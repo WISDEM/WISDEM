@@ -19,7 +19,7 @@ wt_opt2, modeling_options2, analysis_options2 = run_wisdem(fname_wt_input2, fnam
 
 label1    = 'Initial'
 label2    = 'Optimized'
-fs        = 12
+font_size        = 12
 extension = '.png' # '.pdf'
 color1    = 'tab:blue'
 color2    = 'tab:red'
@@ -27,6 +27,35 @@ color3    = 'tab:green'
 
 
 folder_output = analysis_options1['general']['folder_output']
+
+list_of_yamls = [wt_opt1, wt_opt2]
+list_of_yaml_labels = [label1, label2]
+colors = [color1, color2, color3]
+
+
+### Do not change code below here
+
+"""
+Simple plots:
+af_efficiency
+edge
+flap
+induction
+lift_coeff
+mass
+skin_opt
+strains_opt
+torsion
+
+More complex:
+chord
+sc_opt
+twist_opt
+
+Special:
+AOA
+
+"""
 
 # Twist
 ftw, axtw = plt.subplots(1,1,figsize=(5.3, 4))
@@ -37,12 +66,12 @@ twist_opt  = np.interp(s_opt_twist, wt_opt2['blade.outer_shape_bem.s'], wt_opt2[
 axtw.plot(s_opt_twist, twist_opt * 180. / np.pi,'o',color = color2, markersize=3, label='Optimized - Control Points')
 axtw.plot(s_opt_twist, np.array(analysis_options2['optimization_variables']['blade']['aero_shape']['twist']['lower_bound']) * 180. / np.pi, ':o', color=color3,markersize=3, label = 'Bounds')
 axtw.plot(s_opt_twist, np.array(analysis_options2['optimization_variables']['blade']['aero_shape']['twist']['upper_bound']) * 180. / np.pi, ':o', color=color3, markersize=3)
-axtw.legend(fontsize=fs)
+axtw.legend(fontsize=font_size)
 axtw.set_ylim([-5, 20])
-plt.xlabel('Blade Nondimensional Span [-]', fontsize=fs+2, fontweight='bold')
-plt.ylabel('Twist [deg]', fontsize=fs+2, fontweight='bold')
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
+plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
+plt.ylabel('Twist [deg]', fontsize=font_size+2, fontweight='bold')
+plt.xticks(fontsize=font_size)
+plt.yticks(fontsize=font_size)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'twist_opt' + extension
@@ -58,130 +87,16 @@ chord_init = np.interp(s_opt_chord, wt_opt2['blade.outer_shape_bem.s'], wt_opt1[
 axc.plot(s_opt_chord, chord_opt,'o',color = color2, markersize=3, label='Optimized - Control Points')
 axc.plot(s_opt_chord, np.array(analysis_options2['optimization_variables']['blade']['aero_shape']['chord']['min_gain']) * chord_init, ':o', color=color3,markersize=3, label = 'Bounds')
 axc.plot(s_opt_chord, np.array(analysis_options2['optimization_variables']['blade']['aero_shape']['chord']['max_gain']) * chord_init, ':o', color=color3, markersize=3)
-axc.legend(fontsize=fs)
-plt.xlabel('Blade Nondimensional Span [-]', fontsize=fs+2, fontweight='bold')
-plt.ylabel('Chord [m]', fontsize=fs+2, fontweight='bold')
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
+axc.legend(fontsize=font_size)
+plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
+plt.ylabel('Chord [m]', fontsize=font_size+2, fontweight='bold')
+plt.xticks(fontsize=font_size)
+plt.yticks(fontsize=font_size)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'chord' + extension
 fc.savefig(os.path.join(folder_output, fig_name))
 
-# Edgewise stiffness
-f, ax = plt.subplots(1,1,figsize=(5.3, 4))
-ax.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['elastic.EIxx'],'--', color = color1, label=label1)
-ax.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['elastic.EIxx'],'-',  color = color2, label=label2)
-ax.legend(fontsize=fs)
-plt.xlabel('Blade Nondimensional Span [-]', fontsize=fs+2, fontweight='bold')
-plt.ylabel('Edgewise Stiffness [Nm2]', fontsize=fs+2, fontweight='bold')
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
-plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-plt.subplots_adjust(bottom = 0.15, left = 0.15)
-fig_name = 'edge' + extension
-f.savefig(os.path.join(folder_output, fig_name))
-
-# Edgewise stiffness
-f, ax = plt.subplots(1,1,figsize=(5.3, 4))
-ax.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['elastic.GJ'],'--', color = color1, label=label1)
-ax.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['elastic.GJ'],'-',  color = color2, label=label2)
-ax.legend(fontsize=fs)
-plt.xlabel('Blade Nondimensional Span [-]', fontsize=fs+2, fontweight='bold')
-plt.ylabel('Torsional Stiffness [Nm2]', fontsize=fs+2, fontweight='bold')
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
-plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-plt.subplots_adjust(bottom = 0.15, left = 0.15)
-fig_name = 'torsion' + extension
-f.savefig(os.path.join(folder_output, fig_name))
-
-# Flapwise stiffness
-f, ax = plt.subplots(1,1,figsize=(5.3, 4))
-ax.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['elastic.EIyy'],'--',color = color1, label=label1)
-ax.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['elastic.EIyy'],'-',color = color2, label=label2)
-ax.legend(fontsize=fs)
-plt.xlabel('Blade Nondimensional Span [-]', fontsize=fs+2, fontweight='bold')
-plt.ylabel('Flapwise Stiffness [Nm2]', fontsize=fs+2, fontweight='bold')
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
-plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-plt.subplots_adjust(bottom = 0.15, left = 0.15)
-fig_name = 'flap' + extension
-f.savefig(os.path.join(folder_output, fig_name))
-
-# Mass
-f, ax = plt.subplots(1,1,figsize=(5.3, 4))
-ax.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['elastic.rhoA'],'--',color = color1, label=label1)
-ax.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['elastic.rhoA'],'-',color = color2, label=label2)
-ax.legend(fontsize=fs)
-plt.xlabel('Blade Nondimensional Span [-]', fontsize=fs+2, fontweight='bold')
-plt.ylabel('Unit Mass [kg/m]', fontsize=fs+2, fontweight='bold')
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
-plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-plt.subplots_adjust(bottom = 0.15, left = 0.15)
-fig_name = 'mass' + extension
-f.savefig(os.path.join(folder_output, fig_name))
-
-# Angle of attack and stall angle
-faoa, axaoa = plt.subplots(1,1,figsize=(5.3, 4))
-axaoa.plot(wt_opt1['stall_check.s'], wt_opt1['stall_check.aoa_along_span'],'--',color = color1, label=label1)
-axaoa.plot(wt_opt2['stall_check.s'], wt_opt2['stall_check.aoa_along_span'],'-',color = color2, label=label2)
-axaoa.plot(wt_opt1['stall_check.s'], wt_opt1['stall_check.stall_angle_along_span'],':',color=color3, label='Stall')
-axaoa.legend(fontsize=fs)
-axaoa.set_ylim([0, 20])
-plt.xlabel('Blade Nondimensional Span [-]', fontsize=fs+2, fontweight='bold')
-plt.ylabel('Angle of Attack [deg]', fontsize=fs+2, fontweight='bold')
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
-plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-plt.subplots_adjust(bottom = 0.15, left = 0.15)
-fig_name = 'aoa' + extension
-faoa.savefig(os.path.join(folder_output, fig_name))
-
-# Induction
-fa, axa = plt.subplots(1,1,figsize=(5.3, 4))
-axa.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['sse.powercurve.ax_induct_regII'],'--',color = color1, label=label1)
-axa.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['sse.powercurve.ax_induct_regII'],'-',color = color2, label=label2)
-axa.legend(fontsize=fs)
-axa.set_ylim([0, 0.5])
-plt.xlabel('Blade Nondimensional Span [-]', fontsize=fs+2, fontweight='bold')
-plt.ylabel('Axial Induction [-]', fontsize=fs+2, fontweight='bold')
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
-plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-plt.subplots_adjust(bottom = 0.15, left = 0.15)
-fig_name = 'induction' + extension
-fa.savefig(os.path.join(folder_output, fig_name))
-
-# Lift coefficient
-fcl, axcl = plt.subplots(1,1,figsize=(5.3, 4))
-axcl.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['sse.powercurve.cl_regII'],'--',color = color1, label=label1)
-axcl.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['sse.powercurve.cl_regII'],'-',color = color2, label=label2)
-axcl.legend(fontsize=fs)
-plt.xlabel('Blade Nondimensional Span [-]', fontsize=fs+2, fontweight='bold')
-plt.ylabel('Lift Coefficient [-]', fontsize=fs+2, fontweight='bold')
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
-plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-plt.subplots_adjust(bottom = 0.15, left = 0.15)
-fig_name = 'lift_coeff' + extension
-fcl.savefig(os.path.join(folder_output, fig_name))
-
-# Airfoil efficiency
-feff, axeff = plt.subplots(1,1,figsize=(5.3, 4))
-axeff.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['sse.powercurve.cl_regII'] / wt_opt1['sse.powercurve.cd_regII'],'--',color = color1, label=label1)
-axeff.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['sse.powercurve.cl_regII'] / wt_opt2['sse.powercurve.cd_regII'],'-',color = color2, label=label2)
-axeff.legend(fontsize=fs)
-plt.xlabel('Blade Nondimensional Span [-]', fontsize=fs+2, fontweight='bold')
-plt.ylabel('Airfoil Efficiency [-]', fontsize=fs+2, fontweight='bold')
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
-plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-plt.subplots_adjust(bottom = 0.15, left = 0.15)
-fig_name = 'af_efficiency' + extension
-feff.savefig(os.path.join(folder_output, fig_name))
 
 # Spar caps
 fsc, axsc = plt.subplots(1,1,figsize=(5.3, 4))
@@ -199,14 +114,134 @@ for i in range(n_layers):
         axsc.plot(s_opt_sc, sc_opt,'o',color = color2, markersize=3, label='Optimized - Control Points')
         axsc.plot(s_opt_sc, np.array(analysis_options2['optimization_variables']['blade']['structure']['spar_cap_ss']['min_gain']) * sc_init, ':o', color=color3,markersize=3, label = 'Bounds')
         axsc.plot(s_opt_sc, np.array(analysis_options2['optimization_variables']['blade']['structure']['spar_cap_ss']['max_gain']) * sc_init, ':o', color=color3, markersize=3)
+        
+        
+def simple_plot_results(x_axis_label, y_axis_label, x_axis_data_name, y_axis_data_name, plot_filename):
+    f, ax = plt.subplots(1,1,figsize=(5.3, 4))
+    for i_yaml, yaml_data in enumerate(list_of_yamls):
+        ax.plot(yaml_data[x_axis_data_name], yaml_data[y_axis_data_name],'--', color = colors[i_yaml], label=list_of_yaml_labels[i_yaml])
+    ax.legend(fontsize=font_size)
+    plt.xlabel(x_axis_label, fontsize=font_size+2, fontweight='bold')
+    plt.ylabel(y_axis_label, fontsize=font_size+2, fontweight='bold')
+    plt.xticks(fontsize=font_size)
+    plt.yticks(fontsize=font_size)
+    plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+    plt.subplots_adjust(bottom = 0.15, left = 0.15)
+    fig_name = plot_filename + extension
+    f.savefig(os.path.join(folder_output, fig_name))
+    
+simple_plot_results('Blade Nondimensional Span [-]', 'Edgewise Stiffness [Nm2]', 'blade.outer_shape_bem.s', 'elastic.EIxx', 'edge')
+    
+    
+# Edgewise stiffness
+f, ax = plt.subplots(1,1,figsize=(5.3, 4))
+ax.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['elastic.GJ'],'--', color = color1, label=label1)
+ax.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['elastic.GJ'],'-',  color = color2, label=label2)
+ax.legend(fontsize=font_size)
+plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
+plt.ylabel('Torsional Stiffness [Nm2]', fontsize=font_size+2, fontweight='bold')
+plt.xticks(fontsize=font_size)
+plt.yticks(fontsize=font_size)
+plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+plt.subplots_adjust(bottom = 0.15, left = 0.15)
+fig_name = 'torsion' + extension
+f.savefig(os.path.join(folder_output, fig_name))
+
+# Flapwise stiffness
+f, ax = plt.subplots(1,1,figsize=(5.3, 4))
+ax.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['elastic.EIyy'],'--',color = color1, label=label1)
+ax.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['elastic.EIyy'],'-',color = color2, label=label2)
+ax.legend(fontsize=font_size)
+plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
+plt.ylabel('Flapwise Stiffness [Nm2]', fontsize=font_size+2, fontweight='bold')
+plt.xticks(fontsize=font_size)
+plt.yticks(fontsize=font_size)
+plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+plt.subplots_adjust(bottom = 0.15, left = 0.15)
+fig_name = 'flap' + extension
+f.savefig(os.path.join(folder_output, fig_name))
+
+# Mass
+f, ax = plt.subplots(1,1,figsize=(5.3, 4))
+ax.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['elastic.rhoA'],'--',color = color1, label=label1)
+ax.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['elastic.rhoA'],'-',color = color2, label=label2)
+ax.legend(fontsize=font_size)
+plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
+plt.ylabel('Unit Mass [kg/m]', fontsize=font_size+2, fontweight='bold')
+plt.xticks(fontsize=font_size)
+plt.yticks(fontsize=font_size)
+plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+plt.subplots_adjust(bottom = 0.15, left = 0.15)
+fig_name = 'mass' + extension
+f.savefig(os.path.join(folder_output, fig_name))
+
+# Angle of attack and stall angle
+faoa, axaoa = plt.subplots(1,1,figsize=(5.3, 4))
+axaoa.plot(wt_opt1['stall_check.s'], wt_opt1['stall_check.aoa_along_span'],'--',color = color1, label=label1)
+axaoa.plot(wt_opt2['stall_check.s'], wt_opt2['stall_check.aoa_along_span'],'-',color = color2, label=label2)
+axaoa.plot(wt_opt1['stall_check.s'], wt_opt1['stall_check.stall_angle_along_span'],':',color=color3, label='Stall')
+axaoa.legend(fontsize=font_size)
+axaoa.set_ylim([0, 20])
+plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
+plt.ylabel('Angle of Attack [deg]', fontsize=font_size+2, fontweight='bold')
+plt.xticks(fontsize=font_size)
+plt.yticks(fontsize=font_size)
+plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+plt.subplots_adjust(bottom = 0.15, left = 0.15)
+fig_name = 'aoa' + extension
+faoa.savefig(os.path.join(folder_output, fig_name))
+
+# Induction
+fa, axa = plt.subplots(1,1,figsize=(5.3, 4))
+axa.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['sse.powercurve.ax_induct_regII'],'--',color = color1, label=label1)
+axa.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['sse.powercurve.ax_induct_regII'],'-',color = color2, label=label2)
+axa.legend(fontsize=font_size)
+axa.set_ylim([0, 0.5])
+plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
+plt.ylabel('Axial Induction [-]', fontsize=font_size+2, fontweight='bold')
+plt.xticks(fontsize=font_size)
+plt.yticks(fontsize=font_size)
+plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+plt.subplots_adjust(bottom = 0.15, left = 0.15)
+fig_name = 'induction' + extension
+fa.savefig(os.path.join(folder_output, fig_name))
+
+# Lift coefficient
+fcl, axcl = plt.subplots(1,1,figsize=(5.3, 4))
+axcl.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['sse.powercurve.cl_regII'],'--',color = color1, label=label1)
+axcl.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['sse.powercurve.cl_regII'],'-',color = color2, label=label2)
+axcl.legend(fontsize=font_size)
+plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
+plt.ylabel('Lift Coefficient [-]', fontsize=font_size+2, fontweight='bold')
+plt.xticks(fontsize=font_size)
+plt.yticks(fontsize=font_size)
+plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+plt.subplots_adjust(bottom = 0.15, left = 0.15)
+fig_name = 'lift_coeff' + extension
+fcl.savefig(os.path.join(folder_output, fig_name))
+
+# Airfoil efficiency
+feff, axeff = plt.subplots(1,1,figsize=(5.3, 4))
+axeff.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['sse.powercurve.cl_regII'] / wt_opt1['sse.powercurve.cd_regII'],'--',color = color1, label=label1)
+axeff.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['sse.powercurve.cl_regII'] / wt_opt2['sse.powercurve.cd_regII'],'-',color = color2, label=label2)
+axeff.legend(fontsize=font_size)
+plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
+plt.ylabel('Airfoil Efficiency [-]', fontsize=font_size+2, fontweight='bold')
+plt.xticks(fontsize=font_size)
+plt.yticks(fontsize=font_size)
+plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+plt.subplots_adjust(bottom = 0.15, left = 0.15)
+fig_name = 'af_efficiency' + extension
+feff.savefig(os.path.join(folder_output, fig_name))
 
 
-axsc.legend(fontsize=fs)
+
+axsc.legend(fontsize=font_size)
 plt.ylim([0., 200])
-plt.xlabel('Blade Nondimensional Span [-]', fontsize=fs+2, fontweight='bold')
-plt.ylabel('Spar Caps Thickness [mm]', fontsize=fs+2, fontweight='bold')
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
+plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
+plt.ylabel('Spar Caps Thickness [mm]', fontsize=font_size+2, fontweight='bold')
+plt.xticks(fontsize=font_size)
+plt.yticks(fontsize=font_size)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'sc_opt' + extension
@@ -216,12 +251,12 @@ fsc.savefig(os.path.join(folder_output, fig_name))
 f, ax = plt.subplots(1,1,figsize=(5.3, 4))
 ax.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['blade.internal_structure_2d_fem.layer_thickness'][1,:] * 1.e+3,'--', color = color1, label=label1)
 ax.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['blade.internal_structure_2d_fem.layer_thickness'][1,:] * 1.e+3,'-', color = color2, label=label2)
-ax.legend(fontsize=fs)
+ax.legend(fontsize=font_size)
 #plt.ylim([0., 120])
-plt.xlabel('Blade Nondimensional Span [-]', fontsize=fs+2, fontweight='bold')
-plt.ylabel('Outer Shell Skin Thickness [mm]', fontsize=fs+2, fontweight='bold')
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
+plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
+plt.ylabel('Outer Shell Skin Thickness [mm]', fontsize=font_size+2, fontweight='bold')
+plt.xticks(fontsize=font_size)
+plt.yticks(fontsize=font_size)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.15)
 fig_name = 'skin_opt' + extension
@@ -239,11 +274,11 @@ axeps.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['rlds.frame.strainL_spar'
 # axeps.plot(np.array([0.,1.]), np.array([3000.,3000.]), ':',color=color3, label='Constraints')
 # axeps.plot(np.array([0.,1.]), np.array([-3000.,-3000.]), ':', color=color3,)
 plt.ylim([-5e+3, 5e+3])
-axeps.legend(fontsize=fs)
-plt.xlabel('Blade Nondimensional Span [-]', fontsize=fs+2, fontweight='bold')
-plt.ylabel('Spar Caps Strains [mu eps]', fontsize=fs+2, fontweight='bold')
-plt.xticks(fontsize=fs)
-plt.yticks(fontsize=fs)
+axeps.legend(fontsize=font_size)
+plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
+plt.ylabel('Spar Caps Strains [mu eps]', fontsize=font_size+2, fontweight='bold')
+plt.xticks(fontsize=font_size)
+plt.yticks(fontsize=font_size)
 plt.grid(color=[0.8,0.8,0.8], linestyle='--')
 plt.subplots_adjust(bottom = 0.15, left = 0.2)
 fig_name = 'strains_opt' + extension
