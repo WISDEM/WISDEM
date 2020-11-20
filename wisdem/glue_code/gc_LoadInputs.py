@@ -222,7 +222,8 @@ class WindTurbineOntologyPython(object):
 
 
     def write_ontology(self, wt_opt, fname_output):
-
+        
+        # Update blade
         if self.modeling_options['flags']['blade']:
             # Update blade outer shape
             self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['grid']      = wt_opt['blade.opt_var.af_position'].tolist()
@@ -323,6 +324,7 @@ class WindTurbineOntologyPython(object):
                 I.append(Ii.tolist())
             self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['inertia_matrix']['values'] = I
 
+        # Update hub
         if self.modeling_options['flags']['hub']:
             # Update hub
             self.wt_init['components']['hub']['cone_angle']                  = float(wt_opt['hub.cone'])
@@ -338,6 +340,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['hub']['pitch_system_scaling_factor'] = float(wt_opt['hub.pitch_system_scaling_factor'])
             self.wt_init['components']['hub']['spinner_gust_ws']             = float(wt_opt['hub.spinner_gust_ws'])
 
+        # Update nacelle
         if self.modeling_options['flags']['nacelle']:
             # Common direct and geared
             self.wt_init['components']['nacelle']['drivetrain']['uptilt']                    = float(wt_opt['nacelle.uptilt'])
@@ -385,7 +388,7 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['nacelle']['drivetrain']['planet_numbers']            = wt_opt['nacelle.planet_numbers']
                 self.wt_init['components']['nacelle']['drivetrain']['hss_material']              = wt_opt['nacelle.hss_material']
 
-
+        # Update generator
         if self.modeling_options['flags']['generator']:
 
             self.wt_init['components']['nacelle']['generator']['B_r']         = float(wt_opt['generator.B_r'])
@@ -513,6 +516,10 @@ class WindTurbineOntologyPython(object):
         # Update rotor diameter and hub height
         self.wt_init['assembly']['rotor_diameter'] = float(wt_opt['assembly.rotor_diameter'])
         self.wt_init['assembly']['hub_height']     = float(wt_opt['assembly.hub_height'])
+
+        # Update controller
+        if self.modeling_options['flags']['control']:
+            self.wt_init['control']['tsr'] = float(wt_opt['control.rated_TSR'])
 
         # Write yaml with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)

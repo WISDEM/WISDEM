@@ -12,10 +12,13 @@ class PoseOptimization(object):
         # Determine the number of design variables
         n_DV = 0
 
+        rotorD_opt  = self.opt['optimization_variables']['rotor_diameter']
         blade_opt   = self.opt['optimization_variables']['blade']
         tower_opt   = self.opt['optimization_variables']['tower']
         mono_opt    = self.opt['optimization_variables']['monopile']
         
+        if rotorD_opt['flag']:
+            n_DV += 1
         if blade_opt['aero_shape']['twist']['flag']:
             n_DV += blade_opt['aero_shape']['twist']['n_opt'] - 2
         if blade_opt['aero_shape']['chord']['flag']:
@@ -148,10 +151,14 @@ class PoseOptimization(object):
     def set_design_variables(self, wt_opt, wt_init):
 
         # Set optimization design variables.
+        rotorD_opt   = self.opt['optimization_variables']['rotor_diameter']
         blade_opt    = self.opt['optimization_variables']['blade']
         tower_opt    = self.opt['optimization_variables']['tower']
         monopile_opt = self.opt['optimization_variables']['monopile']
         control_opt  = self.opt['optimization_variables']['control']
+
+        if rotorD_opt['flag']:
+            wt_opt.model.add_design_var('assembly.rotor_diameter', indices = indices, lower=rotorD_opt['minimum'], upper=rotorD_opt['minimum'], ref = 1.e+2)
 
         if blade_opt['aero_shape']['twist']['flag']:
             indices        = range(2, blade_opt['aero_shape']['twist']['n_opt'])
@@ -203,8 +210,8 @@ class PoseOptimization(object):
 
         # -- Control --
         if control_opt['tsr']['flag']:
-            wt_opt.model.add_design_var('opt_var.tsr_opt_gain', lower=control_opt['tsr']['min_gain'],
-                                                                upper=control_opt['tsr']['max_gain'])
+            wt_opt.model.add_design_var('control.rated_TSR', lower=control_opt['tsr']['minimum'],
+                                                                upper=control_opt['tsr']['maximum'], ref=1e+1)
         if control_opt['servo']['pitch_control']['flag']:
             wt_opt.model.add_design_var('control.PC_omega', lower=control_opt['servo']['pitch_control']['omega_min'],
                                                             upper=control_opt['servo']['pitch_control']['omega_max'])

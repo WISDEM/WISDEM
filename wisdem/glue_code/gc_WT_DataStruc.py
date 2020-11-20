@@ -333,16 +333,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         if modeling_options['flags']['nacelle']:
             self.connect('nacelle.distance_tt_hub',         'assembly.distance_tt_hub')
 
-        # Setup TSR optimization
-        opt_var = self.add_subsystem('opt_var', om.IndepVarComp())
-        opt_var.add_output('tsr_opt_gain',   val = 1.0)
-        # Multiply the initial tsr with the tsr gain
-        exec_comp = om.ExecComp('tsr_opt = tsr_original * tsr_gain')
-        self.add_subsystem('pc', exec_comp)
-        self.connect('opt_var.tsr_opt_gain', 'pc.tsr_gain')
-        if modeling_options['flags']['control']:
-            self.connect('control.rated_TSR',    'pc.tsr_original')
-
 class Blade(om.Group):
     # Openmdao group with components with the blade data coming from the input yaml file.
     def initialize(self):
