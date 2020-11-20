@@ -14,7 +14,7 @@ from wisdem.ccblade import CCAirfoil, CCBlade
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
 from wisdem.commonse.utilities import linspace_with_deriv, smooth_min, smooth_abs
 
-class ServoSE(Group):
+class RotorPower(Group):
     def initialize(self):
         self.options.declare('modeling_options')
         self.options.declare('opt_options')

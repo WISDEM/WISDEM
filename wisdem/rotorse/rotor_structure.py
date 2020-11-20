@@ -762,7 +762,7 @@ class DesignConstraints(ExplicitComponent):
 #                 outputs['C_miners_TE_PS'] = remap2grid(r_gage, C_miners, r, axis=0)
 
 
-class RotorLoadsDeflStrains(Group):
+class RotorStructure(Group):
     # OpenMDAO group to compute the blade elastic properties, deflections, and loading
     def initialize(self):
         self.options.declare('modeling_options')

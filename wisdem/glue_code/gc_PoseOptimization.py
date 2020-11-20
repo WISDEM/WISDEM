@@ -111,10 +111,10 @@ class PoseOptimization(object):
 
         # Set merit figure. Each objective has its own scaling.
         if self.opt['merit_figure'] == 'AEP':
-            wt_opt.model.add_objective('sse.AEP', ref = -1.e6)
+            wt_opt.model.add_objective('rp.AEP', ref = -1.e6)
 
         elif self.opt['merit_figure'] == 'blade_mass':
-            wt_opt.model.add_objective('elastic.precomp.blade_mass', ref = 1.e4)
+            wt_opt.model.add_objective('re.precomp.blade_mass', ref = 1.e4)
 
         elif self.opt['merit_figure'] == 'LCOE':
             wt_opt.model.add_objective('financese.lcoe', ref = 0.1)
@@ -136,7 +136,7 @@ class PoseOptimization(object):
 
         elif self.opt['merit_figure'] == 'Cp':
             if self.modeling['flags']['blade']:
-                wt_opt.model.add_objective('sse.powercurve.Cp_regII', ref = -1.)
+                wt_opt.model.add_objective('rp.powercurve.Cp_regII', ref = -1.)
             else:
                 wt_opt.model.add_objective('ccblade.CP', ref = -1.)
         else:
@@ -226,13 +226,13 @@ class PoseOptimization(object):
         blade_constraints = self.opt['constraints']['blade']
         if blade_constraints['strains_spar_cap_ss']['flag']:
             if blade_opt['structure']['spar_cap_ss']['flag']:
-                wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.0)
+                wt_opt.model.add_constraint('rs.constr.constr_max_strainU_spar', upper= 1.0)
             else:
                 print('WARNING: the strains of the suction-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced.')
 
         if blade_constraints['strains_spar_cap_ps']['flag']:
             if blade_opt['structure']['spar_cap_ps']['flag'] or blade_opt['structure']['spar_cap_ps']['equal_to_suction']:
-                wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.0)
+                wt_opt.model.add_constraint('rs.constr.constr_max_strainL_spar', upper= 1.0)
             else:
                 print('WARNING: the strains of the pressure-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced.')
 
@@ -256,20 +256,20 @@ class PoseOptimization(object):
 
         if blade_constraints['frequency']['flap_above_3P']:
             if blade_opt['structure']['spar_cap_ss']['flag'] or blade_opt['structure']['spar_cap_ps']['flag']:
-                wt_opt.model.add_constraint('rlds.constr.constr_flap_f_margin', upper= 0.0)
+                wt_opt.model.add_constraint('rs.constr.constr_flap_f_margin', upper= 0.0)
             else:
                 print('WARNING: the blade flap frequencies are set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
 
         if blade_constraints['frequency']['edge_above_3P']:
-            wt_opt.model.add_constraint('rlds.constr.constr_edge_f_margin', upper= 0.0)
+            wt_opt.model.add_constraint('rs.constr.constr_edge_f_margin', upper= 0.0)
 
         if blade_constraints['rail_transport']['flag']:
             if blade_constraints['rail_transport']['8_axle']:
-                wt_opt.model.add_constraint('elastic.rail.constr_LV_8axle_horiz',   lower = 0.8, upper= 1.0)
-                wt_opt.model.add_constraint('elastic.rail.constr_strainPS',         upper= 1.0)
-                wt_opt.model.add_constraint('elastic.rail.constr_strainSS',         upper= 1.0)
+                wt_opt.model.add_constraint('re.rail.constr_LV_8axle_horiz',   lower = 0.8, upper= 1.0)
+                wt_opt.model.add_constraint('re.rail.constr_strainPS',         upper= 1.0)
+                wt_opt.model.add_constraint('re.rail.constr_strainSS',         upper= 1.0)
             elif blade_constraints['rail_transport']['4_axle']:
-                wt_opt.model.add_constraint('elastic.rail.constr_LV_4axle_horiz', upper= 1.0)
+                wt_opt.model.add_constraint('re.rail.constr_LV_4axle_horiz', upper= 1.0)
             else:
                 raise ValueError('You have activated the rail transport constraint module. Please define whether you want to model 4- or 8-axle flatcars.')
 
@@ -377,8 +377,8 @@ class PoseOptimization(object):
             wt_opt['blade.opt_var.s_opt_chord']  = np.linspace(0., 1., blade_opt['aero_shape']['chord']['n_opt'])
             wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., blade_opt['structure']['spar_cap_ss']['n_opt'])
             wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., blade_opt['structure']['spar_cap_ps']['n_opt'])
-            wt_opt['rlds.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
-            wt_opt['rlds.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
+            wt_opt['rs.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
+            wt_opt['rs.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
             wt_opt['stall_check.stall_margin'] = blade_constraints['stall']['margin'] * 180. / np.pi
         
         return wt_opt

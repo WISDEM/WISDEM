@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-import wisdem.rotorse.servose as serv
+import wisdem.rotorse.rotor_power as rp
 import openmdao.api as om
 import copy
 import time
@@ -17,7 +17,7 @@ class TestServo(unittest.TestCase):
         discrete_inputs = {}
         discrete_outputs = {}
 
-        myobj = serv.GustETM()
+        myobj = rp.GustETM()
         
         inputs['V_mean'] = 10.0
         inputs['V_hub']  = 15.0
@@ -70,7 +70,7 @@ class TestServo(unittest.TestCase):
         modeling_options['airfoils']['n_Re'] = n_Re
         modeling_options['airfoils']['n_tab'] = n_tab
         
-        prob.model.add_subsystem('powercurve', serv.RegulatedPowerCurve(modeling_options=modeling_options), promotes=['*'])
+        prob.model.add_subsystem('powercurve', rp.RegulatedPowerCurve(modeling_options=modeling_options), promotes=['*'])
         
         prob.setup()
         
@@ -306,7 +306,7 @@ class TestServo(unittest.TestCase):
         modeling_options['airfoils']['n_Re'] = n_Re
         modeling_options['airfoils']['n_tab'] = n_tab
         
-        prob.model.add_subsystem('powercurve', serv.RegulatedPowerCurve(modeling_options=modeling_options), promotes=['*'])
+        prob.model.add_subsystem('powercurve', rp.RegulatedPowerCurve(modeling_options=modeling_options), promotes=['*'])
         
         prob.setup()
         
