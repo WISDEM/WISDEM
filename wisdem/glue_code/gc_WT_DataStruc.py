@@ -71,7 +71,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             nacelle_ivc.add_output('gear_ratio',         val=1.0,                      desc='Total gear ratio of drivetrain (use 1.0 for direct)')
             nacelle_ivc.add_output('gearbox_efficiency', val=1.0,                      desc='Efficiency of the gearbox. Set to 1.0 for direct-drive')
             nacelle_ivc.add_output('brake_mass_user',    val=0.0,         units='kg',  desc='Override regular regression-based calculation of brake mass with this value')
-            nacelle_ivc.add_output('hvac_mass_coeff',    val=0.08,        units='kg/kW', desc='Regression-based scaling coefficient on machine rating to get HVAC system mass')
+            nacelle_ivc.add_output('hvac_mass_coeff',    val=0.025,        units='kg/kW/m', desc='Regression-based scaling coefficient on machine rating to get HVAC system mass')
             nacelle_ivc.add_output('converter_mass_user',val=0.0,         units='kg',  desc='Override regular regression-based calculation of converter mass with this value')
             nacelle_ivc.add_output('transformer_mass_user', val=0.0,      units='kg',  desc='Override regular regression-based calculation of transformer mass with this value')
             nacelle_ivc.add_discrete_output('mb1Type',   val='CARB',                   desc='Type of main bearing: CARB / CRB / SRB / TRB')

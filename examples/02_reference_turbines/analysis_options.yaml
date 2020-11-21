@@ -1,3 +1,4 @@
+# Generic analysis options where nothing is run
 general:
     folder_output: outputs
     fname_output: refturb_output
@@ -134,3 +135,4 @@ driver:
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder
+# end analysis options

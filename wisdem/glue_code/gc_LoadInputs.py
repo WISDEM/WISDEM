@@ -22,7 +22,6 @@ class WindTurbineOntologyPython(object):
         self.set_openmdao_vectors()
         self.set_opt_flags()
 
-
     def get_input_data(self):
         return self.wt_init, self.modeling_options, self.analysis_options
 
