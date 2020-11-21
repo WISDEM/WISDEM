@@ -29,7 +29,7 @@ class WT_RNTA(om.Group):
         if modeling_options['flags']['blade'] and modeling_options['flags']['nacelle']:
             self.linear_solver = lbgs = om.LinearBlockGS()
             self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
-            nlbgs.options['maxiter'] = 2
+            nlbgs.options['maxiter'] = 5
             nlbgs.options['atol'] = nlbgs.options['atol'] = 1e-2
         
         # Analysis components
