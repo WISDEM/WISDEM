@@ -590,8 +590,8 @@ class MiscNacelleComponents(om.ExplicitComponent):
         outputs['hvac_I' ]   = I_hvac*np.array([1.0, 0.5, 0.5])
 
         # Platforms as a fraction of bedplate mass and bundling it to call it 'platforms'
-        L_platform = L_cover if direct else 2*D_top
-        W_platform = W_cover if direct else 2*D_top
+        L_platform = 2*D_top if direct else L_cover 
+        W_platform = 2*D_top if direct else W_cover 
         t_platform = 0.05
         m_platform = L_platform * W_platform * t_platform * rho_castiron
         I_platform = m_platform * np.array([t_platform**2 + W_platform**2,
@@ -851,7 +851,7 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         r       = inputs['yaw_cm'] - cm_nac
         I_add   = util.assembleI(np.r_[inputs['yaw_I'], np.zeros(3)]) + inputs['yaw_mass']*(np.dot(r, r)*np.eye(3) - np.outer(r, r))
         I_add   = util.unassembleI(I_add)
-        I_nac   = I_add
+        I_nac  += I_add
 
         # Wrap up nacelle mass table
         m_list[-1]    = inputs['yaw_mass']

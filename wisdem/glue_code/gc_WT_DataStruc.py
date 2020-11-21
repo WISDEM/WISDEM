@@ -18,7 +18,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         opt_options      = self.options['opt_options']
 
         # Material dictionary inputs
-        self.add_subsystem('materials', Materials(mat_init_options = modeling_options['materials']))
+        self.add_subsystem('materials', Materials(mat_init_options = modeling_options['materials'],
+                                                  composites=modeling_options['flags']['blade']))
 
         # Airfoil dictionary inputs
         if modeling_options['flags']['airfoils']:
@@ -225,7 +226,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # Control inputs
         if modeling_options['flags']['control']:
             ctrl_ivc = self.add_subsystem('control', om.IndepVarComp())
-            ctrl_ivc.add_output('rated_power',      val=0.0, units='W',         desc='Electrical rated power of the generator.')
             ctrl_ivc.add_output('V_in',             val=0.0, units='m/s',       desc='Cut in wind speed. This is the wind speed where region II begins.')
             ctrl_ivc.add_output('V_out',            val=0.0, units='m/s',       desc='Cut out wind speed. This is the wind speed where region III ends.')
             ctrl_ivc.add_output('minOmega',         val=0.0, units='rad/s',     desc='Minimum allowed rotor speed.')
@@ -244,6 +244,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         conf_ivc.add_discrete_output('rotor_orientation',   val='upwind',       desc='Rotor orientation, either upwind or downwind.')
         conf_ivc.add_discrete_output('upwind',              val=True,           desc='Convenient boolean for upwind (True) or downwind (False).')
         conf_ivc.add_discrete_output('n_blades',            val=3,              desc='Number of blades of the rotor.')
+        conf_ivc.add_output('rated_power',                  val=0.0, units='W', desc='Electrical rated power of the generator.')
+        
         conf_ivc.add_output('rotor_diameter_user',          val=0.,units='m',   desc='Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.')
         conf_ivc.add_output('hub_height_user',              val=0.,units='m',   desc='Height of the hub center over the ground (land-based) or the mean sea level (offshore) specified by the user.')
 
@@ -1218,6 +1220,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('mat_init_options')
+        self.options.declare('composites', default=True)
 
     def setup(self):
 
@@ -1244,8 +1247,8 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
             if discrete_inputs['name'][i] == 'resin':
                 density_resin = inputs['rho'][i]
                 id_resin = i
-        if density_resin==0.:
-            raise ValueError('Error: a material named resin must be defined in the input yaml')
+        if self.options['composites'] and density_resin==0.:
+            print('Warning: a material named resin is not defined in the input yaml.  This is required for blade composite analysis')
 
         fvf   = np.zeros(self.n_mat)
         fwf   = np.zeros(self.n_mat)
@@ -1290,6 +1293,7 @@ class Materials(om.Group):
 
     def initialize(self):
         self.options.declare('mat_init_options')
+        self.options.declare('composites', default=True)
 
     def setup(self):
         mat_init_options = self.options['mat_init_options']
@@ -1317,7 +1321,8 @@ class Materials(om.Group):
         ivc.add_output('fvf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.')
         ivc.add_output('fwf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.')
 
-        self.add_subsystem('compute_materials_properties', ComputeMaterialsProperties(mat_init_options=mat_init_options), promotes=['*'])
+        self.add_subsystem('compute_materials_properties', ComputeMaterialsProperties(mat_init_options=mat_init_options,
+                                                                                      composites=self.options['composites']), promotes=['*'])
 
 class WT_Assembly(om.ExplicitComponent):
     # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance

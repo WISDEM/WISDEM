@@ -1,5 +1,5 @@
 import os
-from wisdem.glue_code.runWISDEM import run_wisdem
+from wisdem import run_wisdem
 
 
 ## File management

@@ -821,7 +821,6 @@ def assign_floating_values(wt_opt, modeling_options, floating):
 
 def assign_control_values(wt_opt, modeling_options, control):
     # Controller parameters
-    wt_opt['control.rated_power']   = control['rated_power']
     wt_opt['control.V_in']          = control['Vin']
     wt_opt['control.V_out']         = control['Vout']
     wt_opt['control.minOmega']      = control['minOmega']
@@ -844,6 +843,7 @@ def assign_configuration_values(wt_opt, assembly, opt_options):
     wt_opt['configuration.n_blades']          = int(assembly['number_of_blades'])
     wt_opt['configuration.rotor_diameter_user'] = assembly['rotor_diameter']
     wt_opt['configuration.hub_height_user']   = assembly['hub_height']
+    wt_opt['configuration.rated_power']       = assembly['rated_power']
 
     # Checks for errors
     if int(assembly['number_of_blades']) - assembly['number_of_blades'] != 0:

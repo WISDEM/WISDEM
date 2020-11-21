@@ -1578,6 +1578,7 @@ properties:
             - number_of_blades
             - rotor_diameter
             - hub_height
+            - rated_power
         properties:
             turbine_class:
                 type: string
@@ -1618,10 +1619,14 @@ properties:
                 unit: m
                 minimum: 0
                 maximum: 1000
+            rated_power:
+                type: number
+                description: Nameplate power of the turbine, i.e. the rated electrical output of the generator.
+                unit: W
+                minimum: 0
     control:
         type: object
         required:
-            - rated_power
             - Vin
             - Vout
             - tsr
@@ -1630,11 +1635,6 @@ properties:
             - max_pitch_rate
             - max_torque_rate
         properties:
-            rated_power:
-                type: number
-                description: Nameplate power of the turbine, i.e. the rated electrical output of the generator.
-                unit: W
-                minimum: 0
             Vin:
                 type: number
                 description: Cut-in wind speed of the wind turbine.

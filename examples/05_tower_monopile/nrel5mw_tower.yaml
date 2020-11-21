@@ -8,6 +8,7 @@ assembly:
     number_of_blades: 3
     hub_height: 90.
     rotor_diameter: 126.
+    rated_power: 5.e+6
 
 components:
     tower:
@@ -42,7 +43,7 @@ components:
         
 materials:
    -  name: steel
-      description: Steel of the tower and monopile: ASTM A572 Grade 50
+      description: Steel of the tower and monopile, ASTM A572 Grade 50
       source: http://www.matweb.com/search/DataSheet.aspx?MatGUID=9ced5dc901c54bd1aef19403d0385d7f
       orth: 0
       rho: 7800

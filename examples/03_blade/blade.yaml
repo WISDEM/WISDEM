@@ -8,6 +8,7 @@ assembly:
     number_of_blades: 3
     hub_height: 140.
     rotor_diameter: 206. 
+    rated_power: 5.e+6
 components:
     blade:
         outer_shape_bem:
@@ -675,7 +676,6 @@ materials:
       S: 0
       Xy: 450.e+6
 control:
-    rated_power: 5.e+6
     Vin: 4.0
     Vout: 25.0
     minOmega: 0.0

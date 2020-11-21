@@ -1,5 +1,13 @@
 name: IEA 15MW Offshore Reference Turbine, with taped chord tip design
 
+assembly:
+    turbine_class: I
+    turbulence_class: B
+    drivetrain: direct_drive
+    rotor_orientation: Upwind
+    number_of_blades: 3
+    rated_power: 15.e+6
+    
 components:
     blade:
         outer_shape_bem:
@@ -870,14 +878,7 @@ materials:
       orth: 0
       unit_cost: 3.63
 
-assembly:
-    turbine_class: I
-    turbulence_class: B
-    drivetrain: direct_drive
-    rotor_orientation: Upwind
-    number_of_blades: 3
 control:
-    rated_power: 15.e+6
     Vin: 3.0
     Vout: 25.0
     minOmega: 0.52

@@ -1,6 +1,4 @@
-from wisdem.glue_code.runWISDEM import run_wisdem
-import matplotlib.pyplot as plt
-import numpy as np
+from wisdem import run_wisdem
 import os
 from wisdem.commonse.mpi_tools import MPI
 
