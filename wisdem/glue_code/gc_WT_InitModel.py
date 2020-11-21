@@ -1,12 +1,12 @@
 import numpy as np
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 
-def yaml2openmdao(wt_opt, modeling_options, wt_init):
+def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
 
     # These are the required components
     assembly        = wt_init['assembly']
-    wt_opt = assign_configuration_values(wt_opt, assembly)
+    wt_opt = assign_configuration_values(wt_opt, assembly, opt_options)
 
     materials       = wt_init['materials']
     wt_opt = assign_material_values(wt_opt, modeling_options, materials)
@@ -834,7 +834,7 @@ def assign_control_values(wt_opt, modeling_options, control):
 
     return wt_opt
 
-def assign_configuration_values(wt_opt, assembly):
+def assign_configuration_values(wt_opt, assembly, opt_options):
 
     wt_opt['configuration.ws_class']          = assembly['turbine_class']
     wt_opt['configuration.turb_class']        = assembly['turbulence_class']
@@ -842,12 +842,15 @@ def assign_configuration_values(wt_opt, assembly):
     wt_opt['configuration.rotor_orientation'] = assembly['rotor_orientation'].lower()
     wt_opt['configuration.upwind']            = wt_opt['configuration.rotor_orientation'] == 'upwind'
     wt_opt['configuration.n_blades']          = int(assembly['number_of_blades'])
-    wt_opt['configuration.rotor_diameter']    = assembly['rotor_diameter']
-    wt_opt['configuration.hub_height']        = assembly['hub_height']
+    wt_opt['configuration.rotor_diameter_user'] = assembly['rotor_diameter']
+    wt_opt['configuration.hub_height_user']   = assembly['hub_height']
 
     # Checks for errors
     if int(assembly['number_of_blades']) - assembly['number_of_blades'] != 0:
         raise Exception('ERROR: the number of blades must be an integer')
+
+    if assembly['rotor_diameter'] == 0. and opt_options['optimization_variables']['rotor_diameter']['flag']:
+        raise Exception('ERROR: you activated the rotor diameter as design variable, but you have not specified the rotor diameter in the geometry yaml.')
 
     return wt_opt
 

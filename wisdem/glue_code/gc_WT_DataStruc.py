@@ -244,8 +244,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         conf_ivc.add_discrete_output('rotor_orientation',   val='upwind',       desc='Rotor orientation, either upwind or downwind.')
         conf_ivc.add_discrete_output('upwind',              val=True,           desc='Convenient boolean for upwind (True) or downwind (False).')
         conf_ivc.add_discrete_output('n_blades',            val=3,              desc='Number of blades of the rotor.')
-        conf_ivc.add_output('rotor_diameter',               val=0.,units='m',   desc='Diameter of the rotor, defined as two times the blade length plus the hub diameter.')
-        conf_ivc.add_output('hub_height',                   val=0.,units='m',   desc='Height of the hub center over the ground (land-based) or the mean sea level (offshore).')
+        conf_ivc.add_output('rotor_diameter_user',          val=0.,units='m',   desc='Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.')
+        conf_ivc.add_output('hub_height_user',              val=0.,units='m',   desc='Height of the hub center over the ground (land-based) or the mean sea level (offshore) specified by the user.')
 
         # Environment inputs
         if modeling_options['flags']['environment']:
@@ -320,14 +320,14 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Assembly setup
         self.add_subsystem('assembly',      WT_Assembly(modeling_options = modeling_options))
-        self.connect('configuration.rotor_diameter',    'assembly.rotor_diameter')
-        self.connect('configuration.hub_height',        'assembly.hub_height')
+        self.connect('configuration.rotor_diameter_user',   'assembly.rotor_diameter_user')
+        self.connect('configuration.hub_height_user',       'assembly.hub_height_user')
         if modeling_options['flags']['blade']:
-            self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis_inp')
+            self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis_user')
         if modeling_options['flags']['hub']:
             self.connect('hub.radius',                      'assembly.hub_radius')
         if modeling_options['flags']['tower']:
-            self.connect('tower.ref_axis',                  'assembly.tower_ref_axis_inp')
+            self.connect('tower.ref_axis',                  'assembly.tower_ref_axis_user')
             self.add_subsystem('tower_grid', Compute_Grid(init_options=tower_init_options))
             self.connect('assembly.tower_ref_axis',         'tower_grid.ref_axis')
         if modeling_options['flags']['nacelle']:
@@ -388,7 +388,7 @@ class Blade(om.Group):
             self.connect('interp_airfoils.coord_xy_dim',    'blade_lofted.coord_xy_dim')
             self.connect('pa.twist_param',                  'blade_lofted.twist')
             self.connect('outer_shape_bem.s',               'blade_lofted.s')
-            self.connect('outer_shape_bem.ref_axis',        'blade_lofted.ref_axis')
+            self.connect('assembly.blade_ref_axis',         'blade_lofted.ref_axis')
 
         # Import blade internal structure data and remap composites on the outer blade shape
         self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options, af_init_options = af_init_options))
@@ -1336,36 +1336,44 @@ class WT_Assembly(om.ExplicitComponent):
         else:
             n_height = 0
             
-        self.add_input('blade_ref_axis_inp',    val=np.zeros((n_span,3)),   units='m',  desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
-        self.add_input('rotor_diameter',        val=0.0,                    units='m',  desc='Scalar of the rotor diameter, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.')
+        self.add_input('blade_ref_axis_user',   val=np.zeros((n_span,3)),   units='m',  desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+        self.add_input('rotor_diameter_user',   val=0.0,                    units='m',  desc='Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.')
         self.add_input('hub_radius',            val=0.0,                    units='m',  desc='Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.')
         
+        self.add_output('rotor_diameter',       val=0.0,                    units='m',  desc='Diameter of the rotor used in WISDEM. It is defined as two times the blade length plus the hub diameter.')
         self.add_output('r_blade',              val=np.zeros(n_span),       units='m',  desc='1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)')
         self.add_output('rotor_radius',         val=0.0,                    units='m',  desc='Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.')
         self.add_output('blade_ref_axis',       val=np.zeros((n_span,3)),   units='m',  desc='2D array of the coordinates (x,y,z) of the blade reference axis scaled based on rotor diameter, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
         self.add_output('blade_length',         val=0.0,                    units='m',  desc='Scalar of the 3D blade length computed along its axis, scaled based on the user defined rotor diameter.')
             
-        self.add_input('tower_ref_axis_inp',    val=np.zeros((n_height, 3)),units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+        self.add_input('tower_ref_axis_user',   val=np.zeros((n_height, 3)),units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
         self.add_input('distance_tt_hub',       val=0.0,                    units='m',  desc='Vertical distance from tower top to hub center.')
-        self.add_input('hub_height',            val=0.0,                    units='m',  desc='Height of the hub in the global reference system, i.e. distance rotor center to ground.')
+        self.add_input('hub_height_user',       val=0.0,                    units='m',  desc='Height of the hub specified by the user.')
 
         self.add_output('tower_ref_axis',       val=np.zeros((n_height, 3)),units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+        self.add_output('hub_height',           val=0.0,                    units='m',  desc='Height of the hub in the global reference system, i.e. distance rotor center to ground.')
 
     def compute(self, inputs, outputs):
         modeling_options = self.options['modeling_options']
 
         if modeling_options['flags']['blade']:
-            outputs['blade_ref_axis'][:,0] = inputs['blade_ref_axis_inp'][:,0]
-            outputs['blade_ref_axis'][:,1] = inputs['blade_ref_axis_inp'][:,1]
+            outputs['blade_ref_axis'][:,0] = inputs['blade_ref_axis_user'][:,0]
+            outputs['blade_ref_axis'][:,1] = inputs['blade_ref_axis_user'][:,1]
             # Scale z if the blade length provided by the user does not match the rotor diameter. D = (blade length + hub radius) * 2
-            if inputs['rotor_diameter'] != 0.:
-                outputs['blade_ref_axis'][:,2] = inputs['blade_ref_axis_inp'][:,2] * inputs['rotor_diameter'] / ((arc_length(inputs['blade_ref_axis_inp'])[-1] + inputs['hub_radius']) * 2.)
+            if inputs['rotor_diameter_user'] != 0.:
+                outputs['rotor_diameter']       = inputs['rotor_diameter_user']
+                outputs['blade_ref_axis'][:,2]  = inputs['blade_ref_axis_user'][:,2] * inputs['rotor_diameter_user'] / ((arc_length(inputs['blade_ref_axis_user'])[-1] + inputs['hub_radius']) * 2.)
+            # If the user does not provide a rotor diameter, this is computed from the hub diameter and the blade length
             else:
-                outputs['blade_ref_axis'][:,2] = inputs['blade_ref_axis_inp'][:,2]
+                outputs['rotor_diameter']       = (arc_length(inputs['blade_ref_axis_user'])[-1] + inputs['hub_radius']) * 2.
+                outputs['blade_ref_axis'][:,2]  = inputs['blade_ref_axis_user'][:,2]
             outputs['r_blade']        = outputs['blade_ref_axis'][:,2] + inputs['hub_radius']
             outputs['rotor_radius']   = outputs['r_blade'][-1]
             outputs['blade_length']   = arc_length(outputs['blade_ref_axis'])[-1]
-        if modeling_options['flags']['tower'] and inputs['hub_height'] != 0.:
-            outputs['tower_ref_axis'][:,2] = (inputs['tower_ref_axis_inp'][:,2] - inputs['tower_ref_axis_inp'][0,2]) * inputs['hub_height'] / (inputs['tower_ref_axis_inp'][-1,2] + inputs['distance_tt_hub']) + inputs['tower_ref_axis_inp'][0,2]
-        else:
-            outputs['tower_ref_axis'] = inputs['tower_ref_axis_inp']
+        if modeling_options['flags']['tower']:
+            if inputs['hub_height_user'] != 0.:
+                outputs['hub_height'] = inputs['hub_height_user']
+                outputs['tower_ref_axis'][:,2] = (inputs['tower_ref_axis_user'][:,2] - inputs['tower_ref_axis_user'][0,2]) * inputs['hub_height_user'] / (inputs['tower_ref_axis_user'][-1,2] + inputs['distance_tt_hub']) + inputs['tower_ref_axis_user'][0,2]
+            else:
+                outputs['hub_height']     = inputs['tower_ref_axis_user'][-1,2]
+                outputs['tower_ref_axis'] = inputs['tower_ref_axis_user']

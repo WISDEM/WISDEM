@@ -158,7 +158,7 @@ class PoseOptimization(object):
         control_opt  = self.opt['optimization_variables']['control']
 
         if rotorD_opt['flag']:
-            wt_opt.model.add_design_var('assembly.rotor_diameter', indices = indices, lower=rotorD_opt['minimum'], upper=rotorD_opt['minimum'], ref = 1.e+2)
+            wt_opt.model.add_design_var('configuration.rotor_diameter_user', lower=rotorD_opt['minimum'], upper=rotorD_opt['minimum'], ref = 1.e+2)
 
         if blade_opt['aero_shape']['twist']['flag']:
             indices        = range(2, blade_opt['aero_shape']['twist']['n_opt'])

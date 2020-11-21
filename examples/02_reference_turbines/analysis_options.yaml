@@ -3,7 +3,7 @@ general:
     fname_output: refturb_output
 optimization_variables:
   rotor_diameter:
-    flag: True
+    flag: False
     minimum: 190
     maximum: 240
   blade:

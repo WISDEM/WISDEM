@@ -66,7 +66,7 @@ class WT_RNTA(om.Group):
             self.connect('blade.interp_airfoils.cl_interp', 'ccblade.airfoils_cl')
             self.connect('blade.interp_airfoils.cd_interp', 'ccblade.airfoils_cd')
             self.connect('blade.interp_airfoils.cm_interp', 'ccblade.airfoils_cm')
-            self.connect('configuration.hub_height',        'ccblade.hub_height')
+            self.connect('assembly.hub_height',             'ccblade.hub_height')
             self.connect('hub.cone',                        'ccblade.precone')
             self.connect('nacelle.uptilt',                  'ccblade.tilt')
             self.connect('assembly.blade_ref_axis',         'ccblade.precurve', src_indices=[(i, 0) for i in np.arange(n_span)])
@@ -163,7 +163,7 @@ class WT_RNTA(om.Group):
             # self.connect('blade.pa.twist_param',           'rp.theta')
             self.connect('hub.radius',                     'rp.Rhub')
             self.connect('assembly.rotor_radius',          'rp.Rtip')
-            self.connect('configuration.hub_height',       'rp.hub_height')
+            self.connect('assembly.hub_height',            'rp.hub_height')
             self.connect('hub.cone',                       'rp.precone')
             self.connect('nacelle.uptilt',                 'rp.tilt')
             self.connect('assembly.blade_ref_axis',        'rp.precurve', src_indices=[(i, 0) for i in np.arange(n_span)])
@@ -206,7 +206,7 @@ class WT_RNTA(om.Group):
             self.connect('env.rho_air',               'rs.rho')
             self.connect('env.mu_air',                'rs.mu')
             self.connect('env.shear_exp',             'rs.aero_hub_loads.shearExp')
-            self.connect('configuration.hub_height',  'rs.hub_height')
+            self.connect('assembly.hub_height',       'rs.hub_height')
             self.connect('configuration.n_blades',    'rs.nBlades')
             self.connect('assembly.r_blade',          'rs.r')
             self.connect('hub.cone',                  'rs.precone')
@@ -262,7 +262,7 @@ class WT_RNTA(om.Group):
 
             self.connect('configuration.n_blades',          'drivese.n_blades')
             
-            self.connect('configuration.rotor_diameter',    'drivese.rotor_diameter')
+            self.connect('assembly.rotor_diameter',         'drivese.rotor_diameter')
             self.connect('configuration.upwind',            'drivese.upwind')
             self.connect('control.minOmega' ,               'drivese.minimum_rpm')
             self.connect('rp.powercurve.rated_Omega',       'drivese.rated_rpm')
@@ -437,12 +437,12 @@ class WT_RNTA(om.Group):
                 self.connect('drivese.rna_mass',          'towerse.rna_mass')
             if modeling_options['flags']['blade']:
                 self.connect('rp.gust.V_gust',            'towerse.wind.Uref')
-            self.connect('configuration.hub_height',      'towerse.wind_reference_height')  # TODO- environment
+            self.connect('assembly.hub_height',           'towerse.wind_reference_height')  # TODO- environment
             self.connect('foundation.height',             'towerse.wind_z0') # TODO- environment
             self.connect('env.rho_air',                   'towerse.rho_air')
             self.connect('env.mu_air',                    'towerse.mu_air')                    
             self.connect('env.shear_exp',                 'towerse.shearExp')                    
-            self.connect('configuration.hub_height',      'towerse.hub_height')
+            self.connect('assembly.hub_height',           'towerse.hub_height')
             self.connect('foundation.height',             'towerse.foundation_height')
             self.connect('tower.diameter',                'towerse.tower_outer_diameter_in')
             self.connect('tower_grid.height',             'towerse.tower_height')
@@ -576,8 +576,8 @@ class WindPark(om.Group):
                 self.connect('env.water_depth',                       'orbit.site_depth')
                 self.connect('costs.turbine_number',                  'orbit.number_of_turbines')
                 self.connect('configuration.n_blades',                'orbit.number_of_blades')
-                self.connect('configuration.hub_height',              'orbit.hub_height')
-                self.connect('configuration.rotor_diameter',          'orbit.turbine_rotor_diameter')     
+                self.connect('assembly.hub_height',                   'orbit.hub_height')
+                self.connect('assembly.rotor_diameter',               'orbit.turbine_rotor_diameter')     
                 self.connect('towerse.tower_mass',                    'orbit.tower_mass')
                 self.connect('towerse.monopile_mass',                 'orbit.monopile_mass')
                 self.connect('towerse.monopile_length',               'orbit.monopile_length')
@@ -605,11 +605,11 @@ class WindPark(om.Group):
                 self.connect('bos.design_install_plan_cost',          'orbit.design_install_plan_cost')
             else:
                 # Inputs into LandBOSSE
-                self.connect('configuration.hub_height',        'landbosse.hub_height_meters')
+                self.connect('assembly.hub_height',             'landbosse.hub_height_meters')
                 self.connect('costs.turbine_number',            'landbosse.num_turbines')
                 self.connect('control.rated_power',             'landbosse.turbine_rating_MW')
                 self.connect('env.shear_exp',                   'landbosse.wind_shear_exponent')
-                self.connect('configuration.rotor_diameter',    'landbosse.rotor_diameter_m')
+                self.connect('assembly.rotor_diameter',         'landbosse.rotor_diameter_m')
                 self.connect('configuration.n_blades',          'landbosse.number_of_blades')
                 if modeling_options['flags']['blade']:
                     self.connect('rp.powercurve.rated_T',       'landbosse.rated_thrust_N')
