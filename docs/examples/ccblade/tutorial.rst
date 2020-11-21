@@ -7,7 +7,10 @@
 
 Three examples are shown below.
 The first is a complete setup for the :ref:`NREL 5-MW model <5MW-example>`, the second shows how to model blade :ref:`precurvature <curvature-example>`, and the final shows how to get the provided :ref:`analytic gradients <gradient-example>`.
-Each complete example is also included within the ``WISDEM/examples/ccblade`` directory.
+Each complete example is also included within the ``WISDEM/examples/10_ccblade`` directory.
+
+.. contents:: List of Examples
+   :depth: 2
 
 .. _5MW-example:
 
@@ -17,35 +20,35 @@ NREL 5-MW
 One example of a CCBlade application is the simulation of the NREL 5-MW reference model's aerodynamic performance.
 First, define the geometry and atmospheric properties.
 
-.. literalinclude:: ../../../examples/ccblade/example.py
+.. literalinclude:: ../../../examples/10_ccblade/example.py
     :start-after: # 1 ---
     :end-before: # 1 ---
 
 Airfoil aerodynamic data is specified using the :class:`CCAirfoil` class.
 Rather than use the default constructor, this example uses the special constructor designed to read AeroDyn files directly :meth:`CCAirfoil.initFromAerodynFile`.
 
-.. literalinclude:: ../../../examples/ccblade/example.py
+.. literalinclude:: ../../../examples/10_ccblade/example.py
     :start-after: # 2 ---
     :end-before: # 2 ---
 
 
 Next, construct the CCBlade object.
 
-.. literalinclude:: ../../../examples/ccblade/example.py
+.. literalinclude:: ../../../examples/10_ccblade/example.py
     :start-after: # 3 ---
     :end-before: # 3 ---
 
 
 Evaluate the distributed loads at a chosen set of operating conditions.
 
-.. literalinclude:: ../../../examples/ccblade/example.py
+.. literalinclude:: ../../../examples/10_ccblade/example.py
     :start-after: # 4 ---
     :end-before: # 4 ---
 
 
 Plot the flapwise and lead-lag aerodynamic loading
 
-.. literalinclude:: ../../../examples/ccblade/example.py
+.. literalinclude:: ../../../examples/10_ccblade/example.py
     :start-after: # 5 ---
     :end-before: # 5 ---
 
@@ -65,7 +68,7 @@ To get the power, thrust, and torque at the same conditions (in both absolute an
 This is generally used for generating power curves so it expects ``array_like`` input.
 For this example a list of size one is used.
 
-.. literalinclude:: ../../../examples/ccblade/example.py
+.. literalinclude:: ../../../examples/10_ccblade/example.py
     :start-after: # 6 ---
     :end-before: # 6 ---
 
@@ -79,7 +82,7 @@ The result is
 Note that the outputs are numpy arrays (of length 1 for this example).
 To generate a nondimensional power curve (:math:`\lambda` vs :math:`c_p`):
 
-.. literalinclude:: ../../../examples/ccblade/example.py
+.. literalinclude:: ../../../examples/10_ccblade/example.py
     :start-after: # 7 ---
     :end-before: # 7 ---
 
@@ -128,7 +131,7 @@ Presweep can be specified in the same manner, by using the ``presweep`` and ``pr
 Generally, it is advisable to set ``precone=0`` for blades with precurve.
 There is no loss of generality in defining the blade shape, and including a nonzero precone would change the rotor diameter in a nonlinear way. As an example, a downwind machine with significant curvature could be simulated using:
 
-.. literalinclude:: ../../../examples/ccblade/precurve.py
+.. literalinclude:: ../../../examples/10_ccblade/precurve.py
     :start-after: # 1 ---
     :end-before: # 1 ---
 
@@ -153,7 +156,7 @@ This is accomplished using an adjoint method (direct method is identical because
 Partial derivatives are provided by `Tapenade <http://www-tapenade.inria.fr:8080/tapenade/index.jsp>`_ and hand calculations.
 Starting with the previous example for the NREL 5-MW reference model we add the keyword value ``derivatives=True`` in the constructor.
 
-.. literalinclude:: ../../../examples/ccblade/gradients.py
+.. literalinclude:: ../../../examples/10_ccblade/gradients.py
     :start-after: # 3 ---
     :end-before: # 3 ---
 
@@ -161,14 +164,14 @@ Now when we ask for the distributed loads, we also get the gradients.
 The gradients are returned as a dictionary containing 2D arrays.
 These can be accessed as follows:
 
-.. literalinclude:: ../../../examples/ccblade/gradients.py
+.. literalinclude:: ../../../examples/10_ccblade/gradients.py
     :start-after: # 5 ---
     :end-before: # 5 ---
 
 Even though many of the matrices are diagonal, the full Jacobian is returned for consistency.
 We can compare against finite differencing as follows (with a randomly chosen station along the blade):
 
-.. literalinclude:: ../../../examples/ccblade/gradients.py
+.. literalinclude:: ../../../examples/10_ccblade/gradients.py
     :start-after: # 7 ---
     :end-before: # 7 ---
 
@@ -180,13 +183,13 @@ The output is:
 Similarly, when we compute thrust, torque, and power we also get the gradients (for either the non-dimensional or dimensional form).
 The gradients are also returned as a dictionary containing 2D Jacobians.
 
-.. literalinclude:: ../../../examples/ccblade/gradients.py
+.. literalinclude:: ../../../examples/10_ccblade/gradients.py
     :start-after: # 6 ---
     :end-before: # 6 ---
 
 Let us compare the derivative of power against finite differencing for one of the scalar quantities (precone):
 
-.. literalinclude:: ../../../examples/ccblade/gradients.py
+.. literalinclude:: ../../../examples/10_ccblade/gradients.py
     :start-after: # 8 ---
     :end-before: # 8 ---
 
@@ -196,7 +199,7 @@ Let us compare the derivative of power against finite differencing for one of th
 
 Finally, we compare the derivative of power against finite differencing for one of the vector quantities (r) at a random index:
 
-.. literalinclude:: ../../../examples/ccblade/gradients.py
+.. literalinclude:: ../../../examples/10_ccblade/gradients.py
     :start-after: # 9 ---
     :end-before: # 9 ---
 

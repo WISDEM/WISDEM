@@ -10,12 +10,12 @@ Calling WISDEM
 Option 1. Use the GUI
 =====================
 
-Installing WISDEM creates a `wisdem` command that should be available at the command prompt (a terminal prompt on Linux / Mac machines or the Anaconda PowerShell prompt for Windows).  Just typing `wisdem` at the command line opens the GUI.  From there, you can use the dialogue menus to load in the yaml input files and run WISDEM.
+Installing WISDEM creates a ``wisdem`` command that should be available at the command prompt (a terminal prompt on Linux / Mac machines or the Anaconda PowerShell prompt for Windows).  Just typing ``wisdem`` at the command line opens the GUI.  From there, you can use the dialogue menus to load in the yaml input files and run WISDEM.
 
-Option 2. Pass YAML-files directly to the `wisdem` command
-===========================================================
+Option 2. Pass YAML-files directly to the ``wisdem`` command
+==============================================================
 
-Installing WISDEM creates a `wisdem` command that should be available at the command prompt (a terminal prompt on Linux / Mac machines or the Anaconda PowerShell prompt for Windows).  You can pass that command the three input yaml-files in order to run WISDEM.
+Installing WISDEM creates a ``wisdem`` command that should be available at the command prompt (a terminal prompt on Linux / Mac machines or the Anaconda PowerShell prompt for Windows).  You can pass that command the three input yaml-files in order to run WISDEM.
 
 .. code-block:: bash
 
@@ -27,12 +27,12 @@ Alternatively, you can create a summary WISDEM file that points to each file,
 
     $ wisdem nrel5mw_driver.yaml
 
-Where the contents of `nrel5mw_driver.yaml` are,
+Where the contents of ``nrel5mw_driver.yaml`` are,
 
 .. literalinclude:: /../examples/02_reference_turbines/nrel5mw_driver.yaml
     :language: yaml
 
-Note that to run the IEA Wind 15-MW reference wind turbine, simply substitute the file, `IEA-15-240-RWT.yaml`, in as the geometry file.  The `modeling_options.yaml` and `analysis_options.yaml` file can remain the same.
+Note that to run the IEA Wind 15-MW reference wind turbine, simply substitute the file, ``IEA-15-240-RWT.yaml``, in as the geometry file.  The ``modeling_options.yaml`` and ``analysis_options.yaml`` file can remain the same.
 
 Option 3. Call WISDEM from a Python Script
 ==========================================
@@ -43,7 +43,7 @@ For those users who are comfortable with Python scripting, the WISDEM yaml input
 
     $ python nrel5mw_driver.py
 
-Where the contents of `nrel5mw_driver.py` are,
+Where the contents of ``nrel5mw_driver.py`` are,
 
 .. literalinclude:: /../examples/02_reference_turbines/nrel5mw_driver.py
     :start-after: #!
@@ -54,7 +54,7 @@ Screen Output
 
 Successfully running WISDEM should show the following screen output for the NREL 5-MW reference wind turbine:
 
-.. parsed-literal::
+.. code:: console
 
     ==
     wt
@@ -70,7 +70,7 @@ Successfully running WISDEM should show the following screen output for the NREL
 
 And this output for the IEA Wind 15-MW reference wind turbine:
 
-.. parsed-literal::
+.. code:: console
 
     ==
     wt
@@ -101,7 +101,7 @@ And this output for the IEA Wind 15-MW reference wind turbine:
     Tip Defl.:   22.7001875342 m
     ########################################
 
-Some helpful summary information is printed to the screen.  More detailed output can be found in the `outputs` directory.  This creates output files that can be read-in by Matlab, Numpy, Python pickle-package, and Excel.  These files have the complete list of all WISDEM variables (with extended naming based on their OpenMDAO Group hierarchy) and the associated values.  An output yaml-file is also written, in case any input values were altered in the course of the analysis.
+Some helpful summary information is printed to the screen.  More detailed output can be found in the ``outputs`` directory.  This creates output files that can be read-in by Matlab, Numpy, Python pickle-package, and Excel.  These files have the complete list of all WISDEM variables (with extended naming based on their OpenMDAO Group hierarchy) and the associated values.  An output yaml-file is also written, in case any input values were altered in the course of the analysis.
 
 .. code:: bash
 

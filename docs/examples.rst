@@ -7,8 +7,8 @@ All of these case studies below can be found in the `examples` directory.  For t
 
 
 .. toctree::
-    :maxdepth: 1
-    :caption: Contents:
+   :maxdepth: 1
+   :caption: Contents:
 
    examples/nrelcsm/tutorial
    examples/refturb/tutorial

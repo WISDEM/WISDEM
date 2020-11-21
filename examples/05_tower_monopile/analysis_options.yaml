@@ -30,7 +30,7 @@ constraints:
     d_to_t:
       flag: True
       lower_bound: 120.0
-      upper_bound: 2000.0
+      upper_bound: 500.0
     taper:
       flag: True
       lower_bound: 0.2
@@ -42,7 +42,7 @@ constraints:
       upper_bound: 0.40
 
 driver:
-    tol: 1.e-3            # Optimality tolerance
+    tol: 1.e-6            # Optimality tolerance
     max_iter: 100         # Maximum number of iterations (SLSQP)
     solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
     step_size: 1.e-6      # Step size for finite differencing

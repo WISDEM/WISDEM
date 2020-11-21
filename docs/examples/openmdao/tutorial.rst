@@ -221,7 +221,7 @@ Now we can run the optimization:
     :start-after: # Execute
     :end-before: # --
 
-.. parsed-literal::
+.. code:: console
 
     Optimization terminated successfully.    (Exit mode 0)
                 Current function value: -0.5925925906659251
@@ -243,7 +243,7 @@ care about and list all of the inputs and outputs that are problem used.
     :end-before: # --
 
 
-.. parsed-literal::
+.. code:: console
 
     Coefficient of power Cp =  [0.59259259]
     Induction factor a = [0.33335528]
@@ -538,7 +538,7 @@ differences for gradient approximations, and to run the driver:
     :start-after: # Execute
     :end-before: # --
 
-.. parsed-literal::
+.. code:: console
 
     NL: NLBGS Converged in 7 iterations
     NL: NLBGS Converged in 0 iterations

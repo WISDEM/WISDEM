@@ -1,8 +1,7 @@
+#!/usr/bin/env python3
 import os
 from wisdem import run_wisdem
 
-
-## File management
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
 fname_wt_input         = mydir + os.sep + 'nrel5mw_tower.yaml'
 fname_modeling_options = mydir + os.sep + 'modeling_options.yaml'
