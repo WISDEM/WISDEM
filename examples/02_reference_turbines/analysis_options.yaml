@@ -3,6 +3,10 @@ general:
     folder_output: outputs
     fname_output: refturb_output
 optimization_variables:
+  rotor_diameter:
+    flag: False
+    minimum: 190
+    maximum: 240
   blade:
     aero_shape:
       twist:
@@ -48,8 +52,8 @@ optimization_variables:
   control:
     tsr:
       flag: False     # Flag to optimize the rotor tip speed ratio
-      min_gain: 0.9   # Nondimensional lower bound
-      max_gain: 1.1   # Nondimensional upper bound
+      minimum: 9      # Nondimensional lower bound
+      maximum: 13     # Nondimensional upper bound
 
   tower:
     outer_diameter:

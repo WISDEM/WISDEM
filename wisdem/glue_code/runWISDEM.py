@@ -1,5 +1,6 @@
 import numpy as np
-import os, sys, time
+import os
+import sys
 import openmdao.api as om
 from wisdem.glue_code.gc_LoadInputs   import WindTurbineOntologyPython
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
@@ -7,8 +8,6 @@ from wisdem.glue_code.gc_PoseOptimization  import PoseOptimization
 from wisdem.glue_code.glue_code       import WindPark
 from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
-from wisdem.yaml                      import load_yaml
-from wisdem.yaml.gui                  import run as guirun
 
 np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
 
@@ -75,7 +74,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         wt_opt.setup()
 
         # Load initial wind turbine data from wt_initial to the openmdao problem
-        wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init)
+        wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
 
         # If the user provides values in this dict, they overwrite
@@ -121,96 +120,3 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
     else:
         return [], [], []
 
-
-
-
-def read_master_file( fyaml ):
-    if os.path.exists(fyaml):
-        print('...Reading master input file,',fyaml)
-    else:
-        raise FileNotFoundError('The master input file, '+fyaml+', cannot be found.')
-
-    input_yaml = load_yaml(fyaml)
-
-    check_list = ['geometry_file','modeling_file','analysis_file']
-    for f in check_list:
-        if not os.path.exists(input_yaml[f]):
-            raise FileNotFoundError('The '+f+' entry, '+input_yaml[f]+', cannot be found.')
-
-    return input_yaml
-
-
-
-def wisdem_cmd():
-    usg_msg = 'WISDEM command line launcher\n    Arguments: \n    wisdem : Starts GUI\n    wisdem input.yaml : Runs master yaml file that specifies geometry, modeling, and analysis files\n    wisdem geom.yaml modeling.yaml analysis.yaml : Runs specific geometry, modeling, and analysis files\n'
-
-    # Look for help message
-    help_flag = False
-    for k in range(len(sys.argv)):
-        if sys.argv[k] in ['-h','--help']:
-            help_flag = True
-
-    if help_flag:
-        print(usg_msg)
-
-    elif len(sys.argv) == 1:
-        # Launch GUI
-        guirun()
-
-    elif len(sys.argv) == 2:
-        # Grab master input file
-        fyaml = sys.argv[1]
-        if os.path.exists(fyaml):
-            print('...Reading master input file,',fyaml)
-        else:
-            raise FileNotFoundError('The master input file, '+fyaml+', cannot be found.')
-        yaml_dict = load_yaml( fyaml )
-
-        check_list = ['geometry_file','modeling_file','analysis_file']
-        for f in check_list:
-            if not os.path.exists(yaml_dict[f]):
-                raise FileNotFoundError('The '+f+' entry, '+yaml_dict[f]+', cannot be found.')
-
-        # Run WISDEM (also saves output)
-        wt_opt, modeling_options, opt_options = run_wisdem(yaml_dict['geometry_file'],
-                                                           yaml_dict['modeling_file'],
-                                                           yaml_dict['analysis_file'])
-
-    elif len(sys.argv) == 4:
-        check_list = ['geometry','modeling','analysis']
-        for k, f in enumerate(sys.argv[1:]):
-            if not os.path.exists(f):
-                raise FileNotFoundError('The '+check_list[k]+' file, '+f+', cannot be found.')
-
-        # Run WISDEM (also saves output)
-        wt_opt, modeling_options, opt_options = run_wisdem(sys.argv[1], sys.argv[2], sys.argv[3])
-
-    else:
-        # As if asked for help
-        print('Unrecognized set of inputs.  Usage:')
-        print(usg_msg)
-
-    sys.exit( 0 )
-
-
-
-
-if __name__ == "__main__":
-
-    ## File management
-    run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep + 'examples' + os.sep + 'reference_turbines_lcoe' + os.sep
-    fname_wt_input         = run_dir + "IEA-15-240-RWT.yaml" #"reference_turbines/bar/BAR2010n.yaml"
-    fname_modeling_options = run_dir + "modeling_options.yaml"
-    fname_analysis_options = run_dir + "analysis_options.yaml"
-
-
-    tt = time.time()
-    wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
-
-    if MPI:
-        rank = MPI.COMM_WORLD.Get_rank()
-    else:
-        rank = 0
-    if rank == 0:
-        print('Run time: %f'%(time.time()-tt))
-        sys.stdout.flush()

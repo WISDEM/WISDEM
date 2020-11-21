@@ -1,5 +1,4 @@
 name: 5MW Tower only
-comments:
 
 assembly:
     turbine_class: I
@@ -7,8 +6,9 @@ assembly:
     drivetrain: Geared
     rotor_orientation: Upwind
     number_of_blades: 3
-    hub_height: 90.0
-    
+    hub_height: 90.
+    rotor_diameter: 126.
+
 components:
     tower:
         outer_shape_bem:
@@ -58,7 +58,7 @@ materials:
       S: 0
       Xy: 345.e+6
       unit_cost: 0.7
-
+      
 environment:
     air_density: 1.225
     air_dyn_viscosity: 1.81e-5
