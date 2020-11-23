@@ -349,10 +349,8 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['nacelle']['drivetrain']['distance_mb_mb']            = float(wt_opt['nacelle.distance_mb2mb'])
             self.wt_init['components']['nacelle']['drivetrain']['generator_length']          = float(wt_opt['nacelle.L_generator'])
             s_lss  = np.linspace(0.0, 1.0, len(wt_opt['nacelle.lss_diameter'])).tolist()
-            self.wt_init['components']['nacelle']['drivetrain']['lss_diameter']['grid']      = s_lss
-            self.wt_init['components']['nacelle']['drivetrain']['lss_diameter']['values']    = wt_opt['nacelle.lss_diameter'].tolist()
-            self.wt_init['components']['nacelle']['drivetrain']['lss_wall_thickness']['grid']= s_lss
-            self.wt_init['components']['nacelle']['drivetrain']['lss_wall_thickness']['values']= wt_opt['nacelle.lss_wall_thickness'].tolist()
+            self.wt_init['components']['nacelle']['drivetrain']['lss_diameter']              = wt_opt['nacelle.lss_diameter'].tolist()
+            self.wt_init['components']['nacelle']['drivetrain']['lss_wall_thickness']        = wt_opt['nacelle.lss_wall_thickness'].tolist()
             self.wt_init['components']['nacelle']['drivetrain']['gear_ratio']                = float(wt_opt['nacelle.gear_ratio'])
             self.wt_init['components']['nacelle']['drivetrain']['gearbox_efficiency']        = float(wt_opt['nacelle.gearbox_efficiency'])
             self.wt_init['components']['nacelle']['drivetrain']['mb1Type']                   = wt_opt['nacelle.mb1Type']
@@ -366,20 +364,16 @@ class WindTurbineOntologyPython(object):
                 s_nose = np.linspace(0.0, 1.0, len(wt_opt['nacelle.nose_diameter'])).tolist()
                 s_bed  = np.linspace(0.0, 1.0, len(wt_opt['nacelle.bedplate_wall_thickness'])).tolist()
                 self.wt_init['components']['nacelle']['drivetrain']['access_diameter']           = float(wt_opt['nacelle.access_diameter'])
-                self.wt_init['components']['nacelle']['drivetrain']['nose_diameter']['grid']     = s_nose
-                self.wt_init['components']['nacelle']['drivetrain']['nose_diameter']['values']   = wt_opt['nacelle.nose_diameter'].tolist()
-                self.wt_init['components']['nacelle']['drivetrain']['nose_wall_thickness']['grid'] = s_nose
-                self.wt_init['components']['nacelle']['drivetrain']['nose_wall_thickness']['values'] = wt_opt['nacelle.nose_wall_thickness'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['nose_diameter']             = wt_opt['nacelle.nose_diameter'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['nose_wall_thickness']        = wt_opt['nacelle.nose_wall_thickness'].tolist()
                 self.wt_init['components']['nacelle']['drivetrain']['bedplate_wall_thickness']['grid'] = s_bed
                 self.wt_init['components']['nacelle']['drivetrain']['bedplate_wall_thickness']['values']   = wt_opt['nacelle.bedplate_wall_thickness'].tolist()
             else:
                 # Geared only
                 s_hss  = np.linspace(0.0, 1.0, len(wt_opt['nacelle.hss_diameter'])).tolist()
                 self.wt_init['components']['nacelle']['drivetrain']['hss_length']                = float(wt_opt['nacelle.hss_length'])
-                self.wt_init['components']['nacelle']['drivetrain']['hss_diameter']['grid']      = s_hss
-                self.wt_init['components']['nacelle']['drivetrain']['hss_diameter']['values']    = wt_opt['nacelle.hss_diameter'].tolist()
-                self.wt_init['components']['nacelle']['drivetrain']['hss_wall_thickness']['grid'] = s_hss
-                self.wt_init['components']['nacelle']['drivetrain']['hss_wall_thickness']['values']= wt_opt['nacelle.hss_wall_thickness'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['hss_diameter']              = wt_opt['nacelle.hss_diameter'].tolist()
+                self.wt_init['components']['nacelle']['drivetrain']['hss_wall_thickness']        = wt_opt['nacelle.hss_wall_thickness'].tolist()
                 self.wt_init['components']['nacelle']['drivetrain']['bedplate_flange_width']     = float(wt_opt['nacelle.bedplate_flange_width'])
                 self.wt_init['components']['nacelle']['drivetrain']['bedplate_flange_thickness'] = float(wt_opt['nacelle.bedplate_flange_thickness'])
                 self.wt_init['components']['nacelle']['drivetrain']['bedplate_web_thickness']    = float(wt_opt['nacelle.bedplate_web_thickness'])

@@ -539,17 +539,23 @@ properties:
                                 maximum: 1.0
                             max: *flapminmax
             hub:
-                hub_diameter: *flagonly
+                type: object
+                default: {}
+                properties:
+                    hub_diameter: *flagonly
             drivetrain:
-                lss: *flagonly
-                hss: *flagonly
-                bedplate: *flagonly
-                mb1: *flagonly
-                mb2: *flagonly
-                length: *flagonly
-                height: *flagonly
-                access: *flagonly
-                ecc: *flagonly
+                type: object
+                default: {}
+                properties:
+                    lss: *flagonly
+                    hss: *flagonly
+                    bedplate: *flagonly
+                    mb1: *flagonly
+                    mb2: *flagonly
+                    length: *flagonly
+                    height: *flagonly
+                    access: *flagonly
+                    ecc: *flagonly
 
     merit_figure:
         type: string

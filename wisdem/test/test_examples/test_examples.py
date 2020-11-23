@@ -23,23 +23,25 @@ all_scripts = ['01_nrel_csm/costs',
                '05_tower_monopile/monopile_driver',
                '05_tower_monopile/tower_direct',
                '05_tower_monopile/tower_driver',
-               '06_generator/dfig',
-               '06_generator/eesg',
-               '06_generator/pmsg_arms',
-               '06_generator/pmsg_disc',
-               '06_generator/pmsg_outer',
-               '06_generator/scig',
-               '07_floating/mooring_opt',
-               '07_floating/semi_example',
-               '07_floating/spar_example',
-               '07_floating/spar_opt',
-               '07_floating/tlp_example',
+               '06_drivetrain/drivetrain_direct',
+               #'06_drivetrain/drivetrain_driver',
+               '07_generator/dfig',
+               '07_generator/eesg',
+               '07_generator/pmsg_arms',
+               '07_generator/pmsg_disc',
+               '07_generator/pmsg_outer',
+               '07_generator/scig',
                '08_plant_finance/example',
-               '09_ccblade/example',
-               '09_ccblade/gradients',
-               '09_ccblade/precurve',
-               '10_airfoilprep/example',
-               '11_pyframe3dd/exB',
+               '09_floating/mooring_opt',
+               '09_floating/semi_example',
+               '09_floating/spar_example',
+               '09_floating/spar_opt',
+               '09_floating/tlp_example',
+               '10_ccblade/example',
+               '10_ccblade/gradients',
+               '10_ccblade/precurve',
+               '11_airfoilprep/example',
+               '12_pyframe3dd/exB',
                ]
 
 def execute_script(fscript):
@@ -91,7 +93,6 @@ class TestExamples(unittest.TestCase):
                 print('Failed to run,',k)
                 self.assertTrue(False)
     
-    '''
     def test_openmdao(self):
         scripts = [m for m in all_scripts if m.find('openmdao') >= 0]
         for k in scripts:
@@ -100,7 +101,6 @@ class TestExamples(unittest.TestCase):
             except:
                 print('Failed to run,',k)
                 self.assertTrue(False)
-    '''
     
     def test_tower_monopile(self):
         scripts = [m for m in all_scripts if m.find('monopile') >= 0]
@@ -111,7 +111,6 @@ class TestExamples(unittest.TestCase):
                 print('Failed to run,',k)
                 self.assertTrue(False)
 
-    '''
     def test_drivetrain(self):
         scripts = [m for m in all_scripts if m.find('drivetrain') >= 0]
         for k in scripts:
@@ -120,7 +119,6 @@ class TestExamples(unittest.TestCase):
             except:
                 print('Failed to run,',k)
                 self.assertTrue(False)
-    '''
     
     def test_generator(self):
         scripts = [m for m in all_scripts if m.find('generator') >= 0]

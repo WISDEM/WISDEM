@@ -7,7 +7,7 @@
 
 In this example we show how to perform simulation and optimization of a land-based tower and an offshore tower-monopile combination.  Both examples can be executed either by limiting the input yaml to only the necessary components or by using a python script that calls WISDEM directly.
 
-Land-based Tower Simulation
+Land-based Tower Design
 ===========================
 
 The following example, demonstrates how to set up and run analysis or optimization for a land-based tower.
@@ -220,9 +220,144 @@ Each is a utilization and so should be <1 for a feasible result.
 Because the result shown here was for an optimization case, we see some of the utilization values are right at the 1.0 upper limit.
 
 .. _utilization-fig:
-
 .. figure:: /images/towerse/utilization.*
     :width: 6in
     :align: center
 
     Utilization along tower for ultimate stress, shell buckling, global buckling, and fatigue damage.
+
+
+Offshore Monopile Design
+===========================
+
+The following example, demonstrates how to set up and run analysis or optimization for a land-based tower.
+Some of the geometric parameters are seen in 
+The tower is not restricted to 3 sections, any number of sections can be defined.
+The array `z` is given in coordinates nondimensionalized by the tower height.
+The array `n`, should of length len(tower.z)-1 and represents the number of finite elements to be used in each tower can.
+Yaw and tilt are needed to handle to mass/load transfer.
+
+Invoking with YAML files
+*************************
+
+To run just the tower analysis from the YAML input files, we just need to include the necessary elements.  First dealing with the ``geometry_option`` file, this always includes the ``assembly`` section. Of the ``components``, this means the ``tower`` and ``foundation`` sections.  Also, the ``materials``, ``environment``, and ``costs`` section,
+
+.. literalinclude:: ../../../examples/05_tower_monopile/nrel5mw_tower.yaml
+    :language: yaml
+
+The ``modeling_options`` file is also limited to just the sections we need.  Note that even though the ``monopile`` options are included here, since there was no specification of a monopile in the geometry inputs, this will be ignored.  One new section is added here, a ``loading`` section that specifies the load scenarios that are applied to the tower.  Since there is no rotor simulation to generate the loads, they must be specified by the user directly.  Note that two load cases are specified.  This creates a set of constraints for both of them.
+
+.. literalinclude:: ../../../examples/05_tower_monopile/modeling_options.yaml
+    :language: yaml
+
+The ``analysis_options`` poses the optimization problem,
+
+.. literalinclude:: ../../../examples/05_tower_monopile/analysis_options.yaml
+    :language: yaml
+
+The yaml files can be called directly from the command line, or via a python script that passes them to the top-level WISDEM function,
+
+.. code-block:: bash
+
+    $ wisdem nrel5mw_tower.yaml modeling_options.yaml analysis_options.yaml
+
+or
+
+.. code-block:: bash
+
+    $ python tower_driver.py
+
+Where the contents of ``tower_driver.py`` are,
+
+.. literalinclude:: ../../../examples/05_tower_monopile/monopile_driver.py
+    :language: python
+    :start-after: #!
+    :end-before: # print
+
+Calling Python Directly
+*************************
+
+The tower optimization can also be written using direct calls to WISDEM's TowerSE module.  First, we import the modules we want to use and setup the tower configuration.
+We set flags for if we want to perform analysis or optimization, as well as if we want plots to be shown at the end.
+Next, we set the tower height, diameter, and wall thickness.
+
+.. literalinclude:: ../../../examples/05_tower_monopile/monopile_direct.py
+    :language: python
+    :start-after: # Tower
+    :end-before: # ---
+
+We then set many analysis options for the tower, including materials, safety factors, and FEM settings.
+The module uses the frame finite element code `Frame3DD <http://frame3dd.sourceforge.net/>`_ to perform the FEM analysis.
+
+.. literalinclude:: ../../../examples/05_tower_monopile/monopile_direct.py
+    :language: python
+    :start-after: # Store analysis options in dictionary
+    :end-before: # ---
+
+Next, we instantiate the OpenMDAO problem and add a tower model to this problem.
+
+.. literalinclude:: ../../../examples/05_tower_monopile/monopile_direct.py
+    :language: python
+    :start-after: # Instantiate OpenMDAO
+    :end-before: # ---
+
+Next, we have logic in the script to add the optimization problem if ``opt_flag`` is set to True.
+The optimizer must first be selected and configured.
+We then set the objective, in this case tower mass, and scale it so it is of order 1 for better convergence behavior.
+The tower diameters and thicknesses are added as design variables.
+Finally, constraints are added.
+Some constraints are based on the tower geometry and others are based on the stress and buckling loads experienced in the loading cases.
+
+.. literalinclude:: ../../../examples/05_tower_monopile/monopile_direct.py
+    :language: python
+    :start-after: # If performing optimization
+    :end-before: # ---
+
+We then call ``setup()`` on the OpenMDAO problem, which finalizes the components and groups for the tower analysis or optimization.
+Once ``setup()`` has been called, we can access the problem values or modify them for a given analysis.
+
+.. literalinclude:: ../../../examples/05_tower_monopile/monopile_direct.py
+    :language: python
+    :start-after: # Set up the OpenMDAO problem
+    :end-before: # ---
+
+Now that we've set up the tower problem, we set values for tower, soil, and RNA assembly properties.
+For the soil, shear and modulus properties for the soil can be defined, but in this example we assume that all directions are rigid (3 translation and 3 rotation).
+The center of mass locations are defined relative to the tower top in the yaw-aligned coordinate system.
+Blade and hub moments of inertia should be defined about the hub center, nacelle moments of inertia are defined about the center of mass of the nacelle.
+
+.. literalinclude:: ../../../examples/05_tower_monopile/monopile_direct.py
+    :language: python
+    :start-after: # Set geometry and turbine values
+    :end-before: # ---
+
+For the power-law wind profile, the only parameter needed is the shear exponent.
+In addition, some geometric parameters for the wind profile's extend must be defined, the base (or no-slip location) at `z0`, and the height at which a reference velocity will be defined.
+
+.. literalinclude:: ../../../examples/05_tower_monopile/monopile_direct.py
+    :language: python
+    :start-after: # cost rates
+    :end-before: # ---
+
+As mentioned earlier, we are allowing for two separate loading cases.
+The wind speed, and rotor force/moments for those two cases are now defined.
+The wind speed location corresponds to the reference height defined previously as `wind_zref`.
+In this simple case, we include only thrust and torque, but in general all 3 components of force and moments can be defined in the hub-aligned coordinate system.
+The assembly automatically handles translating the forces and moments defined at the rotor to the tower top.
+
+.. literalinclude:: ../../../examples/05_tower_monopile/monopile_direct.py
+    :language: python
+    :start-after: # --- loading case 1
+    :end-before: # ---
+
+.. literalinclude:: ../../../examples/05_tower_monopile/monopile_direct.py
+    :language: python
+    :start-after: # --- loading case 2
+    :end-before: # ---
+
+We can now run the model and display some of the outputs.
+
+.. literalinclude:: ../../../examples/05_tower_monopile/monopile_direct.py
+    :language: python
+    :start-after: # run the analysis or optimization
+    :end-before: # ---
