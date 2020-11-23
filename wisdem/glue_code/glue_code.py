@@ -29,8 +29,9 @@ class WT_RNTA(om.Group):
         if modeling_options['flags']['blade'] and modeling_options['flags']['nacelle']:
             self.linear_solver = lbgs = om.LinearBlockGS()
             self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
-            nlbgs.options['maxiter'] = 2
-            nlbgs.options['atol'] = nlbgs.options['atol'] = 1e-2
+            nlbgs.options['maxiter'] = 5
+            nlbgs.options['atol'] = 1e-2
+            nlbgs.options['rtol'] = 1e-8            
         
         # Analysis components
         self.add_subsystem('wt_init',   WindTurbineOntologyOpenMDAO(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
@@ -584,7 +585,8 @@ class WindPark(om.Group):
                 self.connect('monopile.transition_piece_mass',        'orbit.transition_piece_mass')
                 self.connect('re.precomp.blade_mass',                 'orbit.blade_mass')
                 self.connect('tcc.turbine_cost_kW',                   'orbit.turbine_capex')
-                self.connect('drivese.nacelle_mass',                  'orbit.nacelle_mass')
+                if modeling_options['flags']['nacelle']:
+                    self.connect('drivese.nacelle_mass',                  'orbit.nacelle_mass')
                 self.connect('monopile.diameter',                     'orbit.monopile_diameter', src_indices=[0])
                 self.connect('wt_class.V_mean',                       'orbit.site_mean_windspeed')
                 self.connect('rp.powercurve.rated_V',                 'orbit.turbine_rated_windspeed')
@@ -614,9 +616,10 @@ class WindPark(om.Group):
                 if modeling_options['flags']['blade']:
                     self.connect('rp.powercurve.rated_T',       'landbosse.rated_thrust_N')
                 self.connect('towerse.tower_mass',              'landbosse.tower_mass')
-                self.connect('drivese.nacelle_mass',            'landbosse.nacelle_mass')
+                if modeling_options['flags']['nacelle']:
+                    self.connect('drivese.nacelle_mass',            'landbosse.nacelle_mass')
+                    self.connect('drivese.hub_system_mass',         'landbosse.hub_mass')
                 self.connect('re.precomp.blade_mass',           'landbosse.blade_mass')
-                self.connect('drivese.hub_system_mass',         'landbosse.hub_mass')
                 self.connect('foundation.height',               'landbosse.foundation_height')
                 self.connect('bos.plant_turbine_spacing',       'landbosse.turbine_spacing_rotor_diameters')
                 self.connect('bos.plant_row_spacing',           'landbosse.row_spacing_rotor_diameters')
