@@ -137,5 +137,5 @@ driver:
 
 
 recorder:
-    flag: True              # Flag to activate OpenMDAO recorder
+    flag: False              # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder
