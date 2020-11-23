@@ -267,8 +267,9 @@ class WT_RNTA(om.Group):
             self.connect('control.minOmega' ,               'drivese.minimum_rpm')
             self.connect('rp.powercurve.rated_Omega',       'drivese.rated_rpm')
             self.connect('rp.powercurve.rated_Q',           'drivese.rated_torque')
-            self.connect('configuration.rated_power',       'drivese.machine_rating')    
-            self.connect('tower.diameter',                  'drivese.D_top', src_indices=[-1])
+            self.connect('configuration.rated_power',       'drivese.machine_rating')
+            if modeling_options['flags']['tower']:
+                self.connect('tower.diameter',                  'drivese.D_top', src_indices=[-1])
             
             self.connect('rs.aero_hub_loads.Fxyz_hub_aero', 'drivese.F_hub')
             self.connect('rs.aero_hub_loads.Mxyz_hub_aero', 'drivese.M_hub')

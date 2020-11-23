@@ -398,7 +398,7 @@ def assign_hub_values(wt_opt, hub):
 
     wt_opt['hub.diameter']                    = hub['diameter']
     wt_opt['hub.cone']                        = hub['cone_angle']
-    wt_opt['hub.drag_coeff']                  = hub['drag_coefficient']
+    #wt_opt['hub.drag_coeff']                  = hub['drag_coefficient'] # GB: This doesn't connect to anything
     wt_opt['hub.flange_t2shell_t']            = hub['flange_t2shell_t']
     wt_opt['hub.flange_OD2hub_D']             = hub['flange_OD2hub_D']
     wt_opt['hub.flange_ID2flange_OD']         = hub['flange_ID2OD']
@@ -436,25 +436,14 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
     wt_opt['nacelle.converter_mass_user']       = nacelle['drivetrain']['converter_mass_user']
     wt_opt['nacelle.transformer_mass_user']     = nacelle['drivetrain']['transformer_mass_user']
 
-    s_lss = np.linspace(0.0, 1.0, len(wt_opt['nacelle.lss_wall_thickness']))
-    s_lss_diameter_in = nacelle['drivetrain']['lss_diameter']['grid']
-    v_lss_diameter_in = nacelle['drivetrain']['lss_diameter']['values']
-    s_lss_thick_in    = nacelle['drivetrain']['lss_wall_thickness']['grid']
-    v_lss_thick_in    = nacelle['drivetrain']['lss_wall_thickness']['values']
-    wt_opt['nacelle.lss_wall_thickness']       = np.interp(s_lss, s_lss_thick_in,    v_lss_thick_in)
-    wt_opt['nacelle.lss_diameter']             = np.interp(s_lss, s_lss_diameter_in, v_lss_diameter_in)
+    wt_opt['nacelle.lss_wall_thickness']       = nacelle['drivetrain']['lss_wall_thickness']
+    wt_opt['nacelle.lss_diameter']             = nacelle['drivetrain']['lss_diameter']
 
     if modeling_options['drivetrainse']['direct']:
         # Direct only
         wt_opt['nacelle.access_diameter']           = nacelle['drivetrain']['access_diameter']
-
-        s_nose = np.linspace(0.0, 1.0, len(wt_opt['nacelle.nose_wall_thickness']))
-        s_nose_diameter_in = nacelle['drivetrain']['nose_diameter']['grid']
-        v_nose_diameter_in = nacelle['drivetrain']['nose_diameter']['values']
-        s_nose_thick_in    = nacelle['drivetrain']['nose_wall_thickness']['grid']
-        v_nose_thick_in    = nacelle['drivetrain']['nose_wall_thickness']['values']
-        wt_opt['nacelle.nose_wall_thickness']       = np.interp(s_nose, s_nose_thick_in,    v_nose_thick_in)
-        wt_opt['nacelle.nose_diameter']             = np.interp(s_nose, s_nose_diameter_in, v_nose_diameter_in)
+        wt_opt['nacelle.nose_wall_thickness']       = nacelle['drivetrain']['nose_wall_thickness']
+        wt_opt['nacelle.nose_diameter']             = nacelle['drivetrain']['nose_diameter']
 
         s_bedplate = np.linspace(0.0, 1.0, len(wt_opt['nacelle.bedplate_wall_thickness']))
         s_bed_thick_in    = nacelle['drivetrain']['bedplate_wall_thickness']['grid']
@@ -462,13 +451,8 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
         wt_opt['nacelle.bedplate_wall_thickness']   = np.interp(s_bedplate, s_bed_thick_in, v_bed_thick_in)
     else:
         # Geared only
-        s_hss = np.linspace(0.0, 1.0, len(wt_opt['nacelle.hss_wall_thickness']))
-        s_hss_diameter_in = nacelle['drivetrain']['hss_diameter']['grid']
-        v_hss_diameter_in = nacelle['drivetrain']['hss_diameter']['values']
-        s_hss_thick_in    = nacelle['drivetrain']['hss_wall_thickness']['grid']
-        v_hss_thick_in    = nacelle['drivetrain']['hss_wall_thickness']['values']
-        wt_opt['nacelle.hss_wall_thickness']       = np.interp(s_hss, s_hss_thick_in,    v_hss_thick_in)
-        wt_opt['nacelle.hss_diameter']             = np.interp(s_hss, s_hss_diameter_in, v_hss_diameter_in)
+        wt_opt['nacelle.hss_wall_thickness']       = nacelle['drivetrain']['hss_wall_thickness']
+        wt_opt['nacelle.hss_diameter']             = nacelle['drivetrain']['hss_diameter']
 
         wt_opt['nacelle.hss_length']                = nacelle['drivetrain']['hss_length']
         wt_opt['nacelle.bedplate_flange_width']     = nacelle['drivetrain']['bedplate_flange_width']

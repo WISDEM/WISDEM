@@ -92,12 +92,12 @@ class TestGroup(unittest.TestCase):
         prob['tilt'] = 4.0
         prob['access_diameter'] = 0.9
 
-        myones = np.ones(5)
+        myones = np.ones(2)
         prob['lss_diameter'] = 3.3*myones
         prob['nose_diameter'] = 2.2*myones
         prob['lss_wall_thickness'] = 0.45*myones
         prob['nose_wall_thickness'] = 0.1*myones
-        prob['bedplate_wall_thickness'] = 0.06*np.ones(npts)
+        prob['bedplate_wall_thickness'] = 0.06*np.ones(4)
         prob['bear1.D_shaft'] = 2.2
         prob['bear2.D_shaft'] = 2.2
         prob['generator.D_shaft'] = 3.3
@@ -178,12 +178,12 @@ class TestGroup(unittest.TestCase):
         prob['tilt'] = 4.0
         prob['access_diameter'] = 0.9
 
-        myones = np.ones(5)
+        myones = np.ones(2)
         prob['lss_diameter'] = 3.3*myones
         prob['nose_diameter'] = 2.2*myones
         prob['lss_wall_thickness'] = 0.45*myones
         prob['nose_wall_thickness'] = 0.1*myones
-        prob['bedplate_wall_thickness'] = 0.06*np.ones(npts)
+        prob['bedplate_wall_thickness'] = 0.06*np.ones(4)
         prob['bear1.D_shaft'] = 2.2
         prob['bear2.D_shaft'] = 2.2
 
@@ -233,10 +233,9 @@ class TestGroup(unittest.TestCase):
         prob['L_gearbox'] = 1.1
         prob['tilt'] = 5.0
 
-        myones = np.ones(5)
+        myones = np.ones(2)
         prob['lss_diameter'] = 2.3*myones
         prob['lss_wall_thickness'] = 0.05*myones
-        myones = np.ones(3)
         prob['hss_diameter'] = 2.0*myones
         prob['hss_wall_thickness'] = 0.05*myones
 
@@ -344,10 +343,9 @@ class TestGroup(unittest.TestCase):
         prob['L_gearbox'] = 1.1
         prob['tilt'] = 5.0
 
-        myones = np.ones(5)
+        myones = np.ones(2)
         prob['lss_diameter'] = 2.3*myones
         prob['lss_wall_thickness'] = 0.05*myones
-        myones = np.ones(3)
         prob['hss_diameter'] = 2.0*myones
         prob['hss_wall_thickness'] = 0.05*myones
 

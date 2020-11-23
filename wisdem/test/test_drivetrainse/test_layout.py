@@ -25,13 +25,13 @@ class TestDirectLayout(unittest.TestCase):
         self.inputs['tilt'] = 5.0
         self.inputs['access_diameter'] = 0.9
 
-        myones = np.ones(5)
+        myones = np.ones(2)
         self.inputs['lss_diameter'] = 2.3*myones
         self.inputs['nose_diameter'] = 1.33*myones
         self.inputs['lss_wall_thickness'] = 0.05*myones
         self.inputs['nose_wall_thickness'] = 0.04*myones
 
-        self.inputs['bedplate_wall_thickness'] = 0.06*np.ones(npts)
+        self.inputs['bedplate_wall_thickness'] = 0.06*np.ones(4)
         self.inputs['D_top'] = 6.5
         self.inputs['hub_diameter'] = 4.0
 
@@ -285,10 +285,9 @@ class TestGearedLayout(unittest.TestCase):
         self.inputs['L_gearbox'] = 1.1
         self.inputs['tilt'] = 5.0
 
-        myones = np.ones(5)
+        myones = np.ones(2)
         self.inputs['lss_diameter'] = 2.3*myones
         self.inputs['lss_wall_thickness'] = 0.05*myones
-        myones = np.ones(3)
         self.inputs['hss_diameter'] = 2.0*myones
         self.inputs['hss_wall_thickness'] = 0.05*myones
 
