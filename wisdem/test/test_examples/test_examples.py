@@ -91,6 +91,7 @@ class TestExamples(unittest.TestCase):
                 print('Failed to run,',k)
                 self.assertTrue(False)
     
+    '''
     def test_openmdao(self):
         scripts = [m for m in all_scripts if m.find('openmdao') >= 0]
         for k in scripts:
@@ -99,6 +100,7 @@ class TestExamples(unittest.TestCase):
             except:
                 print('Failed to run,',k)
                 self.assertTrue(False)
+    '''
     
     def test_tower_monopile(self):
         scripts = [m for m in all_scripts if m.find('monopile') >= 0]
