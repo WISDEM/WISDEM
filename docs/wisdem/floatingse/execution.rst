@@ -88,11 +88,14 @@ described by these examples is shown in :numref:`fig_initial-spar` and
 
     Spar example in *FloatingSE* taken from OC3 :cite:`OC3` project.
 
-       
+
 .. _fig_initial-semi:
 .. figure::  /images/floatingse/semi-initial.*
     :width: 75%
     :align: center
 
     Semi example in *FloatingSE* taken from OC4 :cite:`OC4` project.
-    
+
+
+.. bibliography:: ../../references.bib
+   :filter: docname in docnames

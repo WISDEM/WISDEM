@@ -47,7 +47,7 @@ ones shown.
     :align: center
 
     Geometry parameterization with common wind turbine and naval architecture conventions.
-   
+
 Inputs: WindIO
 --------------
 
@@ -97,7 +97,7 @@ Stiffeners
 ~~~~~~~~~~
 
 The ring stiffener geometry is depicted in :numref:`fig_stiffenerCut`, and :numref:`fig_stiffenerZoom`.
-       
+
 .. _fig_stiffenerCut:
 .. figure::  /images/floatingse/stiffenerCut.*
     :width: 30%
@@ -134,7 +134,7 @@ as opposed to permanent ballast, is water that is added or removed above
 the permanent ballast to achieve neutral buoyancy as the operating
 conditions of the turbine change. A discussion of variable water balance
 in the model is found in Section :ref:`static-label`.
-   
+
 
 Buoyancy Tanks (and Heave Plates)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -215,3 +215,6 @@ the proprietary nature of commercial cost data, so cost rates and
 estimates should be considered notional.
 
 
+
+.. bibliography:: ../../references.bib
+   :filter: docname in docnames

@@ -788,7 +788,7 @@ class PMSG_Outer(GeneratorBase):
         S            = Slot_pole*2*p*m
         testval      = S/(m*np.gcd(int(S),int(p)))
 
-        if float(testval).is_integer():
+        if float(np.round(testval,3)).is_integer():
             k_w		     = winding_factor(int(S),b,c,int(p),m)
             b_m              = ratio_mw2pp*tau_p  # magnet width
             alpha_p	     = np.pi/2*ratio_mw2pp
@@ -900,7 +900,10 @@ class PMSG_Outer(GeneratorBase):
             Losses            = Losses
             generator_efficiency = gen_eff
         else:
-            pass
+            # Bad design
+            for k in outputs.keys():
+                outputs[k] = 1e30
+            return
 
         ######################## Rotor inactive (structural) design ###################################
         # Radial deformation of rotor

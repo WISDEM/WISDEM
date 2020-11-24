@@ -9,5 +9,5 @@ WISDEM simulates the rail transport of blades. Blades can be transported rigidly
 Bibliography
 ============
 
-.. bibliography:: references_rail.bib
-    :style: unsrt
+.. bibliography:: ../../references.bib
+   :filter: docname in docnames

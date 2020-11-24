@@ -14,6 +14,5 @@ CCBlade
 .. toctree::
 
     intro
-    tutorial
     documentation
     theory

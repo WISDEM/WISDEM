@@ -17,7 +17,7 @@ Mass Properties
 
 The first step in the verification exercise was to ensure that the mass
 properties of the spar predicted by *FloatingSE* matched those
-calculated by ANSYS. The comparison is shown in 
+calculated by ANSYS. The comparison is shown in
 :numref:`tbl_verify-static`, where *FloatingSE* summary mass estimates are
 within :math:`1\%` error of ANSYS. To ensure that these mass property
 calculations remain consistent over time despite changes in the
@@ -125,3 +125,6 @@ DOF in *FloatingSE*.
    +-------------------------------+-----------+------------+-----------+
 
 
+
+.. bibliography:: ../../references.bib
+   :filter: docname in docnames

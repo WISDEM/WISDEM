@@ -14,7 +14,6 @@ AirfoilPrep.py
 .. toctree::
 
     intro
-    tutorial
     documentation
 
 

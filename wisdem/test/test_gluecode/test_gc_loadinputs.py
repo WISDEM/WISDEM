@@ -2,7 +2,7 @@ import unittest
 import os
 import wisdem.glue_code.gc_LoadInputs as gcl
 
-test_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) ) + os.sep + 'examples' + os.sep + 'reference_turbines_lcoe' + os.sep
+test_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) ) + os.sep + 'examples' + os.sep + '02_reference_turbines' + os.sep
 
 class TestLoadInputs(unittest.TestCase):
     def setUp(self):

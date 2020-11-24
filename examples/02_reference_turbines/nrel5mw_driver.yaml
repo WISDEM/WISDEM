@@ -1,0 +1,3 @@
+geometry_file: nrel5mw.yaml
+modeling_file: modeling_options.yaml
+analysis_file: analysis_options.yaml

@@ -14,17 +14,13 @@ cost and sizing module for the WISDEM.
 This document serves as both a User Manual and Theory Guide for
 *FloatingSE*. *FloatingSE* can be executed as a stand-alone module or
 coupled to the rest of the turbine through the WISDEM glue code. An
-overview of the package contents is in Section :ref:`package-label`
-and substructure geometry parameterization in Section
+overview of the package contents is below and substructure geometry parameterization in Section
 :ref:`geometry-label`. With this foundation, the underlying theory of
 *FloatingSE’s* methodology is explained in Section
 :ref:`theory-label`. This helps to understand the analysis execution
 flow described in Section :ref:`execution-label` and the setup of
 design variables and constraints for optimization problems in Section
-:ref:`optimization-label`. Finally, some discussion of how
-*FloatingSE* can be linked to other `WISDEM
-<http://www.github.com/WISDEM>`_ modules via a high-level OpenMDAO
-Group is described in Section :ref:`other-label`.
+:ref:`optimization-label`.
 
 
 Package Files

@@ -1,4 +1,4 @@
-.. _documentation-label:
+.. _towerse_documentation-label:
 
 .. currentmodule:: wisdem.towerse.tower
 

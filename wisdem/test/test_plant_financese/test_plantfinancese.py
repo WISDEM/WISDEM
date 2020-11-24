@@ -17,7 +17,7 @@ class TestPlantFinance(unittest.TestCase):
         self.inputs['opex_per_kW'] = 7e2
         self.inputs['fixed_charge_rate'] = 0.12
         self.inputs['turbine_aep'] = 1.6e7
-        self.inputs['park_aep'] = 1.6e7*50
+        self.inputs['plant_aep_in'] = 1.6e7*50
         self.inputs['wake_loss_factor'] = 0.15
 
         self.discrete_inputs['turbine_number'] = 50
@@ -25,14 +25,14 @@ class TestPlantFinance(unittest.TestCase):
         self.mypfin = pf.PlantFinance(verbosity=True)
 
     def testRun(self):
-        # Park AEP way
+        # Plant AEP way
         self.mypfin.compute(self.inputs, self.outputs, self.discrete_inputs, {})
 
         lcoe = 1e3*50*(0.12*(1.2e3+7.7e3) + 7e2) / (1.6e7*50.0)
         self.assertEqual(self.outputs['lcoe'], lcoe)
 
         # Wake loss way
-        self.inputs['park_aep'] = 0.0
+        self.inputs['plant_aep_in'] = 0.0
         self.mypfin.compute(self.inputs, self.outputs, self.discrete_inputs, {})
 
         lcoe = 1e3*50*(0.12*(1.2e3+7.7e3) + 7e2) / (1.6e7*50.0*(1-0.15))

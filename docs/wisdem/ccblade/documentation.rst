@@ -1,6 +1,6 @@
 .. module:: wisdem.ccblade
 
-.. _interfaces-label:
+.. _ccblade_interfaces-label:
 
 Module Documentation
 --------------------
@@ -10,10 +10,6 @@ Airfoil data is provided by any object that implements :ref:`AirfoilInterface <a
 The helper class :ref:`CCAirfoil <ccairfoil-class-label>` is provided as a useful default implementation for AirfoilInterface.
 If CCAirfoil is not used, the user must provide an implementation that produces :math:`C^1` continuous output (or else accept non-smooth aerodynamic calculations from CCBlade).
 Some of the underlying implementation for CCBlade is written in Fortran for computational efficiency.
-
-.. only:: latex
-
-    An HTML version of this documentation is available that is better formatted for reading the code documentation and contains hyperlinks to the source code.
 
 .. _airfoil-interface-label:
 
@@ -30,8 +26,6 @@ CCAirfoil Class
 CCAirfoil is a helper class used to evaluate airfoil data with a continuously differentiable bivariate spline across the angle of attack and Reynolds number.
 The degree of the spline polynomials across the Reynolds number is summarized in the following table (the same applies to the angle of attack although generally, the number of points for the angle of attack is much larger).
 
-.. only:: latex
-
     TABLE CAPTION:: Degree of spline across Reynolds number.
 
 ========= =====================
@@ -46,32 +40,14 @@ len(Re)    degree of spline
 
 .. rubric:: Class Summary:
 
-.. only:: latex
+.. autoclass:: CCAirfoil
 
-    .. autoclass:: CCAirfoil
-        :members:
-
-
-.. only:: html
-
-    .. autoclass:: CCAirfoil
-
-        .. rubric:: Methods
-        .. autosummary::
-            :nosignatures:
-
-            ~CCAirfoil.initFromAerodynFile
-            ~CCAirfoil.evaluate
-
-
-.. autogenerate
+    .. rubric:: Methods
     .. autosummary::
-        :toctree: generated
+        :nosignatures:
 
         ~CCAirfoil.initFromAerodynFile
         ~CCAirfoil.evaluate
-
-
 
 
 .. _ccblade-class-label:
@@ -84,22 +60,14 @@ An emphasis is placed on convergence robustness and differentiable output so tha
 
 .. rubric:: Class Summary:
 
+.. autoclass:: CCBlade
 
-.. only:: latex
+    .. rubric:: Methods
+    .. autosummary::
+        :nosignatures:
 
-    .. autoclass:: CCBlade
-        :members:
-
-.. only:: html
-
-    .. autoclass:: CCBlade
-
-        .. rubric:: Methods
-        .. autosummary::
-            :nosignatures:
-
-            ~CCBlade.distributedAeroLoads
-            ~CCBlade.evaluate
+        ~CCBlade.distributedAeroLoads
+        ~CCBlade.evaluate
 
 .. autogenerate
     .. autosummary::
@@ -107,4 +75,3 @@ An emphasis is placed on convergence robustness and differentiable output so tha
 
         ~CCBlade.distributedAeroLoads
         ~CCBlade.evaluate
-

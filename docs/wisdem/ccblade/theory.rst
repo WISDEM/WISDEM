@@ -76,9 +76,5 @@ Using the chain rule the total derivatives are given as
     \frac{df}{dx_i} = \frac{\partial f}{\partial x_i} - \frac{\partial f}{\partial \phi} \frac{\partial R}{\partial x_i} / \frac{\partial R}{\partial \phi}
 
 
-.. only:: html
-
-    :bib:`Bibliography`
-
-.. bibliography:: references.bib
-    :style: unsrt
+.. bibliography:: ../../references.bib
+   :filter: docname in docnames

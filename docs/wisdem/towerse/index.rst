@@ -12,6 +12,5 @@ TowerSE
 
     intro
     theory
-    tutorial
     documentation
 
