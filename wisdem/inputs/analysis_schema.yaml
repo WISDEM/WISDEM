@@ -386,11 +386,11 @@ properties:
                         default: {}
                         properties:
                             flag: *flag
-                            ratio:
+                            margin:
                                 type: number
-                                default: 0.8
-                                minimum: 0.0
-                                maximum: 2.0
+                                default: 1.4175 #1.35*1.05
+                                minimum: 1.0
+                                maximum: 10.0
                     rail_transport:
                         type: object
                         default: {}

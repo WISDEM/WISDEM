@@ -300,7 +300,7 @@ class PoseOptimization(object):
 
         if blade_constr['tip_deflection']['flag']:
             if blade_opt['structure']['spar_cap_ss']['flag'] or blade_opt['structure']['spar_cap_ps']['flag']:
-                wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper= blade_constr['tip_deflection']['ratio'])
+                wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper=1.0)
             else:
                 print('WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
 
@@ -449,12 +449,13 @@ class PoseOptimization(object):
                     print('Warning: the initial twist violates the upper or lower bounds of the twist design variables.')
 
             blade_constr = self.opt['constraints']['blade']
-            wt_opt['blade.opt_var.s_opt_chord']  = np.linspace(0., 1., blade_opt['aero_shape']['chord']['n_opt'])
-            wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., blade_opt['structure']['spar_cap_ss']['n_opt'])
-            wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., blade_opt['structure']['spar_cap_ps']['n_opt'])
-            wt_opt['rs.constr.max_strainU_spar'] = blade_constr['strains_spar_cap_ss']['max']
-            wt_opt['rs.constr.max_strainL_spar'] = blade_constr['strains_spar_cap_ps']['max']
-            wt_opt['stall_check.stall_margin'] = blade_constr['stall']['margin'] * 180. / np.pi
+            wt_opt['blade.opt_var.s_opt_chord']    = np.linspace(0., 1., blade_opt['aero_shape']['chord']['n_opt'])
+            wt_opt['blade.ps.s_opt_spar_cap_ss']   = np.linspace(0., 1., blade_opt['structure']['spar_cap_ss']['n_opt'])
+            wt_opt['blade.ps.s_opt_spar_cap_ps']   = np.linspace(0., 1., blade_opt['structure']['spar_cap_ps']['n_opt'])
+            wt_opt['rs.constr.max_strainU_spar']   = blade_constr['strains_spar_cap_ss']['max']
+            wt_opt['rs.constr.max_strainL_spar']   = blade_constr['strains_spar_cap_ps']['max']
+            wt_opt['stall_check.stall_margin']     = blade_constr['stall']['margin'] * 180. / np.pi
+            wt_opt['tcons.max_allowable_td_ratio'] = blade_constr['tip_deflection']['margin']
         
         return wt_opt
 

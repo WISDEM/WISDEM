@@ -144,8 +144,8 @@ constraints:
             flag: False     # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade pressure side
             max:  3500.e-6  # Value of maximum strains [-]
         tip_deflection:
-            flag: False     # Constraint that maximum tip deflection cannot exceed 70% of tower clearance. Only for upwind rotors
-            ratio: 0.8
+            flag: False
+            margin: 1.4175
         rail_transport:
             flag: False
             8_axle: False
