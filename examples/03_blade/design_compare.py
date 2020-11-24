@@ -3,55 +3,30 @@ import matplotlib.pyplot as plt
 from wisdem.glue_code.runWISDEM import run_wisdem
 import os
 
+
 show_plots = True
 
 ## File management
 run_dir                = os.path.dirname( os.path.realpath(__file__) ) + os.sep
 fname_wt_input1        = run_dir + 'blade.yaml'
 fname_wt_input2        = run_dir + os.sep + 'outputs_aero' + os.sep + 'blade_out.yaml'
-# fname_wt_input2        = run_dir + os.sep + 'outputs_struct' + os.sep + 'blade_out.yaml'
-# fname_wt_input2        = run_dir + os.sep + 'outputs_aerostruct' + os.sep + 'blade_out.yaml'
 fname_modeling_options = run_dir + 'modeling_options.yaml'
 fname_analysis_options = run_dir + 'analysis_options_no_opt.yaml'
 
 wt_opt1, modeling_options1, analysis_options1 = run_wisdem(fname_wt_input1, fname_modeling_options, fname_analysis_options)
-# wt_opt2, modeling_options2, analysis_options2 = run_wisdem(fname_wt_input2, fname_modeling_options, fname_analysis_options)
+wt_opt2, modeling_options2, analysis_options2 = run_wisdem(fname_wt_input2, fname_modeling_options, fname_analysis_options)
 
-label1    = 'Initial'
-label2    = 'Optimized'
 font_size        = 12
 extension = '.png' # '.pdf'
 
 folder_output = analysis_options1['general']['folder_output']
 
-list_of_yamls = [wt_opt1, wt_opt1, wt_opt1]
-list_of_yaml_labels = [label1, label2, "bamboo"]
+list_of_yamls = [wt_opt1, wt_opt2, wt_opt1]
+list_of_yaml_labels = ['Initial', 'Optimized', 'Initial again']
 colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 
 ### Do not change code below here
-
-"""
-Simple plots:
-edge
-flap
-induction
-lift_coeff
-mass
-skin_opt
-strains_opt
-torsion
-
-More complex:
-chord
-sc_opt
-twist_opt
-
-Special:
-AOA
-af_efficiency
-
-"""
 
 # # Twist
 # ftw, axtw = plt.subplots(1,1,figsize=(5.3, 4))
@@ -232,25 +207,30 @@ af_efficiency
 
 values_to_print = {
     'AEP' : ['sse.AEP', 'GW*h'],
-    'blade mass' : ['elastic.precomp.blade_mass', 'kg'],
+    'Blade mass' : ['elastic.precomp.blade_mass', 'kg'],
     'LCOE' : ['financese.lcoe', 'USD/(MW*h)'],
+    'Cp' : ['sse.powercurve.Cp_aero', None],
+    'Blade cost' : ['elastic.precomp.total_blade_cost', 'USD'],
+    'Tip defl ratio' : ['tcons.tip_deflection_ratio', None],
+    'Flap freqs' : ['rlds.frame.flap_mode_freqs', 'Hz'],
+    'Edge freqs' : ['rlds.frame.edge_mode_freqs', 'Hz'],
+    '3P freq' : ['sse.powercurve.rated_Omega', None, 3. / 60],
+    '6P freq' : ['sse.powercurve.rated_Omega', None, 6. / 60],
+    'Hub forces' : ['rlds.aero_hub_loads.Fxyz_hub_aero', 'kN'],
+    'Hub moments' : ['rlds.aero_hub_loads.Mxyz_hub_aero', 'kN*m'],
 }
-
 
 
 list_of_labels = []
 max_label_length = 1
 for label in list_of_yaml_labels:
-    list_of_labels.append(f"{label:15.12}")
+    list_of_labels.append(f"{label:15.15}")
     
 case_headers = '| Data name       | ' + ' | '.join(list_of_labels) + ' | Units          |'
 # Header describing what we are printing:
 title_string = "Comparison between WISDEM results from yaml files"
 spacing = (len(case_headers) - len(title_string) - 2) // 2
-if not spacing % 2:
-    extra_space = " "
-else:
-    extra_space = ""
+
 print("+" + "-" * (len(case_headers) - 2) + "+")
 print("|" + " " * spacing + title_string + " " * spacing + " |")
 print("+" + "-" * (len(case_headers) - 2) + "+")
@@ -259,75 +239,49 @@ print(case_headers)
 print("+" + "-" * (len(case_headers) - 2) + "+")
 
 for key in values_to_print:
-    name_str = f"| {key}" + (16 - len(key)) * ' ' + "| "
-    
     value_name = values_to_print[key][0]
     units = values_to_print[key][1]
+    units_str = f" | {units}" + (15 - len(str(units))) * ' ' + "|"
     
-    list_of_values = []
-    for yaml_data in list_of_yamls:
-        value = yaml_data.get_val(value_name, units)
-        list_of_values.append(f"{float(value):15.5f}")
-    values_str = " | ".join(list_of_values)
+    value_sizer = list_of_yamls[0].get_val(value_name, units)
+    size_of_variable = len(value_sizer)
     
-    units_str = f" | {units}" + (15 - len(units)) * ' ' + "|"
-    
-    print(name_str + values_str + units_str)
-
-
-
+    for idx in range(size_of_variable):
+        
+        if size_of_variable > 1:
+            augmented_key = f"{key}_{idx}"
+        else:
+            augmented_key = key
+            
+        name_str = f"| {augmented_key}" + (16 - len(augmented_key)) * ' ' + "| "
+        
+        list_of_values = []
+        for yaml_data in list_of_yamls:
+            value = yaml_data.get_val(value_name, units).copy()
+            
+            if len(values_to_print[key]) > 2:
+                value *= values_to_print[key][2]
+                
+            list_of_values.append(f"{float(value[idx]):15.5f}")
+                
+        values_str = " | ".join(list_of_values)    
+        print(name_str + values_str + units_str)
 
 print("+" + "-" * (len(case_headers) - 2) + "+")
 print()
-print()
 
 
-# Printing and plotting results
-print('AEP ' + label1 + ' = ' + str(wt_opt1['sse.AEP']*1.e-6) + ' GWh')
-print('AEP ' + label2 + '   = ' + str(wt_opt2['sse.AEP']*1.e-6) + ' GWh')
-print('Cp ' + label1 + '  = ' + str(wt_opt1['sse.powercurve.Cp_aero']))
-print('Cp ' + label2 + '    = ' + str(wt_opt2['sse.powercurve.Cp_aero']))
-print('Design ' + label1 + ': LCOE in $/MWh: '  + str(wt_opt1['financese.lcoe']*1.e3))
-print('Design ' + label2 + ': LCOE in $/MWh: '    + str(wt_opt2['financese.lcoe']*1.e3))
-
-
-print('Design ' + label1 + ': blade mass in kg: ' + str(wt_opt1['elastic.precomp.blade_mass']))
-print('Design ' + label1 + ': blade cost in $: '  + str(wt_opt1['elastic.precomp.total_blade_cost']))
-print('Design ' + label2 + ': blade mass in kg: '   + str(wt_opt2['elastic.precomp.blade_mass']))
-print('Design ' + label2 + ': blade cost in $: '    + str(wt_opt2['elastic.precomp.total_blade_cost']))
-
-print('Design ' + label1 + ': AEP in GWh: ' + str(wt_opt1['sse.AEP']))
-print('Design ' + label2 + ': AEP in GWh: ' + str(wt_opt2['sse.AEP']))
-
-print('Design ' + label1 + ': tip deflection ratio: ' + str(wt_opt1['tcons.tip_deflection_ratio']))
-print('Design ' + label2 + ': tip deflection ratio: ' + str(wt_opt2['tcons.tip_deflection_ratio']))
-
-print('Design ' + label2 + ': flap and edge blade frequencies in Hz:')
-print(wt_opt1['rlds.frame.flap_mode_freqs'])
-print(wt_opt1['rlds.frame.edge_mode_freqs'])
-print('Design ' + label1 + ': 3P frequency in Hz' + str(3.*wt_opt1['sse.powercurve.rated_Omega']/60.))
-print('Design ' + label1 + ': 6P frequency in Hz' + str(6.*wt_opt1['sse.powercurve.rated_Omega']/60.))
-print('Design ' + label2 + ': flap and edge blade frequencies in Hz:')
-print(wt_opt2['rlds.frame.flap_mode_freqs'])
-print(wt_opt2['rlds.frame.edge_mode_freqs'])
-print('Design ' + label2 + ': 3P frequency in Hz' + str(3.*wt_opt2['sse.powercurve.rated_Omega']/60.))
-print('Design ' + label2 + ': 6P frequency in Hz' + str(6.*wt_opt2['sse.powercurve.rated_Omega']/60.))
-
-print('Design ' + label1 + ': forces at hub: ' + str(wt_opt1['rlds.aero_hub_loads.Fxyz_hub_aero']))
-print('Design ' + label1 + ': moments at hub: ' + str(wt_opt1['rlds.aero_hub_loads.Mxyz_hub_aero']))
-print('Design ' + label2 + ': forces at hub: ' + str(wt_opt2['rlds.aero_hub_loads.Fxyz_hub_aero']))
-print('Design ' + label2 + ': moments at hub: ' + str(wt_opt2['rlds.aero_hub_loads.Mxyz_hub_aero']))
-
-
-lcoe_data = np.array([[wt_opt1['financese.turbine_number'], wt_opt2['financese.turbine_number']],
-[wt_opt1['financese.machine_rating'][0], wt_opt2['financese.machine_rating'][0]],
-[wt_opt1['financese.tcc_per_kW'][0], wt_opt2['financese.tcc_per_kW'][0]],
-[wt_opt1['financese.bos_per_kW'][0], wt_opt2['financese.bos_per_kW'][0]],
-[wt_opt1['financese.opex_per_kW'][0], wt_opt2['financese.opex_per_kW'][0]],
-[wt_opt1['financese.turbine_aep'][0]*1.e-6, wt_opt2['financese.turbine_aep'][0]*1.e-6],
-[wt_opt1['financese.fixed_charge_rate'][0]*100., wt_opt2['financese.fixed_charge_rate'][0]*100.],
-[wt_opt1['financese.lcoe'][0]*1000., wt_opt2['financese.lcoe'][0]*1000.]])
-
+lcoe_data = np.zeros((8, len(list_of_yamls)))
+for idx, yaml_data in enumerate(list_of_yamls):
+    lcoe_data[0, idx] = yaml_data['financese.turbine_number']
+    lcoe_data[1, idx] = yaml_data['financese.machine_rating'][0]
+    lcoe_data[2, idx] = yaml_data['financese.tcc_per_kW'][0]
+    lcoe_data[3, idx] = yaml_data['financese.bos_per_kW'][0]
+    lcoe_data[4, idx] = yaml_data['financese.opex_per_kW'][0]
+    lcoe_data[5, idx] = yaml_data['financese.turbine_aep'][0]*1.e-6
+    lcoe_data[6, idx] = yaml_data['financese.fixed_charge_rate'][0]*100.
+    lcoe_data[7, idx] = yaml_data['financese.lcoe'][0]*1000.
+    
 np.savetxt(os.path.join(folder_output, 'lcoe.dat'), lcoe_data)
 
 
