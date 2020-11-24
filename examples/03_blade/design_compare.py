@@ -24,8 +24,8 @@ extension = '.png' # '.pdf'
 
 folder_output = analysis_options1['general']['folder_output']
 
-list_of_yamls = [wt_opt1, wt_opt1]
-list_of_yaml_labels = [label1, label2]
+list_of_yamls = [wt_opt1, wt_opt1, wt_opt1]
+list_of_yaml_labels = [label1, label2, "bamboo"]
 colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 
@@ -237,16 +237,29 @@ values_to_print = {
 }
 
 
+
+list_of_labels = []
+max_label_length = 1
+for label in list_of_yaml_labels:
+    list_of_labels.append(f"{label:15.12}")
+    
+case_headers = '| Data name       | ' + ' | '.join(list_of_labels) + ' | Units          |'
 # Header describing what we are printing:
-print("+" + "-" * 78 + "-" + "+")
-print("|" + " " * 15 + "Comparison between WISDEM results from yaml files" + " " * 15 + "|")
-print("+" + "-" * 78 + "-" + "+")
-case_headers = '| Data name     | ' + ' | '.join(list_of_yaml_labels) + ' | Units |'
+title_string = "Comparison between WISDEM results from yaml files"
+spacing = (len(case_headers) - len(title_string) - 2) // 2
+if not spacing % 2:
+    extra_space = " "
+else:
+    extra_space = ""
+print("+" + "-" * (len(case_headers) - 2) + "+")
+print("|" + " " * spacing + title_string + " " * spacing + " |")
+print("+" + "-" * (len(case_headers) - 2) + "+")
+
 print(case_headers)
-print("+" + "-" * 78 + "-" + "+")
+print("+" + "-" * (len(case_headers) - 2) + "+")
 
 for key in values_to_print:
-    name_str = f"| {key}" + (14 - len(key)) * ' ' + "| "
+    name_str = f"| {key}" + (16 - len(key)) * ' ' + "| "
     
     value_name = values_to_print[key][0]
     units = values_to_print[key][1]
@@ -254,18 +267,17 @@ for key in values_to_print:
     list_of_values = []
     for yaml_data in list_of_yamls:
         value = yaml_data.get_val(value_name, units)
-        list_of_values.append(f"{float(value):12.5f}")
+        list_of_values.append(f"{float(value):15.5f}")
     values_str = " | ".join(list_of_values)
     
-    units_str = f" | {units}" + (12 - len(units)) * ' ' + "|"
+    units_str = f" | {units}" + (15 - len(units)) * ' ' + "|"
     
     print(name_str + values_str + units_str)
 
 
 
 
-
-
+print("+" + "-" * (len(case_headers) - 2) + "+")
 print()
 print()
 
