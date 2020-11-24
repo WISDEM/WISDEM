@@ -97,12 +97,12 @@ environment:
     air_dyn_viscosity: 1.81e-5
     weib_shape_parameter: 2.
     air_speed_sound: 340.
-    shear_exp: 0.2
+    shear_exp: 0.1
     water_density: 1025.0
     water_dyn_viscosity: 1.3351e-3
     water_depth: 30.0
-    significant_wave_height: 0.0
-    significant_wave_period: 0.0
+    significant_wave_height: 4.52
+    significant_wave_period: 9.45
     soil_shear_modulus: 140.e+6
     soil_poisson: 0.4
     

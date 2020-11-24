@@ -8,7 +8,7 @@ from wisdem.commonse.fileIO import save_data
 
 # Set analysis and optimization options and define geometry
 plot_flag = False
-opt_flag = False
+opt_flag = True
 
 n_control_points = 4
 n_materials = 1
@@ -165,7 +165,7 @@ prob['beta_wind'] = 0.0
 prob['hsig_wave'] = 4.52
 prob['Tsig_wave'] = 9.52
 if modeling_options['tower']['wind'] == 'PowerWind':
-    prob['shearExp'] = 0.2
+    prob['shearExp'] = 0.1
 # ---
 
 

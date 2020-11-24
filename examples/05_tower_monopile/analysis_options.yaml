@@ -13,7 +13,7 @@ optimization_variables:
       lower_bound: 4e-3
       upper_bound: 2e-1
 
-merit_figure: tower_mass  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
+merit_figure: tower_mass
 
 constraints:
   tower:
