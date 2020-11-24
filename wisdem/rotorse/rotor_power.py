@@ -122,9 +122,9 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_input('Rhub',      val=0.0,             units='m',   desc='hub radius')
         self.add_input('Rtip',      val=0.0,             units='m',   desc='tip radius')
         self.add_input('hub_height',val=0.0,             units='m',   desc='hub height')
-        self.add_input('precone',   val=0.0,             units='deg', desc='precone angle', )
-        self.add_input('tilt',      val=0.0,             units='deg', desc='shaft tilt', )
-        self.add_input('yaw',       val=0.0,             units='deg', desc='yaw error', )
+        self.add_input('precone',   val=0.0,             units='deg', desc='precone angle')
+        self.add_input('tilt',      val=0.0,             units='deg', desc='shaft tilt')
+        self.add_input('yaw',       val=0.0,             units='deg', desc='yaw error')
         self.add_input('precurve',      val=np.zeros(n_span),    units='m', desc='precurve at each section')
         self.add_input('precurveTip',   val=0.0,                units='m', desc='precurve at tip')
         self.add_input('presweep',      val=np.zeros(n_span),    units='m', desc='presweep at each section')
@@ -406,16 +406,60 @@ class ComputePowerCurve(ExplicitComponent):
 
             else:
                 P[i_3:]       = P_rated
+                P_aero[i_3:]  = P_aero[i_3-1]
                 T[i_3:]       = 0
                 Q[i_3:]       = P[i_3:] / Omega[i_3:]
                 M[i_3:]       = 0
                 pitch[i_3:]   = 0
                 Cp[i_3:]      = P[i_3:] / (0.5 * inputs['rho'] * np.pi * R_tip**2 * Uhub[i_3:]**3)
+                Cp_aero[i_3:] = P_aero[i_3:] / (0.5 * inputs['rho'] * np.pi * R_tip**2 * Uhub[i_3:]**3)
                 Ct_aero[i_3:] = 0
                 Cq_aero[i_3:] = 0
                 Cm_aero[i_3:] = 0
-
+        
+        # Optional correction of pitch for peak thrust shaving
+        peak_thrust_shaving = True
+        if peak_thrust_shaving:
+            max_T = 0.8 * np.max(T)
+            identify_new_rated = True
+            for i in range(self.n_pc):
+                if T[i] > max_T:
                     
+                    def const_Tmax(x):
+                        myout, _ = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [x], coefficients=False)
+                        T_i      = float(myout['T'])
+                        return (T_i - max_T)
+                    
+                    x             = pitch[i]
+                    bnds          = [[x-10., x+10.]]
+                    const         = {}
+                    const['type'] = 'eq'
+                    const['fun']  = const_Tmax
+                    params  = minimize(lambda x: maximizePower(x[0], Uhub[i], Omega_rpm[i]), x,
+                                       bounds = bnds, method='slsqp', constraints=const, tol=1e-3)
+                    
+                    # Only update pitch in case of success
+                    if params.success and not np.isnan(params.x[0]):
+                        pitch[i] = params.x[0]
+                    
+                    myout, _   = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
+                    P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
+                    #P[i], eff[i] = compute_P_and_eff(P_aero[i], P_rated, Omega_rpm[i], driveType, driveEta)
+                    eff[i]       = np.interp(Omega_rpm[i], lss_rpm, driveEta)
+                    P[i]         = P_aero[i]*eff[i]
+                    Cp[i]        = Cp_aero[i]*eff[i]
+
+                    if P[i] >= P_rated and identify_new_rated:
+                        
+                        outputs['rated_V']     = Uhub[i]
+                        outputs['rated_Omega'] = Omega_rpm[i]
+                        outputs['rated_pitch'] = pitch[i]
+                        outputs['rated_T']     = T[i]
+                        outputs['rated_Q']     = Q[i]
+                        outputs['rated_mech']  = P_aero[i]
+                        outputs['rated_efficiency'] = eff[i]
+                        identify_new_rated = False
+
         outputs['T']       = T
         outputs['Q']       = Q
         outputs['Omega']   = Omega_rpm
