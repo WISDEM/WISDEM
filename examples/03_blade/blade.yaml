@@ -1,6 +1,13 @@
 name: yaml_BAR00
 description: BAR baseline 00. File reoptimized in WISDEM to increase the flap frequency. SNl mat properties. NREL airfoils from Roland Feil (roland.feil@nrel.gov), reoptimized twist.
-
+assembly:
+    turbine_class: III
+    turbulence_class: A
+    drivetrain: Geared
+    rotor_orientation: Upwind
+    number_of_blades: 3
+    hub_height: 140.
+    rotor_diameter: 206. 
 components:
     blade:
         outer_shape_bem:
@@ -667,12 +674,6 @@ materials:
       Xc: 360.e+006
       S: 0
       Xy: 450.e+6
-assembly:
-    turbine_class: III
-    turbulence_class: A
-    drivetrain: Geared
-    rotor_orientation: Upwind
-    number_of_blades: 3
 control:
     rated_power: 5.e+6
     Vin: 4.0

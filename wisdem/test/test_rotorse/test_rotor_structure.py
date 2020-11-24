@@ -1,7 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import unittest
-import wisdem.rotorse.rotor_loads_defl_strains as rlds
+import wisdem.rotorse.rotor_structure as rs
 from wisdem.commonse import gravity
 import openmdao.api as om
 import copy
@@ -9,7 +9,7 @@ import time
 import os
 ARCHIVE  = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + 'nrel5mw_test.npz'
         
-class TestRLDS(unittest.TestCase):
+class TestRS(unittest.TestCase):
 
             
     def testBladeCurvature(self):
@@ -24,7 +24,7 @@ class TestRLDS(unittest.TestCase):
         options['blade'] = {}
         options['blade']['n_span'] = npts
 
-        myobj = rlds.BladeCurvature(modeling_options=options)
+        myobj = rs.BladeCurvature(modeling_options=options)
 
         # Straight blade: Z is 'r'
         inputs['r'] = np.linspace(0, 100, npts)
@@ -90,7 +90,7 @@ class TestRLDS(unittest.TestCase):
         options['blade'] = {}
         options['blade']['n_span'] = npts
 
-        myobj = rlds.TotalLoads(modeling_options=options)
+        myobj = rs.TotalLoads(modeling_options=options)
 
         # Pass through
         inputs['r'] = np.linspace(0, 100, npts)
@@ -170,12 +170,12 @@ class TestRLDS(unittest.TestCase):
         options['blade']['n_span'] = npts
         options['blade']['n_freq'] = nfreq
 
-        #myold = rlds.RunpBEAM(modeling_options=options)
+        #myold = rs.RunpBEAM(modeling_options=options)
         #myold.n_span = npts
         #myold.n_freq = nfreq
         #myold.compute(inputs, outputs0)
         
-        myobj = rlds.RunFrame3DD(modeling_options=options, pbeam=True)
+        myobj = rs.RunFrame3DD(modeling_options=options, pbeam=True)
         myobj.n_span = npts
         myobj.n_freq = nfreq
         myobj.compute(inputs, outputs)
@@ -221,12 +221,12 @@ class TestRLDS(unittest.TestCase):
         options['blade']['n_freq'] = nfreq
 
         # Tip deflection the old pBeam way
-        myobj0 = rlds.RunFrame3DD(modeling_options=options, pbeam=True)
+        myobj0 = rs.RunFrame3DD(modeling_options=options, pbeam=True)
         myobj0.n_span = npts
         myobj0.n_freq = nfreq
         myobj0.compute(inputs, outputs0)
         
-        mytip = rlds.TipDeflection()
+        mytip = rs.TipDeflection()
         inputs['dx_tip'] = outputs0['dx'][-1]
         inputs['dy_tip'] = outputs0['dy'][-1]
         inputs['dz_tip'] = outputs0['dz'][-1]
@@ -238,7 +238,7 @@ class TestRLDS(unittest.TestCase):
         mytip.compute(inputs, outputs0)
 
         # Tip deflection the new, enhanced way with geometric stiffening
-        myobj = rlds.RunFrame3DD(modeling_options=options, pbeam=False)
+        myobj = rs.RunFrame3DD(modeling_options=options, pbeam=False)
         myobj.n_span = npts
         myobj.n_freq = nfreq
         myobj.compute(inputs, outputs)
@@ -272,7 +272,7 @@ class TestRLDS(unittest.TestCase):
         myopt['optimization_variables']['blade']['spar_cap_ss']['n_opt'] = 3
         myopt['optimization_variables']['blade']['spar_cap_ps']['n_opt'] = 3
 
-        myobj = rlds.DesignConstraints(modeling_options=options, opt_options=myopt)
+        myobj = rs.DesignConstraints(modeling_options=options, opt_options=myopt)
 
         # Straight blade: Z is 'r'
         inputs['strainU_spar'] = np.linspace(0.4, 0.6, npts)
@@ -294,7 +294,7 @@ class TestRLDS(unittest.TestCase):
         
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestRLDS))
+    suite.addTest(unittest.makeSuite(TestRS))
     return suite
 
 if __name__ == '__main__':

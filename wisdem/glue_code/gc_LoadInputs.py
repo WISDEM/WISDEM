@@ -222,7 +222,8 @@ class WindTurbineOntologyPython(object):
 
 
     def write_ontology(self, wt_opt, fname_output):
-
+        
+        # Update blade
         if self.modeling_options['flags']['blade']:
             # Update blade outer shape
             self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['grid']      = wt_opt['blade.opt_var.af_position'].tolist()
@@ -298,10 +299,10 @@ class WindTurbineOntologyPython(object):
             K = []
             for i in range(self.modeling_options['blade']['n_span']):
                 Ki = np.zeros(21)
-                Ki[11] = wt_opt['elastic.EA'][i]
-                Ki[15] = wt_opt['elastic.EIxx'][i]
-                Ki[18] = wt_opt['elastic.EIyy'][i]
-                Ki[20] = wt_opt['elastic.GJ'][i]
+                Ki[11] = wt_opt['re.EA'][i]
+                Ki[15] = wt_opt['re.EIxx'][i]
+                Ki[18] = wt_opt['re.EIyy'][i]
+                Ki[20] = wt_opt['re.GJ'][i]
                 K.append(Ki.tolist())
             self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['stiff_matrix']['values'] = K
             self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['inertia_matrix'] = {}
@@ -309,20 +310,21 @@ class WindTurbineOntologyPython(object):
             I = []
             for i in range(self.modeling_options['blade']['n_span']):
                 Ii = np.zeros(21)
-                Ii[0]  = wt_opt['elastic.rhoA'][i]
-                Ii[5]  = - wt_opt['elastic.rhoA'][i] * wt_opt['elastic.precomp.y_cg'][i]
-                Ii[6]  = wt_opt['elastic.rhoA'][i]
-                Ii[10] = wt_opt['elastic.rhoA'][i] * wt_opt['elastic.precomp.x_cg'][i]
-                Ii[11] = wt_opt['elastic.rhoA'][i]
-                Ii[12] = wt_opt['elastic.rhoA'][i] * wt_opt['elastic.precomp.y_cg'][i]
-                Ii[13] = - wt_opt['elastic.rhoA'][i] * wt_opt['elastic.precomp.x_cg'][i]
-                Ii[15] = wt_opt['elastic.precomp.edge_iner'][i]
-                Ii[16] = wt_opt['elastic.precomp.edge_iner'][i]
-                # Ii[18] = wt_opt['elastic.precomp.edge_iner'][i]
-                Ii[20] = wt_opt['elastic.rhoJ'][i]
+                Ii[0]  = wt_opt['re.rhoA'][i]
+                Ii[5]  = - wt_opt['re.rhoA'][i] * wt_opt['re.precomp.y_cg'][i]
+                Ii[6]  = wt_opt['re.rhoA'][i]
+                Ii[10] = wt_opt['re.rhoA'][i] * wt_opt['re.precomp.x_cg'][i]
+                Ii[11] = wt_opt['re.rhoA'][i]
+                Ii[12] = wt_opt['re.rhoA'][i] * wt_opt['re.precomp.y_cg'][i]
+                Ii[13] = - wt_opt['re.rhoA'][i] * wt_opt['re.precomp.x_cg'][i]
+                Ii[15] = wt_opt['re.precomp.edge_iner'][i]
+                Ii[16] = wt_opt['re.precomp.edge_iner'][i]
+                # Ii[18] = wt_opt['re.precomp.edge_iner'][i]
+                Ii[20] = wt_opt['re.rhoJ'][i]
                 I.append(Ii.tolist())
             self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['inertia_matrix']['values'] = I
 
+        # Update hub
         if self.modeling_options['flags']['hub']:
             # Update hub
             self.wt_init['components']['hub']['cone_angle']                  = float(wt_opt['hub.cone'])
@@ -338,6 +340,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['hub']['pitch_system_scaling_factor'] = float(wt_opt['hub.pitch_system_scaling_factor'])
             self.wt_init['components']['hub']['spinner_gust_ws']             = float(wt_opt['hub.spinner_gust_ws'])
 
+        # Update nacelle
         if self.modeling_options['flags']['nacelle']:
             # Common direct and geared
             self.wt_init['components']['nacelle']['drivetrain']['uptilt']                    = float(wt_opt['nacelle.uptilt'])
@@ -385,7 +388,7 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['nacelle']['drivetrain']['planet_numbers']            = wt_opt['nacelle.planet_numbers']
                 self.wt_init['components']['nacelle']['drivetrain']['hss_material']              = wt_opt['nacelle.hss_material']
 
-
+        # Update generator
         if self.modeling_options['flags']['generator']:
 
             self.wt_init['components']['nacelle']['generator']['B_r']         = float(wt_opt['generator.B_r'])
@@ -473,17 +476,17 @@ class WindTurbineOntologyPython(object):
 
         # Update tower
         if self.modeling_options['flags']['tower']:
-            self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid']          = wt_opt['tower.s'].tolist()
+            self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid']          = wt_opt['tower_grid.s'].tolist()
             self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['values']        = wt_opt['tower.diameter'].tolist()
-            self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['tower.s'].tolist()
-            self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['y']['grid']     = wt_opt['tower.s'].tolist()
-            self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['z']['grid']     = wt_opt['tower.s'].tolist()
+            self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['x']['grid']     = wt_opt['tower_grid.s'].tolist()
+            self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['y']['grid']     = wt_opt['tower_grid.s'].tolist()
+            self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['z']['grid']     = wt_opt['tower_grid.s'].tolist()
             self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['x']['values']   = wt_opt['tower.ref_axis'][:,0].tolist()
             self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['y']['values']   = wt_opt['tower.ref_axis'][:,1].tolist()
             self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['z']['values']   = wt_opt['tower.ref_axis'][:,2].tolist()
             self.wt_init['components']['tower']['internal_structure_2d_fem']['outfitting_factor']     = float( wt_opt['tower.outfitting_factor'] )
             for i in range(self.modeling_options['tower']['n_layers']):
-                self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['tower.s'].tolist()
+                self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['tower_grid.s'].tolist()
                 self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = np.hstack((wt_opt['tower.layer_thickness'][i,:], wt_opt['tower.layer_thickness'][i,-1])).tolist()
 
         # Update monopile
@@ -509,6 +512,14 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['RNA']['elastic_properties_mb']['mass']        = float(wt_opt['drivese.rna_mass'])
             self.wt_init['components']['RNA']['elastic_properties_mb']['inertia']     = wt_opt['drivese.rna_I_TT'].tolist()
             self.wt_init['components']['RNA']['elastic_properties_mb']['center_mass'] = wt_opt['drivese.rna_cm'].tolist()
+
+        # Update rotor diameter and hub height
+        self.wt_init['assembly']['rotor_diameter'] = float(wt_opt['assembly.rotor_diameter'])
+        self.wt_init['assembly']['hub_height']     = float(wt_opt['assembly.hub_height'])
+
+        # Update controller
+        if self.modeling_options['flags']['control']:
+            self.wt_init['control']['tsr'] = float(wt_opt['control.rated_TSR'])
 
         # Write yaml with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)

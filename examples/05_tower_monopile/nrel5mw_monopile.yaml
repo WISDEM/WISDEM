@@ -1,6 +1,13 @@
 name: 5MW Tower only
 comments:
-
+assembly:
+    turbine_class: I
+    turbulence_class: B
+    drivetrain: Geared
+    rotor_orientation: Upwind
+    number_of_blades: 3
+    hub_height: 90.
+    rotor_diameter: 126.
 components:
     tower:
         outer_shape_bem:
@@ -160,13 +167,6 @@ materials:
       Xc: 65.36e+006
       orth: 0
       unit_cost: 3.63
-assembly:
-    turbine_class: I
-    turbulence_class: B
-    drivetrain: Geared
-    rotor_orientation: Upwind
-    number_of_blades: 3
-
 environment:
     air_density: 1.225
     air_dyn_viscosity: 1.81e-5
