@@ -1,11 +1,12 @@
-------------------------------------
+.. _drivetrain_tutorial-label:
+
 6. Drivetrain Model Example
-------------------------------------
+---------------------------
 
 This example optimizes the sizing of key drivetrain components, assuming their overall length and height have already been determined by a target blade tip deflection and hub height, respectively.  Only Python-scripts are supported for now, as a yaml-based input using only hub and nacelle parameters is not yet available.
 
 Direct-Drive Design
-====================
+===================
 
 This example is for design sizing (diameter and thickness) of the shaft, nose/turret, and bedplate wall thickness of the direct-drive layout shown in :numref:`fig_layout_diagram_ex` and in :numref:`fig_layout_detail_ex`.
 
@@ -48,7 +49,7 @@ The modeling options dictionary sets the partial safety factors, the vector size
     :start-after: # Set in
     :end-before: # ---
 
-Next, we instantiate the OpenMDAO problem and asign the drivetrain as the *model* of the problem,
+Next, we instantiate the OpenMDAO problem and assign the drivetrain as the *model* of the problem,
 
 .. literalinclude:: ../../../examples/06_drivetrain/drivetrain_direct.py
     :language: python

@@ -1,4 +1,5 @@
-------------------------------------
+.. _generator_tutorial-label:
+  
 7. Generator Model Examples
 ------------------------------------
 

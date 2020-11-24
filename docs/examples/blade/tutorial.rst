@@ -1,11 +1,14 @@
-------------------------------------
-3. Blade Optimization Example
-------------------------------------
+.. _blade_opt_tutorial-label:
 
-This example walks through a blade optimization problem with increasing complexity.  All of the iterations use tthe same geometry input file, ``blade.yaml``, which describes a baseline design from the NREL-Sanndia Big Adaptive Rotor (BAR) project.  This blade uses glass fiber-reinnforced polymer inn the spar cap design.  The same ``modeling_options.yaml`` file is also common to all iterations and shows that all modules are called, the airfoil polars are discretized at 200 angles of attack, etc.
+3. Blade Optimization Example
+-----------------------------
+
+This example walks through a blade optimization problem with increasing complexity.
+All of the iterations use the same geometry input file, ``blade.yaml``, which describes a baseline design from the NREL-Sandia Big Adaptive Rotor (BAR) project.
+This blade uses glass fiber-reinforced polymer inn the spar cap design.  The same ``modeling_options.yaml`` file is also common to all iterations and shows that all modules are called, the airfoil polars are discretized at 200 angles of attack, etc.
 
 Simple Aerodynamic Optimization
-=================================
+===============================
 
 The file, ``analysis_options_aero.yaml``, file is used first to run a blade twist optimization. This is activated by turning on the appropriate design variable flags in the file,
 
@@ -14,7 +17,7 @@ The file, ``analysis_options_aero.yaml``, file is used first to run a blade twis
     :start-after: blade:
     :end-before: structure:
 
-Not that we are also setting the number of spline control points at 8 and the twist bounds (in radians) at each evently spaced control point along the blade span.  We also need to set the objective function to be AEP with,
+We are also setting the number of spline control points at 8 and the twist bounds (in radians) at each evenly spaced control point along the blade span.  We also need to set the objective function to be AEP with,
 
 .. code-block:: yaml
 
@@ -95,7 +98,7 @@ towards the blade tip, but the AEP is only mildly reduced by 0.18%.
 
 
 Simple Structural Optimization
-=================================
+==============================
 
 Next, we shift from an aerodynamic optimization of the blade to a structural optimization.  In this case, we make the following changes,
 
@@ -175,7 +178,7 @@ The relaxed tip deflection constraint compared to when the baseline was created 
 
 
 Aero-Structural Optimization
-=================================
+============================
 
 Finally, we will combine the previous two scenarios and use the levelized cost of energy, LCOE, as a way to balance the power production and minimum mass/cost objectives.  This problem formulation is represented in the file, ``analysis_options_aerostruct.yaml``. The design variables are,
 
