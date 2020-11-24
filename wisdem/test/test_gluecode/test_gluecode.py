@@ -17,7 +17,7 @@ class TestRegression(unittest.TestCase):
 
         self.assertAlmostEqual(wt_opt['re.precomp.blade_mass'][0], 16403.682326940743, 2)
         self.assertAlmostEqual(wt_opt['rp.AEP'][0]*1.e-6, 24.0801229107, 2)
-        self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 49.86807427992537, 2)
+        self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 50.982520869210894, 2)
 
     def test15MW(self):
         ## IEA 15MW
@@ -26,7 +26,7 @@ class TestRegression(unittest.TestCase):
 
         self.assertAlmostEqual(wt_opt['re.precomp.blade_mass'][0], 73310.0985877902, 1)
         self.assertAlmostEqual(wt_opt['rp.AEP'][0]*1.e-6, 78.09153972721633, 1)
-        self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 66.1585080360, 1)
+        self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 73.31802279483122, 1)
 
 def suite():
     suite = unittest.TestSuite()

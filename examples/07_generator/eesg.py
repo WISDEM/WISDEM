@@ -63,11 +63,11 @@ if opt_flag:
     prob.model.add_constraint('A_Cuscalc', lower=5.0, upper=300)
     prob.model.add_constraint('K_rad', lower=0.2+eps, upper=0.27)
     prob.model.add_constraint('Slot_aspect_ratio', lower=4.0, upper=10.0)
-    prob.model.add_constraint('gen_eff', lower=Eta_Target)
+    prob.model.add_constraint('generator_efficiency', lower=Eta_Target)
     prob.model.add_constraint('con_zar', lower=0.0+eps)
     prob.model.add_constraint('con_br', lower=0.0+eps)
 
-    Objective_function = 'Costs'
+    Objective_function = 'generator_cost'
     prob.model.add_objective(Objective_function, scaler=1e-5)
 
 

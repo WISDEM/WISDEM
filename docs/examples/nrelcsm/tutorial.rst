@@ -5,6 +5,7 @@
 ----------------------------------------
 
 .. contents:: List of Examples
+   :depth: 2
 
 
 Turbine Component Masses Using the NREL_CSM (2015)
@@ -14,32 +15,32 @@ As an example of estimating turbine component masses (only) using the 2015 updat
 
 The first step is to import OpenMDAO and the model itself:
 
-.. literalinclude:: /../examples/nrel_csm/mass.py
+.. literalinclude:: /../examples/01_nrel_csm/mass.py
     :start-after: # 0 ---
     :end-before: # 0 ---
 
 Next, we initialize an OpenMDAO instance and assign the model to be the `nrel_csm_mass_2015` module.  The `setup()` command completes the high-level configuration readies the model for variable inpu:
 
-.. literalinclude:: /../examples/nrel_csm/mass.py
+.. literalinclude:: /../examples/01_nrel_csm/mass.py
     :start-after: # 1 ---
     :end-before: # 1 ---
 
 The turbine scaling relies on key turbine configuration parameters.  These filter down to the individual component models through the rotor, nacelle, and tower as described on the :ref:`theory` page.  The variables are set like a Python dictionary:
 
-.. literalinclude:: /../examples/nrel_csm/mass.py
+.. literalinclude:: /../examples/01_nrel_csm/mass.py
     :start-after: # 2 ---
     :end-before: # 2 ---
 
 We can now run the model to compute the component masses:
 
-.. literalinclude:: /../examples/nrel_csm/mass.py
+.. literalinclude:: /../examples/01_nrel_csm/mass.py
     :start-after: # 3 ---
     :end-before: # 3 ---
 
 
 We can then print out an exhaustive listing of the inputs and outputs to each submodule:
 
-.. literalinclude:: /../examples/nrel_csm/mass.py
+.. literalinclude:: /../examples/01_nrel_csm/mass.py
     :start-after: # 4 ---
     :end-before: # 4 ---
 
@@ -51,7 +52,7 @@ The final lines highlight the mass breakdown summaries:
 >>>    nacelle_mass         [165460.38774975]  kg
 >>>    turbine_mass         [442906.80408368]  kg
 
-See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/mass.py>`_.
+See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/01_nrel_csm/mass.py>`_.
 
 
 Turbine Component Masses and Costs Using the NREL_CSM (2015)
@@ -59,31 +60,31 @@ Turbine Component Masses and Costs Using the NREL_CSM (2015)
 
 It is often desired to estimate the component costs and cost of energy of a hypothetical turbine, not just the component masses in the previous example.  To do so, all that is required is import the full 2015 Cost and Scaling model with:
 
-.. literalinclude:: /../examples/nrel_csm/mass_and_cost.py
+.. literalinclude:: /../examples/01_nrel_csm/mass_and_cost.py
     :start-after: # 0 ---
     :end-before: # 0 ---
 
 The OpenMDAO problem instance must also be assigned this model (`nrel_csm_2015`):
 
-.. literalinclude:: /../examples/nrel_csm/mass_and_cost.py
+.. literalinclude:: /../examples/01_nrel_csm/mass_and_cost.py
     :start-after: # 1 ---
     :end-before: # 1 ---
 
 The model inputs remain the same:
 
-.. literalinclude:: /../examples/nrel_csm/mass_and_cost.py
+.. literalinclude:: /../examples/01_nrel_csm/mass_and_cost.py
     :start-after: # 2 ---
     :end-before: # 2 ---
 
 We can now run the model to compute the component masses and costs:
 
-.. literalinclude:: /../examples/nrel_csm/mass_and_cost.py
+.. literalinclude:: /../examples/01_nrel_csm/mass_and_cost.py
     :start-after: # 3 ---
     :end-before: # 3 ---
 
 Then we can again print out an exhaustive listing of the inputs and outputs:
 
-.. literalinclude:: /../examples/nrel_csm/mass_and_cost.py
+.. literalinclude:: /../examples/01_nrel_csm/mass_and_cost.py
     :start-after: # 4 ---
     :end-before: # 4 ---
 
@@ -94,7 +95,7 @@ The final screen output is:
 >>>      turbine_cost                           [3543676.12253719]  USD
 >>>      turbine_cost_kW                        [708.73522451]      USD/kW
 
-See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/mass_and_cost.py>`__.
+See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/01_nrel_csm/mass_and_cost.py>`__.
 
 
 Turbine Component Costs Using the NREL_CSM (2015)
@@ -104,31 +105,31 @@ As an example of estimating turbine component costs (only), if the component mas
 
 The first step is to import OpenMDAO and the model itself:
 
-.. literalinclude:: /../examples/nrel_csm/costs.py
+.. literalinclude:: /../examples/01_nrel_csm/costs.py
     :start-after: # 0 ---
     :end-before: # 0 ---
 
 Next, we initialize an OpenMDAO instance and assign the model to be the `Turbine_CostsSE_2015` module.  This module has a configuration option to print to the screen a nicely formatted summary of the outputs, which is accessed by setting `verbosity=True`.  The `setup()` command completes the high-level configuration readies the model for variable inpu:
 
-.. literalinclude:: /../examples/nrel_csm/costs.py
+.. literalinclude:: /../examples/01_nrel_csm/costs.py
     :start-after: # 1 ---
     :end-before: # 1 ---
 
 The turbine scaling relies on key turbine configuration parameters.  These filter down to the individual component models through the rotor, nacelle, and tower as described on the :ref:`theory` page.  The variables are set like a Python dictionary:
 
-.. literalinclude:: /../examples/nrel_csm/costs.py
+.. literalinclude:: /../examples/01_nrel_csm/costs.py
     :start-after: # 2 ---
     :end-before: # 2 ---
 
-Next we set the individual component masses.  These values might come from publically available data, the other WISDEM modules, or through parametric study.  In this example, we grab the masses computed in the previous example:
+Next we set the individual component masses.  These values might come from publicly available data, the other WISDEM modules, or through parametric study.  In this example, we grab the masses computed in the previous example:
 
-.. literalinclude:: /../examples/nrel_csm/costs.py
+.. literalinclude:: /../examples/01_nrel_csm/costs.py
     :start-after: # 3 ---
     :end-before: # 3 ---
 
 We can now run the model to compute the component costs:
 
-.. literalinclude:: /../examples/nrel_csm/costs.py
+.. literalinclude:: /../examples/01_nrel_csm/costs.py
     :start-after: # 4 ---
     :end-before: # 4 ---
 
@@ -170,11 +171,11 @@ A formatted tabular output is printed to the screen:
 
 We can also print out an exhaustive listing of the inputs and outputs to each submodule:
 
-.. literalinclude:: /../examples/nrel_csm/costs.py
+.. literalinclude:: /../examples/01_nrel_csm/costs.py
     :start-after: # 5 ---
     :end-before: # 5 ---
 
-See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/costs.py>`__.
+See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/01_nrel_csm/costs.py>`__.
 
 
 
@@ -186,54 +187,54 @@ The simplicity and rapid execution of the NREL CSM makes it well suited for para
 
 As above, the first step is to import OpenMDAO and the model itself, but we will also need other Python and WISDEM packages.  In this case, the NumPy library and the annual energy production (AEP) estimator from the older (~2010) CSM code:
 
-.. literalinclude:: /../examples/nrel_csm/parametric.py
+.. literalinclude:: /../examples/01_nrel_csm/parametric.py
     :start-after: # 0 ---
     :end-before: # 0 ---
 
 Next, we initialize an OpenMDAO instance and assign the model to be the `nrel_csm_2015` module.  We also initialize an instance of the AEP model:
 
-.. literalinclude:: /../examples/nrel_csm/parametric.py
+.. literalinclude:: /../examples/01_nrel_csm/parametric.py
     :start-after: # 1 ---
     :end-before: # 1 ---
 
 The CSM model initialization is abbreviated here because some of the variables will be modified within the DoE loop.  The remaining ones are:
 
-.. literalinclude:: /../examples/nrel_csm/parametric.py
+.. literalinclude:: /../examples/01_nrel_csm/parametric.py
     :start-after: # 2 ---
     :end-before: # 2 ---
 
 Note that the `turbine_class` variable has been set to `-1` to allow us to override the `blade_mass_exp` value as described in the :ref:`csmsource` documentation.  Also, two variables are jointly assigned to local Python variables for use in the AEP estimation.
 The AEP model requires a number of other inputs to define the turbine power curve.  To keep things simple, we focus on a single turbine, and ignore many of the other losses and options:
 
-.. literalinclude:: /../examples/nrel_csm/parametric.py
+.. literalinclude:: /../examples/01_nrel_csm/parametric.py
     :start-after: # 3 ---
     :end-before: # 3 ---
 
 Next we define our parametric axes using NumPy's `arange <https://numpy.org/doc/stable/reference/generated/numpy.arange.html>`_ function that provides evenly spaced intervals:
 
-.. literalinclude:: /../examples/nrel_csm/parametric.py
+.. literalinclude:: /../examples/01_nrel_csm/parametric.py
     :start-after: # 4 ---
     :end-before: # 4 ---
 
 To run our n-dimensional DOE, we do a "tensor" or "outer" multiplication of the arrays using NumPy's `meshgrid <https://numpy.org/doc/stable/reference/generated/numpy.arange.html>`_, but then flatten them into 1-D vectors for easy enumeration of all of the scenarios:
 
-.. literalinclude:: /../examples/nrel_csm/parametric.py
+.. literalinclude:: /../examples/01_nrel_csm/parametric.py
     :start-after: # 5 ---
     :end-before: # 5 ---
 
 We are now ready to loop through all of the points, and evaluate the CSM model and AEP model:
 
-.. literalinclude:: /../examples/nrel_csm/parametric.py
+.. literalinclude:: /../examples/01_nrel_csm/parametric.py
     :start-after: # 6 ---
     :end-before: # 6 ---
 
 To store for later postprocessing, we save everything into a large csv-file.  Flattening the arrays makes this fairly straightforward using NumPy's concatenation shortcuts:
 
-.. literalinclude:: /../examples/nrel_csm/parametric.py
+.. literalinclude:: /../examples/01_nrel_csm/parametric.py
     :start-after: # 7 ---
     :end-before: # 7 ---
 
-See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/nrel_csm/parametric.py>`__.
+See the full source for this example on `Github <https://github.com/WISDEM/WISDEM/blob/master/examples/01_nrel_csm/parametric.py>`__.
 
 .. bibliography:: ../../references.bib
    :filter: docname in docnames

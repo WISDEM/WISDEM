@@ -18,7 +18,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         opt_options      = self.options['opt_options']
 
         # Material dictionary inputs
-        self.add_subsystem('materials', Materials(mat_init_options = modeling_options['materials']))
+        self.add_subsystem('materials', Materials(mat_init_options = modeling_options['materials'],
+                                                  composites=modeling_options['flags']['blade']))
 
         # Airfoil dictionary inputs
         if modeling_options['flags']['airfoils']:
@@ -66,12 +67,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             nacelle_ivc.add_output('distance_hub2mb',    val=0.0,         units='m',   desc='Distance from hub flange to first main bearing along shaft')
             nacelle_ivc.add_output('distance_mb2mb',     val=0.0,         units='m',   desc='Distance from first to second main bearing along shaft')
             nacelle_ivc.add_output('L_generator',        val=0.0,         units='m',   desc='Generator length along shaft')
-            nacelle_ivc.add_output('lss_diameter',       val=np.zeros(5), units='m',   desc='Diameter of low speed shaft')
-            nacelle_ivc.add_output('lss_wall_thickness', val=np.zeros(5), units='m',   desc='Thickness of low speed shaft')
+            nacelle_ivc.add_output('lss_diameter',       val=np.zeros(2), units='m',   desc='Diameter of low speed shaft')
+            nacelle_ivc.add_output('lss_wall_thickness', val=np.zeros(2), units='m',   desc='Thickness of low speed shaft')
             nacelle_ivc.add_output('gear_ratio',         val=1.0,                      desc='Total gear ratio of drivetrain (use 1.0 for direct)')
             nacelle_ivc.add_output('gearbox_efficiency', val=1.0,                      desc='Efficiency of the gearbox. Set to 1.0 for direct-drive')
             nacelle_ivc.add_output('brake_mass_user',    val=0.0,         units='kg',  desc='Override regular regression-based calculation of brake mass with this value')
-            nacelle_ivc.add_output('hvac_mass_coeff',    val=0.08,        units='kg/kW', desc='Regression-based scaling coefficient on machine rating to get HVAC system mass')
+            nacelle_ivc.add_output('hvac_mass_coeff',    val=0.025,        units='kg/kW/m', desc='Regression-based scaling coefficient on machine rating to get HVAC system mass')
             nacelle_ivc.add_output('converter_mass_user',val=0.0,         units='kg',  desc='Override regular regression-based calculation of converter mass with this value')
             nacelle_ivc.add_output('transformer_mass_user', val=0.0,      units='kg',  desc='Override regular regression-based calculation of transformer mass with this value')
             nacelle_ivc.add_discrete_output('mb1Type',   val='CARB',                   desc='Type of main bearing: CARB / CRB / SRB / TRB')
@@ -84,14 +85,14 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             if modeling_options['drivetrainse']['direct']:
                 # Direct only
                 nacelle_ivc.add_output('access_diameter',         val=0.0,         units='m',  desc='Minimum diameter for hollow shafts for maintenance access')
-                nacelle_ivc.add_output('nose_diameter',           val=np.zeros(5), units='m',  desc='Diameter of nose (also called turret or spindle)')
-                nacelle_ivc.add_output('nose_wall_thickness',     val=np.zeros(5), units='m',  desc='Thickness of nose (also called turret or spindle)')
-                nacelle_ivc.add_output('bedplate_wall_thickness', val=np.zeros(12), units='m',  desc='Thickness of hollow elliptical bedplate')
+                nacelle_ivc.add_output('nose_diameter',           val=np.zeros(2), units='m',  desc='Diameter of nose (also called turret or spindle)')
+                nacelle_ivc.add_output('nose_wall_thickness',     val=np.zeros(2), units='m',  desc='Thickness of nose (also called turret or spindle)')
+                nacelle_ivc.add_output('bedplate_wall_thickness', val=np.zeros(4), units='m',  desc='Thickness of hollow elliptical bedplate')
             else:
                 # Geared only
                 nacelle_ivc.add_output('hss_length',                  val=0.0,         units='m', desc='Length of high speed shaft')
-                nacelle_ivc.add_output('hss_diameter',                val=np.zeros(3), units='m', desc='Diameter of high speed shaft')
-                nacelle_ivc.add_output('hss_wall_thickness',          val=np.zeros(3), units='m', desc='Wall thickness of high speed shaft')
+                nacelle_ivc.add_output('hss_diameter',                val=np.zeros(2), units='m', desc='Diameter of high speed shaft')
+                nacelle_ivc.add_output('hss_wall_thickness',          val=np.zeros(2), units='m', desc='Wall thickness of high speed shaft')
                 nacelle_ivc.add_output('bedplate_flange_width',       val=0.0,         units='m', desc='Bedplate I-beam flange width')
                 nacelle_ivc.add_output('bedplate_flange_thickness',   val=0.0,         units='m', desc='Bedplate I-beam flange thickness')
                 nacelle_ivc.add_output('bedplate_web_thickness',      val=0.0,         units='m', desc='Bedplate I-beam web thickness')
@@ -225,7 +226,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # Control inputs
         if modeling_options['flags']['control']:
             ctrl_ivc = self.add_subsystem('control', om.IndepVarComp())
-            ctrl_ivc.add_output('rated_power',      val=0.0, units='W',         desc='Electrical rated power of the generator.')
             ctrl_ivc.add_output('V_in',             val=0.0, units='m/s',       desc='Cut in wind speed. This is the wind speed where region II begins.')
             ctrl_ivc.add_output('V_out',            val=0.0, units='m/s',       desc='Cut out wind speed. This is the wind speed where region III ends.')
             ctrl_ivc.add_output('minOmega',         val=0.0, units='rad/s',     desc='Minimum allowed rotor speed.')
@@ -244,6 +244,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         conf_ivc.add_discrete_output('rotor_orientation',   val='upwind',       desc='Rotor orientation, either upwind or downwind.')
         conf_ivc.add_discrete_output('upwind',              val=True,           desc='Convenient boolean for upwind (True) or downwind (False).')
         conf_ivc.add_discrete_output('n_blades',            val=3,              desc='Number of blades of the rotor.')
+        conf_ivc.add_output('rated_power',                  val=0.0, units='W', desc='Electrical rated power of the generator.')
+        
         conf_ivc.add_output('rotor_diameter_user',          val=0.,units='m',   desc='Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.')
         conf_ivc.add_output('hub_height_user',              val=0.,units='m',   desc='Height of the hub center over the ground (land-based) or the mean sea level (offshore) specified by the user.')
 
@@ -1042,7 +1044,7 @@ class Hub(om.Group):
         ivc = self.add_subsystem('hub_indep_vars', om.IndepVarComp(), promotes=['*'])
 
         ivc.add_output('cone',         val=0.0, units='rad',   desc='Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.')
-        ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.')
+        #ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.') # GB: this doesn't connect to anything
         ivc.add_output('diameter',          val = 0.0, units='m')
         ivc.add_output('flange_t2shell_t',          val = 0.0)
         ivc.add_output('flange_OD2hub_D',           val = 0.0)
@@ -1218,6 +1220,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('mat_init_options')
+        self.options.declare('composites', default=True)
 
     def setup(self):
 
@@ -1244,8 +1247,8 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
             if discrete_inputs['name'][i] == 'resin':
                 density_resin = inputs['rho'][i]
                 id_resin = i
-        if density_resin==0.:
-            raise ValueError('Error: a material named resin must be defined in the input yaml')
+        if self.options['composites'] and density_resin==0.:
+            print('Warning: a material named resin is not defined in the input yaml.  This is required for blade composite analysis')
 
         fvf   = np.zeros(self.n_mat)
         fwf   = np.zeros(self.n_mat)
@@ -1290,6 +1293,7 @@ class Materials(om.Group):
 
     def initialize(self):
         self.options.declare('mat_init_options')
+        self.options.declare('composites', default=True)
 
     def setup(self):
         mat_init_options = self.options['mat_init_options']
@@ -1317,7 +1321,8 @@ class Materials(om.Group):
         ivc.add_output('fvf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.')
         ivc.add_output('fwf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.')
 
-        self.add_subsystem('compute_materials_properties', ComputeMaterialsProperties(mat_init_options=mat_init_options), promotes=['*'])
+        self.add_subsystem('compute_materials_properties', ComputeMaterialsProperties(mat_init_options=mat_init_options,
+                                                                                      composites=self.options['composites']), promotes=['*'])
 
 class WT_Assembly(om.ExplicitComponent):
     # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance

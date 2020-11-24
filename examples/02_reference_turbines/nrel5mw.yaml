@@ -8,6 +8,7 @@ assembly:
     number_of_blades: 3
     hub_height: 90.
     rotor_diameter: 126. 
+    rated_power: 5.e+6
 components:
     blade:
         outer_shape_bem:
@@ -179,8 +180,8 @@ components:
         cone_angle: 0.04363
         diameter: 3.0
         drag_coefficient: 0.5
-        hub_material: steel #cast_iron
-        spinner_material: CarbonUD
+        hub_material: cast_iron
+        spinner_material: glassDB
         flange_t2shell_t: 4.0
         flange_OD2hub_D: 0.5
         flange_ID2OD: 0.8
@@ -200,20 +201,12 @@ components:
             distance_hub2mb: 1.912
             distance_mb2mb: 0.368
             overhang: 5.
-            lss_diameter:
-              grid: [0.0, 1.0]
-              values: [0.577, 0.577]
-            lss_wall_thickness:
-              grid: [0.0, 1.0]
-              values: [0.288, 0.288]
+            lss_diameter: [0.577, 0.577]
+            lss_wall_thickness: [0.288, 0.288]
             generator_length: 2.0
             hss_length: 1.5
-            hss_diameter:
-              grid: [0.0, 1.0]
-              values: [0.288, 0.288]
-            hss_wall_thickness:
-              grid: [0.0, 1.0]
-              values: [0.144, 0.144]
+            hss_diameter: [0.288, 0.288]
+            hss_wall_thickness: [0.144, 0.144]
             bedplate_flange_width: 1.0
             bedplate_flange_thickness: 0.05
             bedplate_web_thickness: 0.05
@@ -224,8 +217,8 @@ components:
             mb1Type: CARB
             mb2Type: SRB
             uptower: True
-            lss_material: steel
-            hss_material: steel
+            lss_material: steel_drive
+            hss_material: steel_drive
             bedplate_material: steel
         generator:
             generator_type: DFIG
@@ -485,16 +478,57 @@ materials:
       area_density_dry: 1.112
       component_id: 3
       roll_mass: 181.4368
-   -  E: 2.0e+11
-      name: steel
-      G: 7.93e+10
-      rho: 7850.0
+   -  name: steel
+      description: Steel of the tower and monopile ASTM A572 Grade 50
+      source: http://www.matweb.com/search/DataSheet.aspx?MatGUID=9ced5dc901c54bd1aef19403d0385d7f
       orth: 0
-      Xy: 450.e+6
-      nu: 0.265
-      Xt: 1.12e+9
-      Xc: 2.16e+9
+      rho: 7800
+      alpha: 0.0
+      E: 200.e+009
+      nu: 0.3
+      G: 79.3e+009
+      GIc: 0  #Place holder, currently not used
+      GIIc: 0  #Place holder, currently not used
+      alp0: 0  #Place holder, currently not used
+      Xt: 450.e+006
+      Xc: 450.e+006
+      S: 0
+      Xy: 345.e+6
       unit_cost: 0.7
+   -  name: steel_drive
+      description: Steel of the drivetrain ASTM 4140 40Cr1Mo28
+      source: http://www.matweb.com/search/DataSheet.aspx?MatGUID=38108bfd64c44b4c9c6a02af78d5b6c6
+      orth: 0
+      rho: 7850
+      alpha: 0.0
+      E: 205.e+009
+      nu: 0.3
+      G: 80.0e+009
+      GIc: 0  #Place holder, currently not used
+      GIIc: 0  #Place holder, currently not used
+      alp0: 0  #Place holder, currently not used
+      Xt: 814.e+006
+      Xc: 814.e+006
+      S: 0
+      Xy: 485.e+6
+      unit_cost: 0.9
+   -  name: cast_iron
+      description: TODO Steel of the drivetrain ASTM 4140 40Cr1Mo28
+      source: TODO http://www.matweb.com/search/DataSheet.aspx?MatGUID=38108bfd64c44b4c9c6a02af78d5b6c6
+      orth: 0
+      rho: 7200
+      alpha: 0.0
+      E: 118.e+009
+      nu: 0.3
+      G: 47.6e+009
+      GIc: 0  #Place holder, currently not used
+      GIIc: 0  #Place holder, currently not used
+      alp0: 0  #Place holder, currently not used
+      Xt: 310.e+006
+      Xc: 310.e+006
+      S: 0
+      Xy: 265.e+6
+      unit_cost: 0.5
    -  E: 98460000.0
       name: FOAM
       G: 98460000.0
@@ -530,7 +564,6 @@ materials:
       orth: 0
       unit_cost: 3.63
 control:
-    rated_power: 5.e+6
     Vin: 3.0
     Vout: 25.0
     minOmega: 0.72256

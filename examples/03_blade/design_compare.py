@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from wisdem.glue_code.runWISDEM import run_wisdem
+from wisdem import run_wisdem
 import os
 
 show_plots = True

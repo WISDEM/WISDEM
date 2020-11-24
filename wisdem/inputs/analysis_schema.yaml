@@ -213,6 +213,108 @@ properties:
                                     omega_max: *omega_max
                                     zeta_min: *zeta_min
                                     zeta_max: *zeta_max
+            hub:
+                type: object
+                default: {}
+                properties:
+                    cone: &smallang
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &angbound
+                                type: number
+                                minimum: 0.0
+                                maximum: 0.5235987756 # 30 deg
+                                default: 0.0
+                                unit: rad
+                            upper_bound: *angbound
+                    hub_diameter:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound:
+                                type: number
+                                minimum: 0.0
+                                maximum: 30.0
+                                default: 0.0
+                                unit: m
+                            upper_bound:
+                                type: number
+                                minimum: 0.0
+                                maximum: 30.0
+                                default: 30.0
+                                unit: m
+            drivetrain:
+                type: object
+                default: {}
+                properties:
+                    uptilt: *smallang
+                    overhang: &drivedim
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound:
+                                type: number
+                                minimum: 0.1
+                                maximum: 30.0
+                                default: 0.1
+                                unit: m
+                            upper_bound:
+                                type: number
+                                minimum: 0.1
+                                maximum: 30.0
+                                default: 0.1
+                                unit: m
+                    distance_tt_hub: *drivedim
+                    distance_hub_mb: *drivedim
+                    distance_mb_mb: *drivedim
+                    generator_length: *drivedim
+                    gear_ratio:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound:
+                                type: number
+                                minimum: 1.0
+                                maximum: 500.0
+                                default: 1.0
+                                unit: none
+                            upper_bound:
+                                type: number
+                                minimum: 1.0
+                                maximum: 1000.0
+                                default: 150.0
+                                unit: none
+                    lss_diameter: *drivedim
+                    hss_diameter: *drivedim
+                    nose_diameter: *drivedim
+                    lss_wall_thickness: &drivethick
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound:
+                                type: number
+                                minimum: 0.001
+                                maximum: 3.0
+                                default: 0.001
+                                unit: m
+                            upper_bound:
+                                type: number
+                                minimum: 0.01
+                                maximum: 5.0
+                                default: 1.0
+                                unit: m
+                    hss_wall_thickness: *drivethick
+                    nose_wall_thickness: *drivethick
+                    bedplate_wall_thickness: *drivethick
+                    bedplate_web_thickness: *drivethick
+                    bedplate_flange_thickness: *drivethick
+                    bedplate_flange_width: *drivethick
             tower: &towdv
                 type: object
                 default: {}
@@ -284,11 +386,11 @@ properties:
                         default: {}
                         properties:
                             flag: *flag
-                            ratio:
+                            margin:
                                 type: number
-                                default: 0.8
-                                minimum: 0.0
-                                maximum: 2.0
+                                default: 1.4175 #1.35*1.05
+                                minimum: 1.0
+                                maximum: 10.0
                     rail_transport:
                         type: object
                         default: {}
@@ -436,6 +538,24 @@ properties:
                                 minimum: 0.0
                                 maximum: 1.0
                             max: *flapminmax
+            hub:
+                type: object
+                default: {}
+                properties:
+                    hub_diameter: *flagonly
+            drivetrain:
+                type: object
+                default: {}
+                properties:
+                    lss: *flagonly
+                    hss: *flagonly
+                    bedplate: *flagonly
+                    mb1: *flagonly
+                    mb2: *flagonly
+                    length: *flagonly
+                    height: *flagonly
+                    access: *flagonly
+                    ecc: *flagonly
 
     merit_figure:
         type: string

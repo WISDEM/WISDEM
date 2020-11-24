@@ -148,7 +148,7 @@ class WT_RNTA(om.Group):
             # Connections to RotorPower
             self.connect('control.V_in' ,                  'rp.v_min')
             self.connect('control.V_out' ,                 'rp.v_max')
-            self.connect('control.rated_power' ,           'rp.rated_power')
+            self.connect('configuration.rated_power',      'rp.rated_power')
             self.connect('control.minOmega' ,              'rp.omega_min')
             self.connect('control.maxOmega' ,              'rp.omega_max')
             self.connect('control.max_TS' ,                'rp.control_maxTS')
@@ -268,8 +268,9 @@ class WT_RNTA(om.Group):
             self.connect('control.minOmega' ,               'drivese.minimum_rpm')
             self.connect('rp.powercurve.rated_Omega',       'drivese.rated_rpm')
             self.connect('rp.powercurve.rated_Q',           'drivese.rated_torque')
-            self.connect('control.rated_power',             'drivese.machine_rating')    
-            self.connect('tower.diameter',                  'drivese.D_top', src_indices=[-1])
+            self.connect('configuration.rated_power',       'drivese.machine_rating')
+            if modeling_options['flags']['tower']:
+                self.connect('tower.diameter',                  'drivese.D_top', src_indices=[-1])
             
             self.connect('rs.aero_hub_loads.Fxyz_hub_aero', 'drivese.F_hub')
             self.connect('rs.aero_hub_loads.Mxyz_hub_aero', 'drivese.M_hub')
@@ -492,8 +493,7 @@ class WT_RNTA(om.Group):
 
         # Connections to turbine capital cost
         self.connect('configuration.n_blades',          'tcc.blade_number')
-        if modeling_options['flags']['control']:
-            self.connect('control.rated_power',         'tcc.machine_rating')
+        self.connect('configuration.rated_power',  'tcc.machine_rating')
         if modeling_options['flags']['blade']:
             self.connect('re.precomp.blade_mass',       'tcc.blade_mass')
             self.connect('re.precomp.total_blade_cost', 'tcc.blade_cost_external')
@@ -514,7 +514,7 @@ class WT_RNTA(om.Group):
             self.connect('drivese.transformer_mass',    'tcc.transformer_mass')
             self.connect('drivese.hvac_mass',           'tcc.hvac_mass')
             self.connect('drivese.cover_mass',          'tcc.cover_mass')
-            self.connect('drivese.platforms_mass',      'tcc.platforms_mass')
+            self.connect('drivese.platform_mass',       'tcc.platforms_mass')
             
             if modeling_options['flags']['generator']:
                 self.connect('drivese.generator_cost',  'tcc.generator_cost_external')
@@ -573,7 +573,7 @@ class WindPark(om.Group):
         if modeling_options['flags']['bos']:
             if modeling_options['offshore']:
                 # Inputs into ORBIT
-                self.connect('control.rated_power',                   'orbit.turbine_rating')
+                self.connect('configuration.rated_power',             'orbit.turbine_rating')
                 self.connect('env.water_depth',                       'orbit.site_depth')
                 self.connect('costs.turbine_number',                  'orbit.number_of_turbines')
                 self.connect('configuration.n_blades',                'orbit.number_of_blades')
@@ -609,7 +609,7 @@ class WindPark(om.Group):
                 # Inputs into LandBOSSE
                 self.connect('assembly.hub_height',             'landbosse.hub_height_meters')
                 self.connect('costs.turbine_number',            'landbosse.num_turbines')
-                self.connect('control.rated_power',             'landbosse.turbine_rating_MW')
+                self.connect('configuration.rated_power',       'landbosse.turbine_rating_MW')
                 self.connect('env.shear_exp',                   'landbosse.wind_shear_exponent')
                 self.connect('assembly.rotor_diameter',         'landbosse.rotor_diameter_m')
                 self.connect('configuration.n_blades',          'landbosse.number_of_blades')
@@ -644,7 +644,7 @@ class WindPark(om.Group):
 
             # Inputs to plantfinancese from input yaml
             if modeling_options['flags']['control']:
-                self.connect('control.rated_power', 'financese.machine_rating')
+                self.connect('configuration.rated_power', 'financese.machine_rating')
             self.connect('costs.turbine_number',    'financese.turbine_number')
             self.connect('costs.opex_per_kW',       'financese.opex_per_kW')
             self.connect('costs.offset_tcc_per_kW', 'financese.offset_tcc_per_kW')

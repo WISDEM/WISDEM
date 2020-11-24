@@ -45,6 +45,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs['bedplate_web_thickness'] = 0.05
 
         self.inputs['D_top'] = 6.5
+        self.inputs['hub_diameter'] = 4.0
 
         self.inputs['other_mass'] = 200e3
         self.inputs['mb1_mass'] = 10e3
