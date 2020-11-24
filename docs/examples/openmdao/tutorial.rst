@@ -7,7 +7,7 @@ WISDEM can be run through the yaml-input files if the intention is to do a full 
 OpenMDAO serves to
 connect the various components of turbine models into a cohesive whole
 that can be optimized in systems engineering problems. WISDEM uses
-OpenMDAO to build up modular *components* and *groups* of components to
+OpenMDAO to build up modular **components** and **groups** of components to
 represent a wind turbine. Fortunately, OpenMDAO already provides some
 excellent training examples on their `website <http://openmdao.org>`__.
 
@@ -63,10 +63,10 @@ downstream of rotor, all measured in :math:`\frac{m}{s}`.
 There are few other variables we’ll have:
 
 -  :math:`a`: Induced Velocity Factor
--  *Area*: Rotor disc area in :math:`m^2`
--  *thrust*: Thrust produced by the rotor in N
+-  **Area**: Rotor disc area in :math:`m^2`
+-  **thrust**: Thrust produced by the rotor in N
 -  :math:`C_t`: Thrust coefficient
--  *power*: Power produced by rotor in *W*
+-  **power**: Power produced by rotor in *W*
 -  :math:`\rho`: Air density in :math:`kg /m^3`
 
 Before we start in on the source code, let’s look at a few key snippets
@@ -81,34 +81,34 @@ First we need to import OpenMDAO
     :start-after: # Import
     :end-before: # --
 
-Now we can make an ``ActuatorDisc`` class that models the actuator disc
+Now we can make an :code:`ActuatorDisc` class that models the actuator disc
 theory for the optimization.  This is derived off of an OpenMDAO class
 
 .. literalinclude:: /../examples/04_openmdao/betz_limit.py
     :start-after: # Specific
     :end-before: # -- end
 
-The class declaration, ``class ActuatorDisc(om.ExplicitComponent):``
-shows that our class, ``ActuatorDisc`` inherits off of the
-``ExplicitComponent`` class in OpenMDAO. In WISDEM, 99% of all coded
-components are of the ``ExplicitComponent`` class, so this is the most
+The class declaration, :code:`class ActuatorDisc(om.ExplicitComponent):`
+shows that our class, :code:`ActuatorDisc` inherits off of the
+:code:`ExplicitComponent` class in OpenMDAO. In WISDEM, 99% of all coded
+components are of the :code:`ExplicitComponent` class, so this is the most
 fundamental building block to get accustomed to. Other types of
 components are described in the OpenMDAO docs
 `here <http://openmdao.org/twodocs/versions/latest/_srcdocs/packages/openmdao.components.html>`__.
 
-The ``ExplicitComponent`` class provides a template for the user to: -
-Declare their input and output variables in the ``setup`` method -
-Calculate the outputs from the inputs in the ``compute`` method. In an
+The :code:`ExplicitComponent` class provides a template for the user to: -
+Declare their input and output variables in the :code:`setup` method -
+Calculate the outputs from the inputs in the :code:`compute` method. In an
 optimization loop, this is called at every iteration. - Calculate
 analytical gradients of outputs with respect to inputs in the
-``compute_partials`` method.
+:code:`compute_partials` method.
 
-The variable declarations take the form of ``self.add_input`` or
-``self.add_output`` where a variable name and default/initial vaue is
+The variable declarations take the form of :code:`self.add_input` or
+:code:`self.add_output` where a variable name and default/initial vaue is
 assigned. The value declaration also tells the OpenMDAO internals about
 the size and shape for any vector or multi-dimensional variables. Other
 optional keywords that can help with code documentation and model
-consistency are ``units=`` and ``desc=``.
+consistency are :code:`units=` and :code:`desc=`.
 
 Working with analytical derivatives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -120,7 +120,7 @@ That happens in the following lines:
     :start-after: # Declare
     :end-before: # --
 
-Note that lines like ``self.declare_partials('Vr', ['a', 'Vu'])``
+Note that lines like :code:`self.declare_partials('Vr', ['a', 'Vu'])`
 references both the derivatives :math:`\partial `V_r /
 :math:`\partial `a` and :math:`\partial `V_r /
 :math:`\partial `V_u`.
@@ -142,28 +142,28 @@ Betz Group:
     :start-after: # Optional
     :end-before: # --
 
-The ``Betz`` class derives off of the OpenMDAO ``Group`` class, which is
+The :code:`Betz` class derives off of the OpenMDAO :code:`Group` class, which is
 typically the top-level class that is used in an analysis. The OpenMDAO
-``Group`` class allows you to cluster models in hierarchies. We can put
+:code:`Group` class allows you to cluster models in hierarchies. We can put
 multiple components in groups. We can also put other groups in groups.
 
-Components are added to groups with the ``self.add_subsystem`` command,
+Components are added to groups with the :code:`self.add_subsystem` command,
 which has two primary arguments. The first is the string name to call
 the subsystem that is added and the second is the component or sub-group
-class instance. A common optional argument is ``promotes=``, which
+class instance. A common optional argument is :code:`promotes=`, which
 elevatest the input/ouput variable string names to the top-level
-namespace. The ``Betz`` group shows examples where the ``promotes=`` can
-be passed a list of variable string names or the ``'*'`` wildcard to
+namespace. The :code:`Betz` group shows examples where the :code:`promotes=` can
+be passed a list of variable string names or the :code:`'*'` wildcard to
 mean all input/output variables.
 
-The first subsystem that is added is an ``IndepVarComp``, which are the
+The first subsystem that is added is an :code:`IndepVarComp`, which are the
 independent variables of the problem. Subsystem inputs that are not tied
 to other subsystem outputs should be connected to an independent
 variables. For optimization problems, design variables must be part of
-an ``IndepVarComp``. In the Betz problem, we have ``a``, ``Area``,
-``rho``, and ``Vu``. Note that they are promoted to the top level
-namespace, otherwise we would have to access them by ``'indeps.x'`` and
-``'indeps.z'``.
+an :code:`IndepVarComp`. In the Betz problem, we have :code:`a`, :code:`Area`,
+:code:`rho`, and :code:`Vu`. Note that they are promoted to the top level
+namespace, otherwise we would have to access them by :code:`'indeps.x'` and
+:code:`'indeps.z'`.
 
 The next subsystem that is added is an instance of the component we
 created above:
@@ -172,21 +172,21 @@ created above:
 
    self.add_subsystem('a_disk', ActuatorDisc(), promotes=['a', 'Area', 'rho', 'Vu'])
 
-The ``promotes=`` can also serve to connect variables. In OpenMDAO, two
+The :code:`promotes=` can also serve to connect variables. In OpenMDAO, two
 variables with the same string name in the same namespace are
 automatically connected. By promoting the same variable string names as
-in the ``IndepCarComp``, they are automatically connected. For variables
+in the :code:`IndepCarComp`, they are automatically connected. For variables
 that are not connected in this way, explicit connect statements are
 required, which is demonstrated in the next tutorial. ## Let’s optimize
 our system!
 
-Even though we have all the pieces in a ``Group``, we still need to put
-them into a ``Problem`` to be executed. The ``Problem`` instance is
+Even though we have all the pieces in a :code:`Group`, we still need to put
+them into a :code:`Problem` to be executed. The :code:`Problem` instance is
 where we can assign design variables, objective functions, and
-constraints. It is also how the user interacts with the ``Group`` to set
+constraints. It is also how the user interacts with the :code:`Group` to set
 initial conditions and interrogate output values.
 
-First, we instantiate the ``Problem`` and assign an instance of ``Betz``
+First, we instantiate the :code:`Problem` and assign an instance of :code:`Betz`
 to be the root model:
 
 .. literalinclude:: /../examples/04_openmdao/betz_limit.py
@@ -207,9 +207,9 @@ and any model output can be an objective or constraint.
 
 We want to maximize the objective, but OpenMDAO will want to minimize it
 as it is consistent with the standard optimization problem statement. So
-we minimize the negative to find the maximum. Note that ``Cp`` is not
-promoted from ``a_disk``. Therefore we must reference it with
-``a_disk.Cp``
+we minimize the negative to find the maximum. Note that :code:`Cp` is not
+promoted from :code:`a_disk`. Therefore we must reference it with
+:code:`a_disk.Cp`
 
 .. literalinclude:: /../examples/04_openmdao/betz_limit.py
     :start-after: # Assign
@@ -349,8 +349,8 @@ parallelograms connected to *Discipline 1* by thick grey lines. These
 are variables pertaining to the *Discipline 1* component.
 
 -  :math:`\mathbf{z}`: An input. Since the components :math:`z_1,
-   z_2` can form a vector, we call the variable ``z`` in the code and
-   initialize it to :math:`(0, 0)` with ``np.zeros(2)``. Note that
+   z_2` can form a vector, we call the variable :code:`z` in the code and
+   initialize it to :math:`(0, 0)` with :code:`np.zeros(2)`. Note that
    components of :math:`\mathbf{z}` are found in 3 of the
    white :math:`\mathbf{z}` parallelograms connected to
    multiple components and the objective, so this is a globabl design
@@ -372,31 +372,31 @@ piece by piece. ### Discipline 1
     :start-after: # Create
     :end-before: # -- end Discipline 1
 
-The class declaration, ``class SellarDis1(om.ExplicitComponent):`` shows
-that our class, ``SellarDis1`` inherits off of the ``ExplicitComponent``
+The class declaration, :code:`class SellarDis1(om.ExplicitComponent):` shows
+that our class, :code:`SellarDis1` inherits off of the :code:`ExplicitComponent`
 class in OpenMDAO. In WISDEM, 99% of all coded components are of the
-``ExplicitComponent`` class, so this is the most fundamental building
+:code:`ExplicitComponent` class, so this is the most fundamental building
 block to get accustomed to. Keen observers will notice that the *Sellar
 Problem* has implicitly defined variables that will need to be
 addressed, but that is addressed below. Other types of components are
 described in the OpenMDAO docs
 `here <http://openmdao.org/twodocs/versions/latest/_srcdocs/packages/openmdao.components.html>`__.
 
-The ``ExplicitComponent`` class provides a template for the user to: -
-Declare their input and output variables in the ``setup`` method -
-Calculate the outputs from the inputs in the ``compute`` method. In an
+The :code:`ExplicitComponent` class provides a template for the user to: -
+Declare their input and output variables in the :code:`setup` method -
+Calculate the outputs from the inputs in the :code:`compute` method. In an
 optimization loop, this is called at every iteration. - Calculate
 analytical gradients of outputs with respect to inputs in the
-``compute_partials`` method. This is absent from the *Sellar Problem*.
+:code:`compute_partials` method. This is absent from the *Sellar Problem*.
 
-The variable declarations take the form of ``self.add_input`` or
-``self.add_output`` where a variable name and default/initial vaue is
+The variable declarations take the form of :code:`self.add_input` or
+:code:`self.add_output` where a variable name and default/initial vaue is
 assigned. The value declaration also tells the OpenMDAO internals about
 the size and shape for any vector or multi-dimensional variables. Other
 optional keywords that can help with code documentation and model
-consistency are ``units=`` and ``desc=``.
+consistency are :code:`units=` and :code:`desc=`.
 
-Finally ``self.declare_partials('*', '*', method='fd')`` tell OpenMDAO
+Finally :code:`self.declare_partials('*', '*', method='fd')` tell OpenMDAO
 to use finite difference to compute the partial derivative of the
 outputs with respect to the inputs. OpenMDAO provides many finite
 difference capabilities including: - Forward and backward differencing -
@@ -430,28 +430,28 @@ Sellar Group:
     :start-after: # Assemble
     :end-before: # -- end Group
 
-The ``SellarMDA`` class derives off of the OpenMDAO ``Group`` class,
+The :code:`SellarMDA` class derives off of the OpenMDAO :code:`Group` class,
 which is typically the top-level class that is used in an analysis. The
-OpenMDAO ``Group`` class allows you to cluster models in hierarchies. We
+OpenMDAO :code:`Group` class allows you to cluster models in hierarchies. We
 can put multiple components in groups. We can also put other groups in
 groups.
 
-Components are added to groups with the ``self.add_subsystem`` command,
+Components are added to groups with the :code:`self.add_subsystem` command,
 which has two primary arguments. The first is the string name to call
 the subsystem that is added and the second is the component or sub-group
-class instance. A common optional argument is ``promotes=``, which
+class instance. A common optional argument is :code:`promotes=`, which
 elevatest the input/ouput variable string names to the top-level
-namespace. The ``SellarMDA`` group shows examples where the
-``promotes=`` can be passed a list of variable string names or the
-``'*'`` wildcard to mean all input/output variables.
+namespace. The :code:`SellarMDA` group shows examples where the
+:code:`promotes=` can be passed a list of variable string names or the
+:code:`'*'` wildcard to mean all input/output variables.
 
-The first subsystem that is added is an ``IndepVarComp``, which are the
+The first subsystem that is added is an :code:`IndepVarComp`, which are the
 independent variables of the problem. Subsystem inputs that are not tied
 to other subsystem outputs should be connected to an independent
 variables. For optimization problems, design variables must be part of
-an ``IndepVarComp``. In the Sellar problem, we have ``x`` and ``z``.
+an :code:`IndepVarComp`. In the Sellar problem, we have :code:`x` and :code:`z`.
 Note that they are promoted to the top level namespace, otherwise we
-would have to access them by ``'indeps.x'`` and ``'indeps.z'``.
+would have to access them by :code:`'indeps.x'` and :code:`'indeps.z'`.
 
 The next subsystems that are added are instances of the components we
 created above:
@@ -461,10 +461,10 @@ created above:
    self.add_subsystem('d1', SellarDis1(), promotes=['y1', 'y2'])
    self.add_subsystem('d2', SellarDis2(), promotes=['y1', 'y2'])
 
-The ``promotes=`` can also serve to connect variables. In OpenMDAO, two
+The :code:`promotes=` can also serve to connect variables. In OpenMDAO, two
 variables with the same string name in the same namespace are
-automatically connected. By promoting ``y1`` and ``y2`` in both ``d1``
-and ``d2``, they are automatically connected. For variables that are not
+automatically connected. By promoting :code:`y1` and :code:`y2` in both :code:`d1`
+and :code:`d2`, they are automatically connected. For variables that are not
 connected in this way, explicit connect statements are required such as:
 
 .. code:: python
@@ -472,23 +472,23 @@ connected in this way, explicit connect statements are required such as:
    self.connect('x', ['d1.x','d2.x'])
    self.connect('z', ['d1.z','d2.z'])
 
-These statements connect the ``IndepVarComp`` versions of ``x`` and
-``z`` to the ``d1`` and ``d2`` versions. Note that if ``x`` and ``z``
-could easily have been promoted in ``d1`` and ``d2`` too, which would
+These statements connect the :code:`IndepVarComp` versions of :code:`x` and
+:code:`z` to the :code:`d1` and :code:`d2` versions. Note that if :code:`x` and :code:`z`
+could easily have been promoted in :code:`d1` and :code:`d2` too, which would
 have made these connect statements unnecessary, but including them is
 instructive.
 
-The next statement, ``self.nonlinear_solver = om.NonlinearBlockGS()``,
-handles the required internal iteration between ``y1`` and ``y2`` is our
+The next statement, :code:`self.nonlinear_solver = om.NonlinearBlockGS()`,
+handles the required internal iteration between :code:`y1` and :code:`y2` is our
 two components. OpenMDAO is able to identify a *cycle* between
 input/output variables and requires the user to specify a solver to
 handle the nested iteration loop. WISDEM does its best to avoid cycles.
 
 Finally, we have a series of three subsystems that use instances of the
-OpenMDAO ``ExecComp`` component. This is a useful way to defining an
-``ExplicitComponent`` inline, without having to create a whole new
+OpenMDAO :code:`ExecComp` component. This is a useful way to defining an
+:code:`ExplicitComponent` inline, without having to create a whole new
 class. OpenMDAO is able to parse the string expression and populate the
-``setup`` and ``compute`` methods automatically. This technique is used
+:code:`setup` and :code:`compute` methods automatically. This technique is used
 to create our objective function and two constraint functions directly:
 
 .. code:: python
@@ -502,29 +502,29 @@ to create our objective function and two constraint functions directly:
 Let’s optimize our system!
 --------------------------
 
-Even though we have all the pieces in a ``Group``, we still need to put
-them into a ``Problem`` to be executed. The ``Problem`` instance is
+Even though we have all the pieces in a :code:`Group`, we still need to put
+them into a :code:`Problem` to be executed. The :code:`Problem` instance is
 where we can assign design variables, objective functions, and
-constraints. It is also how the user interacts with the ``Group`` to set
+constraints. It is also how the user interacts with the :code:`Group` to set
 initial conditions and interrogate output values.
 
-First, we instantiate the ``Problem`` and assign an instance of
-``SellarMDA`` to be the root model:
+First, we instantiate the :code:`Problem` and assign an instance of
+:code:`SellarMDA` to be the root model:
 
 .. literalinclude:: /../examples/04_openmdao/sellar.py
     :start-after: # Instantiate
     :end-before: # --
 
-Next we assign an optimization ``driver`` to the problem instance. If we
+Next we assign an optimization :code:`driver` to the problem instance. If we
 only wanted to evaluate the model once and not optimize, then a
-``driver`` is not needed:
+:code:`driver` is not needed:
 
 .. literalinclude:: /../examples/04_openmdao/sellar.py
     :start-after: # Specify
     :end-before: # --
 
 With the optimization driver in place, we can assign design variables,
-objective(s), and constraints. Any ``IndepVarComp`` can be a design
+objective(s), and constraints. Any :code:`IndepVarComp` can be a design
 variable and any model output can be an objective or constraint.
 
 .. literalinclude:: /../examples/04_openmdao/sellar.py

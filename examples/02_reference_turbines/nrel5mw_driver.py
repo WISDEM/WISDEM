@@ -11,3 +11,9 @@ fname_analysis_options = mydir + os.sep + 'analysis_options.yaml'
 
 wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 # end
+
+print(wt_opt['wt.tcc.blade_mass'])
+print(wt_opt['wt.drivese.blades_I'])
+print(wt_opt['wt.drivese.pitch_system.BRFM'])
+print(wt_opt['wt.drivese.F_hub'])
+print(wt_opt['wt.drivese.M_hub'])

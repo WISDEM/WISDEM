@@ -2,14 +2,14 @@
 7. Generator Model Examples
 ------------------------------------
 
-Understanding the generator examples is most easily done with the companion report for `GeneratorSE <https://www.nrel.gov/docs/fy17osti/66462.pdf>`__.  The design variables in the examples relate to both the electromagnetic and structural design.  The five generator example files relate to the five different generator archictectures available:
+Understanding the generator examples is most easily done with the companion report for `GeneratorSE <https://www.nrel.gov/docs/fy17osti/66462.pdf>`__.  The design variables in the examples relate to both the electromagnetic and structural design.  The five generator example files relate to the five different generator architectures available:
 
-* *PMSG-Outer*: Permanent magnet synchronous generator (outer generator - inner stator)
-* *PMSG-Disc*: Permanent magnet synchronous generator (inner generator - outer stator) with solid disc stator support
-* *PMSG-Arms*: Permanent magnet synchronous generator (inner generator - outer stator) with arm/spoke stator support
-* *EESG*: Electrically excited synchronous generator
-* *DFIG*: Doubly fed induction generator
-* *SCIG*: Squirrel-cage induction generator
+- **PMSG-Outer**: Permanent magnet synchronous generator (outer generator - inner stator)
+- **PMSG-Disc**: Permanent magnet synchronous generator (inner generator - outer stator) with solid disc stator support
+- **PMSG-Arms**: Permanent magnet synchronous generator (inner generator - outer stator) with arm/spoke stator support
+- **EESG**: Electrically excited synchronous generator
+- **DFIG**: Doubly fed induction generator
+- **SCIG**: Squirrel-cage induction generator
 
 Each of the technologies have slightly different sets of required inputs so while the examples follow the same pattern, the specific design variables and constraints will vary from one to the other. For brevity, only the ``pmsg_outer.py`` script is presented here.
 

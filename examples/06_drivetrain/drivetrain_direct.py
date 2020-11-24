@@ -6,7 +6,7 @@ import numpy as np
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
 from wisdem.commonse.fileIO import save_data
 
-opt_flag = True #False
+opt_flag = True
 # ---
 
 # Set input options
@@ -23,8 +23,6 @@ opt['servose'] = {}
 opt['servose']['n_pc'] = 20
 opt['materials'] = {}
 opt['materials']['n_mat'] = 4
-opt['GeneratorSE'] = {}
-opt['GeneratorSE']['type'] = 'pmsg_outer'
 opt['flags'] = {}
 opt['flags']['generator'] = False
 # ---
@@ -45,6 +43,8 @@ if opt_flag:
     prob.model.add_objective('nacelle_mass', scaler=1e-6)
 
     # Add design variables, in this case the tower diameter and wall thicknesses
+    prob.model.add_design_var('L_12', lower=0.1, upper=5.0)
+    prob.model.add_design_var('L_h1', lower=0.1, upper=5.0)
     prob.model.add_design_var('hub_diameter', lower=3.0, upper=15.0)
     prob.model.add_design_var('lss_diameter', lower=0.5, upper=6.0)
     prob.model.add_design_var('lss_wall_thickness', lower=4e-3, upper=5e-1, ref=1e-2)
@@ -70,12 +70,13 @@ prob.setup()
 # ---
 
 # Set input values
+prob.set_val('machine_rating', 15.0, units='MW')
 prob['upwind']         = True
 prob['n_blades']       = 3
 prob['rotor_diameter'] = 240.0
 prob['D_top']          = 6.5
-prob.set_val('machine_rating', 15.0, units='MW')
-# ---
+prob['minimum_rpm']    = 5.0
+prob['rated_rpm']      = 7.56
 
 # Loading from rotor
 prob['F_hub'] = np.array([2517580., -27669., 3204.]).reshape((3,1))
@@ -99,12 +100,10 @@ prob['clearance_hub_spinner']       = 0.5
 prob['spin_hole_incr']              = 1.2
 prob['spinner_gust_ws']             = 70.
 prob['hub_diameter']                = 7.94
-prob['minimum_rpm']                 = 5.0
-prob['rated_rpm']                   = 7.56
 prob['blades_I']                    = np.r_[4.12747714e+08, 1.97149973e+08, 1.54854398e+08, np.zeros(3)]
 # ---
 
-# Drivetrain configuration options
+# Drivetrain configuration and sizing inputs
 prob['bear1.bearing_type'] = 'CARB'
 prob['bear2.bearing_type'] = 'SRB'
 prob['L_12']            = 1.2
@@ -113,10 +112,8 @@ prob['L_generator']     = 2.15 #2.75
 prob['overhang']        = 12.0313
 prob['drive_height']    = 5.614
 prob['tilt']            = 6.0
-prob['access_diameter'] = 0.8001
-# ---
+prob['access_diameter'] = 2.0
 
-# Sizing inputs
 myones = np.ones(2)
 prob['lss_diameter']            = 3.0*myones
 prob['nose_diameter']           = 2.2*myones
@@ -141,9 +138,9 @@ prob['spinner_material']  = 'glass_uni'
 prob['material_names']    = ['steel','steel_drive','cast_iron','glass_uni']
 # ---
 
-# run the analysis or optimization
-prob.model.approx_totals()
+# Run the analysis or optimization
 if opt_flag:
+    prob.model.approx_totals()
     prob.run_driver()
 else:
     prob.run_model()
@@ -153,15 +150,24 @@ save_data('drivetrain_example',prob)
 # Display all inputs and outputs
 #prob.model.list_inputs(units=True)
 #prob.model.list_outputs(units=True)
-# ---
 
+# Print out the objective, design variables and constraints
+print('nacelle_mass:', prob['nacelle_mass'])
+print('')
+print('L_h1:', prob['L_h1'])
+print('L_12:', prob['L_12'])
+print('L_lss:', prob['L_lss'])
+print('L_nose:', prob['L_nose'])
+print('L_generator:', prob['L_generator'])
+print('L_bedplate:', prob['L_bedplate'])
+print('H_bedplate:', prob['H_bedplate'])
 print('hub_diameter:', prob['hub_diameter'])
 print('lss_diameter:', prob['lss_diameter'])
 print('lss_wall_thickness:', prob['lss_wall_thickness'])
 print('nose_diameter:', prob['nose_diameter'])
 print('nose_wall_thickness:', prob['nose_wall_thickness'])
 print('bedplate_wall_thickness:', prob['bedplate_wall_thickness'])
-
+print('')
 print('constr_lss_vonmises:', prob['constr_lss_vonmises'].flatten())
 print('constr_bedplate_vonmises:', prob['constr_bedplate_vonmises'].flatten())
 print('constr_mb1_defl:', prob['constr_mb1_defl'])
@@ -171,3 +177,4 @@ print('constr_length:', prob['constr_length'])
 print('constr_height:', prob['constr_height'])
 print('constr_access:', prob['constr_access'])
 print('constr_ecc:', prob['constr_ecc'])
+# ---

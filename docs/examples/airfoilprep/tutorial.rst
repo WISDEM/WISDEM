@@ -61,7 +61,7 @@ For example, if :code:`airfoil.dat` contained 2-D data with :code:`r/R=0.5`, :co
 By default the output file will append _3D to the name.
 In the above example, the output file would be :code:`airfoil_3D.dat`.
 However, this can be overridden with the :code:`--out` option.
-To output to a file at :code:`/Users/Me/Airfoils/my_new_airfoil.dat`:
+To output to a file at :code:`/Users/Me/Airfoils/my_new_airfoil.dat`
 
 .. _convert-cmdline-label:
 

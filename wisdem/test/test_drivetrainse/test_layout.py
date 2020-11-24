@@ -75,7 +75,8 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['D_bearing1'], 2.3-0.05-1.33)
         self.assertAlmostEqual(self.outputs['D_bearing2'], 2.3-0.05-1.33)
 
-        npt.assert_equal(self.outputs['constr_access'], 1.33-0.04-0.9)
+        npt.assert_equal(self.outputs['constr_access'][:,-1], 1.33-0.08-0.9)
+        npt.assert_equal(self.outputs['constr_access'][:,0], 2.3-0.1-1.33-0.25*0.9)
         self.assertAlmostEqual(self.outputs['constr_length'], 5-0.5*6.5)
         self.assertAlmostEqual(self.outputs['constr_height'], self.outputs['H_bedplate'])
 
@@ -118,7 +119,8 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['D_bearing1'], 2.3-0.05-1.33)
         self.assertAlmostEqual(self.outputs['D_bearing2'], 2.3-0.05-1.33)
 
-        npt.assert_equal(self.outputs['constr_access'], 1.33-0.04-0.9)
+        npt.assert_equal(self.outputs['constr_access'][:,-1], 1.33-0.08-0.9)
+        npt.assert_equal(self.outputs['constr_access'][:,0], 2.3-0.1-1.33-0.25*0.9)
         self.assertAlmostEqual(self.outputs['constr_length'], self.inputs['overhang']- (2+self.outputs['L_drive'])*ct - 0.5*self.inputs['D_top'])
         self.assertAlmostEqual(self.outputs['constr_height'], self.outputs['H_bedplate'])
 
@@ -160,7 +162,8 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['D_bearing1'], 2.3-0.05-1.33)
         self.assertAlmostEqual(self.outputs['D_bearing2'], 2.3-0.05-1.33)
 
-        npt.assert_equal(self.outputs['constr_access'], 1.33-0.04-0.9)
+        npt.assert_equal(self.outputs['constr_access'][:,-1], 1.33-0.08-0.9)
+        npt.assert_equal(self.outputs['constr_access'][:,0], 2.3-0.1-1.33-0.25*0.9)
         self.assertAlmostEqual(self.outputs['constr_length'], 5-0.5*6.5)
         self.assertAlmostEqual(self.outputs['constr_height'], self.outputs['H_bedplate'])
 
@@ -204,7 +207,8 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs['D_bearing1'], 2.3-0.05-1.33)
         self.assertAlmostEqual(self.outputs['D_bearing2'], 2.3-0.05-1.33)
 
-        npt.assert_equal(self.outputs['constr_access'], 1.33-0.04-0.9)
+        npt.assert_equal(self.outputs['constr_access'][:,-1], 1.33-0.08-0.9)
+        npt.assert_equal(self.outputs['constr_access'][:,0], 2.3-0.1-1.33-0.25*0.9)
         self.assertAlmostEqual(self.outputs['constr_length'], self.inputs['overhang']- (2+self.outputs['L_drive'])*ct - 0.5*self.inputs['D_top'])
         self.assertAlmostEqual(self.outputs['constr_height'], self.outputs['H_bedplate'])
 

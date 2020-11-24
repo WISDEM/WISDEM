@@ -224,7 +224,7 @@ class DirectLayout(Layout):
         self.add_output('t_bedplate', val=np.zeros(12), units='m')
         self.add_output('s_stator', val=0.0, units='m')
         self.add_output('s_rotor', val=0.0, units='m')
-        self.add_output('constr_access', np.zeros(2), units='m')
+        self.add_output('constr_access', np.zeros((2,2)), units='m')
         self.add_output('constr_ecc', 0.0, units='m')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -378,7 +378,7 @@ class DirectLayout(Layout):
         # ------------------------------------
 
         # ------- Constraints ----------------
-        outputs['constr_access'] = D_nose - t_nose - D_access
+        outputs['constr_access'] = np.c_[D_lss-2*t_lss-D_nose-0.25*D_access, D_nose-2*t_nose-D_access]
         outputs['constr_length'] = constr_Ldrive # Should be > 0
         outputs['constr_height'] = H_bedplate # Should be > 0
         outputs['constr_ecc']    = L_bedplate - H_bedplate # Should be > 0

@@ -13,9 +13,6 @@ Land-based Tower Design
 The following example, demonstrates how to set up and run analysis or optimization for a land-based tower.
 Some of the geometric parameters are seen in :numref:`Figure %s <tower-fig>`.
 The tower is not restricted to 3 sections, any number of sections can be defined.
-The array `z` is given in coordinates nondimensionalized by the tower height.
-The array `n`, should of length len(tower.z)-1 and represents the number of finite elements to be used in each tower can.
-Yaw and tilt are needed to handle to mass/load transfer.
 
 .. _tower-fig:
 
@@ -28,17 +25,17 @@ Yaw and tilt are needed to handle to mass/load transfer.
 Invoking with YAML files
 *************************
 
-To run just the tower analysis from the YAML input files, we just need to include the necessary elements.  First dealing with the ``geometry_option`` file, this always includes the ``assembly`` section. Of the ``components``, this means the ``tower`` and ``foundation`` sections.  Also, the ``materials``, ``environment``, and ``costs`` section,
+To run just the tower analysis from the YAML input files, we just need to include the necessary elements.  First dealing with the ``geometry_option.yaml`` file, this always includes the :code:`assembly` section. Of the :code:`components`, this means the :code:`tower` and :code:`foundation` sections.  Also, the :code:`materials`, :code:`environment`, and :code:`costs` section,
 
 .. literalinclude:: ../../../examples/05_tower_monopile/nrel5mw_tower.yaml
     :language: yaml
 
-The ``modeling_options`` file is also limited to just the sections we need.  Note that even though the ``monopile`` options are included here, since there was no specification of a monopile in the geometry inputs, this will be ignored.  One new section is added here, a ``loading`` section that specifies the load scenarios that are applied to the tower.  Since there is no rotor simulation to generate the loads, they must be specified by the user directly.  Note that two load cases are specified.  This creates a set of constraints for both of them.
+The ``modeling_options.yaml`` file is also limited to just the sections we need.  Note that even though the :code:`monopile` options are included here, since there was no specification of a monopile in the geometry inputs, this will be ignored.  One new section is added here, a :code:`loading` section that specifies the load scenarios that are applied to the tower.  Since there is no rotor simulation to generate the loads, they must be specified by the user directly.  Note that two load cases are specified.  This creates a set of constraints for both of them.
 
 .. literalinclude:: ../../../examples/05_tower_monopile/modeling_options.yaml
     :language: yaml
 
-The ``analysis_options`` poses the optimization problem,
+The ``analysis_options.yaml`` poses the optimization problem,
 
 .. literalinclude:: ../../../examples/05_tower_monopile/analysis_options.yaml
     :language: yaml
@@ -89,8 +86,8 @@ Next, we instantiate the OpenMDAO problem and add a tower model to this problem.
     :start-after: # Instantiate OpenMDAO
     :end-before: # ---
 
-Next, we have logic in the script to add the optimization problem if ``opt_flag`` is set to True.
-The optimizer must first be selected and configured.
+Next, the script proceeds to set-up the design optimization problem if :code:`opt_flag` is set to True.
+In this case, the optimization driver is first be selected and configured.
 We then set the objective, in this case tower mass, and scale it so it is of order 1 for better convergence behavior.
 The tower diameters and thicknesses are added as design variables.
 Finally, constraints are added.
@@ -101,8 +98,8 @@ Some constraints are based on the tower geometry and others are based on the str
     :start-after: # If performing optimization
     :end-before: # ---
 
-We then call ``setup()`` on the OpenMDAO problem, which finalizes the components and groups for the tower analysis or optimization.
-Once ``setup()`` has been called, we can access the problem values or modify them for a given analysis.
+We then call :code:`setup()` on the OpenMDAO problem, which finalizes the components and groups for the tower analysis or optimization.
+Once :code:`setup()` has been called, we can access the problem values or modify them for a given analysis.
 
 .. literalinclude:: ../../../examples/05_tower_monopile/tower_direct.py
     :language: python
@@ -153,7 +150,7 @@ We can now run the model and display some of the outputs.
 Results
 *******
 
-Whether invoking from the yaml files orr running via python directly, the optimization result is the same.  It should look something like this:
+Whether invoking from the yaml files or running via python directly, the optimization result is the same.  It should look something like this:
 
 .. code:: console
 
@@ -240,21 +237,21 @@ Monopile design in WISDEM is modeled as an extension of the tower.  In this exam
 Invoking with YAML files
 *************************
 
-To run just the monopile, there is an additional ``monopile`` section that must be added to the ``components`` section of the yaml,
+To run just the monopile, there is an additional :code:`monopile` section that must be added to the :code:`components` section of the yaml,
 
 .. literalinclude:: ../../../examples/05_tower_monopile/nrel5mw_monopile.yaml
     :language: yaml
     :start-after: values: [0.027, 0.0222
     :end-before: foundation:
 
-The ``environment`` section must also be updated with the offshore properties,
+The :code:`environment` section must also be updated with the offshore properties,
 
 .. literalinclude:: ../../../examples/05_tower_monopile/nrel5mw_monopile.yaml
     :language: yaml
     :start-after: air_speed_sound
     :end-before: costs:
 
-The ``modeling_options`` file already contains a section for the monopile, with entries identical to the tower section.  The input ``loading`` scenarios are also the same. The ``analysis_options`` file, however, is different and activates the design variables and constraints associated with the monopile.  Note also that the objective function now says ``structural_mass``, to capture the combined mass of both the tower and monopile,
+The ``modeling_options.yaml`` file already contains a section for the monopile, with entries identical to the tower section.  The input :code:`loading` scenarios are also the same. The ``analysis_options.yaml`` file, however, is different and activates the design variables and constraints associated with the monopile.  Note also that the objective function now says :code:`structural_mass`, to capture the combined mass of both the tower and monopile,
 
 .. literalinclude:: ../../../examples/05_tower_monopile/analysis_options_monopile.yaml
     :language: yaml
@@ -309,7 +306,7 @@ The optimization problem switches the objective function to the total structural
     :start-after: # If performing optimization
     :end-before: # ---
 
-We then call ``setup()`` as before,
+We then call :code:`setup()` as before,
 
 .. literalinclude:: ../../../examples/05_tower_monopile/monopile_direct.py
     :language: python

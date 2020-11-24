@@ -65,7 +65,7 @@ as shown in :numref:`Figure %s <distributed-fig>`.
 
 
 To get the power, thrust, and torque at the same conditions (in both absolute and coefficient form), use the :meth:`evaluate <ccblade.CCBlade.evaluate>` method.
-This is generally used for generating power curves so it expects ``array_like`` input.
+This is generally used for generating power curves so it expects :code:`array_like` input.
 For this example a list of size one is used.
 
 .. literalinclude:: ../../../examples/10_ccblade/example.py
@@ -79,7 +79,7 @@ The result is
 >>> CT = [ 0.76926398]
 >>> CQ = [ 0.0616323]
 
-Note that the outputs are numpy arrays (of length 1 for this example).
+Note that the outputs are Numpy arrays (of length 1 for this example).
 To generate a nondimensional power curve (:math:`\lambda` vs :math:`c_p`):
 
 .. literalinclude:: ../../../examples/10_ccblade/example.py
@@ -112,7 +112,7 @@ The parameters :code:`tiploss` and :code:`hubloss` toggle Prandtl tip and hub lo
 The parameter :code:`usecd` can be used to disable the inclusion of drag in the calculation of the induction factors (it is always used in calculations of the distributed loads).
 However, doing so may cause potential failure in the solution methodology (see :cite:`Ning2013A-simple-soluti`).
 In practice, it should work fine, but special care for that particular case has not yet been examined, and the default implementation allows for the possibility of convergence failure.
-All four of these parameters are ``True`` by default.
+All four of these parameters are :code:`True` by default.
 The parameter :code:`iterRe` is for advanced usage.
 Referring to :cite:`Ning2013A-simple-soluti`, this parameter controls the number of internal iterations on the Reynolds number.
 One iteration is almost always sufficient, but for high accuracy in the Reynolds number :code:`iterRe` could be set at 2.
@@ -124,11 +124,11 @@ Precurve
 ^^^^^^^^
 
 CCBlade can also simulate blades with precurve.
-This is done by using the ``precurve`` and ``precurveTip`` parameters.
-These correspond precisely to the ``r`` and ``Rtip`` parameters.
+This is done by using the :code:`precurve` and :code:`precurveTip` parameters.
+These correspond precisely to the :code:`r` and :code:`Rtip` parameters.
 Precurve is defined as the position of the blade reference axis in the x-direction of the :ref:`blade-aligned coordinate system <azimuth_blade_coord>` (r is the position in the z-direction of the same coordinate system).
-Presweep can be specified in the same manner, by using the ``presweep`` and ``presweepTip`` parameters (position in blade-aligned y-axis).
-Generally, it is advisable to set ``precone=0`` for blades with precurve.
+Presweep can be specified in the same manner, by using the :code:`presweep` and :code:`presweepTip` parameters (position in blade-aligned y-axis).
+Generally, it is advisable to set :code:`precone=0` for blades with precurve.
 There is no loss of generality in defining the blade shape, and including a nonzero precone would change the rotor diameter in a nonlinear way. As an example, a downwind machine with significant curvature could be simulated using:
 
 .. literalinclude:: ../../../examples/10_ccblade/precurve.py
@@ -154,7 +154,7 @@ Gradients
 CCBlade optionally provides analytic gradients of every output with respect to all design variables.
 This is accomplished using an adjoint method (direct method is identical because there is only one state variable at each blade section).
 Partial derivatives are provided by `Tapenade <http://www-tapenade.inria.fr:8080/tapenade/index.jsp>`_ and hand calculations.
-Starting with the previous example for the NREL 5-MW reference model we add the keyword value ``derivatives=True`` in the constructor.
+Starting with the previous example for the NREL 5-MW reference model we add the keyword value :code:`derivatives=True` in the constructor.
 
 .. literalinclude:: ../../../examples/10_ccblade/gradients.py
     :start-after: # 3 ---

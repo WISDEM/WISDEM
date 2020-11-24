@@ -234,7 +234,6 @@ class Spinner(om.ExplicitComponent):
         self.add_output('spinner_I',                val = np.zeros(6), units = 'kg*m**2')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        
         # Increase hub diameter by twice the clearance between hub and spinner. This gives us the spherical spinner diameter, radius, and circumference
         sph_spin_diam           = inputs['hub_diameter'] + (2.*inputs['clearance_hub_spinner'])
         sph_spin_rad            = 0.5 * sph_spin_diam

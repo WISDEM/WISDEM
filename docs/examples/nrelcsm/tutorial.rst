@@ -121,7 +121,7 @@ The turbine scaling relies on key turbine configuration parameters.  These filte
     :start-after: # 2 ---
     :end-before: # 2 ---
 
-Next we set the individual component masses.  These values might come from publically available data, the other WISDEM modules, or through parametric study.  In this example, we grab the masses computed in the previous example:
+Next we set the individual component masses.  These values might come from publicly available data, the other WISDEM modules, or through parametric study.  In this example, we grab the masses computed in the previous example:
 
 .. literalinclude:: /../examples/01_nrel_csm/costs.py
     :start-after: # 3 ---

@@ -10,12 +10,12 @@ Calling WISDEM
 Option 1. Use the GUI
 =====================
 
-Installing WISDEM creates a ``wisdem`` command that should be available at the command prompt (a terminal prompt on Linux / Mac machines or the Anaconda PowerShell prompt for Windows).  Just typing ``wisdem`` at the command line opens the GUI.  From there, you can use the dialogue menus to load in the yaml input files and run WISDEM.
+Installing WISDEM creates a :code:`wisdem` command that should be available at the command prompt (a terminal prompt on Linux / Mac machines or the Anaconda PowerShell prompt for Windows).  Just typing :code:`wisdem` at the command line opens the GUI.  From there, you can use the dialogue menus to load in the yaml input files and run WISDEM.
 
 Option 2. Pass YAML-files directly to the ``wisdem`` command
 ==============================================================
 
-Installing WISDEM creates a ``wisdem`` command that should be available at the command prompt (a terminal prompt on Linux / Mac machines or the Anaconda PowerShell prompt for Windows).  You can pass that command the three input yaml-files in order to run WISDEM.
+Installing WISDEM creates a :code:`wisdem` command that should be available at the command prompt (a terminal prompt on Linux / Mac machines or the Anaconda PowerShell prompt for Windows).  You can pass that command the three input yaml-files in order to run WISDEM.
 
 .. code-block:: bash
 

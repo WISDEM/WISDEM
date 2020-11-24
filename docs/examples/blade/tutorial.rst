@@ -99,12 +99,12 @@ Simple Structural Optimization
 
 Next, we shift from an aerodynamic optimization of the blade to a structural optimization.  In this case, we make the following changes,
 
-- The design variables as the thickness of the blade structural layers ``Spar_cap_ss`` and ``Spar_cap_ps``
-- The thickness is parameterized in 8 locations along span and can vary between 70 and 130% of the initial value (using the ``min_gain`` and ``max_gain`` options)
+- The design variables as the thickness of the blade structural layers :code:`Spar_cap_ss` and :code:`Spar_cap_ps`
+- The thickness is parameterized in 8 locations along span and can vary between 70 and 130% of the initial value (using the :code:`min_gain` and :code:`max_gain` options)
 - The merit figure is blade mass instead of AEP
-- TODO: Max strain constraint is set at :math:`3500 \mu\epsilon` and the blade tip deflection constrain the problem, but the latter ratio is relaxed from 0.8 to 1.0
+- A max allowable strain of :math:`3500 \mu\epsilon` and the blade tip deflection constrain the problem, but the latter ratio is relaxed from a safety factor of 1.4175 to 1.134
 
-To run this optimization problem, we can use the same geometry and modeling input files, and the optimization problem is captured in ``analysis_options_struct``.  The design variables are,
+To run this optimization problem, we can use the same geometry and modeling input files, and the optimization problem is captured in ``analysis_options_struct.yaml``.  The design variables are,
 
 .. literalinclude:: /../examples/03_blade/analysis_options_struct.yaml
     :language: yaml
@@ -142,7 +142,7 @@ and then do,
 
     $ python blade_driver.py
 
-(parallel caluclation is also available if desired).
+(parallel calculation is also available if desired).
 
 Once the optimization terminates, the same ``design_compare.py`` script can be used again to plot the differences, but we must edit the file to point to the new set of results.  The file should contain these lines near the top,
 
@@ -151,7 +151,7 @@ Once the optimization terminates, the same ``design_compare.py`` script can be u
     :start-after: show_plots = True
     :end-before: wt_opt1
 
-comment out the line that assigns the ``fname_wt_input2`` variable to the ``outputs_aero`` directory and instead uncomment the line that uses the ``outputs_struct`` directory.  Then, it can be run just as before,
+comment out the line that assigns the :code:`fname_wt_input2` variable to the :code:`outputs_aero` directory and instead uncomment the line that uses the :code:`outputs_struct` directory.  Then, it can be run just as before,
 
 .. code-block:: bash
 
