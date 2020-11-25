@@ -31,8 +31,8 @@ jobs:
         $CONDA/bin/pytest --cov-config=.coverageac --cov=wisdem
     - name: Run tests
       run: |
-      # Run coveralls
-        coveralls
+        # Run coveralls
+        $CONDA/bin/coveralls
     #- name: Lint with flake8
     #  run: |
     #    $CONDA/bin/conda install flake8
