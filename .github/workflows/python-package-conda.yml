@@ -5,28 +5,49 @@ on: [push, pull_request]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  build-linux:
-    name: Build Linux
-    runs-on: "ubuntu-latest"
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+        python-version: ["3.8"]
+        
     steps:
+      - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
           channels: conda-forge
           auto-update-conda: true
           python-version: 3.8
-      - name: Bash
-        shell: bash -l {0}
+          
+      - name: Conda config
+        shell: pwsh
         run: |
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
           conda config --add channels conda-forge
           conda info -a
+          
       - name: Dependencies
-        shell: bash -l {0}
+        shell: pwsh
         run: |
-          conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 swig compilers petsc4py mpi4py 
+          conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 swig
           pip install simpy marmot-agents
+      
+      # Install dependencies of WEIS specific to ubuntu (not with compilers)
+      - name: Add dependendencies ubuntu specific
+        if: contains( matrix.os, 'ubuntu')
+        run: |
+          conda install -y petsc4py mpi4py compilers
+      
+      # Install dependencies of WEIS specific to windows
+      - name: Add dependendencies windows specific
+        if: contains( matrix.os, 'windows')
+        run: |
+          conda install -y m2w64-toolchain libpython
 
       # Debugging session
       #- name: Setup tmate session
@@ -34,53 +55,19 @@ jobs:
         
       # Install WISDEM
       - name: Install WISDEM
+        shell: pwsh
         run: |
           python setup.py develop
       
       # Run all tests
       - name: Run tests
+        shell: pwsh
         run: |
           pytest --cov-config=.coverageac --cov=wisdem
       
       # Run coveralls
       - name: Run tests
         if: contains( matrix.os, 'ubuntu')
+        shell: pwsh
         run: |
           coveralls
-
-  build-win:
-    name: Build Windows
-    runs-on: "windows-latest"
-    steps:
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-          channels: conda-forge
-          auto-update-conda: true
-          python-version: 3.8
-      - name: PowerShell
-        shell: powershell
-        run: |
-          conda config --set always_yes yes --set changeps1 no
-          conda update -q conda
-          conda config --add channels conda-forge
-          conda info -a
-      - name: Dependencies
-        shell: powershell
-        run: |
-          conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 swig m2w64-toolchain libpython
-          pip install simpy marmot-agents
-
-      # Debugging session
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
-        
-      # Install WISDEM
-      - name: Install WISDEM
-        run: |
-          python setup.py develop
-      
-      # Run all tests
-      - name: Run tests
-        run: |
-          pytest .
