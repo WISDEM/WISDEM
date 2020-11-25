@@ -51,12 +51,12 @@ class WindTurbineOntologyPython(object):
         flags = self.modeling_options['flags']
 
         # Even if the block is in the inputs, the user can turn off via modeling options
-        if flags['bos']:   flags['bos']   = self.modeling_options['Analysis_Flags']['BOS']
-        if flags['blade']: flags['blade'] = self.modeling_options['Analysis_Flags']['RotorSE'] or self.modeling_options['Analysis_Flags']['ServoSE']
-        if flags['tower']: flags['tower'] = self.modeling_options['Analysis_Flags']['TowerSE']
-        if flags['hub']:   flags['hub']   = self.modeling_options['Analysis_Flags']['DriveSE']
-        if flags['nacelle']: flags['nacelle'] = self.modeling_options['Analysis_Flags']['DriveSE']
-        if flags['generator']: flags['generator'] = self.modeling_options['Analysis_Flags']['DriveSE']
+        if flags['bos']:   flags['bos']   = self.modeling_options['BOS']['flag']
+        if flags['blade']: flags['blade'] = self.modeling_options['RotorSE']['flag']
+        if flags['tower']: flags['tower'] = self.modeling_options['TowerSE']['flag']
+        if flags['hub']:   flags['hub']   = self.modeling_options['DriveSE']['flag']
+        if flags['nacelle']: flags['nacelle'] = self.modeling_options['DriveSE']['flag']
+        if flags['generator']: flags['generator'] = self.modeling_options['DriveSE']['flag']
         flags['hub'] = flags['nacelle'] = (flags['hub'] or flags['nacelle']) # Hub and nacelle have to go together
         
         # Blades and airfoils
@@ -110,7 +110,7 @@ class WindTurbineOntologyPython(object):
         self.modeling_options['airfoils']           = {}
         if self.modeling_options['flags']['airfoils']:
             self.modeling_options['airfoils']['n_af']   = len(self.wt_init['airfoils'])
-            self.modeling_options['airfoils']['n_aoa']  = self.modeling_options['rotorse']['n_aoa']
+            self.modeling_options['airfoils']['n_aoa']  = self.modeling_options['RotorSE']['n_aoa']
             if self.modeling_options['airfoils']['n_aoa'] / 4. == int(self.modeling_options['airfoils']['n_aoa'] / 4.):
                 # One fourth of the angles of attack from -pi to -pi/6, half between -pi/6 to pi/6, and one fourth from pi/6 to pi
                 self.modeling_options['airfoils']['aoa']    = np.unique(np.hstack([np.linspace(-np.pi, -np.pi / 6., int(self.modeling_options['airfoils']['n_aoa'] / 4. + 1)), np.linspace(-np.pi / 6., np.pi / 6., int(self.modeling_options['airfoils']['n_aoa'] / 2.)), np.linspace(np.pi / 6., np.pi, int(self.modeling_options['airfoils']['n_aoa'] / 4. + 1))]))
@@ -123,48 +123,46 @@ class WindTurbineOntologyPython(object):
                     Re_all.append(self.wt_init['airfoils'][i]['polars'][j]['re'])
             self.modeling_options['airfoils']['n_Re']   = len(np.unique(Re_all))
             self.modeling_options['airfoils']['n_tab']  = 1
-            self.modeling_options['airfoils']['n_xy']   = self.modeling_options['rotorse']['n_xy']
+            self.modeling_options['airfoils']['n_xy']   = self.modeling_options['RotorSE']['n_xy']
             self.modeling_options['airfoils']['af_used']      = self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['labels']
 
         # Blade
-        self.modeling_options['blade']              = {}
         if self.modeling_options['flags']['blade']:
-            self.modeling_options['blade']['n_span']    = self.modeling_options['rotorse']['n_span']
-            self.modeling_options['blade']['nd_span']   = np.linspace(0., 1., self.modeling_options['blade']['n_span']) # Equally spaced non-dimensional spanwise grid
-            self.modeling_options['blade']['n_af_span'] = len(self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['labels']) # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
-            self.modeling_options['blade']['n_webs']    = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'])
-            self.modeling_options['blade']['n_layers']  = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'])
-            self.modeling_options['blade']['lofted_output'] = False
-            self.modeling_options['blade']['n_freq']    = 10 # Number of blade nat frequencies computed
+            self.modeling_options['RotorSE']['nd_span']   = np.linspace(0., 1., self.modeling_options['RotorSE']['n_span']) # Equally spaced non-dimensional spanwise grid
+            self.modeling_options['RotorSE']['n_af_span'] = len(self.wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['labels']) # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
+            self.modeling_options['RotorSE']['n_webs']    = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'])
+            self.modeling_options['RotorSE']['n_layers']  = len(self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'])
+            self.modeling_options['RotorSE']['lofted_output'] = False
+            self.modeling_options['RotorSE']['n_freq']    = 10 # Number of blade nat frequencies computed
 
-            self.modeling_options['blade']['layer_name'] = self.modeling_options['blade']['n_layers'] * ['']
-            self.modeling_options['blade']['layer_mat']  = self.modeling_options['blade']['n_layers'] * ['']
-            for i in range(self.modeling_options['blade']['n_layers']):
-                self.modeling_options['blade']['layer_name'][i]  = self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['name']
-                self.modeling_options['blade']['layer_mat'][i]   = self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['material']
+            self.modeling_options['RotorSE']['layer_name'] = self.modeling_options['RotorSE']['n_layers'] * ['']
+            self.modeling_options['RotorSE']['layer_mat']  = self.modeling_options['RotorSE']['n_layers'] * ['']
+            for i in range(self.modeling_options['RotorSE']['n_layers']):
+                self.modeling_options['RotorSE']['layer_name'][i]  = self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['name']
+                self.modeling_options['RotorSE']['layer_mat'][i]   = self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['material']
 
 
-            self.modeling_options['blade']['web_name']  = self.modeling_options['blade']['n_webs'] * ['']
-            for i in range(self.modeling_options['blade']['n_webs']):
-                self.modeling_options['blade']['web_name'][i]  = self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'][i]['name']
+            self.modeling_options['RotorSE']['web_name']  = self.modeling_options['RotorSE']['n_webs'] * ['']
+            for i in range(self.modeling_options['RotorSE']['n_webs']):
+                self.modeling_options['RotorSE']['web_name'][i]  = self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'][i]['name']
 
             # Distributed aerodynamic control devices along blade
-            self.modeling_options['blade']['n_te_flaps']      = 0
+            self.modeling_options['RotorSE']['n_te_flaps']      = 0
             if 'aerodynamic_control' in self.wt_init['components']['blade']:
                 if 'te_flaps' in self.wt_init['components']['blade']['aerodynamic_control']:
-                    self.modeling_options['blade']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
+                    self.modeling_options['RotorSE']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
                     self.modeling_options['airfoils']['n_tab']   = 3
                 else:
                     raise RuntimeError('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
 
         # Drivetrain
         if self.modeling_options['flags']['nacelle']:
-            self.modeling_options['drivetrainse']['direct'] = self.wt_init['assembly']['drivetrain'].lower() in ['direct','direct_drive','pm_direct_drive']
+            self.modeling_options['DriveSE']['direct'] = self.wt_init['assembly']['drivetrain'].lower() in ['direct','direct_drive','pm_direct_drive']
 
         # Tower
         if self.modeling_options['flags']['tower']:
-            self.modeling_options['tower']['n_height']  = len(self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid'])
-            self.modeling_options['tower']['n_layers']  = len(self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'])
+            self.modeling_options['TowerSE']['n_height']  = len(self.wt_init['components']['tower']['outer_shape_bem']['outer_diameter']['grid'])
+            self.modeling_options['TowerSE']['n_layers']  = len(self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'])
 
         # Monopile
         self.modeling_options['monopile'] = {}
@@ -296,22 +294,22 @@ class WindTurbineOntologyPython(object):
         # If not an optimization DV, then the number of points should be same as the discretization
         blade_opt_options = self.analysis_options['optimization_variables']['blade']
         if not blade_opt_options['aero_shape']['twist']['flag']:
-            blade_opt_options['aero_shape']['twist']['n_opt'] = self.modeling_options['rotorse']['n_span']
+            blade_opt_options['aero_shape']['twist']['n_opt'] = self.modeling_options['RotorSE']['n_span']
         elif blade_opt_options['aero_shape']['twist']['n_opt'] < 4:
                 raise ValueError('Cannot optimize twist with less than 4 control points along blade span')
 
         if not blade_opt_options['aero_shape']['chord']['flag']:
-            blade_opt_options['aero_shape']['chord']['n_opt'] = self.modeling_options['rotorse']['n_span']
+            blade_opt_options['aero_shape']['chord']['n_opt'] = self.modeling_options['RotorSE']['n_span']
         elif blade_opt_options['aero_shape']['chord']['n_opt'] < 4:
                 raise ValueError('Cannot optimize chord with less than 4 control points along blade span')
 
         if not blade_opt_options['structure']['spar_cap_ss']['flag']:
-            blade_opt_options['structure']['spar_cap_ss']['n_opt'] = self.modeling_options['rotorse']['n_span']
+            blade_opt_options['structure']['spar_cap_ss']['n_opt'] = self.modeling_options['RotorSE']['n_span']
         elif blade_opt_options['structure']['spar_cap_ss']['n_opt'] < 4:
                 raise ValueError('Cannot optimize spar cap suction side with less than 4 control points along blade span')
 
         if not blade_opt_options['structure']['spar_cap_ps']['flag']:
-            blade_opt_options['structure']['spar_cap_ps']['n_opt'] = self.modeling_options['rotorse']['n_span']
+            blade_opt_options['structure']['spar_cap_ps']['n_opt'] = self.modeling_options['RotorSE']['n_span']
         elif blade_opt_options['structure']['spar_cap_ps']['n_opt'] < 4:
                 raise ValueError('Cannot optimize spar cap pressure side with less than 4 control points along blade span')
 
@@ -340,7 +338,7 @@ class WindTurbineOntologyPython(object):
             # Reference axis from blade outer shape
             self.wt_init['components']['blade']['internal_structure_2d_fem']['reference_axis'] = self.wt_init['components']['blade']['outer_shape_bem']['reference_axis']
             # Webs positions
-            for i in range(self.modeling_options['blade']['n_webs']):
+            for i in range(self.modeling_options['RotorSE']['n_webs']):
                 if 'rotation' in self.wt_init['components']['blade']['internal_structure_2d_fem']['webs']:
                     self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'][i]['rotation']['grid']   = wt_opt['blade.internal_structure_2d_fem.s'].tolist()
                     self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'][i]['rotation']['values'] = wt_opt['blade.internal_structure_2d_fem.web_rotation'][i,:].tolist()
@@ -356,7 +354,7 @@ class WindTurbineOntologyPython(object):
                 self.wt_init['components']['blade']['internal_structure_2d_fem']['webs'][i]['end_nd_arc']['values']   = wt_opt['blade.internal_structure_2d_fem.web_end_nd'][i,:].tolist()
 
             # Structural layers
-            for i in range(self.modeling_options['blade']['n_layers']):
+            for i in range(self.modeling_options['RotorSE']['n_layers']):
                 self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['blade.internal_structure_2d_fem.s'].tolist()
                 self.wt_init['components']['blade']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = wt_opt['blade.ps.layer_thickness_param'][i,:].tolist()
                 if wt_opt['blade.internal_structure_2d_fem.definition_layer'][i] < 7:
@@ -393,7 +391,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['stiff_matrix'] = {}
             self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['stiff_matrix']['grid'] = wt_opt['blade.outer_shape_bem.s'].tolist()
             K = []
-            for i in range(self.modeling_options['blade']['n_span']):
+            for i in range(self.modeling_options['RotorSE']['n_span']):
                 Ki = np.zeros(21)
                 Ki[11] = wt_opt['re.EA'][i]
                 Ki[15] = wt_opt['re.EIxx'][i]
@@ -404,7 +402,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['inertia_matrix'] = {}
             self.wt_init['components']['blade']['elastic_properties_mb']['six_x_six']['inertia_matrix']['grid'] = wt_opt['blade.outer_shape_bem.s'].tolist()
             I = []
-            for i in range(self.modeling_options['blade']['n_span']):
+            for i in range(self.modeling_options['RotorSE']['n_span']):
                 Ii = np.zeros(21)
                 Ii[0]  = wt_opt['re.rhoA'][i]
                 Ii[5]  = - wt_opt['re.rhoA'][i] * wt_opt['re.precomp.y_cg'][i]
@@ -456,7 +454,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['nacelle']['drivetrain']['lss_material']              = wt_opt['nacelle.lss_material']
             self.wt_init['components']['nacelle']['drivetrain']['bedplate_material']         = wt_opt['nacelle.bedplate_material']
 
-            if self.modeling_options['drivetrainse']['direct']:
+            if self.modeling_options['DriveSE']['direct']:
                 # Direct only
                 s_nose = np.linspace(0.0, 1.0, len(wt_opt['nacelle.nose_diameter'])).tolist()
                 s_bed  = np.linspace(0.0, 1.0, len(wt_opt['nacelle.bedplate_wall_thickness'])).tolist()
@@ -575,7 +573,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['y']['values']   = wt_opt['tower.ref_axis'][:,1].tolist()
             self.wt_init['components']['tower']['outer_shape_bem']['reference_axis']['z']['values']   = wt_opt['tower.ref_axis'][:,2].tolist()
             self.wt_init['components']['tower']['internal_structure_2d_fem']['outfitting_factor']     = float( wt_opt['tower.outfitting_factor'] )
-            for i in range(self.modeling_options['tower']['n_layers']):
+            for i in range(self.modeling_options['TowerSE']['n_layers']):
                 self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['grid']      = wt_opt['tower_grid.s'].tolist()
                 self.wt_init['components']['tower']['internal_structure_2d_fem']['layers'][i]['thickness']['values']    = np.hstack((wt_opt['tower.layer_thickness'][i,:], wt_opt['tower.layer_thickness'][i,-1])).tolist()
 

@@ -24,8 +24,8 @@ class TestRegression(unittest.TestCase):
         fname_wt_input         = test_dir + 'IEA-15-240-RWT.yaml'
         wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
-        self.assertAlmostEqual(wt_opt['elastic.precomp.blade_mass'][0], 73310.0985877902, 1)
-        self.assertAlmostEqual(wt_opt['sse.AEP'][0]*1.e-6, 78.0371305939, 1)
+        self.assertAlmostEqual(wt_opt['re.precomp.blade_mass'][0], 73310.0985877902, 1)
+        self.assertAlmostEqual(wt_opt['rp.AEP'][0]*1.e-6, 78.0371305939, 1)
         self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 73.31802279483122, 1)
 
 def suite():

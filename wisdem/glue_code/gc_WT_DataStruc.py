@@ -44,7 +44,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Blade inputs and connections from airfoils
         if modeling_options['flags']['blade']:
-            self.add_subsystem('blade',         Blade(blade_init_options   = modeling_options['blade'], af_init_options   = modeling_options['airfoils'], opt_options = opt_options))
+            self.add_subsystem('blade',         Blade(blade_init_options   = modeling_options['RotorSE'], af_init_options   = modeling_options['airfoils'], opt_options = opt_options))
             self.connect('airfoils.name',    'blade.interp_airfoils.name')
             self.connect('airfoils.r_thick', 'blade.interp_airfoils.r_thick')
             self.connect('airfoils.coord_xy','blade.interp_airfoils.coord_xy')
@@ -82,7 +82,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             nacelle_ivc.add_discrete_output('hss_material', val='steel',             desc='Material name identifier for the high speed shaft')
             nacelle_ivc.add_discrete_output('bedplate_material', val='steel',        desc='Material name identifier for the bedplate')
 
-            if modeling_options['drivetrainse']['direct']:
+            if modeling_options['DriveSE']['direct']:
                 # Direct only
                 nacelle_ivc.add_output('access_diameter',         val=0.0,         units='m',  desc='Minimum diameter for hollow shafts for maintenance access')
                 nacelle_ivc.add_output('nose_diameter',           val=np.zeros(2), units='m',  desc='Diameter of nose (also called turret or spindle)')
@@ -195,7 +195,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
             else:
                 # If using simple (regression) generator scaling, this is an optional input to override default values
-                n_pc = modeling_options['servose']['n_pc']
+                n_pc = modeling_options['RotorSE']['n_pc']
                 generator_ivc.add_output('generator_mass_user', val=0.0, units='kg')
                 generator_ivc.add_output('generator_efficiency_user', val=np.zeros((n_pc, 2)))
 
@@ -203,7 +203,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Tower inputs
         if modeling_options['flags']['tower']:
-            tower_init_options = modeling_options['tower']
+            tower_init_options = modeling_options['TowerSE']
             n_height           = tower_init_options['n_height']
             n_layers           = tower_init_options['n_layers']
             ivc = self.add_subsystem('tower', om.IndepVarComp())
@@ -1427,11 +1427,11 @@ class WT_Assembly(om.ExplicitComponent):
         modeling_options = self.options['modeling_options']
 
         if modeling_options['flags']['blade']:
-            n_span = modeling_options['blade']['n_span']
+            n_span = modeling_options['RotorSE']['n_span']
         else:
             n_span = 0
         if modeling_options['flags']['tower']:
-            n_height           = modeling_options['tower']['n_height']
+            n_height           = modeling_options['TowerSE']['n_height']
         else:
             n_height = 0
             

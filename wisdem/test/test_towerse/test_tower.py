@@ -22,31 +22,31 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options['flags'] = {}
         self.modeling_options['flags']['monopile'] = False
 
-        self.modeling_options['tower'] = {}
-        self.modeling_options['tower']['buckling_length'] = 30.0
-        self.modeling_options['tower']['n_height'] = 3
-        self.modeling_options['tower']['n_layers'] = 1
-        self.modeling_options['tower']['wind'] = 'PowerWind'
-        self.modeling_options['tower']['nLC'] = 1
+        self.modeling_options['TowerSE'] = {}
+        self.modeling_options['TowerSE']['buckling_length'] = 30.0
+        self.modeling_options['TowerSE']['n_height'] = 3
+        self.modeling_options['TowerSE']['n_layers'] = 1
+        self.modeling_options['TowerSE']['wind'] = 'PowerWind'
+        self.modeling_options['TowerSE']['nLC'] = 1
 
-        self.modeling_options['tower']['gamma_f'] = 1.0
-        self.modeling_options['tower']['gamma_m'] = 1.0
-        self.modeling_options['tower']['gamma_n'] = 1.0
-        self.modeling_options['tower']['gamma_b'] = 1.0
-        self.modeling_options['tower']['gamma_fatigue'] = 1.0
+        self.modeling_options['TowerSE']['gamma_f'] = 1.0
+        self.modeling_options['TowerSE']['gamma_m'] = 1.0
+        self.modeling_options['TowerSE']['gamma_n'] = 1.0
+        self.modeling_options['TowerSE']['gamma_b'] = 1.0
+        self.modeling_options['TowerSE']['gamma_fatigue'] = 1.0
 
         # Simplified the options available to the user
-        self.modeling_options['tower']['frame3dd']            = {}
-        #self.modeling_options['tower']['frame3dd']['DC']      = 80.0
-        self.modeling_options['tower']['frame3dd']['shear']   = True
-        self.modeling_options['tower']['frame3dd']['geom']    = True
-        #self.modeling_options['tower']['frame3dd']['dx']      = -1
-        #self.modeling_options['tower']['frame3dd']['nM']      = 6
-        #self.modeling_options['tower']['frame3dd']['Mmethod'] = 1
-        #self.modeling_options['tower']['frame3dd']['lump']    = 0
-        self.modeling_options['tower']['frame3dd']['tol']     = 1e-9
-        #self.modeling_options['tower']['frame3dd']['shift']   = 0.0
-        #self.modeling_options['tower']['frame3dd']['add_gravity'] = True
+        self.modeling_options['TowerSE']['frame3dd']            = {}
+        #self.modeling_options['TowerSE']['frame3dd']['DC']      = 80.0
+        self.modeling_options['TowerSE']['frame3dd']['shear']   = True
+        self.modeling_options['TowerSE']['frame3dd']['geom']    = True
+        #self.modeling_options['TowerSE']['frame3dd']['dx']      = -1
+        #self.modeling_options['TowerSE']['frame3dd']['nM']      = 6
+        #self.modeling_options['TowerSE']['frame3dd']['Mmethod'] = 1
+        #self.modeling_options['TowerSE']['frame3dd']['lump']    = 0
+        self.modeling_options['TowerSE']['frame3dd']['tol']     = 1e-9
+        #self.modeling_options['TowerSE']['frame3dd']['shift']   = 0.0
+        #self.modeling_options['TowerSE']['frame3dd']['add_gravity'] = True
 
         self.modeling_options['monopile'] = {}
         self.modeling_options['monopile']['n_height'] = 0
@@ -702,7 +702,7 @@ class TestTowerSE(unittest.TestCase):
         d_param = np.array([10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 9.92647687, 9.44319282, 8.83283769, 8.15148167, 7.38976138, 6.90908962, 6.74803581, 6.57231775, 6.5])
         t_param = np.array([0.05534138, 0.05344902, 0.05150928, 0.04952705, 0.04751736, 0.04551709, 0.0435267, 0.04224176, 0.04105759, 0.0394965, 0.03645589, 0.03377851, 0.03219233, 0.03070819, 0.02910109, 0.02721289, 0.02400931, 0.0208264, 0.02399756])
 
-        self.modeling_options['tower']['n_height'] = len(d_param)
+        self.modeling_options['TowerSE']['n_height'] = len(d_param)
         
         prob = om.Problem()
         prob.model = tow.TowerSE(modeling_options=self.modeling_options)
@@ -841,21 +841,21 @@ class TestTowerSE(unittest.TestCase):
         life = 20.0
         # ---------------
 
-        self.modeling_options['tower']['n_height'] = len(d_param)
-        self.modeling_options['tower']['n_layers'] = 1
-        self.modeling_options['tower']['nLC'] = 2
-        self.modeling_options['tower']['gamma_f'] = 1.35
-        self.modeling_options['tower']['gamma_m'] = 1.3
-        self.modeling_options['tower']['gamma_n'] = 1.0
-        self.modeling_options['tower']['gamma_b'] = 1.1
-        self.modeling_options['tower']['gamma_fatigue'] = 1.35*1.3*1.0
+        self.modeling_options['TowerSE']['n_height'] = len(d_param)
+        self.modeling_options['TowerSE']['n_layers'] = 1
+        self.modeling_options['TowerSE']['nLC'] = 2
+        self.modeling_options['TowerSE']['gamma_f'] = 1.35
+        self.modeling_options['TowerSE']['gamma_m'] = 1.3
+        self.modeling_options['TowerSE']['gamma_n'] = 1.0
+        self.modeling_options['TowerSE']['gamma_b'] = 1.1
+        self.modeling_options['TowerSE']['gamma_fatigue'] = 1.35*1.3*1.0
 
 
         prob = om.Problem()
         prob.model = tow.TowerSE(modeling_options=self.modeling_options)
         prob.setup()
 
-        if self.modeling_options['tower']['wind'] == 'PowerWind':
+        if self.modeling_options['TowerSE']['wind'] == 'PowerWind':
             prob['shearExp'] = shearExp
 
         # assign values to params

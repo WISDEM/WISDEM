@@ -42,9 +42,9 @@ class TestOC3Mass(unittest.TestCase):
         opt['platform']['gamma_fatigue'] = 1.755 # Not used
         opt['platform']['run_modal'] = True # Not used
 
-        opt['tower'] = {}
-        opt['tower']['n_height'] = npts
-        opt['tower']['n_layers'] = 1
+        opt['TowerSE'] = {}
+        opt['TowerSE']['n_height'] = npts
+        opt['TowerSE']['n_layers'] = 1
         opt['materials'] = {}
         opt['materials']['n_mat'] = 1
 
@@ -162,7 +162,7 @@ class TestOC3Mass(unittest.TestCase):
         prob['zref'] = 100.0
 
         # Porperties of turbine tower
-        nTower = prob.model.options['modeling_options']['tower']['n_height']-1
+        nTower = prob.model.options['modeling_options']['TowerSE']['n_height']-1
         prob['tower_height']            = prob['hub_height'] = 77.6
         prob['tower_s']                 = np.linspace(0.0, 1.0, nTower+1)
         prob['tower_outer_diameter_in'] = np.linspace(6.5, 3.87, nTower+1)

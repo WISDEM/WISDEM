@@ -48,10 +48,10 @@ class WT_RNTA(om.Group):
             self.add_subsystem('towerse',   TowerSE(modeling_options=modeling_options))
         if modeling_options['flags']['blade'] and modeling_options['flags']['tower']:
             self.add_subsystem('tcons',     TurbineConstraints(modeling_options = modeling_options))
-        self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=modeling_options['general']['verbosity']))
+        self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=modeling_options['General']['verbosity']))
 
         if modeling_options['flags']['blade']:
-            n_span  = modeling_options['blade']['n_span']
+            n_span  = modeling_options['RotorSE']['n_span']
             
             # Conncetions to ccblade
             self.connect('blade.pa.chord_param',            'ccblade.chord')
@@ -292,7 +292,7 @@ class WT_RNTA(om.Group):
             self.connect('nacelle.mb2Type',                   'drivese.bear2.bearing_type')
             self.connect('nacelle.lss_diameter',              'drivese.lss_diameter')
             self.connect('nacelle.lss_wall_thickness',        'drivese.lss_wall_thickness')
-            if modeling_options['drivetrainse']['direct']:
+            if modeling_options['DriveSE']['direct']:
                 self.connect('nacelle.nose_diameter',              'drivese.bear1.D_shaft', src_indices=[0])
                 self.connect('nacelle.nose_diameter',              'drivese.bear2.D_shaft', src_indices=[-1])
             else:
@@ -304,7 +304,7 @@ class WT_RNTA(om.Group):
             self.connect('nacelle.converter_mass_user',       'drivese.converter_mass_user')
             self.connect('nacelle.transformer_mass_user',     'drivese.transformer_mass_user')
 
-            if modeling_options['drivetrainse']['direct']:
+            if modeling_options['DriveSE']['direct']:
                 self.connect('nacelle.access_diameter',           'drivese.access_diameter') # only used in direct
                 self.connect('nacelle.nose_diameter',             'drivese.nose_diameter') # only used in direct
                 self.connect('nacelle.nose_wall_thickness',       'drivese.nose_wall_thickness') # only used in direct
@@ -418,7 +418,7 @@ class WT_RNTA(om.Group):
                     self.connect('generator.B_symax'      , 'drivese.generator.B_symax')
                     self.connect('generator.S_Nmax'      , 'drivese.generator.S_Nmax')
 
-                if modeling_options['drivetrainse']['direct']:
+                if modeling_options['DriveSE']['direct']:
                     self.connect('nacelle.nose_diameter',             'drivese.generator.D_nose', src_indices=[-1])
                     self.connect('nacelle.lss_diameter',              'drivese.generator.D_shaft', src_indices=[0])
                 else:
@@ -556,21 +556,21 @@ class WindPark(om.Group):
         opt_options     = self.options['opt_options']
 
         self.add_subsystem('wt',        WT_RNTA(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
-        if modeling_options['Analysis_Flags']['BOS']:
+        if modeling_options['BOS']['flag']:
             if modeling_options['flags']['monopile'] == True or modeling_options['flags']['floating_platform'] == True:
                 self.add_subsystem('orbit',     Orbit(floating=modeling_options['flags']['floating_platform']))
             else:
                 self.add_subsystem('landbosse', LandBOSSE())
 
         if modeling_options['flags']['blade']:
-            self.add_subsystem('financese', PlantFinance(verbosity=modeling_options['general']['verbosity']))
+            self.add_subsystem('financese', PlantFinance(verbosity=modeling_options['General']['verbosity']))
             self.add_subsystem('outputs_2_screen',  Outputs_2_Screen(modeling_options = modeling_options, opt_options = opt_options))
         
         if opt_options['opt_flag'] and opt_options['recorder']['flag']:
             self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = opt_options))
 
         # BOS inputs
-        if modeling_options['Analysis_Flags']['BOS']:
+        if modeling_options['BOS']['flag']:
             if modeling_options['flags']['offshore']:
                 # Inputs into ORBIT
                 self.connect('configuration.rated_power',             'orbit.turbine_rating')

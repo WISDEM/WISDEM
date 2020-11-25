@@ -45,9 +45,9 @@ opt['platform']['run_modal'] = True # Not used
 opt['flags'] = {}
 opt['flags']['monopile'] = False
 
-opt['tower'] = {}
-opt['tower']['n_height'] = npts
-opt['tower']['n_layers'] = 1
+opt['TowerSE'] = {}
+opt['TowerSE']['n_height'] = npts
+opt['TowerSE']['n_layers'] = 1
 opt['materials'] = {}
 opt['materials']['n_mat'] = 1
 

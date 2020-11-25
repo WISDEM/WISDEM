@@ -122,11 +122,11 @@ class DrivetrainSE(om.Group):
         self.options.declare('n_dlcs')
 
     def setup(self):
-        opt = self.options['modeling_options']['drivetrainse']
+        opt = self.options['modeling_options']['DriveSE']
         n_dlcs   = self.options['n_dlcs']
         direct   = opt['direct']
         dogen    = self.options['modeling_options']['flags']['generator']
-        n_pc     = self.options['modeling_options']['servose']['n_pc']
+        n_pc     = self.options['modeling_options']['RotorSE']['n_pc']
 
         self.set_input_defaults('machine_rating', units='kW')
         self.set_input_defaults('planet_numbers', [3, 3, 0])

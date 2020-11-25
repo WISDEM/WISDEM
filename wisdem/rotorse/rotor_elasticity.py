@@ -16,7 +16,7 @@ class RunPreComp(ExplicitComponent):
         self.options.declare('opt_options')
 
     def setup(self):
-        blade_init_options = self.options['modeling_options']['blade']
+        blade_init_options = self.options['modeling_options']['RotorSE']
         self.n_span        = n_span    = blade_init_options['n_span']
         self.n_webs        = n_webs    = blade_init_options['n_webs']
         self.n_layers      = n_layers  = blade_init_options['n_layers']
@@ -24,7 +24,7 @@ class RunPreComp(ExplicitComponent):
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         mat_init_options = self.options['modeling_options']['materials']
         self.n_mat = n_mat = mat_init_options['n_mat']
-        self.verbosity     = self.options['modeling_options']['general']['verbosity']
+        self.verbosity     = self.options['modeling_options']['General']['verbosity']
 
         opt_options   = self.options['opt_options']
         self.te_ss_var   = opt_options['optimization_variables']['blade']['structure']['te_ss']['name']
@@ -223,8 +223,8 @@ class RunPreComp(ExplicitComponent):
             return sec
             ##############################
 
-        layer_name = self.options['modeling_options']['blade']['layer_name']
-        layer_mat  = self.options['modeling_options']['blade']['layer_mat']        
+        layer_name = self.options['modeling_options']['RotorSE']['layer_name']
+        layer_mat  = self.options['modeling_options']['RotorSE']['layer_mat']        
 
         upperCS = [None]*self.n_span
         lowerCS = [None]*self.n_span
