@@ -11,10 +11,7 @@ jobs:
       # Fail-fast set to false lets the jobs across platforms continue even if one fails
       fail-fast: true
       matrix:
-        # Operating systems
         os: [ubuntu-latest, windows-latest]
-        # Python versions
-        python-version: 3.8
       
     steps:
     - uses: actions/checkout@v2
