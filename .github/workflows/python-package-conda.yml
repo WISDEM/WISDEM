@@ -28,11 +28,10 @@ jobs:
         #uses: conda-incubator/setup-miniconda@v1 
         uses: s-weigand/setup-conda@v1
         with:
-          auto-update-conda: true
+          update-conda: true
+          activate-conda: true
           python-version: ${{ matrix.python-version }}
           conda-channels: anaconda, conda-forge
-      - run: conda --version
-      - run: which python
       
       # Install setup common across platforms
       - name: Setup conda parameters
@@ -40,6 +39,7 @@ jobs:
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
           conda config --add channels conda-forge
+          conda info -a
       
       # Install dependencies of WISDEM common across platforms
       - name: Install dependencies
@@ -47,7 +47,7 @@ jobs:
           conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 swig
           pip install simpy marmot-agents
       
-      # Install dependencies of WISDEM specific to ubuntu (not with compilers)
+      # Install dependencies of WISDEM specific to ubuntu
       - name: Add dependendencies ubuntu specific
         if: contains( matrix.os, 'ubuntu')
         run: |
