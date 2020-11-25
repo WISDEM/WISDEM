@@ -31,21 +31,34 @@ jobs:
     - name: Add dependendencies windows specific
       if: contains( matrix.os, 'windows')
       run: |
-        $CONDA\bin\conda config --add channels conda-forge
-        $CONDA\bin\conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 m2w64-toolchain libpython
-        $CONDA\bin\pip install simpy marmot-agents
+        C:\Miniconda\condabin\conda.bat init powershell
+        C:\Miniconda\condabin\conda.bat config --add channels conda-forge
+        C:\Miniconda\condabin\conda.bat install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 m2w64-toolchain libpython
+        C:\Miniconda\condabin\pip.bat install simpy marmot-agents
 
     #- name: Setup tmate session
     #  # Debugging session
     #  uses: mxschmitt/action-tmate@v3
         
-    - name: Install WISDEM
+    - name: Install WISDEM ubuntu
+      if: contains( matrix.os, 'ubuntu')
       run: |
         $CONDA/bin/python setup.py develop
         
-    - name: Test with pytest
+    - name: Test with pytest ubuntu
+      if: contains( matrix.os, 'ubuntu')
       run: |
         $CONDA/bin/pytest --cov-config=.coverageac --cov=wisdem
+        
+    - name: Install WISDEM windows
+      if: contains( matrix.os, 'windows')
+      run: |
+        C:\Miniconda\condabin\python.bat setup.py develop
+        
+    - name: Test with pytest windows
+      if: contains( matrix.os, 'windows')
+      run: |
+        C:\Miniconda\condabin\pytest.bat .
         
     #- name: Set coverage
     #  if: contains( matrix.os, 'ubuntu')
