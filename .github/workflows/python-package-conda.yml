@@ -44,7 +44,7 @@ jobs:
       # Install dependencies of WISDEM common across platforms
       - name: Install dependencies
         run: |
-          conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2
+          conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 swig
           pip install simpy marmot-agents
       
       # Install dependencies of WISDEM specific to ubuntu (not with compilers)
