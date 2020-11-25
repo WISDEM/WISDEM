@@ -7,74 +7,18 @@ outputted yaml files. This script runs an instance of WISDEM for each yaml
 file then produces plots and text output comparing the designs and performance.
 You can modify the yaml files being compared, as well as which values are plotted
 and printed to screen.
+
+See the bottom of this file for some user customization options.
 """
 
+import os
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from wisdem.glue_code.runWISDEM import run_wisdem
-import os
 
 
-# Set the filenames for the comparison. `yaml_filenames` is a list of the
-# yamls you want to compare. `list_of_yaml_labels` are the labels corresponding
-# to the yaml files that will appear on the outputted plots.
-run_dir = os.path.dirname(os.path.realpath(__file__)) + os.sep
-fname_wt_input1 = run_dir + "blade.yaml"
-fname_wt_input2 = run_dir + "outputs_aero" + os.sep + "blade_out.yaml"
-yaml_filenames = [fname_wt_input1, fname_wt_input2]
-list_of_yaml_labels = ["Initial", "Optimized"]
-
-# These are the modeling and analysis options used to evaluate the designs.
-# Both of these yaml files are used for all yamls to make a fair comparison.
-fname_modeling_options = run_dir + "modeling_options.yaml"
-fname_analysis_options = run_dir + "analysis_options_no_opt.yaml"
-
-# These are options for the plotting and saving
-show_plots = False  # if True, print plots to screen in addition to saving files
-font_size = 12
-extension = ".png"  # '.pdf'
-folder_output = 'outputs'
-
-# These are the values to print to screen for text-based output.
-# The dictionary keys are the value names.
-# The first string in the list is where that value exists in the WISDEM problem,
-# the second string is the units to print the value in,
-# and the optional third string is the multiplicative scalar on the value to be printed.
-values_to_print = {
-    "AEP": ["sse.AEP", "GW*h"],
-    "Blade mass": ["elastic.precomp.blade_mass", "kg"],
-    "LCOE": ["financese.lcoe", "USD/(MW*h)"],
-    "Cp": ["sse.powercurve.Cp_aero", None],
-    "Blade cost": ["elastic.precomp.total_blade_cost", "USD"],
-    "Tip defl ratio": ["tcons.tip_deflection_ratio", None],
-    "Flap freqs": ["rlds.frame.flap_mode_freqs", "Hz"],
-    "Edge freqs": ["rlds.frame.edge_mode_freqs", "Hz"],
-    "3P freq": ["sse.powercurve.rated_Omega", None, 3.0 / 60],
-    "6P freq": ["sse.powercurve.rated_Omega", None, 6.0 / 60],
-    "Hub forces": ["rlds.aero_hub_loads.Fxyz_hub_aero", "kN"],
-    "Hub moments": ["rlds.aero_hub_loads.Mxyz_hub_aero", "kN*m"],
-}
-
-# Generally it's not necessary to change the code below here, unless you
-# want to plot additional values
-
-# Create the output folder if it doesn't exist
-if not os.path.exists(folder_output):
-    os.makedirs(folder_output)
-
-# Run WISDEM for each yaml file to compare using the modeling and analysis
-# options set above
-print()
-list_of_yamls = []
-for yaml_filename in yaml_filenames:
-    print(f"Running WISDEM for {yaml_filename}.")
-    wt_opt, modeling_options, analysis_options = run_wisdem(
-        yaml_filename, fname_modeling_options, fname_analysis_options
-    )
-    list_of_yamls.append(wt_opt)
-
-
-def create_all_plots():
+def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analysis_options, folder_output, show_plots, font_size, extension):
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
     # Twist
@@ -470,7 +414,7 @@ def create_all_plots():
         plt.show()
 
 
-def print_results_to_screen():
+def print_results_to_screen(list_of_yamls, list_of_yaml_labels, values_to_print):
     list_of_labels = []
     max_label_length = 1
     for label in list_of_yaml_labels:
@@ -523,7 +467,7 @@ def print_results_to_screen():
     print()
 
 
-def save_lcoe_data_to_file():
+def save_lcoe_data_to_file(list_of_yamls, folder_output):
     lcoe_data = np.zeros((8, len(list_of_yamls)))
     for idx, yaml_data in enumerate(list_of_yamls):
         lcoe_data[0, idx] = yaml_data["financese.turbine_number"]
@@ -538,6 +482,86 @@ def save_lcoe_data_to_file():
     np.savetxt(os.path.join(folder_output, "lcoe.dat"), lcoe_data)
 
 
-print_results_to_screen()
-save_lcoe_data_to_file()
-create_all_plots()
+def main():
+    # Called only if this script is run as main.
+    
+    # Set the filenames for the comparison. `yaml_filenames` is a list of the
+    # yamls you want to compare. `list_of_yaml_labels` are the labels corresponding
+    # to the yaml files that will appear on the outputted plots.
+    this_dir = os.path.dirname(os.path.realpath(__file__))
+
+    # These are the modeling and analysis options used to evaluate the designs.
+    # Both of these yaml files are used for all yamls to make a fair comparison.
+    fname_modeling_options = this_dir + os.sep + "default_modeling_options.yaml"
+    fname_analysis_options = this_dir + os.sep + "default_analysis_options.yaml"
+
+    # ======================================================================
+    # Input Information
+    # ======================================================================
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "yaml_files", nargs="*", type=str, help="Specify the yaml filenames to be compared."
+    )
+    parser.add_argument("--modeling_options", nargs="?", type=str, default=fname_modeling_options, help="Specify the modeling options yaml.")
+    parser.add_argument("--analysis_options", nargs="?", type=str, default=fname_analysis_options, help="Specify the analysis options yaml.")
+    parser.add_argument("--labels", nargs="*", type=str, default=None, help="Specify the labels for the yaml files.")
+
+    args = parser.parse_args()
+    yaml_filenames = args.yaml_files
+    modeling_options = args.modeling_options
+    analysis_options = args.analysis_options
+    list_of_yaml_labels = args.labels
+    if list_of_yaml_labels is None:
+        list_of_yaml_labels = [f"yaml_{idx}" for idx in range(len(yaml_filenames))]
+    
+    # These are options for the plotting and saving
+    show_plots = False  # if True, print plots to screen in addition to saving files
+    font_size = 12
+    extension = ".png"  # '.pdf'
+    folder_output = 'outputs'
+
+    # These are the values to print to screen for text-based output.
+    # The dictionary keys are the value names.
+    # The first string in the list is where that value exists in the WISDEM problem,
+    # the second string is the units to print the value in,
+    # and the optional third string is the multiplicative scalar on the value to be printed.
+    values_to_print = {
+        "AEP": ["sse.AEP", "GW*h"],
+        "Blade mass": ["elastic.precomp.blade_mass", "kg"],
+        "LCOE": ["financese.lcoe", "USD/(MW*h)"],
+        "Cp": ["sse.powercurve.Cp_aero", None],
+        "Blade cost": ["elastic.precomp.total_blade_cost", "USD"],
+        "Tip defl ratio": ["tcons.tip_deflection_ratio", None],
+        "Flap freqs": ["rlds.frame.flap_mode_freqs", "Hz"],
+        "Edge freqs": ["rlds.frame.edge_mode_freqs", "Hz"],
+        "3P freq": ["sse.powercurve.rated_Omega", None, 3.0 / 60],
+        "6P freq": ["sse.powercurve.rated_Omega", None, 6.0 / 60],
+        "Hub forces": ["rlds.aero_hub_loads.Fxyz_hub_aero", "kN"],
+        "Hub moments": ["rlds.aero_hub_loads.Mxyz_hub_aero", "kN*m"],
+    }
+
+    # Generally it's not necessary to change the code below here, unless you
+    # want to plot additional values
+
+    # Create the output folder if it doesn't exist
+    if not os.path.exists(folder_output):
+        os.makedirs(folder_output)
+
+    # Run WISDEM for each yaml file to compare using the modeling and analysis
+    # options set above
+    list_of_yamls = []
+    for yaml_filename in yaml_filenames:
+        print()
+        print(f"Running WISDEM for {yaml_filename}.")
+        wt_opt, modeling_options, analysis_options = run_wisdem(
+            yaml_filename, fname_modeling_options, fname_analysis_options
+        )
+        list_of_yamls.append(wt_opt)
+    
+    # Call the functions to print, save, and plot results
+    print_results_to_screen(list_of_yamls, list_of_yaml_labels, values_to_print)
+    save_lcoe_data_to_file(list_of_yamls, folder_output)
+    create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analysis_options, folder_output, show_plots, font_size, extension)
+
+if __name__ == "__main__":
+    main()
