@@ -1,8 +1,11 @@
-name: Python Package using Conda
+name: CI_WISDEM
 
+# We run CI on push commits and pull requests on master and develop branches
 on: [push, pull_request]
 
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+  # This workflow contains a single build
   build:
     name: Compile and run examples
     # We run the script on a matrix of operating systems and python versions
@@ -11,66 +14,67 @@ jobs:
       # Fail-fast set to false lets the jobs across platforms continue even if one fails
       fail-fast: true
       matrix:
+        # Operating systems
         os: [ubuntu-latest, windows-latest]
-      
+        # Python versions
+        python-version: [3.7, 3.8]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.8
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
+      # Checks-out the repository under $GITHUB_WORKSPACE, so that the job can access it
+      - uses: actions/checkout@v2
+      # GitHub Actions sintax to setup a conda environment (do not change) #
+      - name: Setup conda
+        #uses: conda-incubator/setup-miniconda@v1 
+        uses: s-weigand/setup-conda@v1
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          conda-channels: anaconda, conda-forge
+      - run: conda --version
+      - run: which python
       
-    - name: Add dependendencies ubuntu specific
-      if: contains( matrix.os, 'ubuntu')
-      run: |
-        $CONDA/bin/conda config --add channels conda-forge
-        $CONDA/bin/conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 compilers petsc4py mpi4py 
-        $CONDA/bin/pip install simpy marmot-agents
+      # Install setup common across platforms
+      - name: Setup conda parameters
+        run: |
+          conda config --set always_yes yes --set changeps1 no
+          conda update -q conda
+          conda config --add channels conda-forge
       
-    - name: Add dependendencies windows specific
-      if: contains( matrix.os, 'windows')
-      run: |
-        C:\Miniconda\condabin\conda.bat init powershell
-        C:\Miniconda\condabin\conda.bat config --add channels conda-forge
-        C:\Miniconda\condabin\conda.bat install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 m2w64-toolchain libpython
-        C:\Miniconda\condabin\pip.bat install simpy marmot-agents
+      # Install dependencies of WISDEM common across platforms
+      - name: Install dependencies
+        run: |
+          conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2
+          pip install simpy marmot-agents
+      
+      # Install dependencies of WISDEM specific to ubuntu (not with compilers)
+      - name: Add dependendencies ubuntu specific
+        if: contains( matrix.os, 'ubuntu')
+        run: |
+          conda install -y compilers petsc4py mpi4py 
+      
+      # Install dependencies of WISDEM specific to windows
+      - name: Add dependendencies windows specific
+        if: contains( matrix.os, 'windows')
+        run: |
+          conda install -y m2w64-toolchain libpython
 
-    #- name: Setup tmate session
-    #  # Debugging session
-    #  uses: mxschmitt/action-tmate@v3
+      # Debugging session
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
         
-    - name: Install WISDEM ubuntu
-      if: contains( matrix.os, 'ubuntu')
-      run: |
-        $CONDA/bin/python setup.py develop
-        
-    - name: Test with pytest ubuntu
-      if: contains( matrix.os, 'ubuntu')
-      run: |
-        $CONDA/bin/pytest --cov-config=.coverageac --cov=wisdem
-        
-    - name: Install WISDEM windows
-      if: contains( matrix.os, 'windows')
-      run: |
-        C:\Miniconda\condabin\python.bat setup.py develop
-        
-    - name: Test with pytest windows
-      if: contains( matrix.os, 'windows')
-      run: |
-        C:\Miniconda\condabin\pytest.bat .
-        
-    #- name: Set coverage
-    #  if: contains( matrix.os, 'ubuntu')
-    #  run: |
-    #    # Run coveralls
-    #    $CONDA/bin/coveralls
-    
-    #- name: Lint with flake8
-    #  run: |
-    #    $CONDA/bin/conda install flake8
-    #    # stop the build if there are Python syntax errors or undefined names
-    #    $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-    #    # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-    #    $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
+      # Install WISDEM
+      - name: Install WISDEM
+        run: |
+          python setup.py develop
+      
+      # Run all tests
+      - name: Run tests
+        run: |
+          pytest --cov-config=.coverageac --cov=wisdem
+      
+      # Run coveralls
+      - name: Run tests
+        if: contains( matrix.os, 'ubuntu')
+        run: |
+          coveralls
