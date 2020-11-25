@@ -13,7 +13,7 @@ jobs:
         with:
           miniconda-version: "latest"
           channels: conda-forge
-          activate-environment: foo
+          auto-update-conda: true
           python-version: 3.8
       - name: Bash
         shell: bash -l {0}
@@ -56,7 +56,7 @@ jobs:
         with:
           miniconda-version: "latest"
           channels: conda-forge
-          activate-environment: foo
+          auto-update-conda: true
           python-version: 3.8
       - name: PowerShell
         shell: powershell
