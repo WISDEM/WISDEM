@@ -1,14 +1,19 @@
 """
-This file postprocesses results from WISDEM. Modify the relevant parameters
-in the first part of this file, then run the script.
+This file postprocesses results from WISDEM. This script is installed
+as a console script when WISDEM is installed.
 
 This script allows you to compare wind turbine designs via the
 outputted yaml files. This script runs an instance of WISDEM for each yaml
 file then produces plots and text output comparing the designs and performance.
 You can modify the yaml files being compared, as well as which values are plotted
 and printed to screen.
-
 See the bottom of this file for some user customization options.
+
+At a terminal, example usage is:
+
+compare_designs blade.yaml optimized_blade.yaml
+
+This will print results to screen, then create and save plots.
 """
 
 import os
