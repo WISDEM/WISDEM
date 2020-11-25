@@ -1,6 +1,15 @@
 name: 5MW with OC3 semisubmersible
 comments: NREL 5MW Offshore Reference Wind Turbine, modified for a more realisitic manufacturable blade with constant width spar caps, trailing edge reinforcement, and leading edge foam that wraps around the full LE w/o a gap -EMG
 
+assembly:
+    turbine_class: I
+    turbulence_class: B
+    drivetrain: Geared
+    rotor_orientation: Upwind
+    number_of_blades: 3
+    hub_height: 90.
+    rotor_diameter: 126.
+    rated_power: 5.e+6
 components:
     blade:
         outer_shape_bem:
@@ -172,8 +181,8 @@ components:
         cone_angle: 0.04363
         diameter: 3.0
         drag_coefficient: 0.5
-        hub_material: steel #cast_iron
-        spinner_material: CarbonUD
+        hub_material: cast_iron
+        spinner_material: glassDB
         flange_t2shell_t: 4.0
         flange_OD2hub_D: 0.5
         flange_ID2OD: 0.8
@@ -193,20 +202,12 @@ components:
             distance_hub2mb: 1.912
             distance_mb2mb: 0.368
             overhang: 5.
-            lss_diameter:
-              grid: [0.0, 1.0]
-              values: [0.577, 0.577]
-            lss_wall_thickness:
-              grid: [0.0, 1.0]
-              values: [0.288, 0.288]
+            lss_diameter: [0.577, 0.577]
+            lss_wall_thickness: [0.288, 0.288]
             generator_length: 2.0
             hss_length: 1.5
-            hss_diameter:
-              grid: [0.0, 1.0]
-              values: [0.288, 0.288]
-            hss_wall_thickness:
-              grid: [0.0, 1.0]
-              values: [0.144, 0.144]
+            hss_diameter: [0.288, 0.288]
+            hss_wall_thickness: [0.144, 0.144]
             bedplate_flange_width: 1.0
             bedplate_flange_thickness: 0.05
             bedplate_web_thickness: 0.05
@@ -217,8 +218,8 @@ components:
             mb1Type: CARB
             mb2Type: SRB
             uptower: True
-            lss_material: steel
-            hss_material: steel
+            lss_material: steel_drive
+            hss_material: steel_drive
             bedplate_material: steel
         generator:
             generator_type: DFIG
@@ -631,12 +632,6 @@ materials:
       Xc: 65.36e+006
       orth: 0
       unit_cost: 3.63
-assembly:
-    turbine_class: I
-    turbulence_class: B
-    drivetrain: Geared
-    rotor_orientation: Upwind
-    number_of_blades: 3
 control:
     supervisory:
         Vin: 3.0
