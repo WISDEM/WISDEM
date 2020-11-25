@@ -5,59 +5,28 @@ on: [push, pull_request]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single build
-  build:
-    name: Compile and run examples
-    # We run the script on a matrix of operating systems and python versions
-    runs-on: ${{ matrix.os }}
-    strategy:
-      # Fail-fast set to false lets the jobs across platforms continue even if one fails
-      fail-fast: true
-      matrix:
-        # Operating systems
-        os: [ubuntu-latest, windows-latest]
-        # Python versions
-        python-version: [3.8]
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+  build-linux:
+    name: Build Linux
+    runs-on: "ubuntu-latest"
     steps:
-      # Checks-out the repository under $GITHUB_WORKSPACE, so that the job can access it
-      - uses: actions/checkout@v2
-      # GitHub Actions sintax to setup a conda environment (do not change) #
-      - name: Setup conda
-        #uses: conda-incubator/setup-miniconda@v1 
-        uses: s-weigand/setup-conda@v1
+      - uses: conda-incubator/setup-miniconda@v2
         with:
-          update-conda: true
-          activate-conda: true
-          python-version: ${{ matrix.python-version }}
-          conda-channels: anaconda, conda-forge
-      
-      # Install setup common across platforms
-      - name: Setup conda parameters
+          miniconda-version: "latest"
+          channels: conda-forge
+          activate-environment: foo
+          python-version: 3.8
+      - name: Bash
+        shell: bash -l {0}
         run: |
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
           conda config --add channels conda-forge
           conda info -a
-      
-      # Install dependencies of WISDEM common across platforms
-      - name: Install dependencies
+      - name: Dependencies
+        shell: bash -l {0}
         run: |
-          conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 swig
+          conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 swig compilers petsc4py mpi4py 
           pip install simpy marmot-agents
-      
-      # Install dependencies of WISDEM specific to ubuntu
-      - name: Add dependendencies ubuntu specific
-        if: contains( matrix.os, 'ubuntu')
-        run: |
-          conda install -y petsc4py mpi4py 
-      
-      # Install dependencies of WISDEM specific to windows
-      - name: Add dependendencies windows specific
-        if: contains( matrix.os, 'windows')
-        run: |
-          conda install -y m2w64-toolchain libpython
 
       # Debugging session
       #- name: Setup tmate session
@@ -78,3 +47,40 @@ jobs:
         if: contains( matrix.os, 'ubuntu')
         run: |
           coveralls
+
+  build-win:
+    name: Build Windows
+    runs-on: "windows-latest"
+    steps:
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          channels: conda-forge
+          activate-environment: foo
+          python-version: 3.8
+      - name: PowerShell
+        shell: powershell
+        run: |
+          conda config --set always_yes yes --set changeps1 no
+          conda update -q conda
+          conda config --add channels conda-forge
+          conda info -a
+      - name: Dependencies
+        shell: powershell
+        run: |
+          conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 swig m2w64-toolchain libpython
+          pip install simpy marmot-agents
+
+      # Debugging session
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
+        
+      # Install WISDEM
+      - name: Install WISDEM
+        run: |
+          python setup.py develop
+      
+      # Run all tests
+      - name: Run tests
+        run: |
+          pytest .
