@@ -7,7 +7,6 @@ dependencies:
   - pytest
   - pytest-cov
   - coveralls
-  - pip
   - openmdao=3.4.0
   - jsonschema
   - ruamel_yaml
@@ -26,6 +25,11 @@ dependencies:
   - matplotlib
   - geopy
   - pyside2
+  - m2w64-toolchain
+  - libpython
   - compilers
   - petsc4py
   - mpi4py
+  - pip
+    - simpy
+    - marmot-agents

@@ -20,8 +20,8 @@ jobs:
         $CONDA/bin/conda config --add channels conda-forge
         #$CONDA/bin/conda install -q compilers matplotlib pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy geopy pyside2
         #$CONDA/bin/conda install -y petsc4py mpi4py 
+        #$CONDA/bin/pip install simpy marmot-agents
         $CONDA/bin/conda env update --file environment.yml --name base
-        $CONDA/bin/pip install simpy marmot-agents
     - name: Install WISDEM
       run: |
         $CONDA/bin/python setup.py develop
