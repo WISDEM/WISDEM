@@ -262,14 +262,14 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
     for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
         axeps.plot(
             yaml_data["blade.outer_shape_bem.s"],
-            yaml_data["rlds.frame.strainU_spar"] * 1.0e6,
+            yaml_data["rs.frame.strainU_spar"] * 1.0e6,
             "--",
             color=colors[idx],
             label=label,
         )
         axeps.plot(
             yaml_data["blade.outer_shape_bem.s"],
-            yaml_data["rlds.frame.strainL_spar"] * 1.0e6,
+            yaml_data["rs.frame.strainL_spar"] * 1.0e6,
             "--",
             color=colors[idx],
         )
@@ -322,7 +322,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
     for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
         axeff.plot(
             yaml_data["blade.outer_shape_bem.s"],
-            yaml_data["sse.powercurve.cl_regII"] / yaml_data["sse.powercurve.cd_regII"],
+            yaml_data["rp.powercurve.cl_regII"] / yaml_data["rp.powercurve.cd_regII"],
             "--",
             color=colors[idx],
             label=label,
@@ -366,7 +366,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
         "Blade Nondimensional Span [-]",
         "Edgewise Stiffness [Nm2]",
         "blade.outer_shape_bem.s",
-        "elastic.EIxx",
+        "re.EIxx",
         "edge",
     )
 
@@ -375,7 +375,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
         "Blade Nondimensional Span [-]",
         "Torsional Stiffness [Nm2]",
         "blade.outer_shape_bem.s",
-        "elastic.GJ",
+        "re.GJ",
         "torsion",
     )
 
@@ -384,7 +384,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
         "Blade Nondimensional Span [-]",
         "Flapwise Stiffness [Nm2]",
         "blade.outer_shape_bem.s",
-        "elastic.EIyy",
+        "re.EIyy",
         "flap",
     )
 
@@ -393,7 +393,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
         "Blade Nondimensional Span [-]",
         "Unit Mass [kg/m]",
         "blade.outer_shape_bem.s",
-        "elastic.rhoA",
+        "re.rhoA",
         "mass",
     )
 
@@ -402,7 +402,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
         "Blade Nondimensional Span [-]",
         "Axial Induction [-]",
         "blade.outer_shape_bem.s",
-        "sse.powercurve.ax_induct_regII",
+        "rp.powercurve.ax_induct_regII",
         "induction",
     )
 
@@ -411,7 +411,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
         "Blade Nondimensional Span [-]",
         "Lift Coefficient [-]",
         "blade.outer_shape_bem.s",
-        "sse.powercurve.cl_regII",
+        "rp.powercurve.cl_regII",
         "lift_coeff",
     )
 
@@ -531,18 +531,18 @@ def main():
     # the second string is the units to print the value in,
     # and the optional third string is the multiplicative scalar on the value to be printed.
     values_to_print = {
-        "AEP": ["sse.AEP", "GW*h"],
-        "Blade mass": ["elastic.precomp.blade_mass", "kg"],
+        "AEP": ["rp.AEP", "GW*h"],
+        "Blade mass": ["re.precomp.blade_mass", "kg"],
         "LCOE": ["financese.lcoe", "USD/(MW*h)"],
-        "Cp": ["sse.powercurve.Cp_aero", None],
-        "Blade cost": ["elastic.precomp.total_blade_cost", "USD"],
+        "Cp": ["rp.powercurve.Cp_aero", None],
+        "Blade cost": ["re.precomp.total_blade_cost", "USD"],
         "Tip defl ratio": ["tcons.tip_deflection_ratio", None],
-        "Flap freqs": ["rlds.frame.flap_mode_freqs", "Hz"],
-        "Edge freqs": ["rlds.frame.edge_mode_freqs", "Hz"],
-        "3P freq": ["sse.powercurve.rated_Omega", None, 3.0 / 60],
-        "6P freq": ["sse.powercurve.rated_Omega", None, 6.0 / 60],
-        "Hub forces": ["rlds.aero_hub_loads.Fxyz_hub_aero", "kN"],
-        "Hub moments": ["rlds.aero_hub_loads.Mxyz_hub_aero", "kN*m"],
+        "Flap freqs": ["rs.frame.flap_mode_freqs", "Hz"],
+        "Edge freqs": ["rs.frame.edge_mode_freqs", "Hz"],
+        "3P freq": ["rp.powercurve.rated_Omega", None, 3.0 / 60],
+        "6P freq": ["rp.powercurve.rated_Omega", None, 6.0 / 60],
+        "Hub forces": ["rs.aero_hub_loads.Fxyz_hub_aero", "kN"],
+        "Hub moments": ["rs.aero_hub_loads.Mxyz_hub_aero", "kN*m"],
     }
 
     # Generally it's not necessary to change the code below here, unless you
