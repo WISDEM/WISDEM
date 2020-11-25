@@ -1,6 +1,6 @@
 name: Python Package using Conda
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build-linux:
@@ -18,8 +18,7 @@ jobs:
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         $CONDA/bin/conda config --add channels conda-forge
-        #$CONDA/bin/conda install -q compilers matplotlib pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy geopy pyside2
-        #$CONDA/bin/conda install -y petsc4py mpi4py 
+        #$CONDA/bin/conda install -q compilers matplotlib pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy geopy pyside2 petsc4py mpi4py 
         #$CONDA/bin/pip install simpy marmot-agents
         $CONDA/bin/conda env update --file environment.yml --name base
     - name: Install WISDEM
@@ -27,11 +26,12 @@ jobs:
         $CONDA/bin/python setup.py develop
     - name: Test with pytest
       run: |
-        $CONDA/bin/conda install pytest
+        #$CONDA/bin/conda install pytest pytest-cov
         $CONDA/bin/pytest --cov-config=.coverageac --cov=wisdem
     - name: Run tests
       run: |
         # Run coveralls
+        #$CONDA/bin/conda install coveralls
         $CONDA/bin/coveralls
     #- name: Lint with flake8
     #  run: |

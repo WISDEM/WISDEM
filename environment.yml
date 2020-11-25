@@ -30,6 +30,6 @@ dependencies:
   - compilers
   - petsc4py
   - mpi4py
-  - pip
+  - pip:
     - simpy
     - marmot-agents
