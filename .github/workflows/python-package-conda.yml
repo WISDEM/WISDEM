@@ -19,24 +19,21 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
-    - name: Install dependencies
-      run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
-        $CONDA/bin/conda config --add channels conda-forge
-        $CONDA/bin/conda install -q compilers pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 petsc4py mpi4py 
-        $CONDA/bin/pip install simpy marmot-agents
       
     - name: Add dependendencies ubuntu specific
-      # Install dependencies of WISDEM specific to ubuntu (not with compilers)
       if: contains( matrix.os, 'ubuntu')
       run: |
-        $CONDA/bin/conda install -y petsc4py mpi4py 
+        $CONDA/bin/conda config --add channels conda-forge
+        $CONDA/bin/conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 compilers petsc4py mpi4py 
+        $CONDA/bin/pip install simpy marmot-agents
       
     - name: Add dependendencies windows specific
-      # Install dependencies of WISDEM specific to windows
       if: contains( matrix.os, 'windows')
       run: |
-        $CONDA/bin/conda install -y m2w64-toolchain libpython
+        $CONDA\bin\conda config --add channels conda-forge
+        $CONDA\bin\conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 m2w64-toolchain libpython
+        $CONDA\bin\pip install simpy marmot-agents
 
     #- name: Setup tmate session
     #  # Debugging session
