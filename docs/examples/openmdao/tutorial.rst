@@ -1,6 +1,7 @@
----------------------
+.. _openmdao_tutorial-label:
+  
 4. OpenMDAO Examples
----------------------
+--------------------
 
 WISDEM can be run through the yaml-input files if the intention is to do a full turbine and LCOE roll-up.  Sometimes though, a user might just want to evaluate or optimize a single component within WISDEM.  This can also be done through the yaml-input files, and some of the examples for the tower, monopile, and drivetrain show how that is accomplished.  However, for other modules it may be simpler to interface with WISDEM directly with a python script.  Since WISDEM is built on top of the `OpenMDAO <http://openmdao.org>`__ library, this tutorial is a cursory introduction into OpenMDAO syntax and problem structure.
 
@@ -35,7 +36,7 @@ such explanation is on Wikipedia
 https://en.wikipedia.org/wiki/Betz%27s_law .
 
 Problem formulation
--------------------
+*******************
 
 According to the Betz limit, the maximum power a turbine can extract
 from wind is:
@@ -73,7 +74,7 @@ Before we start in on the source code, let’s look at a few key snippets
 of the code
 
 OpenMDAO implementation
------------------------
+***********************
 
 First we need to import OpenMDAO
 
@@ -82,14 +83,14 @@ First we need to import OpenMDAO
     :end-before: # --
 
 Now we can make an :code:`ActuatorDisc` class that models the actuator disc
-theory for the optimization.  This is derived off of an OpenMDAO class
+theory for the optimization.  This is derived from an OpenMDAO class
 
 .. literalinclude:: /../examples/04_openmdao/betz_limit.py
     :start-after: # Specific
     :end-before: # -- end
 
 The class declaration, :code:`class ActuatorDisc(om.ExplicitComponent):`
-shows that our class, :code:`ActuatorDisc` inherits off of the
+shows that our class, :code:`ActuatorDisc` inherits from the
 :code:`ExplicitComponent` class in OpenMDAO. In WISDEM, 99% of all coded
 components are of the :code:`ExplicitComponent` class, so this is the most
 fundamental building block to get accustomed to. Other types of
@@ -111,7 +112,7 @@ optional keywords that can help with code documentation and model
 consistency are :code:`units=` and :code:`desc=`.
 
 Working with analytical derivatives
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We need to tell OpenMDAO which derivatives will need to be computed.
 That happens in the following lines:
@@ -142,7 +143,7 @@ Betz Group:
     :start-after: # Optional
     :end-before: # --
 
-The :code:`Betz` class derives off of the OpenMDAO :code:`Group` class, which is
+The :code:`Betz` class derives from the OpenMDAO :code:`Group` class, which is
 typically the top-level class that is used in an analysis. The OpenMDAO
 :code:`Group` class allows you to cluster models in hierarchies. We can put
 multiple components in groups. We can also put other groups in groups.
@@ -151,7 +152,7 @@ Components are added to groups with the :code:`self.add_subsystem` command,
 which has two primary arguments. The first is the string name to call
 the subsystem that is added and the second is the component or sub-group
 class instance. A common optional argument is :code:`promotes=`, which
-elevatest the input/ouput variable string names to the top-level
+elevates the input/output variable string names to the top-level
 namespace. The :code:`Betz` group shows examples where the :code:`promotes=` can
 be passed a list of variable string names or the :code:`'*'` wildcard to
 mean all input/output variables.
@@ -233,7 +234,7 @@ Now we can run the optimization:
 
 
 Finally, the result:
---------------------
+********************
 
 Above, we see a summary of the steps in our optimization.  Next, we print out the values we
 care about and list all of the inputs and outputs that are problem used.
@@ -305,7 +306,7 @@ comfortable with all of the core OpenMDAO training examples is strongly
 encouraged.
 
 Problem formulation
--------------------
+*******************
 
 The Sellar problem are a couple of components (what Wikipedia calls
 models) that are simple equations. There is an objective to optimize and
@@ -327,16 +328,16 @@ see:
    Read the definitions for *design variables*, *constraints*,
    *objectives* and *models*.
 
--  `Lambe and Martins: Extensions to the Design Strcuture Matrix for the
-   Description of Multidisciplinary Desgn, Analysis, and Optimation
+-  `Lambe and Martins: Extensions to the Design Structure Matrix for the
+   Description of Multidisciplinary Design, Analysis, and Optimization
    Processes <http://mdolab.engin.umich.edu/content/extensions-design-structure-matrix>`__:
    Read section 2 “Terminology and Notation” for further explanation of
    *design variables*, *discipline analysis*, *response variables*,
    *target variables* and *coupling variables*. Read section 4 about
-   XDSM diagrams that dsecribe MDO processes.
+   XDSM diagrams that describe MDO processes.
 
 OpenMDAO implementation
------------------------
+***********************
 
 First we need to import OpenMDAO
 
@@ -353,7 +354,7 @@ are variables pertaining to the *Discipline 1* component.
    initialize it to :math:`(0, 0)` with :code:`np.zeros(2)`. Note that
    components of :math:`\mathbf{z}` are found in 3 of the
    white :math:`\mathbf{z}` parallelograms connected to
-   multiple components and the objective, so this is a globabl design
+   multiple components and the objective, so this is a global design
    variable.
 
 -  :math:`x`: An input. A local design variable for Discipline 1. Since it
@@ -362,7 +363,7 @@ are variables pertaining to the *Discipline 1* component.
 -  :math:`y_2`: An input. This is a coupling variable coming from an output
    on *Discipline 2*
 
--  :math:`y_1`: An output. This is acoupling variable going to an input on
+-  :math:`y_1`: An output. This is a coupling variable going to an input on
    *Discipline 2*
 
 Let’s take a look at the *Discipline 1* component and break it down
@@ -373,7 +374,7 @@ piece by piece. ### Discipline 1
     :end-before: # -- end Discipline 1
 
 The class declaration, :code:`class SellarDis1(om.ExplicitComponent):` shows
-that our class, :code:`SellarDis1` inherits off of the :code:`ExplicitComponent`
+that our class, :code:`SellarDis1` inherits from the :code:`ExplicitComponent`
 class in OpenMDAO. In WISDEM, 99% of all coded components are of the
 :code:`ExplicitComponent` class, so this is the most fundamental building
 block to get accustomed to. Keen observers will notice that the *Sellar
@@ -430,7 +431,7 @@ Sellar Group:
     :start-after: # Assemble
     :end-before: # -- end Group
 
-The :code:`SellarMDA` class derives off of the OpenMDAO :code:`Group` class,
+The :code:`SellarMDA` class derives from the OpenMDAO :code:`Group` class,
 which is typically the top-level class that is used in an analysis. The
 OpenMDAO :code:`Group` class allows you to cluster models in hierarchies. We
 can put multiple components in groups. We can also put other groups in
@@ -440,7 +441,7 @@ Components are added to groups with the :code:`self.add_subsystem` command,
 which has two primary arguments. The first is the string name to call
 the subsystem that is added and the second is the component or sub-group
 class instance. A common optional argument is :code:`promotes=`, which
-elevatest the input/ouput variable string names to the top-level
+elevates the input/output variable string names to the top-level
 namespace. The :code:`SellarMDA` group shows examples where the
 :code:`promotes=` can be passed a list of variable string names or the
 :code:`'*'` wildcard to mean all input/output variables.
@@ -500,7 +501,7 @@ to create our objective function and two constraint functions directly:
    self.add_subsystem('con_cmp2', om.ExecComp('con2 = y2 - 24.0'), promotes=['con2', 'y2'])
 
 Let’s optimize our system!
---------------------------
+**************************
 
 Even though we have all the pieces in a :code:`Group`, we still need to put
 them into a :code:`Problem` to be executed. The :code:`Problem` instance is
@@ -575,5 +576,5 @@ differences for gradient approximations, and to run the driver:
     minimum found at
     0.0
     [1.97763888e+00 2.83540724e-15]
-    minumum objective
+    minimum objective
     3.183393951735934

@@ -1,11 +1,12 @@
-------------------------------------------------------------------------
+.. _refturb_tutorial-label:
+  
 2. Running the NREL 5-MW and IEA Wind 15-MW Reference Wind Turbines
-------------------------------------------------------------------------
+-------------------------------------------------------------------
 
 The next example involves running two reference turbine examples, the NREL 5-MW land-based and IEA Wind 15-MW offshore fixed-bottom turbines.  There are multiple ways to run WISDEM, each is perfectly valid and users should adopt whatever approach they are most comfortable with.
 
 Calling WISDEM
----------------
+**************
 
 Option 1. Use the GUI
 =====================
@@ -50,7 +51,7 @@ Where the contents of ``nrel5mw_driver.py`` are,
     :end-before: # end
 
 Screen Output
---------------
+*************
 
 Successfully running WISDEM should show the following screen output for the NREL 5-MW reference wind turbine:
 

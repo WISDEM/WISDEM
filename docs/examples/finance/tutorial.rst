@@ -1,8 +1,7 @@
 .. _finance_tutorial-label:
 
---------------------------------
 8. Plant Finance Example
---------------------------------
+------------------------
 
 Using the plant finance model only requires a short script.
 The plant finance model depends on the costs of the turbine, balance of station, expected operational expenditures, energy production and a few financial parameters.
