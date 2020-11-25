@@ -1,0 +1,30 @@
+name: base
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python
+  - compilers
+  - pytest
+  - pytest-cov
+  - coveralls
+  - pip
+  - openmdao=3.4.0
+  - jsonschema
+  - ruamel_yaml
+  - pyyaml
+  - make
+  - xlrd
+  - openpyxl
+  - cython
+  - pandas
+  - numpydoc
+  - six
+  - setuptools
+  - git
+  - numpy
+  - scipy
+  - matplotlib
+  - geopy
+  - pyside2
