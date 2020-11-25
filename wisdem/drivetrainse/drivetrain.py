@@ -162,7 +162,7 @@ class DrivetrainSE(om.Group):
         self.add_subsystem('rpm', dc.RPM_Input(n_pc=n_pc), promotes=['*'])
         if dogen:
             gentype = self.options['modeling_options']['GeneratorSE']['type']
-            self.add_subsystem('generator', Generator(design=gentype), promotes=['generator_mass','generator_cost','generator_I','machine_rating','generator_efficiency','rated_torque',('rotor_mass','generator_rotor_mass'),('rotor_I','generator_rotor_I'),('stator_mass','generator_stator_mass'),('stator_I','generator_stator_I')])
+            self.add_subsystem('generator', Generator(design=gentype, n_pc=n_pc), promotes=['generator_mass','generator_cost','generator_I','machine_rating','generator_efficiency','rated_torque',('rotor_mass','generator_rotor_mass'),('rotor_I','generator_rotor_I'),('stator_mass','generator_stator_mass'),('stator_I','generator_stator_I')])
         else:
             self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct, n_pc=n_pc), promotes=['*'])
 

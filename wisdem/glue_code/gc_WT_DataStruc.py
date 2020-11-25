@@ -209,6 +209,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             ivc = self.add_subsystem('tower', om.IndepVarComp())
             ivc.add_output('ref_axis',              val=np.zeros((n_height, 3)),            units='m', desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
             ivc.add_output('diameter',              val=np.zeros(n_height),                 units='m', desc='1D array of the outer diameter values defined along the tower axis.')
+            ivc.add_output('cd',                    val=np.zeros(n_height),                            desc='1D array of the drag coefficients defined along the tower height.')
             ivc.add_output('layer_thickness',       val=np.zeros((n_layers, n_height-1)),   units='m', desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
             ivc.add_output('outfitting_factor',     val = 0.0,      desc='Multiplier that accounts for secondary structure mass inside of tower')
             ivc.add_discrete_output('layer_name',   val=[],         desc='1D array of the names of the layers modeled in the tower structure.')
@@ -1172,7 +1173,7 @@ class Floating(om.Group):
             ivc.add_output('ballast_volume',     val = np.zeros(n_ballasts),        units='m**3')
             ivc.add_output('grid_axial_joints',  val = np.zeros(n_axial_joints))
 
-        self.add_subsystem('alljoints', CombineJoints(floating_init_options=floating_init_options), promotes=['*'])
+        # self.add_subsystem('alljoints', CombineJoints(floating_init_options=floating_init_options), promotes=['*'])
 
 class CombineJoints(om.ExplicitComponent):
     def initialize(self):
