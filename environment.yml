@@ -1,11 +1,9 @@
-name: base
 channels:
   - conda-forge
   - defaults
 
 dependencies:
   - python
-  - compilers
   - pytest
   - pytest-cov
   - coveralls
@@ -28,3 +26,6 @@ dependencies:
   - matplotlib
   - geopy
   - pyside2
+  - compilers
+  - petsc4py
+  - mpi4py
