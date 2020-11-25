@@ -25,11 +25,11 @@ dependencies:
   - matplotlib
   - geopy
   - pyside2
-  - m2w64-toolchain
-  - libpython
-  - compilers
-  - petsc4py
-  - mpi4py
+  - m2w64-toolchain # [win]
+  - libpython # [win]
+  - compilers # [not win]
+  - petsc4py # [not win]
+  - mpi4py # [not win]
   - pip:
     - simpy
     - marmot-agents
