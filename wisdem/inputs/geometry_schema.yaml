@@ -2948,24 +2948,6 @@ properties:
     bos:
         type: object
         default: {}
-        required:
-            - plant_turbine_spacing
-            - plant_row_spacing
-            - commissioning_pct
-            - decommissioning_pct
-            - distance_to_substation
-            - distance_to_interconnection
-            - interconnect_voltage
-        optional:
-            - distance_to_site
-            - distance_to_landfall
-            - port_cost_per_month
-            - site_auction_price
-            - site_assessment_plan_cost
-            - site_assessment_cost
-            - construction_operations_plan_cost
-            - boem_review_cost
-            - design_install_plan_cost
         properties:
             plant_turbine_spacing:
                 type: number
