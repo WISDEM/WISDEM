@@ -59,6 +59,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
         conda remove --force wisdem
         conda install compilers     # (Mac / Linux only)
         conda install m2w64-toolchain libpython       # (Windows only)
+	pip install simpy marmot-agents
         git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
         git checkout develop

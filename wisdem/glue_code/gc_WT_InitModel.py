@@ -1,12 +1,12 @@
 import numpy as np
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 
-def yaml2openmdao(wt_opt, modeling_options, wt_init):
+def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
 
     # These are the required components
     assembly        = wt_init['assembly']
-    wt_opt = assign_configuration_values(wt_opt, assembly)
+    wt_opt = assign_configuration_values(wt_opt, assembly, opt_options)
 
     materials       = wt_init['materials']
     wt_opt = assign_material_values(wt_opt, modeling_options, materials)
@@ -398,7 +398,7 @@ def assign_hub_values(wt_opt, hub):
 
     wt_opt['hub.diameter']                    = hub['diameter']
     wt_opt['hub.cone']                        = hub['cone_angle']
-    wt_opt['hub.drag_coeff']                  = hub['drag_coefficient']
+    #wt_opt['hub.drag_coeff']                  = hub['drag_coefficient'] # GB: This doesn't connect to anything
     wt_opt['hub.flange_t2shell_t']            = hub['flange_t2shell_t']
     wt_opt['hub.flange_OD2hub_D']             = hub['flange_OD2hub_D']
     wt_opt['hub.flange_ID2flange_OD']         = hub['flange_ID2OD']
@@ -436,25 +436,14 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
     wt_opt['nacelle.converter_mass_user']       = nacelle['drivetrain']['converter_mass_user']
     wt_opt['nacelle.transformer_mass_user']     = nacelle['drivetrain']['transformer_mass_user']
 
-    s_lss = np.linspace(0.0, 1.0, len(wt_opt['nacelle.lss_wall_thickness']))
-    s_lss_diameter_in = nacelle['drivetrain']['lss_diameter']['grid']
-    v_lss_diameter_in = nacelle['drivetrain']['lss_diameter']['values']
-    s_lss_thick_in    = nacelle['drivetrain']['lss_wall_thickness']['grid']
-    v_lss_thick_in    = nacelle['drivetrain']['lss_wall_thickness']['values']
-    wt_opt['nacelle.lss_wall_thickness']       = np.interp(s_lss, s_lss_thick_in,    v_lss_thick_in)
-    wt_opt['nacelle.lss_diameter']             = np.interp(s_lss, s_lss_diameter_in, v_lss_diameter_in)
+    wt_opt['nacelle.lss_wall_thickness']       = nacelle['drivetrain']['lss_wall_thickness']
+    wt_opt['nacelle.lss_diameter']             = nacelle['drivetrain']['lss_diameter']
 
     if modeling_options['drivetrainse']['direct']:
         # Direct only
         wt_opt['nacelle.access_diameter']           = nacelle['drivetrain']['access_diameter']
-
-        s_nose = np.linspace(0.0, 1.0, len(wt_opt['nacelle.nose_wall_thickness']))
-        s_nose_diameter_in = nacelle['drivetrain']['nose_diameter']['grid']
-        v_nose_diameter_in = nacelle['drivetrain']['nose_diameter']['values']
-        s_nose_thick_in    = nacelle['drivetrain']['nose_wall_thickness']['grid']
-        v_nose_thick_in    = nacelle['drivetrain']['nose_wall_thickness']['values']
-        wt_opt['nacelle.nose_wall_thickness']       = np.interp(s_nose, s_nose_thick_in,    v_nose_thick_in)
-        wt_opt['nacelle.nose_diameter']             = np.interp(s_nose, s_nose_diameter_in, v_nose_diameter_in)
+        wt_opt['nacelle.nose_wall_thickness']       = nacelle['drivetrain']['nose_wall_thickness']
+        wt_opt['nacelle.nose_diameter']             = nacelle['drivetrain']['nose_diameter']
 
         s_bedplate = np.linspace(0.0, 1.0, len(wt_opt['nacelle.bedplate_wall_thickness']))
         s_bed_thick_in    = nacelle['drivetrain']['bedplate_wall_thickness']['grid']
@@ -462,13 +451,8 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
         wt_opt['nacelle.bedplate_wall_thickness']   = np.interp(s_bedplate, s_bed_thick_in, v_bed_thick_in)
     else:
         # Geared only
-        s_hss = np.linspace(0.0, 1.0, len(wt_opt['nacelle.hss_wall_thickness']))
-        s_hss_diameter_in = nacelle['drivetrain']['hss_diameter']['grid']
-        v_hss_diameter_in = nacelle['drivetrain']['hss_diameter']['values']
-        s_hss_thick_in    = nacelle['drivetrain']['hss_wall_thickness']['grid']
-        v_hss_thick_in    = nacelle['drivetrain']['hss_wall_thickness']['values']
-        wt_opt['nacelle.hss_wall_thickness']       = np.interp(s_hss, s_hss_thick_in,    v_hss_thick_in)
-        wt_opt['nacelle.hss_diameter']             = np.interp(s_hss, s_hss_diameter_in, v_hss_diameter_in)
+        wt_opt['nacelle.hss_wall_thickness']       = nacelle['drivetrain']['hss_wall_thickness']
+        wt_opt['nacelle.hss_diameter']             = nacelle['drivetrain']['hss_diameter']
 
         wt_opt['nacelle.hss_length']                = nacelle['drivetrain']['hss_length']
         wt_opt['nacelle.bedplate_flange_width']     = nacelle['drivetrain']['bedplate_flange_width']
@@ -592,7 +576,7 @@ def assign_tower_values(wt_opt, modeling_options, tower):
                             tower['outer_shape_bem']['reference_axis']['y']['grid'],
                             tower['outer_shape_bem']['reference_axis']['z']['grid']] )
 
-    wt_opt['tower.s'] = svec
+    # wt_opt['tower.s'] = svec
     wt_opt['tower.diameter']   = np.interp(svec, tower['outer_shape_bem']['outer_diameter']['grid'], tower['outer_shape_bem']['outer_diameter']['values'])
 
     wt_opt['tower.ref_axis'][:,0]  = np.interp(svec, tower['outer_shape_bem']['reference_axis']['x']['grid'], tower['outer_shape_bem']['reference_axis']['x']['values'])
@@ -821,7 +805,6 @@ def assign_floating_values(wt_opt, modeling_options, floating):
 
 def assign_control_values(wt_opt, modeling_options, control):
     # Controller parameters
-    wt_opt['control.rated_power']   = control['rated_power']
     wt_opt['control.V_in']          = control['Vin']
     wt_opt['control.V_out']         = control['Vout']
     wt_opt['control.minOmega']      = control['minOmega']
@@ -834,7 +817,7 @@ def assign_control_values(wt_opt, modeling_options, control):
 
     return wt_opt
 
-def assign_configuration_values(wt_opt, assembly):
+def assign_configuration_values(wt_opt, assembly, opt_options):
 
     wt_opt['configuration.ws_class']          = assembly['turbine_class']
     wt_opt['configuration.turb_class']        = assembly['turbulence_class']
@@ -842,10 +825,16 @@ def assign_configuration_values(wt_opt, assembly):
     wt_opt['configuration.rotor_orientation'] = assembly['rotor_orientation'].lower()
     wt_opt['configuration.upwind']            = wt_opt['configuration.rotor_orientation'] == 'upwind'
     wt_opt['configuration.n_blades']          = int(assembly['number_of_blades'])
+    wt_opt['configuration.rotor_diameter_user'] = assembly['rotor_diameter']
+    wt_opt['configuration.hub_height_user']   = assembly['hub_height']
+    wt_opt['configuration.rated_power']       = assembly['rated_power']
 
     # Checks for errors
     if int(assembly['number_of_blades']) - assembly['number_of_blades'] != 0:
-        print('ERROR: the number of blades must be an integer')
+        raise Exception('ERROR: the number of blades must be an integer')
+
+    if assembly['rotor_diameter'] == 0. and opt_options['optimization_variables']['rotor_diameter']['flag']:
+        raise Exception('ERROR: you activated the rotor diameter as design variable, but you have not specified the rotor diameter in the geometry yaml.')
 
     return wt_opt
 

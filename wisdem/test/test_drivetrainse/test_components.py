@@ -173,53 +173,102 @@ class TestComponents(unittest.TestCase):
         npt.assert_equal(outputs['yaw_I'], 0.0)
 
 
-    def testMisc(self):
+    def testMiscDirect(self):
         inputs = {}
         outputs = {}
         discrete_inputs = {}
         discrete_outputs = {}
-        myobj = dc.MiscNacelleComponents()
+        myobj = dc.MiscNacelleComponents(direct_drive=True)
 
         discrete_inputs['upwind'] = False
         inputs['machine_rating'] = 10e3
+        inputs['L_bedplate']     = 5.0
         inputs['H_bedplate']     = 4.0
-        inputs['D_top']          = 5.0
-        inputs['bedplate_mass']  = 5e3
-        inputs['bedplate_I']     = 5e3*np.array([1.0, 2.0, 3.0])
+        inputs['D_top']          = 6.0
         inputs['R_generator']    = 2.0
         inputs['overhang']       = 10.0
         inputs['generator_cm']   = 6.0
         inputs['rho_fiberglass'] = 2e3
+        inputs['rho_castiron']   = 3e3
         inputs['hvac_mass_coeff'] = 0.1
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
 
-        L = 1.1*(10 + 2.5)
+        L = 1.1*5 #(10 + 6.0)
         W = 1.1 * 2*2
         H = 1.1 * (2 + 4)
-        self.assertEqual(outputs['cover_mass'], 0.04*2e3*2*(L*W+L*H+W*H))
+        self.assertEqual(outputs['cover_mass'], 0.02*2e3*2*(L*W+L*H+W*H))
         npt.assert_equal(outputs['cover_cm'], np.array([0.5*(L-5), 0.0, 0.5*H]))
         
-        self.assertEqual(outputs['hvac_mass'], 0.1 * 10e3)
+        self.assertEqual(outputs['hvac_mass'], 0.1 * 10e3*2*np.pi*0.75*2)
         self.assertEqual(outputs['hvac_cm'], 6.0)
-        npt.assert_equal(outputs['hvac_I'], 0.1*10e3 * 1.5**2 * np.r_[1.0, 0.5, 0.5])
+        npt.assert_equal(outputs['hvac_I'], outputs['hvac_mass'] * 1.5**2 * np.r_[1.0, 0.5, 0.5])
 
-        self.assertEqual(outputs['platforms_mass'], 0.125 * 5e3)
-        npt.assert_equal(outputs['platforms_cm'], 0.0)
-        npt.assert_equal(outputs['platforms_I'], 0.125*5e3*np.array([1.0, 2.0, 3.0]))
+        t = 0.05
+        self.assertEqual(outputs['platform_mass'], t*3e3*12**2)
+        npt.assert_equal(outputs['platform_cm'], 0.0)
+        npt.assert_equal(outputs['platform_I'], outputs['platform_mass']*np.array([t**2+12**2, t**2+12**2, 2*12**2])/12.)
         
         discrete_inputs['upwind'] = True
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
-        self.assertEqual(outputs['cover_mass'], 0.04*2e3*2*(L*W+L*H+W*H))
+        self.assertEqual(outputs['cover_mass'], 0.02*2e3*2*(L*W+L*H+W*H))
         npt.assert_equal(outputs['cover_cm'], np.array([-0.5*(L-5), 0.0, 0.5*H]))
         
-        self.assertEqual(outputs['hvac_mass'], 0.1 * 10e3)
+        self.assertEqual(outputs['hvac_mass'], 0.1 * 10e3*2*np.pi*0.75*2)
         self.assertEqual(outputs['hvac_cm'], 6.0)
-        npt.assert_equal(outputs['hvac_I'], 0.1*10e3 * 1.5**2 * np.r_[1.0, 0.5, 0.5])
+        npt.assert_equal(outputs['hvac_I'], outputs['hvac_mass'] * 1.5**2 * np.r_[1.0, 0.5, 0.5])
 
-        self.assertEqual(outputs['platforms_mass'], 0.125 * 5e3)
-        npt.assert_equal(outputs['platforms_cm'], 0.0)
-        npt.assert_equal(outputs['platforms_I'], 0.125*5e3*np.array([1.0, 2.0, 3.0]))
+        self.assertEqual(outputs['platform_mass'], t*3e3*12**2)
+        npt.assert_equal(outputs['platform_cm'], 0.0)
+        npt.assert_equal(outputs['platform_I'], outputs['platform_mass']*np.array([t**2+12**2, t**2+12**2, 2*12**2])/12.)
 
+
+    def testMiscGeared(self):
+        inputs = {}
+        outputs = {}
+        discrete_inputs = {}
+        discrete_outputs = {}
+        myobj = dc.MiscNacelleComponents(direct_drive=False)
+
+        discrete_inputs['upwind'] = False
+        inputs['machine_rating'] = 10e3
+        inputs['L_bedplate']     = 5.0
+        inputs['H_bedplate']     = 4.0
+        inputs['D_top']          = 6.0
+        inputs['R_generator']    = 2.0
+        inputs['overhang']       = 10.0
+        inputs['generator_cm']   = 6.0
+        inputs['rho_fiberglass'] = 2e3
+        inputs['rho_castiron']   = 3e3
+        inputs['hvac_mass_coeff'] = 0.1
+        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+
+        L = 1.1*(10 + 6.0)
+        W = 1.1 * 2*2
+        H = 1.1 * (2 + 4)
+        self.assertEqual(outputs['cover_mass'], 0.02*2e3*2*(L*W+L*H+W*H))
+        npt.assert_equal(outputs['cover_cm'], np.array([0.5*(L-5), 0.0, 0.5*H]))
+        
+        self.assertEqual(outputs['hvac_mass'], 0.1 * 10e3*2*np.pi*0.75*2)
+        self.assertEqual(outputs['hvac_cm'], 6.0)
+        npt.assert_equal(outputs['hvac_I'], outputs['hvac_mass'] * 1.5**2 * np.r_[1.0, 0.5, 0.5])
+
+        t = 0.05
+        self.assertEqual(outputs['platform_mass'], t*3e3*L*W)
+        npt.assert_equal(outputs['platform_cm'], 0.0)
+        npt.assert_equal(outputs['platform_I'], outputs['platform_mass']*np.array([t**2+W**2, t**2+L**2, L**2+W**2])/12.)
+        
+        discrete_inputs['upwind'] = True
+        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+        self.assertEqual(outputs['cover_mass'], 0.02*2e3*2*(L*W+L*H+W*H))
+        npt.assert_equal(outputs['cover_cm'], np.array([-0.5*(L-5), 0.0, 0.5*H]))
+        
+        self.assertEqual(outputs['hvac_mass'], 0.1 * 10e3*2*np.pi*0.75*2)
+        self.assertEqual(outputs['hvac_cm'], 6.0)
+        npt.assert_equal(outputs['hvac_I'], outputs['hvac_mass'] * 1.5**2 * np.r_[1.0, 0.5, 0.5])
+
+        self.assertEqual(outputs['platform_mass'], t*3e3*L*W)
+        npt.assert_equal(outputs['platform_cm'], 0.0)
+        npt.assert_equal(outputs['platform_I'], outputs['platform_mass']*np.array([t**2+W**2, t**2+L**2, L**2+W**2])/12.)
 
 
 
@@ -234,8 +283,8 @@ class TestComponents(unittest.TestCase):
         discrete_inputs['uptower'] = True
         inputs['tilt'] = 0.0
         components = ['mb1','mb2','lss','hss','gearbox','generator','hvac','brake',
-                      'nose','bedplate','platforms','yaw','cover','transformer','converter']
-        cm3 = ['gearbox','transformer','converter','yaw','bedplate','platforms','cover']
+                      'nose','bedplate','platform','yaw','cover','transformer','converter']
+        cm3 = ['gearbox','transformer','converter','yaw','bedplate','platform','cover']
         for k in components:
             inputs[k+'_mass'] = 1e3
             inputs[k+'_I'] = 1e3*np.array([1, 2, 3])
@@ -280,8 +329,8 @@ class TestComponents(unittest.TestCase):
         inputs['tilt'] = 5.0
         tr = 5*np.pi/180.
         components = ['mb1','mb2','lss','hss','gearbox','generator','hvac','brake',
-                      'nose','bedplate','platforms','yaw','cover','transformer','converter']
-        cm3 = ['gearbox','transformer','converter','yaw','bedplate','platforms','cover']
+                      'nose','bedplate','platform','yaw','cover','transformer','converter']
+        cm3 = ['gearbox','transformer','converter','yaw','bedplate','platform','cover']
         for k in components:
             inputs[k+'_mass'] = 1e3
             inputs[k+'_I'] = 1e3*np.array([1, 2, 3])

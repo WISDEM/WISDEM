@@ -19,7 +19,7 @@ class PlantFinance(om.ExplicitComponent):
         Balance of system costs of the turbine
     opex_per_kW : float
         Average annual operational expenditures of the turbine
-    park_aep : float
+    plant_aep_in : float
         Annual Energy Production of the wind plant
     turbine_aep : float
         Annual Energy Production of the wind turbine
@@ -32,6 +32,8 @@ class PlantFinance(om.ExplicitComponent):
     -------
     lcoe : float
         Levelized cost of energy for the wind plant
+    plant_aep : float
+        Annual Energy Production of the wind plant
     
     """
     def initialize(self):
@@ -46,12 +48,13 @@ class PlantFinance(om.ExplicitComponent):
         self.add_discrete_input('turbine_number', val=0)
         self.add_input('bos_per_kW', val=0.0, units='USD/kW')
         self.add_input('opex_per_kW', val=0.0, units='USD/kW/yr')
-        self.add_input('park_aep', val=0.0, units='kW*h')
+        self.add_input('plant_aep_in', val=0.0, units='kW*h')
         self.add_input('turbine_aep', val=0.0, units='kW*h')
         self.add_input('wake_loss_factor', val=0.15)
         self.add_input('fixed_charge_rate', val=0.075)
 
         self.add_output('lcoe', val=0.0, units='USD/kW/h')
+        self.add_output('plant_aep', val=0.0, units='USD/kW/h')
 
         self.declare_partials('*', '*')
     
@@ -82,7 +85,7 @@ class PlantFinance(om.ExplicitComponent):
         if c_opex_turbine == 0:
             print('WARNING: The Opex costs of the turbine are not initialized correctly and they are currently equal to 0 USD. Check the connections to Plant_FinanceSE')
         
-        if inputs['park_aep'] == 0:
+        if inputs['plant_aep_in'] == 0:
             if turb_aep == 0:
                 print('WARNING: AEP is not computed properly or it is not connected to PlantFinanceSE. Both turbine_aep and park_aep are currently equal to 0 Wh. Check the connections to Plant_FinanceSE')
             park_aep     =  n_turbine * turb_aep * (1. - wlf)
@@ -91,7 +94,7 @@ class PlantFinance(om.ExplicitComponent):
             dpark_dwlf   = -n_turbine * turb_aep
             dpark_dpaep  = 0.0
         else:
-            park_aep    = inputs['park_aep']
+            park_aep    = inputs['plant_aep_in']
             dpark_dpaep = 1.0
             dpark_dtaep = dpark_dnturb = dpark_dwlf = 0.0
         
@@ -116,6 +119,7 @@ class PlantFinance(om.ExplicitComponent):
         #compute COE and LCOE values
         lcoe = ((icc * fcr + c_opex) / nec) # changed per COE report
         outputs['lcoe'] = lcoe
+        outputs['plant_aep'] = park_aep
 
         self.J = {}
         self.J['lcoe', 'tcc_per_kW'       ] = dicc_dcturb*fcr /nec
@@ -125,7 +129,7 @@ class PlantFinance(om.ExplicitComponent):
         self.J['lcoe', 'fixed_charge_rate'] = icc / nec
         self.J['lcoe', 'wake_loss_factor' ] = -dnec_dwlf *lcoe/nec
         self.J['lcoe', 'turbine_aep'      ] = -dnec_dtaep*lcoe/nec
-        self.J['lcoe', 'park_aep'         ] = -dnec_dpaep*lcoe/nec
+        self.J['lcoe', 'plant_aep_in'     ] = -dnec_dpaep*lcoe/nec
         self.J['lcoe', 'machine_rating'   ] = (dicc_dtrating*fcr + dcopex_dtrating)/nec - dnec_dtrating*lcoe/nec
         
         if self.options['verbosity']:

@@ -10,10 +10,6 @@ Analysis_Flags:
     ServoSE:  True
     BOS:      True
 
-yaml:
-    validate: False    # When set to True, the code runs a yam validation package. This checks whether the yams has the right formatting.
-    path2schema: windIO/windIO/turbine/IEAontology_schema.yaml   # Path to the yams schema to run the validation
-
 rotorse:
     n_aoa: 200        # Number of angles of attack used to define polars
     n_xy: 200         # Number of angles of coordinate points used to discretize each airfoil

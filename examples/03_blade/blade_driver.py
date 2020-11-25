@@ -1,12 +1,7 @@
-from wisdem.glue_code.runWISDEM import run_wisdem
-import matplotlib.pyplot as plt
-import numpy as np
+from wisdem import run_wisdem
 import os
 from wisdem.commonse.mpi_tools import MPI
 
-show_plots = False
-
-## File management
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
 fname_wt_input         = mydir + os.sep + 'blade.yaml'
 fname_modeling_options = mydir + os.sep + 'modeling_options.yaml'

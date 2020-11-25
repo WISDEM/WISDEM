@@ -1,6 +1,7 @@
 ******************
 Layout and Inputs
 ******************
+
 The direct-drive and geared drivetrain layouts are quite different, however both use the same set of user inputs.  This was intentional to simplify the user-input burden.  The common layout parameters are,
 
 - Overhang (:math:`L_{overhang}`)
@@ -11,7 +12,7 @@ The direct-drive and geared drivetrain layouts are quite different, however both
 - Distance between the main bearings (:math:`L_{12}`)
 
 Detailed diagrams of how these parameters set the sizing and layout of the drivetrain is shown in the two subsections below.
-  
+
 Direct-Drive Layout
 ========================
 
@@ -23,7 +24,7 @@ Direct-Drive Layout
     Direct-drive configuration geometry
 
 The overall layout for the direct-drive configuration is shown in :numref:`fig_layout_pic` and :numref:`fig_layout_diagram`.  The hub connects to the low-speed shaft, which is a large diameter, hollow cylinder supported by two sets of main bearings attached to the nose, also called the turret.  The nose is affixed to the bedplate, which also has a circular cross-section, but follows an elliptical curve down to the tower attachment.  The total length, parallel to the ground, from the tower center line to the rotor apex, is considered the *overhang*.  The total height difference between those same two points in the *hub to tower top height*.  The outer-rotor of the generator also attaches to the low-speed shaft, and the corresponding stator attaches to the nose.
-    
+
 .. _fig_layout_diagram:
 .. figure::  /images/drivetrainse/layout_diagram.*
     :width: 50%
@@ -97,7 +98,7 @@ The detailed parameters that specify the drivetrain geared are shown in :numref:
     Geared configuration layout diagram
 
 In addition to the user-defined dimensions, the other values are derived in the following way,
-    
+
 .. math::
    \delta       &= 0.1\\
    L_{lss}      &= L_{12} + L_{h1} + \delta\\

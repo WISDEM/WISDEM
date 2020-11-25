@@ -18,7 +18,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         opt_options      = self.options['opt_options']
 
         # Material dictionary inputs
-        self.add_subsystem('materials', Materials(mat_init_options = modeling_options['materials']))
+        self.add_subsystem('materials', Materials(mat_init_options = modeling_options['materials'],
+                                                  composites=modeling_options['flags']['blade']))
 
         # Airfoil dictionary inputs
         if modeling_options['flags']['airfoils']:
@@ -66,12 +67,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             nacelle_ivc.add_output('distance_hub2mb',    val=0.0,         units='m',   desc='Distance from hub flange to first main bearing along shaft')
             nacelle_ivc.add_output('distance_mb2mb',     val=0.0,         units='m',   desc='Distance from first to second main bearing along shaft')
             nacelle_ivc.add_output('L_generator',        val=0.0,         units='m',   desc='Generator length along shaft')
-            nacelle_ivc.add_output('lss_diameter',       val=np.zeros(5), units='m',   desc='Diameter of low speed shaft')
-            nacelle_ivc.add_output('lss_wall_thickness', val=np.zeros(5), units='m',   desc='Thickness of low speed shaft')
+            nacelle_ivc.add_output('lss_diameter',       val=np.zeros(2), units='m',   desc='Diameter of low speed shaft')
+            nacelle_ivc.add_output('lss_wall_thickness', val=np.zeros(2), units='m',   desc='Thickness of low speed shaft')
             nacelle_ivc.add_output('gear_ratio',         val=1.0,                      desc='Total gear ratio of drivetrain (use 1.0 for direct)')
             nacelle_ivc.add_output('gearbox_efficiency', val=1.0,                      desc='Efficiency of the gearbox. Set to 1.0 for direct-drive')
             nacelle_ivc.add_output('brake_mass_user',    val=0.0,         units='kg',  desc='Override regular regression-based calculation of brake mass with this value')
-            nacelle_ivc.add_output('hvac_mass_coeff',    val=0.08,        units='kg/kW', desc='Regression-based scaling coefficient on machine rating to get HVAC system mass')
+            nacelle_ivc.add_output('hvac_mass_coeff',    val=0.025,        units='kg/kW/m', desc='Regression-based scaling coefficient on machine rating to get HVAC system mass')
             nacelle_ivc.add_output('converter_mass_user',val=0.0,         units='kg',  desc='Override regular regression-based calculation of converter mass with this value')
             nacelle_ivc.add_output('transformer_mass_user', val=0.0,      units='kg',  desc='Override regular regression-based calculation of transformer mass with this value')
             nacelle_ivc.add_discrete_output('mb1Type',   val='CARB',                   desc='Type of main bearing: CARB / CRB / SRB / TRB')
@@ -84,14 +85,14 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             if modeling_options['drivetrainse']['direct']:
                 # Direct only
                 nacelle_ivc.add_output('access_diameter',         val=0.0,         units='m',  desc='Minimum diameter for hollow shafts for maintenance access')
-                nacelle_ivc.add_output('nose_diameter',           val=np.zeros(5), units='m',  desc='Diameter of nose (also called turret or spindle)')
-                nacelle_ivc.add_output('nose_wall_thickness',     val=np.zeros(5), units='m',  desc='Thickness of nose (also called turret or spindle)')
-                nacelle_ivc.add_output('bedplate_wall_thickness', val=np.zeros(12), units='m',  desc='Thickness of hollow elliptical bedplate')
+                nacelle_ivc.add_output('nose_diameter',           val=np.zeros(2), units='m',  desc='Diameter of nose (also called turret or spindle)')
+                nacelle_ivc.add_output('nose_wall_thickness',     val=np.zeros(2), units='m',  desc='Thickness of nose (also called turret or spindle)')
+                nacelle_ivc.add_output('bedplate_wall_thickness', val=np.zeros(4), units='m',  desc='Thickness of hollow elliptical bedplate')
             else:
                 # Geared only
                 nacelle_ivc.add_output('hss_length',                  val=0.0,         units='m', desc='Length of high speed shaft')
-                nacelle_ivc.add_output('hss_diameter',                val=np.zeros(3), units='m', desc='Diameter of high speed shaft')
-                nacelle_ivc.add_output('hss_wall_thickness',          val=np.zeros(3), units='m', desc='Wall thickness of high speed shaft')
+                nacelle_ivc.add_output('hss_diameter',                val=np.zeros(2), units='m', desc='Diameter of high speed shaft')
+                nacelle_ivc.add_output('hss_wall_thickness',          val=np.zeros(2), units='m', desc='Wall thickness of high speed shaft')
                 nacelle_ivc.add_output('bedplate_flange_width',       val=0.0,         units='m', desc='Bedplate I-beam flange width')
                 nacelle_ivc.add_output('bedplate_flange_thickness',   val=0.0,         units='m', desc='Bedplate I-beam flange thickness')
                 nacelle_ivc.add_output('bedplate_web_thickness',      val=0.0,         units='m', desc='Bedplate I-beam web thickness')
@@ -202,8 +203,18 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Tower inputs
         if modeling_options['flags']['tower']:
-            self.add_subsystem('tower',         Tower(tower_init_options   = modeling_options['tower']))
+            tower_init_options = modeling_options['tower']
+            n_height           = tower_init_options['n_height']
+            n_layers           = tower_init_options['n_layers']
+            ivc = self.add_subsystem('tower', om.IndepVarComp())
+            ivc.add_output('ref_axis',              val=np.zeros((n_height, 3)),            units='m', desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+            ivc.add_output('diameter',              val=np.zeros(n_height),                 units='m', desc='1D array of the outer diameter values defined along the tower axis.')
+            ivc.add_output('layer_thickness',       val=np.zeros((n_layers, n_height-1)),   units='m', desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
+            ivc.add_output('outfitting_factor',     val = 0.0,      desc='Multiplier that accounts for secondary structure mass inside of tower')
+            ivc.add_discrete_output('layer_name',   val=[],         desc='1D array of the names of the layers modeled in the tower structure.')
+            ivc.add_discrete_output('layer_mat',    val=[],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
 
+        # Monopile inputs
         if modeling_options['flags']['monopile']:
             self.add_subsystem('monopile',  Monopile(monopile_init_options   = modeling_options['monopile']))
 
@@ -215,7 +226,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # Control inputs
         if modeling_options['flags']['control']:
             ctrl_ivc = self.add_subsystem('control', om.IndepVarComp())
-            ctrl_ivc.add_output('rated_power',      val=0.0, units='W',         desc='Electrical rated power of the generator.')
             ctrl_ivc.add_output('V_in',             val=0.0, units='m/s',       desc='Cut in wind speed. This is the wind speed where region II begins.')
             ctrl_ivc.add_output('V_out',            val=0.0, units='m/s',       desc='Cut out wind speed. This is the wind speed where region III ends.')
             ctrl_ivc.add_output('minOmega',         val=0.0, units='rad/s',     desc='Minimum allowed rotor speed.')
@@ -228,12 +238,16 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Wind turbine configuration inputs
         conf_ivc = self.add_subsystem('configuration', om.IndepVarComp())
-        conf_ivc.add_discrete_output('ws_class',            val='',         desc='IEC wind turbine class. I - offshore, II coastal, III - land-based, IV - low wind speed site.')
-        conf_ivc.add_discrete_output('turb_class',          val='',         desc='IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).')
-        conf_ivc.add_discrete_output('gearbox_type',        val='geared',   desc='Gearbox configuration (geared, direct-drive, etc.).')
-        conf_ivc.add_discrete_output('rotor_orientation',   val='upwind',   desc='Rotor orientation, either upwind or downwind.')
-        conf_ivc.add_discrete_output('upwind',              val=True,       desc='Convenient boolean for upwind (True) or downwind (False).')
-        conf_ivc.add_discrete_output('n_blades',            val=3,          desc='Number of blades of the rotor.')
+        conf_ivc.add_discrete_output('ws_class',            val='',             desc='IEC wind turbine class. I - offshore, II coastal, III - land-based, IV - low wind speed site.')
+        conf_ivc.add_discrete_output('turb_class',          val='',             desc='IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).')
+        conf_ivc.add_discrete_output('gearbox_type',        val='geared',       desc='Gearbox configuration (geared, direct-drive, etc.).')
+        conf_ivc.add_discrete_output('rotor_orientation',   val='upwind',       desc='Rotor orientation, either upwind or downwind.')
+        conf_ivc.add_discrete_output('upwind',              val=True,           desc='Convenient boolean for upwind (True) or downwind (False).')
+        conf_ivc.add_discrete_output('n_blades',            val=3,              desc='Number of blades of the rotor.')
+        conf_ivc.add_output('rated_power',                  val=0.0, units='W', desc='Electrical rated power of the generator.')
+        
+        conf_ivc.add_output('rotor_diameter_user',          val=0.,units='m',   desc='Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.')
+        conf_ivc.add_output('hub_height_user',              val=0.,units='m',   desc='Height of the hub center over the ground (land-based) or the mean sea level (offshore) specified by the user.')
 
         # Environment inputs
         if modeling_options['flags']['environment']:
@@ -251,6 +265,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             env_ivc.add_output('G_soil',       val=140e6,       units='N/m**2',     desc='Shear stress of soil')
             env_ivc.add_output('nu_soil',      val=0.4,                             desc='Poisson ratio of soil')
 
+        # Balance of station inputs
         if modeling_options['flags']['bos']:
             bos_ivc = self.add_subsystem('bos', om.IndepVarComp())
             bos_ivc.add_output('plant_turbine_spacing', 7, desc='Distance between turbines in rotor diameters')
@@ -307,28 +322,18 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Assembly setup
         self.add_subsystem('assembly',      WT_Assembly(modeling_options = modeling_options))
+        self.connect('configuration.rotor_diameter_user',   'assembly.rotor_diameter_user')
+        self.connect('configuration.hub_height_user',       'assembly.hub_height_user')
         if modeling_options['flags']['blade']:
-            self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis')
+            self.connect('blade.outer_shape_bem.ref_axis',  'assembly.blade_ref_axis_user')
         if modeling_options['flags']['hub']:
             self.connect('hub.radius',                      'assembly.hub_radius')
         if modeling_options['flags']['tower']:
-            self.connect('tower.height',                    'assembly.tower_height')
-        if modeling_options['flags']['foundation']:
-            self.connect('foundation.height',               'assembly.foundation_height')
+            self.connect('tower.ref_axis',                  'assembly.tower_ref_axis_user')
+            self.add_subsystem('tower_grid', Compute_Grid(init_options=tower_init_options))
+            self.connect('assembly.tower_ref_axis',         'tower_grid.ref_axis')
         if modeling_options['flags']['nacelle']:
             self.connect('nacelle.distance_tt_hub',         'assembly.distance_tt_hub')
-        if modeling_options['flags']['monopile']:
-            self.connect('monopile.height',                 'assembly.monopile_height')
-
-        # Setup TSR optimization
-        opt_var = self.add_subsystem('opt_var', om.IndepVarComp())
-        opt_var.add_output('tsr_opt_gain',   val = 1.0)
-        # Multiply the initial tsr with the tsr gain
-        exec_comp = om.ExecComp('tsr_opt = tsr_original * tsr_gain')
-        self.add_subsystem('pc', exec_comp)
-        self.connect('opt_var.tsr_opt_gain', 'pc.tsr_gain')
-        if modeling_options['flags']['control']:
-            self.connect('control.rated_TSR',    'pc.tsr_original')
 
 class Blade(om.Group):
     # Openmdao group with components with the blade data coming from the input yaml file.
@@ -355,7 +360,7 @@ class Blade(om.Group):
         self.add_subsystem('opt_var',opt_var)
 
         # Import outer shape BEM
-        self.add_subsystem('outer_shape_bem', Blade_Outer_Shape_BEM(blade_init_options = blade_init_options), promotes = ['length'])
+        self.add_subsystem('outer_shape_bem', Blade_Outer_Shape_BEM(blade_init_options = blade_init_options))
 
         # Parametrize blade outer shape
         self.add_subsystem('pa',    ParametrizeBladeAero(blade_init_options = blade_init_options, opt_options = opt_options)) # Parameterize aero (chord and twist)
@@ -385,7 +390,7 @@ class Blade(om.Group):
             self.connect('interp_airfoils.coord_xy_dim',    'blade_lofted.coord_xy_dim')
             self.connect('pa.twist_param',                  'blade_lofted.twist')
             self.connect('outer_shape_bem.s',               'blade_lofted.s')
-            self.connect('outer_shape_bem.ref_axis',        'blade_lofted.ref_axis')
+            self.connect('assembly.blade_ref_axis',         'blade_lofted.ref_axis')
 
         # Import blade internal structure data and remap composites on the outer blade shape
         self.add_subsystem('internal_structure_2d_fem', Blade_Internal_Structure_2D_FEM(blade_init_options = blade_init_options, af_init_options = af_init_options))
@@ -453,9 +458,6 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
         self.add_output('pitch_axis',    val=np.zeros(n_span),                 desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
         self.add_output('ref_axis',      val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
 
-        self.add_output('length',       val = 0.0,               units='m',    desc='Scalar of the 3D blade length computed along its axis.')
-        self.add_output('length_z',     val = 0.0,               units='m',    desc='Scalar of the 1D blade length along z, i.e. the blade projection in the plane ignoring prebend and sweep. For a straight blade this is equal to length')
-
     def compute(self, inputs, outputs):
 
         # If devices are defined along span, manipulate the grid s to always have a grid point where it is needed, and reinterpolate the blade quantities, namely chord, twist, pitch axis, and reference axis
@@ -500,9 +502,6 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             outputs['twist']        = inputs['twist_yaml']
             outputs['pitch_axis']   = inputs['pitch_axis_yaml']
             outputs['ref_axis']     = inputs['ref_axis_yaml']
-
-        outputs['length']   = arc_length(outputs['ref_axis'])[-1]
-        outputs['length_z'] = outputs['ref_axis'][:,2][-1]
 
 class Blade_Interp_Airfoils(om.ExplicitComponent):
     # Openmdao component to interpolate airfoil coordinates and airfoil polars along the span of the blade for a predefined set of airfoils coming from component Airfoils.
@@ -1045,7 +1044,7 @@ class Hub(om.Group):
         ivc = self.add_subsystem('hub_indep_vars', om.IndepVarComp(), promotes=['*'])
 
         ivc.add_output('cone',         val=0.0, units='rad',   desc='Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.')
-        ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.')
+        #ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.') # GB: this doesn't connect to anything
         ivc.add_output('diameter',          val = 0.0, units='m')
         ivc.add_output('flange_t2shell_t',          val = 0.0)
         ivc.add_output('flange_OD2hub_D',           val = 0.0)
@@ -1063,7 +1062,6 @@ class Hub(om.Group):
 
         exec_comp = om.ExecComp('radius = 0.5 * diameter', units='m', radius={'desc' : 'Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.'})
         self.add_subsystem('compute_radius', exec_comp, promotes=['*'])
-
 
 class Compute_Grid(om.ExplicitComponent):
     """
@@ -1116,28 +1114,6 @@ class Compute_Grid(om.ExplicitComponent):
         low_d_high = arc_distances[-1] * d_arc_distances_d_points
         high_d_low = np.outer(arc_distances, d_arc_distances_d_points[-1, :])
         partials['s', 'ref_axis'] = (low_d_high - high_d_low) / arc_distances[-1]**2
-
-class Tower(om.Group):
-
-    def initialize(self):
-        self.options.declare('tower_init_options')
-
-    def setup(self):
-        tower_init_options = self.options['tower_init_options']
-        n_height           = tower_init_options['n_height']
-        n_layers           = tower_init_options['n_layers']
-
-        ivc = self.add_subsystem('tower_indep_vars', om.IndepVarComp(), promotes=['*'])
-        ivc.add_output('ref_axis', val=np.zeros((n_height, 3)), units='m', desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
-        ivc.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the tower axis.')
-        ivc.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
-        ivc.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of tower')
-        ivc.add_discrete_output('layer_name', val=[],         desc='1D array of the names of the layers modeled in the tower structure.')
-        ivc.add_discrete_output('layer_mat',  val=[],         desc='1D array of the names of the materials of each layer modeled in the tower structure.')
-
-        self.add_subsystem('compute_tower_grid',
-            Compute_Grid(init_options=tower_init_options),
-            promotes=['*'])
 
 class Monopile(om.Group):
 
@@ -1244,6 +1220,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('mat_init_options')
+        self.options.declare('composites', default=True)
 
     def setup(self):
 
@@ -1270,8 +1247,8 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
             if discrete_inputs['name'][i] == 'resin':
                 density_resin = inputs['rho'][i]
                 id_resin = i
-        if density_resin==0.:
-            raise ValueError('Error: a material named resin must be defined in the input yaml')
+        if self.options['composites'] and density_resin==0.:
+            print('Warning: a material named resin is not defined in the input yaml.  This is required for blade composite analysis')
 
         fvf   = np.zeros(self.n_mat)
         fwf   = np.zeros(self.n_mat)
@@ -1316,6 +1293,7 @@ class Materials(om.Group):
 
     def initialize(self):
         self.options.declare('mat_init_options')
+        self.options.declare('composites', default=True)
 
     def setup(self):
         mat_init_options = self.options['mat_init_options']
@@ -1343,7 +1321,8 @@ class Materials(om.Group):
         ivc.add_output('fvf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.')
         ivc.add_output('fwf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.')
 
-        self.add_subsystem('compute_materials_properties', ComputeMaterialsProperties(mat_init_options=mat_init_options), promotes=['*'])
+        self.add_subsystem('compute_materials_properties', ComputeMaterialsProperties(mat_init_options=mat_init_options,
+                                                                                      composites=self.options['composites']), promotes=['*'])
 
 class WT_Assembly(om.ExplicitComponent):
     # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
@@ -1357,28 +1336,49 @@ class WT_Assembly(om.ExplicitComponent):
             n_span = modeling_options['blade']['n_span']
         else:
             n_span = 0
+        if modeling_options['flags']['tower']:
+            n_height           = modeling_options['tower']['n_height']
+        else:
+            n_height = 0
             
-        self.add_input('blade_ref_axis',        val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
-        self.add_output('r_blade',              val=np.zeros(n_span), units='m',      desc='1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)')
-        self.add_output('rotor_radius',         val=0.0,    units='m',      desc='Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.')
-        self.add_output('rotor_diameter',       val=0.0,    units='m',      desc='Scalar of the rotor diameter, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.')
+        self.add_input('blade_ref_axis_user',   val=np.zeros((n_span,3)),   units='m',  desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+        self.add_input('rotor_diameter_user',   val=0.0,                    units='m',  desc='Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.')
+        self.add_input('hub_radius',            val=0.0,                    units='m',  desc='Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.')
+        
+        self.add_output('rotor_diameter',       val=0.0,                    units='m',  desc='Diameter of the rotor used in WISDEM. It is defined as two times the blade length plus the hub diameter.')
+        self.add_output('r_blade',              val=np.zeros(n_span),       units='m',  desc='1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)')
+        self.add_output('rotor_radius',         val=0.0,                    units='m',  desc='Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.')
+        self.add_output('blade_ref_axis',       val=np.zeros((n_span,3)),   units='m',  desc='2D array of the coordinates (x,y,z) of the blade reference axis scaled based on rotor diameter, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+        self.add_output('blade_length',         val=0.0,                    units='m',  desc='Scalar of the 3D blade length computed along its axis, scaled based on the user defined rotor diameter.')
+            
+        self.add_input('tower_ref_axis_user',   val=np.zeros((n_height, 3)),units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+        self.add_input('distance_tt_hub',       val=0.0,                    units='m',  desc='Vertical distance from tower top to hub center.')
+        self.add_input('hub_height_user',       val=0.0,                    units='m',  desc='Height of the hub specified by the user.')
 
-        self.add_input('hub_radius',            val=0.0, units='m',         desc='Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.')
-            
-        self.add_input('monopile_height',       val=0.0,    units='m',      desc='Scalar of the monopile height computed along its axis from monopile base.')
-            
-        self.add_input('tower_height',          val=0.0,    units='m',      desc='Scalar of the tower height computed along its axis from tower base.')
-        self.add_input('foundation_height',     val=0.0,    units='m',      desc='Scalar of the foundation height computed along its axis.')
-
-        self.add_input('distance_tt_hub',       val=0.0,    units='m',      desc='Vertical distance from tower top to hub center.')
-        self.add_output('hub_height',           val=0.0,    units='m',      desc='Height of the hub in the global reference system, i.e. distance rotor center to ground.')
+        self.add_output('tower_ref_axis',       val=np.zeros((n_height, 3)),units='m',  desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
+        self.add_output('hub_height',           val=0.0,                    units='m',  desc='Height of the hub in the global reference system, i.e. distance rotor center to ground.')
 
     def compute(self, inputs, outputs):
         modeling_options = self.options['modeling_options']
 
         if modeling_options['flags']['blade']:
-            outputs['r_blade']        = inputs['blade_ref_axis'][:,2] + inputs['hub_radius']
+            outputs['blade_ref_axis'][:,0] = inputs['blade_ref_axis_user'][:,0]
+            outputs['blade_ref_axis'][:,1] = inputs['blade_ref_axis_user'][:,1]
+            # Scale z if the blade length provided by the user does not match the rotor diameter. D = (blade length + hub radius) * 2
+            if inputs['rotor_diameter_user'] != 0.:
+                outputs['rotor_diameter']       = inputs['rotor_diameter_user']
+                outputs['blade_ref_axis'][:,2]  = inputs['blade_ref_axis_user'][:,2] * inputs['rotor_diameter_user'] / ((arc_length(inputs['blade_ref_axis_user'])[-1] + inputs['hub_radius']) * 2.)
+            # If the user does not provide a rotor diameter, this is computed from the hub diameter and the blade length
+            else:
+                outputs['rotor_diameter']       = (arc_length(inputs['blade_ref_axis_user'])[-1] + inputs['hub_radius']) * 2.
+                outputs['blade_ref_axis'][:,2]  = inputs['blade_ref_axis_user'][:,2]
+            outputs['r_blade']        = outputs['blade_ref_axis'][:,2] + inputs['hub_radius']
             outputs['rotor_radius']   = outputs['r_blade'][-1]
-            
-        outputs['rotor_diameter'] = outputs['rotor_radius'] * 2.
-        outputs['hub_height']     = inputs['monopile_height'] + inputs['tower_height'] + inputs['distance_tt_hub'] + inputs['foundation_height']
+            outputs['blade_length']   = arc_length(outputs['blade_ref_axis'])[-1]
+        if modeling_options['flags']['tower']:
+            if inputs['hub_height_user'] != 0.:
+                outputs['hub_height'] = inputs['hub_height_user']
+                outputs['tower_ref_axis'][:,2] = (inputs['tower_ref_axis_user'][:,2] - inputs['tower_ref_axis_user'][0,2]) * inputs['hub_height_user'] / (inputs['tower_ref_axis_user'][-1,2] + inputs['distance_tt_hub']) + inputs['tower_ref_axis_user'][0,2]
+            else:
+                outputs['hub_height']     = inputs['tower_ref_axis_user'][-1,2]
+                outputs['tower_ref_axis'] = inputs['tower_ref_axis_user']

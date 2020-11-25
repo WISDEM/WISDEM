@@ -29,7 +29,7 @@ if opt_flag:
     prob.model.add_design_var('S_Nmax',       lower=-0.3, upper=-0.1)
 
     # Constraints
-    prob.model.add_constraint('Overall_eff',        lower=Eta_Target)
+    prob.model.add_constraint('generator_efficiency',        lower=Eta_Target)
     prob.model.add_constraint('E_p',                lower=500.0+eps, upper=5000.0-eps)
     prob.model.add_constraint('TCr',                 lower=0.0+eps)
     prob.model.add_constraint('TCs',                 lower=0.0+eps)
@@ -44,7 +44,7 @@ if opt_flag:
     prob.model.add_constraint('D_ratio',      lower=1.37, upper=1.4)
     prob.model.add_constraint('Current_ratio',lower=0.1,  upper=0.3)
 
-    Objective_function = 'Costs'
+    Objective_function = 'generator_cost'
     prob.model.add_objective(Objective_function, scaler=1e-5)
 
 

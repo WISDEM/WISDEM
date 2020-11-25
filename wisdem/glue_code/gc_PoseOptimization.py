@@ -12,10 +12,15 @@ class PoseOptimization(object):
         # Determine the number of design variables
         n_DV = 0
 
+        rotorD_opt  = self.opt['optimization_variables']['rotor_diameter']
         blade_opt   = self.opt['optimization_variables']['blade']
         tower_opt   = self.opt['optimization_variables']['tower']
         mono_opt    = self.opt['optimization_variables']['monopile']
+        hub_opt     = self.opt['optimization_variables']['hub']
+        drive_opt   = self.opt['optimization_variables']['drivetrain']
         
+        if rotorD_opt['flag']:
+            n_DV += 1
         if blade_opt['aero_shape']['twist']['flag']:
             n_DV += blade_opt['aero_shape']['twist']['n_opt'] - 2
         if blade_opt['aero_shape']['chord']['flag']:
@@ -40,7 +45,21 @@ class PoseOptimization(object):
             n_DV += self.modeling['monopile']['n_height']
         if mono_opt['layer_thickness']['flag']:
             n_DV += (self.modeling['monopile']['n_height'] - 1) * self.modeling['monopile']['n_layers']
-
+        if hub_opt['cone']['flag']:
+            n_DV += 1
+        if hub_opt['hub_diameter']['flag']:
+            n_DV += 1
+        for k in ['uptilt','overhang','distance_tt_hub','distance_hub_mb',
+                  'distance_mb_mb','generator_length','gear_ratio','generator_length',
+                  'bedplate_web_thickness','bedplate_flange_thickness','bedplate_flange_width']:
+            if drive_opt[k]['flag']:
+                n_DV += 1
+        for k in ['lss_diameter','lss_wall_thickness','hss_diameter','hss_wall_thickness',
+                  'nose_diameter','nose_wall_thickness']:
+            if drive_opt[k]['flag']:
+                n_DV += 2
+        if drive_opt['bedplate_wall_thickness']['flag']:
+            n_DV += 4
         if self.opt['driver']['form'] == 'central':
             n_DV *= 2
 
@@ -111,10 +130,10 @@ class PoseOptimization(object):
 
         # Set merit figure. Each objective has its own scaling.
         if self.opt['merit_figure'] == 'AEP':
-            wt_opt.model.add_objective('sse.AEP', ref = -1.e6)
+            wt_opt.model.add_objective('rp.AEP', ref = -1.e6)
 
         elif self.opt['merit_figure'] == 'blade_mass':
-            wt_opt.model.add_objective('elastic.precomp.blade_mass', ref = 1.e4)
+            wt_opt.model.add_objective('re.precomp.blade_mass', ref = 1.e4)
 
         elif self.opt['merit_figure'] == 'LCOE':
             wt_opt.model.add_objective('financese.lcoe', ref = 0.1)
@@ -123,20 +142,26 @@ class PoseOptimization(object):
             wt_opt.model.add_objective('tcons.tip_deflection_ratio')
 
         elif self.opt['merit_figure'] == 'tower_mass':
-            wt_opt.model.add_objective('towerse.tower_mass', scaler=1e-6)
+            wt_opt.model.add_objective('towerse.tower_mass', ref = 1e6)
 
         elif self.opt['merit_figure'] == 'mononpile_mass':
-            wt_opt.model.add_objective('towerse.mononpile_mass', ref=1.e6)
+            wt_opt.model.add_objective('towerse.mononpile_mass', ref = 1e6)
 
         elif self.opt['merit_figure'] == 'structural_mass':
-            wt_opt.model.add_objective('towerse.structural_mass', ref=1.e6)
+            wt_opt.model.add_objective('towerse.structural_mass', ref = 1e6)
 
         elif self.opt['merit_figure'] == 'tower_cost':
-            wt_opt.model.add_objective('tcc.tower_cost', ref=1.e6)
+            wt_opt.model.add_objective('tcc.tower_cost', ref = 1e6)
+
+        elif self.opt['merit_figure'] == 'hub_mass':
+            wt_opt.model.add_objective('drivese.hub_system_mass', ref = 1e5)
+
+        elif self.opt['merit_figure'] == 'nacelle_mass':
+            wt_opt.model.add_objective('drivese.nacelle_mass', ref = 1e6)
 
         elif self.opt['merit_figure'] == 'Cp':
             if self.modeling['flags']['blade']:
-                wt_opt.model.add_objective('sse.powercurve.Cp_regII', ref = -1.)
+                wt_opt.model.add_objective('rp.powercurve.Cp_regII', ref = -1.)
             else:
                 wt_opt.model.add_objective('ccblade.CP', ref = -1.)
         else:
@@ -148,10 +173,16 @@ class PoseOptimization(object):
     def set_design_variables(self, wt_opt, wt_init):
 
         # Set optimization design variables.
+        rotorD_opt   = self.opt['optimization_variables']['rotor_diameter']
         blade_opt    = self.opt['optimization_variables']['blade']
         tower_opt    = self.opt['optimization_variables']['tower']
         monopile_opt = self.opt['optimization_variables']['monopile']
         control_opt  = self.opt['optimization_variables']['control']
+        hub_opt      = self.opt['optimization_variables']['hub']
+        drive_opt    = self.opt['optimization_variables']['drivetrain']
+
+        if rotorD_opt['flag']:
+            wt_opt.model.add_design_var('configuration.rotor_diameter_user', lower=rotorD_opt['minimum'], upper=rotorD_opt['minimum'], ref = 1.e+2)
 
         if blade_opt['aero_shape']['twist']['flag']:
             indices        = range(2, blade_opt['aero_shape']['twist']['n_opt'])
@@ -189,6 +220,7 @@ class PoseOptimization(object):
             indices  = range(1, spar_cap_ps_options['n_opt'] - 1)
             wt_opt.model.add_design_var('blade.opt_var.spar_cap_ps_opt_gain', indices = indices, lower=spar_cap_ps_options['min_gain'], upper=spar_cap_ps_options['max_gain'])
 
+        # -- Tower & Monopile --
         if tower_opt['outer_diameter']['flag']:
             wt_opt.model.add_design_var('tower.diameter', lower=tower_opt['outer_diameter']['lower_bound'], upper=tower_opt['outer_diameter']['upper_bound'], ref=5.)
 
@@ -203,8 +235,8 @@ class PoseOptimization(object):
 
         # -- Control --
         if control_opt['tsr']['flag']:
-            wt_opt.model.add_design_var('opt_var.tsr_opt_gain', lower=control_opt['tsr']['min_gain'],
-                                                                upper=control_opt['tsr']['max_gain'])
+            wt_opt.model.add_design_var('control.rated_TSR', lower=control_opt['tsr']['minimum'],
+                                        upper=control_opt['tsr']['maximum'], ref=1e+1)
         if control_opt['servo']['pitch_control']['flag']:
             wt_opt.model.add_design_var('control.PC_omega', lower=control_opt['servo']['pitch_control']['omega_min'],
                                                             upper=control_opt['servo']['pitch_control']['omega_max'])
@@ -215,61 +247,85 @@ class PoseOptimization(object):
                                                             upper=control_opt['servo']['torque_control']['omega_max'])
             wt_opt.model.add_design_var('control.VS_zeta', lower=control_opt['servo']['torque_control']['zeta_min'],
                                                            upper=control_opt['servo']['torque_control']['zeta_max'])
-        
+        # -- Hub & Drivetrain --
+        if hub_opt['cone']['flag']:
+            wt_opt.model.add_design_var('hub.cone', lower=hub_opt['cone']['lower_bound'],
+                                        upper=hub_opt['cone']['upper_bound'], ref=1e-2)
+        if hub_opt['hub_diameter']['flag']:
+            wt_opt.model.add_design_var('hub.diameter', lower=hub_opt['hub_diameter']['lower_bound'],
+                                        upper=hub_opt['hub_diameter']['upper_bound'])
+        if drive_opt['uptilt']['flag']:
+            wt_opt.model.add_design_var('nacelle.uptilt', lower=drive_opt['uptilt']['lower_bound'],
+                                        upper=drive_opt['uptilt']['upper_bound'], ref=1e-2)
+
+        if drive_opt['generator_length']['flag']:
+            wt_opt.model.add_design_var('nacelle.L_generator', lower=drive_opt['generator_length']['lower_bound'],
+                                        upper=drive_opt['generator_length']['upper_bound'])
+
+        for k in ['overhang','distance_tt_hub','distance_hub_mb','distance_mb_mb','gear_ratio',
+                  'bedplate_flange_width','lss_diameter','hss_diameter','nose_diameter']:
+            if drive_opt[k]['flag']:
+                wt_opt.model.add_design_var('nacelle.'+k, lower=drive_opt[k]['lower_bound'], upper=drive_opt[k]['upper_bound'])
+
+        for k in ['bedplate_wall_thickness','bedplate_web_thickness','bedplate_flange_thickness','lss_wall_thickness',
+                  'hss_wall_thickness','nose_wall_thickness']:
+            if drive_opt[k]['flag']:
+                wt_opt.model.add_design_var('nacelle.'+k, lower=drive_opt[k]['lower_bound'], upper=drive_opt[k]['upper_bound'], ref=1e-2)
+
         return wt_opt
 
     
     def set_constraints(self, wt_opt):
         blade_opt   = self.opt['optimization_variables']['blade']
 
-        # Set non-linear constraints
-        blade_constraints = self.opt['constraints']['blade']
-        if blade_constraints['strains_spar_cap_ss']['flag']:
+        # Set non-linear blade constraints
+        blade_constr = self.opt['constraints']['blade']
+        if blade_constr['strains_spar_cap_ss']['flag']:
             if blade_opt['structure']['spar_cap_ss']['flag']:
-                wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.0)
+                wt_opt.model.add_constraint('rs.constr.constr_max_strainU_spar', upper= 1.0)
             else:
                 print('WARNING: the strains of the suction-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced.')
 
-        if blade_constraints['strains_spar_cap_ps']['flag']:
+        if blade_constr['strains_spar_cap_ps']['flag']:
             if blade_opt['structure']['spar_cap_ps']['flag'] or blade_opt['structure']['spar_cap_ps']['equal_to_suction']:
-                wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.0)
+                wt_opt.model.add_constraint('rs.constr.constr_max_strainL_spar', upper= 1.0)
             else:
                 print('WARNING: the strains of the pressure-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced.')
 
-        if blade_constraints['stall']['flag']:
+        if blade_constr['stall']['flag']:
             if blade_opt['aero_shape']['twist']['flag']:
                 wt_opt.model.add_constraint('stall_check.no_stall_constraint', upper= 1.0)
             else:
                 print('WARNING: the margin to stall is set to be constrained, but twist is not an active design variable. The constraint is not enforced.')
 
-        if blade_constraints['tip_deflection']['flag']:
+        if blade_constr['tip_deflection']['flag']:
             if blade_opt['structure']['spar_cap_ss']['flag'] or blade_opt['structure']['spar_cap_ps']['flag']:
-                wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper= blade_constraints['tip_deflection']['ratio'])
+                wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper=1.0)
             else:
                 print('WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
 
-        if blade_constraints['chord']['flag']:
+        if blade_constr['chord']['flag']:
             if blade_opt['aero_shape']['chord']['flag']:
                 wt_opt.model.add_constraint('blade.pa.max_chord_constr', upper= 1.0)
             else:
                 print('WARNING: the max chord is set to be constrained, but chord is not an active design variable. The constraint is not enforced.')
 
-        if blade_constraints['frequency']['flap_above_3P']:
+        if blade_constr['frequency']['flap_above_3P']:
             if blade_opt['structure']['spar_cap_ss']['flag'] or blade_opt['structure']['spar_cap_ps']['flag']:
-                wt_opt.model.add_constraint('rlds.constr.constr_flap_f_margin', upper= 0.0)
+                wt_opt.model.add_constraint('rs.constr.constr_flap_f_margin', upper= 0.0)
             else:
                 print('WARNING: the blade flap frequencies are set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
 
-        if blade_constraints['frequency']['edge_above_3P']:
-            wt_opt.model.add_constraint('rlds.constr.constr_edge_f_margin', upper= 0.0)
+        if blade_constr['frequency']['edge_above_3P']:
+            wt_opt.model.add_constraint('rs.constr.constr_edge_f_margin', upper= 0.0)
 
-        if blade_constraints['rail_transport']['flag']:
-            if blade_constraints['rail_transport']['8_axle']:
-                wt_opt.model.add_constraint('elastic.rail.constr_LV_8axle_horiz',   lower = 0.8, upper= 1.0)
-                wt_opt.model.add_constraint('elastic.rail.constr_strainPS',         upper= 1.0)
-                wt_opt.model.add_constraint('elastic.rail.constr_strainSS',         upper= 1.0)
-            elif blade_constraints['rail_transport']['4_axle']:
-                wt_opt.model.add_constraint('elastic.rail.constr_LV_4axle_horiz', upper= 1.0)
+        if blade_constr['rail_transport']['flag']:
+            if blade_constr['rail_transport']['8_axle']:
+                wt_opt.model.add_constraint('re.rail.constr_LV_8axle_horiz',   lower = 0.8, upper= 1.0)
+                wt_opt.model.add_constraint('re.rail.constr_strainPS',         upper= 1.0)
+                wt_opt.model.add_constraint('re.rail.constr_strainSS',         upper= 1.0)
+            elif blade_constr['rail_transport']['4_axle']:
+                wt_opt.model.add_constraint('re.rail.constr_LV_4axle_horiz', upper= 1.0)
             else:
                 raise ValueError('You have activated the rail transport constraint module. Please define whether you want to model 4- or 8-axle flatcars.')
 
@@ -297,50 +353,69 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint('ccblade.D_n_opt', lower = target_D-eps_L, upper = target_D+eps_L)
 
         # Tower and monopile contraints
-        tower_constraints = self.opt['constraints']['tower']
-        monopile_constraints = self.opt['constraints']['monopile']
-        if tower_constraints['height_constraint']['flag'] or monopile_constraints['height_constraint']['flag']:
+        tower_constr    = self.opt['constraints']['tower']
+        monopile_constr = self.opt['constraints']['monopile']
+        if tower_constr['height_constraint']['flag'] or monopile_constr['height_constraint']['flag']:
             wt_opt.model.add_constraint('towerse.height_constraint',
-                lower=tower_constraints['height_constraint']['lower_bound'],
-                upper=tower_constraints['height_constraint']['upper_bound'])
+                lower=tower_constr['height_constraint']['lower_bound'],
+                upper=tower_constr['height_constraint']['upper_bound'])
 
-        if tower_constraints['stress']['flag'] or monopile_constraints['stress']['flag']:
+        if tower_constr['stress']['flag'] or monopile_constr['stress']['flag']:
             for k in range(self.modeling['tower']['nLC']):
                 kstr = '' if self.modeling['tower']['nLC'] == 0 else str(k+1)
                 wt_opt.model.add_constraint('towerse.post'+kstr+'.stress', upper=1.0)
 
-        if tower_constraints['global_buckling']['flag'] or monopile_constraints['global_buckling']['flag']:
+        if tower_constr['global_buckling']['flag'] or monopile_constr['global_buckling']['flag']:
             for k in range(self.modeling['tower']['nLC']):
                 kstr = '' if self.modeling['tower']['nLC'] == 0 else str(k+1)
                 wt_opt.model.add_constraint('towerse.post'+kstr+'.global_buckling', upper=1.0)
 
-        if tower_constraints['shell_buckling']['flag'] or monopile_constraints['shell_buckling']['flag']:
+        if tower_constr['shell_buckling']['flag'] or monopile_constr['shell_buckling']['flag']:
             for k in range(self.modeling['tower']['nLC']):
                 kstr = '' if self.modeling['tower']['nLC'] == 0 else str(k+1)
                 wt_opt.model.add_constraint('towerse.post'+kstr+'.shell_buckling', upper=1.0)
 
-        if tower_constraints['d_to_t']['flag'] or monopile_constraints['d_to_t']['flag']:
+        if tower_constr['d_to_t']['flag'] or monopile_constr['d_to_t']['flag']:
             wt_opt.model.add_constraint('towerse.constr_d_to_t',
-                                        lower=tower_constraints['d_to_t']['lower_bound'],
-                                        upper=tower_constraints['d_to_t']['upper_bound'])
+                                        lower=tower_constr['d_to_t']['lower_bound'],
+                                        upper=tower_constr['d_to_t']['upper_bound'])
 
-        if tower_constraints['taper']['flag'] or monopile_constraints['taper']['flag']:
+        if tower_constr['taper']['flag'] or monopile_constr['taper']['flag']:
             wt_opt.model.add_constraint('towerse.constr_taper',
-                                        lower=tower_constraints['taper']['lower_bound'])
+                                        lower=tower_constr['taper']['lower_bound'])
 
-        if tower_constraints['slope']['flag'] or monopile_constraints['slope']['flag']:
+        if tower_constr['slope']['flag'] or monopile_constr['slope']['flag']:
             wt_opt.model.add_constraint('towerse.slope', upper=1.0)
 
-        if tower_constraints['frequency_1']['flag'] or monopile_constraints['frequency_1']['flag']:
+        if tower_constr['frequency_1']['flag'] or monopile_constr['frequency_1']['flag']:
             for k in range(self.modeling['tower']['nLC']):
                 kstr = '' if self.modeling['tower']['nLC'] == 0 else str(k+1)
                 wt_opt.model.add_constraint('towerse.post'+kstr+'.structural_frequencies', indices=[0],
-                lower=tower_constraints['frequency_1']['lower_bound'],
-                upper=tower_constraints['frequency_1']['upper_bound'])
+                lower=tower_constr['frequency_1']['lower_bound'],
+                upper=tower_constr['frequency_1']['upper_bound'])
 
-        #control_constraints = self.opt['constraints']['control']
+        #control_constr = self.opt['constraints']['control']
+        
+        # Hub and drivetrain constraints
+        hub_constr   = self.opt['constraints']['hub']
+        drive_constr = self.opt['constraints']['drivetrain']
+        
+        if hub_constr['hub_diameter']['flag']:
+            wt_opt.model.add_constraint('drivese.constr_hub_diameter', lower=0.0)
+
+        for k in ['lss','hss','bedplate','mb1','mb2']:
+            if drive_constr[k]['flag']:
+                mystr = k+'_vonmises' if k in ['lss','hss','bedplate'] else k+'_defl'
+                wt_opt.model.add_constraint('drivese.constr_'+mystr, upper=1.0)
+
+        for k in ['length','height','access','ecc']:
+            if drive_constr[k]['flag']:
+                wt_opt.model.add_constraint('drivese.constr_'+k, lower=0.0)
+
+
         return wt_opt
 
+        
     
     def set_recorders(self, wt_opt):
         folder_output = self.opt['general']['folder_output']
@@ -373,13 +448,14 @@ class PoseOptimization(object):
                 if max(wt_opt['blade.opt_var.twist_opt_gain']) > 1. or min(wt_opt['blade.opt_var.twist_opt_gain']) < 0.:
                     print('Warning: the initial twist violates the upper or lower bounds of the twist design variables.')
 
-            blade_constraints = self.opt['constraints']['blade']
-            wt_opt['blade.opt_var.s_opt_chord']  = np.linspace(0., 1., blade_opt['aero_shape']['chord']['n_opt'])
-            wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., blade_opt['structure']['spar_cap_ss']['n_opt'])
-            wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., blade_opt['structure']['spar_cap_ps']['n_opt'])
-            wt_opt['rlds.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
-            wt_opt['rlds.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
-            wt_opt['stall_check.stall_margin'] = blade_constraints['stall']['margin'] * 180. / np.pi
+            blade_constr = self.opt['constraints']['blade']
+            wt_opt['blade.opt_var.s_opt_chord']    = np.linspace(0., 1., blade_opt['aero_shape']['chord']['n_opt'])
+            wt_opt['blade.ps.s_opt_spar_cap_ss']   = np.linspace(0., 1., blade_opt['structure']['spar_cap_ss']['n_opt'])
+            wt_opt['blade.ps.s_opt_spar_cap_ps']   = np.linspace(0., 1., blade_opt['structure']['spar_cap_ps']['n_opt'])
+            wt_opt['rs.constr.max_strainU_spar']   = blade_constr['strains_spar_cap_ss']['max']
+            wt_opt['rs.constr.max_strainL_spar']   = blade_constr['strains_spar_cap_ps']['max']
+            wt_opt['stall_check.stall_margin']     = blade_constr['stall']['margin'] * 180. / np.pi
+            wt_opt['tcons.max_allowable_td_ratio'] = blade_constr['tip_deflection']['margin']
         
         return wt_opt
 

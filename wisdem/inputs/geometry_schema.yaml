@@ -406,29 +406,25 @@ properties:
                                 maximum: 1.
                                 default: 1.0
                             lss_diameter:
-                                type: object
-                                description: Diameter of the low speed shaft
-                                default: {'grid':[0.0, 1.0], 'values':[0.3, 0.3]}
-                                required:
-                                    - grid
-                                    - values
-                                properties:
-                                    grid:
-                                        $ref: "#/definitions/distributed_data/grid_nd"
-                                    values:
-                                        $ref: "#/definitions/distributed_data/length"
+                                type: array
+                                description: Diameter of the low speed shaft at beginning (generator/gearbox) and end (hub) points
+                                default: [0.3, 0.3]
+                                items:
+                                    type: number
+                                    unit: m
+                                    minItems: 2
+                                    maxItems: 2
+                                    default: 0.3
                             lss_wall_thickness:
-                                type: object
-                                description: Thickness of the low speed shaft wall in radial direction
-                                default: {'grid':[0.0, 1.0], 'values':[0.1, 0.1]}
-                                required:
-                                    - grid
-                                    - values
-                                properties:
-                                    grid:
-                                        $ref: "#/definitions/distributed_data/grid_nd"
-                                    values:
-                                        $ref: "#/definitions/distributed_data/length"
+                                type: array
+                                description: Thickness of the low speed shaft at beginning (generator/gearbox) and end (hub) points
+                                default: [0.1, 0.1]
+                                items:
+                                    type: number
+                                    unit: m
+                                    minItems: 2
+                                    maxItems: 2
+                                    default: 0.1
                             lss_material:
                                 type: string
                                 description: Material name identifier
@@ -441,57 +437,49 @@ properties:
                                 maximum: 10.
                                 default: 1.5
                             hss_diameter:
-                                type: object
-                                description: Diameter of the high speed shaft
-                                default: {'grid':[0.0, 1.0], 'values':[0.3, 0.3]}
-                                required:
-                                    - grid
-                                    - values
-                                properties:
-                                    grid:
-                                        $ref: "#/definitions/distributed_data/grid_nd"
-                                    values:
-                                        $ref: "#/definitions/distributed_data/length"
+                                type: array
+                                description: Diameter of the high speed shaft at beginning (generator) and end (generator) points
+                                default: [0.3, 0.3]
+                                items:
+                                    type: number
+                                    unit: m
+                                    minItems: 2
+                                    maxItems: 2
+                                    default: 0.3
                             hss_wall_thickness:
-                                type: object
-                                description: Thickness of the high speed shaft wall in radial direction
-                                default: {'grid':[0.0, 1.0], 'values':[0.1, 0.1]}
-                                required:
-                                    - grid
-                                    - values
-                                properties:
-                                    grid:
-                                        $ref: "#/definitions/distributed_data/grid_nd"
-                                    values:
-                                        $ref: "#/definitions/distributed_data/length"
+                                type: array
+                                description: Thickness of the high speed shaft at beginning (generator) and end (generator) points
+                                default: [0.1, 0.1]
+                                items:
+                                    type: number
+                                    unit: m
+                                    minItems: 2
+                                    maxItems: 2
+                                    default: 0.1
                             hss_material:
                                 type: string
                                 description: Material name identifier
                                 default: steel
                             nose_diameter:
-                                type: object
-                                description: Diameter of the nose (also called turret or spindle)
-                                default: {'grid':[0.0, 1.0], 'values':[0.3, 0.3]}
-                                required:
-                                    - grid
-                                    - values
-                                properties:
-                                    grid:
-                                        $ref: "#/definitions/distributed_data/grid_nd"
-                                    values:
-                                        $ref: "#/definitions/distributed_data/length"
+                                type: array
+                                description: Diameter of the nose/turret at beginning (bedplate) and end (main bearing) points
+                                default: [0.3, 0.3]
+                                items:
+                                    type: number
+                                    unit: m
+                                    minItems: 2
+                                    maxItems: 2
+                                    default: 0.3
                             nose_wall_thickness:
-                                type: object
-                                description: Thickness of the nose (also called turret or spindle)
-                                default: {'grid':[0.0, 1.0], 'values':[0.05, 0.05]}
-                                required:
-                                    - grid
-                                    - values
-                                properties:
-                                    grid:
-                                        $ref: "#/definitions/distributed_data/grid_nd"
-                                    values:
-                                        $ref: "#/definitions/distributed_data/length"
+                                type: array
+                                description: Thickness of the nose/turret at beginning (bedplate) and end (main bearing) points
+                                default: [0.1, 0.1]
+                                items:
+                                    type: number
+                                    unit: m
+                                    minItems: 2
+                                    maxItems: 2
+                                    default: 0.1
                             bedplate_wall_thickness:
                                 type: object
                                 description: Thickness of the hollow elliptical bedplate used in direct drive configurations
@@ -1576,6 +1564,9 @@ properties:
             - drivetrain
             - rotor_orientation
             - number_of_blades
+            - rotor_diameter
+            - hub_height
+            - rated_power
         properties:
             turbine_class:
                 type: string
@@ -1602,10 +1593,28 @@ properties:
                 unit: none
                 minimum: 1
                 maximum: 10
+            rotor_diameter:
+                type: number
+                default: 0
+                description: Diameter of the rotor, defined as two times the blade length plus the hub diameter
+                unit: m
+                minimum: 0
+                maximum: 1000
+            hub_height:
+                type: number
+                default: 0
+                description: Height of the hub center over the ground (land-based) or the mean sea level (offshore)
+                unit: m
+                minimum: 0
+                maximum: 1000
+            rated_power:
+                type: number
+                description: Nameplate power of the turbine, i.e. the rated electrical output of the generator.
+                unit: W
+                minimum: 0
     control:
         type: object
         required:
-            - rated_power
             - Vin
             - Vout
             - tsr
@@ -1614,11 +1623,6 @@ properties:
             - max_pitch_rate
             - max_torque_rate
         properties:
-            rated_power:
-                type: number
-                description: Nameplate power of the turbine, i.e. the rated electrical output of the generator.
-                unit: W
-                minimum: 0
             Vin:
                 type: number
                 description: Cut-in wind speed of the wind turbine.

@@ -1,5 +1,15 @@
 name: IEA 15MW Offshore Reference Turbine, with taped chord tip design
 
+assembly:
+    turbine_class: I
+    turbulence_class: B
+    drivetrain: direct_drive
+    rotor_orientation: Upwind
+    number_of_blades: 3
+    hub_height: 150.
+    rotor_diameter: 242.23775645
+    rated_power: 15.e+6
+
 components:
     blade:
         outer_shape_bem:
@@ -322,53 +332,43 @@ components:
         diameter: 7.94
         cone_angle: 0.06981317007977318 # 4 deg
         drag_coefficient: 0.5
-        flange_t2shell_t: 4.0
-        flange_OD2hub_D: 0.5
+        flange_t2shell_t: 6.0
+        flange_OD2hub_D: 0.6
         flange_ID2OD: 0.8
         hub_blade_spacing_margin: 1.2
-        hub_stress_concentration: 2.5
-        n_front_brackets: 3
-        n_rear_brackets: 3
+        hub_stress_concentration: 3.0
+        n_front_brackets: 5
+        n_rear_brackets: 5
         clearance_hub_spinner: 0.5
         spin_hole_incr: 1.2
-        pitch_system_scaling_factor: 0.54
+        pitch_system_scaling_factor: 0.75
         spinner_gust_ws: 70.0
-        hub_material: Steel #cast_iron
-        spinner_material: CarbonUD
+        hub_material: cast_iron
+        spinner_material: glass_uni
     nacelle:
         drivetrain:
-          uptilt_angle: 0.10471975511965977 # 6 deg
-          distance_tt_hub: 4.348
-          tower_top_to_nacelle: 0.380
-          overhang: 11.014
-          drag_coefficient: 0.5
-          distance_hub2mb: 1.0
-          distance_mb2mb: 1.2
-          lss_diameter:
-              grid: [0.0, 1.0]
-              values: [3.0, 3.0]
-          lss_wall_thickness:
-              grid: [0.0, 1.0]
-              values: [0.1, 0.1]
-          nose_diameter:
-              grid: [0.0, 1.0]
-              values: [2.2, 2.2]
-          nose_wall_thickness:
-              grid: [0.0, 1.0]
-              values: [0.1, 0.1]
-          generator_length: 2.75
-          bedplate_wall_thickness:
-              grid: [0.0, 1.0]
-              values: [0.05, 0.05]
-          access_diameter: 1.5
-          gear_ratio: 1.0
-          gearbox_efficiency: 1.0
-          mb1Type: CARB
-          mb2Type: SRB
-          uptower: True
-          lss_material: Steel
-          hss_material: Steel
-          bedplate_material: Steel
+            uptilt_angle: 0.10471975511965977 # 6 deg
+            distance_tt_hub: 5.614
+            overhang: 12.0313
+            drag_coefficient: 0.5
+            distance_hub2mb: 1.0
+            distance_mb2mb: 1.2
+            lss_diameter: [3.0, 3.0]
+            lss_wall_thickness: [0.1, 0.1]
+            nose_diameter: [2.2, 2.2]
+            nose_wall_thickness: [0.1, 0.1]
+            generator_length: 2.15
+            bedplate_wall_thickness:
+                grid: [0.0, 1.0]
+                values: [0.05, 0.05]
+            access_diameter: 0.801
+            gear_ratio: 1.0
+            gearbox_efficiency: 1.0
+            mb1Type: CARB
+            mb2Type: SRB
+            uptower: True
+            lss_material: steel_drive
+            bedplate_material: steel_drive
         generator:
             generator_type: PMSG_Outer
             rho_Fe: 7700.0
@@ -403,7 +403,6 @@ components:
             resist_Cu: 2.52e-8 #1.8e-8*1.4
             y_tau_pr: 0.8333333 #10. / 12
             y_tau_p: 0.8 #12./15.
-
             rad_ag: 5.12623359
             len_s: 2.23961662
             tau_p: 0.1610453779
@@ -470,7 +469,7 @@ components:
                     values: [0.0, 0.0]
                 z:
                     grid: &grid_tower [0, 7.71712E-06, 0.100322576, 0.100330293, 0.200645151, 0.200652868, 0.300967727, 0.300975444, 0.401290303, 0.40129802, 0.501612878, 0.501620595, 0.601935454, 0.601943171, 0.70225803, 0.702265747, 0.802580605, 0.802588322, 0.902903181, 0.902910898, 1.]
-                    values: [15, 15.001, 28, 28.001, 41, 41.001, 54, 54.001, 67, 67.001, 80, 80.001, 93, 93.001, 106, 106.001, 119, 119.001, 132, 132.001, 144.582]
+                    values: [15, 15.001, 28, 28.001, 41, 41.001, 54, 54.001, 67, 67.001, 80, 80.001, 93, 93.001, 106, 106.001, 119, 119.001, 132, 132.001, 144.386]
             outer_diameter:
                 grid: *grid_tower
                 values: [10., 10., 10., 10., 9.926, 9.926, 9.443, 9.443, 8.833, 8.833, 8.151, 8.151, 7.39, 7.39, 6.909, 6.909, 6.748, 6.748, 6.572, 6.572, 6.5]
@@ -482,7 +481,7 @@ components:
             reference_axis: *ref_axis_tower
             layers:
                 - name: tower_wall
-                  material: Steel
+                  material: steel
                   thickness:
                     grid: *grid_tower
                     values: [0.041058, 0.039496, 0.039496, 0.036456, 0.036456, 0.033779, 0.033779, 0.032192, 0.032192, 0.030708, 0.030708, 0.029101, 0.029101, 0.027213, 0.027213, 0.024009, 0.024009, 0.020826, 0.020826, 0.023998, 0.023998]
@@ -512,16 +511,13 @@ components:
             reference_axis: *ref_axis_mono
             layers:
                 - name: monopile_wall
-                  material: Steel
+                  material: steel
                   thickness:
                     grid: *grid_mono
                     values: [0.055341, 0.055341, 0.055341, 0.053449, 0.053449, 0.051509, 0.051509, 0.049527, 0.049527, 0.047517, 0.047517, 0.045517, 0.045517, 0.043527, 0.043527, 0.042242, 0.042242, 0.041058, 0.041058]
     foundation:
         height: -30.
         # monopile_embedment: 45
-
-
-
 
 airfoils:
    -  name: circular
@@ -693,23 +689,57 @@ materials:
       waste: 0.25
       unit_cost: 7.23
       component_id: 0
-   -  name: Steel
-      description: Steel of the tower
-      source: Standard steel with higher density to account for auxiliary systems of the tower (elevator, stairs, etc)
+   -  name: steel
+      description: Steel of the tower and monopile ASTM A572 Grade 50
+      source: http://www.matweb.com/search/DataSheet.aspx?MatGUID=9ced5dc901c54bd1aef19403d0385d7f
       orth: 0
-      rho: 8500
+      rho: 7800
       alpha: 0.0
-      E: 210.e+009
+      E: 200.e+009
       nu: 0.3
-      G: 65.625e+009
+      G: 79.3e+009
       GIc: 0  #Place holder, currently not used
       GIIc: 0  #Place holder, currently not used
       alp0: 0  #Place holder, currently not used
-      Xt: 360.e+006
-      Xc: 360.e+006
+      Xt: 450.e+006
+      Xc: 450.e+006
       S: 0
-      Xy: 450.e+6
+      Xy: 345.e+6
       unit_cost: 0.7
+   -  name: steel_drive
+      description: Steel of the drivetrain ASTM 4140 40Cr1Mo28
+      source: http://www.matweb.com/search/DataSheet.aspx?MatGUID=38108bfd64c44b4c9c6a02af78d5b6c6
+      orth: 0
+      rho: 7850
+      alpha: 0.0
+      E: 205.e+009
+      nu: 0.3
+      G: 80.0e+009
+      GIc: 0  #Place holder, currently not used
+      GIIc: 0  #Place holder, currently not used
+      alp0: 0  #Place holder, currently not used
+      Xt: 814.e+006
+      Xc: 814.e+006
+      S: 0
+      Xy: 485.e+6
+      unit_cost: 0.9
+   -  name: cast_iron
+      description: TODO Steel of the drivetrain ASTM 4140 40Cr1Mo28
+      source: TODO http://www.matweb.com/search/DataSheet.aspx?MatGUID=38108bfd64c44b4c9c6a02af78d5b6c6
+      orth: 0
+      rho: 7200
+      alpha: 0.0
+      E: 118.e+009
+      nu: 0.3
+      G: 47.6e+009
+      GIc: 0  #Place holder, currently not used
+      GIIc: 0  #Place holder, currently not used
+      alp0: 0  #Place holder, currently not used
+      Xt: 310.e+006
+      Xc: 310.e+006
+      S: 0
+      Xy: 265.e+6
+      unit_cost: 0.5
    -  name: glass_uni
       description: Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy
       source: MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34
@@ -857,14 +887,7 @@ materials:
       orth: 0
       unit_cost: 3.63
 
-assembly:
-    turbine_class: I
-    turbulence_class: B
-    drivetrain: direct_drive
-    rotor_orientation: Upwind
-    number_of_blades: 3
 control:
-    rated_power: 15.e+6
     Vin: 3.0
     Vout: 25.0
     minOmega: 0.52
