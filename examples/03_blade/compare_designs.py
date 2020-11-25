@@ -1,31 +1,45 @@
+"""
+This file postprocesses results from WISDEM. Modify the relevant parameters
+in the first part of this file, then run the script.
+
+This script allows you to compare wind turbine designs via the
+outputted yaml files. This script runs an instance of WISDEM for each yaml
+file then produces plots and text output comparing the designs and performance.
+You can modify the yaml files being compared, as well as which values are plotted
+and printed to screen.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from wisdem.glue_code.runWISDEM import run_wisdem
 import os
 
 
-## File management
+# Set the filenames for the comparison. `yaml_filenames` is a list of the
+# yamls you want to compare. `list_of_yaml_labels` are the labels corresponding
+# to the yaml files that will appear on the outputted plots.
 run_dir = os.path.dirname(os.path.realpath(__file__)) + os.sep
 fname_wt_input1 = run_dir + "blade.yaml"
-fname_wt_input2 = run_dir + os.sep + "outputs_aero" + os.sep + "blade_out.yaml"
+fname_wt_input2 = run_dir + "outputs_aero" + os.sep + "blade_out.yaml"
+yaml_filenames = [fname_wt_input1, fname_wt_input2]
+list_of_yaml_labels = ["Initial", "Optimized"]
+
+# These are the modeling and analysis options used to evaluate the designs.
+# Both of these yaml files are used for all yamls to make a fair comparison.
 fname_modeling_options = run_dir + "modeling_options.yaml"
 fname_analysis_options = run_dir + "analysis_options_no_opt.yaml"
 
-wt_opt1, modeling_options, analysis_options = run_wisdem(
-    fname_wt_input1, fname_modeling_options, fname_analysis_options
-)
-wt_opt2, _, _ = run_wisdem(
-    fname_wt_input2, fname_modeling_options, fname_analysis_options
-)
-
-show_plots = False
+# These are options for the plotting and saving
+show_plots = False  # if True, print plots to screen in addition to saving files
 font_size = 12
 extension = ".png"  # '.pdf'
-folder_output = analysis_options["general"]["folder_output"]
-list_of_yamls = [wt_opt1, wt_opt2]  # , wt_opt1]
-list_of_yaml_labels = ["Initial", "Optimized"]  # , 'Initial again']
+folder_output = 'outputs'
 
-
+# These are the values to print to screen for text-based output.
+# The dictionary keys are the value names.
+# The first string in the list is where that value exists in the WISDEM problem,
+# the second string is the units to print the value in,
+# and the optional third string is the multiplicative scalar on the value to be printed.
 values_to_print = {
     "AEP": ["sse.AEP", "GW*h"],
     "Blade mass": ["elastic.precomp.blade_mass", "kg"],
@@ -41,7 +55,23 @@ values_to_print = {
     "Hub moments": ["rlds.aero_hub_loads.Mxyz_hub_aero", "kN*m"],
 }
 
-### Do not change code below here
+# Generally it's not necessary to change the code below here, unless you
+# want to plot additional values
+
+# Create the output folder if it doesn't exist
+if not os.path.exists(folder_output):
+    os.makedirs(folder_output)
+
+# Run WISDEM for each yaml file to compare using the modeling and analysis
+# options set above
+print()
+list_of_yamls = []
+for yaml_filename in yaml_filenames:
+    print(f"Running WISDEM for {yaml_filename}.")
+    wt_opt, modeling_options, analysis_options = run_wisdem(
+        yaml_filename, fname_modeling_options, fname_analysis_options
+    )
+    list_of_yamls.append(wt_opt)
 
 
 def create_all_plots():
