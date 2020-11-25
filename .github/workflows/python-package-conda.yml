@@ -21,21 +21,23 @@ jobs:
           miniconda-version: "latest"
           channels: conda-forge
           auto-update-conda: true
+          #auto-activate-base: true
           python-version: 3.8
+          environment-file: environment.yml
           
-      - name: Conda config
-        shell: pwsh
-        run: |
-          conda config --set always_yes yes --set changeps1 no
-          conda update -q conda
-          conda config --add channels conda-forge
-          conda info -a
+      #- name: Conda config
+      #  shell: pwsh
+      #  run: |
+      #    conda config --set always_yes yes --set changeps1 no
+      #    conda update -q conda
+      #    conda config --add channels conda-forge
+      #    conda info -a
           
-      - name: Dependencies
-        shell: pwsh
-        run: |
-          conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 swig
-          pip install simpy marmot-agents
+      #- name: Dependencies
+      #  shell: pwsh
+      #  run: |
+      #    conda install -q pytest pytest-cov coveralls pip openmdao=3.4.0 jsonschema ruamel_yaml pyyaml make xlrd openpyxl cython pandas numpydoc six setuptools git numpy scipy matplotlib geopy pyside2 swig
+      #    pip install simpy marmot-agents
       
       # Install dependencies of WEIS specific to ubuntu (not with compilers)
       - name: Add dependendencies ubuntu specific
@@ -66,7 +68,7 @@ jobs:
           pytest --cov-config=.coverageac --cov=wisdem
       
       # Run coveralls
-      - name: Run tests
+      - name: Run coveralls
         if: contains( matrix.os, 'ubuntu')
         shell: pwsh
         run: |
