@@ -12,15 +12,15 @@ fname_wt_input2        = run_dir + os.sep + 'outputs_aero' + os.sep + 'blade_out
 fname_modeling_options = run_dir + 'modeling_options.yaml'
 fname_analysis_options = run_dir + 'analysis_options_no_opt.yaml'
 
-wt_opt1, modeling_options1, analysis_options1 = run_wisdem(fname_wt_input1, fname_modeling_options, fname_analysis_options)
-wt_opt2, modeling_options2, analysis_options2 = run_wisdem(fname_wt_input2, fname_modeling_options, fname_analysis_options)
+wt_opt1, modeling_options, analysis_options = run_wisdem(fname_wt_input1, fname_modeling_options, fname_analysis_options)
+wt_opt2, _, _ = run_wisdem(fname_wt_input2, fname_modeling_options, fname_analysis_options)
 
-show_plots = True
+show_plots = False
 font_size        = 12
 extension = '.png' # '.pdf'
-folder_output = analysis_options1['general']['folder_output']
-list_of_yamls = [wt_opt1, wt_opt2, wt_opt1]
-list_of_yaml_labels = ['Initial', 'Optimized', 'Initial again']
+folder_output = analysis_options['general']['folder_output']
+list_of_yamls = [wt_opt1, wt_opt2]#, wt_opt1]
+list_of_yaml_labels = ['Initial', 'Optimized']#, 'Initial again']
 
 
 values_to_print = {
@@ -38,21 +38,24 @@ values_to_print = {
     'Hub moments' : ['rlds.aero_hub_loads.Mxyz_hub_aero', 'kN*m'],
 }
 
+### Do not change code below here
 
 def create_all_plots():
-    ### Do not change code below here
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
     # Twist
     ftw, axtw = plt.subplots(1,1,figsize=(5.3, 4))
-    axtw.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['blade.outer_shape_bem.twist'] * 180. / np.pi,'--',color = colors[0], label=label1)
-    axtw.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['blade.outer_shape_bem.twist'] * 180. / np.pi,'-',color = colors[1], label=label2)
-    s_opt_twist = np.linspace(0., 1., 8)
-    twist_opt  = np.interp(s_opt_twist, wt_opt2['blade.outer_shape_bem.s'], wt_opt2['ccblade.theta'])
-    axtw.plot(s_opt_twist, twist_opt * 180. / np.pi,'o',color = colors[1], markersize=3, label='Optimized - Control Points')
-    axtw.plot(s_opt_twist, np.array(analysis_options2['optimization_variables']['blade']['aero_shape']['twist']['lower_bound']) * 180. / np.pi, ':o', color=colors[2],markersize=3, label = 'Bounds')
-    axtw.plot(s_opt_twist, np.array(analysis_options2['optimization_variables']['blade']['aero_shape']['twist']['upper_bound']) * 180. / np.pi, ':o', color=colors[2], markersize=3)
+    
+    for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
+        axtw.plot(yaml_data['blade.outer_shape_bem.s'], yaml_data['blade.outer_shape_bem.twist'] * 180. / np.pi,'-',color = colors[idx], label=label)
+        s_opt_twist = np.linspace(0., 1., 8)
+        twist_opt  = np.interp(s_opt_twist, yaml_data['blade.outer_shape_bem.s'], yaml_data['ccblade.theta'])
+        axtw.plot(s_opt_twist, twist_opt * 180. / np.pi,'o',color = colors[idx], markersize=3)
+        
+    axtw.plot(s_opt_twist, np.array(analysis_options['optimization_variables']['blade']['aero_shape']['twist']['lower_bound']) * 180. / np.pi, ':o', color=colors[idx+1],markersize=3, label = 'Bounds')
+    axtw.plot(s_opt_twist, np.array(analysis_options['optimization_variables']['blade']['aero_shape']['twist']['upper_bound']) * 180. / np.pi, ':o', color=colors[idx+1], markersize=3)
     axtw.legend(fontsize=font_size)
+    
     axtw.set_ylim([-5, 20])
     plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
     plt.ylabel('Twist [deg]', fontsize=font_size+2, fontweight='bold')
@@ -65,14 +68,17 @@ def create_all_plots():
 
     # Chord
     fc, axc = plt.subplots(1,1,figsize=(5.3, 4))
-    axc.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['blade.outer_shape_bem.chord'],'--', color = colors[0], label=label1)
-    axc.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['blade.outer_shape_bem.chord'],'-', color = colors[1], label=label2)
-    s_opt_chord = np.linspace(0., 1., 8)
-    chord_opt  = np.interp(s_opt_chord, wt_opt2['blade.outer_shape_bem.s'], wt_opt2['ccblade.chord'])
-    chord_init = np.interp(s_opt_chord, wt_opt2['blade.outer_shape_bem.s'], wt_opt1['blade.outer_shape_bem.chord'])
-    axc.plot(s_opt_chord, chord_opt,'o',color = colors[1], markersize=3, label='Optimized - Control Points')
-    axc.plot(s_opt_chord, np.array(analysis_options2['optimization_variables']['blade']['aero_shape']['chord']['min_gain']) * chord_init, ':o', color=colors[2],markersize=3, label = 'Bounds')
-    axc.plot(s_opt_chord, np.array(analysis_options2['optimization_variables']['blade']['aero_shape']['chord']['max_gain']) * chord_init, ':o', color=colors[2], markersize=3)
+    
+    for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
+        axc.plot(yaml_data['blade.outer_shape_bem.s'], yaml_data['blade.outer_shape_bem.chord'],'-', color = colors[idx], label=label)
+        s_opt_chord = np.linspace(0., 1., 8)
+        chord_opt  = np.interp(s_opt_chord, yaml_data['blade.outer_shape_bem.s'], yaml_data['ccblade.chord'])
+        axc.plot(s_opt_chord, chord_opt,'o',color = colors[idx], markersize=3)
+        
+    chord_init  = np.interp(s_opt_chord, list_of_yamls[0]['blade.outer_shape_bem.s'], yaml_data['ccblade.chord'])
+    axc.plot(s_opt_chord, np.array(analysis_options['optimization_variables']['blade']['aero_shape']['chord']['min_gain']) * chord_init, ':o', color=colors[idx+1],markersize=3, label = 'Bounds')
+    axc.plot(s_opt_chord, np.array(analysis_options['optimization_variables']['blade']['aero_shape']['chord']['max_gain']) * chord_init, ':o', color=colors[idx+1], markersize=3)
+    
     axc.legend(fontsize=font_size)
     plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
     plt.ylabel('Chord [m]', fontsize=font_size+2, fontweight='bold')
@@ -86,20 +92,24 @@ def create_all_plots():
 
     # Spar caps
     fsc, axsc = plt.subplots(1,1,figsize=(5.3, 4))
-    n_layers = len(wt_opt1['blade.internal_structure_2d_fem.layer_thickness'][:,0])
-    spar_ss_name = analysis_options1['optimization_variables']['blade']['structure']['spar_cap_ss']['name']
-    spar_ps_name = analysis_options2['optimization_variables']['blade']['structure']['spar_cap_ps']['name']
-    for i in range(n_layers):
-        if modeling_options1['blade']['layer_name'][i] == spar_ss_name:
-            axsc.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['blade.internal_structure_2d_fem.layer_thickness'][i,:] * 1.e+3,'--', color = colors[0], label=label1)
-            axsc.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['blade.internal_structure_2d_fem.layer_thickness'][i,:] * 1.e+3,'-', color = colors[1], label=label2)
+    
+    for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
+        n_layers = len(yaml_data['blade.internal_structure_2d_fem.layer_thickness'][:,0])
+        spar_ss_name = analysis_options['optimization_variables']['blade']['structure']['spar_cap_ss']['name']
+        spar_ps_name = analysis_options['optimization_variables']['blade']['structure']['spar_cap_ps']['name']
+        for i in range(n_layers):
+            if modeling_options['blade']['layer_name'][i] == spar_ss_name:
+                axsc.plot(yaml_data['blade.outer_shape_bem.s'], yaml_data['blade.internal_structure_2d_fem.layer_thickness'][i,:] * 1.e+3,'-', color = colors[idx], label=label)
 
-            s_opt_sc = np.linspace(0., 1., 8)
-            sc_opt  = np.interp(s_opt_sc, wt_opt2['blade.outer_shape_bem.s'], wt_opt2['blade.internal_structure_2d_fem.layer_thickness'][i,:] * 1.e+3)
-            sc_init = np.interp(s_opt_sc, wt_opt2['blade.outer_shape_bem.s'], wt_opt1['blade.internal_structure_2d_fem.layer_thickness'][i,:] * 1.e+3)
-            axsc.plot(s_opt_sc, sc_opt,'o',color = colors[1], markersize=3, label='Optimized - Control Points')
-            axsc.plot(s_opt_sc, np.array(analysis_options2['optimization_variables']['blade']['structure']['spar_cap_ss']['min_gain']) * sc_init, ':o', color=colors[2],markersize=3, label = 'Bounds')
-            axsc.plot(s_opt_sc, np.array(analysis_options2['optimization_variables']['blade']['structure']['spar_cap_ss']['max_gain']) * sc_init, ':o', color=colors[2], markersize=3)
+                s_opt_sc = np.linspace(0., 1., 8)
+                sc_opt  = np.interp(s_opt_sc, yaml_data['blade.outer_shape_bem.s'], yaml_data['blade.internal_structure_2d_fem.layer_thickness'][i,:] * 1.e+3)
+                axsc.plot(s_opt_sc, sc_opt,'o',color = colors[idx], markersize=3)
+                
+    for i in range(n_layers):
+        if modeling_options['blade']['layer_name'][i] == spar_ss_name:
+            sc_init  = np.interp(s_opt_sc, list_of_yamls[0]['blade.outer_shape_bem.s'], list_of_yamls[0]['blade.internal_structure_2d_fem.layer_thickness'][i,:] * 1.e+3)
+            axsc.plot(s_opt_sc, np.array(analysis_options['optimization_variables']['blade']['structure']['spar_cap_ss']['min_gain']) * sc_init, ':o', color=colors[idx+1],markersize=3, label = 'Bounds')
+            axsc.plot(s_opt_sc, np.array(analysis_options['optimization_variables']['blade']['structure']['spar_cap_ss']['max_gain']) * sc_init, ':o', color=colors[idx+1], markersize=3)
 
     axsc.legend(fontsize=font_size)
     plt.ylim([0., 200])
@@ -111,11 +121,12 @@ def create_all_plots():
     plt.subplots_adjust(bottom = 0.15, left = 0.15)
     fig_name = 'sc_opt' + extension
     fsc.savefig(os.path.join(folder_output, fig_name))
+    
 
     # Skins
     f, ax = plt.subplots(1,1,figsize=(5.3, 4))
-    ax.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['blade.internal_structure_2d_fem.layer_thickness'][1,:] * 1.e+3,'--', color = colors[0], label=label1)
-    ax.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['blade.internal_structure_2d_fem.layer_thickness'][1,:] * 1.e+3,'-', color = colors[1], label=label2)
+    for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
+        ax.plot(yaml_data['blade.outer_shape_bem.s'], yaml_data['blade.internal_structure_2d_fem.layer_thickness'][1,:] * 1.e+3,'--', color = colors[idx], label=label)
     ax.legend(fontsize=font_size)
     #plt.ylim([0., 120])
     plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
@@ -129,12 +140,10 @@ def create_all_plots():
 
     # Strains spar caps
     feps, axeps = plt.subplots(1,1,figsize=(5.3, 4))
-    axeps.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['rlds.frame.strainU_spar'] * 1.e+6,'--',color = colors[0], label=label1)
-    axeps.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['rlds.frame.strainU_spar'] * 1.e+6,'-',color = colors[1], label=label2)
-    axeps.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['rlds.frame.strainL_spar'] * 1.e+6,'--',color = colors[0])
-    axeps.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['rlds.frame.strainL_spar'] * 1.e+6,'-',color = colors[1])
-    # axeps.plot(np.array([0.,1.]), np.array([3000.,3000.]), ':',color=colors[2], label='Constraints')
-    # axeps.plot(np.array([0.,1.]), np.array([-3000.,-3000.]), ':', color=colors[2],)
+    for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
+        axeps.plot(yaml_data['blade.outer_shape_bem.s'], yaml_data['rlds.frame.strainU_spar'] * 1.e+6,'--',color = colors[idx], label=label)
+        axeps.plot(yaml_data['blade.outer_shape_bem.s'], yaml_data['rlds.frame.strainL_spar'] * 1.e+6,'--',color = colors[idx])
+        
     plt.ylim([-5e+3, 5e+3])
     axeps.legend(fontsize=font_size)
     plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
@@ -149,9 +158,9 @@ def create_all_plots():
 
     # Angle of attack and stall angle
     faoa, axaoa = plt.subplots(1,1,figsize=(5.3, 4))
-    axaoa.plot(wt_opt1['stall_check.s'], wt_opt1['stall_check.aoa_along_span'],'--',color = colors[0], label=label1)
-    axaoa.plot(wt_opt2['stall_check.s'], wt_opt2['stall_check.aoa_along_span'],'-',color = colors[1], label=label2)
-    axaoa.plot(wt_opt1['stall_check.s'], wt_opt1['stall_check.stall_angle_along_span'],':',color=colors[2], label='Stall')
+    for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
+        axaoa.plot(yaml_data['stall_check.s'], yaml_data['stall_check.aoa_along_span'],'--',color = colors[idx], label=label)
+    axaoa.plot(yaml_data['stall_check.s'], yaml_data['stall_check.stall_angle_along_span'],':',color=colors[idx+1], label='Stall')
     axaoa.legend(fontsize=font_size)
     axaoa.set_ylim([0, 20])
     plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
@@ -165,8 +174,8 @@ def create_all_plots():
 
     # Airfoil efficiency
     feff, axeff = plt.subplots(1,1,figsize=(5.3, 4))
-    axeff.plot(wt_opt1['blade.outer_shape_bem.s'], wt_opt1['sse.powercurve.cl_regII'] / wt_opt1['sse.powercurve.cd_regII'],'--',color = colors[0], label=label1)
-    axeff.plot(wt_opt2['blade.outer_shape_bem.s'], wt_opt2['sse.powercurve.cl_regII'] / wt_opt2['sse.powercurve.cd_regII'],'-',color = colors[1], label=label2)
+    for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
+        axeff.plot(yaml_data['blade.outer_shape_bem.s'], yaml_data['sse.powercurve.cl_regII'] / yaml_data['sse.powercurve.cd_regII'],'--',color = colors[idx], label=label)
     axeff.legend(fontsize=font_size)
     plt.xlabel('Blade Nondimensional Span [-]', fontsize=font_size+2, fontweight='bold')
     plt.ylabel('Airfoil Efficiency [-]', fontsize=font_size+2, fontweight='bold')
@@ -279,6 +288,6 @@ def save_lcoe_data_to_file():
     np.savetxt(os.path.join(folder_output, 'lcoe.dat'), lcoe_data)
 
 
-create_all_plots()
 print_results_to_screen()
 save_lcoe_data_to_file()
+create_all_plots()
