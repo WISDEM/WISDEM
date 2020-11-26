@@ -61,6 +61,7 @@ jobs:
       - name: Run coveralls
         if: contains( matrix.os, 'ubuntu')
         #uses: AndreMiras/coveralls-python-action@develop
+        shell: pwsh
         env:
         #  COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
