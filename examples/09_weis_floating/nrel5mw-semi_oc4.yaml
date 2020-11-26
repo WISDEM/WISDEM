@@ -593,7 +593,7 @@ components:
               fairlead_type: rigid
             - name: line2_vessel
               node_type: vessel
-              joint: col4_fairlead
+              joint: col2_fairlead
               fairlead_type: rigid
             - name: line3_vessel
               joint: col3_fairlead

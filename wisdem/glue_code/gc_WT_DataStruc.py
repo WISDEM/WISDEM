@@ -227,6 +227,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         if modeling_options['flags']['floating_platform']:
             self.add_subsystem('floating',  Floating(floating_init_options   = modeling_options['floating']))
             self.add_subsystem('mooring',   Mooring(mooring_init_options     = modeling_options['mooring']))
+            self.connect('floating.joints_xyz',      'mooring.joints_xyz')
+            self.connect('floating.joints_name2idx', 'mooring.joints_name2idx')
 
         # Control inputs
         if modeling_options['flags']['control']:
@@ -1173,7 +1175,7 @@ class Floating(om.Group):
             ivc.add_output('ballast_volume',     val = np.zeros(n_ballasts),        units='m**3')
             ivc.add_output('grid_axial_joints',  val = np.zeros(n_axial_joints))
 
-        # self.add_subsystem('alljoints', CombineJoints(floating_init_options=floating_init_options), promotes=['*'])
+        self.add_subsystem('alljoints', CombineJoints(floating_init_options=floating_init_options), promotes=['*'])
 
 class CombineJoints(om.ExplicitComponent):
     def initialize(self):
@@ -1186,14 +1188,14 @@ class CombineJoints(om.ExplicitComponent):
 
         self.add_input('location',   val = np.zeros((n_joints, 3)), units='m')
 
-        n_joint_tot = n_joints
+        self.n_joint_tot = n_joints
         for i in range(n_members):
             iname = floating_init_options['members']['name'][i]
             i_axial_joints = floating_init_options['members']['n_axial_joints'][i]
             self.add_input(iname+':grid_axial_joints', val = np.zeros(i_axial_joints))
-            n_joint_tot += i_axial_joints
+            self.n_joint_tot += i_axial_joints
 
-        self.add_output('joints_xyz',   val = np.zeros((n_joint_tot, 3)), units='m')
+        self.add_output('joints_xyz',   val = np.zeros((self.n_joint_tot, 3)), units='m')
         self.add_discrete_output('joints_name2idx', val={})
             
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -1203,7 +1205,7 @@ class CombineJoints(om.ExplicitComponent):
         n_members             = floating_init_options['members']['n_members']
 
         # Unpack inputs
-        locations = inputs['locations']
+        locations = inputs['location']
         joints_xyz = np.zeros( outputs['joints_xyz'].shape )
 
         # Handle cylindrical coordinate joints
@@ -1218,22 +1220,30 @@ class CombineJoints(om.ExplicitComponent):
         count = n_joints
 
         # Now add axial joints
-        for k in range(n_members):
-            joint1xyz = locations_xyz[ name2idx[ floating_init_options['members']['joint1'][k] ], :]
-            joint2xyz = locations_xyz[ name2idx[ floating_init_options['members']['joint2'][k] ], :]
-            dxyz = joint2xyz - joint1xyz
-            
-            iname = floating_init_options['members']['name'][k]
-            i_axial_joints = floating_init_options['members']['n_axial_joints'][k]
-            i_axial_joint_names = floating_init_options['members']['axial_joint_name_member_' + iname]
-            for a in range(i_axial_joints):
-                joints_xyz[count,:] = joint1xyz + inputs[iname+':grid_axial_joints'][a]*dxyz
-                name2idx[i_axial_joint_names] = count
-                count += 1
+        member_list = list(range(n_members))
+        while count < self.n_joint_tot:
+            for k in member_list[:]:
+                if ( (floating_init_options['members']['joint1'][k] in name2idx) and
+                     (floating_init_options['members']['joint2'][k] in name2idx) ):
+                    member_list.remove(k)
+                else:
+                    continue
+                
+                joint1xyz = locations_xyz[ name2idx[ floating_init_options['members']['joint1'][k] ], :]
+                joint2xyz = locations_xyz[ name2idx[ floating_init_options['members']['joint2'][k] ], :]
+                dxyz = joint2xyz - joint1xyz
+
+                iname = floating_init_options['members']['name'][k]
+                i_axial_joints = floating_init_options['members']['n_axial_joints'][k]
+                i_axial_joint_names = floating_init_options['members']['axial_joint_name_member_' + iname]
+                for a in range(i_axial_joints):
+                    joints_xyz[count,:] = joint1xyz + inputs[iname+':grid_axial_joints'][a]*dxyz
+                    name2idx[i_axial_joint_names] = count
+                    count += 1
 
         # Store outputs
         outputs['joints_xyz']       = joints_xyz
-        outputs['joints_names2idx'] = name2idx
+        discrete_outputs['joints_name2idx'] = name2idx
         
                 
 class Mooring(om.Group):
@@ -1273,6 +1283,37 @@ class Mooring(om.Group):
         ivc.add_output('anchor_max_lateral_load',   val = np.zeros(n_anchor_types), units = 'N')
 
         self.add_subsystem('moormass', MooringMassProps(mooring_init_options = mooring_init_options), promotes=['*'])
+        self.add_subsystem('moorjoint', MooringJoints(mooring_init_options = mooring_init_options), promotes=['*'])
+
+class MooringJoints(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare('mooring_init_options')
+
+    def setup(self):
+        mooring_init_options = self.options['mooring_init_options']
+        n_nodes              = mooring_init_options['n_nodes']       
+        
+        self.add_discrete_input('nodes_joint_name', val = ['']*n_nodes)
+        self.add_discrete_input('joints_name2idx',  val={})
+        self.add_input('nodes_location',            val = np.zeros((n_nodes, 3)), units='m')
+        self.add_input('joints_xyz',  shape_by_conn=True, units='m')
+
+        self.add_output('nodes_location_full',  val = np.zeros((n_nodes, 3)), units='m')
+
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        mooring_init_options = self.options['mooring_init_options']
+        n_nodes              = mooring_init_options['n_nodes']       
+
+        node_joints = discrete_inputs['nodes_joint_name']
+        node_loc    = inputs['nodes_location']
+        joints_loc  = inputs['joints_xyz']
+        idx_map     = discrete_inputs['joints_name2idx']
+        for k in range(n_nodes):
+            if node_joints[k] == '': continue
+            idx = idx_map[ node_joints[k] ]
+            node_loc[k,:] = joints_loc[idx,:]
+
+        outputs['nodes_location_full'] = node_loc
 
 class MooringMassProps(om.ExplicitComponent):
     def initialize(self):
