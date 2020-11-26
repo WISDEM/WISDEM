@@ -143,22 +143,14 @@ def test_plant_creation(config):
     assert plant.num_turbines == config["plant"]["num_turbines"]
 
     if "turbine_spacing" in config["plant"]:
-        td = (
-            config["turbine"]["rotor_diameter"]
-            * config["plant"]["turbine_spacing"]
-            / 1000.0
-        )
+        td = config["turbine"]["rotor_diameter"] * config["plant"]["turbine_spacing"] / 1000.0
     else:
         td = config["plant"]["turbine_distance"]
     assert plant.turbine_distance == td
 
     if "row_spacing" in config["plant"]:
         if config["plant"]["layout"] == "grid":
-            rd = (
-                config["turbine"]["rotor_diameter"]
-                * config["plant"]["row_spacing"]
-                / 1000.0
-            )
+            rd = config["turbine"]["rotor_diameter"] * config["plant"]["row_spacing"] / 1000.0
         if config["plant"]["layout"] == "ring":
             rd = td
     else:

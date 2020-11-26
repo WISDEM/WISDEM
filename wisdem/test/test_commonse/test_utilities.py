@@ -6,14 +6,12 @@ import wisdem.commonse.utilities as util
 npts = 100
 myones = np.ones((npts,))
 
+
 class TestAny(unittest.TestCase):
-
-            
     def testNodal2Sectional(self):
-        x,dx = util.nodal2sectional(np.array([8.0, 10.0, 12.0]))
+        x, dx = util.nodal2sectional(np.array([8.0, 10.0, 12.0]))
         npt.assert_equal(x, np.array([9.0, 11.0]))
-        npt.assert_equal(dx, np.array([[0.5, 0.5, 0.0],[0.0, 0.5, 0.5]]))
-
+        npt.assert_equal(dx, np.array([[0.5, 0.5, 0.0], [0.0, 0.5, 0.5]]))
 
     def testSectionalInterp(self):
         x = np.arange(0.0, 2.1, 0.5)
@@ -27,17 +25,17 @@ class TestAny(unittest.TestCase):
     def testModalCoefficients(self):
         # Test exact 6-deg polynomial
         p = np.random.random((7,))
-        x = np.linspace(0,1)
+        x = np.linspace(0, 1)
         y = np.polynomial.polynomial.polyval(x, p)
 
-        pp  = util.get_modal_coefficients(x, y)
-        npt.assert_almost_equal(p[2:]/p[2:].sum(), pp)
+        pp = util.get_modal_coefficients(x, y)
+        npt.assert_almost_equal(p[2:] / p[2:].sum(), pp)
 
     def testGetXYModes(self):
-        r = np.linspace(0,1,20)
+        r = np.linspace(0, 1, 20)
         n = 10
-        n2 = int(n/2)
-        dx = dy = dz = np.tile(np.r_[r**2 + 10.], (n,1))
+        n2 = int(n / 2)
+        dx = dy = dz = np.tile(np.r_[r ** 2 + 10.0], (n, 1))
         freqs = np.arange(n)
         xm = np.zeros(n)
         ym = np.zeros(n)
@@ -47,19 +45,21 @@ class TestAny(unittest.TestCase):
         zm[2] = zm[5] = zm[8] = 1
 
         freq_x, freq_y, _, _ = util.get_xy_mode_shapes(r, freqs, dx, dy, dz, xm, ym, zm)
-        npt.assert_array_equal(freq_x, np.r_[0, 3, 6, 9, np.zeros(n2-4)])
-        npt.assert_array_equal(freq_y, np.r_[1, 4, 7, np.zeros(n2-3)])
-        
+        npt.assert_array_equal(freq_x, np.r_[0, 3, 6, 9, np.zeros(n2 - 4)])
+        npt.assert_array_equal(freq_y, np.r_[1, 4, 7, np.zeros(n2 - 3)])
+
     def testRotateI(self):
-        I  = np.arange(6)+1
+        I = np.arange(6) + 1
         th = np.deg2rad(45)
-        Irot = util.rotateI(I, th, axis='z')
-        npt.assert_almost_equal(Irot, np.array([-2.5, 5.5, 3, -0.5, -0.5*np.sqrt(2), 5.5*np.sqrt(2)]) )
-        
+        Irot = util.rotateI(I, th, axis="z")
+        npt.assert_almost_equal(Irot, np.array([-2.5, 5.5, 3, -0.5, -0.5 * np.sqrt(2), 5.5 * np.sqrt(2)]))
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestAny))
     return suite
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.TextTestRunner().run(suite())

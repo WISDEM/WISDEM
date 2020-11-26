@@ -26,9 +26,7 @@ class MissingComponent(Exception):
         self.vessel = vessel
         self.component = component
 
-        self.message = (
-            f"{vessel} is missing required component(s) '{component}'."
-        )
+        self.message = f"{vessel} is missing required component(s) '{component}'."
 
     def __str__(self):
 
@@ -153,10 +151,7 @@ class InsufficientAmount(Exception):
         self.amount_requested = amount_requested
 
         required = self.amount_requested - self.current_amount
-        self.message = (
-            f"Not enough '{self.item_type}' on vessel. At least "
-            f"{required:.4e} more units required"
-        )
+        self.message = f"Not enough '{self.item_type}' on vessel. At least " f"{required:.4e} more units required"
 
     def __str__(self):
         return self.message
@@ -331,9 +326,7 @@ class WeatherProfileExhausted(Exception):
 
         self.length = length
 
-        self.message = "Weather profile exhausted at element {:,.0f}".format(
-            length
-        )
+        self.message = "Weather profile exhausted at element {:,.0f}".format(length)
 
     def __str__(self):
         return self.message

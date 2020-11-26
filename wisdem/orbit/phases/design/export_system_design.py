@@ -81,9 +81,7 @@ class ExportSystemDesign(CableSystem):
         self._distance_to_landfall = config["site"]["distance_to_landfall"]
         self._get_touchdown_distance()
         try:
-            self._distance_to_interconnection = config["landfall"][
-                "interconnection_distance"
-            ]
+            self._distance_to_interconnection = config["landfall"]["interconnection_distance"]
         except KeyError:
             self._distance_to_interconnection = 3
 
@@ -137,11 +135,7 @@ class ExportSystemDesign(CableSystem):
 
         added_length = 1.0 + self._design.get("percent_added_length", 0.0)
         self.length = round(
-            (
-                self.free_cable_length
-                + (self._distance_to_landfall - self.touchdown / 1000)
-                + self._distance_to_interconnection
-            )
+            (self.free_cable_length + (self._distance_to_landfall - self.touchdown / 1000) + self._distance_to_interconnection)
             * added_length,
             10,
         )
@@ -205,11 +199,7 @@ class ExportSystemDesign(CableSystem):
         if self.cables is None:
             raise Exception(f"Has {self.__class__.__name__} been ran?")
 
-        output = {
-            "export_system": {
-                "interconnection_distance": self._distance_to_interconnection
-            }
-        }
+        output = {"export_system": {"interconnection_distance": self._distance_to_interconnection}}
 
         for name, cable in self.cables.items():
 

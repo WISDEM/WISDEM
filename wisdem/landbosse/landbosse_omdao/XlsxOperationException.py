@@ -8,4 +8,5 @@ class XlsxOperationException(Exception):
 
     See also: https://docs.python.org/3/library/exceptions.html
     """
+
     pass

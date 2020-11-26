@@ -32,16 +32,12 @@ def test_simulation_creation():
     assert sim.number_systems
 
 
-@pytest.mark.parametrize(
-    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
-)
+@pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
 def test_full_run_logging(weather):
     sim = MooringSystemInstallation(config, weather=weather)
     sim.run()
 
-    lines = (
-        config["plant"]["num_turbines"] * config["mooring_system"]["num_lines"]
-    )
+    lines = config["plant"]["num_turbines"] * config["mooring_system"]["num_lines"]
 
     df = pd.DataFrame(sim.env.actions)
     df = df.assign(shift=(df.time - df.time.shift(1)))

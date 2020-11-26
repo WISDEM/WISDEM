@@ -82,7 +82,7 @@ class CsvGenerator:
                 "Type of cost": row["type_of_cost"],
                 "Cost per turbine": row["cost_per_turbine"],
                 "Cost per project": row["cost_per_project"],
-                "Cost per kW": row["usd_per_kw_per_project"]
+                "Cost per kW": row["usd_per_kw_per_project"],
             }
             new_rows.append(new_row)
         costs_df = pd.DataFrame(new_rows)

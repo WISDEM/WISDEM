@@ -70,9 +70,7 @@ def test_vessel_initialization(config):
     (config_wtiv, config_wtiv_feeder, config_wtiv_multi_feeder),
     ids=["wtiv_only", "single_feeder", "multi_feeder"],
 )
-@pytest.mark.parametrize(
-    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
-)
+@pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
 def test_for_complete_logging(weather, config):
 
     sim = MonopileInstallation(config, weather=weather)

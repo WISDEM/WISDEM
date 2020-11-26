@@ -60,9 +60,7 @@ class OrbitEnvironment(Environment):
         c = {k: v for k, v in kwargs.items() if isinstance(v, Constraint)}
         constraints = self.resolve_windspeed_constraints(c)
 
-        keys = set(self.state.dtype.names).intersection(
-            set(constraints.keys())
-        )
+        keys = set(self.state.dtype.names).intersection(set(constraints.keys()))
         valid = {k: v for k, v in constraints.items() if k in keys}
 
         return valid
@@ -132,9 +130,7 @@ class OrbitEnvironment(Environment):
 
         if "windspeed" in self.state.dtype.names:
             if len(ws) > 1:
-                raise ValueError(
-                    "Multiple constraints applied to the 'windspeed' column."
-                )
+                raise ValueError("Multiple constraints applied to the 'windspeed' column.")
 
             return {**constraints, "windspeed": list(ws.values())[0]}
 

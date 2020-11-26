@@ -135,25 +135,16 @@ class JackingSys:
         """
 
         if extension > self.max_extension:
-            raise Exception(
-                "{} extension is greater than {} maximum"
-                "".format(extension, self.max_extension)
-            )
+            raise Exception("{} extension is greater than {} maximum" "".format(extension, self.max_extension))
 
         elif depth > self.max_depth:
-            raise Exception(
-                "{} is beyond the operating depth {}"
-                "".format(depth, self.max_depth)
-            )
+            raise Exception("{} is beyond the operating depth {}" "".format(depth, self.max_depth))
 
         elif depth > extension:
             raise Exception("Extension must be greater than depth")
 
         else:
-            return (
-                depth / self.speed_below_depth
-                + (extension - depth) / self.speed_above_depth
-            ) / 60
+            return (depth / self.speed_below_depth + (extension - depth) / self.speed_above_depth) / 60
 
 
 class VesselStorage(simpy.FilterStore):
@@ -161,9 +152,7 @@ class VesselStorage(simpy.FilterStore):
 
     required_keys = ["type", "mass", "deck_space"]
 
-    def __init__(
-        self, env, max_cargo, max_deck_space, max_deck_load, **kwargs
-    ):
+    def __init__(self, env, max_cargo, max_deck_space, max_deck_load, **kwargs):
         """
         Creates an instance of VesselStorage.
 
@@ -219,14 +208,10 @@ class VesselStorage(simpy.FilterStore):
         #     raise ItemPropertyNotDefined(item, self.required_keys)
 
         if self.current_deck_space + item.deck_space > self.max_deck_space:
-            raise DeckSpaceExceeded(
-                self.max_deck_space, self.current_deck_space, item
-            )
+            raise DeckSpaceExceeded(self.max_deck_space, self.current_deck_space, item)
 
         if self.current_cargo_mass + item.mass > self.max_cargo_mass:
-            raise CargoMassExceeded(
-                self.max_cargo_mass, self.current_cargo_mass, item
-            )
+            raise CargoMassExceeded(self.max_cargo_mass, self.current_cargo_mass, item)
 
         self.put(item)
 
@@ -387,9 +372,7 @@ class CableCarousel(simpy.Container):
             # Load length of cable
             proposed = length * cable.linear_density
             if proposed > self.available_mass:
-                raise ValueError(
-                    f"Length {length} of {cable} can't be loaded."
-                )
+                raise ValueError(f"Length {length} of {cable} can't be loaded.")
 
             self.put(length)
 

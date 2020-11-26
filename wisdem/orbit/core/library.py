@@ -50,9 +50,7 @@ class CustomSafeLoader(yaml.SafeLoader):
         return tuple(self.construct_sequence(node))
 
 
-CustomSafeLoader.add_constructor(
-    "tag:yaml.org,2002:python/tuple", CustomSafeLoader.construct_python_tuple
-)
+CustomSafeLoader.add_constructor("tag:yaml.org,2002:python/tuple", CustomSafeLoader.construct_python_tuple)
 
 loader = CustomSafeLoader
 loader.add_implicit_resolver(

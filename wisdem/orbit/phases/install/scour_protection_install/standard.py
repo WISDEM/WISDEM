@@ -75,15 +75,9 @@ class ScourProtectionInstallation(InstallPhase):
         turbine_distance = self.config["plant"].get("turbine_distance", None)
 
         if turbine_distance is None:
-            turbine_distance = (
-                rotor_diameter
-                * self.config["plant"]["turbine_spacing"]
-                / 1000.0
-            )
+            turbine_distance = rotor_diameter * self.config["plant"]["turbine_spacing"] / 1000.0
 
-        self.tons_per_substructure = ceil(
-            self.config["scour_protection"]["tons_per_substructure"]
-        )
+        self.tons_per_substructure = ceil(self.config["scour_protection"]["tons_per_substructure"])
 
         install_scour_protection(
             self.spi_vessel,
@@ -161,9 +155,7 @@ def install_scour_protection(
     while turbines > 0:
         if vessel.at_port:
             # Load scour protection material
-            yield load_material(
-                vessel, vessel.rock_storage.available_capacity, **kwargs
-            )
+            yield load_material(vessel, vessel.rock_storage.available_capacity, **kwargs)
 
             # Transit to site
             vessel.at_port = False
@@ -177,10 +169,7 @@ def install_scour_protection(
                 turbines -= 1
 
                 # Transit to another turbine
-                if (
-                    vessel.rock_storage.level >= tons_per_substructure
-                    and turbines > 0
-                ):
+                if vessel.rock_storage.level >= tons_per_substructure and turbines > 0:
                     yield vessel.transit(turbine_distance)
 
                 else:
@@ -252,9 +241,7 @@ def drop_material(vessel, mass, **kwargs):
     """
 
     if vessel.rock_storage.level < mass:
-        raise InsufficientAmount(
-            vessel.rock_storage.level, "Scour Protection", mass
-        )
+        raise InsufficientAmount(vessel.rock_storage.level, "Scour Protection", mass)
 
     key = "drop_rocks_time"
     drop_time = kwargs.get(key, pt[key])

@@ -23,7 +23,9 @@ import matplotlib.pyplot as plt
 from wisdem.glue_code.runWISDEM import run_wisdem
 
 
-def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analysis_options, folder_output, show_plots, font_size, extension):
+def create_all_plots(
+    list_of_yamls, list_of_yaml_labels, modeling_options, analysis_options, folder_output, show_plots, font_size, extension
+):
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
     # Twist
@@ -43,19 +45,11 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
             yaml_data["blade.outer_shape_bem.s"],
             yaml_data["ccblade.theta"],
         )
-        axtw.plot(
-            s_opt_twist, twist_opt * 180.0 / np.pi, "o", color=colors[idx], markersize=3
-        )
+        axtw.plot(s_opt_twist, twist_opt * 180.0 / np.pi, "o", color=colors[idx], markersize=3)
 
     axtw.plot(
         s_opt_twist,
-        np.array(
-            analysis_options["optimization_variables"]["blade"]["aero_shape"]["twist"][
-                "lower_bound"
-            ]
-        )
-        * 180.0
-        / np.pi,
+        np.array(analysis_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["lower_bound"]) * 180.0 / np.pi,
         ":o",
         color=colors[idx + 1],
         markersize=3,
@@ -63,13 +57,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
     )
     axtw.plot(
         s_opt_twist,
-        np.array(
-            analysis_options["optimization_variables"]["blade"]["aero_shape"]["twist"][
-                "upper_bound"
-            ]
-        )
-        * 180.0
-        / np.pi,
+        np.array(analysis_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["upper_bound"]) * 180.0 / np.pi,
         ":o",
         color=colors[idx + 1],
         markersize=3,
@@ -77,9 +65,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
     axtw.legend(fontsize=font_size)
 
     axtw.set_ylim([-5, 20])
-    plt.xlabel(
-        "Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold"
-    )
+    plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
     plt.ylabel("Twist [deg]", fontsize=font_size + 2, fontweight="bold")
     plt.xticks(fontsize=font_size)
     plt.yticks(fontsize=font_size)
@@ -114,12 +100,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
     )
     axc.plot(
         s_opt_chord,
-        np.array(
-            analysis_options["optimization_variables"]["blade"]["aero_shape"]["chord"][
-                "min_gain"
-            ]
-        )
-        * chord_init,
+        np.array(analysis_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["min_gain"]) * chord_init,
         ":o",
         color=colors[idx + 1],
         markersize=3,
@@ -127,21 +108,14 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
     )
     axc.plot(
         s_opt_chord,
-        np.array(
-            analysis_options["optimization_variables"]["blade"]["aero_shape"]["chord"][
-                "max_gain"
-            ]
-        )
-        * chord_init,
+        np.array(analysis_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["max_gain"]) * chord_init,
         ":o",
         color=colors[idx + 1],
         markersize=3,
     )
 
     axc.legend(fontsize=font_size)
-    plt.xlabel(
-        "Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold"
-    )
+    plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
     plt.ylabel("Chord [m]", fontsize=font_size + 2, fontweight="bold")
     plt.xticks(fontsize=font_size)
     plt.yticks(fontsize=font_size)
@@ -154,21 +128,14 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
     fsc, axsc = plt.subplots(1, 1, figsize=(5.3, 4))
 
     for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
-        n_layers = len(
-            yaml_data["blade.internal_structure_2d_fem.layer_thickness"][:, 0]
-        )
-        spar_ss_name = analysis_options["optimization_variables"]["blade"]["structure"][
-            "spar_cap_ss"
-        ]["name"]
-        spar_ps_name = analysis_options["optimization_variables"]["blade"]["structure"][
-            "spar_cap_ps"
-        ]["name"]
+        n_layers = len(yaml_data["blade.internal_structure_2d_fem.layer_thickness"][:, 0])
+        spar_ss_name = analysis_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["name"]
+        spar_ps_name = analysis_options["optimization_variables"]["blade"]["structure"]["spar_cap_ps"]["name"]
         for i in range(n_layers):
             if modeling_options["blade"]["layer_name"][i] == spar_ss_name:
                 axsc.plot(
                     yaml_data["blade.outer_shape_bem.s"],
-                    yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :]
-                    * 1.0e3,
+                    yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
                     "-",
                     color=colors[idx],
                     label=label,
@@ -178,8 +145,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
                 sc_opt = np.interp(
                     s_opt_sc,
                     yaml_data["blade.outer_shape_bem.s"],
-                    yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :]
-                    * 1.0e3,
+                    yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
                 )
                 axsc.plot(s_opt_sc, sc_opt, "o", color=colors[idx], markersize=3)
 
@@ -188,19 +154,11 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
             sc_init = np.interp(
                 s_opt_sc,
                 list_of_yamls[0]["blade.outer_shape_bem.s"],
-                list_of_yamls[0]["blade.internal_structure_2d_fem.layer_thickness"][
-                    i, :
-                ]
-                * 1.0e3,
+                list_of_yamls[0]["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
             )
             axsc.plot(
                 s_opt_sc,
-                np.array(
-                    analysis_options["optimization_variables"]["blade"]["structure"][
-                        "spar_cap_ss"
-                    ]["min_gain"]
-                )
-                * sc_init,
+                np.array(analysis_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["min_gain"]) * sc_init,
                 ":o",
                 color=colors[idx + 1],
                 markersize=3,
@@ -208,12 +166,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
             )
             axsc.plot(
                 s_opt_sc,
-                np.array(
-                    analysis_options["optimization_variables"]["blade"]["structure"][
-                        "spar_cap_ss"
-                    ]["max_gain"]
-                )
-                * sc_init,
+                np.array(analysis_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["max_gain"]) * sc_init,
                 ":o",
                 color=colors[idx + 1],
                 markersize=3,
@@ -221,9 +174,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
 
     axsc.legend(fontsize=font_size)
     plt.ylim([0.0, 200])
-    plt.xlabel(
-        "Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold"
-    )
+    plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
     plt.ylabel("Spar Caps Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
     plt.xticks(fontsize=font_size)
     plt.yticks(fontsize=font_size)
@@ -244,12 +195,8 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
         )
     ax.legend(fontsize=font_size)
     # plt.ylim([0., 120])
-    plt.xlabel(
-        "Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold"
-    )
-    plt.ylabel(
-        "Outer Shell Skin Thickness [mm]", fontsize=font_size + 2, fontweight="bold"
-    )
+    plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
+    plt.ylabel("Outer Shell Skin Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
     plt.xticks(fontsize=font_size)
     plt.yticks(fontsize=font_size)
     plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
@@ -276,9 +223,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
 
     plt.ylim([-5e3, 5e3])
     axeps.legend(fontsize=font_size)
-    plt.xlabel(
-        "Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold"
-    )
+    plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
     plt.ylabel("Spar Caps Strains [mu eps]", fontsize=font_size + 2, fontweight="bold")
     plt.xticks(fontsize=font_size)
     plt.yticks(fontsize=font_size)
@@ -306,9 +251,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
     )
     axaoa.legend(fontsize=font_size)
     axaoa.set_ylim([0, 20])
-    plt.xlabel(
-        "Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold"
-    )
+    plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
     plt.ylabel("Angle of Attack [deg]", fontsize=font_size + 2, fontweight="bold")
     plt.xticks(fontsize=font_size)
     plt.yticks(fontsize=font_size)
@@ -328,9 +271,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
             label=label,
         )
     axeff.legend(fontsize=font_size)
-    plt.xlabel(
-        "Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold"
-    )
+    plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
     plt.ylabel("Airfoil Efficiency [-]", fontsize=font_size + 2, fontweight="bold")
     plt.xticks(fontsize=font_size)
     plt.yticks(fontsize=font_size)
@@ -339,9 +280,7 @@ def create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analy
     fig_name = "af_efficiency" + extension
     feff.savefig(os.path.join(folder_output, fig_name))
 
-    def simple_plot_results(
-        x_axis_label, y_axis_label, x_axis_data_name, y_axis_data_name, plot_filename
-    ):
+    def simple_plot_results(x_axis_label, y_axis_label, x_axis_data_name, y_axis_data_name, plot_filename):
         f, ax = plt.subplots(1, 1, figsize=(5.3, 4))
         for i_yaml, yaml_data in enumerate(list_of_yamls):
             ax.plot(
@@ -425,9 +364,7 @@ def print_results_to_screen(list_of_yamls, list_of_yaml_labels, values_to_print)
     for label in list_of_yaml_labels:
         list_of_labels.append(f"{label:15.15}")
 
-    case_headers = (
-        "| Data name       | " + " | ".join(list_of_labels) + " | Units          |"
-    )
+    case_headers = "| Data name       | " + " | ".join(list_of_labels) + " | Units          |"
     # Header describing what we are printing:
     title_string = "Comparison between WISDEM results from yaml files"
     spacing = (len(case_headers) - len(title_string) - 2) // 2
@@ -489,7 +426,7 @@ def save_lcoe_data_to_file(list_of_yamls, folder_output):
 
 def main():
     # Called only if this script is run as main.
-    
+
     # Set the filenames for the comparison. `yaml_filenames` is a list of the
     # yamls you want to compare. `list_of_yaml_labels` are the labels corresponding
     # to the yaml files that will appear on the outputted plots.
@@ -504,11 +441,13 @@ def main():
     # Input Information
     # ======================================================================
     parser = argparse.ArgumentParser()
+    parser.add_argument("yaml_files", nargs="*", type=str, help="Specify the yaml filenames to be compared.")
     parser.add_argument(
-        "yaml_files", nargs="*", type=str, help="Specify the yaml filenames to be compared."
+        "--modeling_options", nargs="?", type=str, default=fname_modeling_options, help="Specify the modeling options yaml."
     )
-    parser.add_argument("--modeling_options", nargs="?", type=str, default=fname_modeling_options, help="Specify the modeling options yaml.")
-    parser.add_argument("--analysis_options", nargs="?", type=str, default=fname_analysis_options, help="Specify the analysis options yaml.")
+    parser.add_argument(
+        "--analysis_options", nargs="?", type=str, default=fname_analysis_options, help="Specify the analysis options yaml."
+    )
     parser.add_argument("--labels", nargs="*", type=str, default=None, help="Specify the labels for the yaml files.")
 
     args = parser.parse_args()
@@ -518,12 +457,12 @@ def main():
     list_of_yaml_labels = args.labels
     if list_of_yaml_labels is None:
         list_of_yaml_labels = [f"yaml_{idx}" for idx in range(len(yaml_filenames))]
-    
+
     # These are options for the plotting and saving
     show_plots = False  # if True, print plots to screen in addition to saving files
     font_size = 12
     extension = ".png"  # '.pdf'
-    folder_output = 'outputs'
+    folder_output = "outputs"
 
     # These are the values to print to screen for text-based output.
     # The dictionary keys are the value names.
@@ -558,15 +497,16 @@ def main():
     for yaml_filename in yaml_filenames:
         print()
         print(f"Running WISDEM for {yaml_filename}.")
-        wt_opt, modeling_options, analysis_options = run_wisdem(
-            yaml_filename, fname_modeling_options, fname_analysis_options
-        )
+        wt_opt, modeling_options, analysis_options = run_wisdem(yaml_filename, fname_modeling_options, fname_analysis_options)
         list_of_yamls.append(wt_opt)
-    
+
     # Call the functions to print, save, and plot results
     print_results_to_screen(list_of_yamls, list_of_yaml_labels, values_to_print)
     save_lcoe_data_to_file(list_of_yamls, folder_output)
-    create_all_plots(list_of_yamls, list_of_yaml_labels, modeling_options, analysis_options, folder_output, show_plots, font_size, extension)
+    create_all_plots(
+        list_of_yamls, list_of_yaml_labels, modeling_options, analysis_options, folder_output, show_plots, font_size, extension
+    )
+
 
 if __name__ == "__main__":
     main()

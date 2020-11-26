@@ -219,22 +219,16 @@ def install_oss_from_queue(vessel, queue, substations, distance, **kwargs):
             if queue.vessel:
 
                 # Prep for monopile install
-                yield prep_for_site_operations(
-                    vessel, survey_required=True, **kwargs
-                )
+                yield prep_for_site_operations(vessel, survey_required=True, **kwargs)
 
                 # Get monopile
-                monopile = yield vessel.get_item_from_storage(
-                    "Monopile", vessel=queue.vessel, **kwargs
-                )
+                monopile = yield vessel.get_item_from_storage("Monopile", vessel=queue.vessel, **kwargs)
 
                 yield upend_monopile(vessel, monopile.length, **kwargs)
                 yield install_monopile(vessel, monopile, **kwargs)
 
                 # Get topside
-                topside = yield vessel.get_item_from_storage(
-                    "Topside", vessel=queue.vessel, release=True, **kwargs
-                )
+                topside = yield vessel.get_item_from_storage("Topside", vessel=queue.vessel, release=True, **kwargs)
                 yield install_topside(vessel, topside, **kwargs)
                 n += 1
 

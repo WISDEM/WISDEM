@@ -143,10 +143,7 @@ class InstallPhase(BasePhase):
         efficiencies = {}
 
         s = sorted(self.env.actions, key=lambda x: (x["agent"], x["action"]))
-        grouped = {
-            k: sum([i["duration"] for i in list(v)])
-            for k, v in groupby(s, key=lambda x: (x["agent"], x["action"]))
-        }
+        grouped = {k: sum([i["duration"] for i in list(v)]) for k, v in groupby(s, key=lambda x: (x["agent"], x["action"]))}
         agents = list(set([k[0] for k in grouped.keys()]))
         for agent in agents:
             total = sum([v for k, v in grouped.items() if k[0] == agent])
@@ -190,9 +187,7 @@ class InstallPhase(BasePhase):
                 print("Vessel does not have storage capacity.")
                 continue
 
-            outputs[
-                f"{name}_cargo_mass_utilization"
-            ] = vessel.max_cargo_mass_utilization
+            outputs[f"{name}_cargo_mass_utilization"] = vessel.max_cargo_mass_utilization
 
         return outputs
 
@@ -216,8 +211,6 @@ class InstallPhase(BasePhase):
                 print("Vessel does not have storage capacity.")
                 continue
 
-            outputs[
-                f"{name}_deck_space_utilization"
-            ] = vessel.max_deck_space_utilization
+            outputs[f"{name}_deck_space_utilization"] = vessel.max_deck_space_utilization
 
         return outputs

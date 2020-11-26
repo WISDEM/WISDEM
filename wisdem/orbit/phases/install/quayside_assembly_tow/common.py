@@ -185,9 +185,7 @@ class TurbineAssemblyLine(Agent):
             delay = self.env.now - start
 
             if delay > 0:
-                self.submit_action_log(
-                    "Delay: No Substructures in Wet Storage", delay
-                )
+                self.submit_action_log("Delay: No Substructures in Wet Storage", delay)
 
             yield self.assemble_turbine()
 
@@ -218,13 +216,9 @@ class TurbineAssemblyLine(Agent):
         delay = self.env.now - start
 
         if delay > 0:
-            self.submit_action_log(
-                "Delay: No Assembly Storage Available", delay
-            )
+            self.submit_action_log("Delay: No Assembly Storage Available", delay)
 
-        self.submit_debug_log(
-            message="Assembly delievered to installation groups."
-        )
+        self.submit_debug_log(message="Assembly delievered to installation groups.")
 
     @process
     def move_substructure(self):
@@ -266,9 +260,7 @@ class TurbineAssemblyLine(Agent):
         at quayside.
         """
 
-        yield self.task(
-            "Lift and Attach Nacelle", 7, constraints={"windspeed": le(15)}
-        )
+        yield self.task("Lift and Attach Nacelle", 7, constraints={"windspeed": le(15)})
 
     @process
     def lift_and_attach_blade(self):
@@ -277,9 +269,7 @@ class TurbineAssemblyLine(Agent):
         blade at quayside.
         """
 
-        yield self.task(
-            "Lift and Attach Blade", 3.5, constraints={"windspeed": le(12)}
-        )
+        yield self.task("Lift and Attach Blade", 3.5, constraints={"windspeed": le(12)})
 
     @process
     def mechanical_completion(self):
@@ -288,9 +278,7 @@ class TurbineAssemblyLine(Agent):
         work at quayside.
         """
 
-        yield self.task(
-            "Mechanical Completion", 24, constraints={"windspeed": le(18)}
-        )
+        yield self.task("Mechanical Completion", 24, constraints={"windspeed": le(18)})
 
 
 class TowingGroup(Agent):
@@ -318,9 +306,7 @@ class TowingGroup(Agent):
         self.submit_debug_log(message="{self.name} initialized.")
 
     @process
-    def group_task(
-        self, name, duration, num_vessels, constraints={}, **kwargs
-    ):
+    def group_task(self, name, duration, num_vessels, constraints={}, **kwargs):
         """
         Submits a group task with any number of towing vessels.
 

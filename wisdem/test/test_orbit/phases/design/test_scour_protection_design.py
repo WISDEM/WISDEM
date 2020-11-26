@@ -76,11 +76,7 @@ def test_total_cost(config):
     scour = ScourProtectionDesign(config_min_defined)
     scour.run()
 
-    cost = (
-        config["plant"]["num_turbines"]
-        * config["scour_protection_design"]["cost_per_tonne"]
-        * scour.scour_protection_tonnes
-    )
+    cost = config["plant"]["num_turbines"] * config["scour_protection_design"]["cost_per_tonne"] * scour.scour_protection_tonnes
     assert scour.total_phase_cost == pytest.approx(cost, rel=1e-8)
 
 
@@ -88,8 +84,4 @@ def test_design_result():
     scour = ScourProtectionDesign(config_min_defined)
     scour.run()
 
-    assert scour.design_result == {
-        "scour_protection": {
-            "tons_per_substructure": scour.scour_protection_tonnes
-        }
-    }
+    assert scour.design_result == {"scour_protection": {"tons_per_substructure": scour.scour_protection_tonnes}}

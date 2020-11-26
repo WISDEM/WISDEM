@@ -15,9 +15,7 @@ from wisdem.orbit.core.defaults import process_times as pt
 class Monopile(Cargo):
     """Monopile Cargo"""
 
-    def __init__(
-        self, length=None, diameter=None, mass=None, deck_space=None, **kwargs
-    ):
+    def __init__(self, length=None, diameter=None, mass=None, deck_space=None, **kwargs):
         """
         Creates an instance of `Monopile`.
         """
@@ -187,9 +185,7 @@ def lower_transition_piece(vessel, **kwargs):
     rate = vessel.crane.crane_rate(**kwargs)
     lower_time = vessel.jacksys.air_gap / rate
 
-    yield vessel.task(
-        "Lower TP", lower_time, constraints=vessel.operational_limits, **kwargs
-    )
+    yield vessel.task("Lower TP", lower_time, constraints=vessel.operational_limits, **kwargs)
 
 
 @process
@@ -212,9 +208,7 @@ def bolt_transition_piece(vessel, **kwargs):
     key = "tp_bolt_time"
     bolt_time = kwargs.get(key, pt[key])
 
-    yield vessel.task(
-        "Bolt TP", bolt_time, constraints=vessel.operational_limits, **kwargs
-    )
+    yield vessel.task("Bolt TP", bolt_time, constraints=vessel.operational_limits, **kwargs)
 
 
 @process
@@ -261,9 +255,7 @@ def cure_transition_piece_grout(vessel, **kwargs):
     key = "grout_cure_time"
     cure_time = kwargs.get(key, pt[key])
 
-    yield vessel.task(
-        "Cure TP Grout", cure_time, constraints=vessel.transit_limits, **kwargs
-    )
+    yield vessel.task("Cure TP Grout", cure_time, constraints=vessel.transit_limits, **kwargs)
 
 
 @process
@@ -351,11 +343,6 @@ def install_transition_piece(vessel, tp, **kwargs):
         yield cure_transition_piece_grout(vessel)
 
     else:
-        raise Exception(
-            f"Transition piece connection type '{connection}'"
-            "not recognized. Must be 'bolted' or 'grouted'."
-        )
+        raise Exception(f"Transition piece connection type '{connection}'" "not recognized. Must be 'bolted' or 'grouted'.")
 
-    yield vessel.task(
-        "Jackdown", jackdown_time, constraints=vessel.transit_limits, **kwargs
-    )
+    yield vessel.task("Jackdown", jackdown_time, constraints=vessel.transit_limits, **kwargs)

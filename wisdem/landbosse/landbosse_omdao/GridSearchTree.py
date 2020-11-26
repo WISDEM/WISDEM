@@ -6,6 +6,7 @@ This module contains the logic to handle a tree to compute
 points in an N-dimensional parametric search space.
 """
 
+
 class GridSearchTreeNode:
     """
     This just contains information about a node in the grid
@@ -87,12 +88,12 @@ class GridSearchTree:
         cell_specification = f"{row['Dataframe name']}/{row['Row name']}/{row['Column name']}"
 
         # First, make an iterable of the range we are going to be using.
-        if 'Value list' in row and not pd.isnull(row['Value list']):
-            values = [float(value) for value in row['Value list'].split(',')]
+        if "Value list" in row and not pd.isnull(row["Value list"]):
+            values = [float(value) for value in row["Value list"].split(",")]
         else:
-            start = row['Min']
-            end = row['Max']
-            step = row['Step']
+            start = row["Min"]
+            end = row["Max"]
+            step = row["Step"]
             values = np.arange(start, end + step, step)
 
         if root == None:
@@ -148,10 +149,12 @@ class GridSearchTree:
         path = [] if path is None else path[:]
 
         if root.cell_specification is not None:
-            path.append({
-                'cell_specification': root.cell_specification,
-                'value': root.value,
-            })
+            path.append(
+                {
+                    "cell_specification": root.cell_specification,
+                    "value": root.value,
+                }
+            )
 
         if len(root.children) == 0:
             traversal.append(path)

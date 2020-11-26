@@ -24,18 +24,14 @@ simul_config = deepcopy(base_config)
 _ = simul_config.pop("array_cable_bury_vessel")
 
 
-@pytest.mark.parametrize(
-    "config", (base_config, simul_config), ids=["separate", "simultaneous"]
-)
+@pytest.mark.parametrize("config", (base_config, simul_config), ids=["separate", "simultaneous"])
 def test_simulation_setup(config):
 
     sim = ArrayCableInstallation(config)
     assert sim.env
 
 
-@pytest.mark.parametrize(
-    "config", (base_config, simul_config), ids=["separate", "simultaneous"]
-)
+@pytest.mark.parametrize("config", (base_config, simul_config), ids=["separate", "simultaneous"])
 def test_vessel_initialization(config):
 
     sim = ArrayCableInstallation(config)
@@ -46,12 +42,8 @@ def test_vessel_initialization(config):
         assert sim.bury_vessel
 
 
-@pytest.mark.parametrize(
-    "config", (base_config, simul_config), ids=["separate", "simultaneous"]
-)
-@pytest.mark.parametrize(
-    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
-)
+@pytest.mark.parametrize("config", (base_config, simul_config), ids=["separate", "simultaneous"])
+@pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
 def test_for_complete_logging(config, weather):
 
     sim = ArrayCableInstallation(config, weather=weather)
