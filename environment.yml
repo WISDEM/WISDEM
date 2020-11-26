@@ -15,6 +15,7 @@ dependencies:
   - xlrd
   - openpyxl
   - cython
+  - swig
   - pandas
   - numpydoc
   - six
