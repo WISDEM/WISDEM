@@ -9,7 +9,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 from marmot import process
 
 from wisdem.orbit.core import Cargo
-from wisdem.orbit.core._defaults import process_times as pt
+from wisdem.orbit.core.defaults import process_times as pt
 
 
 class TowerSection(Cargo):

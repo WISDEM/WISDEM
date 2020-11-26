@@ -9,7 +9,7 @@ from copy import deepcopy
 
 import pytest
 
-from wisdem.orbit.library import extract_library_specs
+from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.phases.design import ExportSystemDesign
 
 config = extract_library_specs("config", "export_design")

@@ -11,8 +11,8 @@ import pytest
 
 from wisdem.orbit import ProjectManager
 from wisdem.test.test_orbit.data import test_weather
-from wisdem.orbit.library import extract_library_specs
 from wisdem.orbit.manager import ProjectProgress
+from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.core.exceptions import (
     MissingInputs,
     PhaseNotFound,
@@ -594,31 +594,31 @@ def test_npv():
     baseline = project.npv
 
     config = deepcopy(complete_project)
-    config["ncf"] = 0.35
+    config["project_parameters"] = {"ncf": 0.35}
     project = ProjectManager(config)
     project.run_project()
     assert project.npv != baseline
 
     config = deepcopy(complete_project)
-    config["offtake_price"] = 70
+    config["project_parameters"] = {"offtake_price": 70}
     project = ProjectManager(config)
     project.run_project()
     assert project.npv != baseline
 
     config = deepcopy(complete_project)
-    config["project_lifetime"] = 30
+    config["project_parameters"] = {"project_lifetime": 30}
     project = ProjectManager(config)
     project.run_project()
     assert project.npv != baseline
 
     config = deepcopy(complete_project)
-    config["discount_rate"] = 0.03
+    config["project_parameters"] = {"discount_rate": 0.03}
     project = ProjectManager(config)
     project.run_project()
     assert project.npv != baseline
 
     config = deepcopy(complete_project)
-    config["opex_rate"] = 120
+    config["project_parameters"] = {"opex_rate": 120}
     project = ProjectManager(config)
     project.run_project()
     assert project.npv != baseline

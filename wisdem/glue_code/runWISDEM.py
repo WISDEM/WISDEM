@@ -72,7 +72,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
 
         # Setup openmdao problem
         wt_opt.setup()
-
+        
         # Load initial wind turbine data from wt_initial to the openmdao problem
         wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)

@@ -1,45 +1,28 @@
-general:
+# Generic modeling options file to run standard WISDEM case
+General:
     verbosity: False  # When set to True, the code prints to screen many infos
-
-Analysis_Flags:
-    # Control which WISDEM modules are executed.
-    # (GOAL) If inputs are missing for a module, a warning will be written to the screen and the module disabled.
-    RotorSE:  False
-    DriveSE:  False
-    TowerSE:  True
-    BOS:      False
-
-yaml:
-    validate: False    # When set to True, the code runs a yam validation package. This checks whether the yams has the right formatting.
-
-tower:             # Options of TowerSE module
-    nLC: 2           # Number of design load cases in TowerSE
-    wind: PowerWind  # Wind used in TowerSE
-    gamma_f: 1.35    # Safety factor for fatigue loads in TowerSE
-    gamma_m: 1.3     # Safety factor for material properties in TowerSE
+RotorSE:
+    flag: False
+DriveSE:
+    flag: False
+TowerSE:             # Options of TowerSE module
+    flag: True
+    nLC: 2           # Number of design load cases 
+    wind: PowerWind  # Wind used 
+    gamma_f: 1.35    # Safety factor for fatigue loads 
+    gamma_m: 1.3     # Safety factor for material properties 
     gamma_n: 1.0     # Safety factor for ...
     gamma_b: 1.1     # Safety factor for ...
-    gamma_fatigue: 1.755  # Safety factor for fatigue loads in TowerSE
-    buckling_length: 30    # Buckling parameter in TowerSE
+    gamma_fatigue: 1.755  # Safety factor for fatigue loads 
+    buckling_length: 30    # Buckling parameter 
     frame3dd:
         shear: True
         geom: True
         tol: 1e-9
-monopile:             # Options of TowerSE module
-    nLC: 2           # Number of design load cases in TowerSE
-    wind: PowerWind  # Wind used in TowerSE
-    gamma_f: 1.35    # Safety factor for fatigue loads in TowerSE
-    gamma_m: 1.3     # Safety factor for material properties in TowerSE
-    gamma_n: 1.0     # Safety factor for ...
-    gamma_b: 1.1     # Safety factor for ...
-    gamma_fatigue: 1.755  # Safety factor for fatigue loads in TowerSE
-    buckling_length: 30    # Buckling parameter in TowerSE
-    frame3dd:
-        shear: True
-        geom: True
-        tol: 1e-9
+BOS:
+    flag: False
 
-loading:
+Loading:
     mass: 285598.8
     center_of_mass: [-1.13197635, 0.0, 0.50875268]
     moment_of_inertia: [1.14930678e08, 2.20354030e07, 1.87597425e07, 0.0, 5.03710467e05, 0.0]

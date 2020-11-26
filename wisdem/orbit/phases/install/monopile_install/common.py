@@ -9,7 +9,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 from marmot import process
 
 from wisdem.orbit.core import Cargo
-from wisdem.orbit.core._defaults import process_times as pt
+from wisdem.orbit.core.defaults import process_times as pt
 
 
 class Monopile(Cargo):
@@ -342,10 +342,10 @@ def install_transition_piece(vessel, tp, **kwargs):
     )
     yield lower_transition_piece(vessel, **kwargs)
 
-    if connection is "bolted":
+    if connection == "bolted":
         yield bolt_transition_piece(vessel, **kwargs)
 
-    elif connection is "grouted":
+    elif connection == "grouted":
 
         yield pump_transition_piece_grout(vessel, **kwargs)
         yield cure_transition_piece_grout(vessel)

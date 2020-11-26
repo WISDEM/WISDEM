@@ -3,6 +3,11 @@ from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 
 def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
+    
+    if modeling_options['flags']['monopile'] or modeling_options['flags']['floating_platform']:
+        offshore = True
+    else:
+        offshore = False
 
     # These are the required components
     assembly        = wt_init['assembly']
@@ -14,7 +19,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     # Now all of the optional components
     if modeling_options['flags']['environment']:
         environment     = wt_init['environment']
-        wt_opt = assign_environment_values(wt_opt, environment, modeling_options['offshore'])
+        wt_opt = assign_environment_values(wt_opt, environment, offshore)
     else:
         environment = {}
 
@@ -68,11 +73,11 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     else:
         monopile = {}
 
-    if modeling_options['flags']['floating']:
-        floating = wt_init['components']['floating']
-        wt_opt   = assign_floating_values(wt_opt, modeling_options, floating)
-    else:
-        floating = {}
+    if modeling_options['flags']['floating_platform']:
+        floating_platform   = wt_init['components']['floating_platform']
+        wt_opt              = assign_floating_values(wt_opt, modeling_options, floating_platform)
+        mooring             = wt_init['components']['mooring']
+        wt_opt              = assign_mooring_values(wt_opt, modeling_options, mooring)
 
     if modeling_options['flags']['foundation']:
         foundation      = wt_init['components']['foundation']
@@ -82,7 +87,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
 
     if modeling_options['flags']['bos']:
         bos           = wt_init['bos']
-        wt_opt = assign_bos_values(wt_opt, bos, modeling_options['offshore'])
+        wt_opt = assign_bos_values(wt_opt, bos, offshore)
     else:
         costs = {}
 
@@ -105,7 +110,7 @@ def assign_blade_values(wt_opt, modeling_options, blade):
 def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
     # Function to assign values to the openmdao component Blade_Outer_Shape_BEM
 
-    nd_span     = modeling_options['blade']['nd_span']
+    nd_span     = modeling_options['RotorSE']['nd_span']
 
     wt_opt['blade.outer_shape_bem.af_position'] = outer_shape_bem['airfoil_position']['grid']
     wt_opt['blade.opt_var.af_position']         = outer_shape_bem['airfoil_position']['grid']
@@ -178,8 +183,8 @@ def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
 def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_structure_2d_fem):
     # Function to assign values to the openmdao component Blade_Internal_Structure_2D_FEM
 
-    n_span          = modeling_options['blade']['n_span']
-    n_webs          = modeling_options['blade']['n_webs']
+    n_span          = modeling_options['RotorSE']['n_span']
+    n_webs          = modeling_options['RotorSE']['n_webs']
 
     web_rotation    = np.zeros((n_webs, n_span))
     web_offset_y_pa = np.zeros((n_webs, n_span))
@@ -195,7 +200,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                 if internal_structure_2d_fem['webs'][i]['rotation']['fixed'] == 'twist':
                     definition_web[i] = 1
                 else:
-                    raise ValueError('Invalid rotation reference for web ' + self.modeling_options['blade']['web_name'][i] + '. Please check the yaml input file')
+                    raise ValueError('Invalid rotation reference for web ' + self.modeling_options['RotorSE']['web_name'][i] + '. Please check the yaml input file')
             else:
                 web_rotation[i,:] = np.interp(nd_span, internal_structure_2d_fem['webs'][i]['rotation']['grid'], internal_structure_2d_fem['webs'][i]['rotation']['values'], left=0., right=0.)
                 definition_web[i] = 2
@@ -207,7 +212,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
         else:
             raise ValueError('Webs definition not supported. Please check the yaml input.')
 
-    n_layers        = modeling_options['blade']['n_layers']
+    n_layers        = modeling_options['RotorSE']['n_layers']
     layer_name      = n_layers * ['']
     layer_mat       = n_layers * ['']
     thickness       = np.zeros((n_layers, n_span))
@@ -227,8 +232,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
 
     # Loop through the layers, interpolate along blade span, assign the inputs, and the definition flag
     for i in range(n_layers):
-        layer_name[i]  = modeling_options['blade']['layer_name'][i]
-        layer_mat[i]   = modeling_options['blade']['layer_mat'][i]
+        layer_name[i]  = modeling_options['RotorSE']['layer_name'][i]
+        layer_mat[i]   = modeling_options['RotorSE']['layer_mat'][i]
         thickness[i]   = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['thickness']['grid'], internal_structure_2d_fem['layers'][i]['thickness']['values'], left=0., right=0.)
         if 'rotation' not in internal_structure_2d_fem['layers'][i] and 'offset_y_pa' not in internal_structure_2d_fem['layers'][i] and 'width' not in internal_structure_2d_fem['layers'][i] and 'start_nd_arc' not in internal_structure_2d_fem['layers'][i] and 'end_nd_arc' not in internal_structure_2d_fem['layers'][i] and 'web' not in internal_structure_2d_fem['layers'][i]:
             definition_layer[i] = 1
@@ -321,8 +326,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
 
         if 'web' in internal_structure_2d_fem['layers'][i]:
             web_name_i = internal_structure_2d_fem['layers'][i]['web']
-            for j in range(modeling_options['blade']['n_webs']):
-                if web_name_i == modeling_options['blade']['web_name'][j]:
+            for j in range(modeling_options['RotorSE']['n_webs']):
+                if web_name_i == modeling_options['RotorSE']['web_name'][j]:
                     k = j+1
                     break
             layer_web[i] = k
@@ -353,8 +358,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
 
 def assign_te_flaps_values(wt_opt, modeling_options, blade):
     # Function to assign the trailing edge flaps data to the openmdao data structure
-    if modeling_options['blade']['n_te_flaps'] > 0:
-        n_te_flaps = modeling_options['blade']['n_te_flaps']
+    if modeling_options['RotorSE']['n_te_flaps'] > 0:
+        n_te_flaps = modeling_options['RotorSE']['n_te_flaps']
         for i in range(n_te_flaps):
             wt_opt['dac_ivc.te_flap_start'][i]   = blade['aerodynamic_control']['te_flaps'][i]['span_start']
             wt_opt['dac_ivc.te_flap_end'][i]     = blade['aerodynamic_control']['te_flaps'][i]['span_end']
@@ -398,7 +403,7 @@ def assign_hub_values(wt_opt, hub):
 
     wt_opt['hub.diameter']                    = hub['diameter']
     wt_opt['hub.cone']                        = hub['cone_angle']
-    wt_opt['hub.drag_coeff']                  = hub['drag_coefficient']
+    #wt_opt['hub.drag_coeff']                  = hub['drag_coefficient'] # GB: This doesn't connect to anything
     wt_opt['hub.flange_t2shell_t']            = hub['flange_t2shell_t']
     wt_opt['hub.flange_OD2hub_D']             = hub['flange_OD2hub_D']
     wt_opt['hub.flange_ID2flange_OD']         = hub['flange_ID2OD']
@@ -414,7 +419,6 @@ def assign_hub_values(wt_opt, hub):
     wt_opt['hub.spinner_material']            = hub['spinner_material']
 
     return wt_opt
-
 
 def assign_nacelle_values(wt_opt, modeling_options, nacelle):
     # Common direct and geared
@@ -436,25 +440,14 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
     wt_opt['nacelle.converter_mass_user']       = nacelle['drivetrain']['converter_mass_user']
     wt_opt['nacelle.transformer_mass_user']     = nacelle['drivetrain']['transformer_mass_user']
 
-    s_lss = np.linspace(0.0, 1.0, len(wt_opt['nacelle.lss_wall_thickness']))
-    s_lss_diameter_in = nacelle['drivetrain']['lss_diameter']['grid']
-    v_lss_diameter_in = nacelle['drivetrain']['lss_diameter']['values']
-    s_lss_thick_in    = nacelle['drivetrain']['lss_wall_thickness']['grid']
-    v_lss_thick_in    = nacelle['drivetrain']['lss_wall_thickness']['values']
-    wt_opt['nacelle.lss_wall_thickness']       = np.interp(s_lss, s_lss_thick_in,    v_lss_thick_in)
-    wt_opt['nacelle.lss_diameter']             = np.interp(s_lss, s_lss_diameter_in, v_lss_diameter_in)
+    wt_opt['nacelle.lss_wall_thickness']       = nacelle['drivetrain']['lss_wall_thickness']
+    wt_opt['nacelle.lss_diameter']             = nacelle['drivetrain']['lss_diameter']
 
-    if modeling_options['drivetrainse']['direct']:
+    if modeling_options['DriveSE']['direct']:
         # Direct only
         wt_opt['nacelle.access_diameter']           = nacelle['drivetrain']['access_diameter']
-
-        s_nose = np.linspace(0.0, 1.0, len(wt_opt['nacelle.nose_wall_thickness']))
-        s_nose_diameter_in = nacelle['drivetrain']['nose_diameter']['grid']
-        v_nose_diameter_in = nacelle['drivetrain']['nose_diameter']['values']
-        s_nose_thick_in    = nacelle['drivetrain']['nose_wall_thickness']['grid']
-        v_nose_thick_in    = nacelle['drivetrain']['nose_wall_thickness']['values']
-        wt_opt['nacelle.nose_wall_thickness']       = np.interp(s_nose, s_nose_thick_in,    v_nose_thick_in)
-        wt_opt['nacelle.nose_diameter']             = np.interp(s_nose, s_nose_diameter_in, v_nose_diameter_in)
+        wt_opt['nacelle.nose_wall_thickness']       = nacelle['drivetrain']['nose_wall_thickness']
+        wt_opt['nacelle.nose_diameter']             = nacelle['drivetrain']['nose_diameter']
 
         s_bedplate = np.linspace(0.0, 1.0, len(wt_opt['nacelle.bedplate_wall_thickness']))
         s_bed_thick_in    = nacelle['drivetrain']['bedplate_wall_thickness']['grid']
@@ -462,13 +455,8 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
         wt_opt['nacelle.bedplate_wall_thickness']   = np.interp(s_bedplate, s_bed_thick_in, v_bed_thick_in)
     else:
         # Geared only
-        s_hss = np.linspace(0.0, 1.0, len(wt_opt['nacelle.hss_wall_thickness']))
-        s_hss_diameter_in = nacelle['drivetrain']['hss_diameter']['grid']
-        v_hss_diameter_in = nacelle['drivetrain']['hss_diameter']['values']
-        s_hss_thick_in    = nacelle['drivetrain']['hss_wall_thickness']['grid']
-        v_hss_thick_in    = nacelle['drivetrain']['hss_wall_thickness']['values']
-        wt_opt['nacelle.hss_wall_thickness']       = np.interp(s_hss, s_hss_thick_in,    v_hss_thick_in)
-        wt_opt['nacelle.hss_diameter']             = np.interp(s_hss, s_hss_diameter_in, v_hss_diameter_in)
+        wt_opt['nacelle.hss_wall_thickness']       = nacelle['drivetrain']['hss_wall_thickness']
+        wt_opt['nacelle.hss_diameter']             = nacelle['drivetrain']['hss_diameter']
 
         wt_opt['nacelle.hss_length']                = nacelle['drivetrain']['hss_length']
         wt_opt['nacelle.bedplate_flange_width']     = nacelle['drivetrain']['bedplate_flange_width']
@@ -483,7 +471,7 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
 
         eff_user = np.c_[nacelle['drivetrain']['generator_rpm_efficiency_user']['grid'],
                          nacelle['drivetrain']['generator_rpm_efficiency_user']['values']]
-        n_pc     = modeling_options['servose']['n_pc']
+        n_pc     = modeling_options['RotorSE']['n_pc']
         if np.any(eff_user):
             newrpm   = np.linspace(eff_user[:,0].min(), eff_user[:,0].max(), n_pc)
             neweff   = np.interp(newrpm, eff_user[:,0], eff_user[:,1])
@@ -581,11 +569,10 @@ def assign_generator_values(wt_opt, modeling_options, nacelle):
 
     return wt_opt
 
-
 def assign_tower_values(wt_opt, modeling_options, tower):
     # Function to assign values to the openmdao component Tower
-    n_height        = modeling_options['tower']['n_height'] # Number of points along tower height
-    n_layers        = modeling_options['tower']['n_layers']
+    n_height        = modeling_options['TowerSE']['n_height'] # Number of points along tower height
+    n_layers        = modeling_options['TowerSE']['n_layers']
 
     svec = np.unique( np.r_[tower['outer_shape_bem']['outer_diameter']['grid'],
                             tower['outer_shape_bem']['reference_axis']['x']['grid'],
@@ -594,6 +581,7 @@ def assign_tower_values(wt_opt, modeling_options, tower):
 
     # wt_opt['tower.s'] = svec
     wt_opt['tower.diameter']   = np.interp(svec, tower['outer_shape_bem']['outer_diameter']['grid'], tower['outer_shape_bem']['outer_diameter']['values'])
+    wt_opt['tower.cd']         = np.interp(svec, tower['outer_shape_bem']['drag_coefficient']['grid'], tower['outer_shape_bem']['drag_coefficient']['values'])
 
     wt_opt['tower.ref_axis'][:,0]  = np.interp(svec, tower['outer_shape_bem']['reference_axis']['x']['grid'], tower['outer_shape_bem']['reference_axis']['x']['values'])
     wt_opt['tower.ref_axis'][:,1]  = np.interp(svec, tower['outer_shape_bem']['reference_axis']['y']['grid'], tower['outer_shape_bem']['reference_axis']['y']['values'])
@@ -672,165 +660,85 @@ def assign_foundation_values(wt_opt, foundation):
 
 def assign_floating_values(wt_opt, modeling_options, floating):
 
-    dx = (floating['column']['main']['reference_axis']['x']['values'].mean() -
-          floating['column']['offset']['reference_axis']['x']['values'].mean() )
-    dy = (floating['column']['main']['reference_axis']['y']['values'].mean() -
-          floating['column']['offset']['reference_axis']['y']['values'].mean() )
-    wt_opt['floating.radius_to_offset_column'] = np.sqrt(dx**2 + dy**2)
+    floating_init_options   = modeling_options['floating']
+    n_joints = floating_init_options['joints']['n_joints']
+    # Loop through joints and assign location values to openmdao entry
+    for i in range(n_joints):
+        wt_opt['floating.floating_joints.location'][i,:] = floating['joints'][i]['location']
 
-    wt_opt['floating.number_of_offset_columns'] = len(floating['column']['repeat'])
-    for k in range(len(floating['mooring']['nodes'])):
-        if floating['mooring']['nodes'][k]['node_type'] == 'vessel':
-            wt_opt['fairlead_location'] = floating['mooring']['nodes'][k]['location']['z']
-            wt_opt['fairlead_offset_from_shell'] = 1.0 # TODO
-            break
-
-    wt_opt['floating.outfitting_cost_rate'] = 20.0 # Lookup material here?
-    wt_opt['floating.loading'] = 'hydrostatic' #if modeling_options['floating']['loading']['hydrostatic'] else
-
-    # Main column
-    svec = np.unique( np.r_[floating['column']['main']['outer_shape_bem']['outer_diameter']['grid'],
-                            floating['column']['main']['outer_shape_bem']['reference_axis']['x']['grid'],
-                            floating['column']['main']['outer_shape_bem']['reference_axis']['y']['grid'],
-                            floating['column']['main']['outer_shape_bem']['reference_axis']['z']['grid']] )
-
-    wt_opt['floating.main.s'] = svec
-    wt_opt['floating.main.diameter']   = np.interp(svec, floating['column']['main']['outer_shape_bem']['outer_diameter']['grid'], floating['column']['main']['outer_shape_bem']['outer_diameter']['values'])
-
-    wt_opt['floating.main.ref_axis'][:,0]  = np.interp(svec, floating['column']['main']['outer_shape_bem']['reference_axis']['x']['grid'], floating['column']['main']['outer_shape_bem']['reference_axis']['x']['values'])
-    wt_opt['floating.main.ref_axis'][:,1]  = np.interp(svec, floating['column']['main']['outer_shape_bem']['reference_axis']['y']['grid'], floating['column']['main']['outer_shape_bem']['reference_axis']['y']['values'])
-    wt_opt['floating.main.ref_axis'][:,2]  = np.interp(svec, floating['column']['main']['outer_shape_bem']['reference_axis']['z']['grid'], floating['column']['main']['outer_shape_bem']['reference_axis']['z']['values'])
-
-    wt_opt['floating.main.outfitting_factor']          = floating['columns']['main']['internal_structure']['outfitting_factor']
-    wt_opt['floating.main.stiffener_web_height']       = floating['columns']['main']['internal_structure']['stiffener_web_height']
-    wt_opt['floating.main.stiffener_web_thickness']    = floating['columns']['main']['internal_structure']['stiffener_web_thickness']
-    wt_opt['floating.main.stiffener_flange_thickness'] = floating['columns']['main']['internal_structure']['stiffener_flange_thickness']
-    wt_opt['floating.main.stiffener_flange_width']     = floating['columns']['main']['internal_structure']['stiffener_flange_width']
-    wt_opt['floating.main.stiffener_spacing']          = floating['columns']['main']['internal_structure']['stiffener_spacing']
-    wt_opt['floating.main.permanent_ballast_volume']   = floating['columns']['main']['internal_structure']['ballast']['volume']
-
-    wt_opt['floating.main.bulkhead_thickness']         = floating['columns']['main']['internal_structure']['bulkhead']['thickness']['values']
-    wt_opt['floating.main.bulkhead_location']          = floating['columns']['main']['internal_structure']['bulkhead']['thickness']['grid']
-
-    layer_name      = n_layers * ['']
-    layer_mat       = n_layers * ['']
-    thickness       = np.zeros((n_layers, n_height-1))
-    for i in range(n_layers):
-        layer_name[i]  = floating['columns']['main']['internal_structure']['layers'][i]['name']
-        layer_mat[i]   = floating['columns']['main']['internal_structure']['layers'][i]['material']
-        thickness[i]   = floating['columns']['main']['internal_structure']['layers'][i]['thickness']['values']
-
-    wt_opt['floating.main.layer_name']     = layer_name
-    wt_opt['floating.main.layer_mat']      = layer_mat
-    wt_opt['floating.mainlayer_thickness'] = thickness
+    n_members = floating_init_options['members']['n_members']
+    # Loop through members and assign grid, outer diameter, layer thickness and ballast volume to openmdao entry. The distributed quantities are interpolated to a common grid
+    for i in range(n_members):
+        name_member = floating_init_options['members']['name'][i]
+        grid_member = floating_init_options['members']['grid_member_' + floating_init_options['members']['name'][i]]
+        wt_opt['floating.floating_member_' + name_member + '.grid'] = grid_member
+        wt_opt['floating.floating_member_' + name_member + '.outer_diameter'] = np.interp(grid_member, floating['members'][i]['outer_shape']['outer_diameter']['grid'],floating['members'][i]['outer_shape']['outer_diameter']['values'])
+        if 'bulkhead' in floating['members'][i]['internal_structure']:
+            wt_opt['floating.floating_member_' + name_member + '.bulkhead_thickness'] = np.interp(grid_member, floating['members'][i]['internal_structure']['bulkhead']['thickness']['grid'],floating['members'][i]['internal_structure']['bulkhead']['thickness']['values'])
+        n_layers = floating_init_options['members']['n_layers'][i]
+        for j in range(n_layers):
+            wt_opt['floating.floating_member_' + name_member + '.layer_thickness'][j,:] = np.interp(grid_member, floating['members'][i]['internal_structure']['layers'][j]['thickness']['grid'],floating['members'][i]['internal_structure']['layers'][j]['thickness']['values'])
+        n_ballasts = floating_init_options['members']['n_ballasts'][i]
+        for j in range(n_ballasts):
+            if floating_init_options['members']['ballast_flag_member_' + name_member][j] == False:
+                wt_opt['floating.floating_member_' + name_member + '.ballast_volume'][j] = floating['members'][i]['internal_structure']['ballasts'][j]['volume']
+        if floating_init_options['members']['n_axial_joints'][i] > 0:
+            for j in range(floating_init_options['members']['n_axial_joints'][i]):
+                wt_opt['floating.floating_member_' + name_member + '.grid_axial_joints'][j] = floating['members'][i]['axial_joints'][j]['grid']
 
 
-    # Offset column
-    svec = np.unique( np.r_[floating['column']['offset']['outer_shape_bem']['outer_diameter']['grid'],
-                            floating['column']['offset']['outer_shape_bem']['reference_axis']['x']['grid'],
-                            floating['column']['offset']['outer_shape_bem']['reference_axis']['y']['grid'],
-                            floating['column']['offset']['outer_shape_bem']['reference_axis']['z']['grid']] )
+    return wt_opt
 
-    wt_opt['floating.offset.s'] = svec
-    wt_opt['floating.offset.diameter']   = np.interp(svec, floating['column']['offset']['outer_shape_bem']['outer_diameter']['grid'], floating['column']['offset']['outer_shape_bem']['outer_diameter']['values'])
+def assign_mooring_values(wt_opt, modeling_options, mooring):
+    # Mooring system parameters
+    mooring_init_options   = modeling_options['mooring']
 
-    wt_opt['floating.offset.ref_axis'][:,0]  = np.interp(svec, floating['column']['offset']['outer_shape_bem']['reference_axis']['x']['grid'], floating['column']['offset']['outer_shape_bem']['reference_axis']['x']['values'])
-    wt_opt['floating.offset.ref_axis'][:,1]  = np.interp(svec, floating['column']['offset']['outer_shape_bem']['reference_axis']['y']['grid'], floating['column']['offset']['outer_shape_bem']['reference_axis']['y']['values'])
-    wt_opt['floating.offset.ref_axis'][:,2]  = np.interp(svec, floating['column']['offset']['outer_shape_bem']['reference_axis']['z']['grid'], floating['column']['offset']['outer_shape_bem']['reference_axis']['z']['values'])
+    n_nodes         = mooring_init_options['n_nodes']       
+    n_lines         = mooring_init_options['n_lines']       
+    n_line_types    = mooring_init_options['n_line_types']  
+    n_anchor_types  = mooring_init_options['n_anchor_types']
 
-    wt_opt['floating.offset.outfitting_factor']          = floating['columns']['offset']['internal_structure']['outfitting_factor']
-    wt_opt['floating.offset.stiffener_web_height']       = floating['columns']['offset']['internal_structure']['stiffener_web_height']
-    wt_opt['floating.offset.stiffener_web_thickness']    = floating['columns']['offset']['internal_structure']['stiffener_web_thickness']
-    wt_opt['floating.offset.stiffener_flange_thickness'] = floating['columns']['offset']['internal_structure']['stiffener_flange_thickness']
-    wt_opt['floating.offset.stiffener_flange_width']     = floating['columns']['offset']['internal_structure']['stiffener_flange_width']
-    wt_opt['floating.offset.stiffener_spacing']          = floating['columns']['offset']['internal_structure']['stiffener_spacing']
-    wt_opt['floating.offset.permanent_ballast_volume']   = floating['columns']['offset']['internal_structure']['ballast']['volume']
-
-    wt_opt['floating.offset.bulkhead_thickness']         = floating['columns']['offset']['internal_structure']['bulkhead']['thickness']['values']
-    wt_opt['floating.offset.bulkhead_location']          = floating['columns']['offset']['internal_structure']['bulkhead']['thickness']['grid']
-
-    layer_name      = n_layers * ['']
-    layer_mat       = n_layers * ['']
-    thickness       = np.zeros((n_layers, n_height-1))
-    for i in range(n_layers):
-        layer_name[i]  = floating['columns']['offset']['internal_structure']['layers'][i]['name']
-        layer_mat[i]   = floating['columns']['offset']['internal_structure']['layers'][i]['material']
-        thickness[i]   = floating['columns']['offset']['internal_structure']['layers'][i]['thickness']['values']
-
-    wt_opt['floating.offset.layer_name']     = layer_name
-    wt_opt['floating.offset.layer_mat']      = layer_mat
-    wt_opt['floating.offsetlayer_thickness'] = thickness
-
-    for k in range(len(floating['heave_plate'])):
-        if floating['heave_plate'][k]['member_name'].lower().find('main') >= 0:
-            # TODO: Might need grid/values on OD
-            wt_opt['floating.main.buoyancy_tank_diameter'] = floating['heave_plate'][k]['outer_diameter']
-            wt_opt['floating.main.buoyancy_tank_height']   = floating['heave_plate'][k]['wall_thickness']
-            wt_opt['floating.main.buoyancy_tank_location'] = floating['heave_plate'][k]['grid_value']
-
-        elif floating['heave_plate'][k]['member_name'].lower().find('off') >= 0:
-            # TODO: Might need grid/values on OD
-            wt_opt['floating.offset.buoyancy_tank_diameter'] = floating['heave_plate'][k]['outer_diameter']
-            wt_opt['floating.offset.buoyancy_tank_height']   = floating['heave_plate'][k]['wall_thickness']
-            wt_opt['floating.offset.buoyancy_tank_location'] = floating['heave_plate'][k]['grid_value']
-
-
-    wt_opt['floating.transition_piece_height'] = wt_opt['floating.main.freeboard'] = floating['column']['main']['reference_axis']['z']['values'].max()
-    wt_opt['floating.transition_piece_mass']   = floating['transition_piece_mass']
-
-    line_length = np.zeros(len(floating['mooring']['lines']))
-    for k in range(line_length.size):
-        line_length[k] = floating['mooring']['lines'][k]['unstretched_length']
-        line_type      = floating['mooring']['lines'][k]['line_type']
-    wt_opt['floating.mooring.mooring_line_length'] = line_length.mean()
-
-    nodes_xyz = np.zeros( (len(floating['mooring']['nodes']), 3) )
-    for k in range(len(floating['mooring']['nodes'])):
-        nodes_xyz[k,0] = floating['mooring']['nodes'][k]['location']['x']
-        nodes_xyz[k,1] = floating['mooring']['nodes'][k]['location']['y']
-        nodes_xyz[k,2] = floating['mooring']['nodes'][k]['location']['z']
-
-    anchor_nodes = []
-    vessel_nodes = []
-    for k in range(len(floating['mooring']['nodes'])):
-        if floating['mooring']['nodes'][k]['node_type'] == 'fixed':
-            anchor_nodes.append( k )
-        elif floating['mooring']['nodes'][k]['node_type'] == 'vessel':
-            vessel_nodes.append( k )
-    wt_opt['floating.mooring.number_of_mooring_connections'] = len(vessel_nodes)
-    wt_opt['floating.mooring.mooring_lines_per_connection']  = len(floating['mooring']['lines']) / len(vessel_nodes)
-
-    center_xyz = nodes_xyz[anchor_nodes, :].mean(axis=0)
-    anchor_dist = nodes_xyz[anchor_nodes, :] - center_xyz[np.newaxis,:]
-    wt_opt['floating.mooring.anchor_radius'] = np.sqrt( np.sum(anchor_dist**2, axis=1) ).mean()
-
-    for k in range(len(floating['mooring']['line_type'])):
-        if floating['mooring']['line_type'][k]['name'] == line_type:
-            wt_opt['floating.mooring.mooring_diameter'] = floating['mooring']['line_type'][k]['diameter']
-
-    wt_opt['floating.mooring.mooring_type'] = 'CHAIN'
-    wt_opt['floating.mooring.anchor_type'] = 'SUCTIONPILE'
-
-    # TODO- These should be set in constraints or analysis options
-    wt_opt['floating.mooring.mooring_cost_factor'] = 1.0
-    wt_opt['floating.mooring.max_offset']          = 50.0
-    wt_opt['floating.mooring.operational_heel']    = 6.0
-    wt_opt['floating.mooring.max_survival_heel']   = 10.0
+    wt_opt['mooring.node_names']       = [mooring['nodes'][i]['name'] for i in range(n_nodes)]
+    wt_opt['mooring.nodes_joint_name'] = ['' for i in range(n_nodes)]
+    wt_opt['mooring.line_id']          = [mooring['lines'][i]['name'] for i in range(n_lines)]
+    wt_opt['mooring.line_names']       = [mooring['line_types'][i]['name'] for i in range(n_line_types)]
+    wt_opt['mooring.anchor_names']     = [mooring['anchor_types'][i]['name'] for i in range(n_anchor_types)]
+    for i in range(n_nodes):
+        if 'location' in mooring['nodes'][i]:
+            wt_opt['mooring.nodes_location'][i,:] = mooring['nodes'][i]['location']
+        else:
+            wt_opt['mooring.nodes_joint_name'][i] = mooring['nodes'][i]['joint']
+    for i in range(n_lines):
+        wt_opt['mooring.unstretched_length'][i] = mooring['lines'][i]['unstretched_length']
+    for i in range(n_line_types):
+        wt_opt['mooring.line_diameter'][i]      = mooring['line_types'][i]['diameter']
+        wt_opt['mooring.line_mass_density'][i]  = mooring['line_types'][i]['mass_density']
+        wt_opt['mooring.line_stiffness'][i]     = mooring['line_types'][i]['stiffness']
+        wt_opt['mooring.line_breaking_load'][i] = mooring['line_types'][i]['breaking_load']
+        wt_opt['mooring.line_cost'][i]          = mooring['line_types'][i]['cost']
+        wt_opt['mooring.line_transverse_added_mass'][i] = mooring['line_types'][i]['transverse_added_mass']
+        wt_opt['mooring.line_tangential_added_mass'][i] = mooring['line_types'][i]['tangential_added_mass']
+        wt_opt['mooring.line_transverse_drag'][i] = mooring['line_types'][i]['transverse_drag']
+        wt_opt['mooring.line_tangential_drag'][i] = mooring['line_types'][i]['tangential_drag']
+    for i in range(n_anchor_types):
+        wt_opt['mooring.anchor_mass'][i] = mooring['anchor_types'][i]['mass']
+        wt_opt['mooring.anchor_cost'][i] = mooring['anchor_types'][i]['cost']
+        wt_opt['mooring.anchor_max_vertical_load'][i]   = mooring['anchor_types'][i]['max_vertical_load']
+        wt_opt['mooring.anchor_max_lateral_load'][i]    = mooring['anchor_types'][i]['max_lateral_load']
 
     return wt_opt
 
 def assign_control_values(wt_opt, modeling_options, control):
     # Controller parameters
-    wt_opt['control.rated_power']   = control['rated_power']
-    wt_opt['control.V_in']          = control['Vin']
-    wt_opt['control.V_out']         = control['Vout']
-    wt_opt['control.minOmega']      = control['minOmega']
-    wt_opt['control.maxOmega']      = control['maxOmega']
-    wt_opt['control.rated_TSR']     = control['tsr']
-    wt_opt['control.rated_pitch']   = control['pitch']
-    wt_opt['control.max_TS']        = control['maxTS']
-    wt_opt['control.max_pitch_rate']= control['max_pitch_rate']
-    wt_opt['control.max_torque_rate']= control['max_torque_rate']
+    wt_opt['control.V_in']          = control['supervisory']['Vin']
+    wt_opt['control.V_out']         = control['supervisory']['Vout']
+    wt_opt['control.minOmega']      = control['torque']['VS_minspd']
+    wt_opt['control.maxOmega']      = control['torque']['VS_maxspd']
+    wt_opt['control.rated_TSR']     = control['torque']['tsr']
+    wt_opt['control.rated_pitch']   = control['pitch']['min_pitch']
+    wt_opt['control.max_TS']        = control['supervisory']['maxTS']
+    wt_opt['control.max_pitch_rate']= control['pitch']['max_pitch_rate']
+    wt_opt['control.max_torque_rate']= control['torque']['max_torque_rate']
 
     return wt_opt
 
@@ -844,6 +752,7 @@ def assign_configuration_values(wt_opt, assembly, opt_options):
     wt_opt['configuration.n_blades']          = int(assembly['number_of_blades'])
     wt_opt['configuration.rotor_diameter_user'] = assembly['rotor_diameter']
     wt_opt['configuration.hub_height_user']   = assembly['hub_height']
+    wt_opt['configuration.rated_power']       = assembly['rated_power']
 
     # Checks for errors
     if int(assembly['number_of_blades']) - assembly['number_of_blades'] != 0:

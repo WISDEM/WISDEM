@@ -17,7 +17,7 @@ class FloatingSE(om.Group):
         n_mat = self.options['modeling_options']['materials']['n_mat']
         n_height_main = opt['columns']['main']['n_height']
         n_height_off  = opt['columns']['offset']['n_height']
-        n_height_tow  = self.options['modeling_options']['tower']['n_height']
+        n_height_tow  = self.options['modeling_options']['TowerSE']['n_height']
 
         self.set_input_defaults('mooring_type', 'chain')
         self.set_input_defaults('anchor_type', 'SUCTIONPILE')

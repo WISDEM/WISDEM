@@ -18,7 +18,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         opt_options      = self.options['opt_options']
 
         # Material dictionary inputs
-        self.add_subsystem('materials', Materials(mat_init_options = modeling_options['materials']))
+        self.add_subsystem('materials', Materials(mat_init_options = modeling_options['materials'],
+                                                  composites=modeling_options['flags']['blade']))
 
         # Airfoil dictionary inputs
         if modeling_options['flags']['airfoils']:
@@ -43,7 +44,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Blade inputs and connections from airfoils
         if modeling_options['flags']['blade']:
-            self.add_subsystem('blade',         Blade(blade_init_options   = modeling_options['blade'], af_init_options   = modeling_options['airfoils'], opt_options = opt_options))
+            self.add_subsystem('blade',         Blade(blade_init_options   = modeling_options['RotorSE'], af_init_options   = modeling_options['airfoils'], opt_options = opt_options))
             self.connect('airfoils.name',    'blade.interp_airfoils.name')
             self.connect('airfoils.r_thick', 'blade.interp_airfoils.r_thick')
             self.connect('airfoils.coord_xy','blade.interp_airfoils.coord_xy')
@@ -66,12 +67,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             nacelle_ivc.add_output('distance_hub2mb',    val=0.0,         units='m',   desc='Distance from hub flange to first main bearing along shaft')
             nacelle_ivc.add_output('distance_mb2mb',     val=0.0,         units='m',   desc='Distance from first to second main bearing along shaft')
             nacelle_ivc.add_output('L_generator',        val=0.0,         units='m',   desc='Generator length along shaft')
-            nacelle_ivc.add_output('lss_diameter',       val=np.zeros(5), units='m',   desc='Diameter of low speed shaft')
-            nacelle_ivc.add_output('lss_wall_thickness', val=np.zeros(5), units='m',   desc='Thickness of low speed shaft')
+            nacelle_ivc.add_output('lss_diameter',       val=np.zeros(2), units='m',   desc='Diameter of low speed shaft')
+            nacelle_ivc.add_output('lss_wall_thickness', val=np.zeros(2), units='m',   desc='Thickness of low speed shaft')
             nacelle_ivc.add_output('gear_ratio',         val=1.0,                      desc='Total gear ratio of drivetrain (use 1.0 for direct)')
             nacelle_ivc.add_output('gearbox_efficiency', val=1.0,                      desc='Efficiency of the gearbox. Set to 1.0 for direct-drive')
             nacelle_ivc.add_output('brake_mass_user',    val=0.0,         units='kg',  desc='Override regular regression-based calculation of brake mass with this value')
-            nacelle_ivc.add_output('hvac_mass_coeff',    val=0.08,        units='kg/kW', desc='Regression-based scaling coefficient on machine rating to get HVAC system mass')
+            nacelle_ivc.add_output('hvac_mass_coeff',    val=0.025,        units='kg/kW/m', desc='Regression-based scaling coefficient on machine rating to get HVAC system mass')
             nacelle_ivc.add_output('converter_mass_user',val=0.0,         units='kg',  desc='Override regular regression-based calculation of converter mass with this value')
             nacelle_ivc.add_output('transformer_mass_user', val=0.0,      units='kg',  desc='Override regular regression-based calculation of transformer mass with this value')
             nacelle_ivc.add_discrete_output('mb1Type',   val='CARB',                   desc='Type of main bearing: CARB / CRB / SRB / TRB')
@@ -81,17 +82,17 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             nacelle_ivc.add_discrete_output('hss_material', val='steel',             desc='Material name identifier for the high speed shaft')
             nacelle_ivc.add_discrete_output('bedplate_material', val='steel',        desc='Material name identifier for the bedplate')
 
-            if modeling_options['drivetrainse']['direct']:
+            if modeling_options['DriveSE']['direct']:
                 # Direct only
                 nacelle_ivc.add_output('access_diameter',         val=0.0,         units='m',  desc='Minimum diameter for hollow shafts for maintenance access')
-                nacelle_ivc.add_output('nose_diameter',           val=np.zeros(5), units='m',  desc='Diameter of nose (also called turret or spindle)')
-                nacelle_ivc.add_output('nose_wall_thickness',     val=np.zeros(5), units='m',  desc='Thickness of nose (also called turret or spindle)')
-                nacelle_ivc.add_output('bedplate_wall_thickness', val=np.zeros(12), units='m',  desc='Thickness of hollow elliptical bedplate')
+                nacelle_ivc.add_output('nose_diameter',           val=np.zeros(2), units='m',  desc='Diameter of nose (also called turret or spindle)')
+                nacelle_ivc.add_output('nose_wall_thickness',     val=np.zeros(2), units='m',  desc='Thickness of nose (also called turret or spindle)')
+                nacelle_ivc.add_output('bedplate_wall_thickness', val=np.zeros(4), units='m',  desc='Thickness of hollow elliptical bedplate')
             else:
                 # Geared only
                 nacelle_ivc.add_output('hss_length',                  val=0.0,         units='m', desc='Length of high speed shaft')
-                nacelle_ivc.add_output('hss_diameter',                val=np.zeros(3), units='m', desc='Diameter of high speed shaft')
-                nacelle_ivc.add_output('hss_wall_thickness',          val=np.zeros(3), units='m', desc='Wall thickness of high speed shaft')
+                nacelle_ivc.add_output('hss_diameter',                val=np.zeros(2), units='m', desc='Diameter of high speed shaft')
+                nacelle_ivc.add_output('hss_wall_thickness',          val=np.zeros(2), units='m', desc='Wall thickness of high speed shaft')
                 nacelle_ivc.add_output('bedplate_flange_width',       val=0.0,         units='m', desc='Bedplate I-beam flange width')
                 nacelle_ivc.add_output('bedplate_flange_thickness',   val=0.0,         units='m', desc='Bedplate I-beam flange thickness')
                 nacelle_ivc.add_output('bedplate_web_thickness',      val=0.0,         units='m', desc='Bedplate I-beam web thickness')
@@ -194,7 +195,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
             else:
                 # If using simple (regression) generator scaling, this is an optional input to override default values
-                n_pc = modeling_options['servose']['n_pc']
+                n_pc = modeling_options['RotorSE']['n_pc']
                 generator_ivc.add_output('generator_mass_user', val=0.0, units='kg')
                 generator_ivc.add_output('generator_efficiency_user', val=np.zeros((n_pc, 2)))
 
@@ -202,12 +203,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Tower inputs
         if modeling_options['flags']['tower']:
-            tower_init_options = modeling_options['tower']
+            tower_init_options = modeling_options['TowerSE']
             n_height           = tower_init_options['n_height']
             n_layers           = tower_init_options['n_layers']
             ivc = self.add_subsystem('tower', om.IndepVarComp())
             ivc.add_output('ref_axis',              val=np.zeros((n_height, 3)),            units='m', desc='2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.')
             ivc.add_output('diameter',              val=np.zeros(n_height),                 units='m', desc='1D array of the outer diameter values defined along the tower axis.')
+            ivc.add_output('cd',                    val=np.zeros(n_height),                            desc='1D array of the drag coefficients defined along the tower height.')
             ivc.add_output('layer_thickness',       val=np.zeros((n_layers, n_height-1)),   units='m', desc='2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.')
             ivc.add_output('outfitting_factor',     val = 0.0,      desc='Multiplier that accounts for secondary structure mass inside of tower')
             ivc.add_discrete_output('layer_name',   val=[],         desc='1D array of the names of the layers modeled in the tower structure.')
@@ -222,10 +224,15 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             foundation_ivc = self.add_subsystem('foundation', om.IndepVarComp())
             foundation_ivc.add_output('height',     val=0.0, units='m',     desc='Foundation height in respect to the ground level.')
 
+        if modeling_options['flags']['floating_platform']:
+            self.add_subsystem('floating',  Floating(floating_init_options   = modeling_options['floating']))
+            self.add_subsystem('mooring',   Mooring(mooring_init_options     = modeling_options['mooring']))
+            self.connect('floating.joints_xyz',      'mooring.joints_xyz')
+            self.connect('floating.joints_name2idx', 'mooring.joints_name2idx')
+
         # Control inputs
         if modeling_options['flags']['control']:
             ctrl_ivc = self.add_subsystem('control', om.IndepVarComp())
-            ctrl_ivc.add_output('rated_power',      val=0.0, units='W',         desc='Electrical rated power of the generator.')
             ctrl_ivc.add_output('V_in',             val=0.0, units='m/s',       desc='Cut in wind speed. This is the wind speed where region II begins.')
             ctrl_ivc.add_output('V_out',            val=0.0, units='m/s',       desc='Cut out wind speed. This is the wind speed where region III ends.')
             ctrl_ivc.add_output('minOmega',         val=0.0, units='rad/s',     desc='Minimum allowed rotor speed.')
@@ -244,6 +251,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         conf_ivc.add_discrete_output('rotor_orientation',   val='upwind',       desc='Rotor orientation, either upwind or downwind.')
         conf_ivc.add_discrete_output('upwind',              val=True,           desc='Convenient boolean for upwind (True) or downwind (False).')
         conf_ivc.add_discrete_output('n_blades',            val=3,              desc='Number of blades of the rotor.')
+        conf_ivc.add_output('rated_power',                  val=0.0, units='W', desc='Electrical rated power of the generator.')
+        
         conf_ivc.add_output('rotor_diameter_user',          val=0.,units='m',   desc='Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.')
         conf_ivc.add_output('hub_height_user',              val=0.,units='m',   desc='Height of the hub center over the ground (land-based) or the mean sea level (offshore) specified by the user.')
 
@@ -272,7 +281,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             bos_ivc.add_output('decommissioning_pct', 0.15)
             bos_ivc.add_output('distance_to_substation', 50.0, units='km')
             bos_ivc.add_output('distance_to_interconnection', 5.0, units='km')
-            if modeling_options['offshore']:
+            if modeling_options['flags']['monopile'] == True or modeling_options['flags']['floating_platform'] == True:
                 bos_ivc.add_output('site_distance', 40.0, units='km')
                 bos_ivc.add_output('distance_to_landfall', 40.0, units='km')
                 bos_ivc.add_output('port_cost_per_month', 2e6, units='USD/mo')
@@ -1042,7 +1051,7 @@ class Hub(om.Group):
         ivc = self.add_subsystem('hub_indep_vars', om.IndepVarComp(), promotes=['*'])
 
         ivc.add_output('cone',         val=0.0, units='rad',   desc='Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.')
-        ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.')
+        #ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.') # GB: this doesn't connect to anything
         ivc.add_output('diameter',          val = 0.0, units='m')
         ivc.add_output('flange_t2shell_t',          val = 0.0)
         ivc.add_output('flange_OD2hub_D',           val = 0.0)
@@ -1145,54 +1154,98 @@ class Floating(om.Group):
         self.options.declare('floating_init_options')
 
     def setup(self):
-        floating_init_options = self.options['floating_init_options']
+        floating_init_options   = self.options['floating_init_options']
+        n_joints                = floating_init_options['joints']['n_joints']
+        n_members               = floating_init_options['members']['n_members']
 
-        ivc = self.add_subsystem('floating_indep_vars', om.IndepVarComp(), promotes=['*'])
+        jivc = self.add_subsystem('floating_joints', om.IndepVarComp())
+        jivc.add_output('location',   val = np.zeros((n_joints, 3)), units='m')
 
-        ivc.add_output('radius_to_offset_column', 0.0, units='m')
-        ivc.add_discrete_output('number_of_offset_columns', 0)
-        ivc.add_output('fairlead_location', 0.0)
-        ivc.add_output('fairlead_offset_from_shell', 0.0, units='m')
-        ivc.add_output('outfitting_cost_rate', 0.0, units='USD/kg')
-        ivc.add_discrete_output('loading', 'hydrostatic')
-        ivc.add_output('transition_piece_height', val = 0.0, units='m',  desc='point mass height of transition piece above water line')
-        ivc.add_output('transition_piece_mass',   val = 0.0, units='kg', desc='point mass of transition piece')
+        for i in range(n_members):
+            name_member = floating_init_options['members']['name'][i]
+            ivc         = self.add_subsystem('floating_member_' + name_member, om.IndepVarComp())
+            n_grid      = len(floating_init_options['members']['grid_member_' + name_member])
+            n_layers    = floating_init_options['members']['n_layers'][i]
+            n_ballasts  = floating_init_options['members']['n_ballasts'][i]
+            n_axial_joints = floating_init_options['members']['n_axial_joints'][i]
+            ivc.add_output('grid',               val = np.zeros(n_grid))
+            ivc.add_output('outer_diameter',     val = np.zeros(n_grid),           units='m')
+            ivc.add_output('bulkhead_thickness', val = np.zeros(n_grid),           units='m')
+            ivc.add_output('layer_thickness',    val = np.zeros((n_layers, n_grid)),  units='m')
+            ivc.add_output('ballast_volume',     val = np.zeros(n_ballasts),        units='m**3')
+            ivc.add_output('grid_axial_joints',  val = np.zeros(n_axial_joints))
 
-        self.add_subsystem('main_column',   Column(options=floating_init_options['column']['main']))
-        self.add_subsystem('offset_column', Column(options=floating_init_options['column']['offset']))
-        self.add_subsystem('tower',         Tower(options=floating_init_options['tower']))
-        self.add_subsystem('mooring',       Mooring(options=floating_init_options['mooring']))
+        self.add_subsystem('alljoints', CombineJoints(floating_init_options=floating_init_options), promotes=['*'])
 
-class Column(om.Group):
+class CombineJoints(om.ExplicitComponent):
     def initialize(self):
-        self.options.declare('column_init_options')
+        self.options.declare('floating_init_options')
 
     def setup(self):
-        column_init_options = self.options['column_init_options']
+        floating_init_options = self.options['floating_init_options']
+        n_joints              = floating_init_options['joints']['n_joints']
+        n_members             = floating_init_options['members']['n_members']
 
-        ivc = self.add_subsystem('column_indep_vars', om.IndepVarComp(), promotes=['*'])
-        ivc.add_output('diameter', val=np.zeros(n_height),     units='m',  desc='1D array of the outer diameter values defined along the column axis.')
-        ivc.add_discrete_output('layer_name', val=n_layers * [''],         desc='1D array of the names of the layers modeled in the columnn structure.')
-        ivc.add_discrete_output('layer_mat',  val=n_layers * [''],         desc='1D array of the names of the materials of each layer modeled in the column structure.')
-        ivc.add_output('layer_thickness',     val=np.zeros((n_layers, n_height-1)), units='m',    desc='2D array of the thickness of the layers of the column structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the column sections.')
-        ivc.add_output('freeboard', 0.0, units='m') # Have to add here because cannot promote ivc from Column before needed by tower.  Grr
-        ivc.add_output('outfitting_factor',       val = 0.0,             desc='Multiplier that accounts for secondary structure mass inside of column')
+        self.add_input('location',   val = np.zeros((n_joints, 3)), units='m')
 
-        ivc.add_output('stiffener_web_height', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_web_thickness', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_flange_width', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_flange_thickness', np.zeros(n_sect), units='m')
-        ivc.add_output('stiffener_spacing', np.zeros(n_sect), units='m')
-        ivc.add_output('bulkhead_thickness', np.zeros(n_height), units='m')
-        ivc.add_output('permanent_ballast_height', 0.0, units='m')
-        ivc.add_output('buoyancy_tank_diameter', 0.0, units='m')
-        ivc.add_output('buoyancy_tank_height', 0.0, units='m')
-        ivc.add_output('buoyancy_tank_location', 0.0, units='m')
+        self.n_joint_tot = n_joints
+        for i in range(n_members):
+            iname = floating_init_options['members']['name'][i]
+            i_axial_joints = floating_init_options['members']['n_axial_joints'][i]
+            self.add_input(iname+':grid_axial_joints', val = np.zeros(i_axial_joints))
+            self.n_joint_tot += i_axial_joints
 
-        self.add_subsystem('compute_monopile_grid',
-            Compute_Grid(init_options=column_init_options),
-            promotes=['*'])
+        self.add_output('joints_xyz',   val = np.zeros((self.n_joint_tot, 3)), units='m')
+        self.add_discrete_output('joints_name2idx', val={})
+            
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        # Unpack options
+        floating_init_options = self.options['floating_init_options']
+        n_joints              = floating_init_options['joints']['n_joints']
+        n_members             = floating_init_options['members']['n_members']
 
+        # Unpack inputs
+        locations = inputs['location']
+        joints_xyz = np.zeros( outputs['joints_xyz'].shape )
+
+        # Handle cylindrical coordinate joints
+        icyl = floating_init_options['joints']['cylindrical']
+        locations_xyz           = locations.copy()
+        locations_xyz[icyl,0]   = locations[icyl,0]*np.cos( locations[icyl,1] )
+        locations_xyz[icyl,1]   = locations[icyl,0]*np.sin( locations[icyl,1] )
+        joints_xyz[:n_joints,:] = locations_xyz.copy()
+        
+        # Create initial name-to-index mapping
+        name2idx = dict( zip( floating_init_options['joints']['name'], range(n_joints) ) )
+        count = n_joints
+
+        # Now add axial joints
+        member_list = list(range(n_members))
+        while count < self.n_joint_tot:
+            for k in member_list[:]:
+                if ( (floating_init_options['members']['joint1'][k] in name2idx) and
+                     (floating_init_options['members']['joint2'][k] in name2idx) ):
+                    member_list.remove(k)
+                else:
+                    continue
+                
+                joint1xyz = locations_xyz[ name2idx[ floating_init_options['members']['joint1'][k] ], :]
+                joint2xyz = locations_xyz[ name2idx[ floating_init_options['members']['joint2'][k] ], :]
+                dxyz = joint2xyz - joint1xyz
+
+                iname = floating_init_options['members']['name'][k]
+                i_axial_joints = floating_init_options['members']['n_axial_joints'][k]
+                i_axial_joint_names = floating_init_options['members']['axial_joint_name_member_' + iname]
+                for a in range(i_axial_joints):
+                    joints_xyz[count,:] = joint1xyz + inputs[iname+':grid_axial_joints'][a]*dxyz
+                    name2idx[i_axial_joint_names] = count
+                    count += 1
+
+        # Store outputs
+        outputs['joints_xyz']       = joints_xyz
+        discrete_outputs['joints_name2idx'] = name2idx
+        
+                
 class Mooring(om.Group):
     def initialize(self):
         self.options.declare('mooring_init_options')
@@ -1200,24 +1253,111 @@ class Mooring(om.Group):
     def setup(self):
         mooring_init_options = self.options['mooring_init_options']
 
-        ivc = self.add_subsystem('mooring_indep_vars', om.IndepVarComp(), promotes=['*'])
-        ivc.add_output('mooring_line_length', 0.0, units='m')
-        ivc.add_output('anchor_radius', 0.0, units='m')
-        ivc.add_output('mooring_diameter', 0.0, units='m')
-        ivc.add_output('number_of_mooring_connections', 0)
-        ivc.add_output('mooring_lines_per_connection', 0)
-        ivc.add_discrete_output('mooring_type', 'chain')
-        ivc.add_discrete_output('anchor_type', 'SUCTIONPILE')
-        ivc.add_output('max_offset', 0.0, units='m')
-        ivc.add_output('operational_heel', 0.0, units='deg')
-        ivc.add_output('mooring_cost_factor', 0.0)
-        ivc.add_output('max_survival_heel', 0.0, units='deg')
+        n_nodes         = mooring_init_options['n_nodes']       
+        n_lines         = mooring_init_options['n_lines']       
+        n_line_types    = mooring_init_options['n_line_types']  
+        n_anchor_types  = mooring_init_options['n_anchor_types']
 
+        ivc = self.add_subsystem('mooring', om.IndepVarComp(), promotes=['*'])
+
+        ivc.add_discrete_output('node_names',       val = ['']*n_nodes)
+        ivc.add_output('nodes_location',            val = np.zeros((n_nodes, 3)),   units='m')
+        ivc.add_discrete_output('nodes_joint_name', val = ['']*n_nodes)
+        ivc.add_discrete_output('line_id',          val = ['']*n_lines)
+        ivc.add_output('unstretched_length',        val = np.zeros(n_lines),        units='m')
+        ivc.add_discrete_output('n_lines',          val = n_lines)
+        ivc.add_discrete_output('line_type_names',  val = ['']*n_line_types)
+        ivc.add_output('line_diameter',             val = np.zeros(n_line_types),   units='m')
+        ivc.add_output('line_mass_density',         val = np.zeros(n_line_types),   units='kg/m')
+        ivc.add_output('line_stiffness',            val = np.zeros(n_line_types),   units='N')
+        ivc.add_output('line_breaking_load',        val = np.zeros(n_line_types),   units='N')
+        ivc.add_output('line_cost_rate',            val = np.zeros(n_line_types),   units='USD/m')
+        ivc.add_output('line_transverse_added_mass',val = np.zeros(n_line_types),   units='kg/m')
+        ivc.add_output('line_tangential_added_mass',val = np.zeros(n_line_types),   units='kg/m')
+        ivc.add_output('line_transverse_drag',      val = np.zeros(n_line_types))
+        ivc.add_output('line_tangential_drag',      val = np.zeros(n_line_types))
+        ivc.add_discrete_output('anchor_names',     val = ['']*n_anchor_types)
+        ivc.add_output('anchor_mass',               val = np.zeros(n_anchor_types), units = 'kg')
+        ivc.add_output('anchor_cost',               val = np.zeros(n_anchor_types), units = 'USD')
+        ivc.add_output('anchor_max_vertical_load',  val = np.zeros(n_anchor_types), units = 'N')
+        ivc.add_output('anchor_max_lateral_load',   val = np.zeros(n_anchor_types), units = 'N')
+
+        self.add_subsystem('moormass', MooringMassProps(mooring_init_options = mooring_init_options), promotes=['*'])
+        self.add_subsystem('moorjoint', MooringJoints(mooring_init_options = mooring_init_options), promotes=['*'])
+
+class MooringJoints(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare('mooring_init_options')
+
+    def setup(self):
+        mooring_init_options = self.options['mooring_init_options']
+        n_nodes              = mooring_init_options['n_nodes']       
+        
+        self.add_discrete_input('nodes_joint_name', val = ['']*n_nodes)
+        self.add_discrete_input('joints_name2idx',  val={})
+        self.add_input('nodes_location',            val = np.zeros((n_nodes, 3)), units='m')
+        self.add_input('joints_xyz',  shape_by_conn=True, units='m')
+
+        self.add_output('nodes_location_full',  val = np.zeros((n_nodes, 3)), units='m')
+
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        mooring_init_options = self.options['mooring_init_options']
+        n_nodes              = mooring_init_options['n_nodes']       
+
+        node_joints = discrete_inputs['nodes_joint_name']
+        node_loc    = inputs['nodes_location']
+        joints_loc  = inputs['joints_xyz']
+        idx_map     = discrete_inputs['joints_name2idx']
+        for k in range(n_nodes):
+            if node_joints[k] == '': continue
+            idx = idx_map[ node_joints[k] ]
+            node_loc[k,:] = joints_loc[idx,:]
+
+        outputs['nodes_location_full'] = node_loc
+
+class MooringMassProps(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare('mooring_init_options')
+
+    def setup(self):
+        mooring_init_options = self.options['mooring_init_options']
+        n_lines         = mooring_init_options['n_lines']       
+        n_line_types    = mooring_init_options['n_line_types']  
+        
+        self.add_discrete_input('line_id',    val = ['']*n_lines)
+        self.add_input('unstretched_length',  val = np.zeros(n_lines),        units='m')
+        self.add_discrete_input('line_names', val = ['']*n_line_types)
+        self.add_input('line_mass_density',   val = np.zeros(n_line_types),   units='kg/m')
+        self.add_input('line_cost_rate',      val = np.zeros(n_line_types),   units='USD/m')
+
+        self.add_output('line_mass',          val = np.zeros(n_lines),   units='kg')
+        self.add_output('mooring_mass',       val = 0.0,   units='kg')
+        self.add_output('line_cost',          val = np.zeros(n_lines),   units='USD')
+        self.add_output('mooring_cost',       val = 0.0,   units='USD')
+
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        mooring_init_options = self.options['mooring_init_options']
+        n_lines         = mooring_init_options['n_lines']       
+        
+        line_mass = np.zeros(n_lines)
+        line_cost = np.zeros(n_lines)
+        for ii, iname in enumerate(discrete_inputs['line_names']):
+            for jj, jname in enumerate(discrete_inputs['line_id']):
+                if jname == iname:
+                    line_mass[jj] = inputs['line_mass_density'][ii] * inputs['unstretched_length'][jj]
+                    line_cost[jj] = inputs['line_cost_rate'][   ii] * inputs['unstretched_length'][jj]
+        
+        outputs['line_mass'] = line_mass
+        outputs['line_cost'] = line_cost
+        outputs['mooring_mass'] = line_mass.sum()
+        outputs['mooring_cost'] = line_cost.sum()
+        
 class ComputeMaterialsProperties(om.ExplicitComponent):
     # Openmdao component with the wind turbine materials coming from the input yaml file. The inputs and outputs are arrays where each entry represents a material
 
     def initialize(self):
         self.options.declare('mat_init_options')
+        self.options.declare('composites', default=True)
 
     def setup(self):
 
@@ -1244,8 +1384,8 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
             if discrete_inputs['name'][i] == 'resin':
                 density_resin = inputs['rho'][i]
                 id_resin = i
-        if density_resin==0.:
-            raise ValueError('Error: a material named resin must be defined in the input yaml')
+        if self.options['composites'] and density_resin==0.:
+            print('Warning: a material named resin is not defined in the input yaml.  This is required for blade composite analysis')
 
         fvf   = np.zeros(self.n_mat)
         fwf   = np.zeros(self.n_mat)
@@ -1290,6 +1430,7 @@ class Materials(om.Group):
 
     def initialize(self):
         self.options.declare('mat_init_options')
+        self.options.declare('composites', default=True)
 
     def setup(self):
         mat_init_options = self.options['mat_init_options']
@@ -1317,7 +1458,8 @@ class Materials(om.Group):
         ivc.add_output('fvf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.')
         ivc.add_output('fwf_from_yaml',          val=np.zeros(n_mat),                      desc='1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.')
 
-        self.add_subsystem('compute_materials_properties', ComputeMaterialsProperties(mat_init_options=mat_init_options), promotes=['*'])
+        self.add_subsystem('compute_materials_properties', ComputeMaterialsProperties(mat_init_options=mat_init_options,
+                                                                                      composites=self.options['composites']), promotes=['*'])
 
 class WT_Assembly(om.ExplicitComponent):
     # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
@@ -1328,11 +1470,11 @@ class WT_Assembly(om.ExplicitComponent):
         modeling_options = self.options['modeling_options']
 
         if modeling_options['flags']['blade']:
-            n_span = modeling_options['blade']['n_span']
+            n_span = modeling_options['RotorSE']['n_span']
         else:
             n_span = 0
         if modeling_options['flags']['tower']:
-            n_height           = modeling_options['tower']['n_height']
+            n_height           = modeling_options['TowerSE']['n_height']
         else:
             n_height = 0
             

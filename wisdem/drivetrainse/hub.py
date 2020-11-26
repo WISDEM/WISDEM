@@ -234,7 +234,6 @@ class Spinner(om.ExplicitComponent):
         self.add_output('spinner_I',                val = np.zeros(6), units = 'kg*m**2')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        
         # Increase hub diameter by twice the clearance between hub and spinner. This gives us the spherical spinner diameter, radius, and circumference
         sph_spin_diam           = inputs['hub_diameter'] + (2.*inputs['clearance_hub_spinner'])
         sph_spin_rad            = 0.5 * sph_spin_diam
@@ -481,7 +480,8 @@ class Hub_System(om.Group):
         self.add_subsystem('maxtorq',     FindMaxTorque(),    promotes=['*'])
         self.add_subsystem('hub_shell',   HubShell(gamma=opt['hub_gamma']), promotes=['hub_mass', 'hub_diameter', 'hub_cost', 'hub_cm', 'hub_I',
                                                                                       'flange_t2shell_t','flange_OD2hub_D','flange_ID2flange_OD','hub_in2out_circ',
-                                                                                      'blade_root_diameter','hub_stress_concentration', 'max_torque'])
+                                                                                      'blade_root_diameter','hub_stress_concentration', 'max_torque',
+                                                                                      'constr_hub_diameter'])
         self.add_subsystem('spinner',     Spinner(gamma=opt['spinner_gamma']), promotes=['n_blades', 'hub_diameter', 'spinner_mass', 'spinner_cost', 'spinner_cm', 'spinner_I',
                                                                       'n_front_brackets','n_rear_brackets','clearance_hub_spinner',
                                                                       'spin_hole_incr', 'blade_root_diameter','spinner_gust_ws'])

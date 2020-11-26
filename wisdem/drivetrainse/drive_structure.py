@@ -18,6 +18,20 @@ FREE  = 0
 def find_nearest(array, value):
     return (np.abs(array-value)).argmin()
 
+def tube_prop(s, Di, ti):
+    L  = s.max() - s.min()
+    def equal_pts(xi):
+        if len(xi) < len(s) and len(xi) == 2:
+            x = np.interp((s-s.min())/L, [0, 1], xi)
+        elif len(xi) == len(s):
+            x = xi
+        else:
+            raise ValueError('Unknown grid of input',str(xi))
+        return x
+    D = equal_pts(Di)
+    t = equal_pts(ti)
+    return Tube(nodal2sectional(D)[0], nodal2sectional(t)[0])
+
 
 class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
     """
@@ -29,9 +43,9 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         Shaft tilt
     s_lss : numpy array[5], [m]
         Discretized s-coordinates along drivetrain, measured from bedplate (direct) or tower center (geared)
-    lss_diameter : numpy array[5], [m]
+    lss_diameter : numpy array[2], [m]
         LSS outer diameter from hub to bearing 2
-    lss_wall_thickness : numpy array[5], [m]
+    lss_wall_thickness : numpy array[2], [m]
         LSS wall thickness
     hub_system_mass : float, [kg]
         Hub system mass
@@ -78,7 +92,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         Shear stress in Curved_beam structure
     torq_bending_stress : numpy array[5, n_dlcs], [Pa]
         Hoop stress in Curved_beam structure calculated with Roarks formulae
-    constr_torq_vonmises : numpy array[5, n_dlcs]
+    constr_lss_vonmises : numpy array[5, n_dlcs]
         Sigma_y/Von_Mises
     F_mb1 : numpy array[3, n_dlcs], [N]
         Force vector applied to bearing 1 in hub c.s.
@@ -106,8 +120,8 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         self.add_discrete_input('upwind', True)
         self.add_input('tilt', 0.0, units='deg')
         self.add_input('s_lss', val=np.zeros(5), units='m')
-        self.add_input('lss_diameter', val=np.zeros(5), units='m')
-        self.add_input('lss_wall_thickness', val=np.zeros(5), units='m')
+        self.add_input('lss_diameter', val=np.zeros(2), units='m')
+        self.add_input('lss_wall_thickness', val=np.zeros(2), units='m')
         self.add_input('hub_system_mass', 0.0, units='kg')
         self.add_input('hub_system_cm', 0.0, units='m')
         self.add_input('hub_system_I', np.zeros(6), units='kg*m**2')
@@ -223,7 +237,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         # -----------------------------------
 
         # ------ frame element data ------------
-        lsscyl = Tube(nodal2sectional(D_lss)[0], nodal2sectional(t_lss)[0])
+        lsscyl   = tube_prop(s_lss, D_lss, t_lss)
         ielement = np.arange(1, n)
         N1       = np.arange(1, n)
         N2       = np.arange(2, n+1)
@@ -338,9 +352,9 @@ class HSS_Frame(om.ExplicitComponent):
         Shaft tilt
     s_hss : numpy array[3], [m]
         Discretized s-coordinates along drivetrain, measured from bedplate (direct) or tower center (geared)
-    hss_diameter : numpy array[3], [m]
+    hss_diameter : numpy array[2], [m]
         Lss discretized diameter values at coordinates
-    hss_wall_thickness : numpy array[3], [m]
+    hss_wall_thickness : numpy array[2], [m]
         Lss discretized thickness values at coordinates
     M_hub : numpy array[3, n_dlcs], [N*m]
         Moment vector applied to the hub
@@ -385,8 +399,8 @@ class HSS_Frame(om.ExplicitComponent):
 
         self.add_input('tilt', 0.0, units='deg')
         self.add_input('s_hss', val=np.zeros(3), units='m')
-        self.add_input('hss_diameter', val=np.zeros(3), units='m')
-        self.add_input('hss_wall_thickness', val=np.zeros(3), units='m')
+        self.add_input('hss_diameter', val=np.zeros(2), units='m')
+        self.add_input('hss_wall_thickness', val=np.zeros(2), units='m')
         self.add_input('M_hub', val=np.zeros((3, n_dlcs)), units='N*m')
         self.add_input('gear_ratio', val=1.0)
         self.add_input('s_generator', val=0.0, units='m')
@@ -449,7 +463,7 @@ class HSS_Frame(om.ExplicitComponent):
         # -----------------------------------
 
         # ------ frame element data ------------
-        hsscyl = Tube(nodal2sectional(D_hss)[0], nodal2sectional(t_hss)[0])
+        hsscyl   = tube_prop(s_hss, D_hss, t_hss)
         ielement = np.arange(1, n)
         N1       = np.arange(1, n)
         N2       = np.arange(2, n+1)
@@ -549,9 +563,9 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         Lss tilt
     s_nose : numpy array[5], [m]
         Discretized s-coordinates along drivetrain, measured from bedplate
-    nose_diameter : numpy array[5], [m]
+    nose_diameter : numpy array[2], [m]
         Nose outer diameter from bearing 1 to bedplate
-    nose_wall_thickness : numpy array[5], [m]
+    nose_wall_thickness : numpy array[2], [m]
         Nose wall thickness
     x_bedplate : numpy array[12], [m]
         Bedplate centerline x-coordinates
@@ -634,7 +648,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         Shear stress in Curved_beam structure
     bedplate_nose_bending_stress : numpy array[12+3, n_dlcs], [Pa]
         Hoop stress in Curved_beam structure calculated with Roarks formulae
-    constr_bedplate_nose_vonmises : numpy array[12+3, n_dlcs]
+    constr_bedplate_vonmises : numpy array[12+3, n_dlcs]
         Sigma_y/Von_Mises
     constr_mb1_defl : numpy array[n_dlcs]
         Angular deflection relative to limit of bearing 1 (should be <1)
@@ -653,8 +667,8 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         self.add_discrete_input('upwind', True)
         self.add_input('tilt', 0.0, units='deg')
         self.add_input('s_nose', val=np.zeros(5), units='m')
-        self.add_input('nose_diameter', np.zeros(5), units='m')
-        self.add_input('nose_wall_thickness', np.zeros(5), units='m')
+        self.add_input('nose_diameter', np.zeros(2), units='m')
+        self.add_input('nose_wall_thickness', np.zeros(2), units='m')
         self.add_input('x_bedplate', val=np.zeros(12), units='m')
         self.add_input('z_bedplate', val=np.zeros(12), units='m')
         self.add_input('x_bedplate_inner', val=np.zeros(12), units='m')
@@ -695,7 +709,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         self.add_output('bedplate_nose_axial_stress', np.zeros((12+3, n_dlcs)), units='Pa')
         self.add_output('bedplate_nose_shear_stress', np.zeros((12+3, n_dlcs)), units='Pa')
         self.add_output('bedplate_nose_bending_stress', np.zeros((12+3, n_dlcs)), units='Pa')
-        self.add_output('constr_bedplate_nose_vonmises', np.zeros((12+3, n_dlcs)))
+        self.add_output('constr_bedplate_vonmises', np.zeros((12+3, n_dlcs)))
         self.add_output('constr_mb1_defl', val=np.zeros(n_dlcs))
         self.add_output('constr_mb2_defl', val=np.zeros(n_dlcs))
 
@@ -771,8 +785,8 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         # -----------------------------------
 
         # ------ frame element data ------------
-        bedcyl   = Tube(nodal2sectional(D_bed)[0], nodal2sectional(t_bed)[0])
-        nosecyl  = Tube(nodal2sectional(D_nose)[0], nodal2sectional(t_nose)[0])
+        bedcyl   = tube_prop(x_c, D_bed, t_bed)
+        nosecyl  = tube_prop(inputs['s_nose'], D_nose, t_nose)
         ielement = np.arange(1, n)
         N1       = np.arange(1, n)
         N2       = np.arange(2, n+1)
@@ -855,10 +869,10 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         stator_rotation           = np.zeros(n_dlcs)
         outputs['base_F']         = np.zeros((3, n_dlcs))
         outputs['base_M']         = np.zeros((3, n_dlcs))
-        outputs['bedplate_nose_axial_stress']    = np.zeros((n-1, n_dlcs))
-        outputs['bedplate_nose_shear_stress']    = np.zeros((n-1, n_dlcs))
-        outputs['bedplate_nose_bending_stress']  = np.zeros((n-1, n_dlcs))
-        outputs['constr_bedplate_nose_vonmises'] = np.zeros((n-1, n_dlcs))
+        outputs['bedplate_nose_axial_stress']   = np.zeros((n-1, n_dlcs))
+        outputs['bedplate_nose_shear_stress']   = np.zeros((n-1, n_dlcs))
+        outputs['bedplate_nose_bending_stress'] = np.zeros((n-1, n_dlcs))
+        outputs['constr_bedplate_vonmises']     = np.zeros((n-1, n_dlcs))
         for k in range(n_dlcs):
             # Deflections and rotations at bearings- how to sum up rotation angles?
             outputs['mb1_deflection'][k] = np.sqrt(displacements.dx[k,i1-1]**2 + displacements.dy[k,i1-1]**2 + displacements.dz[k,i1-1]**2)
@@ -894,14 +908,14 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
             #Bending_stress_inner = M[:(inose-1)] * nodal2sectional( (R_n-Ri) / (A_bed*e_cn*Ri) )[0]
             outputs['bedplate_nose_bending_stress'][:(inose-1),k] = Bending_stress_outer
 
-            outputs['constr_bedplate_nose_vonmises'][:,k] = vonMisesStressUtilization(outputs['bedplate_nose_axial_stress'][:,k],
+            outputs['constr_bedplate_vonmises'][:,k] = vonMisesStressUtilization(outputs['bedplate_nose_axial_stress'][:,k],
                                                                                       outputs['bedplate_nose_bending_stress'][:,k],
                                                                                       outputs['bedplate_nose_shear_stress'][:,k],
                                                                                       gamma_f*gamma_m*gamma_n, sigma_y)
 
         # Evaluate bearing limits
-        outputs['constr_mb1_defl'] = outputs['mb1_rotation'] / inputs['mb1_max_defl_ang']
-        outputs['constr_mb2_defl'] = outputs['mb2_rotation'] / inputs['mb2_max_defl_ang']
+        outputs['constr_mb1_defl'] = np.abs( outputs['mb1_rotation'] / inputs['mb1_max_defl_ang'] )
+        outputs['constr_mb2_defl'] = np.abs( outputs['mb2_rotation'] / inputs['mb2_max_defl_ang'] )
         outputs['stator_deflection'] = stator_deflection.max()
         outputs['stator_rotation']   = stator_rotation.max()
 

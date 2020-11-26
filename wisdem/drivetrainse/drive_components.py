@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import copy
 import openmdao.api as om
 import wisdem.commonse.utilities as util
@@ -507,11 +508,11 @@ class MiscNacelleComponents(om.ExplicitComponent):
         component center of mass
     hvac_I : numpy array[3], [m]
         component mass moments of inertia
-    platforms_mass : float, [kg]
+    platform_mass : float, [kg]
         component mass
-    platforms_cm : numpy array[3], [m]
+    platform_cm : numpy array[3], [m]
         component center of mass
-    platforms_I : numpy array[6], [m]
+    platform_I : numpy array[3], [m]
         component mass moments of inertia
     cover_mass : float, [kg]
         component mass
@@ -522,25 +523,28 @@ class MiscNacelleComponents(om.ExplicitComponent):
     
     """
 
+    def initialize(self):
+        self.options.declare('direct_drive', default=True)
+        
     def setup(self):
         self.add_discrete_input('upwind', True)
         self.add_input('machine_rating', 0.0, units='kW')
-        self.add_input('hvac_mass_coeff', 0.08, units='kg/kW')
+        self.add_input('hvac_mass_coeff', 0.025, units='kg/kW/m')
         self.add_input('H_bedplate', 0.0, units='m')
         self.add_input('D_top', 0.0, units='m')
-        self.add_input('bedplate_mass', 0.0, units='kg')
-        self.add_input('bedplate_I', np.zeros(6), units='kg*m**2')
+        self.add_input('L_bedplate', 0.0, units='m')
         self.add_input('R_generator', 0.0, units='m')
         self.add_input('overhang', 0.0, units='m')
         self.add_input('generator_cm', 0.0, units='m')
         self.add_input('rho_fiberglass', 0.0, units='kg/m**3')
+        self.add_input('rho_castiron', 0.0, units='kg/m**3')
 
         self.add_output('hvac_mass', 0.0, units='kg')
         self.add_output('hvac_cm', 0.0, units='m')
         self.add_output('hvac_I', np.zeros(3), units='m')
-        self.add_output('platforms_mass', 0.0, units='kg')
-        self.add_output('platforms_cm', np.zeros(3), units='m')
-        self.add_output('platforms_I', np.zeros(6), units='m')
+        self.add_output('platform_mass', 0.0, units='kg')
+        self.add_output('platform_cm', np.zeros(3), units='m')
+        self.add_output('platform_I', np.zeros(3), units='m')
         self.add_output('cover_mass', 0.0, units='kg')
         self.add_output('cover_cm', np.zeros(3), units='m')
         self.add_output('cover_I', np.zeros(3), units='m')
@@ -548,24 +552,25 @@ class MiscNacelleComponents(om.ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs
+        direct      = self.options['direct_drive']
         upwind      = discrete_inputs['upwind']
         rating      = float(inputs['machine_rating'])
         coeff       = float(inputs['hvac_mass_coeff'])
         H_bedplate  = float(inputs['H_bedplate'])
-        L_bedplate  = float(inputs['D_top'])
+        D_top       = float(inputs['D_top'])
+        L_bedplate  = float(inputs['L_bedplate'])
         R_generator = float(inputs['R_generator'])
-        m_bedplate  = float(inputs['bedplate_mass'])
-        I_bedplate  = inputs['bedplate_I']
         overhang    = float(inputs['overhang'])
         s_generator = float(inputs['generator_cm'])
         rho_fiberglass = float(inputs['rho_fiberglass'])
+        rho_castiron   = float(inputs['rho_castiron'])
 
         # For the nacelle cover, imagine a box from the bedplate to the hub in length and around the generator in width, height, with 10% margin in each dim
-        L_cover  = 1.1 * (overhang + 0.5*L_bedplate)
+        L_cover  = 1.1 * L_bedplate if direct else 1.1 * (overhang + D_top)
         W_cover  = 1.1 * 2*R_generator
         H_cover  = 1.1 * (R_generator + np.maximum(R_generator,H_bedplate))
         A_cover  = 2*(L_cover*W_cover + L_cover*H_cover + H_cover*W_cover)
-        t_cover  = 0.04 # 5cm thick walls?
+        t_cover  = 0.02
         m_cover  = A_cover * t_cover * rho_fiberglass
         cm_cover = np.array([0.5*L_cover-0.5*L_bedplate, 0.0, 0.5*H_cover])
         I_cover  = m_cover*np.array([H_cover**2 + W_cover**2 - (H_cover-t_cover)**2 - (W_cover-t_cover)**2,
@@ -577,7 +582,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         outputs['cover_I' ]   = I_cover
         
         # Regression based estimate on HVAC mass
-        m_hvac       = coeff * rating
+        m_hvac       = coeff * rating * 2 * np.pi * (0.75*R_generator)
         cm_hvac      = s_generator
         I_hvac       = m_hvac * (0.75*R_generator)**2
         outputs['hvac_mass'] = m_hvac
@@ -585,12 +590,16 @@ class MiscNacelleComponents(om.ExplicitComponent):
         outputs['hvac_I' ]   = I_hvac*np.array([1.0, 0.5, 0.5])
 
         # Platforms as a fraction of bedplate mass and bundling it to call it 'platforms'
-        platforms_coeff = 0.125
-        m_platforms  = platforms_coeff * m_bedplate
-        I_platforms  = platforms_coeff * I_bedplate
-        outputs['platforms_mass'] = m_platforms
-        outputs['platforms_cm']   = np.zeros(3)
-        outputs['platforms_I' ]   = I_platforms
+        L_platform = 2*D_top if direct else L_cover 
+        W_platform = 2*D_top if direct else W_cover 
+        t_platform = 0.05
+        m_platform = L_platform * W_platform * t_platform * rho_castiron
+        I_platform = m_platform * np.array([t_platform**2 + W_platform**2,
+                                            t_platform**2 + L_platform**2,
+                                            W_platform**2 + L_platform**2]) / 12.
+        outputs['platform_mass'] = m_platform
+        outputs['platform_cm']   = np.zeros(3)
+        outputs['platform_I' ]   = I_platform
 
 #--------------------------------------------
 class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include electronics
@@ -683,11 +692,11 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         component center of mass
     hvac_I : numpy array[3], [m]
         component mass moments of inertia
-    platforms_mass : float, [kg]
+    platform_mass : float, [kg]
         component mass
-    platforms_cm : numpy array[3], [m]
+    platform_cm : numpy array[3], [m]
         component center of mass
-    platforms_I : numpy array[6], [m]
+    platform_I : numpy array[3], [m]
         component mass moments of inertia
     cover_mass : float, [kg]
         component mass
@@ -761,9 +770,9 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         self.add_input('hvac_mass', 0.0, units='kg')
         self.add_input('hvac_cm', 0.0, units='m')
         self.add_input('hvac_I', np.zeros(3), units='m')
-        self.add_input('platforms_mass', 0.0, units='kg')
-        self.add_input('platforms_cm', np.zeros(3), units='m')
-        self.add_input('platforms_I', np.zeros(6), units='m')
+        self.add_input('platform_mass', 0.0, units='kg')
+        self.add_input('platform_cm', np.zeros(3), units='m')
+        self.add_input('platform_I', np.zeros(3), units='m')
         self.add_input('cover_mass', 0.0, units='kg')
         self.add_input('cover_cm', np.zeros(3), units='m')
         self.add_input('cover_I', np.zeros(3), units='m')
@@ -777,6 +786,8 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         self.add_output('above_yaw_cm', np.zeros(3), units='m')
         self.add_output('nacelle_I',    np.zeros(6), units='kg*m**2')
         self.add_output('above_yaw_I',  np.zeros(6), units='kg*m**2')
+
+        self._mass_table = None
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -784,7 +795,7 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         tilt = float(np.deg2rad(inputs['tilt']))
         
         components = ['mb1','mb2','lss','hss','brake','gearbox','generator','hvac',
-                      'nose','bedplate','platforms','cover']
+                      'nose','bedplate','platform','cover']
         if discrete_inputs['uptower']: components.extend(['transformer','converter'])
 
         # Mass and CofM summaries first because will need them for I later
@@ -805,11 +816,14 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         cm_nac /= m_nac
 
         # Now find total I about nacelle CofM
-        I_nac  = util.assembleI( np.zeros(6) )
-        for k in components:
-            m_i  = inputs[k+'_mass']
-            cm_i = inputs[k+'_cm']
-            I_i  = inputs[k+'_I']
+        I_nac   = np.zeros(6)
+        m_list  = np.zeros( (len(components)+1,  ) )
+        cm_list = np.zeros( (len(components)+1, 3) )
+        I_list  = np.zeros( (len(components)+1, 6) )
+        for ic,c in enumerate(components):
+            m_i  = inputs[c+'_mass']
+            cm_i = inputs[c+'_cm']
+            I_i  = inputs[c+'_I']
 
             # Rotate MofI if in hub c.s.
             if len(cm_i) == 1:
@@ -819,22 +833,49 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
                 I_i  = np.r_[I_i, np.zeros(3)]
                 
             r       = cm_i - cm_nac
-            I_nac  += util.assembleI(I_i) + m_i*(np.dot(r, r)*np.eye(3) - np.outer(r, r))
+            I_add   = util.assembleI(I_i) + m_i*(np.dot(r, r)*np.eye(3) - np.outer(r, r))
+            I_add   = util.unassembleI(I_add)
+            I_nac  += I_add
+
+            m_list[ic]    = m_i
+            cm_list[ic,:] = cm_i
+            I_list[ic,:]  = I_add
 
         outputs['above_yaw_mass'] = copy.copy(m_nac)
         outputs['above_yaw_cm']   = copy.copy(cm_nac)
-        outputs['above_yaw_I']    = copy.copy(util.unassembleI(I_nac))
+        outputs['above_yaw_I']    = copy.copy(I_nac)
 
         components.append('yaw')
         m_nac  += inputs['yaw_mass']
         cm_nac  = (outputs['above_yaw_mass'] * outputs['above_yaw_cm'] + inputs['yaw_cm'] * inputs['yaw_mass']) / m_nac
         r       = inputs['yaw_cm'] - cm_nac
-        I_nac  += util.assembleI(np.r_[inputs['yaw_I'], np.zeros(3)]) + inputs['yaw_mass']*(np.dot(r, r)*np.eye(3) - np.outer(r, r))
+        I_add   = util.assembleI(np.r_[inputs['yaw_I'], np.zeros(3)]) + inputs['yaw_mass']*(np.dot(r, r)*np.eye(3) - np.outer(r, r))
+        I_add   = util.unassembleI(I_add)
+        I_nac  += I_add
 
+        # Wrap up nacelle mass table
+        m_list[-1]    = inputs['yaw_mass']
+        cm_list[-1,:] = inputs['yaw_cm']
+        I_list[-1,:]  = I_add
+        self._mass_table = pd.DataFrame()
+        self._mass_table['Component'] = components
+        self._mass_table['Mass'] = m_list
+        self._mass_table['CoM_x'] = cm_list[:,0]
+        self._mass_table['CoM_y'] = cm_list[:,1]
+        self._mass_table['CoM_z'] = cm_list[:,2]
+        self._mass_table['MoI_xx'] = I_list[:,0]
+        self._mass_table['MoI_yy'] = I_list[:,1]
+        self._mass_table['MoI_zz'] = I_list[:,2]
+        self._mass_table['MoI_xy'] = I_list[:,3]
+        self._mass_table['MoI_xz'] = I_list[:,4]
+        self._mass_table['MoI_yz'] = I_list[:,5]
+        self._mass_table.set_index('Component')
+        self._mass_table.loc['Total'] = self._mass_table.sum()
+        
         outputs['nacelle_mass'] = m_nac
         outputs['nacelle_cm']   = cm_nac
-        outputs['nacelle_I']    = util.unassembleI(I_nac)
-        outputs['other_mass']   = (inputs['hvac_mass'] + inputs['platforms_mass'] + inputs['cover_mass'] + 
+        outputs['nacelle_I']    = I_nac
+        outputs['other_mass']   = (inputs['hvac_mass'] + inputs['platform_mass'] + inputs['cover_mass'] + 
                                    inputs['yaw_mass'] + inputs['converter_mass'] + inputs['transformer_mass'])
         outputs['mean_bearing_mass'] = 0.5*(inputs['mb1_mass'] + inputs['mb2_mass'])
         outputs['total_bedplate_mass'] = inputs['nose_mass'] + inputs['bedplate_mass']

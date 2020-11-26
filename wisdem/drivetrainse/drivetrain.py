@@ -122,16 +122,16 @@ class DrivetrainSE(om.Group):
         self.options.declare('n_dlcs')
 
     def setup(self):
-        opt = self.options['modeling_options']['drivetrainse']
+        opt = self.options['modeling_options']['DriveSE']
         n_dlcs   = self.options['n_dlcs']
         direct   = opt['direct']
         dogen    = self.options['modeling_options']['flags']['generator']
-        n_pc     = self.options['modeling_options']['servose']['n_pc']
+        n_pc     = self.options['modeling_options']['RotorSE']['n_pc']
 
         self.set_input_defaults('machine_rating', units='kW')
         self.set_input_defaults('planet_numbers', [3, 3, 0])
         self.set_input_defaults('gear_configuration', 'eep')
-        self.set_input_defaults('hvac_mass_coeff', 0.08, units='kg/kW')
+        self.set_input_defaults('hvac_mass_coeff', 0.025, units='kg/kW/m')
         #self.set_input_defaults('mb1Type', 'CARB')
         #self.set_input_defaults('mb2Type', 'SRB')
         self.set_input_defaults('uptower', True)
@@ -162,7 +162,7 @@ class DrivetrainSE(om.Group):
         self.add_subsystem('rpm', dc.RPM_Input(n_pc=n_pc), promotes=['*'])
         if dogen:
             gentype = self.options['modeling_options']['GeneratorSE']['type']
-            self.add_subsystem('generator', Generator(design=gentype), promotes=['generator_mass','generator_cost','generator_I','machine_rating','generator_efficiency','rated_torque',('rotor_mass','generator_rotor_mass'),('rotor_I','generator_rotor_I'),('stator_mass','generator_stator_mass'),('stator_I','generator_stator_I')])
+            self.add_subsystem('generator', Generator(design=gentype, n_pc=n_pc), promotes=['generator_mass','generator_cost','generator_I','machine_rating','generator_efficiency','rated_torque',('rotor_mass','generator_rotor_mass'),('rotor_I','generator_rotor_I'),('stator_mass','generator_stator_mass'),('stator_I','generator_stator_I')])
         else:
             self.add_subsystem('gensimp', dc.GeneratorSimple(direct_drive=direct, n_pc=n_pc), promotes=['*'])
 
@@ -184,7 +184,7 @@ class DrivetrainSE(om.Group):
         self.connect('bedplate_rho', ['pitch_system.rho', 'spinner.metal_rho'])
         self.connect('bedplate_Xy', ['pitch_system.Xy', 'spinner.Xy'])
         self.connect('bedplate_mat_cost', 'spinner.metal_cost')
-        self.connect('hub_rho', 'hub_shell.rho')
+        self.connect('hub_rho', ['hub_shell.rho','rho_castiron'])
         self.connect('hub_Xy', 'hub_shell.Xy')
         self.connect('hub_mat_cost', 'hub_shell.metal_cost')
         self.connect('spinner_rho', ['spinner.composite_rho','rho_fiberglass'])

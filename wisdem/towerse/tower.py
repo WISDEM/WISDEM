@@ -1117,7 +1117,7 @@ class TowerLeanSE(om.Group):
         self.options.declare('modeling_options')
         
     def setup(self):
-        toweropt = self.options['modeling_options']['tower']
+        toweropt = self.options['modeling_options']['TowerSE']
         monopile = self.options['modeling_options']['flags']['monopile']
 
         n_height_tow = toweropt['n_height']
@@ -1200,12 +1200,12 @@ class TowerSE(om.Group):
         self.options.declare('modeling_options')
         
     def setup(self):
-        toweropt = self.options['modeling_options']['tower']
+        toweropt = self.options['modeling_options']['TowerSE']
         monopile = self.options['modeling_options']['flags']['monopile']
         nLC      = toweropt['nLC'] # not yet supported
         wind     = toweropt['wind'] # not yet supported
         frame3dd_opt = toweropt['frame3dd']
-        n_height_tow = self.options['modeling_options']['tower']['n_height']
+        n_height_tow = toweropt['n_height']
         n_height_mon = 0 if not monopile else self.options['modeling_options']['monopile']['n_height']
         n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
         nFull        = get_nfull(n_height)

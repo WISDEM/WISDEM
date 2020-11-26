@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Tower analysis
 # Optimization by flag
 # Two load cases
@@ -5,7 +7,6 @@ import numpy as np
 import openmdao.api as om
 from wisdem.towerse.tower import TowerSE
 from wisdem.commonse.fileIO import save_data
-
 
 # Set analysis and optimization options and define geometry
 plot_flag = False
@@ -26,29 +27,29 @@ modeling_options = {}
 modeling_options['flags'] = {}
 modeling_options['materials'] = {}
 modeling_options['monopile'] = {}
-modeling_options['tower'] = {}
-modeling_options['tower']['buckling_length'] = 30.0
+modeling_options['TowerSE'] = {}
+modeling_options['TowerSE']['buckling_length'] = 30.0
 modeling_options['flags']['monopile'] = False
 
 # safety factors
-modeling_options['tower']['gamma_f'] = 1.35
-modeling_options['tower']['gamma_m'] = 1.3
-modeling_options['tower']['gamma_n'] = 1.0
-modeling_options['tower']['gamma_b'] = 1.1
-modeling_options['tower']['gamma_fatigue'] = 1.35 * 1.3 * 1.0
+modeling_options['TowerSE']['gamma_f'] = 1.35
+modeling_options['TowerSE']['gamma_m'] = 1.3
+modeling_options['TowerSE']['gamma_n'] = 1.0
+modeling_options['TowerSE']['gamma_b'] = 1.1
+modeling_options['TowerSE']['gamma_fatigue'] = 1.35 * 1.3 * 1.0
 
 # Frame3DD options
-modeling_options['tower']['frame3dd'] = {}
-modeling_options['tower']['frame3dd']['shear'] = True
-modeling_options['tower']['frame3dd']['geom'] = True
-modeling_options['tower']['frame3dd']['tol'] = 1e-9
+modeling_options['TowerSE']['frame3dd'] = {}
+modeling_options['TowerSE']['frame3dd']['shear'] = True
+modeling_options['TowerSE']['frame3dd']['geom'] = True
+modeling_options['TowerSE']['frame3dd']['tol'] = 1e-9
 
-modeling_options['tower']['n_height'] = n_control_points
-modeling_options['tower']['n_layers'] = 1
+modeling_options['TowerSE']['n_height'] = n_control_points
+modeling_options['TowerSE']['n_layers'] = 1
 modeling_options['monopile']['n_height'] = 0
 modeling_options['monopile']['n_layers'] = 0
-modeling_options['tower']['wind'] = 'PowerWind'
-modeling_options['tower']['nLC'] = n_load_cases
+modeling_options['TowerSE']['wind'] = 'PowerWind'
+modeling_options['TowerSE']['nLC'] = n_load_cases
 modeling_options['materials']['n_mat'] = n_materials
 # ---
 
@@ -134,7 +135,7 @@ prob['cd_usr'] = -1.0
 prob['rho_air'] = 1.225
 prob['mu_air'] = 1.7934e-5
 prob['beta_wind'] = 0.0
-if modeling_options['tower']['wind'] == 'PowerWind':
+if modeling_options['TowerSE']['wind'] == 'PowerWind':
     prob['shearExp'] = 0.2
 # ---
 
@@ -207,81 +208,6 @@ print('Shell buckling =', prob['post2.shell_buckling'])
 
 if plot_flag:
     import matplotlib.pyplot as plt
-
-    '''
-    from matplotlib import rcParams
-    import matplotlib.colorbar as cbar
-    from matplotlib import cm
-    
-    # Pretty geometry plot
-    scaling_factor = 10.
-    
-    global_buckling = np.hstack((prob['post1.global_buckling'], prob['post1.global_buckling'][-1]))
-    shell_buckling = np.hstack((prob['post1.shell_buckling'], prob['post1.shell_buckling'][-1]))
-    buc_tower = np.maximum(global_buckling, shell_buckling)
-    
-    D_tower = prob['tower_outer_diameter']
-    wt_tower = np.hstack((prob['tower_wall_thickness'], prob['tower_wall_thickness'][-1]))
-    stress = np.hstack((prob['post1.stress'], prob['post1.stress'][-1]))
-    L_tower = prob['tower_section_height']
-
-    X = np.zeros((n_control_points, 2))
-    Z = np.zeros((n_control_points, 2))
-    Cl = np.zeros((n_control_points, 2))
-    Cr = np.zeros((n_control_points, 2))
-
-    X[:, 0] = -D_tower / 2.
-    X[:, 1] = -D_tower / 2. + scaling_factor * wt_tower
-    Z[:, 0] = Z[:, 1] = L_tower.sum()
-    Cl[:, 0] = Cl[:, 1] = stress.max()
-    Cr[:, 0] = Cr[:, 1] = buc_tower.max()
-
-    X0 = []
-    Z0 = []
-
-    X0 = np.hstack((-D_tower / 2., D_tower[::-1] / 2.))
-    Z0 = np.hstack((L_tower, L_tower[::-1]))
-
-    cmap = cm.viridis
-
-    rcParams.update({'font.size': 18})
-
-    fig, ax = plt.subplots(1, figsize=(8,12))
-
-    ax.fill(X0, Z0, color='grey', zorder=0)
-    ax.plot([-20., 20.], [0., 0.], color='k', linewidth=1.0, zorder=20)
-    
-    ax.plot([-max_diam/2., -max_diam/2.], [0., L_tower[-1]], color='r', alpha=0.5, lw=3., solid_capstyle='butt')
-    ax.plot([max_diam/2., max_diam/2.], [0., L_tower[-1]], color='r', alpha=0.5, lw=3., solid_capstyle='butt')
-    
-    vmin = 0.5
-    vmax = 1.1
-    im = ax.pcolormesh(X, Z, Cl, cmap=cmap, vmin=vmin, vmax=vmax, shading='gouraud', zorder=10)
-    im2 = ax.pcolormesh(-X, Z, Cr, cmap=cmap, vmin=vmin, vmax=vmax, shading='gouraud', zorder=10)
-    
-    print()
-    print(X.shape, Z.shape, Cr.shape)
-    if np.any(Cr > 1.01):
-        im3 = ax.contour(-X, Z, Cr, levels=[0., 1.01, 2.], colors='black', zorder=15, linewidths=3)
-    
-    cbar = fig.colorbar(im, cmap=cmap, fraction=0.05, aspect=40, pad=0.1)
-    cbar.set_label('Utilization', rotation=90)
-
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    
-    ax.set_xlim(-5., 5.)
-    ax.set_ylim(-10., 150.)
-    
-    ax.annotate('Stress', xy=(X[-1, 0], 130), va='center', color='k', xycoords='data', xytext=(-4.25, 145), textcoords='data', arrowprops=dict(arrowstyle='-', lw=2))
-    
-    ax.annotate('Buckling', xy=(-X[-1, 0], 130), va='center', color='k', xycoords='data', xytext=(2.25, 145), textcoords='data', arrowprops=dict(arrowstyle='-', lw=2))
-    
-    plt.xlabel('Distance from center [m]')
-    plt.ylabel('Elevation relative to ground [m]')
-    
-    plt.show()
-    '''
 
     # Old line plot
     stress1 = np.copy(prob['post1.stress'])

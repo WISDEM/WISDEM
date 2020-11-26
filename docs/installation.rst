@@ -27,6 +27,7 @@ In order to directly use the examples in the repository and peek at the code whe
 
     conda install -y wisdem git
     conda remove --force wisdem
+    pip install simpy marmot-agents
 
 For Mac / Linux systems:
 

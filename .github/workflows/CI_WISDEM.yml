@@ -1,0 +1,68 @@
+name: CI_WISDEM
+
+# We run CI on push commits and pull requests on all branches
+on: [push, pull_request]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+        python-version: ["3.8"]
+        
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        # https://github.com/marketplace/actions/setup-miniconda
+        with:
+          miniconda-version: "latest"
+          channels: conda-forge
+          auto-update-conda: true
+          python-version: 3.8
+          environment-file: environment.yml
+      
+      # Install dependencies of WEIS specific to ubuntu
+      - name: Add dependencies ubuntu specific
+        if: false == contains( matrix.os, 'windows')
+        #shell: pwsh # putting in a shell command makes for compile linking problems later
+        # (if you use the shell here, cannot use 'compiler' package)
+        run: |
+          conda install -y petsc4py mpi4py compilers
+      
+      # Install dependencies of WISDEM specific to windows
+      - name: Add dependencies windows specific
+        if: contains( matrix.os, 'windows')
+        run: |
+          conda install -y m2w64-toolchain libpython
+
+      # Debugging session
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
+        
+      # Install WISDEM
+      - name: Install WISDEM
+        shell: pwsh
+        run: |
+          python setup.py develop
+      
+      # Run all tests
+      - name: Run tests
+        if: contains( matrix.os, 'ubuntu')
+        shell: pwsh
+        run: |
+          pytest --cov-config=.coverageac --cov=wisdem 
+    
+      # Run coveralls
+      - name: Run coveralls
+        if: contains( matrix.os, 'ubuntu')
+        # This also works, https://github.com/AndreMiras/coveralls-python-action
+        #uses: AndreMiras/coveralls-python-action@develop
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          coveralls

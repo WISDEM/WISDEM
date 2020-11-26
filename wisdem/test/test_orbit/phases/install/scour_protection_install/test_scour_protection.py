@@ -8,12 +8,15 @@ __maintainer__ = "Jake Nunemaker"
 __email__ = "Jake.Nunemaker@nrel.gov"
 
 
+from copy import deepcopy
+
 import pandas as pd
 import pytest
 
+from wisdem.orbit import ProjectManager
 from wisdem.test.test_orbit.data import test_weather
-from wisdem.orbit.library import extract_library_specs
-from wisdem.orbit.core._defaults import process_times as pt
+from wisdem.orbit.core.library import extract_library_specs
+from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import ScourProtectionInstallation
 
 config = extract_library_specs("config", "scour_protection_install")
@@ -65,6 +68,44 @@ def test_kwargs():
         new_sim = ScourProtectionInstallation(config, **kwargs)
         new_sim.run()
         new_time = new_sim.total_phase_time
+
+        if new_time > baseline:
+            pass
+
+        else:
+            failed.append(kw)
+
+    if failed:
+        raise Exception(f"'{failed}' not affecting results.")
+
+    else:
+        assert True
+
+
+def test_kwargs_in_ProjectManager():
+
+    base = deepcopy(config)
+    base["install_phases"] = ["ScourProtectionInstallation"]
+
+    project = ProjectManager(base)
+    project.run_project()
+    baseline = project.phase_times["ScourProtectionInstallation"]
+
+    keywords = ["drop_rocks_time"]
+
+    failed = []
+
+    for kw in keywords:
+
+        default = pt[kw]
+        processes = {kw: default + 2}
+
+        new_config = deepcopy(base)
+        new_config["processes"] = processes
+
+        new_project = ProjectManager(new_config)
+        new_project.run_project()
+        new_time = new_project.phase_times["ScourProtectionInstallation"]
 
         if new_time > baseline:
             pass
