@@ -71,7 +71,6 @@ class ExportCableInstallation(InstallPhase):
 
         config = self.initialize_library(config, **kwargs)
         self.config = self.validate_config(config)
-        self.extract_defaults()
 
         self.initialize_port()
         self.extract_distances()

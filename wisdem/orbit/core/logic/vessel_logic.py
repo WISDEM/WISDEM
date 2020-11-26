@@ -8,7 +8,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 from marmot import process
 
-from wisdem.orbit.core._defaults import process_times as pt
+from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.core.exceptions import ItemNotFound, VesselCapacityError
 
 
@@ -31,7 +31,7 @@ def prep_for_site_operations(vessel, survey_required=False, **kwargs):
         List of tasks included in preperation process.
     """
 
-    site_depth = kwargs.get("site_depth", None)
+    site_depth = kwargs.get("site_depth", 40)
     extension = kwargs.get("extension", site_depth + 10)
     jackup_time = vessel.jacksys.jacking_time(extension, site_depth)
 
@@ -88,6 +88,9 @@ def shuttle_items_to_queue(vessel, port, queue, distance, items, **kwargs):
     """
 
     transit_time = vessel.transit_time(distance)
+    site_depth = kwargs.get("site_depth", 40)
+    extension = kwargs.get("extension", site_depth + 10)
+    jackup_time = vessel.jacksys.jacking_time(extension, site_depth)
 
     while True:
 
@@ -120,6 +123,12 @@ def shuttle_items_to_queue(vessel, port, queue, distance, items, **kwargs):
             vessel.at_port = False
             yield vessel.task(
                 "Transit", transit_time, constraints=vessel.transit_limits
+            )
+            yield vessel.task(
+                "Jackup",
+                jackup_time,
+                constraints=vessel.transit_limits,
+                **kwargs,
             )
             vessel.at_site = True
 
@@ -155,6 +164,12 @@ def shuttle_items_to_queue(vessel, port, queue, distance, items, **kwargs):
 
             # Transit back to port
             vessel.at_site = False
+            yield vessel.task(
+                "Jackdown",
+                jackup_time,
+                constraints=vessel.transit_limits,
+                **kwargs,
+            )
             yield vessel.task(
                 "Transit", transit_time, constraints=vessel.transit_limits
             )

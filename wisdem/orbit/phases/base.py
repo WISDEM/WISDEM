@@ -9,10 +9,9 @@ __email__ = "jake.nunemaker@nrel.gov"
 from abc import ABC, abstractmethod
 from copy import deepcopy
 
-from wisdem.orbit.library import (
+from wisdem.orbit.core.library import (
     initialize_library,
     extract_library_data,
-    extract_library_specs,
 )
 from wisdem.orbit.core.exceptions import MissingInputs
 
@@ -66,13 +65,6 @@ class BasePhase(ABC):
         phase_name = kwargs.get("phase_name", None)
         if phase_name is not None:
             self.phase = phase_name
-
-    def extract_defaults(self):
-        """
-        Extracts the default data from the library.
-        """
-
-        self.defaults = extract_library_specs("defaults", "project")
 
     @classmethod
     def _check_keys(cls, expected, config):

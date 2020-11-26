@@ -46,11 +46,11 @@ class Test(unittest.TestCase):
         n_Re = npzfile['Re'].size
             
         modeling_options = {}
-        modeling_options['blade'] = {}
-        modeling_options['blade']['n_span'] = n_span
-        modeling_options['blade']['n_aoa'] = n_aoa
-        modeling_options['blade']['n_Re'] = n_Re
-        modeling_options['blade']['n_tab'] = 1
+        modeling_options['RotorSE'] = {}
+        modeling_options['RotorSE']['n_span'] = n_span
+        modeling_options['RotorSE']['n_aoa'] = n_aoa
+        modeling_options['RotorSE']['n_Re'] = n_Re
+        modeling_options['RotorSE']['n_tab'] = 1
     
         n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile['cl'][:,:,:,np.newaxis], 0, 1).shape
         modeling_options['airfoils'] = {}
@@ -131,11 +131,11 @@ class Test(unittest.TestCase):
         n_Re = npzfile['Re'].size
     
         modeling_options = {}
-        modeling_options['blade'] = {}
-        modeling_options['blade']['n_span'] = n_span
-        modeling_options['blade']['n_aoa'] = n_aoa
-        modeling_options['blade']['n_Re'] = n_Re
-        modeling_options['blade']['n_tab'] = 1
+        modeling_options['RotorSE'] = {}
+        modeling_options['RotorSE']['n_span'] = n_span
+        modeling_options['RotorSE']['n_aoa'] = n_aoa
+        modeling_options['RotorSE']['n_Re'] = n_Re
+        modeling_options['RotorSE']['n_tab'] = 1
     
         modeling_options['assembly'] = {}
         modeling_options['assembly']['number_of_blades'] = 3
@@ -216,11 +216,11 @@ class Test(unittest.TestCase):
         
     
         modeling_options = {}
-        modeling_options['blade'] = {}
-        modeling_options['blade']['n_span'] = n_span
-        modeling_options['blade']['n_aoa'] = n_aoa
-        modeling_options['blade']['n_Re'] = n_Re
-        modeling_options['blade']['n_tab'] = 1
+        modeling_options['RotorSE'] = {}
+        modeling_options['RotorSE']['n_span'] = n_span
+        modeling_options['RotorSE']['n_aoa'] = n_aoa
+        modeling_options['RotorSE']['n_Re'] = n_Re
+        modeling_options['RotorSE']['n_tab'] = 1
     
         modeling_options['assembly'] = {}
         modeling_options['assembly']['number_of_blades'] = 3
@@ -307,11 +307,11 @@ class Test(unittest.TestCase):
 
     
         modeling_options = {}
-        modeling_options['blade'] = {}
-        modeling_options['blade']['n_span'] = n_span
-        modeling_options['blade']['n_aoa'] = n_aoa
-        modeling_options['blade']['n_Re'] = n_Re
-        modeling_options['blade']['n_tab'] = 1
+        modeling_options['RotorSE'] = {}
+        modeling_options['RotorSE']['n_span'] = n_span
+        modeling_options['RotorSE']['n_aoa'] = n_aoa
+        modeling_options['RotorSE']['n_Re'] = n_Re
+        modeling_options['RotorSE']['n_tab'] = 1
     
         modeling_options['assembly'] = {}
         modeling_options['assembly']['number_of_blades'] = 3

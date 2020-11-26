@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from wisdem.orbit.library import export_library_specs, extract_library_specs
+from wisdem.orbit.core.library import export_library_specs, extract_library_specs
 from wisdem.orbit.phases.design._cables import Plant, CableSystem
 
 

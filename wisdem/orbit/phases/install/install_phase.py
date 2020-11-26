@@ -14,6 +14,7 @@ import simpy
 
 from wisdem.orbit.core import Port, Environment
 from wisdem.orbit.phases import BasePhase
+from wisdem.orbit.core.defaults import common_costs
 
 
 class InstallPhase(BasePhase):
@@ -103,7 +104,7 @@ class InstallPhase(BasePhase):
         else:
             key = "port_cost_per_month"
             port_config = self.config.get("port", {})
-            rate = port_config.get("monthly_rate", self.defaults[key])
+            rate = port_config.get("monthly_rate", common_costs[key])
 
             months = self.total_phase_time / (8760 / 12)
             return months * rate

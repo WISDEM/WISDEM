@@ -10,7 +10,7 @@ title: WISDEM wind turbine modeling options schema
 description: Scehma that describes the modeling options for WISDEM
 type: object
 properties:
-    general:
+    General:
         type: object
         default: {}
         properties:
@@ -18,45 +18,74 @@ properties:
                 type: boolean
                 default: False
                 description: Prints additional outputs to screen (and to a file log in the future)
-    Analysis_Flags:
+    RotorSE:
         type: object
         default: {}
         properties:
-            RotorSE:
+            flag:
                 type: boolean
                 default: False
                 description: Whether or not to run RotorSE and ServoSE
-            DriveSE:
-                type: boolean
-                description: Whether or not to run DriveSE
-            TowerSE:
-                type: boolean
-                default: False
-                description: Whether or not to run TowerSE
-            BOS:
-                type: boolean
-                default: False
-                description: Whether or not to run balance of station cost models (LandBOSSE or ORBIT)
-    rotorse:
-        type: object
-        default: {}
-        properties:
             n_aoa:
-                type: number
+                type: integer
                 default: 200
                 description: Number of angles of attack in a common grid to define polars
             n_xy:
-                type: number
+                type: integer
                 default: 200
                 description: Number of coordinate point used to define airfoils #GB: This should depend on the airfoil. We are not resampling if the airfoils come inwith different numbers of points.  PreComp doesn't care if different airfoils have different numbers of points, right?
             n_span:
-                type: number
+                type: integer
                 default: 30
                 description: Number of spanwise stations in a common grid used to define blade properties
-    drivetrainse:
+            n_pc:
+                type: integer
+                default: 20
+                description: Number of wind speeds to compute the power curve
+            n_pc_spline:
+                type: integer
+                default: 200
+                description: Number of wind speeds to spline the power curve  
+            n_pitch_perf_surfaces: 
+                type: integer
+                default: 20
+                description: Number of pitch angles to determine the Cp-Ct-Cq-surfaces
+            min_pitch_perf_surfaces:
+                type: number
+                default: -5.
+                description: Min pitch angle of the Cp-Ct-Cq-surfaces
+            max_pitch_perf_surfaces:
+                type: number
+                default: 30.
+                description: Max pitch angle of the Cp-Ct-Cq-surfaces
+            n_tsr_perf_surfaces:
+                type: integer
+                default: 20
+                description: Number of tsr values to determine the Cp-Ct-Cq-surfaces
+            min_tsr_perf_surfaces: 
+                type: number
+                default: 2.
+                description: Min TSR of the Cp-Ct-Cq-surfaces
+            max_tsr_perf_surfaces: 
+                type: number
+                default: 12.
+                description: Max TSR of the Cp-Ct-Cq-surfaces
+            n_U_perf_surfaces:
+                type: integer
+                default: 1
+                description: Number of wind speeds to determine the Cp-Ct-Cq-surfaces
+            regulation_reg_III:
+                type: boolean
+                default: False
+                description: Flag to derive the regulation trajectory in region III in terms of pitch and TSR
+    DriveSE:
         type: object
         default: {}
         properties:
+            flag:
+                type: boolean
+                default: False
+                description: Whether or not to run RotorSE and ServoSE
             model_generator:
                 type: boolean
                 default: False
@@ -100,11 +129,18 @@ properties:
                         maximum: 5.0
                         default: 1.5
                         unit: none
-
-    towerse:
+    TowerSE:
         type: object
         default: {}
         properties:
+            flag:
+                type: boolean
+                default: False
+                description: Whether or not to run RotorSE and ServoSE
+            nLC:
+                type: integer
+                default: 1
+                description: Number of load cases
             wind:
                 type: string
                 enum: [PowerWind, LogisticWind]
@@ -176,7 +212,23 @@ properties:
                         minimum: 1e-12
                         maximum: 1e-1
                         default: 1e-9
-    loading:
+    BOS:
+        type: object
+        default: {}
+        properties:
+            flag:
+                type: boolean
+                default: False
+                description: Whether or not to run balance of station cost models (LandBOSSE or ORBIT)
+    FloatingSE:
+        type: object
+        default: {}
+        properties:
+            flag:
+                type: boolean
+                default: False
+                description: Whether or not to run the floating design modules (FloatingSE)
+    Loading:
         type: object
         description: This is only used if not running the full WISDEM turbine Group and you need to input the mass properties, forces, and moments for a tower-only or nacelle-only analysis
         properties:

@@ -1,0 +1,6 @@
+# Material costs
+monopile_steel_cost: 3000                     # USD/t
+tp_steel_cost: 3000                           # USD/t
+
+# Port properties
+port_cost_per_month: 2e6                      # USD/month

@@ -8,7 +8,7 @@ from marmot import Environment
 
 from wisdem.orbit.core import Vessel
 from wisdem.test.test_orbit.data import test_weather
-from wisdem.orbit.library import initialize_library, extract_library_specs
+from wisdem.orbit.core.library import initialize_library, extract_library_specs
 from wisdem.orbit.phases.install.cable_install import SimpleCable
 
 

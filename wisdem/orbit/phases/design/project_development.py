@@ -6,8 +6,6 @@ __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
 
-from wisdem.orbit.library import extract_library_specs
-
 from .design_phase import DesignPhase
 
 
@@ -45,8 +43,6 @@ class ProjectDevelopment(DesignPhase):
         config = self.initialize_library(config, **kwargs)
         self.config = self.validate_config(config)
         self._outputs = {}
-
-        self.defaults = extract_library_specs("defaults", "project")
 
     def run(self):
         """
@@ -119,8 +115,8 @@ class ProjectDevelopment(DesignPhase):
         t = "site_auction_duration"
         c = "site_auction_cost"
         self._outputs["site_auction"] = {
-            "duration": development_specs.get(t, self.defaults[t]),
-            "cost": development_specs.get(c, self.defaults[c]),
+            "duration": development_specs.get(t, 0),
+            "cost": development_specs.get(c, 100e6),
         }
 
     def site_assessment_plan_development(self, **development_specs):
@@ -141,8 +137,8 @@ class ProjectDevelopment(DesignPhase):
         t = "site_assessment_plan_duration"
         c = "site_assessment_plan_cost"
         self._outputs["site_assessment_plan"] = {
-            "duration": development_specs.get(t, self.defaults[t]),
-            "cost": development_specs.get(c, self.defaults[c]),
+            "duration": development_specs.get(t, 8760),
+            "cost": development_specs.get(c, 0.5e6),
         }
 
     def site_assessment(self, **development_specs):
@@ -162,8 +158,8 @@ class ProjectDevelopment(DesignPhase):
         t = "site_assessment_duration"
         c = "site_assessment_cost"
         self._outputs["site_assessment"] = {
-            "duration": development_specs.get(t, self.defaults[t]),
-            "cost": development_specs.get(c, self.defaults[c]),
+            "duration": development_specs.get(t, 43800),
+            "cost": development_specs.get(c, 50e6),
         }
 
     def construction_operations_plan_development(self, **development_specs):
@@ -185,8 +181,8 @@ class ProjectDevelopment(DesignPhase):
         t = "construction_operations_plan_duration"
         c = "construction_operations_plan_cost"
         self._outputs["construction_operations_plan"] = {
-            "duration": development_specs.get(t, self.defaults[t]),
-            "cost": development_specs.get(c, self.defaults[c]),
+            "duration": development_specs.get(t, 43800),
+            "cost": development_specs.get(c, 1e6),
         }
 
     def boem_review(self, **development_specs):
@@ -207,8 +203,8 @@ class ProjectDevelopment(DesignPhase):
         t = "boem_review_duration"
         c = "boem_review_cost"
         self._outputs["boem_review"] = {
-            "duration": development_specs.get(t, self.defaults[t]),
-            "cost": development_specs.get(c, self.defaults[c]),
+            "duration": development_specs.get(t, 8760),
+            "cost": development_specs.get(c, 0),
         }
 
     def design_install_plan_development(self, **development_specs):
@@ -230,8 +226,8 @@ class ProjectDevelopment(DesignPhase):
         t = "design_install_plan_duration"
         c = "design_install_plan_cost"
         self._outputs["design_install_plan"] = {
-            "duration": development_specs.get(t, self.defaults[t]),
-            "cost": development_specs.get(c, self.defaults[c]),
+            "duration": development_specs.get(t, 8760),
+            "cost": development_specs.get(c, 0.25e6),
         }
 
     @property

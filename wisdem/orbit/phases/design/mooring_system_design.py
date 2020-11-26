@@ -54,7 +54,6 @@ class MooringSystemDesign(DesignPhase):
         self.num_lines = self._design.get("num_lines", 4)
         self.anchor_type = self._design.get("anchor_type", "Suction Pile")
 
-        self.extract_defaults()
         self._outputs = {}
 
     def run(self):

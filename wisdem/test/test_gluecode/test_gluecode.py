@@ -25,8 +25,8 @@ class TestRegression(unittest.TestCase):
         wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
         self.assertAlmostEqual(wt_opt['re.precomp.blade_mass'][0], 73310.0985877902, 1)
-        self.assertAlmostEqual(wt_opt['rp.AEP'][0]*1.e-6, 78.09153972721633, 1)
-        self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 73.31802279483122, 1)
+        self.assertAlmostEqual(wt_opt['rp.AEP'][0]*1.e-6, 78.0371305939, 1)
+        self.assertAlmostEqual(wt_opt['financese.lcoe'][0]*1.e3, 66.22846083658864, 1)
 
 def suite():
     suite = unittest.TestSuite()

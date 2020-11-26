@@ -60,16 +60,16 @@ class TestGroup(unittest.TestCase):
     def testDirectDrive_withGen(self):
 
         opt = {}
-        opt['drivetrainse'] = {}
-        opt['drivetrainse']['direct'] = True
-        opt['drivetrainse']['hub'] = {}
-        opt['drivetrainse']['hub']['hub_gamma'] = 2.0
-        opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
-        opt['drivetrainse']['gamma_f'] = 1.35
-        opt['drivetrainse']['gamma_m'] = 1.3
-        opt['drivetrainse']['gamma_n'] = 1.0
-        opt['servose'] = {}
-        opt['servose']['n_pc'] = 20
+        opt['DriveSE'] = {}
+        opt['DriveSE']['direct'] = True
+        opt['DriveSE']['hub'] = {}
+        opt['DriveSE']['hub']['hub_gamma'] = 2.0
+        opt['DriveSE']['hub']['spinner_gamma'] = 1.5
+        opt['DriveSE']['gamma_f'] = 1.35
+        opt['DriveSE']['gamma_m'] = 1.3
+        opt['DriveSE']['gamma_n'] = 1.0
+        opt['RotorSE'] = {}
+        opt['RotorSE']['n_pc'] = 20
         opt['materials'] = {}
         opt['materials']['n_mat'] = 1
         opt['GeneratorSE'] = {}
@@ -148,16 +148,16 @@ class TestGroup(unittest.TestCase):
     def testDirectDrive_withSimpleGen(self):
 
         opt = {}
-        opt['drivetrainse'] = {}
-        opt['drivetrainse']['direct'] = True
-        opt['drivetrainse']['hub'] = {}
-        opt['drivetrainse']['hub']['hub_gamma'] = 2.0
-        opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
-        opt['drivetrainse']['gamma_f'] = 1.35
-        opt['drivetrainse']['gamma_m'] = 1.3
-        opt['drivetrainse']['gamma_n'] = 1.0
-        opt['servose'] = {}
-        opt['servose']['n_pc'] = 20
+        opt['DriveSE'] = {}
+        opt['DriveSE']['direct'] = True
+        opt['DriveSE']['hub'] = {}
+        opt['DriveSE']['hub']['hub_gamma'] = 2.0
+        opt['DriveSE']['hub']['spinner_gamma'] = 1.5
+        opt['DriveSE']['gamma_f'] = 1.35
+        opt['DriveSE']['gamma_m'] = 1.3
+        opt['DriveSE']['gamma_n'] = 1.0
+        opt['RotorSE'] = {}
+        opt['RotorSE']['n_pc'] = 20
         opt['materials'] = {}
         opt['materials']['n_mat'] = 1
         opt['flags'] = {}
@@ -200,18 +200,18 @@ class TestGroup(unittest.TestCase):
     def testGeared_withGen(self):
 
         opt = {}
-        opt['drivetrainse'] = {}
-        opt['drivetrainse']['direct'] = False
-        opt['drivetrainse']['hub'] = {}
-        opt['drivetrainse']['hub']['hub_gamma'] = 2.0
-        opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
-        opt['drivetrainse']['gamma_f'] = 1.35
-        opt['drivetrainse']['gamma_m'] = 1.3
-        opt['drivetrainse']['gamma_n'] = 1.0
+        opt['DriveSE'] = {}
+        opt['DriveSE']['direct'] = False
+        opt['DriveSE']['hub'] = {}
+        opt['DriveSE']['hub']['hub_gamma'] = 2.0
+        opt['DriveSE']['hub']['spinner_gamma'] = 1.5
+        opt['DriveSE']['gamma_f'] = 1.35
+        opt['DriveSE']['gamma_m'] = 1.3
+        opt['DriveSE']['gamma_n'] = 1.0
         opt['GeneratorSE'] = {}
         opt['GeneratorSE']['type'] = 'dfig'
-        opt['servose'] = {}
-        opt['servose']['n_pc'] = 20
+        opt['RotorSE'] = {}
+        opt['RotorSE']['n_pc'] = 20
         opt['materials'] = {}
         opt['materials']['n_mat'] = 1
         opt['flags'] = {}
@@ -312,18 +312,18 @@ class TestGroup(unittest.TestCase):
     def testGeared_withSimpleGen(self):
 
         opt = {}
-        opt['drivetrainse'] = {}
-        opt['drivetrainse']['direct'] = False
-        opt['drivetrainse']['hub'] = {}
-        opt['drivetrainse']['hub']['hub_gamma'] = 2.0
-        opt['drivetrainse']['hub']['spinner_gamma'] = 1.5
-        opt['drivetrainse']['gamma_f'] = 1.35
-        opt['drivetrainse']['gamma_m'] = 1.3
-        opt['drivetrainse']['gamma_n'] = 1.0
+        opt['DriveSE'] = {}
+        opt['DriveSE']['direct'] = False
+        opt['DriveSE']['hub'] = {}
+        opt['DriveSE']['hub']['hub_gamma'] = 2.0
+        opt['DriveSE']['hub']['spinner_gamma'] = 1.5
+        opt['DriveSE']['gamma_f'] = 1.35
+        opt['DriveSE']['gamma_m'] = 1.3
+        opt['DriveSE']['gamma_n'] = 1.0
         opt['flags'] = {}
         opt['flags']['generator'] = False
-        opt['servose'] = {}
-        opt['servose']['n_pc'] = 20
+        opt['RotorSE'] = {}
+        opt['RotorSE']['n_pc'] = 20
         opt['materials'] = {}
         opt['materials']['n_mat'] = 1
 

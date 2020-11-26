@@ -1,5 +1,13 @@
 name: turbine_example_yaml
 description: version from May 15th, 2020
+# Assembly
+assembly:
+    turbine_class: III
+    turbulence_class: A
+    drivetrain: Geared
+    rotor_orientation: Upwind
+    number_of_blades: 3
+    rated_power: 5.e+6
 # Components
 components:
     # Blade
@@ -310,8 +318,102 @@ components:
     # Foundation
     foundation:
         height: 0.
-    # Floating
-    floating:
+    # Floating platform
+    floating_platform:
+        joints:
+            - name: spar_keel
+              location: [0.0, 0.0, 0.0]
+            - name: spar_freeboard
+              location: [0.0, 0.0, 10.0]
+              transition: True
+        members:
+            - name: spar
+              joint1: spar_keel
+              joint2: spar_freeboard
+              outer_shape:
+                shape: circular
+                outer_diameter:
+                    grid: [0.0, 0.8308, 0.8923, 1.0]
+                    values: [9.4, 9.4, 6.5, 6.5]
+              internal_structure:
+                layers:
+                    - name: spar_twall
+                      material: steel
+                      thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.05, 0.05]
+                bulkhead:
+                    material: steel
+                    thickness:
+                        grid: [0.0, 0.1, 0.5, 0.8308, 1.0]
+                        values: [0.1, 0.05, 0.05, 0.05, 0.05]
+                ballast:
+                    - variable_flag: False
+                      material: slurry
+                      volume: 1e3
+                      grid: [0.0, 0.1]
+                    - variable_flag: True
+                      grid: [0.1, 0.5]
+    # Mooring lines
+    mooring:
+        nodes:
+            - name: line1_anchor
+              node_type: fixed
+              location: [853.87, 0.0, -320.0]
+              anchor_type: drag_embedment
+            - name: line2_anchor
+              node_type: fixed
+              location: [-426.94, 739.47, -320.0]
+              anchor_type: drag_embedment
+            - name: line3_anchor
+              node_type: fixed
+              location: [-426.94, -739.47, -320.0]
+              anchor_type: drag_embedment
+            - name: line1_vessel
+              node_type: vessel
+              location: [5.2, 0.0, -70.0]
+              fairlead_type: rigid
+            - name: line2_vessel
+              node_type: vessel
+              location: [-2.6, 4.5, -70.0]
+              fairlead_type: rigid
+            - name: line3_vessel
+              node_type: vessel
+              location: [-2.6, -4.5, -70.0]
+              fairlead_type: rigid
+        lines:
+            - name: line1
+              node1: line1_anchor
+              node2: line1_vessel
+              line_type: main
+              unstretched_length: 902.2
+            - name: line2
+              node1: line2_anchor
+              node2: line2_vessel
+              line_type: main
+              unstretched_length: 902.2
+            - name: line3
+              node1: line3_anchor
+              node2: line3_vessel
+              line_type: main
+              unstretched_length: 902.2
+        line_types:
+            - name: main
+              diameter: 0.09
+              mass_density: 77.7066
+              stiffness: 384.243e6
+              breaking_load: 1e8
+              cost: 100.0
+              transverse_added_mass: 1.0
+              tangential_added_mass: 0.0
+              transverse_drag: 1.6
+              tangential_drag: 0.1
+        anchor_types:
+            - name: drag_embedment
+              mass: 1e3
+              cost: 1e4
+              max_vertical_load: 0.0
+              max_lateral_load: 1e5
     # RNA
     RNA:
         elastic_properties_mb:
@@ -361,35 +463,35 @@ materials:
       area_density_dry: 1.112
       fiber_density: 2600.
       roll_mass: 181.4368
-# Assembly
-assembly:
-    turbine_class: III
-    turbulence_class: A
-    drivetrain: Geared
-    rotor_orientation: Upwind
-    number_of_blades: 3
 # Control
 control:
-    rated_power: 3.37e+6
-    Vin: 3.0
-    Vout: 25.0
-    minOmega: 0.723
-    maxOmega: 1.267
-    tsr: 8.01754386
-    pitch: 0.0174
-    maxTS: 80.
-    max_pitch_rate: 0.1221
-    max_torque_rate: 1.5e+6
-    PC_zeta: 1.0
-    PC_omega: 0.2
-    VS_zeta: 1.0
-    VS_omega: 0.2
-    max_pitch: 1.57
-    min_pitch: 0
-    vs_minspd: 0
-    ss_vsgain: 1
-    ss_pcgain: .001
-    ps_percent: 0.8
+    supervisory:
+        Vin: 3.0
+        Vout: 25.0
+        maxTS: 80.
+        minOmega: 0.0
+        maxOmega: 2.0
+    pitch:
+        PC_zeta: 0.7                      # Pitch controller desired damping ratio [-]
+        PC_omega: 0.5                     # Pitch controller desired natural frequency [rad/s]
+        ps_percent: 0.8                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
+        max_pitch: 1.57                     # Maximum pitch angle [rad], {default = 90 degrees}
+        max_pitch_rate: 0.1745
+        min_pitch: 0                      # Minimum pitch angle [rad], {default = 0 degrees}
+    torque:
+        control_type: tsr_tracking
+        tsr: 10.
+        VS_zeta: 0.7                      # Torque controller desired damping ratio [-]
+        VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
+        max_torque_rate: 1500000.
+        VS_minspd: 0.                # Minimum rotor speed [rad/s], {default = 0 rad/s}
+        VS_maxspd: 2.                # Minimum rotor speed [rad/s], {default = 0 rad/s}
+    setpoint_smooth:
+        ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
+        ss_pcgain: .01                    # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
+    shutdown:
+        limit_type: gen_speed
+        limit_value: 2.0
 # Environment
 environment:
     air_density: 1.225
@@ -427,25 +529,4 @@ costs:
     bos_per_kW: 0.0
     opex_per_kW: 0.0
     turbine_number: 100
-    blade_mass_cost_coeff: 14.6
-    hub_mass_cost_coeff: 3.9
-    pitch_system_mass_cost_coeff: 22.1
-    spinner_mass_cost_coeff: 11.1
-    lss_mass_cost_coeff: 11.9
-    bearing_mass_cost_coeff: 4.5
-    gearbox_mass_cost_coeff: 12.9
-    hss_mass_cost_coeff: 6.8
-    generator_mass_cost_coeff: 12.4
-    bedplate_mass_cost_coeff: 2.9
-    yaw_mass_cost_coeff: 8.3
-    converter_mass_cost_coeff: 18.8
-    transformer_mass_cost_coeff: 18.8
-    hvac_mass_cost_coeff: 124.0
-    cover_mass_cost_coeff: 5.7
-    elec_connec_machine_rating_cost_coeff: 41.85
-    platforms_mass_cost_coeff: 17.1
-    tower_mass_cost_coeff: 2.9
-    controls_machine_rating_cost_coeff: 21.15
-    crane_cost: 12e3
-
 # EOF

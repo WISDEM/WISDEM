@@ -24,8 +24,8 @@ class RotorPower(Group):
 
         self.add_subsystem('powercurve',        RegulatedPowerCurve(modeling_options   = modeling_options), promotes = ['v_min', 'v_max','rated_power','omega_min','omega_max', 'control_maxTS','tsr_operational','control_pitch','drivetrainType','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
         self.add_subsystem('gust',              GustETM())
-        self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=modeling_options['servose']['n_pc_spline']))
-        self.add_subsystem('aep',               AEP(nspline=modeling_options['servose']['n_pc_spline']), promotes=['AEP'])
+        self.add_subsystem('cdf',               WeibullWithMeanCDF(nspline=modeling_options['RotorSE']['n_pc_spline']))
+        self.add_subsystem('aep',               AEP(nspline=modeling_options['RotorSE']['n_pc_spline']), promotes=['AEP'])
 
         # Connections to the Weibull CDF
         self.connect('powercurve.V_spline', 'cdf.x')
@@ -89,16 +89,16 @@ class ComputePowerCurve(ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options['modeling_options']
-        self.n_span        = n_span    = modeling_options['blade']['n_span']
+        self.n_span        = n_span    = modeling_options['RotorSE']['n_span']
         # self.n_af          = n_af      = af_init_options['n_af'] # Number of airfoils
         self.n_aoa         = n_aoa     = modeling_options['airfoils']['n_aoa']# Number of angle of attacks
         self.n_Re          = n_Re      = modeling_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = modeling_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         # self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
-        self.regulation_reg_III = modeling_options['servose']['regulation_reg_III']
+        self.regulation_reg_III = modeling_options['RotorSE']['regulation_reg_III']
         # n_span       = self.n_span = self.options['n_span']
-        self.n_pc          = modeling_options['servose']['n_pc']
-        self.n_pc_spline   = modeling_options['servose']['n_pc_spline']
+        self.n_pc          = modeling_options['RotorSE']['n_pc']
+        self.n_pc_spline   = modeling_options['RotorSE']['n_pc_spline']
         # n_aoa  = self.options['n_aoa']
         # n_re   = self.options['n_re']
         
@@ -454,8 +454,8 @@ class ComputeSplines(ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options['modeling_options']
-        self.n_pc          = modeling_options['servose']['n_pc']
-        self.n_pc_spline   = modeling_options['servose']['n_pc_spline']
+        self.n_pc          = modeling_options['RotorSE']['n_pc']
+        self.n_pc_spline   = modeling_options['RotorSE']['n_pc_spline']
         
         self.add_input('v_min',        val=0.0, units='m/s',  desc='cut-in wind speed')
         self.add_input('v_max',       val=0.0, units='m/s',  desc='cut-out wind speed')
@@ -508,7 +508,7 @@ class NoStallConstraint(ExplicitComponent):
     def setup(self):
         
         modeling_options = self.options['modeling_options']
-        self.n_span        = n_span    = modeling_options['blade']['n_span']
+        self.n_span        = n_span    = modeling_options['RotorSE']['n_span']
         self.n_aoa         = n_aoa     = modeling_options['airfoils']['n_aoa']# Number of angle of attacks
         self.n_Re          = n_Re      = modeling_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = modeling_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
@@ -615,7 +615,7 @@ def compute_P_and_eff(aeroPower, ratedPower, Omega_rpm, drivetrainType, drivetra
             linear = 0.07
             quadratic = 0.0
         else:
-            raise ValueError('The drivetrain model is not supported! Please check servose.py')
+            raise ValueError('The drivetrain model is not supported! Please check rotor_power.py')
         
         Pbar0 = aeroPower / ratedPower
 

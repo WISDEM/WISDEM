@@ -10,7 +10,7 @@ import pandas as pd
 import pytest
 
 from wisdem.test.test_orbit.data import test_weather
-from wisdem.orbit.library import extract_library_specs
+from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.phases.install import GravityBasedInstallation
 
 config = extract_library_specs("config", "moored_install")

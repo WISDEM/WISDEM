@@ -10,7 +10,8 @@ from copy import deepcopy
 
 import pytest
 
-from wisdem.orbit import ProjectManager, library
+from wisdem.orbit import ProjectManager
+from wisdem.orbit.core import library
 from wisdem.orbit.core.exceptions import LibraryItemNotFoundError
 
 config = {

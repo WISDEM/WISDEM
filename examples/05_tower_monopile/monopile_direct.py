@@ -36,29 +36,29 @@ modeling_options = {}
 modeling_options['flags'] = {}
 modeling_options['materials'] = {}
 modeling_options['monopile'] = {}
-modeling_options['tower'] = {}
-modeling_options['tower']['buckling_length'] = 30.0
+modeling_options['TowerSE'] = {}
+modeling_options['TowerSE']['buckling_length'] = 30.0
 modeling_options['flags']['monopile'] = True
 
 # safety factors
-modeling_options['tower']['gamma_f'] = 1.35
-modeling_options['tower']['gamma_m'] = 1.3
-modeling_options['tower']['gamma_n'] = 1.0
-modeling_options['tower']['gamma_b'] = 1.1
-modeling_options['tower']['gamma_fatigue'] = 1.35 * 1.3 * 1.0
+modeling_options['TowerSE']['gamma_f'] = 1.35
+modeling_options['TowerSE']['gamma_m'] = 1.3
+modeling_options['TowerSE']['gamma_n'] = 1.0
+modeling_options['TowerSE']['gamma_b'] = 1.1
+modeling_options['TowerSE']['gamma_fatigue'] = 1.35 * 1.3 * 1.0
 
 # Frame3DD options
-modeling_options['tower']['frame3dd'] = {}
-modeling_options['tower']['frame3dd']['shear'] = True
-modeling_options['tower']['frame3dd']['geom'] = True
-modeling_options['tower']['frame3dd']['tol'] = 1e-9
+modeling_options['TowerSE']['frame3dd'] = {}
+modeling_options['TowerSE']['frame3dd']['shear'] = True
+modeling_options['TowerSE']['frame3dd']['geom'] = True
+modeling_options['TowerSE']['frame3dd']['tol'] = 1e-9
 
-modeling_options['tower']['n_height'] = n_control_points
-modeling_options['tower']['n_layers'] = 1
+modeling_options['TowerSE']['n_height'] = n_control_points
+modeling_options['TowerSE']['n_layers'] = 1
 modeling_options['monopile']['n_height'] = n_control_points
 modeling_options['monopile']['n_layers'] = 1
-modeling_options['tower']['wind'] = 'PowerWind'
-modeling_options['tower']['nLC'] = n_load_cases
+modeling_options['TowerSE']['wind'] = 'PowerWind'
+modeling_options['TowerSE']['nLC'] = n_load_cases
 modeling_options['materials']['n_mat'] = n_materials
 # ---
 
@@ -164,7 +164,7 @@ prob['mu_water'] = 1.3351e-3
 prob['beta_wind'] = 0.0
 prob['hsig_wave'] = 4.52
 prob['Tsig_wave'] = 9.52
-if modeling_options['tower']['wind'] == 'PowerWind':
+if modeling_options['TowerSE']['wind'] == 'PowerWind':
     prob['shearExp'] = 0.1
 # ---
 

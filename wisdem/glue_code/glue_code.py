@@ -6,7 +6,7 @@ from wisdem.commonse.turbine_class import TurbineClass
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
-from wisdem.orbit.api.wisdem.fixed import Orbit
+from wisdem.orbit.api.wisdem import Orbit
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.commonse.turbine_constraints  import TurbineConstraints
@@ -48,10 +48,10 @@ class WT_RNTA(om.Group):
             self.add_subsystem('towerse',   TowerSE(modeling_options=modeling_options))
         if modeling_options['flags']['blade'] and modeling_options['flags']['tower']:
             self.add_subsystem('tcons',     TurbineConstraints(modeling_options = modeling_options))
-        self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=modeling_options['general']['verbosity']))
+        self.add_subsystem('tcc',       Turbine_CostsSE_2015(verbosity=modeling_options['General']['verbosity']))
 
         if modeling_options['flags']['blade']:
-            n_span  = modeling_options['blade']['n_span']
+            n_span  = modeling_options['RotorSE']['n_span']
             
             # Conncetions to ccblade
             self.connect('blade.pa.chord_param',            'ccblade.chord')
@@ -292,7 +292,7 @@ class WT_RNTA(om.Group):
             self.connect('nacelle.mb2Type',                   'drivese.bear2.bearing_type')
             self.connect('nacelle.lss_diameter',              'drivese.lss_diameter')
             self.connect('nacelle.lss_wall_thickness',        'drivese.lss_wall_thickness')
-            if modeling_options['drivetrainse']['direct']:
+            if modeling_options['DriveSE']['direct']:
                 self.connect('nacelle.nose_diameter',              'drivese.bear1.D_shaft', src_indices=[0])
                 self.connect('nacelle.nose_diameter',              'drivese.bear2.D_shaft', src_indices=[-1])
             else:
@@ -304,7 +304,7 @@ class WT_RNTA(om.Group):
             self.connect('nacelle.converter_mass_user',       'drivese.converter_mass_user')
             self.connect('nacelle.transformer_mass_user',     'drivese.transformer_mass_user')
 
-            if modeling_options['drivetrainse']['direct']:
+            if modeling_options['DriveSE']['direct']:
                 self.connect('nacelle.access_diameter',           'drivese.access_diameter') # only used in direct
                 self.connect('nacelle.nose_diameter',             'drivese.nose_diameter') # only used in direct
                 self.connect('nacelle.nose_wall_thickness',       'drivese.nose_wall_thickness') # only used in direct
@@ -418,7 +418,7 @@ class WT_RNTA(om.Group):
                     self.connect('generator.B_symax'      , 'drivese.generator.B_symax')
                     self.connect('generator.S_Nmax'      , 'drivese.generator.S_Nmax')
 
-                if modeling_options['drivetrainse']['direct']:
+                if modeling_options['DriveSE']['direct']:
                     self.connect('nacelle.nose_diameter',             'drivese.generator.D_nose', src_indices=[-1])
                     self.connect('nacelle.lss_diameter',              'drivese.generator.D_shaft', src_indices=[0])
                 else:
@@ -440,12 +440,12 @@ class WT_RNTA(om.Group):
             if modeling_options['flags']['blade']:
                 self.connect('rp.gust.V_gust',            'towerse.wind.Uref')
             self.connect('assembly.hub_height',           'towerse.wind_reference_height')  # TODO- environment
-            self.connect('foundation.height',             'towerse.wind_z0') # TODO- environment
             self.connect('env.rho_air',                   'towerse.rho_air')
             self.connect('env.mu_air',                    'towerse.mu_air')                    
             self.connect('env.shear_exp',                 'towerse.shearExp')                    
             self.connect('assembly.hub_height',           'towerse.hub_height')
-            self.connect('foundation.height',             'towerse.foundation_height')
+            if modeling_options['flags']['foundation']:
+                self.connect('foundation.height',             ['towerse.wind_z0','towerse.foundation_height']) # TODO- environment
             self.connect('tower.diameter',                'towerse.tower_outer_diameter_in')
             self.connect('tower_grid.height',             'towerse.tower_height')
             self.connect('tower_grid.s',                  'towerse.tower_s')
@@ -556,22 +556,22 @@ class WindPark(om.Group):
         opt_options     = self.options['opt_options']
 
         self.add_subsystem('wt',        WT_RNTA(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
-        if modeling_options['flags']['bos']:
-            if modeling_options['offshore']:
-                self.add_subsystem('orbit',     Orbit())
+        if modeling_options['BOS']['flag']:
+            if modeling_options['flags']['offshore']:
+                self.add_subsystem('orbit',     Orbit(floating=modeling_options['flags']['floating_platform']))
             else:
                 self.add_subsystem('landbosse', LandBOSSE())
 
         if modeling_options['flags']['blade']:
-            self.add_subsystem('financese', PlantFinance(verbosity=modeling_options['general']['verbosity']))
+            self.add_subsystem('financese', PlantFinance(verbosity=modeling_options['General']['verbosity']))
             self.add_subsystem('outputs_2_screen',  Outputs_2_Screen(modeling_options = modeling_options, opt_options = opt_options))
         
         if opt_options['opt_flag'] and opt_options['recorder']['flag']:
             self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = opt_options))
 
         # BOS inputs
-        if modeling_options['flags']['bos']:
-            if modeling_options['offshore']:
+        if modeling_options['BOS']['flag']:
+            if modeling_options['flags']['offshore']:
                 # Inputs into ORBIT
                 self.connect('configuration.rated_power',             'orbit.turbine_rating')
                 self.connect('env.water_depth',                       'orbit.site_depth')
@@ -580,14 +580,21 @@ class WindPark(om.Group):
                 self.connect('assembly.hub_height',                   'orbit.hub_height')
                 self.connect('assembly.rotor_diameter',               'orbit.turbine_rotor_diameter')     
                 self.connect('towerse.tower_mass',                    'orbit.tower_mass')
-                self.connect('towerse.monopile_mass',                 'orbit.monopile_mass')
-                self.connect('towerse.monopile_length',               'orbit.monopile_length')
-                self.connect('monopile.transition_piece_mass',        'orbit.transition_piece_mass')
+                if modeling_options['flags']['monopile']:
+                    self.connect('towerse.monopile_mass',                 'orbit.monopile_mass')
+                    self.connect('towerse.monopile_length',               'orbit.monopile_length')
+                    self.connect('monopile.transition_piece_mass',        'orbit.transition_piece_mass')
+                    self.connect('monopile.diameter',                     'orbit.monopile_diameter', src_indices=[0])
+                else:
+                    self.connect('mooring.n_lines',                       'orbit.num_mooring_lines')
+                    self.connect('mooring.line_mass',                     'orbit.mooring_line_mass', src_indices=[0])
+                    self.connect('mooring.line_diameter',                 'orbit.mooring_line_diameter', src_indices=[0])
+                    self.connect('mooring.unstretched_length',            'orbit.mooring_line_length', src_indices=[0])
+                    self.connect('mooring.anchor_mass',                   'orbit.anchor_mass')
                 self.connect('re.precomp.blade_mass',                 'orbit.blade_mass')
                 self.connect('tcc.turbine_cost_kW',                   'orbit.turbine_capex')
                 if modeling_options['flags']['nacelle']:
                     self.connect('drivese.nacelle_mass',                  'orbit.nacelle_mass')
-                self.connect('monopile.diameter',                     'orbit.monopile_diameter', src_indices=[0])
                 self.connect('wt_class.V_mean',                       'orbit.site_mean_windspeed')
                 self.connect('rp.powercurve.rated_V',                 'orbit.turbine_rated_windspeed')
                 self.connect('bos.plant_turbine_spacing',             'orbit.plant_turbine_spacing')
@@ -635,13 +642,13 @@ class WindPark(om.Group):
             self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
             
             if modeling_options['flags']['bos']:
-                if 'offshore' in modeling_options and modeling_options['offshore']:
+                if modeling_options['flags']['offshore']:
                     self.connect('orbit.total_capex_kW',    'financese.bos_per_kW')
                 else:
                     self.connect('landbosse.bos_capex_kW',  'financese.bos_per_kW')
             else:
                 self.connect('costs.bos_per_kW',  'financese.bos_per_kW')
-
+                
             # Inputs to plantfinancese from input yaml
             if modeling_options['flags']['control']:
                 self.connect('configuration.rated_power', 'financese.machine_rating')

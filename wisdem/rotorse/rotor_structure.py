@@ -14,7 +14,7 @@ class BladeCurvature(ExplicitComponent):
         self.options.declare('modeling_options')
 
     def setup(self):
-        n_span = self.options['modeling_options']['blade']['n_span']
+        n_span = self.options['modeling_options']['RotorSE']['n_span']
 
         # Inputs
         self.add_input('r',         val=np.zeros(n_span), units='m',      desc='location in blade z-coordinate')
@@ -59,7 +59,7 @@ class TotalLoads(ExplicitComponent):
         self.options.declare('modeling_options')
 
     def setup(self):
-        n_span = self.options['modeling_options']['blade']['n_span']
+        n_span = self.options['modeling_options']['RotorSE']['n_span']
 
         # Inputs
         self.add_input('r',                 val=np.zeros(n_span),   units='m',      desc='radial positions along blade going toward tip')
@@ -128,7 +128,7 @@ class RunFrame3DD(ExplicitComponent):
         self.options.declare('pbeam',default=False) # Recover old pbeam c.s. and accuracy
 
     def setup(self):
-        blade_init_options = self.options['modeling_options']['blade']
+        blade_init_options = self.options['modeling_options']['RotorSE']
         self.n_span = n_span = blade_init_options['n_span']
         self.n_freq = n_freq = blade_init_options['n_freq']
 
@@ -459,7 +459,7 @@ class DesignConstraints(ExplicitComponent):
         self.options.declare('opt_options')
 
     def setup(self):
-        blade_init_options = self.options['modeling_options']['blade']
+        blade_init_options = self.options['modeling_options']['RotorSE']
         self.n_span = n_span = blade_init_options['n_span']
         self.n_freq = n_freq = blade_init_options['n_freq']
         n_freq2 = int(n_freq/2)
@@ -536,7 +536,7 @@ class DesignConstraints(ExplicitComponent):
 
 
 #     def setup(self):
-#         blade_init_options   = self.options['modeling_options']['blade']
+#         blade_init_options   = self.options['modeling_options']['RotorSE']
 #         mat_init_options     = self.options['modeling_options']['materials']
 
 #         self.n_span          = n_span   = blade_init_options['n_span']

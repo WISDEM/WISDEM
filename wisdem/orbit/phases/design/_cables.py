@@ -12,7 +12,7 @@ from collections import Counter, OrderedDict
 import numpy as np
 from scipy.optimize import fsolve
 
-from wisdem.orbit.library import extract_library_specs
+from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.phases.design import DesignPhase
 
 

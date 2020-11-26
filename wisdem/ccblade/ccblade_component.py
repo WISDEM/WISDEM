@@ -171,7 +171,7 @@ class CCBladeLoads(ExplicitComponent):
         self.options.declare('modeling_options')
         
     def setup(self):
-        blade_init_options = self.options['modeling_options']['blade']
+        blade_init_options = self.options['modeling_options']['RotorSE']
         self.n_span        = n_span    = blade_init_options['n_span']
         af_init_options = self.options['modeling_options']['airfoils']
         self.n_aoa         = n_aoa     = af_init_options['n_aoa']  # Number of angle of attacks
@@ -321,7 +321,7 @@ class CCBladeTwist(ExplicitComponent):
     def setup(self):
         modeling_options = self.options['modeling_options']
         opt_options      = self.options['opt_options']
-        self.n_span      = n_span    = modeling_options['blade']['n_span']
+        self.n_span      = n_span    = modeling_options['RotorSE']['n_span']
         # self.n_af          = n_af      = af_init_options['n_af'] # Number of airfoils
         self.n_aoa       = n_aoa     = modeling_options['airfoils']['n_aoa']# Number of angle of attacks
         self.n_Re        = n_Re      = modeling_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
@@ -621,7 +621,7 @@ class AeroHubLoads(ExplicitComponent):
         self.options.declare('modeling_options')
 
     def setup(self):
-        blade_init_options = self.options['modeling_options']['blade']
+        blade_init_options = self.options['modeling_options']['RotorSE']
         n_blades           = self.options['modeling_options']['assembly']['number_of_blades']
 
         self.n_span        = n_span    = blade_init_options['n_span']
@@ -795,7 +795,7 @@ class CCBladeEvaluate(ExplicitComponent):
         self.options.declare('modeling_options')
         
     def setup(self):
-        blade_init_options = self.options['modeling_options']['blade']
+        blade_init_options = self.options['modeling_options']['RotorSE']
         self.n_span        = n_span    = blade_init_options['n_span']
         af_init_options = self.options['modeling_options']['airfoils']
         self.n_aoa         = n_aoa     = af_init_options['n_aoa']  # Number of angle of attacks
