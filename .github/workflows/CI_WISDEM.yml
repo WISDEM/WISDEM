@@ -26,12 +26,12 @@ jobs:
           python-version: 3.8
           environment-file: environment.yml
       
-      # Install dependencies of WISDEM specific to ubuntu
+      # Install dependencies of WISDEM specific to ubuntu (not with compilers package as that creates errors)
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         shell: pwsh
         run: |
-          conda install -y petsc4py mpi4py compilers
+          conda install -y petsc4py mpi4py
       
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
