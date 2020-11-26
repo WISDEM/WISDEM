@@ -497,11 +497,15 @@ class ErectionCost(CostModule):
         crane_component = pd.merge(crane_poly, component_max_speed, on=["Crane name", "Boom system"])
 
         # select only cranes that could lift the component
-        possible_cranes = crane_component.where(crane_component["crane_bool"] == True).dropna(thresh=1).reset_index(drop=True)
+        possible_cranes = (
+            crane_component.where(crane_component["crane_bool"] == True).dropna(thresh=1).reset_index(drop=True)
+        )
 
         # calculate travel time per cycle
         turbine_spacing = float(turbine_spacing_rotor_diameters * rotor_diameter_m * km_per_m)
-        possible_cranes["Travel time hr"] = turbine_spacing / possible_cranes["Speed of travel km per hr"] * num_turbines
+        possible_cranes["Travel time hr"] = (
+            turbine_spacing / possible_cranes["Speed of travel km per hr"] * num_turbines
+        )
 
         # calculate erection time
         possible_cranes["Operation time hr"] = (
@@ -526,7 +530,9 @@ class ErectionCost(CostModule):
         ].all()
         # if it can't then we need to remove it.
         # otherwise we end up with an option for a crane to perform an operation without lifting all of the corresponding components
-        testcranenew = possible_cranes.merge(crane_lift_entire_group_for_operation, on=["Crane name", "Boom system", "Operation"])
+        testcranenew = possible_cranes.merge(
+            crane_lift_entire_group_for_operation, on=["Crane name", "Boom system", "Operation"]
+        )
         possible_cranes = testcranenew.loc[testcranenew["crane_bool_y"]]
 
         erection_time = possible_cranes.groupby(
@@ -548,19 +554,27 @@ class ErectionCost(CostModule):
 
         # if more than one crew needed to complete within construction duration then assume that all construction happens
         # within that window and use that time frame for weather delays; if not, use the number of days calculated
-        operation_time["time_construct_bool"] = operation_time["Operational construct days"] > erection_construction_time * 30
+        operation_time["time_construct_bool"] = (
+            operation_time["Operational construct days"] > erection_construction_time * 30
+        )
         boolean_dictionary = {True: erection_construction_time * 30, False: np.NAN}
         operation_time["time_construct_bool"] = operation_time["time_construct_bool"].map(boolean_dictionary)
-        operation_time["Time construct days"] = operation_time[["time_construct_bool", "Operational construct days"]].min(axis=1)
+        operation_time["Time construct days"] = operation_time[
+            ["time_construct_bool", "Operational construct days"]
+        ].min(axis=1)
 
         # print(possible_cranes[['Crane name', 'Component', 'Operation time hr', 'Operation']])
 
         for operation, component_group in top_v_base:
-            unique_component_crane = possible_cranes.loc[possible_cranes["Operation"] == operation]["Component"].unique()
+            unique_component_crane = possible_cranes.loc[possible_cranes["Operation"] == operation][
+                "Component"
+            ].unique()
             for component in component_group["Component"]:
                 if component not in unique_component_crane:
                     raise Exception(
-                        "Error: Unable to find installation crane for {} operation and {} component".format(operation, component)
+                        "Error: Unable to find installation crane for {} operation and {} component".format(
+                            operation, component
+                        )
                     )
 
         erection_operation_time_dict = dict()
@@ -602,7 +616,9 @@ class ErectionCost(CostModule):
         num_turbines = float(self.input_dict["num_turbines"])
         turbine_spacing_rotor_diameters = self.input_dict["turbine_spacing_rotor_diameters"]
 
-        offload_cranes = project_data["crane_specs"].where(project_data["crane_specs"]["Equipment name"] == "Offload crane")
+        offload_cranes = project_data["crane_specs"].where(
+            project_data["crane_specs"]["Equipment name"] == "Offload crane"
+        )
 
         # group crane data by boom system and crane name to get distinct cranes
         crane_grouped = offload_cranes.groupby(
@@ -613,7 +629,10 @@ class ErectionCost(CostModule):
         component_group = project_data["components"]
         component_max_speed = pd.DataFrame()
         lift_max_wind_speed = self.calculate_component_lift_max_wind_speed(
-            component_group=component_group, crane_poly=crane_poly, component_max_speed=component_max_speed, operation="offload"
+            component_group=component_group,
+            crane_poly=crane_poly,
+            component_max_speed=component_max_speed,
+            operation="offload",
         )
         component_max_speed = lift_max_wind_speed["component_max_speed"]
         crane_poly = lift_max_wind_speed["crane_poly"]
@@ -623,12 +642,16 @@ class ErectionCost(CostModule):
             crane_component = pd.merge(crane_poly, component_max_speed, on=["Crane name", "Boom system"])
 
             # select only cranes that could lift the component
-            possible_cranes = crane_component.where(crane_component["crane_bool"] == True).dropna(thresh=1).reset_index(drop=True)
+            possible_cranes = (
+                crane_component.where(crane_component["crane_bool"] == True).dropna(thresh=1).reset_index(drop=True)
+            )
 
             # calculate travel time per cycle
             turbine_spacing = float(turbine_spacing_rotor_diameters * rotor_diameter_m * km_per_m)
             turbine_num = float(self.input_dict["num_turbines"])
-            possible_cranes["Travel time hr"] = turbine_spacing / possible_cranes["Speed of travel km per hr"] * num_turbines
+            possible_cranes["Travel time hr"] = (
+                turbine_spacing / possible_cranes["Speed of travel km per hr"] * num_turbines
+            )
 
             # calculate erection time
             possible_cranes["Operation time hr"] = (
@@ -659,14 +682,14 @@ class ErectionCost(CostModule):
             # if more than one crew needed to complete within construction duration
             # then assume that all construction happens within that window and use
             # that timeframe for weather delays; if not, use the number of days calculated
-            operation_time["time_construct_bool"] = turbine_num / operation_time["Operational construct days"] * 6 > float(
-                rate_of_deliveries
-            )
+            operation_time["time_construct_bool"] = turbine_num / operation_time[
+                "Operational construct days"
+            ] * 6 > float(rate_of_deliveries)
             boolean_dictionary = {True: (float(turbine_num) / (float(rate_of_deliveries) / 6)), False: np.NAN}
             operation_time["time_construct_bool"] = operation_time["time_construct_bool"].map(boolean_dictionary)
-            operation_time["Time construct days"] = operation_time[["time_construct_bool", "Operational construct days"]].max(
-                axis=1
-            )
+            operation_time["Time construct days"] = operation_time[
+                ["time_construct_bool", "Operational construct days"]
+            ].max(axis=1)
 
             possible_cranes["Operation"] = "Offload"
             operation_time["Operation"] = "Offload"
@@ -704,7 +727,14 @@ class ErectionCost(CostModule):
             A dataframe of the cranes and their lifting polygons.
         """
         crane_poly = pd.DataFrame(
-            columns=["Equipment name", "Equipment ID", "Crane name", "Boom system", "Crane capacity tonne", "Crane poly"]
+            columns=[
+                "Equipment name",
+                "Equipment ID",
+                "Crane name",
+                "Boom system",
+                "Crane capacity tonne",
+                "Crane poly",
+            ]
         )
         for (equipment_name, equipment_id, crane_name, boom_system, crane_capacity_tonne), crane in crane_grouped:
             crane = crane.reset_index(drop=True)
@@ -820,7 +850,8 @@ class ErectionCost(CostModule):
                     )
                 else:
                     point = Point(
-                        component_only["Mass tonne"], (component_only["Lift height m"] + component_only["Offload hook height m"])
+                        component_only["Mass tonne"],
+                        (component_only["Lift height m"] + component_only["Offload hook height m"]),
                     )
                 crane["Lift boolean {component}".format(component=component)] = point_in_polygon(point, polygon)
 
@@ -939,7 +970,9 @@ class ErectionCost(CostModule):
         # TODO: consider removing equipment name and crane capacity from crane_specs tab (I believe these data are unused here and they get overwritten later with equip information from equip tab)
         join_wind_operation = join_wind_operation.drop(columns=["Equipment name", "Crane capacity tonne"])
 
-        possible_crane_cost_with_equip = pd.merge(join_wind_operation, project_data["equip"], on=["Equipment ID", "Operation"])
+        possible_crane_cost_with_equip = pd.merge(
+            join_wind_operation, project_data["equip"], on=["Equipment ID", "Operation"]
+        )
 
         equip_crane_cost = pd.merge(
             possible_crane_cost_with_equip, project_data["equip_price"], on=["Equipment name", "Crane capacity tonne"]
@@ -967,7 +1000,9 @@ class ErectionCost(CostModule):
             ]
         ]
         equipment_cost_to_merge = (
-            equipment_cost_to_merge.groupby(["Crane name", "Boom system", "Equipment ID", "Operation"]).sum().reset_index()
+            equipment_cost_to_merge.groupby(["Crane name", "Boom system", "Equipment ID", "Operation"])
+            .sum()
+            .reset_index()
         )
 
         possible_crane_cost = pd.merge(
@@ -1057,7 +1092,10 @@ class ErectionCost(CostModule):
 
         # group crane spec data for mobilization
         mobilization_costs = (
-            project_data["crane_specs"].groupby(["Crane name", "Boom system"])["Mobilization cost USD"].max().reset_index()
+            project_data["crane_specs"]
+            .groupby(["Crane name", "Boom system"])["Mobilization cost USD"]
+            .max()
+            .reset_index()
         )
 
         mobilization_costs["Mobilization cost USD"] = (
@@ -1065,7 +1103,9 @@ class ErectionCost(CostModule):
         )  # for mobilization and demobilizaton
 
         # join top and base crane data with mobilization data
-        topbase_same_crane_cost = pd.merge(possible_crane_topbase_sum, mobilization_costs, on=["Crane name", "Boom system"])
+        topbase_same_crane_cost = pd.merge(
+            possible_crane_topbase_sum, mobilization_costs, on=["Crane name", "Boom system"]
+        )
 
         # compute total project cost for erection
         topbase_same_crane_cost["Total cost USD"] = (
@@ -1205,7 +1245,9 @@ class ErectionCost(CostModule):
         )
 
         # increase management crews by rate of construction (scale if greater than 10/wk)
-        management_crews.loc[management_crews["Crew name"] == "Management - rate construction", "Number of workers"] = round(
+        management_crews.loc[
+            management_crews["Crew name"] == "Management - rate construction", "Number of workers"
+        ] = round(
             management_crews.loc[management_crews["Crew name"] == "Management - rate construction", "Number of workers"]
             * np.ceil(deliveries_per_week / 10)
         )
@@ -1230,10 +1272,14 @@ class ErectionCost(CostModule):
         management_crews["hourly_costs"] = management_crews["Hourly rate for all workers"] * (
             duration_hours * (normal_labor_rate + overtime_percentage * overtime_multiplier)
         )
-        management_crews["crew_level_total_costs"] = management_crews["per_diem_costs"] + management_crews["hourly_costs"]
+        management_crews["crew_level_total_costs"] = (
+            management_crews["per_diem_costs"] + management_crews["hourly_costs"]
+        )
 
         # Aggregate and sum
-        management_crew_cost_grouped = management_crews.groupby(["Crew type ID", "Operation", "Crew name"]).sum().reset_index()
+        management_crew_cost_grouped = (
+            management_crews.groupby(["Crew type ID", "Operation", "Crew name"]).sum().reset_index()
+        )
 
         # Total management cost
         total_management_cost = management_crews["crew_level_total_costs"].sum()
@@ -1274,7 +1320,9 @@ class ErectionCost(CostModule):
         self.output_dict["cranes_wind_delay_withoffload"] = crane_specs_with_weather
 
         average_wind_delay = (
-            crane_specs_with_weather.groupby(["Crane name", "Boom system", "Operation", "Equipment ID"])["Wind delay percent"]
+            crane_specs_with_weather.groupby(["Crane name", "Boom system", "Operation", "Equipment ID"])[
+                "Wind delay percent"
+            ]
             .mean()
             .reset_index()
         )
@@ -1318,9 +1366,11 @@ class ErectionCost(CostModule):
             selected_detailed_data["Total time per op with weather"] / self.input_dict["num_turbines"]
         )
 
-        management_crews_cost, management_crews_cost_grouped, total_management_cost = self.calculate_management_crews_cost(
-            selected_detailed_data
-        )
+        (
+            management_crews_cost,
+            management_crews_cost_grouped,
+            total_management_cost,
+        ) = self.calculate_management_crews_cost(selected_detailed_data)
 
         crane_choice = selected_detailed_data[["Crane name", "Boom system", "Operation"]].drop_duplicates()
 
@@ -1332,14 +1382,19 @@ class ErectionCost(CostModule):
 
         crane_cost_details = crane_data_output.where(crane_data_output["variable"].str.contains("cost")).dropna()
         crane_cost_details = crane_cost_details.rename(
-            index=str, columns={"crane_boom_operation_concat": "Operation ID", "variable": "Type of cost", "value": "Cost"}
+            index=str,
+            columns={"crane_boom_operation_concat": "Operation ID", "variable": "Type of cost", "value": "Cost"},
         )
 
         subtotal_per_diem_labor_management_USD = management_crews_cost["per_diem_costs"].sum()
         subtotal_hourly_labor_management_USD = management_crews_cost["hourly_costs"].sum()
 
-        self.output_dict["labor_cost_management"] = subtotal_per_diem_labor_management_USD + subtotal_hourly_labor_management_USD
-        self.output_dict["labor_cost_non_management"] = selected_detailed_data["Labor cost USD without management"].sum()
+        self.output_dict["labor_cost_management"] = (
+            subtotal_per_diem_labor_management_USD + subtotal_hourly_labor_management_USD
+        )
+        self.output_dict["labor_cost_non_management"] = selected_detailed_data[
+            "Labor cost USD without management"
+        ].sum()
         self.output_dict["labor_cost_total"] = (
             self.output_dict["labor_cost_management"] + self.output_dict["labor_cost_non_management"]
         )

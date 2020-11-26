@@ -21,7 +21,9 @@ class TestUtilization(unittest.TestCase):
         self.assertAlmostEqual(Iyy, 193.16666, 4)
         self.assertAlmostEqual(Ixx, 1051.37631867699, 4)
 
-        area, y_cg, Ixx, Iyy = util._TBeamProperties(h_web * myones, t_web * myones, w_flange * myones, t_flange * myones)
+        area, y_cg, Ixx, Iyy = util._TBeamProperties(
+            h_web * myones, t_web * myones, w_flange * myones, t_flange * myones
+        )
         npt.assert_equal(area, 62.0 * myones)
         npt.assert_almost_equal(y_cg, 8.6129 * myones, 1e-4)
         npt.assert_almost_equal(Iyy, 193.16666 * myones, 1e-4)
@@ -205,7 +207,20 @@ class TestUtilization(unittest.TestCase):
             _,
             _,
         ) = util.shellBuckling_withStiffeners(
-            P, sigma_ax, R_od, t_wall, h_section, h_web, t_web, w_flange, t_flange, L_stiffener, E, nu, sigma_y, loading="radial"
+            P,
+            sigma_ax,
+            R_od,
+            t_wall,
+            h_section,
+            h_web,
+            t_web,
+            w_flange,
+            t_flange,
+            L_stiffener,
+            E,
+            nu,
+            sigma_y,
+            loading="radial",
         )
 
         # npt.assert_almost_equal(web_compactness, 24.1/22.4 * np.ones((3,)), decimal=3)

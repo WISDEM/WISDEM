@@ -15,4 +15,7 @@ else:
     rank = 0
 
 if rank == 0:
-    print("RUN COMPLETED. RESULTS ARE AVAILABLE HERE: " + os.path.join(mydir, analysis_options["general"]["folder_output"]))
+    print(
+        "RUN COMPLETED. RESULTS ARE AVAILABLE HERE: "
+        + os.path.join(mydir, analysis_options["general"]["folder_output"])
+    )

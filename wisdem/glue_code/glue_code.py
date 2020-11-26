@@ -36,7 +36,9 @@ class WT_RNTA(om.Group):
 
         # Analysis components
         self.add_subsystem(
-            "wt_init", WindTurbineOntologyOpenMDAO(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"]
+            "wt_init",
+            WindTurbineOntologyOpenMDAO(modeling_options=modeling_options, opt_options=opt_options),
+            promotes=["*"],
         )
         if modeling_options["flags"]["blade"]:
             self.add_subsystem(
@@ -46,7 +48,9 @@ class WT_RNTA(om.Group):
             self.add_subsystem("re", RotorElasticity(modeling_options=modeling_options, opt_options=opt_options))
             self.add_subsystem("rp", RotorPower(modeling_options=modeling_options))  # Aero analysis
             self.add_subsystem("stall_check", NoStallConstraint(modeling_options=modeling_options))
-            self.add_subsystem("rs", RotorStructure(modeling_options=modeling_options, opt_options=opt_options, freq_run=False))
+            self.add_subsystem(
+                "rs", RotorStructure(modeling_options=modeling_options, opt_options=opt_options, freq_run=False)
+            )
         if modeling_options["flags"]["nacelle"]:
             self.add_subsystem("drivese", DrivetrainSE(modeling_options=modeling_options, n_dlcs=1))
         if modeling_options["flags"]["tower"]:
@@ -147,7 +151,8 @@ class WT_RNTA(om.Group):
             self.connect("rp.gust.V_gust", ["rs.aero_gust.V_load", "rs.aero_hub_loads.V_load"])
             self.connect("env.shear_exp", ["rp.powercurve.shearExp", "rs.aero_gust.shearExp"])
             self.connect(
-                "rp.powercurve.rated_Omega", ["rs.Omega_load", "rs.tot_loads_gust.aeroloads_Omega", "rs.constr.rated_Omega"]
+                "rp.powercurve.rated_Omega",
+                ["rs.Omega_load", "rs.tot_loads_gust.aeroloads_Omega", "rs.constr.rated_Omega"],
             )
             self.connect("rp.powercurve.rated_pitch", ["rs.pitch_load", "rs.tot_loads_gust.aeroloads_pitch"])
 
@@ -314,7 +319,9 @@ class WT_RNTA(om.Group):
                 self.connect("nacelle.access_diameter", "drivese.access_diameter")  # only used in direct
                 self.connect("nacelle.nose_diameter", "drivese.nose_diameter")  # only used in direct
                 self.connect("nacelle.nose_wall_thickness", "drivese.nose_wall_thickness")  # only used in direct
-                self.connect("nacelle.bedplate_wall_thickness", "drivese.bedplate_wall_thickness")  # only used in direct
+                self.connect(
+                    "nacelle.bedplate_wall_thickness", "drivese.bedplate_wall_thickness"
+                )  # only used in direct
             else:
                 self.connect("nacelle.hss_length", "drivese.L_hss")  # only used in geared
                 self.connect("nacelle.hss_diameter", "drivese.hss_diameter")  # only used in geared
@@ -323,7 +330,9 @@ class WT_RNTA(om.Group):
                 self.connect("nacelle.planet_numbers", "drivese.planet_numbers")  # only used in geared
                 self.connect("nacelle.gear_configuration", "drivese.gear_configuration")  # only used in geared
                 self.connect("nacelle.bedplate_flange_width", "drivese.bedplate_flange_width")  # only used in geared
-                self.connect("nacelle.bedplate_flange_thickness", "drivese.bedplate_flange_thickness")  # only used in geared
+                self.connect(
+                    "nacelle.bedplate_flange_thickness", "drivese.bedplate_flange_thickness"
+                )  # only used in geared
                 self.connect("nacelle.bedplate_web_thickness", "drivese.bedplate_web_thickness")  # only used in geared
 
             self.connect("hub.hub_material", "drivese.hub_material")
@@ -570,7 +579,9 @@ class WindPark(om.Group):
 
         if modeling_options["flags"]["blade"]:
             self.add_subsystem("financese", PlantFinance(verbosity=modeling_options["General"]["verbosity"]))
-            self.add_subsystem("outputs_2_screen", Outputs_2_Screen(modeling_options=modeling_options, opt_options=opt_options))
+            self.add_subsystem(
+                "outputs_2_screen", Outputs_2_Screen(modeling_options=modeling_options, opt_options=opt_options)
+            )
 
         if opt_options["opt_flag"] and opt_options["recorder"]["flag"]:
             self.add_subsystem("conv_plots", Convergence_Trends_Opt(opt_options=opt_options))

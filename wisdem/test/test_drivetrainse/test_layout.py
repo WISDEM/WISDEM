@@ -114,7 +114,9 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["L_lss"], 3.0)
         self.assertAlmostEqual(self.outputs["L_drive"], 4.5)
         self.assertAlmostEqual(self.outputs["L_bedplate"], self.inputs["overhang"] - (2 + self.outputs["L_drive"]) * ct)
-        self.assertAlmostEqual(self.outputs["H_bedplate"], self.inputs["drive_height"] - (2 + self.outputs["L_drive"]) * st)
+        self.assertAlmostEqual(
+            self.outputs["H_bedplate"], self.inputs["drive_height"] - (2 + self.outputs["L_drive"]) * st
+        )
         self.assertAlmostEqual(self.outputs["D_bearing1"], 2.3 - 0.05 - 1.33)
         self.assertAlmostEqual(self.outputs["D_bearing2"], 2.3 - 0.05 - 1.33)
 
@@ -203,7 +205,9 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["L_lss"], 3.0)
         self.assertAlmostEqual(self.outputs["L_drive"], 4.5)
         self.assertAlmostEqual(self.outputs["L_bedplate"], self.inputs["overhang"] - (2 + self.outputs["L_drive"]) * ct)
-        self.assertAlmostEqual(self.outputs["H_bedplate"], self.inputs["drive_height"] - (2 + self.outputs["L_drive"]) * st)
+        self.assertAlmostEqual(
+            self.outputs["H_bedplate"], self.inputs["drive_height"] - (2 + self.outputs["L_drive"]) * st
+        )
         self.assertAlmostEqual(self.outputs["D_bearing1"], 2.3 - 0.05 - 1.33)
         self.assertAlmostEqual(self.outputs["D_bearing2"], 2.3 - 0.05 - 1.33)
 
@@ -320,7 +324,8 @@ class TestGearedLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["L_lss"], 3.1)
         self.assertAlmostEqual(self.outputs["L_drive"], 6.95)
         npt.assert_almost_equal(
-            self.outputs["s_drive"], np.array([0.0, 0.625, 1.25, 2.0, 2.75, 3.3, 3.85, 3.95, 4.95, 5.95, 6.45, 6.95]) - ds
+            self.outputs["s_drive"],
+            np.array([0.0, 0.625, 1.25, 2.0, 2.75, 3.3, 3.85, 3.95, 4.95, 5.95, 6.45, 6.95]) - ds,
         )
         self.assertAlmostEqual(self.outputs["s_generator"], 0.625 - ds)
         self.assertAlmostEqual(self.outputs["s_gearbox"], 3.3 - ds)
@@ -340,7 +345,8 @@ class TestGearedLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["L_lss"], 3.1)
         self.assertAlmostEqual(self.outputs["L_drive"], 6.95)
         npt.assert_almost_equal(
-            self.outputs["s_drive"], np.array([0.0, 0.625, 1.25, 2.0, 2.75, 3.3, 3.85, 3.95, 4.95, 5.95, 6.45, 6.95]) - ds
+            self.outputs["s_drive"],
+            np.array([0.0, 0.625, 1.25, 2.0, 2.75, 3.3, 3.85, 3.95, 4.95, 5.95, 6.45, 6.95]) - ds,
         )
         self.assertAlmostEqual(self.outputs["s_generator"], 0.625 - ds)
         self.assertAlmostEqual(self.outputs["s_gearbox"], 3.3 - ds)

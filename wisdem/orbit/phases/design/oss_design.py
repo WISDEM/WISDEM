@@ -127,7 +127,9 @@ class OffshoreSubstationDesign(DesignPhase):
         turbine_rating = self.config["turbine"]["turbine_rating"]
 
         self.num_mpt = np.ceil(num_turbines * turbine_rating / (250 * self.num_substations))
-        self.mpt_rating = round(((num_turbines * turbine_rating * 1.15) / (self.num_mpt * self.num_substations)) / 10.0) * 10.0
+        self.mpt_rating = (
+            round(((num_turbines * turbine_rating * 1.15) / (self.num_mpt * self.num_substations)) / 10.0) * 10.0
+        )
 
     def calc_mpt_cost(self):
         """
@@ -237,7 +239,9 @@ class OffshoreSubstationDesign(DesignPhase):
 
         substructure_mass = 0.4 * self.topside_mass
         substructure_pile_mass = 8 * substructure_mass ** 0.5574
-        self.substructure_cost = substructure_mass * oss_substructure_cost_rate + substructure_pile_mass * oss_pile_cost_rate
+        self.substructure_cost = (
+            substructure_mass * oss_substructure_cost_rate + substructure_pile_mass * oss_pile_cost_rate
+        )
 
         self.substructure_mass = substructure_mass + substructure_pile_mass
 

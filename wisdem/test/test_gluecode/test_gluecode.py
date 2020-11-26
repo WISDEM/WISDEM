@@ -20,7 +20,9 @@ class TestRegression(unittest.TestCase):
         ## NREL 5MW
         fname_wt_input = test_dir + "nrel5mw.yaml"
 
-        wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
+        wt_opt, modeling_options, opt_options = run_wisdem(
+            fname_wt_input, fname_modeling_options, fname_analysis_options
+        )
 
         self.assertAlmostEqual(wt_opt["re.precomp.blade_mass"][0], 16403.682326940743, 2)
         self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 24.0801229107, 2)
@@ -29,7 +31,9 @@ class TestRegression(unittest.TestCase):
     def test15MW(self):
         ## IEA 15MW
         fname_wt_input = test_dir + "IEA-15-240-RWT.yaml"
-        wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
+        wt_opt, modeling_options, opt_options = run_wisdem(
+            fname_wt_input, fname_modeling_options, fname_analysis_options
+        )
 
         self.assertAlmostEqual(wt_opt["re.precomp.blade_mass"][0], 73310.0985877902, 1)
         self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 78.0371305939, 1)

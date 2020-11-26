@@ -53,13 +53,19 @@ class Manager:
             self.input_dict["weather_window"] = filtered_weather_window
             self.input_dict["weather_data_user_input"] = weather_data_user_input
 
-            foundation_cost = FoundationCost(input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name)
+            foundation_cost = FoundationCost(
+                input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name
+            )
             foundation_cost.run_module()
 
-            roads_cost = SitePreparationCost(input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name)
+            roads_cost = SitePreparationCost(
+                input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name
+            )
             roads_cost.run_module()
 
-            substation_cost = SubstationCost(input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name)
+            substation_cost = SubstationCost(
+                input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name
+            )
             substation_cost.run_module()
 
             transdist_cost = GridConnectionCost(
@@ -67,7 +73,9 @@ class Manager:
             )
             transdist_cost.run_module()
 
-            collection_cost = ArraySystem(input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name)
+            collection_cost = ArraySystem(
+                input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name
+            )
             collection_cost.run_module()
 
             development_cost = DevelopmentCost(
@@ -76,7 +84,9 @@ class Manager:
             development_cost.run_module()
 
             erection_cost_output_dict = dict()
-            erection_cost = ErectionCost(input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name)
+            erection_cost = ErectionCost(
+                input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name
+            )
             erection_cost.run_module()
             self.output_dict["erection_cost"] = erection_cost_output_dict
 
@@ -97,7 +107,9 @@ class Manager:
                 amount_shorter_than_input_construction_time = (
                     self.input_dict["construct_duration"] - self.output_dict["siteprep_construction_months"]
                 )
-                road_cost.loc[index, "Cost USD"] = other["Cost USD"] - amount_shorter_than_input_construction_time * 55500
+                road_cost.loc[index, "Cost USD"] = (
+                    other["Cost USD"] - amount_shorter_than_input_construction_time * 55500
+                )
                 self.output_dict["total_road_cost"] = road_cost
 
             total_costs = self.output_dict["total_collection_cost"]
@@ -111,7 +123,9 @@ class Manager:
             self.input_dict["project_value_usd"] = total_costs.sum(numeric_only=True)[0]
             self.input_dict["foundation_cost_usd"] = self.output_dict["total_foundation_cost"].sum(numeric_only=True)[0]
 
-            management_cost = ManagementCost(input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name)
+            management_cost = ManagementCost(
+                input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name
+            )
             management_cost.run_module()
 
             return 0

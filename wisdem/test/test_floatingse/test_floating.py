@@ -100,7 +100,9 @@ class TestOC3Mass(unittest.TestCase):
             (1, nsection)
         )  # Shell thickness at each section node (linear lofting between) [m]
 
-        prob["main.bulkhead_thickness"] = 0.05 * np.ones(4)  # Locations/thickness of internal bulkheads at section interfaces [m]
+        prob["main.bulkhead_thickness"] = 0.05 * np.ones(
+            4
+        )  # Locations/thickness of internal bulkheads at section interfaces [m]
         prob["main.bulkhead_locations"] = np.array(
             [0.0, 0.37692308, 0.89230769, 1.0]
         )  # Locations/thickness of internal bulkheads at section interfaces [m]

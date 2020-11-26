@@ -16,7 +16,14 @@ from wisdem.commonse.wind_wave_drag import AeroHydroLoads, CylinderWindDrag, Cyl
 from wisdem.commonse.environment import LinearWaves, TowerSoil, PowerWind, LogWind
 from wisdem.commonse.cross_sections import CylindricalShellProperties
 from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, interp_with_deriv, sectionalInterp
-from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, CylinderFrame3DD, NFREQ, get_nfull, RIGID
+from wisdem.commonse.vertical_cylinder import (
+    CylinderDiscretization,
+    CylinderMass,
+    CylinderFrame3DD,
+    NFREQ,
+    get_nfull,
+    RIGID,
+)
 
 import wisdem.commonse.utilization_constraints as util_con
 
@@ -179,12 +186,16 @@ class DiscretizationYAML(om.ExplicitComponent):
 
         if n_height_mon > 0:
             # Last monopile point and first tower point are the same
-            outputs["tower_section_height"] = np.r_[np.diff(h_mon * inputs["monopile_s"]), np.diff(h_tow * inputs["tower_s"])]
+            outputs["tower_section_height"] = np.r_[
+                np.diff(h_mon * inputs["monopile_s"]), np.diff(h_tow * inputs["tower_s"])
+            ]
             outputs["outfitting_factor"] = np.r_[
                 inputs["monopile_outfitting_factor"] * np.ones(n_height_mon - 1),
                 inputs["tower_outfitting_factor"] * np.ones(n_height_tow - 1),
             ]
-            outputs["tower_outer_diameter"] = np.r_[inputs["monopile_outer_diameter_in"], inputs["tower_outer_diameter_in"][1:]]
+            outputs["tower_outer_diameter"] = np.r_[
+                inputs["monopile_outer_diameter_in"], inputs["tower_outer_diameter_in"][1:]
+            ]
 
             # Combine layers into one structure
             layer_mat = []
@@ -536,7 +547,8 @@ class TowerMass(om.ExplicitComponent):
             inputs["transition_piece_height"], inputs["z_full"], np.r_[0.0, np.cumsum(inputs["cylinder_mass"])]
         )
         outputs["monopile_cost"] = (
-            inputs["cylinder_cost"] * outputs["monopile_mass"] / inputs["cylinder_mass"].sum() + inputs["transition_piece_cost"]
+            inputs["cylinder_cost"] * outputs["monopile_mass"] / inputs["cylinder_mass"].sum()
+            + inputs["transition_piece_cost"]
         )
         outputs["monopile_mass"] += inputs["transition_piece_mass"] + inputs["gravity_foundation_mass"]
         outputs["monopile_length"] = inputs["transition_piece_height"] - inputs["z_full"][0]
@@ -597,7 +609,9 @@ class TurbineMass(om.ExplicitComponent):
         self.add_output("turbine_center_of_mass", val=np.zeros(3), units="m")
         self.add_output("turbine_I_base", np.zeros(6), units="kg*m**2")
 
-        self.declare_partials("turbine_I_base", ["hub_height", "rna_I", "rna_cg", "rna_mass", "tower_I_base"], method="fd")
+        self.declare_partials(
+            "turbine_I_base", ["hub_height", "rna_I", "rna_cg", "rna_mass", "tower_I_base"], method="fd"
+        )
         self.declare_partials(
             "turbine_center_of_mass",
             ["hub_height", "monopile_mass", "rna_cg", "rna_mass", "tower_center_of_mass", "tower_mass"],
@@ -945,7 +959,10 @@ class TowerPostFrame(om.ExplicitComponent):
         # Material properties
         self.add_input("E_full", np.zeros(nFull - 1), units="N/m**2", desc="modulus of elasticity")
         self.add_input(
-            "G_full", np.zeros(nFull - 1), units="Pa", desc="Isotropic shear modulus of the materials along the tower sections."
+            "G_full",
+            np.zeros(nFull - 1),
+            units="Pa",
+            desc="Isotropic shear modulus of the materials along the tower sections.",
         )
         self.add_input(
             "rho_full", np.zeros(nFull - 1), units="kg/m**3", desc="Density of the materials along the tower sections."
@@ -989,11 +1006,17 @@ class TowerPostFrame(om.ExplicitComponent):
             val=np.zeros((NFREQ2, 5)),
             desc="6-degree polynomial coefficients of mode shapes in the x-direction (x^2..x^6, no linear or constant term)",
         )
-        self.add_input("x_mode_freqs", val=np.zeros(NFREQ2), desc="Frequencies associated with mode shapes in the x-direction")
-        self.add_input("y_mode_freqs", val=np.zeros(NFREQ2), desc="Frequencies associated with mode shapes in the y-direction")
+        self.add_input(
+            "x_mode_freqs", val=np.zeros(NFREQ2), desc="Frequencies associated with mode shapes in the x-direction"
+        )
+        self.add_input(
+            "y_mode_freqs", val=np.zeros(NFREQ2), desc="Frequencies associated with mode shapes in the y-direction"
+        )
 
         # outputs
-        self.add_output("structural_frequencies", np.zeros(NFREQ), units="Hz", desc="First and second natural frequency")
+        self.add_output(
+            "structural_frequencies", np.zeros(NFREQ), units="Hz", desc="First and second natural frequency"
+        )
         self.add_output(
             "fore_aft_modes",
             np.zeros((NFREQ2, 5)),
@@ -1005,10 +1028,14 @@ class TowerPostFrame(om.ExplicitComponent):
             desc="6-degree polynomial coefficients of mode shapes in the tower side-side direction (x^2..x^6, no linear or constant term)",
         )
         self.add_output(
-            "fore_aft_freqs", np.zeros(NFREQ2), desc="Frequencies associated with mode shapes in the tower fore-aft direction"
+            "fore_aft_freqs",
+            np.zeros(NFREQ2),
+            desc="Frequencies associated with mode shapes in the tower fore-aft direction",
         )
         self.add_output(
-            "side_side_freqs", np.zeros(NFREQ2), desc="Frequencies associated with mode shapes in the tower side-side direction"
+            "side_side_freqs",
+            np.zeros(NFREQ2),
+            desc="Frequencies associated with mode shapes in the tower side-side direction",
         )
         self.add_output("top_deflection", 0.0, units="m", desc="Deflection of tower top in yaw-aligned +x direction")
         self.add_output(
@@ -1066,9 +1093,13 @@ class TowerPostFrame(om.ExplicitComponent):
         self.add_output("sc_offst", np.zeros(N_beam), units="m", desc="offset from the sectional shear center")
         self.add_output("tc_offst", np.zeros(N_beam), units="m", desc="offset from the sectional tension center")
 
-        self.declare_partials("global_buckling", ["Fz", "Mxx", "Myy", "d_full", "sigma_y_full", "t_full", "z_full"], method="fd")
         self.declare_partials(
-            "shell_buckling", ["axial_stress", "d_full", "hoop_stress", "shear_stress", "sigma_y_full", "t_full"], method="fd"
+            "global_buckling", ["Fz", "Mxx", "Myy", "d_full", "sigma_y_full", "t_full", "z_full"], method="fd"
+        )
+        self.declare_partials(
+            "shell_buckling",
+            ["axial_stress", "d_full", "hoop_stress", "shear_stress", "sigma_y_full", "t_full"],
+            method="fd",
         )
         self.declare_partials("stress", ["axial_stress", "hoop_stress", "shear_stress", "sigma_y_full"], method="fd")
         self.declare_partials("structural_frequencies", ["freqs"], method="fd")
@@ -1105,7 +1136,13 @@ class TowerPostFrame(om.ExplicitComponent):
 
         # Compute distributed beam properties
         outputs = self.compute_distprop(
-            outputs, inputs["z_full"], inputs["d_full"], inputs["t_full"], inputs["E_full"], inputs["G_full"], inputs["rho_full"]
+            outputs,
+            inputs["z_full"],
+            inputs["d_full"],
+            inputs["t_full"],
+            inputs["E_full"],
+            inputs["G_full"],
+            inputs["rho_full"],
         )
 
         # Tower top deflection
@@ -1124,7 +1161,9 @@ class TowerPostFrame(om.ExplicitComponent):
         # global buckling
         tower_height = inputs["z_full"][-1] - inputs["z_full"][0]
         M = np.sqrt(inputs["Mxx"] ** 2 + inputs["Myy"] ** 2)
-        outputs["global_buckling"] = util_con.bucklingGL(d, t, inputs["Fz"], M, tower_height, E, sigma_y, gamma_f, gamma_b)
+        outputs["global_buckling"] = util_con.bucklingGL(
+            d, t, inputs["Fz"], M, tower_height, E, sigma_y, gamma_f, gamma_b
+        )
 
         # fatigue
         N_DEL = 365.0 * 24.0 * 3600.0 * inputs["life"] * np.ones(len(t))
@@ -1145,7 +1184,12 @@ class TowerPostFrame(om.ExplicitComponent):
         # rho = density of tower material, kg/m**3
 
         towdata = np.c_[
-            z_in, np.r_[d_in], np.r_[thk_in[0], thk_in], np.r_[E_in[0], E_in], np.r_[G_in[0], G_in], np.r_[rho_in[0], rho_in]
+            z_in,
+            np.r_[d_in],
+            np.r_[thk_in[0], thk_in],
+            np.r_[E_in[0], E_in],
+            np.r_[G_in[0], G_in],
+            np.r_[rho_in[0], rho_in],
         ]
         rowadd = []
         for k in range(towdata.shape[0]):
@@ -1189,7 +1233,9 @@ class TowerPostFrame(om.ExplicitComponent):
             I = np.pi / 4.0 * (a ** 4.0 - b ** 4.0)
 
             outputs["mass_den"][i] = A * rho[i]
-            outputs["foreaft_iner"][i] = outputs["sideside_iner"][i] = 0.5 * outputs["mass_den"][i] * (a ** 2 + b ** 2) / 2.0
+            outputs["foreaft_iner"][i] = outputs["sideside_iner"][i] = (
+                0.5 * outputs["mass_den"][i] * (a ** 2 + b ** 2) / 2.0
+            )
             outputs["foreaft_stff"][i] = outputs["sideside_stff"][i] = E[i] * I
             outputs["tor_stff"][i] = 1.0 / 2.0 * np.pi * (a ** 4.0 - b ** 4) * G[i]
             outputs["axial_stff"][i] = A * E[i]
@@ -1224,7 +1270,9 @@ class TowerLeanSE(om.Group):
         n_layers_tow = toweropt["n_layers"]
         n_height_mon = 0 if not monopile else self.options["modeling_options"]["monopile"]["n_height"]
         n_layers_mon = 0 if not monopile else self.options["modeling_options"]["monopile"]["n_layers"]
-        n_height = n_height_tow if n_height_mon == 0 else n_height_tow + n_height_mon - 1  # Should have one overlapping point
+        n_height = (
+            n_height_tow if n_height_mon == 0 else n_height_tow + n_height_mon - 1
+        )  # Should have one overlapping point
         nFull = get_nfull(n_height)
 
         n_mat = self.options["modeling_options"]["materials"]["n_mat"]
@@ -1281,7 +1329,9 @@ class TowerLeanSE(om.Group):
         self.add_subsystem("tgeometry", TowerDiscretization(n_height=n_height), promotes=["*"])
 
         self.add_subsystem(
-            "cm", CylinderMass(nPoints=nFull), promotes=["z_full", "d_full", "t_full", "labor_cost_rate", "painting_cost_rate"]
+            "cm",
+            CylinderMass(nPoints=nFull),
+            promotes=["z_full", "d_full", "t_full", "labor_cost_rate", "painting_cost_rate"],
         )
         self.add_subsystem(
             "tm",
@@ -1308,7 +1358,13 @@ class TowerLeanSE(om.Group):
         self.add_subsystem(
             "gc",
             util_con.GeometricConstraints(nPoints=n_height),
-            promotes=["constr_taper", "constr_d_to_t", "slope", ("d", "tower_outer_diameter"), ("t", "tower_wall_thickness")],
+            promotes=[
+                "constr_taper",
+                "constr_d_to_t",
+                "slope",
+                ("d", "tower_outer_diameter"),
+                ("t", "tower_wall_thickness"),
+            ],
         )
 
         self.add_subsystem(
@@ -1360,7 +1416,9 @@ class TowerSE(om.Group):
         frame3dd_opt = toweropt["frame3dd"]
         n_height_tow = toweropt["n_height"]
         n_height_mon = 0 if not monopile else self.options["modeling_options"]["monopile"]["n_height"]
-        n_height = n_height_tow if n_height_mon == 0 else n_height_tow + n_height_mon - 1  # Should have one overlapping point
+        n_height = (
+            n_height_tow if n_height_mon == 0 else n_height_tow + n_height_mon - 1
+        )  # Should have one overlapping point
         nFull = get_nfull(n_height)
         n_mat = self.options["modeling_options"]["materials"]["n_mat"]
 
@@ -1384,7 +1442,9 @@ class TowerSE(om.Group):
         # Load baseline discretization
         self.add_subsystem("geom", TowerLeanSE(modeling_options=self.options["modeling_options"]), promotes=["*"])
         self.add_subsystem("props", CylindricalShellProperties(nFull=nFull))
-        self.add_subsystem("soil", TowerSoil(), promotes=[("G", "G_soil"), ("nu", "nu_soil"), ("depth", "suctionpile_depth")])
+        self.add_subsystem(
+            "soil", TowerSoil(), promotes=[("G", "G_soil"), ("nu", "nu_soil"), ("depth", "suctionpile_depth")]
+        )
 
         # Connections for geometry and mass
         self.connect("d_full", "props.d")
@@ -1417,7 +1477,13 @@ class TowerSE(om.Group):
                 self.add_subsystem(
                     "wave" + lc,
                     LinearWaves(nPoints=nFull),
-                    promotes=[("z_floor", "foundation_height"), "rho_water", "hsig_wave", "Tsig_wave", ("z_surface", "wind_z0")],
+                    promotes=[
+                        ("z_floor", "foundation_height"),
+                        "rho_water",
+                        "hsig_wave",
+                        "Tsig_wave",
+                        ("z_surface", "wind_z0"),
+                    ],
                 )
                 self.add_subsystem(
                     "waveLoads" + lc,
@@ -1444,7 +1510,12 @@ class TowerSE(om.Group):
             self.add_subsystem(
                 "tower" + lc,
                 CylinderFrame3DD(
-                    npts=nFull, nK=1, nMass=3, nPL=1, frame3dd_opt=frame3dd_opt, buckling_length=toweropt["buckling_length"]
+                    npts=nFull,
+                    nK=1,
+                    nMass=3,
+                    nPL=1,
+                    frame3dd_opt=frame3dd_opt,
+                    buckling_length=toweropt["buckling_length"],
                 ),
             )
             self.add_subsystem(
@@ -1453,7 +1524,9 @@ class TowerSE(om.Group):
                 promotes=["life", "z_full", "d_full", "t_full", "rho_full", "E_full", "G_full", "sigma_y_full"],
             )
 
-            self.connect("z_full", ["wind" + lc + ".z", "windLoads" + lc + ".z", "distLoads" + lc + ".z", "tower" + lc + ".z"])
+            self.connect(
+                "z_full", ["wind" + lc + ".z", "windLoads" + lc + ".z", "distLoads" + lc + ".z", "tower" + lc + ".z"]
+            )
             self.connect("d_full", ["windLoads" + lc + ".d", "tower" + lc + ".d"])
             self.connect("t_full", "tower" + lc + ".t")
             if monopile:

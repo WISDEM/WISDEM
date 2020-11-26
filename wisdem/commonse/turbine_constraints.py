@@ -212,7 +212,9 @@ class TipDeflectionConstraint(om.ExplicitComponent):
             )
             r_interp = 0.0
         else:
-            d_interp, ddinterp_dzinterp, ddinterp_dtowerz, ddinterp_dtowerd = interp_with_deriv(z_interp, z_tower, d_tower)
+            d_interp, ddinterp_dzinterp, ddinterp_dtowerz, ddinterp_dtowerd = interp_with_deriv(
+                z_interp, z_tower, d_tower
+            )
             r_interp = 0.5 * d_interp
             drinterp_dzinterp = 0.5 * ddinterp_dzinterp
             drinterp_dtowerz = 0.5 * ddinterp_dtowerz

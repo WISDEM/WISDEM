@@ -317,7 +317,9 @@ class Polar(object):
         alpha_num = abs(int((-180.0 - cm1_alpha) / 10.0 - 1))
         alpha_cm1 = np.linspace(-180.0, cm1_alpha, alpha_num)
         alpha_cm2 = np.linspace(cm2_alpha, 180.0, int((180.0 - cm2_alpha) / 10.0 + 1))
-        alpha_cm = np.concatenate((alpha_cm1, self.alpha, alpha_cm2))  # Specific alpha values are needed for cm function to work
+        alpha_cm = np.concatenate(
+            (alpha_cm1, self.alpha, alpha_cm2)
+        )  # Specific alpha values are needed for cm function to work
         cm1 = np.zeros(len(alpha_cm1))
         cm2 = np.zeros(len(alpha_cm2))
         cm_ext = np.concatenate((cm1, self.cm, cm2))
@@ -381,11 +383,14 @@ class Polar(object):
             else:
                 if alpha[i] > 0:
                     x = cmCoef * np.tan(np.radians(alpha[i]) - np.pi / 2) + 0.25
-                    cm_new = self.cm0 - x * (cl_ext[i] * np.cos(np.radians(alpha[i])) + cd_ext[i] * np.sin(np.radians(alpha[i])))
+                    cm_new = self.cm0 - x * (
+                        cl_ext[i] * np.cos(np.radians(alpha[i])) + cd_ext[i] * np.sin(np.radians(alpha[i]))
+                    )
                 else:
                     x = cmCoef * np.tan(-np.radians(alpha[i]) - np.pi / 2) + 0.25
                     cm_new = -(
-                        self.cm0 - x * (-cl_ext[i] * np.cos(-np.radians(alpha[i])) + cd_ext[i] * np.sin(-np.radians(alpha[i])))
+                        self.cm0
+                        - x * (-cl_ext[i] * np.cos(-np.radians(alpha[i])) + cd_ext[i] * np.sin(-np.radians(alpha[i])))
                     )
         else:
             if alpha[i] == 165:
@@ -652,7 +657,9 @@ class Polar(object):
         i_max = np.argmax(cl)
         if i_max == len(iwindow):
             raise Exception(
-                "Max cl is at the window boundary ([{};{}]), increase window (TODO automatically)".format(window[0], window[1])
+                "Max cl is at the window boundary ([{};{}]), increase window (TODO automatically)".format(
+                    window[0], window[1]
+                )
             )
             pass
         cl_max = cl[i_max]
@@ -854,7 +861,9 @@ def thicknessinterp_from_one_set(thickness, polarList, polarThickness):
     tmax_in = np.max(thickness)
     tmax_pol = np.max(polarThickness)
     if (tmax_in > 1.2 and tmax_pol <= 1.2) or (tmax_in <= 1.2 and tmax_pol > 1.2):
-        raise Exception("Thicknesses of polars and input thickness need to be both in percent ([0-120]) or in fraction ([0-1.2])")
+        raise Exception(
+            "Thicknesses of polars and input thickness need to be both in percent ([0-120]) or in fraction ([0-1.2])"
+        )
 
     # sorting thickness
     Isort = np.argsort(polarThickness)
@@ -941,7 +950,9 @@ def _find_alpha0(alpha, coeff, window):
         )
     elif len(alpha_zc) == 0:
         raise Exception(
-            "Cannot find alpha0, no zero crossing of Coeff in the range of alpha values: [{} {}] ".format(window[0], window[1])
+            "Cannot find alpha0, no zero crossing of Coeff in the range of alpha values: [{} {}] ".format(
+                window[0], window[1]
+            )
         )
 
     alpha0 = alpha_zc[0]

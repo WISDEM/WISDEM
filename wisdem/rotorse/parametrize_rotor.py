@@ -14,8 +14,12 @@ class ParametrizeBladeAero(ExplicitComponent):
         blade_init_options = self.options["blade_init_options"]
         self.opt_options = self.options["opt_options"]
         n_span = blade_init_options["n_span"]
-        self.n_opt_twist = n_opt_twist = self.opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
-        self.n_opt_chord = n_opt_chord = self.opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]
+        self.n_opt_twist = n_opt_twist = self.opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"][
+            "n_opt"
+        ]
+        self.n_opt_chord = n_opt_chord = self.opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"][
+            "n_opt"
+        ]
 
         # Inputs
         self.add_input(
@@ -82,8 +86,12 @@ class ParametrizeBladeAero(ExplicitComponent):
         spline = PchipInterpolator
 
         if self.opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["flag"] == True:
-            lb_twist = np.array(self.opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["lower_bound"])
-            ub_twist = np.array(self.opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["upper_bound"])
+            lb_twist = np.array(
+                self.opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["lower_bound"]
+            )
+            ub_twist = np.array(
+                self.opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["upper_bound"]
+            )
             twist_opt_gain_nd = inputs["twist_opt_gain"]
             twist_upper = np.ones(self.n_opt_twist) * ub_twist
             twist_lower = np.ones(self.n_opt_twist) * lb_twist
@@ -114,12 +122,12 @@ class ParametrizeBladeStruct(ExplicitComponent):
         self.opt_options = opt_options = self.options["opt_options"]
         self.n_span = n_span = blade_init_options["n_span"]
         self.n_layers = n_layers = blade_init_options["n_layers"]
-        self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"][
-            "n_opt"
-        ]
-        self.n_opt_spar_cap_ps = n_opt_spar_cap_ps = opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ps"][
-            "n_opt"
-        ]
+        self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options["optimization_variables"]["blade"]["structure"][
+            "spar_cap_ss"
+        ]["n_opt"]
+        self.n_opt_spar_cap_ps = n_opt_spar_cap_ps = opt_options["optimization_variables"]["blade"]["structure"][
+            "spar_cap_ps"
+        ]["n_opt"]
 
         # Inputs
         self.add_input(
@@ -175,10 +183,17 @@ class ParametrizeBladeStruct(ExplicitComponent):
             if layer_name[i] == spar_cap_ss_name:
                 opt_gain_m_interp = np.interp(inputs["s"], outputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt_gain"])
             elif layer_name[i] == spar_cap_ps_name:
-                if self.opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"] == False:
-                    opt_gain_m_interp = np.interp(inputs["s"], outputs["s_opt_spar_cap_ps"], inputs["spar_cap_ps_opt_gain"])
+                if (
+                    self.opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
+                    == False
+                ):
+                    opt_gain_m_interp = np.interp(
+                        inputs["s"], outputs["s_opt_spar_cap_ps"], inputs["spar_cap_ps_opt_gain"]
+                    )
                 else:
-                    opt_gain_m_interp = np.interp(inputs["s"], outputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt_gain"])
+                    opt_gain_m_interp = np.interp(
+                        inputs["s"], outputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt_gain"]
+                    )
             else:
                 opt_gain_m_interp = np.ones(self.n_span)
 

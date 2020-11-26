@@ -419,7 +419,10 @@ class CCBladeTwist(ExplicitComponent):
         )
         self.add_input("chord", val=np.zeros(n_span), units="m", desc="chord length at each section")
         self.add_input(
-            "twist", val=np.zeros(n_span), units="rad", desc="twist angle at each section (positive decreases angle of attack)"
+            "twist",
+            val=np.zeros(n_span),
+            units="rad",
+            desc="twist angle at each section (positive decreases angle of attack)",
         )
         self.add_input("airfoils_aoa", val=np.zeros((n_aoa)), units="deg", desc="angle of attack grid for polars")
         self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="lift coefficients, spanwise")
@@ -464,13 +467,18 @@ class CCBladeTwist(ExplicitComponent):
         self.add_discrete_input("tiploss", val=True, desc="include Prandtl tip loss model")
         self.add_discrete_input("hubloss", val=True, desc="include Prandtl hub loss model")
         self.add_discrete_input(
-            "wakerotation", val=True, desc="include effect of wake rotation (i.e., tangential induction factor is nonzero)"
+            "wakerotation",
+            val=True,
+            desc="include effect of wake rotation (i.e., tangential induction factor is nonzero)",
         )
         self.add_discrete_input("usecd", val=True, desc="use drag coefficient in computing induction factors")
 
         # Outputs
         self.add_output(
-            "theta", val=np.zeros(n_span), units="rad", desc="Twist angle at each section (positive decreases angle of attack)"
+            "theta",
+            val=np.zeros(n_span),
+            units="rad",
+            desc="Twist angle at each section (positive decreases angle of attack)",
         )
         self.add_output("CP", val=0.0, desc="Rotor power coefficient")
         self.add_output("CM", val=0.0, desc="Blade flapwise moment coefficient")
@@ -482,9 +490,15 @@ class CCBladeTwist(ExplicitComponent):
         n_opt = opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
         self.add_output("cl_n_opt", val=np.zeros(n_opt), desc="Lift coefficients along blade span")
         self.add_output("cd_n_opt", val=np.zeros(n_opt), desc="Drag coefficients along blade span")
-        self.add_output("Px_b", val=np.zeros(n_span), units="N/m", desc="Distributed loads in blade-aligned x-direction")
-        self.add_output("Py_b", val=np.zeros(n_span), units="N/m", desc="Distributed loads in blade-aligned y-direction")
-        self.add_output("Pz_b", val=np.zeros(n_span), units="N/m", desc="Distributed loads in blade-aligned z-direction")
+        self.add_output(
+            "Px_b", val=np.zeros(n_span), units="N/m", desc="Distributed loads in blade-aligned x-direction"
+        )
+        self.add_output(
+            "Py_b", val=np.zeros(n_span), units="N/m", desc="Distributed loads in blade-aligned y-direction"
+        )
+        self.add_output(
+            "Pz_b", val=np.zeros(n_span), units="N/m", desc="Distributed loads in blade-aligned z-direction"
+        )
         self.add_output("Px_af", val=np.zeros(n_span), units="N/m", desc="Distributed loads in airfoil x-direction")
         self.add_output("Py_af", val=np.zeros(n_span), units="N/m", desc="Distributed loads in airfoil y-direction")
         self.add_output("Pz_af", val=np.zeros(n_span), units="N/m", desc="Distributed loads in airfoil z-direction")
@@ -988,8 +1002,12 @@ class AeroHubLoads(ExplicitComponent):
         M_hub_tot = np.zeros((3,))
         # Convert from blade to hub c.s.
         for i_blade in range(B):
-            myF = DirectionVector.fromArray(outputs["Fxyz_blade_aero"][i_blade, :]).azimuthToHub(azimuth_blades[i_blade])
-            myM = DirectionVector.fromArray(outputs["Mxyz_blade_aero"][i_blade, :]).azimuthToHub(azimuth_blades[i_blade])
+            myF = DirectionVector.fromArray(outputs["Fxyz_blade_aero"][i_blade, :]).azimuthToHub(
+                azimuth_blades[i_blade]
+            )
+            myM = DirectionVector.fromArray(outputs["Mxyz_blade_aero"][i_blade, :]).azimuthToHub(
+                azimuth_blades[i_blade]
+            )
 
             F_hub_tot += myF.toArray().flatten()
             M_hub_tot += myM.toArray().flatten()

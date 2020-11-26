@@ -1395,13 +1395,17 @@ class Outputs2Screen(om.ExplicitComponent):
             print("################################################")
             print("Computation of costs of the main turbine components from TurbineCostSE")
             print(
-                "Blade cost              %.3f k USD       mass %.3f kg" % (inputs["blade_cost"] * 1.0e-003, inputs["blade_mass"])
+                "Blade cost              %.3f k USD       mass %.3f kg"
+                % (inputs["blade_cost"] * 1.0e-003, inputs["blade_mass"])
             )
             print(
                 "Pitch system cost       %.3f k USD       mass %.3f kg"
                 % (inputs["pitch_system_cost"] * 1.0e-003, inputs["pitch_system_mass"])
             )
-            print("Hub cost                %.3f k USD       mass %.3f kg" % (inputs["hub_cost"] * 1.0e-003, inputs["hub_mass"]))
+            print(
+                "Hub cost                %.3f k USD       mass %.3f kg"
+                % (inputs["hub_cost"] * 1.0e-003, inputs["hub_mass"])
+            )
             print(
                 "Spinner cost            %.3f k USD       mass %.3f kg"
                 % (inputs["spinner_cost"] * 1.0e-003, inputs["spinner_mass"])
@@ -1412,7 +1416,10 @@ class Outputs2Screen(om.ExplicitComponent):
                 % (inputs["rotor_cost"] * 1.0e-003, inputs["rotor_mass_tcc"])
             )
             print("")
-            print("LSS cost                %.3f k USD       mass %.3f kg" % (inputs["lss_cost"] * 1.0e-003, inputs["lss_mass"]))
+            print(
+                "LSS cost                %.3f k USD       mass %.3f kg"
+                % (inputs["lss_cost"] * 1.0e-003, inputs["lss_mass"])
+            )
             print(
                 "Main bearing cost       %.3f k USD       mass %.3f kg"
                 % (inputs["main_bearing_cost"] * 1.0e-003, inputs["main_bearing_mass"])
@@ -1421,9 +1428,13 @@ class Outputs2Screen(om.ExplicitComponent):
                 "Gearbox cost            %.3f k USD       mass %.3f kg"
                 % (inputs["gearbox_cost"] * 1.0e-003, inputs["gearbox_mass"])
             )
-            print("HSS cost                %.3f k USD       mass %.3f kg" % (inputs["hss_cost"] * 1.0e-003, inputs["hss_mass"]))
             print(
-                "Brake cost              %.3f k USD       mass %.3f kg" % (inputs["brake_cost"] * 1.0e-003, inputs["brake_mass"])
+                "HSS cost                %.3f k USD       mass %.3f kg"
+                % (inputs["hss_cost"] * 1.0e-003, inputs["hss_mass"])
+            )
+            print(
+                "Brake cost              %.3f k USD       mass %.3f kg"
+                % (inputs["brake_cost"] * 1.0e-003, inputs["brake_mass"])
             )
             print(
                 "Generator cost          %.3f k USD       mass %.3f kg"
@@ -1437,9 +1448,13 @@ class Outputs2Screen(om.ExplicitComponent):
                 "Yaw system cost         %.3f k USD       mass %.3f kg"
                 % (inputs["yaw_system_cost"] * 1.0e-003, inputs["yaw_mass"])
             )
-            print("HVAC cost               %.3f k USD       mass %.3f kg" % (inputs["hvac_cost"] * 1.0e-003, inputs["hvac_mass"]))
             print(
-                "Nacelle cover cost      %.3f k USD       mass %.3f kg" % (inputs["cover_cost"] * 1.0e-003, inputs["cover_mass"])
+                "HVAC cost               %.3f k USD       mass %.3f kg"
+                % (inputs["hvac_cost"] * 1.0e-003, inputs["hvac_mass"])
+            )
+            print(
+                "Nacelle cover cost      %.3f k USD       mass %.3f kg"
+                % (inputs["cover_cost"] * 1.0e-003, inputs["cover_mass"])
             )
             print("Electr connection cost  %.3f k USD" % (inputs["elec_cost"] * 1.0e-003))
             print("Controls cost           %.3f k USD" % (inputs["controls_cost"] * 1.0e-003))
@@ -1459,7 +1474,8 @@ class Outputs2Screen(om.ExplicitComponent):
             )
             print("")
             print(
-                "Tower cost              %.3f k USD       mass %.3f kg" % (inputs["tower_cost"] * 1.0e-003, inputs["tower_mass"])
+                "Tower cost              %.3f k USD       mass %.3f kg"
+                % (inputs["tower_cost"] * 1.0e-003, inputs["tower_mass"])
             )
             print("------------------------------------------------")
             print("------------------------------------------------")

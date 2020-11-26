@@ -110,7 +110,9 @@ class FloatingSE(om.Group):
         )
 
         # Run Semi Geometry for interfaces
-        self.add_subsystem("sg", SubstructureGeometry(n_height_main=n_height_main, n_height_off=n_height_off), promotes=["*"])
+        self.add_subsystem(
+            "sg", SubstructureGeometry(n_height_main=n_height_main, n_height_off=n_height_off), promotes=["*"]
+        )
 
         # Next run MapMooring
         self.add_subsystem("mm", MapMooring(modeling_options=opt), promotes=["*"])
@@ -118,7 +120,9 @@ class FloatingSE(om.Group):
         # Add in the connecting truss
         self.add_subsystem(
             "load",
-            Loading(n_height_main=n_height_main, n_height_off=n_height_off, n_height_tow=n_height_tow, modeling_options=opt),
+            Loading(
+                n_height_main=n_height_main, n_height_off=n_height_off, n_height_tow=n_height_tow, modeling_options=opt
+            ),
             promotes=["*"],
         )
 

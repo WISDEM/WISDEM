@@ -38,10 +38,14 @@ class TestGearbox(unittest.TestCase):
         print("eep", self.outputs["stage_ratios"], self.outputs["gearbox_mass"])
         self.assertAlmostEqual(np.prod(self.outputs["stage_ratios"]), self.inputs["gear_ratio"], 1)
         # self.assertEqual(self.outputs['gearbox_mass'], 0.0)
-        npt.assert_equal(self.outputs["gearbox_I"][0], 0.5 * self.outputs["gearbox_mass"] * 0.25 * self.outputs["D_gearbox"] ** 2)
+        npt.assert_equal(
+            self.outputs["gearbox_I"][0], 0.5 * self.outputs["gearbox_mass"] * 0.25 * self.outputs["D_gearbox"] ** 2
+        )
         npt.assert_almost_equal(
             self.outputs["gearbox_I"][1:],
-            self.outputs["gearbox_mass"] * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2) / 12.0,
+            self.outputs["gearbox_mass"]
+            * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
+            / 12.0,
         )
         self.assertEqual(self.outputs["L_gearbox"], 0.012 * 126.0)
         self.assertEqual(self.outputs["D_gearbox"], 0.75 * 0.015 * 126.0)
@@ -54,10 +58,14 @@ class TestGearbox(unittest.TestCase):
         self.assertAlmostEqual(np.prod(self.outputs["stage_ratios"]), self.inputs["gear_ratio"], 1)
         self.assertEqual(self.outputs["stage_ratios"][-1], 3.0)
         # self.assertEqual(self.outputs['gearbox_mass'], 0.0)
-        npt.assert_equal(self.outputs["gearbox_I"][0], 0.5 * self.outputs["gearbox_mass"] * 0.25 * self.outputs["D_gearbox"] ** 2)
+        npt.assert_equal(
+            self.outputs["gearbox_I"][0], 0.5 * self.outputs["gearbox_mass"] * 0.25 * self.outputs["D_gearbox"] ** 2
+        )
         npt.assert_almost_equal(
             self.outputs["gearbox_I"][1:],
-            self.outputs["gearbox_mass"] * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2) / 12.0,
+            self.outputs["gearbox_mass"]
+            * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
+            / 12.0,
         )
         self.assertEqual(self.outputs["L_gearbox"], 0.012 * 126.0)
         self.assertEqual(self.outputs["D_gearbox"], 0.75 * 0.015 * 126.0)
@@ -70,10 +78,14 @@ class TestGearbox(unittest.TestCase):
         self.assertAlmostEqual(np.prod(self.outputs["stage_ratios"]), self.inputs["gear_ratio"], 1)
         self.assertEqual(self.outputs["stage_ratios"][-1], 2.0)
         # self.assertEqual(self.outputs['gearbox_mass'], 0.0)
-        npt.assert_equal(self.outputs["gearbox_I"][0], 0.5 * self.outputs["gearbox_mass"] * 0.25 * self.outputs["D_gearbox"] ** 2)
+        npt.assert_equal(
+            self.outputs["gearbox_I"][0], 0.5 * self.outputs["gearbox_mass"] * 0.25 * self.outputs["D_gearbox"] ** 2
+        )
         npt.assert_almost_equal(
             self.outputs["gearbox_I"][1:],
-            self.outputs["gearbox_mass"] * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2) / 12.0,
+            self.outputs["gearbox_mass"]
+            * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
+            / 12.0,
         )
         self.assertEqual(self.outputs["L_gearbox"], 0.012 * 126.0)
         self.assertEqual(self.outputs["D_gearbox"], 0.75 * 0.015 * 126.0)
@@ -86,10 +98,14 @@ class TestGearbox(unittest.TestCase):
         print("eep_4-1", self.outputs["stage_ratios"], self.outputs["gearbox_mass"])
         self.assertAlmostEqual(np.prod(self.outputs["stage_ratios"]), self.inputs["gear_ratio"], 1)
         # self.assertEqual(self.outputs['gearbox_mass'], 0.0)
-        npt.assert_equal(self.outputs["gearbox_I"][0], 0.5 * self.outputs["gearbox_mass"] * 0.25 * self.outputs["D_gearbox"] ** 2)
+        npt.assert_equal(
+            self.outputs["gearbox_I"][0], 0.5 * self.outputs["gearbox_mass"] * 0.25 * self.outputs["D_gearbox"] ** 2
+        )
         npt.assert_almost_equal(
             self.outputs["gearbox_I"][1:],
-            self.outputs["gearbox_mass"] * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2) / 12.0,
+            self.outputs["gearbox_mass"]
+            * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
+            / 12.0,
         )
         self.assertEqual(self.outputs["L_gearbox"], 0.012 * 126.0)
         self.assertEqual(self.outputs["D_gearbox"], 0.75 * 0.015 * 126.0)
@@ -102,10 +118,14 @@ class TestGearbox(unittest.TestCase):
         print("eep_4-2", self.outputs["stage_ratios"], self.outputs["gearbox_mass"])
         self.assertAlmostEqual(np.prod(self.outputs["stage_ratios"]), self.inputs["gear_ratio"], 1)
         # self.assertEqual(self.outputs['gearbox_mass'], 0.0)
-        npt.assert_equal(self.outputs["gearbox_I"][0], 0.5 * self.outputs["gearbox_mass"] * 0.25 * self.outputs["D_gearbox"] ** 2)
+        npt.assert_equal(
+            self.outputs["gearbox_I"][0], 0.5 * self.outputs["gearbox_mass"] * 0.25 * self.outputs["D_gearbox"] ** 2
+        )
         npt.assert_almost_equal(
             self.outputs["gearbox_I"][1:],
-            self.outputs["gearbox_mass"] * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2) / 12.0,
+            self.outputs["gearbox_mass"]
+            * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
+            / 12.0,
         )
         self.assertEqual(self.outputs["L_gearbox"], 0.012 * 126.0)
         self.assertEqual(self.outputs["D_gearbox"], 0.75 * 0.015 * 126.0)
@@ -117,10 +137,14 @@ class TestGearbox(unittest.TestCase):
         print("epp", self.outputs["stage_ratios"], self.outputs["gearbox_mass"])
         self.assertAlmostEqual(np.prod(self.outputs["stage_ratios"]), self.inputs["gear_ratio"], 1)
         # self.assertEqual(self.outputs['gearbox_mass'], 0.0)
-        npt.assert_equal(self.outputs["gearbox_I"][0], 0.5 * self.outputs["gearbox_mass"] * 0.25 * self.outputs["D_gearbox"] ** 2)
+        npt.assert_equal(
+            self.outputs["gearbox_I"][0], 0.5 * self.outputs["gearbox_mass"] * 0.25 * self.outputs["D_gearbox"] ** 2
+        )
         npt.assert_almost_equal(
             self.outputs["gearbox_I"][1:],
-            self.outputs["gearbox_mass"] * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2) / 12.0,
+            self.outputs["gearbox_mass"]
+            * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
+            / 12.0,
         )
         self.assertEqual(self.outputs["L_gearbox"], 0.012 * 126.0)
         self.assertEqual(self.outputs["D_gearbox"], 0.75 * 0.015 * 126.0)
@@ -134,10 +158,14 @@ class TestGearbox(unittest.TestCase):
         print("large", self.outputs["stage_ratios"], self.outputs["gearbox_mass"])
         self.assertAlmostEqual(np.prod(self.outputs["stage_ratios"]), self.inputs["gear_ratio"], 1)
         # self.assertEqual(self.outputs['gearbox_mass'], 0.0)
-        npt.assert_equal(self.outputs["gearbox_I"][0], 0.5 * self.outputs["gearbox_mass"] * 0.25 * self.outputs["D_gearbox"] ** 2)
+        npt.assert_equal(
+            self.outputs["gearbox_I"][0], 0.5 * self.outputs["gearbox_mass"] * 0.25 * self.outputs["D_gearbox"] ** 2
+        )
         npt.assert_almost_equal(
             self.outputs["gearbox_I"][1:],
-            self.outputs["gearbox_mass"] * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2) / 12.0,
+            self.outputs["gearbox_mass"]
+            * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
+            / 12.0,
         )
         self.assertEqual(self.outputs["L_gearbox"], 0.012 * 200.0)
         self.assertEqual(self.outputs["D_gearbox"], 0.75 * 0.015 * 200.0)

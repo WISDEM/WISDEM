@@ -142,6 +142,8 @@ def install_topside(vessel, topside, **kwargs):
         yield cure_transition_piece_grout(vessel, **kwargs)
 
     else:
-        raise Exception(f"Transition piece connection type '{connection}'" "not recognized. Must be 'bolted' or 'grouted'.")
+        raise Exception(
+            f"Transition piece connection type '{connection}'" "not recognized. Must be 'bolted' or 'grouted'."
+        )
 
     yield vessel.task("Jackdown", jackdown_time, constraints=vessel.transit_limits, **kwargs)

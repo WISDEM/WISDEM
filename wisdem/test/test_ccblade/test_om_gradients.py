@@ -38,7 +38,9 @@ class Test(unittest.TestCase):
         prob = om.Problem()
 
         # Load in airfoil and blade shape inputs for NREL 5MW
-        npzfile = np.load(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "smaller_dataset.npz", allow_pickle=True)
+        npzfile = np.load(
+            os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "smaller_dataset.npz", allow_pickle=True
+        )
 
         n_span = npzfile["r"].size
         n_aoa = npzfile["aoa"].size
@@ -127,7 +129,9 @@ class Test(unittest.TestCase):
 
         # Add some arbitrary inputs
         # Load in airfoil and blade shape inputs for NREL 5MW
-        npzfile = np.load(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "smaller_dataset.npz", allow_pickle=True)
+        npzfile = np.load(
+            os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "smaller_dataset.npz", allow_pickle=True
+        )
         n_span = npzfile["r"].size
         n_aoa = npzfile["aoa"].size
         n_Re = npzfile["Re"].size
@@ -215,7 +219,9 @@ class Test(unittest.TestCase):
 
         # Add some arbitrary inputs
         # Load in airfoil and blade shape inputs for NREL 5MW
-        npzfile = np.load(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "smaller_dataset.npz", allow_pickle=True)
+        npzfile = np.load(
+            os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "smaller_dataset.npz", allow_pickle=True
+        )
         n_span = npzfile["r"].size
         n_aoa = npzfile["aoa"].size
         n_Re = npzfile["Re"].size
@@ -308,7 +314,9 @@ class Test(unittest.TestCase):
 
         # Add some arbitrary inputs
         # Load in airfoil and blade shape inputs for NREL 5MW
-        npzfile = np.load(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "smaller_dataset.npz", allow_pickle=True)
+        npzfile = np.load(
+            os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "smaller_dataset.npz", allow_pickle=True
+        )
         n_span = npzfile["r"].size
         n_aoa = npzfile["aoa"].size
         n_Re = npzfile["Re"].size

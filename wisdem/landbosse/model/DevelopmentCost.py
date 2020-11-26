@@ -73,7 +73,9 @@ class DevelopmentCost(CostModule):
         result = []
         module = type(self).__name__
         for _, row in self.output_dict["total_development_cost"].iterrows():
-            dashed_row = "{} - {} - {}".format(row["Type of cost"], row["Phase of construction"], math.ceil(row["Cost USD"]))
+            dashed_row = "{} - {} - {}".format(
+                row["Type of cost"], row["Phase of construction"], math.ceil(row["Cost USD"])
+            )
             result.append(
                 {
                     "unit": "",

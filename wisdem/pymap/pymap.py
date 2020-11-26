@@ -212,8 +212,22 @@ libexec.map_jacobian_dzdh.argtypes = [MapData_Type, c_int, c_char_p, POINTER(c_i
 libexec.map_jacobian_dzdv.argtypes = [MapData_Type, c_int, c_char_p, POINTER(c_int)]
 
 
-libexec.map_get_fairlead_force_2d.argtypes = [POINTER(c_double), POINTER(c_double), MapData_Type, c_int, c_char_p, POINTER(c_int)]
-libexec.map_get_anchor_force_2d.argtypes = [POINTER(c_double), POINTER(c_double), MapData_Type, c_int, c_char_p, POINTER(c_int)]
+libexec.map_get_fairlead_force_2d.argtypes = [
+    POINTER(c_double),
+    POINTER(c_double),
+    MapData_Type,
+    c_int,
+    c_char_p,
+    POINTER(c_int),
+]
+libexec.map_get_anchor_force_2d.argtypes = [
+    POINTER(c_double),
+    POINTER(c_double),
+    MapData_Type,
+    c_int,
+    c_char_p,
+    POINTER(c_int),
+]
 
 libexec.map_get_fairlead_force_3d.argtypes = [
     POINTER(c_double),
@@ -338,7 +352,13 @@ class pyMAP(object):
         self.f_type_initout = self.CreateInitoutState()
         libexec.set_init_to_null(self.f_type_init, self.status, pointer(self.ierr))
         libexec.map_initialize_msqs_base(
-            self.f_type_u, self.f_type_p, self.f_type_x, self.f_type_z, self.f_type_d, self.f_type_y, self.f_type_initout
+            self.f_type_u,
+            self.f_type_p,
+            self.f_type_x,
+            self.f_type_z,
+            self.f_type_d,
+            self.f_type_y,
+            self.f_type_initout,
         )
         self.summary_file("outlist.map.sum")
 
@@ -534,7 +554,9 @@ class pyMAP(object):
         """
         H_ref = c_double(-999.9)
         V_ref = c_double(-999.9)
-        libexec.map_get_fairlead_force_2d(pointer(H_ref), pointer(V_ref), self.f_type_d, index, self.status, pointer(self.ierr))
+        libexec.map_get_fairlead_force_2d(
+            pointer(H_ref), pointer(V_ref), self.f_type_d, index, self.status, pointer(self.ierr)
+        )
         return H_ref.value, V_ref.value
 
     def get_fairlead_force_3d(self, index):
@@ -575,7 +597,9 @@ class pyMAP(object):
         """
         Ha_ref = c_double(-999.9)
         Va_ref = c_double(-999.9)
-        libexec.map_get_anchor_force_2d(pointer(Ha_ref), pointer(Va_ref), self.f_type_d, index, self.status, pointer(self.ierr))
+        libexec.map_get_anchor_force_2d(
+            pointer(Ha_ref), pointer(Va_ref), self.f_type_d, index, self.status, pointer(self.ierr)
+        )
         return Ha_ref.value, Va_ref.value
 
     def get_anchor_force_3d(self, index):
@@ -664,7 +688,14 @@ class pyMAP(object):
         """
         array = POINTER(POINTER(c_double))
         array = libexec.map_linearize_matrix(
-            self.f_type_u, self.f_type_p, self.f_type_d, self.f_type_y, self.f_type_z, epsilon, pointer(self.ierr), self.status
+            self.f_type_u,
+            self.f_type_p,
+            self.f_type_d,
+            self.f_type_y,
+            self.f_type_z,
+            epsilon,
+            pointer(self.ierr),
+            self.status,
         )
         if self.ierr.value != 0:
             print(self.status.value)

@@ -151,7 +151,8 @@ class TestSubs(unittest.TestCase):
         self.assertEqual(self.outputs["metacentric_height"], meta_expect)
         self.assertEqual(self.outputs["offset_force_ratio"], 26.0 / 1e2)
         self.assertAlmostEqual(
-            self.outputs["heel_moment_ratio"], (wind_fact * 5e4) / (1e4 * g * 1e3 * np.sin(np.deg2rad(10)) * np.abs(meta_expect))
+            self.outputs["heel_moment_ratio"],
+            (wind_fact * 5e4) / (1e4 * g * 1e3 * np.sin(np.deg2rad(10)) * np.abs(meta_expect)),
         )
 
         self.inputs["number_of_offset_columns"] = 0
@@ -163,7 +164,8 @@ class TestSubs(unittest.TestCase):
         self.assertEqual(self.outputs["metacentric_height"], meta_expect)
         self.assertEqual(self.outputs["offset_force_ratio"], 26.0 / 1e2)
         self.assertAlmostEqual(
-            self.outputs["heel_moment_ratio"], (wind_fact * 5e4) / (1e4 * g * 1e3 * np.sin(np.deg2rad(10)) * np.abs(meta_expect))
+            self.outputs["heel_moment_ratio"],
+            (wind_fact * 5e4) / (1e4 * g * 1e3 * np.sin(np.deg2rad(10)) * np.abs(meta_expect)),
         )
 
         self.inputs["fairlead"] = 1.0
@@ -211,7 +213,9 @@ class TestSubs(unittest.TestCase):
         K_expect[3:5] = rho_w * g * self.outputs["metacentric_height"] * 1e4  # Total displacement
         npt.assert_almost_equal(self.outputs["hydrostatic_stiffness"], K_expect)
 
-        T_expect = 2 * np.pi * np.sqrt((M_expect + A_expect) / (1e-6 + K_expect + np.diag(self.inputs["mooring_stiffness"])))
+        T_expect = (
+            2 * np.pi * np.sqrt((M_expect + A_expect) / (1e-6 + K_expect + np.diag(self.inputs["mooring_stiffness"])))
+        )
         npt.assert_almost_equal(self.outputs["rigid_body_periods"], T_expect)
 
     def testMargins(self):

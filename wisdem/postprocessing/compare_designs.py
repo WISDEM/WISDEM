@@ -24,7 +24,14 @@ from wisdem.glue_code.runWISDEM import run_wisdem
 
 
 def create_all_plots(
-    list_of_yamls, list_of_yaml_labels, modeling_options, analysis_options, folder_output, show_plots, font_size, extension
+    list_of_yamls,
+    list_of_yaml_labels,
+    modeling_options,
+    analysis_options,
+    folder_output,
+    show_plots,
+    font_size,
+    extension,
 ):
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
@@ -49,7 +56,9 @@ def create_all_plots(
 
     axtw.plot(
         s_opt_twist,
-        np.array(analysis_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["lower_bound"]) * 180.0 / np.pi,
+        np.array(analysis_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["lower_bound"])
+        * 180.0
+        / np.pi,
         ":o",
         color=colors[idx + 1],
         markersize=3,
@@ -57,7 +66,9 @@ def create_all_plots(
     )
     axtw.plot(
         s_opt_twist,
-        np.array(analysis_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["upper_bound"]) * 180.0 / np.pi,
+        np.array(analysis_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["upper_bound"])
+        * 180.0
+        / np.pi,
         ":o",
         color=colors[idx + 1],
         markersize=3,
@@ -158,7 +169,8 @@ def create_all_plots(
             )
             axsc.plot(
                 s_opt_sc,
-                np.array(analysis_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["min_gain"]) * sc_init,
+                np.array(analysis_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["min_gain"])
+                * sc_init,
                 ":o",
                 color=colors[idx + 1],
                 markersize=3,
@@ -166,7 +178,8 @@ def create_all_plots(
             )
             axsc.plot(
                 s_opt_sc,
-                np.array(analysis_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["max_gain"]) * sc_init,
+                np.array(analysis_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["max_gain"])
+                * sc_init,
                 ":o",
                 color=colors[idx + 1],
                 markersize=3,
@@ -443,10 +456,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("yaml_files", nargs="*", type=str, help="Specify the yaml filenames to be compared.")
     parser.add_argument(
-        "--modeling_options", nargs="?", type=str, default=fname_modeling_options, help="Specify the modeling options yaml."
+        "--modeling_options",
+        nargs="?",
+        type=str,
+        default=fname_modeling_options,
+        help="Specify the modeling options yaml.",
     )
     parser.add_argument(
-        "--analysis_options", nargs="?", type=str, default=fname_analysis_options, help="Specify the analysis options yaml."
+        "--analysis_options",
+        nargs="?",
+        type=str,
+        default=fname_analysis_options,
+        help="Specify the analysis options yaml.",
     )
     parser.add_argument("--labels", nargs="*", type=str, default=None, help="Specify the labels for the yaml files.")
 
@@ -497,14 +518,23 @@ def main():
     for yaml_filename in yaml_filenames:
         print()
         print(f"Running WISDEM for {yaml_filename}.")
-        wt_opt, modeling_options, analysis_options = run_wisdem(yaml_filename, fname_modeling_options, fname_analysis_options)
+        wt_opt, modeling_options, analysis_options = run_wisdem(
+            yaml_filename, fname_modeling_options, fname_analysis_options
+        )
         list_of_yamls.append(wt_opt)
 
     # Call the functions to print, save, and plot results
     print_results_to_screen(list_of_yamls, list_of_yaml_labels, values_to_print)
     save_lcoe_data_to_file(list_of_yamls, folder_output)
     create_all_plots(
-        list_of_yamls, list_of_yaml_labels, modeling_options, analysis_options, folder_output, show_plots, font_size, extension
+        list_of_yamls,
+        list_of_yaml_labels,
+        modeling_options,
+        analysis_options,
+        folder_output,
+        show_plots,
+        font_size,
+        extension,
     )
 
 

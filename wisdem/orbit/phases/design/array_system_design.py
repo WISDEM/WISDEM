@@ -257,7 +257,8 @@ class ArraySystemDesign(CableSystem):
 
         # Calculate the radius of each turbine from the OSS
         radius = (
-            np.arange(self.num_turbines_full_string, dtype=float) * self.system.turbine_distance + self.system.substation_distance
+            np.arange(self.num_turbines_full_string, dtype=float) * self.system.turbine_distance
+            + self.system.substation_distance
         )
 
         # Calculate the angle required to make rings evenly spaced
@@ -621,9 +622,16 @@ class CustomArraySystemDesign(ArraySystemDesign):
         # Create the string order/number information
         strings = [(i, j) for i in range(self.num_full_strings) for j in range(self.num_turbines_full_string)]
         strings.extend(
-            [(i, j) for i in range(self.num_full_strings, self.num_strings) for j in range(self.num_turbines_partial_string)]
+            [
+                (i, j)
+                for i in range(self.num_full_strings, self.num_strings)
+                for j in range(self.num_turbines_partial_string)
+            ]
         )
-        rows = [[f"t{i}", "oss1", f"turbine-{i}", 0.0, 0.0, string, order, 0, 0] for i, (string, order) in enumerate(strings)]
+        rows = [
+            [f"t{i}", "oss1", f"turbine-{i}", 0.0, 0.0, string, order, 0, 0]
+            for i, (string, order) in enumerate(strings)
+        ]
         first = [
             "oss1",
             "oss1",

@@ -209,9 +209,7 @@ class CylinderMass(om.ExplicitComponent):
         k_m = inputs["material_cost_rate"]  # 1.1 # USD / kg carbon steel plate
         k_f = inputs["labor_cost_rate"]  # 1.0 # USD / min labor
         k_p = inputs["painting_cost_rate"]  # USD / m^2 painting
-        k_e = (
-            0.064  # Industrial electricity rate $/kWh https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a
-        )
+        k_e = 0.064  # Industrial electricity rate $/kWh https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a
         e_f = 15.9  # Electricity usage kWh/kg for steel
         e_fo = 26.9  # Electricity usage kWh/kg for stainless steel
 

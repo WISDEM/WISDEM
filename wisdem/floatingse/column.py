@@ -1525,7 +1525,20 @@ class ColumnBuckling(om.ExplicitComponent):
             external_local_raw,
             external_general_raw,
         ) = shellBuckling_withStiffeners(
-            pressure, sigma_ax, R_od, t_wall, h_section, h_web, t_web, w_flange, t_flange, L_stiffener, E, nu, sigma_y, loading
+            pressure,
+            sigma_ax,
+            R_od,
+            t_wall,
+            h_section,
+            h_web,
+            t_web,
+            w_flange,
+            t_flange,
+            L_stiffener,
+            E,
+            nu,
+            sigma_y,
+            loading,
         )
 
         outputs["flange_compactness"] = flange_compactness
@@ -1564,7 +1577,9 @@ class Column(om.Group):
         self.set_input_defaults("material_names", ["steel"])
 
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
-        self.add_subsystem("yaml", DiscretizationYAML(n_height=n_height, n_layers=n_layers, n_mat=n_mat), promotes=["*"])
+        self.add_subsystem(
+            "yaml", DiscretizationYAML(n_height=n_height, n_layers=n_layers, n_mat=n_mat), promotes=["*"]
+        )
 
         self.add_subsystem(
             "gc", GeometricConstraints(nPoints=n_height, diamFlag=True), promotes=["constr_taper", "constr_d_to_t"]
@@ -1601,11 +1616,22 @@ class Column(om.Group):
         self.add_subsystem(
             "wave",
             LinearWaves(nPoints=n_full),
-            promotes=["Uc", "hsig_wave", "Tsig_wave", "rho_water", ("z_floor", "water_depth"), ("z_surface", "wave_z0")],
+            promotes=[
+                "Uc",
+                "hsig_wave",
+                "Tsig_wave",
+                "rho_water",
+                ("z_floor", "water_depth"),
+                ("z_surface", "wave_z0"),
+            ],
         )
-        self.add_subsystem("windLoads", CylinderWindDrag(nPoints=n_full), promotes=["cd_usr", "beta_wind", "rho_air", "mu_air"])
         self.add_subsystem(
-            "waveLoads", CylinderWaveDrag(nPoints=n_full), promotes=["cm", "cd_usr", "beta_wave", "rho_water", "mu_water"]
+            "windLoads", CylinderWindDrag(nPoints=n_full), promotes=["cd_usr", "beta_wind", "rho_air", "mu_air"]
+        )
+        self.add_subsystem(
+            "waveLoads",
+            CylinderWaveDrag(nPoints=n_full),
+            promotes=["cm", "cd_usr", "beta_wave", "rho_water", "mu_water"],
         )
         self.add_subsystem("distLoads", AeroHydroLoads(nPoints=n_full), promotes=["Px", "Py", "Pz", "qdyn", "yaw"])
 

@@ -29,7 +29,10 @@ class PoseOptimization(object):
             n_DV += self.modeling["RotorSE"]["n_af_span"] - blade_opt["aero_shape"]["af_positions"]["af_start"] - 1
         if blade_opt["structure"]["spar_cap_ss"]["flag"]:
             n_DV += blade_opt["structure"]["spar_cap_ss"]["n_opt"] - 2
-        if blade_opt["structure"]["spar_cap_ps"]["flag"] and not blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]:
+        if (
+            blade_opt["structure"]["spar_cap_ps"]["flag"]
+            and not blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
+        ):
             n_DV += blade_opt["structure"]["spar_cap_ps"]["n_opt"] - 2
         if self.opt["optimization_variables"]["control"]["tsr"]["flag"]:
             n_DV += 1
@@ -212,7 +215,10 @@ class PoseOptimization(object):
         if chord_options["flag"]:
             indices = range(3, chord_options["n_opt"] - 1)
             wt_opt.model.add_design_var(
-                "blade.opt_var.chord_opt_gain", indices=indices, lower=chord_options["min_gain"], upper=chord_options["max_gain"]
+                "blade.opt_var.chord_opt_gain",
+                indices=indices,
+                lower=chord_options["min_gain"],
+                upper=chord_options["max_gain"],
             )
 
         if blade_opt["aero_shape"]["af_positions"]["flag"]:
@@ -228,7 +234,9 @@ class PoseOptimization(object):
                 lb_af[i] = 0.5 * (af_pos_init[i - 1] + af_pos_init[i]) + step_size
                 ub_af[i] = 0.5 * (af_pos_init[i + 1] + af_pos_init[i]) - step_size
             lb_af[-1] = ub_af[-1] = 1.0
-            wt_opt.model.add_design_var("blade.opt_var.af_position", indices=indices, lower=lb_af[indices], upper=ub_af[indices])
+            wt_opt.model.add_design_var(
+                "blade.opt_var.af_position", indices=indices, lower=lb_af[indices], upper=ub_af[indices]
+            )
 
         spar_cap_ss_options = blade_opt["structure"]["spar_cap_ss"]
         if spar_cap_ss_options["flag"]:
@@ -319,11 +327,16 @@ class PoseOptimization(object):
             )
         if hub_opt["hub_diameter"]["flag"]:
             wt_opt.model.add_design_var(
-                "hub.diameter", lower=hub_opt["hub_diameter"]["lower_bound"], upper=hub_opt["hub_diameter"]["upper_bound"]
+                "hub.diameter",
+                lower=hub_opt["hub_diameter"]["lower_bound"],
+                upper=hub_opt["hub_diameter"]["upper_bound"],
             )
         if drive_opt["uptilt"]["flag"]:
             wt_opt.model.add_design_var(
-                "nacelle.uptilt", lower=drive_opt["uptilt"]["lower_bound"], upper=drive_opt["uptilt"]["upper_bound"], ref=1e-2
+                "nacelle.uptilt",
+                lower=drive_opt["uptilt"]["lower_bound"],
+                upper=drive_opt["uptilt"]["upper_bound"],
+                ref=1e-2,
             )
 
         if drive_opt["generator_length"]["flag"]:
@@ -345,7 +358,9 @@ class PoseOptimization(object):
             "nose_diameter",
         ]:
             if drive_opt[k]["flag"]:
-                wt_opt.model.add_design_var("nacelle." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"])
+                wt_opt.model.add_design_var(
+                    "nacelle." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"]
+                )
 
         for k in [
             "bedplate_wall_thickness",
@@ -376,7 +391,10 @@ class PoseOptimization(object):
                 )
 
         if blade_constr["strains_spar_cap_ps"]["flag"]:
-            if blade_opt["structure"]["spar_cap_ps"]["flag"] or blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]:
+            if (
+                blade_opt["structure"]["spar_cap_ps"]["flag"]
+                or blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
+            ):
                 wt_opt.model.add_constraint("rs.constr.constr_max_strainL_spar", upper=1.0)
             else:
                 print(
@@ -449,7 +467,10 @@ class PoseOptimization(object):
                 wt_opt.model.add_constraint("ccblade.cl_n_opt", lower=target_cl - eps_cl, upper=target_cl + eps_cl)
             if self.opt["constraints"]["blade"]["match_cl_cd"]["flag_cd"]:
                 wt_opt.model.add_constraint("ccblade.cd_n_opt", lower=target_cd - eps_cl, upper=target_cd + eps_cl)
-        if self.opt["constraints"]["blade"]["match_L_D"]["flag_L"] or self.opt["constraints"]["blade"]["match_L_D"]["flag_D"]:
+        if (
+            self.opt["constraints"]["blade"]["match_L_D"]["flag_L"]
+            or self.opt["constraints"]["blade"]["match_L_D"]["flag_D"]
+        ):
             data_target = np.loadtxt(self.opt["constraints"]["blade"]["match_L_D"]["filename"])
             eta_opt = np.linspace(0.0, 1.0, self.opt["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
             target_L = np.interp(eta_opt, data_target[:, 0], data_target[:, 7])
@@ -487,7 +508,9 @@ class PoseOptimization(object):
 
         if tower_constr["d_to_t"]["flag"] or monopile_constr["d_to_t"]["flag"]:
             wt_opt.model.add_constraint(
-                "towerse.constr_d_to_t", lower=tower_constr["d_to_t"]["lower_bound"], upper=tower_constr["d_to_t"]["upper_bound"]
+                "towerse.constr_d_to_t",
+                lower=tower_constr["d_to_t"]["lower_bound"],
+                upper=tower_constr["d_to_t"]["upper_bound"],
             )
 
         if tower_constr["taper"]["flag"] or monopile_constr["taper"]["flag"]:
@@ -557,8 +580,13 @@ class PoseOptimization(object):
                 lb_twist = np.array(blade_opt["aero_shape"]["twist"]["lower_bound"])
                 ub_twist = np.array(blade_opt["aero_shape"]["twist"]["upper_bound"])
                 wt_opt["blade.opt_var.twist_opt_gain"] = (init_twist_opt - lb_twist) / (ub_twist - lb_twist)
-                if max(wt_opt["blade.opt_var.twist_opt_gain"]) > 1.0 or min(wt_opt["blade.opt_var.twist_opt_gain"]) < 0.0:
-                    print("Warning: the initial twist violates the upper or lower bounds of the twist design variables.")
+                if (
+                    max(wt_opt["blade.opt_var.twist_opt_gain"]) > 1.0
+                    or min(wt_opt["blade.opt_var.twist_opt_gain"]) < 0.0
+                ):
+                    print(
+                        "Warning: the initial twist violates the upper or lower bounds of the twist design variables."
+                    )
 
             blade_constr = self.opt["constraints"]["blade"]
             wt_opt["blade.opt_var.s_opt_chord"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["chord"]["n_opt"])

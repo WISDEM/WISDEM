@@ -280,7 +280,17 @@ class MapMooring(om.ExplicitComponent):
         self.finput.append("(-)  (-) (m)   (m)  (m) (kg) (m^3) (kN) (kN) (kN)")
 
     def write_node_properties(
-        self, number, node_type, x_pos, y_pos, z_pos, point_mass=0, displaced_volume=0, x_force=None, y_force=None, z_force=None
+        self,
+        number,
+        node_type,
+        x_pos,
+        y_pos,
+        z_pos,
+        point_mass=0,
+        displaced_volume=0,
+        x_force=None,
+        y_force=None,
+        z_force=None,
     ):
         """Writes NODE PROPERTIES data of input.map file.  Nodes are connections between mooring lines and bridles, vessels, and anchors
 
@@ -349,7 +359,14 @@ class MapMooring(om.ExplicitComponent):
         self.finput.append("(-)      (-)       (m)       (-)       (-)       (-)")
         self.finput.append(
             "%d   %s   %f   %d   %d   %s"
-            % (line_number, discrete_inputs["mooring_type"], inputs["mooring_line_length"], anchor_node, fairlead_node, flags)
+            % (
+                line_number,
+                discrete_inputs["mooring_type"],
+                inputs["mooring_line_length"],
+                anchor_node,
+                fairlead_node,
+                flags,
+            )
         )
 
     def write_solver_options(self, inputs):

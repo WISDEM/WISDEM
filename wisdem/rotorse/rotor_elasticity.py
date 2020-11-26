@@ -41,7 +41,10 @@ class RunPreComp(ExplicitComponent):
             desc="radial locations where blade is defined (should be increasing and not go all the way to hub or tip)",
         )
         self.add_input(
-            "theta", val=np.zeros(n_span), units="deg", desc="Twist angle at each section (positive decreases angle of attack)"
+            "theta",
+            val=np.zeros(n_span),
+            units="deg",
+            desc="Twist angle at each section (positive decreases angle of attack)",
         )
         self.add_input("chord", val=np.zeros(n_span), units="m", desc="chord length at each section")
         self.add_input(
@@ -58,7 +61,9 @@ class RunPreComp(ExplicitComponent):
         )
 
         # Rotor configuration
-        self.add_input("uptilt", val=0.0, units="deg", desc="Nacelle uptilt angle. A standard machine has positive values.")
+        self.add_input(
+            "uptilt", val=0.0, units="deg", desc="Nacelle uptilt angle. A standard machine has positive values."
+        )
         self.add_discrete_input("n_blades", val=3, desc="Number of blades of the rotor.")
 
         # Inner structure
@@ -192,7 +197,10 @@ class RunPreComp(ExplicitComponent):
             desc="Chordwise offset of the section tension-center with respect to the XR-YR axes",
         )
         self.add_output(
-            "x_sc", val=np.zeros(n_span), units="m", desc="X-coordinate of the shear-center offset with respect to the XR-YR axes"
+            "x_sc",
+            val=np.zeros(n_span),
+            units="m",
+            desc="X-coordinate of the shear-center offset with respect to the XR-YR axes",
         )
         self.add_output(
             "y_sc",
@@ -213,10 +221,16 @@ class RunPreComp(ExplicitComponent):
             desc="Chordwise offset of the section center of mass with respect to the XR-YR axes",
         )
         self.add_output(
-            "flap_iner", val=np.zeros(n_span), units="kg/m", desc="Section flap inertia about the Y_G axis per unit length."
+            "flap_iner",
+            val=np.zeros(n_span),
+            units="kg/m",
+            desc="Section flap inertia about the Y_G axis per unit length.",
         )
         self.add_output(
-            "edge_iner", val=np.zeros(n_span), units="kg/m", desc="Section lag inertia about the X_G axis per unit length"
+            "edge_iner",
+            val=np.zeros(n_span),
+            units="kg/m",
+            desc="Section lag inertia about the X_G axis per unit length",
         )
         # self.add_output('eps_crit_spar',    val=np.zeros(n_span), desc='critical strain in spar from panel buckling calculation')
         # self.add_output('eps_crit_te',      val=np.zeros(n_span), desc='critical strain in trailing-edge panels from panel buckling calculation')
@@ -263,7 +277,9 @@ class RunPreComp(ExplicitComponent):
 
         # Outputs - Overall beam properties
         self.add_output("blade_mass", val=0.0, units="kg", desc="mass of one blade")
-        self.add_output("blade_moment_of_inertia", val=0.0, units="kg*m**2", desc="mass moment of inertia of blade about hub")
+        self.add_output(
+            "blade_moment_of_inertia", val=0.0, units="kg*m**2", desc="mass moment of inertia of blade about hub"
+        )
         self.add_output("mass_all_blades", val=0.0, units="kg", desc="mass of all blades")
         self.add_output(
             "I_all_blades",
@@ -278,10 +294,17 @@ class RunPreComp(ExplicitComponent):
             val=np.zeros(n_mat),
             desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.",
         )
-        self.add_input("unit_cost", val=np.zeros(n_mat), units="USD/kg", desc="1D array of the unit costs of the materials.")
-        self.add_input("waste", val=np.zeros(n_mat), desc="1D array of the non-dimensional waste fraction of the materials.")
         self.add_input(
-            "rho_fiber", val=np.zeros(n_mat), units="kg/m**3", desc="1D array of the density of the fibers of the materials."
+            "unit_cost", val=np.zeros(n_mat), units="USD/kg", desc="1D array of the unit costs of the materials."
+        )
+        self.add_input(
+            "waste", val=np.zeros(n_mat), desc="1D array of the non-dimensional waste fraction of the materials."
+        )
+        self.add_input(
+            "rho_fiber",
+            val=np.zeros(n_mat),
+            units="kg/m**3",
+            desc="1D array of the density of the fibers of the materials.",
         )
         self.add_input(
             "rho_area_dry",
@@ -362,14 +385,16 @@ class RunPreComp(ExplicitComponent):
                 for start_nd_arci in start_nd_arc
             ]
             end_nd_arc = [
-                0.0 if end_nd_arci != 0.0 and np.isclose(end_nd_arci, 0.0) else end_nd_arci for end_nd_arci in end_nd_arc
+                0.0 if end_nd_arci != 0.0 and np.isclose(end_nd_arci, 0.0) else end_nd_arci
+                for end_nd_arci in end_nd_arc
             ]
             start_nd_arc = [
                 1.0 if start_nd_arci != 1.0 and np.isclose(start_nd_arci, 1.0) else start_nd_arci
                 for start_nd_arci in start_nd_arc
             ]
             end_nd_arc = [
-                1.0 if end_nd_arci != 1.0 and np.isclose(end_nd_arci, 1.0) else end_nd_arci for end_nd_arci in end_nd_arc
+                1.0 if end_nd_arci != 1.0 and np.isclose(end_nd_arci, 1.0) else end_nd_arci
+                for end_nd_arci in end_nd_arc
             ]
 
             # region end points
@@ -455,7 +480,9 @@ class RunPreComp(ExplicitComponent):
                     thki = [layer_thickness[i_reg] for i_reg, web_idi in zip(web_idx, web_ids) if web_idi == webi]
                     thetai = [fiber_orientation[i_reg] for i_reg, web_idi in zip(web_idx, web_ids) if web_idi == webi]
                     thetai = [0.0 if theta_ij == None else theta_ij for theta_ij in thetai]
-                    mati = [material_dict[layer_mat[i_reg]] for i_reg, web_idi in zip(web_idx, web_ids) if web_idi == webi]
+                    mati = [
+                        material_dict[layer_mat[i_reg]] for i_reg, web_idi in zip(web_idx, web_ids) if web_idi == webi
+                    ]
 
                     n_plies.append(np.array(n_pliesi))
                     thk.append(np.array(thki))
@@ -656,7 +683,10 @@ class RunPreComp(ExplicitComponent):
                             # ps_start_nd_arc.append((max(sec['start_nd_arc']['values'][i], loc_LE)-loc_LE)/len_PS)
                             # ps_end_nd_arc.append((min(sec['end_nd_arc']['values'][i], 1.)-loc_LE)/len_PS)
 
-                            if inputs["layer_start_nd"][idx_sec, i] > loc_LE and inputs["layer_end_nd"][idx_sec, i] < loc_LE:
+                            if (
+                                inputs["layer_start_nd"][idx_sec, i] > loc_LE
+                                and inputs["layer_end_nd"][idx_sec, i] < loc_LE
+                            ):
                                 # ps_start_nd_arc.append(float(remap2grid(profile_i_arc, profile_i_rot[:,0], sec['start_nd_arc']['values'][i])))
                                 ps_end_nd_arc.append(1.0)
                             else:
@@ -735,8 +765,12 @@ class RunPreComp(ExplicitComponent):
         sector_idx_strain_spar_cap_ps = [
             None if regs == None else regs[int(len(regs) / 2)] for regs in region_loc_ps[self.spar_cap_ps_var]
         ]
-        sector_idx_strain_te_ss = [None if regs == None else regs[int(len(regs) / 2)] for regs in region_loc_ss[self.te_ss_var]]
-        sector_idx_strain_te_ps = [None if regs == None else regs[int(len(regs) / 2)] for regs in region_loc_ps[self.te_ps_var]]
+        sector_idx_strain_te_ss = [
+            None if regs == None else regs[int(len(regs) / 2)] for regs in region_loc_ss[self.te_ss_var]
+        ]
+        sector_idx_strain_te_ps = [
+            None if regs == None else regs[int(len(regs) / 2)] for regs in region_loc_ps[self.te_ps_var]
+        ]
 
         # Get Beam Properties
         beam = PreComp(
@@ -902,7 +936,9 @@ class RunPreComp(ExplicitComponent):
             elif discrete_inputs["component_id"][i_mat] == 2:
                 bcm.mat_options["skin_mat_id"] = bcm.materials[name]["id"]  # Assigning the material to the shell skin
             elif discrete_inputs["component_id"][i_mat] == 3:
-                bcm.mat_options["skinwebs_mat_id"] = bcm.materials[name]["id"]  # Assigning the material to the webs skin
+                bcm.mat_options["skinwebs_mat_id"] = bcm.materials[name][
+                    "id"
+                ]  # Assigning the material to the webs skin
             elif discrete_inputs["component_id"][i_mat] == 4:
                 bcm.mat_options["sc_mat_id"] = bcm.materials[name]["id"]  # Assigning the material to the spar caps
             elif discrete_inputs["component_id"][i_mat] == 5:
@@ -940,7 +976,18 @@ class RotorElasticity(Group):
             "precomp",
             RunPreComp(modeling_options=modeling_options, opt_options=opt_options),
             promotes=promote_list
-            + ["r", "Tw_iner", "precurve", "presweep", "x_ec", "y_ec", "sc_ss_mats", "sc_ps_mats", "te_ss_mats", "te_ps_mats"],
+            + [
+                "r",
+                "Tw_iner",
+                "precurve",
+                "presweep",
+                "x_ec",
+                "y_ec",
+                "sc_ss_mats",
+                "sc_ps_mats",
+                "te_ss_mats",
+                "te_ps_mats",
+            ],
         )
         # Check rail transportabiliy
         if opt_options["constraints"]["blade"]["rail_transport"]["flag"]:

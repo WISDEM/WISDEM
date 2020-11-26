@@ -24,10 +24,18 @@ class BladeCurvature(ExplicitComponent):
         self.add_input("precone", val=0.0, units="deg", desc="precone angle")
 
         # Outputs
-        self.add_output("3d_curv", val=np.zeros(n_span), units="deg", desc="total cone angle from precone and curvature")
-        self.add_output("x_az", val=np.zeros(n_span), units="m", desc="location of blade in azimuth x-coordinate system")
-        self.add_output("y_az", val=np.zeros(n_span), units="m", desc="location of blade in azimuth y-coordinate system")
-        self.add_output("z_az", val=np.zeros(n_span), units="m", desc="location of blade in azimuth z-coordinate system")
+        self.add_output(
+            "3d_curv", val=np.zeros(n_span), units="deg", desc="total cone angle from precone and curvature"
+        )
+        self.add_output(
+            "x_az", val=np.zeros(n_span), units="m", desc="location of blade in azimuth x-coordinate system"
+        )
+        self.add_output(
+            "y_az", val=np.zeros(n_span), units="m", desc="location of blade in azimuth y-coordinate system"
+        )
+        self.add_output(
+            "z_az", val=np.zeros(n_span), units="m", desc="location of blade in azimuth z-coordinate system"
+        )
         self.add_output("s", val=np.zeros(n_span), units="m", desc="cumulative path length along blade")
 
     def compute(self, inputs, outputs):
@@ -64,9 +72,15 @@ class TotalLoads(ExplicitComponent):
 
         # Inputs
         self.add_input("r", val=np.zeros(n_span), units="m", desc="radial positions along blade going toward tip")
-        self.add_input("aeroloads_Px", val=np.zeros(n_span), units="N/m", desc="distributed loads in blade-aligned x-direction")
-        self.add_input("aeroloads_Py", val=np.zeros(n_span), units="N/m", desc="distributed loads in blade-aligned y-direction")
-        self.add_input("aeroloads_Pz", val=np.zeros(n_span), units="N/m", desc="distributed loads in blade-aligned z-direction")
+        self.add_input(
+            "aeroloads_Px", val=np.zeros(n_span), units="N/m", desc="distributed loads in blade-aligned x-direction"
+        )
+        self.add_input(
+            "aeroloads_Py", val=np.zeros(n_span), units="N/m", desc="distributed loads in blade-aligned y-direction"
+        )
+        self.add_input(
+            "aeroloads_Pz", val=np.zeros(n_span), units="N/m", desc="distributed loads in blade-aligned z-direction"
+        )
         self.add_input("aeroloads_Omega", val=0.0, units="rpm", desc="rotor rotation speed")
         self.add_input("aeroloads_pitch", val=0.0, units="deg", desc="pitch angle")
         self.add_input("aeroloads_azimuth", val=0.0, units="deg", desc="azimuthal angle")
@@ -133,17 +147,30 @@ class RunFrame3DD(ExplicitComponent):
         self.n_freq = n_freq = blade_init_options["n_freq"]
 
         # Locations of airfoils in global c.s.
-        self.add_input("x_az", val=np.zeros(n_span), units="m", desc="location of blade in azimuth x-coordinate system (prebend)")
-        self.add_input("y_az", val=np.zeros(n_span), units="m", desc="location of blade in azimuth y-coordinate system (sweep)")
         self.add_input(
-            "z_az", val=np.zeros(n_span), units="m", desc="location of blade in azimuth z-coordinate system (from root to tip)"
+            "x_az", val=np.zeros(n_span), units="m", desc="location of blade in azimuth x-coordinate system (prebend)"
+        )
+        self.add_input(
+            "y_az", val=np.zeros(n_span), units="m", desc="location of blade in azimuth y-coordinate system (sweep)"
+        )
+        self.add_input(
+            "z_az",
+            val=np.zeros(n_span),
+            units="m",
+            desc="location of blade in azimuth z-coordinate system (from root to tip)",
         )
         self.add_input("theta", val=np.zeros(n_span), units="deg", desc="structural twist")
 
         # all inputs/outputs in airfoil coordinate system
-        self.add_input("Px_af", val=np.zeros(n_span), desc="distributed load (force per unit length) in airfoil x-direction")
-        self.add_input("Py_af", val=np.zeros(n_span), desc="distributed load (force per unit length) in airfoil y-direction")
-        self.add_input("Pz_af", val=np.zeros(n_span), desc="distributed load (force per unit length) in airfoil z-direction")
+        self.add_input(
+            "Px_af", val=np.zeros(n_span), desc="distributed load (force per unit length) in airfoil x-direction"
+        )
+        self.add_input(
+            "Py_af", val=np.zeros(n_span), desc="distributed load (force per unit length) in airfoil y-direction"
+        )
+        self.add_input(
+            "Pz_af", val=np.zeros(n_span), desc="distributed load (force per unit length) in airfoil z-direction"
+        )
 
         self.add_input(
             "xu_strain_spar",
@@ -243,10 +270,16 @@ class RunFrame3DD(ExplicitComponent):
             desc="6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)",
         )
         self.add_output(
-            "flap_mode_freqs", np.zeros(n_freq2), units="Hz", desc="Frequencies associated with mode shapes in the flap direction"
+            "flap_mode_freqs",
+            np.zeros(n_freq2),
+            units="Hz",
+            desc="Frequencies associated with mode shapes in the flap direction",
         )
         self.add_output(
-            "edge_mode_freqs", np.zeros(n_freq2), units="Hz", desc="Frequencies associated with mode shapes in the edge direction"
+            "edge_mode_freqs",
+            np.zeros(n_freq2),
+            units="Hz",
+            desc="Frequencies associated with mode shapes in the edge direction",
         )
         self.add_output(
             "freqs",
@@ -255,11 +288,19 @@ class RunFrame3DD(ExplicitComponent):
             desc="ration of 2nd and 1st natural frequencies, should be ratio of edgewise to flapwise",
         )
         self.add_output(
-            "freq_distance", val=0.0, desc="ration of 2nd and 1st natural frequencies, should be ratio of edgewise to flapwise"
+            "freq_distance",
+            val=0.0,
+            desc="ration of 2nd and 1st natural frequencies, should be ratio of edgewise to flapwise",
         )
-        self.add_output("dx", val=np.zeros(n_span), units="m", desc="deflection of blade section in airfoil x-direction")
-        self.add_output("dy", val=np.zeros(n_span), units="m", desc="deflection of blade section in airfoil y-direction")
-        self.add_output("dz", val=np.zeros(n_span), units="m", desc="deflection of blade section in airfoil z-direction")
+        self.add_output(
+            "dx", val=np.zeros(n_span), units="m", desc="deflection of blade section in airfoil x-direction"
+        )
+        self.add_output(
+            "dy", val=np.zeros(n_span), units="m", desc="deflection of blade section in airfoil y-direction"
+        )
+        self.add_output(
+            "dz", val=np.zeros(n_span), units="m", desc="deflection of blade section in airfoil z-direction"
+        )
         self.add_output(
             "strainU_spar",
             val=np.zeros(n_span),
@@ -488,7 +529,9 @@ class RunFrame3DD(ExplicitComponent):
 
             # compute strain
             x, y = rotate(xuu, yuu)
-            strainU = -(M1 / EI11 * y - M2 / EI22 * x + Fz / EA)  # negative sign because Hansen c3 is opposite of Precomp z
+            strainU = -(
+                M1 / EI11 * y - M2 / EI22 * x + Fz / EA
+            )  # negative sign because Hansen c3 is opposite of Precomp z
 
             x, y = rotate(xll, yll)
             strainL = -(M1 / EI11 * y - M2 / EI22 * x + Fz / EA)
@@ -542,9 +585,7 @@ class TipDeflection(ExplicitComponent):
         dy = inputs["dy_tip"]
         dz = inputs["dz_tip"]
         pitch = inputs["pitch_load"]  # + inputs['theta_tip']
-        azimuth = (
-            180.0  # The blade is assumed in front of the tower, although the loading may correspond to another azimuthal position
-        )
+        azimuth = 180.0  # The blade is assumed in front of the tower, although the loading may correspond to another azimuthal position
         tilt = inputs["tilt"]
         totalConeTip = inputs["3d_curv_tip"]
         dynamicFactor = inputs["dynamicFactor"]
@@ -568,12 +609,12 @@ class DesignConstraints(ExplicitComponent):
         self.n_freq = n_freq = blade_init_options["n_freq"]
         n_freq2 = int(n_freq / 2)
         self.opt_options = opt_options = self.options["opt_options"]
-        self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"][
-            "n_opt"
-        ]
-        self.n_opt_spar_cap_ps = n_opt_spar_cap_ps = opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ps"][
-            "n_opt"
-        ]
+        self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options["optimization_variables"]["blade"]["structure"][
+            "spar_cap_ss"
+        ]["n_opt"]
+        self.n_opt_spar_cap_ps = n_opt_spar_cap_ps = opt_options["optimization_variables"]["blade"]["structure"][
+            "spar_cap_ps"
+        ]["n_opt"]
         # Inputs strains
         self.add_input(
             "strainU_spar",
@@ -611,10 +652,16 @@ class DesignConstraints(ExplicitComponent):
         self.add_input("rated_Omega", val=0.0, units="rpm", desc="rotor rotation speed at rated")
         self.add_input("delta_f", val=1.1, desc="minimum frequency margin")
         self.add_input(
-            "flap_mode_freqs", np.zeros(n_freq2), units="Hz", desc="Frequencies associated with mode shapes in the flap direction"
+            "flap_mode_freqs",
+            np.zeros(n_freq2),
+            units="Hz",
+            desc="Frequencies associated with mode shapes in the flap direction",
         )
         self.add_input(
-            "edge_mode_freqs", np.zeros(n_freq2), units="Hz", desc="Frequencies associated with mode shapes in the edge direction"
+            "edge_mode_freqs",
+            np.zeros(n_freq2),
+            units="Hz",
+            desc="Frequencies associated with mode shapes in the edge direction",
         )
 
         # Outputs
@@ -960,7 +1007,9 @@ class RotorStructure(Group):
             promotes=["r", "precone", "precurve", "presweep", "3d_curv", "x_az", "y_az", "z_az"],
         )
         promoteListTotalLoads = ["r", "theta", "tilt", "rhoA", "3d_curv", "z_az"]
-        self.add_subsystem("tot_loads_gust", TotalLoads(modeling_options=modeling_options), promotes=promoteListTotalLoads)
+        self.add_subsystem(
+            "tot_loads_gust", TotalLoads(modeling_options=modeling_options), promotes=promoteListTotalLoads
+        )
         # self.add_subsystem('tot_loads_rated',       TotalLoads(modeling_options = modeling_options),      promotes=promoteListTotalLoads)
         # self.add_subsystem('tot_loads_storm_1yr',   TotalLoads(modeling_options = modeling_options),      promotes=promoteListTotalLoads)
         # self.add_subsystem('tot_loads_storm_50yr',  TotalLoads(modeling_options = modeling_options),      promotes=promoteListTotalLoads)
@@ -991,7 +1040,9 @@ class RotorStructure(Group):
         ]
         self.add_subsystem("frame", RunFrame3DD(modeling_options=modeling_options), promotes=promoteListFrame3DD)
         self.add_subsystem("tip_pos", TipDeflection(), promotes=["tilt", "pitch_load"])
-        self.add_subsystem("aero_hub_loads", AeroHubLoads(modeling_options=modeling_options), promotes=promoteListAeroLoads)
+        self.add_subsystem(
+            "aero_hub_loads", AeroHubLoads(modeling_options=modeling_options), promotes=promoteListAeroLoads
+        )
         self.add_subsystem("constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options))
 
         # if modeling_options['rotorse']['FatigueMode'] > 0:

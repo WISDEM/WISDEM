@@ -350,7 +350,10 @@ class FoundationCost(CostModule):
         # calculate foundation radius based on gapping
         # check if gapping constrain is already satisfied - r / 3 < e
         foundation_vol = np.pi * r_test_gapping ** 2 * foundation_load_input_data["depth"]
-        v_1 = foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete) + f_dead
+        v_1 = (
+            foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete)
+            + f_dead
+        )
         e = m_tot / v_1
         if (r_test_gapping / 3) < e:
             r_gapping = 0
@@ -359,7 +362,8 @@ class FoundationCost(CostModule):
             def r_g(x):
                 foundation_vol = np.pi * x ** 2 * foundation_load_input_data["depth"]
                 v_1 = (
-                    foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete)
+                    foundation_vol
+                    * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete)
                     + f_dead
                 )
                 e = m_tot / v_1
@@ -368,14 +372,19 @@ class FoundationCost(CostModule):
             result = root_scalar(r_g, method="brentq", bracket=[0.9 * r_overturn, 50], xtol=1e-4, maxiter=50)
             r_gapping = result.root
             if not result.converged:
-                raise ValueError(f"Warning {self.project_name} calculate_foundation_load r_gapping solve failed, {result.flag}")
+                raise ValueError(
+                    f"Warning {self.project_name} calculate_foundation_load r_gapping solve failed, {result.flag}"
+                )
 
         r_test_bearing = max(r_test_gapping, r_gapping)
 
         # calculate foundation radius based on bearing pressure
         def r_b(x):
             foundation_vol = np.pi * r_test_bearing ** 2 * foundation_load_input_data["depth"]
-            v_1 = foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete) + f_dead
+            v_1 = (
+                foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete)
+                + f_dead
+            )
             e = m_tot / v_1
             a_eff = v_1 / bearing_pressure
             return 2 * (x ** 2 - e * (x ** 2 - e ** 2) ** 0.5) - a_eff
@@ -384,7 +393,9 @@ class FoundationCost(CostModule):
         r_bearing = result.root
 
         if not result.converged:
-            raise ValueError(f"Warning {self.project_name} calculate_foundation_load r_bearing solve failed, {result.flag}")
+            raise ValueError(
+                f"Warning {self.project_name} calculate_foundation_load r_bearing solve failed, {result.flag}"
+            )
 
         # pick the largest foundation radius based on all 4 foundation design criteria: moment, gapping, bearing, slipping
         r_choosen = max(r_bearing, r_overturn, r_slipping, r_gapping)
@@ -424,7 +435,9 @@ class FoundationCost(CostModule):
                 foundation_size_output_data["excavated_volume_m3"] * 0.45
             )
         else:
-            foundation_size_output_data["excavated_volume_m3"] = np.pi * (r + 0.5) ** 2 * foundation_size_input_data["depth"]
+            foundation_size_output_data["excavated_volume_m3"] = (
+                np.pi * (r + 0.5) ** 2 * foundation_size_input_data["depth"]
+            )
 
             # only compute the portion of the foundation that is composed of concrete (45% concrete; other portion is
             # backfill); TODO: Add to sphinx -> (volume excavated = pi*(r_pick + .5m)^2 this assumes vertical sides which
@@ -435,7 +448,9 @@ class FoundationCost(CostModule):
 
         return foundation_size_output_data
 
-    def estimate_material_needs_per_turbine(self, material_needs_per_turbine_input_data, material_needs_per_turbine_output_data):
+    def estimate_material_needs_per_turbine(
+        self, material_needs_per_turbine_input_data, material_needs_per_turbine_output_data
+    ):
         """
         Function to estimate amount of material based on foundation size and number of turbines.
 
@@ -460,7 +475,9 @@ class FoundationCost(CostModule):
             / self._kg_per_tonne
         )
         concrete_volume_cubic_yards_per_turbine = (
-            material_needs_per_turbine_output_data["foundation_volume_concrete_m3_per_turbine"] * 0.985 * self._cubicyd_per_cubicm
+            material_needs_per_turbine_output_data["foundation_volume_concrete_m3_per_turbine"]
+            * 0.985
+            * self._cubicyd_per_cubicm
         )
 
         # Assign values to output dictionary:
@@ -521,19 +538,25 @@ class FoundationCost(CostModule):
         material_needs_entire_farm = construction_time_output_data["material_needs_entire_farm"]
         material_needs_entire_farm["Quantity of material"] = quantity_materials_entire_farm
         if construction_time_input_data["turbine_rating_MW"] <= 0.1:
-            operation_data = throughput_operations.where(throughput_operations["Module"] == "Small DW Foundations").dropna(
+            operation_data = throughput_operations.where(
+                throughput_operations["Module"] == "Small DW Foundations"
+            ).dropna(thresh=4)
+        else:
+            operation_data = throughput_operations.where(throughput_operations["Module"] == "Foundations").dropna(
                 thresh=4
             )
-        else:
-            operation_data = throughput_operations.where(throughput_operations["Module"] == "Foundations").dropna(thresh=4)
 
         # operation data for entire wind farm:
         operation_data = pd.merge(material_needs_entire_farm, operation_data, on=["Material type ID"], how="outer")
         operation_data["Number of days"] = operation_data["Quantity of material"] / operation_data["Daily output"]
-        operation_data["Number of crews"] = np.ceil((operation_data["Number of days"] / 30) / foundation_construction_time)
+        operation_data["Number of crews"] = np.ceil(
+            (operation_data["Number of days"] / 30) / foundation_construction_time
+        )
 
         alpha = operation_data[operation_data["Type of cost"] == "Labor"]
-        operation_data_id_days_crews_workers = alpha[["Operation ID", "Number of days", "Number of crews", "Number of workers"]]
+        operation_data_id_days_crews_workers = alpha[
+            ["Operation ID", "Number of days", "Number of crews", "Number of workers"]
+        ]
 
         # if more than one crew needed to complete within construction duration then assume that all construction happens
         # within that window and use that timeframe for weather delays; if not, use the number of days calculated
@@ -560,7 +583,8 @@ class FoundationCost(CostModule):
                 * num_days
             )
             management_crew = management_crew.assign(
-                total_crew_cost_before_wind_delay=management_crew["per_diem_total"] + management_crew["hourly_costs_total"]
+                total_crew_cost_before_wind_delay=management_crew["per_diem_total"]
+                + management_crew["hourly_costs_total"]
             )
             self.output_dict["management_crew"] = management_crew
             self.output_dict["managament_crew_cost_before_wind_delay"] = management_crew[
@@ -713,7 +737,8 @@ class FoundationCost(CostModule):
             + per_diem
         )
         labor_cost_usd_with_management = (
-            labor_cost_usd_without_management.sum() + calculate_costs_output_dict["managament_crew_cost_before_wind_delay"]
+            labor_cost_usd_without_management.sum()
+            + calculate_costs_output_dict["managament_crew_cost_before_wind_delay"]
         )
         labor_cost_usd_with_management_plus_weather_delays = labor_cost_usd_with_management * wind_multiplier
         labor_costs = pd.DataFrame(
@@ -728,7 +753,8 @@ class FoundationCost(CostModule):
         material_cost_dataframe["Cost USD"] = material_data_entire_farm["Cost USD"]
         material_costs_sum = material_cost_dataframe["Cost USD"].sum()
         material_costs = pd.DataFrame(
-            [["Materials", material_costs_sum, "Foundation"]], columns=["Type of cost", "Cost USD", "Phase of construction"]
+            [["Materials", material_costs_sum, "Foundation"]],
+            columns=["Type of cost", "Cost USD", "Phase of construction"],
         )
 
         # Append all cost items to foundation_cost
@@ -753,7 +779,8 @@ class FoundationCost(CostModule):
                 mobilization_cost = foundation_cost["Cost USD"].sum() / num_turbines * mobilization_multipler
 
         mob_cost = pd.DataFrame(
-            [["Mobilization", mobilization_cost, "Foundation"]], columns=["Type of cost", "Cost USD", "Phase of construction"]
+            [["Mobilization", mobilization_cost, "Foundation"]],
+            columns=["Type of cost", "Cost USD", "Phase of construction"],
         )
 
         foundation_cost = foundation_cost.append(mob_cost)
@@ -849,7 +876,12 @@ class FoundationCost(CostModule):
             }
         )
         result.append(
-            {"unit": "m", "type": "variable", "variable_df_key_col_name": "Radius", "value": float(self.output_dict["Radius_m"])}
+            {
+                "unit": "m",
+                "type": "variable",
+                "variable_df_key_col_name": "Radius",
+                "value": float(self.output_dict["Radius_m"]),
+            }
         )
         result.append(
             {
@@ -955,20 +987,26 @@ class FoundationCost(CostModule):
             self.calculate_foundation_load(self.input_dict, self.output_dict)  # Returns foundation load
             self.determine_foundation_size(self.input_dict, self.output_dict)  # Returns foundation volume
             self.estimate_material_needs_per_turbine(self.input_dict, self.output_dict)  # Returns material volume
-            operation_data = self.estimate_construction_time(self.input_dict, self.output_dict)  # Estimates construction time
+            operation_data = self.estimate_construction_time(
+                self.input_dict, self.output_dict
+            )  # Estimates construction time
 
             # pull only global inputs for weather delay from input_dict
             weather_data_keys = ("wind_shear_exponent", "weather_window")
 
             # specify foundation-specific weather delay inputs
-            self.weather_input_dict = dict([(i, self.input_dict[i]) for i in self.input_dict if i in set(weather_data_keys)])
+            self.weather_input_dict = dict(
+                [(i, self.input_dict[i]) for i in self.input_dict if i in set(weather_data_keys)]
+            )
             self.weather_input_dict[
                 "start_delay_hours"
             ] = 0  # assume zero start for when foundation construction begins (start at beginning of construction time)
             self.weather_input_dict["critical_wind_speed_m_per_s"] = self.input_dict[
                 "critical_speed_non_erection_wind_delays_m_per_s"
             ]
-            self.weather_input_dict["wind_height_of_interest_m"] = self.input_dict["critical_height_non_erection_wind_delays_m"]
+            self.weather_input_dict["wind_height_of_interest_m"] = self.input_dict[
+                "critical_height_non_erection_wind_delays_m"
+            ]
 
             # duration_construction is in units of days
             # duration_construction_months is in units of months

@@ -399,7 +399,9 @@ class CableSystem(DesignPhase):
             E.g.: {`Cable.name`: cost}
         """
 
-        cost = {name: length * self.cables[name].cost_per_km for name, length in self.total_cable_length_by_type.items()}
+        cost = {
+            name: length * self.cables[name].cost_per_km for name, length in self.total_cable_length_by_type.items()
+        }
         return cost
 
     @property

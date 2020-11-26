@@ -328,7 +328,9 @@ class ArraySystem(CostModule):
         self.output_dict["num_full_strings"] = np.floor(
             self.output_dict["total_turb"] / self.output_dict["total_turb_per_string"]
         )
-        self.output_dict["num_leftover_turb"] = self.output_dict["total_turb"] % self.output_dict["total_turb_per_string"]
+        self.output_dict["num_leftover_turb"] = (
+            self.output_dict["total_turb"] % self.output_dict["total_turb_per_string"]
+        )
 
         # Calculate number of turbines on a remaining partial string
 
@@ -407,7 +409,9 @@ class ArraySystem(CostModule):
 
     # TODO: change length_to_substation calculation as a user defined input?
     @staticmethod
-    def calc_cable_len_to_substation(distance_to_grid, turbine_spacing_rotor_diameters, row_spacing_rotor_diameters, num_strings):
+    def calc_cable_len_to_substation(
+        distance_to_grid, turbine_spacing_rotor_diameters, row_spacing_rotor_diameters, num_strings
+    ):
         """
         Calculate the distance for the largest cable run to substation
         Assumes substation is in the center of the layout, 1 row spacing in
@@ -454,7 +458,8 @@ class ArraySystem(CostModule):
                 string_to_substation_length.append(
                     c
                     * np.sqrt(
-                        row_spacing_rotor_diameters ** 2 + (turb_space_scaling * idx * turbine_spacing_rotor_diameters) ** 2
+                        row_spacing_rotor_diameters ** 2
+                        + (turb_space_scaling * idx * turbine_spacing_rotor_diameters) ** 2
                     )
                 )
 
@@ -535,7 +540,9 @@ class ArraySystem(CostModule):
                 # more turbines than specified by user, it is the terminal cable
 
                 cable.num_turb_per_cable = total_turbines
-                cable.array_cable_len = (cable.num_turb_per_cable + cable.downstream_connection) * cable.turb_section_length
+                cable.array_cable_len = (
+                    cable.num_turb_per_cable + cable.downstream_connection
+                ) * cable.turb_section_length
 
                 total_cable_len = (
                     (num_full_strings * cable.array_cable_len) + (num_partial_strings * cable.array_cable_len)
@@ -544,7 +551,9 @@ class ArraySystem(CostModule):
             else:
 
                 cable.num_turb_per_cable = total_turbines - turbines_per_cable[(count - 1)]
-                cable.array_cable_len = (cable.num_turb_per_cable + cable.downstream_connection) * cable.turb_section_length
+                cable.array_cable_len = (
+                    cable.num_turb_per_cable + cable.downstream_connection
+                ) * cable.turb_section_length
 
                 total_cable_len = (
                     (num_full_strings * cable.array_cable_len) + (num_partial_strings * cable.array_cable_len)
@@ -730,13 +739,15 @@ class ArraySystem(CostModule):
         throughput_operations = construction_time_input_data["rsmeans"]
         trench_length_km = construction_time_output_data["trench_length_km"]
         if construction_time_input_data["turbine_rating_MW"] >= 0.1:
-            operation_data = throughput_operations.where(throughput_operations["Module"] == "Collection").dropna(thresh=4)
+            operation_data = throughput_operations.where(throughput_operations["Module"] == "Collection").dropna(
+                thresh=4
+            )
             # from rsmeans data, only read in Collection related data and filter out the rest:
             cable_trenching = throughput_operations[throughput_operations.Module == "Collection"]
         else:  # switch for small DW
-            operation_data = throughput_operations.where(throughput_operations["Module"] == "Small DW Collection").dropna(
-                thresh=4
-            )
+            operation_data = throughput_operations.where(
+                throughput_operations["Module"] == "Small DW Collection"
+            ).dropna(thresh=4)
             # from rsmeans data, only read in Collection related data and filter out the rest:
             cable_trenching = throughput_operations[throughput_operations.Module == "Small DW Collection"]
         # operation_data = pd.merge()
@@ -749,7 +760,9 @@ class ArraySystem(CostModule):
         trenching_labor_usd_per_hr = trenching_labor["Rate USD per unit"].sum()
 
         construction_time_output_data["trenching_labor_usd_per_hr"] = trenching_labor_usd_per_hr
-        trenching_labor_daily_output = trenching_labor["Daily output"].values[0]  # Units:  LF/day  -> where LF = Linear Foot
+        trenching_labor_daily_output = trenching_labor["Daily output"].values[
+            0
+        ]  # Units:  LF/day  -> where LF = Linear Foot
         trenching_labor_num_workers = trenching_labor["Number of workers"].sum()
 
         # Storing data with equipment related inputs:
@@ -762,7 +775,9 @@ class ArraySystem(CostModule):
         construction_time_output_data["trenching_labor_daily_output"] = trenching_labor_daily_output
         construction_time_output_data["trenching_equipment_daily_output"] = trenching_equipment_daily_output
 
-        operation_data["Number of days taken by single crew"] = (trench_length_km / self._km_to_LF) / trenching_labor_daily_output
+        operation_data["Number of days taken by single crew"] = (
+            trench_length_km / self._km_to_LF
+        ) / trenching_labor_daily_output
         operation_data["Number of crews"] = np.ceil(
             (operation_data["Number of days taken by single crew"] / 30) / collection_construction_time
         )
@@ -807,7 +822,8 @@ class ArraySystem(CostModule):
                 * num_days
             )
             management_crew = management_crew.assign(
-                total_crew_cost_before_wind_delay=management_crew["per_diem_total"] + management_crew["hourly_costs_total"]
+                total_crew_cost_before_wind_delay=management_crew["per_diem_total"]
+                + management_crew["hourly_costs_total"]
             )
             self.output_dict["management_crew"] = management_crew
             self.output_dict["managament_crew_cost_before_wind_delay"] = management_crew[
@@ -865,7 +881,13 @@ class ArraySystem(CostModule):
 
         if calculate_costs_input_dict["turbine_rating_MW"] >= 0.1:
             trenching_equipment_rental_cost_df = pd.DataFrame(
-                [["Equipment rental", calculate_costs_output_dict["Equipment Cost USD with weather delays"], "Collection"]],
+                [
+                    [
+                        "Equipment rental",
+                        calculate_costs_output_dict["Equipment Cost USD with weather delays"],
+                        "Collection",
+                    ]
+                ],
                 columns=["Type of cost", "Cost USD", "Phase of construction"],
             )
 
@@ -874,7 +896,13 @@ class ArraySystem(CostModule):
             if calculate_costs_output_dict["Equipment Cost USD with weather delays"] < 137:
                 calculate_costs_output_dict["Equipment Cost USD with weather delays"] = 137  # cost of renting for a day
                 trenching_equipment_rental_cost_df = pd.DataFrame(
-                    [["Equipment rental", calculate_costs_output_dict["Equipment Cost USD with weather delays"], "Collection"]],
+                    [
+                        [
+                            "Equipment rental",
+                            calculate_costs_output_dict["Equipment Cost USD with weather delays"],
+                            "Collection",
+                        ]
+                    ],
                     columns=["Type of cost", "Cost USD", "Phase of construction"],
                 )
             else:
@@ -907,7 +935,8 @@ class ArraySystem(CostModule):
             + calculate_costs_output_dict["managament_crew_cost_before_wind_delay"]
         )
         calculate_costs_output_dict["Labor Cost USD with weather delays"] = (
-            calculate_costs_output_dict["Labor Cost USD without weather delays"] * calculate_costs_output_dict["wind_multiplier"]
+            calculate_costs_output_dict["Labor Cost USD without weather delays"]
+            * calculate_costs_output_dict["wind_multiplier"]
         )
 
         if calculate_costs_input_dict["turbine_rating_MW"] >= 0.1:
@@ -925,7 +954,8 @@ class ArraySystem(CostModule):
 
         # Calculate cable cost:
         cable_cost_usd_per_LF_df = pd.DataFrame(
-            [["Materials", self._total_cable_cost, "Collection"]], columns=["Type of cost", "Cost USD", "Phase of construction"]
+            [["Materials", self._total_cable_cost, "Collection"]],
+            columns=["Type of cost", "Cost USD", "Phase of construction"],
         )
 
         # Combine all calculated cost items into the 'collection_cost' dataframe:
@@ -941,9 +971,9 @@ class ArraySystem(CostModule):
             calculate_costs_output_dict["mob_cost"] = collection_cost["Cost USD"].sum() * 0.05
         else:
             if calculate_costs_input_dict["turbine_rating_MW"] >= 0.1:
-                calculate_costs_output_dict["mob_cost"] = collection_cost["Cost USD"].sum() * self.mobilization_cost_multiplier(
-                    calculate_costs_input_dict["turbine_rating_MW"]
-                )
+                calculate_costs_output_dict["mob_cost"] = collection_cost[
+                    "Cost USD"
+                ].sum() * self.mobilization_cost_multiplier(calculate_costs_input_dict["turbine_rating_MW"])
 
             # switch for small DW
             else:  # mobilization cost included in equipment rental cost
@@ -1158,14 +1188,18 @@ class ArraySystem(CostModule):
             weather_data_keys = ("wind_shear_exponent", "weather_window")
 
             # specify collection-specific weather delay inputs
-            self.weather_input_dict = dict([(i, self.input_dict[i]) for i in self.input_dict if i in set(weather_data_keys)])
+            self.weather_input_dict = dict(
+                [(i, self.input_dict[i]) for i in self.input_dict if i in set(weather_data_keys)]
+            )
             self.weather_input_dict[
                 "start_delay_hours"
             ] = 0  # assume zero start for when collection construction begins (start at beginning of construction time)
             self.weather_input_dict["critical_wind_speed_m_per_s"] = self.input_dict[
                 "critical_speed_non_erection_wind_delays_m_per_s"
             ]
-            self.weather_input_dict["wind_height_of_interest_m"] = self.input_dict["critical_height_non_erection_wind_delays_m"]
+            self.weather_input_dict["wind_height_of_interest_m"] = self.input_dict[
+                "critical_height_non_erection_wind_delays_m"
+            ]
 
             # Compute the duration of the construction for electrical collection
             duration_construction = operation_data["Time construct days"].max(skipna=True)

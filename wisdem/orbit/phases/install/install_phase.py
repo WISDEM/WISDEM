@@ -143,7 +143,9 @@ class InstallPhase(BasePhase):
         efficiencies = {}
 
         s = sorted(self.env.actions, key=lambda x: (x["agent"], x["action"]))
-        grouped = {k: sum([i["duration"] for i in list(v)]) for k, v in groupby(s, key=lambda x: (x["agent"], x["action"]))}
+        grouped = {
+            k: sum([i["duration"] for i in list(v)]) for k, v in groupby(s, key=lambda x: (x["agent"], x["action"]))
+        }
         agents = list(set([k[0] for k in grouped.keys()]))
         for agent in agents:
             total = sum([v for k, v in grouped.items() if k[0] == agent])

@@ -55,7 +55,9 @@ wind_speed = np.arange(5.0, 11.1, 1.0)  # m/s
 
 # 5 ---------- (marker for docs)
 # Enumerate DoE through tensor multiplication and then flatten to get vector of all of the runs
-[Rating, Diameter, Bladeexp, Shear, WindV] = np.meshgrid(machine_rating, rotor_diameter, blade_mass_exp, shear_exp, wind_speed)
+[Rating, Diameter, Bladeexp, Shear, WindV] = np.meshgrid(
+    machine_rating, rotor_diameter, blade_mass_exp, shear_exp, wind_speed
+)
 
 # Shift to flattened arrays to run through each scenario easily
 Rating = Rating.flatten()

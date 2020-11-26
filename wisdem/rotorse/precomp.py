@@ -1185,7 +1185,8 @@ class PreCompWriter:
             text = []
 
             text.append(
-                "%d                      N_af_nodes :no of airfoil nodes, counted clockwise starting\n" % len(profile_i.x)
+                "%d                      N_af_nodes :no of airfoil nodes, counted clockwise starting\n"
+                % len(profile_i.x)
             )
             text.append("                      with leading edge (see users' manual, fig xx)\n")
             text.append("\n")
@@ -1251,10 +1252,15 @@ class PreCompWriter:
             text.append("Webs (spars) data  --------------------------------------------------\n")
             text.append("\n")
             text.append(
-                "%d                Nweb        : number of webs (-)  ! enter 0 if the blade has no webs\n" % len(webs_i.loc)
+                "%d                Nweb        : number of webs (-)  ! enter 0 if the blade has no webs\n"
+                % len(webs_i.loc)
             )
-            text.append("1                Ib_sp_stn   : blade station number where inner-most end of webs is located (-)\n")
-            text.append("2                Ob_sp_stn   : blade station number where outer-most end of webs is located (-)\n")
+            text.append(
+                "1                Ib_sp_stn   : blade station number where inner-most end of webs is located (-)\n"
+            )
+            text.append(
+                "2                Ob_sp_stn   : blade station number where outer-most end of webs is located (-)\n"
+            )
             text.append("\n")
             text.append("Web_num   Inb_end_ch_loc   Oub_end_ch_loc (fraction of chord length)\n")
             for i, loc in enumerate(webs_i.loc):
@@ -1604,7 +1610,9 @@ if __name__ == "__main__":
         profile[i] = Profile.initFromPreCompFile(os.path.join(basepath, "shape_" + str(i + 1) + ".inp"))
     # --------------------------------------
 
-    precomp = PreComp(r_str, chord_str, theta_str, le_str, precurve_str, presweep_str, profile, materials, upper, lower, webs)
+    precomp = PreComp(
+        r_str, chord_str, theta_str, le_str, precurve_str, presweep_str, profile, materials, upper, lower, webs
+    )
 
     # evalute section properties
     EA, EIxx, EIyy, EIxy, GJ, rhoA, rhoJ, x_ec_str, y_ec_str = precomp.sectionProperties()

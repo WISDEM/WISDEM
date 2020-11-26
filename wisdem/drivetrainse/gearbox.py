@@ -10,7 +10,15 @@ Kr = 0.4
 
 def V_planetary(U, B, K):
     sunU = 0.5 * U - 1.0
-    V = 1.0 / U + 1.0 / U / B + 1.0 / B / sunU + sunU + sunU ** 2 + K * (U - 1.0) ** 2 / B + K * (U - 1.0) ** 2 / B / sunU
+    V = (
+        1.0 / U
+        + 1.0 / U / B
+        + 1.0 / B / sunU
+        + sunU
+        + sunU ** 2
+        + K * (U - 1.0) ** 2 / B
+        + K * (U - 1.0) ** 2 / B / sunU
+    )
     return V
 
 

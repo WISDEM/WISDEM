@@ -69,7 +69,9 @@ class TestServo(unittest.TestCase):
         modeling_options["airfoils"]["n_Re"] = n_Re
         modeling_options["airfoils"]["n_tab"] = n_tab
 
-        prob.model.add_subsystem("powercurve", rp.RegulatedPowerCurve(modeling_options=modeling_options), promotes=["*"])
+        prob.model.add_subsystem(
+            "powercurve", rp.RegulatedPowerCurve(modeling_options=modeling_options), promotes=["*"]
+        )
 
         prob.setup()
 
@@ -304,7 +306,9 @@ class TestServo(unittest.TestCase):
         modeling_options["airfoils"]["n_Re"] = n_Re
         modeling_options["airfoils"]["n_tab"] = n_tab
 
-        prob.model.add_subsystem("powercurve", rp.RegulatedPowerCurve(modeling_options=modeling_options), promotes=["*"])
+        prob.model.add_subsystem(
+            "powercurve", rp.RegulatedPowerCurve(modeling_options=modeling_options), promotes=["*"]
+        )
 
         prob.setup()
 

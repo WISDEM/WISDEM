@@ -40,18 +40,30 @@ class RailTransport(ExplicitComponent):
 
         # Rail configuration
         self.add_input(
-            "horizontal_angle_deg", val=13.0, units="deg", desc="Angle of horizontal turn (defined for an chord of 100 feet)"
+            "horizontal_angle_deg",
+            val=13.0,
+            units="deg",
+            desc="Angle of horizontal turn (defined for an chord of 100 feet)",
         )
         self.add_input(
-            "min_vertical_radius", val=609.6, units="m", desc="Minimum radius of a vertical curvature (hill or sag) (2000 feet)"
+            "min_vertical_radius",
+            val=609.6,
+            units="m",
+            desc="Minimum radius of a vertical curvature (hill or sag) (2000 feet)",
         )
         self.add_input("lateral_clearance", val=6.7056, units="m", desc="Clearance profile horizontal (22 feet)")
         self.add_input("vertical_clearance", val=7.0104, units="m", desc="Clearance profile vertical (23 feet)")
-        self.add_input("deck_height", val=1.19, units="m", desc="Height of the deck of the flatcar from the rails (4 feet)")
+        self.add_input(
+            "deck_height", val=1.19, units="m", desc="Height of the deck of the flatcar from the rails (4 feet)"
+        )
         self.add_input("max_strains", val=3500.0 * 1.0e-6, desc="Max allowable strains during transport")
         self.add_input("max_LV", val=0.5, desc="Max allowable ratio between lateral and vertical forces")
-        self.add_input("max_flatcar_weight_4axle", val=129727.31, units="kg", desc="Max mass of an 4-axle flatcar (286000 lbm)")
-        self.add_input("max_flatcar_weight_8axle", val=217724.16, units="kg", desc="Max mass of an 8-axle flatcar (480000 lbm)")
+        self.add_input(
+            "max_flatcar_weight_4axle", val=129727.31, units="kg", desc="Max mass of an 4-axle flatcar (286000 lbm)"
+        )
+        self.add_input(
+            "max_flatcar_weight_8axle", val=217724.16, units="kg", desc="Max mass of an 8-axle flatcar (480000 lbm)"
+        )
         self.add_input("max_root_rot_deg", val=15.0, units="deg", desc="Max degree of angle at blade root")
         self.add_input("flatcar_tc_length", val=20.12, units="m", desc="Flatcar truck center to truck center lenght")
 
@@ -63,7 +75,10 @@ class RailTransport(ExplicitComponent):
             desc="2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
         )
         self.add_input(
-            "theta", val=np.zeros(n_span), units="deg", desc="Twist angle at each section (positive decreases angle of attack)"
+            "theta",
+            val=np.zeros(n_span),
+            units="deg",
+            desc="Twist angle at each section (positive decreases angle of attack)",
         )
         self.add_input("chord", val=np.zeros(n_span), units="m", desc="chord length at each section")
         self.add_input(
@@ -108,7 +123,10 @@ class RailTransport(ExplicitComponent):
         self.add_input("rhoA", val=np.zeros(n_span), units="kg/m", desc="mass per unit length")
         self.add_input("rhoJ", val=np.zeros(n_span), units="kg*m", desc="polar mass moment of inertia per unit length")
         self.add_input(
-            "x_sc", val=np.zeros(n_span), units="m", desc="X-coordinate of the shear-center offset with respect to the XR-YR axes"
+            "x_sc",
+            val=np.zeros(n_span),
+            units="m",
+            desc="X-coordinate of the shear-center offset with respect to the XR-YR axes",
         )
         self.add_input(
             "y_sc",
@@ -138,13 +156,21 @@ class RailTransport(ExplicitComponent):
             val=np.zeros(2),
             desc="Constraint for max L/V for an 8-axle flatcar on vert curves, violated when bigger than 1",
         )
-        self.add_output("constr_strainPS", val=np.zeros(n_span), desc="Strain along pressure side of blade on a horizontal curve")
-        self.add_output("constr_strainSS", val=np.zeros(n_span), desc="Strain along suction side of blade on a horizontal curve")
         self.add_output(
-            "constr_strainLE", val=np.zeros((n_span, 2)), desc="Strain along leading edge side of blade on a vertical curve"
+            "constr_strainPS", val=np.zeros(n_span), desc="Strain along pressure side of blade on a horizontal curve"
         )
         self.add_output(
-            "constr_strainTE", val=np.zeros((n_span, 2)), desc="Strain along trailing edge side of blade on a vertical curve"
+            "constr_strainSS", val=np.zeros(n_span), desc="Strain along suction side of blade on a horizontal curve"
+        )
+        self.add_output(
+            "constr_strainLE",
+            val=np.zeros((n_span, 2)),
+            desc="Strain along leading edge side of blade on a vertical curve",
+        )
+        self.add_output(
+            "constr_strainTE",
+            val=np.zeros((n_span, 2)),
+            desc="Strain along trailing edge side of blade on a vertical curve",
         )
 
     def compute(self, inputs, outputs):
@@ -449,7 +475,8 @@ class RailTransport(ExplicitComponent):
 
                 # Check solved blade shape against envelope
                 r_check[:, k] = (
-                    np.sqrt((blade.nx + displacements.dx[0, :]) ** 2 + (blade.nz + displacements.dz[0, :]) ** 2) - r_outer
+                    np.sqrt((blade.nx + displacements.dx[0, :]) ** 2 + (blade.nz + displacements.dz[0, :]) ** 2)
+                    - r_outer
                 )
 
                 # Derailing reaction force on root node
@@ -500,7 +527,13 @@ class RailTransport(ExplicitComponent):
         bounds = [(0.0, 1e2)] * npts
         x0 = 1e2 * np.ones(npts)
         result = minimize(
-            lambda x: np.sum(np.abs(x)), x0, method="slsqp", bounds=bounds, tol=1e-3, constraints=const, options={"maxiter": 100}
+            lambda x: np.sum(np.abs(x)),
+            x0,
+            method="slsqp",
+            bounds=bounds,
+            tol=1e-3,
+            constraints=const,
+            options={"maxiter": 100},
         )
 
         # if result.success:

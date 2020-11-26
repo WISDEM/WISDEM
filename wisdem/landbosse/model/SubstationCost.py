@@ -77,7 +77,10 @@ class SubstationCost(CostModule):
         if calculate_costs_input_dict["num_turbines"] > 10:
             calculate_costs_output_dict["substation_cost_usd"] = (
                 11652
-                * (calculate_costs_input_dict["interconnect_voltage_kV"] + calculate_costs_input_dict["project_size_megawatts"])
+                * (
+                    calculate_costs_input_dict["interconnect_voltage_kV"]
+                    + calculate_costs_input_dict["project_size_megawatts"]
+                )
                 + 11795 * (calculate_costs_input_dict["project_size_megawatts"] ** 0.3549)
                 + 1526800
             )
@@ -150,7 +153,9 @@ class SubstationCost(CostModule):
             self.outputs_for_detailed_tab(self.input_dict, self.output_dict)
             # self.outputs_for_module_type_operation(self.input_dict, self.output_dict)
             self.output_dict["substation_module_type_operation"] = self.outputs_for_costs_by_module_type_operation(
-                input_df=self.output_dict["substation_cost_output_df"], project_id=self.project_name, total_or_turbine=True
+                input_df=self.output_dict["substation_cost_output_df"],
+                project_id=self.project_name,
+                total_or_turbine=True,
             )
             return 0, 0
         except Exception as error:

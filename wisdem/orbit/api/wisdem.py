@@ -61,7 +61,9 @@ class OrbitWisdem(om.ExplicitComponent):
         self.add_discrete_input(
             "wtiv", "example_wtiv", desc="Vessel configuration to use for installation of foundations and turbines."
         )
-        self.add_discrete_input("feeder", "future_feeder", desc="Vessel configuration to use for (optional) feeder barges.")
+        self.add_discrete_input(
+            "feeder", "future_feeder", desc="Vessel configuration to use for (optional) feeder barges."
+        )
         self.add_discrete_input(
             "num_feeders", 1, desc="Number of feeder barges to use for installation of foundations and turbines."
         )
@@ -71,7 +73,9 @@ class OrbitWisdem(om.ExplicitComponent):
             desc="Number of towing vessels to use for floating platforms that are assembled at port (with or without the turbine).",
         )
         self.add_discrete_input(
-            "num_station_keeping", 3, desc="Number of station keeping vessels that attach to floating platforms under tow-out."
+            "num_station_keeping",
+            3,
+            desc="Number of station keeping vessels that attach to floating platforms under tow-out.",
         )
         self.add_discrete_input(
             "oss_install_vessel",
@@ -82,7 +86,9 @@ class OrbitWisdem(om.ExplicitComponent):
         # Site
         self.add_input("site_depth", 40.0, units="m", desc="Site depth.")
         self.add_input("site_distance", 40.0, units="km", desc="Distance from site to installation port.")
-        self.add_input("site_distance_to_landfall", 50.0, units="km", desc="Distance from site to landfall for export cable.")
+        self.add_input(
+            "site_distance_to_landfall", 50.0, units="km", desc="Distance from site to landfall for export cable."
+        )
         self.add_input("interconnection_distance", 3.0, units="km", desc="Distance from landfall to interconnection.")
         self.add_input("site_mean_windspeed", 9.0, units="m/s", desc="Mean windspeed of the site.")
 
@@ -90,7 +96,9 @@ class OrbitWisdem(om.ExplicitComponent):
         self.add_discrete_input("number_of_turbines", 60, desc="Number of turbines.")
         self.add_input("plant_turbine_spacing", 7, desc="Turbine spacing in rotor diameters.")
         self.add_input("plant_row_spacing", 7, desc="Row spacing in rotor diameters. Not used in ring layouts.")
-        self.add_input("plant_substation_distance", 1, units="km", desc="Distance from first turbine in string to substation.")
+        self.add_input(
+            "plant_substation_distance", 1, units="km", desc="Distance from first turbine in string to substation."
+        )
 
         # Turbine
         self.add_input("turbine_rating", 8.0, units="MW", desc="Rated capacity of a turbine.")
@@ -132,8 +140,12 @@ class OrbitWisdem(om.ExplicitComponent):
 
         # Port
         self.add_input("port_cost_per_month", 2e6, units="USD/mo", desc="Monthly port costs.")
-        self.add_input("takt_time", 170.0, units="h", desc="Substructure assembly cycle time when doing assembly at the port.")
-        self.add_discrete_input("num_assembly_lines", 1, desc="Number of assembly lines used when assembly occurs at the port.")
+        self.add_input(
+            "takt_time", 170.0, units="h", desc="Substructure assembly cycle time when doing assembly at the port."
+        )
+        self.add_discrete_input(
+            "num_assembly_lines", 1, desc="Number of assembly lines used when assembly occurs at the port."
+        )
         self.add_discrete_input(
             "num_port_cranes",
             1,
@@ -160,7 +172,9 @@ class OrbitWisdem(om.ExplicitComponent):
 
         # Project
         self.add_input("site_auction_price", 100e6, units="USD", desc="Cost to secure site lease")
-        self.add_input("site_assessment_plan_cost", 1e6, units="USD", desc="Cost to do engineering plan for site assessment")
+        self.add_input(
+            "site_assessment_plan_cost", 1e6, units="USD", desc="Cost to do engineering plan for site assessment"
+        )
         self.add_input("site_assessment_cost", 25e6, units="USD", desc="Cost to execute site assessment")
         self.add_input("construction_operations_plan_cost", 2.5e6, units="USD", desc="Cost to do construction planning")
         self.add_input(
@@ -177,8 +191,12 @@ class OrbitWisdem(om.ExplicitComponent):
 
         # Outputs
         # Totals
-        self.add_output("bos_capex", 0.0, units="USD", desc="Total BOS CAPEX not including commissioning or decommissioning.")
-        self.add_output("total_capex", 0.0, units="USD", desc="Total BOS CAPEX including commissioning and decommissioning.")
+        self.add_output(
+            "bos_capex", 0.0, units="USD", desc="Total BOS CAPEX not including commissioning or decommissioning."
+        )
+        self.add_output(
+            "total_capex", 0.0, units="USD", desc="Total BOS CAPEX including commissioning and decommissioning."
+        )
         self.add_output(
             "total_capex_kW", 0.0, units="USD/kW", desc="Total BOS CAPEX including commissioning and decommissioning."
         )

@@ -254,7 +254,9 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         J0 = lsscyl.J0
         Jx = lsscyl.Jxx
 
-        elements = frame3dd.ElementData(ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones)
+        elements = frame3dd.ElementData(
+            ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones
+        )
         # -----------------------------------
 
         # ------ options ------------
@@ -325,10 +327,14 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         for k in range(n_dlcs):
             # Deflections and rotations at torq attachment
             rotor_gearbox_deflection[k] = np.sqrt(
-                displacements.dx[k, itorq - 1] ** 2 + displacements.dy[k, itorq - 1] ** 2 + displacements.dz[k, itorq - 1] ** 2
+                displacements.dx[k, itorq - 1] ** 2
+                + displacements.dy[k, itorq - 1] ** 2
+                + displacements.dz[k, itorq - 1] ** 2
             )
             rotor_gearbox_rotation[k] = (
-                displacements.dxrot[k, itorq - 1] + displacements.dyrot[k, itorq - 1] + displacements.dzrot[k, itorq - 1]
+                displacements.dxrot[k, itorq - 1]
+                + displacements.dyrot[k, itorq - 1]
+                + displacements.dzrot[k, itorq - 1]
             )
 
             # shear and bending, one per element (convert from local to global c.s.)
@@ -354,7 +360,11 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
             hoop = np.zeros(F.shape)
 
             outputs["constr_lss_vonmises"][:, k] = vonMisesStressUtilization(
-                outputs["lss_axial_stress"][:, k], hoop, outputs["lss_shear_stress"][:, k], gamma_f * gamma_m * gamma_n, sigma_y
+                outputs["lss_axial_stress"][:, k],
+                hoop,
+                outputs["lss_shear_stress"][:, k],
+                gamma_f * gamma_m * gamma_n,
+                sigma_y,
             )
         outputs["torq_deflection"] = rotor_gearbox_deflection.max()
         outputs["torq_rotation"] = rotor_gearbox_rotation.max()
@@ -494,7 +504,9 @@ class HSS_Frame(om.ExplicitComponent):
         J0 = hsscyl.J0
         Jx = hsscyl.Jxx
 
-        elements = frame3dd.ElementData(ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones)
+        elements = frame3dd.ElementData(
+            ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones
+        )
         # -----------------------------------
 
         # ------ options ------------
@@ -565,13 +577,19 @@ class HSS_Frame(om.ExplicitComponent):
 
             # Record total forces and moments
             outputs["F_generator"][:, k] = -1.0 * np.array([reactions.Fx[k, 0], reactions.Fy[k, 0], reactions.Fz[k, 0]])
-            outputs["M_generator"][:, k] = -1.0 * np.array([reactions.Mxx[k, 0], reactions.Myy[k, 0], reactions.Mzz[k, 0]])
+            outputs["M_generator"][:, k] = -1.0 * np.array(
+                [reactions.Mxx[k, 0], reactions.Myy[k, 0], reactions.Mzz[k, 0]]
+            )
             outputs["hss_axial_stress"][:, k] = np.abs(Fx) / Ax + M / S
             outputs["hss_shear_stress"][:, k] = 2.0 * F / As + np.abs(Mxx) / C
             hoop = np.zeros(F.shape)
 
             outputs["constr_hss_vonmises"][:, k] = vonMisesStressUtilization(
-                outputs["hss_axial_stress"][:, k], hoop, outputs["hss_shear_stress"][:, k], gamma_f * gamma_m * gamma_n, sigma_y
+                outputs["hss_axial_stress"][:, k],
+                hoop,
+                outputs["hss_shear_stress"][:, k],
+                gamma_f * gamma_m * gamma_n,
+                sigma_y,
             )
 
 
@@ -823,7 +841,9 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         J0 = np.r_[bedcyl.J0, nosecyl.J0]
         Jx = np.r_[bedcyl.Jxx, nosecyl.Jxx]
 
-        elements = frame3dd.ElementData(ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones)
+        elements = frame3dd.ElementData(
+            ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones
+        )
         # -----------------------------------
 
         # ------ options ------------
@@ -925,7 +945,9 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
                 displacements.dxrot[k, i2 - 1] + displacements.dyrot[k, i2 - 1] + displacements.dzrot[k, i2 - 1]
             )
             stator_rotation[k] = (
-                displacements.dxrot[k, istator - 1] + displacements.dyrot[k, istator - 1] + displacements.dzrot[k, istator - 1]
+                displacements.dxrot[k, istator - 1]
+                + displacements.dyrot[k, istator - 1]
+                + displacements.dzrot[k, istator - 1]
             )
 
             # shear and bending, one per element (convert from local to global c.s.)
@@ -941,7 +963,9 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
 
             # Record total forces and moments
             F_base_k = DirectionVector(-reactions.Fx[k, :].sum(), -reactions.Fy[k, :].sum(), -reactions.Fz[k, :].sum())
-            M_base_k = DirectionVector(-reactions.Mxx[k, :].sum(), -reactions.Myy[k, :].sum(), -reactions.Mzz[k, :].sum())
+            M_base_k = DirectionVector(
+                -reactions.Mxx[k, :].sum(), -reactions.Myy[k, :].sum(), -reactions.Mzz[k, :].sum()
+            )
 
             # Rotate vector from tilt axes to yaw/tower axes
             outputs["base_F"][:, k] = F_base_k.hubToYaw(-tiltD).toArray()
@@ -1256,7 +1280,13 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
             F_rot = DirectionVector(F_ext[0, :], F_ext[1, :], F_ext[2, :]).hubToYaw(-tiltD).toArray()
             M_rot = DirectionVector(M_ext[0, :], M_ext[1, :], M_ext[2, :]).hubToYaw(-tiltD).toArray()
             load.changePointLoads(
-                np.r_[i2, i1, igearbox, igenerator], F_rot[:, 0], F_rot[:, 1], F_rot[:, 2], M_rot[:, 0], M_rot[:, 1], M_rot[:, 2]
+                np.r_[i2, i1, igearbox, igenerator],
+                F_rot[:, 0],
+                F_rot[:, 1],
+                F_rot[:, 2],
+                M_rot[:, 0],
+                M_rot[:, 1],
+                M_rot[:, 2],
             )
             # -----------------------------------
 
@@ -1312,10 +1342,16 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
             # M   =  np.sqrt(Myy**2 + Mzz**2)
 
             # Record total forces and moments at base
-            outputs["base_F"][:, k] = np.r_[-reactions.Fx[k, :].sum(), -reactions.Fy[k, :].sum(), -reactions.Fz[k, :].sum()]
-            outputs["base_M"][:, k] = np.r_[-reactions.Mxx[k, :].sum(), -reactions.Myy[k, :].sum(), -reactions.Mzz[k, :].sum()]
+            outputs["base_F"][:, k] = np.r_[
+                -reactions.Fx[k, :].sum(), -reactions.Fy[k, :].sum(), -reactions.Fz[k, :].sum()
+            ]
+            outputs["base_M"][:, k] = np.r_[
+                -reactions.Mxx[k, :].sum(), -reactions.Myy[k, :].sum(), -reactions.Mzz[k, :].sum()
+            ]
 
-            outputs["bedplate_axial_stress"][:, k] = (np.abs(Fx) / Ax + np.abs(Myy) / Sy + np.abs(Mzz) / Sz)[: (2 * n - 2)]
+            outputs["bedplate_axial_stress"][:, k] = (np.abs(Fx) / Ax + np.abs(Myy) / Sy + np.abs(Mzz) / Sz)[
+                : (2 * n - 2)
+            ]
             outputs["bedplate_shear_stress"][:, k] = (2.0 * (np.abs(Vy) / Asy + np.abs(Vz) / Asz) + np.abs(Mxx) / C)[
                 : (2 * n - 2)
             ]

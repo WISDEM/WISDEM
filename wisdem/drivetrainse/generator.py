@@ -423,7 +423,9 @@ class Generator(om.Group):
         #    self.add_subsystem('sivc', sivc, promotes=['*'])
 
         # Easy Poisson ratio assuming isotropic
-        self.add_subsystem("poisson", om.ExecComp("v = 0.5*E/G - 1.0", E={"units": "Pa"}, G={"units": "Pa"}), promotes=["*"])
+        self.add_subsystem(
+            "poisson", om.ExecComp("v = 0.5*E/G - 1.0", E={"units": "Pa"}, G={"units": "Pa"}), promotes=["*"]
+        )
 
         # Add generator design component and cost
         if genType.lower() == "scig":

@@ -346,7 +346,9 @@ def check_gradient(
             fd_func = comp.complex_step_jacobian
         else:
             fd_func = comp.fd_jacobian
-        jac_fd = fd_func(params, unknowns, resids, option_overrides=comp.deriv_options)  # EMG: derv_options were not being passed
+        jac_fd = fd_func(
+            params, unknowns, resids, option_overrides=comp.deriv_options
+        )  # EMG: derv_options were not being passed
 
         # # Assemble and Return all metrics.
         # _assemble_deriv_data(chain(dparams, states), resids, data[cname],

@@ -65,11 +65,16 @@ class XlsxValidator:
         )
 
         comparison.rename(
-            columns={"cost_per_project_x": "cost_per_project_actual", "cost_per_project_y": "cost_per_project_expected"},
+            columns={
+                "cost_per_project_x": "cost_per_project_actual",
+                "cost_per_project_y": "cost_per_project_expected",
+            },
             inplace=True,
         )
 
-        comparison["difference_validation"] = comparison["cost_per_project_actual"] - comparison["cost_per_project_expected"]
+        comparison["difference_validation"] = (
+            comparison["cost_per_project_actual"] - comparison["cost_per_project_expected"]
+        )
 
         # Regardless of the outcome, write the end result of the comparison
         # to the validation output file.

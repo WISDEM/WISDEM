@@ -155,7 +155,11 @@ def test_total_cable_length(config, total_length):
     assert total_length == val
 
     val = round(
-        sum(length * n for val in array.design_result["array_system"]["cables"].values() for length, n in val["cable_sections"]),
+        sum(
+            length * n
+            for val in array.design_result["array_system"]["cables"].values()
+            for length, n in val["cable_sections"]
+        ),
         2,
     )
     assert total_length == val

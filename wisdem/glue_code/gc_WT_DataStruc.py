@@ -20,7 +20,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Material dictionary inputs
         self.add_subsystem(
-            "materials", Materials(mat_init_options=modeling_options["materials"], composites=modeling_options["flags"]["blade"])
+            "materials",
+            Materials(mat_init_options=modeling_options["materials"], composites=modeling_options["flags"]["blade"]),
         )
 
         # Airfoil dictionary inputs
@@ -30,11 +31,15 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             n_af = af_init_options["n_af"]  # Number of airfoils
             n_aoa = af_init_options["n_aoa"]  # Number of angle of attacks
             n_Re = af_init_options["n_Re"]  # Number of Reynolds, so far hard set at 1
-            n_tab = af_init_options["n_tab"]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
+            n_tab = af_init_options[
+                "n_tab"
+            ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
             n_xy = af_init_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
             airfoils.add_discrete_output("name", val=n_af * [""], desc="1D array of names of airfoils.")
             airfoils.add_output("ac", val=np.zeros(n_af), desc="1D array of the aerodynamic centers of each airfoil.")
-            airfoils.add_output("r_thick", val=np.zeros(n_af), desc="1D array of the relative thicknesses of each airfoil.")
+            airfoils.add_output(
+                "r_thick", val=np.zeros(n_af), desc="1D array of the relative thicknesses of each airfoil."
+            )
             airfoils.add_output(
                 "aoa",
                 val=np.zeros(n_aoa),
@@ -101,7 +106,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             nacelle_ivc.add_output(
                 "distance_tt_hub", val=0.0, units="m", desc="Vertical distance from tower top plane to hub flange"
             )
-            nacelle_ivc.add_output("overhang", val=0.0, units="m", desc="Horizontal distance from tower top edge to hub flange")
+            nacelle_ivc.add_output(
+                "overhang", val=0.0, units="m", desc="Horizontal distance from tower top edge to hub flange"
+            )
             nacelle_ivc.add_output(
                 "distance_hub2mb", val=0.0, units="m", desc="Distance from hub flange to first main bearing along shaft"
             )
@@ -110,9 +117,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             )
             nacelle_ivc.add_output("L_generator", val=0.0, units="m", desc="Generator length along shaft")
             nacelle_ivc.add_output("lss_diameter", val=np.zeros(2), units="m", desc="Diameter of low speed shaft")
-            nacelle_ivc.add_output("lss_wall_thickness", val=np.zeros(2), units="m", desc="Thickness of low speed shaft")
+            nacelle_ivc.add_output(
+                "lss_wall_thickness", val=np.zeros(2), units="m", desc="Thickness of low speed shaft"
+            )
             nacelle_ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
-            nacelle_ivc.add_output("gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive")
+            nacelle_ivc.add_output(
+                "gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive"
+            )
             nacelle_ivc.add_output(
                 "brake_mass_user",
                 val=0.0,
@@ -142,23 +153,38 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             nacelle_ivc.add_discrete_output(
                 "uptower", val=True, desc="If power electronics are located uptower (True) or at tower base (False)"
             )
-            nacelle_ivc.add_discrete_output("lss_material", val="steel", desc="Material name identifier for the low speed shaft")
-            nacelle_ivc.add_discrete_output("hss_material", val="steel", desc="Material name identifier for the high speed shaft")
-            nacelle_ivc.add_discrete_output("bedplate_material", val="steel", desc="Material name identifier for the bedplate")
+            nacelle_ivc.add_discrete_output(
+                "lss_material", val="steel", desc="Material name identifier for the low speed shaft"
+            )
+            nacelle_ivc.add_discrete_output(
+                "hss_material", val="steel", desc="Material name identifier for the high speed shaft"
+            )
+            nacelle_ivc.add_discrete_output(
+                "bedplate_material", val="steel", desc="Material name identifier for the bedplate"
+            )
 
             if modeling_options["DriveSE"]["direct"]:
                 # Direct only
                 nacelle_ivc.add_output(
-                    "access_diameter", val=0.0, units="m", desc="Minimum diameter for hollow shafts for maintenance access"
+                    "access_diameter",
+                    val=0.0,
+                    units="m",
+                    desc="Minimum diameter for hollow shafts for maintenance access",
                 )
                 nacelle_ivc.add_output(
                     "nose_diameter", val=np.zeros(2), units="m", desc="Diameter of nose (also called turret or spindle)"
                 )
                 nacelle_ivc.add_output(
-                    "nose_wall_thickness", val=np.zeros(2), units="m", desc="Thickness of nose (also called turret or spindle)"
+                    "nose_wall_thickness",
+                    val=np.zeros(2),
+                    units="m",
+                    desc="Thickness of nose (also called turret or spindle)",
                 )
                 nacelle_ivc.add_output(
-                    "bedplate_wall_thickness", val=np.zeros(4), units="m", desc="Thickness of hollow elliptical bedplate"
+                    "bedplate_wall_thickness",
+                    val=np.zeros(4),
+                    units="m",
+                    desc="Thickness of hollow elliptical bedplate",
                 )
             else:
                 # Geared only
@@ -168,8 +194,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     "hss_wall_thickness", val=np.zeros(2), units="m", desc="Wall thickness of high speed shaft"
                 )
                 nacelle_ivc.add_output("bedplate_flange_width", val=0.0, units="m", desc="Bedplate I-beam flange width")
-                nacelle_ivc.add_output("bedplate_flange_thickness", val=0.0, units="m", desc="Bedplate I-beam flange thickness")
-                nacelle_ivc.add_output("bedplate_web_thickness", val=0.0, units="m", desc="Bedplate I-beam web thickness")
+                nacelle_ivc.add_output(
+                    "bedplate_flange_thickness", val=0.0, units="m", desc="Bedplate I-beam flange thickness"
+                )
+                nacelle_ivc.add_output(
+                    "bedplate_web_thickness", val=0.0, units="m", desc="Bedplate I-beam web thickness"
+                )
                 nacelle_ivc.add_discrete_output(
                     "gear_configuration",
                     val="eep",
@@ -299,7 +329,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 units="m",
                 desc="1D array of the outer diameter values defined along the tower axis.",
             )
-            ivc.add_output("cd", val=np.zeros(n_height), desc="1D array of the drag coefficients defined along the tower height.")
+            ivc.add_output(
+                "cd", val=np.zeros(n_height), desc="1D array of the drag coefficients defined along the tower height."
+            )
             ivc.add_output(
                 "layer_thickness",
                 val=np.zeros((n_layers, n_height - 1)),
@@ -307,13 +339,17 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 desc="2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.",
             )
             ivc.add_output(
-                "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of tower"
+                "outfitting_factor",
+                val=0.0,
+                desc="Multiplier that accounts for secondary structure mass inside of tower",
             )
             ivc.add_discrete_output(
                 "layer_name", val=[], desc="1D array of the names of the layers modeled in the tower structure."
             )
             ivc.add_discrete_output(
-                "layer_mat", val=[], desc="1D array of the names of the materials of each layer modeled in the tower structure."
+                "layer_mat",
+                val=[],
+                desc="1D array of the names of the materials of each layer modeled in the tower structure.",
             )
 
         # Monopile inputs
@@ -323,7 +359,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # Foundation inputs
         if modeling_options["flags"]["foundation"]:
             foundation_ivc = self.add_subsystem("foundation", om.IndepVarComp())
-            foundation_ivc.add_output("height", val=0.0, units="m", desc="Foundation height in respect to the ground level.")
+            foundation_ivc.add_output(
+                "height", val=0.0, units="m", desc="Foundation height in respect to the ground level."
+            )
 
         if modeling_options["flags"]["floating_platform"]:
             self.add_subsystem("floating", Floating(floating_init_options=modeling_options["floating"]))
@@ -360,9 +398,15 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             val="",
             desc="IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).",
         )
-        conf_ivc.add_discrete_output("gearbox_type", val="geared", desc="Gearbox configuration (geared, direct-drive, etc.).")
-        conf_ivc.add_discrete_output("rotor_orientation", val="upwind", desc="Rotor orientation, either upwind or downwind.")
-        conf_ivc.add_discrete_output("upwind", val=True, desc="Convenient boolean for upwind (True) or downwind (False).")
+        conf_ivc.add_discrete_output(
+            "gearbox_type", val="geared", desc="Gearbox configuration (geared, direct-drive, etc.)."
+        )
+        conf_ivc.add_discrete_output(
+            "rotor_orientation", val="upwind", desc="Rotor orientation, either upwind or downwind."
+        )
+        conf_ivc.add_discrete_output(
+            "upwind", val=True, desc="Convenient boolean for upwind (True) or downwind (False)."
+        )
         conf_ivc.add_discrete_output("n_blades", val=3, desc="Number of blades of the rotor.")
         conf_ivc.add_output("rated_power", val=0.0, units="W", desc="Electrical rated power of the generator.")
 
@@ -391,7 +435,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             )
             env_ivc.add_output("rho_water", val=1025.0, units="kg/m**3", desc="Density of ocean water")
             env_ivc.add_output("mu_water", val=1.3351e-3, units="kg/(m*s)", desc="Dynamic viscosity of ocean water")
-            env_ivc.add_output("water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore")
+            env_ivc.add_output(
+                "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
+            )
             env_ivc.add_output("hsig_wave", val=0.0, units="m", desc="Significant wave height")
             env_ivc.add_output("Tsig_wave", val=0.0, units="s", desc="Significant wave period")
             env_ivc.add_output("G_soil", val=140e6, units="N/m**2", desc="Shear stress of soil")
@@ -492,10 +538,12 @@ class Blade(om.Group):
             "s_opt_chord", val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
         )
         opt_var.add_output(
-            "twist_opt_gain", val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
+            "twist_opt_gain",
+            val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
         )
         opt_var.add_output(
-            "chord_opt_gain", val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
+            "chord_opt_gain",
+            val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
         opt_var.add_output("af_position", val=np.ones(blade_init_options["n_af_span"]))
         opt_var.add_output(
@@ -518,7 +566,8 @@ class Blade(om.Group):
 
         # Interpolate airfoil profiles and coordinates
         self.add_subsystem(
-            "interp_airfoils", Blade_Interp_Airfoils(blade_init_options=blade_init_options, af_init_options=af_init_options)
+            "interp_airfoils",
+            Blade_Interp_Airfoils(blade_init_options=blade_init_options, af_init_options=af_init_options),
         )
 
         # Connections to blade aero parametrization
@@ -540,7 +589,8 @@ class Blade(om.Group):
         # If the flag is true, generate the 3D x,y,z points of the outer blade shape
         if blade_init_options["lofted_output"] == True:
             self.add_subsystem(
-                "blade_lofted", Blade_Lofted_Shape(blade_init_options=blade_init_options, af_init_options=af_init_options)
+                "blade_lofted",
+                Blade_Lofted_Shape(blade_init_options=blade_init_options, af_init_options=af_init_options),
             )
             self.connect("interp_airfoils.coord_xy_dim", "blade_lofted.coord_xy_dim")
             self.connect("pa.twist_param", "blade_lofted.twist")
@@ -613,7 +663,9 @@ class Blade_Outer_Shape_BEM(om.Group):
         )
 
         self.add_subsystem(
-            "compute_blade_outer_shape_bem", Compute_Blade_Outer_Shape_BEM(blade_init_options=blade_init_options), promotes=["*"]
+            "compute_blade_outer_shape_bem",
+            Compute_Blade_Outer_Shape_BEM(blade_init_options=blade_init_options),
+            promotes=["*"],
         )
 
 
@@ -673,7 +725,9 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             val=np.zeros(n_span),
             desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
         )
-        self.add_output("chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span.")
+        self.add_output(
+            "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
+        )
         self.add_output(
             "twist",
             val=np.zeros(n_span),
@@ -717,7 +771,9 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
                 flap_start = inputs["span_end"] - inputs["span_ext"]
                 flap_end = inputs["span_end"]
 
-            idx_flap_start = np.where(np.abs(nd_span_orig - flap_start) == (np.abs(nd_span_orig - flap_start)).min())[0][0]
+            idx_flap_start = np.where(np.abs(nd_span_orig - flap_start) == (np.abs(nd_span_orig - flap_start)).min())[
+                0
+            ][0]
             idx_flap_end = np.where(np.abs(nd_span_orig - flap_end) == (np.abs(nd_span_orig - flap_end)).min())[0][0]
             if idx_flap_start == idx_flap_end:
                 idx_flap_end += 1
@@ -774,7 +830,9 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             val=np.zeros(n_span),
             desc="1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.",
         )
-        self.add_input("chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span.")
+        self.add_input(
+            "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
+        )
 
         # Airfoil properties
         self.add_discrete_input("name", val=n_af * [""], desc="1D array of names of airfoils.")
@@ -804,15 +862,21 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
 
         # Airfoil coordinates
         self.add_input(
-            "coord_xy", val=np.zeros((n_af, n_xy, 2)), desc="3D array of the x and y airfoil coordinates of the n_af airfoils."
+            "coord_xy",
+            val=np.zeros((n_af, n_xy, 2)),
+            desc="3D array of the x and y airfoil coordinates of the n_af airfoils.",
         )
 
         # Polars and coordinates interpolated along span
         self.add_output(
-            "r_thick_interp", val=np.zeros(n_span), desc="1D array of the relative thicknesses of the blade defined along span."
+            "r_thick_interp",
+            val=np.zeros(n_span),
+            desc="1D array of the relative thicknesses of the blade defined along span.",
         )
         self.add_output(
-            "ac_interp", val=np.zeros(n_span), desc="1D array of the aerodynamic center of the blade defined along span."
+            "ac_interp",
+            val=np.zeros(n_span),
+            desc="1D array of the aerodynamic center of the blade defined along span.",
         )
         self.add_output(
             "cl_interp",
@@ -1099,7 +1163,9 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
             val=np.zeros(n_layers),
             desc="1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer",
         )
-        ivc.add_discrete_output("index_layer_start", val=np.zeros(n_layers), desc="Index used to fix a layer to another")
+        ivc.add_discrete_output(
+            "index_layer_start", val=np.zeros(n_layers), desc="Index used to fix a layer to another"
+        )
         ivc.add_discrete_output("index_layer_end", val=np.zeros(n_layers), desc="Index used to fix a layer to another")
 
         ivc.add_output(
@@ -1155,7 +1221,9 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
 
         self.add_subsystem(
             "compute_internal_structure_2d_fem",
-            Compute_Blade_Internal_Structure_2D_FEM(blade_init_options=blade_init_options, af_init_options=af_init_options),
+            Compute_Blade_Internal_Structure_2D_FEM(
+                blade_init_options=blade_init_options, af_init_options=af_init_options
+            ),
             promotes=["*"],
         )
 
@@ -1261,7 +1329,9 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
             val=np.zeros(n_layers),
             desc="1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer",
         )
-        self.add_discrete_input("index_layer_start", val=np.zeros(n_layers), desc="Index used to fix a layer to another")
+        self.add_discrete_input(
+            "index_layer_start", val=np.zeros(n_layers), desc="Index used to fix a layer to another"
+        )
         self.add_discrete_input("index_layer_end", val=np.zeros(n_layers), desc="Index used to fix a layer to another")
 
         # From blade outer shape
@@ -1277,7 +1347,9 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
             units="rad",
             desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
         )
-        self.add_input("chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span.")
+        self.add_input(
+            "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
+        )
         self.add_input(
             "pitch_axis",
             val=np.zeros(n_span),
@@ -1446,7 +1518,9 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     web_start_nd[j, i] = inputs["web_start_nd_yaml"][j, i]
                     web_end_nd[j, i] = inputs["web_end_nd_yaml"][j, i]
                 else:
-                    raise ValueError("Blade web " + web_name[j] + " not described correctly. Please check the yaml input file.")
+                    raise ValueError(
+                        "Blade web " + web_name[j] + " not described correctly. Please check the yaml input file."
+                    )
 
             # Loop through the layers and compute non-dimensional start and end positions along the profile for the different layer definitions
             for j in range(self.n_layers):
@@ -1520,13 +1594,19 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     # Geometry check to prevent overlap between SC and LE reinf
                     for k in range(self.n_layers):
                         if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
-                            if discrete_inputs["layer_side"][k] == "suction" and layer_start_nd[j, i] < layer_end_nd[k, i]:
+                            if (
+                                discrete_inputs["layer_side"][k] == "suction"
+                                and layer_start_nd[j, i] < layer_end_nd[k, i]
+                            ):
                                 print(
                                     "WARNING: The leading edge reinforcement extends above the spar caps at station "
                                     + str(i)
                                     + ". Please reduce its width."
                                 )
-                            elif discrete_inputs["layer_side"][k] == "pressure" and layer_end_nd[j, i] > layer_start_nd[k, i]:
+                            elif (
+                                discrete_inputs["layer_side"][k] == "pressure"
+                                and layer_end_nd[j, i] > layer_start_nd[k, i]
+                            ):
                                 print(
                                     "WARNING: The leading edge reinforcement extends above the spar caps at station "
                                     + str(i)
@@ -1562,7 +1642,9 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     layer_start_nd[j, i] = layer_end_nd[int(discrete_inputs["index_layer_start"][j]), i]
                 else:
                     raise ValueError(
-                        "Blade layer " + str(layer_name[j]) + " not described correctly. Please check the yaml input file."
+                        "Blade layer "
+                        + str(layer_name[j])
+                        + " not described correctly. Please check the yaml input file."
                     )
 
         # Assign openmdao outputs
@@ -1583,7 +1665,9 @@ def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.0):
     m_rot = np.sin(rotation) / np.cos(rotation)  # slope of rotated axis
     plane_rot = [m_rot, -1 * m_rot * p_le_d[0] + p_le_d[1]]  # coefficients for rotated axis line: a1*x + a0
 
-    m_intersection = np.sin(rotation + np.pi / 2.0) / np.cos(rotation + np.pi / 2.0)  # slope perpendicular to rotated axis
+    m_intersection = np.sin(rotation + np.pi / 2.0) / np.cos(
+        rotation + np.pi / 2.0
+    )  # slope perpendicular to rotated axis
     plane_intersection = [
         m_intersection,
         -1 * m_intersection * offset_x + offset_y,
@@ -1614,7 +1698,9 @@ def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.0):
 
         midpoint_x = (tangent_line[1] - plane_intersection[1]) / (plane_intersection[0] - tangent_line[0])
         midpoint_y = (
-            plane_intersection[0] * (tangent_line[1] - plane_intersection[1]) / (plane_intersection[0] - tangent_line[0])
+            plane_intersection[0]
+            * (tangent_line[1] - plane_intersection[1])
+            / (plane_intersection[0] - tangent_line[0])
             + plane_intersection[1]
         )
 
@@ -1753,7 +1839,9 @@ class Monopile(om.Group):
             desc="1D array of the outer diameter values defined along the tower axis.",
         )
         ivc.add_discrete_output(
-            "layer_name", val=n_layers * [""], desc="1D array of the names of the layers modeled in the tower structure."
+            "layer_name",
+            val=n_layers * [""],
+            desc="1D array of the names of the layers modeled in the tower structure.",
         )
         ivc.add_discrete_output(
             "layer_mat",
@@ -1766,7 +1854,9 @@ class Monopile(om.Group):
             units="m",
             desc="2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.",
         )
-        ivc.add_output("outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of tower")
+        ivc.add_output(
+            "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of tower"
+        )
         ivc.add_output(
             "transition_piece_height", val=0.0, units="m", desc="point mass height of transition piece above water line"
         )
@@ -1774,7 +1864,9 @@ class Monopile(om.Group):
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
         ivc.add_output("suctionpile_depth", val=0.0, units="m", desc="depth of foundation in the soil")
-        ivc.add_output("suctionpile_depth_diam_ratio", 0.0, desc="ratio of sunction pile depth to mudline monopile diameter")
+        ivc.add_output(
+            "suctionpile_depth_diam_ratio", 0.0, desc="ratio of sunction pile depth to mudline monopile diameter"
+        )
 
         self.add_subsystem("compute_monopile_grid", Compute_Grid(init_options=monopile_init_options), promotes=["*"])
 
@@ -2007,7 +2099,10 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
             desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.",
         )
         self.add_input(
-            "rho_fiber", val=np.zeros(n_mat), units="kg/m**3", desc="1D array of the density of the fibers of the materials."
+            "rho_fiber",
+            val=np.zeros(n_mat),
+            units="kg/m**3",
+            desc="1D array of the density of the fibers of the materials.",
         )
         self.add_input(
             "rho",
@@ -2189,8 +2284,12 @@ class Materials(om.Group):
             units="Pa",
             desc="Yield stress of the material (in the principle direction for composites).",
         )
-        ivc.add_output("unit_cost", val=np.zeros(n_mat), units="USD/kg", desc="1D array of the unit costs of the materials.")
-        ivc.add_output("waste", val=np.zeros(n_mat), desc="1D array of the non-dimensional waste fraction of the materials.")
+        ivc.add_output(
+            "unit_cost", val=np.zeros(n_mat), units="USD/kg", desc="1D array of the unit costs of the materials."
+        )
+        ivc.add_output(
+            "waste", val=np.zeros(n_mat), desc="1D array of the non-dimensional waste fraction of the materials."
+        )
         ivc.add_output(
             "roll_mass",
             val=np.zeros(n_mat),
@@ -2205,7 +2304,10 @@ class Materials(om.Group):
             desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.",
         )
         ivc.add_output(
-            "rho_fiber", val=np.zeros(n_mat), units="kg/m**3", desc="1D array of the density of the fibers of the materials."
+            "rho_fiber",
+            val=np.zeros(n_mat),
+            units="kg/m**3",
+            desc="1D array of the density of the fibers of the materials.",
         )
         ivc.add_output(
             "rho",
@@ -2358,7 +2460,9 @@ class WT_Assembly(om.ExplicitComponent):
                 outputs["hub_height"] = inputs["hub_height_user"]
                 outputs["tower_ref_axis"][:, 2] = (
                     inputs["tower_ref_axis_user"][:, 2] - inputs["tower_ref_axis_user"][0, 2]
-                ) * inputs["hub_height_user"] / (inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]) + inputs[
+                ) * inputs["hub_height_user"] / (
+                    inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
+                ) + inputs[
                     "tower_ref_axis_user"
                 ][
                     0, 2

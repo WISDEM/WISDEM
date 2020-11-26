@@ -74,7 +74,9 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["rho_mat"] = np.array([1e4])
         self.inputs["unit_cost_mat"] = np.array([1e1])
         self.discrete_inputs["material_names"] = ["steel"]
-        myobj = tow.DiscretizationYAML(n_height_tower=5, n_height_monopile=0, n_layers_tower=1, n_layers_monopile=0, n_mat=1)
+        myobj = tow.DiscretizationYAML(
+            n_height_tower=5, n_height_monopile=0, n_layers_tower=1, n_layers_monopile=0, n_mat=1
+        )
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         npt.assert_equal(self.outputs["tower_section_height"], 25.0 * np.ones(4))
@@ -107,7 +109,9 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["rho_mat"] = np.array([1e4, 2e4])
         self.inputs["unit_cost_mat"] = np.array([1e1, 2e1])
         self.discrete_inputs["material_names"] = ["steel", "other"]
-        myobj = tow.DiscretizationYAML(n_height_tower=5, n_height_monopile=0, n_layers_tower=1, n_layers_monopile=0, n_mat=2)
+        myobj = tow.DiscretizationYAML(
+            n_height_tower=5, n_height_monopile=0, n_layers_tower=1, n_layers_monopile=0, n_mat=2
+        )
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         npt.assert_equal(self.outputs["tower_section_height"], 25.0 * np.ones(4))
@@ -140,7 +144,9 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["rho_mat"] = np.array([1e4])
         self.inputs["unit_cost_mat"] = np.array([1e1])
         self.discrete_inputs["material_names"] = ["steel"]
-        myobj = tow.DiscretizationYAML(n_height_tower=5, n_height_monopile=5, n_layers_tower=1, n_layers_monopile=1, n_mat=1)
+        myobj = tow.DiscretizationYAML(
+            n_height_tower=5, n_height_monopile=5, n_layers_tower=1, n_layers_monopile=1, n_mat=1
+        )
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         npt.assert_equal(self.outputs["tower_section_height"], np.r_[12.5 * np.ones(4), 25 * np.ones(4)])
@@ -173,7 +179,9 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["rho_mat"] = np.array([1e4, 2e4])
         self.inputs["unit_cost_mat"] = np.array([1e1, 2e1])
         self.discrete_inputs["material_names"] = ["steel", "other"]
-        myobj = tow.DiscretizationYAML(n_height_tower=5, n_height_monopile=5, n_layers_tower=1, n_layers_monopile=1, n_mat=2)
+        myobj = tow.DiscretizationYAML(
+            n_height_tower=5, n_height_monopile=5, n_layers_tower=1, n_layers_monopile=1, n_mat=2
+        )
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         npt.assert_equal(self.outputs["tower_section_height"], np.r_[12.5 * np.ones(4), 25 * np.ones(4)])
@@ -205,7 +213,9 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["rho_mat"] = np.array([1e4])
         self.inputs["unit_cost_mat"] = np.array([1e1])
         self.discrete_inputs["material_names"] = ["steel"]
-        myobj = tow.DiscretizationYAML(n_height_tower=5, n_height_monopile=0, n_layers_tower=1, n_layers_monopile=0, n_mat=1)
+        myobj = tow.DiscretizationYAML(
+            n_height_tower=5, n_height_monopile=0, n_layers_tower=1, n_layers_monopile=0, n_mat=1
+        )
 
         try:
             self.inputs["tower_layer_thickness"][0, -1] = 0.0
@@ -295,7 +305,9 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["cylinder_mass"] = 1e3 * np.ones(4)
         self.inputs["cylinder_cost"] = 1e5
         self.inputs["cylinder_center_of_mass"] = 10.0
-        self.inputs["cylinder_section_center_of_mass"] = self.inputs["z_full"][:-1] + 0.5 * np.diff(self.inputs["z_full"])
+        self.inputs["cylinder_section_center_of_mass"] = self.inputs["z_full"][:-1] + 0.5 * np.diff(
+            self.inputs["z_full"]
+        )
         self.inputs["cylinder_I_base"] = 1e4 * np.r_[np.ones(3), np.zeros(3)]
         self.inputs["transition_piece_height"] = 20.0
         self.inputs["transition_piece_mass"] = 1e2
@@ -308,7 +320,9 @@ class TestTowerSE(unittest.TestCase):
 
         self.assertEqual(self.outputs["structural_cost"], self.inputs["cylinder_cost"] + 1e3)
         npt.assert_equal(self.outputs["tower_I_base"], self.inputs["cylinder_I_base"])
-        self.assertEqual(self.outputs["tower_center_of_mass"], (4 * 1e3 * 10.0 + 1e2 * 20.0 + 1e2 * -30.0) / (4 * 1e3 + 2e2))
+        self.assertEqual(
+            self.outputs["tower_center_of_mass"], (4 * 1e3 * 10.0 + 1e2 * 20.0 + 1e2 * -30.0) / (4 * 1e3 + 2e2)
+        )
         npt.assert_equal(self.outputs["tower_section_center_of_mass"], self.inputs["cylinder_section_center_of_mass"])
         self.assertEqual(self.outputs["monopile_mass"], 1e3 * 2.5 + 2 * 1e2)
         self.assertEqual(self.outputs["monopile_cost"], self.inputs["cylinder_cost"] * 2.5 / 4.0 + 1e3)
@@ -614,7 +628,8 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(prob["tower_I_base"][:2], prob["cm.I_base"][:2] + 1e2 * 45 ** 2)
         npt.assert_equal(prob["tower_I_base"][2:], prob["cm.I_base"][2:])
         npt.assert_almost_equal(
-            prob["tower_center_of_mass"], (7.5 * mass_dens * 105.0 + 15.0 * 1e2 + 1e4 * -30.0) / (mass_dens * 105 + 1e2 + 1e4)
+            prob["tower_center_of_mass"],
+            (7.5 * mass_dens * 105.0 + 15.0 * 1e2 + 1e4 * -30.0) / (mass_dens * 105 + 1e2 + 1e4),
         )
         npt.assert_equal(prob["tower_section_center_of_mass"], prob["cm.section_center_of_mass"])
         npt.assert_almost_equal(prob["monopile_cost"], (60.0 / 105.0) * prob["cm.cost"] + 1e3)
@@ -1022,7 +1037,9 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob["wind1.Uref"], [11.73732])
         npt.assert_almost_equal(prob["tower1.f1"], [0.33214436], 5)
         npt.assert_almost_equal(prob["post1.top_deflection"], [0.69728181])
-        npt.assert_almost_equal(prob["post1.stress"], [0.45829036, 0.41279744, 0.35017613, 0.31497356, 0.17978006, 0.12034969])
+        npt.assert_almost_equal(
+            prob["post1.stress"], [0.45829036, 0.41279744, 0.35017613, 0.31497356, 0.17978006, 0.12034969]
+        )
         npt.assert_almost_equal(
             prob["post1.global_buckling"], [0.50459926, 0.47009267, 0.42172339, 0.40495796, 0.29807777, 0.25473308]
         )
@@ -1032,7 +1049,9 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob["wind2.Uref"], [70.0])
         npt.assert_almost_equal(prob["tower2.f1"], [0.33218936], 5)
         npt.assert_almost_equal(prob["post2.top_deflection"], [0.64374406])
-        npt.assert_almost_equal(prob["post2.stress"], [0.44626187, 0.3821702, 0.30578917, 0.25648781, 0.13131541, 0.10609859])
+        npt.assert_almost_equal(
+            prob["post2.stress"], [0.44626187, 0.3821702, 0.30578917, 0.25648781, 0.13131541, 0.10609859]
+        )
         npt.assert_almost_equal(
             prob["post2.global_buckling"], [0.49412205, 0.4442257, 0.38450749, 0.35599809, 0.25784865, 0.24625576]
         )

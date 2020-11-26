@@ -237,7 +237,10 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                 left=0.0,
                 right=0.0,
             )
-        elif "start_nd_arc" in internal_structure_2d_fem["webs"][i] and "end_nd_arc" in internal_structure_2d_fem["webs"][i]:
+        elif (
+            "start_nd_arc" in internal_structure_2d_fem["webs"][i]
+            and "end_nd_arc" in internal_structure_2d_fem["webs"][i]
+        ):
             definition_web[i] = 3
             web_start_nd[i, :] = np.interp(
                 nd_span,
@@ -331,7 +334,10 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                 right=0.0,
             )
             layer_side[i] = internal_structure_2d_fem["layers"][i]["side"]
-        if "midpoint_nd_arc" in internal_structure_2d_fem["layers"][i] and "width" in internal_structure_2d_fem["layers"][i]:
+        if (
+            "midpoint_nd_arc" in internal_structure_2d_fem["layers"][i]
+            and "width" in internal_structure_2d_fem["layers"][i]
+        ):
             if "fixed" in internal_structure_2d_fem["layers"][i]["midpoint_nd_arc"].keys():
                 if internal_structure_2d_fem["layers"][i]["midpoint_nd_arc"]["fixed"] == "TE":
                     layer_midpoint_nd[i, :] = np.ones(n_span)
@@ -769,17 +775,25 @@ def assign_tower_values(wt_opt, modeling_options, tower):
         svec, tower["outer_shape_bem"]["outer_diameter"]["grid"], tower["outer_shape_bem"]["outer_diameter"]["values"]
     )
     wt_opt["tower.cd"] = np.interp(
-        svec, tower["outer_shape_bem"]["drag_coefficient"]["grid"], tower["outer_shape_bem"]["drag_coefficient"]["values"]
+        svec,
+        tower["outer_shape_bem"]["drag_coefficient"]["grid"],
+        tower["outer_shape_bem"]["drag_coefficient"]["values"],
     )
 
     wt_opt["tower.ref_axis"][:, 0] = np.interp(
-        svec, tower["outer_shape_bem"]["reference_axis"]["x"]["grid"], tower["outer_shape_bem"]["reference_axis"]["x"]["values"]
+        svec,
+        tower["outer_shape_bem"]["reference_axis"]["x"]["grid"],
+        tower["outer_shape_bem"]["reference_axis"]["x"]["values"],
     )
     wt_opt["tower.ref_axis"][:, 1] = np.interp(
-        svec, tower["outer_shape_bem"]["reference_axis"]["y"]["grid"], tower["outer_shape_bem"]["reference_axis"]["y"]["values"]
+        svec,
+        tower["outer_shape_bem"]["reference_axis"]["y"]["grid"],
+        tower["outer_shape_bem"]["reference_axis"]["y"]["values"],
     )
     wt_opt["tower.ref_axis"][:, 2] = np.interp(
-        svec, tower["outer_shape_bem"]["reference_axis"]["z"]["grid"], tower["outer_shape_bem"]["reference_axis"]["z"]["values"]
+        svec,
+        tower["outer_shape_bem"]["reference_axis"]["z"]["grid"],
+        tower["outer_shape_bem"]["reference_axis"]["z"]["values"],
     )
 
     layer_name = n_layers * [""]
@@ -829,7 +843,9 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
 
     wt_opt["monopile.s"] = svec
     wt_opt["monopile.diameter"] = np.interp(
-        svec, monopile["outer_shape_bem"]["outer_diameter"]["grid"], monopile["outer_shape_bem"]["outer_diameter"]["values"]
+        svec,
+        monopile["outer_shape_bem"]["outer_diameter"]["grid"],
+        monopile["outer_shape_bem"]["outer_diameter"]["values"],
     )
 
     wt_opt["monopile.ref_axis"][:, 0] = np.interp(

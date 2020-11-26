@@ -138,7 +138,10 @@ class LandBOSSE_API(om.ExplicitComponent):
             val=15,
         )
         self.add_input(
-            "critical_height_non_erection_wind_delays_m", units="m", desc="Non-Erection Wind Delay Critical Height (m)", val=10
+            "critical_height_non_erection_wind_delays_m",
+            units="m",
+            desc="Non-Erection Wind Delay Critical Height (m)",
+            val=10,
         )
         self.add_discrete_input("road_distributed_winnd", val=False)
         self.add_input("road_width_ft", units="ft", desc="Road width (ft)", val=20)
@@ -151,7 +154,9 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input("markup_overhead", desc="Markup overhead", val=0.05)
         self.add_input("markup_profit_margin", desc="Markup profit margin", val=0.05)
         self.add_input("Mass tonne", val=(1.0,), desc="", units="t")
-        self.add_input("development_labor_cost_usd", val=1e6, desc="The cost of labor in the development phase", units="USD")
+        self.add_input(
+            "development_labor_cost_usd", val=1e6, desc="The cost of labor in the development phase", units="USD"
+        )
         # Disabled due to Pandas conflict right now.
         self.add_input("labor_cost_multiplier", val=1.0, desc="Labor cost multiplier")
 
@@ -223,7 +228,9 @@ class LandBOSSE_API(om.ExplicitComponent):
         )
 
         self.add_discrete_input(
-            "components", val=default_project_data["components"], desc="Dataframe of components for tower, blade, nacelle"
+            "components",
+            val=default_project_data["components"],
+            desc="Dataframe of components for tower, blade, nacelle",
         )
 
         self.add_discrete_input(
@@ -239,7 +246,9 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_discrete_input("crew", val=default_project_data["crew"], desc="Dataframe of crew configurations")
 
         self.add_discrete_input(
-            "crew_price", val=default_project_data["crew_price"], desc="Dataframe of costs per hour for each type of worker."
+            "crew_price",
+            val=default_project_data["crew_price"],
+            desc="Dataframe of costs per hour for each type of worker.",
         )
 
         self.add_discrete_input(
@@ -252,10 +261,14 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         self.add_discrete_input("rsmeans", val=default_project_data["rsmeans"], desc="RSMeans price data")
 
-        self.add_discrete_input("cable_specs", val=default_project_data["cable_specs"], desc="cable specs for collection system")
+        self.add_discrete_input(
+            "cable_specs", val=default_project_data["cable_specs"], desc="cable specs for collection system"
+        )
 
         self.add_discrete_input(
-            "material_price", val=default_project_data["material_price"], desc="Prices of materials for foundations and roads"
+            "material_price",
+            val=default_project_data["material_price"],
+            desc="Prices of materials for foundations and roads",
         )
 
         self.add_discrete_input("project_data", val=default_project_data, desc="Dictionary of all dataframes of data")
@@ -268,16 +281,28 @@ class LandBOSSE_API(om.ExplicitComponent):
         To see how cost totals are calculated see, the compute_total_bos_costs
         method below.
         """
-        self.add_output("bos_capex", 0.0, units="USD", desc="Total BOS CAPEX not including commissioning or decommissioning.")
         self.add_output(
-            "bos_capex_kW", 0.0, units="USD/kW", desc="Total BOS CAPEX per kW not including commissioning or decommissioning."
+            "bos_capex", 0.0, units="USD", desc="Total BOS CAPEX not including commissioning or decommissioning."
         )
-        self.add_output("total_capex", 0.0, units="USD", desc="Total BOS CAPEX including commissioning and decommissioning.")
         self.add_output(
-            "total_capex_kW", 0.0, units="USD/kW", desc="Total BOS CAPEX per kW including commissioning and decommissioning."
+            "bos_capex_kW",
+            0.0,
+            units="USD/kW",
+            desc="Total BOS CAPEX per kW not including commissioning or decommissioning.",
+        )
+        self.add_output(
+            "total_capex", 0.0, units="USD", desc="Total BOS CAPEX including commissioning and decommissioning."
+        )
+        self.add_output(
+            "total_capex_kW",
+            0.0,
+            units="USD/kW",
+            desc="Total BOS CAPEX per kW including commissioning and decommissioning.",
         )
         self.add_output("installation_capex", 0.0, units="USD", desc="Total foundation and erection installation cost.")
-        self.add_output("installation_capex_kW", 0.0, units="USD", desc="Total foundation and erection installation cost per kW.")
+        self.add_output(
+            "installation_capex_kW", 0.0, units="USD", desc="Total foundation and erection installation cost per kW."
+        )
         self.add_output("installation_time_months", 0.0, desc="Total balance of system installation time (months).")
 
     def setup_discrete_outputs(self):
@@ -416,7 +441,9 @@ class LandBOSSE_API(om.ExplicitComponent):
         incomplete_input_dict["rsmeans_per_diem"] = crew_cost.loc["RSMeans", "Per diem USD per day"]
 
         # Calculate project size in megawatts
-        incomplete_input_dict["project_size_megawatts"] = float(discrete_inputs["num_turbines"] * inputs["turbine_rating_MW"])
+        incomplete_input_dict["project_size_megawatts"] = float(
+            discrete_inputs["num_turbines"] * inputs["turbine_rating_MW"]
+        )
 
         defaults = DefaultMasterInputDict()
         master_input_dict = defaults.populate_input_dict(incomplete_input_dict)

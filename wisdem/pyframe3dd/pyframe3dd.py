@@ -50,7 +50,14 @@ def dp(x):
 
 
 class C_Nodes(Structure):
-    _fields_ = [("nN", c_int), ("N", c_int_p), ("x", c_double_p), ("y", c_double_p), ("z", c_double_p), ("r", c_double_p)]
+    _fields_ = [
+        ("nN", c_int),
+        ("N", c_int_p),
+        ("x", c_double_p),
+        ("y", c_double_p),
+        ("z", c_double_p),
+        ("r", c_double_p),
+    ]
 
 
 class C_Reactions(Structure):
@@ -132,7 +139,14 @@ class C_TrapezoidalLoads(Structure):
 
 
 class C_ElementLoads(Structure):
-    _fields_ = [("nP", c_int), ("EL", c_int_p), ("Px", c_double_p), ("Py", c_double_p), ("Pz", c_double_p), ("x", c_double_p)]
+    _fields_ = [
+        ("nP", c_int),
+        ("EL", c_int_p),
+        ("Px", c_double_p),
+        ("Py", c_double_p),
+        ("Pz", c_double_p),
+        ("x", c_double_p),
+    ]
 
 
 class C_TemperatureLoads(Structure):
@@ -374,7 +388,9 @@ class Frame(object):
             rigid = 1
         else:
             self.rnode = np.array(reactions.node).astype(np.int32)
-            self.rKx = np.array(reactions.Kx).astype(np.float64)  # convert rather than copy to allow old syntax of integers
+            self.rKx = np.array(reactions.Kx).astype(
+                np.float64
+            )  # convert rather than copy to allow old syntax of integers
             self.rKy = np.array(reactions.Ky).astype(np.float64)
             self.rKz = np.array(reactions.Kz).astype(np.float64)
             self.rKtx = np.array(reactions.Ktx).astype(np.float64)
@@ -1056,7 +1072,9 @@ class Frame(object):
             f.write("#.e    Ux   Uy   Uz\n")
             f.write("#      N/m  N/m  N/m\n")
             for k in range(len(mylc.ELU)):
-                f.write(str(mylc.ELU[k]) + "\t" + str(mylc.Ux[k]) + "\t" + str(mylc.Uy[k]) + "\t" + str(mylc.Uz[k]) + "\n")
+                f.write(
+                    str(mylc.ELU[k]) + "\t" + str(mylc.Ux[k]) + "\t" + str(mylc.Uy[k]) + "\t" + str(mylc.Uz[k]) + "\n"
+                )
 
             f.write(str(len(mylc.ELT)) + " # number of trapezoidal loads\n")
             f.write("#.e     x1       x2        w1      w2\n")
@@ -1075,10 +1093,26 @@ class Frame(object):
                     + "\n"
                 )
                 f.write(
-                    "\t" + str(mylc.xy1[k]) + "\t" + str(mylc.xy2[k]) + "\t" + str(mylc.wy1[k]) + "\t" + str(mylc.wy2[k]) + "\n"
+                    "\t"
+                    + str(mylc.xy1[k])
+                    + "\t"
+                    + str(mylc.xy2[k])
+                    + "\t"
+                    + str(mylc.wy1[k])
+                    + "\t"
+                    + str(mylc.wy2[k])
+                    + "\n"
                 )
                 f.write(
-                    "\t" + str(mylc.xz1[k]) + "\t" + str(mylc.xz2[k]) + "\t" + str(mylc.wz1[k]) + "\t" + str(mylc.wz2[k]) + "\n"
+                    "\t"
+                    + str(mylc.xz1[k])
+                    + "\t"
+                    + str(mylc.xz2[k])
+                    + "\t"
+                    + str(mylc.wz1[k])
+                    + "\t"
+                    + str(mylc.wz2[k])
+                    + "\n"
                 )
 
             f.write(str(len(mylc.ELE)) + " # number of internal concentrated loads\n")
@@ -1265,7 +1299,15 @@ class StaticLoadCase(object):
         self.Tzm = np.copy(Tzm)
 
         self.tempL = C_TemperatureLoads(
-            len(EL), ip(self.ELTemp), dp(self.a), dp(self.hy), dp(self.hz), dp(self.Typ), dp(self.Tym), dp(self.Tzp), dp(self.Tzm)
+            len(EL),
+            ip(self.ELTemp),
+            dp(self.a),
+            dp(self.hy),
+            dp(self.hz),
+            dp(self.Typ),
+            dp(self.Tym),
+            dp(self.Tzp),
+            dp(self.Tzm),
         )
 
     def changePrescribedDisplacements(self, N, Dx, Dy, Dz, Dxx, Dyy, Dzz):

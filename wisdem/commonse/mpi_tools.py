@@ -13,7 +13,12 @@ def under_mpirun():
     # no consistent set of environment vars between MPI
     # implementations.
     for name in os.environ.keys():
-        if name == "OMPI_COMM_WORLD_RANK" or name == "MPIEXEC_HOSTNAME" or name.startswith("MPIR_") or name.startswith("MPICH_"):
+        if (
+            name == "OMPI_COMM_WORLD_RANK"
+            or name == "MPIEXEC_HOSTNAME"
+            or name.startswith("MPIR_")
+            or name.startswith("MPICH_")
+        ):
             return True
     return False
 

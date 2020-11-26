@@ -527,7 +527,9 @@ class TestProperties(unittest.TestCase):
         self.inputs["d_full"][5] -= 8.0
         self.mycolumn.balance_column(self.inputs, self.outputs)
         self.assertAlmostEqual(
-            self.outputs["hydrostatic_force"].sum() / (self.outputs["displaced_volume"].sum() * rho_w * g), 1.0, delta=1e-2
+            self.outputs["hydrostatic_force"].sum() / (self.outputs["displaced_volume"].sum() * rho_w * g),
+            1.0,
+            delta=1e-2,
         )
 
     def testCheckCost(self):
@@ -614,7 +616,9 @@ class TestGroup(unittest.TestCase):
 
         prob = om.Problem()
 
-        prob.model.add_subsystem("col", column.Column(column_options=colopt, modeling_options=opt, n_mat=1), promotes=["*"])
+        prob.model.add_subsystem(
+            "col", column.Column(column_options=colopt, modeling_options=opt, n_mat=1), promotes=["*"]
+        )
 
         prob.setup()
         prob["freeboard"] = 15.0

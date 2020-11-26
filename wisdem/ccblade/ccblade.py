@@ -292,7 +292,9 @@ class CCAirfoil(object):
             cm_temp = cm[idx_low:idx_high]
             idx_cm_min = [
                 i
-                for i, local_min in enumerate(np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True])
+                for i, local_min in enumerate(
+                    np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True]
+                )
                 if local_min
             ] + idx_low
             idx_high = idx_cm_min[-1]
@@ -311,7 +313,9 @@ class CCAirfoil(object):
             cm_temp = cm[idx_low:idx_high]
             idx_cm_min = [
                 i
-                for i, local_min in enumerate(np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True])
+                for i, local_min in enumerate(
+                    np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True]
+                )
                 if local_min
             ] + idx_low
             idx_high = idx_cm_min[-1]
@@ -610,7 +614,9 @@ class CCBlade(object):
             alpha, W, Re = _bem.relativewind(phi, a, ap, Vx, Vy, self.pitch, chord, theta, self.rho, self.mu)
             cl, cd = af.evaluate(alpha, Re)
 
-            fzero, a, ap = _bem.inductionfactors(r, chord, self.Rhub, self.Rtip, phi, cl, cd, self.B, Vx, Vy, **self.bemoptions)
+            fzero, a, ap = _bem.inductionfactors(
+                r, chord, self.Rhub, self.Rtip, phi, cl, cd, self.B, Vx, Vy, **self.bemoptions
+            )
 
             # if isnan(a):
             #     if r == self.Rhub:
@@ -640,7 +646,9 @@ class CCBlade(object):
         ap = 0.0
         for i in range(self.iterRe):
 
-            fzero, a, ap = _bem.inductionfactors(r, chord, self.Rhub, self.Rtip, phi, cl, cd, self.B, Vx, Vy, **self.bemoptions)
+            fzero, a, ap = _bem.inductionfactors(
+                r, chord, self.Rhub, self.Rtip, phi, cl, cd, self.B, Vx, Vy, **self.bemoptions
+            )
 
         return fzero, a, ap
 
@@ -1123,7 +1131,19 @@ class CCBlade(object):
             derivs["dNp"] = dNp
             derivs["dTp"] = dTp
 
-        loads = {"Np": Np, "Tp": Tp, "a": a, "ap": ap, "alpha": alpha, "Cl": cl, "Cd": cd, "Cn": cn, "Ct": ct, "W": W, "Re": Re}
+        loads = {
+            "Np": Np,
+            "Tp": Tp,
+            "a": a,
+            "ap": ap,
+            "alpha": alpha,
+            "Cl": cl,
+            "Cd": cd,
+            "Cn": cn,
+            "Ct": ct,
+            "W": W,
+            "Re": Re,
+        }
 
         return loads, derivs
 
@@ -1177,7 +1197,16 @@ class CCBlade(object):
         """
 
         # rename
-        args = (self.r, self.precurve, self.presweep, self.precone, self.Rhub, self.Rtip, self.precurveTip, self.presweepTip)
+        args = (
+            self.r,
+            self.precurve,
+            self.presweep,
+            self.precone,
+            self.Rhub,
+            self.Rtip,
+            self.precurveTip,
+            self.presweepTip,
+        )
         nsec = self.nSector
 
         # initialize

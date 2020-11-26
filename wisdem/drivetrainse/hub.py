@@ -111,7 +111,9 @@ class HubShell(om.ExplicitComponent):
         dsgn_hub_diam = inputs["hub_diameter"]
 
         # Estimate diameter of sphere based on blade root diameter
-        min_hub_diam = inputs["hub_in2out_circ"] * inputs["blade_root_diameter"] / np.sin(np.pi / discrete_inputs["n_blades"])
+        min_hub_diam = (
+            inputs["hub_in2out_circ"] * inputs["blade_root_diameter"] / np.sin(np.pi / discrete_inputs["n_blades"])
+        )
 
         # Compute diameter and radius of the hub including safety factor
         dsgn_hub_rad = 0.5 * dsgn_hub_diam
@@ -121,7 +123,10 @@ class HubShell(om.ExplicitComponent):
 
         # Size shell thickness, assuming max torsional stress from torque can not exceed design allowable stress, and solving, torsional stress (t=Tr/J), and polar moment of inertia (J=PI/32(Do^4-Di^4), for thickness.
         sph_hub_shell_thick = (
-            ((dsgn_hub_diam ** 4.0 - 32.0 / np.pi * inputs["max_torque"] * dsgn_hub_rad / stress_allow_pa) ** (1.0 / 4.0))
+            (
+                (dsgn_hub_diam ** 4.0 - 32.0 / np.pi * inputs["max_torque"] * dsgn_hub_rad / stress_allow_pa)
+                ** (1.0 / 4.0)
+            )
             - dsgn_hub_diam
         ) / (-2.0)
 
@@ -145,13 +150,17 @@ class HubShell(om.ExplicitComponent):
         hub_cost = hub_mass * inputs["metal_cost"]
 
         # Compute distance between hub/shaft flange and hub center of mass
-        hub_cm = (main_flange_mass * main_flange_thick * 0.5 + sph_hub_mass * dsgn_hub_rad) / (main_flange_mass + sph_hub_mass)
+        hub_cm = (main_flange_mass * main_flange_thick * 0.5 + sph_hub_mass * dsgn_hub_rad) / (
+            main_flange_mass + sph_hub_mass
+        )
 
         # Assign values to openmdao outputs
         outputs["hub_mass"] = hub_mass
         outputs["hub_cost"] = hub_cost
         outputs["hub_cm"] = hub_cm
-        outputs["hub_I"] = np.r_[(2.0 / 3.0) * hub_mass * (0.5 * dsgn_hub_diam) ** 2 * np.ones(3), np.zeros(3)]  # Spherical shell
+        outputs["hub_I"] = np.r_[
+            (2.0 / 3.0) * hub_mass * (0.5 * dsgn_hub_diam) ** 2 * np.ones(3), np.zeros(3)
+        ]  # Spherical shell
         outputs["constr_hub_diameter"] = dsgn_hub_diam - min_hub_diam  # Should be > 0
 
 
@@ -272,7 +281,10 @@ class Spinner(om.ExplicitComponent):
 
         # Estimate area, volume, and mass of the spherical caps that are removed because of blade access
         sph_cap_area = (
-            2.0 * np.pi * sph_spin_rad * (sph_spin_rad - np.sqrt(sph_spin_rad ** 2.0 - (spin_acc_hole_diam / 2.0) ** 2.0))
+            2.0
+            * np.pi
+            * sph_spin_rad
+            * (sph_spin_rad - np.sqrt(sph_spin_rad ** 2.0 - (spin_acc_hole_diam / 2.0) ** 2.0))
         )
         sph_caps_volume = discrete_inputs["n_blades"] * sph_cap_area * spin_shell_thickness
         sph_caps_mass = sph_caps_volume * inputs["composite_rho"]
@@ -309,7 +321,9 @@ class Spinner(om.ExplicitComponent):
 
         # Compute bracket volume and mass and total mass of all brackets
         bracket_volume = (
-            (inputs["clearance_hub_spinner"] + bracket_flange_length + bracket_flange_length) * bracket_width * bracket_thickness
+            (inputs["clearance_hub_spinner"] + bracket_flange_length + bracket_flange_length)
+            * bracket_width
+            * bracket_thickness
         )
         bracket_mass = bracket_volume * inputs["metal_rho"]
         bracket_mass_total = bracket_mass * (discrete_inputs["n_front_brackets"] + discrete_inputs["n_rear_brackets"])
@@ -323,7 +337,9 @@ class Spinner(om.ExplicitComponent):
         # Spinner and hub are assumed to be concentric (spinner wraps hub)
         outputs["spinner_cm"] = inputs["hub_diameter"] / 2.0
         outputs["spinner_cost"] = spin_shell_mass * inputs["composite_cost"] + bracket_mass_total * inputs["metal_cost"]
-        outputs["spinner_I"] = np.r_[(2.0 / 3.0) * mass * (0.5 * sph_spin_diam) ** 2 * np.ones(3), np.zeros(3)]  # Spherical shell
+        outputs["spinner_I"] = np.r_[
+            (2.0 / 3.0) * mass * (0.5 * sph_spin_diam) ** 2 * np.ones(3), np.zeros(3)
+        ]  # Spherical shell
 
 
 class PitchSystem(om.ExplicitComponent):

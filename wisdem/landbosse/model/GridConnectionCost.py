@@ -85,7 +85,8 @@ class GridConnectionCost(CostModule):
         else:
             # Code below is for newer version of LandBOSSE which incorporates distributed wind into the model:
             calculate_costs_output_dict["tower_to_point_of_interconnection_usd_per_kw"] = 1736.7 * (
-                (calculate_costs_input_dict["num_turbines"] * calculate_costs_input_dict["turbine_rating_MW"] * 1000) ** (-0.272)
+                (calculate_costs_input_dict["num_turbines"] * calculate_costs_input_dict["turbine_rating_MW"] * 1000)
+                ** (-0.272)
             )
             calculate_costs_output_dict["trans_dist_usd"] = (
                 calculate_costs_input_dict["num_turbines"]

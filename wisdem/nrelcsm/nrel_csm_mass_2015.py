@@ -255,7 +255,9 @@ class LowSpeedShaftMass(om.ExplicitComponent):
         lss_mass_intercept = inputs["lss_mass_intercept"]
 
         # calculate the lss mass
-        outputs["lss_mass"] = lss_mass_coeff * (blade_mass * machine_rating / 1000.0) ** lss_mass_exp + lss_mass_intercept
+        outputs["lss_mass"] = (
+            lss_mass_coeff * (blade_mass * machine_rating / 1000.0) ** lss_mass_exp + lss_mass_intercept
+        )
 
 
 # --------------------------------------------------------------------

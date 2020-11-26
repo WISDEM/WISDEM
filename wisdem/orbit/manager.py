@@ -888,7 +888,10 @@ class ProjectManager:
             revenue = {}
 
         expenses = self.monthly_expenses
-        return {i: revenue.get(i, 0.0) - expenses.get(i, 0.0) for i in range(1, max([*revenue.keys(), *expenses.keys()]) + 1)}
+        return {
+            i: revenue.get(i, 0.0) - expenses.get(i, 0.0)
+            for i in range(1, max([*revenue.keys(), *expenses.keys()]) + 1)
+        }
 
     @property
     def npv(self):
@@ -983,7 +986,9 @@ class ProjectManager:
         overlaps if phase dates are supplied.
         """
 
-        res = sum([v for k, v in self.phase_times.items() if k in self.config["install_phases"] and isinstance(v, Number)])
+        res = sum(
+            [v for k, v in self.phase_times.items() if k in self.config["install_phases"] and isinstance(v, Number)]
+        )
         return res
 
     @property
@@ -1055,7 +1060,9 @@ class ProjectManager:
         Returns installation related CAPEX.
         """
 
-        res = sum([v for k, v in self.phase_costs.items() if k in self.config["install_phases"] and isinstance(v, Number)])
+        res = sum(
+            [v for k, v in self.phase_costs.items() if k in self.config["install_phases"] and isinstance(v, Number)]
+        )
         return res
 
     @property

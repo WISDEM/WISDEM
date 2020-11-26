@@ -70,7 +70,9 @@ def getInputs():
     inputs["main_E_full"] = inputs["offset_E_full"] = inputs["tower_E_full"] = 200e9 * np.ones(NPTS - 1)
     inputs["main_G_full"] = inputs["offset_G_full"] = inputs["tower_G_full"] = 79.3e9 * np.ones(NPTS - 1)
     inputs["main_rho_full"] = inputs["offset_rho_full"] = inputs["tower_rho_full"] = 7850.0 * np.ones(NPTS - 1)
-    inputs["main_sigma_y_full"] = inputs["offset_sigma_y_full"] = inputs["tower_sigma_y_full"] = 345e6 * np.ones(NPTS - 1)
+    inputs["main_sigma_y_full"] = inputs["offset_sigma_y_full"] = inputs["tower_sigma_y_full"] = 345e6 * np.ones(
+        NPTS - 1
+    )
 
     inputs["hsig_wave"] = 10.0
 
@@ -167,7 +169,9 @@ class TestFrame(unittest.TestCase):
 
         self.outputs["pontoon_stress"] = np.zeros(70)
 
-        self.mytruss = sP.FloatingFrame(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT, modeling_options=opt)
+        self.mytruss = sP.FloatingFrame(
+            n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT, modeling_options=opt
+        )
 
     def tearDown(self):
         self.mytruss = None
@@ -320,7 +324,9 @@ class TestFrame(unittest.TestCase):
         self.inputs["fairlead_radius"] = 10.1
         self.inputs["fairlead_support_outer_diameter"] = 2 * np.sqrt(2.0 / np.pi)
         self.inputs["fairlead_support_wall_thickness"] = np.sqrt(2.0 / np.pi) - np.sqrt(1.0 / np.pi)
-        self.inputs["main_rho_full"] = self.inputs["offset_rho_full"] = self.inputs["tower_rho_full"] = 20.0 * np.ones(NPTS - 1)
+        self.inputs["main_rho_full"] = self.inputs["offset_rho_full"] = self.inputs["tower_rho_full"] = 20.0 * np.ones(
+            NPTS - 1
+        )
         self.inputs["radius_to_offset_column"] = 1.0
 
         goodRun = False
@@ -365,7 +371,9 @@ class TestModal(unittest.TestCase):
 
         newopt = copy.copy(opt)
         newopt["run_modal"] = True
-        mytruss = sP.FloatingFrame(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT, modeling_options=newopt)
+        mytruss = sP.FloatingFrame(
+            n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT, modeling_options=newopt
+        )
 
         mytruss.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertTrue(True)
@@ -378,7 +386,9 @@ class TestSandbox(unittest.TestCase):
         self.discrete_outputs = {}
         self.outputs["pontoon_stress"] = np.zeros(70)
 
-        self.mytruss = sP.FloatingFrame(n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT, modeling_options=opt)
+        self.mytruss = sP.FloatingFrame(
+            n_height_main=NHEIGHT, n_height_off=NHEIGHT, n_height_tow=NHEIGHT, modeling_options=opt
+        )
 
     def tearDown(self):
         self.mytruss = None
@@ -431,7 +441,9 @@ class TestSandbox(unittest.TestCase):
                                     if (nc > 0) and (ocp) and (not lrp):
                                         continue
 
-                                    self.mytruss.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+                                    self.mytruss.compute(
+                                        self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs
+                                    )
                                     if self.outputs["substructure_mass"] == 1e30:
                                         print(nc, cap, lap, uap, lrp, urp, ocp)
                                     self.assertNotEqual(self.outputs["substructure_mass"], 1e30)

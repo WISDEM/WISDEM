@@ -683,7 +683,9 @@ def _IBeamProperties(h_web, t_web, w_flange, t_flange, w_base, t_base):
     area_base = w_base * t_base
     area = area_web + area_flange + area_base
     # Y-position of the center of mass (Yna) measured from the base
-    y_cg = ((t_base + h_web + 0.5 * t_flange) * area_flange + (t_base + 0.5 * h_web) * area_web + 0.5 * t_base * area_base) / area
+    y_cg = (
+        (t_base + h_web + 0.5 * t_flange) * area_flange + (t_base + 0.5 * h_web) * area_web + 0.5 * t_base * area_base
+    ) / area
     return area, y_cg
 
 
@@ -723,7 +725,9 @@ def _compute_applied_hoop(pressure, R_od, t_wall):
     return pressure * R_od / t_wall
 
 
-def _compute_stiffener_factors(pressure, axial_stress, R_od, t_wall, h_web, t_web, w_flange, t_flange, L_stiffener, E, nu):
+def _compute_stiffener_factors(
+    pressure, axial_stress, R_od, t_wall, h_web, t_web, w_flange, t_flange, L_stiffener, E, nu
+):
     """Compute modifiers to stress due to presence of stiffener rings.
 
     INPUTS:
@@ -821,7 +825,9 @@ def _compute_elastic_stress_limits(
     # Calculate beta (local term)
     beta = np.round(n) * L_stiffener / np.pi / R
     # Calculate buckling coefficient
-    C_thL = a_thL * ((1 + beta ** 2) ** 2 / (0.5 + beta ** 2) + 0.112 * m_x ** 4 / (1 + beta ** 2) ** 2 / (0.5 + beta ** 2))
+    C_thL = a_thL * (
+        (1 + beta ** 2) ** 2 / (0.5 + beta ** 2) + 0.112 * m_x ** 4 / (1 + beta ** 2) ** 2 / (0.5 + beta ** 2)
+    )
     # Calculate elastic and inelastic final limits
     elastic_extern_local_FreL = C_thL * np.pi ** 2 * E * (t_wall / L_stiffener) ** 2 / 12.0 / (1 - nu ** 2)
 
@@ -861,7 +867,12 @@ def _compute_elastic_stress_limits(
     pressure_failure_peG = np.zeros(R_od.shape)
     for k in range(nsections):
         peG = lambda x: (
-            E[k] * lambda_G[k] ** 4 * t_wall[k] / R[k] / (x ** 2 + 0.0 * lambda_G[k] ** 2 - 1) / (x ** 2 + lambda_G[k] ** 2) ** 2
+            E[k]
+            * lambda_G[k] ** 4
+            * t_wall[k]
+            / R[k]
+            / (x ** 2 + 0.0 * lambda_G[k] ** 2 - 1)
+            / (x ** 2 + lambda_G[k] ** 2) ** 2
             + E[k] * Ier[k] * (x ** 2 - 1) / L_stiffener[k] / Rc[k] ** 2 / R_od[k]
         )
         minout = minimize_scalar(peG, bounds=(2.0, 15.0), method="bounded")
@@ -933,7 +944,18 @@ def shellBuckling_withStiffeners(
         elastic_axial_general_FxeG,
         elastic_extern_general_FreG,
     ) = _compute_elastic_stress_limits(
-        R_od, t_wall, h_section, h_web, t_web, w_flange, t_flange, L_stiffener, E, nu, stiffener_factor_KthG, loading=loading
+        R_od,
+        t_wall,
+        h_section,
+        h_web,
+        t_web,
+        w_flange,
+        t_flange,
+        L_stiffener,
+        E,
+        nu,
+        stiffener_factor_KthG,
+        loading=loading,
     )
     inelastic_axial_local_FxcL = _plasticityRF(elastic_axial_local_FxeL, sigma_y)
     inelastic_axial_general_FxcG = _plasticityRF(elastic_axial_general_FxeG, sigma_y)

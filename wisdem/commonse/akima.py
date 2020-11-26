@@ -99,14 +99,19 @@ class Akima(object):
             ypt_jj = ypt[jj, :]
 
             # Compute segment slopes
-            temp = (yptd[:, 1:] - yptd[:, :-1]) * (xpt[1:] - xpt[:-1]) - (ypt_jj[1:] - ypt_jj[:-1]) * (xptd[:, 1:] - xptd[:, :-1])
+            temp = (yptd[:, 1:] - yptd[:, :-1]) * (xpt[1:] - xpt[:-1]) - (ypt_jj[1:] - ypt_jj[:-1]) * (
+                xptd[:, 1:] - xptd[:, :-1]
+            )
             md[:, 2 : ncp + 1] = np.divide(
                 temp, (xpt[1:] - xpt[:-1]) ** 2, out=np.zeros_like(temp), where=(xpt[1:] - xpt[:-1]) != 0.0
             )
 
             # m[2:ncp + 1] = (ypt_jj[1:] - ypt_jj[:-1]) / (xpt[1:] - xpt[:-1])
             m[2 : ncp + 1] = np.divide(
-                ypt_jj[1:] - ypt_jj[:-1], xpt[1:] - xpt[:-1], out=np.zeros_like(ypt_jj[1:]), where=(xpt[1:] - xpt[:-1]) != 0.0
+                ypt_jj[1:] - ypt_jj[:-1],
+                xpt[1:] - xpt[:-1],
+                out=np.zeros_like(ypt_jj[1:]),
+                where=(xpt[1:] - xpt[:-1]) != 0.0,
             )
 
             # Estimation for end points.
@@ -167,9 +172,13 @@ class Akima(object):
 
             p0d[jj, ...] = yptd[:, :-1]
             p1d[jj, ...] = td[:, :-1]
-            temp = (3.0 * md[:, 2 : ncp + 1] - 2.0 * td[:, :-1] - td[:, 1:]) * dx - (3.0 * m[2 : ncp + 1] - 2.0 * t1 - t2) * dxd
+            temp = (3.0 * md[:, 2 : ncp + 1] - 2.0 * td[:, :-1] - td[:, 1:]) * dx - (
+                3.0 * m[2 : ncp + 1] - 2.0 * t1 - t2
+            ) * dxd
             p2d[jj, ...] = np.divide(temp, dx2, out=np.zeros_like(p2d[jj, ...]), where=dx2 != 0.0)
-            temp = (td[:, :-1] + td[:, 1:] - 2.0 * md[:, 2 : ncp + 1]) * dx2 - (t1 + t2 - 2.0 * m[2 : ncp + 1]) * 2 * dx * dxd
+            temp = (td[:, :-1] + td[:, 1:] - 2.0 * md[:, 2 : ncp + 1]) * dx2 - (
+                t1 + t2 - 2.0 * m[2 : ncp + 1]
+            ) * 2 * dx * dxd
             p3d[jj, ...] = np.divide(temp, dx2 ** 2, out=np.zeros_like(p3d[jj, ...]), where=dx2 != 0.0)
 
         self.xpt = xpt

@@ -14,7 +14,9 @@ def steel_cutting_plasma_time(length, thickness):
 
 def steel_rolling_time(theta, radius, thickness):
     # Radius and thickness input as meters, converted to mm
-    time = theta * np.exp(6.8582513 - 4.527217 / np.sqrt(1e3 * thickness + eps) + 0.009541996 * np.sqrt(2 * 1e3 * radius))
+    time = theta * np.exp(
+        6.8582513 - 4.527217 / np.sqrt(1e3 * thickness + eps) + 0.009541996 * np.sqrt(2 * 1e3 * radius)
+    )
     return np.sum(time)
 
 

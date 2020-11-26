@@ -184,7 +184,9 @@ def plate_constant(a, b, E, v, r_o, t):
     C_6 = 0.25 * (b / a) * ((b / a) ** 2 - 1 + 2 * np.log(a / b))
     C_8 = 0.5 * (1 + v + (1 - v) * (b / a) ** 2)
     C_9 = (b / a) * (0.5 * (1 + v) * np.log(a / b) + 0.25 * (1 - v) * (1 - (b / a) ** 2))
-    L_11 = (1 / 64) * (1 + 4 * (r_o / a) ** 2 - 5 * (r_o / a) ** 4 - 4 * (r_o / a) ** 2 * (2 + (r_o / a) ** 2) * np.log(a / r_o))
+    L_11 = (1 / 64) * (
+        1 + 4 * (r_o / a) ** 2 - 5 * (r_o / a) ** 4 - 4 * (r_o / a) ** 2 * (2 + (r_o / a) ** 2) * np.log(a / r_o)
+    )
     L_17 = 0.25 * (1 - 0.25 * (1 - v) * ((1 - (r_o / a) ** 4) - (r_o / a) ** 2 * (1 + (1 + v) * np.log(a / r_o))))
 
     return D, C_2, C_3, C_5, C_6, C_8, C_9, L_11, L_17
@@ -885,7 +887,9 @@ class PMSG_Outer(GeneratorBase):
             h_t = h_s + h_w + h_0
             V_Fest = len_s * S * (b_t * (h_s + h_w + h_0) + wedge_area)  # volume of iron in stator tooth
             V_Fesy = (
-                len_s * np.pi * ((rad_ag - len_ag - h_s - h_w - h_0) ** 2 - (rad_ag - len_ag - h_s - h_w - h_0 - h_ys) ** 2)
+                len_s
+                * np.pi
+                * ((rad_ag - len_ag - h_s - h_w - h_0) ** 2 - (rad_ag - len_ag - h_s - h_w - h_0 - h_ys) ** 2)
             )  # volume of iron in stator yoke
             V_Fery = len_s * np.pi * ((rad_ag + h_m + h_yr) ** 2 - (rad_ag + h_m) ** 2)
             Copper = V_Cus[-1] * inputs["rho_Copper"]
@@ -901,16 +905,28 @@ class PMSG_Outer(GeneratorBase):
             P_Cu = m * (I_s / 2 ** 0.5) ** 2 * R_s * K_R
 
             # Iron Losses ( from Hysteresis and eddy currents)
-            P_Hyys = M_Fesy * (B_symax / 1.5) ** 2 * (P_Fe0h * om_e / (2 * np.pi * 60))  # Hysteresis losses in stator yoke
-            P_Ftys = M_Fesy * ((B_symax / 1.5) ** 2) * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)  # Eddy losses in stator yoke
+            P_Hyys = (
+                M_Fesy * (B_symax / 1.5) ** 2 * (P_Fe0h * om_e / (2 * np.pi * 60))
+            )  # Hysteresis losses in stator yoke
+            P_Ftys = (
+                M_Fesy * ((B_symax / 1.5) ** 2) * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)
+            )  # Eddy losses in stator yoke
             P_Fesynom = P_Hyys + P_Ftys
-            P_Hyd = M_Fest * (B_tmax / 1.5) ** 2 * (P_Fe0h * om_e / (2 * np.pi * 60))  # Hysteresis losses in stator teeth
-            P_Ftd = M_Fest * (B_tmax / 1.5) ** 2 * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)  # Eddy losses in stator teeth
+            P_Hyd = (
+                M_Fest * (B_tmax / 1.5) ** 2 * (P_Fe0h * om_e / (2 * np.pi * 60))
+            )  # Hysteresis losses in stator teeth
+            P_Ftd = (
+                M_Fest * (B_tmax / 1.5) ** 2 * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)
+            )  # Eddy losses in stator teeth
             P_Festnom = P_Hyd + P_Ftd
 
             # Iron Losses ( from Hysteresis and eddy currents)
-            P_Hyyr = M_Fery * (B_rymax / 1.5) ** 2 * (P_Fe0h * om_e / (2 * np.pi * 60))  # Hysteresis losses in stator yoke
-            P_Ftyr = M_Fery * ((B_rymax / 1.5) ** 2) * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)  # Eddy losses in stator yoke
+            P_Hyyr = (
+                M_Fery * (B_rymax / 1.5) ** 2 * (P_Fe0h * om_e / (2 * np.pi * 60))
+            )  # Hysteresis losses in stator yoke
+            P_Ftyr = (
+                M_Fery * ((B_rymax / 1.5) ** 2) * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)
+            )  # Eddy losses in stator yoke
             P_Ferynom = P_Hyyr + P_Ftyr
 
             # additional stray losses due to leakage flux
@@ -985,14 +1001,22 @@ class PMSG_Outer(GeneratorBase):
         )
         W_sr = rho_Fes * gravity * np.sin(phi) * (L_r - t_r) * h_sr
         y_ai2r = (
-            -W_sr * (h_sr * 0.5 + h_yr + R) ** 4 / (R_sh * W_ssteel[0]) * (W_ssteel[1] * W_ssteel[4] / W_ssteel[3] - W_ssteel[2])
+            -W_sr
+            * (h_sr * 0.5 + h_yr + R) ** 4
+            / (R_sh * W_ssteel[0])
+            * (W_ssteel[1] * W_ssteel[4] / W_ssteel[3] - W_ssteel[2])
         )
         W_m = np.sin(phi) * mass_PM / (2 * np.pi * (R - h_m * 0.5))
         y_ai3r = -W_m * (R - h_m) ** 4 / (R_sh * W_mag[0]) * (W_mag[1] * W_mag[4] / W_mag[3] - W_mag[2])
         w_disc_r = rho_Fes * gravity * np.sin(phi) * t_r
         a_ii = R + h_sr + h_yr
         r_oii = R_sh
-        M_rb = -w_disc_r * a_ii ** 2 / W_ssteel[5] * (W_ssteel[6] * 0.5 / (a_ii * R_sh) * (a_ii ** 2 - r_oii ** 2) - W_ssteel[8])
+        M_rb = (
+            -w_disc_r
+            * a_ii ** 2
+            / W_ssteel[5]
+            * (W_ssteel[6] * 0.5 / (a_ii * R_sh) * (a_ii ** 2 - r_oii ** 2) - W_ssteel[8])
+        )
         Q_b = w_disc_r * 0.5 / R_sh * (a_ii ** 2 - r_oii ** 2)
         y_aiir = (
             M_rb * a_ii ** 2 / W_ssteel[0] * W_ssteel[1]
@@ -1003,7 +1027,10 @@ class PMSG_Outer(GeneratorBase):
         F_ecc = q * 2 * np.pi * K_rad * rad_ag ** 3
         M_ar = F_ecc * L_r * 0.5
         y_ar = (
-            np.abs(y_ai1r + y_ai2r + y_ai3r) + y_aiir + (R + h_yr + h_sr) * inputs["theta_sh"] + M_ar * L_r ** 2 * 0 / (2 * E * I)
+            np.abs(y_ai1r + y_ai2r + y_ai3r)
+            + y_aiir
+            + (R + h_yr + h_sr) * inputs["theta_sh"]
+            + M_ar * L_r ** 2 * 0 / (2 * E * I)
         )
         y_allow_r = L_r / 100 * inputs["y_allow_pcent"]
 
@@ -1012,7 +1039,9 @@ class PMSG_Outer(GeneratorBase):
         J_cylr = 0.5 * np.pi * ((R + h_yr + h_sr) ** 4 - R ** 4)
         twist_r = 180 / np.pi * inputs["rated_torque"] / G * (t_r / J_dr + (L_r - t_r) / J_cylr)
         Structural_mass_rotor = (
-            rho_Fes * np.pi * (((R + h_yr + h_sr) ** 2 - (R_sh) ** 2) * t_r + ((R + h_yr + h_sr) ** 2 - (R + h_yr) ** 2) * len_s)
+            rho_Fes
+            * np.pi
+            * (((R + h_yr + h_sr) ** 2 - (R_sh) ** 2) * t_r + ((R + h_yr + h_sr) ** 2 - (R + h_yr) ** 2) * len_s)
         )
         TC1 = inputs["rated_torque"] / (2 * np.pi * sigma)
         TC2r = (R + (h_yr + h_sr)) ** 2 * L_r
@@ -1023,7 +1052,9 @@ class PMSG_Outer(GeneratorBase):
         R_stator = rad_ag - len_ag - h_t - h_ys - h_ss
         constants_x_0 = shell_constant(R_stator, t_s, L_stator, 0, E, v)
         constants_x_L = shell_constant(R_stator, t_s, L_stator, L_stator, E, v)
-        f_d_denom1 = R_stator / (E * ((R_stator) ** 2 - (R_no) ** 2)) * ((1 - v) * R_stator ** 2 + (1 + v) * (R_no) ** 2)
+        f_d_denom1 = (
+            R_stator / (E * ((R_stator) ** 2 - (R_no) ** 2)) * ((1 - v) * R_stator ** 2 + (1 + v) * (R_no) ** 2)
+        )
         f_d_denom2 = (
             t_s
             / (2 * constants_x_0[0] * (constants_x_0[1]) ** 3)
@@ -1080,7 +1111,12 @@ class PMSG_Outer(GeneratorBase):
         w_disc_s = rho_Fes * gravity * np.sin(phi) * t_s
         a_ii = R_stator + h_ss + h_ys + h_t
         r_oii = R_no
-        M_rb = -w_disc_s * a_ii ** 2 / W_ssteel[5] * (W_ssteel[6] * 0.5 / (a_ii * R_no) * (a_ii ** 2 - r_oii ** 2) - W_ssteel[8])
+        M_rb = (
+            -w_disc_s
+            * a_ii ** 2
+            / W_ssteel[5]
+            * (W_ssteel[6] * 0.5 / (a_ii * R_no) * (a_ii ** 2 - r_oii ** 2) - W_ssteel[8])
+        )
         Q_b = w_disc_s * 0.5 / R_no * (a_ii ** 2 - r_oii ** 2)
         y_aiis = (
             M_rb * a_ii ** 2 / W_ssteel[0] * W_ssteel[1]
@@ -1402,10 +1438,14 @@ class PMSG_Disc(GeneratorBase):
 
         # Iron Losses ( from Hysteresis and eddy currents)
         P_Hyys = M_Fesy * (B_symax / 1.5) ** 2 * (P_Fe0h * om_e / (2 * np.pi * 60))  # Hysteresis losses in stator yoke
-        P_Ftys = M_Fesy * (B_symax / 1.5) ** 2 * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)  # Eddy       losses in stator yoke
+        P_Ftys = (
+            M_Fesy * (B_symax / 1.5) ** 2 * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)
+        )  # Eddy       losses in stator yoke
         P_Fesynom = P_Hyys + P_Ftys
         P_Hyd = M_Fest * (B_tmax / 1.5) ** 2 * (P_Fe0h * om_e / (2 * np.pi * 60))  # Hysteresis losses in stator teeth
-        P_Ftd = M_Fest * (B_tmax / 1.5) ** 2 * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)  # Eddy       losses in stator teeth
+        P_Ftd = (
+            M_Fest * (B_tmax / 1.5) ** 2 * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)
+        )  # Eddy       losses in stator teeth
         P_Festnom = P_Hyd + P_Ftd
         P_ad = 0.2 * (P_Hyys + P_Ftys + P_Hyd + P_Ftd)  # additional stray losses due to leakage flux
         pFtm = 300  # specific magnet loss
@@ -1504,7 +1544,11 @@ class PMSG_Disc(GeneratorBase):
             Part_5
             + fr
             / (2 * D_r * lamb ** 3)
-            * ((-F_1_x0 / C_11) * (C_3 * C_a2 - C_4 * C_a1) + (F_2_x0 / 2 / C_11) * (C_2 * C_a2 - 2 * C_3 * C_a1) - F_a4_x0 / 2)
+            * (
+                (-F_1_x0 / C_11) * (C_3 * C_a2 - C_4 * C_a1)
+                + (F_2_x0 / 2 / C_11) * (C_2 * C_a2 - 2 * C_3 * C_a1)
+                - F_a4_x0 / 2
+            )
         )
 
         # Calculation of Axial deflection of rotor
@@ -1572,7 +1616,9 @@ class PMSG_Disc(GeneratorBase):
             - (0.5 / np.sin(theta_s))
             + (0.5 / theta_s)
         )
-        Povs = ((theta_s / (np.sin(theta_s)) ** 2) + 1 / np.tan(theta_s)) * ((0.25 * R_st / A_st) + (0.25 * R_st ** 3 / I_st))
+        Povs = ((theta_s / (np.sin(theta_s)) ** 2) + 1 / np.tan(theta_s)) * (
+            (0.25 * R_st / A_st) + (0.25 * R_st ** 3 / I_st)
+        )
         Qovs = R_st ** 3 / (2 * I_st * theta_s * (m2 + 1))
         Lovs = (R_1s - R_sh) * 0.5 / a_s
         Denoms = I_st * (Povs - Qovs + Lovs)
@@ -1581,8 +1627,12 @@ class PMSG_Disc(GeneratorBase):
 
         # Calculation of axial deflection of stator
         mass_st_lam_s = M_Fest + np.pi * L_t * rho_Fe * ((R_st + 0.5 * h_ys) ** 2 - (R_st - 0.5 * h_ys) ** 2)
-        W_is = 0.5 * gravity * np.sin(phi) * (rho_Fes * L_t * d_s ** 2)  # length of stator arm beam at which self-weight acts
-        W_iis = gravity * np.sin(phi) * (mass_st_lam_s + V_Cus * rho_Copper) / 2 / N_st  # weight of stator cylinder and teeth
+        W_is = (
+            0.5 * gravity * np.sin(phi) * (rho_Fes * L_t * d_s ** 2)
+        )  # length of stator arm beam at which self-weight acts
+        W_iis = (
+            gravity * np.sin(phi) * (mass_st_lam_s + V_Cus * rho_Copper) / 2 / N_st
+        )  # weight of stator cylinder and teeth
         w_s = rho_Fes * gravity * np.sin(phi) * a_s * N_st  # uniformly distributed load of the arms
 
         l_is = R_st - R_sh  # distance at which the weight of the stator cylinder acts
@@ -1590,14 +1640,18 @@ class PMSG_Disc(GeneratorBase):
         l_iiis = l_is  # distance at which the weight of the stator cylinder acts
         u_allow_s = c1 / 20
 
-        X_comp1 = W_is * l_is ** 3 / 12 / E / I_arm_axi_s  # deflection component due to stator arm beam at which self-weight acts
+        X_comp1 = (
+            W_is * l_is ** 3 / 12 / E / I_arm_axi_s
+        )  # deflection component due to stator arm beam at which self-weight acts
         X_comp2 = W_iis * l_iis ** 4 / 24 / E / I_arm_axi_s  # deflection component due to 1/nth of stator cylinder
         X_comp3 = w_s * l_iiis ** 4 / 24 / E / I_arm_axi_s  # deflection component due to weight of arms
         y_as = X_comp1 + X_comp2 + X_comp3  # axial deflection
 
         # Stator circumferential deflection
         z_allow_s = np.deg2rad(0.05 * R_st)  # allowable torsional deflection
-        z_as = 2 * np.pi * (R_st + 0.5 * t_s) * L_t / (2 * N_st) * sigma * (l_is + 0.5 * t_s) ** 3 / (3 * E * I_arm_tor_s)
+        z_as = (
+            2 * np.pi * (R_st + 0.5 * t_s) * L_t / (2 * N_st) * sigma * (l_is + 0.5 * t_s) ** 3 / (3 * E * I_arm_tor_s)
+        )
 
         mass_stru_steel = 2 * (N_st * (R_1s - R_sh) * a_s * rho_Fes)
 
@@ -1857,7 +1911,9 @@ class PMSG_Arms(GeneratorBase):
 
         # Calculating leakage inductance in  stator
         L_m = 2 * mu_0 * N_s ** 2 / p * m * k_wd ** 2 * tau_p * L_t / np.pi ** 2 / g_eff
-        L_ssigmas = 2 * mu_0 * N_s ** 2 / p / q1 * len_s * ((h_s - h_w) / (3 * b_s) + h_w / b_so)  # slot leakage inductance
+        L_ssigmas = (
+            2 * mu_0 * N_s ** 2 / p / q1 * len_s * ((h_s - h_w) / (3 * b_s) + h_w / b_so)
+        )  # slot leakage inductance
         L_ssigmaew = (
             2 * mu_0 * N_s ** 2 / p / q1 * len_s * 0.34 * len_ag * (l_e - 0.64 * tau_p * y_tau_p) / len_s
         )  # end winding leakage inductance
@@ -1906,11 +1962,15 @@ class PMSG_Arms(GeneratorBase):
 
         # Iron Losses ( from Hysteresis and eddy currents)
         P_Hyys = M_Fesy * (B_symax / 1.5) ** 2 * (P_Fe0h * om_e / (2 * np.pi * 60))  # Hysteresis losses in stator yoke
-        P_Ftys = M_Fesy * (B_symax / 1.5) ** 2 * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)  # Eddy       losses in stator yoke
+        P_Ftys = (
+            M_Fesy * (B_symax / 1.5) ** 2 * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)
+        )  # Eddy       losses in stator yoke
         P_Fesynom = P_Hyys + P_Ftys
 
         P_Hyd = M_Fest * (B_tmax / 1.5) ** 2 * (P_Fe0h * om_e / (2 * np.pi * 60))  # Hysteresis losses in stator teeth
-        P_Ftd = M_Fest * (B_tmax / 1.5) ** 2 * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)  # Eddy       losses in stator teeth
+        P_Ftd = (
+            M_Fest * (B_tmax / 1.5) ** 2 * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)
+        )  # Eddy       losses in stator teeth
         P_Festnom = P_Hyd + P_Ftd
 
         # additional stray losses due to leakage flux
@@ -1931,7 +1991,9 @@ class PMSG_Arms(GeneratorBase):
         N_r = np.round(n_r)  # rotor arms
         theta_r = np.pi * 1 / N_r  # half angle between spokes
         I_r = L_t * t ** 3 / 12  # second moment of area of rotor cylinder
-        I_arm_axi_r = ((b_r * d_r ** 3) - ((b_r - 2 * t_wr) * (d_r - 2 * t_wr) ** 3)) / 12  # second moment of area of rotor arm
+        I_arm_axi_r = (
+            (b_r * d_r ** 3) - ((b_r - 2 * t_wr) * (d_r - 2 * t_wr) ** 3)
+        ) / 12  # second moment of area of rotor arm
         I_arm_tor_r = (
             (d_r * b_r ** 3) - ((d_r - 2 * t_wr) * (b_r - 2 * t_wr) ** 3)
         ) / 12  # second moment of area of rotot arm w.r.t torsion
@@ -2008,8 +2070,12 @@ class PMSG_Arms(GeneratorBase):
         l_iiis = l_is  # distance at which the weight of the stator cylinder acts
 
         mass_st_lam_s = M_Fest + np.pi * L_t * rho_Fe * ((R_st + 0.5 * h_ys) ** 2 - (R_st - 0.5 * h_ys) ** 2)
-        W_is = 0.5 * gravity * np.sin(phi) * (rho_Fes * L_t * d_s ** 2)  # length of stator arm beam at which self-weight acts
-        W_iis = gravity * np.sin(phi) * (mass_st_lam_s + V_Cus * rho_Copper) / 2 / N_st  # weight of stator cylinder and teeth
+        W_is = (
+            0.5 * gravity * np.sin(phi) * (rho_Fes * L_t * d_s ** 2)
+        )  # length of stator arm beam at which self-weight acts
+        W_iis = (
+            gravity * np.sin(phi) * (mass_st_lam_s + V_Cus * rho_Copper) / 2 / N_st
+        )  # weight of stator cylinder and teeth
         w_s = rho_Fes * gravity * np.sin(phi) * a_s * N_st  # uniformly distributed load of the arms
 
         mass_stru_steel = 2 * (N_st * (R_1s - R_sh) * a_s * rho_Fes)  # Structural mass of stator arms
@@ -2021,14 +2087,18 @@ class PMSG_Arms(GeneratorBase):
             - (0.5 / np.sin(theta_s))
             + (0.5 / theta_s)
         )
-        Povs = ((theta_s / (np.sin(theta_s)) ** 2) + 1 / np.tan(theta_s)) * ((0.25 * R_st / A_st) + (0.25 * R_st ** 3 / I_st))
+        Povs = ((theta_s / (np.sin(theta_s)) ** 2) + 1 / np.tan(theta_s)) * (
+            (0.25 * R_st / A_st) + (0.25 * R_st ** 3 / I_st)
+        )
         Qovs = R_st ** 3 / (2 * I_st * theta_s * (m2 + 1))
         Lovs = (R_1s - R_sh) * 0.5 / a_s
         Denoms = I_st * (Povs - Qovs + Lovs)
         u_as = (q3 * R_st ** 2 / E / t_s) * (1 + Numers / Denoms)
 
         # Calculating axial deflection of the stator
-        X_comp1 = W_is * l_is ** 3 / 12 / E / I_arm_axi_s  # deflection component due to stator arm beam at which self-weight acts
+        X_comp1 = (
+            W_is * l_is ** 3 / 12 / E / I_arm_axi_s
+        )  # deflection component due to stator arm beam at which self-weight acts
         X_comp2 = W_iis * l_iis ** 4 / 24 / E / I_arm_axi_s  # deflection component due to 1 / nth of stator cylinder
         X_comp3 = w_s * l_iiis ** 4 / 24 / E / I_arm_axi_s  # deflection component due to weight of arms
         y_as = X_comp1 + X_comp2 + X_comp3  # axial deflection
@@ -2348,7 +2418,9 @@ class DFIG(GeneratorBase):
         sigma_dr = 0.0062
 
         l_fr = (0.015 + y_tau_pr * tau_r / 2 / np.cos(np.deg2rad(40))) + np.pi * h_0  # Rotor end connection length
-        L_rsl = (mu_0 * len_s * (2 * n_c2) ** 2 * Q_r / m) * ((h_0 - h_w) / (3 * b_r) + h_w / b_ro)  # slot leakage inductance
+        L_rsl = (mu_0 * len_s * (2 * n_c2) ** 2 * Q_r / m) * (
+            (h_0 - h_w) / (3 * b_r) + h_w / b_ro
+        )  # slot leakage inductance
         L_rel = (
             (mu_0 * len_s * (2 * n_c2) ** 2 * Q_r / m) * 0.34 * q2 * (l_fr - 0.64 * tau_r * y_tau_pr) / len_s
         )  # end winding leakage inductance
@@ -2816,7 +2888,9 @@ class SCIG(GeneratorBase):
 
         # Calculating rotor current
         if debug:
-            sys.stderr.write("S_N {} P_e {:.1f} m {} R_R {:.4f} = {:.1f}\n".format(S_N, P_e, m, R_R, -S_N * P_e / m / R_R))
+            sys.stderr.write(
+                "S_N {} P_e {:.1f} m {} R_R {:.4f} = {:.1f}\n".format(S_N, P_e, m, R_R, -S_N * P_e / m / R_R)
+            )
         I_r = np.sqrt(-S_N * P_e / m / R_R)
 
         I_sm = E_p / (2 * np.pi * freq * L_sm)
@@ -2862,14 +2936,22 @@ class SCIG(GeneratorBase):
 
         # Iron Losses ( from Hysteresis and eddy currents)
         P_Hyys = M_Fesy * (B_symax / 1.5) ** 2 * (P_Fe0h * om_e / (2 * np.pi * 60))  # Hysteresis losses in stator yoke
-        P_Ftys = M_Fesy * (B_symax / 1.5) ** 2 * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)  # Eddy       losses in stator yoke
+        P_Ftys = (
+            M_Fesy * (B_symax / 1.5) ** 2 * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)
+        )  # Eddy       losses in stator yoke
         P_Hyd = M_Fest * (B_tsmax / 1.5) ** 2 * (P_Fe0h * om_e / (2 * np.pi * 60))  # Hysteresis losses in stator tooth
-        P_Ftd = M_Fest * (B_tsmax / 1.5) ** 2 * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)  # Eddy       losses in stator tooth
-        P_Hyyr = M_Fery * (B_rymax / 1.5) ** 2 * (P_Fe0h * abs(S_N) * om_e / (2 * np.pi * 60))  # Hysteresis losses in rotor yoke
+        P_Ftd = (
+            M_Fest * (B_tsmax / 1.5) ** 2 * (P_Fe0e * (om_e / (2 * np.pi * 60)) ** 2)
+        )  # Eddy       losses in stator tooth
+        P_Hyyr = (
+            M_Fery * (B_rymax / 1.5) ** 2 * (P_Fe0h * abs(S_N) * om_e / (2 * np.pi * 60))
+        )  # Hysteresis losses in rotor yoke
         P_Ftyr = (
             M_Fery * (B_rymax / 1.5) ** 2 * (P_Fe0e * (abs(S_N) * om_e / (2 * np.pi * 60)) ** 2)
         )  # Eddy       losses in rotor yoke
-        P_Hydr = M_Fert * (B_trmax / 1.5) ** 2 * (P_Fe0h * abs(S_N) * om_e / (2 * np.pi * 60))  # Hysteresis losses in rotor tooth
+        P_Hydr = (
+            M_Fert * (B_trmax / 1.5) ** 2 * (P_Fe0h * abs(S_N) * om_e / (2 * np.pi * 60))
+        )  # Hysteresis losses in rotor tooth
         P_Ftdr = (
             M_Fert * (B_trmax / 1.5) ** 2 * (P_Fe0e * (abs(S_N) * om_e / (2 * np.pi * 60)) ** 2)
         )  # Eddy       losses in rotor tooth
@@ -3193,7 +3275,13 @@ class EESG(GeneratorBase):
         B_g = B_gfm * 4 * np.sin(0.5 * b_p * np.pi / tau_p) / np.pi  # fundamental component
         B_symax = tau_p * B_g / np.pi / h_ys  # stator yoke flux density
         L_fg = (
-            2 * mu_0 * p * len_s * 4 * N_f ** 2 * ((h_ps / (tau_p - b_p)) + (h_pc / (3 * np.pi * (r_r - h_pc - h_ps) / p - b_pc)))
+            2
+            * mu_0
+            * p
+            * len_s
+            * 4
+            * N_f ** 2
+            * ((h_ps / (tau_p - b_p)) + (h_pc / (3 * np.pi * (r_r - h_pc - h_ps) / p - b_pc)))
         )  #  (not used)
 
         # calculating no-load voltage and stator current
@@ -3223,9 +3311,13 @@ class EESG(GeneratorBase):
 
         # Calculating leakage inductances in the stator
 
-        L_ssigmas = 2 * mu_0 * len_s * N_s ** 2 / p / q1 * ((h_s - h_w) / (3 * b_s) + h_w / b_so)  # slot leakage inductance
+        L_ssigmas = (
+            2 * mu_0 * len_s * N_s ** 2 / p / q1 * ((h_s - h_w) / (3 * b_s) + h_w / b_so)
+        )  # slot leakage inductance
         L_ssigmaew = mu_0 * 1.2 * N_s ** 2 / p * 1.2 * (2 / 3 * tau_p + 0.01)  # end winding leakage inductance
-        L_ssigmag = 2 * mu_0 * len_s * N_s ** 2 / p / q1 * (5 * (g / b_so) / (5 + 4 * (g / b_so)))  # tooth tip leakage inductance
+        L_ssigmag = (
+            2 * mu_0 * len_s * N_s ** 2 / p / q1 * (5 * (g / b_so) / (5 + 4 * (g / b_so)))
+        )  # tooth tip leakage inductance
         L_ssigma = L_ssigmas + L_ssigmaew + L_ssigmag  # stator leakage inductance
 
         # Calculating effective air gap
@@ -3261,7 +3353,9 @@ class EESG(GeneratorBase):
 
         # Calculating direct axis and quadrature axes inductances
         L_dm = (b_p / tau_p + (1 / np.pi) * np.sin(np.pi * b_p / tau_p)) * L_m
-        L_qm = (b_p / tau_p - (1 / np.pi) * np.sin(np.pi * b_p / tau_p) + 2 / (3 * np.pi) * np.cos(b_p * np.pi / 2 * tau_p)) * L_m
+        L_qm = (
+            b_p / tau_p - (1 / np.pi) * np.sin(np.pi * b_p / tau_p) + 2 / (3 * np.pi) * np.cos(b_p * np.pi / 2 * tau_p)
+        ) * L_m
 
         # Calculating actual load angle
 
@@ -3296,7 +3390,9 @@ class EESG(GeneratorBase):
         )  # volume of iron in stator tooth
         V_Fesy = len_s * np.pi * ((rad_ag + h_s + h_ys) ** 2 - (rad_ag + h_s) ** 2)  # volume of iron in stator yoke
         V_Fert = l_pfe * 2 * p * (h_pc * b_pc + b_p * h_ps)  # volume of iron in rotor pole
-        V_Fery = l_pfe * np.pi * ((r_r - h_ps - h_pc) ** 2 - (r_r - h_ps - h_pc - h_yr) ** 2)  # volume of iron in rotor yoke
+        V_Fery = (
+            l_pfe * np.pi * ((r_r - h_ps - h_pc) ** 2 - (r_r - h_ps - h_pc - h_yr) ** 2)
+        )  # volume of iron in rotor yoke
 
         Copper = (V_Cuss + V_Cusr) * rho_Copper
         M_Fest = V_Fest * rho_Fe
@@ -3359,7 +3455,9 @@ class EESG(GeneratorBase):
         N_r = np.round(n_r)
         theta_r = np.pi / N_r  # half angle between spokes
         I_r = len_s * t ** 3 / 12  # second moment of area of rotor cylinder
-        I_arm_axi_r = ((b_r * d_r ** 3) - ((b_r - 2 * t_wr) * (d_r - 2 * t_wr) ** 3)) / 12  # second moment of area of rotor arm
+        I_arm_axi_r = (
+            (b_r * d_r ** 3) - ((b_r - 2 * t_wr) * (d_r - 2 * t_wr) ** 3)
+        ) / 12  # second moment of area of rotor arm
         I_arm_tor_r = (
             (d_r * b_r ** 3) - ((d_r - 2 * t_wr) * (b_r - 2 * t_wr) ** 3)
         ) / 12  # second moment of area of rotot arm w.r.t torsion
@@ -3433,7 +3531,9 @@ class EESG(GeneratorBase):
             - (0.5 / np.sin(theta_s))
             + (0.5 / theta_s)
         )
-        Povs = ((theta_s / (np.sin(theta_s)) ** 2) + 1 / np.tan(theta_s)) * ((0.25 * R_st / A_st) + (0.25 * R_st ** 3 / I_st))
+        Povs = ((theta_s / (np.sin(theta_s)) ** 2) + 1 / np.tan(theta_s)) * (
+            (0.25 * R_st / A_st) + (0.25 * R_st ** 3 / I_st)
+        )
         Qovs = R_st ** 3 / (2 * I_st * theta_s * (m2 + 1))
         Lovs = (R_1s - R_sh) * 0.5 / a_s
         Denoms = I_st * (Povs - Qovs + Lovs)
@@ -3458,7 +3558,16 @@ class EESG(GeneratorBase):
 
         # Calculating torsional deflection
 
-        z_as = 2 * np.pi * (R_st + 0.5 * t_s) * len_s / (2 * N_st) * sigma * (l_is + 0.5 * t_s) ** 3 / (3 * E * I_arm_tor_s)
+        z_as = (
+            2
+            * np.pi
+            * (R_st + 0.5 * t_s)
+            * len_s
+            / (2 * N_st)
+            * sigma
+            * (l_is + 0.5 * t_s) ** 3
+            / (3 * E * I_arm_tor_s)
+        )
 
         # tangential stress constraints
 

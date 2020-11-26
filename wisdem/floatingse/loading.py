@@ -452,10 +452,14 @@ class FloatingFrame(om.ExplicitComponent):
         NFREQ2 = int(NFREQ / 2)
         self.add_output("structural_frequencies", np.zeros(NFREQ), units="Hz")
         self.add_output(
-            "x_mode_shapes", val=np.zeros((NFREQ2, 5)), desc="6-degree polynomial coefficients of mode shapes in the x-direction"
+            "x_mode_shapes",
+            val=np.zeros((NFREQ2, 5)),
+            desc="6-degree polynomial coefficients of mode shapes in the x-direction",
         )
         self.add_output(
-            "y_mode_shapes", val=np.zeros((NFREQ2, 5)), desc="6-degree polynomial coefficients of mode shapes in the y-direction"
+            "y_mode_shapes",
+            val=np.zeros((NFREQ2, 5)),
+            desc="6-degree polynomial coefficients of mode shapes in the y-direction",
         )
         self.add_output("substructure_mass", val=0.0, units="kg")
         self.add_output("structural_mass", val=0.0, units="kg")
@@ -557,7 +561,9 @@ class FloatingFrame(om.ExplicitComponent):
         # Quick ratio for unknowns
         outputs["main_connection_ratio"] = inputs["connection_ratio_max"] - R_od_pontoon / R_od_main
         outputs["offset_connection_ratio"] = inputs["connection_ratio_max"] - R_od_pontoon / R_od_offset
-        outputs["pontoon_wave_height_depth_margin"] = np.abs(np.r_[z_attach_lower, z_attach_upper]) - np.abs(inputs["hsig_wave"])
+        outputs["pontoon_wave_height_depth_margin"] = np.abs(np.r_[z_attach_lower, z_attach_upper]) - np.abs(
+            inputs["hsig_wave"]
+        )
 
         # --- INPUT CHECKS -----
         # If something fails, we have to tell the optimizer this design is no good
@@ -730,7 +736,9 @@ class FloatingFrame(om.ExplicitComponent):
             for k in range(ncolumn):
                 tempID1 = mainLowerID
                 tempID2 = offsetLowerID[k]
-                add1, add2 = ghostNodes(nodeMat[tempID1 - 1, :], nodeMat[tempID2 - 1, :], rnode[tempID1 - 1], rnode[tempID2 - 1])
+                add1, add2 = ghostNodes(
+                    nodeMat[tempID1 - 1, :], nodeMat[tempID2 - 1, :], rnode[tempID1 - 1], rnode[tempID2 - 1]
+                )
                 if (add1[-1] >= z_main[0]) and (add1[-1] <= z_main[-1]):
                     tempID1 = xnode.size + 1
                     xnode = np.append(xnode, add1[0])
@@ -755,7 +763,9 @@ class FloatingFrame(om.ExplicitComponent):
             for k in range(ncolumn):
                 tempID1 = mainUpperID
                 tempID2 = offsetUpperID[k]
-                add1, add2 = ghostNodes(nodeMat[tempID1 - 1, :], nodeMat[tempID2 - 1, :], rnode[tempID1 - 1], rnode[tempID2 - 1])
+                add1, add2 = ghostNodes(
+                    nodeMat[tempID1 - 1, :], nodeMat[tempID2 - 1, :], rnode[tempID1 - 1], rnode[tempID2 - 1]
+                )
                 if (add1[-1] >= z_main[0]) and (add1[-1] <= z_main[-1]):
                     tempID1 = xnode.size + 1
                     xnode = np.append(xnode, add1[0])
@@ -780,7 +790,9 @@ class FloatingFrame(om.ExplicitComponent):
             for k in range(ncolumn):
                 tempID1 = mainLowerID
                 tempID2 = offsetUpperID[k]
-                add1, add2 = ghostNodes(nodeMat[tempID1 - 1, :], nodeMat[tempID2 - 1, :], rnode[tempID1 - 1], rnode[tempID2 - 1])
+                add1, add2 = ghostNodes(
+                    nodeMat[tempID1 - 1, :], nodeMat[tempID2 - 1, :], rnode[tempID1 - 1], rnode[tempID2 - 1]
+                )
                 if (add1[-1] >= z_main[0]) and (add1[-1] <= z_main[-1]):
                     tempID1 = xnode.size + 1
                     xnode = np.append(xnode, add1[0])
@@ -808,7 +820,9 @@ class FloatingFrame(om.ExplicitComponent):
             for k in range(ncolumn):
                 tempID1 = offsetLowerID[k]
                 tempID2 = offsetLowerID[k + 1]
-                add1, add2 = ghostNodes(nodeMat[tempID1 - 1, :], nodeMat[tempID2 - 1, :], rnode[tempID1 - 1], rnode[tempID2 - 1])
+                add1, add2 = ghostNodes(
+                    nodeMat[tempID1 - 1, :], nodeMat[tempID2 - 1, :], rnode[tempID1 - 1], rnode[tempID2 - 1]
+                )
                 if (add1[-1] >= z_offset[0]) and (add1[-1] <= z_offset[-1]):
                     tempID1 = xnode.size + 1
                     xnode = np.append(xnode, add1[0])
@@ -833,7 +847,9 @@ class FloatingFrame(om.ExplicitComponent):
             for k in range(ncolumn):
                 tempID1 = offsetUpperID[k]
                 tempID2 = offsetUpperID[k + 1]
-                add1, add2 = ghostNodes(nodeMat[tempID1 - 1, :], nodeMat[tempID2 - 1, :], rnode[tempID1 - 1], rnode[tempID2 - 1])
+                add1, add2 = ghostNodes(
+                    nodeMat[tempID1 - 1, :], nodeMat[tempID2 - 1, :], rnode[tempID1 - 1], rnode[tempID2 - 1]
+                )
                 if (add1[-1] >= z_offset[0]) and (add1[-1] <= z_offset[-1]):
                     tempID1 = xnode.size + 1
                     xnode = np.append(xnode, add1[0])
@@ -858,7 +874,9 @@ class FloatingFrame(om.ExplicitComponent):
             for k in range(ncolumn):
                 tempID1 = crossOuterLowerID[k]
                 tempID2 = offsetUpperID[k]
-                _, add2 = ghostNodes(nodeMat[tempID1 - 1, :], nodeMat[tempID2 - 1, :], rnode[tempID1 - 1], rnode[tempID2 - 1])
+                _, add2 = ghostNodes(
+                    nodeMat[tempID1 - 1, :], nodeMat[tempID2 - 1, :], rnode[tempID1 - 1], rnode[tempID2 - 1]
+                )
                 if (add2[-1] >= z_offset[0]) and (add2[-1] <= z_offset[-1]):
                     tempID2 = xnode.size + 1
                     xnode = np.append(xnode, add2[0])
@@ -887,7 +905,9 @@ class FloatingFrame(om.ExplicitComponent):
 
                 tempID1 = crossOuterLowerID[k + 1]
                 tempID2 = offsetUpperID[k]
-                _, add2 = ghostNodes(nodeMat[tempID1 - 1, :], nodeMat[tempID2 - 1, :], rnode[tempID1 - 1], rnode[tempID2 - 1])
+                _, add2 = ghostNodes(
+                    nodeMat[tempID1 - 1, :], nodeMat[tempID2 - 1, :], rnode[tempID1 - 1], rnode[tempID2 - 1]
+                )
                 if (add2[-1] > z_offset[0]) and (add2[-1] < z_offset[-1]):
                     tempID2 = xnode.size + 1
                     xnode = np.append(xnode, add2[0])
@@ -1083,8 +1103,16 @@ class FloatingFrame(om.ExplicitComponent):
 
         # Wind + Wave loading in local main / offset / tower c.s.
         Px_main, Py_main, Pz_main = inputs["main_Pz"], inputs["main_Py"], -inputs["main_Px"]  # switch to local c.s.
-        Px_offset, Py_offset, Pz_offset = inputs["offset_Pz"], inputs["offset_Py"], -inputs["offset_Px"]  # switch to local c.s.
-        Px_tower, Py_tower, Pz_tower = inputs["tower_Pz"], inputs["tower_Py"], -inputs["tower_Px"]  # switch to local c.s.
+        Px_offset, Py_offset, Pz_offset = (
+            inputs["offset_Pz"],
+            inputs["offset_Py"],
+            -inputs["offset_Px"],
+        )  # switch to local c.s.
+        Px_tower, Py_tower, Pz_tower = (
+            inputs["tower_Pz"],
+            inputs["tower_Py"],
+            -inputs["tower_Px"],
+        )  # switch to local c.s.
         epsOff = 1e-5
         # Get mass right- offsets, stiffeners, tower, rna, etc.
         # Also account for buoyancy loads
@@ -1160,7 +1188,9 @@ class FloatingFrame(om.ExplicitComponent):
                 F_truss += factor * Frange * elemL[crossAttachEID - 1] * ncolumn
                 z_cb += factor * Frange * elemL[crossAttachEID - 1] * ncolumn * elemCoG[crossAttachEID - 1, :]
             if outerCrossFlag:
-                factor = np.minimum(1.0, (0.0 - znode[mainLowerID - 1]) / (znode[offsetUpperID[0] - 1] - znode[mainLowerID - 1]))
+                factor = np.minimum(
+                    1.0, (0.0 - znode[mainLowerID - 1]) / (znode[offsetUpperID[0] - 1] - znode[mainLowerID - 1])
+                )
                 # TODO: This one will take a little more math
                 # EL       = np.append(EL, outerCrossEID + np.arange(2*ncolumn, dtype=np.int32))
                 # Ux       = np.append(Ux, np.zeros(nrange.shape))
@@ -1293,7 +1323,9 @@ class FloatingFrame(om.ExplicitComponent):
         m_total = outputs["substructure_mass"] + m_rna + m_tower.sum()
         outputs["structural_mass"] = m_total
         outputs["structure_center_of_mass"] = (
-            m_rna * cg_rna + m_tower.sum() * cg_tower + outputs["substructure_mass"] * outputs["substructure_center_of_mass"]
+            m_rna * cg_rna
+            + m_tower.sum() * cg_tower
+            + outputs["substructure_mass"] * outputs["substructure_center_of_mass"]
         ) / m_total
 
         # Find cb (center of buoyancy) for whole system
@@ -1355,7 +1387,9 @@ class FloatingFrame(om.ExplicitComponent):
 
             # ---DYNAMIC ANALYSIS---
             shift = 1e1
-            myframe0.enableDynamics(3 * NFREQ, frame3dd_opt["Mmethod"], frame3dd_opt["lump"], float(frame3dd_opt["tol"]), shift)
+            myframe0.enableDynamics(
+                3 * NFREQ, frame3dd_opt["Mmethod"], frame3dd_opt["lump"], float(frame3dd_opt["tol"]), shift
+            )
 
             # ---DEBUGGING---
             # myframe0.write('debug.3dd') # For debugging
@@ -1501,7 +1535,9 @@ class FloatingFrame(om.ExplicitComponent):
         outputs["main_stress:axial"] = sigma_ax_main
         outputs["main_stress:shear"] = sigma_sh_main
         outputs["main_stress:hoop"] = sigma_h_main
-        outputs["main_stress:hoopStiffen"] = util.hoopStressEurocode(z_main, 2 * R_od_main, t_wall_main, L_reinforced, qdyn_main)
+        outputs["main_stress:hoopStiffen"] = util.hoopStressEurocode(
+            z_main, 2 * R_od_main, t_wall_main, L_reinforced, qdyn_main
+        )
         outputs["main_stress"] = util.vonMisesStressUtilization(
             sigma_ax_main, sigma_h_main, sigma_sh_main, gamma_f * gamma_m * gamma_n, sigma_y_main
         )
@@ -1558,7 +1594,15 @@ class FloatingFrame(om.ExplicitComponent):
 
             offset_height = z_offset[-1] - z_offset[0]
             outputs["offset_global_buckling"] = util.bucklingGL(
-                2 * R_od_offset, t_wall_offset, Nx[idx], M[idx], offset_height, E_offset, sigma_y_offset, gamma_f, gamma_b
+                2 * R_od_offset,
+                t_wall_offset,
+                Nx[idx],
+                M[idx],
+                offset_height,
+                E_offset,
+                sigma_y_offset,
+                gamma_f,
+                gamma_b,
             )
 
 

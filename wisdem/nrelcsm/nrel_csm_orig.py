@@ -49,7 +49,9 @@ class aero_csm(object):
         self.rotor_thrust = 0.0  # Float(iotype='out', units='N', desc='maximum thrust from rotor')
         self.rotor_torque = 0.0  # Float(iotype='out', units='N * m', desc = 'torque from rotor at rated power')
         self.power_curve = np.zeros(161)  # Array(iotype='out', units='kW', desc='total power before drivetrain losses')
-        self.wind_curve = np.zeros(161)  # Array(iotype='out', units='m/s', desc='wind curve associated with power curve')
+        self.wind_curve = np.zeros(
+            161
+        )  # Array(iotype='out', units='m/s', desc='wind curve associated with power curve')
 
     def compute(
         self,
@@ -90,7 +92,8 @@ class aero_csm(object):
             ssl_temp = 288.15  # std sea-level temp in K
 
             air_density = (
-                ssl_pa * (1 - ((lapse_rate * (altitude + self.hubHt)) / ssl_temp)) ** (gravity / (lapse_rate * gas_const))
+                ssl_pa
+                * (1 - ((lapse_rate * (altitude + self.hubHt)) / ssl_temp)) ** (gravity / (lapse_rate * gas_const))
             ) / (gas_const * (ssl_temp - lapse_rate * (altitude + self.hubHt)))
         else:
             air_density = air_density
@@ -167,7 +170,9 @@ class aero_csm(object):
 
         # compute turbine load outputs
         self.rotor_torque = self.ratedHubPower / (self.ratedRPM * (pi / 30.0)) * 1000.0
-        self.rotor_thrust = air_density * thrust_coefficient * pi * rotor_diameter ** 2 * (self.ratedWindSpeed ** 2) / 8.0
+        self.rotor_thrust = (
+            air_density * thrust_coefficient * pi * rotor_diameter ** 2 * (self.ratedWindSpeed ** 2) / 8.0
+        )
 
     def idealPowerCurve(self, Wind, ITP, kTorque, windOmegaT, pwrOmegaT, n, omegaTflag):
         """
@@ -186,9 +191,13 @@ class aero_csm(object):
                             Wind[i] - windOmegaT
                         ) + pwrOmegaT  # region 2.5
                     else:
-                        idealPwr = kTorque * (Wind[i] * self.maxTipSpdRatio / (self.rotorDiam / 2.0)) ** 3 / 1000.0  # region 2
+                        idealPwr = (
+                            kTorque * (Wind[i] * self.maxTipSpdRatio / (self.rotorDiam / 2.0)) ** 3 / 1000.0
+                        )  # region 2
                 else:
-                    idealPwr = kTorque * (Wind[i] * self.maxTipSpdRatio / (self.rotorDiam / 2.0)) ** 3 / 1000.0  # region 2
+                    idealPwr = (
+                        kTorque * (Wind[i] * self.maxTipSpdRatio / (self.rotorDiam / 2.0)) ** 3 / 1000.0
+                    )  # region 2
 
             ITP[i] = idealPwr
             # print [Wind[i],ITP[i]]
@@ -237,9 +246,7 @@ class aep_calc_csm(object):
         # turbine_number = Int(100, iotype='in', desc = 'total number of wind turbines at the plant')
 
         # Output
-        gross_aep = (
-            0.0  # Float(iotype='out', desc='Gross Annual Energy Production before availability and loss impacts', unit='kWh')
-        )
+        gross_aep = 0.0  # Float(iotype='out', desc='Gross Annual Energy Production before availability and loss impacts', unit='kWh')
         net_aep = 0.0  # Float(units= 'kW * h', iotype='out', desc='Annual energy production in kWh')  # use PhysicalUnits to set units='kWh'
         power_array = 0.0  # Array(iotype='out', units='kW', desc='total power after drivetrain losses')
         capacity_factor = 0.0  # Float(iotype='out', desc='plant capacity factor')
@@ -434,12 +441,16 @@ class blades_csm(object):
         """
 
         # Variables
-        self.rotor_diameter = rotor_diameter  # = Float(126.0, units = 'm', iotype='in', desc= 'rotor diameter of the machine')
+        self.rotor_diameter = (
+            rotor_diameter  # = Float(126.0, units = 'm', iotype='in', desc= 'rotor diameter of the machine')
+        )
 
         # Parameters
         self.year = year  # = Int(2009, iotype='in', desc = 'year of project start')
         self.month = month  # Int(12, iotype='in', desc = 'month of project start')
-        self.advanced_blade = advanced_blade  # Bool(False, iotype='in', desc = 'boolean for use of advanced blade curve')
+        self.advanced_blade = (
+            advanced_blade  # Bool(False, iotype='in', desc = 'boolean for use of advanced blade curve')
+        )
 
         if self.advanced_blade == True:
             massCoeff = 0.4948
@@ -524,7 +535,9 @@ class hub_csm(object):
         """
 
         # Variables
-        self.rotor_diameter = rotor_diameter  # Float(126.0, units = 'm', iotype='in', desc= 'rotor diameter of the machine')
+        self.rotor_diameter = (
+            rotor_diameter  # Float(126.0, units = 'm', iotype='in', desc= 'rotor diameter of the machine')
+        )
         self.blade_mass = blade_mass  # Float(17650.67, units='kg', iotype='in', desc='mass of an individual blade')
 
         # Parameters
@@ -569,12 +582,16 @@ class hub_csm(object):
         self.d_hub_mass_d_diameter = 0.0
         self.d_pitch_mass_d_diameter = 0.0
         self.d_spinner_mass_d_diameter = 18.5
-        self.d_system_mass_d_diameter = self.d_hub_mass_d_diameter + self.d_pitch_mass_d_diameter + self.d_spinner_mass_d_diameter
+        self.d_system_mass_d_diameter = (
+            self.d_hub_mass_d_diameter + self.d_pitch_mass_d_diameter + self.d_spinner_mass_d_diameter
+        )
 
         self.d_hub_cost_d_diameter = 0.0
         self.d_pitch_cost_d_diameter = bearingCostEscalator * 2.28 * 2.6576 * (0.2106 * self.rotor_diameter ** 1.6576)
         self.d_spinner_cost_d_diameter = spinnerCostEscalator * (5.57 * self.d_spinner_mass_d_diameter)
-        self.d_system_cost_d_diameter = self.d_hub_cost_d_diameter + self.d_pitch_cost_d_diameter + self.d_spinner_cost_d_diameter
+        self.d_system_cost_d_diameter = (
+            self.d_hub_cost_d_diameter + self.d_pitch_cost_d_diameter + self.d_spinner_cost_d_diameter
+        )
 
         self.d_hub_mass_d_blade_mass = 0.95402537
         self.d_pitch_mass_d_blade_mass = 0.1295 * self.blade_number * (1 + bearingHousingPct)
@@ -649,7 +666,9 @@ class nacelle_csm(object):
         self.generator_mass = 0.0  # Float(0.0, units='kg', iotype='out', desc= 'generator and housing mass')
         self.VSElectronics_mass = 0.0  # Float(0.0, units='kg', iotype='out', desc= 'variable speed electronics mass')
         self.yawSystem_mass = 0.0  # Float(0.0, units='kg', iotype='out', desc= 'yaw system mass')
-        self.mainframeTotal_mass = 0.0  # Float(0.0, units='kg', iotype='out', desc= 'mainframe total mass including bedplate')
+        self.mainframeTotal_mass = (
+            0.0  # Float(0.0, units='kg', iotype='out', desc= 'mainframe total mass including bedplate')
+        )
         self.electronicCabling_mass = 0.0  # Float(0.0, units='kg', iotype='out', desc= 'electronic cabling mass')
         self.HVAC_mass = 0.0  # Float(0.0, units='kg', iotype='out', desc= 'HVAC system mass')
         self.nacelleCover_mass = 0.0  # Float(0.0, units='kg', iotype='out', desc= 'nacelle cover mass')
@@ -665,7 +684,9 @@ class nacelle_csm(object):
         self.generator_cost = 0.0  # Float(0.0, units='kg', iotype='out', desc= 'generator and housing _cost')
         self.VSElectronics_cost = 0.0  # Float(0.0, units='kg', iotype='out', desc= 'variable speed electronics _cost')
         self.yawSystem_cost = 0.0  # Float(0.0, units='kg', iotype='out', desc= 'yaw system _cost')
-        self.mainframeTotal_cost = 0.0  # Float(0.0, units='kg', iotype='out', desc= 'mainframe total _cost including bedplate')
+        self.mainframeTotal_cost = (
+            0.0  # Float(0.0, units='kg', iotype='out', desc= 'mainframe total _cost including bedplate')
+        )
         self.electronicCabling_cost = 0.0  # Float(0.0, units='kg', iotype='out', desc= 'electronic cabling _cost')
         self.HVAC_cost = 0.0  # Float(0.0, units='kg', iotype='out', desc= 'HVAC system _cost')
         self.nacelleCover_cost = 0.0  # Float(0.0, units='kg', iotype='out', desc= 'nacelle cover _cost')
@@ -701,9 +722,7 @@ class nacelle_csm(object):
         self.machine_rating = machine_rating  # Float(5000.0, units='kW', iotype='in', desc = 'Machine rated power')
 
         # Parameters
-        self.drivetrain_design = (
-            drivetrain_design  # Enum('geared', ('geared', 'single_stage', 'multi_drive', 'pm_direct_drive'), iotype='in')
-        )
+        self.drivetrain_design = drivetrain_design  # Enum('geared', ('geared', 'single_stage', 'multi_drive', 'pm_direct_drive'), iotype='in')
         self.crane = crane  # Bool(True, iotype='in', desc = 'boolean for presence of a service crane up tower')
         self.advanced_bedplate = (
             advanced_bedplate  # Int(0, iotype='in', desc= 'indicator for drivetrain bedplate design 0 - conventional')
@@ -729,7 +748,10 @@ class nacelle_csm(object):
         hFact = 0.1
         hollow = 1 / (1 - (hFact) ** 4)
         outDiam = (
-            (32.0 / np.pi) * hollow * 3.25 * ((self.rotor_torque * 3.0 / 371000000.0) ** 2 + (bendMom / 71070000) ** 2) ** (0.5)
+            (32.0 / np.pi)
+            * hollow
+            * 3.25
+            * ((self.rotor_torque * 3.0 / 371000000.0) ** 2 + (bendMom / 71070000) ** 2) ** (0.5)
         ) ** (1.0 / 3.0)
         inDiam = outDiam * hFact
 
@@ -818,7 +840,9 @@ class nacelle_csm(object):
             )
         else:
             self.d_generator_mass_d_r_torque = (
-                massExp[drivetrain_design] * massCoeff[drivetrain_design] * self.rotor_torque ** (massExp[drivetrain_design] - 1)
+                massExp[drivetrain_design]
+                * massCoeff[drivetrain_design]
+                * self.rotor_torque ** (massExp[drivetrain_design] - 1)
             )
             self.d_generator_mass_d_rating = 0.0
         self.d_generator_cost_d_rating = generatorCostEsc * costCoeff[drivetrain_design]
@@ -965,7 +989,10 @@ class nacelle_csm(object):
             + self.d_mainframe_mass_d_r_torque
         )
         self.d_nacelle_mass_d_rating = (
-            self.d_generator_mass_d_rating + self.d_brakes_mass_d_rating + self.d_hvac_mass_d_rating + self.d_cover_mass_d_rating
+            self.d_generator_mass_d_rating
+            + self.d_brakes_mass_d_rating
+            + self.d_hvac_mass_d_rating
+            + self.d_cover_mass_d_rating
         )
 
         # Rest of System Costs
@@ -1052,7 +1079,10 @@ class nacelle_csm(object):
         self.mainframeTotal_cost = MainFrame2002 * mainFrameCostEsc
 
         self.d_mainframe_cost_d_r_diameter = mainFrameCostEsc * (
-            1.7 * mfmCoeff[drivetrain_design] * mfmExp[drivetrain_design] * self.rotor_diameter ** (mfmExp[drivetrain_design] - 1)
+            1.7
+            * mfmCoeff[drivetrain_design]
+            * mfmExp[drivetrain_design]
+            * self.rotor_diameter ** (mfmExp[drivetrain_design] - 1)
             + 8.7 * self.d_mainframe_mass_d_r_diameter * (0.125 / 1.125)
         )
         self.d_mainframe_cost_d_r_mass = mainFrameCostEsc * 8.7 * self.d_mainframe_mass_d_r_mass * (0.125 / 1.125)
@@ -1212,7 +1242,9 @@ class tower_csm(object):
         """
 
         # Variables
-        self.rotor_diameter = rotor_diameter  # Float(126.0, units = 'm', iotype='in', desc= 'rotor diameter of the machine')
+        self.rotor_diameter = (
+            rotor_diameter  # Float(126.0, units = 'm', iotype='in', desc= 'rotor diameter of the machine')
+        )
         self.hub_height = hub_height  # Float(90.0, units = 'm', iotype='in', desc = 'hub height of machine')
 
         # Parameters
@@ -1227,7 +1259,9 @@ class tower_csm(object):
             windpactMassSlope = 0.269380169
             windpactMassInt = 1779.328183
 
-        self.tower_mass = windpactMassSlope * np.pi * (self.rotor_diameter / 2.0) ** 2 * self.hub_height + windpactMassInt
+        self.tower_mass = (
+            windpactMassSlope * np.pi * (self.rotor_diameter / 2.0) ** 2 * self.hub_height + windpactMassInt
+        )
 
         ppi.curr_yr = curr_yr
         ppi.curr_mon = curr_mon
@@ -1240,7 +1274,9 @@ class tower_csm(object):
         self.tower_cost = self.towerCost2002 * twrCostEscalator
 
         # derivatives
-        self.d_mass_d_diameter = 2 * windpactMassSlope * np.pi * (self.rotor_diameter / 2.0) * (1 / 2.0) * self.hub_height
+        self.d_mass_d_diameter = (
+            2 * windpactMassSlope * np.pi * (self.rotor_diameter / 2.0) * (1 / 2.0) * self.hub_height
+        )
         self.d_mass_d_hheight = windpactMassSlope * np.pi * (self.rotor_diameter / 2.0) ** 2
         self.d_cost_d_diameter = twrCostCoeff * twrCostEscalator * self.d_mass_d_diameter
         self.d_cost_d_hheight = twrCostCoeff * twrCostEscalator * self.d_mass_d_hheight
@@ -1254,7 +1290,9 @@ class tower_csm(object):
 
     def provideJ(self):
 
-        self.J = np.array([[self.d_mass_d_diameter, self.d_mass_d_hheight], [self.d_cost_d_diameter, self.d_cost_d_hheight]])
+        self.J = np.array(
+            [[self.d_mass_d_diameter, self.d_mass_d_hheight], [self.d_cost_d_diameter, self.d_cost_d_hheight]]
+        )
 
         return self.J
 
@@ -1330,7 +1368,9 @@ class turbine_csm(object):
         """
 
         # Variables
-        self.blade_cost = blade_cost  # Float(0.0, units='USD', iotype='in', desc='cost for a single wind turbine blade')
+        self.blade_cost = (
+            blade_cost  # Float(0.0, units='USD', iotype='in', desc='cost for a single wind turbine blade')
+        )
         self.blade_mass = blade_mass  # Float(0.0, units='kg', iotype='in', desc='mass for a single wind turbine blade')
         self.hub_system_cost = hub_system_cost  # Float(0.0, units='USD', iotype='in', desc='hub system cost')
         self.hub_system_mass = hub_system_mass  # Float(0.0, units='kg', iotype='in', desc='hub system mass')
@@ -1462,10 +1502,10 @@ class tcc_csm(object):
         self.month = month  # Int(12, iotype='in', desc = 'month of project start')
         self.blade_number = blade_number  # Int(3, iotype='in', desc = 'number of rotor blades')
         self.offshore = offshore  # Bool(True, iotype='in', desc = 'boolean for offshore')
-        self.advanced_blade = advanced_blade  # Bool(False, iotype='in', desc = 'boolean for use of advanced blade curve')
-        self.drivetrain_design = (
-            drivetrain_design  # Enum('geared', ('geared', 'single_stage', 'multi_drive', 'pm_direct_drive'), iotype='in')
+        self.advanced_blade = (
+            advanced_blade  # Bool(False, iotype='in', desc = 'boolean for use of advanced blade curve')
         )
+        self.drivetrain_design = drivetrain_design  # Enum('geared', ('geared', 'single_stage', 'multi_drive', 'pm_direct_drive'), iotype='in')
         self.crane = crane  # Bool(True, iotype='in', desc = 'boolean for presence of a service crane up tower')
         self.advanced_bedplate = (
             advanced_bedplate  # Int(0, iotype='in', desc= 'indicator for drivetrain bedplate design 0 - conventional')
@@ -1531,7 +1571,9 @@ class bos_csm(object):
         # bos_costs = Float(iotype='out', desc='Overall wind plant balance of station/system costs up to point of comissioning')
         self.bos_costs = 0.0  # *= self.multiplier  # TODO: add to gradients
         self.bos_breakdown_development_costs = 0.0  # engPermits_costs * self.turbine_number
-        self.bos_breakdown_preparation_and_staging_costs = 0.0  # (roadsCivil_costs + portStaging_costs) * self.turbine_number
+        self.bos_breakdown_preparation_and_staging_costs = (
+            0.0  # (roadsCivil_costs + portStaging_costs) * self.turbine_number
+        )
         self.bos_breakdown_transportation_costs = 0.0  # (transportation_costs * self.turbine_number)
         self.bos_breakdown_foundation_and_substructure_costs = 0.0  # foundation_cost * self.turbine_number
         self.bos_breakdown_electrical_costs = 0.0  # electrical_costs * self.turbine_number
@@ -1563,7 +1605,9 @@ class bos_csm(object):
 
         # Parameters
         self.turbine_number = turbine_number  # Int(iotype='in', desc='number of turbines in project')
-        self.sea_depth = sea_depth  # Float(20.0, units = 'm', iotype = 'in', desc = 'sea depth for offshore wind plant')
+        self.sea_depth = (
+            sea_depth  # Float(20.0, units = 'm', iotype = 'in', desc = 'sea depth for offshore wind plant')
+        )
         self.year = year  # Int(2009, iotype='in', desc='year for project start')
         self.month = month  # Int(12, iotype = 'in', desc= 'month for project start')
         self.multiplier = multiplier  # Float(1.0, iotype='in')
@@ -1693,10 +1737,16 @@ class bos_csm(object):
             iExp = 1.1736
             installation_costs = iCoeff * ((self.hub_height * self.rotor_diameter) ** iExp) * ppi.compute("IPPI_LAI")
             self.d_assembly_d_diameter = (
-                iCoeff * ((self.hub_height * self.rotor_diameter) ** (iExp - 1)) * self.hub_height * ppi.compute("IPPI_LAI")
+                iCoeff
+                * ((self.hub_height * self.rotor_diameter) ** (iExp - 1))
+                * self.hub_height
+                * ppi.compute("IPPI_LAI")
             )
             self.d_assembly_d_hheight = (
-                iCoeff * ((self.hub_height * self.rotor_diameter) ** (iExp - 1)) * self.rotor_diameter * ppi.compute("IPPI_LAI")
+                iCoeff
+                * ((self.hub_height * self.rotor_diameter) ** (iExp - 1))
+                * self.rotor_diameter
+                * ppi.compute("IPPI_LAI")
             )
 
             transportation_costs = self.machine_rating * tFact * ppi.compute("IPPI_TPT")
@@ -1950,9 +2000,27 @@ class bos_csm(object):
                     self.d_assembly_d_hheight,
                     self.d_assembly_d_rna,
                 ],
-                [self.d_soft_d_rating, self.d_soft_d_diameter, self.d_soft_d_tcc, self.d_soft_d_hheight, self.d_soft_d_rna],
-                [self.d_other_d_rating, self.d_other_d_diameter, self.d_other_d_tcc, self.d_other_d_hheight, self.d_other_d_rna],
-                [self.d_cost_d_rating, self.d_cost_d_diameter, self.d_cost_d_tcc, self.d_cost_d_hheight, self.d_cost_d_rna],
+                [
+                    self.d_soft_d_rating,
+                    self.d_soft_d_diameter,
+                    self.d_soft_d_tcc,
+                    self.d_soft_d_hheight,
+                    self.d_soft_d_rna,
+                ],
+                [
+                    self.d_other_d_rating,
+                    self.d_other_d_diameter,
+                    self.d_other_d_tcc,
+                    self.d_other_d_hheight,
+                    self.d_other_d_rna,
+                ],
+                [
+                    self.d_cost_d_rating,
+                    self.d_cost_d_diameter,
+                    self.d_cost_d_tcc,
+                    self.d_cost_d_hheight,
+                    self.d_cost_d_rna,
+                ],
             ]
         )
 
@@ -2044,7 +2112,9 @@ class opex_csm(object):
         else:
             self.d_preventative_d_aep = offshoreCostFactor * costEscalator
         self.d_preventative_d_rating = 0.0
-        self.d_opex_d_aep = self.d_preventative_d_aep + self.d_corrective_d_aep + self.d_lease_d_aep + self.d_other_d_aep
+        self.d_opex_d_aep = (
+            self.d_preventative_d_aep + self.d_corrective_d_aep + self.d_lease_d_aep + self.d_other_d_aep
+        )
         self.d_opex_d_rating = (
             self.d_preventative_d_rating + self.d_corrective_d_rating + self.d_lease_d_rating + self.d_other_d_rating
         )
@@ -2088,14 +2158,18 @@ class fin_csm(object):
         self.lcoe = 0.0  # Float(iotype='out', desc='_cost of energy - unlevelized')
 
         # parameters
-        self.fixed_charge_rate = fixed_charge_rate  # Float(0.12, iotype = 'in', desc = 'fixed charge rate for coe calculation')
+        self.fixed_charge_rate = (
+            fixed_charge_rate  # Float(0.12, iotype = 'in', desc = 'fixed charge rate for coe calculation')
+        )
         self.construction_finance_rate = construction_finance_rate  # Float(0.00, iotype='in', desc = 'construction financing rate applied to overnight capital costs')
         self.tax_rate = tax_rate  # Float(0.4, iotype = 'in', desc = 'tax rate applied to operations')
         self.discount_rate = discount_rate  # Float(0.07, iotype = 'in', desc = 'applicable project discount rate')
         self.construction_time = (
             construction_time  # Float(1.0, iotype = 'in', desc = 'number of years to complete project construction')
         )
-        self.project_lifetime = project_lifetime  # Float(20.0, iotype = 'in', desc = 'project lifetime for LCOE calculation')
+        self.project_lifetime = (
+            project_lifetime  # Float(20.0, iotype = 'in', desc = 'project lifetime for LCOE calculation')
+        )
 
     def compute(self, turbine_cost, turbine_number, bos_costs, avg_annual_opex, net_aep, sea_depth):
         """
@@ -2122,7 +2196,9 @@ class fin_csm(object):
             icc = self.turbine_cost * self.turbine_number + self.bos_costs
 
         # compute COE and LCOE values
-        self.coe = (icc * self.fixed_charge_rate / self.net_aep) + (self.avg_annual_opex) * (1 - self.tax_rate) / self.net_aep
+        self.coe = (icc * self.fixed_charge_rate / self.net_aep) + (self.avg_annual_opex) * (
+            1 - self.tax_rate
+        ) / self.net_aep
 
         amortFactor = (1 + 0.5 * ((1 + self.discount_rate) ** self.construction_time - 1)) * (
             self.discount_rate / (1 - (1 + self.discount_rate) ** (-1.0 * self.project_lifetime))
@@ -2131,12 +2207,16 @@ class fin_csm(object):
 
         # derivatives
         if offshore:
-            self.d_coe_d_turbine_cost = (self.turbine_number * (1 + 0.15 / 1.10) * self.fixed_charge_rate) / self.net_aep
+            self.d_coe_d_turbine_cost = (
+                self.turbine_number * (1 + 0.15 / 1.10) * self.fixed_charge_rate
+            ) / self.net_aep
         else:
             self.d_coe_d_turbine_cost = self.turbine_number * self.fixed_charge_rate / self.net_aep
         self.d_coe_d_bos_cost = self.fixed_charge_rate / self.net_aep
         self.d_coe_d_avg_opex = (1 - self.tax_rate) / self.net_aep
-        self.d_coe_d_net_aep = -(icc * self.fixed_charge_rate + self.avg_annual_opex * (1 - self.tax_rate)) / (self.net_aep ** 2)
+        self.d_coe_d_net_aep = -(icc * self.fixed_charge_rate + self.avg_annual_opex * (1 - self.tax_rate)) / (
+            self.net_aep ** 2
+        )
 
         if offshore:
             self.d_lcoe_d_turbine_cost = self.turbine_number * (1 + 0.15 / 1.10) * amortFactor / self.net_aep

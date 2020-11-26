@@ -156,7 +156,9 @@ class Polar(object):
 
         # correction factor
         fcl = 1.0 / m * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r ** expon) / (b + chord_over_r ** expon) - 1)
-        fcd = 1.0 / m * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r ** expon_d) / (b + chord_over_r ** expon_d) - 1)
+        fcd = (
+            1.0 / m * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r ** expon_d) / (b + chord_over_r ** expon_d) - 1)
+        )
 
         # not sure where this adjustment comes from (besides AirfoilPrep spreadsheet of course)
         adj = ((pi / 2 - alpha) / (pi / 2 - alpha_max_corr)) ** 2
@@ -304,7 +306,9 @@ class Polar(object):
         alpha_num = abs(int((-180.0 - cm1_alpha) / 10.0 - 1))
         alpha_cm1 = np.linspace(-180.0, cm1_alpha, alpha_num)
         alpha_cm2 = np.linspace(cm2_alpha, 180.0, int((180.0 - cm2_alpha) / 10.0 + 1))
-        alpha_cm = np.concatenate((alpha_cm1, self.alpha, alpha_cm2))  # Specific alpha values are needed for cm function to work
+        alpha_cm = np.concatenate(
+            (alpha_cm1, self.alpha, alpha_cm2)
+        )  # Specific alpha values are needed for cm function to work
         cm1 = np.zeros(len(alpha_cm1))
         cm2 = np.zeros(len(alpha_cm2))
         cm_ext = np.concatenate((cm1, self.cm, cm2))
@@ -371,7 +375,9 @@ class Polar(object):
                     cm_new = self.cm0 - x * (cl_ext[i] * cos(radians(alpha[i])) + cd_ext[i] * sin(radians(alpha[i])))
                 else:
                     x = cmCoef * tan(-radians(alpha[i]) - pi / 2) + 0.25
-                    cm_new = -(self.cm0 - x * (-cl_ext[i] * cos(-radians(alpha[i])) + cd_ext[i] * sin(-radians(alpha[i]))))
+                    cm_new = -(
+                        self.cm0 - x * (-cl_ext[i] * cos(-radians(alpha[i])) + cd_ext[i] * sin(-radians(alpha[i])))
+                    )
         else:
             if alpha[i] == 165:
                 cm_new = -0.4
@@ -690,7 +696,9 @@ class Airfoil(object):
         n = len(self.polars)
         polars = [0] * n
         for idx, p in enumerate(self.polars):
-            polars[idx] = p.correction3D(r_over_R, chord_over_r, tsr, alpha_max_corr, alpha_linear_min, alpha_linear_max)
+            polars[idx] = p.correction3D(
+                r_over_R, chord_over_r, tsr, alpha_max_corr, alpha_linear_min, alpha_linear_max
+            )
 
         return Airfoil(polars)
 
@@ -778,8 +786,16 @@ class Airfoil(object):
             f.write("{0:<10f}\t{1:40}".format(param[1], "Stall angle (deg)"))
             f.write("{0:<10f}\t{1:40}".format(param[2], "Angle of attack for zero Cn for linear Cn curve (deg)"))
             f.write("{0:<10f}\t{1:40}".format(param[3], "Cn slope for zero lift for linear Cn curve (1/rad)"))
-            f.write("{0:<10f}\t{1:40}".format(param[4], "Cn at stall value for positive angle of attack for linear Cn curve"))
-            f.write("{0:<10f}\t{1:40}".format(param[5], "Cn at stall value for negative angle of attack for linear Cn curve"))
+            f.write(
+                "{0:<10f}\t{1:40}".format(
+                    param[4], "Cn at stall value for positive angle of attack for linear Cn curve"
+                )
+            )
+            f.write(
+                "{0:<10f}\t{1:40}".format(
+                    param[5], "Cn at stall value for negative angle of attack for linear Cn curve"
+                )
+            )
             f.write("{0:<10f}\t{1:40}".format(param[6], "Angle of attack for minimum CD (deg)"))
             f.write("{0:<10f}\t{1:40}".format(param[7], "Minimum CD value"))
             for a, cl, cd, cm in zip(p.alpha, p.cl, p.cd, p.cm):
@@ -973,7 +989,9 @@ if __name__ == "__main__":
         formatter_class=RawTextHelpFormatter, description="Preprocessing airfoil data for wind turbine applications."
     )
     parser.add_argument("src_file", type=str, help="source file")
-    parser.add_argument("--stall3D", type=str, nargs=3, metavar=("r/R", "c/r", "tsr"), help="2D data -> apply 3D corrections")
+    parser.add_argument(
+        "--stall3D", type=str, nargs=3, metavar=("r/R", "c/r", "tsr"), help="2D data -> apply 3D corrections"
+    )
     parser.add_argument("--extrap", type=str, nargs=1, metavar=("cdmax"), help="3D data -> high alpha extrapolations")
     parser.add_argument(
         "--blend",

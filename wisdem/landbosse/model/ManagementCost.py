@@ -493,16 +493,22 @@ class ManagementCost:
         project_size_kw = num_turbines * turbine_rating_MW * 1000
 
         if self.in_distributed_mode:
-            result.append({"type_of_cost": "total_management_cost", "raw_cost": self.output_dict["total_management_cost"]})
+            result.append(
+                {"type_of_cost": "total_management_cost", "raw_cost": self.output_dict["total_management_cost"]}
+            )
 
         else:
             result.append({"type_of_cost": "insurance", "raw_cost": self.output_dict["insurance_usd"]})
             result.append(
                 {"type_of_cost": "Construction Permitting", "raw_cost": self.output_dict["construction_permitting_usd"]}
             )
-            result.append({"type_of_cost": "Project Management", "raw_cost": self.output_dict["project_management_usd"]})
+            result.append(
+                {"type_of_cost": "Project Management", "raw_cost": self.output_dict["project_management_usd"]}
+            )
             result.append({"type_of_cost": "Bonding", "raw_cost": self.output_dict["bonding_usd"]})
-            result.append({"type_of_cost": "Markup Contingency", "raw_cost": self.output_dict["markup_contingency_usd"]})
+            result.append(
+                {"type_of_cost": "Markup Contingency", "raw_cost": self.output_dict["markup_contingency_usd"]}
+            )
             result.append(
                 {
                     "type_of_cost": "Engineering Foundation and Collections System (includes met mast)",

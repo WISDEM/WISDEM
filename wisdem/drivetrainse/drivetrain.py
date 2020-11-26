@@ -139,7 +139,9 @@ class DrivetrainSE(om.Group):
 
         # Materials prep
         self.add_subsystem(
-            "mat", DriveMaterials(direct=direct, n_mat=self.options["modeling_options"]["materials"]["n_mat"]), promotes=["*"]
+            "mat",
+            DriveMaterials(direct=direct, n_mat=self.options["modeling_options"]["materials"]["n_mat"]),
+            promotes=["*"],
         )
 
         # Need to do these first, before the layout
@@ -192,7 +194,9 @@ class DrivetrainSE(om.Group):
             "lss", ds.Hub_Rotor_LSS_Frame(n_dlcs=n_dlcs, modeling_options=opt, direct_drive=direct), promotes=["*"]
         )
         if direct:
-            self.add_subsystem("nose", ds.Nose_Stator_Bedplate_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=["*"])
+            self.add_subsystem(
+                "nose", ds.Nose_Stator_Bedplate_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=["*"]
+            )
         else:
             self.add_subsystem("hss", ds.HSS_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=["*"])
             self.add_subsystem("bed", ds.Bedplate_IBeam_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=["*"])

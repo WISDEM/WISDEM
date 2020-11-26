@@ -894,7 +894,9 @@ class Test3DStall(unittest.TestCase):
         Uinf = 10.0
         tsr = Omega * R / Uinf
 
-        newpolar = self.polar.correction3D(r / R, chord / r, tsr, alpha_max_corr=30, alpha_linear_min=-4, alpha_linear_max=4)
+        newpolar = self.polar.correction3D(
+            r / R, chord / r, tsr, alpha_max_corr=30, alpha_linear_min=-4, alpha_linear_max=4
+        )
 
         cl_3d = [
             -0.8466,
@@ -1178,7 +1180,9 @@ class Test3DStall(unittest.TestCase):
         Uinf = 14.0
         tsr = Omega * R / Uinf
 
-        newpolar = self.polar.correction3D(r / R, chord / r, tsr, alpha_max_corr=30, alpha_linear_min=-4, alpha_linear_max=4)
+        newpolar = self.polar.correction3D(
+            r / R, chord / r, tsr, alpha_max_corr=30, alpha_linear_min=-4, alpha_linear_max=4
+        )
 
         cl_3d = [
             -0.81340155,
@@ -1300,7 +1304,9 @@ class Test3DStall(unittest.TestCase):
         Uinf = 10.0
         tsr = Omega * R / Uinf
 
-        newpolar = self.polar.correction3D(r / R, chord / r, tsr, alpha_max_corr=30, alpha_linear_min=-4, alpha_linear_max=4)
+        newpolar = self.polar.correction3D(
+            r / R, chord / r, tsr, alpha_max_corr=30, alpha_linear_min=-4, alpha_linear_max=4
+        )
 
         cl_3d = [
             -0.8240,
@@ -1422,7 +1428,9 @@ class Test3DStall(unittest.TestCase):
         Uinf = 10.0
         tsr = Omega * R / Uinf
 
-        newpolar = self.polar2.correction3D(r / R, chord / r, tsr, alpha_max_corr=30, alpha_linear_min=-4, alpha_linear_max=4)
+        newpolar = self.polar2.correction3D(
+            r / R, chord / r, tsr, alpha_max_corr=30, alpha_linear_min=-4, alpha_linear_max=4
+        )
 
         cl_3d = [
             -0.8240,

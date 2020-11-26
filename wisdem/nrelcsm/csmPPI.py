@@ -118,7 +118,9 @@ class PPI:
 
         # self.escData = [None] * 37
         self.escData = {}  # try a dictionary
-        self.tblfile = "PPI_Tables.txt"  # TODO: temporary solution - should update so it can locate it from dictionary etc
+        self.tblfile = (
+            "PPI_Tables.txt"  # TODO: temporary solution - should update so it can locate it from dictionary etc
+        )
         self.ppitbls = {}  # dictionary of PPITbl objects
         self.yrs_gdp = []
         self.ppi_gdp = []
@@ -162,7 +164,9 @@ class PPI:
                 self.ppi_gdp = g
 
                 code = "GDP"
-                self.ppitbls[code] = PPITbl(code=code, name="Gross Domestic Product")  # add a new element to self.ppitbls
+                self.ppitbls[code] = PPITbl(
+                    code=code, name="Gross Domestic Product"
+                )  # add a new element to self.ppitbls
                 for i in range(len(y)):
                     rvals = []
                     for mon in range(13):
@@ -197,10 +201,18 @@ class PPI:
                 iyr += 1
 
         self.escData["IPPI_BLD"] = Escalator(
-            ["Baseline Blade material costs       ", ["3272123", "3255204", "332722489", "326150P"], [60.00, 23.00, 8.00, 9.00]]
+            [
+                "Baseline Blade material costs       ",
+                ["3272123", "3255204", "332722489", "326150P"],
+                [60.00, 23.00, 8.00, 9.00],
+            ]
         )
         self.escData["IPPI_BLA"] = Escalator(
-            ["Advanced Blade material costs       ", ["3272123", "3255204", "332722489", "326150P"], [61.00, 27.00, 3.00, 9.00]]
+            [
+                "Advanced Blade material costs       ",
+                ["3272123", "3255204", "332722489", "326150P"],
+                [61.00, 27.00, 3.00, 9.00],
+            ]
         )
         self.escData["IPPI_BLL"] = Escalator(["Blade Labor costs                   ", ["GDP    "], [100.00]])
         self.escData["IPPI_HUB"] = Escalator(
@@ -213,7 +225,11 @@ class PPI:
             ]
         )
         self.escData["IPPI_PMB"] = Escalator(
-            ["Pitch Mechanisms/Bearings           ", ["332991P", "3353123", "333612P  ", "334513"], [50.00, 20.00, 20.00, 10.00]]
+            [
+                "Pitch Mechanisms/Bearings           ",
+                ["332991P", "3353123", "333612P  ", "334513"],
+                [50.00, 20.00, 20.00, 10.00],
+            ]
         )
         self.escData["IPPI_LSS"] = Escalator(["Low speed shaft                     ", ["3315131"], [100.00]])
         self.escData["IPPI_BRN"] = Escalator(["Bearings                            ", ["332991P"], [100.00]])
@@ -265,10 +281,18 @@ class PPI:
         self.escData["IPPI_LAI"] = Escalator(["Land Based Assembly & installation  ", ["BHVY   "], [100.00]])
         self.escData["IPPI_OAI"] = Escalator(["Offshore Assembly & installation    ", ["BHVY   "], [100.00]])
         self.escData["IPPI_LEL"] = Escalator(
-            ["Land Based Elect                    ", ["3353119", "335313P", "3359291  ", "GDP"], [40.00, 15.00, 35.00, 10.00]]
+            [
+                "Land Based Elect                    ",
+                ["3353119", "335313P", "3359291  ", "GDP"],
+                [40.00, 15.00, 35.00, 10.00],
+            ]
         )
         self.escData["IPPI_OEL"] = Escalator(
-            ["Offshore Elect                      ", ["3353119", "335313P", "3359291  ", "GDP"], [5.00, 5.00, 70.00, 20.00]]
+            [
+                "Offshore Elect                      ",
+                ["3353119", "335313P", "3359291  ", "GDP"],
+                [5.00, 5.00, 70.00, 20.00],
+            ]
         )
         self.escData["IPPI_LPM"] = Escalator(["Permits, engineering (Land Based)   ", ["GDP    "], [100.00]])
         self.escData["IPPI_OPM"] = Escalator(["Permits, engineering (Offshore)     ", ["GDP    "], [100.00]])

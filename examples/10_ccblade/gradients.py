@@ -33,10 +33,46 @@ r = np.array(
     ]
 )
 chord = np.array(
-    [3.542, 3.854, 4.167, 4.557, 4.652, 4.458, 4.249, 4.007, 3.748, 3.502, 3.256, 3.010, 2.764, 2.518, 2.313, 2.086, 1.419]
+    [
+        3.542,
+        3.854,
+        4.167,
+        4.557,
+        4.652,
+        4.458,
+        4.249,
+        4.007,
+        3.748,
+        3.502,
+        3.256,
+        3.010,
+        2.764,
+        2.518,
+        2.313,
+        2.086,
+        1.419,
+    ]
 )
 theta = np.array(
-    [13.308, 13.308, 13.308, 13.308, 11.480, 10.162, 9.011, 7.795, 6.544, 5.361, 4.188, 3.125, 2.319, 1.526, 0.863, 0.370, 0.106]
+    [
+        13.308,
+        13.308,
+        13.308,
+        13.308,
+        11.480,
+        10.162,
+        9.011,
+        7.795,
+        6.544,
+        5.361,
+        4.188,
+        3.125,
+        2.319,
+        1.526,
+        0.863,
+        0.370,
+        0.106,
+    ]
 )
 B = 3  # number of blades
 
@@ -84,7 +120,9 @@ for i in range(len(r)):
 # 3 ----------
 
 # create CCBlade object
-rotor = CCBlade(r, chord, theta, af, Rhub, Rtip, B, rho, mu, precone, tilt, yaw, shearExp, hubHt, nSector, derivatives=True)
+rotor = CCBlade(
+    r, chord, theta, af, Rhub, Rtip, B, rho, mu, precone, tilt, yaw, shearExp, hubHt, nSector, derivatives=True
+)
 
 # 3 ----------
 
@@ -181,7 +219,9 @@ idx = 8
 delta = 1e-6 * r[idx]
 r[idx] += delta
 
-rotor_fd = CCBlade(r, chord, theta, af, Rhub, Rtip, B, rho, mu, precone, tilt, yaw, shearExp, hubHt, nSector, derivatives=False)
+rotor_fd = CCBlade(
+    r, chord, theta, af, Rhub, Rtip, B, rho, mu, precone, tilt, yaw, shearExp, hubHt, nSector, derivatives=False
+)
 
 r[idx] -= delta
 
@@ -202,7 +242,9 @@ print()
 delta = 1e-6 * precone
 precone += delta
 
-rotor_fd = CCBlade(r, chord, theta, af, Rhub, Rtip, B, rho, mu, precone, tilt, yaw, shearExp, hubHt, nSector, derivatives=False)
+rotor_fd = CCBlade(
+    r, chord, theta, af, Rhub, Rtip, B, rho, mu, precone, tilt, yaw, shearExp, hubHt, nSector, derivatives=False
+)
 
 precone -= delta
 
@@ -226,7 +268,9 @@ idx = 12
 delta = 1e-6 * r[idx]
 r[idx] += delta
 
-rotor_fd = CCBlade(r, chord, theta, af, Rhub, Rtip, B, rho, mu, precone, tilt, yaw, shearExp, hubHt, nSector, derivatives=False)
+rotor_fd = CCBlade(
+    r, chord, theta, af, Rhub, Rtip, B, rho, mu, precone, tilt, yaw, shearExp, hubHt, nSector, derivatives=False
+)
 
 r[idx] -= delta
 

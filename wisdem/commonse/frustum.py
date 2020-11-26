@@ -267,7 +267,9 @@ if __name__ == "__main__":
     Dt = 4.0
     H = 120.0
 
-    print("From commonse.Frustum: Sample Volume and CM of FRUSTUM=" + 4 * "{:8.4f}, ").format(*frustum(Db, Dt, H)[0].flatten())
+    print("From commonse.Frustum: Sample Volume and CM of FRUSTUM=" + 4 * "{:8.4f}, ").format(
+        *frustum(Db, Dt, H)[0].flatten()
+    )
 
 
 def main():

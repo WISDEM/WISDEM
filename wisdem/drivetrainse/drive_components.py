@@ -618,7 +618,13 @@ class MiscNacelleComponents(om.ExplicitComponent):
         m_platform = L_platform * W_platform * t_platform * rho_castiron
         I_platform = (
             m_platform
-            * np.array([t_platform ** 2 + W_platform ** 2, t_platform ** 2 + L_platform ** 2, W_platform ** 2 + L_platform ** 2])
+            * np.array(
+                [
+                    t_platform ** 2 + W_platform ** 2,
+                    t_platform ** 2 + L_platform ** 2,
+                    W_platform ** 2 + L_platform ** 2,
+                ]
+            )
             / 12.0
         )
         outputs["platform_mass"] = m_platform

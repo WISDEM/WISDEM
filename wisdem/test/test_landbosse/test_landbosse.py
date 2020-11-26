@@ -29,7 +29,9 @@ def test_landbosse(landbosse_costs_by_module_type_operation):
     OpenMDAODataframeCache._cache = {}  # Clear the cache
     expected_validation_data_sheets = OpenMDAODataframeCache.read_all_sheets_from_xlsx("ge15_expected_validation")
     costs_by_module_type_operation = expected_validation_data_sheets["costs_by_module_type_operation"]
-    result = compare_expected_to_actual(costs_by_module_type_operation, landbosse_costs_by_module_type_operation, "test.csv")
+    result = compare_expected_to_actual(
+        costs_by_module_type_operation, landbosse_costs_by_module_type_operation, "test.csv"
+    )
     assert result
 
 
@@ -67,10 +69,13 @@ def compare_expected_to_actual(expected_df, actual_module_type_operation_list, v
     cost_per_project_actual = actual_df[columns_to_compare]
     cost_per_project_expected = expected_df[columns_to_compare]
 
-    comparison = cost_per_project_actual.merge(cost_per_project_expected, on=["Project ID with serial", "Module", "Type of cost"])
+    comparison = cost_per_project_actual.merge(
+        cost_per_project_expected, on=["Project ID with serial", "Module", "Type of cost"]
+    )
 
     comparison.rename(
-        columns={"Cost / project_x": "Cost / project actual", "Cost / project_y": "Cost / project expected"}, inplace=True
+        columns={"Cost / project_x": "Cost / project actual", "Cost / project_y": "Cost / project expected"},
+        inplace=True,
     )
 
     comparison["% delta"] = (comparison["Cost / project actual"] / comparison["Cost / project expected"] - 1) * 100

@@ -102,7 +102,9 @@ class TestComponents(unittest.TestCase):
         self.assertEqual(outputs["R_generator"], 1.5)
         m = 37.68 * 10e3
         self.assertEqual(outputs["generator_mass"], m)
-        npt.assert_equal(outputs["generator_I"], m * np.r_[0.5 * 1.5 ** 2, (3 * 1.5 ** 2 + (3.6 * 1.5) ** 2) / 12 * np.ones(2)])
+        npt.assert_equal(
+            outputs["generator_I"], m * np.r_[0.5 * 1.5 ** 2, (3 * 1.5 ** 2 + (3.6 * 1.5) ** 2) / 12 * np.ones(2)]
+        )
 
         eff = 1.0 - (0.01007 / x * x[-1] + 0.02 + 0.06899 * x / x[-1])
         eff = np.maximum(1e-3, eff)
@@ -113,7 +115,9 @@ class TestComponents(unittest.TestCase):
         self.assertEqual(outputs["R_generator"], 1.5)
         m = np.mean([6.4737, 10.51, 5.34]) * 10e3 ** 0.9223
         self.assertEqual(outputs["generator_mass"], m)
-        npt.assert_equal(outputs["generator_I"], m * np.r_[0.5 * 1.5 ** 2, (3 * 1.5 ** 2 + (3.6 * 1.5) ** 2) / 12 * np.ones(2)])
+        npt.assert_equal(
+            outputs["generator_I"], m * np.r_[0.5 * 1.5 ** 2, (3 * 1.5 ** 2 + (3.6 * 1.5) ** 2) / 12 * np.ones(2)]
+        )
 
         eff = 1.0 - (0.01289 / x * x[-1] + 0.0851 + 0.0 * x / x[-1])
         eff = np.maximum(1e-3, eff)
@@ -204,7 +208,8 @@ class TestComponents(unittest.TestCase):
         self.assertEqual(outputs["platform_mass"], t * 3e3 * 12 ** 2)
         npt.assert_equal(outputs["platform_cm"], 0.0)
         npt.assert_equal(
-            outputs["platform_I"], outputs["platform_mass"] * np.array([t ** 2 + 12 ** 2, t ** 2 + 12 ** 2, 2 * 12 ** 2]) / 12.0
+            outputs["platform_I"],
+            outputs["platform_mass"] * np.array([t ** 2 + 12 ** 2, t ** 2 + 12 ** 2, 2 * 12 ** 2]) / 12.0,
         )
 
         discrete_inputs["upwind"] = True
@@ -219,7 +224,8 @@ class TestComponents(unittest.TestCase):
         self.assertEqual(outputs["platform_mass"], t * 3e3 * 12 ** 2)
         npt.assert_equal(outputs["platform_cm"], 0.0)
         npt.assert_equal(
-            outputs["platform_I"], outputs["platform_mass"] * np.array([t ** 2 + 12 ** 2, t ** 2 + 12 ** 2, 2 * 12 ** 2]) / 12.0
+            outputs["platform_I"],
+            outputs["platform_mass"] * np.array([t ** 2 + 12 ** 2, t ** 2 + 12 ** 2, 2 * 12 ** 2]) / 12.0,
         )
 
     def testMiscGeared(self):
@@ -256,7 +262,8 @@ class TestComponents(unittest.TestCase):
         self.assertEqual(outputs["platform_mass"], t * 3e3 * L * W)
         npt.assert_equal(outputs["platform_cm"], 0.0)
         npt.assert_equal(
-            outputs["platform_I"], outputs["platform_mass"] * np.array([t ** 2 + W ** 2, t ** 2 + L ** 2, L ** 2 + W ** 2]) / 12.0
+            outputs["platform_I"],
+            outputs["platform_mass"] * np.array([t ** 2 + W ** 2, t ** 2 + L ** 2, L ** 2 + W ** 2]) / 12.0,
         )
 
         discrete_inputs["upwind"] = True
@@ -271,7 +278,8 @@ class TestComponents(unittest.TestCase):
         self.assertEqual(outputs["platform_mass"], t * 3e3 * L * W)
         npt.assert_equal(outputs["platform_cm"], 0.0)
         npt.assert_equal(
-            outputs["platform_I"], outputs["platform_mass"] * np.array([t ** 2 + W ** 2, t ** 2 + L ** 2, L ** 2 + W ** 2]) / 12.0
+            outputs["platform_I"],
+            outputs["platform_mass"] * np.array([t ** 2 + W ** 2, t ** 2 + L ** 2, L ** 2 + W ** 2]) / 12.0,
         )
 
     def testNacelle_noTilt(self):

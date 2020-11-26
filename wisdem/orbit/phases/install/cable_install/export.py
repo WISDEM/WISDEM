@@ -177,7 +177,9 @@ class ExportCableInstallation(InstallPhase):
         onshore_misc_cost = 11795 * capacity ** 0.3549 + 350000
         transmission_line_cost = (1176 * voltage + 218257) * (distance ** (1 - 0.1063))
 
-        onshore_transmission_cost = switchyard_cost + onshore_substation_cost + onshore_misc_cost + transmission_line_cost
+        onshore_transmission_cost = (
+            switchyard_cost + onshore_substation_cost + onshore_misc_cost + transmission_line_cost
+        )
 
         return onshore_transmission_cost
 

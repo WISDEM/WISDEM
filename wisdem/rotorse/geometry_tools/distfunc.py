@@ -225,7 +225,9 @@ def transtanh_(b=None):
     delta_old = delta
     for n in range(nmax):
         f = delta / (np.tanh(0.5 * delta) + 1.0 * 10 ** (-60)) - 2.0 / b
-        df = (np.tanh(0.5 * delta) - delta * (1 - np.tanh(0.5 * delta) ** 2)) / (np.tanh(0.5 * delta) ** 2 + 1.0 * 10 ** (-60))
+        df = (np.tanh(0.5 * delta) - delta * (1 - np.tanh(0.5 * delta) ** 2)) / (
+            np.tanh(0.5 * delta) ** 2 + 1.0 * 10 ** (-60)
+        )
         delta = delta - 0.5 * f / df
         res = np.abs((delta - delta_old) / delta_old)
         if res < rlim:

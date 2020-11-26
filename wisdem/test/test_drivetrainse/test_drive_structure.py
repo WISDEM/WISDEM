@@ -182,7 +182,9 @@ class TestDirectStructure(unittest.TestCase):
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs["base_F"][:2], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["base_F"][2], F0[2] - 500e3 * gravity)
-        npt.assert_almost_equal(self.outputs["base_M"][1], M0[1] + self.inputs["M_mb1"][1] + self.inputs["M_mb2"][1], decimal=-1)
+        npt.assert_almost_equal(
+            self.outputs["base_M"][1], M0[1] + self.inputs["M_mb1"][1] + self.inputs["M_mb2"][1], decimal=-1
+        )
 
         self.inputs["F_mb1"] = np.array([30e2, 40e2, 50e2]).reshape((3, 1))
         self.inputs["F_mb2"] = np.array([30e2, 40e2, 50e2]).reshape((3, 1))
@@ -265,7 +267,9 @@ class TestDirectStructure(unittest.TestCase):
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs["base_F"][:2], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["base_F"][2], F0[2] - 500e3 * gravity)
-        npt.assert_almost_equal(self.outputs["base_M"][1], M0[1] + self.inputs["M_mb1"][1] + self.inputs["M_mb2"][1], decimal=-1)
+        npt.assert_almost_equal(
+            self.outputs["base_M"][1], M0[1] + self.inputs["M_mb1"][1] + self.inputs["M_mb2"][1], decimal=-1
+        )
 
         self.inputs["F_mb1"] = np.array([30e2, 40e2, 50e2]).reshape((3, 1))
         self.inputs["F_mb2"] = np.array([30e2, 40e2, 50e2]).reshape((3, 1))

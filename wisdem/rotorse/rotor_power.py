@@ -151,7 +151,10 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_input("control_maxTS", val=0.0, units="m/s", desc="maximum allowed blade tip speed")
         self.add_input("tsr_operational", val=0.0, desc="tip-speed ratio in Region 2 (should be optimized externally)")
         self.add_input(
-            "control_pitch", val=0.0, units="deg", desc="pitch angle in region 2 (and region 3 for fixed pitch machines)"
+            "control_pitch",
+            val=0.0,
+            units="deg",
+            desc="pitch angle in region 2 (and region 3 for fixed pitch machines)",
         )
         self.add_discrete_input("drivetrainType", val="GEARED")
         self.add_input("gearbox_efficiency", val=1.0)
@@ -175,7 +178,10 @@ class ComputePowerCurve(ExplicitComponent):
         )
         self.add_input("chord", val=np.zeros(n_span), units="m", desc="chord length at each section")
         self.add_input(
-            "theta", val=np.zeros(n_span), units="deg", desc="twist angle at each section (positive decreases angle of attack)"
+            "theta",
+            val=np.zeros(n_span),
+            units="deg",
+            desc="twist angle at each section (positive decreases angle of attack)",
         )
         self.add_input("Rhub", val=0.0, units="m", desc="hub radius")
         self.add_input("Rtip", val=0.0, units="m", desc="tip radius")
@@ -219,7 +225,9 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_discrete_input("tiploss", val=True, desc="include Prandtl tip loss model")
         self.add_discrete_input("hubloss", val=True, desc="include Prandtl hub loss model")
         self.add_discrete_input(
-            "wakerotation", val=True, desc="include effect of wake rotation (i.e., tangential induction factor is nonzero)"
+            "wakerotation",
+            val=True,
+            desc="include effect of wake rotation (i.e., tangential induction factor is nonzero)",
         )
         self.add_discrete_input("usecd", val=True, desc="use drag coefficient in computing induction factors")
 
@@ -249,7 +257,9 @@ class ComputePowerCurve(ExplicitComponent):
             "ax_induct_regII", val=np.zeros(n_span), desc="rotor axial induction at cut-in wind speed along blade span"
         )
         self.add_output(
-            "tang_induct_regII", val=np.zeros(n_span), desc="rotor tangential induction at cut-in wind speed along blade span"
+            "tang_induct_regII",
+            val=np.zeros(n_span),
+            desc="rotor tangential induction at cut-in wind speed along blade span",
         )
         self.add_output(
             "aoa_regII",
@@ -365,7 +375,9 @@ class ComputePowerCurve(ExplicitComponent):
 
         # Set baseline power production
         myout, derivs = self.ccblade.evaluate(Uhub, Omega_rpm, pitch, coefficients=True)
-        P_aero, T, Q, M, Cp_aero, Ct_aero, Cq_aero, Cm_aero = [myout[key] for key in ["P", "T", "Q", "M", "CP", "CT", "CQ", "CM"]]
+        P_aero, T, Q, M, Cp_aero, Ct_aero, Cq_aero, Cm_aero = [
+            myout[key] for key in ["P", "T", "Q", "M", "CP", "CT", "CQ", "CM"]
+        ]
         # P, eff  = compute_P_and_eff(P_aero, P_rated, Omega_rpm, driveType, driveEta)
         eff = np.interp(Omega_rpm, lss_rpm, driveEta)
         P = P_aero * eff
@@ -475,7 +487,13 @@ class ComputePowerCurve(ExplicitComponent):
                 pitch[i] = 0.0
                 try:
                     U_rated = brentq(
-                        lambda x: const_Urated([0.0, x]), Uhub[i - 1], Uhub[i + 1], xtol=1e-4, rtol=1e-5, maxiter=40, disp=False
+                        lambda x: const_Urated([0.0, x]),
+                        Uhub[i - 1],
+                        Uhub[i + 1],
+                        xtol=1e-4,
+                        rtol=1e-5,
+                        maxiter=40,
+                        disp=False,
                     )
                 except ValueError:
                     U_rated = minimize_scalar(
@@ -689,7 +707,9 @@ class NoStallConstraint(ExplicitComponent):
             val=np.zeros(n_span),
             desc="Constraint, ratio between angle of attack plus a margin and stall angle",
         )
-        self.add_output("stall_angle_along_span", val=np.zeros(n_span), units="deg", desc="Stall angle along blade span")
+        self.add_output(
+            "stall_angle_along_span", val=np.zeros(n_span), units="deg", desc="Stall angle along blade span"
+        )
 
     def compute(self, inputs, outputs):
 
@@ -729,7 +749,10 @@ class AEP(ExplicitComponent):
 
         # inputs
         self.add_input(
-            "CDF_V", val=np.zeros(n_pc_spline), units="m/s", desc="cumulative distribution function evaluated at each wind speed"
+            "CDF_V",
+            val=np.zeros(n_pc_spline),
+            units="m/s",
+            desc="cumulative distribution function evaluated at each wind speed",
         )
         self.add_input("P", val=np.zeros(n_pc_spline), units="W", desc="power curve (power)")
         self.add_input(
@@ -877,7 +900,9 @@ def eval_unsteady(alpha, cl, cd, cm):
         cm_temp = cm[idx_low:idx_high]
         idx_cm_min = [
             i
-            for i, local_min in enumerate(np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True])
+            for i, local_min in enumerate(
+                np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True]
+            )
             if local_min
         ] + idx_low
         idx_high = idx_cm_min[-1]
@@ -896,7 +921,9 @@ def eval_unsteady(alpha, cl, cd, cm):
         cm_temp = cm[idx_low:idx_high]
         idx_cm_min = [
             i
-            for i, local_min in enumerate(np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True])
+            for i, local_min in enumerate(
+                np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True]
+            )
             if local_min
         ] + idx_low
         idx_high = idx_cm_min[-1]
