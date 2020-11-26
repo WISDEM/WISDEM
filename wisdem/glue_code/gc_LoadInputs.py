@@ -45,7 +45,7 @@ class WindTurbineOntologyPython(object):
 
         # Offshore flags
         self.modeling_options['flags']['floating'] = self.modeling_options['flags']['floating_platform']
-        self.modeling_options['flags']['offshore'] = self.modeling_options['flags']['floating'] or self.modeling_options['flags']['monopile'] 
+        self.modeling_options['flags']['offshore'] = self.modeling_options['flags']['floating'] or self.modeling_options['flags']['monopile']
         
         # Put in some logic about what needs to be in there
         flags = self.modeling_options['flags']

@@ -141,7 +141,7 @@ class OrbitWisdem(om.ExplicitComponent):
             
         config = {
             # Vessels
-            'wtiv': discrete_inputs['wtiv'],
+            'wtiv': 'floating_heavy_lift_vessel' if floating else discrete_inputs['wtiv'],
             'array_cable_install_vessel': 'example_cable_lay_vessel',
             'array_cable_bury_vessel': 'example_cable_lay_vessel',
             'export_cable_install_vessel': 'example_cable_lay_vessel',
@@ -214,8 +214,8 @@ class OrbitWisdem(om.ExplicitComponent):
             
             # Phase Specific
             'OffshoreSubstationInstallation': {
-                'oss_install_vessel': 'example_heavy_lift_vessel',
-                'feeder': 'future_feeder',
+                'oss_install_vessel': 'floating_heavy_lift_vessel' if floating else 'example_heavy_lift_vessel',
+                'feeder': 'floating_barge' if floating else 'future_feeder',
                 'num_feeders': int(discrete_inputs['num_feeders']),
             },
 

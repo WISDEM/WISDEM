@@ -77,7 +77,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         floating_platform   = wt_init['components']['floating_platform']
         wt_opt              = assign_floating_values(wt_opt, modeling_options, floating_platform)
         mooring             = wt_init['components']['mooring']
-        # wt_opt              = assign_mooring_values(wt_opt, modeling_options, mooring)
+        wt_opt              = assign_mooring_values(wt_opt, modeling_options, mooring)
 
     if modeling_options['flags']['foundation']:
         foundation      = wt_init['components']['foundation']
@@ -699,11 +699,15 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
     n_anchor_types  = mooring_init_options['n_anchor_types']
 
     wt_opt['mooring.node_names']       = [mooring['nodes'][i]['name'] for i in range(n_nodes)]
+    wt_opt['mooring.nodes_joint_name'] = ['' for i in range(n_nodes)]
     wt_opt['mooring.line_id']          = [mooring['lines'][i]['name'] for i in range(n_lines)]
     wt_opt['mooring.line_names']       = [mooring['line_types'][i]['name'] for i in range(n_line_types)]
     wt_opt['mooring.anchor_names']     = [mooring['anchor_types'][i]['name'] for i in range(n_anchor_types)]
     for i in range(n_nodes):
-        wt_opt['mooring.nodes_location'][i,:] = mooring['nodes'][i]['location']
+        if 'location' in mooring['nodes'][i]:
+            wt_opt['mooring.nodes_location'][i,:] = mooring['nodes'][i]['location']
+        else:
+            wt_opt['mooring.nodes_joint_name'][i] = mooring['nodes'][i]['joint']
     for i in range(n_lines):
         wt_opt['mooring.unstretched_length'][i] = mooring['lines'][i]['unstretched_length']
     for i in range(n_line_types):

@@ -557,7 +557,7 @@ class WindPark(om.Group):
 
         self.add_subsystem('wt',        WT_RNTA(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         if modeling_options['BOS']['flag']:
-            if modeling_options['flags']['monopile'] == True or modeling_options['flags']['floating_platform'] == True:
+            if modeling_options['flags']['offshore']:
                 self.add_subsystem('orbit',     Orbit(floating=modeling_options['flags']['floating_platform']))
             else:
                 self.add_subsystem('landbosse', LandBOSSE())

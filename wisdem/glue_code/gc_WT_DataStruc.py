@@ -1252,6 +1252,7 @@ class Mooring(om.Group):
 
         ivc.add_discrete_output('node_names',       val = ['']*n_nodes)
         ivc.add_output('nodes_location',            val = np.zeros((n_nodes, 3)),   units='m')
+        ivc.add_discrete_output('nodes_joint_name', val = ['']*n_nodes)
         ivc.add_discrete_output('line_id',          val = ['']*n_lines)
         ivc.add_output('unstretched_length',        val = np.zeros(n_lines),        units='m')
         ivc.add_discrete_output('n_lines',          val = n_lines)
