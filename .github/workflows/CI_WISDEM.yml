@@ -56,21 +56,13 @@ jobs:
         # --cov-report=xml
         run: |
           pytest --cov-config=.coverageac --cov=wisdem 
-      
-    #- name: Lint with flake8
-    #  run: |
-    #    $CONDA/bin/conda install flake8
-    #    # stop the build if there are Python syntax errors or undefined names
-    #    $CONDA/bin/flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-    #    # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-    #    $CONDA/bin/flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     
       # Run coveralls
       - name: Run coveralls
         if: contains( matrix.os, 'ubuntu')
-        uses: AndreMiras/coveralls-python-action@develop
-        #uses: coverallsapp/github-action@master
-        # https://github.com/marketplace/actions/coveralls-github-action
-        #with:
-        #  github-token: ${{ secrets.GITHUB_TOKEN }}
-        #  path-to-lcov: .coverage
+        #uses: AndreMiras/coveralls-python-action@develop
+        env:
+        #  COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          coveralls
