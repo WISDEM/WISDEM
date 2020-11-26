@@ -342,10 +342,10 @@ def install_transition_piece(vessel, tp, **kwargs):
     )
     yield lower_transition_piece(vessel, **kwargs)
 
-    if connection is "bolted":
+    if connection == "bolted":
         yield bolt_transition_piece(vessel, **kwargs)
 
-    elif connection is "grouted":
+    elif connection == "grouted":
 
         yield pump_transition_piece_grout(vessel, **kwargs)
         yield cure_transition_piece_grout(vessel)
