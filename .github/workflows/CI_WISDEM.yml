@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
-          # https://github.com/marketplace/actions/setup-miniconda
+        # https://github.com/marketplace/actions/setup-miniconda
         with:
           miniconda-version: "latest"
           channels: conda-forge
@@ -26,9 +26,11 @@ jobs:
           python-version: 3.8
           environment-file: environment.yml
       
-      # Install dependencies of WEIS specific to ubuntu (not with compilers package as that creates errors)
+      # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
+        #shell: pwsh # putting in a shell command makes for compile linking problems later
+        # (if you use the shell here, cannot use 'compiler' package)
         run: |
           conda install -y petsc4py mpi4py compilers
       
@@ -51,8 +53,9 @@ jobs:
       # Run all tests
       - name: Run tests
         shell: pwsh
+        # --cov-report=xml
         run: |
-          pytest --cov-config=.coverageac --cov=wisdem
+          pytest --cov-config=.coverageac --cov=wisdem 
       
     #- name: Lint with flake8
     #  run: |
@@ -65,7 +68,9 @@ jobs:
       # Run coveralls
       - name: Run coveralls
         if: contains( matrix.os, 'ubuntu')
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: .coverage
+        uses: AndreMiras/coveralls-python-action@develop
+        #uses: coverallsapp/github-action@master
+        # https://github.com/marketplace/actions/coveralls-github-action
+        #with:
+        #  github-token: ${{ secrets.GITHUB_TOKEN }}
+        #  path-to-lcov: .coverage
