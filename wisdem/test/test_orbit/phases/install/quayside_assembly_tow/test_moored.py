@@ -25,20 +25,12 @@ def test_simulation_setup():
 
     assert sim.support_vessel
     assert len(sim.sub_assembly_lines) == config["port"]["sub_assembly_lines"]
-    assert (
-        len(sim.turbine_assembly_lines)
-        == config["port"]["turbine_assembly_cranes"]
-    )
-    assert (
-        len(sim.installation_groups)
-        == config["towing_vessel_groups"]["num_groups"]
-    )
+    assert len(sim.turbine_assembly_lines) == config["port"]["turbine_assembly_cranes"]
+    assert len(sim.installation_groups) == config["towing_vessel_groups"]["num_groups"]
     assert sim.num_turbines == config["plant"]["num_turbines"]
 
 
-@pytest.mark.parametrize(
-    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
-)
+@pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
 @pytest.mark.parametrize("config", (config, no_supply))
 def test_for_complete_logging(weather, config):
 

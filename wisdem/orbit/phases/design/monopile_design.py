@@ -163,12 +163,8 @@ class MonopileDesign(DesignPhase):
         # Monopile sizing
         sizing["diameter"] = fsolve(self.pile_diam_equation, 10, args=data)[0]
         sizing["thickness"] = self.pile_thickness(sizing["diameter"])
-        sizing["moment"] = self.pile_moment(
-            sizing["diameter"], sizing["thickness"]
-        )
-        sizing["embedment_length"] = self.pile_embedment_length(
-            sizing["moment"], **kwargs
-        )
+        sizing["moment"] = self.pile_moment(sizing["diameter"], sizing["thickness"])
+        sizing["embedment_length"] = self.pile_embedment_length(sizing["moment"], **kwargs)
 
         # Total length
         airgap = kwargs.get("airgap", 10)  # m
@@ -214,9 +210,7 @@ class MonopileDesign(DesignPhase):
         D_tp = D_p + 2 * (t_c + t_tp)  # Arany 2016, Section 2.2.7
 
         # Arany 2016, Section 2.2.8
-        m_tp = (
-            dens_tp * (D_p + 2 * t_c + t_tp) * pi * t_tp * L_tp
-        ) / 907.185  # t
+        m_tp = (dens_tp * (D_p + 2 * t_c + t_tp) * pi * t_tp * L_tp) / 907.185  # t
 
         tp_design = {
             "thickness": t_tp,
@@ -265,9 +259,7 @@ class MonopileDesign(DesignPhase):
             "total_monopile_mass": self.total_monopile_mass,
             "total_monopile_cost": self.material_cost["monopile"],
             "total_transition_piece_mass": self.total_tp_mass,
-            "total_transition_piece_cost": self.material_cost[
-                "transition_piece"
-            ],
+            "total_transition_piece_cost": self.material_cost["transition_piece"],
         }
 
         return _outputs
@@ -509,9 +501,7 @@ class MonopileDesign(DesignPhase):
 
         return M_50y * load_factor
 
-    def calculate_50year_wind_load(
-        self, mean_windspeed, rotor_diameter, rated_windspeed, **kwargs
-    ):
+    def calculate_50year_wind_load(self, mean_windspeed, rotor_diameter, rated_windspeed, **kwargs):
         """
         Calculates the 50 year extreme wind load using methodology from DNV-GL.
         Source: Arany & Bhattacharya (2016)
@@ -565,9 +555,7 @@ class MonopileDesign(DesignPhase):
             Coefficient of thrust.
         """
 
-        ct = min(
-            [3.5 * (2 * rated_windspeed + 3.5) / (rated_windspeed ** 2), 1]
-        )
+        ct = min([3.5 * (2 * rated_windspeed + 3.5) / (rated_windspeed ** 2), 1])
 
         return ct
 
@@ -593,15 +581,11 @@ class MonopileDesign(DesignPhase):
 
         scale_factor = kwargs.get("weibull_scale_factor", mean_windspeed)
         shape_factor = kwargs.get("weibull_shape_factor", 2)
-        U_50y = scale_factor * (-log(1 - 0.98 ** (1 / 52596))) ** (
-            1 / shape_factor
-        )
+        U_50y = scale_factor * (-log(1 - 0.98 ** (1 / 52596))) ** (1 / shape_factor)
 
         return U_50y
 
-    def calculate_50year_extreme_gust(
-        self, mean_windspeed, rotor_diameter, rated_windspeed, **kwargs
-    ):
+    def calculate_50year_extreme_gust(self, mean_windspeed, rotor_diameter, rated_windspeed, **kwargs):
         """
         Calculates the 50 year extreme wind gust using methodology from DNV-GL.
         Source: Arany & Bhattacharya (2016)
@@ -632,8 +616,7 @@ class MonopileDesign(DesignPhase):
         U_eog = min(
             [
                 (1.35 * (U_1y - rated_windspeed)),
-                (3.3 * 0.11 * U_1y)
-                / (1 + (0.1 * rotor_diameter) / (length_scale / 8)),
+                (3.3 * 0.11 * U_1y) / (1 + (0.1 * rotor_diameter) / (length_scale / 8)),
             ]
         )
 

@@ -31,7 +31,7 @@ class GridConnectionCost(CostModule):
 
     """
 
-    def __init__(self, input_dict, output_dict , project_name):
+    def __init__(self, input_dict, output_dict, project_name):
         """
         Parameters
         ----------
@@ -65,42 +65,44 @@ class GridConnectionCost(CostModule):
         """
         # Switch between utility scale model and distributed model
         # Run utility version of GridConnectionCost for project size > 15 MW:
-        if (calculate_costs_input_dict['turbine_rating_MW'] * calculate_costs_input_dict['num_turbines']) > 15:
-            if calculate_costs_input_dict['distance_to_interconnect_mi'] == 0:
-                calculate_costs_output_dict['trans_dist_usd'] = 0
+        if (calculate_costs_input_dict["turbine_rating_MW"] * calculate_costs_input_dict["num_turbines"]) > 15:
+            if calculate_costs_input_dict["distance_to_interconnect_mi"] == 0:
+                calculate_costs_output_dict["trans_dist_usd"] = 0
             else:
-                if calculate_costs_input_dict['new_switchyard'] is True:
-                    calculate_costs_output_dict['interconnect_adder_USD'] = 18115 * self.input_dict['interconnect_voltage_kV'] + 165944
+                if calculate_costs_input_dict["new_switchyard"] is True:
+                    calculate_costs_output_dict["interconnect_adder_USD"] = (
+                        18115 * self.input_dict["interconnect_voltage_kV"] + 165944
+                    )
                 else:
-                    calculate_costs_output_dict['interconnect_adder_USD'] = 0
-                calculate_costs_output_dict['trans_dist_usd'] = ((1176 * self.input_dict[
-                    'interconnect_voltage_kV'] + 218257) * (calculate_costs_input_dict['distance_to_interconnect_mi'] ** (
-                    -0.1063)) * calculate_costs_input_dict['distance_to_interconnect_mi']) + calculate_costs_output_dict[
-                                                                    'interconnect_adder_USD']
+                    calculate_costs_output_dict["interconnect_adder_USD"] = 0
+                calculate_costs_output_dict["trans_dist_usd"] = (
+                    (1176 * self.input_dict["interconnect_voltage_kV"] + 218257)
+                    * (calculate_costs_input_dict["distance_to_interconnect_mi"] ** (-0.1063))
+                    * calculate_costs_input_dict["distance_to_interconnect_mi"]
+                ) + calculate_costs_output_dict["interconnect_adder_USD"]
 
         # Run distributed wind version of GridConnectionCost for project size < 15 MW:
         else:
             # Code below is for newer version of LandBOSSE which incorporates distributed wind into the model:
-            calculate_costs_output_dict['tower_to_point_of_interconnection_usd_per_kw'] = 1736.7 * ((
-                                                                                                            calculate_costs_input_dict[
-                                                                                                                'num_turbines'] *
-                                                                                                            calculate_costs_input_dict[
-                                                                                                                'turbine_rating_MW'] * 1000) ** (
-                                                                                                        -0.272))
-            calculate_costs_output_dict['trans_dist_usd'] = calculate_costs_input_dict['num_turbines'] * \
-                                                                 calculate_costs_input_dict[
-                                                                     'turbine_rating_MW'] * 1000 * \
-                                                                 calculate_costs_output_dict[
-                                                                     'tower_to_point_of_interconnection_usd_per_kw']
+            calculate_costs_output_dict["tower_to_point_of_interconnection_usd_per_kw"] = 1736.7 * (
+                (calculate_costs_input_dict["num_turbines"] * calculate_costs_input_dict["turbine_rating_MW"] * 1000)
+                ** (-0.272)
+            )
+            calculate_costs_output_dict["trans_dist_usd"] = (
+                calculate_costs_input_dict["num_turbines"]
+                * calculate_costs_input_dict["turbine_rating_MW"]
+                * 1000
+                * calculate_costs_output_dict["tower_to_point_of_interconnection_usd_per_kw"]
+            )
 
+        calculate_costs_output_dict["trans_dist_usd_df"] = pd.DataFrame(
+            [["Other", calculate_costs_output_dict["trans_dist_usd"], "Transmission and Distribution"]],
+            columns=["Type of cost", "Cost USD", "Phase of construction"],
+        )
 
-        calculate_costs_output_dict['trans_dist_usd_df'] = pd.DataFrame([['Other', calculate_costs_output_dict['trans_dist_usd'], 'Transmission and Distribution']],
-                     columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+        calculate_costs_output_dict["total_transdist_cost"] = calculate_costs_output_dict["trans_dist_usd_df"]
 
-        calculate_costs_output_dict['total_transdist_cost'] = calculate_costs_output_dict['trans_dist_usd_df']
-
-        return calculate_costs_output_dict['trans_dist_usd_df']
-
+        return calculate_costs_output_dict["trans_dist_usd_df"]
 
     def outputs_for_detailed_tab(self, input_dict, output_dict):
         """
@@ -117,21 +119,23 @@ class GridConnectionCost(CostModule):
         result = []
         module = type(self).__name__
 
-        for row in self.output_dict['trans_dist_usd_df'].itertuples():
-            dashed_row = '{} <--> {} <--> {}'.format(row[1], row[3], math.ceil(row[2]))
-            result.append({
-                'unit': '',
-                'type': 'dataframe',
-                'variable_df_key_col_name': 'Type of Cost <--> Phase of Construction <--> Cost in USD ',
-                'value': dashed_row,
-                'last_number': row[2]
-            })
+        for row in self.output_dict["trans_dist_usd_df"].itertuples():
+            dashed_row = "{} <--> {} <--> {}".format(row[1], row[3], math.ceil(row[2]))
+            result.append(
+                {
+                    "unit": "",
+                    "type": "dataframe",
+                    "variable_df_key_col_name": "Type of Cost <--> Phase of Construction <--> Cost in USD ",
+                    "value": dashed_row,
+                    "last_number": row[2],
+                }
+            )
 
         for _dict in result:
-            _dict['project_id_with_serial'] = self.project_name
-            _dict['module'] = module
+            _dict["project_id_with_serial"] = self.project_name
+            _dict["module"] = module
 
-        self.output_dict['trans_dist_cost_csv'] = result
+        self.output_dict["trans_dist_cost_csv"] = result
         return result
 
     def outputs_for_module_type_operation(self, input_dict, output_dict):
@@ -148,21 +152,21 @@ class GridConnectionCost(CostModule):
         result = []
         module = type(self).__name__
 
-        costs_by_module_type_operation = output_dict['trans_dist_usd_df']
+        costs_by_module_type_operation = output_dict["trans_dist_usd_df"]
         for _, row in costs_by_module_type_operation.iterrows():
             _dict = dict()
             row = row.to_dict()
-            _dict['operation_id'] = row['Phase of construction']
-            _dict['type_of_cost'] = row['Type of cost']
-            _dict['cost'] = row['Cost USD']
+            _dict["operation_id"] = row["Phase of construction"]
+            _dict["type_of_cost"] = row["Type of cost"]
+            _dict["cost"] = row["Cost USD"]
             result.append(_dict)
 
         for _dict in result:
-            _dict['project_id_with_serial'] = self.project_name
-            _dict['module'] = module
-            _dict['total_or_turbine'] = 'total'
+            _dict["project_id_with_serial"] = self.project_name
+            _dict["module"] = module
+            _dict["total_or_turbine"] = "total"
 
-        output_dict['trans_dist_cost_module_type_operation'] = result
+        output_dict["trans_dist_cost_module_type_operation"] = result
         return result
 
     def run_module(self):
@@ -185,13 +189,11 @@ class GridConnectionCost(CostModule):
         try:
             self.calculate_costs(self.input_dict, self.output_dict)
             self.outputs_for_detailed_tab(self.input_dict, self.output_dict)
-            self.output_dict['trans_dist_cost_module_type_operation'] = \
-                self.outputs_for_costs_by_module_type_operation(input_df=self.output_dict['trans_dist_usd_df'],
-                                                                project_id=self.project_name,
-                                                                total_or_turbine=True)
-            return 0, 0 # module ran successfully
+            self.output_dict["trans_dist_cost_module_type_operation"] = self.outputs_for_costs_by_module_type_operation(
+                input_df=self.output_dict["trans_dist_usd_df"], project_id=self.project_name, total_or_turbine=True
+            )
+            return 0, 0  # module ran successfully
         except Exception as error:
             traceback.print_exc()
             print(f"Fail {self.project_name} GridConnectionCost")
-            return 1, error # module did not run successfully
-
+            return 1, error  # module did not run successfully

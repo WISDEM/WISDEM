@@ -100,9 +100,7 @@ class ArraySystemDesign(CableSystem):
 
         super().__init__(config, "array", **kwargs)
 
-        self.exclusion = 1 + self.config["array_system_design"].get(
-            "average_exclusion_percent", 0.0
-        )
+        self.exclusion = 1 + self.config["array_system_design"].get("average_exclusion_percent", 0.0)
         self._get_touchdown_distance()
         self.extract_phase_kwargs(**kwargs)
         self.system = Plant(self.config)
@@ -155,9 +153,7 @@ class ArraySystemDesign(CableSystem):
 
         for cable in self.cables.values():
             with np.errstate(divide="ignore", invalid="ignore"):
-                cable.max_turbines = np.floor(
-                    cable.cable_power / self.system.turbine_rating
-                )
+                cable.max_turbines = np.floor(cable.cable_power / self.system.turbine_rating)
                 if cable.max_turbines == float("inf"):
                     raise ValueError("Must be at least 1 turbine in windfarm!")
 
@@ -212,21 +208,15 @@ class ArraySystemDesign(CableSystem):
         self._compute_maximum_turbines_per_cable()
 
         # Create the longest string possible with the given cable properties
-        self.full_string = self._compute_string(
-            list(self.cables.values())[-1].max_turbines
-        )
+        self.full_string = self._compute_string(list(self.cables.values())[-1].max_turbines)
         self.num_turbines_full_string = len(self.full_string)
         self.num_full_strings, self.num_turbines_partial_string = np.divmod(
             self.system.num_turbines, self.num_turbines_full_string
         )
 
         # Create a partial string constrained by the remainder
-        self.partial_string = self._compute_string(
-            self.num_turbines_partial_string
-        )
-        self.num_partial_strings = (
-            1 if self.num_turbines_partial_string > 0 else 0
-        )
+        self.partial_string = self._compute_string(self.num_turbines_partial_string)
+        self.num_partial_strings = 1 if self.num_turbines_partial_string > 0 else 0
 
         self.num_strings = self.num_full_strings + self.num_partial_strings
 
@@ -240,17 +230,13 @@ class ArraySystemDesign(CableSystem):
 
         # X = column vector of turbine distance
         #     * row vector of range(1, num_turbines_full_string + 1)
-        self.turbines_x = np.full(
-            self.num_strings, self.system.turbine_distance
-        ).reshape(-1, 1) * np.add(
+        self.turbines_x = np.full(self.num_strings, self.system.turbine_distance).reshape(-1, 1) * np.add(
             np.arange(self.num_turbines_full_string, dtype=float), 1
         )
 
         # Y = column vector of reverse range(1, num_strings)
         #     * row vector of row_distance
-        self.turbines_y = np.arange(self.num_strings, dtype=float)[
-            ::-1
-        ].reshape(-1, 1) * np.full(
+        self.turbines_y = np.arange(self.num_strings, dtype=float)[::-1].reshape(-1, 1) * np.full(
             (1, self.num_turbines_full_string), self.system.row_distance
         )
 
@@ -271,8 +257,7 @@ class ArraySystemDesign(CableSystem):
 
         # Calculate the radius of each turbine from the OSS
         radius = (
-            np.arange(self.num_turbines_full_string, dtype=float)
-            * self.system.turbine_distance
+            np.arange(self.num_turbines_full_string, dtype=float) * self.system.turbine_distance
             + self.system.substation_distance
         )
 
@@ -303,9 +288,7 @@ class ArraySystemDesign(CableSystem):
         """
 
         if self.system.layout == "custom":
-            raise NotImplementedError(
-                "Use `CustomArraySystemDesign` for custom layouts"
-            )
+            raise NotImplementedError("Use `CustomArraySystemDesign` for custom layouts")
 
         if self.system.layout == "grid":
             self._design_grid_layout()
@@ -332,24 +315,18 @@ class ArraySystemDesign(CableSystem):
 
         if getattr(self, "sections_cable_lengths", np.zeros(1)).sum() == 0:
             self.sections_cable_lengths = (
-                self.sections_distance * self.exclusion
-                + (2 * self.free_cable_length)
-                - (2 * self.touchdown / 1000)
+                self.sections_distance * self.exclusion + (2 * self.free_cable_length) - (2 * self.touchdown / 1000)
             )
-        self.sections_cables = np.full(
-            (self.num_strings, self.num_turbines_full_string), None
-        )
+        self.sections_cables = np.full((self.num_strings, self.num_turbines_full_string), None)
 
         # Create an array of the cable names for each cable section
         for i, row in enumerate(np.isnan(self.coordinates[:, :, 0])):
             ix = row.sum()
             # Fill each string (row in array) with the cables names for valid
             # positions in the layout starting from the end
-            self.sections_cables[
-                i, 0 : self.num_turbines_full_string - ix
-            ] = self.full_string[::-1][: self.num_turbines_full_string - ix][
-                ::-1
-            ]
+            self.sections_cables[i, 0 : self.num_turbines_full_string - ix] = self.full_string[::-1][
+                : self.num_turbines_full_string - ix
+            ][::-1]
 
     def run(self):
         """
@@ -445,12 +422,7 @@ class ArraySystemDesign(CableSystem):
 
         # Determine the cable section widths
         string_sets = np.unique(
-            [
-                list(
-                    OrderedDict.fromkeys(el for el in cables if el is not None)
-                )
-                for cables in self.sections_cables
-            ]
+            [list(OrderedDict.fromkeys(el for el in cables if el is not None)) for cables in self.sections_cables]
         )
         if isinstance(string_sets[0], list):
             max_string = max(string_sets, key=len)
@@ -644,19 +616,11 @@ class CustomArraySystemDesign(ArraySystemDesign):
         print(f"{border} {title.ljust(30)} {border}")
         print(sep)
         for desc, n in rows:
-            print(
-                " ".join(
-                    (border, desc.ljust(25), border, str(n).rjust(2), border)
-                )
-            )
+            print(" ".join((border, desc.ljust(25), border, str(n).rjust(2), border)))
         print(sep)
 
         # Create the string order/number information
-        strings = [
-            (i, j)
-            for i in range(self.num_full_strings)
-            for j in range(self.num_turbines_full_string)
-        ]
+        strings = [(i, j) for i in range(self.num_full_strings) for j in range(self.num_turbines_full_string)]
         strings.extend(
             [
                 (i, j)
@@ -681,17 +645,13 @@ class CustomArraySystemDesign(ArraySystemDesign):
         ]
         rows.insert(0, first)
         rows.insert(0, self.COLUMNS)
-        print(
-            f"Saving custom array CSV to: <library_path>/cables/{save_name}.csv"
-        )
+        print(f"Saving custom array CSV to: <library_path>/cables/{save_name}.csv")
         export_library_specs("cables", save_name, rows, file_ext="csv")
 
     def _format_windfarm_data(self):
 
         # Separate the OSS data where substaion_id is equal to id
-        substation_filter = (
-            self.location_data.substation_id == self.location_data.id
-        )
+        substation_filter = self.location_data.substation_id == self.location_data.id
         oss = self.location_data[substation_filter].copy()
         oss.rename(
             columns={
@@ -720,57 +680,37 @@ class CustomArraySystemDesign(ArraySystemDesign):
         )
 
         # Merge them back together
-        self.location_data = turbines.merge(
-            oss, on="substation_id", how="left"
-        )
+        self.location_data = turbines.merge(oss, on="substation_id", how="left")
 
         self.location_data = self.location_data[self.REQUIRED + self.OPTIONAL]
 
         self.location_data.string = self.location_data.string.astype(int)
         self.location_data.order = self.location_data.order.astype(int)
-        self.location_data.sort_values(
-            by=["substation_id", "string", "order"], inplace=True
-        )
+        self.location_data.sort_values(by=["substation_id", "string", "order"], inplace=True)
 
     def _initialize_custom_data(self):
         windfarm = self.config["array_system_design"]["location_data"]
 
-        self.location_data = extract_library_specs(
-            "cables", windfarm, file_type="csv"
-        )
+        self.location_data = extract_library_specs("cables", windfarm, file_type="csv")
 
         # Make sure no data is missing
         missing = set(self.COLUMNS).difference(self.location_data.columns)
         if missing:
-            raise ValueError(
-                f"The following columns must be included in the location data: {missing}"
-            )
+            raise ValueError(f"The following columns must be included in the location data: {missing}")
 
         self._format_windfarm_data()
 
         # Ensure there is no missing data in required columns
-        missing_data_cols = [
-            c
-            for c in self.REQUIRED
-            if pd.isnull(self.location_data[c]).sum() > 0
-        ]
+        missing_data_cols = [c for c in self.REQUIRED if pd.isnull(self.location_data[c]).sum() > 0]
         if missing_data_cols:
             raise ValueError(f"Missing data in columns: {missing_data_cols}!")
 
         # Ensure there is no missing data in optional columns
         missing_data_cols = [
-            c
-            for c in self.OPTIONAL
-            if (
-                pd.isnull(self.location_data[c]) | self.location_data[c] == 0
-            ).sum()
-            > 0
+            c for c in self.OPTIONAL if (pd.isnull(self.location_data[c]) | self.location_data[c] == 0).sum() > 0
         ]
         if missing_data_cols:
-            message = (
-                f"Missing data in columns {missing_data_cols}; "
-                "all values will be calculated."
-            )
+            message = f"Missing data in columns {missing_data_cols}; " "all values will be calculated."
             warnings.warn(message)
 
         # Ensure the number of turbines matches what's expected
@@ -780,25 +720,16 @@ class CustomArraySystemDesign(ArraySystemDesign):
                 f"does not match the plant data ({self.system.num_turbines}).",
             )
 
-        n_coords = self.location_data.groupby(
-            ["turbine_latitude", "turbine_longitude"]
-        ).ngroups
+        n_coords = self.location_data.groupby(["turbine_latitude", "turbine_longitude"]).ngroups
         duplicates = self.location_data.shape[0] - n_coords
         if duplicates > 0:
-            raise ValueError(
-                f"There are {duplicates} rows with duplicate coordinates."
-            )
+            raise ValueError(f"There are {duplicates} rows with duplicate coordinates.")
 
         # Ensure the number of turbines on a string is within the limits
         longest_string = self.location_data["order"].unique().size
-        self.num_strings = self.location_data.groupby(
-            ["substation_id", "string"]
-        ).ngroups
+        self.num_strings = self.location_data.groupby(["substation_id", "string"]).ngroups
         if longest_string > self.num_turbines_full_string:
-            raise ValueError(
-                "Strings can't contain more than "
-                f"{self.num_turbines_full_string} turbines."
-            )
+            raise ValueError("Strings can't contain more than " f"{self.num_turbines_full_string} turbines.")
         else:
             self.num_turbines_full_string = longest_string
             del self.num_turbines_partial_string
@@ -810,14 +741,10 @@ class CustomArraySystemDesign(ArraySystemDesign):
         all filled out.
         """
         if np.any(self.sections_cable_lengths == 0):
-            self.sections_cable_lengths = np.zeros(
-                (self.num_strings, self.num_turbines_full_string), dtype=float
-            )
+            self.sections_cable_lengths = np.zeros((self.num_strings, self.num_turbines_full_string), dtype=float)
 
         if np.any(self.sections_bury_speeds == 0):
-            self.sections_bury_speeds = np.zeros(
-                (self.num_strings, self.num_turbines_full_string), dtype=float
-            )
+            self.sections_bury_speeds = np.zeros((self.num_strings, self.num_turbines_full_string), dtype=float)
 
     def _compute_haversine_distance(self):
         """Computes the haversine distance between two subsequent pairs in a string for
@@ -839,10 +766,7 @@ class CustomArraySystemDesign(ArraySystemDesign):
         dlat = lat2 - lat1
         dlon = lon2 - lon1
 
-        a = (
-            np.sin(dlat / 2) ** 2
-            + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
-        )
+        a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
         c = 2 * np.arcsin(np.sqrt(a))
         return c * RADIUS
 
@@ -859,27 +783,17 @@ class CustomArraySystemDesign(ArraySystemDesign):
                 optional column in the `location_data`. Shape: `n_strings` x `num_turbines_full_string`.
         """
 
-        self.location_data_x = np.zeros(
-            (self.num_strings, self.num_turbines_full_string + 1), dtype=float
-        )
-        self.location_data_y = np.zeros(
-            (self.num_strings, self.num_turbines_full_string + 1), dtype=float
-        )
-        self.sections_cable_lengths = np.zeros(
-            (self.num_strings, self.num_turbines_full_string), dtype=float
-        )
-        self.sections_bury_speeds = np.zeros(
-            (self.num_strings, self.num_turbines_full_string), dtype=float
-        )
+        self.location_data_x = np.zeros((self.num_strings, self.num_turbines_full_string + 1), dtype=float)
+        self.location_data_y = np.zeros((self.num_strings, self.num_turbines_full_string + 1), dtype=float)
+        self.sections_cable_lengths = np.zeros((self.num_strings, self.num_turbines_full_string), dtype=float)
+        self.sections_bury_speeds = np.zeros((self.num_strings, self.num_turbines_full_string), dtype=float)
 
         self.oss_x = []
         self.oss_y = []
 
         i = 0
         for oss in self.location_data.substation_id.unique():
-            layout = self.location_data[
-                self.location_data.substation_id == oss
-            ]
+            layout = self.location_data[self.location_data.substation_id == oss]
             string_id = np.sort(layout.string.unique())
             string_id += 0 if i == 0 else i
 
@@ -893,18 +807,10 @@ class CustomArraySystemDesign(ArraySystemDesign):
             for string in string_id:
                 data = layout[layout.string == string - i]
                 order = data["order"].values
-                self.location_data_x[
-                    string, order + 1
-                ] = data.turbine_longitude.values[order]
-                self.location_data_y[
-                    string, order + 1
-                ] = data.turbine_latitude.values[order]
-                self.sections_cable_lengths[
-                    string, order
-                ] = data.cable_length.values[order]
-                self.sections_bury_speeds[
-                    string, order
-                ] = data.bury_speed.values[order]
+                self.location_data_x[string, order + 1] = data.turbine_longitude.values[order]
+                self.location_data_y[string, order + 1] = data.turbine_latitude.values[order]
+                self.sections_cable_lengths[string, order] = data.cable_length.values[order]
+                self.sections_bury_speeds[string, order] = data.bury_speed.values[order]
             i += string + 1
 
         # Ensure any point in array without a turbine is set to None
@@ -916,9 +822,7 @@ class CustomArraySystemDesign(ArraySystemDesign):
         self.sections_bury_speeds[no_turbines[:, 1:]] = None
         self._check_optional_input()
 
-        self.coordinates = np.dstack(
-            (self.location_data_x, self.location_data_y)
-        )
+        self.coordinates = np.dstack((self.location_data_x, self.location_data_y))
 
         # Create the distances between each subsequent turbine in a string
         if self.distance:

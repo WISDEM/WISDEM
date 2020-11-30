@@ -130,7 +130,6 @@ class SitePreparationCost(CostModule):
 
     """
 
-
     def __init__(self, input_dict, output_dict, project_name):
         """
         Parameters
@@ -148,9 +147,9 @@ class SitePreparationCost(CostModule):
         self.output_dict = output_dict
         self.project_name = project_name
 
-        #Road quality and fraction of roads that are
-        self.fraction_new_roads = self.input_dict['fraction_new_roads']
-        self.road_quality  = self.input_dict['road_quality']
+        # Road quality and fraction of roads that are
+        self.fraction_new_roads = self.input_dict["fraction_new_roads"]
+        self.road_quality = self.input_dict["road_quality"]
 
         # Conversion factors. Making this data private (hidden from outside of this class):
         self._meters_per_foot = 0.3
@@ -211,34 +210,43 @@ class SitePreparationCost(CostModule):
 
         """
 
-        if False: #road_properties_input['road_distributed_wind'] == True or road_properties_input['turbine_rating_MW'] < 0.1:
-            road_properties_output['road_volume'] = road_properties_input['road_length_adder_m'] * \
-                                                    (road_properties_input['road_width_ft'] * self._meters_per_foot) * \
-                                                    (road_properties_input[
-                                                         'road_thickness'] * self._meters_per_inch)  # units of cubic meters
+        if (
+            False
+        ):  # road_properties_input['road_distributed_wind'] == True or road_properties_input['turbine_rating_MW'] < 0.1:
+            road_properties_output["road_volume"] = (
+                road_properties_input["road_length_adder_m"]
+                * (road_properties_input["road_width_ft"] * self._meters_per_foot)
+                * (road_properties_input["road_thickness"] * self._meters_per_inch)
+            )  # units of cubic meters
         else:
-            road_properties_output['road_length_m'] = ((road_properties_input['num_turbines'] - 1) *
-                                                       road_properties_input['turbine_spacing_rotor_diameters'] *
-                                                       road_properties_input['rotor_diameter_m']) + \
-                                                      road_properties_input['road_length_adder_m']
-            road_properties_output['road_width_m'] = road_properties_input['road_width_ft'] * self._meters_per_foot
-            road_properties_output['road_volume'] = road_properties_output['road_length_m'] * \
-                                                    (road_properties_input['road_width_ft'] * self._meters_per_foot) * \
-                                                    (road_properties_input[
-                                                         'road_thickness'] * self._meters_per_inch)  # units of cubic meters
+            road_properties_output["road_length_m"] = (
+                (road_properties_input["num_turbines"] - 1)
+                * road_properties_input["turbine_spacing_rotor_diameters"]
+                * road_properties_input["rotor_diameter_m"]
+            ) + road_properties_input["road_length_adder_m"]
+            road_properties_output["road_width_m"] = road_properties_input["road_width_ft"] * self._meters_per_foot
+            road_properties_output["road_volume"] = (
+                road_properties_output["road_length_m"]
+                * (road_properties_input["road_width_ft"] * self._meters_per_foot)
+                * (road_properties_input["road_thickness"] * self._meters_per_inch)
+            )  # units of cubic meters
 
+        road_properties_output["road_volume_m3"] = (
+            road_properties_output["road_volume"] + self._crane_pad_volume * road_properties_input["num_turbines"]
+        )  # in cubic meters
 
-        road_properties_output['road_volume_m3'] = road_properties_output['road_volume'] + self._crane_pad_volume * \
-                                                   road_properties_input['num_turbines']  # in cubic meters
+        road_properties_output["depth_to_subgrade_m"] = 0.1
 
-        road_properties_output['depth_to_subgrade_m'] = 0.1
-
-        road_properties_output['crane_path_width_m'] = road_properties_input['crane_width'] + 1.5
+        road_properties_output["crane_path_width_m"] = road_properties_input["crane_width"] + 1.5
 
         # todo: replace with actual crane path width from erection module
-        road_properties_output['road_thickness_m'] = (road_properties_input['road_thickness'] * self._meters_per_inch)
-        road_properties_output['road_width_m'] = road_properties_input['road_width_ft'] * self._meters_per_foot
-        road_properties_output['material_volume_cubic_yards'] = (road_properties_output['road_volume_m3'] * self._cubic_yards_per_cubic_meter * self._yards_loose_per_yards_packed)  # todo: output_dict material volume
+        road_properties_output["road_thickness_m"] = road_properties_input["road_thickness"] * self._meters_per_inch
+        road_properties_output["road_width_m"] = road_properties_input["road_width_ft"] * self._meters_per_foot
+        road_properties_output["material_volume_cubic_yards"] = (
+            road_properties_output["road_volume_m3"]
+            * self._cubic_yards_per_cubic_meter
+            * self._yards_loose_per_yards_packed
+        )  # todo: output_dict material volume
 
         return road_properties_output
 
@@ -278,131 +286,154 @@ class SitePreparationCost(CostModule):
             - Cost of labor and equipment rental prior to weather delays
 
         """
-        throughput_operations = estimate_construction_time_input['rsmeans']
+        throughput_operations = estimate_construction_time_input["rsmeans"]
 
-        #TODO: Figure out where 'construct_duration' gets read in.
-        estimate_construction_time_output['road_construction_time'] = estimate_construction_time_input[
-                                                                          'construct_duration'] * 1 / 5  # assumes road construction occurs for 1/5 of project time
+        # TODO: Figure out where 'construct_duration' gets read in.
+        estimate_construction_time_output["road_construction_time"] = (
+            estimate_construction_time_input["construct_duration"] * 1 / 5
+        )  # assumes road construction occurs for 1/5 of project time
 
         # Main switch between small DW wind and (utility scale + distributed wind)
         # select operations for roads module that have data
-        if estimate_construction_time_input['turbine_rating_MW'] >= 0.1:
-            operation_data = throughput_operations.where(throughput_operations['Module'] == 'Roads').dropna(thresh=4)
+        if estimate_construction_time_input["turbine_rating_MW"] >= 0.1:
+            operation_data = throughput_operations.where(throughput_operations["Module"] == "Roads").dropna(thresh=4)
         else:
-            operation_data = throughput_operations.where(throughput_operations['Module'] == 'Small DW Roads').dropna(
-                thresh=4)
-            operation_data = operation_data.dropna(subset=['Units'])
+            operation_data = throughput_operations.where(throughput_operations["Module"] == "Small DW Roads").dropna(
+                thresh=4
+            )
+            operation_data = operation_data.dropna(subset=["Units"])
 
         # create list of unique material units for operations
-        list_units = operation_data['Units'].unique()
+        list_units = operation_data["Units"].unique()
 
-        if False: #(estimate_construction_time_input['road_distributed_wind'] == True and estimate_construction_time_input[
+        if (
+            False
+        ):  # (estimate_construction_time_input['road_distributed_wind'] == True and estimate_construction_time_input[
             #'turbine_rating_MW'] >= 0.1):
-            estimate_construction_time_output['topsoil_volume'] = estimate_construction_time_input[
-                                                                      'site_prep_area_m2'] * (
-                                                                  estimate_construction_time_output[
-                                                                      'depth_to_subgrade_m']) * self._cubic_yards_per_cubic_meter  # units: cubic yards
-            estimate_construction_time_output['embankment_volume_crane'] = estimate_construction_time_output[
-                'topsoil_volume']  # units: cubic yards
-            estimate_construction_time_output['embankment_volume_road'] = estimate_construction_time_output[
-                'topsoil_volume']  # units: cubic yards
-            estimate_construction_time_output['rough_grading_area'] = (estimate_construction_time_input[
-                                                                           'site_prep_area_m2'] * 10.76391) / 100000  # where 10.76391 sq ft = 1 sq m
+            estimate_construction_time_output["topsoil_volume"] = (
+                estimate_construction_time_input["site_prep_area_m2"]
+                * (estimate_construction_time_output["depth_to_subgrade_m"])
+                * self._cubic_yards_per_cubic_meter
+            )  # units: cubic yards
+            estimate_construction_time_output["embankment_volume_crane"] = estimate_construction_time_output[
+                "topsoil_volume"
+            ]  # units: cubic yards
+            estimate_construction_time_output["embankment_volume_road"] = estimate_construction_time_output[
+                "topsoil_volume"
+            ]  # units: cubic yards
+            estimate_construction_time_output["rough_grading_area"] = (
+                estimate_construction_time_input["site_prep_area_m2"] * 10.76391
+            ) / 100000  # where 10.76391 sq ft = 1 sq m
 
-        elif False: #(estimate_construction_time_input['road_distributed_wind'] == True and estimate_construction_time_input[
+        elif (
+            False
+        ):  # (estimate_construction_time_input['road_distributed_wind'] == True and estimate_construction_time_input[
             #'turbine_rating_MW'] < 0.1):
-            estimate_construction_time_output['topsoil_volume'] = estimate_construction_time_input[
-                                                                      'road_length_adder_m'] * (
-                                                                              estimate_construction_time_input[
-                                                                                  'road_width_ft'] * 0.3048) * (
-                                                                              estimate_construction_time_input[
-                                                                                  'road_thickness'] * 0.0254) * 1.308  # Units: CY (where 1 m3 = 1.308 CY)
+            estimate_construction_time_output["topsoil_volume"] = (
+                estimate_construction_time_input["road_length_adder_m"]
+                * (estimate_construction_time_input["road_width_ft"] * 0.3048)
+                * (estimate_construction_time_input["road_thickness"] * 0.0254)
+                * 1.308
+            )  # Units: CY (where 1 m3 = 1.308 CY)
 
         else:
-            estimate_construction_time_output['topsoil_volume'] = (estimate_construction_time_output[
-                'crane_path_width_m']) * estimate_construction_time_output['road_length_m'] * (
-                                                                  estimate_construction_time_output[
-                                                                      'depth_to_subgrade_m']) * self._cubic_yards_per_cubic_meter  # units: cubic yards
-            estimate_construction_time_output['embankment_volume_crane'] = (estimate_construction_time_output[
-                'crane_path_width_m']) * estimate_construction_time_output['road_length_m'] * (
-                                                                           estimate_construction_time_output[
-                                                                               'depth_to_subgrade_m']) * self._cubic_yards_per_cubic_meter  # units: cubic yards
-            estimate_construction_time_output['embankment_volume_road'] = estimate_construction_time_output[
-                                                                              'road_volume'] * self._cubic_yards_per_cubic_meter * math.ceil(
-                estimate_construction_time_output['road_thickness_m'] / self._lift_depth_m)  # units: cubic yards road
-            estimate_construction_time_output['rough_grading_area'] = estimate_construction_time_output[
-                                                                          'road_length_m'] * \
-                                                                      estimate_construction_time_output[
-                                                                          'road_width_m'] * \
-                                                                      self._square_feet_per_square_meter * \
-                                                                      math.ceil(estimate_construction_time_output[
-                                                                                    'road_thickness_m'] / self._lift_depth_m) / 100000  # Units: Each (100,000 square feet)
+            estimate_construction_time_output["topsoil_volume"] = (
+                (estimate_construction_time_output["crane_path_width_m"])
+                * estimate_construction_time_output["road_length_m"]
+                * (estimate_construction_time_output["depth_to_subgrade_m"])
+                * self._cubic_yards_per_cubic_meter
+            )  # units: cubic yards
+            estimate_construction_time_output["embankment_volume_crane"] = (
+                (estimate_construction_time_output["crane_path_width_m"])
+                * estimate_construction_time_output["road_length_m"]
+                * (estimate_construction_time_output["depth_to_subgrade_m"])
+                * self._cubic_yards_per_cubic_meter
+            )  # units: cubic yards
+            estimate_construction_time_output["embankment_volume_road"] = (
+                estimate_construction_time_output["road_volume"]
+                * self._cubic_yards_per_cubic_meter
+                * math.ceil(estimate_construction_time_output["road_thickness_m"] / self._lift_depth_m)
+            )  # units: cubic yards road
+            estimate_construction_time_output["rough_grading_area"] = (
+                estimate_construction_time_output["road_length_m"]
+                * estimate_construction_time_output["road_width_m"]
+                * self._square_feet_per_square_meter
+                * math.ceil(estimate_construction_time_output["road_thickness_m"] / self._lift_depth_m)
+                / 100000
+            )  # Units: Each (100,000 square feet)
 
-        if estimate_construction_time_input['turbine_rating_MW'] >= 0.1:
-            material_quantity_dict = {'cubic yard': estimate_construction_time_output['topsoil_volume'],
-                                      'embankment cubic yards crane': estimate_construction_time_output[
-                                          'embankment_volume_crane'],
-                                      'embankment cubic yards road': estimate_construction_time_output[
-                                          'embankment_volume_road'],
-                                      'loose cubic yard': estimate_construction_time_output[
-                                          'material_volume_cubic_yards'],
-                                      'Each (100000 square feet)': estimate_construction_time_output[
-                                          'rough_grading_area']}
+        if estimate_construction_time_input["turbine_rating_MW"] >= 0.1:
+            material_quantity_dict = {
+                "cubic yard": estimate_construction_time_output["topsoil_volume"],
+                "embankment cubic yards crane": estimate_construction_time_output["embankment_volume_crane"],
+                "embankment cubic yards road": estimate_construction_time_output["embankment_volume_road"],
+                "loose cubic yard": estimate_construction_time_output["material_volume_cubic_yards"],
+                "Each (100000 square feet)": estimate_construction_time_output["rough_grading_area"],
+            }
         else:  # small DW
-            material_quantity_dict = {'cubic yard': estimate_construction_time_output['topsoil_volume'],
-                                      'embankment cubic yards crane': estimate_construction_time_output[
-                                          'topsoil_volume'],
-                                      'loose cubic yard': estimate_construction_time_output['topsoil_volume'],
-                                      'embankment cubic yards road': estimate_construction_time_output['topsoil_volume']
-                                      }
+            material_quantity_dict = {
+                "cubic yard": estimate_construction_time_output["topsoil_volume"],
+                "embankment cubic yards crane": estimate_construction_time_output["topsoil_volume"],
+                "loose cubic yard": estimate_construction_time_output["topsoil_volume"],
+                "embankment cubic yards road": estimate_construction_time_output["topsoil_volume"],
+            }
 
-        material_needs = pd.DataFrame(columns=['Units', 'Quantity of material'])
+        material_needs = pd.DataFrame(columns=["Units", "Quantity of material"])
         for unit in list_units:
-            unit_quantity = pd.DataFrame([[unit, material_quantity_dict[unit]]],
-                                         columns=['Units', 'Quantity of material'])
+            unit_quantity = pd.DataFrame(
+                [[unit, material_quantity_dict[unit]]], columns=["Units", "Quantity of material"]
+            )
             material_needs = material_needs.append(unit_quantity)
 
-        estimate_construction_time_output['material_needs'] = material_needs
+        estimate_construction_time_output["material_needs"] = material_needs
 
         # join material needs with operational data to compute costs
-        operation_data = pd.merge(operation_data, material_needs, on=['Units']).dropna(thresh=3)
-        operation_data = operation_data.where((operation_data['Daily output']).isnull() == False).dropna(thresh=4)
+        operation_data = pd.merge(operation_data, material_needs, on=["Units"]).dropna(thresh=3)
+        operation_data = operation_data.where((operation_data["Daily output"]).isnull() == False).dropna(thresh=4)
 
         # calculate operational parameters and estimate costs without weather delays
-        operation_data['Number of days'] = operation_data['Quantity of material'] / operation_data['Daily output']
-        operation_data['Number of crews'] = np.ceil((operation_data['Number of days'] / 30) / estimate_construction_time_output['road_construction_time'])
-        operation_data['Cost USD without weather delays'] = operation_data['Quantity of material'] * operation_data['Rate USD per unit']
+        operation_data["Number of days"] = operation_data["Quantity of material"] / operation_data["Daily output"]
+        operation_data["Number of crews"] = np.ceil(
+            (operation_data["Number of days"] / 30) / estimate_construction_time_output["road_construction_time"]
+        )
+        operation_data["Cost USD without weather delays"] = (
+            operation_data["Quantity of material"] * operation_data["Rate USD per unit"]
+        )
 
         # if more than one crew needed to complete within construction duration then assume that all construction happens
         # within that window and use that time frame for weather delays; if not, use the number of days calculated
-        operation_data['time_construct_bool'] = operation_data['Number of days'] > estimate_construction_time_output['road_construction_time'] * 30
-        boolean_dictionary = {True: estimate_construction_time_output['road_construction_time'] * 30, False: np.NAN}
-        operation_data['time_construct_bool'] = operation_data['time_construct_bool'].map(boolean_dictionary)
-        operation_data['Time construct days'] = operation_data[['time_construct_bool', 'Number of days']].min(axis=1)
-        num_days = operation_data['Time construct days'].max()
+        operation_data["time_construct_bool"] = (
+            operation_data["Number of days"] > estimate_construction_time_output["road_construction_time"] * 30
+        )
+        boolean_dictionary = {True: estimate_construction_time_output["road_construction_time"] * 30, False: np.NAN}
+        operation_data["time_construct_bool"] = operation_data["time_construct_bool"].map(boolean_dictionary)
+        operation_data["Time construct days"] = operation_data[["time_construct_bool", "Number of days"]].min(axis=1)
+        num_days = operation_data["Time construct days"].max()
 
         # pull out management data
-        if estimate_construction_time_input['turbine_rating_MW'] >= 0.1:
-            crew_cost = self.input_dict['crew_cost']
-            crew = self.input_dict['crew'][self.input_dict['crew']['Crew type ID'].str.contains('M0')]
-            management_crew = pd.merge(crew_cost, crew, on=['Labor type ID'])
-            management_crew = management_crew.assign(per_diem_total=
-                                                     management_crew['Per diem USD per day'] *
-                                                     management_crew['Number of workers'] *
-                                                     num_days)
-            management_crew = management_crew.assign(hourly_costs_total=
-                                                     management_crew['Hourly rate USD per hour'] *
-                                                     self.input_dict['hour_day'][self.input_dict['time_construct']] *
-                                                     num_days)
-            management_crew = management_crew.assign(total_crew_cost_before_wind_delay=
-                                                     management_crew['per_diem_total'] +
-                                                     management_crew['hourly_costs_total'])
-            self.output_dict['management_crew'] = management_crew
+        if estimate_construction_time_input["turbine_rating_MW"] >= 0.1:
+            crew_cost = self.input_dict["crew_cost"]
+            crew = self.input_dict["crew"][self.input_dict["crew"]["Crew type ID"].str.contains("M0")]
+            management_crew = pd.merge(crew_cost, crew, on=["Labor type ID"])
+            management_crew = management_crew.assign(
+                per_diem_total=management_crew["Per diem USD per day"] * management_crew["Number of workers"] * num_days
+            )
+            management_crew = management_crew.assign(
+                hourly_costs_total=management_crew["Hourly rate USD per hour"]
+                * self.input_dict["hour_day"][self.input_dict["time_construct"]]
+                * num_days
+            )
+            management_crew = management_crew.assign(
+                total_crew_cost_before_wind_delay=management_crew["per_diem_total"]
+                + management_crew["hourly_costs_total"]
+            )
+            self.output_dict["management_crew"] = management_crew
 
-            self.output_dict['managament_crew_cost_before_wind_delay'] = management_crew[
-                                                     'total_crew_cost_before_wind_delay'].sum()
+            self.output_dict["managament_crew_cost_before_wind_delay"] = management_crew[
+                "total_crew_cost_before_wind_delay"
+            ].sum()
 
-        estimate_construction_time_output['operation_data'] = operation_data
+        estimate_construction_time_output["operation_data"] = operation_data
 
         return operation_data
 
@@ -416,14 +447,13 @@ class SitePreparationCost(CostModule):
         WD(weather_delay_input_data, weather_delay_output_data)
 
         # compute weather delay
-        wind_delay = pd.DataFrame(weather_delay_output_data['wind_delays'])
+        wind_delay = pd.DataFrame(weather_delay_output_data["wind_delays"])
 
         # if greater than 4 hour delay, then shut down for full day (10 hours)
         wind_delay[(wind_delay > 4)] = 10
-        weather_delay_output_data['wind_delay_time'] = float(wind_delay.sum())
+        weather_delay_output_data["wind_delay_time"] = float(wind_delay.sum())
 
         return weather_delay_output_data
-
 
     def new_and_existing_total_road_cost(self, new_road_cost_by_type):
         """
@@ -435,12 +465,17 @@ class SitePreparationCost(CostModule):
             Sum total cost in USD of new and existing roads.
         """
 
-        f_new = self.fraction_new_roads    #fraction of new roads that will be built (default assumes 33% new). TODO: Change to user input.
-        r_q = self.road_quality    #is a non-dimensional representation of road quality. Default assumes 0.6, which is representative of average road conditions. TODO: Change to user input.
-        cost_existing_roads = 0.5 * new_road_cost_by_type      #cost of installing existing roads for the entire project. We currently assume default case to equal 50 % of cost of building new roads.
-        new_and_existing_total_road_cost = (f_new * new_road_cost_by_type) + ((1-f_new) * r_q * cost_existing_roads)
+        f_new = (
+            self.fraction_new_roads
+        )  # fraction of new roads that will be built (default assumes 33% new). TODO: Change to user input.
+        r_q = (
+            self.road_quality
+        )  # is a non-dimensional representation of road quality. Default assumes 0.6, which is representative of average road conditions. TODO: Change to user input.
+        cost_existing_roads = (
+            0.5 * new_road_cost_by_type
+        )  # cost of installing existing roads for the entire project. We currently assume default case to equal 50 % of cost of building new roads.
+        new_and_existing_total_road_cost = (f_new * new_road_cost_by_type) + ((1 - f_new) * r_q * cost_existing_roads)
         return new_and_existing_total_road_cost
-
 
     def calculate_costs(self, calculate_cost_input_dict, calculate_cost_output_dict):
         """
@@ -475,158 +510,194 @@ class SitePreparationCost(CostModule):
 
 
         """
-        rsmeans = calculate_cost_input_dict['rsmeans']
+        rsmeans = calculate_cost_input_dict["rsmeans"]
 
-        material_name = rsmeans['Material type ID'].where(rsmeans['Module'] == 'Roads').dropna().unique()
+        material_name = rsmeans["Material type ID"].where(rsmeans["Module"] == "Roads").dropna().unique()
 
         material_vol = pd.DataFrame(
-            [[material_name[0], calculate_cost_output_dict['material_volume_cubic_yards'], 'Loose cubic yard']],
-            columns=['Material type ID', 'Quantity of material', 'Units'])
+            [[material_name[0], calculate_cost_output_dict["material_volume_cubic_yards"], "Loose cubic yard"]],
+            columns=["Material type ID", "Quantity of material", "Units"],
+        )
 
-        material_data = pd.merge(material_vol, calculate_cost_input_dict['material_price'], on=['Material type ID'])
-        material_data['Cost USD'] = material_data['Quantity of material'] * pd.to_numeric(
-            material_data['Material price USD per unit'])
+        material_data = pd.merge(material_vol, calculate_cost_input_dict["material_price"], on=["Material type ID"])
+        material_data["Cost USD"] = material_data["Quantity of material"] * pd.to_numeric(
+            material_data["Material price USD per unit"]
+        )
 
-        #New roads material cost:
-        material_cost_of_new_roads = material_data['Quantity of material'].iloc[0] * pd.to_numeric(material_data['Material price USD per unit'].iloc[0])
+        # New roads material cost:
+        material_cost_of_new_roads = material_data["Quantity of material"].iloc[0] * pd.to_numeric(
+            material_data["Material price USD per unit"].iloc[0]
+        )
 
         # New + old roads material cost:
-        if calculate_cost_input_dict['turbine_rating_MW'] >= 0.1:
+        if calculate_cost_input_dict["turbine_rating_MW"] >= 0.1:
             material_cost_of_old_and_new_roads = self.new_and_existing_total_road_cost(material_cost_of_new_roads)
             material_costs = pd.DataFrame(
-                [['Materials', float(material_cost_of_old_and_new_roads), 'Roads']],
-                columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+                [["Materials", float(material_cost_of_old_and_new_roads), "Roads"]],
+                columns=["Type of cost", "Cost USD", "Phase of construction"],
+            )
         else:
             material_cost_of_old_and_new_roads = material_cost_of_new_roads
             material_costs = pd.DataFrame(
-                [['Materials', float(material_cost_of_old_and_new_roads), 'Small DW Roads']],
-                columns=['Type of cost', 'Cost USD', 'Phase of construction'])
-
-
+                [["Materials", float(material_cost_of_old_and_new_roads), "Small DW Roads"]],
+                columns=["Type of cost", "Cost USD", "Phase of construction"],
+            )
 
         operation_data = self.estimate_construction_time(calculate_cost_input_dict, calculate_cost_output_dict)
 
-        wind_delay_fraction = (calculate_cost_output_dict['wind_delay_time'] / calculate_cost_input_dict[
-            'operational_hrs_per_day']) / operation_data['Time construct days'].max(skipna=True)
+        wind_delay_fraction = (
+            calculate_cost_output_dict["wind_delay_time"] / calculate_cost_input_dict["operational_hrs_per_day"]
+        ) / operation_data["Time construct days"].max(skipna=True)
         # check if wind_delay_fraction is greater than 1, which would mean weather delays are longer than they can possibily be for the input data
         if wind_delay_fraction > 1:
-            raise ValueError('{}: Error: Wind delay greater than 100%'.format(type(self).__name__))
-        calculate_cost_output_dict['wind_multiplier'] = 1 / (
-                    1 - wind_delay_fraction)
+            raise ValueError("{}: Error: Wind delay greater than 100%".format(type(self).__name__))
+        calculate_cost_output_dict["wind_multiplier"] = 1 / (1 - wind_delay_fraction)
 
-        per_diem = operation_data['Number of workers'] * operation_data['Number of crews'] * (operation_data['Time construct days'] + np.ceil(operation_data['Time construct days'] / 7)) * calculate_cost_input_dict['rsmeans_per_diem']
+        per_diem = (
+            operation_data["Number of workers"]
+            * operation_data["Number of crews"]
+            * (operation_data["Time construct days"] + np.ceil(operation_data["Time construct days"] / 7))
+            * calculate_cost_input_dict["rsmeans_per_diem"]
+        )
         labor_per_diem = per_diem.dropna()
         # calculate_cost_output_dict['Total per diem (USD)'] = per_diem.sum()
-        labor_equip_data = pd.merge(operation_data[['Operation ID', 'Units', 'Quantity of material']], rsmeans, on=['Units', 'Operation ID'])
+        labor_equip_data = pd.merge(
+            operation_data[["Operation ID", "Units", "Quantity of material"]], rsmeans, on=["Units", "Operation ID"]
+        )
         # Calculating labor costs:
-        if calculate_cost_input_dict['turbine_rating_MW'] >= 0.1:
-            labor_equip_data['Calculated per diem'] = per_diem
-            labor_data = labor_equip_data[labor_equip_data['Type of cost'] == 'Labor'].copy()
+        if calculate_cost_input_dict["turbine_rating_MW"] >= 0.1:
+            labor_equip_data["Calculated per diem"] = per_diem
+            labor_data = labor_equip_data[labor_equip_data["Type of cost"] == "Labor"].copy()
         else:
-            labor_equip_data['Calculated per diem'] = 0
+            labor_equip_data["Calculated per diem"] = 0
             # labor_data = labor_equip_data[labor_equip_data['Type of cost'] == 'Labor'].copy()
-            labor_data = labor_equip_data[labor_equip_data['Module'] == 'Small DW Roads'].copy()
+            labor_data = labor_equip_data[labor_equip_data["Module"] == "Small DW Roads"].copy()
 
-        quantity_material = material_data['Quantity of material']
-        labor_usd_per_unit = labor_data['Rate USD per unit']
-        overtime_multiplier = calculate_cost_input_dict['overtime_multiplier']
-        wind_multiplier = calculate_cost_output_dict['wind_multiplier']
+        quantity_material = material_data["Quantity of material"]
+        labor_usd_per_unit = labor_data["Rate USD per unit"]
+        overtime_multiplier = calculate_cost_input_dict["overtime_multiplier"]
+        wind_multiplier = calculate_cost_output_dict["wind_multiplier"]
 
-        labor_data['Cost USD'] = ((labor_data['Quantity of material'] *
-                                   labor_data['Rate USD per unit'] *
-                                   calculate_cost_input_dict['overtime_multiplier']) +
-                                  labor_per_diem
-                                  ) * calculate_cost_output_dict['wind_multiplier']
+        labor_data["Cost USD"] = (
+            (
+                labor_data["Quantity of material"]
+                * labor_data["Rate USD per unit"]
+                * calculate_cost_input_dict["overtime_multiplier"]
+            )
+            + labor_per_diem
+        ) * calculate_cost_output_dict["wind_multiplier"]
 
-        if False: #calculate_cost_input_dict['road_distributed_wind'] and calculate_cost_input_dict['turbine_rating_MW'] >= 0.1:
+        if (
+            False
+        ):  # calculate_cost_input_dict['road_distributed_wind'] and calculate_cost_input_dict['turbine_rating_MW'] >= 0.1:
 
-            labor_for_new_roads_cost_usd = (labor_data['Cost USD'].sum()) + \
-                                           calculate_cost_output_dict['managament_crew_cost_before_wind_delay']
+            labor_for_new_roads_cost_usd = (labor_data["Cost USD"].sum()) + calculate_cost_output_dict[
+                "managament_crew_cost_before_wind_delay"
+            ]
 
             labor_for_new_and_old_roads_cost_usd = self.new_and_existing_total_road_cost(labor_for_new_roads_cost_usd)
-            labor_costs = pd.DataFrame([['Labor', float(labor_for_new_and_old_roads_cost_usd), 'Roads']],
-                                       columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+            labor_costs = pd.DataFrame(
+                [["Labor", float(labor_for_new_and_old_roads_cost_usd), "Roads"]],
+                columns=["Type of cost", "Cost USD", "Phase of construction"],
+            )
 
-        elif False: #calculate_cost_input_dict['road_distributed_wind'] and calculate_cost_input_dict['turbine_rating_MW'] < 0.1:  # small DW
+        elif (
+            False
+        ):  # calculate_cost_input_dict['road_distributed_wind'] and calculate_cost_input_dict['turbine_rating_MW'] < 0.1:  # small DW
 
-            labor_for_new_roads_cost_usd = (labor_data['Cost USD'].sum())
+            labor_for_new_roads_cost_usd = labor_data["Cost USD"].sum()
             labor_for_new_and_old_roads_cost_usd = self.new_and_existing_total_road_cost(labor_for_new_roads_cost_usd)
 
-            labor_costs = pd.DataFrame([['Labor', float(labor_for_new_and_old_roads_cost_usd), 'Small DW Roads']],
-                                       columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+            labor_costs = pd.DataFrame(
+                [["Labor", float(labor_for_new_and_old_roads_cost_usd), "Small DW Roads"]],
+                columns=["Type of cost", "Cost USD", "Phase of construction"],
+            )
 
         else:
-            labor_for_new_roads_cost_usd = labor_data['Cost USD'].sum() + \
-                                           calculate_cost_output_dict['managament_crew_cost_before_wind_delay']
+            labor_for_new_roads_cost_usd = (
+                labor_data["Cost USD"].sum() + calculate_cost_output_dict["managament_crew_cost_before_wind_delay"]
+            )
 
             labor_for_new_and_old_roads_cost_usd = self.new_and_existing_total_road_cost(labor_for_new_roads_cost_usd)
 
-            labor_costs = pd.DataFrame([['Labor',
-                                         float(labor_for_new_and_old_roads_cost_usd),
-                                         'Roads']],
-
-                                       columns=['Type of cost',
-                                                'Cost USD',
-                                                'Phase of construction'])
+            labor_costs = pd.DataFrame(
+                [["Labor", float(labor_for_new_and_old_roads_cost_usd), "Roads"]],
+                columns=["Type of cost", "Cost USD", "Phase of construction"],
+            )
 
         # Filter out equipment costs from rsmeans tab:
-        if calculate_cost_input_dict['turbine_rating_MW'] >= 0.1:
-            equipment_data = labor_equip_data[labor_equip_data['Type of cost'] == 'Equipment rental'].copy()
+        if calculate_cost_input_dict["turbine_rating_MW"] >= 0.1:
+            equipment_data = labor_equip_data[labor_equip_data["Type of cost"] == "Equipment rental"].copy()
         else:
-            equipment_data = labor_equip_data[labor_equip_data['Module'] == 'Small DW Roads'].copy()
-            equipment_data = equipment_data[equipment_data['Type of cost'] == 'Equipment rental'].copy()
+            equipment_data = labor_equip_data[labor_equip_data["Module"] == "Small DW Roads"].copy()
+            equipment_data = equipment_data[equipment_data["Type of cost"] == "Equipment rental"].copy()
 
-        equipment_data['Cost USD'] = (equipment_data['Quantity of material'] * equipment_data['Rate USD per unit']) * \
-                                     calculate_cost_output_dict['wind_multiplier']
+        equipment_data["Cost USD"] = (
+            equipment_data["Quantity of material"] * equipment_data["Rate USD per unit"]
+        ) * calculate_cost_output_dict["wind_multiplier"]
 
         # if rental cost is < half day minimum:
-        if equipment_data['Cost USD'].sum() < 460:
+        if equipment_data["Cost USD"].sum() < 460:
             equip_for_new_roads_cost_usd = 460
         else:
-            equip_for_new_roads_cost_usd = equipment_data['Cost USD'].sum()
+            equip_for_new_roads_cost_usd = equipment_data["Cost USD"].sum()
 
-        if calculate_cost_input_dict['turbine_rating_MW'] >= 0.1:
+        if calculate_cost_input_dict["turbine_rating_MW"] >= 0.1:
             equip_for_new_and_old_roads_cost_usd = self.new_and_existing_total_road_cost(equip_for_new_roads_cost_usd)
-            equipment_costs = pd.DataFrame([['Equipment rental', float(equip_for_new_and_old_roads_cost_usd), 'Roads']],
-                columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+            equipment_costs = pd.DataFrame(
+                [["Equipment rental", float(equip_for_new_and_old_roads_cost_usd), "Roads"]],
+                columns=["Type of cost", "Cost USD", "Phase of construction"],
+            )
         else:
             equip_for_new_and_old_roads_cost_usd = self.new_and_existing_total_road_cost(equip_for_new_roads_cost_usd)
-            equipment_costs = pd.DataFrame([['Equipment rental', float(equip_for_new_and_old_roads_cost_usd), 'Small DW Roads']],
-                                           columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+            equipment_costs = pd.DataFrame(
+                [["Equipment rental", float(equip_for_new_and_old_roads_cost_usd), "Small DW Roads"]],
+                columns=["Type of cost", "Cost USD", "Phase of construction"],
+            )
 
         # add costs for other operations not included in process data for utility mode (e.g., fencing, access roads)
-        if calculate_cost_input_dict['turbine_rating_MW'] > 0.1:
-            num_turbines = calculate_cost_input_dict['num_turbines']
-            rotor_diameter_m = calculate_cost_input_dict['rotor_diameter_m']
-            construct_duration = calculate_cost_input_dict['construct_duration']
-            num_access_roads = calculate_cost_input_dict['num_access_roads']
+        if calculate_cost_input_dict["turbine_rating_MW"] > 0.1:
+            num_turbines = calculate_cost_input_dict["num_turbines"]
+            rotor_diameter_m = calculate_cost_input_dict["rotor_diameter_m"]
+            construct_duration = calculate_cost_input_dict["construct_duration"]
+            num_access_roads = calculate_cost_input_dict["num_access_roads"]
 
             cost_new_roads_adder = (
-                        (float(num_turbines) * 17639) + (float(num_turbines) * float(rotor_diameter_m) * 24.8) + (
-                            float(construct_duration) * 55500) + float(num_access_roads) * 3800)
+                (float(num_turbines) * 17639)
+                + (float(num_turbines) * float(rotor_diameter_m) * 24.8)
+                + (float(construct_duration) * 55500)
+                + float(num_access_roads) * 3800
+            )
             cost_adder = self.new_and_existing_total_road_cost(cost_new_roads_adder)
-            additional_costs = pd.DataFrame([['Other', float(cost_adder), 'Roads']],
-                                            columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+            additional_costs = pd.DataFrame(
+                [["Other", float(cost_adder), "Roads"]], columns=["Type of cost", "Cost USD", "Phase of construction"]
+            )
 
         else:  # No 'Other' cost in distributed wind mode:
             cost_new_roads_adder = 0
             cost_adder = self.new_and_existing_total_road_cost(cost_new_roads_adder)
-            additional_costs = pd.DataFrame([['Other', float(cost_adder), 'Small DW Roads']],
-                                            columns=['Type of cost', 'Cost USD', 'Phase of construction'])
-
-
+            additional_costs = pd.DataFrame(
+                [["Other", float(cost_adder), "Small DW Roads"]],
+                columns=["Type of cost", "Cost USD", "Phase of construction"],
+            )
 
         # Create empty road cost (showing cost breakdown by type) dataframe:
-        road_cost = pd.DataFrame(columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+        road_cost = pd.DataFrame(columns=["Type of cost", "Cost USD", "Phase of construction"])
 
-        #Filter out equipment costs from rsmeans tab:
-        equipment_data = labor_equip_data[labor_equip_data['Type of cost'] == 'Equipment rental'].copy()
-        equipment_data['Cost USD'] = (equipment_data['Quantity of material'] * equipment_data['Rate USD per unit']) * calculate_cost_output_dict['wind_multiplier']     #TODO: Annika can you confirm if this is correct.
+        # Filter out equipment costs from rsmeans tab:
+        equipment_data = labor_equip_data[labor_equip_data["Type of cost"] == "Equipment rental"].copy()
+        equipment_data["Cost USD"] = (
+            equipment_data["Quantity of material"] * equipment_data["Rate USD per unit"]
+        ) * calculate_cost_output_dict[
+            "wind_multiplier"
+        ]  # TODO: Annika can you confirm if this is correct.
 
-        equip_for_new_roads_cost_usd = equipment_data['Cost USD'].sum()
+        equip_for_new_roads_cost_usd = equipment_data["Cost USD"].sum()
         equip_for_new_and_old_roads_cost_usd = self.new_and_existing_total_road_cost(equip_for_new_roads_cost_usd)
-        equipment_costs = pd.DataFrame([['Equipment rental', float(equip_for_new_and_old_roads_cost_usd), 'Roads']],
-            columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+        equipment_costs = pd.DataFrame(
+            [["Equipment rental", float(equip_for_new_and_old_roads_cost_usd), "Roads"]],
+            columns=["Type of cost", "Cost USD", "Phase of construction"],
+        )
 
         # add costs for other operations not included in process data (e.g., fencing, access roads)
         #
@@ -639,19 +710,24 @@ class SitePreparationCost(CostModule):
         # All crews work concurrently, so the total site preparation time is the
         # the max of "Time construct days"
 
-        max_time_construct_days = operation_data['Time construct days'].max()
-        num_turbines = float(calculate_cost_input_dict['num_turbines'])
-        rotor_diameter_m = float(calculate_cost_input_dict['rotor_diameter_m'])
-        num_access_roads = float(calculate_cost_input_dict['num_access_roads'])
-        calendar_construct_days = (max_time_construct_days + np.ceil(
-            max_time_construct_days / 6))  # assumes working only 6 days per week
+        max_time_construct_days = operation_data["Time construct days"].max()
+        num_turbines = float(calculate_cost_input_dict["num_turbines"])
+        rotor_diameter_m = float(calculate_cost_input_dict["rotor_diameter_m"])
+        num_access_roads = float(calculate_cost_input_dict["num_access_roads"])
+        calendar_construct_days = max_time_construct_days + np.ceil(
+            max_time_construct_days / 6
+        )  # assumes working only 6 days per week
         siteprep_construction_months = calendar_construct_days / 30.0
-        cost_new_roads_adder = \
-            num_turbines * 17639 + num_turbines * rotor_diameter_m * 24.8 + calculate_cost_input_dict['construct_duration'] * 55500 \
+        cost_new_roads_adder = (
+            num_turbines * 17639
+            + num_turbines * rotor_diameter_m * 24.8
+            + calculate_cost_input_dict["construct_duration"] * 55500
             + num_access_roads * 3800
+        )
         cost_adder = self.new_and_existing_total_road_cost(cost_new_roads_adder)
-        additional_costs = pd.DataFrame([['Other', cost_adder, 'Roads']],
-                                        columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+        additional_costs = pd.DataFrame(
+            [["Other", cost_adder, "Roads"]], columns=["Type of cost", "Cost USD", "Phase of construction"]
+        )
 
         road_cost = road_cost.append(material_costs)
         road_cost = road_cost.append(equipment_costs)
@@ -660,30 +736,35 @@ class SitePreparationCost(CostModule):
 
         # set mobilization cost equal to 5% of total road cost for utility scale model and function of
         # of turbine size for distributed wind:
-        if calculate_cost_input_dict['num_turbines'] > 10:
+        if calculate_cost_input_dict["num_turbines"] > 10:
             mobilization_costs_new_roads = road_cost["Cost USD"].sum() * 0.05
             mobilization_costs_new_plus_old_roads = self.new_and_existing_total_road_cost(mobilization_costs_new_roads)
-            mobilization_costs = pd.DataFrame([['Mobilization', mobilization_costs_new_plus_old_roads, 'Roads']],
-                                              columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+            mobilization_costs = pd.DataFrame(
+                [["Mobilization", mobilization_costs_new_plus_old_roads, "Roads"]],
+                columns=["Type of cost", "Cost USD", "Phase of construction"],
+            )
         else:
-            mobilization_costs_new_roads = road_cost["Cost USD"].sum() * \
-                                           self.mobilization_cost_multiplier(calculate_cost_input_dict['turbine_rating_MW'])
+            mobilization_costs_new_roads = road_cost["Cost USD"].sum() * self.mobilization_cost_multiplier(
+                calculate_cost_input_dict["turbine_rating_MW"]
+            )
             mobilization_costs_new_plus_old_roads = self.new_and_existing_total_road_cost(mobilization_costs_new_roads)
 
-            if calculate_cost_input_dict['turbine_rating_MW'] >= 0.1:
-                mobilization_costs = pd.DataFrame([['Mobilization', mobilization_costs_new_plus_old_roads, 'Roads']],
-                                                  columns=['Type of cost', 'Cost USD', 'Phase of construction'])
+            if calculate_cost_input_dict["turbine_rating_MW"] >= 0.1:
+                mobilization_costs = pd.DataFrame(
+                    [["Mobilization", mobilization_costs_new_plus_old_roads, "Roads"]],
+                    columns=["Type of cost", "Cost USD", "Phase of construction"],
+                )
             else:
-                mobilization_costs = pd.DataFrame([['Mobilization', mobilization_costs_new_plus_old_roads, 'Small DW Roads']],
-                                                  columns=['Type of cost', 'Cost USD', 'Phase of construction'])
-
+                mobilization_costs = pd.DataFrame(
+                    [["Mobilization", mobilization_costs_new_plus_old_roads, "Small DW Roads"]],
+                    columns=["Type of cost", "Cost USD", "Phase of construction"],
+                )
 
         road_cost = road_cost.append(mobilization_costs)
         total_road_cost = road_cost
-        calculate_cost_output_dict['total_road_cost'] = total_road_cost
-        calculate_cost_output_dict['siteprep_construction_months'] = siteprep_construction_months
+        calculate_cost_output_dict["total_road_cost"] = total_road_cost
+        calculate_cost_output_dict["siteprep_construction_months"] = siteprep_construction_months
         return total_road_cost
-
 
     def outputs_for_detailed_tab(self, input_dict, output_dict):
         """
@@ -704,106 +785,125 @@ class SitePreparationCost(CostModule):
         # numbers. XlsxWriter, interestingly, cannot handle np.float32()
         # types.
 
-        result.append({
-            'unit': 'm^3',
-            'type': 'variable',
-            'variable_df_key_col_name': 'Total road volume',
-            'value': float(self.output_dict['road_volume_m3'])
-        })
+        result.append(
+            {
+                "unit": "m^3",
+                "type": "variable",
+                "variable_df_key_col_name": "Total road volume",
+                "value": float(self.output_dict["road_volume_m3"]),
+            }
+        )
 
-        result.append({
-            'unit': 'm',
-            'type': 'variable',
-            'variable_df_key_col_name': 'Depth to subgrade',
-            'value': self.output_dict['depth_to_subgrade_m']
-        })
+        result.append(
+            {
+                "unit": "m",
+                "type": "variable",
+                "variable_df_key_col_name": "Depth to subgrade",
+                "value": self.output_dict["depth_to_subgrade_m"],
+            }
+        )
 
-        result.append({
-            'unit': 'ft',
-            'type': 'variable',
-            'variable_df_key_col_name': 'Crane path width',
-            'value': self.output_dict['crane_path_width_m']     #TODO: Rename variable to: crane_path_width_ft
-        })
+        result.append(
+            {
+                "unit": "ft",
+                "type": "variable",
+                "variable_df_key_col_name": "Crane path width",
+                "value": self.output_dict["crane_path_width_m"],  # TODO: Rename variable to: crane_path_width_ft
+            }
+        )
 
-        if True: #not input_dict['road_distributed_wind']:
-            result.append({
-                'unit': 'm',
-                'type': 'variable',
-                'variable_df_key_col_name': 'Road length',
-                'value': float(self.output_dict['road_length_m'])
-            })
+        if True:  # not input_dict['road_distributed_wind']:
+            result.append(
+                {
+                    "unit": "m",
+                    "type": "variable",
+                    "variable_df_key_col_name": "Road length",
+                    "value": float(self.output_dict["road_length_m"]),
+                }
+            )
 
-        result.append({
-            'unit': 'm',
-            'type': 'variable',
-            'variable_df_key_col_name': 'Road width',
-            'value': self.output_dict['road_width_m']
-        })
+        result.append(
+            {
+                "unit": "m",
+                "type": "variable",
+                "variable_df_key_col_name": "Road width",
+                "value": self.output_dict["road_width_m"],
+            }
+        )
 
-        result.append({
-            'unit': 'm',
-            'type': 'variable',
-            'variable_df_key_col_name': 'Road thickness',
-            'value': self.output_dict['road_thickness_m']
-        })
+        result.append(
+            {
+                "unit": "m",
+                "type": "variable",
+                "variable_df_key_col_name": "Road thickness",
+                "value": self.output_dict["road_thickness_m"],
+            }
+        )
 
+        result.append(
+            {
+                "unit": "cubic yards",
+                "type": "variable",
+                "variable_df_key_col_name": "Material volume",
+                "value": float(self.output_dict["material_volume_cubic_yards"]),
+            }
+        )
 
+        result.append(
+            {
+                "unit": "cubic yards",
+                "type": "variable",
+                "variable_df_key_col_name": "Topsoil volume",
+                "value": float(self.output_dict["topsoil_volume"]),
+            }
+        )
 
-        result.append({
-            'unit': 'cubic yards',
-            'type': 'variable',
-            'variable_df_key_col_name': 'Material volume',
-            'value': float(self.output_dict['material_volume_cubic_yards'])
-        })
+        if input_dict["turbine_rating_MW"] >= 0.1:
+            result.append(
+                {
+                    "unit": "cubic yards",
+                    "type": "variable",
+                    "variable_df_key_col_name": "Embankment volume crane",
+                    "value": float(self.output_dict["embankment_volume_crane"]),
+                }
+            )
 
-        result.append({
-            'unit': 'cubic yards',
-            'type': 'variable',
-            'variable_df_key_col_name': 'Topsoil volume',
-            'value': float(self.output_dict['topsoil_volume'])
-        })
+            result.append(
+                {
+                    "unit": "cubic yards",
+                    "type": "variable",
+                    "variable_df_key_col_name": "Embankment volume road",
+                    "value": float(self.output_dict["embankment_volume_road"]),
+                }
+            )
 
-        if input_dict['turbine_rating_MW'] >= 0.1:
-            result.append({
-                'unit': 'cubic yards',
-                'type': 'variable',
-                'variable_df_key_col_name': 'Embankment volume crane',
-                'value': float(self.output_dict['embankment_volume_crane'])
-            })
+            result.append(
+                {
+                    "unit": "ft^2",
+                    "type": "variable",
+                    "variable_df_key_col_name": "Rough grading area",
+                    "value": float(self.output_dict["rough_grading_area"]),
+                }
+            )
 
-            result.append({
-                'unit': 'cubic yards',
-                'type': 'variable',
-                'variable_df_key_col_name': 'Embankment volume road',
-                'value': float(self.output_dict['embankment_volume_road'])
-            })
-
-            result.append({
-                'unit': 'ft^2',
-                'type': 'variable',
-                'variable_df_key_col_name': 'Rough grading area',
-                'value': float(self.output_dict['rough_grading_area'])
-            })
-
-        for row in self.output_dict['total_road_cost'].itertuples():
-            dashed_row = '{} <--> {} <--> {}'.format(row[1], row[3], math.ceil(row[2]))
-            result.append({
-                'unit': '',
-                'type': 'dataframe',
-                'variable_df_key_col_name': 'Type of Cost <--> Phase of Construction <--> Cost in USD ',
-                'value': dashed_row,
-                'last_number': row[2]
-            })
-
-
+        for row in self.output_dict["total_road_cost"].itertuples():
+            dashed_row = "{} <--> {} <--> {}".format(row[1], row[3], math.ceil(row[2]))
+            result.append(
+                {
+                    "unit": "",
+                    "type": "dataframe",
+                    "variable_df_key_col_name": "Type of Cost <--> Phase of Construction <--> Cost in USD ",
+                    "value": dashed_row,
+                    "last_number": row[2],
+                }
+            )
 
         for _dict in result:
-            _dict['project_id_with_serial'] = self.project_name
-            _dict['module'] = module
+            _dict["project_id_with_serial"] = self.project_name
+            _dict["module"] = module
 
-        self.output_dict['roads_cost_csv'] = result
+        self.output_dict["roads_cost_csv"] = result
         return result
-
 
     def outputs_for_module_type_operation(self, input_dict, output_dict):
         """
@@ -818,24 +918,24 @@ class SitePreparationCost(CostModule):
         """
         result = []
         module = type(self).__name__
-        num_turbines = self.input_dict['num_turbines']
+        num_turbines = self.input_dict["num_turbines"]
 
-        costs_by_module_type_operation = output_dict['total_road_cost']
+        costs_by_module_type_operation = output_dict["total_road_cost"]
         for _, row in costs_by_module_type_operation.iterrows():
             _dict = dict()
             row = row.to_dict()
-            _dict['operation_id'] = row['Phase of construction']
-            _dict['type_of_cost'] = row['Type of cost']
-            _dict['cost'] = row['Cost USD']
+            _dict["operation_id"] = row["Phase of construction"]
+            _dict["type_of_cost"] = row["Type of cost"]
+            _dict["cost"] = row["Cost USD"]
             result.append(_dict)
 
         for _dict in result:
-            _dict['project_id_with_serial'] = self.project_name
-            _dict['module'] = module
-            _dict['total_or_turbine'] = 'total'
-            _dict['num_turbines'] = num_turbines
+            _dict["project_id_with_serial"] = self.project_name
+            _dict["module"] = module
+            _dict["total_or_turbine"] = "total"
+            _dict["num_turbines"] = num_turbines
 
-        output_dict['roads_cost_module_type_operation'] = result
+        output_dict["roads_cost_module_type_operation"] = result
         return result
 
     def run_module(self):
@@ -848,31 +948,34 @@ class SitePreparationCost(CostModule):
             operation_data = self.estimate_construction_time(self.input_dict, self.output_dict)
 
             # pull only global inputs for weather delay from input_dict
-            weather_data_keys = ('wind_shear_exponent',
-                                 'weather_window')
+            weather_data_keys = ("wind_shear_exponent", "weather_window")
 
             # specify roads-specific weather delay inputs
-            self.weather_input_dict = dict([(i, self.input_dict[i]) for i in self.input_dict if i in set(weather_data_keys)])
-            self.weather_input_dict['start_delay_hours'] = 0  # assume zero start for when road construction begins (start at beginning of construction time)
+            self.weather_input_dict = dict(
+                [(i, self.input_dict[i]) for i in self.input_dict if i in set(weather_data_keys)]
+            )
             self.weather_input_dict[
-                'critical_wind_speed_m_per_s'] = self.input_dict['critical_speed_non_erection_wind_delays_m_per_s']
-            self.weather_input_dict[
-                'wind_height_of_interest_m'] = self.input_dict['critical_height_non_erection_wind_delays_m']
+                "start_delay_hours"
+            ] = 0  # assume zero start for when road construction begins (start at beginning of construction time)
+            self.weather_input_dict["critical_wind_speed_m_per_s"] = self.input_dict[
+                "critical_speed_non_erection_wind_delays_m_per_s"
+            ]
+            self.weather_input_dict["wind_height_of_interest_m"] = self.input_dict[
+                "critical_height_non_erection_wind_delays_m"
+            ]
 
             # compute and specify weather delay mission time for roads
-            duration_construction = operation_data['Time construct days'].max(skipna=True)
-            operational_hrs_per_day = self.input_dict['hour_day'][self.input_dict['time_construct']]
+            duration_construction = operation_data["Time construct days"].max(skipna=True)
+            operational_hrs_per_day = self.input_dict["hour_day"][self.input_dict["time_construct"]]
             mission_time_hrs = duration_construction * operational_hrs_per_day
-            self.weather_input_dict['mission_time_hours'] = mission_time_hrs
+            self.weather_input_dict["mission_time_hours"] = mission_time_hrs
 
             self.calculate_weather_delay(self.weather_input_dict, self.output_dict)
             self.calculate_costs(self.input_dict, self.output_dict)
             self.outputs_for_detailed_tab(self.input_dict, self.output_dict)
             # self.outputs_for_module_type_operation(self.input_dict, self.output_dict)
-            self.output_dict['siteprep_module_type_operation'] = self.outputs_for_costs_by_module_type_operation(
-                input_df=self.output_dict['total_road_cost'],
-                project_id=self.project_name,
-                total_or_turbine=True
+            self.output_dict["siteprep_module_type_operation"] = self.outputs_for_costs_by_module_type_operation(
+                input_df=self.output_dict["total_road_cost"], project_id=self.project_name, total_or_turbine=True
             )
             return 0, 0  # module ran successfully
         except Exception as error:

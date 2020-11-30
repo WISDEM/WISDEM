@@ -3,6 +3,7 @@ import traceback
 import pytest
 import traceback
 
+
 class ManagementCost:
     """
     This class models management costs of a wind plant. Its inputs are
@@ -94,7 +95,7 @@ class ManagementCost:
         output_dict : dict
             Dictionary with output key / value pairs.
         """
-        self.in_distributed_mode = 'override_total_management_cost' in input_dict
+        self.in_distributed_mode = "override_total_management_cost" in input_dict
         self.validate_inputs(input_dict)
         self.input_dict = input_dict
         self.output_dict = output_dict
@@ -119,24 +120,24 @@ class ManagementCost:
         """
         if not self.in_distributed_mode:
             required_keys = {
-                'project_value_usd',
-                'foundation_cost_usd',
-                'construct_duration',
-                'num_hwy_permits',
-                'num_turbines',
-                'project_size_megawatts',
-                'hub_height_meters',
-                'num_access_roads',
-                'markup_contingency',
-                'markup_warranty_management',
-                'markup_sales_and_use_tax',
-                'markup_overhead',
-                'markup_profit_margin',
-                'site_facility_building_area_df'
+                "project_value_usd",
+                "foundation_cost_usd",
+                "construct_duration",
+                "num_hwy_permits",
+                "num_turbines",
+                "project_size_megawatts",
+                "hub_height_meters",
+                "num_access_roads",
+                "markup_contingency",
+                "markup_warranty_management",
+                "markup_sales_and_use_tax",
+                "markup_overhead",
+                "markup_profit_margin",
+                "site_facility_building_area_df",
             }
             found_keys = set(input_dict.keys())
             if len(required_keys - found_keys) > 0:
-                err_msg = '{}: did not find all required keys in inputs dictionary. Missing keys are {}'
+                err_msg = "{}: did not find all required keys in inputs dictionary. Missing keys are {}"
                 raise ValueError(err_msg.format(type(self).__name__, required_keys - found_keys))
 
     def insurance(self):
@@ -165,7 +166,7 @@ class ManagementCost:
         float
             Insurance costs in USD
         """
-        insurance_cost = 0.0056 * self.input_dict['project_value_usd']
+        insurance_cost = 0.0056 * self.input_dict["project_value_usd"]
         return insurance_cost
 
     def construction_permitting(self):
@@ -178,8 +179,8 @@ class ManagementCost:
         float
             Construction permitting cost in USD
         """
-        building_permits = 0.02 * self.input_dict['foundation_cost_usd']
-        highway_permits = 20000 * self.input_dict['num_hwy_permits']
+        building_permits = 0.02 * self.input_dict["foundation_cost_usd"]
+        highway_permits = 20000 * self.input_dict["num_hwy_permits"]
         construction_permitting_cost = building_permits + highway_permits
         return construction_permitting_cost
 
@@ -193,7 +194,7 @@ class ManagementCost:
             Bonding cost in USD
         """
         # Calculate bonding costs based on project size
-        performance_bond_cost = 0.01 * self.input_dict['project_value_usd']
+        performance_bond_cost = 0.01 * self.input_dict["project_value_usd"]
         return performance_bond_cost
 
     def project_management(self):
@@ -229,12 +230,14 @@ class ManagementCost:
             Project management cost
         """
         # todo: add relationship to site-specific interface with public infrastructure
-        if self.output_dict['actual_construction_months'] < 28:
-            project_management_cost = (53.333 * self.output_dict['actual_construction_months'] ** 2 -
-                                       3442 * self.output_dict['actual_construction_months'] +
-                                       209542) * (self.output_dict['actual_construction_months'] + 2)
+        if self.output_dict["actual_construction_months"] < 28:
+            project_management_cost = (
+                53.333 * self.output_dict["actual_construction_months"] ** 2
+                - 3442 * self.output_dict["actual_construction_months"]
+                + 209542
+            ) * (self.output_dict["actual_construction_months"] + 2)
         else:
-            project_management_cost = (self.output_dict['actual_construction_months'] + 2) * 155000
+            project_management_cost = (self.output_dict["actual_construction_months"] + 2) * 155000
         return project_management_cost
 
     def markup_contingency(self):
@@ -257,11 +260,13 @@ class ManagementCost:
             Mark up and contingency costs.
         """
         # Calculate mark-up and contingency costs based on project value
-        markup_contingency_cost = (self.input_dict['markup_contingency']
-                                   + self.input_dict['markup_warranty_management']
-                                   + self.input_dict['markup_sales_and_use_tax']
-                                   + self.input_dict['markup_overhead']
-                                   + self.input_dict['markup_profit_margin']) * self.input_dict['project_value_usd']
+        markup_contingency_cost = (
+            self.input_dict["markup_contingency"]
+            + self.input_dict["markup_warranty_management"]
+            + self.input_dict["markup_sales_and_use_tax"]
+            + self.input_dict["markup_overhead"]
+            + self.input_dict["markup_profit_margin"]
+        ) * self.input_dict["project_value_usd"]
         return markup_contingency_cost
 
     def engineering_foundations_collection_sys(self):
@@ -275,27 +280,35 @@ class ManagementCost:
             site-specific engineering costs
         """
         # development engineering costs for foundations and collection system
-        if self.input_dict['project_size_megawatts'] < 200:
-            development_engineering_cost = 7188.5 * self.input_dict['num_turbines'] + round(3.4893 * math.log(self.input_dict['num_turbines']) - 7.3049, 0) * 16800 + 165675
+        if self.input_dict["project_size_megawatts"] < 200:
+            development_engineering_cost = (
+                7188.5 * self.input_dict["num_turbines"]
+                + round(3.4893 * math.log(self.input_dict["num_turbines"]) - 7.3049, 0) * 16800
+                + 165675
+            )
         else:
-            development_engineering_cost = 7188.5 * self.input_dict['num_turbines'] + round(3.4893 * math.log(self.input_dict['num_turbines']) - 7.3049, 0) * 16800 + 327250
+            development_engineering_cost = (
+                7188.5 * self.input_dict["num_turbines"]
+                + round(3.4893 * math.log(self.input_dict["num_turbines"]) - 7.3049, 0) * 16800
+                + 327250
+            )
 
         # engineering costs for met masts
         # TODO: Projects less than 30 MW for met masts
-        if 30 <= self.input_dict['project_size_megawatts'] <= 100:
+        if 30 <= self.input_dict["project_size_megawatts"] <= 100:
             num_perm_met_mast = 2
             num_temp_met_mast = 2
-        elif 100 < self.input_dict['project_size_megawatts'] <= 300:
+        elif 100 < self.input_dict["project_size_megawatts"] <= 300:
             num_perm_met_mast = 2
             num_temp_met_mast = 4
-        elif self.input_dict['project_size_megawatts'] > 300:
-            num_perm_met_mast = round(self.input_dict['project_size_megawatts'] / 100)
-            num_temp_met_mast = round(self.input_dict['project_size_megawatts'] / 100) * 2
+        elif self.input_dict["project_size_megawatts"] > 300:
+            num_perm_met_mast = round(self.input_dict["project_size_megawatts"] / 100)
+            num_temp_met_mast = round(self.input_dict["project_size_megawatts"] / 100) * 2
         else:
             num_perm_met_mast = 1
             num_temp_met_mast = 1
 
-        if self.input_dict['hub_height_meters'] < 90:
+        if self.input_dict["hub_height_meters"] < 90:
             multiplier_perm = 232600
             multiplier_temp = 92600
         else:
@@ -366,16 +379,16 @@ class ManagementCost:
         float
             Building area in square feet
         """
-        df = self.input_dict['site_facility_building_area_df']
-        project_size_megawatts = self.input_dict['project_size_megawatts']
-        row = df[(df['Size Max (MW)'] > project_size_megawatts) & (df['Size Min (MW)'] <= project_size_megawatts)]
-        building_area_sq_ft = float(row['Building area (sq. ft.)'])
+        df = self.input_dict["site_facility_building_area_df"]
+        project_size_megawatts = self.input_dict["project_size_megawatts"]
+        row = df[(df["Size Max (MW)"] > project_size_megawatts) & (df["Size Min (MW)"] <= project_size_megawatts)]
+        building_area_sq_ft = float(row["Building area (sq. ft.)"])
 
         construction_building_cost = building_area_sq_ft * 125 + 176125
 
-        ps = self.input_dict['project_size_megawatts']
-        ct = self.output_dict['actual_construction_months']
-        nt = self.input_dict['num_turbines']
+        ps = self.input_dict["project_size_megawatts"]
+        ct = self.output_dict["actual_construction_months"]
+        nt = self.input_dict["num_turbines"]
         if nt < 30:
             nr = 1
             acs = 30000
@@ -389,7 +402,6 @@ class ManagementCost:
 
         site_facility_cost = construction_building_cost + compound_security_cost
         return site_facility_cost
-
 
     def total_management_cost(self):
         """
@@ -406,13 +418,13 @@ class ManagementCost:
             other methods.
         """
         total = 0
-        total += self.output_dict['insurance_usd']
-        total += self.output_dict['construction_permitting_usd']
-        total += self.output_dict['bonding_usd']
-        total += self.output_dict['project_management_usd']
-        total += self.output_dict['markup_contingency_usd']
-        total += self.output_dict['engineering_usd']
-        total += self.output_dict['site_facility_usd']
+        total += self.output_dict["insurance_usd"]
+        total += self.output_dict["construction_permitting_usd"]
+        total += self.output_dict["bonding_usd"]
+        total += self.output_dict["project_management_usd"]
+        total += self.output_dict["markup_contingency_usd"]
+        total += self.output_dict["engineering_usd"]
+        total += self.output_dict["site_facility_usd"]
         return total
 
     def outputs_for_detailed_tab(self):
@@ -430,34 +442,34 @@ class ManagementCost:
         result = []
         if self.in_distributed_mode:
             row = {
-                'project_id_with_serial': self.project_name,
-                'module': type(self).__name__,
-                'type': 'variable',
-                'variable_df_key_col_name': 'total_management_cost',
-                'unit': 'usd',
-                'value': self.output_dict['total_management_cost']
+                "project_id_with_serial": self.project_name,
+                "module": type(self).__name__,
+                "type": "variable",
+                "variable_df_key_col_name": "total_management_cost",
+                "unit": "usd",
+                "value": self.output_dict["total_management_cost"],
             }
             result.append(row)
         else:
             management_cost_keys = [
-                'insurance_usd',
-                'construction_permitting_usd',
-                'bonding_usd',
-                'project_management_usd',
-                'markup_contingency_usd',
-                'engineering_usd',
-                'site_facility_usd'
+                "insurance_usd",
+                "construction_permitting_usd",
+                "bonding_usd",
+                "project_management_usd",
+                "markup_contingency_usd",
+                "engineering_usd",
+                "site_facility_usd",
             ]
 
             for key in management_cost_keys:
                 value = self.output_dict[key]
                 row = {
-                    'project_id_with_serial': self.project_name,
-                    'module': type(self).__name__,
-                    'type': 'variable',
-                    'variable_df_key_col_name': key,
-                    'unit': 'usd',
-                    'value': value
+                    "project_id_with_serial": self.project_name,
+                    "module": type(self).__name__,
+                    "type": "variable",
+                    "variable_df_key_col_name": key,
+                    "unit": "usd",
+                    "value": value,
                 }
                 result.append(row)
 
@@ -476,57 +488,46 @@ class ManagementCost:
         """
         result = []
         module = type(self).__name__
-        turbine_rating_MW = self.input_dict['turbine_rating_MW']
-        num_turbines = self.input_dict['num_turbines']
+        turbine_rating_MW = self.input_dict["turbine_rating_MW"]
+        num_turbines = self.input_dict["num_turbines"]
         project_size_kw = num_turbines * turbine_rating_MW * 1000
 
         if self.in_distributed_mode:
-            result.append({
-                'type_of_cost': 'total_management_cost',
-                'raw_cost': self.output_dict['total_management_cost']
-            })
+            result.append(
+                {"type_of_cost": "total_management_cost", "raw_cost": self.output_dict["total_management_cost"]}
+            )
 
         else:
-            result.append({
-                'type_of_cost': 'insurance',
-                'raw_cost': self.output_dict['insurance_usd']
-            })
-            result.append({
-                'type_of_cost': 'Construction Permitting',
-                'raw_cost': self.output_dict['construction_permitting_usd']
-            })
-            result.append({
-                'type_of_cost': 'Project Management',
-                'raw_cost': self.output_dict['project_management_usd']
-            })
-            result.append({
-                'type_of_cost': 'Bonding',
-                'raw_cost': self.output_dict['bonding_usd']
-            })
-            result.append({
-                'type_of_cost': 'Markup Contingency',
-                'raw_cost': self.output_dict['markup_contingency_usd']
-            })
-            result.append({
-                'type_of_cost': 'Engineering Foundation and Collections System (includes met mast)',
-                'raw_cost': self.output_dict['engineering_usd']
-            })
-            result.append({
-                'type_of_cost': 'Site Facility',
-                'raw_cost': self.output_dict['site_facility_usd']
-            })
+            result.append({"type_of_cost": "insurance", "raw_cost": self.output_dict["insurance_usd"]})
+            result.append(
+                {"type_of_cost": "Construction Permitting", "raw_cost": self.output_dict["construction_permitting_usd"]}
+            )
+            result.append(
+                {"type_of_cost": "Project Management", "raw_cost": self.output_dict["project_management_usd"]}
+            )
+            result.append({"type_of_cost": "Bonding", "raw_cost": self.output_dict["bonding_usd"]})
+            result.append(
+                {"type_of_cost": "Markup Contingency", "raw_cost": self.output_dict["markup_contingency_usd"]}
+            )
+            result.append(
+                {
+                    "type_of_cost": "Engineering Foundation and Collections System (includes met mast)",
+                    "raw_cost": self.output_dict["engineering_usd"],
+                }
+            )
+            result.append({"type_of_cost": "Site Facility", "raw_cost": self.output_dict["site_facility_usd"]})
 
         for _dict in result:
-            _dict['turbine_rating_MW'] = self.input_dict['turbine_rating_MW']
-            _dict['num_turbines'] = self.input_dict['num_turbines']
-            _dict['rotor_diameter_m'] = self.input_dict['rotor_diameter_m']
-            _dict['project_id_with_serial'] = self.project_name
-            _dict['operation_id'] = 'Management'
-            _dict['module'] = module
-            _dict['raw_cost_total_or_per_turbine'] = 'total'
-            _dict['cost_per_turbine'] = _dict['raw_cost'] / num_turbines
-            _dict['cost_per_project'] = _dict['raw_cost']
-            _dict['usd_per_kw_per_project'] = _dict['raw_cost'] / project_size_kw
+            _dict["turbine_rating_MW"] = self.input_dict["turbine_rating_MW"]
+            _dict["num_turbines"] = self.input_dict["num_turbines"]
+            _dict["rotor_diameter_m"] = self.input_dict["rotor_diameter_m"]
+            _dict["project_id_with_serial"] = self.project_name
+            _dict["operation_id"] = "Management"
+            _dict["module"] = module
+            _dict["raw_cost_total_or_per_turbine"] = "total"
+            _dict["cost_per_turbine"] = _dict["raw_cost"] / num_turbines
+            _dict["cost_per_project"] = _dict["raw_cost"]
+            _dict["usd_per_kw_per_project"] = _dict["raw_cost"] / project_size_kw
 
         return result
 
@@ -550,27 +551,27 @@ class ManagementCost:
         """
         try:
             if self.in_distributed_mode:
-                self.output_dict['insurance_usd'] = 0
-                self.output_dict['construction_permitting_usd'] = 0
-                self.output_dict['project_management_usd'] = 0
-                self.output_dict['bonding_usd'] = 0
-                self.output_dict['markup_contingency_usd'] = 0
-                self.output_dict['engineering_usd'] = 0
-                self.output_dict['site_facility_usd'] = 0
-                self.output_dict['total_management_cost'] = self.input_dict['override_total_management_cost']
+                self.output_dict["insurance_usd"] = 0
+                self.output_dict["construction_permitting_usd"] = 0
+                self.output_dict["project_management_usd"] = 0
+                self.output_dict["bonding_usd"] = 0
+                self.output_dict["markup_contingency_usd"] = 0
+                self.output_dict["engineering_usd"] = 0
+                self.output_dict["site_facility_usd"] = 0
+                self.output_dict["total_management_cost"] = self.input_dict["override_total_management_cost"]
 
             else:
-                self.output_dict['insurance_usd'] = self.insurance()
-                self.output_dict['construction_permitting_usd'] = self.construction_permitting()
-                self.output_dict['project_management_usd'] = self.project_management()
-                self.output_dict['bonding_usd'] = self.bonding()
-                self.output_dict['markup_contingency_usd'] = self.markup_contingency()
-                self.output_dict['engineering_usd'] = self.engineering_foundations_collection_sys()
-                self.output_dict['site_facility_usd'] = self.site_facility()
-                self.output_dict['total_management_cost'] = self.total_management_cost()
-            self.output_dict['management_cost_csv'] = self.outputs_for_detailed_tab()
-            self.output_dict['mangement_module_type_operation'] = self.outputs_for_module_type_operation()
-            return 0, 0    # module ran successfully
+                self.output_dict["insurance_usd"] = self.insurance()
+                self.output_dict["construction_permitting_usd"] = self.construction_permitting()
+                self.output_dict["project_management_usd"] = self.project_management()
+                self.output_dict["bonding_usd"] = self.bonding()
+                self.output_dict["markup_contingency_usd"] = self.markup_contingency()
+                self.output_dict["engineering_usd"] = self.engineering_foundations_collection_sys()
+                self.output_dict["site_facility_usd"] = self.site_facility()
+                self.output_dict["total_management_cost"] = self.total_management_cost()
+            self.output_dict["management_cost_csv"] = self.outputs_for_detailed_tab()
+            self.output_dict["mangement_module_type_operation"] = self.outputs_for_module_type_operation()
+            return 0, 0  # module ran successfully
         except Exception as error:
             traceback.print_exc()
             print(f"Fail {self.project_name} ManagementCost")

@@ -1,6 +1,7 @@
 import os
 
 import warnings
+
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
     import pandas as pd
@@ -9,6 +10,7 @@ with warnings.catch_warnings():
 # The library path is where to find the default input data for LandBOSSE.
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
 library_path = os.path.join(ROOT, "library", "landbosse")
+
 
 class OpenMDAODataframeCache:
     """
@@ -73,9 +75,9 @@ class OpenMDAODataframeCache:
             return cls.copy_dataframes(original)
 
         if xlsx_path is None:
-            xlsx_filename = os.path.join(library_path, f'{xlsx_basename}.xlsx')
+            xlsx_filename = os.path.join(library_path, f"{xlsx_basename}.xlsx")
         else:
-            xlsx_filename = os.path.join(xlsx_path, f'{xlsx_basename}.xlsx')
+            xlsx_filename = os.path.join(xlsx_path, f"{xlsx_basename}.xlsx")
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=PendingDeprecationWarning)

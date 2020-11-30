@@ -4,16 +4,17 @@ import copy
 import openmdao.api as om
 import wisdem.commonse.utilities as util
 
-#-------------------------------------------------------------------------
+# -------------------------------------------------------------------------
+
 
 class MainBearing(om.ExplicitComponent):
     """
-    MainBearings class is used to represent the main bearing components of a wind turbine drivetrain. 
-    This is a simple, regression-based sizing tool for the main bearings.  The same function is called once 
-    for configurations with one main bearing or twice for configurations with two.  It handles Compact Aligning 
-    Roller Bearings (CARB), Cylindrical Roller Bearings (CRB), Spherical Roller Bearings (SRB), and 
-    Tapered Roller Bearings (TRB). 
-    
+    MainBearings class is used to represent the main bearing components of a wind turbine drivetrain.
+    This is a simple, regression-based sizing tool for the main bearings.  The same function is called once
+    for configurations with one main bearing or twice for configurations with two.  It handles Compact Aligning
+    Roller Bearings (CARB), Cylindrical Roller Bearings (CRB), Spherical Roller Bearings (SRB), and
+    Tapered Roller Bearings (TRB).
+
     Parameters
     ----------
     bearing_type : string
@@ -22,7 +23,7 @@ class MainBearing(om.ExplicitComponent):
         bearing diameter/facewidth
     D_shaft : float, [m]
         Diameter of LSS shaft at bearing location
-    
+
     Returns
     -------
     mb_max_defl_ang : float, [rad]
@@ -31,81 +32,83 @@ class MainBearing(om.ExplicitComponent):
         overall component mass
     mb_I : numpy array[3], [kg*m**2]
         moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass
-    
-    """
-        
-    def setup(self):
-        self.add_discrete_input('bearing_type', 'CARB')
-        self.add_input('D_bearing', 0.0, units='m')
-        self.add_input('D_shaft', 0.0, units='m')
 
-        self.add_output('mb_max_defl_ang', 0.0, units='rad')
-        self.add_output('mb_mass', 0.0, units='kg')
-        self.add_output('mb_I', np.zeros(3), units='kg*m**2')
-        
+    """
+
+    def setup(self):
+        self.add_discrete_input("bearing_type", "CARB")
+        self.add_input("D_bearing", 0.0, units="m")
+        self.add_input("D_shaft", 0.0, units="m")
+
+        self.add_output("mb_max_defl_ang", 0.0, units="rad")
+        self.add_output("mb_mass", 0.0, units="kg")
+        self.add_output("mb_I", np.zeros(3), units="kg*m**2")
+
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        if type(discrete_inputs['bearing_type']) != type(''): raise ValueError('Bearing type input must be a string')
-        btype = discrete_inputs['bearing_type'].upper()
-        D_shaft = inputs['D_shaft']
-        
+        if type(discrete_inputs["bearing_type"]) != type(""):
+            raise ValueError("Bearing type input must be a string")
+        btype = discrete_inputs["bearing_type"].upper()
+        D_shaft = inputs["D_shaft"]
+
         # assume low load rating for bearing
-        if btype == 'CARB':  # p = Fr, so X=1, Y=0
-            face_width = 0.2663 * D_shaft + .0435
-            mass = 1561.4 * D_shaft**2.6007
+        if btype == "CARB":  # p = Fr, so X=1, Y=0
+            face_width = 0.2663 * D_shaft + 0.0435
+            mass = 1561.4 * D_shaft ** 2.6007
             max_ang = np.deg2rad(0.5)
 
-        elif btype == 'CRB':
+        elif btype == "CRB":
             face_width = 0.1136 * D_shaft
-            mass = 304.19 * D_shaft**1.8885
+            mass = 304.19 * D_shaft ** 1.8885
             max_ang = np.deg2rad(4.0 / 60.0)
 
-        elif btype == 'SRB':
+        elif btype == "SRB":
             face_width = 0.2762 * D_shaft
-            mass = 876.7 * D_shaft**1.7195
+            mass = 876.7 * D_shaft ** 1.7195
             max_ang = 0.078
 
-        #elif btype == 'RB':  # factors depend on ratio Fa/C0, C0 depends on bearing... TODO: add this functionality
+        # elif btype == 'RB':  # factors depend on ratio Fa/C0, C0 depends on bearing... TODO: add this functionality
         #    face_width = 0.0839
         #    mass = 229.47 * D_shaft**1.8036
         #    max_ang = 0.002
 
-        #elif btype == 'TRB':
+        # elif btype == 'TRB':
         #    face_width = 0.0740
         #    mass = 92.863 * D_shaft**.8399
         #    max_ang = np.deg2rad(3.0 / 60.0)
 
-        elif btype == 'TRB':
+        elif btype == "TRB":
             face_width = 0.1499 * D_shaft
-            mass = 543.01 * D_shaft**1.9043
+            mass = 543.01 * D_shaft ** 1.9043
             max_ang = np.deg2rad(3.0 / 60.0)
 
         else:
-            raise ValueError('Bearing type must be CARB / CRB / SRB / TRB')
-            
+            raise ValueError("Bearing type must be CARB / CRB / SRB / TRB")
+
         # add housing weight, but pg 23 of report says factor is 2.92 whereas this is 2.963
-        mass *= (1 + 80.0/27.0)
+        mass *= 1 + 80.0 / 27.0
 
         # Consider the bearings a torus for MoI (https://en.wikipedia.org/wiki/List_of_moments_of_inertia)
-        D_bearing = inputs['D_bearing'] if inputs['D_bearing'] > 0.0 else face_width
-        I0 = 0.25*mass  * (4*(0.5*D_shaft)**2 + 3*(0.5*D_bearing)**2)
-        I1 = 0.125*mass * (4*(0.5*D_shaft)**2 + 5*(0.5*D_bearing)**2)
+        D_bearing = inputs["D_bearing"] if inputs["D_bearing"] > 0.0 else face_width
+        I0 = 0.25 * mass * (4 * (0.5 * D_shaft) ** 2 + 3 * (0.5 * D_bearing) ** 2)
+        I1 = 0.125 * mass * (4 * (0.5 * D_shaft) ** 2 + 5 * (0.5 * D_bearing) ** 2)
         I = np.r_[I0, I1, I1]
-        outputs['mb_mass'] = mass
-        outputs['mb_I'] = I
-        outputs['mb_max_defl_ang'] = max_ang
-        
+        outputs["mb_mass"] = mass
+        outputs["mb_I"] = I
+        outputs["mb_max_defl_ang"] = max_ang
 
-#-------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+
 
 class Brake(om.ExplicitComponent):
     """
-    The brake attaches to the high speed shaft for geared configurations or directly on the 
-    low speed shaft for direct drive configurations.  It is regression based, but also allows 
+    The brake attaches to the high speed shaft for geared configurations or directly on the
+    low speed shaft for direct drive configurations.  It is regression based, but also allows
     for a user override of the total mass value.
 
     Compute brake mass in the form of :math:`mass = k*torque`.
     Value of :math:`k` was updated in 2020 to be 0.00122.
-    
+
     Parameters
     ----------
     rotor_diameter : float, [m]
@@ -122,7 +125,7 @@ class Brake(om.ExplicitComponent):
         Gearbox s-coordinate measured from bedplate
     rho : float, [kg/m**3]
         material density
-    
+
     Returns
     -------
     brake_mass : float, [kg]
@@ -134,52 +137,54 @@ class Brake(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare('direct_drive', default=True)
-       
-    def setup(self):
-        self.add_input('rotor_diameter', 0.0, units='m')
-        self.add_input('rated_torque', 0.0, units='N*m')
-        self.add_input('brake_mass_user', 0.0, units='kg')
-        self.add_input('s_rotor', 0.0, units='m')
-        self.add_input('s_gearbox', 0.0, units='m')
+        self.options.declare("direct_drive", default=True)
 
-        self.add_output('brake_mass', 0.0, units='kg')
-        self.add_output('brake_cm', 0.0, units='m')
-        self.add_output('brake_I', np.zeros(3), units='kg*m**2')
+    def setup(self):
+        self.add_input("rotor_diameter", 0.0, units="m")
+        self.add_input("rated_torque", 0.0, units="N*m")
+        self.add_input("brake_mass_user", 0.0, units="kg")
+        self.add_input("s_rotor", 0.0, units="m")
+        self.add_input("s_gearbox", 0.0, units="m")
+
+        self.add_output("brake_mass", 0.0, units="kg")
+        self.add_output("brake_cm", 0.0, units="m")
+        self.add_output("brake_I", np.zeros(3), units="kg*m**2")
 
     def compute(self, inputs, outputs):
 
         # Unpack inputs
-        D_rotor     = float(inputs['rotor_diameter'])
-        Q_rotor     = float(inputs['rated_torque'])
-        m_brake     = float(inputs['brake_mass_user'])
-        s_rotor     = float(inputs['s_rotor'])
-        s_gearbox   = float(inputs['s_gearbox'])
+        D_rotor = float(inputs["rotor_diameter"])
+        Q_rotor = float(inputs["rated_torque"])
+        m_brake = float(inputs["brake_mass_user"])
+        s_rotor = float(inputs["s_rotor"])
+        s_gearbox = float(inputs["s_gearbox"])
 
         # Regression based sizing derived by J.Keller under FOA 1981 support project
         if m_brake == 0.0:
-            coeff       = 0.00122
-            m_brake     = coeff * Q_rotor
-    
+            coeff = 0.00122
+            m_brake = coeff * Q_rotor
+
         # Assume brake disc diameter and simple MoI
-        D_disc  = 0.01*D_rotor
-        Ib      = np.zeros(3)
-        Ib[0]   = 0.5*m_brake*(0.5*D_disc)**2
-        Ib[1:]  = 0.5*Ib[0]
-        
-        cm = s_rotor if self.options['direct_drive'] else 0.5*(s_rotor + s_gearbox)
-  
-        outputs['brake_mass'] = m_brake
-        outputs['brake_I']    = Ib
-        outputs['brake_cm']   = cm
-        
-#----------------------------------------------------------------------------------------------
+        D_disc = 0.01 * D_rotor
+        Ib = np.zeros(3)
+        Ib[0] = 0.5 * m_brake * (0.5 * D_disc) ** 2
+        Ib[1:] = 0.5 * Ib[0]
+
+        cm = s_rotor if self.options["direct_drive"] else 0.5 * (s_rotor + s_gearbox)
+
+        outputs["brake_mass"] = m_brake
+        outputs["brake_I"] = Ib
+        outputs["brake_cm"] = cm
+
+
+# ----------------------------------------------------------------------------------------------
+
 
 class RPM_Input(om.ExplicitComponent):
     """
-    Generates vector of possible rpm values from min to max. 
+    Generates vector of possible rpm values from min to max.
     The max value is assumed to be the rated rpm value.
-    
+
     Parameters
     ----------
     minimum_rpm : float, [rpm]
@@ -188,41 +193,43 @@ class RPM_Input(om.ExplicitComponent):
         Rated shaft rotations-per-minute (rpm)
     gear_ratio : float
         overall gearbox ratio
-    
+
     Returns
     -------
     shaft_rpm : float, [rpm]
         Vector of possible rpm values
     """
-    
+
     def initialize(self):
-        self.options.declare('n_pc', default=20)
-        
+        self.options.declare("n_pc", default=20)
+
     def setup(self):
-        n_pc = self.options['n_pc']
-        self.add_input('minimum_rpm', val=1.0, units ='rpm')
-        self.add_input('rated_rpm', val=0.0, units ='rpm')
-        self.add_input('gear_ratio', val=1.0)
-        
-        self.add_output('lss_rpm', val=np.zeros(n_pc), units ='rpm')
-        self.add_output('hss_rpm', val=np.zeros(n_pc), units ='rpm')
+        n_pc = self.options["n_pc"]
+        self.add_input("minimum_rpm", val=1.0, units="rpm")
+        self.add_input("rated_rpm", val=0.0, units="rpm")
+        self.add_input("gear_ratio", val=1.0)
+
+        self.add_output("lss_rpm", val=np.zeros(n_pc), units="rpm")
+        self.add_output("hss_rpm", val=np.zeros(n_pc), units="rpm")
 
     def compute(self, inputs, outputs):
-        min_rpm  = np.maximum(0.1, float(inputs['minimum_rpm']))
-        max_rpm  = float(inputs['rated_rpm'])
-        ratio    = float(inputs['gear_ratio'])
-        rpm_full = np.linspace(min_rpm, max_rpm, self.options['n_pc'])
-        outputs['lss_rpm'] = rpm_full
-        outputs['hss_rpm'] = ratio * rpm_full
-#----------------------------------------------------------------------------------------------
-        
+        min_rpm = np.maximum(0.1, float(inputs["minimum_rpm"]))
+        max_rpm = float(inputs["rated_rpm"])
+        ratio = float(inputs["gear_ratio"])
+        rpm_full = np.linspace(min_rpm, max_rpm, self.options["n_pc"])
+        outputs["lss_rpm"] = rpm_full
+        outputs["hss_rpm"] = ratio * rpm_full
+
+
+# ----------------------------------------------------------------------------------------------
+
 
 class GeneratorSimple(om.ExplicitComponent):
     """
-    The Generator class is used to represent the generator of a wind turbine drivetrain 
-    using simple scaling laws.  For a more detailed electromagnetic and structural design, 
+    The Generator class is used to represent the generator of a wind turbine drivetrain
+    using simple scaling laws.  For a more detailed electromagnetic and structural design,
     please see the other generator components.
-    
+
     Parameters
     ----------
     rotor_diameter : float, [m]
@@ -235,7 +242,7 @@ class GeneratorSimple(om.ExplicitComponent):
         Input shaft rotations-per-minute (rpm)
     generator_mass_user : float, [kg]
         User input override of generator mass
-    
+
     Returns
     -------
     R_generator : float, [m]
@@ -249,95 +256,95 @@ class GeneratorSimple(om.ExplicitComponent):
     lss_rpm : numpy array[n_pc], [rpm]
         Low speed shaft rpm values at which the generator efficiency is given
     """
-        
-    def initialize(self):
-        self.options.declare('direct_drive', default=True)
-        self.options.declare('n_pc', default=20)
-        
-    def setup(self):
-        n_pc = self.options['n_pc']
-        
-        # variables
-        self.add_input('rotor_diameter', val=0.0, units='m')
-        self.add_input('machine_rating', val=0.0, units='kW')
-        self.add_input('rated_torque', 0.0, units='N*m')
-        self.add_input('lss_rpm', np.zeros(n_pc), units='rpm')
-        self.add_input('generator_mass_user', 0.0, units='kg')
-        self.add_input('generator_efficiency_user', val=np.zeros((n_pc, 2)) )
 
-        self.add_output('R_generator', val=0.0, units='m')
-        self.add_output('generator_mass', val=0.0, units='kg')
-        self.add_output('stator_mass', val=0.0, units='kg')
-        self.add_output('generator_rotor_mass', val=0.0, units='kg')
-        self.add_output('generator_stator_mass', val=0.0, units='kg')
-        self.add_output('generator_efficiency', val=np.zeros(n_pc) )
-        self.add_output('generator_rotor_I', val=np.zeros(3), units='kg*m**2')
-        self.add_output('generator_stator_I', val=np.zeros(3), units='kg*m**2')
-        self.add_output('generator_I', val=np.zeros(3), units='kg*m**2')
+    def initialize(self):
+        self.options.declare("direct_drive", default=True)
+        self.options.declare("n_pc", default=20)
+
+    def setup(self):
+        n_pc = self.options["n_pc"]
+
+        # variables
+        self.add_input("rotor_diameter", val=0.0, units="m")
+        self.add_input("machine_rating", val=0.0, units="kW")
+        self.add_input("rated_torque", 0.0, units="N*m")
+        self.add_input("lss_rpm", np.zeros(n_pc), units="rpm")
+        self.add_input("generator_mass_user", 0.0, units="kg")
+        self.add_input("generator_efficiency_user", val=np.zeros((n_pc, 2)))
+
+        self.add_output("R_generator", val=0.0, units="m")
+        self.add_output("generator_mass", val=0.0, units="kg")
+        self.add_output("stator_mass", val=0.0, units="kg")
+        self.add_output("generator_rotor_mass", val=0.0, units="kg")
+        self.add_output("generator_stator_mass", val=0.0, units="kg")
+        self.add_output("generator_efficiency", val=np.zeros(n_pc))
+        self.add_output("generator_rotor_I", val=np.zeros(3), units="kg*m**2")
+        self.add_output("generator_stator_I", val=np.zeros(3), units="kg*m**2")
+        self.add_output("generator_I", val=np.zeros(3), units="kg*m**2")
 
     def compute(self, inputs, outputs):
 
         # Unpack inputs
-        rating   = float(inputs['machine_rating'])
-        D_rotor  = float(inputs['rotor_diameter'])
-        Q_rotor  = float(inputs['rated_torque'])
-        mass     = float(inputs['generator_mass_user'])
-        eff_user = inputs['generator_efficiency_user']
+        rating = float(inputs["machine_rating"])
+        D_rotor = float(inputs["rotor_diameter"])
+        Q_rotor = float(inputs["rated_torque"])
+        mass = float(inputs["generator_mass_user"])
+        eff_user = inputs["generator_efficiency_user"]
 
         if mass == 0.0:
-            if self.options['direct_drive']:
+            if self.options["direct_drive"]:
                 massCoeff = 1e-3 * 37.68
                 mass = massCoeff * Q_rotor
             else:
                 massCoeff = np.mean([6.4737, 10.51, 5.34])
-                massExp   = 0.9223
-                mass = (massCoeff * rating ** massExp)
-        outputs['generator_mass'] = mass
-        outputs['generator_rotor_mass'] = outputs['generator_stator_mass'] = 0.5*mass
-        
+                massExp = 0.9223
+                mass = massCoeff * rating ** massExp
+        outputs["generator_mass"] = mass
+        outputs["generator_rotor_mass"] = outputs["generator_stator_mass"] = 0.5 * mass
+
         # calculate mass properties
         length = 1.8 * 0.015 * D_rotor
         R_generator = 0.5 * 0.015 * D_rotor
-        outputs['R_generator'] = R_generator
-        
+        outputs["R_generator"] = R_generator
+
         I = np.zeros(3)
-        I[0] = 0.5*R_generator**2
-        I[1:] = (1./12.)*(3*R_generator**2 + length**2)
-        outputs['generator_I'] = mass*I
-        outputs['generator_rotor_I'] = outputs['generator_stator_I'] = 0.5*mass*I
+        I[0] = 0.5 * R_generator ** 2
+        I[1:] = (1.0 / 12.0) * (3 * R_generator ** 2 + length ** 2)
+        outputs["generator_I"] = mass * I
+        outputs["generator_rotor_I"] = outputs["generator_stator_I"] = 0.5 * mass * I
 
         # Efficiency performance- borrowed and adapted from servose
         # Note: Have to use lss_rpm no matter what here because servose interpolation based on lss shaft rpm
-        rpm_full = inputs['lss_rpm']
+        rpm_full = inputs["lss_rpm"]
         if np.any(eff_user):
-            eff = np.interp(rpm_full, eff_user[:,0], eff_user[:,1])
-            
+            eff = np.interp(rpm_full, eff_user[:, 0], eff_user[:, 1])
+
         else:
-            if self.options['direct_drive']:
-                constant  = 0.01007
-                linear    = 0.02000
+            if self.options["direct_drive"]:
+                constant = 0.01007
+                linear = 0.02000
                 quadratic = 0.06899
             else:
-                constant  = 0.01289
-                linear    = 0.08510
+                constant = 0.01289
+                linear = 0.08510
                 quadratic = 0.0
 
             # Normalize by rated
-            ratio  = rpm_full / rpm_full[-1]
-            eff    = 1.0 - (constant/ratio + linear + quadratic*ratio)
+            ratio = rpm_full / rpm_full[-1]
+            eff = 1.0 - (constant / ratio + linear + quadratic * ratio)
 
         eff = np.maximum(1e-3, eff)
-        outputs['generator_efficiency'] = eff
+        outputs["generator_efficiency"] = eff
 
 
-        
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
+
 
 class Electronics(om.ExplicitComponent):
     """
     Estimate mass of electronics based on rating, rotor diameter, and tower top diameter.
     Empirical only, no load analysis.
-    
+
     Parameters
     ----------
     machine_rating : float, [kW]
@@ -350,7 +357,7 @@ class Electronics(om.ExplicitComponent):
         Override regular regression-based calculation of converter mass with this value
     transformer_mass_user : float, [kg]
         Override regular regression-based calculation of transformer mass with this value
-    
+
     Returns
     -------
     converter_mass : float, [kg]
@@ -365,58 +372,62 @@ class Electronics(om.ExplicitComponent):
         center of mass of the component in [x,y,z] for an arbitrary coordinate system
     transformer_I : numpy array[3], [kg*m**2]
         moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass
-    
-    """
-        
-    def setup(self):
-        self.add_input('machine_rating', 0.0, units='kW')
-        self.add_input('rotor_diameter', 0.0, units='m')
-        self.add_input('D_top', 0.0, units='m')
-        self.add_input('converter_mass_user', 0.0, units='kg')
-        self.add_input('transformer_mass_user', 0.0, units='kg')
 
-        self.add_output('converter_mass', 0.0, units='kg')
-        self.add_output('converter_cm', np.zeros(3), units='m')
-        self.add_output('converter_I', np.zeros(3), units='kg*m**2')
-        self.add_output('transformer_mass', 0.0, units='kg')
-        self.add_output('transformer_cm', np.zeros(3), units='m')
-        self.add_output('transformer_I', np.zeros(3), units='kg*m**2')
-        
+    """
+
+    def setup(self):
+        self.add_input("machine_rating", 0.0, units="kW")
+        self.add_input("rotor_diameter", 0.0, units="m")
+        self.add_input("D_top", 0.0, units="m")
+        self.add_input("converter_mass_user", 0.0, units="kg")
+        self.add_input("transformer_mass_user", 0.0, units="kg")
+
+        self.add_output("converter_mass", 0.0, units="kg")
+        self.add_output("converter_cm", np.zeros(3), units="m")
+        self.add_output("converter_I", np.zeros(3), units="kg*m**2")
+        self.add_output("transformer_mass", 0.0, units="kg")
+        self.add_output("transformer_cm", np.zeros(3), units="m")
+        self.add_output("transformer_I", np.zeros(3), units="kg*m**2")
+
     def compute(self, inputs, outputs):
 
         # Unpack inputs
-        rating      = float(inputs['machine_rating'])
-        D_rotor     = float(inputs['rotor_diameter'])
-        D_top       = float(inputs['D_top'])
-        m_conv_usr  = float(inputs['converter_mass_user'])
-        m_trans_usr = float(inputs['transformer_mass_user'])
+        rating = float(inputs["machine_rating"])
+        D_rotor = float(inputs["rotor_diameter"])
+        D_top = float(inputs["D_top"])
+        m_conv_usr = float(inputs["converter_mass_user"])
+        m_trans_usr = float(inputs["transformer_mass_user"])
 
         # Correlation based trends, assume box
-        m_converter   = m_conv_usr  if m_conv_usr  > 0.0 else 0.77875*rating + 302.6 #coeffs=1e-3*np.mean([740., 817.5]), np.mean([101.37, 503.83])
-        m_transformer = m_trans_usr if m_trans_usr > 0.0 else 1.915*rating + 1910.0
+        m_converter = (
+            m_conv_usr if m_conv_usr > 0.0 else 0.77875 * rating + 302.6
+        )  # coeffs=1e-3*np.mean([740., 817.5]), np.mean([101.37, 503.83])
+        m_transformer = m_trans_usr if m_trans_usr > 0.0 else 1.915 * rating + 1910.0
 
         # CM location, just assume off to the side of the bedplate
-        cm    = np.zeros(3)
-        sides = 0.015*D_rotor
-        cm[1] = 0.5*D_top + 0.5*sides
-        cm[2] = 0.5*sides
-        
+        cm = np.zeros(3)
+        sides = 0.015 * D_rotor
+        cm[1] = 0.5 * D_top + 0.5 * sides
+        cm[2] = 0.5 * sides
+
         # Outputs
-        outputs['converter_mass'] = m_converter
-        outputs['converter_cm'] = cm
-        outputs['converter_I'] = (1./6.)*m_converter*sides**2*np.ones(3)
+        outputs["converter_mass"] = m_converter
+        outputs["converter_cm"] = cm
+        outputs["converter_I"] = (1.0 / 6.0) * m_converter * sides ** 2 * np.ones(3)
 
-        outputs['transformer_mass'] = m_transformer
-        outputs['transformer_cm'] = cm
-        outputs['transformer_I'] = (1./6.)*m_transformer*sides**2*np.ones(3)
+        outputs["transformer_mass"] = m_transformer
+        outputs["transformer_cm"] = cm
+        outputs["transformer_I"] = (1.0 / 6.0) * m_transformer * sides ** 2 * np.ones(3)
 
-#---------------------------------------------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------------------------------------------
+
 
 class YawSystem(om.ExplicitComponent):
     """
     Estimate mass of yaw system based on rotor diameter and tower top diameter.
     Empirical only, no load analysis.
-    
+
     Parameters
     ----------
     rotor_diameter : float, [m]
@@ -425,7 +436,7 @@ class YawSystem(om.ExplicitComponent):
         Tower top outer diameter
     rho : float, [kg/m**3]
         material density
-    
+
     Returns
     -------
     yaw_mass : float, [kg]
@@ -434,47 +445,49 @@ class YawSystem(om.ExplicitComponent):
         center of mass of the component in [x,y,z] for an arbitrary coordinate system
     yaw_I : numpy array[3], [kg*m**2]
         moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass
-    
+
     """
 
     def setup(self):
         # variables
-        self.add_input('rotor_diameter', 0.0, units='m')
-        self.add_input('D_top', 0.0, units='m')
-        self.add_input('rho', 0.0, units='kg/m**3')
+        self.add_input("rotor_diameter", 0.0, units="m")
+        self.add_input("D_top", 0.0, units="m")
+        self.add_input("rho", 0.0, units="kg/m**3")
 
-        self.add_output('yaw_mass', 0.0, units='kg')
-        self.add_output('yaw_cm', np.zeros(3), units='m')
-        self.add_output('yaw_I', np.zeros(3), units='kg*m**2')
+        self.add_output("yaw_mass", 0.0, units="kg")
+        self.add_output("yaw_cm", np.zeros(3), units="m")
+        self.add_output("yaw_I", np.zeros(3), units="kg*m**2")
 
     def compute(self, inputs, outputs):
         # Unpack inputs
-        D_rotor = float(inputs['rotor_diameter'])
-        D_top   = float(inputs['D_top'])
-        rho     = float(inputs['rho'])
+        D_rotor = float(inputs["rotor_diameter"])
+        D_top = float(inputs["D_top"])
+        rho = float(inputs["rho"])
 
         # Estimate the number of yaw motors (borrowed from old DriveSE utilities)
-        n_motors = 2*np.ceil(D_rotor / 30.0) - 2
-  
+        n_motors = 2 * np.ceil(D_rotor / 30.0) - 2
+
         # Assume same yaw motors as Vestas V80 for now: Bonfiglioli 709T2M
         m_motor = 190.0
-  
+
         # Assume friction plate surface width is 1/10 the diameter and thickness scales with rotor diameter
-        m_frictionPlate = rho * np.pi*D_top * (0.1*D_top) * (1e-3*D_rotor)
+        m_frictionPlate = rho * np.pi * D_top * (0.1 * D_top) * (1e-3 * D_rotor)
 
         # Total mass estimate
-        outputs['yaw_mass'] = m_frictionPlate + n_motors*m_motor
-  
-        # Assume cm is at tower top (cm=0,0,0) and mass is non-rotating (I=0,..), so leave at default value of 0s
-        outputs['yaw_cm'] = np.zeros(3)
-        outputs['yaw_I']  = np.zeros(3)
+        outputs["yaw_mass"] = m_frictionPlate + n_motors * m_motor
 
-#---------------------------------------------------------------------------------------------------------------
+        # Assume cm is at tower top (cm=0,0,0) and mass is non-rotating (I=0,..), so leave at default value of 0s
+        outputs["yaw_cm"] = np.zeros(3)
+        outputs["yaw_I"] = np.zeros(3)
+
+
+# ---------------------------------------------------------------------------------------------------------------
+
 
 class MiscNacelleComponents(om.ExplicitComponent):
     """
     Estimate mass properties of miscellaneous other ancillary components in the nacelle.
-    
+
     Parameters
     ----------
     upwind : boolean
@@ -499,7 +512,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         Generator center of mass s-coordinate
     rho_fiberglass : float, [kg/m**3]
         material density of fiberglass
-    
+
     Returns
     -------
     hvac_mass : float, [kg]
@@ -520,92 +533,110 @@ class MiscNacelleComponents(om.ExplicitComponent):
         component center of mass
     cover_I : numpy array[3], [m]
         component mass moments of inertia
-    
+
     """
 
     def initialize(self):
-        self.options.declare('direct_drive', default=True)
-        
-    def setup(self):
-        self.add_discrete_input('upwind', True)
-        self.add_input('machine_rating', 0.0, units='kW')
-        self.add_input('hvac_mass_coeff', 0.025, units='kg/kW/m')
-        self.add_input('H_bedplate', 0.0, units='m')
-        self.add_input('D_top', 0.0, units='m')
-        self.add_input('L_bedplate', 0.0, units='m')
-        self.add_input('R_generator', 0.0, units='m')
-        self.add_input('overhang', 0.0, units='m')
-        self.add_input('generator_cm', 0.0, units='m')
-        self.add_input('rho_fiberglass', 0.0, units='kg/m**3')
-        self.add_input('rho_castiron', 0.0, units='kg/m**3')
+        self.options.declare("direct_drive", default=True)
 
-        self.add_output('hvac_mass', 0.0, units='kg')
-        self.add_output('hvac_cm', 0.0, units='m')
-        self.add_output('hvac_I', np.zeros(3), units='m')
-        self.add_output('platform_mass', 0.0, units='kg')
-        self.add_output('platform_cm', np.zeros(3), units='m')
-        self.add_output('platform_I', np.zeros(3), units='m')
-        self.add_output('cover_mass', 0.0, units='kg')
-        self.add_output('cover_cm', np.zeros(3), units='m')
-        self.add_output('cover_I', np.zeros(3), units='m')
+    def setup(self):
+        self.add_discrete_input("upwind", True)
+        self.add_input("machine_rating", 0.0, units="kW")
+        self.add_input("hvac_mass_coeff", 0.025, units="kg/kW/m")
+        self.add_input("H_bedplate", 0.0, units="m")
+        self.add_input("D_top", 0.0, units="m")
+        self.add_input("L_bedplate", 0.0, units="m")
+        self.add_input("R_generator", 0.0, units="m")
+        self.add_input("overhang", 0.0, units="m")
+        self.add_input("generator_cm", 0.0, units="m")
+        self.add_input("rho_fiberglass", 0.0, units="kg/m**3")
+        self.add_input("rho_castiron", 0.0, units="kg/m**3")
+
+        self.add_output("hvac_mass", 0.0, units="kg")
+        self.add_output("hvac_cm", 0.0, units="m")
+        self.add_output("hvac_I", np.zeros(3), units="m")
+        self.add_output("platform_mass", 0.0, units="kg")
+        self.add_output("platform_cm", np.zeros(3), units="m")
+        self.add_output("platform_I", np.zeros(3), units="m")
+        self.add_output("cover_mass", 0.0, units="kg")
+        self.add_output("cover_cm", np.zeros(3), units="m")
+        self.add_output("cover_I", np.zeros(3), units="m")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs
-        direct      = self.options['direct_drive']
-        upwind      = discrete_inputs['upwind']
-        rating      = float(inputs['machine_rating'])
-        coeff       = float(inputs['hvac_mass_coeff'])
-        H_bedplate  = float(inputs['H_bedplate'])
-        D_top       = float(inputs['D_top'])
-        L_bedplate  = float(inputs['L_bedplate'])
-        R_generator = float(inputs['R_generator'])
-        overhang    = float(inputs['overhang'])
-        s_generator = float(inputs['generator_cm'])
-        rho_fiberglass = float(inputs['rho_fiberglass'])
-        rho_castiron   = float(inputs['rho_castiron'])
+        direct = self.options["direct_drive"]
+        upwind = discrete_inputs["upwind"]
+        rating = float(inputs["machine_rating"])
+        coeff = float(inputs["hvac_mass_coeff"])
+        H_bedplate = float(inputs["H_bedplate"])
+        D_top = float(inputs["D_top"])
+        L_bedplate = float(inputs["L_bedplate"])
+        R_generator = float(inputs["R_generator"])
+        overhang = float(inputs["overhang"])
+        s_generator = float(inputs["generator_cm"])
+        rho_fiberglass = float(inputs["rho_fiberglass"])
+        rho_castiron = float(inputs["rho_castiron"])
 
         # For the nacelle cover, imagine a box from the bedplate to the hub in length and around the generator in width, height, with 10% margin in each dim
-        L_cover  = 1.1 * L_bedplate if direct else 1.1 * (overhang + D_top)
-        W_cover  = 1.1 * 2*R_generator
-        H_cover  = 1.1 * (R_generator + np.maximum(R_generator,H_bedplate))
-        A_cover  = 2*(L_cover*W_cover + L_cover*H_cover + H_cover*W_cover)
-        t_cover  = 0.02
-        m_cover  = A_cover * t_cover * rho_fiberglass
-        cm_cover = np.array([0.5*L_cover-0.5*L_bedplate, 0.0, 0.5*H_cover])
-        I_cover  = m_cover*np.array([H_cover**2 + W_cover**2 - (H_cover-t_cover)**2 - (W_cover-t_cover)**2,
-                                     H_cover**2 + L_cover**2 - (H_cover-t_cover)**2 - (L_cover-t_cover)**2,
-                                     W_cover**2 + L_cover**2 - (W_cover-t_cover)**2 - (L_cover-t_cover)**2]) / 12.
-        if upwind: cm_cover[0] *= -1.0
-        outputs['cover_mass'] = m_cover
-        outputs['cover_cm']   = cm_cover
-        outputs['cover_I' ]   = I_cover
-        
+        L_cover = 1.1 * L_bedplate if direct else 1.1 * (overhang + D_top)
+        W_cover = 1.1 * 2 * R_generator
+        H_cover = 1.1 * (R_generator + np.maximum(R_generator, H_bedplate))
+        A_cover = 2 * (L_cover * W_cover + L_cover * H_cover + H_cover * W_cover)
+        t_cover = 0.02
+        m_cover = A_cover * t_cover * rho_fiberglass
+        cm_cover = np.array([0.5 * L_cover - 0.5 * L_bedplate, 0.0, 0.5 * H_cover])
+        I_cover = (
+            m_cover
+            * np.array(
+                [
+                    H_cover ** 2 + W_cover ** 2 - (H_cover - t_cover) ** 2 - (W_cover - t_cover) ** 2,
+                    H_cover ** 2 + L_cover ** 2 - (H_cover - t_cover) ** 2 - (L_cover - t_cover) ** 2,
+                    W_cover ** 2 + L_cover ** 2 - (W_cover - t_cover) ** 2 - (L_cover - t_cover) ** 2,
+                ]
+            )
+            / 12.0
+        )
+        if upwind:
+            cm_cover[0] *= -1.0
+        outputs["cover_mass"] = m_cover
+        outputs["cover_cm"] = cm_cover
+        outputs["cover_I"] = I_cover
+
         # Regression based estimate on HVAC mass
-        m_hvac       = coeff * rating * 2 * np.pi * (0.75*R_generator)
-        cm_hvac      = s_generator
-        I_hvac       = m_hvac * (0.75*R_generator)**2
-        outputs['hvac_mass'] = m_hvac
-        outputs['hvac_cm']   = cm_hvac
-        outputs['hvac_I' ]   = I_hvac*np.array([1.0, 0.5, 0.5])
+        m_hvac = coeff * rating * 2 * np.pi * (0.75 * R_generator)
+        cm_hvac = s_generator
+        I_hvac = m_hvac * (0.75 * R_generator) ** 2
+        outputs["hvac_mass"] = m_hvac
+        outputs["hvac_cm"] = cm_hvac
+        outputs["hvac_I"] = I_hvac * np.array([1.0, 0.5, 0.5])
 
         # Platforms as a fraction of bedplate mass and bundling it to call it 'platforms'
-        L_platform = 2*D_top if direct else L_cover 
-        W_platform = 2*D_top if direct else W_cover 
+        L_platform = 2 * D_top if direct else L_cover
+        W_platform = 2 * D_top if direct else W_cover
         t_platform = 0.05
         m_platform = L_platform * W_platform * t_platform * rho_castiron
-        I_platform = m_platform * np.array([t_platform**2 + W_platform**2,
-                                            t_platform**2 + L_platform**2,
-                                            W_platform**2 + L_platform**2]) / 12.
-        outputs['platform_mass'] = m_platform
-        outputs['platform_cm']   = np.zeros(3)
-        outputs['platform_I' ]   = I_platform
+        I_platform = (
+            m_platform
+            * np.array(
+                [
+                    t_platform ** 2 + W_platform ** 2,
+                    t_platform ** 2 + L_platform ** 2,
+                    W_platform ** 2 + L_platform ** 2,
+                ]
+            )
+            / 12.0
+        )
+        outputs["platform_mass"] = m_platform
+        outputs["platform_cm"] = np.zeros(3)
+        outputs["platform_I"] = I_platform
 
-#--------------------------------------------
-class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include electronics
+
+# --------------------------------------------
+class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include electronics
     """
     The Nacelle class is used to represent the overall nacelle of a wind turbine.
-    
+
     Parameters
     ----------
     upwind : boolean
@@ -704,7 +735,7 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         component center of mass
     cover_I : numpy array[3], [m]
         component mass moments of inertia
-    
+
     Returns
     -------
     other_mass : float, [kg]
@@ -728,165 +759,187 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
     """
 
     def setup(self):
-        self.add_discrete_input('upwind', True)
-        self.add_discrete_input('uptower', True)
-        self.add_input('tilt', 0.0, units='deg')
-        self.add_input('mb1_mass', 0.0, units='kg')
-        self.add_input('mb1_cm', 0.0, units='m')
-        self.add_input('mb1_I', np.zeros(3), units='kg*m**2')
-        self.add_input('mb2_mass', 0.0, units='kg')
-        self.add_input('mb2_cm', 0.0, units='m')
-        self.add_input('mb2_I', np.zeros(3), units='kg*m**2')
-        self.add_input('gearbox_mass', 0.0, units='kg')
-        self.add_input('gearbox_cm', 0.0, units='m')
-        self.add_input('gearbox_I', np.zeros(3), units='kg*m**2')
-        self.add_input('hss_mass', 0.0, units='kg')
-        self.add_input('hss_cm', 0.0, units='m')
-        self.add_input('hss_I', np.zeros(3), units='kg*m**2')
-        self.add_input('brake_mass', 0.0, units='kg')
-        self.add_input('brake_cm', 0.0, units='m')
-        self.add_input('brake_I', np.zeros(3), units='kg*m**2')
-        self.add_input('generator_mass', 0.0, units='kg')
-        self.add_input('generator_cm', 0.0, units='m')
-        self.add_input('generator_I', np.zeros(3), units='kg*m**2')
-        self.add_input('nose_mass', val=0.0, units='kg')
-        self.add_input('nose_cm', val=0.0, units='m')
-        self.add_input('nose_I', val=np.zeros(3), units='kg*m**2')
-        self.add_input('lss_mass', val=0.0, units='kg')
-        self.add_input('lss_cm', val=0.0, units='m')
-        self.add_input('lss_I', val=np.zeros(3), units='kg*m**2')
-        self.add_input('converter_mass', 0.0, units='kg')
-        self.add_input('converter_cm', np.zeros(3), units='m')
-        self.add_input('converter_I', np.zeros(3), units='kg*m**2')
-        self.add_input('transformer_mass', 0.0, units='kg')
-        self.add_input('transformer_cm', np.zeros(3), units='m')
-        self.add_input('transformer_I', np.zeros(3), units='kg*m**2')
-        self.add_input('yaw_mass', 0.0, units='kg')
-        self.add_input('yaw_cm', np.zeros(3), units='m')
-        self.add_input('yaw_I', np.zeros(3), units='kg*m**2')
-        self.add_input('bedplate_mass', 0.0, units='kg')
-        self.add_input('bedplate_cm', np.zeros(3), units='m')
-        self.add_input('bedplate_I', np.zeros(6), units='kg*m**2')
-        self.add_input('hvac_mass', 0.0, units='kg')
-        self.add_input('hvac_cm', 0.0, units='m')
-        self.add_input('hvac_I', np.zeros(3), units='m')
-        self.add_input('platform_mass', 0.0, units='kg')
-        self.add_input('platform_cm', np.zeros(3), units='m')
-        self.add_input('platform_I', np.zeros(3), units='m')
-        self.add_input('cover_mass', 0.0, units='kg')
-        self.add_input('cover_cm', np.zeros(3), units='m')
-        self.add_input('cover_I', np.zeros(3), units='m')
+        self.add_discrete_input("upwind", True)
+        self.add_discrete_input("uptower", True)
+        self.add_input("tilt", 0.0, units="deg")
+        self.add_input("mb1_mass", 0.0, units="kg")
+        self.add_input("mb1_cm", 0.0, units="m")
+        self.add_input("mb1_I", np.zeros(3), units="kg*m**2")
+        self.add_input("mb2_mass", 0.0, units="kg")
+        self.add_input("mb2_cm", 0.0, units="m")
+        self.add_input("mb2_I", np.zeros(3), units="kg*m**2")
+        self.add_input("gearbox_mass", 0.0, units="kg")
+        self.add_input("gearbox_cm", 0.0, units="m")
+        self.add_input("gearbox_I", np.zeros(3), units="kg*m**2")
+        self.add_input("hss_mass", 0.0, units="kg")
+        self.add_input("hss_cm", 0.0, units="m")
+        self.add_input("hss_I", np.zeros(3), units="kg*m**2")
+        self.add_input("brake_mass", 0.0, units="kg")
+        self.add_input("brake_cm", 0.0, units="m")
+        self.add_input("brake_I", np.zeros(3), units="kg*m**2")
+        self.add_input("generator_mass", 0.0, units="kg")
+        self.add_input("generator_cm", 0.0, units="m")
+        self.add_input("generator_I", np.zeros(3), units="kg*m**2")
+        self.add_input("nose_mass", val=0.0, units="kg")
+        self.add_input("nose_cm", val=0.0, units="m")
+        self.add_input("nose_I", val=np.zeros(3), units="kg*m**2")
+        self.add_input("lss_mass", val=0.0, units="kg")
+        self.add_input("lss_cm", val=0.0, units="m")
+        self.add_input("lss_I", val=np.zeros(3), units="kg*m**2")
+        self.add_input("converter_mass", 0.0, units="kg")
+        self.add_input("converter_cm", np.zeros(3), units="m")
+        self.add_input("converter_I", np.zeros(3), units="kg*m**2")
+        self.add_input("transformer_mass", 0.0, units="kg")
+        self.add_input("transformer_cm", np.zeros(3), units="m")
+        self.add_input("transformer_I", np.zeros(3), units="kg*m**2")
+        self.add_input("yaw_mass", 0.0, units="kg")
+        self.add_input("yaw_cm", np.zeros(3), units="m")
+        self.add_input("yaw_I", np.zeros(3), units="kg*m**2")
+        self.add_input("bedplate_mass", 0.0, units="kg")
+        self.add_input("bedplate_cm", np.zeros(3), units="m")
+        self.add_input("bedplate_I", np.zeros(6), units="kg*m**2")
+        self.add_input("hvac_mass", 0.0, units="kg")
+        self.add_input("hvac_cm", 0.0, units="m")
+        self.add_input("hvac_I", np.zeros(3), units="m")
+        self.add_input("platform_mass", 0.0, units="kg")
+        self.add_input("platform_cm", np.zeros(3), units="m")
+        self.add_input("platform_I", np.zeros(3), units="m")
+        self.add_input("cover_mass", 0.0, units="kg")
+        self.add_input("cover_cm", np.zeros(3), units="m")
+        self.add_input("cover_I", np.zeros(3), units="m")
 
-        self.add_output('other_mass', 0.0, units='kg')
-        self.add_output('mean_bearing_mass', 0.0, units='kg')
-        self.add_output('total_bedplate_mass', 0.0, units='kg')
-        self.add_output('nacelle_mass', 0.0, units='kg')
-        self.add_output('above_yaw_mass', 0.0, units='kg')
-        self.add_output('nacelle_cm',   np.zeros(3), units='m')
-        self.add_output('above_yaw_cm', np.zeros(3), units='m')
-        self.add_output('nacelle_I',    np.zeros(6), units='kg*m**2')
-        self.add_output('above_yaw_I',  np.zeros(6), units='kg*m**2')
+        self.add_output("other_mass", 0.0, units="kg")
+        self.add_output("mean_bearing_mass", 0.0, units="kg")
+        self.add_output("total_bedplate_mass", 0.0, units="kg")
+        self.add_output("nacelle_mass", 0.0, units="kg")
+        self.add_output("above_yaw_mass", 0.0, units="kg")
+        self.add_output("nacelle_cm", np.zeros(3), units="m")
+        self.add_output("above_yaw_cm", np.zeros(3), units="m")
+        self.add_output("nacelle_I", np.zeros(6), units="kg*m**2")
+        self.add_output("above_yaw_I", np.zeros(6), units="kg*m**2")
 
         self._mass_table = None
-        
+
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        Cup  = -1.0 if discrete_inputs['upwind'] else 1.0
-        tilt = float(np.deg2rad(inputs['tilt']))
-        
-        components = ['mb1','mb2','lss','hss','brake','gearbox','generator','hvac',
-                      'nose','bedplate','platform','cover']
-        if discrete_inputs['uptower']: components.extend(['transformer','converter'])
+        Cup = -1.0 if discrete_inputs["upwind"] else 1.0
+        tilt = float(np.deg2rad(inputs["tilt"]))
+
+        components = [
+            "mb1",
+            "mb2",
+            "lss",
+            "hss",
+            "brake",
+            "gearbox",
+            "generator",
+            "hvac",
+            "nose",
+            "bedplate",
+            "platform",
+            "cover",
+        ]
+        if discrete_inputs["uptower"]:
+            components.extend(["transformer", "converter"])
 
         # Mass and CofM summaries first because will need them for I later
         m_nac = 0.0
         cm_nac = np.zeros(3)
         for k in components:
-            m_i  = inputs[k+'_mass']
-            cm_i = inputs[k+'_cm']
+            m_i = inputs[k + "_mass"]
+            cm_i = inputs[k + "_cm"]
 
             # If cm is (x,y,z) then it is already in tower-top c.s.  If it is a scalar, it is in distance from tower and we have to convert
             if len(cm_i) == 1:
-                cm_i = cm_i * np.array([Cup*np.cos(tilt), 0.0, np.sin(tilt)])
-            
-            m_nac  += m_i
-            cm_nac += m_i*cm_i
+                cm_i = cm_i * np.array([Cup * np.cos(tilt), 0.0, np.sin(tilt)])
+
+            m_nac += m_i
+            cm_nac += m_i * cm_i
 
         # Complete CofM calculation
         cm_nac /= m_nac
 
         # Now find total I about nacelle CofM
-        I_nac   = np.zeros(6)
-        m_list  = np.zeros( (len(components)+1,  ) )
-        cm_list = np.zeros( (len(components)+1, 3) )
-        I_list  = np.zeros( (len(components)+1, 6) )
-        for ic,c in enumerate(components):
-            m_i  = inputs[c+'_mass']
-            cm_i = inputs[c+'_cm']
-            I_i  = inputs[c+'_I']
+        I_nac = np.zeros(6)
+        m_list = np.zeros((len(components) + 1,))
+        cm_list = np.zeros((len(components) + 1, 3))
+        I_list = np.zeros((len(components) + 1, 6))
+        for ic, c in enumerate(components):
+            m_i = inputs[c + "_mass"]
+            cm_i = inputs[c + "_cm"]
+            I_i = inputs[c + "_I"]
 
             # Rotate MofI if in hub c.s.
             if len(cm_i) == 1:
-                cm_i = cm_i * np.array([Cup*np.cos(tilt), 0.0, np.sin(tilt)])
-                I_i  = util.rotateI(I_i, -Cup*tilt, axis='y')
+                cm_i = cm_i * np.array([Cup * np.cos(tilt), 0.0, np.sin(tilt)])
+                I_i = util.rotateI(I_i, -Cup * tilt, axis="y")
             else:
-                I_i  = np.r_[I_i, np.zeros(3)]
-                
-            r       = cm_i - cm_nac
-            I_add   = util.assembleI(I_i) + m_i*(np.dot(r, r)*np.eye(3) - np.outer(r, r))
-            I_add   = util.unassembleI(I_add)
-            I_nac  += I_add
+                I_i = np.r_[I_i, np.zeros(3)]
 
-            m_list[ic]    = m_i
-            cm_list[ic,:] = cm_i
-            I_list[ic,:]  = I_add
+            r = cm_i - cm_nac
+            I_add = util.assembleI(I_i) + m_i * (np.dot(r, r) * np.eye(3) - np.outer(r, r))
+            I_add = util.unassembleI(I_add)
+            I_nac += I_add
 
-        outputs['above_yaw_mass'] = copy.copy(m_nac)
-        outputs['above_yaw_cm']   = copy.copy(cm_nac)
-        outputs['above_yaw_I']    = copy.copy(I_nac)
+            m_list[ic] = m_i
+            cm_list[ic, :] = cm_i
+            I_list[ic, :] = I_add
 
-        components.append('yaw')
-        m_nac  += inputs['yaw_mass']
-        cm_nac  = (outputs['above_yaw_mass'] * outputs['above_yaw_cm'] + inputs['yaw_cm'] * inputs['yaw_mass']) / m_nac
-        r       = inputs['yaw_cm'] - cm_nac
-        I_add   = util.assembleI(np.r_[inputs['yaw_I'], np.zeros(3)]) + inputs['yaw_mass']*(np.dot(r, r)*np.eye(3) - np.outer(r, r))
-        I_add   = util.unassembleI(I_add)
-        I_nac  += I_add
+        outputs["above_yaw_mass"] = copy.copy(m_nac)
+        outputs["above_yaw_cm"] = copy.copy(cm_nac)
+        outputs["above_yaw_I"] = copy.copy(I_nac)
+
+        components.append("yaw")
+        m_nac += inputs["yaw_mass"]
+        cm_nac = (outputs["above_yaw_mass"] * outputs["above_yaw_cm"] + inputs["yaw_cm"] * inputs["yaw_mass"]) / m_nac
+        r = inputs["yaw_cm"] - cm_nac
+        I_add = util.assembleI(np.r_[inputs["yaw_I"], np.zeros(3)]) + inputs["yaw_mass"] * (
+            np.dot(r, r) * np.eye(3) - np.outer(r, r)
+        )
+        I_add = util.unassembleI(I_add)
+        I_nac += I_add
 
         # Wrap up nacelle mass table
-        m_list[-1]    = inputs['yaw_mass']
-        cm_list[-1,:] = inputs['yaw_cm']
-        I_list[-1,:]  = I_add
+        m_list[-1] = inputs["yaw_mass"]
+        cm_list[-1, :] = inputs["yaw_cm"]
+        I_list[-1, :] = I_add
         self._mass_table = pd.DataFrame()
-        self._mass_table['Component'] = components
-        self._mass_table['Mass'] = m_list
-        self._mass_table['CoM_x'] = cm_list[:,0]
-        self._mass_table['CoM_y'] = cm_list[:,1]
-        self._mass_table['CoM_z'] = cm_list[:,2]
-        self._mass_table['MoI_xx'] = I_list[:,0]
-        self._mass_table['MoI_yy'] = I_list[:,1]
-        self._mass_table['MoI_zz'] = I_list[:,2]
-        self._mass_table['MoI_xy'] = I_list[:,3]
-        self._mass_table['MoI_xz'] = I_list[:,4]
-        self._mass_table['MoI_yz'] = I_list[:,5]
-        self._mass_table.set_index('Component')
-        self._mass_table.loc['Total'] = self._mass_table.sum()
-        
-        outputs['nacelle_mass'] = m_nac
-        outputs['nacelle_cm']   = cm_nac
-        outputs['nacelle_I']    = I_nac
-        outputs['other_mass']   = (inputs['hvac_mass'] + inputs['platform_mass'] + inputs['cover_mass'] + 
-                                   inputs['yaw_mass'] + inputs['converter_mass'] + inputs['transformer_mass'])
-        outputs['mean_bearing_mass'] = 0.5*(inputs['mb1_mass'] + inputs['mb2_mass'])
-        outputs['total_bedplate_mass'] = inputs['nose_mass'] + inputs['bedplate_mass']
+        self._mass_table["Component"] = components
+        self._mass_table["Mass"] = m_list
+        self._mass_table["CoM_x"] = cm_list[:, 0]
+        self._mass_table["CoM_y"] = cm_list[:, 1]
+        self._mass_table["CoM_z"] = cm_list[:, 2]
+        self._mass_table["MoI_xx"] = I_list[:, 0]
+        self._mass_table["MoI_yy"] = I_list[:, 1]
+        self._mass_table["MoI_zz"] = I_list[:, 2]
+        self._mass_table["MoI_xy"] = I_list[:, 3]
+        self._mass_table["MoI_xz"] = I_list[:, 4]
+        self._mass_table["MoI_yz"] = I_list[:, 5]
+        self._mass_table.set_index("Component")
+        self._mass_table.loc["Total"] = self._mass_table.sum()
 
-#--------------------------------------------
+        outputs["nacelle_mass"] = m_nac
+        outputs["nacelle_cm"] = cm_nac
+        outputs["nacelle_I"] = I_nac
+        outputs["other_mass"] = (
+            inputs["hvac_mass"]
+            + inputs["platform_mass"]
+            + inputs["cover_mass"]
+            + inputs["yaw_mass"]
+            + inputs["converter_mass"]
+            + inputs["transformer_mass"]
+        )
+        outputs["mean_bearing_mass"] = 0.5 * (inputs["mb1_mass"] + inputs["mb2_mass"])
+        outputs["total_bedplate_mass"] = inputs["nose_mass"] + inputs["bedplate_mass"]
+
+
+# --------------------------------------------
 
 
 class RNA_Adder(om.ExplicitComponent):
     """
     Compute mass and moments of inertia for RNA system.
-    
+
     Parameters
     ----------
     upwind : boolean
@@ -911,7 +964,7 @@ class RNA_Adder(om.ExplicitComponent):
         Mass moments of inertia of hub system about its CofM
     nacelle_I : numpy array[6], [kg*m**2]
         Mass moments of inertia of nacelle about its CofM
-    
+
     Returns
     -------
     rotor_mass : float, [kg]
@@ -923,55 +976,57 @@ class RNA_Adder(om.ExplicitComponent):
     rna_I_TT : numpy array[6], [kg*m**2]
         Mass moments of inertia of RNA about tower top in yaw-aligned coordinate system
     """
-    
+
     def setup(self):
 
-        self.add_discrete_input('upwind', True)
-        self.add_input('tilt', 0.0, units='deg')
-        self.add_input('L_drive', 0.0, units='m')
-        self.add_input('blades_mass', 0.0, units='kg')
-        self.add_input('hub_system_mass', 0.0, units='kg')
-        self.add_input('nacelle_mass', 0.0, units='kg')
-        self.add_input('hub_system_cm', 0.0, units='m')
-        self.add_input('nacelle_cm', np.zeros(3), units='m')
-        self.add_input('blades_I', np.zeros(6), units='kg*m**2')
-        self.add_input('hub_system_I', np.zeros(6), units='kg*m**2')
-        self.add_input('nacelle_I', np.zeros(6), units='kg*m**2')
+        self.add_discrete_input("upwind", True)
+        self.add_input("tilt", 0.0, units="deg")
+        self.add_input("L_drive", 0.0, units="m")
+        self.add_input("blades_mass", 0.0, units="kg")
+        self.add_input("hub_system_mass", 0.0, units="kg")
+        self.add_input("nacelle_mass", 0.0, units="kg")
+        self.add_input("hub_system_cm", 0.0, units="m")
+        self.add_input("nacelle_cm", np.zeros(3), units="m")
+        self.add_input("blades_I", np.zeros(6), units="kg*m**2")
+        self.add_input("hub_system_I", np.zeros(6), units="kg*m**2")
+        self.add_input("nacelle_I", np.zeros(6), units="kg*m**2")
 
-        self.add_output('rotor_mass', 0.0, units='kg')
-        self.add_output('rna_mass', 0.0, units='kg')
-        self.add_output('rna_cm', np.zeros(3), units='m')
-        self.add_output('rna_I_TT', np.zeros(6), units='kg*m**2')
+        self.add_output("rotor_mass", 0.0, units="kg")
+        self.add_output("rna_mass", 0.0, units="kg")
+        self.add_output("rna_cm", np.zeros(3), units="m")
+        self.add_output("rna_I_TT", np.zeros(6), units="kg*m**2")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        Cup  = -1.0 if discrete_inputs['upwind'] else 1.0
-        tilt = float(np.deg2rad(inputs['tilt']))
-        
-        rotor_mass = inputs['blades_mass'] + inputs['hub_system_mass']
-        nac_mass   = inputs['nacelle_mass']
-        
+        Cup = -1.0 if discrete_inputs["upwind"] else 1.0
+        tilt = float(np.deg2rad(inputs["tilt"]))
+
+        rotor_mass = inputs["blades_mass"] + inputs["hub_system_mass"]
+        nac_mass = inputs["nacelle_mass"]
+
         # rna mass
-        outputs['rotor_mass'] = rotor_mass
-        outputs['rna_mass']   = rotor_mass + nac_mass
+        outputs["rotor_mass"] = rotor_mass
+        outputs["rna_mass"] = rotor_mass + nac_mass
 
         # rna cm
-        hub_cm  = inputs['hub_system_cm']
-        L_drive = inputs['L_drive']
-        hub_cm  = (L_drive+hub_cm) * np.array([Cup*np.cos(tilt), 0.0, np.sin(tilt)])
-        outputs['rna_cm'] = (rotor_mass*hub_cm + nac_mass*inputs['nacelle_cm']) / outputs['rna_mass']
+        hub_cm = inputs["hub_system_cm"]
+        L_drive = inputs["L_drive"]
+        hub_cm = (L_drive + hub_cm) * np.array([Cup * np.cos(tilt), 0.0, np.sin(tilt)])
+        outputs["rna_cm"] = (rotor_mass * hub_cm + nac_mass * inputs["nacelle_cm"]) / outputs["rna_mass"]
 
         # rna I
-        hub_I    = util.assembleI( util.rotateI(inputs['hub_system_I'], -Cup*tilt, axis='y') )
-        blades_I = util.assembleI(inputs['blades_I'])
-        nac_I    = util.assembleI(inputs['nacelle_I'])
-        rotor_I  = blades_I + hub_I
+        hub_I = util.assembleI(util.rotateI(inputs["hub_system_I"], -Cup * tilt, axis="y"))
+        blades_I = util.assembleI(inputs["blades_I"])
+        nac_I = util.assembleI(inputs["nacelle_I"])
+        rotor_I = blades_I + hub_I
 
         R = hub_cm
-        rotor_I_TT = rotor_I + rotor_mass*(np.dot(R, R)*np.eye(3) - np.outer(R, R))
+        rotor_I_TT = rotor_I + rotor_mass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
 
-        R = inputs['nacelle_cm']
-        nac_I_TT = nac_I + nac_mass*(np.dot(R, R)*np.eye(3) - np.outer(R, R))
+        R = inputs["nacelle_cm"]
+        nac_I_TT = nac_I + nac_mass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
 
-        outputs['rna_I_TT'] = util.unassembleI(rotor_I_TT + nac_I_TT)
-#--------------------------------------------
+        outputs["rna_I_TT"] = util.unassembleI(rotor_I_TT + nac_I_TT)
+
+
+# --------------------------------------------

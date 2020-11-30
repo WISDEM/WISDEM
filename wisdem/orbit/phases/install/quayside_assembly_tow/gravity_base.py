@@ -120,9 +120,7 @@ class GravityBasedInstallation(InstallPhase):
 
         self.sub_assembly_lines = []
         for i in range(lines):
-            a = SubstructureAssemblyLine(
-                to_assemble, time, self.wet_storage, i + 1
-            )
+            a = SubstructureAssemblyLine(to_assemble, time, self.wet_storage, i + 1)
 
             self.env.register(a)
             a.start()
@@ -153,9 +151,7 @@ class GravityBasedInstallation(InstallPhase):
         turbine = self.config["turbine"]
         self.turbine_assembly_lines = []
         for i in range(lines):
-            a = TurbineAssemblyLine(
-                self.wet_storage, self.assembly_storage, turbine, i + 1
-            )
+            a = TurbineAssemblyLine(self.wet_storage, self.assembly_storage, turbine, i + 1)
 
             self.env.register(a)
             a.start()
@@ -213,9 +209,7 @@ class GravityBasedInstallation(InstallPhase):
         vessel.initialize(mobilize=False)
         self.support_vessel = vessel
 
-        station_keeping_vessels = self.config["towing_vessel_groups"][
-            "station_keeping_vessels"
-        ]
+        station_keeping_vessels = self.config["towing_vessel_groups"]["station_keeping_vessels"]
 
         install_gravity_base_foundations(
             self.support_vessel,
@@ -232,21 +226,10 @@ class GravityBasedInstallation(InstallPhase):
 
         return {
             "operational_delays": {
-                **{
-                    k: self.operational_delay(str(k))
-                    for k in self.sub_assembly_lines
-                },
-                **{
-                    k: self.operational_delay(str(k))
-                    for k in self.turbine_assembly_lines
-                },
-                **{
-                    k: self.operational_delay(str(k))
-                    for k in self.installation_groups
-                },
-                self.support_vessel: self.operational_delay(
-                    str(self.support_vessel)
-                ),
+                **{k: self.operational_delay(str(k)) for k in self.sub_assembly_lines},
+                **{k: self.operational_delay(str(k)) for k in self.turbine_assembly_lines},
+                **{k: self.operational_delay(str(k)) for k in self.installation_groups},
+                self.support_vessel: self.operational_delay(str(self.support_vessel)),
             }
         }
 
@@ -260,9 +243,7 @@ class GravityBasedInstallation(InstallPhase):
 
 
 @process
-def transfer_gbf_substructures_from_storage(
-    group, feed, distance, queue, towing_vessels, towing_speed, **kwargs
-):
+def transfer_gbf_substructures_from_storage(group, feed, distance, queue, towing_vessels, towing_speed, **kwargs):
     """
     Process logic for the towing vessel group.
 
@@ -290,13 +271,9 @@ def transfer_gbf_substructures_from_storage(
         delay = group.env.now - start
 
         if delay > 0:
-            group.submit_action_log(
-                "Delay: No Completed Assemblies Available", delay
-            )
+            group.submit_action_log("Delay: No Completed Assemblies Available", delay)
 
-        yield group.group_task(
-            "Tow Substructure", towing_time, num_vessels=towing_vessels
-        )
+        yield group.group_task("Tow Substructure", towing_time, num_vessels=towing_vessels)
 
         # At Site
         with queue.request() as req:
@@ -319,15 +296,11 @@ def transfer_gbf_substructures_from_storage(
             queue.vessel = None
             queue.activate = group.env.event()
 
-        yield group.group_task(
-            "Transit", transit_time, num_vessels=towing_vessels
-        )
+        yield group.group_task("Transit", transit_time, num_vessels=towing_vessels)
 
 
 @process
-def install_gravity_base_foundations(
-    vessel, queue, distance, substructures, station_keeping_vessels, **kwargs
-):
+def install_gravity_base_foundations(vessel, queue, distance, substructures, station_keeping_vessels, **kwargs):
     """
     Logic that a Multi-Purpose Support Vessel uses at site to complete the
     installation of gravity based foundations.

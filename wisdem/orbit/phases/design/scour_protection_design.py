@@ -110,13 +110,9 @@ class ScourProtectionDesign(DesignPhase):
 
         r = self.diameter / 2 + self.scour_depth / np.tan(np.radians(self.phi))
 
-        volume = (
-            np.pi * self.protection_depth * (r ** 2 - (self.diameter / 2) ** 2)
-        )
+        volume = np.pi * self.protection_depth * (r ** 2 - (self.diameter / 2) ** 2)
 
-        self.scour_protection_tonnes = ceil(
-            self.rock_density * volume / 1000.0
-        )
+        self.scour_protection_tonnes = ceil(self.rock_density * volume / 1000.0)
 
     def run(self):
         """
@@ -131,11 +127,7 @@ class ScourProtectionDesign(DesignPhase):
         Returns the total cost of the phase in $USD
         """
 
-        cost = (
-            self._design["cost_per_tonne"]
-            * self.scour_protection_tonnes
-            * self.num_turbines
-        )
+        cost = self._design["cost_per_tonne"] * self.scour_protection_tonnes * self.num_turbines
         return cost
 
     @property
@@ -152,9 +144,7 @@ class ScourProtectionDesign(DesignPhase):
         Returns detailed outputs of the design.
         """
 
-        _out = {
-            "scour_protection_per_substructure": self.scour_protection_tonnes
-        }
+        _out = {"scour_protection_per_substructure": self.scour_protection_tonnes}
         return _out
 
     @property
@@ -170,9 +160,5 @@ class ScourProtectionDesign(DesignPhase):
                 - ``tonnes_per_substructure`` : `int`
         """
 
-        output = {
-            "scour_protection": {
-                "tons_per_substructure": self.scour_protection_tonnes
-            }
-        }
+        output = {"scour_protection": {"tons_per_substructure": self.scour_protection_tonnes}}
         return output

@@ -33,9 +33,7 @@ def test_simulation_creation():
     assert sim.tons_per_substructure
 
 
-@pytest.mark.parametrize(
-    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
-)
+@pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
 def test_full_run_logging(weather):
     sim = ScourProtectionInstallation(config, weather=weather)
     sim.run()

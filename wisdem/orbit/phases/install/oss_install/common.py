@@ -72,9 +72,7 @@ def lift_topside(vessel, **kwargs):
     crane_rate = vessel.crane.crane_rate(**kwargs)
     lift_time = lift_height / crane_rate
 
-    yield vessel.task(
-        "Lift Topside", lift_time, constraints=vessel.operational_limits
-    )
+    yield vessel.task("Lift Topside", lift_time, constraints=vessel.operational_limits)
 
 
 @process
@@ -99,9 +97,7 @@ def attach_topside(vessel, **kwargs):
     key = "topside_attach_time"
     attach_time = kwargs.get(key, pt[key])
 
-    yield vessel.task(
-        "Attach Topside", attach_time, constraints=vessel.operational_limits
-    )
+    yield vessel.task("Attach Topside", attach_time, constraints=vessel.operational_limits)
 
 
 @process
@@ -147,10 +143,7 @@ def install_topside(vessel, topside, **kwargs):
 
     else:
         raise Exception(
-            f"Transition piece connection type '{connection}'"
-            "not recognized. Must be 'bolted' or 'grouted'."
+            f"Transition piece connection type '{connection}'" "not recognized. Must be 'bolted' or 'grouted'."
         )
 
-    yield vessel.task(
-        "Jackdown", jackdown_time, constraints=vessel.transit_limits, **kwargs
-    )
+    yield vessel.task("Jackdown", jackdown_time, constraints=vessel.transit_limits, **kwargs)

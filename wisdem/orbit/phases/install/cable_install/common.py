@@ -46,9 +46,7 @@ def load_cable_on_vessel(vessel, cable, constraints={}, **kwargs):
     load_time = kwargs.get(key, pt[key])
 
     vessel.cable_storage.load_cable(cable)
-    yield vessel.task(
-        "Load Cable", load_time, constraints=constraints, **kwargs
-    )
+    yield vessel.task("Load Cable", load_time, constraints=constraints, **kwargs)
 
 
 @process
@@ -87,9 +85,7 @@ def prep_cable(vessel, **kwargs):
     key = "cable_prep_time"
     prep_time = kwargs.get(key, pt[key])
 
-    yield vessel.task(
-        "Prepare Cable", prep_time, constraints=vessel.transit_limits, **kwargs
-    )
+    yield vessel.task("Prepare Cable", prep_time, constraints=vessel.transit_limits, **kwargs)
 
 
 @process
@@ -334,9 +330,7 @@ def tow_plow(vessel, distance, **kwargs):
     plow_speed = kwargs.get(key, pt[key])
     plow_time = distance / plow_speed
 
-    yield vessel.task(
-        "Tow Plow", plow_time, constraints=vessel.operational_limits, **kwargs
-    )
+    yield vessel.task("Tow Plow", plow_time, constraints=vessel.operational_limits, **kwargs)
 
 
 @process

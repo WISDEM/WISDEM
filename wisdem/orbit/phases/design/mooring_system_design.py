@@ -96,9 +96,7 @@ class MooringSystemDesign(DesignPhase):
         Returns the mooring line breaking load.
         """
 
-        self.breaking_load = (
-            419449 * (self.line_diam ** 2) + 93415 * self.line_diam - 3577.9
-        )
+        self.breaking_load = 419449 * (self.line_diam ** 2) + 93415 * self.line_diam - 3577.9
 
     def calculate_line_length_mass(self):
         """
@@ -112,9 +110,7 @@ class MooringSystemDesign(DesignPhase):
             fixed = 0
 
         depth = self.config["site"]["depth"]
-        self.line_length = (
-            0.0002 * (depth ** 2) + 1.264 * depth + 47.776 + fixed
-        )
+        self.line_length = 0.0002 * (depth ** 2) + 1.264 * depth + 47.776 + fixed
 
         self.line_mass = self.line_length * self.line_mass_per_m
 
@@ -139,11 +135,7 @@ class MooringSystemDesign(DesignPhase):
         Returns the total cost of the mooring system.
         """
 
-        return (
-            self.num_lines
-            * self.num_turbines
-            * (self.anchor_cost + self.line_length * self.line_cost_rate)
-        )
+        return self.num_lines * self.num_turbines * (self.anchor_cost + self.line_length * self.line_cost_rate)
 
     @property
     def design_result(self):

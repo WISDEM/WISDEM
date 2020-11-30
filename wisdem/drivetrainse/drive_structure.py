@@ -13,21 +13,25 @@ from wisdem.commonse.csystem import DirectionVector
 
 
 RIGID = 1
-FREE  = 0
+FREE = 0
+
 
 def find_nearest(array, value):
-    return (np.abs(array-value)).argmin()
+    return (np.abs(array - value)).argmin()
+
 
 def tube_prop(s, Di, ti):
-    L  = s.max() - s.min()
+    L = s.max() - s.min()
+
     def equal_pts(xi):
         if len(xi) < len(s) and len(xi) == 2:
-            x = np.interp((s-s.min())/L, [0, 1], xi)
+            x = np.interp((s - s.min()) / L, [0, 1], xi)
         elif len(xi) == len(s):
             x = xi
         else:
-            raise ValueError('Unknown grid of input',str(xi))
+            raise ValueError("Unknown grid of input", str(xi))
         return x
+
     D = equal_pts(Di)
     t = equal_pts(ti)
     return Tube(nodal2sectional(D)[0], nodal2sectional(t)[0])
@@ -110,147 +114,149 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare('n_dlcs')
-        self.options.declare('direct_drive', default=True)
-        self.options.declare('modeling_options')
+        self.options.declare("n_dlcs")
+        self.options.declare("direct_drive", default=True)
+        self.options.declare("modeling_options")
 
     def setup(self):
-        n_dlcs   = self.options['n_dlcs']
+        n_dlcs = self.options["n_dlcs"]
 
-        self.add_discrete_input('upwind', True)
-        self.add_input('tilt', 0.0, units='deg')
-        self.add_input('s_lss', val=np.zeros(5), units='m')
-        self.add_input('lss_diameter', val=np.zeros(2), units='m')
-        self.add_input('lss_wall_thickness', val=np.zeros(2), units='m')
-        self.add_input('hub_system_mass', 0.0, units='kg')
-        self.add_input('hub_system_cm', 0.0, units='m')
-        self.add_input('hub_system_I', np.zeros(6), units='kg*m**2')
-        self.add_input('F_hub', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_input('M_hub', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_input('s_mb1', val=0.0, units='m')
-        self.add_input('s_mb2', val=0.0, units='m')
-        self.add_input('s_rotor', val=0.0, units='m')
-        self.add_input('generator_rotor_mass', val=0.0, units='kg')
-        self.add_input('generator_rotor_I', val=np.zeros(3), units='kg*m**2')
-        self.add_input('gearbox_mass', val=0.0, units='kg')
-        self.add_input('gearbox_I', val=np.zeros(3), units='kg*m**2')
-        self.add_input('brake_mass', val=0.0, units='kg')
-        self.add_input('brake_I', val=np.zeros(3), units='kg*m**2')
-        self.add_input('carrier_mass', val=0.0, units='kg')
-        self.add_input('carrier_I', val=np.zeros(3), units='kg*m**2')
-        self.add_input('lss_E', val=0.0, units='Pa')
-        self.add_input('lss_G', val=0.0, units='Pa')
-        self.add_input('lss_rho', val=0.0, units='kg/m**3')
-        self.add_input('lss_Xy', val=0.0, units='Pa')
+        self.add_discrete_input("upwind", True)
+        self.add_input("tilt", 0.0, units="deg")
+        self.add_input("s_lss", val=np.zeros(5), units="m")
+        self.add_input("lss_diameter", val=np.zeros(2), units="m")
+        self.add_input("lss_wall_thickness", val=np.zeros(2), units="m")
+        self.add_input("hub_system_mass", 0.0, units="kg")
+        self.add_input("hub_system_cm", 0.0, units="m")
+        self.add_input("hub_system_I", np.zeros(6), units="kg*m**2")
+        self.add_input("F_hub", val=np.zeros((3, n_dlcs)), units="N")
+        self.add_input("M_hub", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_input("s_mb1", val=0.0, units="m")
+        self.add_input("s_mb2", val=0.0, units="m")
+        self.add_input("s_rotor", val=0.0, units="m")
+        self.add_input("generator_rotor_mass", val=0.0, units="kg")
+        self.add_input("generator_rotor_I", val=np.zeros(3), units="kg*m**2")
+        self.add_input("gearbox_mass", val=0.0, units="kg")
+        self.add_input("gearbox_I", val=np.zeros(3), units="kg*m**2")
+        self.add_input("brake_mass", val=0.0, units="kg")
+        self.add_input("brake_I", val=np.zeros(3), units="kg*m**2")
+        self.add_input("carrier_mass", val=0.0, units="kg")
+        self.add_input("carrier_I", val=np.zeros(3), units="kg*m**2")
+        self.add_input("lss_E", val=0.0, units="Pa")
+        self.add_input("lss_G", val=0.0, units="Pa")
+        self.add_input("lss_rho", val=0.0, units="kg/m**3")
+        self.add_input("lss_Xy", val=0.0, units="Pa")
 
-        self.add_output('torq_deflection', val=0.0, units='m')
-        self.add_output('torq_rotation', val=0.0, units='rad')
-        self.add_output('lss_axial_stress', np.zeros((4, n_dlcs)), units='Pa')
-        self.add_output('lss_shear_stress', np.zeros((4, n_dlcs)), units='Pa')
-        self.add_output('constr_lss_vonmises', np.zeros((4, n_dlcs)))
-        self.add_output('F_mb1', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_output('F_mb2', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_output('F_torq', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_output('M_mb1', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_output('M_mb2', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_output('M_torq', val=np.zeros((3, n_dlcs)), units='N*m')
+        self.add_output("torq_deflection", val=0.0, units="m")
+        self.add_output("torq_rotation", val=0.0, units="rad")
+        self.add_output("lss_axial_stress", np.zeros((4, n_dlcs)), units="Pa")
+        self.add_output("lss_shear_stress", np.zeros((4, n_dlcs)), units="Pa")
+        self.add_output("constr_lss_vonmises", np.zeros((4, n_dlcs)))
+        self.add_output("F_mb1", val=np.zeros((3, n_dlcs)), units="N")
+        self.add_output("F_mb2", val=np.zeros((3, n_dlcs)), units="N")
+        self.add_output("F_torq", val=np.zeros((3, n_dlcs)), units="N")
+        self.add_output("M_mb1", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_output("M_mb2", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_output("M_torq", val=np.zeros((3, n_dlcs)), units="N*m")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs
-        upwind     = discrete_inputs['upwind']
-        Cup        = -1.0 if upwind else 1.0
-        tilt       = float(np.deg2rad(inputs['tilt']))
+        upwind = discrete_inputs["upwind"]
+        Cup = -1.0 if upwind else 1.0
+        tilt = float(np.deg2rad(inputs["tilt"]))
 
-        s_lss      = inputs['s_lss']
-        D_lss      = inputs['lss_diameter']
-        t_lss      = inputs['lss_wall_thickness']
+        s_lss = inputs["s_lss"]
+        D_lss = inputs["lss_diameter"]
+        t_lss = inputs["lss_wall_thickness"]
 
-        s_mb1      = float(inputs['s_mb1'])
-        s_mb2      = float(inputs['s_mb2'])
+        s_mb1 = float(inputs["s_mb1"])
+        s_mb2 = float(inputs["s_mb2"])
 
-        if self.options['direct_drive']:
-            s_rotor    = float(inputs['s_rotor'])
-            m_rotor    = float(inputs['generator_rotor_mass'])
-            I_rotor    = inputs['generator_rotor_I']
+        if self.options["direct_drive"]:
+            s_rotor = float(inputs["s_rotor"])
+            m_rotor = float(inputs["generator_rotor_mass"])
+            I_rotor = inputs["generator_rotor_I"]
 
-            m_brake    = float(inputs['brake_mass'])
-            I_brake    = inputs['brake_I']
+            m_brake = float(inputs["brake_mass"])
+            I_brake = inputs["brake_I"]
         else:
-            m_gearbox  = float(inputs['gearbox_mass'])
-            I_gearbox  = inputs['gearbox_I']
-            
-            m_carrier  = float(inputs['carrier_mass'])
-            I_carrier  = inputs['carrier_I']
+            m_gearbox = float(inputs["gearbox_mass"])
+            I_gearbox = inputs["gearbox_I"]
 
-        rho        = float(inputs['lss_rho'])
-        E          = float(inputs['lss_E'])
-        G          = float(inputs['lss_G'])
-        sigma_y    = float(inputs['lss_Xy'])
-        gamma_f    = float(self.options['modeling_options']['gamma_f'])
-        gamma_m    = float(self.options['modeling_options']['gamma_m'])
-        gamma_n    = float(self.options['modeling_options']['gamma_n'])
+            m_carrier = float(inputs["carrier_mass"])
+            I_carrier = inputs["carrier_I"]
 
-        m_hub      = float(inputs['hub_system_mass'])
-        cm_hub     = float(inputs['hub_system_cm'])
-        I_hub      = inputs['hub_system_I']
-        F_hub      = inputs['F_hub']
-        M_hub      = inputs['M_hub']
+        rho = float(inputs["lss_rho"])
+        E = float(inputs["lss_E"])
+        G = float(inputs["lss_G"])
+        sigma_y = float(inputs["lss_Xy"])
+        gamma_f = float(self.options["modeling_options"]["gamma_f"])
+        gamma_m = float(self.options["modeling_options"]["gamma_m"])
+        gamma_n = float(self.options["modeling_options"]["gamma_n"])
+
+        m_hub = float(inputs["hub_system_mass"])
+        cm_hub = float(inputs["hub_system_cm"])
+        I_hub = inputs["hub_system_I"]
+        F_hub = inputs["F_hub"]
+        M_hub = inputs["M_hub"]
 
         # ------- node data ----------------
-        n     = len(s_lss)
-        inode = np.arange(1, n+1)
+        n = len(s_lss)
+        inode = np.arange(1, n + 1)
         ynode = znode = rnode = np.zeros(n)
         xnode = Cup * s_lss.copy()
         nodes = frame3dd.NodeData(inode, xnode, ynode, znode, rnode)
         # Grab indices for later
-        i1   = inode[find_nearest(xnode, Cup * s_mb1)]
-        i2   = inode[find_nearest(xnode, Cup * s_mb2)]
+        i1 = inode[find_nearest(xnode, Cup * s_mb1)]
+        i2 = inode[find_nearest(xnode, Cup * s_mb2)]
         iadd = inode[1]
         # Differences between direct annd geared
-        if self.options['direct_drive']:
-            itorq   = inode[find_nearest(xnode, Cup * s_rotor)]
-            m_torq  = m_rotor
-            I_torq  = I_rotor
-            
-            m_add  = m_brake
-            I_add  = I_brake
+        if self.options["direct_drive"]:
+            itorq = inode[find_nearest(xnode, Cup * s_rotor)]
+            m_torq = m_rotor
+            I_torq = I_rotor
+
+            m_add = m_brake
+            I_add = I_brake
         else:
-            itorq   = inode[0]
-            m_torq  = m_gearbox - m_carrier
-            I_torq  = I_gearbox - I_carrier
-            
-            m_add  = m_carrier
-            I_add  = I_carrier
+            itorq = inode[0]
+            m_torq = m_gearbox - m_carrier
+            I_torq = I_gearbox - I_carrier
+
+            m_add = m_carrier
+            I_add = I_carrier
         # ------------------------------------
 
         # ------ reaction data ------------
         # Reactions at main bearings
         rnode = np.r_[i1, i2, itorq]
-        Rx  = np.array([RIGID, FREE, FREE]) # Upwind bearing restricts translational
-        Ry  = np.array([RIGID, FREE, FREE]) # Upwind bearing restricts translational
-        Rz  = np.array([RIGID, FREE, FREE]) # Upwind bearing restricts translational
-        Rxx = np.array([FREE,  FREE, RIGID]) # Torque is absorbed by stator, so this is the best way to capture that
-        Ryy = np.array([FREE,  RIGID, FREE]) # downwind bearing carry moments
-        Rzz = np.array([FREE,  RIGID, FREE]) # downwind bearing carry moments
+        Rx = np.array([RIGID, FREE, FREE])  # Upwind bearing restricts translational
+        Ry = np.array([RIGID, FREE, FREE])  # Upwind bearing restricts translational
+        Rz = np.array([RIGID, FREE, FREE])  # Upwind bearing restricts translational
+        Rxx = np.array([FREE, FREE, RIGID])  # Torque is absorbed by stator, so this is the best way to capture that
+        Ryy = np.array([FREE, RIGID, FREE])  # downwind bearing carry moments
+        Rzz = np.array([FREE, RIGID, FREE])  # downwind bearing carry moments
         reactions = frame3dd.ReactionData(rnode, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=RIGID)
         # -----------------------------------
 
         # ------ frame element data ------------
-        lsscyl   = tube_prop(s_lss, D_lss, t_lss)
+        lsscyl = tube_prop(s_lss, D_lss, t_lss)
         ielement = np.arange(1, n)
-        N1       = np.arange(1, n)
-        N2       = np.arange(2, n+1)
-        roll     = np.zeros(n-1)
-        myones   = np.ones(n-1)
+        N1 = np.arange(1, n)
+        N2 = np.arange(2, n + 1)
+        roll = np.zeros(n - 1)
+        myones = np.ones(n - 1)
         Ax = lsscyl.Area
         As = lsscyl.Asx
-        S  = lsscyl.S
-        C  = lsscyl.C
+        S = lsscyl.S
+        C = lsscyl.C
         J0 = lsscyl.J0
         Jx = lsscyl.Jxx
 
-        elements = frame3dd.ElementData(ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E*myones, G*myones, roll, rho*myones)
+        elements = frame3dd.ElementData(
+            ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones
+        )
         # -----------------------------------
 
         # ------ options ------------
@@ -264,82 +270,104 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
 
         # ------ add hub and generator rotor (direct) or gearbox (geared) extra mass ------------
         three0 = np.zeros(3).tolist()
-        myframe.changeExtraNodeMass(np.r_[inode[-1], itorq, iadd], [m_hub, m_torq, m_add],
-                                    [I_hub[0], I_torq[0], I_add[0]],
-                                    [I_hub[1], I_torq[1], I_add[1]],
-                                    [I_hub[2], I_torq[2], I_add[2]],
-                                    three0, three0, three0, [cm_hub, 0.0, 0.0], three0, three0, True)
+        myframe.changeExtraNodeMass(
+            np.r_[inode[-1], itorq, iadd],
+            [m_hub, m_torq, m_add],
+            [I_hub[0], I_torq[0], I_add[0]],
+            [I_hub[1], I_torq[1], I_add[1]],
+            [I_hub[2], I_torq[2], I_add[2]],
+            three0,
+            three0,
+            three0,
+            [cm_hub, 0.0, 0.0],
+            three0,
+            three0,
+            True,
+        )
         # ------------------------------------
 
         # ------- NO dynamic analysis ----------
-        #myframe.enableDynamics(NFREQ, discrete_inputs['Mmethod'], discrete_inputs['lump'], float(inputs['tol']), float(inputs['shift']))
+        # myframe.enableDynamics(NFREQ, discrete_inputs['Mmethod'], discrete_inputs['lump'], float(inputs['tol']), float(inputs['shift']))
         # ----------------------------
 
         # ------ static load cases ------------
-        n_dlcs = self.options['n_dlcs']
+        n_dlcs = self.options["n_dlcs"]
         gy = 0.0
-        gx = -gravity*np.sin(tilt)
-        gz = -gravity*np.cos(tilt)
+        gx = -gravity * np.sin(tilt)
+        gz = -gravity * np.cos(tilt)
         for k in range(n_dlcs):
             # gravity in the X, Y, Z, directions (global)
             load = frame3dd.StaticLoadCase(gx, gy, gz)
 
             # point loads
             # TODO: Are input loads aligned with the lss? If so they need to be rotated.
-            load.changePointLoads([inode[-1]], [F_hub[0,k]], [F_hub[1,k]], [F_hub[2,k]], [M_hub[0,k]], [M_hub[1,k]], [M_hub[2,k]])
+            load.changePointLoads(
+                [inode[-1]], [F_hub[0, k]], [F_hub[1, k]], [F_hub[2, k]], [M_hub[0, k]], [M_hub[1, k]], [M_hub[2, k]]
+            )
             # -----------------------------------
 
             # Put all together and run
             myframe.addLoadCase(load)
 
-        #myframe.write('myframe1.3dd') # Debugging
+        # myframe.write('myframe1.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
         # Loop over DLCs and append to outputs
         rotor_gearbox_deflection = np.zeros(n_dlcs)
-        rotor_gearbox_rotation   = np.zeros(n_dlcs)
-        outputs['F_mb1'] = np.zeros((3, n_dlcs))
-        outputs['F_mb2'] = np.zeros((3, n_dlcs))
-        outputs['F_torq'] = np.zeros((3, n_dlcs))
-        outputs['M_mb1'] = np.zeros((3, n_dlcs))
-        outputs['M_mb2'] = np.zeros((3, n_dlcs))
-        outputs['M_torq'] = np.zeros((3, n_dlcs))
-        outputs['lss_axial_stress'] = np.zeros((n-1, n_dlcs))
-        outputs['lss_shear_stress'] = np.zeros((n-1, n_dlcs))
-        outputs['constr_lss_vonmises'] = np.zeros((n-1, n_dlcs))
+        rotor_gearbox_rotation = np.zeros(n_dlcs)
+        outputs["F_mb1"] = np.zeros((3, n_dlcs))
+        outputs["F_mb2"] = np.zeros((3, n_dlcs))
+        outputs["F_torq"] = np.zeros((3, n_dlcs))
+        outputs["M_mb1"] = np.zeros((3, n_dlcs))
+        outputs["M_mb2"] = np.zeros((3, n_dlcs))
+        outputs["M_torq"] = np.zeros((3, n_dlcs))
+        outputs["lss_axial_stress"] = np.zeros((n - 1, n_dlcs))
+        outputs["lss_shear_stress"] = np.zeros((n - 1, n_dlcs))
+        outputs["constr_lss_vonmises"] = np.zeros((n - 1, n_dlcs))
         for k in range(n_dlcs):
             # Deflections and rotations at torq attachment
-            rotor_gearbox_deflection[k] = np.sqrt(displacements.dx[k,itorq-1]**2 + displacements.dy[k,itorq-1]**2 + displacements.dz[k,itorq-1]**2)
-            rotor_gearbox_rotation[k]   = displacements.dxrot[k,itorq-1] + displacements.dyrot[k,itorq-1] + displacements.dzrot[k,itorq-1]
+            rotor_gearbox_deflection[k] = np.sqrt(
+                displacements.dx[k, itorq - 1] ** 2
+                + displacements.dy[k, itorq - 1] ** 2
+                + displacements.dz[k, itorq - 1] ** 2
+            )
+            rotor_gearbox_rotation[k] = (
+                displacements.dxrot[k, itorq - 1]
+                + displacements.dyrot[k, itorq - 1]
+                + displacements.dzrot[k, itorq - 1]
+            )
 
             # shear and bending, one per element (convert from local to global c.s.)
-            Fx =  forces.Nx[k, 1::2]
-            Vy =  forces.Vy[k, 1::2]
+            Fx = forces.Nx[k, 1::2]
+            Vy = forces.Vy[k, 1::2]
             Vz = -forces.Vz[k, 1::2]
-            F  =  np.sqrt(Vz**2 + Vy**2)
+            F = np.sqrt(Vz ** 2 + Vy ** 2)
 
-            Mxx =  forces.Txx[k, 1::2]
-            Myy =  forces.Myy[k, 1::2]
+            Mxx = forces.Txx[k, 1::2]
+            Myy = forces.Myy[k, 1::2]
             Mzz = -forces.Mzz[k, 1::2]
-            M   =  np.sqrt(Myy**2 + Mzz**2)
+            M = np.sqrt(Myy ** 2 + Mzz ** 2)
 
             # Record total forces and moments
-            outputs['F_mb1'][:,k]   = -1.0 * np.array([reactions.Fx[k,0], reactions.Fy[k,0], reactions.Fz[k,0]])
-            outputs['F_mb2'][:,k]   = -1.0 * np.array([reactions.Fx[k,1], reactions.Fy[k,1], reactions.Fz[k,1]])
-            outputs['F_torq'][:,k]  = -1.0 * np.array([reactions.Fx[k,2], reactions.Fy[k,2], reactions.Fz[k,2]])
-            outputs['M_mb1'][:,k]   = -1.0 * np.array([reactions.Mxx[k,0], reactions.Myy[k,0], reactions.Mzz[k,0]])
-            outputs['M_mb2'][:,k]   = -1.0 * np.array([reactions.Mxx[k,1], reactions.Myy[k,1], reactions.Mzz[k,1]])
-            outputs['M_torq'][:,k]  = -1.0 * np.array([reactions.Mxx[k,2], reactions.Myy[k,2], reactions.Mzz[k,2]])
-            outputs['lss_axial_stress'][:,k] = np.abs(Fx)/Ax + M/S
-            outputs['lss_shear_stress'][:,k] = 2.0*F/As + np.abs(Mxx)/C
+            outputs["F_mb1"][:, k] = -1.0 * np.array([reactions.Fx[k, 0], reactions.Fy[k, 0], reactions.Fz[k, 0]])
+            outputs["F_mb2"][:, k] = -1.0 * np.array([reactions.Fx[k, 1], reactions.Fy[k, 1], reactions.Fz[k, 1]])
+            outputs["F_torq"][:, k] = -1.0 * np.array([reactions.Fx[k, 2], reactions.Fy[k, 2], reactions.Fz[k, 2]])
+            outputs["M_mb1"][:, k] = -1.0 * np.array([reactions.Mxx[k, 0], reactions.Myy[k, 0], reactions.Mzz[k, 0]])
+            outputs["M_mb2"][:, k] = -1.0 * np.array([reactions.Mxx[k, 1], reactions.Myy[k, 1], reactions.Mzz[k, 1]])
+            outputs["M_torq"][:, k] = -1.0 * np.array([reactions.Mxx[k, 2], reactions.Myy[k, 2], reactions.Mzz[k, 2]])
+            outputs["lss_axial_stress"][:, k] = np.abs(Fx) / Ax + M / S
+            outputs["lss_shear_stress"][:, k] = 2.0 * F / As + np.abs(Mxx) / C
             hoop = np.zeros(F.shape)
 
-            outputs['constr_lss_vonmises'][:,k] = vonMisesStressUtilization(outputs['lss_axial_stress'][:,k],
-                                                                            hoop,
-                                                                            outputs['lss_shear_stress'][:,k],
-                                                                            gamma_f*gamma_m*gamma_n, sigma_y)
-        outputs['torq_deflection'] = rotor_gearbox_deflection.max()
-        outputs['torq_rotation']   = rotor_gearbox_rotation.max()
+            outputs["constr_lss_vonmises"][:, k] = vonMisesStressUtilization(
+                outputs["lss_axial_stress"][:, k],
+                hoop,
+                outputs["lss_shear_stress"][:, k],
+                gamma_f * gamma_m * gamma_n,
+                sigma_y,
+            )
+        outputs["torq_deflection"] = rotor_gearbox_deflection.max()
+        outputs["torq_rotation"] = rotor_gearbox_rotation.max()
 
 
 class HSS_Frame(om.ExplicitComponent):
@@ -391,65 +419,65 @@ class HSS_Frame(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare('n_dlcs')
-        self.options.declare('modeling_options')
+        self.options.declare("n_dlcs")
+        self.options.declare("modeling_options")
 
     def setup(self):
-        n_dlcs   = self.options['n_dlcs']
+        n_dlcs = self.options["n_dlcs"]
 
-        self.add_input('tilt', 0.0, units='deg')
-        self.add_input('s_hss', val=np.zeros(3), units='m')
-        self.add_input('hss_diameter', val=np.zeros(2), units='m')
-        self.add_input('hss_wall_thickness', val=np.zeros(2), units='m')
-        self.add_input('M_hub', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_input('gear_ratio', val=1.0)
-        self.add_input('s_generator', val=0.0, units='m')
-        self.add_input('generator_mass', val=0.0, units='kg')
-        self.add_input('generator_I', val=np.zeros(3), units='kg*m**2')
-        self.add_input('brake_mass', val=0.0, units='kg')
-        self.add_input('brake_I', val=np.zeros(3), units='kg*m**2')
-        self.add_input('hss_E', val=0.0, units='Pa')
-        self.add_input('hss_G', val=0.0, units='Pa')
-        self.add_input('hss_rho', val=0.0, units='kg/m**3')
-        self.add_input('hss_Xy', val=0.0, units='Pa')
+        self.add_input("tilt", 0.0, units="deg")
+        self.add_input("s_hss", val=np.zeros(3), units="m")
+        self.add_input("hss_diameter", val=np.zeros(2), units="m")
+        self.add_input("hss_wall_thickness", val=np.zeros(2), units="m")
+        self.add_input("M_hub", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_input("gear_ratio", val=1.0)
+        self.add_input("s_generator", val=0.0, units="m")
+        self.add_input("generator_mass", val=0.0, units="kg")
+        self.add_input("generator_I", val=np.zeros(3), units="kg*m**2")
+        self.add_input("brake_mass", val=0.0, units="kg")
+        self.add_input("brake_I", val=np.zeros(3), units="kg*m**2")
+        self.add_input("hss_E", val=0.0, units="Pa")
+        self.add_input("hss_G", val=0.0, units="Pa")
+        self.add_input("hss_rho", val=0.0, units="kg/m**3")
+        self.add_input("hss_Xy", val=0.0, units="Pa")
 
-        self.add_output('hss_axial_stress', np.zeros((2, n_dlcs)), units='Pa')
-        self.add_output('hss_shear_stress', np.zeros((2, n_dlcs)), units='Pa')
-        self.add_output('hss_bending_stress', np.zeros((2, n_dlcs)), units='Pa')
-        self.add_output('constr_hss_vonmises', np.zeros((2, n_dlcs)))
-        self.add_output('F_generator', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_output('M_generator', val=np.zeros((3, n_dlcs)), units='N*m')
+        self.add_output("hss_axial_stress", np.zeros((2, n_dlcs)), units="Pa")
+        self.add_output("hss_shear_stress", np.zeros((2, n_dlcs)), units="Pa")
+        self.add_output("hss_bending_stress", np.zeros((2, n_dlcs)), units="Pa")
+        self.add_output("constr_hss_vonmises", np.zeros((2, n_dlcs)))
+        self.add_output("F_generator", val=np.zeros((3, n_dlcs)), units="N")
+        self.add_output("M_generator", val=np.zeros((3, n_dlcs)), units="N*m")
 
     def compute(self, inputs, outputs):
 
         # Unpack inputs
-        tilt       = float(np.deg2rad(inputs['tilt']))
+        tilt = float(np.deg2rad(inputs["tilt"]))
 
-        s_hss      = inputs['s_hss']
-        D_hss      = inputs['hss_diameter']
-        t_hss      = inputs['hss_wall_thickness']
+        s_hss = inputs["s_hss"]
+        D_hss = inputs["hss_diameter"]
+        t_hss = inputs["hss_wall_thickness"]
 
-        s_generator  = float(inputs['s_generator'])
-        m_generator  = float(inputs['generator_mass'])
-        I_generator  = inputs['generator_I']
+        s_generator = float(inputs["s_generator"])
+        m_generator = float(inputs["generator_mass"])
+        I_generator = inputs["generator_I"]
 
-        m_brake  = float(inputs['brake_mass'])
-        I_brake  = inputs['brake_I']
+        m_brake = float(inputs["brake_mass"])
+        I_brake = inputs["brake_I"]
 
-        rho        = float(inputs['hss_rho'])
-        E          = float(inputs['hss_E'])
-        G          = float(inputs['hss_G'])
-        sigma_y    = float(inputs['hss_Xy'])
-        gamma_f    = float(self.options['modeling_options']['gamma_f'])
-        gamma_m    = float(self.options['modeling_options']['gamma_m'])
-        gamma_n    = float(self.options['modeling_options']['gamma_n'])
+        rho = float(inputs["hss_rho"])
+        E = float(inputs["hss_E"])
+        G = float(inputs["hss_G"])
+        sigma_y = float(inputs["hss_Xy"])
+        gamma_f = float(self.options["modeling_options"]["gamma_f"])
+        gamma_m = float(self.options["modeling_options"]["gamma_m"])
+        gamma_n = float(self.options["modeling_options"]["gamma_n"])
 
-        M_hub      = inputs['M_hub']
-        gear_ratio = float(inputs['gear_ratio'])
+        M_hub = inputs["M_hub"]
+        gear_ratio = float(inputs["gear_ratio"])
 
         # ------- node data ----------------
-        n     = len(s_hss)
-        inode = np.arange(1, n+1)
+        n = len(s_hss)
+        inode = np.arange(1, n + 1)
         ynode = znode = rnode = np.zeros(n)
         xnode = s_hss.copy()
         nodes = frame3dd.NodeData(inode, xnode, ynode, znode, rnode)
@@ -463,20 +491,22 @@ class HSS_Frame(om.ExplicitComponent):
         # -----------------------------------
 
         # ------ frame element data ------------
-        hsscyl   = tube_prop(s_hss, D_hss, t_hss)
+        hsscyl = tube_prop(s_hss, D_hss, t_hss)
         ielement = np.arange(1, n)
-        N1       = np.arange(1, n)
-        N2       = np.arange(2, n+1)
-        roll     = np.zeros(n-1)
-        myones   = np.ones(n-1)
+        N1 = np.arange(1, n)
+        N2 = np.arange(2, n + 1)
+        roll = np.zeros(n - 1)
+        myones = np.ones(n - 1)
         Ax = hsscyl.Area
         As = hsscyl.Asx
-        S  = hsscyl.S
-        C  = hsscyl.C
+        S = hsscyl.S
+        C = hsscyl.C
         J0 = hsscyl.J0
         Jx = hsscyl.Jxx
 
-        elements = frame3dd.ElementData(ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E*myones, G*myones, roll, rho*myones)
+        elements = frame3dd.ElementData(
+            ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones
+        )
         # -----------------------------------
 
         # ------ options ------------
@@ -489,19 +519,27 @@ class HSS_Frame(om.ExplicitComponent):
         myframe = frame3dd.Frame(nodes, reactions, elements, options)
 
         # ------ add brake hub and generator rotor (direct) or generator (geared) extra mass ------------
-        myframe.changeExtraNodeMass(np.r_[inode[1], inode[0]], [m_brake, m_generator],
-                                    [I_brake[0], I_generator[0]],
-                                    [I_brake[1], I_generator[1]],
-                                    [I_brake[2], I_generator[2]],
-                                    [0.0, 0.0], [0.0, 0.0], [0.0, 0.0],
-                                    [0.0, s_generator-s_hss[-1]], [0.0, 0.0], [0.0, 0.0], True)
+        myframe.changeExtraNodeMass(
+            np.r_[inode[1], inode[0]],
+            [m_brake, m_generator],
+            [I_brake[0], I_generator[0]],
+            [I_brake[1], I_generator[1]],
+            [I_brake[2], I_generator[2]],
+            [0.0, 0.0],
+            [0.0, 0.0],
+            [0.0, 0.0],
+            [0.0, s_generator - s_hss[-1]],
+            [0.0, 0.0],
+            [0.0, 0.0],
+            True,
+        )
         # ------------------------------------
 
         # ------ static load cases ------------
-        n_dlcs = self.options['n_dlcs']
+        n_dlcs = self.options["n_dlcs"]
         gy = 0.0
-        gx = -gravity*np.sin(tilt)
-        gz = -gravity*np.cos(tilt)
+        gx = -gravity * np.sin(tilt)
+        gz = -gravity * np.cos(tilt)
         for k in range(n_dlcs):
             # gravity in the X, Y, Z, directions (global)
             load = frame3dd.StaticLoadCase(gx, gy, gz)
@@ -515,40 +553,44 @@ class HSS_Frame(om.ExplicitComponent):
             # Put all together and run
             myframe.addLoadCase(load)
 
-        #myframe.write('myframe2.3dd') # Debugging
+        # myframe.write('myframe2.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
         # Loop over DLCs and append to outputs
-        outputs['F_generator'] = np.zeros((3, n_dlcs))
-        outputs['M_generator'] = np.zeros((3, n_dlcs))
-        outputs['hss_axial_stress'] = np.zeros((n-1, n_dlcs))
-        outputs['hss_shear_stress'] = np.zeros((n-1, n_dlcs))
-        outputs['hss_bending_stress'] = np.zeros((n-1, n_dlcs))
-        outputs['constr_hss_vonmises'] = np.zeros((n-1, n_dlcs))
+        outputs["F_generator"] = np.zeros((3, n_dlcs))
+        outputs["M_generator"] = np.zeros((3, n_dlcs))
+        outputs["hss_axial_stress"] = np.zeros((n - 1, n_dlcs))
+        outputs["hss_shear_stress"] = np.zeros((n - 1, n_dlcs))
+        outputs["hss_bending_stress"] = np.zeros((n - 1, n_dlcs))
+        outputs["constr_hss_vonmises"] = np.zeros((n - 1, n_dlcs))
         for k in range(n_dlcs):
             # shear and bending, one per element (convert from local to global c.s.)
-            Fx =  forces.Nx[k, 1::2]
-            Vy =  forces.Vy[k, 1::2]
+            Fx = forces.Nx[k, 1::2]
+            Vy = forces.Vy[k, 1::2]
             Vz = -forces.Vz[k, 1::2]
-            F  =  np.sqrt(Vz**2 + Vy**2)
+            F = np.sqrt(Vz ** 2 + Vy ** 2)
 
-            Mxx =  forces.Txx[k, 1::2]
-            Myy =  forces.Myy[k, 1::2]
+            Mxx = forces.Txx[k, 1::2]
+            Myy = forces.Myy[k, 1::2]
             Mzz = -forces.Mzz[k, 1::2]
-            M   =  np.sqrt(Myy**2 + Mzz**2)
+            M = np.sqrt(Myy ** 2 + Mzz ** 2)
 
             # Record total forces and moments
-            outputs['F_generator'][:,k]  = -1.0 * np.array([reactions.Fx[k,0], reactions.Fy[k,0], reactions.Fz[k,0]])
-            outputs['M_generator'][:,k]  = -1.0 * np.array([reactions.Mxx[k,0], reactions.Myy[k,0], reactions.Mzz[k,0]])
-            outputs['hss_axial_stress'][:,k] = np.abs(Fx)/Ax + M/S
-            outputs['hss_shear_stress'][:,k] = 2.0*F/As + np.abs(Mxx)/C
+            outputs["F_generator"][:, k] = -1.0 * np.array([reactions.Fx[k, 0], reactions.Fy[k, 0], reactions.Fz[k, 0]])
+            outputs["M_generator"][:, k] = -1.0 * np.array(
+                [reactions.Mxx[k, 0], reactions.Myy[k, 0], reactions.Mzz[k, 0]]
+            )
+            outputs["hss_axial_stress"][:, k] = np.abs(Fx) / Ax + M / S
+            outputs["hss_shear_stress"][:, k] = 2.0 * F / As + np.abs(Mxx) / C
             hoop = np.zeros(F.shape)
 
-            outputs['constr_hss_vonmises'][:,k] = vonMisesStressUtilization(outputs['hss_axial_stress'][:,k],
-                                                                            hoop,
-                                                                            outputs['hss_shear_stress'][:,k],
-                                                                            gamma_f*gamma_m*gamma_n, sigma_y)
-
+            outputs["constr_hss_vonmises"][:, k] = vonMisesStressUtilization(
+                outputs["hss_axial_stress"][:, k],
+                hoop,
+                outputs["hss_shear_stress"][:, k],
+                gamma_f * gamma_m * gamma_n,
+                sigma_y,
+            )
 
 
 class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
@@ -658,148 +700,150 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare('n_dlcs')
-        self.options.declare('modeling_options')
+        self.options.declare("n_dlcs")
+        self.options.declare("modeling_options")
 
     def setup(self):
-        n_dlcs   = self.options['n_dlcs']
+        n_dlcs = self.options["n_dlcs"]
 
-        self.add_discrete_input('upwind', True)
-        self.add_input('tilt', 0.0, units='deg')
-        self.add_input('s_nose', val=np.zeros(5), units='m')
-        self.add_input('nose_diameter', np.zeros(2), units='m')
-        self.add_input('nose_wall_thickness', np.zeros(2), units='m')
-        self.add_input('x_bedplate', val=np.zeros(12), units='m')
-        self.add_input('z_bedplate', val=np.zeros(12), units='m')
-        self.add_input('x_bedplate_inner', val=np.zeros(12), units='m')
-        self.add_input('z_bedplate_inner', val=np.zeros(12), units='m')
-        self.add_input('x_bedplate_outer', val=np.zeros(12), units='m')
-        self.add_input('z_bedplate_outer', val=np.zeros(12), units='m')
-        self.add_input('D_bedplate', val=np.zeros(12), units='m')
-        self.add_input('t_bedplate', val=np.zeros(12), units='m')
-        self.add_input('s_mb1', val=0.0, units='m')
-        self.add_input('s_mb2', val=0.0, units='m')
-        self.add_input('mb1_mass', 0.0, units='kg')
-        self.add_input('mb1_I', np.zeros(3), units='kg*m**2')
-        self.add_input('mb1_max_defl_ang', 0.0, units='rad')
-        self.add_input('mb2_mass', 0.0, units='kg')
-        self.add_input('mb2_I', np.zeros(3), units='kg*m**2')
-        self.add_input('mb2_max_defl_ang', 0.0, units='rad')
-        self.add_input('s_stator', val=0.0, units='m')
-        self.add_input('generator_stator_mass', val=0.0, units='kg')
-        self.add_input('generator_stator_I', val=np.zeros(3), units='kg*m**2')
-        self.add_input('F_mb1', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_input('F_mb2', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_input('M_mb1', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_input('M_mb2', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_input('other_mass', val=0.0, units='kg')
-        self.add_input('bedplate_E', val=0.0, units='Pa')
-        self.add_input('bedplate_G', val=0.0, units='Pa')
-        self.add_input('bedplate_rho', val=0.0, units='kg/m**3')
-        self.add_input('bedplate_Xy', val=0.0, units='Pa')
+        self.add_discrete_input("upwind", True)
+        self.add_input("tilt", 0.0, units="deg")
+        self.add_input("s_nose", val=np.zeros(5), units="m")
+        self.add_input("nose_diameter", np.zeros(2), units="m")
+        self.add_input("nose_wall_thickness", np.zeros(2), units="m")
+        self.add_input("x_bedplate", val=np.zeros(12), units="m")
+        self.add_input("z_bedplate", val=np.zeros(12), units="m")
+        self.add_input("x_bedplate_inner", val=np.zeros(12), units="m")
+        self.add_input("z_bedplate_inner", val=np.zeros(12), units="m")
+        self.add_input("x_bedplate_outer", val=np.zeros(12), units="m")
+        self.add_input("z_bedplate_outer", val=np.zeros(12), units="m")
+        self.add_input("D_bedplate", val=np.zeros(12), units="m")
+        self.add_input("t_bedplate", val=np.zeros(12), units="m")
+        self.add_input("s_mb1", val=0.0, units="m")
+        self.add_input("s_mb2", val=0.0, units="m")
+        self.add_input("mb1_mass", 0.0, units="kg")
+        self.add_input("mb1_I", np.zeros(3), units="kg*m**2")
+        self.add_input("mb1_max_defl_ang", 0.0, units="rad")
+        self.add_input("mb2_mass", 0.0, units="kg")
+        self.add_input("mb2_I", np.zeros(3), units="kg*m**2")
+        self.add_input("mb2_max_defl_ang", 0.0, units="rad")
+        self.add_input("s_stator", val=0.0, units="m")
+        self.add_input("generator_stator_mass", val=0.0, units="kg")
+        self.add_input("generator_stator_I", val=np.zeros(3), units="kg*m**2")
+        self.add_input("F_mb1", val=np.zeros((3, n_dlcs)), units="N")
+        self.add_input("F_mb2", val=np.zeros((3, n_dlcs)), units="N")
+        self.add_input("M_mb1", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_input("M_mb2", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_input("other_mass", val=0.0, units="kg")
+        self.add_input("bedplate_E", val=0.0, units="Pa")
+        self.add_input("bedplate_G", val=0.0, units="Pa")
+        self.add_input("bedplate_rho", val=0.0, units="kg/m**3")
+        self.add_input("bedplate_Xy", val=0.0, units="Pa")
 
-        self.add_output('mb1_deflection', val=np.zeros(n_dlcs), units='m')
-        self.add_output('mb2_deflection', val=np.zeros(n_dlcs), units='m')
-        self.add_output('stator_deflection', val=0.0, units='m')
-        self.add_output('mb1_rotation', val=np.zeros(n_dlcs), units='rad')
-        self.add_output('mb2_rotation', val=np.zeros(n_dlcs), units='rad')
-        self.add_output('stator_rotation', val=0.0, units='rad')
-        self.add_output('base_F', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_output('base_M', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_output('bedplate_nose_axial_stress', np.zeros((12+3, n_dlcs)), units='Pa')
-        self.add_output('bedplate_nose_shear_stress', np.zeros((12+3, n_dlcs)), units='Pa')
-        self.add_output('bedplate_nose_bending_stress', np.zeros((12+3, n_dlcs)), units='Pa')
-        self.add_output('constr_bedplate_vonmises', np.zeros((12+3, n_dlcs)))
-        self.add_output('constr_mb1_defl', val=np.zeros(n_dlcs))
-        self.add_output('constr_mb2_defl', val=np.zeros(n_dlcs))
+        self.add_output("mb1_deflection", val=np.zeros(n_dlcs), units="m")
+        self.add_output("mb2_deflection", val=np.zeros(n_dlcs), units="m")
+        self.add_output("stator_deflection", val=0.0, units="m")
+        self.add_output("mb1_rotation", val=np.zeros(n_dlcs), units="rad")
+        self.add_output("mb2_rotation", val=np.zeros(n_dlcs), units="rad")
+        self.add_output("stator_rotation", val=0.0, units="rad")
+        self.add_output("base_F", val=np.zeros((3, n_dlcs)), units="N")
+        self.add_output("base_M", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_output("bedplate_nose_axial_stress", np.zeros((12 + 3, n_dlcs)), units="Pa")
+        self.add_output("bedplate_nose_shear_stress", np.zeros((12 + 3, n_dlcs)), units="Pa")
+        self.add_output("bedplate_nose_bending_stress", np.zeros((12 + 3, n_dlcs)), units="Pa")
+        self.add_output("constr_bedplate_vonmises", np.zeros((12 + 3, n_dlcs)))
+        self.add_output("constr_mb1_defl", val=np.zeros(n_dlcs))
+        self.add_output("constr_mb2_defl", val=np.zeros(n_dlcs))
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs
-        upwind     = discrete_inputs['upwind']
-        Cup        = -1.0 if upwind else 1.0
-        tiltD      = float(inputs['tilt'])
-        tiltR      = np.deg2rad(tiltD)
+        upwind = discrete_inputs["upwind"]
+        Cup = -1.0 if upwind else 1.0
+        tiltD = float(inputs["tilt"])
+        tiltR = np.deg2rad(tiltD)
 
-        x_c        = inputs['x_bedplate']
-        z_c        = inputs['z_bedplate']
-        x_inner    = inputs['x_bedplate_inner']
-        z_inner    = inputs['z_bedplate_inner']
-        x_outer    = inputs['x_bedplate_outer']
-        z_outer    = inputs['z_bedplate_outer']
-        D_bed      = inputs['D_bedplate']
-        t_bed      = inputs['t_bedplate']
+        x_c = inputs["x_bedplate"]
+        z_c = inputs["z_bedplate"]
+        x_inner = inputs["x_bedplate_inner"]
+        z_inner = inputs["z_bedplate_inner"]
+        x_outer = inputs["x_bedplate_outer"]
+        z_outer = inputs["z_bedplate_outer"]
+        D_bed = inputs["D_bedplate"]
+        t_bed = inputs["t_bedplate"]
 
-        s_nose     = inputs['s_nose'][1:] # First point duplicated with bedplate
-        D_nose     = inputs['nose_diameter']
-        t_nose     = inputs['nose_wall_thickness']
-        x_nose     = s_nose.copy()
-        x_nose    *= Cup
-        x_nose    += x_c[-1]
+        s_nose = inputs["s_nose"][1:]  # First point duplicated with bedplate
+        D_nose = inputs["nose_diameter"]
+        t_nose = inputs["nose_wall_thickness"]
+        x_nose = s_nose.copy()
+        x_nose *= Cup
+        x_nose += x_c[-1]
 
-        s_mb1      = float(inputs['s_mb1'])
-        s_mb2      = float(inputs['s_mb2'])
-        m_mb1      = float(inputs['mb1_mass'])
-        m_mb2      = float(inputs['mb2_mass'])
-        I_mb1      = inputs['mb1_I']
-        I_mb2      = inputs['mb2_I']
+        s_mb1 = float(inputs["s_mb1"])
+        s_mb2 = float(inputs["s_mb2"])
+        m_mb1 = float(inputs["mb1_mass"])
+        m_mb2 = float(inputs["mb2_mass"])
+        I_mb1 = inputs["mb1_I"]
+        I_mb2 = inputs["mb2_I"]
 
-        s_stator   = float(inputs['s_stator'])
-        m_stator   = float(inputs['generator_stator_mass'])
-        I_stator   = inputs['generator_stator_I']
+        s_stator = float(inputs["s_stator"])
+        m_stator = float(inputs["generator_stator_mass"])
+        I_stator = inputs["generator_stator_I"]
 
-        rho        = float(inputs['bedplate_rho'])
-        E          = float(inputs['bedplate_E'])
-        G          = float(inputs['bedplate_G'])
-        sigma_y    = float(inputs['bedplate_Xy'])
-        gamma_f    = float(self.options['modeling_options']['gamma_f'])
-        gamma_m    = float(self.options['modeling_options']['gamma_m'])
-        gamma_n    = float(self.options['modeling_options']['gamma_n'])
+        rho = float(inputs["bedplate_rho"])
+        E = float(inputs["bedplate_E"])
+        G = float(inputs["bedplate_G"])
+        sigma_y = float(inputs["bedplate_Xy"])
+        gamma_f = float(self.options["modeling_options"]["gamma_f"])
+        gamma_m = float(self.options["modeling_options"]["gamma_m"])
+        gamma_n = float(self.options["modeling_options"]["gamma_n"])
 
-        F_mb1      = inputs['F_mb1']
-        F_mb2      = inputs['F_mb2']
-        M_mb1      = inputs['M_mb1']
-        M_mb2      = inputs['M_mb2']
+        F_mb1 = inputs["F_mb1"]
+        F_mb2 = inputs["F_mb2"]
+        M_mb1 = inputs["M_mb1"]
+        M_mb2 = inputs["M_mb2"]
 
-        m_other    = float(inputs['other_mass'])
+        m_other = float(inputs["other_mass"])
 
         # ------- node data ----------------
-        n     = len(x_c) + len(x_nose)
-        inode = np.arange(1, n+1)
+        n = len(x_c) + len(x_nose)
+        inode = np.arange(1, n + 1)
         ynode = rnode = np.zeros(n)
         xnode = np.r_[x_c, x_nose]
-        znode = np.r_[z_c, z_c[-1]*np.ones(x_nose.shape)]
+        znode = np.r_[z_c, z_c[-1] * np.ones(x_nose.shape)]
         nodes = frame3dd.NodeData(inode, xnode, ynode, znode, rnode)
         # Grab indices for later
-        inose   = len(x_c)
-        istator = inode[find_nearest(xnode, Cup*s_stator+x_c[-1])]
-        i1      = inode[find_nearest(xnode, Cup*s_mb1+x_c[-1])]
-        i2      = inode[find_nearest(xnode, Cup*s_mb2+x_c[-1])]
+        inose = len(x_c)
+        istator = inode[find_nearest(xnode, Cup * s_stator + x_c[-1])]
+        i1 = inode[find_nearest(xnode, Cup * s_mb1 + x_c[-1])]
+        i2 = inode[find_nearest(xnode, Cup * s_mb2 + x_c[-1])]
         # ------------------------------------
 
         # ------ reaction data ------------
         # Rigid base
         rnode = [int(inode[0])]
-        rk    = np.array([RIGID])
+        rk = np.array([RIGID])
         reactions = frame3dd.ReactionData(rnode, rk, rk, rk, rk, rk, rk, rigid=RIGID)
         # -----------------------------------
 
         # ------ frame element data ------------
-        bedcyl   = tube_prop(x_c, D_bed, t_bed)
-        nosecyl  = tube_prop(inputs['s_nose'], D_nose, t_nose)
+        bedcyl = tube_prop(x_c, D_bed, t_bed)
+        nosecyl = tube_prop(inputs["s_nose"], D_nose, t_nose)
         ielement = np.arange(1, n)
-        N1       = np.arange(1, n)
-        N2       = np.arange(2, n+1)
-        roll     = np.zeros(n-1)
-        myones   = np.ones(n-1)
+        N1 = np.arange(1, n)
+        N2 = np.arange(2, n + 1)
+        roll = np.zeros(n - 1)
+        myones = np.ones(n - 1)
         Ax = np.r_[bedcyl.Area, nosecyl.Area]
         As = np.r_[bedcyl.Asx, nosecyl.Asx]
-        S  = np.r_[bedcyl.S, nosecyl.S]
-        C  = np.r_[bedcyl.C, nosecyl.C]
+        S = np.r_[bedcyl.S, nosecyl.S]
+        C = np.r_[bedcyl.C, nosecyl.C]
         J0 = np.r_[bedcyl.J0, nosecyl.J0]
         Jx = np.r_[bedcyl.Jxx, nosecyl.Jxx]
 
-        elements = frame3dd.ElementData(ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E*myones, G*myones, roll, rho*myones)
+        elements = frame3dd.ElementData(
+            ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones
+        )
         # -----------------------------------
 
         # ------ options ------------
@@ -812,113 +856,141 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         myframe = frame3dd.Frame(nodes, reactions, elements, options)
 
         # ------ add misc nacelle components at base and stator extra mass ------------
-        myframe.changeExtraNodeMass(np.r_[inode[0], istator, i1, i2], [m_other, m_stator, m_mb1, m_mb2],
-                                    [0.0, I_stator[0], I_mb1[0], I_mb2[0]],
-                                    [0.0, I_stator[1], I_mb1[1], I_mb2[1]],
-                                    [0.0, I_stator[2], I_mb1[2], I_mb2[2]],
-                                    np.zeros(4), np.zeros(4), np.zeros(4),
-                                    [0.0, 0.0, 0.0, 0.0], np.zeros(4), np.zeros(4), True)
+        myframe.changeExtraNodeMass(
+            np.r_[inode[0], istator, i1, i2],
+            [m_other, m_stator, m_mb1, m_mb2],
+            [0.0, I_stator[0], I_mb1[0], I_mb2[0]],
+            [0.0, I_stator[1], I_mb1[1], I_mb2[1]],
+            [0.0, I_stator[2], I_mb1[2], I_mb2[2]],
+            np.zeros(4),
+            np.zeros(4),
+            np.zeros(4),
+            [0.0, 0.0, 0.0, 0.0],
+            np.zeros(4),
+            np.zeros(4),
+            True,
+        )
         # ------------------------------------
 
         # ------- NO dynamic analysis ----------
-        #myframe.enableDynamics(NFREQ, discrete_inputs['Mmethod'], discrete_inputs['lump'], float(inputs['tol']), float(inputs['shift']))
+        # myframe.enableDynamics(NFREQ, discrete_inputs['Mmethod'], discrete_inputs['lump'], float(inputs['tol']), float(inputs['shift']))
         # ----------------------------
 
         # ------ static load cases ------------
-        n_dlcs   = self.options['n_dlcs']
+        n_dlcs = self.options["n_dlcs"]
         gy = 0.0
-        gx = -gravity*np.sin(tiltR)
-        gz = -gravity*np.cos(tiltR)
+        gx = -gravity * np.sin(tiltR)
+        gz = -gravity * np.cos(tiltR)
         for k in range(n_dlcs):
             # gravity in the X, Y, Z, directions (global)
             load = frame3dd.StaticLoadCase(gx, gy, gz)
 
             # point loads
-            F_12 = np.c_[F_mb2[:,k], F_mb1[:,k]]
-            M_12 = np.c_[M_mb2[:,k], M_mb1[:,k]]
-            load.changePointLoads(np.r_[i2, i1], F_12[0,:], F_12[1,:], F_12[2,:], M_12[0,:], M_12[1,:], M_12[2,:])
+            F_12 = np.c_[F_mb2[:, k], F_mb1[:, k]]
+            M_12 = np.c_[M_mb2[:, k], M_mb1[:, k]]
+            load.changePointLoads(np.r_[i2, i1], F_12[0, :], F_12[1, :], F_12[2, :], M_12[0, :], M_12[1, :], M_12[2, :])
             # -----------------------------------
 
             # Put all together and run
             myframe.addLoadCase(load)
 
-        #myframe.write('myframe3.3dd') # Debugging
+        # myframe.write('myframe3.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
         # ------------ Bedplate "curved beam" geometry for post-processing -------------
         # Need to compute neutral axis, so shift points such that bedplate top is at x=0
-        R_c = np.sqrt( (x_c    -x_c[-1])**2 + z_c**2)
-        Ro  = np.sqrt( (x_outer-x_c[-1])**2 + z_outer**2)
-        Ri  = np.sqrt( (x_inner-x_c[-1])**2 + z_inner**2)
-        r_bed_o = 0.5*D_bed
+        R_c = np.sqrt((x_c - x_c[-1]) ** 2 + z_c ** 2)
+        Ro = np.sqrt((x_outer - x_c[-1]) ** 2 + z_outer ** 2)
+        Ri = np.sqrt((x_inner - x_c[-1]) ** 2 + z_inner ** 2)
+        r_bed_o = 0.5 * D_bed
         r_bed_i = r_bed_o - t_bed
-        A_bed   = np.pi * (r_bed_o**2 - r_bed_i**2)
+        A_bed = np.pi * (r_bed_o ** 2 - r_bed_i ** 2)
 
         # Radius of the neutral axis
         # http://faculty.fairfield.edu/wdornfeld/ME311/BasicStressEqns-DBWallace.pdf
-        R_n  = A_bed / (2*np.pi * ( np.sqrt(R_c**2 - r_bed_i**2) - np.sqrt(R_c**2 - r_bed_o**2) ) )
+        R_n = A_bed / (2 * np.pi * (np.sqrt(R_c ** 2 - r_bed_i ** 2) - np.sqrt(R_c ** 2 - r_bed_o ** 2)))
         e_cn = R_c - R_n
         # ------------------------------------
 
         # Loop over DLCs and append to outputs
-        outputs['mb1_deflection'] = np.zeros(n_dlcs)
-        outputs['mb2_deflection'] = np.zeros(n_dlcs)
-        stator_deflection         = np.zeros(n_dlcs)
-        outputs['mb1_rotation']   = np.zeros(n_dlcs)
-        outputs['mb2_rotation']   = np.zeros(n_dlcs)
-        stator_rotation           = np.zeros(n_dlcs)
-        outputs['base_F']         = np.zeros((3, n_dlcs))
-        outputs['base_M']         = np.zeros((3, n_dlcs))
-        outputs['bedplate_nose_axial_stress']   = np.zeros((n-1, n_dlcs))
-        outputs['bedplate_nose_shear_stress']   = np.zeros((n-1, n_dlcs))
-        outputs['bedplate_nose_bending_stress'] = np.zeros((n-1, n_dlcs))
-        outputs['constr_bedplate_vonmises']     = np.zeros((n-1, n_dlcs))
+        outputs["mb1_deflection"] = np.zeros(n_dlcs)
+        outputs["mb2_deflection"] = np.zeros(n_dlcs)
+        stator_deflection = np.zeros(n_dlcs)
+        outputs["mb1_rotation"] = np.zeros(n_dlcs)
+        outputs["mb2_rotation"] = np.zeros(n_dlcs)
+        stator_rotation = np.zeros(n_dlcs)
+        outputs["base_F"] = np.zeros((3, n_dlcs))
+        outputs["base_M"] = np.zeros((3, n_dlcs))
+        outputs["bedplate_nose_axial_stress"] = np.zeros((n - 1, n_dlcs))
+        outputs["bedplate_nose_shear_stress"] = np.zeros((n - 1, n_dlcs))
+        outputs["bedplate_nose_bending_stress"] = np.zeros((n - 1, n_dlcs))
+        outputs["constr_bedplate_vonmises"] = np.zeros((n - 1, n_dlcs))
         for k in range(n_dlcs):
             # Deflections and rotations at bearings- how to sum up rotation angles?
-            outputs['mb1_deflection'][k] = np.sqrt(displacements.dx[k,i1-1]**2 + displacements.dy[k,i1-1]**2 + displacements.dz[k,i1-1]**2)
-            outputs['mb2_deflection'][k] = np.sqrt(displacements.dx[k,i2-1]**2 + displacements.dy[k,i2-1]**2 + displacements.dz[k,i2-1]**2)
-            stator_deflection[k]         = np.sqrt(displacements.dx[k,istator-1]**2 + displacements.dy[k,istator-1]**2 + displacements.dz[k,istator-1]**2)
-            outputs['mb1_rotation'][k]   = displacements.dxrot[k,i1-1] + displacements.dyrot[k,i1-1] + displacements.dzrot[k,i1-1]
-            outputs['mb2_rotation'][k]   = displacements.dxrot[k,i2-1] + displacements.dyrot[k,i2-1] + displacements.dzrot[k,i2-1]
-            stator_rotation[k]           = displacements.dxrot[k,istator-1] + displacements.dyrot[k,istator-1] + displacements.dzrot[k,istator-1]
+            outputs["mb1_deflection"][k] = np.sqrt(
+                displacements.dx[k, i1 - 1] ** 2 + displacements.dy[k, i1 - 1] ** 2 + displacements.dz[k, i1 - 1] ** 2
+            )
+            outputs["mb2_deflection"][k] = np.sqrt(
+                displacements.dx[k, i2 - 1] ** 2 + displacements.dy[k, i2 - 1] ** 2 + displacements.dz[k, i2 - 1] ** 2
+            )
+            stator_deflection[k] = np.sqrt(
+                displacements.dx[k, istator - 1] ** 2
+                + displacements.dy[k, istator - 1] ** 2
+                + displacements.dz[k, istator - 1] ** 2
+            )
+            outputs["mb1_rotation"][k] = (
+                displacements.dxrot[k, i1 - 1] + displacements.dyrot[k, i1 - 1] + displacements.dzrot[k, i1 - 1]
+            )
+            outputs["mb2_rotation"][k] = (
+                displacements.dxrot[k, i2 - 1] + displacements.dyrot[k, i2 - 1] + displacements.dzrot[k, i2 - 1]
+            )
+            stator_rotation[k] = (
+                displacements.dxrot[k, istator - 1]
+                + displacements.dyrot[k, istator - 1]
+                + displacements.dzrot[k, istator - 1]
+            )
 
             # shear and bending, one per element (convert from local to global c.s.)
-            Fx =  forces.Nx[k, 1::2]
-            Vy =  forces.Vy[k, 1::2]
+            Fx = forces.Nx[k, 1::2]
+            Vy = forces.Vy[k, 1::2]
             Vz = -forces.Vz[k, 1::2]
-            F  =  np.sqrt(Vz**2 + Vy**2)
+            F = np.sqrt(Vz ** 2 + Vy ** 2)
 
-            Mxx =  forces.Txx[k, 1::2]
-            Myy =  forces.Myy[k, 1::2]
+            Mxx = forces.Txx[k, 1::2]
+            Myy = forces.Myy[k, 1::2]
             Mzz = -forces.Mzz[k, 1::2]
-            M   =  np.sqrt(Myy**2 + Mzz**2)
+            M = np.sqrt(Myy ** 2 + Mzz ** 2)
 
             # Record total forces and moments
-            F_base_k = DirectionVector(-reactions.Fx[k,:].sum(), -reactions.Fy[k,:].sum(), -reactions.Fz[k,:].sum())
-            M_base_k = DirectionVector(-reactions.Mxx[k,:].sum(), -reactions.Myy[k,:].sum(), -reactions.Mzz[k,:].sum())
+            F_base_k = DirectionVector(-reactions.Fx[k, :].sum(), -reactions.Fy[k, :].sum(), -reactions.Fz[k, :].sum())
+            M_base_k = DirectionVector(
+                -reactions.Mxx[k, :].sum(), -reactions.Myy[k, :].sum(), -reactions.Mzz[k, :].sum()
+            )
 
             # Rotate vector from tilt axes to yaw/tower axes
-            outputs['base_F'][:,k] = F_base_k.hubToYaw(-tiltD).toArray()
-            outputs['base_M'][:,k] = M_base_k.hubToYaw(-tiltD).toArray()
+            outputs["base_F"][:, k] = F_base_k.hubToYaw(-tiltD).toArray()
+            outputs["base_M"][:, k] = M_base_k.hubToYaw(-tiltD).toArray()
 
-            outputs['bedplate_nose_axial_stress'][:,k] = np.abs(Fx)/Ax + M/S
-            outputs['bedplate_nose_shear_stress'][:,k] = 2.0*F/As + np.abs(Mxx)/C
+            outputs["bedplate_nose_axial_stress"][:, k] = np.abs(Fx) / Ax + M / S
+            outputs["bedplate_nose_shear_stress"][:, k] = 2.0 * F / As + np.abs(Mxx) / C
 
-            Bending_stress_outer = M[:(inose-1)] * nodal2sectional( (Ro-R_n) / (A_bed*e_cn*Ro) )[0]
-            #Bending_stress_inner = M[:(inose-1)] * nodal2sectional( (R_n-Ri) / (A_bed*e_cn*Ri) )[0]
-            outputs['bedplate_nose_bending_stress'][:(inose-1),k] = Bending_stress_outer
+            Bending_stress_outer = M[: (inose - 1)] * nodal2sectional((Ro - R_n) / (A_bed * e_cn * Ro))[0]
+            # Bending_stress_inner = M[:(inose-1)] * nodal2sectional( (R_n-Ri) / (A_bed*e_cn*Ri) )[0]
+            outputs["bedplate_nose_bending_stress"][: (inose - 1), k] = Bending_stress_outer
 
-            outputs['constr_bedplate_vonmises'][:,k] = vonMisesStressUtilization(outputs['bedplate_nose_axial_stress'][:,k],
-                                                                                      outputs['bedplate_nose_bending_stress'][:,k],
-                                                                                      outputs['bedplate_nose_shear_stress'][:,k],
-                                                                                      gamma_f*gamma_m*gamma_n, sigma_y)
+            outputs["constr_bedplate_vonmises"][:, k] = vonMisesStressUtilization(
+                outputs["bedplate_nose_axial_stress"][:, k],
+                outputs["bedplate_nose_bending_stress"][:, k],
+                outputs["bedplate_nose_shear_stress"][:, k],
+                gamma_f * gamma_m * gamma_n,
+                sigma_y,
+            )
 
         # Evaluate bearing limits
-        outputs['constr_mb1_defl'] = np.abs( outputs['mb1_rotation'] / inputs['mb1_max_defl_ang'] )
-        outputs['constr_mb2_defl'] = np.abs( outputs['mb2_rotation'] / inputs['mb2_max_defl_ang'] )
-        outputs['stator_deflection'] = stator_deflection.max()
-        outputs['stator_rotation']   = stator_rotation.max()
-
+        outputs["constr_mb1_defl"] = np.abs(outputs["mb1_rotation"] / inputs["mb1_max_defl_ang"])
+        outputs["constr_mb2_defl"] = np.abs(outputs["mb2_rotation"] / inputs["mb2_max_defl_ang"])
+        outputs["stator_deflection"] = stator_deflection.max()
+        outputs["stator_rotation"] = stator_rotation.max()
 
 
 class Bedplate_IBeam_Frame(om.ExplicitComponent):
@@ -1008,123 +1080,123 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare('n_dlcs')
-        self.options.declare('modeling_options')
+        self.options.declare("n_dlcs")
+        self.options.declare("modeling_options")
 
     def setup(self):
-        n_dlcs   = self.options['n_dlcs']
+        n_dlcs = self.options["n_dlcs"]
 
-        self.add_discrete_input('upwind', True)
-        self.add_input('tilt', 0.0, units='deg')
-        self.add_input('D_top', 0.0, units='m')
-        self.add_input('s_drive', val=np.zeros(12), units='m')
-        self.add_input('bedplate_flange_width', val=0.0, units='m')
-        self.add_input('bedplate_flange_thickness', val=0.0, units='m')
-        self.add_input('bedplate_web_height', val=0.0, units='m')
-        self.add_input('bedplate_web_thickness', val=0.0, units='m')
-        self.add_input('s_mb1', val=0.0, units='m')
-        self.add_input('s_mb2', val=0.0, units='m')
-        self.add_input('mb1_mass', 0.0, units='kg')
-        self.add_input('mb1_I', np.zeros(3), units='kg*m**2')
-        self.add_input('mb1_max_defl_ang', 0.0, units='rad')
-        self.add_input('mb2_mass', 0.0, units='kg')
-        self.add_input('mb2_I', np.zeros(3), units='kg*m**2')
-        self.add_input('mb2_max_defl_ang', 0.0, units='rad')
-        self.add_input('s_gearbox', val=0.0, units='m')
-        self.add_input('s_generator', val=0.0, units='m')
-        self.add_input('F_mb1', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_input('F_mb2', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_input('F_torq', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_input('F_generator', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_input('M_mb1', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_input('M_mb2', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_input('M_torq', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_input('M_generator', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_input('other_mass', val=0.0, units='kg')
-        self.add_input('bedplate_E', val=0.0, units='Pa')
-        self.add_input('bedplate_G', val=0.0, units='Pa')
-        self.add_input('bedplate_rho', val=0.0, units='kg/m**3')
-        self.add_input('bedplate_Xy', val=0.0, units='Pa')
+        self.add_discrete_input("upwind", True)
+        self.add_input("tilt", 0.0, units="deg")
+        self.add_input("D_top", 0.0, units="m")
+        self.add_input("s_drive", val=np.zeros(12), units="m")
+        self.add_input("bedplate_flange_width", val=0.0, units="m")
+        self.add_input("bedplate_flange_thickness", val=0.0, units="m")
+        self.add_input("bedplate_web_height", val=0.0, units="m")
+        self.add_input("bedplate_web_thickness", val=0.0, units="m")
+        self.add_input("s_mb1", val=0.0, units="m")
+        self.add_input("s_mb2", val=0.0, units="m")
+        self.add_input("mb1_mass", 0.0, units="kg")
+        self.add_input("mb1_I", np.zeros(3), units="kg*m**2")
+        self.add_input("mb1_max_defl_ang", 0.0, units="rad")
+        self.add_input("mb2_mass", 0.0, units="kg")
+        self.add_input("mb2_I", np.zeros(3), units="kg*m**2")
+        self.add_input("mb2_max_defl_ang", 0.0, units="rad")
+        self.add_input("s_gearbox", val=0.0, units="m")
+        self.add_input("s_generator", val=0.0, units="m")
+        self.add_input("F_mb1", val=np.zeros((3, n_dlcs)), units="N")
+        self.add_input("F_mb2", val=np.zeros((3, n_dlcs)), units="N")
+        self.add_input("F_torq", val=np.zeros((3, n_dlcs)), units="N")
+        self.add_input("F_generator", val=np.zeros((3, n_dlcs)), units="N")
+        self.add_input("M_mb1", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_input("M_mb2", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_input("M_torq", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_input("M_generator", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_input("other_mass", val=0.0, units="kg")
+        self.add_input("bedplate_E", val=0.0, units="Pa")
+        self.add_input("bedplate_G", val=0.0, units="Pa")
+        self.add_input("bedplate_rho", val=0.0, units="kg/m**3")
+        self.add_input("bedplate_Xy", val=0.0, units="Pa")
 
-        self.add_output('mb1_deflection', val=np.zeros(n_dlcs), units='m')
-        self.add_output('mb2_deflection', val=np.zeros(n_dlcs), units='m')
-        self.add_output('bedplate_deflection', val=0.0, units='m')
-        self.add_output('mb1_rotation', val=np.zeros(n_dlcs), units='rad')
-        self.add_output('mb2_rotation', val=np.zeros(n_dlcs), units='rad')
-        self.add_output('bedplate_rotation', val=0.0, units='rad')
-        self.add_output('base_F', val=np.zeros((3, n_dlcs)), units='N')
-        self.add_output('base_M', val=np.zeros((3, n_dlcs)), units='N*m')
-        self.add_output('bedplate_axial_stress', np.zeros((22, n_dlcs)), units='Pa')
-        self.add_output('bedplate_shear_stress', np.zeros((22, n_dlcs)), units='Pa')
-        self.add_output('bedplate_bending_stress', np.zeros((22, n_dlcs)), units='Pa')
-        self.add_output('constr_bedplate_vonmises', np.zeros((22, n_dlcs)))
-        self.add_output('constr_mb1_defl', val=np.zeros(n_dlcs))
-        self.add_output('constr_mb2_defl', val=np.zeros(n_dlcs))
+        self.add_output("mb1_deflection", val=np.zeros(n_dlcs), units="m")
+        self.add_output("mb2_deflection", val=np.zeros(n_dlcs), units="m")
+        self.add_output("bedplate_deflection", val=0.0, units="m")
+        self.add_output("mb1_rotation", val=np.zeros(n_dlcs), units="rad")
+        self.add_output("mb2_rotation", val=np.zeros(n_dlcs), units="rad")
+        self.add_output("bedplate_rotation", val=0.0, units="rad")
+        self.add_output("base_F", val=np.zeros((3, n_dlcs)), units="N")
+        self.add_output("base_M", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_output("bedplate_axial_stress", np.zeros((22, n_dlcs)), units="Pa")
+        self.add_output("bedplate_shear_stress", np.zeros((22, n_dlcs)), units="Pa")
+        self.add_output("bedplate_bending_stress", np.zeros((22, n_dlcs)), units="Pa")
+        self.add_output("constr_bedplate_vonmises", np.zeros((22, n_dlcs)))
+        self.add_output("constr_mb1_defl", val=np.zeros(n_dlcs))
+        self.add_output("constr_mb2_defl", val=np.zeros(n_dlcs))
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack inputs
-        upwind       = discrete_inputs['upwind']
-        Cup          = -1.0 if upwind else 1.0
-        D_top        = float(inputs['D_top'])
-        tiltD        = float(inputs['tilt'])
-        tiltR        = np.deg2rad(tiltD)
-        s_drive      = inputs['s_drive']
+        upwind = discrete_inputs["upwind"]
+        Cup = -1.0 if upwind else 1.0
+        D_top = float(inputs["D_top"])
+        tiltD = float(inputs["tilt"])
+        tiltR = np.deg2rad(tiltD)
+        s_drive = inputs["s_drive"]
 
-        s_gear       = float(inputs['s_gearbox'])
-        s_gen        = float(inputs['s_generator'])
+        s_gear = float(inputs["s_gearbox"])
+        s_gen = float(inputs["s_generator"])
 
-        s_mb1        = float(inputs['s_mb1'])
-        s_mb2        = float(inputs['s_mb2'])
-        m_mb1        = float(inputs['mb1_mass'])
-        m_mb2        = float(inputs['mb2_mass'])
-        I_mb1        = inputs['mb1_I']
-        I_mb2        = inputs['mb2_I']
+        s_mb1 = float(inputs["s_mb1"])
+        s_mb2 = float(inputs["s_mb2"])
+        m_mb1 = float(inputs["mb1_mass"])
+        m_mb2 = float(inputs["mb2_mass"])
+        I_mb1 = inputs["mb1_I"]
+        I_mb2 = inputs["mb2_I"]
 
-        bed_w_flange = float(inputs['bedplate_flange_width'])
-        bed_t_flange = float(inputs['bedplate_flange_thickness'])
-        bed_h_web    = float(inputs['bedplate_web_height'])
-        bed_t_web    = float(inputs['bedplate_web_thickness'])
+        bed_w_flange = float(inputs["bedplate_flange_width"])
+        bed_t_flange = float(inputs["bedplate_flange_thickness"])
+        bed_h_web = float(inputs["bedplate_web_height"])
+        bed_t_web = float(inputs["bedplate_web_thickness"])
 
-        rho          = float(inputs['bedplate_rho'])
-        E            = float(inputs['bedplate_E'])
-        G            = float(inputs['bedplate_G'])
-        sigma_y      = float(inputs['bedplate_Xy'])
-        gamma_f      = float(self.options['modeling_options']['gamma_f'])
-        gamma_m      = float(self.options['modeling_options']['gamma_m'])
-        gamma_n      = float(self.options['modeling_options']['gamma_n'])
+        rho = float(inputs["bedplate_rho"])
+        E = float(inputs["bedplate_E"])
+        G = float(inputs["bedplate_G"])
+        sigma_y = float(inputs["bedplate_Xy"])
+        gamma_f = float(self.options["modeling_options"]["gamma_f"])
+        gamma_m = float(self.options["modeling_options"]["gamma_m"])
+        gamma_n = float(self.options["modeling_options"]["gamma_n"])
 
-        F_mb1        = inputs['F_mb1']
-        F_mb2        = inputs['F_mb2']
-        F_gear       = inputs['F_torq']
-        F_gen        = inputs['F_generator']
-        M_mb1        = inputs['M_mb1']
-        M_mb2        = inputs['M_mb2']
-        M_gear       = inputs['M_torq']
-        M_gen        = inputs['M_generator']
+        F_mb1 = inputs["F_mb1"]
+        F_mb2 = inputs["F_mb2"]
+        F_gear = inputs["F_torq"]
+        F_gen = inputs["F_generator"]
+        M_mb1 = inputs["M_mb1"]
+        M_mb2 = inputs["M_mb2"]
+        M_gear = inputs["M_torq"]
+        M_gen = inputs["M_generator"]
 
-        m_other      = float(inputs['other_mass'])
+        m_other = float(inputs["other_mass"])
 
         # ------- node data ----------------
-        n     = len(s_drive)
-        inode = np.arange(1, 3*n+1)
-        ynode = 0.25*D_top*np.r_[np.zeros(n), np.ones(n), -np.ones(n)]
-        xnode = s_drive*np.cos(tiltR)
-        xnode = Cup*np.r_[xnode, xnode, xnode]
-        znode = rnode = np.zeros(3*n)
+        n = len(s_drive)
+        inode = np.arange(1, 3 * n + 1)
+        ynode = 0.25 * D_top * np.r_[np.zeros(n), np.ones(n), -np.ones(n)]
+        xnode = s_drive * np.cos(tiltR)
+        xnode = Cup * np.r_[xnode, xnode, xnode]
+        znode = rnode = np.zeros(3 * n)
         nodes = frame3dd.NodeData(inode, xnode, ynode, znode, rnode)
         # Grab indices for later
         igenerator = inode[find_nearest(s_drive, s_gen)]
-        igearbox   = inode[find_nearest(s_drive, s_gear)]
-        itower     = inode[find_nearest(s_drive, 0.0)]
-        i1         = inode[find_nearest(s_drive, s_mb1)]
-        i2         = inode[find_nearest(s_drive, s_mb2)]
+        igearbox = inode[find_nearest(s_drive, s_gear)]
+        itower = inode[find_nearest(s_drive, 0.0)]
+        i1 = inode[find_nearest(s_drive, s_mb1)]
+        i2 = inode[find_nearest(s_drive, s_mb2)]
         # ------------------------------------
 
         # ------ reaction data ------------
         # Rigid base
-        rnode = np.int_(np.r_[itower+n, itower+2*n])
-        rk    = np.array([RIGID, RIGID])
+        rnode = np.int_(np.r_[itower + n, itower + 2 * n])
+        rk = np.array([RIGID, RIGID])
         reactions = frame3dd.ReactionData(rnode, rk, rk, rk, rk, rk, rk, rigid=RIGID)
         # -----------------------------------
 
@@ -1134,32 +1206,32 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         # Elements connect the lines, then connect the I-beams to the center nodes
         myI = IBeam(bed_w_flange, bed_t_flange, bed_h_web, bed_t_web)
 
-        N1i      = np.arange(1, n)
-        N2i      = np.arange(2, n+1)
-        Ni       = np.arange(1, n+1)
-        N1       = np.r_[N1i+n, N1i+2*n, Ni+n, Ni+2*n]
-        N2       = np.r_[N2i+n, N2i+2*n, Ni, Ni]
-        ielement = np.arange(1, N1.size+1)
-        roll     = np.zeros(N1.size)
-        myones   = np.ones(N1i.size)
-        plate1s  = np.ones(Ni.size)
+        N1i = np.arange(1, n)
+        N2i = np.arange(2, n + 1)
+        Ni = np.arange(1, n + 1)
+        N1 = np.r_[N1i + n, N1i + 2 * n, Ni + n, Ni + 2 * n]
+        N2 = np.r_[N2i + n, N2i + 2 * n, Ni, Ni]
+        ielement = np.arange(1, N1.size + 1)
+        roll = np.zeros(N1.size)
+        myones = np.ones(N1i.size)
+        plate1s = np.ones(Ni.size)
 
-        A_plate = As_plate = S_plate = C_plate = I_plate = 1e3*plate1s
-        rho_plate = 1e-6*plate1s
-        E_plate = G_plate = 1e16*plate1s
+        A_plate = As_plate = S_plate = C_plate = I_plate = 1e3 * plate1s
+        rho_plate = 1e-6 * plate1s
+        E_plate = G_plate = 1e16 * plate1s
 
-        Ax    = np.r_[myI.Area*myones, myI.Area*myones, A_plate, A_plate]
-        Asy   = np.r_[myI.Asy*myones, myI.Asy*myones, As_plate, As_plate]
-        Asz   = np.r_[myI.Asz*myones, myI.Asz*myones, As_plate, As_plate]
-        Sy    = np.r_[myI.Syy*myones, myI.Syy*myones, S_plate, S_plate]
-        Sz    = np.r_[myI.Szz*myones, myI.Szz*myones, S_plate, S_plate]
-        C     = np.r_[myI.C*myones, myI.C*myones, C_plate, C_plate]
-        J0    = np.r_[myI.Jxx*myones, myI.Jxx*myones, I_plate, I_plate]
-        Jy    = np.r_[myI.Iyy*myones, myI.Iyy*myones, I_plate, I_plate]
-        Jz    = np.r_[myI.Izz*myones, myI.Izz*myones, I_plate, I_plate]
-        myE   = np.r_[E*myones, E*myones, E_plate, E_plate]
-        myG   = np.r_[G*myones, G*myones, G_plate, G_plate]
-        myrho = np.r_[rho*myones, rho*myones, rho_plate, rho_plate]
+        Ax = np.r_[myI.Area * myones, myI.Area * myones, A_plate, A_plate]
+        Asy = np.r_[myI.Asy * myones, myI.Asy * myones, As_plate, As_plate]
+        Asz = np.r_[myI.Asz * myones, myI.Asz * myones, As_plate, As_plate]
+        Sy = np.r_[myI.Syy * myones, myI.Syy * myones, S_plate, S_plate]
+        Sz = np.r_[myI.Szz * myones, myI.Szz * myones, S_plate, S_plate]
+        C = np.r_[myI.C * myones, myI.C * myones, C_plate, C_plate]
+        J0 = np.r_[myI.Jxx * myones, myI.Jxx * myones, I_plate, I_plate]
+        Jy = np.r_[myI.Iyy * myones, myI.Iyy * myones, I_plate, I_plate]
+        Jz = np.r_[myI.Izz * myones, myI.Izz * myones, I_plate, I_plate]
+        myE = np.r_[E * myones, E * myones, E_plate, E_plate]
+        myG = np.r_[G * myones, G * myones, G_plate, G_plate]
+        myrho = np.r_[rho * myones, rho * myones, rho_plate, rho_plate]
 
         elements = frame3dd.ElementData(ielement, N1, N2, Ax, Asy, Asz, J0, Jy, Jz, myE, myG, roll, myrho)
         # -----------------------------------
@@ -1174,20 +1246,28 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         myframe = frame3dd.Frame(nodes, reactions, elements, options)
 
         # ------ add misc nacelle components at base and stator extra mass ------------
-        myframe.changeExtraNodeMass(np.r_[itower, i1, i2], [m_other, m_mb1, m_mb2],
-                                    [0.0, I_mb1[0], I_mb2[0]],
-                                    [0.0, I_mb1[1], I_mb2[1]],
-                                    [0.0, I_mb1[2], I_mb2[2]],
-                                    np.zeros(3), np.zeros(3), np.zeros(3),
-                                    np.zeros(3), np.zeros(3), np.zeros(3), True)
+        myframe.changeExtraNodeMass(
+            np.r_[itower, i1, i2],
+            [m_other, m_mb1, m_mb2],
+            [0.0, I_mb1[0], I_mb2[0]],
+            [0.0, I_mb1[1], I_mb2[1]],
+            [0.0, I_mb1[2], I_mb2[2]],
+            np.zeros(3),
+            np.zeros(3),
+            np.zeros(3),
+            np.zeros(3),
+            np.zeros(3),
+            np.zeros(3),
+            True,
+        )
         # ------------------------------------
 
         # ------- NO dynamic analysis ----------
-        #myframe.enableDynamics(NFREQ, discrete_inputs['Mmethod'], discrete_inputs['lump'], float(inputs['tol']), float(inputs['shift']))
+        # myframe.enableDynamics(NFREQ, discrete_inputs['Mmethod'], discrete_inputs['lump'], float(inputs['tol']), float(inputs['shift']))
         # ----------------------------
 
         # ------ static load cases ------------
-        n_dlcs   = self.options['n_dlcs']
+        n_dlcs = self.options["n_dlcs"]
         gx = gy = 0.0
         gz = -gravity
         for k in range(n_dlcs):
@@ -1195,69 +1275,98 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
             load = frame3dd.StaticLoadCase(gx, gy, gz)
 
             # point loads
-            F_ext = np.c_[F_mb2[:,k], F_mb1[:,k], F_gear[:,k], F_gen[:,k]]
-            M_ext = np.c_[M_mb2[:,k], M_mb1[:,k], M_gear[:,k], M_gen[:,k]]
-            F_rot = DirectionVector(F_ext[0,:], F_ext[1,:], F_ext[2,:]).hubToYaw(-tiltD).toArray()
-            M_rot = DirectionVector(M_ext[0,:], M_ext[1,:], M_ext[2,:]).hubToYaw(-tiltD).toArray()
-            load.changePointLoads(np.r_[i2, i1, igearbox, igenerator],
-                                  F_rot[:,0], F_rot[:,1], F_rot[:,2],
-                                  M_rot[:,0], M_rot[:,1], M_rot[:,2])
+            F_ext = np.c_[F_mb2[:, k], F_mb1[:, k], F_gear[:, k], F_gen[:, k]]
+            M_ext = np.c_[M_mb2[:, k], M_mb1[:, k], M_gear[:, k], M_gen[:, k]]
+            F_rot = DirectionVector(F_ext[0, :], F_ext[1, :], F_ext[2, :]).hubToYaw(-tiltD).toArray()
+            M_rot = DirectionVector(M_ext[0, :], M_ext[1, :], M_ext[2, :]).hubToYaw(-tiltD).toArray()
+            load.changePointLoads(
+                np.r_[i2, i1, igearbox, igenerator],
+                F_rot[:, 0],
+                F_rot[:, 1],
+                F_rot[:, 2],
+                M_rot[:, 0],
+                M_rot[:, 1],
+                M_rot[:, 2],
+            )
             # -----------------------------------
 
             # Put all together and run
             myframe.addLoadCase(load)
 
-        #myframe.write('myframe4.3dd') # Debugging
+        # myframe.write('myframe4.3dd') # Debugging
         displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
         # Loop over DLCs and append to outputs
-        outputs['mb1_deflection'] = np.zeros(n_dlcs)
-        outputs['mb2_deflection'] = np.zeros(n_dlcs)
-        outputs['mb1_rotation']   = np.zeros(n_dlcs)
-        outputs['mb2_rotation']   = np.zeros(n_dlcs)
-        outputs['base_F']         = np.zeros((3, n_dlcs))
-        outputs['base_M']         = np.zeros((3, n_dlcs))
-        outputs['bedplate_axial_stress']    = np.zeros((2*n-2, n_dlcs))
-        outputs['bedplate_shear_stress']    = np.zeros((2*n-2, n_dlcs))
-        outputs['bedplate_bending_stress']  = np.zeros((2*n-2, n_dlcs))
-        outputs['constr_bedplate_vonmises'] = np.zeros((2*n-2, n_dlcs))
+        outputs["mb1_deflection"] = np.zeros(n_dlcs)
+        outputs["mb2_deflection"] = np.zeros(n_dlcs)
+        outputs["mb1_rotation"] = np.zeros(n_dlcs)
+        outputs["mb2_rotation"] = np.zeros(n_dlcs)
+        outputs["base_F"] = np.zeros((3, n_dlcs))
+        outputs["base_M"] = np.zeros((3, n_dlcs))
+        outputs["bedplate_axial_stress"] = np.zeros((2 * n - 2, n_dlcs))
+        outputs["bedplate_shear_stress"] = np.zeros((2 * n - 2, n_dlcs))
+        outputs["bedplate_bending_stress"] = np.zeros((2 * n - 2, n_dlcs))
+        outputs["constr_bedplate_vonmises"] = np.zeros((2 * n - 2, n_dlcs))
         for k in range(n_dlcs):
             # Deflections and rotations at bearings- how to sum up rotation angles?
-            outputs['mb1_deflection'][k] = np.sqrt(displacements.dx[k,i1-1]**2 + displacements.dy[k,i1-1]**2 + displacements.dz[k,i1-1]**2)
-            outputs['mb2_deflection'][k] = np.sqrt(displacements.dx[k,i2-1]**2 + displacements.dy[k,i2-1]**2 + displacements.dz[k,i2-1]**2)
-            bedplate_deflection          = np.maximum( np.sqrt(displacements.dx[k, n]**2 + displacements.dy[k, n]**2 + displacements.dz[k, n]**2),
-                                                       np.sqrt(displacements.dx[k,-1]**2 + displacements.dy[k,-1]**2 + displacements.dz[k,-1]**2))
-            outputs['mb1_rotation'][k]   = displacements.dxrot[k,i1-1] + displacements.dyrot[k,i1-1] + displacements.dzrot[k,i1-1]
-            outputs['mb2_rotation'][k]   = displacements.dxrot[k,i2-1] + displacements.dyrot[k,i2-1] + displacements.dzrot[k,i2-1]
-            bedplate_rotation            = np.maximum( displacements.dxrot[k, n] + displacements.dyrot[k, n] + displacements.dzrot[k, n],
-                                                       displacements.dxrot[k,-1] + displacements.dyrot[k,-1] + displacements.dzrot[k,-1] )
+            outputs["mb1_deflection"][k] = np.sqrt(
+                displacements.dx[k, i1 - 1] ** 2 + displacements.dy[k, i1 - 1] ** 2 + displacements.dz[k, i1 - 1] ** 2
+            )
+            outputs["mb2_deflection"][k] = np.sqrt(
+                displacements.dx[k, i2 - 1] ** 2 + displacements.dy[k, i2 - 1] ** 2 + displacements.dz[k, i2 - 1] ** 2
+            )
+            bedplate_deflection = np.maximum(
+                np.sqrt(displacements.dx[k, n] ** 2 + displacements.dy[k, n] ** 2 + displacements.dz[k, n] ** 2),
+                np.sqrt(displacements.dx[k, -1] ** 2 + displacements.dy[k, -1] ** 2 + displacements.dz[k, -1] ** 2),
+            )
+            outputs["mb1_rotation"][k] = (
+                displacements.dxrot[k, i1 - 1] + displacements.dyrot[k, i1 - 1] + displacements.dzrot[k, i1 - 1]
+            )
+            outputs["mb2_rotation"][k] = (
+                displacements.dxrot[k, i2 - 1] + displacements.dyrot[k, i2 - 1] + displacements.dzrot[k, i2 - 1]
+            )
+            bedplate_rotation = np.maximum(
+                displacements.dxrot[k, n] + displacements.dyrot[k, n] + displacements.dzrot[k, n],
+                displacements.dxrot[k, -1] + displacements.dyrot[k, -1] + displacements.dzrot[k, -1],
+            )
 
             # shear and bending, one per element (convert from local to global c.s.)
-            Fx =  forces.Nx[k, 1::2]
-            Vy =  forces.Vy[k, 1::2]
+            Fx = forces.Nx[k, 1::2]
+            Vy = forces.Vy[k, 1::2]
             Vz = -forces.Vz[k, 1::2]
-            #F  =  np.sqrt(Vz**2 + Vy**2)
+            # F  =  np.sqrt(Vz**2 + Vy**2)
 
-            Mxx =  forces.Txx[k, 1::2]
-            Myy =  forces.Myy[k, 1::2]
+            Mxx = forces.Txx[k, 1::2]
+            Myy = forces.Myy[k, 1::2]
             Mzz = -forces.Mzz[k, 1::2]
-            #M   =  np.sqrt(Myy**2 + Mzz**2)
+            # M   =  np.sqrt(Myy**2 + Mzz**2)
 
             # Record total forces and moments at base
-            outputs['base_F'][:,k] = np.r_[-reactions.Fx[k,:].sum(), -reactions.Fy[k,:].sum(), -reactions.Fz[k,:].sum()]
-            outputs['base_M'][:,k] = np.r_[-reactions.Mxx[k,:].sum(), -reactions.Myy[k,:].sum(), -reactions.Mzz[k,:].sum()]
+            outputs["base_F"][:, k] = np.r_[
+                -reactions.Fx[k, :].sum(), -reactions.Fy[k, :].sum(), -reactions.Fz[k, :].sum()
+            ]
+            outputs["base_M"][:, k] = np.r_[
+                -reactions.Mxx[k, :].sum(), -reactions.Myy[k, :].sum(), -reactions.Mzz[k, :].sum()
+            ]
 
-            outputs['bedplate_axial_stress'][:,k] = (np.abs(Fx)/Ax + np.abs(Myy)/Sy + np.abs(Mzz)/Sz)[:(2*n-2)]
-            outputs['bedplate_shear_stress'][:,k] = (2.0*(np.abs(Vy)/Asy+np.abs(Vz)/Asz) + np.abs(Mxx)/C)[:(2*n-2)]
-            hoop = np.zeros(2*n-2)
+            outputs["bedplate_axial_stress"][:, k] = (np.abs(Fx) / Ax + np.abs(Myy) / Sy + np.abs(Mzz) / Sz)[
+                : (2 * n - 2)
+            ]
+            outputs["bedplate_shear_stress"][:, k] = (2.0 * (np.abs(Vy) / Asy + np.abs(Vz) / Asz) + np.abs(Mxx) / C)[
+                : (2 * n - 2)
+            ]
+            hoop = np.zeros(2 * n - 2)
 
-            outputs['constr_bedplate_vonmises'][:,k] = vonMisesStressUtilization(outputs['bedplate_axial_stress'][:,k],
-                                                                                 hoop,
-                                                                                 outputs['bedplate_shear_stress'][:,k],
-                                                                                 gamma_f*gamma_m*gamma_n, sigma_y)
+            outputs["constr_bedplate_vonmises"][:, k] = vonMisesStressUtilization(
+                outputs["bedplate_axial_stress"][:, k],
+                hoop,
+                outputs["bedplate_shear_stress"][:, k],
+                gamma_f * gamma_m * gamma_n,
+                sigma_y,
+            )
 
         # Evaluate bearing limits
-        outputs['constr_mb1_defl'] = outputs['mb1_rotation'] / inputs['mb1_max_defl_ang']
-        outputs['constr_mb2_defl'] = outputs['mb2_rotation'] / inputs['mb2_max_defl_ang']
-        outputs['bedplate_deflection'] = bedplate_deflection.max()
-        outputs['bedplate_rotation']   = bedplate_rotation.max()
+        outputs["constr_mb1_defl"] = outputs["mb1_rotation"] / inputs["mb1_max_defl_ang"]
+        outputs["constr_mb2_defl"] = outputs["mb2_rotation"] / inputs["mb2_max_defl_ang"]
+        outputs["bedplate_deflection"] = bedplate_deflection.max()
+        outputs["bedplate_rotation"] = bedplate_rotation.max()

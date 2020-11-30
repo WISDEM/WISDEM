@@ -169,27 +169,16 @@ class ExportCableInstallation(InstallPhase):
         num = self.config["plant"]["num_turbines"]
         capacity = num * tr
 
-        voltage = self.config["export_system"].get(
-            "interconnection_voltage", 345
-        )
-        distance = self.config["export_system"].get(
-            "interconnection_distance", 3
-        )
+        voltage = self.config["export_system"].get("interconnection_voltage", 345)
+        distance = self.config["export_system"].get("interconnection_distance", 3)
 
         switchyard_cost = 18115 * voltage + 165944
-        onshore_substation_cost = (
-            0.165 * 1e6
-        ) * capacity  # From BNEF Tomorrow's Cost of Offshore Wind
+        onshore_substation_cost = (0.165 * 1e6) * capacity  # From BNEF Tomorrow's Cost of Offshore Wind
         onshore_misc_cost = 11795 * capacity ** 0.3549 + 350000
-        transmission_line_cost = (1176 * voltage + 218257) * (
-            distance ** (1 - 0.1063)
-        )
+        transmission_line_cost = (1176 * voltage + 218257) * (distance ** (1 - 0.1063))
 
         onshore_transmission_cost = (
-            switchyard_cost
-            + onshore_substation_cost
-            + onshore_misc_cost
-            + transmission_line_cost
+            switchyard_cost + onshore_substation_cost + onshore_misc_cost + transmission_line_cost
         )
 
         return onshore_transmission_cost
@@ -313,15 +302,11 @@ def install_export_cables(
             # Trenching vessel can dig a trench during inbound or outbound journey
             if trench_vessel.at_port:
                 trench_vessel.at_port = False
-                yield dig_export_cables_trench(
-                    trench_vessel, ground_distance, **kwargs
-                )
+                yield dig_export_cables_trench(trench_vessel, ground_distance, **kwargs)
                 trench_vessel.at_site = True
             elif trench_vessel.at_site:
                 trench_vessel.at_site = False
-                yield dig_export_cables_trench(
-                    trench_vessel, ground_distance, **kwargs
-                )
+                yield dig_export_cables_trench(trench_vessel, ground_distance, **kwargs)
                 trench_vessel.at_port = True
 
         # If the vessel finishes trenching at site, return to shore
@@ -437,6 +422,4 @@ def dig_export_cables_trench(vessel, distance, **kwargs):
     yield position_onsite(vessel, site_position_time=2)
     yield dig_trench(vessel, distance, **kwargs)
 
-    vessel.submit_debug_log(
-        message="Export cable trench digging process completed!"
-    )
+    vessel.submit_debug_log(message="Export cable trench digging process completed!")
