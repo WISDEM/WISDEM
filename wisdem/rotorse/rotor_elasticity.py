@@ -17,12 +17,11 @@ class RunPreComp(ExplicitComponent):
         self.options.declare("opt_options")
 
     def setup(self):
-        blade_init_options = self.options["modeling_options"]["RotorSE"]
-        self.n_span = n_span = blade_init_options["n_span"]
-        self.n_webs = n_webs = blade_init_options["n_webs"]
-        self.n_layers = n_layers = blade_init_options["n_layers"]
-        af_init_options = self.options["modeling_options"]["airfoils"]
-        self.n_xy = n_xy = af_init_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
+        rotorse_options = self.options["modeling_options"]["RotorSE"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_webs = n_webs = rotorse_options["n_webs"]
+        self.n_layers = n_layers = rotorse_options["n_layers"]
+        self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
         mat_init_options = self.options["modeling_options"]["materials"]
         self.n_mat = n_mat = mat_init_options["n_mat"]
         self.verbosity = self.options["modeling_options"]["General"]["verbosity"]

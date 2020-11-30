@@ -4484,15 +4484,14 @@ class RotorCost(ExplicitComponent):
 
     def setup(self):
         wt_init_options = self.options["wt_init_options"]
-        blade_init_options = wt_init_options["blade"]
+        rotorse_options = wt_init_options["RotorSE"]
         self.n_span = n_span = blade_init_options["n_span"]
         opt_options = self.options["opt_options"]
         self.costs_verbosity = opt_options["costs_verbosity"]
-        self.n_span = n_span = blade_init_options["n_span"]
-        self.n_webs = n_webs = blade_init_options["n_webs"]
-        self.n_layers = n_layers = blade_init_options["n_layers"]
-        af_init_options = self.options["wt_init_options"]["airfoils"]
-        self.n_xy = n_xy = af_init_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_webs = n_webs = rotorse_options["n_webs"]
+        self.n_layers = n_layers = rotorse_options["n_layers"]
+        self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
         mat_init_options = self.options["wt_init_options"]["materials"]
         self.n_mat = n_mat = mat_init_options["n_mat"]
 

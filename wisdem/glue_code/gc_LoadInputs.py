@@ -116,44 +116,43 @@ class WindTurbineOntologyPython(object):
         self.modeling_options["materials"]["n_mat"] = len(self.wt_init["materials"])
 
         # Airfoils
-        self.modeling_options["airfoils"] = {}
         if self.modeling_options["flags"]["airfoils"]:
-            self.modeling_options["airfoils"]["n_af"] = len(self.wt_init["airfoils"])
-            self.modeling_options["airfoils"]["n_aoa"] = self.modeling_options["RotorSE"]["n_aoa"]
-            if self.modeling_options["airfoils"]["n_aoa"] / 4.0 == int(
-                self.modeling_options["airfoils"]["n_aoa"] / 4.0
+            self.modeling_options["RotorSE"]["n_af"] = len(self.wt_init["airfoils"])
+            self.modeling_options["RotorSE"]["n_aoa"] = self.modeling_options["RotorSE"]["n_aoa"]
+            if self.modeling_options["RotorSE"]["n_aoa"] / 4.0 == int(
+                self.modeling_options["RotorSE"]["n_aoa"] / 4.0
             ):
                 # One fourth of the angles of attack from -pi to -pi/6, half between -pi/6 to pi/6, and one fourth from pi/6 to pi
-                self.modeling_options["airfoils"]["aoa"] = np.unique(
+                self.modeling_options["RotorSE"]["aoa"] = np.unique(
                     np.hstack(
                         [
                             np.linspace(
-                                -np.pi, -np.pi / 6.0, int(self.modeling_options["airfoils"]["n_aoa"] / 4.0 + 1)
+                                -np.pi, -np.pi / 6.0, int(self.modeling_options["RotorSE"]["n_aoa"] / 4.0 + 1)
                             ),
                             np.linspace(
-                                -np.pi / 6.0, np.pi / 6.0, int(self.modeling_options["airfoils"]["n_aoa"] / 2.0)
+                                -np.pi / 6.0, np.pi / 6.0, int(self.modeling_options["RotorSE"]["n_aoa"] / 2.0)
                             ),
-                            np.linspace(np.pi / 6.0, np.pi, int(self.modeling_options["airfoils"]["n_aoa"] / 4.0 + 1)),
+                            np.linspace(np.pi / 6.0, np.pi, int(self.modeling_options["RotorSE"]["n_aoa"] / 4.0 + 1)),
                         ]
                     )
                 )
             else:
-                self.modeling_options["airfoils"]["aoa"] = np.linspace(
-                    -np.pi, np.pi, self.modeling_options["airfoils"]["n_aoa"]
+                self.modeling_options["RotorSE"]["aoa"] = np.linspace(
+                    -np.pi, np.pi, self.modeling_options["RotorSE"]["n_aoa"]
                 )
                 print(
                     "WARNING: If you like a grid of angles of attack more refined between +- 30 deg, please choose a n_aoa in the analysis option input file that is a multiple of 4. The current value of "
-                    + str(self.modeling_options["airfoils"]["n_aoa"])
+                    + str(self.modeling_options["RotorSE"]["n_aoa"])
                     + " is not a multiple of 4 and an equally spaced grid is adopted."
                 )
             Re_all = []
-            for i in range(self.modeling_options["airfoils"]["n_af"]):
+            for i in range(self.modeling_options["RotorSE"]["n_af"]):
                 for j in range(len(self.wt_init["airfoils"][i]["polars"])):
                     Re_all.append(self.wt_init["airfoils"][i]["polars"][j]["re"])
-            self.modeling_options["airfoils"]["n_Re"] = len(np.unique(Re_all))
-            self.modeling_options["airfoils"]["n_tab"] = 1
-            self.modeling_options["airfoils"]["n_xy"] = self.modeling_options["RotorSE"]["n_xy"]
-            self.modeling_options["airfoils"]["af_used"] = self.wt_init["components"]["blade"]["outer_shape_bem"][
+            self.modeling_options["RotorSE"]["n_Re"] = len(np.unique(Re_all))
+            self.modeling_options["RotorSE"]["n_tab"] = 1
+            self.modeling_options["RotorSE"]["n_xy"] = self.modeling_options["RotorSE"]["n_xy"]
+            self.modeling_options["RotorSE"]["af_used"] = self.wt_init["components"]["blade"]["outer_shape_bem"][
                 "airfoil_position"
             ]["labels"]
 
@@ -197,7 +196,7 @@ class WindTurbineOntologyPython(object):
                     self.modeling_options["RotorSE"]["n_te_flaps"] = len(
                         self.wt_init["components"]["blade"]["aerodynamic_control"]["te_flaps"]
                     )
-                    self.modeling_options["airfoils"]["n_tab"] = 3
+                    self.modeling_options["RotorSE"]["n_tab"] = 3
                 else:
                     raise RuntimeError(
                         "A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem."

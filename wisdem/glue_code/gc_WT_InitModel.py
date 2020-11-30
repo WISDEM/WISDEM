@@ -1107,12 +1107,12 @@ def assign_costs_values(wt_opt, costs):
 def assign_airfoil_values(wt_opt, modeling_options, airfoils):
     # Function to assign values to the openmdao component Airfoils
 
-    n_af = modeling_options["airfoils"]["n_af"]
-    n_aoa = modeling_options["airfoils"]["n_aoa"]
-    aoa = modeling_options["airfoils"]["aoa"]
-    n_Re = modeling_options["airfoils"]["n_Re"]
-    n_tab = modeling_options["airfoils"]["n_tab"]
-    n_xy = modeling_options["airfoils"]["n_xy"]
+    n_af = modeling_options["RotorSE"]["n_af"]
+    n_aoa = modeling_options["RotorSE"]["n_aoa"]
+    aoa = modeling_options["RotorSE"]["aoa"]
+    n_Re = modeling_options["RotorSE"]["n_Re"]
+    n_tab = modeling_options["RotorSE"]["n_tab"]
+    n_xy = modeling_options["RotorSE"]["n_xy"]
 
     name = n_af * [""]
     ac = np.zeros(n_af)

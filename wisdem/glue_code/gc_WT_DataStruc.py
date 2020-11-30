@@ -27,14 +27,14 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # Airfoil dictionary inputs
         if modeling_options["flags"]["airfoils"]:
             airfoils = om.IndepVarComp()
-            af_init_options = modeling_options["airfoils"]
-            n_af = af_init_options["n_af"]  # Number of airfoils
-            n_aoa = af_init_options["n_aoa"]  # Number of angle of attacks
-            n_Re = af_init_options["n_Re"]  # Number of Reynolds, so far hard set at 1
-            n_tab = af_init_options[
+            rotorse_options = modeling_options["RotorSE"]
+            n_af = rotorse_options["n_af"]  # Number of airfoils
+            n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
+            n_Re = rotorse_options["n_Re"]  # Number of Reynolds, so far hard set at 1
+            n_tab = rotorse_options[
                 "n_tab"
             ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
-            n_xy = af_init_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
+            n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
             airfoils.add_discrete_output("name", val=n_af * [""], desc="1D array of names of airfoils.")
             airfoils.add_output("ac", val=np.zeros(n_af), desc="1D array of the aerodynamic centers of each airfoil.")
             airfoils.add_output(
@@ -79,8 +79,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem(
                 "blade",
                 Blade(
-                    blade_init_options=modeling_options["RotorSE"],
-                    af_init_options=modeling_options["airfoils"],
+                    rotorse_options=modeling_options["RotorSE"],
                     opt_options=opt_options,
                 ),
             )
@@ -519,14 +518,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 class Blade(om.Group):
     # Openmdao group with components with the blade data coming from the input yaml file.
     def initialize(self):
-        self.options.declare("blade_init_options")
-        self.options.declare("af_init_options")
+        self.options.declare("rotorse_options")
         self.options.declare("opt_options")
 
     def setup(self):
         # Options
-        blade_init_options = self.options["blade_init_options"]
-        af_init_options = self.options["af_init_options"]
+        rotorse_options = self.options["rotorse_options"]
         opt_options = self.options["opt_options"]
 
         # Optimization parameters initialized as indipendent variable component
@@ -545,7 +542,7 @@ class Blade(om.Group):
             "chord_opt_gain",
             val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
-        opt_var.add_output("af_position", val=np.ones(blade_init_options["n_af_span"]))
+        opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
         opt_var.add_output(
             "spar_cap_ss_opt_gain",
             val=np.ones(opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
@@ -557,17 +554,17 @@ class Blade(om.Group):
         self.add_subsystem("opt_var", opt_var)
 
         # Import outer shape BEM
-        self.add_subsystem("outer_shape_bem", Blade_Outer_Shape_BEM(blade_init_options=blade_init_options))
+        self.add_subsystem("outer_shape_bem", Blade_Outer_Shape_BEM(rotorse_options=rotorse_options))
 
         # Parametrize blade outer shape
         self.add_subsystem(
-            "pa", ParametrizeBladeAero(blade_init_options=blade_init_options, opt_options=opt_options)
+            "pa", ParametrizeBladeAero(rotorse_options=rotorse_options, opt_options=opt_options)
         )  # Parameterize aero (chord and twist)
 
         # Interpolate airfoil profiles and coordinates
         self.add_subsystem(
             "interp_airfoils",
-            Blade_Interp_Airfoils(blade_init_options=blade_init_options, af_init_options=af_init_options),
+            Blade_Interp_Airfoils(rotorse_options=rotorse_options),
         )
 
         # Connections to blade aero parametrization
@@ -587,10 +584,10 @@ class Blade(om.Group):
         self.connect("opt_var.af_position", "interp_airfoils.af_position")
 
         # If the flag is true, generate the 3D x,y,z points of the outer blade shape
-        if blade_init_options["lofted_output"] == True:
+        if rotorse_options["lofted_output"] == True:
             self.add_subsystem(
                 "blade_lofted",
-                Blade_Lofted_Shape(blade_init_options=blade_init_options, af_init_options=af_init_options),
+                Blade_Lofted_Shape(rotorse_options=rotorse_options),
             )
             self.connect("interp_airfoils.coord_xy_dim", "blade_lofted.coord_xy_dim")
             self.connect("pa.twist_param", "blade_lofted.twist")
@@ -600,7 +597,7 @@ class Blade(om.Group):
         # Import blade internal structure data and remap composites on the outer blade shape
         self.add_subsystem(
             "internal_structure_2d_fem",
-            Blade_Internal_Structure_2D_FEM(blade_init_options=blade_init_options, af_init_options=af_init_options),
+            Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
         )
         self.connect("outer_shape_bem.s", "internal_structure_2d_fem.s")
         self.connect("pa.twist_param", "internal_structure_2d_fem.twist")
@@ -609,7 +606,7 @@ class Blade(om.Group):
         self.connect("interp_airfoils.coord_xy_dim", "internal_structure_2d_fem.coord_xy_dim")
 
         self.add_subsystem(
-            "ps", ParametrizeBladeStruct(blade_init_options=blade_init_options, opt_options=opt_options)
+            "ps", ParametrizeBladeStruct(rotorse_options=rotorse_options, opt_options=opt_options)
         )  # Parameterize struct (spar caps ss and ps)
 
         # Connections to blade struct parametrization
@@ -623,12 +620,12 @@ class Blade(om.Group):
 class Blade_Outer_Shape_BEM(om.Group):
     # Openmdao group with the blade outer shape data coming from the input yaml file.
     def initialize(self):
-        self.options.declare("blade_init_options")
+        self.options.declare("rotorse_options")
 
     def setup(self):
-        blade_init_options = self.options["blade_init_options"]
-        n_af_span = blade_init_options["n_af_span"]
-        self.n_span = n_span = blade_init_options["n_span"]
+        rotorse_options = self.options["rotorse_options"]
+        n_af_span = rotorse_options["n_af_span"]
+        self.n_span = n_span = rotorse_options["n_span"]
 
         ivc = self.add_subsystem("blade_outer_shape_indep_vars", om.IndepVarComp(), promotes=["*"])
         ivc.add_output(
@@ -664,7 +661,7 @@ class Blade_Outer_Shape_BEM(om.Group):
 
         self.add_subsystem(
             "compute_blade_outer_shape_bem",
-            Compute_Blade_Outer_Shape_BEM(blade_init_options=blade_init_options),
+            Compute_Blade_Outer_Shape_BEM(rotorse_options=rotorse_options),
             promotes=["*"],
         )
 
@@ -672,14 +669,14 @@ class Blade_Outer_Shape_BEM(om.Group):
 class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
     # Openmdao group with the blade outer shape data coming from the input yaml file.
     def initialize(self):
-        self.options.declare("blade_init_options")
+        self.options.declare("rotorse_options")
 
     def setup(self):
-        blade_init_options = self.options["blade_init_options"]
-        n_af_span = blade_init_options["n_af_span"]
-        self.n_span = n_span = blade_init_options["n_span"]
-        if "n_te_flaps" in blade_init_options.keys():
-            n_te_flaps = blade_init_options["n_te_flaps"]
+        rotorse_options = self.options["rotorse_options"]
+        n_af_span = rotorse_options["n_af_span"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        if "n_te_flaps" in rotorse_options.keys():
+            n_te_flaps = rotorse_options["n_te_flaps"]
         else:
             n_te_flaps = 0
 
@@ -798,22 +795,20 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
     # Openmdao component to interpolate airfoil coordinates and airfoil polars along the span of the blade for a predefined set of airfoils coming from component Airfoils.
     # JPJ: can split this up into multiple components to ease derivative computation
     def initialize(self):
-        self.options.declare("blade_init_options")
-        self.options.declare("af_init_options")
+        self.options.declare("rotorse_options")
 
     def setup(self):
-        blade_init_options = self.options["blade_init_options"]
-        self.n_af_span = n_af_span = blade_init_options["n_af_span"]
-        self.n_span = n_span = blade_init_options["n_span"]
-        af_init_options = self.options["af_init_options"]
-        self.n_af = n_af = af_init_options["n_af"]  # Number of airfoils
-        self.n_aoa = n_aoa = af_init_options["n_aoa"]  # Number of angle of attacks
-        self.n_Re = n_Re = af_init_options["n_Re"]  # Number of Reynolds, so far hard set at 1
-        self.n_tab = n_tab = af_init_options[
+        rotorse_options = self.options["rotorse_options"]
+        self.n_af_span = n_af_span = rotorse_options["n_af_span"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_af = n_af = rotorse_options["n_af"]  # Number of airfoils
+        self.n_aoa = n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
+        self.n_Re = n_Re = rotorse_options["n_Re"]  # Number of Reynolds, so far hard set at 1
+        self.n_tab = n_tab = rotorse_options[
             "n_tab"
         ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
-        self.n_xy = n_xy = af_init_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
-        self.af_used = af_init_options["af_used"]  # Names of the airfoils adopted along blade span
+        self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
+        self.af_used = rotorse_options["af_used"]  # Names of the airfoils adopted along blade span
 
         self.add_input(
             "af_position",
@@ -1031,14 +1026,12 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
 class Blade_Lofted_Shape(om.ExplicitComponent):
     # Openmdao component to generate the x, y, z coordinates of the points describing the blade outer shape.
     def initialize(self):
-        self.options.declare("blade_init_options")
-        self.options.declare("af_init_options")
+        self.options.declare("rotorse_options")
 
     def setup(self):
-        blade_init_options = self.options["blade_init_options"]
-        af_init_options = self.options["af_init_options"]
-        self.n_span = n_span = blade_init_options["n_span"]
-        self.n_xy = n_xy = af_init_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
+        rotorse_options = self.options["rotorse_options"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
 
         self.add_input(
             "s",
@@ -1120,16 +1113,14 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
 class Blade_Internal_Structure_2D_FEM(om.Group):
     # Openmdao group with the blade internal structure data coming from the input yaml file.
     def initialize(self):
-        self.options.declare("blade_init_options")
-        self.options.declare("af_init_options")
+        self.options.declare("rotorse_options")
 
     def setup(self):
-        blade_init_options = self.options["blade_init_options"]
-        af_init_options = self.options["af_init_options"]
-        self.n_span = n_span = blade_init_options["n_span"]
-        self.n_webs = n_webs = blade_init_options["n_webs"]
-        self.n_layers = n_layers = blade_init_options["n_layers"]
-        self.n_xy = n_xy = af_init_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
+        rotorse_options = self.options["rotorse_options"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_webs = n_webs = rotorse_options["n_webs"]
+        self.n_layers = n_layers = rotorse_options["n_layers"]
+        self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
 
         ivc = self.add_subsystem("blade_2dfem_indep_vars", om.IndepVarComp(), promotes=["*"])
         ivc.add_output(
@@ -1222,7 +1213,7 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
         self.add_subsystem(
             "compute_internal_structure_2d_fem",
             Compute_Blade_Internal_Structure_2D_FEM(
-                blade_init_options=blade_init_options, af_init_options=af_init_options
+                rotorse_options=rotorse_options
             ),
             promotes=["*"],
         )
@@ -1230,16 +1221,14 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
 
 class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
     def initialize(self):
-        self.options.declare("blade_init_options")
-        self.options.declare("af_init_options")
+        self.options.declare("rotorse_options")
 
     def setup(self):
-        blade_init_options = self.options["blade_init_options"]
-        af_init_options = self.options["af_init_options"]
-        self.n_span = n_span = blade_init_options["n_span"]
-        self.n_webs = n_webs = blade_init_options["n_webs"]
-        self.n_layers = n_layers = blade_init_options["n_layers"]
-        self.n_xy = n_xy = af_init_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
+        rotorse_options = self.options["rotorse_options"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_webs = n_webs = rotorse_options["n_webs"]
+        self.n_layers = n_layers = rotorse_options["n_layers"]
+        self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
 
         # From user defined yaml
         self.add_input(
@@ -1435,9 +1424,9 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
         layer_start_nd = np.zeros((self.n_layers, self.n_span))
         layer_end_nd = np.zeros((self.n_layers, self.n_span))
 
-        layer_name = self.options["blade_init_options"]["layer_name"]
-        layer_mat = self.options["blade_init_options"]["layer_mat"]
-        web_name = self.options["blade_init_options"]["web_name"]
+        layer_name = self.options["rotorse_options"]["layer_name"]
+        layer_mat = self.options["rotorse_options"]["layer_mat"]
+        web_name = self.options["rotorse_options"]["web_name"]
 
         # Loop through spanwise stations
         for i in range(self.n_span):

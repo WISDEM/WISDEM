@@ -7,13 +7,13 @@ from scipy.interpolate import PchipInterpolator
 class ParametrizeBladeAero(ExplicitComponent):
     # Openmdao component to parameterize distributed quantities for the outer shape of the wind turbine rotor blades
     def initialize(self):
-        self.options.declare("blade_init_options")
+        self.options.declare("rotorse_options")
         self.options.declare("opt_options")
 
     def setup(self):
-        blade_init_options = self.options["blade_init_options"]
+        rotorse_options = self.options["rotorse_options"]
         self.opt_options = self.options["opt_options"]
-        n_span = blade_init_options["n_span"]
+        n_span = rotorse_options["n_span"]
         self.n_opt_twist = n_opt_twist = self.opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"][
             "n_opt"
         ]
@@ -114,14 +114,14 @@ class ParametrizeBladeAero(ExplicitComponent):
 class ParametrizeBladeStruct(ExplicitComponent):
     # Openmdao component to parameterize distributed quantities for the structural design of the wind turbine rotor blades
     def initialize(self):
-        self.options.declare("blade_init_options")
+        self.options.declare("rotorse_options")
         self.options.declare("opt_options")
 
     def setup(self):
-        blade_init_options = self.options["blade_init_options"]
+        rotorse_options = self.options["rotorse_options"]
         self.opt_options = opt_options = self.options["opt_options"]
-        self.n_span = n_span = blade_init_options["n_span"]
-        self.n_layers = n_layers = blade_init_options["n_layers"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_layers = n_layers = rotorse_options["n_layers"]
         self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options["optimization_variables"]["blade"]["structure"][
             "spar_cap_ss"
         ]["n_opt"]
@@ -177,7 +177,7 @@ class ParametrizeBladeStruct(ExplicitComponent):
         spar_cap_ss_name = self.opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["name"]
         spar_cap_ps_name = self.opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ps"]["name"]
 
-        layer_name = self.options["blade_init_options"]["layer_name"]
+        layer_name = self.options["rotorse_options"]["layer_name"]
 
         for i in range(self.n_layers):
             if layer_name[i] == spar_cap_ss_name:

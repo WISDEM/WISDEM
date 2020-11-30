@@ -128,19 +128,14 @@ class ComputePowerCurve(ExplicitComponent):
     def setup(self):
         modeling_options = self.options["modeling_options"]
         self.n_span = n_span = modeling_options["RotorSE"]["n_span"]
-        # self.n_af          = n_af      = af_init_options['n_af'] # Number of airfoils
-        self.n_aoa = n_aoa = modeling_options["airfoils"]["n_aoa"]  # Number of angle of attacks
-        self.n_Re = n_Re = modeling_options["airfoils"]["n_Re"]  # Number of Reynolds, so far hard set at 1
-        self.n_tab = n_tab = modeling_options["airfoils"][
+        self.n_aoa = n_aoa = modeling_options["RotorSE"]["n_aoa"]  # Number of angle of attacks
+        self.n_Re = n_Re = modeling_options["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
+        self.n_tab = n_tab = modeling_options["RotorSE"][
             "n_tab"
         ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
-        # self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         self.regulation_reg_III = modeling_options["RotorSE"]["regulation_reg_III"]
-        # n_span       = self.n_span = self.options['n_span']
         self.n_pc = modeling_options["RotorSE"]["n_pc"]
         self.n_pc_spline = modeling_options["RotorSE"]["n_pc_spline"]
-        # n_aoa  = self.options['n_aoa']
-        # n_re   = self.options['n_re']
 
         # parameters
         self.add_input("v_min", val=0.0, units="m/s", desc="cut-in wind speed")
@@ -679,9 +674,9 @@ class NoStallConstraint(ExplicitComponent):
 
         modeling_options = self.options["modeling_options"]
         self.n_span = n_span = modeling_options["RotorSE"]["n_span"]
-        self.n_aoa = n_aoa = modeling_options["airfoils"]["n_aoa"]  # Number of angle of attacks
-        self.n_Re = n_Re = modeling_options["airfoils"]["n_Re"]  # Number of Reynolds, so far hard set at 1
-        self.n_tab = n_tab = modeling_options["airfoils"][
+        self.n_aoa = n_aoa = modeling_options["RotorSE"]["n_aoa"]  # Number of angle of attacks
+        self.n_Re = n_Re = modeling_options["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
+        self.n_tab = n_tab = modeling_options["RotorSE"][
             "n_tab"
         ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
 
