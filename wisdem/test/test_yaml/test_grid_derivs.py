@@ -10,10 +10,8 @@ from wisdem.glue_code.gc_WT_DataStruc import Compute_Grid
 
 class Test(unittest.TestCase):
     def test_derivatives(self):
-        tower_init_options = {}
-        tower_init_options["n_height"] = n_height = 6
-
-        comp = Compute_Grid(init_options=tower_init_options)
+        n_height = 6
+        comp = Compute_Grid(n_height=n_height)
 
         prob = om.Problem()
         prob.model.add_subsystem("comp", comp)

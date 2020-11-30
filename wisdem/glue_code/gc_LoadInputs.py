@@ -212,20 +212,19 @@ class WindTurbineOntologyPython(object):
 
         # Tower
         if self.modeling_options["flags"]["tower"]:
-            self.modeling_options["TowerSE"]["n_height"] = len(
+            self.modeling_options["TowerSE"]["n_height_tower"] = len(
                 self.wt_init["components"]["tower"]["outer_shape_bem"]["outer_diameter"]["grid"]
             )
-            self.modeling_options["TowerSE"]["n_layers"] = len(
+            self.modeling_options["TowerSE"]["n_layers_tower"] = len(
                 self.wt_init["components"]["tower"]["internal_structure_2d_fem"]["layers"]
             )
 
         # Monopile
-        self.modeling_options["monopile"] = {}
         if self.modeling_options["flags"]["monopile"]:
-            self.modeling_options["monopile"]["n_height"] = len(
+            self.modeling_options["TowerSE"]["n_height_monopile"] = len(
                 self.wt_init["components"]["monopile"]["outer_shape_bem"]["outer_diameter"]["grid"]
             )
-            self.modeling_options["monopile"]["n_layers"] = len(
+            self.modeling_options["TowerSE"]["n_layers_monopile"] = len(
                 self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["layers"]
             )
 
@@ -908,7 +907,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["tower"]["internal_structure_2d_fem"]["outfitting_factor"] = float(
                 wt_opt["tower.outfitting_factor"]
             )
-            for i in range(self.modeling_options["TowerSE"]["n_layers"]):
+            for i in range(self.modeling_options["TowerSE"]["n_layers_tower"]):
                 self.wt_init["components"]["tower"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                     "grid"
                 ] = wt_opt["tower_grid.s"].tolist()
@@ -946,7 +945,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["outfitting_factor"] = float(
                 wt_opt["monopile.outfitting_factor"]
             )
-            for i in range(self.modeling_options["monopile"]["n_layers"]):
+            for i in range(self.modeling_options["TowerSE"]["n_layers_monopile"]):
                 self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                     "grid"
                 ] = wt_opt["monopile.s"].tolist()

@@ -313,27 +313,27 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # Tower inputs
         if modeling_options["flags"]["tower"]:
             tower_init_options = modeling_options["TowerSE"]
-            n_height = tower_init_options["n_height"]
-            n_layers = tower_init_options["n_layers"]
+            n_height_tower = tower_init_options["n_height_tower"]
+            n_layers_tower = tower_init_options["n_layers_tower"]
             ivc = self.add_subsystem("tower", om.IndepVarComp())
             ivc.add_output(
                 "ref_axis",
-                val=np.zeros((n_height, 3)),
+                val=np.zeros((n_height_tower, 3)),
                 units="m",
                 desc="2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.",
             )
             ivc.add_output(
                 "diameter",
-                val=np.zeros(n_height),
+                val=np.zeros(n_height_tower),
                 units="m",
                 desc="1D array of the outer diameter values defined along the tower axis.",
             )
             ivc.add_output(
-                "cd", val=np.zeros(n_height), desc="1D array of the drag coefficients defined along the tower height."
+                "cd", val=np.zeros(n_height_tower), desc="1D array of the drag coefficients defined along the tower height."
             )
             ivc.add_output(
                 "layer_thickness",
-                val=np.zeros((n_layers, n_height - 1)),
+                val=np.zeros((n_layers_tower, n_height_tower - 1)),
                 units="m",
                 desc="2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.",
             )
@@ -353,7 +353,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Monopile inputs
         if modeling_options["flags"]["monopile"]:
-            self.add_subsystem("monopile", Monopile(monopile_init_options=modeling_options["monopile"]))
+            self.add_subsystem("monopile", Monopile(towerse_options=modeling_options["TowerSE"]))
 
         # Foundation inputs
         if modeling_options["flags"]["foundation"]:
@@ -509,7 +509,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("hub.radius", "assembly.hub_radius")
         if modeling_options["flags"]["tower"]:
             self.connect("tower.ref_axis", "assembly.tower_ref_axis_user")
-            self.add_subsystem("tower_grid", Compute_Grid(init_options=tower_init_options))
+            self.add_subsystem("tower_grid", Compute_Grid(n_height=n_height_tower))
             self.connect("assembly.tower_ref_axis", "tower_grid.ref_axis")
         if modeling_options["flags"]["nacelle"]:
             self.connect("nacelle.distance_tt_hub", "assembly.distance_tt_hub")
@@ -1754,11 +1754,10 @@ class Compute_Grid(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare("init_options")
+        self.options.declare("n_height")
 
     def setup(self):
-        init_options = self.options["init_options"]
-        n_height = init_options["n_height"]
+        n_height = self.options["n_height"]
 
         self.add_input(
             "ref_axis",
@@ -1795,7 +1794,7 @@ class Compute_Grid(om.ExplicitComponent):
             outputs["s"] = myarc / myarc[-1]
 
     def compute_partials(self, inputs, partials):
-        n_height = self.options["init_options"]["n_height"]
+        n_height = self.options["n_height"]
         partials["height", "ref_axis"] = np.zeros((1, n_height * 3))
         partials["height", "ref_axis"][0, -1] = 1.0
         partials["height", "ref_axis"][0, 2] = -1.0
@@ -1813,12 +1812,12 @@ class Compute_Grid(om.ExplicitComponent):
 
 class Monopile(om.Group):
     def initialize(self):
-        self.options.declare("monopile_init_options")
+        self.options.declare("towerse_options")
 
     def setup(self):
-        monopile_init_options = self.options["monopile_init_options"]
-        n_height = monopile_init_options["n_height"]
-        n_layers = monopile_init_options["n_layers"]
+        towerse_options = self.options["towerse_options"]
+        n_height = towerse_options["n_height_monopile"]
+        n_layers = towerse_options["n_layers_monopile"]
 
         ivc = self.add_subsystem("monopile_indep_vars", om.IndepVarComp(), promotes=["*"])
         ivc.add_output(
@@ -1857,7 +1856,7 @@ class Monopile(om.Group):
             "suctionpile_depth_diam_ratio", 0.0, desc="ratio of sunction pile depth to mudline monopile diameter"
         )
 
-        self.add_subsystem("compute_monopile_grid", Compute_Grid(init_options=monopile_init_options), promotes=["*"])
+        self.add_subsystem("compute_monopile_grid", Compute_Grid(n_height=n_height), promotes=["*"])
 
 
 class Floating(om.Group):
@@ -2347,9 +2346,9 @@ class WT_Assembly(om.ExplicitComponent):
         else:
             n_span = 0
         if modeling_options["flags"]["tower"]:
-            n_height = modeling_options["TowerSE"]["n_height"]
+            n_height_tower = modeling_options["TowerSE"]["n_height_tower"]
         else:
-            n_height = 0
+            n_height_tower = 0
 
         self.add_input(
             "blade_ref_axis_user",
@@ -2403,7 +2402,7 @@ class WT_Assembly(om.ExplicitComponent):
 
         self.add_input(
             "tower_ref_axis_user",
-            val=np.zeros((n_height, 3)),
+            val=np.zeros((n_height_tower, 3)),
             units="m",
             desc="2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.",
         )
@@ -2412,7 +2411,7 @@ class WT_Assembly(om.ExplicitComponent):
 
         self.add_output(
             "tower_ref_axis",
-            val=np.zeros((n_height, 3)),
+            val=np.zeros((n_height_tower, 3)),
             units="m",
             desc="2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values.",
         )

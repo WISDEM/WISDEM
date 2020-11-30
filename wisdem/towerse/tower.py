@@ -1263,13 +1263,13 @@ class TowerLeanSE(om.Group):
         self.options.declare("modeling_options")
 
     def setup(self):
-        toweropt = self.options["modeling_options"]["TowerSE"]
+        mod_opt = self.options["modeling_options"]["TowerSE"]
         monopile = self.options["modeling_options"]["flags"]["monopile"]
 
-        n_height_tow = toweropt["n_height"]
-        n_layers_tow = toweropt["n_layers"]
-        n_height_mon = 0 if not monopile else self.options["modeling_options"]["monopile"]["n_height"]
-        n_layers_mon = 0 if not monopile else self.options["modeling_options"]["monopile"]["n_layers"]
+        n_height_tow = mod_opt["n_height_tower"]
+        n_layers_tow = mod_opt["n_layers_tower"]
+        n_height_mon = 0 if not monopile else mod_opt["n_height_monopile"]
+        n_layers_mon = 0 if not monopile else mod_opt["n_layers_monopile"]
         n_height = (
             n_height_tow if n_height_mon == 0 else n_height_tow + n_height_mon - 1
         )  # Should have one overlapping point
@@ -1409,13 +1409,13 @@ class TowerSE(om.Group):
         self.options.declare("modeling_options")
 
     def setup(self):
-        toweropt = self.options["modeling_options"]["TowerSE"]
+        mod_opt = self.options["modeling_options"]["TowerSE"]
         monopile = self.options["modeling_options"]["flags"]["monopile"]
-        nLC = toweropt["nLC"]  # not yet supported
-        wind = toweropt["wind"]  # not yet supported
-        frame3dd_opt = toweropt["frame3dd"]
-        n_height_tow = toweropt["n_height"]
-        n_height_mon = 0 if not monopile else self.options["modeling_options"]["monopile"]["n_height"]
+        nLC = mod_opt["nLC"]  # not yet supported
+        wind = mod_opt["wind"]  # not yet supported
+        frame3dd_opt = mod_opt["frame3dd"]
+        n_height_tow = mod_opt["n_height_tower"]
+        n_height_mon = 0 if not monopile else mod_opt["n_height_monopile"]
         n_height = (
             n_height_tow if n_height_mon == 0 else n_height_tow + n_height_mon - 1
         )  # Should have one overlapping point
@@ -1515,12 +1515,12 @@ class TowerSE(om.Group):
                     nMass=3,
                     nPL=1,
                     frame3dd_opt=frame3dd_opt,
-                    buckling_length=toweropt["buckling_length"],
+                    buckling_length=mod_opt["buckling_length"],
                 ),
             )
             self.add_subsystem(
                 "post" + lc,
-                TowerPostFrame(n_height=n_height, modeling_options=toweropt),
+                TowerPostFrame(n_height=n_height, modeling_options=mod_opt),
                 promotes=["life", "z_full", "d_full", "t_full", "rho_full", "E_full", "G_full", "sigma_y_full"],
             )
 
