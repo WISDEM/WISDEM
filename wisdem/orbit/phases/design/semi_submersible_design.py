@@ -147,23 +147,13 @@ class SemiSubmersibleDesign(DesignPhase):
     def substructure_mass(self):
         """Returns single substructure mass."""
 
-        return (
-            self.stiffened_column_mass
-            + self.truss_mass
-            + self.heave_plate_mass
-            + self.secondary_steel_mass
-        )
+        return self.stiffened_column_mass + self.truss_mass + self.heave_plate_mass + self.secondary_steel_mass
 
     @property
     def substructure_cost(self):
         """Returns single substructure cost."""
 
-        return (
-            self.stiffened_column_cost
-            + self.truss_cost
-            + self.heave_plate_cost
-            + self.secondary_steel_cost
-        )
+        return self.stiffened_column_cost + self.truss_cost + self.heave_plate_cost + self.secondary_steel_cost
 
     @property
     def total_substructure_mass(self):

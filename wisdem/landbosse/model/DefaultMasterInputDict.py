@@ -12,11 +12,12 @@ class DefaultMasterInputDict:
         self.default_input_dict = dict()
 
         # Set the list and dictionary values on the master dictionary
-        self.default_input_dict['season_construct'] = ['spring', 'summer', 'fall']
-        self.default_input_dict['time_construct'] = 'normal'
-        self.default_input_dict['hour_day'] = {'long': 24, 'normal': 10}
-        self.default_input_dict['operational_construction_time'] = self.default_input_dict['hour_day'][
-            self.default_input_dict['time_construct']]
+        self.default_input_dict["season_construct"] = ["spring", "summer", "fall"]
+        self.default_input_dict["time_construct"] = "normal"
+        self.default_input_dict["hour_day"] = {"long": 24, "normal": 10}
+        self.default_input_dict["operational_construction_time"] = self.default_input_dict["hour_day"][
+            self.default_input_dict["time_construct"]
+        ]
 
     def populate_input_dict(self, incomplete_input_dict):
         """

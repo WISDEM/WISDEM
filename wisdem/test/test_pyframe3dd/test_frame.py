@@ -11,12 +11,10 @@ import unittest
 import numpy as np
 from io import StringIO
 
-from wisdem.pyframe3dd import Frame, NodeData, ReactionData, ElementData, Options, \
-    StaticLoadCase
+from wisdem.pyframe3dd import Frame, NodeData, ReactionData, ElementData, Options, StaticLoadCase
 
 
 class FrameTestEXA(unittest.TestCase):
-
     def setUp(self):
 
         # nodes
@@ -42,27 +40,25 @@ class FrameTestEXA(unittest.TestCase):
         EL = np.arange(1, 22)
         N1 = np.array([1, 2, 3, 4, 5, 6, 1, 2, 2, 3, 4, 4, 4, 5, 6, 6, 7, 8, 9, 10, 11])
         N2 = np.array([2, 3, 4, 5, 6, 7, 8, 8, 9, 9, 9, 10, 11, 11, 11, 12, 12, 9, 10, 11, 12])
-        Ax = 10.0*np.ones(21)
-        Asy = 1.0*np.ones(21)
-        Asz = 1.0*np.ones(21)
-        Jx = 1.0*np.ones(21)
-        Iy = 1.0*np.ones(21)
-        Iz = 0.01*np.ones(21)
-        E = 29000*np.ones(21)
-        G = 11500*np.ones(21)
+        Ax = 10.0 * np.ones(21)
+        Asy = 1.0 * np.ones(21)
+        Asz = 1.0 * np.ones(21)
+        Jx = 1.0 * np.ones(21)
+        Iy = 1.0 * np.ones(21)
+        Iz = 0.01 * np.ones(21)
+        E = 29000 * np.ones(21)
+        G = 11500 * np.ones(21)
         roll = np.zeros(21)
-        density = 7.33e-7*np.ones(21)
+        density = 7.33e-7 * np.ones(21)
         elements = ElementData(EL, N1, N2, Ax, Asy, Asz, Jx, Iy, Iz, E, G, roll, density)
 
         # parameters
-        shear = False               # 1: include shear deformation
-        geom = False                # 1: include geometric stiffness
-        dx = 10.0               # x-axis increment for internal forces
+        shear = False  # 1: include shear deformation
+        geom = False  # 1: include geometric stiffness
+        dx = 10.0  # x-axis increment for internal forces
         options = Options(shear, geom, dx)
 
         frame = Frame(nodes, reactions, elements, options)
-
-
 
         # load cases 1
         gx = 0.0
@@ -79,7 +75,6 @@ class FrameTestEXA(unittest.TestCase):
         Myy = np.zeros(5)
         Mzz = np.zeros(5)
 
-
         load.changePointLoads(nF, Fx, Fy, Fz, Mxx, Myy, Mzz)
 
         nD = np.array([8])
@@ -92,9 +87,7 @@ class FrameTestEXA(unittest.TestCase):
 
         load.changePrescribedDisplacements(nD, Dx, Dy, Dz, Dxx, Dyy, Dzz)
 
-
         frame.addLoadCase(load)
-
 
         # load cases
         gx = 0.0
@@ -124,7 +117,6 @@ class FrameTestEXA(unittest.TestCase):
 
         load.changeTemperatureLoads(EL, a, hy, hz, Typ, Tym, Tzp, Tzm)
 
-
         nD = np.array([1, 8])
         Dx = np.array([0.0, 0.1])
         Dy = np.array([-1.0, 0.0])
@@ -135,15 +127,9 @@ class FrameTestEXA(unittest.TestCase):
 
         load.changePrescribedDisplacements(nD, Dx, Dy, Dz, Dxx, Dyy, Dzz)
 
-
         frame.addLoadCase(load)
 
         self.displacements, self.forces, self.reactions, self.internalForces, self.mass, self.modal = frame.run()
-
-
-
-
-
 
     def test_disp1(self):
 
@@ -151,12 +137,57 @@ class FrameTestEXA(unittest.TestCase):
         iCase = 0
 
         node = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], dtype=np.int)
-        dx = np.array([0.0, 0.010776, 0.035528, 0.060279, 0.086295, 0.112311, 0.129754, 0.100000, 0.089226, 0.059394, 0.029563, 0.012122])
-        dy = np.array([0.0, -0.171344, -0.297816, -0.332643, -0.295487, -0.184135, 0.0, -0.152896, -0.289325, -0.332855, -0.291133, -0.166951])
+        dx = np.array(
+            [
+                0.0,
+                0.010776,
+                0.035528,
+                0.060279,
+                0.086295,
+                0.112311,
+                0.129754,
+                0.100000,
+                0.089226,
+                0.059394,
+                0.029563,
+                0.012122,
+            ]
+        )
+        dy = np.array(
+            [
+                0.0,
+                -0.171344,
+                -0.297816,
+                -0.332643,
+                -0.295487,
+                -0.184135,
+                0.0,
+                -0.152896,
+                -0.289325,
+                -0.332855,
+                -0.291133,
+                -0.166951,
+            ]
+        )
         dz = np.zeros(12)
         dxrot = np.zeros(12)
         dyrot = np.zeros(12)
-        dzrot = np.array([-0.501728, -0.087383, 0.015516, 0.000017, -0.015556, 0.087387, 0.501896, 0.136060, -0.011102, -0.000000, 0.011062, -0.136029])
+        dzrot = np.array(
+            [
+                -0.501728,
+                -0.087383,
+                0.015516,
+                0.000017,
+                -0.015556,
+                0.087387,
+                0.501896,
+                0.136060,
+                -0.011102,
+                -0.000000,
+                0.011062,
+                -0.136029,
+            ]
+        )
 
         np.testing.assert_array_equal(disp.node[iCase, :], node)
         np.testing.assert_array_almost_equal(disp.dx[iCase, :], dx, decimal=6)
@@ -165,7 +196,6 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(disp.dxrot[iCase, :], dxrot, decimal=6)
         np.testing.assert_array_almost_equal(disp.dyrot[iCase, :], dyrot, decimal=6)
         np.testing.assert_array_almost_equal(disp.dzrot[iCase, :], dzrot, decimal=6)
-
 
     def test_disp2(self):
 
@@ -173,12 +203,57 @@ class FrameTestEXA(unittest.TestCase):
         iCase = 1
 
         node = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], dtype=np.int)
-        dx = np.array([0.0, 0.071965, 0.134909, 0.189577, 0.220207, 0.242560, 0.254035, 0.100000, 0.048727, 0.016113, -0.016502, -0.027973])
-        dy = np.array([-1.000000, -1.067463, -1.018927, -0.850595, -0.615710, -0.325659, 0.0, -1.076148, -1.018711, -0.850807, -0.615495, -0.314444])
+        dx = np.array(
+            [
+                0.0,
+                0.071965,
+                0.134909,
+                0.189577,
+                0.220207,
+                0.242560,
+                0.254035,
+                0.100000,
+                0.048727,
+                0.016113,
+                -0.016502,
+                -0.027973,
+            ]
+        )
+        dy = np.array(
+            [
+                -1.000000,
+                -1.067463,
+                -1.018927,
+                -0.850595,
+                -0.615710,
+                -0.325659,
+                0.0,
+                -1.076148,
+                -1.018711,
+                -0.850807,
+                -0.615495,
+                -0.314444,
+            ]
+        )
         dz = np.zeros(12)
         dxrot = np.zeros(12)
         dyrot = np.zeros(12)
-        dzrot = np.array([-0.501206, -0.086438, 0.016991, 0.001616, -0.013988, 0.088765, 0.503041, 0.136834, -0.009551, 0.001627, 0.012588, -0.134603])
+        dzrot = np.array(
+            [
+                -0.501206,
+                -0.086438,
+                0.016991,
+                0.001616,
+                -0.013988,
+                0.088765,
+                0.503041,
+                0.136834,
+                -0.009551,
+                0.001627,
+                0.012588,
+                -0.134603,
+            ]
+        )
 
         np.testing.assert_array_equal(disp.node[iCase, :], node)
         np.testing.assert_array_almost_equal(disp.dx[iCase, :], dx, decimal=6)
@@ -188,13 +263,13 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(disp.dyrot[iCase, :], dyrot, decimal=6)
         np.testing.assert_array_almost_equal(disp.dzrot[iCase, :], dzrot, decimal=6)
 
-
     def test_force1(self):
 
         forces = self.forces
         iCase = 0
 
-        output = StringIO("""
+        output = StringIO(
+            """
          1      1    -26.042      0.099      0.0        0.0        0.0       -1.853
          1      2     26.042      0.241      0.0        0.0        0.0       -6.648
          2      2    -59.816      0.162      0.0        0.0        0.0        2.644
@@ -237,7 +312,8 @@ class FrameTestEXA(unittest.TestCase):
         20     11    -72.094      0.169      0.0        0.0        0.0       -3.297
         21     11     42.149      0.155      0.0        0.0        0.0        2.833
         21     12    -42.149      0.185      0.0        0.0        0.0       -4.675
-        """)
+        """
+        )
 
         out = np.loadtxt(output)
 
@@ -250,13 +326,13 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(forces.Myy[iCase, :], out[:, 6], decimal=3)
         np.testing.assert_array_almost_equal(forces.Mzz[iCase, :], out[:, 7], decimal=3)
 
-
     def test_force2(self):
 
         forces = self.forces
         iCase = 1
 
-        output = StringIO("""
+        output = StringIO(
+            """
          1      1   -173.916      0.099      0.0        0.0        0.0       -1.856
          1      2    173.916      0.241      0.0        0.0        0.0       -6.649
          2      2   -152.115      0.161      0.0        0.0        0.0        2.639
@@ -299,7 +375,8 @@ class FrameTestEXA(unittest.TestCase):
         20     11    -78.818      0.169      0.0        0.0        0.0       -3.298
         21     11     27.723      0.155      0.0        0.0        0.0        2.834
         21     12    -27.723      0.185      0.0        0.0        0.0       -4.675
-        """)
+        """
+        )
 
         out = np.loadtxt(output)
 
@@ -312,14 +389,13 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(forces.Myy[iCase, :], out[:, 6], decimal=3)
         np.testing.assert_array_almost_equal(forces.Mzz[iCase, :], out[:, 7], decimal=3)
 
-
-
     def test_reactions1(self):
 
         reactions = self.reactions
         iCase = 0
 
-        output = StringIO("""
+        output = StringIO(
+            """
              1      19.168      45.519       0.0         0.0         0.0         0.0
              2       0.0         0.0         0.0         0.0         0.0         0.0
              3       0.0         0.0         0.0         0.0         0.0         0.0
@@ -332,7 +408,8 @@ class FrameTestEXA(unittest.TestCase):
             10       0.0         0.0         0.0         0.0         0.0         0.0
             11       0.0         0.0         0.0         0.0         0.0         0.0
             12       0.0         0.0         0.0         0.0         0.0         0.0
-        """)
+        """
+        )
 
         out = np.loadtxt(output)
 
@@ -344,16 +421,13 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(reactions.Myy[iCase, :], out[:, 5], decimal=3)
         np.testing.assert_array_almost_equal(reactions.Mzz[iCase, :], out[:, 6], decimal=3)
 
-
-
-
-
     def test_reactions2(self):
 
         reactions = self.reactions
         iCase = 1
 
-        output = StringIO("""
+        output = StringIO(
+            """
          1    -194.280     -20.056       0.0         0.0         0.0         0.0
          2       0.0         0.0         0.0         0.0         0.0         0.0
          3       0.0         0.0         0.0         0.0         0.0         0.0
@@ -366,7 +440,8 @@ class FrameTestEXA(unittest.TestCase):
         10       0.0         0.0         0.0         0.0         0.0         0.0
         11       0.0         0.0         0.0         0.0         0.0         0.0
         12       0.0         0.0         0.0         0.0         0.0         0.0
-        """)
+        """
+        )
 
         out = np.loadtxt(output)
 
@@ -378,15 +453,14 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(reactions.Myy[iCase, :], out[:, 5], decimal=3)
         np.testing.assert_array_almost_equal(reactions.Mzz[iCase, :], out[:, 6], decimal=3)
 
-
-
     def test_if1(self):
 
         intF = self.internalForces
         iE = 3
         iCase = 0
 
-        output = StringIO("""
+        output = StringIO(
+            """
             0.000000e+00    6.287160e+01   -1.679863e-01    0.000000e+00    0.000000e+00    0.000000e+00   -3.319261e+00    6.027882e-02   -3.326427e-01    0.000000e+00    0.000000e+00
             1.000000e+01    6.287160e+01   -1.396631e-01    0.000000e+00    0.000000e+00    0.000000e+00   -1.781014e+00    6.244680e-02   -7.675230e-01    0.000000e+00    0.000000e+00
             2.000000e+01    6.287160e+01   -1.113400e-01    0.000000e+00    0.000000e+00    0.000000e+00   -5.259979e-01    6.461479e-02   -1.832824e+00    0.000000e+00    0.000000e+00
@@ -400,8 +474,8 @@ class FrameTestEXA(unittest.TestCase):
             1.000000e+02    6.287160e+01    1.152449e-01    0.000000e+00    0.000000e+00    0.000000e+00   -6.821944e-01    8.195868e-02   -1.628517e+00    0.000000e+00    0.000000e+00
             1.100000e+02    6.287160e+01    1.435680e-01    0.000000e+00    0.000000e+00    0.000000e+00   -1.976259e+00    8.412667e-02   -6.131284e-01    0.000000e+00    0.000000e+00
             1.200000e+02    6.287160e+01    1.718912e-01    0.000000e+00    0.000000e+00    0.000000e+00   -3.553555e+00    8.629465e-02   -2.954865e-01    0.000000e+00    0.000000e+00
-        """)
-
+        """
+        )
 
         out = np.loadtxt(output)
 
@@ -417,14 +491,14 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(intF[iE].Dz[iCase, :], out[:, 9], decimal=3)
         np.testing.assert_array_almost_equal(intF[iE].Rx[iCase, :], out[:, 10], decimal=3)
 
-
     def test_if2(self):
 
         intF = self.internalForces
         iE = 7
         iCase = 1
 
-        output = StringIO("""
+        output = StringIO(
+            """
           0.000000e+00   -2.116037e+01   -6.145897e-03    0.000000e+00    0.000000e+00    0.000000e+00    1.708194e-01   -1.067463e+00   -7.196515e-02    0.000000e+00    0.000000e+00
           1.000000e+01   -2.113205e+01   -6.145897e-03    0.000000e+00    0.000000e+00    0.000000e+00    2.322784e-01   -1.068192e+00   -9.033631e-01    0.000000e+00    0.000000e+00
           2.000000e+01   -2.110372e+01   -6.145897e-03    0.000000e+00    0.000000e+00    0.000000e+00    2.937373e-01   -1.068920e+00   -1.654665e+00    0.000000e+00    0.000000e+00
@@ -438,8 +512,8 @@ class FrameTestEXA(unittest.TestCase):
           1.000000e+02   -2.087714e+01   -6.145897e-03    0.000000e+00    0.000000e+00    0.000000e+00    7.854091e-01   -1.074710e+00   -2.238495e+00    0.000000e+00    0.000000e+00
           1.100000e+02   -2.084882e+01   -6.145897e-03    0.000000e+00    0.000000e+00    0.000000e+00    8.468680e-01   -1.075430e+00   -1.315259e+00    0.000000e+00    0.000000e+00
           1.200000e+02   -2.082049e+01   -6.145897e-03    0.000000e+00    0.000000e+00    0.000000e+00    9.083270e-01   -1.076148e+00   -1.000000e-01    0.000000e+00    0.000000e+00
-        """)
-
+        """
+        )
 
         out = np.loadtxt(output)
 
@@ -456,72 +530,80 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(intF[iE].Rx[iCase, :], out[:, 10], decimal=3)
 
 
-
-
-
-
 class FrameTestEXB(unittest.TestCase):
-
     def setUp(self):
 
         # nodes
-        string = StringIO("""
+        string = StringIO(
+            """
         1   0.0 0.0 1000    0.0
         2   -1200   -900    0.0 0.0
         3    1200   -900    0.0 0.0
         4    1200    900    0.0 0.0
         5   -1200    900    0.0 0.0
-        """)
+        """
+        )
         out = np.loadtxt(string)
 
         nodes = NodeData(out[:, 0], out[:, 1], out[:, 2], out[:, 3], out[:, 4])
 
         # reactions
-        string = StringIO("""
+        string = StringIO(
+            """
           2 1  1  1  1  1  1
           3 1  1  1  1  1  1
           4 1  1  1  1  1  1
           5 1  1  1  1  1  1
-        """)
+        """
+        )
         out = np.loadtxt(string, dtype=np.int)
         rigid = 1
 
-        reactions = ReactionData(out[:, 0], out[:, 1], out[:, 2], out[:, 3], out[:, 4],
-            out[:, 5], out[:, 6], rigid)
+        reactions = ReactionData(out[:, 0], out[:, 1], out[:, 2], out[:, 3], out[:, 4], out[:, 5], out[:, 6], rigid)
 
         # elements
 
-        string = StringIO("""
+        string = StringIO(
+            """
         1 2 1   36.0    20.0    20.0    1000    492     492 200000  79300  0 7.85e-9
         2 1 3   36.0    20.0    20.0    1000    492     492 200000  79300  0 7.85e-9
         3 1 4   36.0    20.0    20.0    1000    492     492 200000  79300  0 7.85e-9
         4 5 1   36.0    20.0    20.0    1000    492     492 200000  79300  0 7.85e-9
-        """)
+        """
+        )
         out = np.loadtxt(string)
 
-        elements = ElementData(out[:, 0], out[:, 1], out[:, 2], out[:, 3], out[:, 4],
-            out[:, 5], out[:, 6], out[:, 7], out[:, 8], out[:, 9], out[:, 10],
-            out[:, 11], out[:, 12])
+        elements = ElementData(
+            out[:, 0],
+            out[:, 1],
+            out[:, 2],
+            out[:, 3],
+            out[:, 4],
+            out[:, 5],
+            out[:, 6],
+            out[:, 7],
+            out[:, 8],
+            out[:, 9],
+            out[:, 10],
+            out[:, 11],
+            out[:, 12],
+        )
 
         # parameters
-        shear = True               # 1: include shear deformation
-        geom = True                # 1: include geometric stiffness
-        dx = 20.0               # x-axis increment for internal forces
+        shear = True  # 1: include shear deformation
+        geom = True  # 1: include geometric stiffness
+        dx = 20.0  # x-axis increment for internal forces
         options = Options(shear, geom, dx)
-
 
         frame = Frame(nodes, reactions, elements, options)
 
-
         # dynamics
-        nM = 6               # number of desired dynamic modes of vibration
-        Mmethod = 1                               # 1: subspace Jacobi     2: Stodola
-        lump = 0               # 0: consistent mass ... 1: lumped mass matrix
-        tol = 1e-9                # mode shape tolerance
-        shift = 0.0             # shift value ... for unrestrained structures
+        nM = 6  # number of desired dynamic modes of vibration
+        Mmethod = 1  # 1: subspace Jacobi     2: Stodola
+        lump = 0  # 0: consistent mass ... 1: lumped mass matrix
+        tol = 1e-9  # mode shape tolerance
+        shift = 0.0  # shift value ... for unrestrained structures
         frame.enableDynamics(nM, Mmethod, lump, tol, shift)
-
-
 
         # load cases 1
         gx = 0.0
@@ -542,8 +624,6 @@ class FrameTestEXB(unittest.TestCase):
 
         frame.addLoadCase(load)
 
-
-
         gx = 0.0
         gy = 0.0
         gz = -9806.33
@@ -559,7 +639,6 @@ class FrameTestEXB(unittest.TestCase):
 
         frame.addLoadCase(load)
 
-
         N = np.array([1])
         EMs = np.array([0.1])
         EMx = np.array([0.0])
@@ -574,11 +653,7 @@ class FrameTestEXB(unittest.TestCase):
         addGravityLoad = False
         frame.changeExtraNodeMass(N, EMs, EMx, EMy, EMz, EMxy, EMxz, EMyz, rhox, rhoy, rhoz, addGravityLoad)
 
-
-
-
         self.displacements, self.forces, self.reactions, self.internalForces, self.mass, self.modal = frame.run()
-
 
     def test_disp1(self):
 
@@ -593,7 +668,6 @@ class FrameTestEXB(unittest.TestCase):
         dyrot = np.array([0.000009, 0.0, 0.0, 0.0, 0.0])
         dzrot = np.array([0.000000, 0.0, 0.0, 0.0, 0.0])
 
-
         np.testing.assert_equal(disp.node[iCase, :], node)
         np.testing.assert_almost_equal(disp.dx[iCase, :], dx, decimal=6)
         np.testing.assert_almost_equal(disp.dy[iCase, :], dy, decimal=6)
@@ -602,14 +676,13 @@ class FrameTestEXB(unittest.TestCase):
         np.testing.assert_almost_equal(disp.dyrot[iCase, :], dyrot, decimal=6)
         np.testing.assert_almost_equal(disp.dzrot[iCase, :], dzrot, decimal=6)
 
-
-
     def test_force1(self):
 
         forces = self.forces
         iCase = 0
 
-        output = StringIO("""
+        output = StringIO(
+            """
      1      2    113.543      0.003      2.082     -1.289   -627.689      6.040
      1      1   -110.772     -0.003      2.075      1.289    620.132      4.573
      2      1    185.886     -0.000      2.074      0.904   -620.114     -2.774
@@ -618,7 +691,8 @@ class FrameTestEXB(unittest.TestCase):
      3      4     11.639      0.007      2.082     -1.285    628.130     -6.781
      4      5    -86.753      0.006      2.084     -0.908   -629.366      4.619
      4      1     89.524     -0.006      2.073      0.908    623.616      2.764
-        """)
+        """
+        )
 
         out = np.loadtxt(output)
 
@@ -631,19 +705,19 @@ class FrameTestEXB(unittest.TestCase):
         np.testing.assert_array_almost_equal(forces.Myy[iCase, :], out[:, 6], decimal=3)
         np.testing.assert_array_almost_equal(forces.Mzz[iCase, :], out[:, 7], decimal=3)
 
-
-
     def test_reactions1(self):
 
         reactions = self.reactions
         iCase = 0
 
-        output = StringIO("""
+        output = StringIO(
+            """
      2      74.653      55.994      64.715     373.079    -504.802       4.303
      3    -124.653      93.490     106.381     374.234     503.477      -2.418
      4       8.667       6.509      -4.724    -380.749     499.607      -4.936
      5     -58.667      44.008     -46.388    -380.267    -501.498       3.335
-        """)
+        """
+        )
 
         out = np.loadtxt(output)
 
@@ -655,15 +729,14 @@ class FrameTestEXB(unittest.TestCase):
         np.testing.assert_array_almost_equal(reactions.Myy[iCase, :], out[:, 5], decimal=3)
         np.testing.assert_array_almost_equal(reactions.Mzz[iCase, :], out[:, 6], decimal=3)
 
-
-
     def test_if1(self):
 
         intF = self.internalForces
         iE = 1
         iCase = 0
 
-        output = StringIO("""
+        output = StringIO(
+            """
   0.000000e+00	 -1.858856e+02	  1.885306e-04	 -2.073998e+00	 -9.043267e-01	 -6.201138e+02	  2.773828e+00	  4.689002e-02	 -3.170647e-02	  4.370102e-03	  2.055861e-05
   2.000000e+01	 -1.859164e+02	  1.885306e-04	 -2.027881e+00	 -9.043267e-01	 -5.790859e+02	  2.704083e+00	  4.637362e-02	 -3.140374e-02	  2.564479e-03	  2.033054e-05
   4.000000e+01	 -1.859471e+02	  1.885306e-04	 -1.981764e+00	 -9.043267e-01	 -5.389804e+02	  2.634338e+00	  4.585715e-02	 -3.109157e-02	 -1.591829e-03	  2.010246e-05
@@ -755,8 +828,8 @@ class FrameTestEXB(unittest.TestCase):
   1.760000e+03	 -1.885912e+02	  1.885306e-04	  1.984272e+00	 -9.043267e-01	 -5.403550e+02	 -3.363749e+00	  1.120627e-03	 -7.928135e-05	 -5.624016e-03	  4.878077e-07
   1.780000e+03	 -1.886219e+02	  1.885306e-04	  2.030389e+00	 -9.043267e-01	 -5.804925e+02	 -3.433494e+00	  5.967199e-04	 -3.200293e-05	 -1.644387e-03	  2.597304e-07
   1.802776e+03	 -1.886569e+02	  1.885306e-04	  2.082905e+00	 -9.043267e-01	 -6.273248e+02	 -3.503763e+00	  0.000000e+00	  0.000000e+00	  0.000000e+00	  0.000000e+00
-        """)
-
+        """
+        )
 
         out = np.loadtxt(output)
 
@@ -772,19 +845,19 @@ class FrameTestEXB(unittest.TestCase):
         np.testing.assert_array_almost_equal(intF[iE].Dz[iCase, :], out[:, 9], decimal=3)
         np.testing.assert_array_almost_equal(intF[iE].Rx[iCase, :], out[:, 10], decimal=3)
 
-
-
     def test_mass(self):
 
         mass = self.mass
 
-        string = StringIO("""
+        string = StringIO(
+            """
          1 1.00723e-01 1.00738e-01 1.00733e-01 3.51392e+01 4.73634e+01 4.36768e+01
          2 1.26482e+02 1.26482e+02 1.26482e+02 1.26482e+02 1.26482e+02 1.26482e+02
          3 1.26482e+02 1.26482e+02 1.26482e+02 1.26482e+02 1.26482e+02 1.26482e+02
          4 1.26482e+02 1.26482e+02 1.26482e+02 1.26482e+02 1.26482e+02 1.26482e+02
          5 1.26482e+02 1.26482e+02 1.26482e+02 1.26482e+02 1.26482e+02 1.26482e+02
-        """)
+        """
+        )
         out = np.loadtxt(string)
 
         np.testing.assert_almost_equal(mass.total_mass, 1.020379e-01, decimal=6)
@@ -797,22 +870,21 @@ class FrameTestEXB(unittest.TestCase):
         np.testing.assert_array_almost_equal(mass.yinrta, out[:, 5], decimal=3)
         np.testing.assert_array_almost_equal(mass.zinrta, out[:, 6], decimal=3)
 
-
-
     def test_modal(self):
 
         modal = self.modal
         iM = 0
 
-        string = StringIO("""
+        string = StringIO(
+            """
      1  -2.609e-02   1.369e-04   6.904e-06   3.108e-04   1.344e-01  -5.727e-02
      2  -5.684e-09  -6.833e-10   6.882e-10   4.093e-07  -1.721e-06   1.211e-06
      3  -5.706e-09   7.092e-10  -6.812e-10  -4.137e-07  -1.724e-06   1.206e-06
      4  -3.930e-09  -3.054e-09  -7.138e-10   1.137e-06  -1.151e-06  -9.706e-08
      5  -3.948e-09   3.079e-09   7.073e-10  -1.142e-06  -1.155e-06  -9.307e-08
-        """)
+        """
+        )
         out = np.loadtxt(string)
-
 
         np.testing.assert_almost_equal(modal.freq[iM], 18.807942, decimal=5)
         np.testing.assert_almost_equal(modal.xmpf[iM], -2.5467e-02, decimal=6)
@@ -827,17 +899,15 @@ class FrameTestEXB(unittest.TestCase):
         np.testing.assert_array_almost_equal(modal.zrot[iM, :], out[:, 6], decimal=3)
 
 
-
 class GravityAdd(unittest.TestCase):
-
     def test_addgrav_working(self):
 
         # nodes
         nnode = 3
-        node = np.arange(1, 1+nnode)
+        node = np.arange(1, 1 + nnode)
         x = np.zeros(nnode)
         y = np.zeros(nnode)
-        z = 10.0*np.arange(nnode)
+        z = 10.0 * np.arange(nnode)
         r = np.zeros(nnode)
         nodes = NodeData(node, x, y, z, r)
 
@@ -850,24 +920,24 @@ class GravityAdd(unittest.TestCase):
         # elements
         EL = np.arange(1, nnode)
         N1 = np.arange(1, nnode)
-        N2 = np.arange(2, nnode+1)
-        Ax = 5.0*np.ones(nnode-1)
-        Asy = 1.0*np.ones(nnode-1)
-        Asz = 1.0*np.ones(nnode-1)
-        Jx = 1.0*np.ones(nnode-1)
-        Iy = 1.0*np.ones(nnode-1)
-        Iz = 0.5*np.ones(nnode-1)
-        E = 1e5*np.ones(nnode-1)
-        G = 1e4*np.ones(nnode-1)
-        roll = np.zeros(nnode-1)
-        density = 0.25*np.ones(nnode-1)
+        N2 = np.arange(2, nnode + 1)
+        Ax = 5.0 * np.ones(nnode - 1)
+        Asy = 1.0 * np.ones(nnode - 1)
+        Asz = 1.0 * np.ones(nnode - 1)
+        Jx = 1.0 * np.ones(nnode - 1)
+        Iy = 1.0 * np.ones(nnode - 1)
+        Iz = 0.5 * np.ones(nnode - 1)
+        E = 1e5 * np.ones(nnode - 1)
+        G = 1e4 * np.ones(nnode - 1)
+        roll = np.zeros(nnode - 1)
+        density = 0.25 * np.ones(nnode - 1)
         elements = ElementData(EL, N1, N2, Ax, Asy, Asz, Jx, Iy, Iz, E, G, roll, density)
-        mymass = np.sum(density*Ax*np.diff(z))
-        
+        mymass = np.sum(density * Ax * np.diff(z))
+
         # parameters
-        shear = False               # 1: include shear deformation
-        geom = False                # 1: include geometric stiffness
-        dx = 1.0               # x-axis increment for internal forces
+        shear = False  # 1: include shear deformation
+        geom = False  # 1: include geometric stiffness
+        dx = 1.0  # x-axis increment for internal forces
         options = Options(shear, geom, dx)
 
         frame = Frame(nodes, reactions, elements, options)
@@ -878,15 +948,15 @@ class GravityAdd(unittest.TestCase):
         rhox = rhoy = rhoz = np.array([0.0])
         addGravityLoad = True
         frame.changeExtraNodeMass(N, EMs, EMxx, EMyy, EMzz, EMxy, EMxz, EMyz, rhox, rhoy, rhoz, addGravityLoad)
-        
+
         # dynamics
-        nM = 1               # number of desired dynamic modes of vibration
-        Mmethod = 1                               # 1: subspace Jacobi     2: Stodola
-        lump = 0               # 0: consistent mass ... 1: lumped mass matrix
-        tol = 1e-9                # mode shape tolerance
-        shift = 0.0             # shift value ... for unrestrained structures
+        nM = 1  # number of desired dynamic modes of vibration
+        Mmethod = 1  # 1: subspace Jacobi     2: Stodola
+        lump = 0  # 0: consistent mass ... 1: lumped mass matrix
+        tol = 1e-9  # mode shape tolerance
+        shift = 0.0  # shift value ... for unrestrained structures
         frame.enableDynamics(nM, Mmethod, lump, tol, shift)
-        
+
         # Load case 1: Added mass with    gravity field and NO point loading
         # Load case 2: Added mass with NO gravity field and    point loading
         # Load case 3: Added mass with    gravity field and    point loading
@@ -898,23 +968,23 @@ class GravityAdd(unittest.TestCase):
 
         nF = np.array([nnode])
         Fx = Fy = Mxx = Myy = Mzz = np.array([0.0])
-        Fz = np.array([gz*(mymass+EMs)])
+        Fz = np.array([gz * (mymass + EMs)])
         load2.changePointLoads(nF, Fx, Fy, Fz, Mxx, Myy, Mzz)
         load3.changePointLoads(nF, Fx, Fy, Fz, Mxx, Myy, Mzz)
-        
+
         frame.addLoadCase(load1)
         frame.addLoadCase(load2)
         frame.addLoadCase(load3)
-        
+
         displacements, forces, reactions, internalForces, mass, modal = frame.run()
 
         # Check that the mass was added
-        self.assertEqual(mass.struct_mass, mymass )
+        self.assertEqual(mass.struct_mass, mymass)
         self.assertEqual(mass.total_mass, mymass + EMs)
 
         # Check that the load cases are equivalent
-        self.assertEqual(reactions.Fz[0,0], reactions.Fz[1,0])
-        self.assertAlmostEqual(2*reactions.Fz[0,0], reactions.Fz[2,0])
+        self.assertEqual(reactions.Fz[0, 0], reactions.Fz[1, 0])
+        self.assertAlmostEqual(2 * reactions.Fz[0, 0], reactions.Fz[2, 0])
 
 
 def suite():
@@ -924,5 +994,6 @@ def suite():
     suite.addTest(unittest.makeSuite(GravityAdd))
     return suite
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.TextTestRunner().run(suite())

@@ -5,17 +5,16 @@ import numpy as np
 from openmdao.api import IndepVarComp, Component, Problem, Group, SqliteRecorder, BaseRecorder
 
 
-
 ##### Test Setup Utilities #####
 def init_IndepVar_add(prob, data):
     """ Add component independent vars from a dictionary of inputs """
     for var in data.keys():
         if type(data[var]) is np.ndarray or type(data[var]) is np.array:
-            print var
-            prob.root.add(var, IndepVarComp(var, np.zeros_like(data[var])), promotes=['*'])
+            prob.root.add(var, IndepVarComp(var, np.zeros_like(data[var])), promotes=["*"])
         else:
-            prob.root.add(var, IndepVarComp(var, data[var]), promotes=['*'])
+            prob.root.add(var, IndepVarComp(var, data[var]), promotes=["*"])
     return prob
+
 
 def init_IndepVar_set(prob, data):
     """ Set component independent vars from a dictionary of inputs """
@@ -24,11 +23,19 @@ def init_IndepVar_set(prob, data):
     return prob
 
 
-
-
 ##### Check Gradients ##### <- from test_rotor_aeropower_gradients.py
-def check_gradient_unit_test(prob, fd='central', step_size=1e-6, tol=1e-6, display=False,
-        show_missing_warnings=True, show_scaling_warnings=False, min_grad=1e-6, max_grad=1e6, comp=None):
+def check_gradient_unit_test(
+    prob,
+    fd="central",
+    step_size=1e-6,
+    tol=1e-6,
+    display=False,
+    show_missing_warnings=True,
+    show_scaling_warnings=False,
+    min_grad=1e-6,
+    max_grad=1e6,
+    comp=None,
+):
     """compare provided analytic gradients to finite-difference gradients with unit testing.
     Same as check_gradient, but provides a unit test for each gradient for convenience.
     the unit tests checks that the error for each gradient is less than tol.
@@ -54,11 +61,12 @@ def check_gradient_unit_test(prob, fd='central', step_size=1e-6, tol=1e-6, displ
         quantifies what "very small" or "very large" means when using show_scaling_warnings
     """
 
-    J_fd, J_fwd, J_rev = check_gradient(prob, fd, step_size, tol, display, show_missing_warnings,
-        show_scaling_warnings, min_grad, max_grad)
+    J_fd, J_fwd, J_rev = check_gradient(
+        prob, fd, step_size, tol, display, show_missing_warnings, show_scaling_warnings, min_grad, max_grad
+    )
     if comp == None:
         comp = prob.root.comp
-    if "list_deriv_vars" in dir(comp): #  callable(getattr(comp, 'list_deriv_vars')):
+    if "list_deriv_vars" in dir(comp):  #  callable(getattr(comp, 'list_deriv_vars')):
         inputs, outputs = comp.list_deriv_vars()
         for output in outputs:
             for input in inputs:
@@ -71,11 +79,11 @@ def check_gradient_unit_test(prob, fd='central', step_size=1e-6, tol=1e-6, displ
                 for i in range(m):
                     for j in range(n):
                         if np.abs(J[i, j]) <= tol:
-                            errortype = 'absolute'
+                            errortype = "absolute"
                             error = J[i, j] - JFD[i, j]
                         else:
-                            errortype = 'relative'
-                            error = 1.0 - JFD[i, j]/J[i, j]
+                            errortype = "relative"
+                            error = 1.0 - JFD[i, j] / J[i, j]
                         error = np.abs(error)
 
                         # # display
@@ -101,35 +109,44 @@ def check_gradient_unit_test(prob, fd='central', step_size=1e-6, tol=1e-6, displ
                             # unittest.assertLessEqual(error, tol)
                             assert error <= tol
                         except AssertionError, e:
-                            print '*** error in:', "\n\tOutput: ", output, "\n\tInput: ", input, "\n\tPosition: ", i, j
-                            print JFD[i, j], J[i, j]
-                            print error, tol
+                            print("*** error in:", "\n\tOutput: ", output, "\n\tInput: ", input, "\n\tPosition: ", i, j)
+                            print(JFD[i, j], J[i, j])
+                            print(error, tol)
                             raise e
     else:
         for key, value in J_fd.iteritems():
-                J = J_fwd[key]
-                JFD = J_fd[key]
+            J = J_fwd[key]
+            JFD = J_fd[key]
 
-                m, n = J.shape
-                for i in range(m):
-                    for j in range(n):
-                        if np.abs(J[i, j]) <= tol:
-                            errortype = 'absolute'
-                            error = J[i, j] - JFD[i, j]
-                        else:
-                            errortype = 'relative'
-                            error = 1.0 - JFD[i, j]/J[i, j]
-                        error = np.abs(error)
-                        try:
-                            # unittest.assertLessEqual(error, tol)
-                            assert error <= tol
-                        except AssertionError, e:
-                            print '*** error in:', "\n\tKey: ", key, "\n\tPosition: ", i, j
-                            raise e
+            m, n = J.shape
+            for i in range(m):
+                for j in range(n):
+                    if np.abs(J[i, j]) <= tol:
+                        errortype = "absolute"
+                        error = J[i, j] - JFD[i, j]
+                    else:
+                        errortype = "relative"
+                        error = 1.0 - JFD[i, j] / J[i, j]
+                    error = np.abs(error)
+                    try:
+                        # unittest.assertLessEqual(error, tol)
+                        assert error <= tol
+                    except AssertionError, e:
+                        print("*** error in:", "\n\tKey: ", key, "\n\tPosition: ", i, j)
+                        raise e
 
 
-def check_gradient(prob, fd='central', step_size=1e-6, tol=1e-6, display=False,
-        show_missing_warnings=True, show_scaling_warnings=False, min_grad=1e-6, max_grad=1e6):
+def check_gradient(
+    prob,
+    fd="central",
+    step_size=1e-6,
+    tol=1e-6,
+    display=False,
+    show_missing_warnings=True,
+    show_scaling_warnings=False,
+    min_grad=1e-6,
+    max_grad=1e6,
+):
     """compare provided analytic gradients to finite-difference gradients
     Parameters
     ----------
@@ -208,7 +225,7 @@ def check_gradient(prob, fd='central', step_size=1e-6, tol=1e-6, display=False,
         cname = comp.pathname
 
         # No need to check comps that don't have any derivs.
-        if comp.deriv_options['type'] == 'fd':
+        if comp.deriv_options["type"] == "fd":
             continue
 
         # IndepVarComps are just clutter too.
@@ -242,8 +259,7 @@ def check_gradient(prob, fd='central', step_size=1e-6, tol=1e-6, display=False,
 
         states = comp.states
 
-        param_list = [item for item in dparams if not \
-                      dparams.metadata(item).get('pass_by_obj')]
+        param_list = [item for item in dparams if not dparams.metadata(item).get("pass_by_obj")]
         param_list.extend(states)
 
         # Create all our keys and allocate Jacs
@@ -268,8 +284,10 @@ def check_gradient(prob, fd='central', step_size=1e-6, tol=1e-6, display=False,
                             user = (user[0], 1)
 
                         if user[0] != u_size or user[1] != p_size:
-                            msg = "derivative in component '{}' of '{}' wrt '{}' is the wrong size. " + \
-                                  "It should be {}, but got {}"
+                            msg = (
+                                "derivative in component '{}' of '{}' wrt '{}' is the wrong size. "
+                                + "It should be {}, but got {}"
+                            )
                             msg = msg.format(cname, u_name, p_name, (u_size, p_size), user)
                             raise ValueError(msg)
 
@@ -288,8 +306,7 @@ def check_gradient(prob, fd='central', step_size=1e-6, tol=1e-6, display=False,
 
                 dresids._dat[u_name].val[idx] = 1.0
                 try:
-                    comp.apply_linear(params, unknowns, dparams,
-                                      dunknowns, dresids, 'rev')
+                    comp.apply_linear(params, unknowns, dparams, dunknowns, dresids, "rev")
                 finally:
                     dparams._apply_unit_derivatives()
 
@@ -314,8 +331,7 @@ def check_gradient(prob, fd='central', step_size=1e-6, tol=1e-6, display=False,
 
                 dinputs._dat[p_name].val[idx] = 1.0
                 dparams._apply_unit_derivatives()
-                comp.apply_linear(params, unknowns, dparams,
-                                  dunknowns, dresids, 'fwd')
+                comp.apply_linear(params, unknowns, dparams, dunknowns, dresids, "fwd")
 
                 for u_name, u_val in dresids.vec_val_iter():
                     jac_fwd[(u_name, p_name)][:, idx] = u_val
@@ -326,11 +342,13 @@ def check_gradient(prob, fd='central', step_size=1e-6, tol=1e-6, display=False,
         dunknowns.vec[:] = 0.0
 
         # Component can request to use complex step.
-        if comp.deriv_options['form'] == 'complex_step':
+        if comp.deriv_options["form"] == "complex_step":
             fd_func = comp.complex_step_jacobian
         else:
             fd_func = comp.fd_jacobian
-        jac_fd = fd_func(params, unknowns, resids, option_overrides=comp.deriv_options) #EMG: derv_options were not being passed
+        jac_fd = fd_func(
+            params, unknowns, resids, option_overrides=comp.deriv_options
+        )  # EMG: derv_options were not being passed
 
         # # Assemble and Return all metrics.
         # _assemble_deriv_data(chain(dparams, states), resids, data[cname],

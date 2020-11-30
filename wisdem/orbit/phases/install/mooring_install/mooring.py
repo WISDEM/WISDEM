@@ -129,17 +129,13 @@ def install_mooring_systems(vessel, port, distance, depth, systems, **kwargs):
         if vessel.at_port:
             try:
                 # Get mooring systems from port.
-                yield get_list_of_items_from_port(
-                    vessel, port, ["MooringSystem"], **kwargs
-                )
+                yield get_list_of_items_from_port(vessel, port, ["MooringSystem"], **kwargs)
 
             except ItemNotFound:
                 # If no items are at port and vessel.storage.items is empty,
                 # the job is done
                 if not vessel.storage.items:
-                    vessel.submit_debug_log(
-                        message="Item not found. Shutting down."
-                    )
+                    vessel.submit_debug_log(message="Item not found. Shutting down.")
                     break
 
             # Transit to site
@@ -152,15 +148,11 @@ def install_mooring_systems(vessel, port, distance, depth, systems, **kwargs):
 
             if vessel.storage.items:
 
-                system = yield vessel.get_item_from_storage(
-                    "MooringSystem", **kwargs
-                )
+                system = yield vessel.get_item_from_storage("MooringSystem", **kwargs)
                 for _ in range(system.num_lines):
                     yield position_onsite(vessel, **kwargs)
                     yield perform_mooring_site_survey(vessel, **kwargs)
-                    yield install_mooring_anchor(
-                        vessel, depth, system.anchor_type, **kwargs
-                    )
+                    yield install_mooring_anchor(vessel, depth, system.anchor_type, **kwargs)
                     yield install_mooring_line(vessel, depth, **kwargs)
 
                 n += 1
@@ -230,14 +222,10 @@ def install_mooring_anchor(vessel, depth, _type, **kwargs):
         fixed = kwargs.get(key, pt[key])
 
     else:
-        raise ValueError(
-            f"Mooring System Anchor Type: {_type} not recognized."
-        )
+        raise ValueError(f"Mooring System Anchor Type: {_type} not recognized.")
 
     install_time = fixed + 0.005 * depth
-    yield vessel.task(
-        task, install_time, constraints=vessel.transit_limits, **kwargs
-    )
+    yield vessel.task(task, install_time, constraints=vessel.transit_limits, **kwargs)
 
 
 @process
@@ -325,8 +313,6 @@ class MooringSystem(Cargo):
             fixed = 5
 
         else:
-            raise ValueError(
-                f"Mooring System Anchor Type: {self.anchor_type} not recognized."
-            )
+            raise ValueError(f"Mooring System Anchor Type: {self.anchor_type} not recognized.")
 
         return fixed + 0.005 * depth

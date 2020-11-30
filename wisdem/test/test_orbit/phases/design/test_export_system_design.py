@@ -66,9 +66,7 @@ def test_cables_property():
     export = ExportSystemDesign(config)
     export.run()
 
-    assert (
-        export.sections_cables == export.cable.name
-    ).sum() == export.num_cables
+    assert (export.sections_cables == export.cable.name).sum() == export.num_cables
 
 
 def test_cable_lengths_property():
@@ -76,9 +74,7 @@ def test_cable_lengths_property():
     export.run()
 
     cable_name = export.cable.name
-    assert (
-        export.cable_lengths_by_type[cable_name] == export.length
-    ).sum() == export.num_cables
+    assert (export.cable_lengths_by_type[cable_name] == export.length).sum() == export.num_cables
 
 
 def test_total_cable_len_property():
@@ -86,9 +82,7 @@ def test_total_cable_len_property():
     export.run()
 
     cable_name = export.cable.name
-    assert export.total_cable_length_by_type[cable_name] == pytest.approx(
-        export.total_length, abs=1e-10
-    )
+    assert export.total_cable_length_by_type[cable_name] == pytest.approx(export.total_length, abs=1e-10)
 
 
 def test_design_result():

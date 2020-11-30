@@ -1,14 +1,13 @@
-
-from wisdem.glue_code.runWISDEM     import run_wisdem
-from wisdem.commonse.mpi_tools  import MPI
+from wisdem.glue_code.runWISDEM import run_wisdem
+from wisdem.commonse.mpi_tools import MPI
 import os, time, sys
 
 ## File management
-run_dir                 = os.path.dirname( os.path.realpath(__file__) )
+run_dir = os.path.dirname(os.path.realpath(__file__))
 # fname_wt_input          = run_dir + os.sep + 'nrel5mw-spar_oc3.yaml'
-fname_wt_input          = run_dir + os.sep + 'nrel5mw-semi_oc4.yaml'
-fname_modeling_options  = run_dir + os.sep + 'modeling_options.yaml'
-fname_analysis_options  = run_dir + os.sep + 'analysis_options.yaml'
+fname_wt_input = run_dir + os.sep + "nrel5mw-semi_oc4.yaml"
+fname_modeling_options = run_dir + os.sep + "modeling_options.yaml"
+fname_analysis_options = run_dir + os.sep + "analysis_options.yaml"
 
 
 tt = time.time()
@@ -19,5 +18,5 @@ if MPI:
 else:
     rank = 0
 if rank == 0:
-    print('Run time: %f'%(time.time()-tt))
+    print("Run time: %f" % (time.time() - tt))
     sys.stdout.flush()

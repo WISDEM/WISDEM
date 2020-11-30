@@ -55,9 +55,7 @@ class FocusQLineEdit(QLineEdit):
         self._list_re = re.compile(r"^\[.*\]$")
         super(FocusQLineEdit, self).__init__(*args, *kwargs)
 
-    def set_dictionary_and_key(
-        self, dictionary: Union[List[Any], Dict[str, Any]], key: str
-    ) -> None:
+    def set_dictionary_and_key(self, dictionary: Union[List[Any], Dict[str, Any]], key: str) -> None:
         """
         This method sets the dictionary and key to be modified when the focus
         changes out of this widget
@@ -223,9 +221,7 @@ class FocusQLineEdit(QLineEdit):
         bool
             True if the string represents a boolean, false otherwise.
         """
-        return (
-            value == "True" or value == "False" or value == "true" or value == "false"
-        )
+        return value == "True" or value == "False" or value == "true" or value == "false"
 
 
 class FormAndMenuWindow(QMainWindow):
@@ -277,9 +273,7 @@ class FormAndMenuWindow(QMainWindow):
         central_widget = self.create_central_widget()
         self.setCentralWidget(central_widget)
 
-    def recursion_ui_setup(
-        self, dict_or_list: Union[List[Any], Dict[str, Any]]
-    ) -> QFormLayout:
+    def recursion_ui_setup(self, dict_or_list: Union[List[Any], Dict[str, Any]]) -> QFormLayout:
         """
         This recursive method is where the automatic layout magic happens.
         This method calls itself recursively as it descends down the dictionary
@@ -367,9 +361,7 @@ class FormAndMenuWindow(QMainWindow):
         geometry_filename_button = QPushButton("Select geometry YAML...")
         # geometry_visualize_button = QPushButton("Visualize geometry")
         self.geometry_filename_line_edit = QLineEdit()
-        self.geometry_filename_line_edit.setPlaceholderText(
-            "Please select a geometry file."
-        )
+        self.geometry_filename_line_edit.setPlaceholderText("Please select a geometry file.")
         self.geometry_filename_line_edit.setFixedWidth(200)
         self.geometry_filename_line_edit.setReadOnly(True)
         geometry_filename_button.clicked.connect(self.file_picker_geometry)
@@ -378,9 +370,7 @@ class FormAndMenuWindow(QMainWindow):
         modeling_section_label.setStyleSheet("font-weight: bold;")
         modeling_filename_button = QPushButton("Select modeling YAML...")
         self.modeling_filename_line_edit = QLineEdit()
-        self.modeling_filename_line_edit.setPlaceholderText(
-            "Please select a modeling file."
-        )
+        self.modeling_filename_line_edit.setPlaceholderText("Please select a modeling file.")
         self.modeling_filename_line_edit.setFixedWidth(200)
         self.modeling_filename_line_edit.setReadOnly(True)
         modeling_filename_button.clicked.connect(self.file_picker_modeling)
@@ -389,9 +379,7 @@ class FormAndMenuWindow(QMainWindow):
         analysis_section_label.setStyleSheet("font-weight: bold;")
         analysis_filename_button = QPushButton("Select analysis YAML...")
         self.analysis_filename_line_edit = QLineEdit()
-        self.analysis_filename_line_edit.setPlaceholderText(
-            "Please select an analysis file..."
-        )
+        self.analysis_filename_line_edit.setPlaceholderText("Please select an analysis file...")
         self.analysis_filename_line_edit.setFixedWidth(200)
         self.analysis_filename_line_edit.setReadOnly(True)
         analysis_filename_button.clicked.connect(self.file_picker_analysis)
@@ -405,9 +393,7 @@ class FormAndMenuWindow(QMainWindow):
 
         geometry_layout = QFormLayout()
         geometry_layout.addRow(geometry_section_label)
-        geometry_layout.addRow(
-            self.geometry_filename_line_edit, geometry_filename_button
-        )
+        geometry_layout.addRow(self.geometry_filename_line_edit, geometry_filename_button)
         # geometry_layout.addRow(geometry_visualize_button)
         geometry_layout.addRow(self.geometry_yaml_widget)
         geometry_widget = QWidget()
@@ -417,9 +403,7 @@ class FormAndMenuWindow(QMainWindow):
 
         modeling_layout = QFormLayout()
         modeling_layout.addRow(modeling_section_label)
-        modeling_layout.addRow(
-            self.modeling_filename_line_edit, modeling_filename_button
-        )
+        modeling_layout.addRow(self.modeling_filename_line_edit, modeling_filename_button)
         modeling_layout.addRow(self.modeling_yaml_widget)
         modeling_widget = QWidget()
         modeling_widget.setFixedWidth(subsection_width)
@@ -428,9 +412,7 @@ class FormAndMenuWindow(QMainWindow):
 
         analysis_layout = QFormLayout()
         analysis_layout.addRow(analysis_section_label)
-        analysis_layout.addRow(
-            self.analysis_filename_line_edit, analysis_filename_button
-        )
+        analysis_layout.addRow(self.analysis_filename_line_edit, analysis_filename_button)
         analysis_layout.addRow(self.analysis_yaml_editor_widget)
         analysis_widget = QWidget()
         analysis_widget.setFixedWidth(subsection_width)
@@ -486,9 +468,7 @@ class FormAndMenuWindow(QMainWindow):
             self.status_label.setText("Configuration files written.")
             msg = QMessageBox()
             msg.setText("Run WISDEM: Configuration files complete!")
-            msg.setInformativeText(
-                "Click cancel to back out and continue editing. Click OK to run WISDEM."
-            )
+            msg.setInformativeText("Click cancel to back out and continue editing. Click OK to run WISDEM.")
             msg.addButton(QMessageBox.Cancel)
             msg.addButton(QMessageBox.Ok)
             choice = msg.exec()
@@ -565,9 +545,7 @@ class FormAndMenuWindow(QMainWindow):
         dialog = QFileDialog(self)
         dialog.setFileMode(QFileDialog.ExistingFile)
         dialog.setViewMode(QFileDialog.Detail)
-        self.geometry_filename, _ = dialog.getOpenFileName(
-            None, "Open File", str(Path.home()), "YAML (*.yml *.yaml)"
-        )
+        self.geometry_filename, _ = dialog.getOpenFileName(None, "Open File", str(Path.home()), "YAML (*.yml *.yaml)")
         self.geometry_filename_line_edit.setText(self.geometry_filename)
         self.geometry_dict = self.read_yaml_to_dictionary(self.geometry_filename)
         layout = self.recursion_ui_setup(self.geometry_dict)
@@ -585,9 +563,7 @@ class FormAndMenuWindow(QMainWindow):
         dialog = QFileDialog(self)
         dialog.setFileMode(QFileDialog.ExistingFile)
         dialog.setViewMode(QFileDialog.Detail)
-        self.modeling_filename, _ = dialog.getOpenFileName(
-            None, "Open File", str(Path.home()), "YAML (*.yml *.yaml)"
-        )
+        self.modeling_filename, _ = dialog.getOpenFileName(None, "Open File", str(Path.home()), "YAML (*.yml *.yaml)")
         self.modeling_filename_line_edit.setText(self.modeling_filename)
         self.modeling_dict = self.read_yaml_to_dictionary(self.modeling_filename)
         layout = self.recursion_ui_setup(self.modeling_dict)
@@ -604,9 +580,7 @@ class FormAndMenuWindow(QMainWindow):
         dialog = QFileDialog(self)
         dialog.setFileMode(QFileDialog.ExistingFile)
         dialog.setViewMode(QFileDialog.Detail)
-        self.analysis_filename, _ = dialog.getOpenFileName(
-            None, "Open File", str(Path.home()), "YAML (*.yml *.yaml)"
-        )
+        self.analysis_filename, _ = dialog.getOpenFileName(None, "Open File", str(Path.home()), "YAML (*.yml *.yaml)")
         self.analysis_filename_line_edit.setText(self.analysis_filename)
         self.analysis_dict = self.read_yaml_to_dictionary(self.analysis_filename)
         layout = self.recursion_ui_setup(self.analysis_dict)

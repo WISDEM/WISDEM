@@ -88,8 +88,4 @@ def test_design_result():
     scour = ScourProtectionDesign(config_min_defined)
     scour.run()
 
-    assert scour.design_result == {
-        "scour_protection": {
-            "tons_per_substructure": scour.scour_protection_tonnes
-        }
-    }
+    assert scour.design_result == {"scour_protection": {"tons_per_substructure": scour.scour_protection_tonnes}}

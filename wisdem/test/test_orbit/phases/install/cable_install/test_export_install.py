@@ -24,9 +24,7 @@ simul_config = deepcopy(base_config)
 _ = simul_config.pop("export_cable_bury_vessel")
 
 
-@pytest.mark.parametrize(
-    "config", (base_config, simul_config), ids=["separate", "simultaneous"]
-)
+@pytest.mark.parametrize("config", (base_config, simul_config), ids=["separate", "simultaneous"])
 def test_simulation_setup(config):
 
     sim = ExportCableInstallation(config)
@@ -38,9 +36,7 @@ def test_simulation_setup(config):
     assert "Onshore Construction" in actions
 
 
-@pytest.mark.parametrize(
-    "config", (base_config, simul_config), ids=["separate", "simultaneous"]
-)
+@pytest.mark.parametrize("config", (base_config, simul_config), ids=["separate", "simultaneous"])
 def test_vessel_initialization(config):
 
     sim = ExportCableInstallation(config)
@@ -51,12 +47,8 @@ def test_vessel_initialization(config):
         assert sim.bury_vessel
 
 
-@pytest.mark.parametrize(
-    "config", (base_config, simul_config), ids=["separate", "simultaneous"]
-)
-@pytest.mark.parametrize(
-    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
-)
+@pytest.mark.parametrize("config", (base_config, simul_config), ids=["separate", "simultaneous"])
+@pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
 def test_for_complete_logging(config, weather):
 
     sim = ExportCableInstallation(config, weather=weather)
@@ -120,9 +112,7 @@ def test_separate_speed_kwargs():
 
 def test_kwargs_for_export_install():
 
-    new_export_system = {
-        "cable": {"linear_density": 50.0, "sections": [1000], "number": 1}
-    }
+    new_export_system = {"cable": {"linear_density": 50.0, "sections": [1000], "number": 1}}
     new_site = {"distance": 50, "depth": 20}
 
     new_config = deepcopy(base_config)
@@ -183,9 +173,7 @@ def test_kwargs_for_export_install():
 
 def test_kwargs_for_export_install_in_ProjectManager():
 
-    new_export_system = {
-        "cable": {"linear_density": 50.0, "sections": [1000], "number": 1}
-    }
+    new_export_system = {"cable": {"linear_density": 50.0, "sections": [1000], "number": 1}}
     new_site = {"distance": 50, "depth": 20}
     base = deepcopy(base_config)
     base["export_system"] = new_export_system

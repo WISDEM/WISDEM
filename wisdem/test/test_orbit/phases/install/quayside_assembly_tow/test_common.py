@@ -63,18 +63,14 @@ def test_TurbineAssemblyLine(env, num, assigned):
         feed.put(0)
 
     for a in range(num):
-        assembly = TurbineAssemblyLine(
-            feed, target, {"tower": {"sections": 1}}, a + 1
-        )
+        assembly = TurbineAssemblyLine(feed, target, {"tower": {"sections": 1}}, a + 1)
         env.register(assembly)
         assembly.start()
 
     env.run()
 
     df = pd.DataFrame(env.actions)
-    assert len(df.loc[df["action"] == "Mechanical Completion"]) == len(
-        assigned
-    )
+    assert len(df.loc[df["action"] == "Mechanical Completion"]) == len(assigned)
 
 
 @pytest.mark.parametrize(
@@ -105,9 +101,7 @@ def test_Sub_to_Turbine_assembly_interaction(env, sub_lines, turb_lines):
         assembly.start()
 
     for a in range(turb_lines):
-        assembly = TurbineAssemblyLine(
-            feed, target, {"tower": {"sections": 1}}, a + 1
-        )
+        assembly = TurbineAssemblyLine(feed, target, {"tower": {"sections": 1}}, a + 1)
         env.register(assembly)
         assembly.start()
 

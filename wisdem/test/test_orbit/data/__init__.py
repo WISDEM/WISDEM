@@ -9,8 +9,4 @@ import pandas as pd
 
 DIR = os.path.split(__file__)[0]
 _fp = os.path.join(DIR, "test_weather.csv")
-test_weather = (
-    pd.read_csv(_fp, parse_dates=["datetime"])
-    .set_index("datetime")
-    .to_records()
-)
+test_weather = pd.read_csv(_fp, parse_dates=["datetime"]).set_index("datetime").to_records()

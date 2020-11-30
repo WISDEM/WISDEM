@@ -41,19 +41,13 @@ config_missing_col = deepcopy(config_custom_base)
 config_missing_col["array_system_design"]["location_data"] = "missing_columns"
 
 config_incomplete_optional = deepcopy(config_custom_base)
-config_incomplete_optional["array_system_design"][
-    "location_data"
-] = "incomplete_optional"
+config_incomplete_optional["array_system_design"]["location_data"] = "incomplete_optional"
 
 config_incomplete_required = deepcopy(config_custom_base)
-config_incomplete_required["array_system_design"][
-    "location_data"
-] = "incomplete_required"
+config_incomplete_required["array_system_design"]["location_data"] = "incomplete_required"
 
 config_duplicate_coordinates = deepcopy(config_custom_base)
-config_duplicate_coordinates["array_system_design"][
-    "location_data"
-] = "duplicate_coordinates"
+config_duplicate_coordinates["array_system_design"]["location_data"] = "duplicate_coordinates"
 
 
 def test_array_system_creation():
@@ -154,9 +148,7 @@ def test_total_cable_length(config, total_length):
     array = ArraySystemDesign(config)
     array.run()
 
-    val = round(
-        sum(val.sum() for val in array.cable_lengths_by_type.values()), 2
-    )
+    val = round(sum(val.sum() for val in array.cable_lengths_by_type.values()), 2)
     assert total_length == val
 
     val = round(sum(array.total_cable_length_by_type.values()), 2)
@@ -227,9 +219,7 @@ def test_floating_calculations():
     sim2.run()
 
     no_cat_length = sim2.total_length
-    assert no_cat_length == pytest.approx(
-        base_length + 2 * (200 / 1000) * number
-    )
+    assert no_cat_length == pytest.approx(base_length + 2 * (200 / 1000) * number)
 
     floating_cat = deepcopy(base)
     floating_cat["site"]["depth"] = 250

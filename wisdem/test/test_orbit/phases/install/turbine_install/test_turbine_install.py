@@ -18,9 +18,7 @@ from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import TurbineInstallation
 
 config_wtiv = extract_library_specs("config", "turbine_install_wtiv")
-config_long_mobilize = extract_library_specs(
-    "config", "turbine_install_long_mobilize"
-)
+config_long_mobilize = extract_library_specs("config", "turbine_install_long_mobilize")
 config_wtiv_feeder = extract_library_specs("config", "turbine_install_feeder")
 config_wtiv_multi_feeder = deepcopy(config_wtiv_feeder)
 config_wtiv_multi_feeder["num_feeders"] = 2
@@ -70,9 +68,7 @@ def test_vessel_creation(config):
             assert feeder.storage
 
 
-@pytest.mark.parametrize(
-    "config, expected", [(config_wtiv, 72), (config_long_mobilize, 14 * 24)]
-)
+@pytest.mark.parametrize("config, expected", [(config_wtiv, 72), (config_long_mobilize, 14 * 24)])
 def test_vessel_mobilize(config, expected):
 
     sim = TurbineInstallation(config)
@@ -87,9 +83,7 @@ def test_vessel_mobilize(config, expected):
     (config_wtiv, config_wtiv_feeder, config_wtiv_multi_feeder),
     ids=["wtiv_only", "single_feeder", "multi_feeder"],
 )
-@pytest.mark.parametrize(
-    "weather", (None, test_weather), ids=["no_weather", "test_weather"]
-)
+@pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
 def test_for_complete_logging(weather, config):
 
     sim = TurbineInstallation(config, weather=weather)
@@ -118,9 +112,7 @@ def test_for_complete_installation(config):
     sim = TurbineInstallation(config)
     sim.run()
 
-    installed_nacelles = len(
-        [a for a in sim.env.actions if a["action"] == "Attach Nacelle"]
-    )
+    installed_nacelles = len([a for a in sim.env.actions if a["action"] == "Attach Nacelle"])
     assert installed_nacelles == sim.num_turbines
 
 
@@ -222,18 +214,14 @@ def test_multiple_tower_sections():
 
     sim = TurbineInstallation(config_wtiv)
     sim.run()
-    baseline = len(
-        [a for a in sim.env.actions if a["action"] == "Attach Tower Section"]
-    )
+    baseline = len([a for a in sim.env.actions if a["action"] == "Attach Tower Section"])
 
     two_sections = deepcopy(config_wtiv)
     two_sections["turbine"]["tower"]["sections"] = 2
 
     sim2 = TurbineInstallation(two_sections)
     sim2.run()
-    new = len(
-        [a for a in sim2.env.actions if a["action"] == "Attach Tower Section"]
-    )
+    new = len([a for a in sim2.env.actions if a["action"] == "Attach Tower Section"])
 
     assert new == 2 * baseline
 

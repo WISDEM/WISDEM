@@ -261,9 +261,7 @@ class TurbineInstallation(InstallPhase):
 
 
 @process
-def solo_install_turbines(
-    vessel, port, distance, turbines, tower_sections, num_blades, **kwargs
-):
+def solo_install_turbines(vessel, port, distance, turbines, tower_sections, num_blades, **kwargs):
     """
     Logic that a Wind Turbine Installation Vessel (WTIV) uses during a single
     turbine installation process.
@@ -293,17 +291,13 @@ def solo_install_turbines(
         if vessel.at_port:
             try:
                 # Get turbine components
-                yield get_list_of_items_from_port(
-                    vessel, port, component_list, **kwargs
-                )
+                yield get_list_of_items_from_port(vessel, port, component_list, **kwargs)
 
             except ItemNotFound:
                 # If no items are at port and vessel.storage.items is empty,
                 # the job is done
                 if not vessel.storage.items:
-                    vessel.submit_debug_log(
-                        message="Item not found. Shutting down."
-                    )
+                    vessel.submit_debug_log(message="Item not found. Shutting down.")
                     break
 
             # Transit to site
@@ -319,44 +313,30 @@ def solo_install_turbines(
 
                 for i in range(tower_sections):
                     # Get tower section
-                    section = yield vessel.get_item_from_storage(
-                        "TowerSection", **kwargs
-                    )
+                    section = yield vessel.get_item_from_storage("TowerSection", **kwargs)
 
                     # Install tower section
                     height = section.length * (i + 1)
-                    yield install_tower_section(
-                        vessel, section, height, **kwargs
-                    )
+                    yield install_tower_section(vessel, section, height, **kwargs)
 
                 # Get turbine nacelle
-                nacelle = yield vessel.get_item_from_storage(
-                    "Nacelle", **kwargs
-                )
+                nacelle = yield vessel.get_item_from_storage("Nacelle", **kwargs)
 
                 # Install nacelle
-                yield vessel.task(
-                    "Reequip", reequip_time, constraints=vessel.transit_limits
-                )
+                yield vessel.task("Reequip", reequip_time, constraints=vessel.transit_limits)
                 yield install_nacelle(vessel, nacelle, **kwargs)
 
                 # Install turbine blades
-                yield vessel.task(
-                    "Reequip", reequip_time, constraints=vessel.transit_limits
-                )
+                yield vessel.task("Reequip", reequip_time, constraints=vessel.transit_limits)
                 for _ in range(num_blades):
-                    blade = yield vessel.get_item_from_storage(
-                        "Blade", **kwargs
-                    )
+                    blade = yield vessel.get_item_from_storage("Blade", **kwargs)
 
                     yield install_turbine_blade(vessel, blade, **kwargs)
 
                 # Jack-down
                 site_depth = kwargs.get("site_depth", None)
                 extension = kwargs.get("extension", site_depth + 10)
-                jackdown_time = vessel.jacksys.jacking_time(
-                    extension, site_depth
-                )
+                jackdown_time = vessel.jacksys.jacking_time(extension, site_depth)
 
                 yield vessel.task(
                     "Jackdown",
@@ -378,9 +358,7 @@ def solo_install_turbines(
 
 
 @process
-def install_turbine_components_from_queue(
-    wtiv, queue, distance, turbines, tower_sections, num_blades, **kwargs
-):
+def install_turbine_components_from_queue(wtiv, queue, distance, turbines, tower_sections, num_blades, **kwargs):
     """
     Logic that a Wind Turbine Installation Vessel (WTIV) uses to install
     turbine componenets from a queue of feeder barges.
@@ -420,51 +398,35 @@ def install_turbine_components_from_queue(
 
                 for i in range(tower_sections):
                     # Get tower section
-                    section = yield wtiv.get_item_from_storage(
-                        "TowerSection", vessel=queue.vessel, **kwargs
-                    )
+                    section = yield wtiv.get_item_from_storage("TowerSection", vessel=queue.vessel, **kwargs)
 
                     # Install tower section
                     height = section.length * (i + 1)
-                    yield install_tower_section(
-                        wtiv, section, height, **kwargs
-                    )
+                    yield install_tower_section(wtiv, section, height, **kwargs)
 
                 # Get turbine nacelle
-                nacelle = yield wtiv.get_item_from_storage(
-                    "Nacelle", vessel=queue.vessel, **kwargs
-                )
+                nacelle = yield wtiv.get_item_from_storage("Nacelle", vessel=queue.vessel, **kwargs)
 
                 # Install nacelle
-                yield wtiv.task(
-                    "Reequip", reequip_time, constraints=wtiv.transit_limits
-                )
+                yield wtiv.task("Reequip", reequip_time, constraints=wtiv.transit_limits)
                 yield install_nacelle(wtiv, nacelle, **kwargs)
 
                 # Install turbine blades
-                yield wtiv.task(
-                    "Reequip", reequip_time, constraints=wtiv.transit_limits
-                )
+                yield wtiv.task("Reequip", reequip_time, constraints=wtiv.transit_limits)
 
                 for i in range(num_blades):
                     release = True if i + 1 == num_blades else False
 
-                    blade = yield wtiv.get_item_from_storage(
-                        "Blade", vessel=queue.vessel, release=release, **kwargs
-                    )
+                    blade = yield wtiv.get_item_from_storage("Blade", vessel=queue.vessel, release=release, **kwargs)
 
                     yield install_turbine_blade(wtiv, blade, **kwargs)
 
                 # Jack-down
                 site_depth = kwargs.get("site_depth", None)
                 extension = kwargs.get("extension", site_depth + 10)
-                jackdown_time = wtiv.jacksys.jacking_time(
-                    extension, site_depth
-                )
+                jackdown_time = wtiv.jacksys.jacking_time(extension, site_depth)
 
-                yield wtiv.task(
-                    "Jackdown", jackdown_time, constraints=wtiv.transit_limits
-                )
+                yield wtiv.task("Jackdown", jackdown_time, constraints=wtiv.transit_limits)
 
                 wtiv.submit_debug_log(progress="Turbine")
 

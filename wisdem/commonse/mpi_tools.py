@@ -1,9 +1,11 @@
 import os
 import sys
+
 try:
     from mpi4py import MPI
 except:
     MPI = False
+
 
 def under_mpirun():
     """Return True if we're being executed under mpirun."""
@@ -11,12 +13,15 @@ def under_mpirun():
     # no consistent set of environment vars between MPI
     # implementations.
     for name in os.environ.keys():
-        if name == 'OMPI_COMM_WORLD_RANK' or \
-           name == 'MPIEXEC_HOSTNAME' or \
-           name.startswith('MPIR_') or \
-           name.startswith('MPICH_'):
+        if (
+            name == "OMPI_COMM_WORLD_RANK"
+            or name == "MPIEXEC_HOSTNAME"
+            or name.startswith("MPIR_")
+            or name.startswith("MPICH_")
+        ):
             return True
     return False
+
 
 if under_mpirun():
     from mpi4py import MPI
@@ -25,25 +30,28 @@ if under_mpirun():
         newmsg = ["%d: " % MPI.COMM_WORLD.rank] + list(msg)
         for m in newmsg:
             sys.stdout.write("%s " % m)
-        sys.stdout.write('\n')
+        sys.stdout.write("\n")
         sys.stdout.flush()
+
+
 else:
     MPI = None
 
+
 def map_comm_heirarchical(K, K2):
-    """ 
+    """
     Heirarchical parallelization communicator mapping.  Assumes K top level processes with K2 subprocessors each.
     Requires comm_world_size >= K + K*K2.  Noninclusive, Ki not included in K2i execution.
     (TODO, this is not the most efficient architecture, could be achieve with K fewer processors, but this was easier to generalize)
     """
-    N             = K + K*K2
+    N = K + K * K2
     comm_map_down = {}
-    comm_map_up   = {}
-    color_map     = [0]*K
-    
+    comm_map_up = {}
+    color_map = [0] * K
+
     for i in range(K):
-        comm_map_down[i] = [K+j+i*K2 for j in range(K2)]
-        color_map.extend([i+1]*K2)
+        comm_map_down[i] = [K + j + i * K2 for j in range(K2)]
+        color_map.extend([i + 1] * K2)
 
         for j in comm_map_down[i]:
             comm_map_up[j] = i
@@ -67,7 +75,7 @@ def subprocessor_loop(comm_map_up):
     data[0] = False
     """
     # comm        = impl.world_comm()
-    rank        = MPI.COMM_WORLD.Get_rank()
+    rank = MPI.COMM_WORLD.Get_rank()
     rank_target = comm_map_up[rank]
 
     keep_running = True
@@ -77,9 +85,10 @@ def subprocessor_loop(comm_map_up):
             break
         else:
             func_execution = data[0]
-            args           = data[1]
+            args = data[1]
             output = func_execution(args)
             MPI.COMM_WORLD.send(output, dest=(rank_target), tag=1)
+
 
 def subprocessor_stop(comm_map_down):
     """
@@ -90,9 +99,14 @@ def subprocessor_stop(comm_map_down):
         subranks = comm_map_down[rank]
         for subrank_i in subranks:
             MPI.COMM_WORLD.send([False], dest=subrank_i, tag=0)
-        print('All MPI subranks closed.')
+        print("All MPI subranks closed.")
 
 
 if __name__ == "__main__":
     from mpi4py import MPI
-    _, _, _, = map_comm_heirarchical(2,4)
+
+    (
+        _,
+        _,
+        _,
+    ) = map_comm_heirarchical(2, 4)

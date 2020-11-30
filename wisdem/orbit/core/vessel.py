@@ -210,9 +210,7 @@ class Vessel(Agent):
         self._cable_storage_specs = self.config.get("cable_storage", {})
         if self._cable_storage_specs:
             self.trip_data = []
-            self._cable_storage = CableCarousel(
-                self.env, **self._cable_storage_specs
-            )
+            self._cable_storage = CableCarousel(self.env, **self._cable_storage_specs)
 
     def extract_scour_protection_specs(self):
         """
@@ -236,14 +234,10 @@ class Vessel(Agent):
         if capacity:
             self._rock_storage = ScourProtectionStorage(self.env, capacity)
 
-        self.scour_protection_install_speed = self._sp_specs.get(
-            "scour_protection_install_speed", 10
-        )
+        self.scour_protection_install_speed = self._sp_specs.get("scour_protection_install_speed", 10)
 
     @process
-    def get_item_from_storage(
-        self, _type, vessel=None, release=False, **kwargs
-    ):
+    def get_item_from_storage(self, _type, vessel=None, release=False, **kwargs):
         """
         Retrieves an item which matches `item.type = _type` from `self.storage`
         or `vessel.storage` if configured.

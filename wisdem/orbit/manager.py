@@ -183,12 +183,8 @@ class ProjectManager:
         if _error:
             raise PhaseNotFound(_error)
 
-        design_phases = {
-            n: c for n, c in _phases.items() if issubclass(c, DesignPhase)
-        }
-        install_phases = {
-            n: c for n, c in _phases.items() if issubclass(c, InstallPhase)
-        }
+        design_phases = {n: c for n, c in _phases.items() if issubclass(c, DesignPhase)}
+        install_phases = {n: c for n, c in _phases.items() if issubclass(c, InstallPhase)}
 
         config = {}
         for i in install_phases.values():
@@ -246,9 +242,7 @@ class ProjectManager:
 
         if all((project_capacity, turbine_rating, num_turbines)):
             if project_capacity != (turbine_rating * num_turbines):
-                raise AttributeError(
-                    f"Input and calculated project capacity don't match."
-                )
+                raise AttributeError(f"Input and calculated project capacity don't match.")
 
         else:
             if all((project_capacity, turbine_rating)):
@@ -323,14 +317,8 @@ class ProjectManager:
             right = {k: right[k] for k in set(new).intersection(set(right))}
 
         for k, _ in right.items():
-            if (
-                k in new
-                and isinstance(new[k], dict)
-                and isinstance(right[k], collections.Mapping)
-            ):
-                new[k] = cls.merge_dicts(
-                    new[k], right[k], overwrite=overwrite, add_keys=add_keys
-                )
+            if k in new and isinstance(new[k], dict) and isinstance(right[k], collections.Mapping):
+                new[k] = cls.merge_dicts(new[k], right[k], overwrite=overwrite, add_keys=add_keys)
             else:
                 if overwrite or k not in new:
                     new[k] = right[k]
@@ -395,11 +383,7 @@ class ProjectManager:
         """
 
         _specific = self.config.get(phase, {}).copy()
-        _general = {
-            k: v
-            for k, v in self.config.items()
-            if k not in set(self.phase_dict())
-        }
+        _general = {k: v for k, v in self.config.items() if k not in set(self.phase_dict())}
 
         phase_config = self.merge_dicts(_general, _specific)
 
@@ -453,9 +437,7 @@ class ProjectManager:
 
         if _catch:
             try:
-                phase = _class(
-                    _config, weather=weather, phase_name=name, **processes
-                )
+                phase = _class(_config, weather=weather, phase_name=name, **processes)
                 phase.run()
 
             except Exception as e:
@@ -466,9 +448,7 @@ class ProjectManager:
                 return None, None, None
 
         else:
-            phase = _class(
-                _config, weather=weather, phase_name=name, **processes
-            )
+            phase = _class(_config, weather=weather, phase_name=name, **processes)
             phase.run()
 
         self._phases[name] = phase
@@ -480,9 +460,7 @@ class ProjectManager:
         self.phase_starts[name] = start
         self.phase_costs[name] = cost
         self.phase_times[name] = time
-        self.detailed_outputs = self.merge_dicts(
-            self.detailed_outputs, phase.detailed_output
-        )
+        self.detailed_outputs = self.merge_dicts(self.detailed_outputs, phase.detailed_output)
 
         return cost, time, logs
 
@@ -551,16 +529,10 @@ class ProjectManager:
 
         self.phase_costs[name] = phase.total_phase_cost
         self.phase_times[name] = phase.total_phase_time
-        self.design_results = self.merge_dicts(
-            self.design_results, phase.design_result, overwrite=False
-        )
+        self.design_results = self.merge_dicts(self.design_results, phase.design_result, overwrite=False)
 
-        self.config = self.merge_dicts(
-            self.config, phase.design_result, overwrite=False
-        )
-        self.detailed_outputs = self.merge_dicts(
-            self.detailed_outputs, phase.detailed_output
-        )
+        self.config = self.merge_dicts(self.config, phase.design_result, overwrite=False)
+        self.detailed_outputs = self.merge_dicts(self.detailed_outputs, phase.detailed_output)
 
     def run_multiple_phases_in_serial(self, phase_list, **kwargs):
         """
@@ -653,9 +625,7 @@ class ProjectManager:
 
                 try:
                     start = self.get_dependency_start_time(target, perc)
-                    cost, time, logs = self.run_install_phase(
-                        name, start, **kwargs
-                    )
+                    cost, time, logs = self.run_install_phase(name, start, **kwargs)
 
                     progress = True
 
@@ -753,10 +723,7 @@ class ProjectManager:
                     defined[k] = i
 
                 except AttributeError:
-                    raise ValueError(
-                        f"No weather profile configured "
-                        f"for '{k}': '{v}' input type."
-                    )
+                    raise ValueError(f"No weather profile configured " f"for '{k}': '{v}' input type.")
 
                 except KeyError:
                     raise WeatherProfileError(_dt, self.weather)
@@ -856,9 +823,7 @@ class ProjectManager:
         lifetime = self.project_params.get("project_lifetime", 25)
 
         _expense_logs = self._filter_logs(keys=["cost", "time"])
-        expenses = np.array(
-            _expense_logs, dtype=[("cost", "f8"), ("time", "i4")]
-        )
+        expenses = np.array(_expense_logs, dtype=[("cost", "f8"), ("time", "i4")])
         dig = np.digitize(expenses["time"], self.month_bins)
 
         monthly = {}
@@ -886,9 +851,7 @@ class ProjectManager:
             generating_strings = len([t for t in dig if i >= t])
             generating_turbines = sum(turbines[:generating_strings])
 
-            opex[i] = (
-                generating_turbines * self.turbine_rating * rate * 1000 / 12
-            )
+            opex[i] = generating_turbines * self.turbine_rating * rate * 1000 / 12
 
         return opex
 
@@ -908,9 +871,7 @@ class ProjectManager:
         for i in range(1, lifetime * 12):
             generating_strings = len([t for t in dig if i >= t])
             generating_turbines = sum(turbines[:generating_strings])
-            production = (
-                generating_turbines * self.turbine_rating * ncf * 730
-            )  # MWh
+            production = generating_turbines * self.turbine_rating * ncf * 730  # MWh
             revenue[i] = production * price
 
         return revenue
@@ -941,10 +902,7 @@ class ProjectManager:
         pr = (1 + dr) ** (1 / 12) - 1
 
         cash_flow = self.cash_flow
-        _npv = [
-            (cash_flow[i] / (1 + pr) ** (i))
-            for i in range(1, max(cash_flow.keys()) + 1)
-        ]
+        _npv = [(cash_flow[i] / (1 + pr) ** (i)) for i in range(1, max(cash_flow.keys()) + 1)]
 
         return self.overnight_capex - sum(_npv)
 
@@ -971,17 +929,13 @@ class ProjectManager:
     def progress_summary(self):
         """Returns a summary of progress by month."""
 
-        arr = np.array(
-            self.progress_logs, dtype=[("progress", "U32"), ("time", "i4")]
-        )
+        arr = np.array(self.progress_logs, dtype=[("progress", "U32"), ("time", "i4")])
         dig = np.digitize(arr["time"], self.month_bins)
 
         summary = {}
         for i in range(1, len(self.month_bins)):
 
-            unique, counts = np.unique(
-                arr["progress"][dig == i], return_counts=True
-            )
+            unique, counts = np.unique(arr["progress"][dig == i], return_counts=True)
             summary[i] = dict(zip(unique, counts))
 
         return summary
@@ -1033,11 +987,7 @@ class ProjectManager:
         """
 
         res = sum(
-            [
-                v
-                for k, v in self.phase_times.items()
-                if k in self.config["install_phases"] and isinstance(v, Number)
-            ]
+            [v for k, v in self.phase_times.items() if k in self.config["install_phases"] and isinstance(v, Number)]
         )
         return res
 
@@ -1086,9 +1036,7 @@ class ProjectManager:
         """Returns the overnight capital cost of the project."""
 
         design_phases = [p.__name__ for p in self._design_phases]
-        design_cost = sum(
-            [v for k, v in self.phase_costs.items() if k in design_phases]
-        )
+        design_cost = sum([v for k, v in self.phase_costs.items() if k in design_phases])
 
         return design_cost + self.turbine_capex
 
@@ -1113,11 +1061,7 @@ class ProjectManager:
         """
 
         res = sum(
-            [
-                v
-                for k, v in self.phase_costs.items()
-                if k in self.config["install_phases"] and isinstance(v, Number)
-            ]
+            [v for k, v in self.phase_costs.items() if k in self.config["install_phases"] and isinstance(v, Number)]
         )
         return res
 
@@ -1235,9 +1179,7 @@ class ProjectManager:
         commissioning = self.project_params.get("commissioning", 44)
         decommissioning = self.project_params.get("decommissioning", 58)
 
-        return sum(
-            [insurance, financing, contingency, commissioning, decommissioning]
-        )
+        return sum([insurance, financing, contingency, commissioning, decommissioning])
 
     def export_configuration(self, file_name):
         """

@@ -60,7 +60,7 @@ class WeatherDelay:
         self.input_dict = input_dict
         self.output_dict = output_dict
         self.validate_inputs(self.input_dict)
-        self.output_dict['wind_delays'] = self.calculate_wind_delay()
+        self.output_dict["wind_delays"] = self.calculate_wind_delay()
 
     def validate_inputs(self, input_dict):
         """
@@ -80,16 +80,16 @@ class WeatherDelay:
             If one of the keys is missing, this method raises a ValueError
         """
         required_keys = {
-            'start_delay_hours',
-            'mission_time_hours',
-            'critical_wind_speed_m_per_s',
-            'wind_height_of_interest_m',
-            'wind_shear_exponent',
-            'weather_window'
+            "start_delay_hours",
+            "mission_time_hours",
+            "critical_wind_speed_m_per_s",
+            "wind_height_of_interest_m",
+            "wind_shear_exponent",
+            "weather_window",
         }
         found_keys = set(input_dict.keys())
         if len(required_keys - found_keys) > 0:
-            err_msg = '{}: did not find all required keys in inputs dictionary. Missing keys are {}'
+            err_msg = "{}: did not find all required keys in inputs dictionary. Missing keys are {}"
             raise ValueError(err_msg.format(type(self).__name__, required_keys - found_keys))
 
     def calculate_wind_delay(self):
@@ -115,20 +115,20 @@ class WeatherDelay:
         # following lines shorter. Also, the keys on the input
         # dictionary have units but the lines below do not have units in
         # the variable names.
-        start_delay = self.input_dict['start_delay_hours']
-        mission_time = self.input_dict['mission_time_hours']
-        critical_wind_speed = self.input_dict['critical_wind_speed_m_per_s']
-        wind_height_of_interest_m = self.input_dict['wind_height_of_interest_m']
-        wind_shear_exponent = self.input_dict['wind_shear_exponent']
-        weather_window = self.input_dict['weather_window']
+        start_delay = self.input_dict["start_delay_hours"]
+        mission_time = self.input_dict["mission_time_hours"]
+        critical_wind_speed = self.input_dict["critical_wind_speed_m_per_s"]
+        wind_height_of_interest_m = self.input_dict["wind_height_of_interest_m"]
+        wind_shear_exponent = self.input_dict["wind_shear_exponent"]
+        weather_window = self.input_dict["weather_window"]
 
         # Extract only the 'Speed m per s' as a dataframe, and only retain
         # elements where index is > start_delay and < mission_time
-        wind_speeds_m_s = weather_window['Speed m per s'].values
+        wind_speeds_m_s = weather_window["Speed m per s"].values
         # check if mission time exceeds size of weather window
         if mission_time > len(wind_speeds_m_s):
-            raise ValueError('{}: Error: Mission time longer than weather window'.format(type(self).__name__))
-        wind_speeds_m_s_filtered = wind_speeds_m_s[(start_delay + 1):(int(mission_time) + 1)]
+            raise ValueError("{}: Error: Mission time longer than weather window".format(type(self).__name__))
+        wind_speeds_m_s_filtered = wind_speeds_m_s[(start_delay + 1) : (int(mission_time) + 1)]
 
         # Calculate the wind speed at the particular, given the wind shear exponent
         wind_speed_at_height_m_s = wind_speeds_m_s_filtered * (wind_height_of_interest_m / 100) ** wind_shear_exponent
@@ -208,8 +208,7 @@ class WeatherDelay:
             0 if the module ran without errors. 1 if there was an error.
         """
         try:
-            self.output_dict['wind_delay'] = self.calculate_wind_delay()
-            return 0    # module ran successfully
+            self.output_dict["wind_delay"] = self.calculate_wind_delay()
+            return 0  # module ran successfully
         except:
-            return 1    # module did not run successfully
-
+            return 1  # module did not run successfully

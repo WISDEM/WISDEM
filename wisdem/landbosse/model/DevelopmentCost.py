@@ -3,6 +3,7 @@ from wisdem.landbosse.model.CostModule import CostModule
 import pandas as pd
 import math
 
+
 class DevelopmentCost(CostModule):
     """
     **DevelopmentCost.py
@@ -35,19 +36,24 @@ class DevelopmentCost(CostModule):
         total_development_cost : pd.DataFrame
             data frame with total development cost by type of cost (e.g., Labor)
         """
-        if 'development_labor_cost_usd' in self.input_dict:
-            total_development_cost = pd.DataFrame([
-                {'Type of cost': 'Equipment rental', 'Cost USD': 0, 'Phase of construction': 'Development'},
-                {'Type of cost': 'Labor', 'Cost USD': self.input_dict['development_labor_cost_usd'],
-                 'Phase of construction': 'Development'},
-                {'Type of cost': 'Materials', 'Cost USD': 0, 'Phase of construction': 'Development'},
-                {'Type of cost': 'Mobilization', 'Cost USD': 0, 'Phase of construction': 'Development'},
-                {'Type of cost': 'Other', 'Cost USD': 0, 'Phase of construction': 'Development'}
-            ])
+        if "development_labor_cost_usd" in self.input_dict:
+            total_development_cost = pd.DataFrame(
+                [
+                    {"Type of cost": "Equipment rental", "Cost USD": 0, "Phase of construction": "Development"},
+                    {
+                        "Type of cost": "Labor",
+                        "Cost USD": self.input_dict["development_labor_cost_usd"],
+                        "Phase of construction": "Development",
+                    },
+                    {"Type of cost": "Materials", "Cost USD": 0, "Phase of construction": "Development"},
+                    {"Type of cost": "Mobilization", "Cost USD": 0, "Phase of construction": "Development"},
+                    {"Type of cost": "Other", "Cost USD": 0, "Phase of construction": "Development"},
+                ]
+            )
         else:
-            total_development_cost = self.input_dict['development_df']
+            total_development_cost = self.input_dict["development_df"]
 
-        self.output_dict['total_development_cost'] = total_development_cost
+        self.output_dict["total_development_cost"] = total_development_cost
 
         return total_development_cost
 
@@ -66,21 +72,25 @@ class DevelopmentCost(CostModule):
 
         result = []
         module = type(self).__name__
-        for _, row in self.output_dict['total_development_cost'].iterrows():
-            dashed_row = '{} - {} - {}'.format(row["Type of cost"], row["Phase of construction"], math.ceil(row["Cost USD"]))
-            result.append({
-                'unit': '',
-                'type': 'dataframe',
-                'variable_df_key_col_name': 'Type of Cost - Phase of Construction - Cost in USD',
-                'value': dashed_row,
-                'last_number': row[2]
-            })
+        for _, row in self.output_dict["total_development_cost"].iterrows():
+            dashed_row = "{} - {} - {}".format(
+                row["Type of cost"], row["Phase of construction"], math.ceil(row["Cost USD"])
+            )
+            result.append(
+                {
+                    "unit": "",
+                    "type": "dataframe",
+                    "variable_df_key_col_name": "Type of Cost - Phase of Construction - Cost in USD",
+                    "value": dashed_row,
+                    "last_number": row[2],
+                }
+            )
 
         for _dict in result:
-            _dict['project_id_with_serial'] = self.project_name
-            _dict['module'] = module
+            _dict["project_id_with_serial"] = self.project_name
+            _dict["module"] = module
 
-        self.output_dict['development_cost_csv'] = result
+        self.output_dict["development_cost_csv"] = result
         return result
 
     def run_module(self):
@@ -92,10 +102,8 @@ class DevelopmentCost(CostModule):
         try:
             self.calculate_costs()
             self.outputs_for_detailed_tab()
-            self.output_dict['development_module_type_operation'] = self.outputs_for_costs_by_module_type_operation(
-                input_df=self.output_dict['total_development_cost'],
-                project_id=self.project_name,
-                total_or_turbine=True
+            self.output_dict["development_module_type_operation"] = self.outputs_for_costs_by_module_type_operation(
+                input_df=self.output_dict["total_development_cost"], project_id=self.project_name, total_or_turbine=True
             )
             return 0, 0  # module ran successfully
 
@@ -103,5 +111,3 @@ class DevelopmentCost(CostModule):
             traceback.print_exc()
             print(f"Fail {self.project_name} DevelopmentCost")
             return 1, error  # module did not run successfully
-
-
