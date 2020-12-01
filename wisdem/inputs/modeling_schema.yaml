@@ -78,6 +78,22 @@ properties:
                 type: boolean
                 default: False
                 description: Flag to derive the regulation trajectory in region III in terms of pitch and TSR
+            spar_cap_ss:
+                type: string
+                default: 'none'
+                description: Composite layer modeling the spar cap on the suction side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable spar_cap_ss.
+            spar_cap_ps:
+                type: string
+                default: 'none'
+                description: Composite layer modeling the spar cap on the pressure side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable spar_cap_ps.
+            te_ss:
+                type: string
+                default: 'none'
+                description: Composite layer modeling the trailing edge reinforcement on the suction side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable te_ss.
+            te_ps:
+                type: string
+                default: 'none'
+                description: Composite layer modeling the trailing edge reinforcement on the pressure side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable te_ps.
     DriveSE:
         type: object
         default: {}

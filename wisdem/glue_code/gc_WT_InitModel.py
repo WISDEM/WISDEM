@@ -758,8 +758,8 @@ def assign_generator_values(wt_opt, modeling_options, nacelle):
 
 def assign_tower_values(wt_opt, modeling_options, tower):
     # Function to assign values to the openmdao component Tower
-    n_height = modeling_options["TowerSE"]["n_height"]  # Number of points along tower height
-    n_layers = modeling_options["TowerSE"]["n_layers"]
+    n_height = modeling_options["TowerSE"]["n_height_tower"]  # Number of points along tower height
+    n_layers = modeling_options["TowerSE"]["n_layers_tower"]
 
     svec = np.unique(
         np.r_[
@@ -829,8 +829,8 @@ def assign_tower_values(wt_opt, modeling_options, tower):
 
 def assign_monopile_values(wt_opt, modeling_options, monopile):
     # Function to assign values to the openmdao component Monopile
-    n_height = modeling_options["monopile"]["n_height"]  # Number of points along monopile height
-    n_layers = modeling_options["monopile"]["n_layers"]
+    n_height = modeling_options["TowerSE"]["n_height_monopile"]  # Number of points along monopile height
+    n_layers = modeling_options["TowerSE"]["n_layers_monopile"]
 
     svec = np.unique(
         np.r_[
@@ -1107,12 +1107,12 @@ def assign_costs_values(wt_opt, costs):
 def assign_airfoil_values(wt_opt, modeling_options, airfoils):
     # Function to assign values to the openmdao component Airfoils
 
-    n_af = modeling_options["airfoils"]["n_af"]
-    n_aoa = modeling_options["airfoils"]["n_aoa"]
-    aoa = modeling_options["airfoils"]["aoa"]
-    n_Re = modeling_options["airfoils"]["n_Re"]
-    n_tab = modeling_options["airfoils"]["n_tab"]
-    n_xy = modeling_options["airfoils"]["n_xy"]
+    n_af = modeling_options["RotorSE"]["n_af"]
+    n_aoa = modeling_options["RotorSE"]["n_aoa"]
+    aoa = modeling_options["RotorSE"]["aoa"]
+    n_Re = modeling_options["RotorSE"]["n_Re"]
+    n_tab = modeling_options["RotorSE"]["n_tab"]
+    n_xy = modeling_options["RotorSE"]["n_xy"]
 
     name = n_af * [""]
     ac = np.zeros(n_af)

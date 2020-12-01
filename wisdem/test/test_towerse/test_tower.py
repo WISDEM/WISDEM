@@ -25,8 +25,10 @@ class TestTowerSE(unittest.TestCase):
 
         self.modeling_options["TowerSE"] = {}
         self.modeling_options["TowerSE"]["buckling_length"] = 30.0
-        self.modeling_options["TowerSE"]["n_height"] = 3
-        self.modeling_options["TowerSE"]["n_layers"] = 1
+        self.modeling_options["TowerSE"]["n_height_tower"] = 3
+        self.modeling_options["TowerSE"]["n_layers_tower"] = 1
+        self.modeling_options["TowerSE"]["n_height_monopile"] = 0
+        self.modeling_options["TowerSE"]["n_layers_monopile"] = 0
         self.modeling_options["TowerSE"]["wind"] = "PowerWind"
         self.modeling_options["TowerSE"]["nLC"] = 1
 
@@ -48,10 +50,6 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options["TowerSE"]["frame3dd"]["tol"] = 1e-9
         # self.modeling_options['TowerSE']['frame3dd']['shift']   = 0.0
         # self.modeling_options['TowerSE']['frame3dd']['add_gravity'] = True
-
-        self.modeling_options["monopile"] = {}
-        self.modeling_options["monopile"]["n_height"] = 0
-        self.modeling_options["monopile"]["n_layers"] = 0
 
     def testDiscYAML_Land_1Material(self):
 
@@ -549,8 +547,8 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(prob["pre.Mzz"], np.array([4e4]))
 
     def testProblemFixedPile(self):
-        self.modeling_options["monopile"]["n_height"] = 3
-        self.modeling_options["monopile"]["n_layers"] = 1
+        self.modeling_options["TowerSE"]["n_height_monopile"] = 3
+        self.modeling_options["TowerSE"]["n_layers_monopile"] = 1
         self.modeling_options["flags"]["monopile"] = True
 
         prob = om.Problem()
@@ -672,8 +670,8 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(prob["pre.Mzz"], np.array([4e4]))
 
     def testAddedMassForces(self):
-        self.modeling_options["monopile"]["n_height"] = 3
-        self.modeling_options["monopile"]["n_layers"] = 1
+        self.modeling_options["TowerSE"]["n_height_monopile"] = 3
+        self.modeling_options["TowerSE"]["n_layers_monopile"] = 1
         self.modeling_options["flags"]["monopile"] = True
 
         prob = om.Problem()
@@ -810,7 +808,7 @@ class TestTowerSE(unittest.TestCase):
             ]
         )
 
-        self.modeling_options["TowerSE"]["n_height"] = len(d_param)
+        self.modeling_options["TowerSE"]["n_height_tower"] = len(d_param)
 
         prob = om.Problem()
         prob.model = tow.TowerSE(modeling_options=self.modeling_options)
@@ -947,8 +945,8 @@ class TestTowerSE(unittest.TestCase):
         life = 20.0
         # ---------------
 
-        self.modeling_options["TowerSE"]["n_height"] = len(d_param)
-        self.modeling_options["TowerSE"]["n_layers"] = 1
+        self.modeling_options["TowerSE"]["n_height_tower"] = len(d_param)
+        self.modeling_options["TowerSE"]["n_layers_tower"] = 1
         self.modeling_options["TowerSE"]["nLC"] = 2
         self.modeling_options["TowerSE"]["gamma_f"] = 1.35
         self.modeling_options["TowerSE"]["gamma_m"] = 1.3

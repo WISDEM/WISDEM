@@ -41,13 +41,13 @@ class PoseOptimization(object):
         if self.opt["optimization_variables"]["control"]["servo"]["torque_control"]["flag"]:
             n_DV += 2
         if tower_opt["outer_diameter"]["flag"]:
-            n_DV += self.modeling["TowerSE"]["n_height"]
+            n_DV += self.modeling["TowerSE"]["n_height_tower"]
         if tower_opt["layer_thickness"]["flag"]:
-            n_DV += (self.modeling["TowerSE"]["n_height"] - 1) * self.modeling["TowerSE"]["n_layers"]
+            n_DV += (self.modeling["TowerSE"]["n_height_tower"] - 1) * self.modeling["TowerSE"]["n_layers_tower"]
         if mono_opt["outer_diameter"]["flag"]:
-            n_DV += self.modeling["monopile"]["n_height"]
+            n_DV += self.modeling["TowerSE"]["n_height_monopile"]
         if mono_opt["layer_thickness"]["flag"]:
-            n_DV += (self.modeling["monopile"]["n_height"] - 1) * self.modeling["monopile"]["n_layers"]
+            n_DV += (self.modeling["TowerSE"]["n_height_monopile"] - 1) * self.modeling["TowerSE"]["n_layers_monopile"]
         if hub_opt["cone"]["flag"]:
             n_DV += 1
         if hub_opt["hub_diameter"]["flag"]:

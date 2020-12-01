@@ -142,9 +142,9 @@ class RunFrame3DD(ExplicitComponent):
         self.options.declare("pbeam", default=False)  # Recover old pbeam c.s. and accuracy
 
     def setup(self):
-        blade_init_options = self.options["modeling_options"]["RotorSE"]
-        self.n_span = n_span = blade_init_options["n_span"]
-        self.n_freq = n_freq = blade_init_options["n_freq"]
+        rotorse_options = self.options["modeling_options"]["RotorSE"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_freq = n_freq = rotorse_options["n_freq"]
 
         # Locations of airfoils in global c.s.
         self.add_input(
@@ -604,9 +604,9 @@ class DesignConstraints(ExplicitComponent):
         self.options.declare("opt_options")
 
     def setup(self):
-        blade_init_options = self.options["modeling_options"]["RotorSE"]
-        self.n_span = n_span = blade_init_options["n_span"]
-        self.n_freq = n_freq = blade_init_options["n_freq"]
+        rotorse_options = self.options["modeling_options"]["RotorSE"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_freq = n_freq = rotorse_options["n_freq"]
         n_freq2 = int(n_freq / 2)
         self.opt_options = opt_options = self.options["opt_options"]
         self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options["optimization_variables"]["blade"]["structure"][
@@ -735,12 +735,12 @@ class DesignConstraints(ExplicitComponent):
 
 
 #     def setup(self):
-#         blade_init_options   = self.options['modeling_options']['RotorSE']
+#         rotorse_options   = self.options['modeling_options']['RotorSE']
 #         mat_init_options     = self.options['modeling_options']['materials']
 
-#         self.n_span          = n_span   = blade_init_options['n_span']
+#         self.n_span          = n_span   = rotorse_options['n_span']
 #         self.n_mat           = n_mat    = mat_init_options['n_mat']
-#         self.n_layers        = n_layers = blade_init_options['n_layers']
+#         self.n_layers        = n_layers = rotorse_options['n_layers']
 #         self.FatigueFile     = self.options['modeling_options']['rotorse']['FatigueFile']
 
 #         self.te_ss_var       = self.options['opt_options']['blade_struct']['te_ss_var']
