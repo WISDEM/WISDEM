@@ -115,9 +115,9 @@ properties:
                                     flag: *flag
                                     n_opt:
                                         type: integer
-                                            default: 8
-                                            minimum: 4
-                                            description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
                             spar_cap_ps:
@@ -127,9 +127,9 @@ properties:
                                     flag: *flag
                                     n_opt:
                                         type: integer
-                                            default: 8
-                                            minimum: 4
-                                            description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
                             te_ss:
@@ -139,9 +139,9 @@ properties:
                                     flag: *flag
                                     n_opt:
                                         type: integer
-                                            default: 8
-                                            minimum: 4
-                                            description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
                             te_ps:
@@ -151,9 +151,9 @@ properties:
                                     flag: *flag
                                     n_opt:
                                         type: integer
-                                            default: 8
-                                            minimum: 4
-                                            description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
             control:
