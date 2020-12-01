@@ -174,8 +174,8 @@ class ParametrizeBladeStruct(ExplicitComponent):
 
     def compute(self, inputs, outputs):
 
-        spar_cap_ss_name = self.opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["name"]
-        spar_cap_ps_name = self.opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ps"]["name"]
+        spar_cap_ss_name = self.options["rotorse_options"]["spar_cap_ss"]
+        spar_cap_ps_name = self.options["rotorse_options"]["spar_cap_ps"]
 
         layer_name = self.options["rotorse_options"]["layer_name"]
 

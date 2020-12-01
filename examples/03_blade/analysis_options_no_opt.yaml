@@ -26,26 +26,22 @@ optimization_variables:
         structure:
             spar_cap_ss:
                 flag: False         # Flag to optimize the spar cap thickness on the suction side
-                name: Spar_cap_ss # Name in the yaml of the spar cap laminate on the suction side 
                 n_opt: 8                # Number of control points along blade span
                 min_gain: 0.7     # Nondimensional lower bound at the n_opt locations
                 max_gain: 1.3     # Nondimensional upper bound at the n_opt locations
             spar_cap_ps:
                 flag: False         # Flag to optimize the spar cap thickness on the pressure side
-                name: Spar_cap_ps # Name in the yaml of the spar cap laminate on the pressure side 
                 equal_to_suction: False # Flag to impose the spar cap thickness on pressure and suction sides equal
                 n_opt: 8                # Number of control points along blade span
                 min_gain: 0.7     # Nondimensional lower bound at the n_opt locations
                 max_gain: 1.3     # Nondimensional upper bound at the n_opt locations
             te_ss:
                 flag: False         # Flag to optimize the trailing edge reinforcement thickness on the suction side
-                name: TE_reinforcement # Name in the yaml of the trailing edge reinforcement laminate on the suction side 
                 n_opt: 8                # Number of control points along blade span
                 min_gain: 0.2     # Nondimensional lower bound at the n_opt locations
                 max_gain: 2.0     # Nondimensional upper bound at the n_opt locations
             te_ps:
                 flag: False         # Flag to optimize the trailing edge reinforcement thickness on the pressure side
-                name: TE_reinforcement # Name in the yaml of the trailing edge reinforcement laminate on the pressure side
                 n_opt: 8                # Number of control points along blade span
                 min_gain: 0.2     # Nondimensional lower bound at the n_opt locations
                 max_gain: 2.0     # Nondimensional upper bound at the n_opt locations

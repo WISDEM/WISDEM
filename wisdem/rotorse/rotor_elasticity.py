@@ -26,11 +26,10 @@ class RunPreComp(ExplicitComponent):
         self.n_mat = n_mat = mat_init_options["n_mat"]
         self.verbosity = self.options["modeling_options"]["General"]["verbosity"]
 
-        opt_options = self.options["opt_options"]
-        self.te_ss_var = opt_options["optimization_variables"]["blade"]["structure"]["te_ss"]["name"]
-        self.te_ps_var = opt_options["optimization_variables"]["blade"]["structure"]["te_ps"]["name"]
-        self.spar_cap_ss_var = opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["name"]
-        self.spar_cap_ps_var = opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ps"]["name"]
+        self.te_ss_var = rotorse_options["te_ss"]
+        self.te_ps_var = rotorse_options["te_ps"]
+        self.spar_cap_ss_var = rotorse_options["spar_cap_ss"]
+        self.spar_cap_ps_var = rotorse_options["spar_cap_ps"]
 
         # Outer geometry
         self.add_input(
@@ -523,21 +522,21 @@ class RunPreComp(ExplicitComponent):
                 spar_cap_ss_var_ok = True
             if layer_name[i_layer] == self.spar_cap_ps_var:
                 spar_cap_ps_var_ok = True
-
-        if te_ss_var_ok == False:
-            print(
+        DV_options = self.options["opt_options"]["optimization_variables"]["blade"]["structure"]
+        if te_ss_var_ok == False and DV_options["te_ss"]["flag"]:
+            raise Exception(
                 "The layer at the trailing edge suction side is set to be optimized, but does not exist in the input yaml. Please check."
             )
-        if te_ps_var_ok == False:
-            print(
+        if te_ps_var_ok == False and DV_options["te_ps"]["flag"]:
+            raise Exception(
                 "The layer at the trailing edge pressure side is set to be optimized, but does not exist in the input yaml. Please check."
             )
-        if spar_cap_ss_var_ok == False:
-            print(
+        if spar_cap_ss_var_ok == False and DV_options["spar_cap_ss"]["flag"]:
+            raise Exception(
                 "The layer at the spar cap suction side is set to be optimized, but does not exist in the input yaml. Please check."
             )
-        if spar_cap_ps_var_ok == False:
-            print(
+        if spar_cap_ps_var_ok == False and DV_options["spar_cap_ps"]["flag"]:
+            raise Exception(
                 "The layer at the spar cap pressure side is set to be optimized, but does not exist in the input yaml. Please check."
             )
         region_loc_vars = [self.te_ss_var, self.te_ps_var, self.spar_cap_ss_var, self.spar_cap_ps_var]
