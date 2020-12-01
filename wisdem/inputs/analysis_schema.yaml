@@ -60,7 +60,8 @@ properties:
                                     n_opt: &nopt
                                         type: integer
                                         default: 8
-                                        description: Number of control points to use
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the twist distribution along blade span. By default, the first two points are locked to prevent the optimizer to try to optimize the twist of the blade root cylinder.
                                     lower_bound:
                                         type: array
                                         default: [-0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1]
@@ -78,7 +79,11 @@ properties:
                                 default: {}
                                 properties:
                                     flag: *flag
-                                    n_opt: *nopt
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the chord distribution along blade span. By default, the first two points close to blade root and the last point are locked. The first two points impact the diameter of the blade root cylinder, and the models implemented in WISDEM do not have the level of fidelity to appropriately size the blade root diameter. The last point controls the chord length at blade tip and due to the imperfect tip loss models of CCBlade, it is usually a good idea to taper the chord manually and do not let a numerical optimizer control it.
                                     min_gain:  &mingain
                                         type: number
                                         default: 0.5
@@ -97,7 +102,8 @@ properties:
                                     af_start:
                                         type: integer
                                         default: 4
-                                        description: Index of airfoil where the optimization can start shifting airfoil position
+                                        minimum: 1
+                                        description: Index of airfoil where the optimization can start shifting airfoil position. The airfoil at blade tip is always locked.
                     structure:
                         type: object
                         default: {}
@@ -106,39 +112,48 @@ properties:
                                 type: object
                                 default: {}
                                 properties:
-                                    name: &name
-                                        type: string
-                                        default: 'none'
-                                        description: Layer name of this design variable in the geometry yaml
                                     flag: *flag
-                                    n_opt: *nopt
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
                             spar_cap_ps:
                                 type: object
                                 default: {}
                                 properties:
-                                    name: *name
                                     flag: *flag
-                                    n_opt: *nopt
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
                             te_ss:
                                 type: object
                                 default: {}
                                 properties:
-                                    name: *name
                                     flag: *flag
-                                    n_opt: *nopt
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
                             te_ps:
                                 type: object
                                 default: {}
                                 properties:
-                                    name: *name
                                     flag: *flag
-                                    n_opt: *nopt
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
             control:

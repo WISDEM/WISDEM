@@ -1,13 +1,15 @@
-import numpy as np
 import os
 import sys
+
+import numpy as np
+
 import openmdao.api as om
+from wisdem.commonse import fileIO
+from wisdem.commonse.mpi_tools import MPI
+from wisdem.glue_code.glue_code import WindPark
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
-from wisdem.glue_code.glue_code import WindPark
-from wisdem.commonse.mpi_tools import MPI
-from wisdem.commonse import fileIO
 
 np.warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
 

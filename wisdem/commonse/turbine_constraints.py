@@ -157,10 +157,8 @@ class TipDeflectionConstraint(om.ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options["modeling_options"]
-        blade_init_options = modeling_options["RotorSE"]
-        n_span = blade_init_options["n_span"]
-        tower_init_options = modeling_options["TowerSE"]
-        n_height_tow = tower_init_options["n_height"]
+        n_span = modeling_options["RotorSE"]["n_span"]
+        n_height_tow = modeling_options["TowerSE"]["n_height_tower"]
 
         self.add_discrete_input("rotor_orientation", val="upwind")
         self.add_input("tip_deflection", val=0.0, units="m")

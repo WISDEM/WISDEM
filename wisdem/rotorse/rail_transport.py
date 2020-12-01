@@ -33,10 +33,9 @@ class RailTransport(ExplicitComponent):
         self.options.declare("modeling_options")
 
     def setup(self):
-        blade_init_options = self.options["modeling_options"]["RotorSE"]
-        af_init_options = self.options["modeling_options"]["airfoils"]
-        self.n_span = n_span = blade_init_options["n_span"]
-        self.n_xy = n_xy = af_init_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
+        rotorse_options = self.options["modeling_options"]["RotorSE"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
 
         # Rail configuration
         self.add_input(
