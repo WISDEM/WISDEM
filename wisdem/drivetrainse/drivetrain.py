@@ -1,11 +1,12 @@
 import numpy as np
 import openmdao.api as om
-from wisdem.drivetrainse.hub import Hub_System
-from wisdem.drivetrainse.generator import Generator
-from wisdem.drivetrainse.gearbox import Gearbox
+
 import wisdem.drivetrainse.layout as lay
 import wisdem.drivetrainse.drive_structure as ds
 import wisdem.drivetrainse.drive_components as dc
+from wisdem.drivetrainse.hub import Hub_System
+from wisdem.drivetrainse.gearbox import Gearbox
+from wisdem.drivetrainse.generator import Generator
 
 
 class DriveMaterials(om.ExplicitComponent):
@@ -244,5 +245,6 @@ class DrivetrainSE(om.Group):
                 self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
                 nlbgs.options["maxiter"] = 3
                 nlbgs.options["atol"] = nlbgs.options["atol"] = 1e-2
+                nlbgs.options["iprint"] = 0
             else:
                 self.connect("hss_rpm", "generator.shaft_rpm")
