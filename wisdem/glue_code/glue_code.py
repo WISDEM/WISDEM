@@ -1,19 +1,20 @@
 import numpy as np
 import openmdao.api as om
-from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
-from wisdem.ccblade.ccblade_component import CCBladeTwist
+
+from wisdem.towerse.tower import TowerSE
+from wisdem.orbit.api.wisdem import Orbit
+from wisdem.rotorse.rotor_power import RotorPower, NoStallConstraint
+from wisdem.glue_code.gc_RunTools import Outputs_2_Screen, Convergence_Trends_Opt
 from wisdem.commonse.turbine_class import TurbineClass
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
-from wisdem.towerse.tower import TowerSE
-from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
-from wisdem.orbit.api.wisdem import Orbit
-from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
-from wisdem.plant_financese.plant_finance import PlantFinance
-from wisdem.commonse.turbine_constraints import TurbineConstraints
-from wisdem.rotorse.rotor_power import RotorPower, NoStallConstraint
-from wisdem.rotorse.rotor_elasticity import RotorElasticity
 from wisdem.rotorse.rotor_structure import RotorStructure
-from wisdem.glue_code.gc_RunTools import Outputs_2_Screen, Convergence_Trends_Opt
+from wisdem.rotorse.rotor_elasticity import RotorElasticity
+from wisdem.ccblade.ccblade_component import CCBladeTwist
+from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
+from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
+from wisdem.commonse.turbine_constraints import TurbineConstraints
+from wisdem.plant_financese.plant_finance import PlantFinance
+from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 
 
 class WT_RNTA(om.Group):
@@ -33,6 +34,7 @@ class WT_RNTA(om.Group):
             nlbgs.options["maxiter"] = 5
             nlbgs.options["atol"] = 1e-2
             nlbgs.options["rtol"] = 1e-8
+            nlbgs.options["iprint"] = 0
 
         # Analysis components
         self.add_subsystem(
