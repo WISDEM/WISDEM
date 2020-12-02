@@ -1140,49 +1140,51 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils):
         for j in range(n_Re_i):
             Re_j[j] = airfoils[i]["polars"][j]["re"]
             j_Re[j] = np.argmin(Re - Re_j)
-            cl[i, :, j_Re[j], 0] = np.interp(
-                aoa, airfoils[i]["polars"][j]["c_l"]["grid"], airfoils[i]["polars"][j]["c_l"]["values"]
-            )
-            cd[i, :, j_Re[j], 0] = np.interp(
-                aoa, airfoils[i]["polars"][j]["c_d"]["grid"], airfoils[i]["polars"][j]["c_d"]["values"]
-            )
-            cm[i, :, j_Re[j], 0] = np.interp(
-                aoa, airfoils[i]["polars"][j]["c_m"]["grid"], airfoils[i]["polars"][j]["c_m"]["values"]
-            )
+            for k in range(n_tab):
+                cl[i, :, j_Re[j], k] = np.interp(
+                    aoa, airfoils[i]["polars"][j]["c_l"]["grid"], airfoils[i]["polars"][j]["c_l"]["values"]
+                )
+                cd[i, :, j_Re[j], k] = np.interp(
+                    aoa, airfoils[i]["polars"][j]["c_d"]["grid"], airfoils[i]["polars"][j]["c_d"]["values"]
+                )
+                cm[i, :, j_Re[j], k] = np.interp(
+                    aoa, airfoils[i]["polars"][j]["c_m"]["grid"], airfoils[i]["polars"][j]["c_m"]["values"]
+                )
 
-            if abs(cl[i, 0, j, 0] - cl[i, -1, j, 0]) > 1.0e-5:
-                cl[i, 0, j, 0] = cl[i, -1, j, 0]
-                print(
-                    "WARNING: Airfoil "
-                    + name[i]
-                    + " has the lift coefficient at Re "
-                    + str(Re_j)
-                    + " different between + and - pi rad. This is fixed automatically, but please check the input data."
-                )
-            if abs(cd[i, 0, j, 0] - cd[i, -1, j, 0]) > 1.0e-5:
-                cd[i, 0, j, 0] = cd[i, -1, j, 0]
-                print(
-                    "WARNING: Airfoil "
-                    + name[i]
-                    + " has the drag coefficient at Re "
-                    + str(Re_j)
-                    + " different between + and - pi rad. This is fixed automatically, but please check the input data."
-                )
-            if abs(cm[i, 0, j, 0] - cm[i, -1, j, 0]) > 1.0e-5:
-                cm[i, 0, j, 0] = cm[i, -1, j, 0]
-                print(
-                    "WARNING: Airfoil "
-                    + name[i]
-                    + " has the moment coefficient at Re "
-                    + str(Re_j)
-                    + " different between + and - pi rad. This is fixed automatically, but please check the input data."
-                )
+                if abs(cl[i, 0, j, k] - cl[i, -1, j, k]) > 1.0e-5:
+                    cl[i, 0, j, k] = cl[i, -1, j, k]
+                    print(
+                        "WARNING: Airfoil "
+                        + name[i]
+                        + " has the lift coefficient at Re "
+                        + str(Re_j)
+                        + " different between + and - pi rad. This is fixed automatically, but please check the input data."
+                    )
+                if abs(cd[i, 0, j, k] - cd[i, -1, j, k]) > 1.0e-5:
+                    cd[i, 0, j, k] = cd[i, -1, j, k]
+                    print(
+                        "WARNING: Airfoil "
+                        + name[i]
+                        + " has the drag coefficient at Re "
+                        + str(Re_j)
+                        + " different between + and - pi rad. This is fixed automatically, but please check the input data."
+                    )
+                if abs(cm[i, 0, j, k] - cm[i, -1, j, k]) > 1.0e-5:
+                    cm[i, 0, j, k] = cm[i, -1, j, k]
+                    print(
+                        "WARNING: Airfoil "
+                        + name[i]
+                        + " has the moment coefficient at Re "
+                        + str(Re_j)
+                        + " different between + and - pi rad. This is fixed automatically, but please check the input data."
+                    )
 
         # Re-interpolate cl-cd-cm along the Re dimension if less than n_Re were provided in the input yaml (common condition)
-        for k in range(n_aoa):
-            cl[i, k, :, 0] = np.interp(Re, Re_j, cl[i, k, j_Re, 0])
-            cd[i, k, :, 0] = np.interp(Re, Re_j, cd[i, k, j_Re, 0])
-            cm[i, k, :, 0] = np.interp(Re, Re_j, cm[i, k, j_Re, 0])
+        for l in range(n_aoa):
+            for k in range(n_tab):
+                cl[i, l, :, k] = np.interp(Re, Re_j, cl[i, l, j_Re, k])
+                cd[i, l, :, k] = np.interp(Re, Re_j, cd[i, l, j_Re, k])
+                cm[i, l, :, k] = np.interp(Re, Re_j, cm[i, l, j_Re, k])
 
         points = np.column_stack((airfoils[i]["coordinates"]["x"], airfoils[i]["coordinates"]["y"]))
         # Check that airfoil points are declared from the TE suction side to TE pressure side
