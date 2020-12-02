@@ -1,12 +1,3 @@
-#!/usr/bin/env python
-# encoding: utf-8
-"""
-tower.py
-
-Originally created by Andrew Ning on 2012-01-20.
-Copyright (c) NREL. All rights reserved.
-"""
-
 import copy
 
 import numpy as np
@@ -14,7 +5,7 @@ import openmdao.api as om
 import wisdem.commonse.utilization_constraints as util_con
 from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, sectionalInterp, interp_with_deriv
 from wisdem.commonse.environment import LogWind, PowerWind, TowerSoil, LinearWaves
-from wisdem.commonse.cross_sections import Tube, CylindricalShellProperties
+from wisdem.commonse.cross_sections import CylindricalShellProperties
 from wisdem.commonse.wind_wave_drag import AeroHydroLoads, CylinderWaveDrag, CylinderWindDrag
 from wisdem.commonse.vertical_cylinder import (
     NFREQ,
