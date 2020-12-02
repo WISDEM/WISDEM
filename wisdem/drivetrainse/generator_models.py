@@ -1,8 +1,11 @@
-import openmdao.api as om
+import sys
+
 import numpy as np
 import pandas as pd
+import openmdao.api as om
 from wisdem.commonse import gravity
-import sys
+
+eps = 1e-3
 
 # Convenience functions for computing McDonald's C and F parameters
 def chsMshc(x):
@@ -787,7 +790,7 @@ class PMSG_Outer(GeneratorBase):
         m          = 3     # no of phases
         #b_s_tau_s = 0.45   # slot width to slot pitch ratio
         k_fills     = 0.65  # Slot fill factor
-        P_Fe0h     = 4	   # specific hysteresis losses W/kg @ 1.5 T 
+        P_Fe0h     = 4	   # specific hysteresis losses W/kg @ 1.5 T
         P_Fe0e     = 1	   # specific hysteresis losses W/kg @ 1.5 T
         k_fes      = 0.8   # Iron fill factor
 
@@ -1179,7 +1182,7 @@ class PMSG_Outer(GeneratorBase):
         outputs["Mass_yoke_stator"] = Mass_yoke_stator
         outputs["R_out"] = R_out
         outputs["Losses"] = Losses
-        outputs["generator_efficiency"] = gen_eff
+        outputs["generator_efficiency"] = np.maximum(eps, gen_eff)
         outputs["u_ar"] = u_ar
         outputs["u_allow_r"] = u_allow_r
         outputs["y_ar"] = y_ar
@@ -1313,7 +1316,7 @@ class PMSG_Disc(GeneratorBase):
         mu_r   = 1.06                # relative permeability (probably for neodymium magnets, often given as 1.05 - GNS)
         phi    = np.deg2rad(90)         # tilt angle (rotor tilt -90 degrees during transportation)
         cofi   = 0.85                # power factor
-        
+
         # Assign values to design constants
         h_w     = 0.005              # wedge height
         y_tau_p = 1.0                # coil span to pole pitch
@@ -1321,8 +1324,8 @@ class PMSG_Disc(GeneratorBase):
         q1      = 1                  # no of slots per pole per phase
         b_s_tau_s = 0.45             # slot width / slot pitch ratio
         k_fills = 0.65                # Slot fill factor
-        P_Fe0h = 4.0                 # specific hysteresis losses W / kg @ 1.5 T 
-        P_Fe0e = 1.0                 # specific hysteresis losses W / kg @ 1.5 T 
+        P_Fe0h = 4.0                 # specific hysteresis losses W / kg @ 1.5 T
+        P_Fe0e = 1.0                 # specific hysteresis losses W / kg @ 1.5 T
         resist_Cu = 1.8e-8 * 1.4        # resistivity of copper
         b_so  =  0.004               # stator slot opening
         k_fes = 0.9                  # useful iron stack length
@@ -1522,7 +1525,7 @@ class PMSG_Disc(GeneratorBase):
         # F_a4_ls2 = np.cosh(np.pi / 180 * lamb * (0.5 * len_s - a)) * np.sin(np.pi / 180 * lamb * (0.5 * len_s - a)) \
         #         - np.sinh(np.pi / 180 * lamb * (0.5 * len_s - a)) * np.cos(np.pi / 180 * lamb * (0.5 * len_s - a))
         """
-        Where did the np.pi/180 factor (conversion to radians) come from? 
+        Where did the np.pi/180 factor (conversion to radians) come from?
           lamb is m^-1
           0.5*len_s - a is m
         """
@@ -1685,7 +1688,7 @@ class PMSG_Disc(GeneratorBase):
         outputs["Losses"] = Losses
 
         outputs["K_rad"] = K_rad
-        outputs["generator_efficiency"] = gen_eff
+        outputs["generator_efficiency"] = np.maximum(eps, gen_eff)
         outputs["S"] = S
         outputs["Slot_aspect_ratio"] = Slot_aspect_ratio
         outputs["Copper"] = Copper
@@ -1819,17 +1822,17 @@ class PMSG_Arms(GeneratorBase):
         y_tau_p = inputs["y_tau_p"]
         y_tau_pr = inputs["y_tau_pr"]
 
-        """        
+        """
         # Assign values to universal constants
         B_r    = 1.2                 # Tesla remnant flux density
         E      = 2e11                # N / m^2 young's modulus
         sigma  = 40e3                # shear stress assumed (yield strength of ?? steel, in psi - GNS)
         ratio_mw2pp  = 0.7                 # ratio of magnet width to pole pitch(bm / tau_p)
         mu_0   = np.pi * 4e-7           # permeability of free space in m * kg / (s**2 * A**2)
-        mu_r   = 1.06                # relative permeability (probably for neodymium magnets, often given as 1.05 - GNS) 
+        mu_r   = 1.06                # relative permeability (probably for neodymium magnets, often given as 1.05 - GNS)
         phi    = np.deg2rad(90)         # tilt angle (rotor tilt -90 degrees during transportation)
         cofi   = 0.85                # power factor
-        
+
         # Assign values to design constants
         h_w       = 0.005            # Slot wedge height
         h_i       = 0.001            # coil insulation thickness
@@ -1838,8 +1841,8 @@ class PMSG_Arms(GeneratorBase):
         q1        = 1                # no of slots per pole per phase
         b_s_tau_s = 0.45             # slot width to slot pitch ratio
         k_fills    = 0.65             # Slot fill factor
-        P_Fe0h    = 4                # specific hysteresis losses W / kg @ 1.5 T 
-        P_Fe0e    = 1                # specific eddy losses W / kg @ 1.5 T 
+        P_Fe0h    = 4                # specific hysteresis losses W / kg @ 1.5 T
+        P_Fe0e    = 1                # specific eddy losses W / kg @ 1.5 T
         resist_Cu    = 1.8e-8 * 1.4     # Copper resisitivty
         k_fes     = 0.9              # Stator iron fill factor per Grauers
         b_so      = 0.004            # Slot opening
@@ -2140,7 +2143,7 @@ class PMSG_Arms(GeneratorBase):
         outputs["J_s"] = J_s
         outputs["Losses"] = Losses
         outputs["K_rad"] = K_rad
-        outputs["generator_efficiency"] = gen_eff
+        outputs["generator_efficiency"] = np.maximum(eps, gen_eff)
         outputs["S"] = S
         outputs["Slot_aspect_ratio"] = Slot_aspect_ratio
         outputs["Copper"] = Copper
@@ -2275,21 +2278,21 @@ class DFIG(GeneratorBase):
         m           = 3                # Number of phases
         resist_Cu   = 1.8e-8 * 1.4     # copper resisitivity
         h_sy0       = 0
-        
+
         #Assign values to design constants
         b_so = 0.004                    # Stator slot opening width
         b_ro = 0.004                    # Rotor  slot opening width
         q1 = 5                          # Stator slots per pole per phase
         b_s_tau_s = 0.45                # Stator slot-width / slot-pitch ratio
         b_r_tau_r = 0.45                # Rotor  slot-width / slot-pitch ratio
-        y_tau_p  = 12. / 15             # Stator coil span to pole pitch    
+        y_tau_p  = 12. / 15             # Stator coil span to pole pitch
         y_tau_pr = 10. / 12             # Rotor  coil span to pole pitch
-        
+
         p = 3                           # pole pairs
         freq = 60                       # grid frequency in Hz
         k_fillr = 0.55                  # Rotor Slot fill factor
-        P_Fe0h = 4                      # specific hysteresis losses W / kg @ 1.5 T 
-        P_Fe0e = 1                      # specific eddy losses W / kg @ 1.5 T 
+        P_Fe0h = 4                      # specific hysteresis losses W / kg @ 1.5 T
+        P_Fe0e = 1                      # specific eddy losses W / kg @ 1.5 T
         """
 
         K_rs = 1 / (-1 * S_Nmax)  # Winding turns ratio between rotor and Stator
@@ -2567,7 +2570,7 @@ class DFIG(GeneratorBase):
         outputs["K_rad"] = K_rad
         outputs["Losses"] = Losses
 
-        outputs["generator_efficiency"] = gen_eff
+        outputs["generator_efficiency"] = np.maximum(eps, gen_eff)
         outputs["Copper"] = Copper
         outputs["Iron"] = Iron
         outputs["Structural_mass"] = Structural_mass
@@ -2684,7 +2687,7 @@ class SCIG(GeneratorBase):
         h_w   = 0.005             # wedge height
         m     = 3                 # Number of phases
         resist_Cu = 1.8e-8 * 1.4  # Copper resistivity
-        
+
         #Assign values to design constants
         b_so      = 0.004                     # Stator slot opening width
         b_ro      = 0.004                     # Rotor  slot opening width
@@ -2693,13 +2696,13 @@ class SCIG(GeneratorBase):
         b_s_tau_s = 0.45                      # Stator Slot width/Slot pitch ratio
         b_r_tau_r = 0.45                      # Rotor Slot width/Slot pitch ratio
         y_tau_p   = 12./15                    # Coil span/pole pitch
-        
+
         p         = 3                         # number of pole pairs
         freq      = 60                        # frequency in Hz
         k_fillr   = 0.7                       # Rotor  slot fill factor
         P_Fe0h    = 4                         # specific hysteresis losses W / kg @ 1.5 T @50 Hz
         P_Fe0e    = 1                         # specific eddy losses W / kg @ 1.5 T @50 Hz
-        
+
         S_N       = -0.002                    # Slip
         """
 
@@ -3012,7 +3015,7 @@ class SCIG(GeneratorBase):
         outputs["K_rad_UL"] = K_rad_UL
         outputs["K_rad_LL"] = K_rad_LL
         outputs["Losses"] = Losses
-        outputs["generator_efficiency"] = gen_eff
+        outputs["generator_efficiency"] = np.maximum(eps, gen_eff)
         outputs["Copper"] = Copper
         outputs["Iron"] = Iron
         outputs["Structural_mass"] = Structural_mass
@@ -3165,7 +3168,7 @@ class EESG(GeneratorBase):
         sigma  = 48.373e3            # shear stress of steel in psi (~333 MPa)
         mu_0   = np.pi * 4e-7           # permeability of free space in m * kg / (s**2 * A**2)
         phi    = np.deg2rad(90)
-        
+
         # Assign values to design constants
         h_w       = 0.005
         b_so      = 0.004              # Stator slot opening
@@ -3325,17 +3328,17 @@ class EESG(GeneratorBase):
         """
         What is the source of this function that combines 1st and 13th powers? Very suspicious...
         Inputs appear to be in the range of 0.45 to 2.2, so outputs are 180 to 178000
-        
+
         Equations given without reference in:
-        H. Polinder, J. G. Slootweg . “Design optimization of a synchronous generator for a direct-drive wind turbine,” 
+        H. Polinder, J. G. Slootweg . “Design optimization of a synchronous generator for a direct-drive wind turbine,”
         (paper presented at the European Wind Energy Conference, Copenhagen, Denmark, July2–6, 2001
-        
+
         def airGapFn(B, fact):
             val = 400 * B + 7 * B**13
             ans = val * fact
             sys.stderr.write('aGF: B {} val {} ans {}\n'.format(B, val, ans))
             return val
-        
+
         At_t =  h_s           * airGapFn(B_tmax, h_s)
         At_sy = tau_p / 2     * airGapFn(B_symax, tau_p/2)
         At_pc = (h_pc + h_ps) * airGapFn(B_pc, h_pc + h_ps)
@@ -3611,7 +3614,7 @@ class EESG(GeneratorBase):
         outputs["n_brushes"] = n_brushes
         outputs["J_f"] = J_f
         outputs["K_rad"] = K_rad
-        outputs["generator_efficiency"] = gen_eff
+        outputs["generator_efficiency"] = np.maximum(eps, gen_eff)
         outputs["S"] = S
 
         outputs["Slot_aspect_ratio"] = Slot_aspect_ratio

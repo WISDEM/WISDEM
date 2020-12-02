@@ -1,11 +1,12 @@
-import numpy as np
-import numpy.testing as npt
+import copy
 import unittest
-import wisdem.towerse.tower as tow
+
+import numpy as np
 import openmdao.api as om
+import numpy.testing as npt
+import wisdem.towerse.tower as tow
 from wisdem.commonse import gravity as g
 from wisdem.commonse.vertical_cylinder import NFREQ, RIGID
-import copy
 
 
 class TestTowerSE(unittest.TestCase):
@@ -288,6 +289,10 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["E"] = 6.0 * np.ones(2)
         self.inputs["G"] = 7.0 * np.ones(2)
         self.inputs["sigma_y"] = 8.0 * np.ones(2)
+        self.inputs["Az"] = 9.0 * np.ones(6)
+        self.inputs["Jz"] = 10.0 * np.ones(6)
+        self.inputs["Ixx"] = 11.0 * np.ones(6)
+        self.inputs["Iyy"] = 11.0 * np.ones(6)
         myobj = tow.TowerDiscretization(n_height=3)
         myobj.compute(self.inputs, self.outputs)
         self.assertEqual(self.outputs["height_constraint"], 20.0)
@@ -296,6 +301,20 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs["G_full"], self.inputs["G"][0] * np.ones(6))
         npt.assert_equal(self.outputs["sigma_y_full"], self.inputs["sigma_y"][0] * np.ones(6))
         npt.assert_equal(self.outputs["unit_cost_full"], self.inputs["unit_cost"][0] * np.ones(6))
+
+        npt.assert_almost_equal(self.outputs["sec_loc"], np.linspace(0.0, 1.0, 6))
+        # npt.assert_equal(self.outputs["str_tw"], np.zeros(6))
+        # npt.assert_equal(self.outputs["tw_iner"], np.zeros(6))
+        npt.assert_equal(self.outputs["mass_den"], 1e3 * 9 * np.ones(6))
+        npt.assert_equal(self.outputs["foreaft_iner"], 1e3 * 11 * np.ones(6))
+        npt.assert_equal(self.outputs["sideside_iner"], 1e3 * 11 * np.ones(6))
+        npt.assert_equal(self.outputs["foreaft_stff"], 6 * 11 * np.ones(6))
+        npt.assert_equal(self.outputs["sideside_stff"], 6 * 11 * np.ones(6))
+        npt.assert_equal(self.outputs["tor_stff"], 7 * 10 * np.ones(6))
+        npt.assert_equal(self.outputs["axial_stff"], 6 * 9 * np.ones(6))
+        # npt.assert_equal(self.outputs["cg_offst"], np.zeros(6))
+        # npt.assert_equal(self.outputs["sc_offst"], np.zeros(6))
+        # npt.assert_equal(self.outputs["tc_offst"], np.zeros(6))
 
     def testTowerMass(self):
 
@@ -861,7 +880,7 @@ class TestTowerSE(unittest.TestCase):
         prob.run_model()
         """
         Natural Frequencies (Hz): [ 0.2161   0.21842  1.1091   1.167    1.2745   2.3611   2.5877   5.1233  5.2111   9.9725  10.007   10.151   16.388   16.4     18.092   21.813 23.955   23.958   30.184   33.706  ]
- 
+
         Polynomial fit coefficients to modal displacements (x^2, x^3, x^4, x^5, x^6)
         1st Fore-aft    = [1.11422342, -2.73438505, 6.84397071, -5.97959674, 1.75578766]
         2nd Fore-aft    = [-48.86125831, 82.74454067, -156.79260263, 208.53125496, -84.62193469]

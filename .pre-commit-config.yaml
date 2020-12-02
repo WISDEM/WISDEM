@@ -24,7 +24,7 @@ repos:
     -   id: check-yaml
     -   id: check-merge-conflict
     -   id: check-symlinks
-    -   id: flake8
+    #-   id: flake8
         exclude: ^docs/
     -   id: mixed-line-ending
     -   id: pretty-format-json

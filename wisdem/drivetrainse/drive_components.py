@@ -1,6 +1,7 @@
+import copy
+
 import numpy as np
 import pandas as pd
-import copy
 import openmdao.api as om
 import wisdem.commonse.utilities as util
 
