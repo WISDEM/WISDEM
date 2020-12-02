@@ -5,14 +5,13 @@ Nikhar J. Abbas, Pietro Bortolotti
 January 2020
 """
 
-from __future__ import print_function
 import numpy as np
-from openmdao.api import ExplicitComponent, Group
-from scipy.optimize import minimize_scalar, minimize, brentq
+from openmdao.api import Group, ExplicitComponent
+from scipy.optimize import brentq, minimize, minimize_scalar
+from wisdem.ccblade import CCBlade, CCAirfoil
 from scipy.interpolate import PchipInterpolator
-from wisdem.ccblade import CCAirfoil, CCBlade
+from wisdem.commonse.utilities import smooth_abs, smooth_min, linspace_with_deriv
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
-from wisdem.commonse.utilities import linspace_with_deriv, smooth_min, smooth_abs
 
 
 class RotorPower(Group):
@@ -346,18 +345,6 @@ class ComputePowerCurve(ExplicitComponent):
         tsr = inputs["tsr_operational"]
         driveType = discrete_inputs["drivetrainType"]
 
-        # Create table lookup of total drivetrain efficiency, where rpm is first column and second column is gearbox*generator
-        lss_rpm = inputs["lss_rpm"]
-        gen_eff = inputs["generator_efficiency"]
-        if not np.any(lss_rpm):
-            lss_rpm = np.linspace(np.maximum(0.1, float(inputs["omega_min"])), float(inputs["omega_max"]), self.n_pc)
-            _, gen_eff = compute_P_and_eff(
-                P_rated * lss_rpm / lss_rpm[-1], P_rated, np.zeros(self.n_pc), driveType, np.zeros((self.n_pc, 2))
-            )
-
-        # driveEta  = np.c_[lss_rpm, float(inputs['gearbox_efficiency'])*gen_eff]
-        driveEta = float(inputs["gearbox_efficiency"]) * gen_eff
-
         # Set rotor speed based on TSR
         Omega_tsr = Uhub * tsr / R_tip
 
@@ -367,6 +354,18 @@ class ComputePowerCurve(ExplicitComponent):
         # Apply maximum and minimum rotor speed limits
         Omega = np.maximum(np.minimum(Omega_tsr, Omega_max), inputs["omega_min"] * np.pi / 30.0)
         Omega_rpm = Omega * 30.0 / np.pi
+
+        # Create table lookup of total drivetrain efficiency, where rpm is first column and second column is gearbox*generator
+        lss_rpm = inputs["lss_rpm"]
+        gen_eff = inputs["generator_efficiency"]
+        if not np.any(lss_rpm):
+            lss_rpm = np.linspace(np.maximum(0.1, Omega_rpm[0]), Omega_rpm[-1], self.n_pc)
+            _, gen_eff = compute_P_and_eff(
+                P_rated * lss_rpm / lss_rpm[-1], P_rated, np.zeros(self.n_pc), driveType, np.zeros((self.n_pc, 2))
+            )
+
+        # driveEta  = np.c_[lss_rpm, float(inputs['gearbox_efficiency'])*gen_eff]
+        driveEta = float(inputs["gearbox_efficiency"]) * gen_eff
 
         # Set baseline power production
         myout, derivs = self.ccblade.evaluate(Uhub, Omega_rpm, pitch, coefficients=True)
@@ -824,6 +823,7 @@ def compute_P_and_eff(aeroPower, ratedPower, Omega_rpm, drivetrainType, drivetra
 
         # compute efficiency
         eff = 1.0 - (constant / Pbar + linear + quadratic * Pbar)
+        eff = np.maximum(eff, 1e-3)
     else:
         # Use table lookup from rpm to calculate total efficiency
         eff = np.interp(Omega_rpm, drivetrainEff[:, 0], drivetrainEff[:, 1])
