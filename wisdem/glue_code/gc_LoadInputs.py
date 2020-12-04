@@ -119,16 +119,12 @@ class WindTurbineOntologyPython(object):
         if self.modeling_options["flags"]["airfoils"]:
             self.modeling_options["RotorSE"]["n_af"] = len(self.wt_init["airfoils"])
             self.modeling_options["RotorSE"]["n_aoa"] = self.modeling_options["RotorSE"]["n_aoa"]
-            if self.modeling_options["RotorSE"]["n_aoa"] / 4.0 == int(
-                self.modeling_options["RotorSE"]["n_aoa"] / 4.0
-            ):
+            if self.modeling_options["RotorSE"]["n_aoa"] / 4.0 == int(self.modeling_options["RotorSE"]["n_aoa"] / 4.0):
                 # One fourth of the angles of attack from -pi to -pi/6, half between -pi/6 to pi/6, and one fourth from pi/6 to pi
                 self.modeling_options["RotorSE"]["aoa"] = np.unique(
                     np.hstack(
                         [
-                            np.linspace(
-                                -np.pi, -np.pi / 6.0, int(self.modeling_options["RotorSE"]["n_aoa"] / 4.0 + 1)
-                            ),
+                            np.linspace(-np.pi, -np.pi / 6.0, int(self.modeling_options["RotorSE"]["n_aoa"] / 4.0 + 1)),
                             np.linspace(
                                 -np.pi / 6.0, np.pi / 6.0, int(self.modeling_options["RotorSE"]["n_aoa"] / 2.0)
                             ),
@@ -748,9 +744,6 @@ class WindTurbineOntologyPython(object):
                 # Direct only
                 s_nose = np.linspace(0.0, 1.0, len(wt_opt["nacelle.nose_diameter"])).tolist()
                 s_bed = np.linspace(0.0, 1.0, len(wt_opt["nacelle.bedplate_wall_thickness"])).tolist()
-                self.wt_init["components"]["nacelle"]["drivetrain"]["access_diameter"] = float(
-                    wt_opt["nacelle.access_diameter"]
-                )
                 self.wt_init["components"]["nacelle"]["drivetrain"]["nose_diameter"] = wt_opt[
                     "nacelle.nose_diameter"
                 ].tolist()

@@ -1,5 +1,5 @@
-import unittest
 import os
+import unittest
 import importlib
 from pathlib import Path
 
@@ -10,13 +10,12 @@ root_dir = os.path.dirname(os.path.dirname(os.path.dirname(thisdir)))
 examples_dir = os.path.join(root_dir, "examples")
 all_examples = Path(examples_dir).rglob("*.py") if os.path.exists(examples_dir) else []
 
+# 02_ref turbines are regression tested in test_gluecode, no need to duplicate runtime
 all_scripts = [
     "01_nrel_csm/costs",
     "01_nrel_csm/mass",
     "01_nrel_csm/mass_and_cost",
     "01_nrel_csm/parametric",
-    "02_reference_turbines/iea15mw_driver",
-    "02_reference_turbines/nrel5mw_driver",
     "03_blade/blade_driver",
     "04_openmdao/betz_limit",
     "04_openmdao/sellar",

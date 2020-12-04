@@ -1,52 +1,9 @@
 import numpy as np
 import openmdao.api as om
-from .csystem import DirectionVector
-from .utilities import interp_with_deriv
 from wisdem.commonse import NFREQ
 
-
-# class TowerModes(om.ExplicitComponent):
-#     def setup(self):
-
-#         self.add_input('tower_freq', val=np.zeros(2), units='Hz', desc='First natural frequencies of tower (and substructure)')
-#         self.add_input('rotor_omega', val=0.0, units='rpm', desc='rated rotor rotation speed')
-#         self.add_input('gamma_freq', val=0.0, desc='partial safety factor for fatigue')
-#         self.add_discrete_input('blade_number', 3, desc='number of rotor blades')
-
-#         self.add_output('frequencyNP_margin_low', val=np.zeros(2), desc='Upper bound constraint of tower/structure frequency to blade passing frequency with margin')
-#         self.add_output('frequencyNP_margin_high', val=np.zeros(2), desc='Lower bound constraint of tower/structure frequency to blade passing frequency with margin')
-#         self.add_output('frequency1P_margin_low', val=np.zeros(2), desc='Upper bound constraint of tower/structure frequency to rotor frequency with margin')
-#         self.add_output('frequency1P_margin_high', val=np.zeros(2), desc='Lower bound constraint of tower/structure frequency to rotor frequency with margin')
-
-#         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
-
-#     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-#         freq_struct = inputs['tower_freq']
-#         gamma       = inputs['gamma_freq']
-#         oneP        = (inputs['rotor_omega']/60.0)
-#         oneP_high   = oneP * gamma
-#         oneP_low    = oneP / gamma
-#         threeP      = oneP * discrete_inputs['blade_number']
-#         threeP_high = threeP * gamma
-#         threeP_low  = threeP / gamma
-
-#         # Compute margins between (N/3)P and structural frequencies
-#         indicator_high = threeP_high * np.ones(freq_struct.shape)
-#         indicator_high[freq_struct < threeP_low] = 1e-16
-#         outputs['frequencyNP_margin_high'] = freq_struct / indicator_high
-
-#         indicator_low = threeP_low * np.ones(freq_struct.shape)
-#         indicator_low[freq_struct > threeP_high] = 1e30
-#         outputs['frequencyNP_margin_low']  = freq_struct / indicator_low
-
-#         # Compute margins between 1P and structural frequencies
-#         indicator_high = oneP_high * np.ones(freq_struct.shape)
-#         indicator_high[freq_struct < oneP_low] = 1e-16
-#         outputs['frequency1P_margin_high'] = freq_struct / indicator_high
-
-#         indicator_low = oneP_low * np.ones(freq_struct.shape)
-#         indicator_low[freq_struct > oneP_high] = 1e30
-#         outputs['frequency1P_margin_low']  = freq_struct / indicator_low
+from .csystem import DirectionVector
+from .utilities import interp_with_deriv
 
 
 class TowerModes(om.ExplicitComponent):
@@ -73,20 +30,22 @@ class TowerModes(om.ExplicitComponent):
 
     """
 
+    def initialize(self):
+        self.options.declare("gamma", default=1.1)
+
     def setup(self):
-        self.add_input("tower_freq", val=np.zeros(2), units="Hz")
-        self.add_input("rotor_omega", val=0.0, units="rpm")
-        self.add_input("gamma_freq", val=1.0)
+        self.add_input("rated_Omega", val=0.0, units="rpm", desc="rotor rotation speed at rated")
+        self.add_input("tower_freq", val=0.0, units="Hz")  # np.zeros(NFREQ),
         self.add_discrete_input("blade_number", 3)
 
         self.add_output(
             "constr_tower_f_NPmargin",
-            val=np.zeros(2),
+            val=0.0,  # np.zeros(NFREQ),
             desc="constraint on tower frequency such that ratio of 3P/f is above or below gamma with constraint <= 0",
         )
         self.add_output(
             "constr_tower_f_1Pmargin",
-            val=np.zeros(2),
+            val=0.0,  # np.zeros(NFREQ),
             desc="constraint on tower frequency such that ratio of 1P/f is above or below gamma with constraint <= 0",
         )
 
@@ -94,8 +53,8 @@ class TowerModes(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         freq_struct = inputs["tower_freq"]
-        gamma = inputs["gamma_freq"]
-        oneP = inputs["rotor_omega"] / 60.0
+        gamma = self.options["gamma"]
+        oneP = inputs["rated_Omega"] / 60.0
         threeP = oneP * discrete_inputs["blade_number"]
 
         outputs["constr_tower_f_NPmargin"] = np.array(
@@ -234,5 +193,5 @@ class TurbineConstraints(om.Group):
     def setup(self):
         modeling_options = self.options["modeling_options"]
 
-        # self.add_subsystem('modes', TowerModes(), promotes=['*'])
+        self.add_subsystem("modes", TowerModes(gamma=modeling_options["TowerSE"]["gamma_freq"]), promotes=["*"])
         self.add_subsystem("tipd", TipDeflectionConstraint(modeling_options=modeling_options), promotes=["*"])

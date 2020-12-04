@@ -1,31 +1,20 @@
-#!/usr/bin/env python
-# encoding: utf-8
-"""
-tower.py
-
-Originally created by Andrew Ning on 2012-01-20.
-Copyright (c) NREL. All rights reserved.
-"""
+import copy
 
 import numpy as np
 import openmdao.api as om
-import copy
-
-from wisdem.commonse.wind_wave_drag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
-
-from wisdem.commonse.environment import LinearWaves, TowerSoil, PowerWind, LogWind
+import wisdem.commonse.utilization_constraints as util_con
+from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, sectionalInterp, interp_with_deriv
+from wisdem.commonse.environment import LogWind, PowerWind, TowerSoil, LinearWaves
 from wisdem.commonse.cross_sections import CylindricalShellProperties
-from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, interp_with_deriv, sectionalInterp
+from wisdem.commonse.wind_wave_drag import AeroHydroLoads, CylinderWaveDrag, CylinderWindDrag
 from wisdem.commonse.vertical_cylinder import (
-    CylinderDiscretization,
+    NFREQ,
+    RIGID,
     CylinderMass,
     CylinderFrame3DD,
-    NFREQ,
+    CylinderDiscretization,
     get_nfull,
-    RIGID,
 )
-
-import wisdem.commonse.utilization_constraints as util_con
 
 
 def find_nearest(array, value):
@@ -376,6 +365,14 @@ class TowerDiscretization(om.ExplicitComponent):
         Isotropic shear modulus of the materials along the tower sections.
     sigma_y : numpy array[n_height-1], [Pa]
         Isotropic yield strength of the materials along the tower sections.
+    Az : numpy array[nFull-1], [m**2]
+        cross-sectional area
+    Jz : numpy array[nFull-1], [m**4]
+        polar moment of inertia
+    Ixx : numpy array[nFull-1], [m**4]
+        area moment of inertia about x-axis
+    Iyy : numpy array[nFull-1], [m**4]
+        area moment of inertia about y-axis
 
     Returns
     -------
@@ -413,6 +410,11 @@ class TowerDiscretization(om.ExplicitComponent):
         self.add_input("G", val=np.zeros(n_height - 1), units="Pa")
         self.add_input("sigma_y", val=np.zeros(n_height - 1), units="Pa")
 
+        self.add_input("Az", np.zeros(nFull - 1), units="m**2")
+        self.add_input("Jz", np.zeros(nFull - 1), units="m**4")
+        self.add_input("Ixx", np.zeros(nFull - 1), units="m**4")
+        self.add_input("Iyy", np.zeros(nFull - 1), units="m**4")
+
         self.add_output("height_constraint", val=0.0, units="m")
         self.add_output("rho_full", val=np.zeros(nFull - 1), units="kg/m**3")
         self.add_output("unit_cost_full", val=np.zeros(nFull - 1), units="USD/kg")
@@ -420,6 +422,41 @@ class TowerDiscretization(om.ExplicitComponent):
         self.add_output("E_full", val=np.zeros(nFull - 1), units="Pa")
         self.add_output("G_full", val=np.zeros(nFull - 1), units="Pa")
         self.add_output("sigma_y_full", val=np.zeros(nFull - 1), units="Pa")
+
+        # Tower Distributed Beam Properties (properties needed for ElastoDyn (OpenFAST) inputs or BModes inputs for verification purposes)
+        self.add_output("sec_loc", np.zeros(nFull - 1), desc="normalized sectional location")
+        self.add_output("str_tw", np.zeros(nFull - 1), units="deg", desc="structural twist of section")
+        self.add_output("tw_iner", np.zeros(nFull - 1), units="deg", desc="inertial twist of section")
+        self.add_output("mass_den", np.zeros(nFull - 1), units="kg/m", desc="sectional mass per unit length")
+        self.add_output(
+            "foreaft_iner",
+            np.zeros(nFull - 1),
+            units="kg*m",
+            desc="sectional fore-aft intertia per unit length about the Y_G inertia axis",
+        )
+        self.add_output(
+            "sideside_iner",
+            np.zeros(nFull - 1),
+            units="kg*m",
+            desc="sectional side-side intertia per unit length about the Y_G inertia axis",
+        )
+        self.add_output(
+            "foreaft_stff",
+            np.zeros(nFull - 1),
+            units="N*m**2",
+            desc="sectional fore-aft bending stiffness per unit length about the Y_E elastic axis",
+        )
+        self.add_output(
+            "sideside_stff",
+            np.zeros(nFull - 1),
+            units="N*m**2",
+            desc="sectional side-side bending stiffness per unit length about the Y_E elastic axis",
+        )
+        self.add_output("tor_stff", np.zeros(nFull - 1), units="N*m**2", desc="sectional torsional stiffness")
+        self.add_output("axial_stff", np.zeros(nFull - 1), units="N", desc="sectional axial stiffness")
+        self.add_output("cg_offst", np.zeros(nFull - 1), units="m", desc="offset from the sectional center of mass")
+        self.add_output("sc_offst", np.zeros(nFull - 1), units="m", desc="offset from the sectional shear center")
+        self.add_output("tc_offst", np.zeros(nFull - 1), units="m", desc="offset from the sectional tension center")
 
         self.declare_partials("height_constraint", ["hub_height", "z_param"], method="fd")
         self.declare_partials("outfitting_full", ["outfitting_factor"], method="fd")
@@ -439,12 +476,19 @@ class TowerDiscretization(om.ExplicitComponent):
         outputs["G_full"] = sectionalInterp(z_section, z_param, inputs["G"])
         outputs["sigma_y_full"] = sectionalInterp(z_section, z_param, inputs["sigma_y"])
 
-    # def compute_partials(self, inputs, J):
-    #    n_height = self.options['n_height']
-
-    #    J['height_constraint','hub_height'] = 1.
-    #    J['height_constraint','z_param'] = np.zeros(n_height)
-    #    J['height_constraint','z_param'][-1] = -1.
+        # Unpack for Elastodyn
+        rho = outputs["rho_full"]
+        E = outputs["E_full"]
+        G = outputs["G_full"]
+        z = z_section
+        outputs["sec_loc"] = (z - z[0]) / (z[-1] - z[0])
+        outputs["mass_den"] = inputs["Az"] * rho
+        outputs["foreaft_iner"] = rho * inputs["Ixx"]
+        outputs["sideside_iner"] = rho * inputs["Iyy"]
+        outputs["foreaft_stff"] = E * inputs["Ixx"]
+        outputs["sideside_stff"] = E * inputs["Iyy"]
+        outputs["tor_stff"] = G * inputs["Jz"]
+        outputs["axial_stff"] = inputs["Az"] * E
 
 
 class TowerMass(om.ExplicitComponent):
@@ -1057,42 +1101,6 @@ class TowerPostFrame(om.ExplicitComponent):
         self.add_output("turbine_F", val=np.zeros(3), units="N", desc="Total force on tower+rna")
         self.add_output("turbine_M", val=np.zeros(3), units="N*m", desc="Total x-moment on tower+rna measured at base")
 
-        # Tower Distributed Beam Properties (properties needed for ElastoDyn (OpenFAST) inputs or BModes inputs for verification purposes)
-        N_beam = (nFull - 1) * 2
-        self.add_output("sec_loc", np.zeros(N_beam), desc="normalized sectional location")
-        self.add_output("str_tw", np.zeros(N_beam), units="deg", desc="structural twist of section")
-        self.add_output("tw_iner", np.zeros(N_beam), units="deg", desc="inertial twist of section")
-        self.add_output("mass_den", np.zeros(N_beam), units="kg/m", desc="sectional mass per unit length")
-        self.add_output(
-            "foreaft_iner",
-            np.zeros(N_beam),
-            units="kg*m",
-            desc="sectional fore-aft intertia per unit length about the Y_G inertia axis",
-        )
-        self.add_output(
-            "sideside_iner",
-            np.zeros(N_beam),
-            units="kg*m",
-            desc="sectional side-side intertia per unit length about the Y_G inertia axis",
-        )
-        self.add_output(
-            "foreaft_stff",
-            np.zeros(N_beam),
-            units="N*m**2",
-            desc="sectional fore-aft bending stiffness per unit length about the Y_E elastic axis",
-        )
-        self.add_output(
-            "sideside_stff",
-            np.zeros(N_beam),
-            units="N*m**2",
-            desc="sectional side-side bending stiffness per unit length about the Y_E elastic axis",
-        )
-        self.add_output("tor_stff", np.zeros(N_beam), units="N*m**2", desc="sectional torsional stiffness")
-        self.add_output("axial_stff", np.zeros(N_beam), units="N", desc="sectional axial stiffness")
-        self.add_output("cg_offst", np.zeros(N_beam), units="m", desc="offset from the sectional center of mass")
-        self.add_output("sc_offst", np.zeros(N_beam), units="m", desc="offset from the sectional shear center")
-        self.add_output("tc_offst", np.zeros(N_beam), units="m", desc="offset from the sectional tension center")
-
         self.declare_partials(
             "global_buckling", ["Fz", "Mxx", "Myy", "d_full", "sigma_y_full", "t_full", "z_full"], method="fd"
         )
@@ -1134,17 +1142,6 @@ class TowerPostFrame(om.ExplicitComponent):
         outputs["fore_aft_modes"] = inputs["x_mode_shapes"]
         outputs["side_side_modes"] = inputs["y_mode_shapes"]
 
-        # Compute distributed beam properties
-        outputs = self.compute_distprop(
-            outputs,
-            inputs["z_full"],
-            inputs["d_full"],
-            inputs["t_full"],
-            inputs["E_full"],
-            inputs["G_full"],
-            inputs["rho_full"],
-        )
-
         # Tower top deflection
         outputs["top_deflection"] = inputs["top_deflection_in"]
 
@@ -1174,73 +1171,6 @@ class TowerPostFrame(om.ExplicitComponent):
 
         #    outputs['damage'] = util_con.fatigue(M_DEL, N_DEL, d, inputs['t'], inputs['m_SN'],
         #                                      inputs['DC'], gamma_fatigue, stress_factor=1.0, weld_factor=True)
-
-    def compute_distprop(self, outputs, z_in, d_in, thk_in, E_in, G_in, rho_in):
-        # z   = N positions where tower properties are defined, m
-        # d   = N diameters at points 'z', m
-        # thk = N wall thicknesses at points 'z', m
-        # E   = Young's modulus of tower material, N/m**2
-        # G   = shear modulus of tower material, N/m**2
-        # rho = density of tower material, kg/m**3
-
-        towdata = np.c_[
-            z_in,
-            np.r_[d_in],
-            np.r_[thk_in[0], thk_in],
-            np.r_[E_in[0], E_in],
-            np.r_[G_in[0], G_in],
-            np.r_[rho_in[0], rho_in],
-        ]
-        rowadd = []
-        for k in range(towdata.shape[0]):
-            if k == 0:
-                continue
-            if k + 1 < towdata.shape[0]:
-                rowadd.append(
-                    [
-                        towdata[k, 0] + 1e-3,
-                        towdata[k, 1],
-                        towdata[k + 1, 2],
-                        towdata[k + 1, 3],
-                        towdata[k + 1, 4],
-                        towdata[k + 1, 5],
-                    ]
-                )
-        towdata = np.vstack((towdata, rowadd))
-        towdata = np.round(
-            towdata[
-                towdata[:, 0].argsort(),
-            ],
-            3,
-        )
-
-        z = towdata[:, 0]
-        d = towdata[:, 1]
-        thk = towdata[:, 2]
-        E = towdata[:, 3]
-        G = towdata[:, 4]
-        rho = towdata[:, 5]
-        N = len(z)
-
-        if z[0] > 0.0:
-            z -= z[0]
-
-        outputs["sec_loc"] = np.array(z) / z[-1]
-        for i in range(N):
-            a = d[i] / 2.0
-            b = d[i] / 2.0 - thk[i]
-            A = np.pi * (a ** 2.0 - b ** 2.0)
-            I = np.pi / 4.0 * (a ** 4.0 - b ** 4.0)
-
-            outputs["mass_den"][i] = A * rho[i]
-            outputs["foreaft_iner"][i] = outputs["sideside_iner"][i] = (
-                0.5 * outputs["mass_den"][i] * (a ** 2 + b ** 2) / 2.0
-            )
-            outputs["foreaft_stff"][i] = outputs["sideside_stff"][i] = E[i] * I
-            outputs["tor_stff"][i] = 1.0 / 2.0 * np.pi * (a ** 4.0 - b ** 4) * G[i]
-            outputs["axial_stff"][i] = A * E[i]
-
-        return outputs
 
 
 # -----------------
@@ -1326,6 +1256,9 @@ class TowerLeanSE(om.Group):
             ],
         )
 
+        self.add_subsystem(
+            "props", CylindricalShellProperties(nFull=nFull), promotes=["Az", "Asx", "Asy", "Ixx", "Iyy", "Jz"]
+        )
         self.add_subsystem("tgeometry", TowerDiscretization(n_height=n_height), promotes=["*"])
 
         self.add_subsystem(
@@ -1385,7 +1318,8 @@ class TowerLeanSE(om.Group):
 
         # Connections for geometry and mass
         self.connect("z_start", "geometry.foundation_height")
-
+        self.connect("d_full", "props.d")
+        self.connect("t_full", "props.t")
         self.connect("rho_full", "cm.rho")
         self.connect("outfitting_full", "cm.outfitting_factor")
         self.connect("unit_cost_full", "cm.material_cost_rate")
@@ -1441,14 +1375,11 @@ class TowerSE(om.Group):
 
         # Load baseline discretization
         self.add_subsystem("geom", TowerLeanSE(modeling_options=self.options["modeling_options"]), promotes=["*"])
-        self.add_subsystem("props", CylindricalShellProperties(nFull=nFull))
         self.add_subsystem(
             "soil", TowerSoil(), promotes=[("G", "G_soil"), ("nu", "nu_soil"), ("depth", "suctionpile_depth")]
         )
 
         # Connections for geometry and mass
-        self.connect("d_full", "props.d")
-        self.connect("t_full", "props.t")
         if monopile:
             self.connect("d_full", "soil.d0", src_indices=[0])
 
@@ -1517,6 +1448,7 @@ class TowerSE(om.Group):
                     frame3dd_opt=frame3dd_opt,
                     buckling_length=mod_opt["buckling_length"],
                 ),
+                promotes=["Az", "Asx", "Asy", "Ixx", "Iyy", "Jz"],
             )
             self.add_subsystem(
                 "post" + lc,
@@ -1602,13 +1534,6 @@ class TowerSE(om.Group):
                 self.connect("waveLoads" + lc + ".waveLoads_beta", "distLoads" + lc + ".waveLoads_beta")
                 self.connect("waveLoads" + lc + ".waveLoads_z", "distLoads" + lc + ".waveLoads_z")
                 self.connect("waveLoads" + lc + ".waveLoads_d", "distLoads" + lc + ".waveLoads_d")
-
-            self.connect("props.Az", "tower" + lc + ".Az")
-            self.connect("props.Asx", "tower" + lc + ".Asx")
-            self.connect("props.Asy", "tower" + lc + ".Asy")
-            self.connect("props.Jz", "tower" + lc + ".Jz")
-            self.connect("props.Ixx", "tower" + lc + ".Ixx")
-            self.connect("props.Iyy", "tower" + lc + ".Iyy")
 
             self.connect("distLoads" + lc + ".Px", "tower" + lc + ".Px")
             self.connect("distLoads" + lc + ".Py", "tower" + lc + ".Py")
