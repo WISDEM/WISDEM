@@ -13,7 +13,7 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "windows-latest"]
         python-version: ["3.8"]
-        
+
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
@@ -24,7 +24,7 @@ jobs:
           auto-update-conda: true
           python-version: 3.8
           environment-file: environment.yml
-      
+
       # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
@@ -32,7 +32,7 @@ jobs:
         # (if you use the shell here, cannot use 'compiler' package)
         run: |
           conda install -y petsc4py mpi4py compilers
-      
+
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
@@ -42,20 +42,20 @@ jobs:
       # Debugging session
       #- name: Setup tmate session
       #  uses: mxschmitt/action-tmate@v3
-        
+
       # Install WISDEM
       - name: Install WISDEM
         shell: pwsh
         run: |
           python setup.py develop
-      
+
       # Run all tests
       - name: Run tests
         if: contains( matrix.os, 'ubuntu')
         shell: pwsh
         run: |
-          pytest --cov-config=.coverageac --cov=wisdem 
-    
+          pytest --cov-config=.coverageac --cov=wisdem
+
       # Run coveralls
       - name: Run coveralls
         if: contains( matrix.os, 'ubuntu')
