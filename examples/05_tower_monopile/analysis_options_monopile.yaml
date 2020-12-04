@@ -45,8 +45,6 @@ constraints:
             lower_bound: 0.2
         slope:
             flag: True
-        frequency:
-            flag: False
         frequency_1:
             flag: True
             lower_bound: 0.13
