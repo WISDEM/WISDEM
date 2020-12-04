@@ -1,12 +1,12 @@
 import numpy as np
-from openmdao.api import ExplicitComponent, Group
-from wisdem.ccblade.ccblade_component import CCBladeLoads, AeroHubLoads
 import wisdem.ccblade._bem as _bem
 import wisdem.commonse.utilities as util
+import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
+from openmdao.api import Group, ExplicitComponent
+from wisdem.rotorse import RPM2RS, RS2RPM
 from wisdem.commonse import gravity
 from wisdem.commonse.csystem import DirectionVector
-import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
-from wisdem.rotorse import RPM2RS, RS2RPM
+from wisdem.ccblade.ccblade_component import AeroHubLoads, CCBladeLoads
 
 
 class BladeCurvature(ExplicitComponent):
@@ -650,7 +650,6 @@ class DesignConstraints(ExplicitComponent):
 
         # Input frequencies
         self.add_input("rated_Omega", val=0.0, units="rpm", desc="rotor rotation speed at rated")
-        self.add_input("delta_f", val=1.1, desc="minimum frequency margin")
         self.add_input(
             "flap_mode_freqs",
             np.zeros(n_freq2),
@@ -663,6 +662,8 @@ class DesignConstraints(ExplicitComponent):
             units="Hz",
             desc="Frequencies associated with mode shapes in the edge direction",
         )
+
+        self.add_discrete_input("blade_number", 3)
 
         # Outputs
         # self.add_output('constr_min_strainU_spar',     val=np.zeros(n_opt_spar_cap_ss), desc='constraint for minimum strain in spar cap suction side')
@@ -680,15 +681,15 @@ class DesignConstraints(ExplicitComponent):
         self.add_output(
             "constr_flap_f_margin",
             val=np.zeros(n_freq2),
-            desc="constraint on flap blade frequency such that ratio of 3P/f is above or below delta with constraint <= 0",
+            desc="constraint on flap blade frequency such that ratio of 3P/f is above or below gamma with constraint <= 0",
         )
         self.add_output(
             "constr_edge_f_margin",
             val=np.zeros(n_freq2),
-            desc="constraint on edge blade frequency such that ratio of 3P/f is above or below delta with constraint <= 0",
+            desc="constraint on edge blade frequency such that ratio of 3P/f is above or below gamma with constraint <= 0",
         )
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Constraints on blade strains
         s = inputs["s"]
@@ -714,15 +715,15 @@ class DesignConstraints(ExplicitComponent):
         outputs["constr_max_strainL_spar"] = abs(np.interp(s_opt_spar_cap_ps, s, strainL_spar)) / max_strainL_spar
 
         # Constraints on blade frequencies
-        threeP = 3.0 * inputs["rated_Omega"] / 60.0  # TODO: CHange this to nBlades
+        threeP = discrete_inputs["blade_number"] * inputs["rated_Omega"] / 60.0
         flap_f = inputs["flap_mode_freqs"]
         edge_f = inputs["edge_mode_freqs"]
-        delta = inputs["delta_f"]
+        gamma = self.options["modeling_options"]["RotorSE"]["gamma_freq"]
         outputs["constr_flap_f_margin"] = np.array(
-            [min([threeP - (2 - delta) * f, delta * f - threeP]) for f in flap_f]
+            [min([threeP - (2 - gamma) * f, gamma * f - threeP]) for f in flap_f]
         ).flatten()
         outputs["constr_edge_f_margin"] = np.array(
-            [min([threeP - (2 - delta) * f, delta * f - threeP]) for f in edge_f]
+            [min([threeP - (2 - gamma) * f, gamma * f - threeP]) for f in edge_f]
         ).flatten()
 
 

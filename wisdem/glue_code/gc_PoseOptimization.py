@@ -1,6 +1,7 @@
+import os
+
 import numpy as np
 import openmdao.api as om
-import os
 
 
 class PoseOptimization(object):
@@ -36,10 +37,10 @@ class PoseOptimization(object):
             n_DV += blade_opt["structure"]["spar_cap_ps"]["n_opt"] - 2
         if self.opt["optimization_variables"]["control"]["tsr"]["flag"]:
             n_DV += 1
-        if self.opt["optimization_variables"]["control"]["servo"]["pitch_control"]["flag"]:
-            n_DV += 2
-        if self.opt["optimization_variables"]["control"]["servo"]["torque_control"]["flag"]:
-            n_DV += 2
+        # if self.opt["optimization_variables"]["control"]["servo"]["pitch_control"]["flag"]:
+        #    n_DV += 2
+        # if self.opt["optimization_variables"]["control"]["servo"]["torque_control"]["flag"]:
+        #    n_DV += 2
         if tower_opt["outer_diameter"]["flag"]:
             n_DV += self.modeling["TowerSE"]["n_height_tower"]
         if tower_opt["layer_thickness"]["flag"]:
@@ -298,28 +299,6 @@ class PoseOptimization(object):
             wt_opt.model.add_design_var(
                 "control.rated_TSR", lower=control_opt["tsr"]["minimum"], upper=control_opt["tsr"]["maximum"], ref=1e1
             )
-        if control_opt["servo"]["pitch_control"]["flag"]:
-            wt_opt.model.add_design_var(
-                "control.PC_omega",
-                lower=control_opt["servo"]["pitch_control"]["omega_min"],
-                upper=control_opt["servo"]["pitch_control"]["omega_max"],
-            )
-            wt_opt.model.add_design_var(
-                "control.PC_zeta",
-                lower=control_opt["servo"]["pitch_control"]["zeta_min"],
-                upper=control_opt["servo"]["pitch_control"]["zeta_max"],
-            )
-        if control_opt["servo"]["torque_control"]["flag"]:
-            wt_opt.model.add_design_var(
-                "control.VS_omega",
-                lower=control_opt["servo"]["torque_control"]["omega_min"],
-                upper=control_opt["servo"]["torque_control"]["omega_max"],
-            )
-            wt_opt.model.add_design_var(
-                "control.VS_zeta",
-                lower=control_opt["servo"]["torque_control"]["zeta_min"],
-                upper=control_opt["servo"]["torque_control"]["zeta_max"],
-            )
         # -- Hub & Drivetrain --
         if hub_opt["cone"]["flag"]:
             wt_opt.model.add_design_var(
@@ -425,7 +404,7 @@ class PoseOptimization(object):
                     "WARNING: the max chord is set to be constrained, but chord is not an active design variable. The constraint is not enforced."
                 )
 
-        if blade_constr["frequency"]["flap_above_3P"]:
+        if blade_constr["frequency"]["flap_3P"]:
             if blade_opt["structure"]["spar_cap_ss"]["flag"] or blade_opt["structure"]["spar_cap_ps"]["flag"]:
                 wt_opt.model.add_constraint("rs.constr.constr_flap_f_margin", upper=0.0)
             else:
@@ -433,20 +412,17 @@ class PoseOptimization(object):
                     "WARNING: the blade flap frequencies are set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced."
                 )
 
-        if blade_constr["frequency"]["edge_above_3P"]:
+        if blade_constr["frequency"]["edge_3P"]:
             wt_opt.model.add_constraint("rs.constr.constr_edge_f_margin", upper=0.0)
 
-        if blade_constr["rail_transport"]["flag"]:
-            if blade_constr["rail_transport"]["8_axle"]:
-                wt_opt.model.add_constraint("re.rail.constr_LV_8axle_horiz", lower=0.8, upper=1.0)
-                wt_opt.model.add_constraint("re.rail.constr_strainPS", upper=1.0)
-                wt_opt.model.add_constraint("re.rail.constr_strainSS", upper=1.0)
-            elif blade_constr["rail_transport"]["4_axle"]:
-                wt_opt.model.add_constraint("re.rail.constr_LV_4axle_horiz", upper=1.0)
-            else:
-                raise ValueError(
-                    "You have activated the rail transport constraint module. Please define whether you want to model 4- or 8-axle flatcars."
-                )
+        if blade_constr["rail_transport"]["8_axle"]:
+            wt_opt.model.add_constraint("re.rail.constr_LV_8axle_horiz", lower=0.8, upper=1.0)
+            wt_opt.model.add_constraint("re.rail.constr_strainPS", upper=1.0)
+            wt_opt.model.add_constraint("re.rail.constr_strainSS", upper=1.0)
+        elif blade_constr["rail_transport"]["4_axle"]:
+            wt_opt.model.add_constraint("re.rail.constr_LV_4axle_horiz", upper=1.0)
+            wt_opt.model.add_constraint("re.rail.constr_strainPS", upper=1.0)
+            wt_opt.model.add_constraint("re.rail.constr_strainSS", upper=1.0)
 
         if self.opt["constraints"]["blade"]["moment_coefficient"]["flag"]:
             wt_opt.model.add_constraint(
@@ -519,7 +495,11 @@ class PoseOptimization(object):
         if tower_constr["slope"]["flag"] or monopile_constr["slope"]["flag"]:
             wt_opt.model.add_constraint("towerse.slope", upper=1.0)
 
-        if tower_constr["frequency_1"]["flag"] or monopile_constr["frequency_1"]["flag"]:
+        if tower_constr["frequency"]["flag"]:
+            wt_opt.model.add_constraint("tcons.constr_tower_f_1Pmargin", upper=0.0)
+            wt_opt.model.add_constraint("tcons.constr_tower_f_NPmargin", upper=0.0)
+
+        elif tower_constr["frequency_1"]["flag"] or monopile_constr["frequency_1"]["flag"]:
             for k in range(self.modeling["TowerSE"]["nLC"]):
                 kstr = "" if self.modeling["TowerSE"]["nLC"] == 0 else str(k + 1)
                 wt_opt.model.add_constraint(
@@ -528,8 +508,6 @@ class PoseOptimization(object):
                     lower=tower_constr["frequency_1"]["lower_bound"],
                     upper=tower_constr["frequency_1"]["upper_bound"],
                 )
-
-        # control_constr = self.opt['constraints']['control']
 
         # Hub and drivetrain constraints
         hub_constr = self.opt["constraints"]["hub"]
@@ -596,6 +574,10 @@ class PoseOptimization(object):
             wt_opt["rs.constr.max_strainL_spar"] = blade_constr["strains_spar_cap_ps"]["max"]
             wt_opt["stall_check.stall_margin"] = blade_constr["stall"]["margin"] * 180.0 / np.pi
             wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
+
+        if self.modeling["flags"]["nacelle"] and self.modeling["DriveSE"]["direct"]:
+            drive_constr = self.opt["constraints"]["drivetrain"]
+            wt_opt["drivese.access_diameter"] = drive_constr["access"]["lower_bound"]
 
         return wt_opt
 

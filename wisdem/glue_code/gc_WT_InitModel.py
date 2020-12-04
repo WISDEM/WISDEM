@@ -628,7 +628,6 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
 
     if modeling_options["DriveSE"]["direct"]:
         # Direct only
-        wt_opt["nacelle.access_diameter"] = nacelle["drivetrain"]["access_diameter"]
         wt_opt["nacelle.nose_wall_thickness"] = nacelle["drivetrain"]["nose_wall_thickness"]
         wt_opt["nacelle.nose_diameter"] = nacelle["drivetrain"]["nose_diameter"]
 

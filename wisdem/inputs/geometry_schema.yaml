@@ -402,13 +402,6 @@ properties:
                                         $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
                                         $ref: "#/definitions/distributed_data/length"
-                            access_diameter:
-                                type: number
-                                description: Minimum diameter for hollow shafts for maintenance access
-                                unit: meter
-                                minimum: 0.
-                                maximum: 5.
-                                default: 2.0
                             gear_ratio:
                                 type: number
                                 description: Gear ratio of the drivetrain. Set it to 1 for direct drive machines.
@@ -2743,15 +2736,49 @@ properties:
                     sensors:
                         type: array
                         description: List of sensors used as control inputs, could be any OpenFAST output(?)  # DZ: within ROSCO, probably not...needs to be in avrSWAP
-                        items:
-                            sensor:
-                                $ref: "#/definitions/sensor"
+                        items: &sensor
+                            type: string
+                            description: Sensor used as control input, could be any OpenFAST output (in Simluink), enumerating avrSWAP now  # DZ: within ROSCO, probably not...needs to be in   avrSWAP
+                            enum:
+                                - gen_speed
+                                - nac_IMU
+                                - wind_speed_estimate
+                                - gust_measure
+                                - RootMyc1
+                                - RootMyc2
+                                - RootMyc3
+                                - RootMyT   # MBC of above
+                                - RootMyY   # MBC of above
+                                - azimuth
+                                - YawBrTAxp
+                                - YawBrTAyp
+                                - RootMxc1
+                                - RootMxc2
+                                - RootMxc3
+                                - LSSTipMya
+                                - LSSTipMza
+                                - LSSTipMxa
+                                - LSSTipMys
+                                - LSSTipMzs
+                                - YawBrMyn
+                                - YawBrMzn
+                                - NcIMURAxs  # avrSWAP names don't always match OpenFAST output names
+                                - NcIMURAzs
+                                # No platform info from avrSWAP, will they be added?
                     actuators:
                         type: array
                         description: List of actuators used as control outputs
-                        items:
-                            actuator:
-                                $ref: "#/definitions/actuator"
+                        items: &actuator
+                            type: string
+                            description: Actuator used as control output
+                            enum:
+                                - pitch
+                                - torque   #called generator above, keep consistent?
+                                - tower_TMD
+                                - hull_TMD
+                                - active_tension
+                                - passive_weather_vane
+                                - passive_buoy_can
                     control_model:
                         type: object
                         description: Linear model of controller in state-space form # MIMO harder to clearly define in transfer function form
@@ -2772,10 +2799,8 @@ properties:
                 optional:
                     - activator
                 properties:
-                    sensor:
-                        $ref: "#/definitions/sensor"
-                    actuator:
-                        $ref: "#/definitions/actuator"
+                    sensor: *sensor
+                    actuator: *actuator
                     control_model:
                         type: object
                         description: Linear model of controller in transfer function form, SISO only # MIMO harder to clearly define in transfer function form
@@ -2795,8 +2820,7 @@ properties:
                 optional:
                     - optimize
                 properties:
-                    actuator:
-                        $ref: "#/definitions/actuator"
+                    actuator: *actuator
                     timeseries:
                         $ref: "#/definitions/timeseries"
             user_defined_OL_2: *u_ol
@@ -3254,10 +3278,6 @@ properties:
                 maximum: 1.e+6
                 default: 12.e+3
 definitions:
-
-
-
-
     distributed_data:
         grid_nd:
             type: array
@@ -3917,47 +3937,6 @@ definitions:
                                 minItems: 21
                                 maxItems: 21
                                 uniqueItems: false
-
-    actuator:
-        type: string
-        description: Actuator used as control output
-        enum:
-            - pitch
-            - torque   #called generator above, keep consistent?
-            - tower_TMD
-            - hull_TMD
-            - active_tension
-            - passive_weather_vane
-            - passive_buoy_can
-    sensor:
-        type: string
-        description: Sensor used as control input, could be any OpenFAST output (in Simluink), enumerating avrSWAP now  # DZ: within ROSCO, probably not...needs to be in avrSWAP
-        enum:
-            - gen_speed
-            - nac_IMU
-            - wind_speed_estimate
-            - gust_measure
-            - RootMyc1
-            - RootMyc2
-            - RootMyc3
-            - RootMyT   # MBC of above
-            - RootMyY   # MBC of above
-            - azimuth
-            - YawBrTAxp
-            - YawBrTAyp
-            - RootMxc1
-            - RootMxc2
-            - RootMxc3
-            - LSSTipMya
-            - LSSTipMza
-            - LSSTipMxa
-            - LSSTipMys
-            - LSSTipMzs
-            - YawBrMyn
-            - YawBrMzn
-            - NcIMURAxs  # avrSWAP names don't always match OpenFAST output names
-            - NcIMURAzs
-            # No platform info from avrSWAP, will they be added?
     filter:
         type: object
         description: Linear filter, could be a LPF, HPF, NF, INF, or user_defined

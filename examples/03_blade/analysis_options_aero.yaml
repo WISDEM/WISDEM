@@ -1,7 +1,7 @@
 general:
     folder_output: outputs_aero
     fname_output: blade_out
-    
+
 optimization_variables:
     rotor_diameter:
         flag: False
@@ -60,7 +60,7 @@ optimization_variables:
             flag: False
             lower_bound: 4e-3
             upper_bound: 2e-1
-            
+
     hub:
         cone:
             flag: False
@@ -70,7 +70,7 @@ optimization_variables:
             flag: False
             lower_bound: 3.0
             upper_bound: 15.0
-            
+
     drivetrain:
         uptilt:
             flag: False
@@ -153,10 +153,8 @@ constraints:
             flag: False # Constraint on maximum chord
             max: 4.75   # Value of maximum chord in [m]
         frequency:
-            flap_above_3P: False
-            edge_above_3P: False
-            flap_below_3P: False
-            edge_below_3P: False
+            flap_3P: False
+            edge_3P: False
         moment_coefficient:
             flag: False
             max: 0.15 #0.16333
@@ -186,6 +184,8 @@ constraints:
             flag: False
         slope:
             flag: False
+        frequency:
+            flag: False
         frequency_1:
             flag: False
             lower_bound: 0.13
@@ -210,6 +210,7 @@ constraints:
             flag: False
         access:
             flag: False
+            lower_bound: 2.0
         ecc:
             flag: False
 
