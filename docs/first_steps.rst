@@ -6,18 +6,19 @@ WISDEM just needs three input files for many optimization and analysis operation
 +---------------------------+---------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------+
 | Description               | Suggested Default to Modify                                                                                                     | Where to learn more                                                          |
 +===========================+=================================================================================================================================+==============================================================================+
-| Geometry of the turbine   | `nrel5mw.yaml <https://github.com/WISDEM/WISDEM/blob/develop/examples/reference_turbines_lcoe/nrel5mw.yaml>`_                   | `WindIO docs <https://windio.readthedocs.io/en/latest/source/turbine.html>`_ |
+| Geometry of the turbine   | `nrel5mw.yaml <https://github.com/WISDEM/WISDEM/blob/develop/examples/02_reference_turbines/nrel5mw.yaml>`_                   | `WindIO docs <https://windio.readthedocs.io/en/latest/source/turbine.html>`_ |
 +---------------------------+---------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------+
-| Modeling options          | `modeling_options.yaml <https://github.com/WISDEM/WISDEM/blob/develop/examples/reference_turbines_lcoe/modeling_options.yaml>`_ | :ref:`modeling-options`                                                      |
+| Modeling options          | `modeling_options.yaml <https://github.com/WISDEM/WISDEM/blob/develop/examples/02_reference_turbines/modeling_options.yaml>`_ | :ref:`modeling-options`                                                      |
 +---------------------------+---------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------+
-| Analysis options          | `analysis_options.yaml <https://github.com/WISDEM/WISDEM/blob/develop/examples/reference_turbines_lcoe/analysis_options.yaml>`_ | :ref:`analysis-options`                                                      |
+| Analysis options          | `analysis_options.yaml <https://github.com/WISDEM/WISDEM/blob/develop/examples/02_reference_turbines/analysis_options.yaml>`_ | :ref:`analysis-options`                                                      |
 +---------------------------+---------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------+
 
 There are two options to run WISDEM with these files. The first option is to use a text editor to modify files and to run WISDEM from the command line. The second option is to edit the files with a GUI and run WISDEM with the click of a button. This document will describe both of these options in turn.
 
 The first step for either option is to make copies of example files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Before you start editing your WISDEM input files, please make copies of the original files in a separate folder. This ensures that, if you edit copies of the original files, you can always revert back to a version of the files that is known to execute successfully.
+Before you start editing your WISDEM input files, please make copies of the original files in a separate folder. This ensures that if you edit copies of the original files you can always revert back to a version of the files that is known to execute successfully.
+Each one of the linked files in the table is a good starting point for a turbine simulation.
 
 Option 1: Text editor and command line
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -89,8 +90,8 @@ When you see this dialog box, the GUI has written the YAML files. WISDEM may tak
 
 .. figure:: /images/yaml/wisdem_gui_step_06.png
 
-Working with Outputs
-^^^^^^^^^^^^^^^^^^^^
+Working with Outputs Manually
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In the outputs folder there are several files. Each of them hold all the output variables from a run but are in different formats for various environments:
 
 +-----------+-------------------------+
@@ -126,3 +127,21 @@ As an example, here is a script to plot Axial Induction versus Blade Nondimensio
 This script generates the following plot:
 
 .. figure:: /images/yaml/first_steps_first_plot.png
+
+
+Working with Outputs Using compare_designs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+WISDEM also comes with a built-in command to help post-process results automatically.
+Just as there is a `wisdem` console command installed, there is a `compare_designs` command that plots and prints WISDEM results given a turbine yaml file.
+This command can be used within any directory where you have turbine yaml files you want to investigate.
+
+For example, you can use the command to view the results from the previous example simulation.
+Invoke the command by typing ``compare_designs outputs/refturb_output.yaml`` in your terminal.
+This runs WISDEM using the default set of options, then prints key results to screen and saves plots for variable distributions along the blade span.
+
+You can also compare designs of multiple turbine yaml files using this command, which is especially useful for comparing initial and optimal designs.
+To do this, simply list as many yaml files as you want to compare after invoking the `compare_designs` command.
+Additionally, you can supply your own modeling and analysis options if you want to customize the type of simulation performed when comparing results.
+
+For any further modifications, you can customize the output of the `compare_designs` command by locally editing the script in the `wisdem/postprocessing/compare_designs.py` file.

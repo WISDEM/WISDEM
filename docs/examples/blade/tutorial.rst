@@ -71,14 +71,16 @@ where the ``blade_driver.py`` script is:
     :language: python
 
 The CPU run time is approximately 5 minutes. As the script runs, you will see some
-output to your terminal, such as performance metrics and some analysis warnings. Once the optimization terminates, in the terminal
-type:
+output to your terminal, such as performance metrics and some analysis warnings.
+The optimizer might report that it has failed, but we have artificially limited the number of steps it can take during optimization, so that is expected.
+Once the optimization terminates, type in the terminal:
 
 .. code-block:: bash
 
-    $ python design_compare.py
+    $ compare_designs blade.yaml outputs_aero/blade_out.yaml
 
-Some plots and screen output is generated, such as in :numref:`fig_opt1_induction` and :numref:`fig_opt1_twist`. The twist optimization had to cope with a wider
+This script compares the initial and optimized designs.
+Some screen output is generated, as well as plots (contained in the `outputs` folder), such as in :numref:`fig_opt1_induction` and :numref:`fig_opt1_twist`. The twist optimization had to cope with a wider
 margin to stall than the baseline was originally designed to.  The results show higher twist angles
 towards the blade tip, but the AEP is only mildly reduced by 0.18%.
 
@@ -147,18 +149,11 @@ and then do,
 
 (parallel calculation is also available if desired).
 
-Once the optimization terminates, the same ``design_compare.py`` script can be used again to plot the differences, but we must edit the file to point to the new set of results.  The file should contain these lines near the top,
-
-.. literalinclude:: /../examples/03_blade/design_compare.py
-    :language: python
-    :start-after: show_plots = True
-    :end-before: wt_opt1
-
-comment out the line that assigns the :code:`fname_wt_input2` variable to the :code:`outputs_aero` directory and instead uncomment the line that uses the :code:`outputs_struct` directory.  Then, it can be run just as before,
+Once the optimization terminates, the same ``compare_designs`` script can be used again to plot the differences:
 
 .. code-block:: bash
 
-    $ python design_compare.py
+    $ compare_designs outputs_aero/blade_out.yaml outputs_struct/blade_out.yaml
 
 The relaxed tip deflection constraint compared to when the baseline was created allows the spar cap thickness to come down and the overall blade mass drops from 60.3 metric tons to 54.5 metric tons.  This is shown in :numref:`fig_opt2_spar` and :numref:`fig_opt2_mass`.
 
@@ -226,7 +221,7 @@ and then do,
     $ python blade_driver.py
 
 
-We edit the ``design_compare.py`` script in the same way as above to plot the optimization results, two of which are shown in, :numref:`fig_opt3_chord` and :numref:`fig_opt3_twist`.  With more moving parts, it can be harder to interpret the results.  In the end, LCOE is reduced marginally compared to the structural optimization-only case.
+We can then use the ``compare_designs`` command in the same way as above to plot the optimization results, two of which are shown in, :numref:`fig_opt3_chord` and :numref:`fig_opt3_twist`.  With more moving parts, it can be harder to interpret the results.  In the end, LCOE is reduced marginally compared to the structural optimization-only case.
 
 .. _fig_opt3_chord:
 .. figure:: /images/blade/bladeopt3_chord.*

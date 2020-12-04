@@ -18,8 +18,10 @@ This will print results to screen, then create and save plots.
 
 import os
 import argparse
+
 import numpy as np
 import matplotlib.pyplot as plt
+
 from wisdem.glue_code.runWISDEM import run_wisdem
 
 
@@ -140,10 +142,10 @@ def create_all_plots(
 
     for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
         n_layers = len(yaml_data["blade.internal_structure_2d_fem.layer_thickness"][:, 0])
-        spar_ss_name = analysis_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["name"]
-        spar_ps_name = analysis_options["optimization_variables"]["blade"]["structure"]["spar_cap_ps"]["name"]
+        spar_ss_name = "Spar_Cap_SS"
+        spar_ps_name = "Spar_Cap_PS"
         for i in range(n_layers):
-            if modeling_options["blade"]["layer_name"][i] == spar_ss_name:
+            if modeling_options["RotorSE"]["spar_cap_ss"] == spar_ss_name:
                 axsc.plot(
                     yaml_data["blade.outer_shape_bem.s"],
                     yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
@@ -161,7 +163,7 @@ def create_all_plots(
                 axsc.plot(s_opt_sc, sc_opt, "o", color=colors[idx], markersize=3)
 
     for i in range(n_layers):
-        if modeling_options["blade"]["layer_name"][i] == spar_ss_name:
+        if modeling_options["RotorSE"]["spar_cap_ss"] == spar_ss_name:
             sc_init = np.interp(
                 s_opt_sc,
                 list_of_yamls[0]["blade.outer_shape_bem.s"],
@@ -447,8 +449,8 @@ def main():
 
     # These are the modeling and analysis options used to evaluate the designs.
     # Both of these yaml files are used for all yamls to make a fair comparison.
-    fname_modeling_options = this_dir + os.sep + "default_modeling_options.yaml"
-    fname_analysis_options = this_dir + os.sep + "default_analysis_options.yaml"
+    fname_modeling_options_default = this_dir + os.sep + "default_modeling_options.yaml"
+    fname_analysis_options_default = this_dir + os.sep + "default_analysis_options.yaml"
 
     # ======================================================================
     # Input Information
@@ -459,22 +461,22 @@ def main():
         "--modeling_options",
         nargs="?",
         type=str,
-        default=fname_modeling_options,
+        default=fname_modeling_options_default,
         help="Specify the modeling options yaml.",
     )
     parser.add_argument(
         "--analysis_options",
         nargs="?",
         type=str,
-        default=fname_analysis_options,
+        default=fname_analysis_options_default,
         help="Specify the analysis options yaml.",
     )
     parser.add_argument("--labels", nargs="*", type=str, default=None, help="Specify the labels for the yaml files.")
 
     args = parser.parse_args()
     yaml_filenames = args.yaml_files
-    modeling_options = args.modeling_options
-    analysis_options = args.analysis_options
+    fname_modeling_options = args.modeling_options
+    fname_analysis_options = args.analysis_options
     list_of_yaml_labels = args.labels
     if list_of_yaml_labels is None:
         list_of_yaml_labels = [f"yaml_{idx}" for idx in range(len(yaml_filenames))]
