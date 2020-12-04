@@ -1,7 +1,7 @@
 general:
     folder_output: outputs
     fname_output: blade_out
-    
+
 optimization_variables:
     rotor_diameter:
         flag: False
@@ -10,7 +10,7 @@ optimization_variables:
     blade:
         aero_shape:
             twist:
-                flag: False    # Flag to optimize the twist 
+                flag: False    # Flag to optimize the twist
                 inverse: False # Flag to determine twist from the user-defined desired margin to stall (defined in constraints)
                 n_opt: 8         # Number of control points along blade span
                 lower_bound: [0.3490658503988659, 0.08726646259971647, 0.08726646259971647, 0., -0.08726646259971647, -0.08726646259971647, -0.08726646259971647, -0.08726646259971647]                    # Lower bounds for the twist in [rad] at the n_opt locations
@@ -60,7 +60,7 @@ optimization_variables:
             flag: False
             lower_bound: 4e-3
             upper_bound: 2e-1
-            
+
     hub:
         cone:
             flag: False
@@ -70,7 +70,7 @@ optimization_variables:
             flag: False
             lower_bound: 3.0
             upper_bound: 15.0
-            
+
     drivetrain:
         uptilt:
             flag: False
@@ -210,6 +210,7 @@ constraints:
             flag: False
         access:
             flag: False
+            lower_bound: 2.0
         ecc:
             flag: False
 

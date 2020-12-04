@@ -1,6 +1,5 @@
 import numpy as np
 import openmdao.api as om
-
 from wisdem.towerse.tower import TowerSE
 from wisdem.orbit.api.wisdem import Orbit
 from wisdem.rotorse.rotor_power import RotorPower, NoStallConstraint
@@ -318,7 +317,6 @@ class WT_RNTA(om.Group):
             self.connect("nacelle.transformer_mass_user", "drivese.transformer_mass_user")
 
             if modeling_options["DriveSE"]["direct"]:
-                self.connect("nacelle.access_diameter", "drivese.access_diameter")  # only used in direct
                 self.connect("nacelle.nose_diameter", "drivese.nose_diameter")  # only used in direct
                 self.connect("nacelle.nose_wall_thickness", "drivese.nose_wall_thickness")  # only used in direct
                 self.connect(

@@ -1,6 +1,7 @@
+import os
+
 import numpy as np
 import openmdao.api as om
-import os
 
 
 class PoseOptimization(object):
@@ -425,7 +426,7 @@ class PoseOptimization(object):
                     "WARNING: the max chord is set to be constrained, but chord is not an active design variable. The constraint is not enforced."
                 )
 
-        if blade_constr["frequency"]["flap_above_3P"]:
+        if blade_constr["frequency"]["flap_3P"]:
             if blade_opt["structure"]["spar_cap_ss"]["flag"] or blade_opt["structure"]["spar_cap_ps"]["flag"]:
                 wt_opt.model.add_constraint("rs.constr.constr_flap_f_margin", upper=0.0)
             else:
@@ -433,20 +434,17 @@ class PoseOptimization(object):
                     "WARNING: the blade flap frequencies are set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced."
                 )
 
-        if blade_constr["frequency"]["edge_above_3P"]:
+        if blade_constr["frequency"]["edge_3P"]:
             wt_opt.model.add_constraint("rs.constr.constr_edge_f_margin", upper=0.0)
 
-        if blade_constr["rail_transport"]["flag"]:
-            if blade_constr["rail_transport"]["8_axle"]:
-                wt_opt.model.add_constraint("re.rail.constr_LV_8axle_horiz", lower=0.8, upper=1.0)
-                wt_opt.model.add_constraint("re.rail.constr_strainPS", upper=1.0)
-                wt_opt.model.add_constraint("re.rail.constr_strainSS", upper=1.0)
-            elif blade_constr["rail_transport"]["4_axle"]:
-                wt_opt.model.add_constraint("re.rail.constr_LV_4axle_horiz", upper=1.0)
-            else:
-                raise ValueError(
-                    "You have activated the rail transport constraint module. Please define whether you want to model 4- or 8-axle flatcars."
-                )
+        if blade_constr["rail_transport"]["8_axle"]:
+            wt_opt.model.add_constraint("re.rail.constr_LV_8axle_horiz", lower=0.8, upper=1.0)
+            wt_opt.model.add_constraint("re.rail.constr_strainPS", upper=1.0)
+            wt_opt.model.add_constraint("re.rail.constr_strainSS", upper=1.0)
+        elif blade_constr["rail_transport"]["4_axle"]:
+            wt_opt.model.add_constraint("re.rail.constr_LV_4axle_horiz", upper=1.0)
+            wt_opt.model.add_constraint("re.rail.constr_strainPS", upper=1.0)
+            wt_opt.model.add_constraint("re.rail.constr_strainSS", upper=1.0)
 
         if self.opt["constraints"]["blade"]["moment_coefficient"]["flag"]:
             wt_opt.model.add_constraint(
@@ -596,6 +594,9 @@ class PoseOptimization(object):
             wt_opt["rs.constr.max_strainL_spar"] = blade_constr["strains_spar_cap_ps"]["max"]
             wt_opt["stall_check.stall_margin"] = blade_constr["stall"]["margin"] * 180.0 / np.pi
             wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
+
+            drive_constr = self.opt["constraints"]["drivetrain"]
+            wt_opt["drivese.access_diameter"] = drive_constr["access"]["lower_bound"]
 
         return wt_opt
 

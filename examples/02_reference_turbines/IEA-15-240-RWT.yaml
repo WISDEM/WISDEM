@@ -361,7 +361,6 @@ components:
             bedplate_wall_thickness:
                 grid: [0.0, 1.0]
                 values: [0.05, 0.05]
-            access_diameter: 0.801
             gear_ratio: 1.0
             gearbox_efficiency: 1.0
             mb1Type: CARB
