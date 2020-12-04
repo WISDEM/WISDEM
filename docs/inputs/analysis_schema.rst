@@ -9,8 +9,6 @@ The following inputs describe the options available in the ``analysis_options`` 
 .. literalinclude:: /../examples/03_blade/analysis_options_aerostruct.yaml
     :language: yaml
 
-
-
 general
 ****************************************
 
@@ -1275,7 +1273,7 @@ frequency
 ========================================
 
 
-Frequency separation constraint between blade fundamental frequency and blade passing (3P) frequency. Can be activated for blade flap and/or edge modes.
+Frequency separation constraint between blade fundamental frequency and blade passing (3P) frequency at rated conditions using gamma_freq margin. Can be activated for blade flap and/or edge modes.
 
 :code:`flap_3P` : Boolean
     Activates as a design variable or constraint
@@ -1503,6 +1501,19 @@ Enforcing a max allowable conical frustum taper ratio per section
 
 
 
+frequency
+========================================
+
+
+Frequency separation constraint between all tower modal frequencies and blade period (1P) and passing (3P) frequencies at rated conditions using gamma_freq margin.
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
 frequency_1
 ========================================
 
@@ -1668,6 +1679,19 @@ Enforcing a max allowable conical frustum taper ratio per section
 
     *Minimum* = 0.001    *Maximum* = 1.0
 
+
+
+
+frequency
+========================================
+
+
+Frequency separation constraint between all tower modal frequencies and blade period (1P) and passing (3P) frequencies at rated conditions using gamma_freq margin.
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
 
 
 

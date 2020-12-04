@@ -529,7 +529,7 @@ properties:
                                 unit: meter
                     frequency:
                         type: object
-                        description: Frequency separation constraint between blade fundamental frequency and blade passing (3P) frequency. Can be activated for blade flap and/or edge modes.
+                        description: Frequency separation constraint between blade fundamental frequency and blade passing (3P) frequency at rated conditions using gamma_freq margin. Can be activated for blade flap and/or edge modes.
                         default: {}
                         properties:
                             flap_3P: *flag
@@ -632,6 +632,12 @@ properties:
                                 maximum: 1.0
                                 default: 0.5
                                 unit: none
+                    frequency:
+                        type: object
+                        description: Frequency separation constraint between all tower modal frequencies and blade period (1P) and passing (3P) frequencies at rated conditions using gamma_freq margin.
+                        default: {}
+                        properties:
+                            flag: *flag
                     frequency_1:
                         type: object
                         description: Targeted range for tower first frequency constraint.  Since first and second frequencies are generally the same for the tower, this usually governs the second frequency as well (both fore-aft and side-side first frequency)

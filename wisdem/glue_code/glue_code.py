@@ -103,6 +103,7 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["blade"]:
                 self.connect("blade.pa.twist_param", "rp.theta")
                 self.connect("blade.pa.chord_param", "rp.chord")
+            self.connect("configuration.n_blades", "rs.constr.blade_number")
 
             # Connections from blade struct parametrization to rotor elasticity
             self.connect("blade.ps.layer_thickness_param", "re.precomp.layer_thickness")
@@ -504,6 +505,9 @@ class WT_RNTA(om.Group):
             self.connect("nacelle.overhang", "tcons.overhang")
             self.connect("assembly.tower_ref_axis", "tcons.ref_axis_tower")
             self.connect("tower.diameter", "tcons.d_full")
+            self.connect("towerse.tower.freqs", "tcons.tower_freq", src_indices=[0])
+            self.connect("configuration.n_blades", "tcons.blade_number")
+            self.connect("rp.powercurve.rated_Omega", "tcons.rated_Omega")
 
         # Connections to turbine capital cost
         self.connect("configuration.n_blades", "tcc.blade_number")

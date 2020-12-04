@@ -3,6 +3,7 @@
 ******************************
 Modeling Options Inputs
 ******************************
+
 The following inputs describe the options available in the ``modeling_options`` file.  This example is from the :code:`02_reference_turbines` case in the :code:`examples` directory.
 
 
@@ -127,6 +128,12 @@ RotorSE
 
     *Default* = none
 
+:code:`gamma_freq` : Float
+    Partial safety factor for modal frequencies
+
+    *Default* = 1.1
+
+    *Minimum* = 1.0    *Maximum* = 5.0
 
 
 DriveSE
@@ -242,6 +249,13 @@ TowerSE
 
     *Minimum* = 1.0    *Maximum* = 5.0
 
+
+:code:`gamma_freq` : Float
+    Partial safety factor for modal frequencies
+
+    *Default* = 1.1
+
+    *Minimum* = 1.0    *Maximum* = 5.0
 
 :code:`gamma_fatigue` : Float
     Partial safety factor for fatigue failure

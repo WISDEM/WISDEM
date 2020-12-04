@@ -153,10 +153,8 @@ constraints:
             flag: False # Constraint on maximum chord
             max: 4.75     # Value of maximum chord in [m]
         frequency:
-            flap_above_3P: False
-            edge_above_3P: False
-            flap_below_3P: False
-            edge_below_3P: False
+            flap_3P: False
+            edge_3P: False
         moment_coefficient:
             flag: False
             max: 0.15 #0.16333
@@ -185,6 +183,8 @@ constraints:
         constr_taper:
             flag: False
         slope:
+            flag: False
+        frequency:
             flag: False
         frequency_1:
             flag: False

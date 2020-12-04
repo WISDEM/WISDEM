@@ -94,6 +94,13 @@ properties:
                 type: string
                 default: 'none'
                 description: Composite layer modeling the trailing edge reinforcement on the pressure side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable te_ps.
+            gamma_freq:
+                type: number
+                description: Partial safety factor on modal frequencies
+                minimum: 1.0
+                maximum: 5.0
+                default: 1.1
+                unit: none
     DriveSE:
         type: object
         default: {}
@@ -186,6 +193,13 @@ properties:
             gamma_b:
                 type: number
                 description: Partial safety factor for buckling
+                minimum: 1.0
+                maximum: 5.0
+                default: 1.1
+                unit: none
+            gamma_freq:
+                type: number
+                description: Partial safety factor on modal frequencies
                 minimum: 1.0
                 maximum: 5.0
                 default: 1.1
