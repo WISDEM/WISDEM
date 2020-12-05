@@ -14,9 +14,12 @@ class WindTurbineOntologyPython(object):
     def __init__(self, fname_input_wt, fname_input_modeling, fname_input_analysis):
 
         self.modeling_options = sch.load_modeling_yaml(fname_input_modeling)
-        self.wt_init = sch.load_geometry_yaml(fname_input_wt)
         self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
         self.defaults = sch.load_default_geometry_yaml()
+        if fname_input_wt is None:
+            self.wt_init = None
+        else:
+            self.wt_init = sch.load_geometry_yaml(fname_input_wt)
         self.set_run_flags()
         self.set_openmdao_vectors()
         self.set_opt_flags()
@@ -964,5 +967,7 @@ class WindTurbineOntologyPython(object):
         if self.modeling_options["flags"]["control"]:
             self.wt_init["control"]["tsr"] = float(wt_opt["control.rated_TSR"])
 
-        # Write yaml with updated values
+        # Write yamls with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)
+        sch.write_modeling_yaml(self.modeling_options, fname_output)
+        sch.write_analysis_yaml(self.analysis_options, fname_output)
