@@ -17,14 +17,13 @@ dependencies:
   - cython
   - swig
   - pandas
-  - numpydoc
-  - six
   - setuptools
   - git
   - numpy
   - scipy
   - matplotlib
-  - geopy
+#  - numpydoc
+#  - geopy
   - pyside2
   - pip:
     - simpy
