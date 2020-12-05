@@ -1,6 +1,8 @@
-from wisdem import run_wisdem
 import os
+
+from wisdem import run_wisdem
 from wisdem.commonse.mpi_tools import MPI
+from wisdem.postprocessing.compare_designs import run
 
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
 fname_wt_input = mydir + os.sep + "blade.yaml"
@@ -19,3 +21,5 @@ if rank == 0:
         "RUN COMPLETED. RESULTS ARE AVAILABLE HERE: "
         + os.path.join(mydir, analysis_options["general"]["folder_output"])
     )
+
+run([wt_opt], ["optimized"], modeling_options, analysis_options)

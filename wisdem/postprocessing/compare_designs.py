@@ -24,9 +24,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from wisdem.glue_code.runWISDEM import run_wisdem, load_wisdem
 
-# Set the filenames for the comparison. `yaml_filenames` is a list of the
-# yamls you want to compare. `list_of_labels` are the labels corresponding
-# to the yaml files that will appear on the outputted plots.
 this_dir = os.path.dirname(os.path.realpath(__file__))
 
 # These are the modeling and analysis options used to evaluate the designs.
