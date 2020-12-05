@@ -3,15 +3,15 @@ First Steps in WISDEM
 
 WISDEM just needs three input files for many optimization and analysis operations. These files specify the geometry of the turbine, modeling options, and analysis options. The files and details about them are outlined in the following table:
 
-+---------------------------+---------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------+
-| Description               | Suggested Default to Modify                                                                                                     | Where to learn more                                                          |
-+===========================+=================================================================================================================================+==============================================================================+
++---------------------------+-------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------+
+| Description               | Suggested Default to Modify                                                                                                   | Where to learn more                                                          |
++===========================+===============================================================================================================================+==============================================================================+
 | Geometry of the turbine   | `nrel5mw.yaml <https://github.com/WISDEM/WISDEM/blob/develop/examples/02_reference_turbines/nrel5mw.yaml>`_                   | `WindIO docs <https://windio.readthedocs.io/en/latest/source/turbine.html>`_ |
-+---------------------------+---------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------+
++---------------------------+-------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------+
 | Modeling options          | `modeling_options.yaml <https://github.com/WISDEM/WISDEM/blob/develop/examples/02_reference_turbines/modeling_options.yaml>`_ | :ref:`modeling-options`                                                      |
-+---------------------------+---------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------+
++---------------------------+-------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------+
 | Analysis options          | `analysis_options.yaml <https://github.com/WISDEM/WISDEM/blob/develop/examples/02_reference_turbines/analysis_options.yaml>`_ | :ref:`analysis-options`                                                      |
-+---------------------------+---------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------+
++---------------------------+-------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------+
 
 There are two options to run WISDEM with these files. The first option is to use a text editor to modify files and to run WISDEM from the command line. The second option is to edit the files with a GUI and run WISDEM with the click of a button. This document will describe both of these options in turn.
 
@@ -92,7 +92,20 @@ When you see this dialog box, the GUI has written the YAML files. WISDEM may tak
 
 Working with Outputs Manually
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 In the outputs folder there are several files. Each of them hold all the output variables from a run but are in different formats for various environments:
+
+.. code:: bash
+
+    $ ls -1 outputs
+
+    refturb_output.mat
+    refturb_output.npz
+    refturb_output.pkl
+    refturb_output.xlsx
+    refturb_output.yaml
+    refturb_output-modeling.yaml
+    refturb_output-analysis.yaml
 
 +-----------+-------------------------+
 | Extension | Description             |
@@ -108,21 +121,11 @@ In the outputs folder there are several files. Each of them hold all the output 
 | ``.yaml`` | YAML format             |
 +-----------+-------------------------+
 
-As an example, here is a script to plot Axial Induction versus Blade Nondimensional Span by extracting the values from the Python pickle file. Copy it into a text editor and save it to the same folder that you executed WISDEM from:
+As an example, the ``sample_plot.py`` script plots Axial Induction versus Blade Nondimensional Span by extracting the values from the Python pickle file.  The script content is:
 
-::
 
-    import pickle
-    import matplotlib.pyplot as plt
-    refturb_pickle = pickle.load(open("outputs/refturb_output.pkl", "rb"))
-    refturb = {r[0]: r[1] for r in refturb_pickle}
-    xs = refturb["wt.wt_init.blade.outer_shape_bem.compute_blade_outer_shape_bem.s_default"]["value"]
-    ys = refturb["wt.sse.powercurve.compute_power_curve.ax_induct_regII"]["value"]
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 5))
-    ax.plot(xs, ys)
-    ax.set_xlabel("Blade Nondimensional Span [-]")
-    ax.set_ylabel("Axial Induction [-]")
-    plt.show()
+.. literalinclude:: ../examples/02_reference_turbines/sample_plot.py
+    :language: python
 
 This script generates the following plot:
 
@@ -133,12 +136,12 @@ Working with Outputs Using compare_designs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 WISDEM also comes with a built-in command to help post-process results automatically.
-Just as there is a `wisdem` console command installed, there is a `compare_designs` command that plots and prints WISDEM results given a turbine yaml file.
+Just as there is a `wisdem` console command installed, there is a `compare_designs` command that plots and prints WISDEM results given a turbine yaml file.  If the turbine yaml file is part of an output series, the values are loaded, otherwise it runs WISDEM using a default set of options.
 This command can be used within any directory where you have turbine yaml files you want to investigate.
 
 For example, you can use the command to view the results from the previous example simulation.
 Invoke the command by typing ``compare_designs outputs/refturb_output.yaml`` in your terminal.
-This runs WISDEM using the default set of options, then prints key results to screen and saves plots for variable distributions along the blade span.
+Since this example was just run, it loads in the values, then prints key results to screen and saves plots for variable distributions along the blade span.
 
 You can also compare designs of multiple turbine yaml files using this command, which is especially useful for comparing initial and optimal designs.
 To do this, simply list as many yaml files as you want to compare after invoking the `compare_designs` command.

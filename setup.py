@@ -75,7 +75,7 @@ setup(
     ext_modules=[bemExt, pyframeExt, precompExt, pymapExt],
     entry_points={
         "console_scripts": [
-            "wisdem=wisdem.wisdem:wisdem_cmd",
+            "wisdem=wisdem.main:wisdem_cmd",
             "compare_designs=wisdem.postprocessing.compare_designs:main",
         ],
     },
