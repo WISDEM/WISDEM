@@ -1,4 +1,4 @@
-from wisdem.ccblade import CCAirfoil, CCBlade
+from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
 from openmdao.api import ExplicitComponent
 import numpy as np
 import wisdem.ccblade._bem as _bem

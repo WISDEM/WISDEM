@@ -8,7 +8,7 @@ January 2020
 import numpy as np
 from openmdao.api import Group, ExplicitComponent
 from scipy.optimize import brentq, minimize, minimize_scalar
-from wisdem.ccblade import CCBlade, CCAirfoil
+from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from scipy.interpolate import PchipInterpolator
 from wisdem.commonse.utilities import smooth_abs, smooth_min, linspace_with_deriv
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF

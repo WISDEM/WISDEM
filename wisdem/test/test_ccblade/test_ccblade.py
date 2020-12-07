@@ -17,7 +17,7 @@ import numpy as np
 from os import path
 import math
 
-from wisdem.ccblade import CCAirfoil, CCBlade
+from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
 
 
 class TestNREL5MW(unittest.TestCase):
