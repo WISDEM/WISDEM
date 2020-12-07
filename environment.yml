@@ -1,3 +1,5 @@
+name: test
+
 channels:
   - conda-forge
   - defaults
@@ -22,9 +24,8 @@ dependencies:
   - numpy
   - scipy
   - matplotlib
-#  - numpydoc
-#  - geopy
   - pyside2
+  - pip
   - pip:
     - simpy
     - marmot-agents
