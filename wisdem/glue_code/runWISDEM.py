@@ -2,7 +2,6 @@ import os
 import sys
 
 import numpy as np
-
 import openmdao.api as om
 from wisdem.commonse import fileIO
 from wisdem.commonse.mpi_tools import MPI
@@ -124,3 +123,22 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         return wt_opt, modeling_options, opt_options
     else:
         return [], [], []
+
+
+def load_wisdem(frootin):
+    froot = os.path.splitext(frootin)[0]
+    fgeom = froot + ".yaml"
+    fmodel = froot + "-modeling.yaml"
+    fopt = froot + "-analysis.yaml"
+    fpkl = froot + ".pkl"
+
+    # Load all yaml inputs and validate (also fills in defaults)
+    wt_initial = WindTurbineOntologyPython(fgeom, fmodel, fopt)
+    wt_init, modeling_options, opt_options = wt_initial.get_input_data()
+
+    wt_opt = om.Problem(model=WindPark(modeling_options=modeling_options, opt_options=opt_options))
+    wt_opt.setup()
+
+    wt_opt = fileIO.load_data(fpkl, wt_opt)
+
+    return wt_opt, modeling_options, opt_options

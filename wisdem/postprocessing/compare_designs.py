@@ -17,17 +17,24 @@ This will print results to screen, then create and save plots.
 """
 
 import os
+import sys
 import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
+from wisdem.glue_code.runWISDEM import run_wisdem, load_wisdem
 
-from wisdem.glue_code.runWISDEM import run_wisdem
+this_dir = os.path.dirname(os.path.realpath(__file__))
+
+# These are the modeling and analysis options used to evaluate the designs.
+# Both of these yaml files are used for all yamls to make a fair comparison.
+fname_modeling_options_default = this_dir + os.sep + "default_modeling_options.yaml"
+fname_analysis_options_default = this_dir + os.sep + "default_analysis_options.yaml"
 
 
 def create_all_plots(
-    list_of_yamls,
-    list_of_yaml_labels,
+    list_of_sims,
+    list_of_labels,
     modeling_options,
     analysis_options,
     folder_output,
@@ -40,7 +47,7 @@ def create_all_plots(
     # Twist
     ftw, axtw = plt.subplots(1, 1, figsize=(5.3, 4))
 
-    for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
+    for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
         axtw.plot(
             yaml_data["blade.outer_shape_bem.s"],
             yaml_data["blade.outer_shape_bem.twist"] * 180.0 / np.pi,
@@ -90,7 +97,7 @@ def create_all_plots(
     # Chord
     fc, axc = plt.subplots(1, 1, figsize=(5.3, 4))
 
-    for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
+    for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
         axc.plot(
             yaml_data["blade.outer_shape_bem.s"],
             yaml_data["blade.outer_shape_bem.chord"],
@@ -108,7 +115,7 @@ def create_all_plots(
 
     chord_init = np.interp(
         s_opt_chord,
-        list_of_yamls[0]["blade.outer_shape_bem.s"],
+        list_of_sims[0]["blade.outer_shape_bem.s"],
         yaml_data["ccblade.chord"],
     )
     axc.plot(
@@ -140,7 +147,7 @@ def create_all_plots(
     # Spar caps
     fsc, axsc = plt.subplots(1, 1, figsize=(5.3, 4))
 
-    for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
+    for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
         n_layers = len(yaml_data["blade.internal_structure_2d_fem.layer_thickness"][:, 0])
         spar_ss_name = "Spar_Cap_SS"
         spar_ps_name = "Spar_Cap_PS"
@@ -166,8 +173,8 @@ def create_all_plots(
         if modeling_options["RotorSE"]["spar_cap_ss"] == spar_ss_name:
             sc_init = np.interp(
                 s_opt_sc,
-                list_of_yamls[0]["blade.outer_shape_bem.s"],
-                list_of_yamls[0]["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
+                list_of_sims[0]["blade.outer_shape_bem.s"],
+                list_of_sims[0]["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
             )
             axsc.plot(
                 s_opt_sc,
@@ -200,7 +207,7 @@ def create_all_plots(
 
     # Skins
     f, ax = plt.subplots(1, 1, figsize=(5.3, 4))
-    for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
+    for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
         ax.plot(
             yaml_data["blade.outer_shape_bem.s"],
             yaml_data["blade.internal_structure_2d_fem.layer_thickness"][1, :] * 1.0e3,
@@ -221,7 +228,7 @@ def create_all_plots(
 
     # Strains spar caps
     feps, axeps = plt.subplots(1, 1, figsize=(5.3, 4))
-    for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
+    for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
         axeps.plot(
             yaml_data["blade.outer_shape_bem.s"],
             yaml_data["rs.frame.strainU_spar"] * 1.0e6,
@@ -249,7 +256,7 @@ def create_all_plots(
 
     # Angle of attack and stall angle
     faoa, axaoa = plt.subplots(1, 1, figsize=(5.3, 4))
-    for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
+    for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
         axaoa.plot(
             yaml_data["stall_check.s"],
             yaml_data["stall_check.aoa_along_span"],
@@ -277,7 +284,7 @@ def create_all_plots(
 
     # Airfoil efficiency
     feff, axeff = plt.subplots(1, 1, figsize=(5.3, 4))
-    for idx, (yaml_data, label) in enumerate(zip(list_of_yamls, list_of_yaml_labels)):
+    for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
         axeff.plot(
             yaml_data["blade.outer_shape_bem.s"],
             yaml_data["rp.powercurve.cl_regII"] / yaml_data["rp.powercurve.cd_regII"],
@@ -297,13 +304,13 @@ def create_all_plots(
 
     def simple_plot_results(x_axis_label, y_axis_label, x_axis_data_name, y_axis_data_name, plot_filename):
         f, ax = plt.subplots(1, 1, figsize=(5.3, 4))
-        for i_yaml, yaml_data in enumerate(list_of_yamls):
+        for i_yaml, yaml_data in enumerate(list_of_sims):
             ax.plot(
                 yaml_data[x_axis_data_name],
                 yaml_data[y_axis_data_name],
                 "--",
                 color=colors[i_yaml],
-                label=list_of_yaml_labels[i_yaml],
+                label=list_of_labels[i_yaml],
             )
         ax.legend(fontsize=font_size)
         plt.xlabel(x_axis_label, fontsize=font_size + 2, fontweight="bold")
@@ -373,10 +380,10 @@ def create_all_plots(
         plt.show()
 
 
-def print_results_to_screen(list_of_yamls, list_of_yaml_labels, values_to_print):
+def print_results_to_screen(list_of_sims, list_of_labels, values_to_print):
     list_of_labels = []
     max_label_length = 1
-    for label in list_of_yaml_labels:
+    for label in list_of_labels:
         list_of_labels.append(f"{label:15.15}")
 
     case_headers = "| Data name       | " + " | ".join(list_of_labels) + " | Units          |"
@@ -396,7 +403,7 @@ def print_results_to_screen(list_of_yamls, list_of_yaml_labels, values_to_print)
         units = values_to_print[key][1]
         units_str = f" | {units}" + (15 - len(str(units))) * " " + "|"
 
-        value_sizer = list_of_yamls[0].get_val(value_name, units)
+        value_sizer = list_of_sims[0].get_val(value_name, units)
         size_of_variable = len(value_sizer)
 
         for idx in range(size_of_variable):
@@ -409,7 +416,7 @@ def print_results_to_screen(list_of_yamls, list_of_yaml_labels, values_to_print)
             name_str = f"| {augmented_key}" + (16 - len(augmented_key)) * " " + "| "
 
             list_of_values = []
-            for yaml_data in list_of_yamls:
+            for yaml_data in list_of_sims:
                 value = yaml_data.get_val(value_name, units).copy()
 
                 if len(values_to_print[key]) > 2:
@@ -424,9 +431,9 @@ def print_results_to_screen(list_of_yamls, list_of_yaml_labels, values_to_print)
     print()
 
 
-def save_lcoe_data_to_file(list_of_yamls, folder_output):
-    lcoe_data = np.zeros((8, len(list_of_yamls)))
-    for idx, yaml_data in enumerate(list_of_yamls):
+def save_lcoe_data_to_file(list_of_sims, folder_output):
+    lcoe_data = np.zeros((8, len(list_of_sims)))
+    for idx, yaml_data in enumerate(list_of_sims):
         lcoe_data[0, idx] = yaml_data["financese.turbine_number"]
         lcoe_data[1, idx] = yaml_data["financese.machine_rating"][0]
         lcoe_data[2, idx] = yaml_data["financese.tcc_per_kW"][0]
@@ -439,47 +446,7 @@ def save_lcoe_data_to_file(list_of_yamls, folder_output):
     np.savetxt(os.path.join(folder_output, "lcoe.dat"), lcoe_data)
 
 
-def main():
-    # Called only if this script is run as main.
-
-    # Set the filenames for the comparison. `yaml_filenames` is a list of the
-    # yamls you want to compare. `list_of_yaml_labels` are the labels corresponding
-    # to the yaml files that will appear on the outputted plots.
-    this_dir = os.path.dirname(os.path.realpath(__file__))
-
-    # These are the modeling and analysis options used to evaluate the designs.
-    # Both of these yaml files are used for all yamls to make a fair comparison.
-    fname_modeling_options_default = this_dir + os.sep + "default_modeling_options.yaml"
-    fname_analysis_options_default = this_dir + os.sep + "default_analysis_options.yaml"
-
-    # ======================================================================
-    # Input Information
-    # ======================================================================
-    parser = argparse.ArgumentParser()
-    parser.add_argument("yaml_files", nargs="*", type=str, help="Specify the yaml filenames to be compared.")
-    parser.add_argument(
-        "--modeling_options",
-        nargs="?",
-        type=str,
-        default=fname_modeling_options_default,
-        help="Specify the modeling options yaml.",
-    )
-    parser.add_argument(
-        "--analysis_options",
-        nargs="?",
-        type=str,
-        default=fname_analysis_options_default,
-        help="Specify the analysis options yaml.",
-    )
-    parser.add_argument("--labels", nargs="*", type=str, default=None, help="Specify the labels for the yaml files.")
-
-    args = parser.parse_args()
-    yaml_filenames = args.yaml_files
-    fname_modeling_options = args.modeling_options
-    fname_analysis_options = args.analysis_options
-    list_of_yaml_labels = args.labels
-    if list_of_yaml_labels is None:
-        list_of_yaml_labels = [f"yaml_{idx}" for idx in range(len(yaml_filenames))]
+def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
 
     # These are options for the plotting and saving
     show_plots = False  # if True, print plots to screen in addition to saving files
@@ -514,23 +481,12 @@ def main():
     if not os.path.exists(folder_output):
         os.makedirs(folder_output)
 
-    # Run WISDEM for each yaml file to compare using the modeling and analysis
-    # options set above
-    list_of_yamls = []
-    for yaml_filename in yaml_filenames:
-        print()
-        print(f"Running WISDEM for {yaml_filename}.")
-        wt_opt, modeling_options, analysis_options = run_wisdem(
-            yaml_filename, fname_modeling_options, fname_analysis_options
-        )
-        list_of_yamls.append(wt_opt)
-
     # Call the functions to print, save, and plot results
-    print_results_to_screen(list_of_yamls, list_of_yaml_labels, values_to_print)
-    save_lcoe_data_to_file(list_of_yamls, folder_output)
+    print_results_to_screen(list_of_sims, list_of_labels, values_to_print)
+    save_lcoe_data_to_file(list_of_sims, folder_output)
     create_all_plots(
-        list_of_yamls,
-        list_of_yaml_labels,
+        list_of_sims,
+        list_of_labels,
         modeling_options,
         analysis_options,
         folder_output,
@@ -538,6 +494,72 @@ def main():
         font_size,
         extension,
     )
+
+
+def main():
+    # Called only if this script is run as main.
+
+    # ======================================================================
+    # Input Information
+    # ======================================================================
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "input_files",
+        nargs="*",
+        type=str,
+        help="Specify the yaml filenames and pickled output filenames to be compared.",
+    )
+    parser.add_argument(
+        "--modeling_options",
+        nargs="?",
+        type=str,
+        default=fname_modeling_options_default,
+        help="Specify the modeling options yaml.",
+    )
+    parser.add_argument(
+        "--analysis_options",
+        nargs="?",
+        type=str,
+        default=fname_analysis_options_default,
+        help="Specify the analysis options yaml.",
+    )
+    parser.add_argument("--labels", nargs="*", type=str, default=None, help="Specify the labels for the yaml files.")
+
+    args = parser.parse_args()
+    input_filenames = args.input_files
+    fname_modeling_options = args.modeling_options
+    fname_analysis_options = args.analysis_options
+    list_of_labels = args.labels
+
+    if len(input_filenames) == 0:
+        print("ERROR: Must specify either a set of yaml files or pkl files\n")
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
+    if list_of_labels is None:
+        list_of_labels = [f"run_{idx}" for idx in range(len(input_filenames))]
+
+    list_of_sims = []
+    for input_filename in input_filenames:
+        froot = os.path.splitext(input_filename)[0]
+
+        print()
+        if os.path.exists(froot + ".yaml") and os.path.exists(froot + ".pkl"):
+            # Load in saved pickle dictionary if already ran WISDEM
+            print(f"Loading WISDEM data for {input_filename}.")
+            wt_opt, modeling_options, analysis_options = load_wisdem(froot)
+
+        else:
+            # Run WISDEM for each yaml file to compare using the modeling and analysis options set above
+            print(f"Running WISDEM for {input_filename}.")
+            wt_opt, modeling_options, analysis_options = run_wisdem(
+                input_filename, fname_modeling_options, fname_analysis_options
+            )
+
+        list_of_sims.append(wt_opt)
+
+    run(list_of_sims, list_of_labels, modeling_options, analysis_options)
+    sys.exit(0)
 
 
 if __name__ == "__main__":

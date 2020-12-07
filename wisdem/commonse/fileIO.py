@@ -1,8 +1,9 @@
 import os
 import pickle
+
 import numpy as np
-import scipy.io as sio
 import pandas as pd
+import scipy.io as sio
 
 
 def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
@@ -10,8 +11,8 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
     froot = os.path.splitext(fname)[0]
 
     # Get all OpenMDAO inputs and outputs into a dictionary
-    var_dict = prob.model.list_inputs(values=True, prom_name=False, units=True, out_stream=None)
-    out_dict = prob.model.list_outputs(values=True, prom_name=False, units=True, out_stream=None)
+    var_dict = prob.model.list_inputs(values=True, prom_name=True, units=True, out_stream=None)
+    out_dict = prob.model.list_outputs(values=True, prom_name=True, units=True, out_stream=None)
     var_dict.extend(out_dict)
 
     # Pickle the full archive so that we can load it back in if we need
@@ -81,7 +82,9 @@ def load_data(fname, prob):
     # Store into Problem object
     for k in range(len(var_dict)):
         iname = var_dict[k][0]
+        iname2 = var_dict[k][1]["prom_name"]
         value = var_dict[k][1]["value"]
-        prob[iname] = value
+        prob.set_val(iname, value)
+        prob.set_val(iname2, value)
 
     return prob

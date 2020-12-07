@@ -1,5 +1,5 @@
 .. _refturb_tutorial-label:
-  
+
 2. Running the NREL 5-MW and IEA Wind 15-MW Reference Wind Turbines
 -------------------------------------------------------------------
 
@@ -113,3 +113,30 @@ Some helpful summary information is printed to the screen.  More detailed output
     refturb_output.pkl
     refturb_output.xlsx
     refturb_output.yaml
+    refturb_output-modeling.yaml
+    refturb_output-analysis.yaml
+
+
++-----------+-------------------------+
+| Extension | Description             |
++===========+=========================+
+| ``.mat``  | MatLab output format    |
++-----------+-------------------------+
+| ``.npz``  | Archive of NumPy arrays |
++-----------+-------------------------+
+| ``.pkl``  | Python Pickle format    |
++-----------+-------------------------+
+| ``.xlsx`` | Microsoft Excel format  |
++-----------+-------------------------+
+| ``.yaml`` | YAML format             |
++-----------+-------------------------+
+
+As an example, the ``sample_plot.py`` script plots Axial Induction versus Blade Nondimensional Span by extracting the values from the Python pickle file.  The script content is:
+
+
+.. literalinclude:: ../../../examples/02_reference_turbines/sample_plot.py
+    :language: python
+
+This script generates the following plot:
+
+.. figure:: /images/yaml/first_steps_first_plot.png
