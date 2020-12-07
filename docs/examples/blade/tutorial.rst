@@ -8,10 +8,10 @@ All of the iterations use the same geometry input file, ``blade.yaml``, which de
 This blade uses glass fiber-reinforced polymer inn the spar cap design.  The same ``modeling_options.yaml`` file is also common to all iterations and shows that all modules are called, the airfoil polars are discretized at 200 angles of attack, etc.
 
 
-Baeline Design
-===============================
+Baseline Design
+===============
 
-Whenever conducting a design optimization, it is helpful to first run the starting point design and evaluate the baeline performance. The file, ``analysis_options_no_opt.yaml``, does not have any optimization variables activated and is meant for this purpose.  Outputs are generated in the ``outputs`` directory.
+Whenever conducting a design optimization, it is helpful to first run the starting point design and evaluate the baseline performance. The file, ``analysis_options_no_opt.yaml``, does not have any optimization variables activated and is meant for this purpose.  Outputs are generated in the ``outputs`` directory.
 
 .. code-block:: bash
 
