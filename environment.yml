@@ -7,7 +7,7 @@ dependencies:
   - pytest
   - pytest-cov
   - coveralls
-  - openmdao=3.4.0
+  - openmdao
   - jsonschema
   - ruamel_yaml
   - pyyaml

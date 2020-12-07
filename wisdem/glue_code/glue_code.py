@@ -1,7 +1,10 @@
 import numpy as np
 import openmdao.api as om
 from wisdem.towerse.tower import TowerSE
-from wisdem.orbit.api.wisdem import Orbit
+try:
+    from wisdem.orbit.api.wisdem import Orbit
+except ImportError:
+    print('WARNING: Be sure to pip install simpy and marmot-agents for offshore BOS runs')
 from wisdem.rotorse.rotor_power import RotorPower, NoStallConstraint
 from wisdem.glue_code.gc_RunTools import Outputs_2_Screen, Convergence_Trends_Opt
 from wisdem.commonse.turbine_class import TurbineClass
