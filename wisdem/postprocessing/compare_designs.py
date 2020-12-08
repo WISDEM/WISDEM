@@ -65,7 +65,7 @@ def create_all_plots(
 
     axtw.plot(
         s_opt_twist,
-        np.array(analysis_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["lower_bound"])
+        np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["lower_bound"])
         * 180.0
         / np.pi,
         ":o",
@@ -75,7 +75,7 @@ def create_all_plots(
     )
     axtw.plot(
         s_opt_twist,
-        np.array(analysis_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["upper_bound"])
+        np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["upper_bound"])
         * 180.0
         / np.pi,
         ":o",
@@ -120,7 +120,7 @@ def create_all_plots(
     )
     axc.plot(
         s_opt_chord,
-        np.array(analysis_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["min_gain"]) * chord_init,
+        np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["min_gain"]) * chord_init,
         ":o",
         color=colors[idx + 1],
         markersize=3,
@@ -128,7 +128,7 @@ def create_all_plots(
     )
     axc.plot(
         s_opt_chord,
-        np.array(analysis_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["max_gain"]) * chord_init,
+        np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["max_gain"]) * chord_init,
         ":o",
         color=colors[idx + 1],
         markersize=3,
@@ -178,7 +178,7 @@ def create_all_plots(
             )
             axsc.plot(
                 s_opt_sc,
-                np.array(analysis_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["min_gain"])
+                np.array(analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["min_gain"])
                 * sc_init,
                 ":o",
                 color=colors[idx + 1],
@@ -187,7 +187,7 @@ def create_all_plots(
             )
             axsc.plot(
                 s_opt_sc,
-                np.array(analysis_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["max_gain"])
+                np.array(analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["max_gain"])
                 * sc_init,
                 ":o",
                 color=colors[idx + 1],

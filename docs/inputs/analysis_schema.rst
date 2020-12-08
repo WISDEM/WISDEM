@@ -25,7 +25,7 @@ general
 
 
 
-optimization_variables
+design_variables
 ****************************************
 
 

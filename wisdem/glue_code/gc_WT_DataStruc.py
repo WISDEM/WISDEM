@@ -526,27 +526,27 @@ class Blade(om.Group):
         # Optimization parameters initialized as indipendent variable component
         opt_var = om.IndepVarComp()
         opt_var.add_output(
-            "s_opt_twist", val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
+            "s_opt_twist", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
         )
         opt_var.add_output(
-            "s_opt_chord", val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
+            "s_opt_chord", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
         )
         opt_var.add_output(
             "twist_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
         )
         opt_var.add_output(
             "chord_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
         opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
         opt_var.add_output(
             "spar_cap_ss_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
         )
         opt_var.add_output(
             "spar_cap_ps_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
         )
         self.add_subsystem("opt_var", opt_var)
 

@@ -2,7 +2,7 @@ general:
     folder_output: outputs_struct
     fname_output: blade_out
 
-optimization_variables:
+design_variables:
     rotor_diameter:
         flag: False
         minimum: 190

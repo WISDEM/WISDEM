@@ -16,7 +16,7 @@ properties:
                 type: string
                 default: output
                 description: File prefix for output files
-    optimization_variables:
+    design_variables:
         type: object
         default: {}
         description: Sets the design variables in a design optimization and analysis
