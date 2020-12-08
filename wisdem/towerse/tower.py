@@ -519,6 +519,8 @@ class TowerMass(om.ExplicitComponent):
         Height of foundation (0.0 for land, -water_depth for fixed bottom)
     z_full : numpy array[nFull], [m]
         Parameterized locations along tower, linear lofting between
+    d_full : numpy array[nFull], [m]
+        diameter along tower
 
     Returns
     -------
@@ -563,6 +565,7 @@ class TowerMass(om.ExplicitComponent):
         self.add_input("gravity_foundation_mass", 0.0, units="kg")
         self.add_input("foundation_height", 0.0, units="m")
         self.add_input("z_full", val=np.zeros(nFull), units="m")
+        self.add_input("d_full", val=np.zeros(nFull), units="m")
 
         self.add_output("structural_cost", val=0.0, units="USD")
         self.add_output("structural_mass", val=0.0, units="kg")
@@ -574,35 +577,46 @@ class TowerMass(om.ExplicitComponent):
         self.add_output("monopile_mass", val=0.0, units="kg")
         self.add_output("monopile_cost", val=0.0, units="USD")
         self.add_output("monopile_length", val=0.0, units="m")
+        self.add_output("transition_piece_I", np.zeros(6), units="kg*m**2")
+        self.add_output("gravity_foundation_I", np.zeros(6), units="kg*m**2")
 
     def compute(self, inputs, outputs):
+        # Unpack inputs
+        z = inputs["z_full"]
+        d = inputs["d_full"]
+        z_found = inputs["foundation_height"]
+        z_trans = inputs["transition_piece_height"]
+        m_trans = inputs["transition_piece_mass"]
+        m_grav = inputs["gravity_foundation_mass"]
+        m_cyl = inputs["cylinder_mass"]
+
         outputs["structural_cost"] = inputs["cylinder_cost"] + inputs["transition_piece_cost"]
-        outputs["structural_mass"] = (
-            inputs["cylinder_mass"].sum() + inputs["transition_piece_mass"] + inputs["gravity_foundation_mass"]
-        )
+        outputs["structural_mass"] = m_cyl.sum() + m_trans + m_grav
         outputs["tower_center_of_mass"] = (
-            inputs["cylinder_center_of_mass"] * inputs["cylinder_mass"].sum()
-            + inputs["transition_piece_mass"] * inputs["transition_piece_height"]
-            + inputs["gravity_foundation_mass"] * inputs["foundation_height"]
-        ) / (inputs["cylinder_mass"].sum() + inputs["transition_piece_mass"] + inputs["gravity_foundation_mass"])
+            inputs["cylinder_center_of_mass"] * m_cyl.sum() + m_trans * z_trans + m_grav * z_found
+        ) / (m_cyl.sum() + m_trans + m_grav)
         outputs["tower_section_center_of_mass"] = inputs["cylinder_section_center_of_mass"]
 
-        outputs["monopile_mass"], dydx, dydxp, dydyp = interp_with_deriv(
-            inputs["transition_piece_height"], inputs["z_full"], np.r_[0.0, np.cumsum(inputs["cylinder_mass"])]
-        )
+        outputs["monopile_mass"], dydx, dydxp, dydyp = interp_with_deriv(z_trans, z, np.r_[0.0, np.cumsum(m_cyl)])
         outputs["monopile_cost"] = (
-            inputs["cylinder_cost"] * outputs["monopile_mass"] / inputs["cylinder_mass"].sum()
-            + inputs["transition_piece_cost"]
+            inputs["cylinder_cost"] * outputs["monopile_mass"] / m_cyl.sum() + inputs["transition_piece_cost"]
         )
-        outputs["monopile_mass"] += inputs["transition_piece_mass"] + inputs["gravity_foundation_mass"]
-        outputs["monopile_length"] = inputs["transition_piece_height"] - inputs["z_full"][0]
+        outputs["monopile_mass"] += m_trans + m_grav
+        outputs["monopile_length"] = z_trans - z[0]
 
         outputs["tower_cost"] = outputs["structural_cost"] - outputs["monopile_cost"]
         outputs["tower_mass"] = outputs["structural_mass"] - outputs["monopile_mass"]
         outputs["tower_I_base"] = inputs["cylinder_I_base"]
-        outputs["tower_I_base"][:2] += (
-            inputs["transition_piece_mass"] * (inputs["transition_piece_height"] - inputs["foundation_height"]) ** 2
-        )
+        outputs["tower_I_base"][:2] += m_trans * (z_trans - z_found) ** 2
+
+        # Mass properties for transition piece and gravity foundation
+        itrans = find_nearest(z, z_trans)
+        r_trans = 0.5 * d[itrans]
+        r_grav = 0.5 * d[0]
+        I_trans = m_trans * r_trans ** 2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]  # shell
+        I_grav = m_grav * r_grav ** 2.0 * np.r_[0.25, 0.25, 0.5, np.zeros(3)]  # disk
+        outputs["transition_piece_I"] = I_trans
+        outputs["gravity_foundation_I"] = I_grav
 
 
 class TurbineMass(om.ExplicitComponent):
@@ -690,8 +704,6 @@ class TowerPreFrame(om.ExplicitComponent):
     ----------
     z_full : numpy array[nFull], [m]
         location along tower. start at bottom and go to top
-    d_full : numpy array[nFull], [m]
-        diameter along tower
     mass : float, [kg]
         added mass
     mI : numpy array[6], [kg*m**2]
@@ -777,7 +789,6 @@ class TowerPreFrame(om.ExplicitComponent):
         nFull = get_nfull(n_height)
 
         self.add_input("z_full", np.zeros(nFull), units="m")
-        self.add_input("d_full", np.zeros(nFull), units="m")
 
         # extra mass
         self.add_input("mass", 0.0, units="kg")
@@ -859,17 +870,14 @@ class TowerPreFrame(om.ExplicitComponent):
     def compute(self, inputs, outputs):
         n_height = self.options["n_height"]
         nFull = get_nfull(n_height)
-        d = inputs["d_full"]
         z = inputs["z_full"]
 
         # Prepare RNA, transition piece, and gravity foundation (if any applicable) for "extra node mass"
         itrans = find_nearest(z, inputs["transition_piece_height"])
-        rtrans = 0.5 * d[itrans]
         mtrans = inputs["transition_piece_mass"]
-        Itrans = mtrans * rtrans ** 2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]  # shell
-        rgrav = 0.5 * d[0]
+        Itrans = inputs["transition_piece_I"]
         mgrav = inputs["gravity_foundation_mass"]
-        Igrav = mgrav * rgrav ** 2.0 * np.r_[0.25, 0.25, 0.5, np.zeros(3)]  # disk
+        Igrav = inputs["gravity_foundation_I"]
         # Note, need len()-1 because Frame3DD crashes if mass add at end
         outputs["midx"] = np.array([nFull - 1, itrans, 0], dtype=np.int_)
         outputs["m"] = np.array([inputs["mass"], mtrans, mgrav]).flatten()
@@ -1271,16 +1279,19 @@ class TowerLeanSE(om.Group):
             TowerMass(n_height=n_height),
             promotes=[
                 "z_full",
+                "d_full",
                 "tower_mass",
                 "tower_center_of_mass",
                 "tower_section_center_of_mass",
                 "tower_I_base",
                 "tower_cost",
                 "gravity_foundation_mass",
+                "gravity_foundation_I",
                 "foundation_height",
                 "transition_piece_mass",
                 "transition_piece_cost",
                 "transition_piece_height",
+                "transition_piece_I",
                 "monopile_mass",
                 "monopile_cost",
                 "monopile_length",
@@ -1432,7 +1443,6 @@ class TowerSE(om.Group):
                     "transition_piece_height",
                     "gravity_foundation_mass",
                     "z_full",
-                    "d_full",
                     ("mass", "rna_mass"),
                     ("mrho", "rna_cg"),
                     ("mI", "rna_I"),
