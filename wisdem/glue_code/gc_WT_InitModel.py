@@ -963,6 +963,10 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
             wt_opt["mooring.nodes_location"][i, :] = mooring["nodes"][i]["location"]
         else:
             wt_opt["mooring.nodes_joint_name"][i] = mooring["nodes"][i]["joint"]
+        wt_opt["mooring.nodes_mass"][i] = mooring["nodes"][i]["node_mass"]
+        wt_opt["mooring.nodes_volume"][i] = mooring["nodes"][i]["node_volume"]
+        wt_opt["mooring.nodes_drag_area"][i] = mooring["nodes"][i]["drag_area"]
+        wt_opt["mooring.nodes_added_mass"][i] = mooring["nodes"][i]["added_mass"]
     for i in range(n_lines):
         wt_opt["mooring.unstretched_length"][i] = mooring["lines"][i]["unstretched_length"]
     for i in range(n_line_types):

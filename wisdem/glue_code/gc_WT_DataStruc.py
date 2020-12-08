@@ -1969,6 +1969,10 @@ class Mooring(om.Group):
 
         ivc.add_discrete_output("node_names", val=[""] * n_nodes)
         ivc.add_output("nodes_location", val=np.zeros((n_nodes, 3)), units="m")
+        ivc.add_output("nodes_mass", val=np.zeros(n_nodes), units="kg")
+        ivc.add_output("nodes_volume", val=np.zeros(n_nodes), units="m**3")
+        ivc.add_output("nodes_added_mass", val=np.zeros(n_nodes))
+        ivc.add_output("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
         ivc.add_discrete_output("nodes_joint_name", val=[""] * n_nodes)
         ivc.add_discrete_output("line_id", val=[""] * n_lines)
         ivc.add_output("unstretched_length", val=np.zeros(n_lines), units="m")
