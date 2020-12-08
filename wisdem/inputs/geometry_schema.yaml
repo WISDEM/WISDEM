@@ -2084,8 +2084,7 @@ properties:
                     type: integer
                     description: Flag used by the NREL blade cost model https://www.nrel.gov/docs/fy19osti/73585.pdf to define the manufacturing process behind the laminate. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
                     unit: none
-                    minimum : 0
-                    maximum: 5
+                    enum: [0,1,2,3,4,5]
                 waste:
                     type: number
                     description: Fraction of material that ends up wasted during manufacturing. This quantity is used in the NREL blade cost model https://www.nrel.gov/docs/fy19osti/73585.pdf
