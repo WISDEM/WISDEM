@@ -459,10 +459,10 @@ class WindTurbineOntologyPython(object):
         if "opt_flag" in self.analysis_options["driver"]:
             self.analysis_options["opt_flag"] = self.analysis_options["driver"]["opt_flag"]
         else:
-            self.analysis_options["opt_flag"] = recursive_flag(self.analysis_options["optimization_variables"])
+            self.analysis_options["opt_flag"] = recursive_flag(self.analysis_options["design_variables"])
 
         # If not an optimization DV, then the number of points should be same as the discretization
-        blade_opt_options = self.analysis_options["optimization_variables"]["blade"]
+        blade_opt_options = self.analysis_options["design_variables"]["blade"]
         if not blade_opt_options["aero_shape"]["twist"]["flag"]:
             blade_opt_options["aero_shape"]["twist"]["n_opt"] = self.modeling_options["RotorSE"]["n_span"]
         elif blade_opt_options["aero_shape"]["twist"]["n_opt"] < 4:

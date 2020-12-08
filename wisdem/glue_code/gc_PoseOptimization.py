@@ -13,12 +13,12 @@ class PoseOptimization(object):
         # Determine the number of design variables
         n_DV = 0
 
-        rotorD_opt = self.opt["optimization_variables"]["rotor_diameter"]
-        blade_opt = self.opt["optimization_variables"]["blade"]
-        tower_opt = self.opt["optimization_variables"]["tower"]
-        mono_opt = self.opt["optimization_variables"]["monopile"]
-        hub_opt = self.opt["optimization_variables"]["hub"]
-        drive_opt = self.opt["optimization_variables"]["drivetrain"]
+        rotorD_opt = self.opt["design_variables"]["rotor_diameter"]
+        blade_opt = self.opt["design_variables"]["blade"]
+        tower_opt = self.opt["design_variables"]["tower"]
+        mono_opt = self.opt["design_variables"]["monopile"]
+        hub_opt = self.opt["design_variables"]["hub"]
+        drive_opt = self.opt["design_variables"]["drivetrain"]
 
         if rotorD_opt["flag"]:
             n_DV += 1
@@ -35,11 +35,11 @@ class PoseOptimization(object):
             and not blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
         ):
             n_DV += blade_opt["structure"]["spar_cap_ps"]["n_opt"] - 2
-        if self.opt["optimization_variables"]["control"]["tsr"]["flag"]:
+        if self.opt["design_variables"]["control"]["tsr"]["flag"]:
             n_DV += 1
-        # if self.opt["optimization_variables"]["control"]["servo"]["pitch_control"]["flag"]:
+        # if self.opt["design_variables"]["control"]["servo"]["pitch_control"]["flag"]:
         #    n_DV += 2
-        # if self.opt["optimization_variables"]["control"]["servo"]["torque_control"]["flag"]:
+        # if self.opt["design_variables"]["control"]["servo"]["torque_control"]["flag"]:
         #    n_DV += 2
         if tower_opt["outer_diameter"]["flag"]:
             n_DV += self.modeling["TowerSE"]["n_height_tower"]
@@ -195,13 +195,13 @@ class PoseOptimization(object):
     def set_design_variables(self, wt_opt, wt_init):
 
         # Set optimization design variables.
-        rotorD_opt = self.opt["optimization_variables"]["rotor_diameter"]
-        blade_opt = self.opt["optimization_variables"]["blade"]
-        tower_opt = self.opt["optimization_variables"]["tower"]
-        monopile_opt = self.opt["optimization_variables"]["monopile"]
-        control_opt = self.opt["optimization_variables"]["control"]
-        hub_opt = self.opt["optimization_variables"]["hub"]
-        drive_opt = self.opt["optimization_variables"]["drivetrain"]
+        rotorD_opt = self.opt["design_variables"]["rotor_diameter"]
+        blade_opt = self.opt["design_variables"]["blade"]
+        tower_opt = self.opt["design_variables"]["tower"]
+        monopile_opt = self.opt["design_variables"]["monopile"]
+        control_opt = self.opt["design_variables"]["control"]
+        hub_opt = self.opt["design_variables"]["hub"]
+        drive_opt = self.opt["design_variables"]["drivetrain"]
 
         if rotorD_opt["flag"]:
             wt_opt.model.add_design_var(
@@ -357,7 +357,7 @@ class PoseOptimization(object):
         return wt_opt
 
     def set_constraints(self, wt_opt):
-        blade_opt = self.opt["optimization_variables"]["blade"]
+        blade_opt = self.opt["design_variables"]["blade"]
 
         # Set non-linear blade constraints
         blade_constr = self.opt["constraints"]["blade"]
@@ -435,7 +435,7 @@ class PoseOptimization(object):
             or self.opt["constraints"]["blade"]["match_cl_cd"]["flag_cd"]
         ):
             data_target = np.loadtxt(self.opt["constraints"]["blade"]["match_cl_cd"]["filename"])
-            eta_opt = np.linspace(0.0, 1.0, self.opt["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
+            eta_opt = np.linspace(0.0, 1.0, self.opt["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
             target_cl = np.interp(eta_opt, data_target[:, 0], data_target[:, 3])
             target_cd = np.interp(eta_opt, data_target[:, 0], data_target[:, 4])
             eps_cl = 1.0e-2
@@ -448,7 +448,7 @@ class PoseOptimization(object):
             or self.opt["constraints"]["blade"]["match_L_D"]["flag_D"]
         ):
             data_target = np.loadtxt(self.opt["constraints"]["blade"]["match_L_D"]["filename"])
-            eta_opt = np.linspace(0.0, 1.0, self.opt["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
+            eta_opt = np.linspace(0.0, 1.0, self.opt["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
             target_L = np.interp(eta_opt, data_target[:, 0], data_target[:, 7])
             target_D = np.interp(eta_opt, data_target[:, 0], data_target[:, 8])
         eps_L = 1.0e2
@@ -545,7 +545,7 @@ class PoseOptimization(object):
         return wt_opt
 
     def set_initial(self, wt_opt, wt_init):
-        blade_opt = self.opt["optimization_variables"]["blade"]
+        blade_opt = self.opt["design_variables"]["blade"]
 
         if self.modeling["flags"]["blade"]:
             wt_opt["blade.opt_var.s_opt_twist"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["twist"]["n_opt"])

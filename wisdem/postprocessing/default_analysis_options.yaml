@@ -3,7 +3,7 @@ general:
     folder_output: outputs
     fname_output: refturb_output
 
-optimization_variables:
+design_variables:
     rotor_diameter:
         flag: False
         minimum: 190
