@@ -2451,5 +2451,5 @@ class WT_Assembly(om.ExplicitComponent):
                     0, 2
                 ]
             else:
-                outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2]
+                outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]
