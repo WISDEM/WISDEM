@@ -485,9 +485,7 @@ components:
                     grid: *grid_tower
                     values: [0.041058, 0.039496, 0.039496, 0.036456, 0.036456, 0.033779, 0.033779, 0.032192, 0.032192, 0.030708, 0.030708, 0.029101, 0.029101, 0.027213, 0.027213, 0.024009, 0.024009, 0.020826, 0.020826, 0.023998, 0.023998]
     monopile:
-        transition_piece_height: 15.0
         transition_piece_mass: 100e3
-        suctionpile_depth: 45.0
         outer_shape_bem:
             reference_axis:  &ref_axis_mono
                 x:

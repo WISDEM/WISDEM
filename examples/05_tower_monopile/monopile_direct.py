@@ -106,6 +106,7 @@ prob.setup()
 prob["hub_height"] = hubH
 prob["foundation_height"] = -water_depth
 
+prob["tower_foundation_height"] = htrans
 prob["tower_height"] = h_paramT.sum()
 prob["tower_s"] = np.cumsum(np.r_[0.0, h_paramT]) / h_paramT.sum()
 prob["tower_outer_diameter_in"] = d_paramT
@@ -113,8 +114,8 @@ prob["tower_layer_thickness"] = t_paramT.reshape((1, -1))
 prob["tower_outfitting_factor"] = 1.07
 
 prob["transition_piece_mass"] = 100e3
-prob["transition_piece_height"] = htrans
 
+prob["monopile_foundation_height"] = -55.0
 prob["monopile_height"] = h_paramM.sum()
 prob["monopile_s"] = np.cumsum(np.r_[0.0, h_paramM]) / h_paramM.sum()
 prob["monopile_outer_diameter_in"] = d_paramM
@@ -124,8 +125,6 @@ prob["monopile_outfitting_factor"] = 1.07
 prob["yaw"] = 0.0
 
 # offshore specific
-prob["suctionpile_depth"] = pile_depth
-prob["suctionpile_depth_diam_ratio"] = 0.0  # 3.25
 prob["G_soil"] = 140e6
 prob["nu_soil"] = 0.4
 

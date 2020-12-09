@@ -197,11 +197,10 @@ class DiscretizationYAML(om.ExplicitComponent):
             pile = h_mon - fh_tow - water_depth
             outputs["suctionpile_depth"] = pile
             # Ensure that we have only one segment for pile, a current limitation
-            s1 = pile / h_mon
-            icheck = np.where(s_mon > s1 + 1e-3)[0][0]
-            if icheck > 2:
-                s_mon = [0.0, np.linspace(s1, s_mon[icheck], icheck), s_mon[(icheck + 1) :]]
-            print(s_mon.size, inputs["monopile_s"].size)
+            if pile > 0:
+                s1 = pile / h_mon
+                icheck = np.where(s_mon > s1 + 1e-3)[0][0]
+                s_mon = np.r_[0.0, np.linspace(s1, s_mon[icheck], icheck).flatten(), s_mon[(icheck + 1) :].flatten()]
 
             # Last monopile point and first tower point are the same
             outputs["tower_section_height"] = np.r_[np.diff(h_mon * s_mon), np.diff(h_tow * s_tow)]
@@ -254,6 +253,7 @@ class DiscretizationYAML(om.ExplicitComponent):
             twall = inputs["tower_layer_thickness"]
             layer_mat = discrete_inputs["tower_layer_materials"]
             outputs["z_start"] = fh_tow
+            outputs["suctionpile_depth"] = 0.0
 
         # Check to make sure we have good values
         if np.any(outputs["tower_section_height"] <= 0.0):
@@ -1294,7 +1294,6 @@ class TowerLeanSE(om.Group):
         self.connect("cm.center_of_mass", "tm.cylinder_center_of_mass")
         self.connect("cm.section_center_of_mass", "tm.cylinder_section_center_of_mass")
         self.connect("cm.I_base", "tm.cylinder_I_base")
-        self.connect("tower_outer_diameter", "monopile_base_diameter", src_indices=[0])
 
 
 class TowerSE(om.Group):
