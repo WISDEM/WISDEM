@@ -80,12 +80,6 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         mooring = wt_init["components"]["mooring"]
         wt_opt = assign_mooring_values(wt_opt, modeling_options, mooring)
 
-    if modeling_options["flags"]["foundation"]:
-        foundation = wt_init["components"]["foundation"]
-        wt_opt = assign_foundation_values(wt_opt, foundation)
-    else:
-        foundation = {}
-
     if modeling_options["flags"]["bos"]:
         bos = wt_init["bos"]
         wt_opt = assign_bos_values(wt_opt, bos, offshore)
@@ -886,13 +880,6 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
     wt_opt["monopile.gravity_foundation_mass"] = monopile["gravity_foundation_mass"]
     wt_opt["monopile.suctionpile_depth"] = monopile["suctionpile_depth"]
     wt_opt["monopile.suctionpile_depth_diam_ratio"] = monopile["suctionpile_depth_diam_ratio"]
-
-    return wt_opt
-
-
-def assign_foundation_values(wt_opt, foundation):
-
-    wt_opt["foundation.height"] = foundation["height"]
 
     return wt_opt
 

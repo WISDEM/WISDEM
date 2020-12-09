@@ -88,7 +88,6 @@ properties:
             - nacelle
             - tower
             - monopile
-            - foundation
             - floating_platform
             - mooring
             - RNA
@@ -1176,17 +1175,6 @@ properties:
                                                     $ref: "#/definitions/distributed_data/grid_nd"
                                                 values:
                                                     $ref: "#/definitions/distributed_data/length"
-            foundation:
-                type: object
-                required:
-                    - height
-                properties:
-                    height:
-                        type: number
-                        description: Height of the onshore foundation above ground, always defined positive.
-                        unit: meter
-                        minimum: -1000
-                        maximum: 100
             floating_platform:
                 description: Ontology definition for floating platforms (substructures) suitable for use with the WEIS co-design analysis tool
                 type: object
