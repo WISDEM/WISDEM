@@ -105,6 +105,7 @@ prob.setup()
 
 # Set geometry and turbine values
 prob["hub_height"] = hubH
+prob["water_depth"] = water_depth
 
 prob["tower_foundation_height"] = htrans
 prob["tower_height"] = h_paramT.sum()
