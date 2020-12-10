@@ -495,6 +495,9 @@ class PoseOptimization(object):
         if tower_constr["slope"]["flag"] or monopile_constr["slope"]["flag"]:
             wt_opt.model.add_constraint("towerse.slope", upper=1.0)
 
+        if monopile_constr["pile_depth"]["flag"]:
+            wt_opt.model.add_constraint("towerse.suctionpile_depth", lower=monopile_constr["pile_depth"]["lower_bound"])
+
         if tower_constr["frequency"]["flag"]:
             wt_opt.model.add_constraint("tcons.constr_tower_f_1Pmargin", upper=0.0)
             wt_opt.model.add_constraint("tcons.constr_tower_f_NPmargin", upper=0.0)

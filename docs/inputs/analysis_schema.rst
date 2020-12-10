@@ -1547,15 +1547,15 @@ monopile
 ########################################
 
 
-Constraints associated with the tower design
+Constraints associated with the monopile design
 
 
 
-height_constraint
+pile_depth
 ========================================
 
 
-Double-sided constraint to ensure total tower height meets target hub height when adjusting section heights
+Ensures that the submerged suction pile depth meets a minimum value
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
@@ -1565,17 +1565,9 @@ Double-sided constraint to ensure total tower height meets target hub height whe
 :code:`lower_bound` : Float, m
 
 
-    *Default* = 0.01
+    *Default* = 0.0
 
-    *Minimum* = 1e-06    *Maximum* = 10.0
-
-
-:code:`upper_bound` : Float, m
-
-
-    *Default* = 0.01
-
-    *Minimum* = 1e-06    *Maximum* = 10.0
+    *Minimum* = 0.0    *Maximum* = 200.0
 
 
 

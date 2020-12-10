@@ -94,6 +94,7 @@ if opt_flag:
     prob.model.add_constraint("constr_d_to_t", lower=120.0, upper=500.0)
     prob.model.add_constraint("constr_taper", lower=0.2)
     prob.model.add_constraint("slope", upper=1.0)
+    prob.model.add_constraint("suctionpile_depth", lower=0.0)
     prob.model.add_constraint("tower1.f1", lower=0.13, upper=0.40)
     prob.model.add_constraint("tower2.f1", lower=0.13, upper=0.40)
     # ---
