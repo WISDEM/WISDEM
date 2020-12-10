@@ -21,6 +21,8 @@ def find_nearest(array, value):
     return (np.abs(array - value)).argmin()
 
 
+NPTS_SOIL = 10
+
 # -----------------
 #  Components
 # -----------------
@@ -770,10 +772,11 @@ class TowerPreFrame(om.ExplicitComponent):
         self.add_input("rna_M", np.zeros(3), units="N*m")
 
         # Monopile handling
-        self.add_input("k_monopile", np.zeros(6), units="N/m")
+        self.add_input("z_soil", np.zeros(NPTS_SOIL), units="N/m")
+        self.add_input("k_soil", np.zeros((NPTS_SOIL, 6)), units="N/m")
 
         # spring reaction data.
-        nK = 1
+        nK = 4 if self.options["monopile"] else 1
         self.add_output("kidx", np.zeros(nK, dtype=np.int_))
         self.add_output("kx", np.zeros(nK), units="N/m")
         self.add_output("ky", np.zeros(nK), units="N/m")
@@ -870,16 +873,28 @@ class TowerPreFrame(om.ExplicitComponent):
         outputs["Mzz"] = np.array([inputs["rna_M"][2]]).flatten()
 
         # Prepare for reactions: rigid at tower base
-        outputs["kidx"] = np.array([0], dtype=np.int_)
-        if self.options["monopile"]:
-            kmono = inputs["k_monopile"]
-            outputs["kx"] = np.array([kmono[0]])
-            outputs["ky"] = np.array([kmono[2]])
-            outputs["kz"] = np.array([kmono[4]])
-            outputs["ktx"] = np.array([kmono[1]])
-            outputs["kty"] = np.array([kmono[3]])
-            outputs["ktz"] = np.array([kmono[5]])
+        if self.options["monopile"] and mgrav == 0.0:
+            z_soil = inputs["z_soil"]
+            k_soil = inputs["k_soil"]
+            z_pile = z[z <= (z[0] + 1e-1 + np.abs(z_soil[0]))]
+            if z_pile.size != 4:
+                print(z_soil)
+                print(z)
+                print(z_pile)
+                raise ValueError("Please use only one section for submerged pile for now")
+            k_mono = np.zeros((z_pile.size, 6))
+            for k in range(6):
+                k_mono[:, k] = np.interp(z_pile + np.abs(z_soil[0]), z_soil, k_soil[:, k])
+            outputs["kidx"] = np.arange(len(z_pile), dtype=np.int_)
+            outputs["kx"] = np.array([k_mono[:, 0]])
+            outputs["ky"] = np.array([k_mono[:, 2]])
+            outputs["kz"] = np.zeros(k_mono.shape[0])
+            outputs["kz"][0] = np.array([k_mono[0, 4]])
+            outputs["ktx"] = np.array([k_mono[:, 1]])
+            outputs["kty"] = np.array([k_mono[:, 3]])
+            outputs["ktz"] = np.array([k_mono[:, 5]])
         else:
+            outputs["kidx"] = np.array([0], dtype=np.int_)
             outputs["kx"] = np.array([RIGID])
             outputs["ky"] = np.array([RIGID])
             outputs["kz"] = np.array([RIGID])
@@ -916,8 +931,8 @@ class TowerPostFrame(om.ExplicitComponent):
         shear stress in tower elements
     hoop_stress : numpy array[nFull-1], [N/m**2]
         hoop stress in tower elements
-    top_deflection_in : float, [m]
-        Deflection of tower top in yaw-aligned +x direction
+    tower_deflection_in : numpy array[nFull], [m]
+        Deflection of tower nodes in yaw-aligned +x direction
     life : float
         fatigue life of tower
     freqs : numpy array[NFREQ], [Hz]
@@ -945,6 +960,8 @@ class TowerPostFrame(om.ExplicitComponent):
     side_side_modes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the tower side-side direction
         (without constant term)
+    tower_deflection : numpy array[nFull], [m]
+        Deflection of tower nodes in yaw-aligned +x direction
     top_deflection : float, [m]
         Deflection of tower top in yaw-aligned +x direction
     stress : numpy array[nFull-1]
@@ -997,7 +1014,7 @@ class TowerPostFrame(om.ExplicitComponent):
         self.add_input("axial_stress", val=np.zeros(nFull - 1), units="N/m**2")
         self.add_input("shear_stress", val=np.zeros(nFull - 1), units="N/m**2")
         self.add_input("hoop_stress", val=np.zeros(nFull - 1), units="N/m**2")
-        self.add_input("top_deflection_in", 0.0, units="m")
+        self.add_input("tower_deflection_in", val=np.zeros(nFull), units="m")
 
         # safety factors
         # self.add_input('gamma_f', 1.35, desc='safety factor on loads')
@@ -1058,6 +1075,9 @@ class TowerPostFrame(om.ExplicitComponent):
             np.zeros(NFREQ2),
             desc="Frequencies associated with mode shapes in the tower side-side direction",
         )
+        self.add_output(
+            "tower_deflection", np.zeros(nFull), units="m", desc="Deflection of tower top in yaw-aligned +x direction"
+        )
         self.add_output("top_deflection", 0.0, units="m", desc="Deflection of tower top in yaw-aligned +x direction")
         self.add_output(
             "stress",
@@ -1086,15 +1106,14 @@ class TowerPostFrame(om.ExplicitComponent):
             ["axial_stress", "d_full", "hoop_stress", "shear_stress", "sigma_y_full", "t_full"],
             method="fd",
         )
-        self.declare_partials("stress", ["axial_stress", "hoop_stress", "shear_stress", "sigma_y_full"], method="fd")
-        self.declare_partials("structural_frequencies", ["freqs"], method="fd")
-        self.declare_partials("fore_aft_freqs", ["x_mode_freqs"], method="fd")
-        self.declare_partials("side_side_freqs", ["y_mode_freqs"], method="fd")
-        self.declare_partials("fore_aft_modes", ["x_mode_shapes"], method="fd")
-        self.declare_partials("side_side_modes", ["y_mode_shapes"], method="fd")
-        self.declare_partials("top_deflection", ["top_deflection_in"], method="fd")
-        self.declare_partials("turbine_F", [], method="fd")
-        self.declare_partials("turbine_M", [], method="fd")
+        # self.declare_partials("stress", ["axial_stress", "hoop_stress", "shear_stress", "sigma_y_full"], method="fd")
+        # self.declare_partials("structural_frequencies", ["freqs"], method="fd")
+        # self.declare_partials("fore_aft_freqs", ["x_mode_freqs"], method="fd")
+        # self.declare_partials("side_side_freqs", ["y_mode_freqs"], method="fd")
+        # self.declare_partials("fore_aft_modes", ["x_mode_shapes"], method="fd")
+        # self.declare_partials("side_side_modes", ["y_mode_shapes"], method="fd")
+        # self.declare_partials("turbine_F", [], method="fd")
+        # self.declare_partials("turbine_M", [], method="fd")
 
     def compute(self, inputs, outputs):
         # Unpack some variables
@@ -1120,7 +1139,8 @@ class TowerPostFrame(om.ExplicitComponent):
         outputs["side_side_modes"] = inputs["y_mode_shapes"]
 
         # Tower top deflection
-        outputs["top_deflection"] = inputs["top_deflection_in"]
+        outputs["tower_deflection"] = inputs["tower_deflection_in"]
+        outputs["top_deflection"] = inputs["tower_deflection_in"][-1]
 
         # von mises stress
         outputs["stress"] = util_con.vonMisesStressUtilization(
@@ -1341,7 +1361,9 @@ class TowerSE(om.Group):
         # Load baseline discretization
         self.add_subsystem("geom", TowerLeanSE(modeling_options=self.options["modeling_options"]), promotes=["*"])
         self.add_subsystem(
-            "soil", TowerSoil(), promotes=[("G", "G_soil"), ("nu", "nu_soil"), ("depth", "suctionpile_depth")]
+            "soil",
+            TowerSoil(npts=NPTS_SOIL),
+            promotes=[("G", "G_soil"), ("nu", "nu_soil"), ("depth", "suctionpile_depth")],
         )
 
         # Connections for geometry and mass
@@ -1407,7 +1429,7 @@ class TowerSE(om.Group):
                 "tower" + lc,
                 CylinderFrame3DD(
                     npts=nFull,
-                    nK=1,
+                    nK=4 if monopile else 1,
                     nMass=3,
                     nPL=1,
                     frame3dd_opt=frame3dd_opt,
@@ -1460,7 +1482,8 @@ class TowerSE(om.Group):
             self.connect("pre" + lc + ".Mxx", "tower" + lc + ".Mxx")
             self.connect("pre" + lc + ".Myy", "tower" + lc + ".Myy")
             self.connect("pre" + lc + ".Mzz", "tower" + lc + ".Mzz")
-            self.connect("soil.k", "pre" + lc + ".k_monopile")
+            self.connect("soil.z_k", "pre" + lc + ".z_soil")
+            self.connect("soil.k", "pre" + lc + ".k_soil")
 
             self.connect("tower" + lc + ".freqs", "post" + lc + ".freqs")
             self.connect("tower" + lc + ".x_mode_freqs", "post" + lc + ".x_mode_freqs")
@@ -1473,7 +1496,7 @@ class TowerSE(om.Group):
             self.connect("tower" + lc + ".axial_stress", "post" + lc + ".axial_stress")
             self.connect("tower" + lc + ".shear_stress", "post" + lc + ".shear_stress")
             self.connect("tower" + lc + ".hoop_stress_euro", "post" + lc + ".hoop_stress")
-            self.connect("tower" + lc + ".top_deflection", "post" + lc + ".top_deflection_in")
+            self.connect("tower" + lc + ".cylinder_deflection", "post" + lc + ".tower_deflection_in")
 
             self.connect("wind" + lc + ".U", "windLoads" + lc + ".U")
             if monopile:
