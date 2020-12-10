@@ -283,12 +283,9 @@ components:
                     values: [0.05697, 0.05697, 0.05047, 0.04664, 0.03935, 0.03354, 0.02801, 0.02357, 0.02374, 0.02241, 0.02674]
     # Monopile
     monopile:
-        transition_piece_height: 0.0
         transition_piece_mass: 0.0
         transition_piece_cost: 0.0
         gravity_foundation_mass: 0.0
-        suctionpile_depth: 0.0
-        suctionpile_depth_diam_ratio: 0.0
         outer_shape_bem:
             reference_axis: &ref_axis_mono
                 x:

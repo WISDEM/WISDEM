@@ -463,7 +463,7 @@ class WT_RNTA(om.Group):
             self.connect("env.mu_air", "towerse.mu_air")
             self.connect("env.shear_exp", "towerse.shearExp")
             self.connect("assembly.hub_height", "towerse.hub_height")
-            self.connect("tower.foundation_height", "towerse.tower_foundation_height")  # TODO: towerse.wind_z0"
+            self.connect("tower_grid.foundation_height", "towerse.tower_foundation_height")  # TODO: towerse.wind_z0"
             self.connect("tower.diameter", "towerse.tower_outer_diameter_in")
             self.connect("tower_grid.height", "towerse.tower_height")
             self.connect("tower_grid.s", "towerse.tower_s")
@@ -487,17 +487,17 @@ class WT_RNTA(om.Group):
                 self.connect("env.hsig_wave", "towerse.hsig_wave")
                 self.connect("env.Tsig_wave", "towerse.Tsig_wave")
                 self.connect("monopile.diameter", "towerse.monopile_outer_diameter_in")
-                self.connect("monopile.foundation_height", "monopile.tower_foundation_height")  # TODO: towerse.wind_z0"
+                self.connect(
+                    "monopile.foundation_height", "towerse.monopile_foundation_height"
+                )  # TODO: towerse.wind_z0"
                 self.connect("monopile.height", "towerse.monopile_height")
                 self.connect("monopile.s", "towerse.monopile_s")
                 self.connect("monopile.layer_thickness", "towerse.monopile_layer_thickness")
                 self.connect("monopile.layer_mat", "towerse.monopile_layer_materials")
                 self.connect("monopile.outfitting_factor", "towerse.monopile_outfitting_factor")
-                self.connect("monopile.transition_piece_height", "towerse.transition_piece_height")
+                self.connect("monopile.transition_piece_cost", "towerse.transition_piece_cost")
                 self.connect("monopile.transition_piece_mass", "towerse.transition_piece_mass")
                 self.connect("monopile.gravity_foundation_mass", "towerse.gravity_foundation_mass")
-                self.connect("monopile.suctionpile_depth", "towerse.suctionpile_depth")
-                self.connect("monopile.suctionpile_depth_diam_ratio", "towerse.suctionpile_depth_diam_ratio")
 
         # Connections to turbine constraints
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
@@ -653,7 +653,7 @@ class WindPark(om.Group):
                     self.connect("drivese.nacelle_mass", "landbosse.nacelle_mass")
                     self.connect("drivese.hub_system_mass", "landbosse.hub_mass")
                 self.connect("re.precomp.blade_mass", "landbosse.blade_mass")
-                self.connect("foundation.height", "landbosse.foundation_height")
+                self.connect("tower_grid.foundation_height", "landbosse.foundation_height")
                 self.connect("bos.plant_turbine_spacing", "landbosse.turbine_spacing_rotor_diameters")
                 self.connect("bos.plant_row_spacing", "landbosse.row_spacing_rotor_diameters")
                 self.connect("bos.commissioning_pct", "landbosse.commissioning_pct")

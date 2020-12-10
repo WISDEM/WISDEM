@@ -1,10 +1,9 @@
 import openmdao.api as om
+from wisdem.towerse.tower import TowerLeanSE
 from wisdem.floatingse.column import Column
-from wisdem.floatingse.substructure import Substructure, SubstructureGeometry
 from wisdem.floatingse.loading import Loading
 from wisdem.floatingse.map_mooring import MapMooring
-from wisdem.towerse.tower import TowerLeanSE
-import numpy as np
+from wisdem.floatingse.substructure import Substructure, SubstructureGeometry
 
 
 class FloatingSE(om.Group):
@@ -51,8 +50,7 @@ class FloatingSE(om.Group):
                 "E_mat",
                 "G_mat",
                 "sigma_y_mat",
-                ("transition_piece_height", "main_freeboard"),
-                ("foundation_height", "main_freeboard"),
+                ("tower_foundation_height", "main_freeboard"),
             ],
         )
 

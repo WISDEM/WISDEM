@@ -1767,7 +1767,10 @@ class Compute_Grid(om.ExplicitComponent):
             desc="Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.",
         )
         self.add_output(
-            "foundation_height", val=0.0, units="m", desc="Foundation height in respect to the ground level."
+            "foundation_height",
+            val=0.0,
+            units="m",
+            desc="Foundation height in respect to the ground level.",
         )
 
         # Declare all partial derivatives.
@@ -1840,16 +1843,9 @@ class Monopile(om.Group):
         ivc.add_output(
             "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of tower"
         )
-        ivc.add_output(
-            "transition_piece_height", val=0.0, units="m", desc="point mass height of transition piece above water line"
-        )
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
-        ivc.add_output("suctionpile_depth", val=0.0, units="m", desc="depth of foundation in the soil")
-        ivc.add_output(
-            "suctionpile_depth_diam_ratio", 0.0, desc="ratio of sunction pile depth to mudline monopile diameter"
-        )
 
         self.add_subsystem("compute_monopile_grid", Compute_Grid(n_height=n_height), promotes=["*"])
 
