@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import jsonschema as json
 
 try:
@@ -11,11 +12,8 @@ except:
         raise ImportError("No module named ruamel.yaml or ruamel_yaml")
 
 
-fdefaults_geom = os.path.join(os.path.dirname(os.path.realpath(__file__)), "geometry_defaults.yaml")
 fschema_geom = os.path.join(os.path.dirname(os.path.realpath(__file__)), "geometry_schema.yaml")
-fdefaults_model = os.path.join(os.path.dirname(os.path.realpath(__file__)), "modeling_defaults.yaml")
 fschema_model = os.path.join(os.path.dirname(os.path.realpath(__file__)), "modeling_schema.yaml")
-fdefaults_opt = os.path.join(os.path.dirname(os.path.realpath(__file__)), "analysis_defaults.yaml")
 fschema_opt = os.path.join(os.path.dirname(os.path.realpath(__file__)), "analysis_schema.yaml")
 
 
@@ -83,8 +81,13 @@ def integrate_defaults(instance, defaults, yaml_schema):
 def simple_types(indict):
     rv = indict
     for k in rv.keys():
-        if not type(rv[k]) in [float, int, list, dict, bool, str]:
+        if type(rv[k]) == type(np.array([])):
+            rv[k] = rv[k].tolist()
+        elif isinstance(rv[k], (float, int, list, dict, bool, str)):
+            pass
+        else:
             rv[k] = ""
+
         try:
             simple_types(rv[k])
         except:
@@ -126,10 +129,6 @@ def validate_with_defaults(finput, fschema):
 
 
 # ---------------------
-def load_default_geometry_yaml():
-    return load_yaml(fdefaults_geom)
-
-
 def load_geometry_yaml(finput):
     return validate_with_defaults(finput, fschema_geom)
 
@@ -176,7 +175,7 @@ def write_analysis_yaml(instance, foutput):
 
 if __name__ == "__main__":
     yaml_schema = load_yaml(fschema_opt)
-    myobj = load_yaml(fdefaults_opt)
+    myobj = load_yaml("sample_analysis.yaml")
     DefaultValidatingDraft7Validator(yaml_schema).validate(myobj)
     # validator.validate( myobj )
     print([k for k in myobj.keys()])

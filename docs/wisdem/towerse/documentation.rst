@@ -9,7 +9,6 @@ Referenced Tower Modules
 ========================
 
 .. autoclass:: DiscretizationYAML
-.. autoclass:: MonopileFoundation
 .. autoclass:: TowerDiscretization
 .. autoclass:: TowerMass
 .. autoclass:: TurbineMass

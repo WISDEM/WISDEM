@@ -1,4 +1,4 @@
-from wisdem.ccblade import CCAirfoil, CCBlade
+from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
 from openmdao.api import ExplicitComponent
 import numpy as np
 import wisdem.ccblade._bem as _bem
@@ -392,8 +392,8 @@ class CCBladeTwist(ExplicitComponent):
         self.n_tab = n_tab = modeling_options["RotorSE"][
             "n_tab"
         ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
-        n_opt_chord = opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]
-        n_opt_twist = opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
+        n_opt_chord = opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]
+        n_opt_twist = opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
 
         # Inputs
         self.add_input("Uhub", val=9.0, units="m/s", desc="Undisturbed wind speed")
@@ -486,7 +486,7 @@ class CCBladeTwist(ExplicitComponent):
         self.add_output("alpha", val=np.zeros(n_span), units="deg", desc="Angles of attack along blade span")
         self.add_output("cl", val=np.zeros(n_span), desc="Lift coefficients along blade span")
         self.add_output("cd", val=np.zeros(n_span), desc="Drag coefficients along blade span")
-        n_opt = opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
+        n_opt = opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
         self.add_output("cl_n_opt", val=np.zeros(n_opt), desc="Lift coefficients along blade span")
         self.add_output("cd_n_opt", val=np.zeros(n_opt), desc="Drag coefficients along blade span")
         self.add_output(
@@ -531,7 +531,7 @@ class CCBladeTwist(ExplicitComponent):
                     inputs["airfoils_cm"][i, :, :, 0],
                 )
 
-        if self.options["opt_options"]["optimization_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
+        if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
             # Find cl and cd for max efficiency
             cl = np.zeros(self.n_span)
             cd = np.zeros(self.n_span)
@@ -673,7 +673,7 @@ class CCBladeTwist(ExplicitComponent):
         myout, derivs = get_cp_cm.evaluate([inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=True)
         _, _, _, _, CP, CT, CQ, CM = [myout[key] for key in ["P", "T", "Q", "M", "CP", "CT", "CQ", "CM"]]
 
-        # if self.options['opt_options']['optimization_variables']['blade']['aero_shape']['twist']['flag']:
+        # if self.options['opt_options']['design_variables']['blade']['aero_shape']['twist']['flag']:
         get_cp_cm.induction = False
         get_cp_cm.induction_inflow = True
         loads, deriv = get_cp_cm.distributedAeroLoads(inputs["Uhub"][0], Omega[0], inputs["pitch"][0], 0.0)

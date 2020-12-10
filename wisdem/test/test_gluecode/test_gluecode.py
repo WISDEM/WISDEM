@@ -29,6 +29,7 @@ class TestRegression(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 24.0801229107, 2)
         self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 50.982520869210894, 2)
         self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 4.1949743155, 1)
+        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 87.6974416, 1)
 
     def test15MW(self):
         ## IEA 15MW
@@ -39,8 +40,9 @@ class TestRegression(unittest.TestCase):
 
         self.assertAlmostEqual(wt_opt["re.precomp.blade_mass"][0], 73310.0985877902, 1)
         self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 78.0371305939, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 66.22846083658864, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 67.61437081321105, 1)
         self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 22.7002324979, 1)
+        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 144.386, 1)
 
     def test3p4MW(self):
         ## IEA 15MW
@@ -53,6 +55,7 @@ class TestRegression(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 13.7700592288, 1)
         self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 36.5740341928, 1)
         self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 6.5292336115, 1)
+        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 108.0, 1)
 
 
 def suite():

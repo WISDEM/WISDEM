@@ -1,7 +1,7 @@
 general:
     folder_output: outputs
     fname_output: tower_output
-optimization_variables:
+design_variables:
 
   tower:
     outer_diameter:

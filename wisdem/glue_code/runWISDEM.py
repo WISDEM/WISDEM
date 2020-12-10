@@ -115,6 +115,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
             # Save data coming from openmdao to an output yaml file
             froot_out = os.path.join(folder_output, opt_options["general"]["fname_output"])
             wt_initial.write_ontology(wt_opt, froot_out)
+            wt_initial.write_options(froot_out)
 
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)

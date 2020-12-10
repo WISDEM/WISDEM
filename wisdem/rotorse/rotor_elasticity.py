@@ -522,7 +522,7 @@ class RunPreComp(ExplicitComponent):
                 spar_cap_ss_var_ok = True
             if layer_name[i_layer] == self.spar_cap_ps_var:
                 spar_cap_ps_var_ok = True
-        DV_options = self.options["opt_options"]["optimization_variables"]["blade"]["structure"]
+        DV_options = self.options["opt_options"]["design_variables"]["blade"]["structure"]
         if te_ss_var_ok == False and DV_options["te_ss"]["flag"]:
             raise Exception(
                 "The layer at the trailing edge suction side is set to be optimized, but does not exist in the input yaml. Please check."

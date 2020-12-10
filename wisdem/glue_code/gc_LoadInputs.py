@@ -15,7 +15,6 @@ class WindTurbineOntologyPython(object):
 
         self.modeling_options = sch.load_modeling_yaml(fname_input_modeling)
         self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
-        self.defaults = sch.load_default_geometry_yaml()
         if fname_input_wt is None:
             self.wt_init = None
         else:
@@ -31,10 +30,10 @@ class WindTurbineOntologyPython(object):
         # Create components flag struct
         self.modeling_options["flags"] = {}
 
-        for k in self.defaults["components"]:
+        for k in ["blade", "hub", "nacelle", "tower", "monopile", "floating_platform", "mooring", "RNA"]:
             self.modeling_options["flags"][k] = k in self.wt_init["components"]
 
-        for k in self.defaults.keys():
+        for k in ["assembly", "components", "airfoils", "materials", "control", "environment", "bos", "costs"]:
             self.modeling_options["flags"][k] = k in self.wt_init
 
         # Generator flag
@@ -91,17 +90,7 @@ class WindTurbineOntologyPython(object):
         ):
             print("WARNING: Environment provided but no related component found found")
 
-        # Tower, monopile and foundation
-        if flags["tower"] and not flags["foundation"] and not flags["monopile"] and not flags["floating_platform"]:
-            raise ValueError("Tower analysis is requested but no foundation, no monopile, and no floating are found")
-        if flags["monopile"] and not flags["foundation"]:
-            raise ValueError("Monopile analysis is requested but no foundation is found")
-        if flags["foundation"] and not (flags["tower"] or flags["monopile"]):
-            print("WARNING: Foundation provided but no tower/monopile found or TowerSE deactivated")
-
-        # Foundation and floating/monopile
-        if flags["floating_platform"] and flags["foundation"]:
-            raise ValueError("Cannot have both floating and foundation components")
+        # Floating/monopile
         if flags["floating_platform"] and flags["monopile"]:
             raise ValueError("Cannot have both floating and monopile components")
 
@@ -459,10 +448,10 @@ class WindTurbineOntologyPython(object):
         if "opt_flag" in self.analysis_options["driver"]:
             self.analysis_options["opt_flag"] = self.analysis_options["driver"]["opt_flag"]
         else:
-            self.analysis_options["opt_flag"] = recursive_flag(self.analysis_options["optimization_variables"])
+            self.analysis_options["opt_flag"] = recursive_flag(self.analysis_options["design_variables"])
 
         # If not an optimization DV, then the number of points should be same as the discretization
-        blade_opt_options = self.analysis_options["optimization_variables"]["blade"]
+        blade_opt_options = self.analysis_options["design_variables"]["blade"]
         if not blade_opt_options["aero_shape"]["twist"]["flag"]:
             blade_opt_options["aero_shape"]["twist"]["n_opt"] = self.modeling_options["RotorSE"]["n_span"]
         elif blade_opt_options["aero_shape"]["twist"]["n_opt"] < 4:
@@ -913,7 +902,6 @@ class WindTurbineOntologyPython(object):
 
         # Update monopile
         if self.modeling_options["flags"]["monopile"]:
-            self.wt_init["components"]["monopile"]["suctionpile_depth"] = float(wt_opt["monopile.suctionpile_depth"])
             self.wt_init["components"]["monopile"]["outer_shape_bem"]["outer_diameter"]["grid"] = wt_opt[
                 "monopile.s"
             ].tolist()
@@ -969,5 +957,7 @@ class WindTurbineOntologyPython(object):
 
         # Write yamls with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)
+
+    def write_options(self, fname_output):
         sch.write_modeling_yaml(self.modeling_options, fname_output)
         sch.write_analysis_yaml(self.analysis_options, fname_output)

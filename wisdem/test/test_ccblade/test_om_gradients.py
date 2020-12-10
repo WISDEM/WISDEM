@@ -243,14 +243,14 @@ class Test(unittest.TestCase):
         modeling_options["airfoils"]["n_tab"] = n_tab
 
         opt_options = {}
-        opt_options["optimization_variables"] = {}
-        opt_options["optimization_variables"]["blade"] = {}
-        opt_options["optimization_variables"]["blade"]["aero_shape"] = {}
-        opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"] = {}
-        opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"] = 8
-        opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"] = {}
-        opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"] = 8
-        opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["inverse"] = False
+        opt_options["design_variables"] = {}
+        opt_options["design_variables"]["blade"] = {}
+        opt_options["design_variables"]["blade"]["aero_shape"] = {}
+        opt_options["design_variables"]["blade"]["aero_shape"]["chord"] = {}
+        opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"] = 8
+        opt_options["design_variables"]["blade"]["aero_shape"]["twist"] = {}
+        opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"] = 8
+        opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"] = False
         opt_options["constraints"] = {}
         opt_options["constraints"]["blade"] = {}
         opt_options["constraints"]["blade"]["stall"] = {}
