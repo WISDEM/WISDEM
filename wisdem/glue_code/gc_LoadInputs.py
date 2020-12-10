@@ -15,7 +15,6 @@ class WindTurbineOntologyPython(object):
 
         self.modeling_options = sch.load_modeling_yaml(fname_input_modeling)
         self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
-        self.defaults = sch.load_default_geometry_yaml()
         if fname_input_wt is None:
             self.wt_init = None
         else:
@@ -31,10 +30,10 @@ class WindTurbineOntologyPython(object):
         # Create components flag struct
         self.modeling_options["flags"] = {}
 
-        for k in self.defaults["components"]:
+        for k in ["blade", "hub", "nacelle", "tower", "monopile", "floating_platform", "mooring", "RNA"]:
             self.modeling_options["flags"][k] = k in self.wt_init["components"]
 
-        for k in self.defaults.keys():
+        for k in ["assembly", "components", "airfoils", "materials", "control", "environment", "bos", "costs"]:
             self.modeling_options["flags"][k] = k in self.wt_init
 
         # Generator flag
@@ -958,5 +957,7 @@ class WindTurbineOntologyPython(object):
 
         # Write yamls with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)
+
+    def write_options(self, fname_output):
         sch.write_modeling_yaml(self.modeling_options, fname_output)
         sch.write_analysis_yaml(self.analysis_options, fname_output)

@@ -1,5 +1,6 @@
-import unittest
 import os
+import unittest
+
 import wisdem.glue_code.gc_LoadInputs as gcl
 
 test_dir = (
@@ -21,18 +22,16 @@ class TestLoadInputs(unittest.TestCase):
         self.myobj = gcl.WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
     def testRunFlags(self):
-        self.myobj.defaults["test_absent1"] = {}
-        self.myobj.defaults["test_present1"] = {}
-        self.myobj.defaults["components"]["test_absent2"] = {}
-        self.myobj.defaults["components"]["test_present2"] = {}
-
-        self.myobj.wt_init["test_present1"] = {}
-        self.myobj.wt_init["components"]["test_present2"] = {}
+        self.myobj.wt_init["airfoils"] = {}
+        self.myobj.wt_init["components"]["blade"] = {}
+        self.myobj.wt_init.pop("bos")
+        self.myobj.wt_init["components"].pop("tower")
         self.myobj.set_run_flags()
-        self.assertTrue(self.myobj.modeling_options["flags"]["test_present1"])
-        self.assertTrue(self.myobj.modeling_options["flags"]["test_present2"])
-        self.assertFalse(self.myobj.modeling_options["flags"]["test_absent1"])
-        self.assertFalse(self.myobj.modeling_options["flags"]["test_absent2"])
+
+        self.assertTrue(self.myobj.modeling_options["flags"]["airfoils"])
+        self.assertTrue(self.myobj.modeling_options["flags"]["blade"])
+        self.assertFalse(self.myobj.modeling_options["flags"]["bos"])
+        self.assertFalse(self.myobj.modeling_options["flags"]["tower"])
 
     def testOptFlags(self):
         self.myobj.analysis_options["design_variables"]["test1"] = {}

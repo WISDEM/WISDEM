@@ -487,9 +487,7 @@ class WT_RNTA(om.Group):
                 self.connect("env.hsig_wave", "towerse.hsig_wave")
                 self.connect("env.Tsig_wave", "towerse.Tsig_wave")
                 self.connect("monopile.diameter", "towerse.monopile_outer_diameter_in")
-                self.connect(
-                    "monopile.foundation_height", "towerse.monopile_foundation_height"
-                )  # TODO: towerse.wind_z0"
+                self.connect("monopile.foundation_height", "towerse.monopile_foundation_height")
                 self.connect("monopile.height", "towerse.monopile_height")
                 self.connect("monopile.s", "towerse.monopile_s")
                 self.connect("monopile.layer_thickness", "towerse.monopile_layer_thickness")
