@@ -1930,11 +1930,12 @@ properties:
                             uniqueItems: false
                             minimum: 0
                 nu:
-                    description: Poisson ratio. For orthotropic materials, it consists of an array with nu12, nu13 and nu23
+                    description: Poisson ratio. For orthotropic materials, it consists of an array with nu12, nu13 and nu23. For isotropic materials, a minimum of -1 and a maximum of 0.5 are imposed. No limits are imposed to anisotropic materials.
                     oneOf:
                         - type: number
                           unit: none
-                          minimum: 0
+                          minimum: -1.
+                          maximum: 0.5
                         - type: array
                           items:
                             type: number
@@ -1942,8 +1943,6 @@ properties:
                             minItems: 3
                             maxItems: 3
                             uniqueItems: false
-                            minimum: 0
-                            maximum: 0.6
                 alpha:
                     description: Thermal coefficient of expansion
                     oneOf:
