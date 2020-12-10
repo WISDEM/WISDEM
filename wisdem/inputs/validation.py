@@ -80,7 +80,9 @@ def integrate_defaults(instance, defaults, yaml_schema):
 def simple_types(indict):
     rv = indict
     for k in rv.keys():
-        if not type(rv[k]) in [float, int, list, dict, bool, str]:
+        if type(rv[k]) == type(np.array([])):
+            rv[k] = rv[k].tolist()
+        elif not type(rv[k]) in [float, int, list, dict, bool, str]:
             rv[k] = ""
         try:
             simple_types(rv[k])
