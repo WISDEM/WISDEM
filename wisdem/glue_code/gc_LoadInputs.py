@@ -91,17 +91,7 @@ class WindTurbineOntologyPython(object):
         ):
             print("WARNING: Environment provided but no related component found found")
 
-        # Tower, monopile and foundation
-        if flags["tower"] and not flags["foundation"] and not flags["monopile"] and not flags["floating_platform"]:
-            raise ValueError("Tower analysis is requested but no foundation, no monopile, and no floating are found")
-        if flags["monopile"] and not flags["foundation"]:
-            raise ValueError("Monopile analysis is requested but no foundation is found")
-        if flags["foundation"] and not (flags["tower"] or flags["monopile"]):
-            print("WARNING: Foundation provided but no tower/monopile found or TowerSE deactivated")
-
-        # Foundation and floating/monopile
-        if flags["floating_platform"] and flags["foundation"]:
-            raise ValueError("Cannot have both floating and foundation components")
+        # Floating/monopile
         if flags["floating_platform"] and flags["monopile"]:
             raise ValueError("Cannot have both floating and monopile components")
 
@@ -913,7 +903,6 @@ class WindTurbineOntologyPython(object):
 
         # Update monopile
         if self.modeling_options["flags"]["monopile"]:
-            self.wt_init["components"]["monopile"]["suctionpile_depth"] = float(wt_opt["monopile.suctionpile_depth"])
             self.wt_init["components"]["monopile"]["outer_shape_bem"]["outer_diameter"]["grid"] = wt_opt[
                 "monopile.s"
             ].tolist()

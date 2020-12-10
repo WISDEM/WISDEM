@@ -589,25 +589,25 @@ properties:
                         description: Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n
                         properties:
                             flag: *flag
-                    global_buckling:
+                    global_buckling: &globalb
                         type: object
                         default: {}
                         description: Enforce a global buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b
                         properties:
                             flag: *flag
-                    shell_buckling:
+                    shell_buckling: &shellb
                         type: object
                         default: {}
                         description: Enforce a shell buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b
                         properties:
                             flag: *flag
-                    slope:
+                    slope: &slope
                         type: object
                         default: {}
                         description: Ensure that the diameter moving up the tower at any node is always equal or less than the diameter of the node preceding it
                         properties:
                             flag: *flag
-                    d_to_t:
+                    d_to_t: &d_to_t
                         type: object
                         description: Double-sided constraint to ensure target diameter to thickness ratio for manufacturing and structural objectives
                         default: {}
@@ -620,7 +620,7 @@ properties:
                                 default: 50.0
                                 unit: none
                             upper_bound: *dtbound
-                    taper:
+                    taper: &taper
                         type: object
                         description: Enforcing a max allowable conical frustum taper ratio per section
                         default: {}
@@ -632,13 +632,13 @@ properties:
                                 maximum: 1.0
                                 default: 0.5
                                 unit: none
-                    frequency:
+                    frequency: &towfreq
                         type: object
                         description: Frequency separation constraint between all tower modal frequencies and blade period (1P) and passing (3P) frequencies at rated conditions using gamma_freq margin.
                         default: {}
                         properties:
                             flag: *flag
-                    frequency_1:
+                    frequency_1: &towfreq1
                         type: object
                         description: Targeted range for tower first frequency constraint.  Since first and second frequencies are generally the same for the tower, this usually governs the second frequency as well (both fore-aft and side-side first frequency)
                         default: {}
@@ -651,7 +651,32 @@ properties:
                                 maximum: 1.0
                                 unit: Hz
                             upper_bound: *fminmax
-            monopile: *towcon
+            monopile:
+                type: object
+                default: {}
+                description: Constraints associated with the monopile design
+                properties:
+                    stress: *vonmises
+                    global_buckling: *globalb
+                    shell_buckling: *shellb
+                    slope: *slope
+                    d_to_t: *d_to_t
+                    taper: *taper
+                    frequency: *towfreq
+                    frequency_1: *towfreq1
+                    pile_depth:
+                        type: object
+                        description: Ensures that the submerged suction pile depth meets a minimum value
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound:
+                                type: number
+                                minimum: 0.0
+                                maximum: 200.0
+                                default: 0.0
+                                unit: m
+
             hub:
                 type: object
                 default: {}

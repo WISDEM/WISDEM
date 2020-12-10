@@ -88,7 +88,6 @@ properties:
             - nacelle
             - tower
             - monopile
-            - foundation
             - floating_platform
             - mooring
             - RNA
@@ -1048,20 +1047,10 @@ properties:
                     - outer_shape_bem
                     - internal_structure_2d_fem
                 optional:
-                    - transition_piece_height
                     - transition_piece_mass
                     - transition_piece_cost
                     - gravity_foundation_mass
-                    - suctionpile_depth
-                    - suctionpile_depth_diam_ratio
                 properties:
-                    transition_piece_height:
-                        type: number
-                        description: Height of transition piece top where tower attaches
-                        unit: m
-                        minimum: 0.0
-                        maximum: 100.0
-                        default: 0.0
                     transition_piece_mass:
                         type: number
                         description: Total mass of transition piece
@@ -1079,20 +1068,6 @@ properties:
                         description: Total mass of gravity foundation addition onto monopile
                         unit: kg
                         minimum: 0.0
-                        default: 0.0
-                    suctionpile_depth:
-                        type: number
-                        description: Depth below sea floor that monopile length extends
-                        unit: m
-                        minimum: 0.0
-                        maximum: 100.0
-                        default: 0.0
-                    suctionpile_depth_diam_ratio:
-                        type: number
-                        description: Let suction pile depth be determined by multiplying this value by the monopile diameter at the mudline
-                        unit: m
-                        minimum: 0.0
-                        maximum: 50.0
                         default: 0.0
                     outer_shape:
                         type: object
@@ -1176,17 +1151,6 @@ properties:
                                                     $ref: "#/definitions/distributed_data/grid_nd"
                                                 values:
                                                     $ref: "#/definitions/distributed_data/length"
-            foundation:
-                type: object
-                required:
-                    - height
-                properties:
-                    height:
-                        type: number
-                        description: Height of the onshore foundation above ground, always defined positive.
-                        unit: meter
-                        minimum: -1000
-                        maximum: 100
             floating_platform:
                 description: Ontology definition for floating platforms (substructures) suitable for use with the WEIS co-design analysis tool
                 type: object

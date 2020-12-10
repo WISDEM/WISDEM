@@ -80,12 +80,6 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         mooring = wt_init["components"]["mooring"]
         wt_opt = assign_mooring_values(wt_opt, modeling_options, mooring)
 
-    if modeling_options["flags"]["foundation"]:
-        foundation = wt_init["components"]["foundation"]
-        wt_opt = assign_foundation_values(wt_opt, foundation)
-    else:
-        foundation = {}
-
     if modeling_options["flags"]["bos"]:
         bos = wt_init["bos"]
         wt_opt = assign_bos_values(wt_opt, bos, offshore)
@@ -880,19 +874,9 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
     wt_opt["monopile.layer_thickness"] = 0.5 * (thickness[:, :-1] + thickness[:, 1:])
 
     wt_opt["monopile.outfitting_factor"] = monopile["internal_structure_2d_fem"]["outfitting_factor"]
-    wt_opt["monopile.transition_piece_height"] = monopile["transition_piece_height"]
     wt_opt["monopile.transition_piece_mass"] = monopile["transition_piece_mass"]
     wt_opt["monopile.transition_piece_cost"] = monopile["transition_piece_cost"]
     wt_opt["monopile.gravity_foundation_mass"] = monopile["gravity_foundation_mass"]
-    wt_opt["monopile.suctionpile_depth"] = monopile["suctionpile_depth"]
-    wt_opt["monopile.suctionpile_depth_diam_ratio"] = monopile["suctionpile_depth_diam_ratio"]
-
-    return wt_opt
-
-
-def assign_foundation_values(wt_opt, foundation):
-
-    wt_opt["foundation.height"] = foundation["height"]
 
     return wt_opt
 

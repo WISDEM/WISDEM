@@ -130,15 +130,18 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_discrete_input("tower_layer_materials", val=n_layers_tow * [""])
         self.add_input("tower_layer_thickness", val=np.zeros((n_layers_tow, n_height_tow - 1)), units="m")
         self.add_input("tower_height", val=0.0, units="m")
+        self.add_input("tower_foundation_height", val=0.0, units="m")
         self.add_input("tower_outer_diameter_in", np.zeros(n_height_tow), units="m")
         self.add_input("tower_outfitting_factor", val=0.0)
         self.add_input("monopile_s", val=np.zeros(n_height_mon))
         self.add_discrete_input("monopile_layer_materials", val=n_layers_tow * [""])
         self.add_input("monopile_layer_thickness", val=np.zeros((n_layers_mon, n_height_mon_minus)), units="m")
+        self.add_input("monopile_foundation_height", val=0.0, units="m")
         self.add_input("monopile_height", val=0.0, units="m")
         self.add_input("monopile_outer_diameter_in", np.zeros(n_height_mon), units="m")
         self.add_input("monopile_outfitting_factor", val=0.0)
         self.add_discrete_input("material_names", val=n_mat * [""])
+        self.add_input("water_depth", val=0.0, units="m")
         self.add_input("E_mat", val=np.zeros([n_mat, 3]), units="Pa")
         self.add_input("G_mat", val=np.zeros([n_mat, 3]), units="Pa")
         self.add_input("sigma_y_mat", val=np.zeros(n_mat), units="Pa")
@@ -148,12 +151,15 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_output("tower_section_height", val=np.zeros(n_height - 1), units="m")
         self.add_output("tower_outer_diameter", val=np.zeros(n_height), units="m")
         self.add_output("tower_wall_thickness", val=np.zeros(n_height - 1), units="m")
+        self.add_output("transition_piece_height", 0.0, units="m")
+        self.add_output("suctionpile_depth", 0.0, units="m")
         self.add_output("outfitting_factor", val=np.zeros(n_height - 1))
         self.add_output("E", val=np.zeros(n_height - 1), units="Pa")
         self.add_output("G", val=np.zeros(n_height - 1), units="Pa")
         self.add_output("sigma_y", val=np.zeros(n_height - 1), units="Pa")
         self.add_output("rho", val=np.zeros(n_height - 1), units="kg/m**3")
         self.add_output("unit_cost", val=np.zeros(n_height - 1), units="USD/kg")
+        self.add_output("z_start", 0.0, units="m")
 
         # self.declare_partials('*', '*', method='fd')
 
@@ -168,16 +174,36 @@ class DiscretizationYAML(om.ExplicitComponent):
         # Unpack values
         h_mon = inputs["monopile_height"]
         h_tow = inputs["tower_height"]
+        s_mon = inputs["monopile_s"]
+        s_tow = inputs["tower_s"]
         lthick_mon = inputs["monopile_layer_thickness"]
         lthick_tow = inputs["tower_layer_thickness"]
         lmat_mon = copy.copy(discrete_inputs["monopile_layer_materials"])
         lmat_tow = copy.copy(discrete_inputs["tower_layer_materials"])
+        fh_tow = inputs["tower_foundation_height"]
+        fh_mon = inputs["monopile_foundation_height"]
+        water_depth = inputs["water_depth"]
+
+        outputs["transition_piece_height"] = fh_tow
 
         if n_height_mon > 0:
+            if np.abs(fh_tow - fh_mon - h_mon) > 1.0:
+                print(
+                    "WARNING: Monopile length is not consistent with transition piece height and monopile base height\n",
+                    "         Determining new base height value . . .",
+                )
+            outputs["z_start"] = fh_tow - h_mon
+
+            pile = h_mon - fh_tow - water_depth
+            outputs["suctionpile_depth"] = pile
+            # Ensure that we have only one segment for pile, a current limitation
+            if pile > 0:
+                s1 = pile / h_mon
+                icheck = np.where(s_mon > s1 + 1e-3)[0][0]
+                s_mon = np.r_[0.0, np.linspace(s1, s_mon[icheck], icheck).flatten(), s_mon[(icheck + 1) :].flatten()]
+
             # Last monopile point and first tower point are the same
-            outputs["tower_section_height"] = np.r_[
-                np.diff(h_mon * inputs["monopile_s"]), np.diff(h_tow * inputs["tower_s"])
-            ]
+            outputs["tower_section_height"] = np.r_[np.diff(h_mon * s_mon), np.diff(h_tow * s_tow)]
             outputs["outfitting_factor"] = np.r_[
                 inputs["monopile_outfitting_factor"] * np.ones(n_height_mon - 1),
                 inputs["tower_outfitting_factor"] * np.ones(n_height_tow - 1),
@@ -220,12 +246,14 @@ class DiscretizationYAML(om.ExplicitComponent):
             outputs["tower_wall_thickness"] = np.sum(twall, axis=0)
 
         else:
-            outputs["tower_section_height"] = np.diff(h_tow * inputs["tower_s"])
+            outputs["tower_section_height"] = np.diff(h_tow * s_tow)
             outputs["tower_wall_thickness"] = np.sum(inputs["tower_layer_thickness"], axis=0)
             outputs["outfitting_factor"] = inputs["tower_outfitting_factor"] * np.ones(n_height - 1)
             outputs["tower_outer_diameter"] = inputs["tower_outer_diameter_in"]
             twall = inputs["tower_layer_thickness"]
             layer_mat = discrete_inputs["tower_layer_materials"]
+            outputs["z_start"] = fh_tow
+            outputs["suctionpile_depth"] = 0.0
 
         # Check to make sure we have good values
         if np.any(outputs["tower_section_height"] <= 0.0):
@@ -294,51 +322,6 @@ class DiscretizationYAML(om.ExplicitComponent):
         outputs["rho"] = rho_param
         outputs["sigma_y"] = sigy_param
         outputs["unit_cost"] = cost_param
-
-
-class MonopileFoundation(om.ExplicitComponent):
-    """
-    Compute the monopile foundation parameterized section heights.
-
-    Parameters
-    ----------
-    suctionpile_depth : float, [m]
-        depth of foundation in the soil
-    suctionpile_depth_diam_ratio : float
-        ratio of sunction pile depth to mudline monopile diameter
-    foundation_height : float, [m]
-        height of foundation (0.0 for land, -water_depth for fixed bottom)
-    diameter : float, [m]
-        cylinder diameter
-
-    Returns
-    -------
-    z_start : float, [m]
-        parameterized section heights along cylinder
-
-    """
-
-    def initialize(self):
-        self.options.declare("monopile")
-
-    def setup(self):
-        self.add_input("suctionpile_depth", 0.0, units="m")
-        self.add_input("suctionpile_depth_diam_ratio", 0.0)
-        self.add_input("foundation_height", 0.0, units="m")
-        self.add_input("diameter", 0.0, units="m")
-
-        self.add_output("z_start", 0.0, units="m")
-
-        self.declare_partials("*", "*", method="fd")
-
-    def compute(self, inputs, outputs):
-        outputs["z_start"] = inputs["foundation_height"]
-
-        if self.options["monopile"]:
-            pile = inputs["suctionpile_depth"]
-            if pile == 0.0:
-                pile = inputs["suctionpile_depth_diam_ratio"] * inputs["diameter"]
-            outputs["z_start"] -= np.abs(pile)
 
 
 class TowerDiscretization(om.ExplicitComponent):
@@ -515,8 +498,6 @@ class TowerMass(om.ExplicitComponent):
         Cost of transition piece
     gravity_foundation_mass : float, [kg]
         Extra mass of gravity foundation
-    foundation_height : float, [m]
-        Height of foundation (0.0 for land, -water_depth for fixed bottom)
     z_full : numpy array[nFull], [m]
         Parameterized locations along tower, linear lofting between
 
@@ -561,7 +542,6 @@ class TowerMass(om.ExplicitComponent):
         self.add_input("transition_piece_mass", 0.0, units="kg")
         self.add_input("transition_piece_cost", 0.0, units="USD")
         self.add_input("gravity_foundation_mass", 0.0, units="kg")
-        self.add_input("foundation_height", 0.0, units="m")
         self.add_input("z_full", val=np.zeros(nFull), units="m")
 
         self.add_output("structural_cost", val=0.0, units="USD")
@@ -583,7 +563,7 @@ class TowerMass(om.ExplicitComponent):
         outputs["tower_center_of_mass"] = (
             inputs["cylinder_center_of_mass"] * inputs["cylinder_mass"].sum()
             + inputs["transition_piece_mass"] * inputs["transition_piece_height"]
-            + inputs["gravity_foundation_mass"] * inputs["foundation_height"]
+            + inputs["gravity_foundation_mass"] * inputs["z_full"][0]
         ) / (inputs["cylinder_mass"].sum() + inputs["transition_piece_mass"] + inputs["gravity_foundation_mass"])
         outputs["tower_section_center_of_mass"] = inputs["cylinder_section_center_of_mass"]
 
@@ -601,7 +581,7 @@ class TowerMass(om.ExplicitComponent):
         outputs["tower_mass"] = outputs["structural_mass"] - outputs["monopile_mass"]
         outputs["tower_I_base"] = inputs["cylinder_I_base"]
         outputs["tower_I_base"][:2] += (
-            inputs["transition_piece_mass"] * (inputs["transition_piece_height"] - inputs["foundation_height"]) ** 2
+            inputs["transition_piece_mass"] * (inputs["transition_piece_height"] - inputs["z_full"][0]) ** 2
         )
 
 
@@ -704,8 +684,6 @@ class TowerPreFrame(om.ExplicitComponent):
         point mass of transition piece
     transition_piece_height : float, [m]
         height of transition piece above water line
-    foundation_height : float, [m]
-        height of foundation (0.0 for land, -water_depth for fixed bottom)
     rna_F : numpy array[3], [N]
         rna force
     rna_M : numpy array[3], [N*m]
@@ -786,7 +764,6 @@ class TowerPreFrame(om.ExplicitComponent):
         self.add_input("transition_piece_mass", 0.0, units="kg")
         self.add_input("gravity_foundation_mass", 0.0, units="kg")
         self.add_input("transition_piece_height", 0.0, units="m")
-        self.add_input("foundation_height", 0.0, units="m")
 
         # point loads
         self.add_input("rna_F", np.zeros(3), units="N")
@@ -1205,17 +1182,12 @@ class TowerLeanSE(om.Group):
         )  # Should have one overlapping point
         nFull = get_nfull(n_height)
 
-        n_mat = self.options["modeling_options"]["materials"]["n_mat"]
-
         self.set_input_defaults("gravity_foundation_mass", 0.0, units="kg")
         self.set_input_defaults("transition_piece_mass", 0.0, units="kg")
-        self.set_input_defaults("transition_piece_height", 0.0, units="m")
-        self.set_input_defaults("suctionpile_depth", 0.0, units="m")
-        self.set_input_defaults("suctionpile_depth_diam_ratio", 0.0)
         self.set_input_defaults("tower_outer_diameter", np.ones(n_height), units="m")
         self.set_input_defaults("tower_wall_thickness", np.ones(n_height - 1), units="m")
         self.set_input_defaults("outfitting_factor", np.zeros(n_height - 1))
-        self.set_input_defaults("foundation_height", 0.0, units="m")
+        self.set_input_defaults("water_depth", 0.0, units="m")
         self.set_input_defaults("hub_height", 0.0, units="m")
         self.set_input_defaults("rho", np.zeros(n_height - 1), units="kg/m**3")
         self.set_input_defaults("unit_cost", np.zeros(n_height - 1), units="USD/kg")
@@ -1234,11 +1206,6 @@ class TowerLeanSE(om.Group):
                 n_mat=self.options["modeling_options"]["materials"]["n_mat"],
             ),
             promotes=["*"],
-        )
-
-        # If doing fixed bottom monopile, we add an additional point for the pile (even for gravity foundations)
-        self.add_subsystem(
-            "predisc", MonopileFoundation(monopile=monopile), promotes=["*", ("diameter", "monopile_base_diameter")]
         )
 
         # Promote all but foundation_height so that we can override
@@ -1277,7 +1244,6 @@ class TowerLeanSE(om.Group):
                 "tower_I_base",
                 "tower_cost",
                 "gravity_foundation_mass",
-                "foundation_height",
                 "transition_piece_mass",
                 "transition_piece_cost",
                 "transition_piece_height",
@@ -1328,7 +1294,6 @@ class TowerLeanSE(om.Group):
         self.connect("cm.center_of_mass", "tm.cylinder_center_of_mass")
         self.connect("cm.section_center_of_mass", "tm.cylinder_section_center_of_mass")
         self.connect("cm.I_base", "tm.cylinder_I_base")
-        self.connect("tower_outer_diameter", "monopile_base_diameter", src_indices=[0])
 
 
 class TowerSE(om.Group):
@@ -1354,11 +1319,11 @@ class TowerSE(om.Group):
             n_height_tow if n_height_mon == 0 else n_height_tow + n_height_mon - 1
         )  # Should have one overlapping point
         nFull = get_nfull(n_height)
-        n_mat = self.options["modeling_options"]["materials"]["n_mat"]
 
         self.set_input_defaults("rho_air", 1.225, units="kg/m**3")
         self.set_input_defaults("mu_air", 1.81206e-5, units="kg/m/s")
         self.set_input_defaults("shearExp", 0.0)
+        self.set_input_defaults("wind_z0", 0.0)
         self.set_input_defaults("beta_wind", 0.0, units="deg")
 
         self.set_input_defaults("cd_usr", -1.0)
@@ -1409,7 +1374,7 @@ class TowerSE(om.Group):
                     "wave" + lc,
                     LinearWaves(nPoints=nFull),
                     promotes=[
-                        ("z_floor", "foundation_height"),
+                        ("z_floor", "water_depth"),
                         "rho_water",
                         "hsig_wave",
                         "Tsig_wave",

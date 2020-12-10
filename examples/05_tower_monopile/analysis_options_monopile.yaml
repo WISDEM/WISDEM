@@ -50,10 +50,6 @@ constraints:
             lower_bound: 0.13
             upper_bound: 0.40
     monopile:
-        height_constraint:
-            flag: False
-            lower_bound: 1.e-2
-            upper_bound: 1.e-2
         stress:
             flag: True
         global_buckling:
@@ -73,6 +69,9 @@ constraints:
             flag: True
             lower_bound: 0.13
             upper_bound: 0.40
+        pile_depth:
+            flag: True
+            lower_bound: 0.0
 
 driver:
     tol: 1.e-3                        # Optimality tolerance

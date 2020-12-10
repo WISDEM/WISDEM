@@ -352,13 +352,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         if modeling_options["flags"]["monopile"]:
             self.add_subsystem("monopile", Monopile(towerse_options=modeling_options["TowerSE"]))
 
-        # Foundation inputs
-        if modeling_options["flags"]["foundation"]:
-            foundation_ivc = self.add_subsystem("foundation", om.IndepVarComp())
-            foundation_ivc.add_output(
-                "height", val=0.0, units="m", desc="Foundation height in respect to the ground level."
-            )
-
         if modeling_options["flags"]["floating_platform"]:
             self.add_subsystem("floating", Floating(floating_init_options=modeling_options["floating"]))
             self.add_subsystem("mooring", Mooring(mooring_init_options=modeling_options["mooring"]))
@@ -1773,14 +1766,22 @@ class Compute_Grid(om.ExplicitComponent):
             units="m",
             desc="Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.",
         )
+        self.add_output(
+            "foundation_height",
+            val=0.0,
+            units="m",
+            desc="Foundation height in respect to the ground level.",
+        )
 
         # Declare all partial derivatives.
         self.declare_partials("height", "ref_axis")
         self.declare_partials("length", "ref_axis")
         self.declare_partials("s", "ref_axis")
+        self.declare_partials("foundation_height", "ref_axis")
 
     def compute(self, inputs, outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
+        outputs["foundation_height"] = inputs["ref_axis"][0, 2]
         outputs["height"] = inputs["ref_axis"][-1, 2] - inputs["ref_axis"][0, 2]
         myarc = arc_length(inputs["ref_axis"])
         outputs["length"] = myarc[-1]
@@ -1793,6 +1794,8 @@ class Compute_Grid(om.ExplicitComponent):
         partials["height", "ref_axis"] = np.zeros((1, n_height * 3))
         partials["height", "ref_axis"][0, -1] = 1.0
         partials["height", "ref_axis"][0, 2] = -1.0
+        partials["foundation_height", "ref_axis"] = np.zeros((1, n_height * 3))
+        partials["foundation_height", "ref_axis"][0, 2] = 1.0
         arc_distances, d_arc_distances_d_points = arc_length_deriv(inputs["ref_axis"])
 
         # The length is based on only the final point in the arc,
@@ -1840,16 +1843,9 @@ class Monopile(om.Group):
         ivc.add_output(
             "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of tower"
         )
-        ivc.add_output(
-            "transition_piece_height", val=0.0, units="m", desc="point mass height of transition piece above water line"
-        )
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
-        ivc.add_output("suctionpile_depth", val=0.0, units="m", desc="depth of foundation in the soil")
-        ivc.add_output(
-            "suctionpile_depth_diam_ratio", 0.0, desc="ratio of sunction pile depth to mudline monopile diameter"
-        )
 
         self.add_subsystem("compute_monopile_grid", Compute_Grid(n_height=n_height), promotes=["*"])
 
