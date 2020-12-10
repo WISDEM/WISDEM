@@ -772,6 +772,8 @@ class TowerPreFrame(om.ExplicitComponent):
         self.add_input("mI", np.zeros(6), units="kg*m**2")
         self.add_input("mrho", np.zeros(3), units="m")
         self.add_input("transition_piece_mass", 0.0, units="kg")
+        self.add_input("transition_piece_I", np.zeros(6), units="kg*m**2")
+        self.add_input("gravity_foundation_I", np.zeros(6), units="kg*m**2")
         self.add_input("gravity_foundation_mass", 0.0, units="kg")
         self.add_input("transition_piece_height", 0.0, units="m")
 
@@ -1405,7 +1407,9 @@ class TowerSE(om.Group):
                 promotes=[
                     "transition_piece_mass",
                     "transition_piece_height",
+                    "transition_piece_I",
                     "gravity_foundation_mass",
+                    "gravity_foundation_I",
                     "z_full",
                     ("mass", "rna_mass"),
                     ("mrho", "rna_cg"),
