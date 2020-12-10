@@ -83,8 +83,11 @@ def simple_types(indict):
     for k in rv.keys():
         if type(rv[k]) == type(np.array([])):
             rv[k] = rv[k].tolist()
-        elif not type(rv[k]) in [float, int, list, dict, bool, str]:
+        elif isinstance(rv[k], (float, int, list, dict, bool, str)):
+            pass
+        else:
             rv[k] = ""
+
         try:
             simple_types(rv[k])
         except:
