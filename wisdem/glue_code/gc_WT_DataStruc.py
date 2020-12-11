@@ -427,7 +427,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             env_ivc.add_output(
                 "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
             )
-            env_ivc.add_output("hsig_wave", val=0.0, units="m", desc="Significant wave height")
+            env_ivc.add_output("Hsig_wave", val=0.0, units="m", desc="Significant wave height")
             env_ivc.add_output("Tsig_wave", val=0.0, units="s", desc="Significant wave period")
             env_ivc.add_output("G_soil", val=140e6, units="N/m**2", desc="Shear stress of soil")
             env_ivc.add_output("nu_soil", val=0.4, desc="Poisson ratio of soil")
@@ -1965,6 +1965,10 @@ class Mooring(om.Group):
 
         ivc.add_discrete_output("node_names", val=[""] * n_nodes)
         ivc.add_output("nodes_location", val=np.zeros((n_nodes, 3)), units="m")
+        ivc.add_output("nodes_mass", val=np.zeros(n_nodes), units="kg")
+        ivc.add_output("nodes_volume", val=np.zeros(n_nodes), units="m**3")
+        ivc.add_output("nodes_added_mass", val=np.zeros(n_nodes))
+        ivc.add_output("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
         ivc.add_discrete_output("nodes_joint_name", val=[""] * n_nodes)
         ivc.add_discrete_output("line_id", val=[""] * n_lines)
         ivc.add_output("unstretched_length", val=np.zeros(n_lines), units="m")

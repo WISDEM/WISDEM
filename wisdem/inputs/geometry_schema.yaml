@@ -1627,19 +1627,23 @@ properties:
                                     units: kilogram
                                     description: Clump weight mass
                                     minimum: 0.0
+                                    default: 0.0
                                 node_volume:
                                     type: number
                                     units: meter^3
                                     description: Floater volume
                                     minimum: 0.0
+                                    default: 0.0
                                 drag_area:
                                     type: number
                                     units: meter^2
                                     description: Product of drag coefficient and projected area (assumed constant in all directions) to calculate a drag force for the node
                                     minimum: 0.0
+                                    default: 0.0
                                 added_mass:
                                     type: number
                                     description: Added mass coefficient used along with node volume to calculate added mass on node
+                                    default: 0.0
                     lines:
                         type: array
                         description: List of all mooring line properties in the mooring system

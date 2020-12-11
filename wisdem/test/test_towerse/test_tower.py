@@ -394,6 +394,7 @@ class TestTowerSE(unittest.TestCase):
     def testTowerMass(self):
 
         self.inputs["z_full"] = np.array([-50.0, -30, 0.0, 40.0, 80.0])
+        self.inputs["d_full"] = 10 * np.ones(5)
         self.inputs["cylinder_mass"] = 1e3 * np.ones(4)
         self.inputs["cylinder_cost"] = 1e5
         self.inputs["cylinder_center_of_mass"] = 10.0
@@ -420,6 +421,8 @@ class TestTowerSE(unittest.TestCase):
         self.assertEqual(self.outputs["monopile_length"], 70.0)
         self.assertEqual(self.outputs["tower_mass"], 1e3 * (4 - 2.5))
         self.assertEqual(self.outputs["tower_cost"], self.inputs["cylinder_cost"] * 1.5 / 4.0)
+        npt.assert_equal(self.outputs["transition_piece_I"], 1e2 * 25 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
+        npt.assert_equal(self.outputs["gravity_foundation_I"], 0.5 * 1e2 * 25 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
 
     def testPreFrame(self):
 
@@ -433,6 +436,8 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["transition_piece_mass"] = 0.0
         self.inputs["transition_piece_cost"] = 0.0
         self.inputs["transition_piece_height"] = 0.0
+        self.inputs["transition_piece_I"] = np.zeros(6)
+        self.inputs["gravity_foundation_I"] = np.zeros(6)
         self.inputs["gravity_foundation_mass"] = 0.0
         self.inputs["rna_F"] = 1e5 * np.array(
             [
@@ -490,6 +495,8 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["transition_piece_mass"] = 1e3
         self.inputs["transition_piece_cost"] = 1e4
         self.inputs["transition_piece_height"] = 10.0
+        self.inputs["transition_piece_I"] = 1e3 * 9 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
+        self.inputs["gravity_foundation_I"] = 0.5 * 1e4 * 9 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
         self.inputs["gravity_foundation_mass"] = 1e4
         self.inputs["rna_F"] = 1e5 * np.array(
             [
@@ -690,7 +697,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rho_water"] = 1025.0
         prob["mu_water"] = 1.3351e-3
         prob["beta_wind"] = prob["beta_wave"] = 0.0
-        prob["hsig_wave"] = 0.0
+        prob["Hsig_wave"] = 0.0
         prob["Tsig_wave"] = 1e3
         prob["wind.Uref"] = 15.0
         prob["pre.rna_F"] = 1e3 * np.array(
@@ -815,7 +822,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rho_water"] = 1025.0
         prob["mu_water"] = 1.3351e-3
         prob["beta_wind"] = prob["beta_wave"] = 0.0
-        prob["hsig_wave"] = 0.0
+        prob["Hsig_wave"] = 0.0
         prob["Tsig_wave"] = 1e3
         prob["wind.Uref"] = 15.0
         prob["pre.rna_F"] = 1e3 * np.array(

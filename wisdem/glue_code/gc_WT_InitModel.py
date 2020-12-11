@@ -947,6 +947,10 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
             wt_opt["mooring.nodes_location"][i, :] = mooring["nodes"][i]["location"]
         else:
             wt_opt["mooring.nodes_joint_name"][i] = mooring["nodes"][i]["joint"]
+        wt_opt["mooring.nodes_mass"][i] = mooring["nodes"][i]["node_mass"]
+        wt_opt["mooring.nodes_volume"][i] = mooring["nodes"][i]["node_volume"]
+        wt_opt["mooring.nodes_drag_area"][i] = mooring["nodes"][i]["drag_area"]
+        wt_opt["mooring.nodes_added_mass"][i] = mooring["nodes"][i]["added_mass"]
     for i in range(n_lines):
         wt_opt["mooring.unstretched_length"][i] = mooring["lines"][i]["unstretched_length"]
     for i in range(n_line_types):
@@ -1015,7 +1019,7 @@ def assign_environment_values(wt_opt, environment, offshore):
         wt_opt["env.rho_water"] = environment["water_density"]
         wt_opt["env.mu_water"] = environment["water_dyn_viscosity"]
         wt_opt["env.water_depth"] = environment["water_depth"]
-        wt_opt["env.hsig_wave"] = environment["significant_wave_height"]
+        wt_opt["env.Hsig_wave"] = environment["significant_wave_height"]
         wt_opt["env.Tsig_wave"] = environment["significant_wave_period"]
     wt_opt["env.weibull_k"] = environment["weib_shape_parameter"]
     wt_opt["env.speed_sound_air"] = environment["air_speed_sound"]
