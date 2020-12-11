@@ -29,8 +29,11 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
             elif len(unit_str) > 0:
                 unit_str = "_" + unit_str
 
-            iname = var_dict[k][0] + unit_str
+            iname = var_dict[k][1]["prom_name"] + unit_str
             value = var_dict[k][1]["value"]
+
+            if iname in array_dict:
+                continue
 
             if type(value) in [type(np.array([])), type(0.0), type(0), np.float64, np.int64]:
                 array_dict[iname] = value
@@ -64,7 +67,11 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
             if unit_str is None:
                 unit_str = ""
 
-            data["variables"].append(var_dict[k][0])
+            iname = var_dict[k][1]["prom_name"]
+            if iname in data["variables"]:
+                continue
+
+            data["variables"].append(iname)
             data["units"].append(unit_str)
             data["values"].append(var_dict[k][1]["value"])
         df = pd.DataFrame(data)
