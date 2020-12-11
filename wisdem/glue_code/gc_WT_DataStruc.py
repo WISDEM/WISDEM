@@ -753,7 +753,7 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             if inputs["span_end"] >= 0.98:
                 flap_start = 0.98 - inputs["span_ext"]
                 flap_end = 0.98
-                print("WARNING: span_end point reached limits and was set to r/R = 0.98")
+                # print("WARNING: span_end point reached limits and was set to r/R = 0.98")
             else:
                 flap_start = inputs["span_end"] - inputs["span_ext"]
                 flap_end = inputs["span_end"]
@@ -1447,7 +1447,7 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                         'WARNING: Web "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to %f at R=%f (i=%d)'
                         % (web_name[j], offset_old, offset, inputs["s"][i], i)
                     )
-                    print(layer_resize_warning)
+                    #print(layer_resize_warning)
                 else:
                     outputs["web_offset_y_pa"][j, i] = copy.copy(offset)
 
@@ -1469,28 +1469,28 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                         [0.0, 0.0],
                         ["suction", "pressure"],
                     )
-                    if i == 0:
-                        print(
-                            "WARNING: The web "
-                            + web_name[j]
-                            + " is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition."
-                        )
-                    if web_start_nd[j, i] < 0.0 or web_start_nd[j, i] > 1.0:
-                        print(
-                            "WARNING: Blade web "
-                            + web_name[j]
-                            + " at n.d. span position "
-                            + str(inputs["s"][i])
-                            + " has the n.d. start point outside the TE. Please check the yaml input file."
-                        )
-                    if web_end_nd[j, i] < 0.0 or web_end_nd[j, i] > 1.0:
-                        print(
-                            "WARNING: Blade web "
-                            + web_name[j]
-                            + " at n.d. span position "
-                            + str(inputs["s"][i])
-                            + " has the n.d. end point outside the TE. Please check the yaml input file."
-                        )
+                    # if i == 0:
+                    #     print(
+                    #         "WARNING: The web "
+                    #         + web_name[j]
+                    #         + " is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition."
+                    #     )
+                    # if web_start_nd[j, i] < 0.0 or web_start_nd[j, i] > 1.0:
+                    #     print(
+                    #         "WARNING: Blade web "
+                    #         + web_name[j]
+                    #         + " at n.d. span position "
+                    #         + str(inputs["s"][i])
+                    #         + " has the n.d. start point outside the TE. Please check the yaml input file."
+                    #     )
+                    # if web_end_nd[j, i] < 0.0 or web_end_nd[j, i] > 1.0:
+                    #     print(
+                    #         "WARNING: Blade web "
+                    #         + web_name[j]
+                    #         + " at n.d. span position "
+                    #         + str(inputs["s"][i])
+                    #         + " has the n.d. end point outside the TE. Please check the yaml input file."
+                    #     )
                 elif discrete_inputs["definition_web"][j] == 3:
                     web_start_nd[j, i] = inputs["web_start_nd_yaml"][j, i]
                     web_end_nd[j, i] = inputs["web_end_nd_yaml"][j, i]
@@ -1532,10 +1532,10 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                         outputs["layer_width"][j, i] = copy.copy(width)
                         outputs["layer_offset_y_pa"][j, i] = copy.copy(offset)
                         layer_resize_warning = (
-                            'WARNING: Layer "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to 0.0 and "width" changed from %f to %f at s=%f (i=%d)'
+                            'WARNING: Layer "%s" may be too large to fit within chord. "offset_y_pa" changed from %f to 0.0 and "width" changed from %f to %f at s=%f (i=%d)'
                             % (layer_name[j], offset, width_old, width, inputs["s"][i], i)
                         )
-                        print(layer_resize_warning)
+                        #print(layer_resize_warning)
                     else:
                         outputs["layer_width"][j, i] = copy.copy(width)
                         outputs["layer_offset_y_pa"][j, i] = copy.copy(offset)
@@ -1551,15 +1551,15 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = width / arc_L_i / 2.0
 
-                    # Geometry check to prevent overlap between SC and TE reinf
-                    for k in range(self.n_layers):
-                        if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
-                            if layer_end_nd[j, i] > layer_start_nd[k, i] or layer_start_nd[j, i] < layer_end_nd[k, i]:
-                                print(
-                                    "WARNING: The trailing edge reinforcement extends above the spar caps at station "
-                                    + str(i)
-                                    + ". Please reduce its width."
-                                )
+                    # # Geometry check to prevent overlap between SC and TE reinf
+                    # for k in range(self.n_layers):
+                    #     if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
+                            # if layer_end_nd[j, i] > layer_start_nd[k, i] or layer_start_nd[j, i] < layer_end_nd[k, i]:
+                            #     print(
+                            #         "WARNING: The trailing edge reinforcement extends above the spar caps at station "
+                            #         + str(i)
+                            #         + ". Please reduce its width."
+                            #     )
 
                 elif discrete_inputs["definition_layer"][j] == 5:  # Midpoint and width
                     midpoint = LE_loc
@@ -1568,29 +1568,29 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     outputs["layer_width"][j, i] = copy.copy(width)
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = midpoint + width / arc_L_i / 2.0
-                    # Geometry check to prevent overlap between SC and LE reinf
-                    for k in range(self.n_layers):
-                        if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
-                            if (
-                                discrete_inputs["layer_side"][k] == "suction"
-                                and layer_start_nd[j, i] < layer_end_nd[k, i]
-                            ):
-                                print(
-                                    "WARNING: The leading edge reinforcement extends above the spar caps at station "
-                                    + str(i)
-                                    + ". Please reduce its width."
-                                )
-                            elif (
-                                discrete_inputs["layer_side"][k] == "pressure"
-                                and layer_end_nd[j, i] > layer_start_nd[k, i]
-                            ):
-                                print(
-                                    "WARNING: The leading edge reinforcement extends above the spar caps at station "
-                                    + str(i)
-                                    + ". Please reduce its width."
-                                )
-                            else:
-                                pass
+                    # # Geometry check to prevent overlap between SC and LE reinf
+                    # for k in range(self.n_layers):
+                    #     if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
+                    #         if (
+                    #             discrete_inputs["layer_side"][k] == "suction"
+                    #             and layer_start_nd[j, i] < layer_end_nd[k, i]
+                    #         ):
+                    #             print(
+                    #                 "WARNING: The leading edge reinforcement extends above the spar caps at station "
+                    #                 + str(i)
+                    #                 + ". Please reduce its width."
+                    #             )
+                    #         elif (
+                    #             discrete_inputs["layer_side"][k] == "pressure"
+                    #             and layer_end_nd[j, i] > layer_start_nd[k, i]
+                    #         ):
+                    #             print(
+                    #                 "WARNING: The leading edge reinforcement extends above the spar caps at station "
+                    #                 + str(i)
+                    #                 + ". Please reduce its width."
+                    #             )
+                    #         else:
+                    #             pass
                 elif discrete_inputs["definition_layer"][j] == 6:  # Start and end locked to other element
                     # if inputs['layer_start_nd'][j,i] > 1:
                     layer_start_nd[j, i] = layer_end_nd[int(discrete_inputs["index_layer_start"][j]), i]
@@ -2141,7 +2141,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                 density_resin = inputs["rho"][i]
                 id_resin = i
         if self.options["composites"] and density_resin == 0.0:
-            print(
+            raise Exception(
                 "Warning: a material named resin is not defined in the input yaml.  This is required for blade composite analysis"
             )
 
