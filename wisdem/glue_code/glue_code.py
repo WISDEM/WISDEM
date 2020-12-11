@@ -484,7 +484,7 @@ class WT_RNTA(om.Group):
                 self.connect("env.mu_water", "towerse.mu_water")
                 self.connect("env.G_soil", "towerse.G_soil")
                 self.connect("env.nu_soil", "towerse.nu_soil")
-                self.connect("env.hsig_wave", "towerse.hsig_wave")
+                self.connect("env.Hsig_wave", "towerse.Hsig_wave")
                 self.connect("env.Tsig_wave", "towerse.Tsig_wave")
                 self.connect("monopile.diameter", "towerse.monopile_outer_diameter_in")
                 self.connect("monopile.foundation_height", "towerse.monopile_foundation_height")

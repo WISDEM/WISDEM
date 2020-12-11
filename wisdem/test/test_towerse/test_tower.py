@@ -697,7 +697,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rho_water"] = 1025.0
         prob["mu_water"] = 1.3351e-3
         prob["beta_wind"] = prob["beta_wave"] = 0.0
-        prob["hsig_wave"] = 0.0
+        prob["Hsig_wave"] = 0.0
         prob["Tsig_wave"] = 1e3
         prob["wind.Uref"] = 15.0
         prob["pre.rna_F"] = 1e3 * np.array(
@@ -822,7 +822,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rho_water"] = 1025.0
         prob["mu_water"] = 1.3351e-3
         prob["beta_wind"] = prob["beta_wave"] = 0.0
-        prob["hsig_wave"] = 0.0
+        prob["Hsig_wave"] = 0.0
         prob["Tsig_wave"] = 1e3
         prob["wind.Uref"] = 15.0
         prob["pre.rna_F"] = 1e3 * np.array(

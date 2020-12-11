@@ -1,11 +1,12 @@
-import numpy as np
-import numpy.testing as npt
 import unittest
+
+import numpy as np
 import openmdao.api as om
+import numpy.testing as npt
 import wisdem.floatingse.column as column
-from wisdem.commonse.vertical_cylinder import get_nfull
-from wisdem.commonse.utilities import nodal2sectional
 from wisdem.commonse import gravity as g
+from wisdem.commonse.utilities import nodal2sectional
+from wisdem.commonse.vertical_cylinder import get_nfull
 
 NHEIGHT = 6
 NPTS = get_nfull(NHEIGHT)
@@ -338,7 +339,7 @@ class TestGeometry(unittest.TestCase):
         inputs["stiffener_web_height"] = np.array([1.0, 1.0])
         inputs["stiffener_flange_width"] = np.array([2.0, 2.0])
         inputs["stiffener_spacing"] = np.array([0.1, 0.1])
-        inputs["hsig_wave"] = 5.0
+        inputs["Hsig_wave"] = 5.0
         inputs["max_draft"] = 70.0
         inputs["unit_cost"] = 1.0 * np.ones(2)
         inputs["E"] = 2e9 * np.ones(2)
@@ -382,7 +383,7 @@ class TestProperties(unittest.TestCase):
         self.inputs["freeboard"] = 15.0
         self.inputs["fairlead"] = 10.0
         self.inputs["water_depth"] = 100.0
-        self.inputs["hsig_wave"] = 5.0
+        self.inputs["Hsig_wave"] = 5.0
         self.inputs["max_draft"] = 70.0
 
         self.inputs["t_full"] = 0.5 * this_sec
@@ -643,7 +644,7 @@ class TestGroup(unittest.TestCase):
         prob["permanent_ballast_density"] = 2e4
         prob["beta_wave"] = 0.0
         prob["wave_z0"] = -100.0
-        prob["hsig_wave"] = 5.0
+        prob["Hsig_wave"] = 5.0
         prob["wind_z0"] = 0.0
         prob["zref"] = 100.0
         prob["Uref"] = 10.0

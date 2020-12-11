@@ -427,7 +427,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             env_ivc.add_output(
                 "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
             )
-            env_ivc.add_output("hsig_wave", val=0.0, units="m", desc="Significant wave height")
+            env_ivc.add_output("Hsig_wave", val=0.0, units="m", desc="Significant wave height")
             env_ivc.add_output("Tsig_wave", val=0.0, units="s", desc="Significant wave period")
             env_ivc.add_output("G_soil", val=140e6, units="N/m**2", desc="Shear stress of soil")
             env_ivc.add_output("nu_soil", val=0.4, desc="Poisson ratio of soil")

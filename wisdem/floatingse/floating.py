@@ -69,7 +69,7 @@ class FloatingSE(om.Group):
             "yaw",
             "Uc",
             "water_depth",
-            "hsig_wave",
+            "Hsig_wave",
             "Tsig_wave",
             "cd_usr",
             "cm",

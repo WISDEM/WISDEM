@@ -1388,7 +1388,7 @@ class TowerSE(om.Group):
                     promotes=[
                         ("z_floor", "water_depth"),
                         "rho_water",
-                        "hsig_wave",
+                        "Hsig_wave",
                         "Tsig_wave",
                         ("z_surface", "wind_z0"),
                     ],

@@ -1019,7 +1019,7 @@ def assign_environment_values(wt_opt, environment, offshore):
         wt_opt["env.rho_water"] = environment["water_density"]
         wt_opt["env.mu_water"] = environment["water_dyn_viscosity"]
         wt_opt["env.water_depth"] = environment["water_depth"]
-        wt_opt["env.hsig_wave"] = environment["significant_wave_height"]
+        wt_opt["env.Hsig_wave"] = environment["significant_wave_height"]
         wt_opt["env.Tsig_wave"] = environment["significant_wave_period"]
     wt_opt["env.weibull_k"] = environment["weib_shape_parameter"]
     wt_opt["env.speed_sound_air"] = environment["air_speed_sound"]
