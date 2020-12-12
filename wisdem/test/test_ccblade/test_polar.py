@@ -1,7 +1,7 @@
 import unittest
-import numpy as np
 from math import pi
 
+import numpy as np
 from wisdem.ccblade.Polar import Polar, blend
 
 
@@ -2146,4 +2146,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)
