@@ -1,7 +1,8 @@
 import unittest
-import wisdem.drivetrainse.hub as hub
-import openmdao.api as om
+
 import numpy as np
+import openmdao.api as om
+import wisdem.drivetrainse.hub as hub
 
 
 class TestHub(unittest.TestCase):
@@ -122,4 +123,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

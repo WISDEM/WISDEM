@@ -1,8 +1,10 @@
+import sys
 import unittest
-from wisdem.drivetrainse.drivetrain import DrivetrainSE
-import openmdao.api as om
+import traceback
+
 import numpy as np
-import traceback, sys
+import openmdao.api as om
+from wisdem.drivetrainse.drivetrain import DrivetrainSE
 
 npts = 12
 
@@ -378,4 +380,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

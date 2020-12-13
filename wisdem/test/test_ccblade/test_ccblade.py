@@ -12,12 +12,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import unittest
-import numpy as np
-from os import path
 import math
+import unittest
+from os import path
 
-from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
+import numpy as np
+from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 
 
 class TestNREL5MW(unittest.TestCase):
@@ -293,4 +293,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

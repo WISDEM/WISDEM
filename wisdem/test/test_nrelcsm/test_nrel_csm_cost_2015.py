@@ -1,7 +1,8 @@
+import unittest
+
+import numpy as np
 from openmdao.api import Problem
 from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
-import unittest
-import numpy as np
 
 
 class TestNewAssembly(unittest.TestCase):
@@ -52,4 +53,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

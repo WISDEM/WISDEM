@@ -1,10 +1,8 @@
 import unittest
 
 import numpy as np
-
 import openmdao.api as om
 from openmdao.utils.assert_utils import assert_check_partials
-
 from wisdem.glue_code.gc_WT_DataStruc import Compute_Grid
 
 
@@ -35,4 +33,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

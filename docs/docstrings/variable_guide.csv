@@ -1,0 +1,1772 @@
+Variable,Units,Description
+airfoils.Re,,1D array of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.
+airfoils.ac,,1D array of the aerodynamic centers of each airfoil.
+airfoils.aoa,rad,1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.
+airfoils.cd,,"4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap."
+airfoils.cl,,"4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap."
+airfoils.cm,,"4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.mass coefficient"
+airfoils.coord_xy,,3D array of the x and y airfoil coordinates of the n_af airfoils.
+airfoils.name,Unavailable,1D array of names of airfoils.
+airfoils.r_thick,,1D array of the relative thicknesses of each airfoil.
+assembly.blade_length,m,"Scalar of the 3D blade length computed along its axis, scaled based on the user defined rotor diameter."
+assembly.blade_ref_axis,m,"2D array of the coordinates (x,y,z) of the blade reference axis scaled based on rotor diameter, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values."
+assembly.blade_ref_axis_user,m,"2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values."
+assembly.distance_tt_hub,m,Vertical distance from tower top to hub center.
+assembly.hub_height,m,"Height of the hub in the global reference system, i.e. distance rotor center to ground.hub height of wind turbine above ground / sea level"
+assembly.hub_height_user,m,Height of the hub specified by the user.
+assembly.hub_radius,m,Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.
+assembly.r_blade,m,1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)
+assembly.rotor_diameter,m,Diameter of the rotor used in WISDEM. It is defined as two times the blade length plus the hub diameter.rotor diameter
+assembly.rotor_diameter_user,m,Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.
+assembly.rotor_radius,m,"Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles."
+assembly.tower_ref_axis,m,"2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values."
+assembly.tower_ref_axis_user,m,"2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values."
+blade.internal_structure_2d_fem.chord,m,1D array of the chord values defined along blade span.Chord length at each section.
+blade.internal_structure_2d_fem.coord_xy_dim,m,3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.
+blade.internal_structure_2d_fem.definition_layer,Unavailable,"1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer"
+blade.internal_structure_2d_fem.definition_web,Unavailable,1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation
+blade.internal_structure_2d_fem.index_layer_end,Unavailable,Index used to fix a layer to another
+blade.internal_structure_2d_fem.index_layer_start,Unavailable,Index used to fix a layer to another
+blade.internal_structure_2d_fem.layer_end_nd,,"2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_end_nd_yaml,,"2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_midpoint_nd,,"2D array of the non-dimensional midpoint defined along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_offset_y_pa,m,"2D array of the offset along the y axis to set the position of a layer. Positive values move the layer towards the trailing edge, negative values towards the leading edge. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_offset_y_pa_yaml,m,"2D array of the offset along the y axis to set the position of a layer. Positive values move the layer towards the trailing edge, negative values towards the leading edge. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_rotation,rad,"2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight."
+blade.internal_structure_2d_fem.layer_rotation_yaml,rad,"2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight."
+blade.internal_structure_2d_fem.layer_side,Unavailable,1D array setting whether the layer is on the suction or pressure side. This entry is only used if definition_layer is equal to 1 or 2.
+blade.internal_structure_2d_fem.layer_start_nd,,"2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_start_nd_yaml,,"2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_thickness,m,"2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.2D array of the thickness of the layers of the column structure. The first
+dimension represents each layer, the second dimension represents each piecewise-
+constant entry of the column sections."
+blade.internal_structure_2d_fem.layer_web,,"1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to zero."
+blade.internal_structure_2d_fem.layer_width,m,"2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_width_yaml,m,"2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.pitch_axis,,"1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span."
+blade.internal_structure_2d_fem.s,,"1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)1D array of the non-dimensional grid defined along the column axis (0-column base,
+1-column top)"
+blade.internal_structure_2d_fem.twist,rad,1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).
+blade.internal_structure_2d_fem.web_end_nd,,"2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.web_end_nd_yaml,,"2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.web_offset_y_pa,m,"2D array of the offset along the y axis to set the position of the shear webs. Positive values move the web towards the trailing edge, negative values towards the leading edge. The first dimension represents each shear web, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.web_offset_y_pa_yaml,m,"2D array of the offset along the y axis to set the position of the shear webs. Positive values move the web towards the trailing edge, negative values towards the leading edge. The first dimension represents each shear web, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.web_rotation,rad,"2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight."
+blade.internal_structure_2d_fem.web_rotation_yaml,rad,"2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight."
+blade.internal_structure_2d_fem.web_start_nd,,"2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.web_start_nd_yaml,,"2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span."
+blade.interp_airfoils.ac,,1D array of the aerodynamic centers of each airfoil.
+blade.interp_airfoils.ac_interp,,1D array of the aerodynamic center of the blade defined along span.
+blade.interp_airfoils.af_position,,1D array of the non dimensional positions of the airfoils af_used defined along blade span.
+blade.interp_airfoils.aoa,rad,1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.
+blade.interp_airfoils.cd,,"4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap."
+blade.interp_airfoils.cd_interp,,"4D array with the drag coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap."
+blade.interp_airfoils.chord,m,1D array of the chord values defined along blade span.Chord length at each section.
+blade.interp_airfoils.cl,,"4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap."
+blade.interp_airfoils.cl_interp,,"4D array with the lift coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap."
+blade.interp_airfoils.cm,,"4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.mass coefficient"
+blade.interp_airfoils.cm_interp,,"4D array with the moment coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap."
+blade.interp_airfoils.coord_xy,,3D array of the x and y airfoil coordinates of the n_af airfoils.
+blade.interp_airfoils.coord_xy_dim,m,3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.
+blade.interp_airfoils.coord_xy_interp,,3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.
+blade.interp_airfoils.name,Unavailable,1D array of names of airfoils.
+blade.interp_airfoils.pitch_axis,,"1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span."
+blade.interp_airfoils.r_thick,,1D array of the relative thicknesses of each airfoil.
+blade.interp_airfoils.r_thick_interp,,1D array of the relative thicknesses of the blade defined along span.
+blade.interp_airfoils.s,,"1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)1D array of the non-dimensional grid defined along the column axis (0-column base,
+1-column top)"
+blade.opt_var.af_position,,
+blade.opt_var.chord_opt_gain,,
+blade.opt_var.s_opt_chord,,
+blade.opt_var.s_opt_twist,,
+blade.opt_var.spar_cap_ps_opt_gain,,
+blade.opt_var.spar_cap_ss_opt_gain,,
+blade.opt_var.twist_opt_gain,,
+blade.outer_shape_bem.af_position,,1D array of the non dimensional positions of the airfoils af_used defined along blade span.
+blade.outer_shape_bem.chord,m,1D array of the chord values defined along blade span.Chord length at each section.
+blade.outer_shape_bem.chord_yaml,m,1D array of the chord values defined along blade span.
+blade.outer_shape_bem.pitch_axis,,"1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span."
+blade.outer_shape_bem.pitch_axis_yaml,,"1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span."
+blade.outer_shape_bem.ref_axis,m,"2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values."
+blade.outer_shape_bem.ref_axis_yaml,m,"2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values."
+blade.outer_shape_bem.s,,"1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)1D array of the non-dimensional grid defined along the column axis (0-column base,
+1-column top)"
+blade.outer_shape_bem.s_default,,"1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)"
+blade.outer_shape_bem.span_end,,1D array of the positions along blade span where something (a DAC device?) starts and we want a grid point. Only values between 0 and 1 are meaningful.
+blade.outer_shape_bem.span_ext,,1D array of the extensions along blade span where something (a DAC device?) lives and we want a grid point. Only values between 0 and 1 are meaningful.
+blade.outer_shape_bem.twist,rad,1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).
+blade.outer_shape_bem.twist_yaml,rad,1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).
+blade.pa.chord_opt_gain,,1D array of the non-dimensional gains to optimize the blade spanwise distribution of the chord
+blade.pa.chord_original,m,1D array of the chord values defined along blade span. The chord is the one defined in the yaml.
+blade.pa.chord_param,m,1D array of the chord values defined along blade span. The chord is the result of the parameterization.
+blade.pa.max_chord_constr,,1D array of the ratio between chord values and maximum chord along blade span.
+blade.pa.s,,"1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)1D array of the non-dimensional grid defined along the column axis (0-column base,
+1-column top)"
+blade.pa.s_opt_chord,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade chord
+blade.pa.s_opt_twist,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade twist angle
+blade.pa.twist_opt_gain,,1D array of the non-dimensional gains to optimize the blade spanwise distribution of the twist angle
+blade.pa.twist_original,rad,1D array of the twist values defined along blade span. The twist is the one defined in the yaml.
+blade.pa.twist_param,rad,1D array of the twist values defined along blade span. The twist is the result of the parameterization.
+blade.ps.layer_thickness_original,m,"2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.ps.layer_thickness_param,m,"2D array of the thickness of the layers of the blade structure after the parametrization. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.ps.s,,"1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)1D array of the non-dimensional grid defined along the column axis (0-column base,
+1-column top)"
+blade.ps.s_opt_spar_cap_ps,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap pressure side
+blade.ps.s_opt_spar_cap_ss,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side
+blade.ps.spar_cap_ps_opt_gain,,1D array of the non-dimensional gains to optimize the blade spanwise distribution of the spar caps pressure side
+blade.ps.spar_cap_ss_opt_gain,,1D array of the non-dimensional gains to optimize the blade spanwise distribution of the spar caps suction side
+bos.boem_review_cost,USD,
+bos.commissioning_pct,,
+bos.construction_operations_plan_cost,USD,
+bos.decommissioning_pct,,
+bos.design_install_plan_cost,USD,
+bos.distance_to_interconnection,km,
+bos.distance_to_landfall,km,
+bos.distance_to_substation,km,
+bos.interconnect_voltage,kV,
+bos.plant_row_spacing,,Distance between turbine rows in rotor diameters
+bos.plant_turbine_spacing,,Distance between turbines in rotor diameters
+bos.port_cost_per_month,USD/mo,
+bos.site_assessment_cost,USD,
+bos.site_assessment_plan_cost,USD,
+bos.site_auction_price,USD,
+bos.site_distance,km,
+ccblade.CM,,Blade flapwise moment coefficient
+ccblade.CP,,Rotor power coefficient
+ccblade.D_n_opt,N/m,Distributed drag force
+ccblade.DragF,N/m,Distributed drag force
+ccblade.L_n_opt,N/m,Distributed lift force
+ccblade.LiftF,N/m,Distributed lift force
+ccblade.Px_af,N/m,Distributed loads in airfoil x-direction
+ccblade.Px_b,N/m,Distributed loads in blade-aligned x-direction
+ccblade.Py_af,N/m,Distributed loads in airfoil y-direction
+ccblade.Py_b,N/m,Distributed loads in blade-aligned y-direction
+ccblade.Pz_af,N/m,Distributed loads in airfoil z-direction
+ccblade.Pz_b,N/m,Distributed loads in blade-aligned z-direction
+ccblade.Rhub,m,hub radiusHub radius.
+ccblade.Rtip,m,tip radiusBlade tip location in z_b
+ccblade.Uhub,m/s,Undisturbed wind speed
+ccblade.a,,Axial induction  along blade span
+ccblade.airfoils_Re,,Reynolds numbers of polarsReynolds numbers of polars.
+ccblade.airfoils_aoa,deg,angle of attack grid for polarsAngle of attack grid for polars.
+ccblade.airfoils_cd,,"drag coefficients, spanwiseDrag coefficients, spanwise."
+ccblade.airfoils_cl,,"lift coefficients, spanwiseLift coefficients, spanwise."
+ccblade.airfoils_cm,,"moment coefficients, spanwiseMoment coefficients, spanwise."
+ccblade.alpha,deg,Angles of attack along blade span
+ccblade.ap,,Tangential induction along blade span
+ccblade.cd,,Drag coefficients along blade span
+ccblade.cd_n_opt,,Drag coefficients along blade span
+ccblade.chord,m,chord length at each sectionChord length at each section.
+ccblade.cl,,Lift coefficients along blade span
+ccblade.cl_n_opt,,Lift coefficients along blade span
+ccblade.hub_height,m,hub heighthub height of wind turbine above ground / sea level
+ccblade.hubloss,Unavailable,include Prandtl hub loss modelInclude Prandtl hub loss model.
+ccblade.mu,kg/(m*s),dynamic viscosity of airDynamic viscosity of air
+ccblade.nBlades,Unavailable,number of bladesNumber of blades
+ccblade.nSector,Unavailable,number of sectors to divide rotor face into in computing thrust and powerNumber of sectors to divide rotor face into in computing thrust and power.
+ccblade.pitch,deg,Pitch angle
+ccblade.precone,deg,precone angleRotor precone angle
+ccblade.precurve,m,precurve at each sectionPrecurve at each section.
+ccblade.precurveTip,m,precurve at tipPrecurve at tip.
+ccblade.presweep,m,presweep at each section
+ccblade.presweepTip,m,presweep at tip
+ccblade.r,m,"radial locations where blade is defined (should be increasing and not go all the way to hub or tip)Radial locations where blade is defined. Should be increasing and not
+go all the way to hub or tip."
+ccblade.rho,kg/m**3,density of airDensity of the materials along the column sections.
+ccblade.rthick,,1D array of the relative thicknesses of the blade defined along span.
+ccblade.s_opt_chord,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade chord
+ccblade.s_opt_twist,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade twist
+ccblade.shearExp,,shear exponentshear exponent
+ccblade.theta,rad,Twist angle at each section (positive decreases angle of attack)Twist angle at each section (positive decreases angle of attack).
+ccblade.tilt,deg,shaft tiltNacelle uptilt angle
+ccblade.tiploss,Unavailable,include Prandtl tip loss modelInclude Prandtl tip loss model.
+ccblade.tsr,,Tip speed ratio
+ccblade.twist,rad,twist angle at each section (positive decreases angle of attack)
+ccblade.usecd,Unavailable,use drag coefficient in computing induction factorsUse drag coefficient in computing induction factors.
+ccblade.wakerotation,Unavailable,"include effect of wake rotation (i.e., tangential induction factor is nonzero)Iclude effect of wake rotation (i.e., tangential induction factor is nonzero)."
+ccblade.yaw,deg,yaw erroryaw angle
+configuration.gearbox_type,Unavailable,"Gearbox configuration (geared, direct-drive, etc.)."
+configuration.hub_height_user,m,Height of the hub center over the ground (land-based) or the mean sea level (offshore) specified by the user.
+configuration.n_blades,Unavailable,Number of blades of the rotor.Number of rotor blades
+configuration.rated_power,W,Electrical rated power of the generator.
+configuration.rotor_diameter_user,m,Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.
+configuration.rotor_orientation,Unavailable,"Rotor orientation, either upwind or downwind.Rotor orientation, either upwind or downwind."
+configuration.turb_class,Unavailable,"IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore)."
+configuration.upwind,Unavailable,Convenient boolean for upwind (True) or downwind (False).Flag whether the design is upwind or downwind
+configuration.ws_class,Unavailable,"IEC wind turbine class. I - offshore, II coastal, III - land-based, IV - low wind speed site."
+control.V_in,m/s,Cut in wind speed. This is the wind speed where region II begins.
+control.V_out,m/s,Cut out wind speed. This is the wind speed where region III ends.
+control.maxOmega,rad/s,Maximum allowed rotor speed.
+control.max_TS,m/s,Maximum allowed blade tip speed.
+control.max_pitch_rate,rad/s,Maximum allowed blade pitch rate
+control.max_torque_rate,N*m/s,Maximum allowed generator torque rate
+control.minOmega,rad/s,Minimum allowed rotor speed.
+control.rated_TSR,,Constant tip speed ratio in region II.
+control.rated_pitch,rad,Constant pitch angle in region II.
+costs.bearing_mass_cost_coeff,USD/kg,main bearing mass-cost coeff
+costs.bedplate_mass_cost_coeff,USD/kg,bedplate mass-cost coeff
+costs.blade_mass_cost_coeff,USD/kg,blade mass-cost coeff
+costs.bos_per_kW,USD/kW,Balance of station/plant capital costBalance of system costs of the turbine
+costs.controls_machine_rating_cost_coeff,USD/kW,controls cost coefficient per kW
+costs.converter_mass_cost_coeff,USD/kg,variable speed electronics mass cost coeff
+costs.cover_mass_cost_coeff,USD/kg,nacelle cover mass cost coeff
+costs.crane_cost,USD,crane cost if present
+costs.elec_connec_machine_rating_cost_coeff,USD/kW,electrical connections cost coefficient per kW
+costs.fixed_charge_rate,,Fixed charge rate for coe calculationFixed charge rate for coe calculation
+costs.gearbox_mass_cost_coeff,USD/kg,gearbox mass-cost coeff
+costs.generator_mass_cost_coeff,USD/kg,generator mass cost coeff
+costs.hss_mass_cost_coeff,USD/kg,high speed shaft mass-cost coeff
+costs.hub_mass_cost_coeff,USD/kg,hub mass-cost coeff
+costs.hvac_mass_cost_coeff,USD/kg,hydraulic and cooling system mass cost coeff
+costs.labor_rate,USD/h,
+costs.lss_mass_cost_coeff,USD/kg,low speed shaft mass-cost coeff
+costs.offset_tcc_per_kW,USD/kW,Offset to turbine capital costOffset to turbine capital cost
+costs.opex_per_kW,USD/kW/yr,Average annual operational expenditures of the turbineAverage annual operational expenditures of the turbine
+costs.painting_rate,USD/m**2,
+costs.pitch_system_mass_cost_coeff,USD/kg,pitch system mass-cost coeff
+costs.platforms_mass_cost_coeff,USD/kg,nacelle platforms mass cost coeff
+costs.spinner_mass_cost_coeff,USD/kg,spinner/nose cone mass-cost coeff
+costs.tower_mass_cost_coeff,USD/kg,tower mass-cost coeff
+costs.transformer_mass_cost_coeff,USD/kg,transformer mass cost coeff
+costs.turbine_number,Unavailable,Number of turbines at plantNumber of turbines at plant
+costs.wake_loss_factor,,The losses in AEP due to waked conditionsThe losses in AEP due to waked conditions
+costs.yaw_mass_cost_coeff,USD/kg,yaw system mass cost coeff
+drivese.D_bearing1,m,
+drivese.D_bearing2,m,
+drivese.D_bedplate,m,Bedplate diameters
+drivese.D_gearbox,m,
+drivese.D_top,m,Tower top outer diameter
+drivese.E_mat,Pa,"2D array of the Youngs moduli of the materials. Each row represents a material,
+the three columns represent E11, E22 and E33."
+drivese.F_generator,N,
+drivese.F_hub,N,Force vector applied to the hub (WITH WEIGHT???)
+drivese.F_mb1,N,Force vector applied to bearing 1 in hub c.s.
+drivese.F_mb2,N,Force vector applied to bearing 2 in hub c.s.
+drivese.F_torq,N,
+drivese.G_mat,Pa,"2D array of the shear moduli of the materials. Each row represents a material,
+the three columns represent G12, G13 and G23."
+drivese.H_bedplate,m,height of bedplate
+drivese.L_12,m,Length from bearing #1 to bearing #2
+drivese.L_bedplate,m,
+drivese.L_drive,m,Length of drivetrain from bedplate to hub flang
+drivese.L_gearbox,m,
+drivese.L_generator,m,Generator stack width
+drivese.L_h1,m,Length from hub / start of lss to bearing #1
+drivese.L_hss,m,
+drivese.L_lss,m,
+drivese.L_nose,m,
+drivese.M_generator,N*m,
+drivese.M_hub,N*m,Moment vector applied to the hub
+drivese.M_mb1,N*m,Moment vector applied to bearing 1 in hub c.s.
+drivese.M_mb2,N*m,Moment vector applied to bearing 2 in hub c.s.
+drivese.M_torq,N*m,
+drivese.R_generator,m,Generatour outer diameter
+drivese.Xt_mat,Pa,
+drivese.above_yaw_I,kg*m**2,
+drivese.above_yaw_cm,m,
+drivese.above_yaw_mass,kg,
+drivese.access_diameter,m,Minimum diameter required for maintenance access
+drivese.base_F,N,
+drivese.base_M,N*m,
+drivese.bear1.D_bearing,m,bearing diameter/facewidth
+drivese.bear1.D_shaft,m,Shaft diameter
+drivese.bear1.bearing_type,Unavailable,bearing mass type
+drivese.bear1.mb_I,kg*m**2,
+drivese.bear1.mb_mass,kg,
+drivese.bear1.mb_max_defl_ang,rad,
+drivese.bear2.D_bearing,m,bearing diameter/facewidth
+drivese.bear2.D_shaft,m,Shaft diameter
+drivese.bear2.bearing_type,Unavailable,bearing mass type
+drivese.bear2.mb_I,kg*m**2,
+drivese.bear2.mb_mass,kg,
+drivese.bear2.mb_max_defl_ang,rad,
+drivese.bedplate_E,Pa,modulus of elasticity
+drivese.bedplate_G,Pa,shear modulus
+drivese.bedplate_I,kg*m**2,component I
+drivese.bedplate_Xy,Pa,yield stress
+drivese.bedplate_axial_stress,Pa,
+drivese.bedplate_bending_stress,Pa,
+drivese.bedplate_cm,m,component CM
+drivese.bedplate_deflection,m,
+drivese.bedplate_flange_thickness,m,"Bedplate is two parallel I beams, this is the flange thickness"
+drivese.bedplate_flange_width,m,"Bedplate is two parallel I beams, this is the flange width"
+drivese.bedplate_mass,kg,component mass
+drivese.bedplate_mat_cost,USD/kg,
+drivese.bedplate_material,Unavailable,
+drivese.bedplate_nose_axial_stress,Pa,
+drivese.bedplate_nose_bending_stress,Pa,
+drivese.bedplate_nose_shear_stress,Pa,
+drivese.bedplate_rho,kg/m**3,material density
+drivese.bedplate_rotation,rad,
+drivese.bedplate_shear_stress,Pa,
+drivese.bedplate_wall_thickness,m,Bedplate wall thickness
+drivese.bedplate_web_height,m,"Bedplate is two parallel I beams, this is the web height"
+drivese.bedplate_web_thickness,m,"Bedplate is two parallel I beams, this is the web thickness"
+drivese.blade_mass,kg,Total mass of one blade
+drivese.blade_root_diameter,m,Outer diameter of blade root
+drivese.blades_I,kg*m**2,Mass moments of inertia of all blades about hub center
+drivese.blades_mass,kg,Mass of all bladea
+drivese.brake_I,kg*m**2,component I
+drivese.brake_cm,m,component CM
+drivese.brake_mass,kg,component mass
+drivese.brake_mass_user,kg,User override of brake mass
+drivese.carrier_I,kg*m**2,
+drivese.carrier_mass,kg,
+drivese.clearance_hub_spinner,m,Clearance between spinner and hub
+drivese.constr_access,m,
+drivese.constr_bedplate_vonmises,,
+drivese.constr_ecc,m,
+drivese.constr_height,m,
+drivese.constr_hss_vonmises,,
+drivese.constr_hub_diameter,m,
+drivese.constr_length,m,
+drivese.constr_lss_vonmises,,
+drivese.constr_mb1_defl,,
+drivese.constr_mb2_defl,,
+drivese.converter_I,kg*m**2,"moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass"
+drivese.converter_cm,m,"center of mass of the component in [x,y,z] for an arbitrary coordinate system"
+drivese.converter_mass,kg,overall component mass
+drivese.converter_mass_user,kg,Override regular regression-based calculation of converter mass with this value
+drivese.cover_I,m,component mass moments of inertia
+drivese.cover_cm,m,component center of mass
+drivese.cover_mass,kg,component mass
+drivese.drive_height,m,Hub height above tower top
+drivese.flange_ID2flange_OD,,Ratio of flange inner diameter to flange outer diameter
+drivese.flange_OD2hub_D,,Ratio of flange outer diameter to hub diameter
+drivese.flange_t2shell_t,,Ratio of flange thickness to shell thickness
+drivese.gear_configuration,Unavailable,3-letter string of Es or Ps to denote epicyclic or parallel gear configuration
+drivese.gear_ratio,,overall gearbox ratio
+drivese.gearbox_I,kg*m**2,Gearbox moment of inertia (measured about its cm)
+drivese.gearbox_cm,m,component CM
+drivese.gearbox_mass,kg,Gearbox rotor mass
+drivese.generator.A_1,,
+drivese.generator.A_Curcalc,mm**2,
+drivese.generator.A_Cuscalc,mm**2,
+drivese.generator.B_g,T,
+drivese.generator.B_g1,T,
+drivese.generator.B_pm1,,
+drivese.generator.B_r,T,Remnant flux density
+drivese.generator.B_rymax,T,
+drivese.generator.B_smax,T,
+drivese.generator.B_symax,T,Peak Stator Yoke flux density B_ymax
+drivese.generator.B_tmax,T,Peak Teeth flux density
+drivese.generator.B_trmax,T,
+drivese.generator.B_tsmax,T,
+drivese.generator.C_Cu,USD/kg,Specific cost of copper
+drivese.generator.C_Fe,USD/kg,Specific cost of magnetic steel/iron
+drivese.generator.C_Fes,USD/kg,Specific cost of structural steel
+drivese.generator.C_PM,USD/kg,Specific cost of Magnet
+drivese.generator.Copper,kg,Copper mass
+drivese.generator.Current_ratio,,
+drivese.generator.D_nose,m,Nose outer diameter
+drivese.generator.D_ratio,,
+drivese.generator.D_ratio_L,,
+drivese.generator.D_ratio_LL,,
+drivese.generator.D_ratio_U,,
+drivese.generator.D_ratio_UL,,
+drivese.generator.D_shaft,m,Shaft diameter
+drivese.generator.E,Pa,Isotropic Youngs modulus of the materials along the column sections.
+drivese.generator.E_p,V,Stator phase voltage
+drivese.generator.G,Pa,Isotropic shear modulus of the materials along the column sections.
+drivese.generator.I_0,A,no-load excitation current
+drivese.generator.I_s,A,
+drivese.generator.Iron,kg,Iron mass
+drivese.generator.J_actual,A/m**2,
+drivese.generator.J_r,,
+drivese.generator.J_s,A*m**-2,
+drivese.generator.K_rad,,
+drivese.generator.K_rad_L,,
+drivese.generator.K_rad_LL,,
+drivese.generator.K_rad_U,,
+drivese.generator.K_rad_UL,,
+drivese.generator.L_r,,
+drivese.generator.L_s,,
+drivese.generator.L_sm,,
+drivese.generator.Losses,W,
+drivese.generator.Mass_tooth_stator,kg,
+drivese.generator.Mass_yoke_rotor,kg,
+drivese.generator.Mass_yoke_stator,kg,
+drivese.generator.N_c,,Number of turns per coil
+drivese.generator.N_r,,
+drivese.generator.N_s,,
+drivese.generator.P_Fe0e,W/kg,"specific eddy losses @ 1.5T, 50Hz"
+drivese.generator.P_Fe0h,W/kg,specific hysteresis losses W / kg @ 1.5 T @50 Hz
+drivese.generator.P_mech,W,Shaft mechanical power
+drivese.generator.Q_r,,
+drivese.generator.R_R,,
+drivese.generator.R_out,m,Outer radius
+drivese.generator.R_s,ohm,
+drivese.generator.S,,
+drivese.generator.S_N,,Slip
+drivese.generator.S_Nmax,,Max rated Slip
+drivese.generator.Slot_aspect_ratio,,
+drivese.generator.Slot_aspect_ratio1,,
+drivese.generator.Slot_aspect_ratio2,,
+drivese.generator.Structural_mass,kg,Structural mass
+drivese.generator.Structural_mass_rotor,kg,
+drivese.generator.Structural_mass_stator,kg,
+drivese.generator.TC1,m**3,
+drivese.generator.TC2r,m**3,
+drivese.generator.TC2s,m**3,
+drivese.generator.TCr,m**3,
+drivese.generator.TCs,m**3,
+drivese.generator.T_e,N*m,
+drivese.generator.alpha_p,,
+drivese.generator.b,,Slot pole combination
+drivese.generator.b_allow_r,m,
+drivese.generator.b_allow_s,m,
+drivese.generator.b_arm,m,arm width
+drivese.generator.b_m,,
+drivese.generator.b_r,,
+drivese.generator.b_r_tau_r,,Rotor Slot width / Slot pitch ratio
+drivese.generator.b_ro,m,Rotor slot opening width
+drivese.generator.b_s,m,
+drivese.generator.b_s_tau_s,,Stator Slot width/Slot pitch ratio
+drivese.generator.b_so,m,Stator slot opening width
+drivese.generator.b_st,m,arm width b_st
+drivese.generator.b_t,m,
+drivese.generator.b_tr,,
+drivese.generator.b_trmin,,
+drivese.generator.c,,Slot pole combination
+drivese.generator.cofi,,power factor
+drivese.generator.con_Bsmax,T,
+drivese.generator.con_TC2r,m**3,
+drivese.generator.con_TC2s,m**3,
+drivese.generator.con_br,m,
+drivese.generator.con_bst,m,
+drivese.generator.con_uar,m,
+drivese.generator.con_uas,m,
+drivese.generator.con_yar,m,
+drivese.generator.con_yas,m,
+drivese.generator.con_zar,m,
+drivese.generator.con_zas,m,
+drivese.generator.d_r,m,arm depth d_r
+drivese.generator.d_s,m,arm depth d_s
+drivese.generator.f,,
+drivese.generator.freq,Hz,grid frequency
+drivese.generator.h_0,m,Slot height
+drivese.generator.h_i,m,coil insulation thickness
+drivese.generator.h_m,m,magnet height
+drivese.generator.h_s,m,Yoke height h_s
+drivese.generator.h_sr,m,Structural Mass
+drivese.generator.h_ss,m,Stator yoke height
+drivese.generator.h_sy0,,
+drivese.generator.h_t,m,
+drivese.generator.h_w,m,Slot wedge height
+drivese.generator.h_yr,m,rotor yoke height
+drivese.generator.h_ys,m,Yoke height
+drivese.generator.k_fes,,Stator iron fill factor per Grauers
+drivese.generator.k_fillr,,Rotor slot fill factor
+drivese.generator.k_fills,,Stator Slot fill factor
+drivese.generator.k_s,,magnetic saturation factor for iron
+drivese.generator.len_ag,m,
+drivese.generator.len_s,m,Stator core length
+drivese.generator.m,Unavailable,added mass
+drivese.generator.mass_PM,kg,Magnet mass
+drivese.generator.mu_0,m*kg/s**2/A**2,permeability of free space
+drivese.generator.mu_r,m*kg/s**2/A**2,relative permeability (neodymium)
+drivese.generator.n_r,,number of arms n
+drivese.generator.n_s,,number of stator arms n_s
+drivese.generator.p,,pressure oscillation
+drivese.generator.phi,rad,tilt angle (during transportation)
+drivese.generator.q,N/m**2,
+drivese.generator.q1,Unavailable,Stator slots per pole per phase
+drivese.generator.q2,Unavailable,Rotor slots per pole per phase
+drivese.generator.rad_ag,m,airgap radius
+drivese.generator.ratio_mw2pp,,ratio of magnet width to pole pitch(bm / self.tau_p)
+drivese.generator.resist_Cu,ohm/m,Copper resistivity
+drivese.generator.rho_Copper,kg*m**-3,Copper density
+drivese.generator.rho_Fe,kg*m**-3,Magnetic Steel density
+drivese.generator.rho_Fes,kg*m**-3,Structural Steel density
+drivese.generator.rho_PM,kg*m**-3,Magnet density
+drivese.generator.shaft_rpm,rpm,"rated speed of input shaft (lss for direct, hss for geared)"
+drivese.generator.sigma,Pa,assumed max shear stress
+drivese.generator.t_r,m,Rotor disc thickness
+drivese.generator.t_s,m,Stator disc thickness
+drivese.generator.t_wr,m,arm depth thickness
+drivese.generator.t_ws,m,arm depth thickness
+drivese.generator.tau_p,m,Pole pitch self.tau_p
+drivese.generator.tau_s,m,
+drivese.generator.theta_bd,rad,Slope at the bedplate
+drivese.generator.theta_sh,rad,slope of shaft
+drivese.generator.twist_r,deg,
+drivese.generator.twist_s,deg,
+drivese.generator.u_allow_pcent,,Radial deflection as a percentage of air gap diameter
+drivese.generator.u_allow_r,m,
+drivese.generator.u_allow_s,m,
+drivese.generator.u_ar,m,
+drivese.generator.u_as,m,
+drivese.generator.v,,poisson ratio
+drivese.generator.y_allow_pcent,,Radial deflection as a percentage of air gap diameter
+drivese.generator.y_allow_r,m,
+drivese.generator.y_allow_s,m,
+drivese.generator.y_ar,m,
+drivese.generator.y_as,m,
+drivese.generator.y_bd,m,Deflection of the bedplate
+drivese.generator.y_sh,m,Shaft deflection
+drivese.generator.y_tau_p,,Stator coil span to pole pitch
+drivese.generator.y_tau_pr,,Rotor coil span to pole pitch
+drivese.generator.z_allow_deg,deg,Allowable torsional twist
+drivese.generator.z_allow_r,m,
+drivese.generator.z_allow_s,m,
+drivese.generator.z_ar,m,
+drivese.generator.z_as,m,
+drivese.generator_I,kg*m**2,component I
+drivese.generator_cm,m,component CM
+drivese.generator_cost,USD,generator cost
+drivese.generator_efficiency,,
+drivese.generator_mass,kg,Actual mass
+drivese.generator_rotor_I,kg*m**2,Generator rotor moment of inertia (measured about its cm)
+drivese.generator_rotor_mass,kg,Generator rotor mass
+drivese.generator_stator_I,kg*m**2,Generator stator moment of inertia (measured about cm)
+drivese.generator_stator_mass,kg,Generator stator mass
+drivese.hss_E,Pa,modulus of elasticity
+drivese.hss_G,Pa,shear modulus
+drivese.hss_I,kg*m**2,component I
+drivese.hss_Xy,Pa,yield stress
+drivese.hss_axial_stress,Pa,
+drivese.hss_bending_stress,Pa,
+drivese.hss_cm,m,component CM
+drivese.hss_cost,USD/kg,hss cost
+drivese.hss_diameter,m,Lss discretized diameter values at coordinates
+drivese.hss_mass,kg,component mass
+drivese.hss_material,Unavailable,
+drivese.hss_rho,kg/m**3,material density
+drivese.hss_rpm,rpm,
+drivese.hss_shear_stress,Pa,
+drivese.hss_wall_thickness,m,Lss discretized thickness values at coordinates
+drivese.hub_E,Pa,
+drivese.hub_G,Pa,
+drivese.hub_I,kg*m**2,Total mass moment of inertia of the hub about its cm
+drivese.hub_Xy,Pa,
+drivese.hub_cm,m,Distance between hub/shaft flange and hub center of mass
+drivese.hub_cost,USD,"Cost of the hub shell, including flanges"
+drivese.hub_diameter,m,Outer diameter of the hub
+drivese.hub_in2out_circ,,
+drivese.hub_mass,kg,"Total mass of the hub shell, including the flanges"
+drivese.hub_mat_cost,USD/kg,
+drivese.hub_material,Unavailable,
+drivese.hub_rho,kg/m**3,
+drivese.hub_shell.Xy,Pa,Yield strength metal
+drivese.hub_shell.metal_cost,USD/kg,Unit cost metal
+drivese.hub_shell.n_blades,Unavailable,Number of rotor blades
+drivese.hub_shell.rho,kg/m**3,Density of the materials along the column sections.
+drivese.hub_stress_concentration,,"Stress concentration factor. Stress concentration occurs at all fillets,
+notches, lifting lugs, hatches and are accounted for by assigning a
+stress concentration factor"
+drivese.hub_system_I,kg*m**2,Hub system moment of inertia
+drivese.hub_system_cm,m,Hub system center of mass distance from hub flange
+drivese.hub_system_cost,USD,Cost for hub system
+drivese.hub_system_mass,kg,Hub system mass
+drivese.hvac_I,m,component mass moments of inertia
+drivese.hvac_cm,m,component center of mass
+drivese.hvac_mass,kg,component mass
+drivese.hvac_mass_coeff,kg/kW/m,Regression-based scaling coefficient on machine rating to get HVAC system mass
+drivese.lss_E,Pa,modulus of elasticity
+drivese.lss_G,Pa,shear modulus
+drivese.lss_I,kg*m**2,LSS moment of inertia around cm in axial (hub-aligned) c.s.
+drivese.lss_Xy,Pa,yield stress
+drivese.lss_axial_stress,Pa,
+drivese.lss_cm,m,LSS center of mass along shaft axis from bedplate
+drivese.lss_cost,USD/kg,lss cost
+drivese.lss_diameter,m,LSS outer diameter from hub to bearing 2
+drivese.lss_mass,kg,LSS mass
+drivese.lss_material,Unavailable,
+drivese.lss_rho,kg/m**3,material density
+drivese.lss_rpm,rpm,
+drivese.lss_shear_stress,Pa,
+drivese.lss_wall_thickness,m,LSS wall thickness
+drivese.machine_rating,kW,Machine rating
+drivese.material_names,Unavailable,1D array of names of materials.
+drivese.max_torque,N*m,Max torque that the hub needs to resist (Mx in a hub aliged reference system)
+drivese.mb1_I,kg*m**2,component I
+drivese.mb1_cm,m,component CM
+drivese.mb1_deflection,m,
+drivese.mb1_mass,kg,component mass
+drivese.mb1_max_defl_ang,rad,Maximum allowable deflection angle
+drivese.mb1_rotation,rad,
+drivese.mb2_I,kg*m**2,component I
+drivese.mb2_cm,m,component CM
+drivese.mb2_deflection,m,
+drivese.mb2_mass,kg,component mass
+drivese.mb2_max_defl_ang,rad,Maximum allowable deflection angle
+drivese.mb2_rotation,rad,
+drivese.mean_bearing_mass,kg,
+drivese.minimum_rpm,rpm,"Minimum shaft rotations-per-minute (rpm), usually set by controller"
+drivese.n_blades,Unavailable,Number of rotor blades
+drivese.n_front_brackets,Unavailable,Number of front spinner brackets
+drivese.n_rear_brackets,Unavailable,Number of rear spinner brackets
+drivese.nacelle_I,kg*m**2,Mass moments of inertia of nacelle about its CofM
+drivese.nacelle_cm,m,Nacelle center of mass relative to tower top in yaw-aligned c.s.
+drivese.nacelle_mass,kg,Mass of nacelle system
+drivese.nose_I,kg*m**2,Nose moment of inertia around cm in axial (hub-aligned) c.s.
+drivese.nose_cm,m,Nose center of mass along nose axis from bedplate
+drivese.nose_diameter,m,Nose outer diameter from bearing 1 to bedplate
+drivese.nose_mass,kg,Nose mass
+drivese.nose_wall_thickness,m,Nose wall thickness
+drivese.other_mass,kg,Mass of other nacelle components that rest on mainplate
+drivese.overhang,m,Horizontal distance between hub and tower-top axis
+drivese.pitch_I,kg*m**2,Total mass moment of inertia of the pitch system about central point
+drivese.pitch_cost,USD,Cost of the pitch system
+drivese.pitch_mass,kg,Total mass of the pitch system
+drivese.pitch_system.BRFM,N*m,Flapwise bending moment at blade root
+drivese.pitch_system.Xy,Pa,Yield strength metal
+drivese.pitch_system.rho,kg/m**3,Density of the materials along the column sections.
+drivese.pitch_system_scaling_factor,,Scaling factor to tune the total mass (0.54 is recommended for modern designs)
+drivese.planet_numbers,Unavailable,
+drivese.platform_I,m,component mass moments of inertia
+drivese.platform_cm,m,component center of mass
+drivese.platform_mass,kg,component mass
+drivese.rated_rpm,rpm,Rated shaft rotations-per-minute (rpm)
+drivese.rated_torque,N*m,rotor torque at rated power
+drivese.rho_castiron,kg/m**3,
+drivese.rho_fiberglass,kg/m**3,material density of fiberglass
+drivese.rho_mat,kg/m**3,"1D array of the density of the materials. For composites, this is the density of
+the laminate."
+drivese.rna_I_TT,kg*m**2,
+drivese.rna_cm,m,
+drivese.rna_mass,kg,Mass of RNA
+drivese.rotor_diameter,m,rotor diameter
+drivese.rotor_mass,kg,Total rotor mass
+drivese.s_drive,m,
+drivese.s_gearbox,m,Gearbox s-coordinate measured from bedplate
+drivese.s_generator,m,
+drivese.s_hss,m,"Discretized s-coordinates along drivetrain, measured from bedplate (direct) or tower center (geared)"
+drivese.s_lss,m,"Discretized s-coordinates along drivetrain, measured from bedplate (direct) or tower center (geared)"
+drivese.s_mb1,m,"Bearing 1 s-coordinate along drivetrain, measured from bedplate"
+drivese.s_mb2,m,"Bearing 2 s-coordinate along drivetrain, measured from bedplate"
+drivese.s_nose,m,"Discretized s-coordinates along drivetrain, measured from bedplate"
+drivese.s_rotor,m,Generator rotor attachment to lss s-coordinate measured from bedplate (direct) or tower center (geared)
+drivese.s_stator,m,Generator stator attachment to lss s-coordinate measured from bedplate
+drivese.sigma_y_mat,Pa,"2D array of the yield strength of the materials. Each row represents a material,
+the three columns represent Xt12, Xt13 and Xt23."
+drivese.spin_hole_incr,,"Ratio between access hole diameter in the spinner and blade root diameter.
+Typical value 1.2"
+drivese.spinner.Xy,Pa,Yield strength metal
+drivese.spinner.composite_Xt,Pa,"Tensile strength of the composite material of the shell.
+A glass CFM (continuous fiber mat) is often used."
+drivese.spinner.composite_cost,USD/kg,Unit cost composite of the shell
+drivese.spinner.composite_rho,kg/m**3,Density of composite of the shell
+drivese.spinner.metal_cost,USD/kg,Unit cost metal
+drivese.spinner.metal_rho,kg/m**3,Density metal
+drivese.spinner.spinner_diameter,m,
+drivese.spinner_I,kg*m**2,Total mass moment of inertia of the spinner about its cm
+drivese.spinner_Xt,Pa,
+drivese.spinner_cm,m,Radius / Distance between center of mass of the spinner and outer surface
+drivese.spinner_cost,kg,Cost of the spinner
+drivese.spinner_gust_ws,m/s,Extreme gust wind speed
+drivese.spinner_mass,kg,Total mass of the spinner
+drivese.spinner_mat_cost,USD/kg,
+drivese.spinner_material,Unavailable,
+drivese.spinner_rho,kg/m**3,
+drivese.stage_ratios,,
+drivese.stator_deflection,m,
+drivese.stator_rotation,rad,
+drivese.stop_time,s,Time required for the turbine rotor to come to a complete stop
+drivese.t_bedplate,m,Bedplate wall thickness (mirrors input)
+drivese.tilt,deg,Nacelle uptilt angle
+drivese.torq_deflection,m,
+drivese.torq_rotation,rad,
+drivese.total_bedplate_mass,kg,
+drivese.transformer_I,kg*m**2,"moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass"
+drivese.transformer_cm,m,"center of mass of the component in [x,y,z] for an arbitrary coordinate system"
+drivese.transformer_mass,kg,overall component mass
+drivese.transformer_mass_user,kg,Override regular regression-based calculation of transformer mass with this value
+drivese.unit_cost_mat,USD/kg,1D array of the unit costs of the materials.
+drivese.uptower,Unavailable,Power electronics are placed in the nacelle at the tower top
+drivese.upwind,Unavailable,Flag whether the design is upwind or downwind
+drivese.x_bedplate,m,Bedplate centerline x-coordinates
+drivese.x_bedplate_inner,m,Bedplate lower curve x-coordinates
+drivese.x_bedplate_outer,m,Bedplate outer curve x-coordinates
+drivese.yaw.rho,kg/m**3,Density of the materials along the column sections.
+drivese.yaw_I,kg*m**2,"moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass"
+drivese.yaw_cm,m,"center of mass of the component in [x,y,z] for an arbitrary coordinate system"
+drivese.yaw_mass,kg,overall component mass
+drivese.z_bedplate,m,Bedplate centerline z-coordinates
+drivese.z_bedplate_inner,m,Bedplate lower curve z-coordinates
+drivese.z_bedplate_outer,m,Bedplate outer curve z-coordinates
+env.G_soil,N/m**2,Shear stress of soil
+env.Hsig_wave,m,Significant wave heightsignificant wave height
+env.Tsig_wave,s,Significant wave periodperiod of maximum wave height
+env.mu_air,kg/(m*s),Dynamic viscosity of airdynamic viscosity of air
+env.mu_water,kg/(m*s),Dynamic viscosity of ocean waterdynamic viscosity of water
+env.nu_soil,,Poisson ratio of soil
+env.rho_air,kg/m**3,Density of airair density
+env.rho_water,kg/m**3,Density of ocean waterdensity of water
+env.shear_exp,,Shear exponent of the wind.
+env.speed_sound_air,m/s,Speed of sound in air.
+env.water_depth,m,Water depth for analysis.  Values > 0 mean offshorewater depth
+env.weibull_k,,Shape parameter of the Weibull probability density function of the wind.
+financese.bos_per_kW,USD/kW,Balance of system costs of the turbine
+financese.fixed_charge_rate,,Fixed charge rate for coe calculation
+financese.lcoe,USD/kW/h,
+financese.machine_rating,kW,Machine rating
+financese.offset_tcc_per_kW,USD/kW,Offset to turbine capital cost
+financese.opex_per_kW,USD/kW/yr,Average annual operational expenditures of the turbine
+financese.plant_aep,USD/kW/h,
+financese.plant_aep_in,kW*h,Annual Energy Production of the wind plant
+financese.tcc_per_kW,USD/kW,Turbine capital cost
+financese.turbine_aep,kW*h,Annual Energy Production of the wind turbine
+financese.turbine_number,Unavailable,Number of turbines at plant
+financese.wake_loss_factor,,The losses in AEP due to waked conditions
+generator.B_r,T,Remnant flux density
+generator.B_symax,T,Peak Stator Yoke flux density B_ymax
+generator.B_tmax,T,Peak Teeth flux density
+generator.C_Cu,USD/kg,Specific cost of copper
+generator.C_Fe,USD/kg,Specific cost of magnetic steel/iron
+generator.C_Fes,USD/kg,Specific cost of structural steel
+generator.C_PM,USD/kg,Specific cost of Magnet
+generator.E_p,V,Stator phase voltage
+generator.I_0,A,no-load excitation current
+generator.N_c,,Number of turns per coil
+generator.P_Fe0e,W/kg,"specific eddy losses @ 1.5T, 50Hz"
+generator.P_Fe0h,W/kg,specific hysteresis losses W / kg @ 1.5 T @50 Hz
+generator.S_N,,Slip
+generator.S_Nmax,,Max rated Slip
+generator.alpha_p,,
+generator.b,,Slot pole combination
+generator.b_r_tau_r,,Rotor Slot width / Slot pitch ratio
+generator.b_ro,m,Rotor slot opening width
+generator.b_s_tau_s,,Stator Slot width/Slot pitch ratio
+generator.b_so,m,Stator slot opening width
+generator.b_st,m,arm width b_st
+generator.c,,Slot pole combination
+generator.cofi,,power factor
+generator.d_r,m,arm depth d_r
+generator.d_s,m,arm depth d_s
+generator.freq,Hz,grid frequency
+generator.h_0,m,Slot height
+generator.h_i,m,coil insulation thickness
+generator.h_m,m,magnet height
+generator.h_s,m,Yoke height h_s
+generator.h_sr,m,Structural MassStructural Mass
+generator.h_ss,m,Stator yoke height
+generator.h_sy0,,
+generator.h_w,m,Slot wedge height
+generator.h_yr,m,rotor yoke height
+generator.h_ys,m,Yoke height
+generator.k_fes,,Stator iron fill factor per Grauers
+generator.k_fillr,,Rotor slot fill factor
+generator.k_fills,,Stator Slot fill factor
+generator.k_s,,magnetic saturation factor for iron
+generator.len_s,m,Stator core length
+generator.m,Unavailable,added mass
+generator.mu_0,m*kg/s**2/A**2,permeability of free space
+generator.mu_r,m*kg/s**2/A**2,relative permeability (neodymium)
+generator.n_r,,number of arms n
+generator.n_s,,number of stator arms n_s
+generator.p,,pressure oscillation
+generator.phi,rad,tilt angle (during transportation)
+generator.q1,Unavailable,Stator slots per pole per phase
+generator.q2,Unavailable,Rotor slots per pole per phase
+generator.rad_ag,m,airgap radius
+generator.ratio_mw2pp,,ratio of magnet width to pole pitch(bm / self.tau_p)
+generator.resist_Cu,ohm/m,Copper resistivity
+generator.rho_Copper,kg*m**-3,Copper density
+generator.rho_Fe,kg*m**-3,Magnetic Steel density
+generator.rho_Fes,kg*m**-3,Structural Steel density
+generator.rho_PM,kg*m**-3,Magnet density
+generator.sigma,Pa,assumed max shear stress
+generator.t_r,m,Rotor disc thickness
+generator.t_s,m,Stator disc thickness
+generator.t_wr,m,arm depth thickness
+generator.t_ws,m,arm depth thickness
+generator.u_allow_pcent,,Radial deflection as a percentage of air gap diameter
+generator.y_allow_pcent,,Radial deflection as a percentage of air gap diameter
+generator.y_tau_p,,Stator coil span to pole pitch
+generator.y_tau_pr,,Rotor coil span to pole pitch
+generator.z_allow_deg,deg,Allowable torsional twist
+hub.clearance_hub_spinner,m,Clearance between spinner and hub
+hub.cone,rad,Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.
+hub.diameter,m,cylinder diameter at corresponding locations
+hub.flange_ID2flange_OD,,Ratio of flange inner diameter to flange outer diameter
+hub.flange_OD2hub_D,,Ratio of flange outer diameter to hub diameter
+hub.flange_t2shell_t,,Ratio of flange thickness to shell thickness
+hub.hub_in2out_circ,,
+hub.hub_material,Unavailable,
+hub.hub_stress_concentration,,"Stress concentration factor. Stress concentration occurs at all fillets,
+notches, lifting lugs, hatches and are accounted for by assigning a
+stress concentration factor"
+hub.n_front_brackets,Unavailable,Number of front spinner brackets
+hub.n_rear_brackets,Unavailable,Number of rear spinner brackets
+hub.pitch_system_scaling_factor,,Scaling factor to tune the total mass (0.54 is recommended for modern designs)
+hub.radius,m,Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.
+hub.spin_hole_incr,,"Ratio between access hole diameter in the spinner and blade root diameter.
+Typical value 1.2"
+hub.spinner_gust_ws,m/s,Extreme gust wind speed
+hub.spinner_material,Unavailable,
+landbosse.Mass tonne,t,
+landbosse.allow_same_flag,Unavailable,Allow same crane for base and topping (True or False)
+landbosse.bearing_pressure_n_m2,,Bearing Pressure (n/m2)
+landbosse.blade_drag_coefficient,,
+landbosse.blade_drag_multiplier,,
+landbosse.blade_install_cycle_time,h,
+landbosse.blade_lever_arm,m,
+landbosse.blade_mass,kg,The mass of one rotor blade.Total mass of one blade
+landbosse.blade_offload_cycle_time,h,
+landbosse.blade_offload_hook_height,m,
+landbosse.bos_capex,USD,Total BOS CAPEX not including commissioning or decommissioning.
+landbosse.bos_capex_kW,USD/kW,Total BOS CAPEX per kW not including commissioning or decommissioning.
+landbosse.breakpoint_between_base_and_topping_percent,,Breakpoint between base and topping (percent)
+landbosse.cable_specs,Unavailable,cable specs for collection system
+landbosse.commissioning_pct,,
+landbosse.components,Unavailable,"Dataframe of components for tower, blade, nacelle"
+landbosse.construct_duration,,Total project construction time (months)
+landbosse.crane_breakdown_fraction,,0 means the crane is never broken down. 1 means it is broken down every turbine.
+landbosse.crane_specs,Unavailable,Dataframe of specifications of cranes
+landbosse.crane_width,m,Crane width (m)
+landbosse.crew,Unavailable,Dataframe of crew configurations
+landbosse.crew_price,Unavailable,Dataframe of costs per hour for each type of worker.
+landbosse.critical_height_non_erection_wind_delays_m,m,Non-Erection Wind Delay Critical Height (m)
+landbosse.critical_speed_non_erection_wind_delays_m_per_s,m/s,Non-Erection Wind Delay Critical Speed (m/s)
+landbosse.decommissioning_pct,,
+landbosse.depth,m,Foundation depth mdepth of foundation in the soil
+landbosse.development_labor_cost_usd,USD,The cost of labor in the development phase
+landbosse.distance_to_interconnect_mi,mi,Distance to interconnect (miles)
+landbosse.equip,Unavailable,Collections of equipment to perform erection operations.
+landbosse.equip_price,Unavailable,Prices for various type of equipment.
+landbosse.erection_component_name_topvbase,Unavailable,List of components and whether they are a topping or base operation
+landbosse.erection_components,Unavailable,List of components with their values modified from the defaults.
+landbosse.erection_crane_choice,Unavailable,The crane choices for erection.
+landbosse.foundation_height,m,starting height of tower
+landbosse.fraction_new_roads,,Percent of roads that will be constructed (0.0 - 1.0)
+landbosse.fuel_cost_usd_per_gal,,Fuel cost USD/gal
+landbosse.gust_velocity_m_per_s,m/s,50-year Gust Velocity (m/s)
+landbosse.hour_day,Unavailable,"Dictionary of normal and long hours for construction in a day in the form of {'long': 24, 'normal': 10}"
+landbosse.hub_height_meters,m,Hub height m
+landbosse.hub_mass,kg,"Mass of the rotor hubTotal mass of the hub shell, including the flanges"
+landbosse.installation_capex,USD,Total foundation and erection installation cost.
+landbosse.installation_capex_kW,USD,Total foundation and erection installation cost per kW.
+landbosse.installation_time_months,,Total balance of system installation time (months).
+landbosse.interconnect_voltage_kV,kV,Interconnect Voltage (kV)
+landbosse.labor_cost_multiplier,,Labor cost multiplier
+landbosse.landbosse_costs_by_module_type_operation,Unavailable,"The costs by module, type and operation"
+landbosse.landbosse_details_by_module,Unavailable,"The details from the run of LandBOSSE. This includes some costs, but mostly other things"
+landbosse.line_frequency_hz,Hz,Line Frequency (Hz)
+landbosse.markup_contingency,,Markup contingency
+landbosse.markup_overhead,,Markup overhead
+landbosse.markup_profit_margin,,Markup profit margin
+landbosse.markup_sales_and_use_tax,,Markup sales and use tax
+landbosse.markup_warranty_management,,Markup warranty management
+landbosse.material_price,Unavailable,Prices of materials for foundations and roads
+landbosse.nacelle_mass,kg,Mass of nacelle system
+landbosse.new_switchyard,Unavailable,New Switchyard (True or False)
+landbosse.num_access_roads,Unavailable,Number of access roads
+landbosse.num_hwy_permits,Unavailable,Number of highway permits
+landbosse.num_turbines,Unavailable,Number of turbines in projectNumber of turbines that need scouring protection.
+landbosse.number_of_blades,Unavailable,Number of blades on the rotor
+landbosse.overtime_multiplier,,Overtime multiplier
+landbosse.project_data,Unavailable,Dictionary of all dataframes of data
+landbosse.rate_of_deliveries,Unavailable,Rate of deliveries (turbines per week)
+landbosse.rated_thrust_N,N,Rated Thrust (N)
+landbosse.road_distributed_winnd,Unavailable,
+landbosse.road_length_adder_m,m,Road length adder (m)
+landbosse.road_quality,,Road Quality (0-1)
+landbosse.road_thickness,,Road thickness (in)
+landbosse.road_width_ft,ft,Road width (ft)
+landbosse.rotor_diameter_m,m,Rotor diameter m
+landbosse.row_spacing_rotor_diameters,,Row spacing (times rotor diameter)
+landbosse.rsmeans,Unavailable,RSMeans price data
+landbosse.site_facility_building_area_df,Unavailable,site_facility_building_area DataFrame
+landbosse.time_construct,Unavailable,One of the keys in the hour_day dictionary to specify how many hours per day construction happens.
+landbosse.total_capex,USD,Total BOS CAPEX including commissioning and decommissioning.
+landbosse.total_capex_kW,USD/kW,Total BOS CAPEX per kW including commissioning and decommissioning.
+landbosse.tower_mass,kg,Mass of tower
+landbosse.tower_section_length_m,m,
+landbosse.trench_len_to_substation_km,km,Combined Homerun Trench Length to Substation (km)
+landbosse.turbine_rating_MW,MW,Turbine rating MW
+landbosse.turbine_spacing_rotor_diameters,,Turbine spacing (times rotor diameter)
+landbosse.user_defined_distance_to_grid_connection,Unavailable,Flag for user-defined home run trench length (True or False)
+landbosse.user_defined_home_run_trench,Unavailable,Flag for user-defined home run trench length (0 = no; 1 = yes)
+landbosse.weather_window,Unavailable,Dataframe of wind toolkit data
+landbosse.wind_shear_exponent,,Wind shear exponent
+materials.E,Pa,"2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.Isotropic Youngs modulus of the materials along the column sections."
+materials.G,Pa,"2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.Isotropic shear modulus of the materials along the column sections."
+materials.Xc,Pa,"2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23."
+materials.Xt,Pa,"2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23."
+materials.component_id,Unavailable,"1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic."
+materials.fvf,,1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.
+materials.fvf_from_yaml,,1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.
+materials.fwf,,1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.
+materials.fwf_from_yaml,,1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.
+materials.name,Unavailable,1D array of names of materials.
+materials.nu,,"2D array of the Poisson ratio of the materials. Each row represents a material, the three columns represent nu12, nu13 and nu23.poissons ratio of column material"
+materials.orth,Unavailable,1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.
+materials.ply_t,m,1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.
+materials.ply_t_from_yaml,m,1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.
+materials.rho,kg/m**3,"1D array of the density of the materials. For composites, this is the density of the laminate.Density of the materials along the column sections."
+materials.rho_area_dry,kg/m**2,1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.
+materials.rho_fiber,kg/m**3,1D array of the density of the fibers of the materials.
+materials.roll_mass,kg,1D array of the roll mass of the composite fabrics. Non-composite materials are kept at 0.
+materials.sigma_y,Pa,Yield stress of the material (in the principle direction for composites).Isotropic yield strength of the materials along the column sections.
+materials.unit_cost,USD/kg,1D array of the unit costs of the materials.Unit costs of the materials along the column sections.
+materials.waste,,1D array of the non-dimensional waste fraction of the materials.
+monopile.diameter,m,1D array of the outer diameter values defined along the tower axis.cylinder diameter at corresponding locations
+monopile.foundation_height,m,Foundation height in respect to the ground level.starting height of tower
+monopile.gravity_foundation_mass,kg,extra mass of gravity foundationpoint mass of transition piece
+monopile.height,m,Scalar of the tower height computed along the z axis.Scalar of the column height computed along the z axis.
+monopile.layer_mat,Unavailable,1D array of the names of the materials of each layer modeled in the tower structure.
+monopile.layer_name,Unavailable,1D array of the names of the layers modeled in the tower structure.
+monopile.layer_thickness,m,"2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.2D array of the thickness of the layers of the column structure. The first
+dimension represents each layer, the second dimension represents each piecewise-
+constant entry of the column sections."
+monopile.length,m,Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.Length of a single cable connecting the OSS to the interconnection in km.
+monopile.outfitting_factor,,Multiplier that accounts for secondary structure mass inside of towerMass fraction added for outfitting
+monopile.ref_axis,m,"2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values."
+monopile.s,,"1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)1D array of the non-dimensional grid defined along the column axis (0-column base,
+1-column top)"
+monopile.transition_piece_cost,USD,cost of transition pieceCost of transition piece
+monopile.transition_piece_mass,kg,point mass of transition piecepoint mass of transition piece
+nacelle.L_generator,m,Generator length along shaftGenerator stack width
+nacelle.bedplate_flange_thickness,m,"Bedplate I-beam flange thicknessBedplate is two parallel I beams, this is the flange thickness"
+nacelle.bedplate_flange_width,m,"Bedplate I-beam flange widthBedplate is two parallel I beams, this is the flange width"
+nacelle.bedplate_material,Unavailable,Material name identifier for the bedplate
+nacelle.bedplate_wall_thickness,m,Thickness of hollow elliptical bedplateBedplate wall thickness
+nacelle.bedplate_web_thickness,m,"Bedplate I-beam web thicknessBedplate is two parallel I beams, this is the web thickness"
+nacelle.brake_mass_user,kg,Override regular regression-based calculation of brake mass with this valueUser override of brake mass
+nacelle.converter_mass_user,kg,Override regular regression-based calculation of converter mass with this valueOverride regular regression-based calculation of converter mass with this value
+nacelle.distance_hub2mb,m,Distance from hub flange to first main bearing along shaft
+nacelle.distance_mb2mb,m,Distance from first to second main bearing along shaft
+nacelle.distance_tt_hub,m,Vertical distance from tower top plane to hub flange
+nacelle.gear_configuration,Unavailable,3-letter string of Es or Ps to denote epicyclic or parallel gear configuration3-letter string of Es or Ps to denote epicyclic or parallel gear configuration
+nacelle.gear_ratio,,Total gear ratio of drivetrain (use 1.0 for direct)overall gearbox ratio
+nacelle.gearbox_efficiency,,Efficiency of the gearbox. Set to 1.0 for direct-drive
+nacelle.hss_diameter,m,Diameter of high speed shaftLss discretized diameter values at coordinates
+nacelle.hss_length,m,Length of high speed shaft
+nacelle.hss_material,Unavailable,Material name identifier for the high speed shaft
+nacelle.hss_wall_thickness,m,Wall thickness of high speed shaftLss discretized thickness values at coordinates
+nacelle.hvac_mass_coeff,kg/kW/m,Regression-based scaling coefficient on machine rating to get HVAC system massRegression-based scaling coefficient on machine rating to get HVAC system mass
+nacelle.lss_diameter,m,Diameter of low speed shaftLSS outer diameter from hub to bearing 2
+nacelle.lss_material,Unavailable,Material name identifier for the low speed shaft
+nacelle.lss_wall_thickness,m,Thickness of low speed shaftLSS wall thickness
+nacelle.mb1Type,Unavailable,Type of main bearing: CARB / CRB / SRB / TRB
+nacelle.mb2Type,Unavailable,Type of main bearing: CARB / CRB / SRB / TRB
+nacelle.nose_diameter,m,Diameter of nose (also called turret or spindle)Nose outer diameter from bearing 1 to bedplate
+nacelle.nose_wall_thickness,m,Thickness of nose (also called turret or spindle)Nose wall thickness
+nacelle.overhang,m,Horizontal distance from tower top edge to hub flangeHorizontal distance between hub and tower-top axis
+nacelle.planet_numbers,Unavailable,Number of planets for epicyclic stages (use 0 for parallel)
+nacelle.transformer_mass_user,kg,Override regular regression-based calculation of transformer mass with this valueOverride regular regression-based calculation of transformer mass with this value
+nacelle.uptilt,rad,Nacelle uptilt angle. A standard machine has positive values.
+nacelle.uptower,Unavailable,If power electronics are located uptower (True) or at tower base (False)Power electronics are placed in the nacelle at the tower top
+orbit.anchor_mass,kg,Total mass of an anchor
+orbit.anchor_type,Unavailable,Number of mooring lines per platform.SUCTIONPILE or DRAGEMBEDMENT
+orbit.blade_deck_space,m**2,Deck space required to transport a blade. Defaults to 0 in order to not be a constraint on installation.
+orbit.blade_mass,t,mass of an individual blade.Total mass of one blade
+orbit.boem_review_cost,USD,Cost for additional review by U.S. Dept of Interior Bureau of Ocean Energy Management (BOEM)
+orbit.bos_capex,USD,Total BOS CAPEX not including commissioning or decommissioning.
+orbit.commissioning_pct,,Commissioning percent.
+orbit.construction_operations_plan_cost,USD,Cost to do construction planning
+orbit.decommissioning_pct,,Decommissioning percent.
+orbit.design_install_plan_cost,USD,Cost to do installation planning
+orbit.feeder,Unavailable,Vessel configuration to use for (optional) feeder barges.
+orbit.hub_height,m,Turbine hub height.hub height of wind turbine above ground / sea level
+orbit.installation_capex,USD,Total balance of system installation cost.
+orbit.installation_time,h,Total balance of system installation time.
+orbit.interconnection_distance,km,Distance from landfall to interconnection.
+orbit.monopile_deck_space,m**2,Deck space required to transport a monopile. Defaults to 0 in order to not be a constraint on installation.
+orbit.monopile_diameter,m,Diameter of monopile.
+orbit.monopile_length,m,Length of monopile.
+orbit.monopile_mass,t,mass of an individual monopile.Monopile mass
+orbit.mooring_line_diameter,m,Cross-sectional diameter of a mooring line
+orbit.mooring_line_length,m,Unstretched mooring line lengthUnstretched total mooring line length
+orbit.mooring_line_mass,kg,Total mass of a mooring line
+orbit.nacelle_deck_space,m**2,Deck space required to transport the rotor nacelle assembly (RNA). Defaults to 0 in order to not be a constraint on installation.
+orbit.nacelle_mass,t,mass of the rotor nacelle assembly (RNA).Mass of nacelle system
+orbit.num_assembly_lines,Unavailable,Number of assembly lines used when assembly occurs at the port.
+orbit.num_feeders,Unavailable,Number of feeder barges to use for installation of foundations and turbines.
+orbit.num_mooring_lines,Unavailable,Number of mooring lines per platform.
+orbit.num_port_cranes,Unavailable,Number of cranes used at the port to load feeders / WTIVS when assembly occurs on-site or assembly cranes when assembling at port.
+orbit.num_station_keeping,Unavailable,Number of station keeping vessels that attach to floating platforms under tow-out.
+orbit.num_towing,Unavailable,Number of towing vessels to use for floating platforms that are assembled at port (with or without the turbine).
+orbit.number_of_blades,Unavailable,Number of blades per turbine.
+orbit.number_of_turbines,Unavailable,Number of turbines.
+orbit.oss_install_vessel,Unavailable,Vessel configuration to use for installation of offshore substations.
+orbit.plant_row_spacing,,Row spacing in rotor diameters. Not used in ring layouts.
+orbit.plant_substation_distance,km,Distance from first turbine in string to substation.
+orbit.plant_turbine_spacing,,Turbine spacing in rotor diameters.
+orbit.port_cost_per_month,USD/mo,Monthly port costs.
+orbit.site_assessment_cost,USD,Cost to execute site assessment
+orbit.site_assessment_plan_cost,USD,Cost to do engineering plan for site assessment
+orbit.site_auction_price,USD,Cost to secure site lease
+orbit.site_depth,m,Site depth.Average depth at the site in km.
+orbit.site_distance,km,Distance from site to installation port.
+orbit.site_distance_to_landfall,km,Distance from site to landfall for export cable.
+orbit.site_mean_windspeed,m/s,Mean windspeed of the site.
+orbit.takt_time,h,Substructure assembly cycle time when doing assembly at the port.
+orbit.total_capex,USD,Total BOS CAPEX including commissioning and decommissioning.
+orbit.total_capex_kW,USD/kW,Total BOS CAPEX including commissioning and decommissioning.
+orbit.tower_deck_space,m**2,Deck space required to transport the tower. Defaults to 0 in order to not be a constraint on installation.
+orbit.tower_length,m,Total length of the tower.
+orbit.tower_mass,t,mass of the total tower.Mass of tower
+orbit.transition_piece_deck_space,m**2,Deck space required to transport a transition piece. Defaults to 0 in order to not be a constraint on installation.
+orbit.transition_piece_mass,t,mass of an individual transition piece.point mass of transition piece
+orbit.turbine_capex,USD/kW,Turbine CAPEX
+orbit.turbine_rated_windspeed,m/s,Rated windspeed of the turbine.
+orbit.turbine_rating,MW,Rated capacity of a turbine.Capacity of an individual turbine in MW.
+orbit.turbine_rotor_diameter,m,Turbine rotor diameter.
+orbit.wtiv,Unavailable,Vessel configuration to use for installation of foundations and turbines.
+outputs_2_screen.Flp_omega,rad/s,
+outputs_2_screen.Flp_zeta,,
+outputs_2_screen.My_std,N*m,
+outputs_2_screen.PC_omega,rad/s,
+outputs_2_screen.PC_zeta,,
+outputs_2_screen.VS_omega,rad/s,
+outputs_2_screen.VS_zeta,,
+outputs_2_screen.aep,GW * h,
+outputs_2_screen.blade_mass,kg,Total mass of one blade
+outputs_2_screen.flp1_std,deg,
+outputs_2_screen.lcoe,USD/MW/h,
+outputs_2_screen.tip_deflection,m,Blade tip deflection in yaw x-direction
+re.A,m**2,airfoil cross section material areamagnitude of wave acceleration
+re.EA,N,axial stiffness
+re.EIxx,N*m**2,edgewise stiffness (bending about :ref:`x-axis of airfoil aligned coordinate system <blade_airfoil_coord>`)
+re.EIxy,N*m**2,coupled flap-edge stiffness
+re.EIyy,N*m**2,flatwise stiffness (bending about y-axis of airfoil aligned coordinate system)
+re.GJ,N*m**2,torsional stiffness (about axial z-axis of airfoil aligned coordinate system)
+re.Tw_iner,m,Orientation of the section principal inertia axes with respect the blade reference plane
+re.chord,m,chord length at each sectionChord length at each section.
+re.precomp.E,Pa,"2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.Isotropic Youngs modulus of the materials along the column sections."
+re.precomp.G,Pa,"2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23.Isotropic shear modulus of the materials along the column sections."
+re.precomp.I_all_blades,kg*m**2,"mass moments of inertia of all blades in yaw c.s. order:Ixx, Iyy, Izz, Ixy, Ixz, Iyz"
+re.precomp.blade_mass,kg,mass of one bladeTotal mass of one blade
+re.precomp.blade_moment_of_inertia,kg*m**2,mass moment of inertia of blade about hub
+re.precomp.component_id,Unavailable,"1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic."
+re.precomp.coord_xy_interp,,3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations.
+re.precomp.definition_layer,Unavailable,"1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer"
+re.precomp.edge_iner,kg/m,Section lag inertia about the X_G axis per unit length
+re.precomp.fiber_orientation,deg,"2D array of the orientation of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span."
+re.precomp.flap_iner,kg/m,Section flap inertia about the Y_G axis per unit length.
+re.precomp.fvf,,1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.
+re.precomp.fwf,,1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.
+re.precomp.layer_end_nd,,"2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span."
+re.precomp.layer_start_nd,,"2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span."
+re.precomp.layer_thickness,m,"2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.2D array of the thickness of the layers of the column structure. The first
+dimension represents each layer, the second dimension represents each piecewise-
+constant entry of the column sections."
+re.precomp.layer_web,,"1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to 0."
+re.precomp.mass_all_blades,kg,mass of all blades
+re.precomp.mat_name,Unavailable,1D array of names of materials.
+re.precomp.n_blades,Unavailable,Number of blades of the rotor.Number of rotor blades
+re.precomp.nu,,"2D array of the Poisson ratio of the materials. Each row represents a material, the three columns represent nu12, nu13 and nu23.poissons ratio of column material"
+re.precomp.orth,Unavailable,1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.
+re.precomp.pitch_axis,,"1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span."
+re.precomp.ply_t,m,1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.
+re.precomp.rho,kg/m**3,"1D array of the density of the materials. For composites, this is the density of the laminate.Density of the materials along the column sections."
+re.precomp.rho_area_dry,kg/m**2,1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.
+re.precomp.rho_fiber,kg/m**3,1D array of the density of the fibers of the materials.
+re.precomp.roll_mass,kg,1D array of the roll mass of the composite fabrics. Non-composite materials are kept at 0.
+re.precomp.total_blade_cost,USD,total blade cost
+re.precomp.total_blade_mass,USD,total blade cost
+re.precomp.unit_cost,USD/kg,1D array of the unit costs of the materials.Unit costs of the materials along the column sections.
+re.precomp.uptilt,deg,Nacelle uptilt angle. A standard machine has positive values.
+re.precomp.waste,,1D array of the non-dimensional waste fraction of the materials.
+re.precomp.web_end_nd,,"2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span."
+re.precomp.web_start_nd,,"2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span."
+re.precomp.x_cg,m,X-coordinate of the center-of-mass offset with respect to the XR-YR axes
+re.precomp.x_tc,m,X-coordinate of the tension-center offset with respect to the XR-YR axes
+re.precomp.xl_strain_spar,,x-position of midpoint of spar cap on lower surface for strain calculation
+re.precomp.xl_strain_te,,x-position of midpoint of trailing-edge panel on lower surface for strain calculation
+re.precomp.xu_strain_spar,,x-position of midpoint of spar cap on upper surface for strain calculation
+re.precomp.xu_strain_te,,x-position of midpoint of trailing-edge panel on upper surface for strain calculation
+re.precomp.y_cg,m,Chordwise offset of the section center of mass with respect to the XR-YR axes
+re.precomp.y_tc,m,Chordwise offset of the section tension-center with respect to the XR-YR axes
+re.precomp.yl_strain_spar,,y-position of midpoint of spar cap on lower surface for strain calculation
+re.precomp.yl_strain_te,,y-position of midpoint of trailing-edge panel on lower surface for strain calculation
+re.precomp.yu_strain_spar,,y-position of midpoint of spar cap on upper surface for strain calculation
+re.precomp.yu_strain_te,,y-position of midpoint of trailing-edge panel on upper surface for strain calculation
+re.precomp.z,m,locations of properties along beamlocation along cylinder. start at bottom and go to top
+re.precurve,m,precurve at each sectionPrecurve at each section.
+re.presweep,m,presweep at each section
+re.r,m,"radial locations where blade is defined (should be increasing and not go all the way to hub or tip)Radial locations where blade is defined. Should be increasing and not
+go all the way to hub or tip."
+re.rail.blade_ref_axis,m,"2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values."
+re.rail.constr_LV_4axle_horiz,,"Constraint for max L/V for a 4-axle flatcar on horiz curves, violated when bigger than 1"
+re.rail.constr_LV_4axle_vert,,"Constraint for max L/V for a 4-axle flatcar on vert curves, violated when bigger than 1"
+re.rail.constr_LV_8axle_horiz,,"Constraint for max L/V for an 8-axle flatcar on horiz curves, violated when bigger than 1"
+re.rail.constr_LV_8axle_vert,,"Constraint for max L/V for an 8-axle flatcar on vert curves, violated when bigger than 1"
+re.rail.constr_strainLE,,Strain along leading edge side of blade on a vertical curve
+re.rail.constr_strainPS,,Strain along pressure side of blade on a horizontal curve
+re.rail.constr_strainSS,,Strain along suction side of blade on a horizontal curve
+re.rail.constr_strainTE,,Strain along trailing edge side of blade on a vertical curve
+re.rail.coord_xy_dim,m,3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.
+re.rail.coord_xy_interp,,3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.
+re.rail.deck_height,m,Height of the deck of the flatcar from the rails (4 feet)
+re.rail.flatcar_tc_length,m,Flatcar truck center to truck center lenght
+re.rail.horizontal_angle_deg,deg,Angle of horizontal turn (defined for an chord of 100 feet)
+re.rail.lateral_clearance,m,Clearance profile horizontal (22 feet)
+re.rail.max_LV,,Max allowable ratio between lateral and vertical forces
+re.rail.max_flatcar_weight_4axle,kg,Max mass of an 4-axle flatcar (286000 lbm)
+re.rail.max_flatcar_weight_8axle,kg,Max mass of an 8-axle flatcar (480000 lbm)
+re.rail.max_root_rot_deg,deg,Max degree of angle at blade root
+re.rail.max_strains,,Max allowable strains during transport
+re.rail.min_vertical_radius,m,Minimum radius of a vertical curvature (hill or sag) (2000 feet)
+re.rail.pitch_axis,,"1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span."
+re.rail.vertical_clearance,m,Clearance profile vertical (23 feet)
+re.rhoA,kg/m,mass per unit length
+re.rhoJ,kg*m,polar mass moment of inertia per unit length
+re.sc_ps_mats,,"spar cap, pressure side, boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis"
+re.sc_ss_mats,,"spar cap, suction side,  boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis"
+re.te_ps_mats,,"trailing edge reinforcement, pressure side, boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis"
+re.te_ss_mats,,"trailing edge reinforcement, suction side,  boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis"
+re.theta,deg,Twist angle at each section (positive decreases angle of attack)Twist angle at each section (positive decreases angle of attack).
+re.x_ec,m,x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)
+re.x_sc,m,X-coordinate of the shear-center offset with respect to the XR-YR axes
+re.y_ec,m,y-distance to elastic center from point about which above structural properties are computed
+re.y_sc,m,"Chordwise offset of the section shear-center with respect to the reference frame, XR-YR"
+rp.AEP,kW*h,annual energy production
+rp.Rhub,m,hub radiusHub radius.
+rp.Rtip,m,tip radiusBlade tip location in z_b
+rp.aep.CDF_V,m/s,cumulative distribution function evaluated at each wind speed
+rp.aep.P,W,power curve (power)
+rp.aep.lossFactor,,"multiplicative factor for availability and other losses (soiling, array, etc.)"
+rp.airfoils_Re,,Reynolds numbers of polarsReynolds numbers of polars.
+rp.airfoils_aoa,deg,angle of attack grid for polarsAngle of attack grid for polars.
+rp.airfoils_cd,,"drag coefficients, spanwiseDrag coefficients, spanwise."
+rp.airfoils_cl,,"lift coefficients, spanwiseLift coefficients, spanwise."
+rp.airfoils_cm,,"moment coefficients, spanwiseMoment coefficients, spanwise."
+rp.cdf.F,m/s,magnitude of wind speed at each z location
+rp.cdf.k,,shape or form factor
+rp.cdf.x,m/s,corresponding reference height
+rp.cdf.xbar,m/s,mean value of distribution
+rp.chord,m,chord length at each sectionChord length at each section.
+rp.control_maxTS,m/s,maximum allowed blade tip speed
+rp.control_pitch,deg,pitch angle in region 2 (and region 3 for fixed pitch machines)
+rp.drivetrainType,Unavailable,
+rp.gust.V_gust,m/s,gust wind speed
+rp.gust.V_hub,m/s,hub height wind speed
+rp.gust.V_mean,m/s,IEC average wind speed for turbine class
+rp.gust.std,,number of standard deviations for strength of gust
+rp.gust.turbulence_class,Unavailable,IEC turbulence class
+rp.hub_height,m,hub heighthub height of wind turbine above ground / sea level
+rp.mu,kg/(m*s),dynamic viscosity of airDynamic viscosity of air
+rp.nBlades,Unavailable,number of bladesNumber of blades
+rp.omega_max,rpm,maximum allowed rotor rotation speed
+rp.omega_min,rpm,minimum allowed rotor rotation speed
+rp.powercurve.Cm_aero,,rotor aerodynamic moment coefficient
+rp.powercurve.Cp,,rotor electrical power coefficient
+rp.powercurve.Cp_aero,,rotor aerodynamic power coefficient
+rp.powercurve.Cp_regII,,power coefficient at cut-in wind speed
+rp.powercurve.Cq_aero,,rotor aerodynamic torque coefficient
+rp.powercurve.Ct_aero,,rotor aerodynamic thrust coefficient
+rp.powercurve.M,N*m,blade root moment
+rp.powercurve.Omega,rpm,rotor rotational speed
+rp.powercurve.Omega_spline,rpm,omega
+rp.powercurve.P,W,rotor electrical power
+rp.powercurve.P_aero,W,rotor mechanical power
+rp.powercurve.P_spline,W,rotor electrical power
+rp.powercurve.Q,N*m,rotor aerodynamic torque
+rp.powercurve.T,N,rotor aerodynamic thrust
+rp.powercurve.V,m/s,wind vector
+rp.powercurve.V_R25,m/s,region 2.5 transition wind speed
+rp.powercurve.V_spline,m/s,wind vector
+rp.powercurve.aoa_regII,deg,angle of attack distribution along blade span at cut-in wind speed
+rp.powercurve.ax_induct_regII,,rotor axial induction at cut-in wind speed along blade span
+rp.powercurve.cd_regII,,drag coefficient distribution along blade span at cut-in wind speed
+rp.powercurve.cl_regII,,lift coefficient distribution along blade span at cut-in wind speed
+rp.powercurve.gearbox_efficiency,,
+rp.powercurve.generator_efficiency,,Generator efficiency at various rpm values to support table lookup
+rp.powercurve.hubloss,Unavailable,include Prandtl hub loss modelInclude Prandtl hub loss model.
+rp.powercurve.lss_rpm,rpm,Low speed shaft RPM values at which the generator efficiency values are given
+rp.powercurve.nSector,Unavailable,number of sectors to divide rotor face into in computing thrust and powerNumber of sectors to divide rotor face into in computing thrust and power.
+rp.powercurve.pitch,deg,rotor pitch schedule
+rp.powercurve.rated_Omega,rpm,rotor rotation speed at rated
+rp.powercurve.rated_Q,N*m,rotor aerodynamic torque at rated
+rp.powercurve.rated_T,N,rotor aerodynamic thrust at rated
+rp.powercurve.rated_V,m/s,rated wind speed
+rp.powercurve.rated_efficiency,,Efficiency at rated conditions
+rp.powercurve.rated_mech,W,Mechanical shaft power at rated
+rp.powercurve.rated_pitch,deg,pitch setting at rated
+rp.powercurve.shearExp,,shear exponentshear exponent
+rp.powercurve.tang_induct_regII,,rotor tangential induction at cut-in wind speed along blade span
+rp.powercurve.tiploss,Unavailable,include Prandtl tip loss modelInclude Prandtl tip loss model.
+rp.powercurve.usecd,Unavailable,use drag coefficient in computing induction factorsUse drag coefficient in computing induction factors.
+rp.powercurve.wakerotation,Unavailable,"include effect of wake rotation (i.e., tangential induction factor is nonzero)Iclude effect of wake rotation (i.e., tangential induction factor is nonzero)."
+rp.precone,deg,precone angleRotor precone angle
+rp.precurve,m,precurve at each sectionPrecurve at each section.
+rp.precurveTip,m,precurve at tipPrecurve at tip.
+rp.presweep,m,presweep at each section
+rp.presweepTip,m,presweep at tip
+rp.r,m,"radial locations where blade is defined (should be increasing and not go all the way to hub or tip)Radial locations where blade is defined. Should be increasing and not
+go all the way to hub or tip."
+rp.rated_power,W,electrical rated power
+rp.rho,kg/m**3,density of airDensity of the materials along the column sections.
+rp.theta,deg,twist angle at each section (positive decreases angle of attack)Twist angle at each section (positive decreases angle of attack).
+rp.tilt,deg,shaft tiltNacelle uptilt angle
+rp.tsr_operational,,tip-speed ratio in Region 2 (should be optimized externally)
+rp.v_max,m/s,cut-out wind speed
+rp.v_min,m/s,cut-in wind speed
+rp.yaw,deg,yaw erroryaw angle
+rs.3d_curv,deg,total cone angle from precone and curvature
+rs.A,m**2,airfoil cross section material areamagnitude of wave acceleration
+rs.EA,N,axial stiffness
+rs.EIxx,N*m**2,edgewise stiffness (bending about :ref:`x-axis of airfoil aligned coordinate system <blade_airfoil_coord>`)
+rs.EIxy,N*m**2,coupled flap-edge stiffness
+rs.EIyy,N*m**2,flapwise stiffness (bending about y-axis of airfoil aligned coordinate system)
+rs.GJ,N*m**2,torsional stiffness (about axial z-direction of airfoil aligned coordinate system)
+rs.Omega_load,rpm,Rotor rotation speed.
+rs.Rhub,m,Hub radius.
+rs.Rtip,m,Blade tip location in z_b
+rs.aero_gust.V_load,m/s,Hub height wind speed.
+rs.aero_gust.azimuth_load,deg,Blade azimuthal location.
+rs.aero_gust.hubloss,Unavailable,Include Prandtl hub loss model.
+rs.aero_gust.loads_Px,N/m,
+rs.aero_gust.loads_Py,N/m,
+rs.aero_gust.loads_Pz,N/m,
+rs.aero_gust.loads_r,m,
+rs.aero_gust.nSector,Unavailable,Number of sectors to divide rotor face into in computing thrust and power.
+rs.aero_gust.precurve,m,Precurve at each section.
+rs.aero_gust.precurveTip,m,Precurve at tip.
+rs.aero_gust.shearExp,,shear exponent
+rs.aero_gust.tiploss,Unavailable,Include Prandtl tip loss model.
+rs.aero_gust.usecd,Unavailable,Use drag coefficient in computing induction factors.
+rs.aero_gust.wakerotation,Unavailable,"Iclude effect of wake rotation (i.e., tangential induction factor is nonzero)."
+rs.aero_gust.yaw,deg,yaw angle
+rs.aero_hub_loads.Fxyz_blade_aero,N,Forces at blade root from aerodynamic loading in the blade c.s.
+rs.aero_hub_loads.Fxyz_hub_aero,N,
+rs.aero_hub_loads.Mxyz_blade_aero,N*m,Moments at blade root from aerodynamic loading in the blade c.s.
+rs.aero_hub_loads.Mxyz_hub_aero,N*m,
+rs.aero_hub_loads.V_load,m/s,Hub height wind speed.
+rs.aero_hub_loads.hubloss,Unavailable,Include Prandtl hub loss model.
+rs.aero_hub_loads.precurve,m,Precurve at each section.
+rs.aero_hub_loads.precurveTip,m,Precurve at tip.
+rs.aero_hub_loads.shearExp,,shear exponent
+rs.aero_hub_loads.tiploss,Unavailable,Include Prandtl tip loss model.
+rs.aero_hub_loads.usecd,Unavailable,Use drag coefficient in computing induction factors.
+rs.aero_hub_loads.wakerotation,Unavailable,"Iclude effect of wake rotation (i.e., tangential induction factor is nonzero)."
+rs.aero_hub_loads.yaw,deg,yaw angle
+rs.airfoils_Re,,Reynolds numbers of polars.
+rs.airfoils_aoa,deg,Angle of attack grid for polars.
+rs.airfoils_cd,,"Drag coefficients, spanwise."
+rs.airfoils_cl,,"Lift coefficients, spanwise."
+rs.airfoils_cm,,"Moment coefficients, spanwise."
+rs.chord,m,Chord length at each section.
+rs.constr.blade_number,Unavailable,number of rotor blades
+rs.constr.constr_edge_f_margin,,constraint on edge blade frequency such that ratio of 3P/f is above or below gamma with constraint <= 0
+rs.constr.constr_flap_f_margin,,constraint on flap blade frequency such that ratio of 3P/f is above or below gamma with constraint <= 0
+rs.constr.constr_max_strainL_spar,,constraint for maximum strain in spar cap pressure side
+rs.constr.constr_max_strainU_spar,,constraint for maximum strain in spar cap suction side
+rs.constr.edge_mode_freqs,Hz,Frequencies associated with mode shapes in the edge direction
+rs.constr.flap_mode_freqs,Hz,Frequencies associated with mode shapes in the flap direction
+rs.constr.max_strainL_spar,,maximum strain in spar cap pressure side
+rs.constr.max_strainU_spar,,minimum strain in spar cap pressure side
+rs.constr.min_strainL_spar,,maximum strain in spar cap suction side
+rs.constr.min_strainU_spar,,minimum strain in spar cap suction side
+rs.constr.rated_Omega,rpm,rotor rotation speed at rated
+rs.constr.s,,"1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)1D array of the non-dimensional grid defined along the column axis (0-column base,
+1-column top)"
+rs.constr.s_opt_spar_cap_ps,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side
+rs.constr.s_opt_spar_cap_ss,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side
+rs.constr.strainL_spar,,"strain in spar cap on lower surface at location xl,yl_strain with loads P_strain"
+rs.constr.strainU_spar,,"strain in spar cap on upper surface at location xu,yu_strain with loads P_strain"
+rs.curvature.s,m,"cumulative path length along blade1D array of the non-dimensional grid defined along the column axis (0-column base,
+1-column top)"
+rs.frame.Px_af,,distributed load (force per unit length) in airfoil x-direction
+rs.frame.Py_af,,distributed load (force per unit length) in airfoil y-direction
+rs.frame.Pz_af,,distributed load (force per unit length) in airfoil z-direction
+rs.frame.all_mode_shapes,,"6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)"
+rs.frame.dx,m,deflection of blade section in airfoil x-direction
+rs.frame.dy,m,deflection of blade section in airfoil y-direction
+rs.frame.dz,m,deflection of blade section in airfoil z-direction
+rs.frame.edge_mode_freqs,Hz,Frequencies associated with mode shapes in the edge direction
+rs.frame.edge_mode_shapes,,"6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)"
+rs.frame.flap_mode_freqs,Hz,Frequencies associated with mode shapes in the flap direction
+rs.frame.flap_mode_shapes,,"6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)"
+rs.frame.freq_distance,,"ration of 2nd and 1st natural frequencies, should be ratio of edgewise to flapwise"
+rs.frame.freqs,Hz,"ration of 2nd and 1st natural frequencies, should be ratio of edgewise to flapwiseNatural frequencies of the structure"
+rs.frame.root_F,N,Blade root forces in blade c.s.
+rs.frame.root_M,N*m,Blade root moment in blade c.s.
+rs.frame.strainL_spar,,"strain in spar cap on lower surface at location xl,yl_strain with loads P_strain"
+rs.frame.strainL_te,,"strain in trailing-edge panels on lower surface at location xl,yl_te with loads P_te"
+rs.frame.strainU_spar,,"strain in spar cap on upper surface at location xu,yu_strain with loads P_strain"
+rs.frame.strainU_te,,"strain in trailing-edge panels on upper surface at location xu,yu_te with loads P_te"
+rs.hub_height,m,hub height of wind turbine above ground / sea level
+rs.mu,kg/(m*s),Dynamic viscosity of air
+rs.nBlades,Unavailable,Number of blades
+rs.pitch_load,deg,Blade pitch setting.
+rs.precone,deg,Rotor precone angle
+rs.precurve,m,location in blade x-coordinatePrecurve at each section.
+rs.presweep,m,location in blade y-coordinate
+rs.r,m,"Radial locations where blade is defined. Should be increasing and not
+go all the way to hub or tip."
+rs.rho,kg/m**3,Density of the materials along the column sections.
+rs.rhoA,kg/m,mass per unit length
+rs.rhoJ,kg*m,polar mass moment of inertia per unit length
+rs.theta,deg,Twist angle at each section (positive decreases angle of attack).
+rs.tilt,deg,Nacelle uptilt angle
+rs.tip_pos.3d_curv_tip,deg,total coning angle including precone and curvature
+rs.tip_pos.dx_tip,m,deflection at tip in blade x-direction
+rs.tip_pos.dy_tip,m,deflection at tip in blade y-direction
+rs.tip_pos.dynamicFactor,,a dynamic amplification factor to adjust the static deflection calculation
+rs.tip_pos.dz_tip,m,deflection at tip in blade z-direction
+rs.tip_pos.tip_deflection,m,deflection at tip in yaw x-directionBlade tip deflection in yaw x-direction
+rs.tot_loads_gust.Px_af,,total distributed loads in airfoil x-direction
+rs.tot_loads_gust.Py_af,,total distributed loads in airfoil y-direction
+rs.tot_loads_gust.Pz_af,,total distributed loads in airfoil z-direction
+rs.tot_loads_gust.aeroloads_Omega,rpm,rotor rotation speed
+rs.tot_loads_gust.aeroloads_Px,N/m,distributed loads in blade-aligned x-direction
+rs.tot_loads_gust.aeroloads_Py,N/m,distributed loads in blade-aligned y-direction
+rs.tot_loads_gust.aeroloads_Pz,N/m,distributed loads in blade-aligned z-direction
+rs.tot_loads_gust.aeroloads_azimuth,deg,azimuthal angle
+rs.tot_loads_gust.aeroloads_pitch,deg,pitch angle
+rs.tot_loads_gust.dynamicFactor,,a dynamic amplification factor to adjust the static deflection calculation
+rs.x_az,m,location of blade in azimuth x-coordinate system (prebend)
+rs.x_ec,m,x-distance to elastic center from point about which above structural properties are computed (airfoil aligned coordinate system)
+rs.xl_strain_spar,,x-position of midpoint of spar cap on lower surface for strain calculation
+rs.xl_strain_te,,x-position of midpoint of trailing-edge panel on lower surface for strain calculation
+rs.xu_strain_spar,,x-position of midpoint of spar cap on upper surface for strain calculation
+rs.xu_strain_te,,x-position of midpoint of trailing-edge panel on upper surface for strain calculation
+rs.y_az,m,location of blade in azimuth y-coordinate system (sweep)
+rs.y_ec,m,y-distance to elastic center from point about which above structural properties are computed
+rs.yl_strain_spar,,y-position of midpoint of spar cap on lower surface for strain calculation
+rs.yl_strain_te,,y-position of midpoint of trailing-edge panel on lower surface for strain calculation
+rs.yu_strain_spar,,y-position of midpoint of spar cap on upper surface for strain calculation
+rs.yu_strain_te,,y-position of midpoint of trailing-edge panel on upper surface for strain calculation
+rs.z_az,m,location of blade in azimuth z-coordinate system
+stall_check.airfoils_aoa,deg,angle of attack grid for polarsAngle of attack grid for polars.
+stall_check.airfoils_cd,,"drag coefficients, spanwiseDrag coefficients, spanwise."
+stall_check.airfoils_cl,,"lift coefficients, spanwiseLift coefficients, spanwise."
+stall_check.airfoils_cm,,"moment coefficients, spanwiseMoment coefficients, spanwise."
+stall_check.aoa_along_span,deg,Angle of attack along blade span
+stall_check.min_s,,Minimum nondimensional coordinate along blade span where to define the constraint (blade root typically stalls)
+stall_check.no_stall_constraint,,"Constraint, ratio between angle of attack plus a margin and stall angle"
+stall_check.s,,"1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)1D array of the non-dimensional grid defined along the column axis (0-column base,
+1-column top)"
+stall_check.stall_angle_along_span,deg,Stall angle along blade span
+stall_check.stall_margin,deg,Minimum margin from the stall angle
+tcc.bearing_mass_cost_coeff,USD/kg,main bearing mass-cost coeff
+tcc.bedplate_cost,USD,bedplate cost
+tcc.bedplate_mass,kg,component mass
+tcc.bedplate_mass_cost_coeff,USD/kg,bedplate mass-cost coeff
+tcc.blade_cost,USD,Individual blade cost
+tcc.blade_cost_external,USD,Blade cost computed by RotorSE
+tcc.blade_mass,kg,Total mass of one blade
+tcc.blade_mass_cost_coeff,USD/kg,blade mass-cost coeff
+tcc.blade_number,Unavailable,number of rotor blades
+tcc.brake_cost,USD,brake cost
+tcc.brake_mass,kg,component mass
+tcc.brake_mass_cost_coeff,USD/kg,brake mass-cost coeff
+tcc.controls_cost,USD,controls cost
+tcc.controls_machine_rating_cost_coeff,USD/kW,controls cost coefficient per kW
+tcc.converter_cost,USD,converter cost
+tcc.converter_mass,kg,overall component mass
+tcc.converter_mass_cost_coeff,USD/kg,variable speed electronics mass cost coeff
+tcc.cover_cost,USD,cover cost
+tcc.cover_mass,kg,component mass
+tcc.cover_mass_cost_coeff,USD/kg,nacelle cover mass cost coeff
+tcc.crane,Unavailable,flag for presence of onboard crane
+tcc.crane_cost,USD,crane cost if present
+tcc.elec_connec_machine_rating_cost_coeff,USD/kW,electrical connections cost coefficient per kW
+tcc.elec_cost,USD,elec cost
+tcc.gearbox_cost,USD,gearbox cost
+tcc.gearbox_mass,kg,Gearbox rotor mass
+tcc.gearbox_mass_cost_coeff,USD/kg,gearbox mass-cost coeff
+tcc.generator_cost,USD,generator cost
+tcc.generator_cost_external,USD,Generator cost computed by GeneratorSE
+tcc.generator_mass,kg,Actual mass
+tcc.generator_mass_cost_coeff,USD/kg,generator mass cost coeff
+tcc.hss_cost,USD,hss cost
+tcc.hss_mass,kg,component mass
+tcc.hss_mass_cost_coeff,USD/kg,high speed shaft mass-cost coeff
+tcc.hub_assemblyCostMultiplier,,Rotor assembly cost multiplier
+tcc.hub_cost,USD,"Cost of the hub shell, including flanges"
+tcc.hub_mass,kg,"Total mass of the hub shell, including the flanges"
+tcc.hub_mass_cost_coeff,USD/kg,hub mass-cost coeff
+tcc.hub_overheadCostMultiplier,,Rotor overhead cost multiplier
+tcc.hub_profitMultiplier,,Rotor profit multiplier
+tcc.hub_system_cost,USD,Cost for hub system
+tcc.hub_system_mass_tcc,kg,Mass for hub system
+tcc.hub_transportMultiplier,,Rotor transport multiplier
+tcc.hvac_cost,USD,hvac cost
+tcc.hvac_mass,kg,component mass
+tcc.hvac_mass_cost_coeff,USD/kg,hydraulic and cooling system mass cost coeff
+tcc.lss_cost,USD,lss cost
+tcc.lss_mass,kg,LSS mass
+tcc.lss_mass_cost_coeff,USD/kg,low speed shaft mass-cost coeff
+tcc.machine_rating,kW,Machine rating
+tcc.main_bearing_cost,USD,main_bearing cost
+tcc.main_bearing_mass,kg,Main bearing mass
+tcc.main_bearing_number,Unavailable,number of bearings
+tcc.nacelle_assemblyCostMultiplier,,nacelle assembly cost multiplier
+tcc.nacelle_cost,USD,Nacelle cost
+tcc.nacelle_mass_tcc,kg,Nacelle mass
+tcc.nacelle_overheadCostMultiplier,,nacelle overhead cost multiplier
+tcc.nacelle_profitMultiplier,,nacelle profit multiplier
+tcc.nacelle_transportMultiplier,,nacelle transport multiplier
+tcc.pitch_system_cost,USD,pitch_system cost
+tcc.pitch_system_mass,kg,component mass
+tcc.pitch_system_mass_cost_coeff,USD/kg,pitch system mass-cost coeff
+tcc.platforms_cost,USD,platforms cost
+tcc.platforms_mass,kg,component mass
+tcc.platforms_mass_cost_coeff,USD/kg,nacelle platforms mass cost coeff
+tcc.rotor_cost,USD,Rotor cost
+tcc.rotor_mass_tcc,kg,Rotor mass
+tcc.spinner_cost,USD,Cost of the spinner
+tcc.spinner_mass,kg,Total mass of the spinner
+tcc.spinner_mass_cost_coeff,USD/kg,spinner/nose cone mass-cost coeff
+tcc.tower_assemblyCostMultiplier,,tower assembly cost multiplier
+tcc.tower_cost,USD,Tower cost
+tcc.tower_cost_external,USD,Tower cost computed by TowerSE
+tcc.tower_mass,kg,Mass of tower
+tcc.tower_mass_cost_coeff,USD/kg,tower mass-cost coeff
+tcc.tower_overheadCostMultiplier,,tower overhead cost multiplier
+tcc.tower_parts_cost,USD,component cost
+tcc.tower_profitMultiplier,,tower profit cost multiplier
+tcc.tower_transportMultiplier,,tower transport cost multiplier
+tcc.transformer_cost,USD,transformer cost
+tcc.transformer_mass,kg,overall component mass
+tcc.transformer_mass_cost_coeff,USD/kg,transformer mass cost coeff
+tcc.turbine_assemblyCostMultiplier,,Turbine multiplier for assembly cost in manufacturing
+tcc.turbine_cost,USD,Overall turbine costs
+tcc.turbine_cost_kW,USD/kW,Overall wind turbine capital costs including transportation costs per kW
+tcc.turbine_mass_tcc,kg,Turbine mass
+tcc.turbine_overheadCostMultiplier,,Turbine multiplier for overhead
+tcc.turbine_profitMultiplier,,Turbine multiplier for profit markup
+tcc.turbine_transportMultiplier,,Turbine multiplier for transport costs
+tcc.yaw_mass,kg,overall component mass
+tcc.yaw_mass_cost_coeff,USD/kg,yaw system mass cost coeff
+tcc.yaw_system_cost,USD,yaw_system cost
+tcons.Rtip,m,Blade tip location in z_b
+tcons.blade_number,Unavailable,number of rotor blades
+tcons.blade_tip_tower_clearance,m,
+tcons.constr_tower_f_1Pmargin,,constraint on tower frequency such that ratio of 1P/f is above or below gamma with constraint <= 0
+tcons.constr_tower_f_NPmargin,,constraint on tower frequency such that ratio of 3P/f is above or below gamma with constraint <= 0
+tcons.d_full,m,cylinder diameter at corresponding locations
+tcons.max_allowable_td_ratio,,Safety factor of the tip deflection to stay within the tower clearance
+tcons.overhang,m,Horizontal distance between hub and tower-top axis
+tcons.precone,deg,Rotor precone angle
+tcons.rated_Omega,rpm,rotor rotation speed at rated
+tcons.ref_axis_blade,m,"2D array of the coordinates (x,y,z) of the blade reference axis, defined along
+blade span. The coordinate system is the one of BeamDyn: it is placed at blade
+root with x pointing the suction side of the blade, y pointing the trailing edge
+and z along the blade span. A standard configuration will have negative x values
+(prebend), if swept positive y values, and positive z values."
+tcons.ref_axis_tower,m,"2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate
+system is the global coordinate system of OpenFAST: it is placed at tower base
+with x pointing downwind, y pointing on the side and z pointing vertically
+upwards. A standard tower configuration will have zero x and y values and
+positive z values."
+tcons.rotor_orientation,Unavailable,"Rotor orientation, either upwind or downwind."
+tcons.tilt,deg,Nacelle uptilt angle
+tcons.tip_deflection,m,Blade tip deflection in yaw x-direction
+tcons.tip_deflection_ratio,,
+tcons.tower_freq,Hz,First natural frequencies of tower (and substructure)
+tower.cd,,1D array of the drag coefficients defined along the tower height.
+tower.diameter,m,1D array of the outer diameter values defined along the tower axis.cylinder diameter at corresponding locations
+tower.layer_mat,Unavailable,1D array of the names of the materials of each layer modeled in the tower structure.
+tower.layer_name,Unavailable,1D array of the names of the layers modeled in the tower structure.
+tower.layer_thickness,m,"2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.2D array of the thickness of the layers of the column structure. The first
+dimension represents each layer, the second dimension represents each piecewise-
+constant entry of the column sections."
+tower.outfitting_factor,,Multiplier that accounts for secondary structure mass inside of towerMass fraction added for outfitting
+tower.ref_axis,m,"2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values."
+tower_grid.foundation_height,m,Foundation height in respect to the ground level.starting height of tower
+tower_grid.height,m,Scalar of the tower height computed along the z axis.Scalar of the column height computed along the z axis.
+tower_grid.length,m,Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.Length of a single cable connecting the OSS to the interconnection in km.
+tower_grid.ref_axis,m,"2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values."
+tower_grid.s,,"1D array of the non-dimensional grid defined along the tower axis (0-tower base, 1-tower top)1D array of the non-dimensional grid defined along the column axis (0-column base,
+1-column top)"
+towerse.Asx,m**2,x shear area
+towerse.Asy,m**2,y shear area
+towerse.Az,m**2,cross-sectional area
+towerse.E,Pa,Isotropic Youngs modulus of the materials along the column sections.
+towerse.E_full,N/m**2,modulus of elasticitymodulus of elasticity
+towerse.E_mat,Pa,"2D array of the Youngs moduli of the materials. Each row represents a material,
+the three columns represent E11, E22 and E33."
+towerse.G,Pa,Isotropic shear modulus of the materials along the column sections.
+towerse.G_full,Pa,Isotropic shear modulus of the materials along the tower sections.
+towerse.G_mat,Pa,"2D array of the shear moduli of the materials. Each row represents a material,
+the three columns represent G12, G13 and G23."
+towerse.G_soil,Pa,
+towerse.Hsig_wave,m,significant wave height
+towerse.Ixx,m**4,area moment of inertia about x-axis
+towerse.Iyy,m**4,area moment of inertia about y-axis
+towerse.Jz,m**4,polar moment of inertia
+towerse.Tsig_wave,s,period of maximum wave height
+towerse.axial_stff,N,sectional axial stiffness
+towerse.beta_wave,deg,corresponding wave angles relative to inertial coordinate system
+towerse.beta_wind,deg,corresponding wind angles relative to inertial coordinate system
+towerse.cd_usr,,User input drag coefficient to override Reynolds number based one
+towerse.cg_offst,m,offset from the sectional center of mass
+towerse.cm,,mass coefficient
+towerse.cm.I_base,kg*m**2,
+towerse.cm.center_of_mass,m,
+towerse.cm.cost,USD,
+towerse.cm.mass,kg,added mass
+towerse.cm.material_cost_rate,USD/kg,"Raw material cost rate: steel $1.1/kg, aluminum $3.5/kg"
+towerse.cm.outfitting_factor,,Mass fraction added for outfitting
+towerse.cm.rho,kg/m**3,Density of the materials along the column sections.
+towerse.cm.section_center_of_mass,m,
+towerse.constr_d_to_t,,
+towerse.constr_taper,,
+towerse.d_full,m,cylinder diameter at corresponding locations
+towerse.distLoads.Px,N/m,force per unit length in x-direction
+towerse.distLoads.Py,N/m,force per unit length in y-direction
+towerse.distLoads.Pz,N/m,force per unit length in z-direction
+towerse.distLoads.qdyn,N/m**2,dynamic pressure
+towerse.distLoads.waveLoads_Px,N/m,"distributed loads, force per unit length in x-direction"
+towerse.distLoads.waveLoads_Py,N/m,"distributed loads, force per unit length in y-direction"
+towerse.distLoads.waveLoads_Pz,N/m,"distributed loads, force per unit length in z-direction"
+towerse.distLoads.waveLoads_beta,deg,wind/wave angle relative to inertia c.s.
+towerse.distLoads.waveLoads_d,m,corresponding diameters
+towerse.distLoads.waveLoads_qdyn,N/m**2,dynamic pressure
+towerse.distLoads.waveLoads_z,m,corresponding heights
+towerse.distLoads.windLoads_Px,N/m,"distributed loads, force per unit length in x-direction"
+towerse.distLoads.windLoads_Py,N/m,"distributed loads, force per unit length in y-direction"
+towerse.distLoads.windLoads_Pz,N/m,"distributed loads, force per unit length in z-direction"
+towerse.distLoads.windLoads_beta,deg,wind/wave angle relative to inertia c.s.
+towerse.distLoads.windLoads_d,m,corresponding diameters
+towerse.distLoads.windLoads_qdyn,N/m**2,dynamic pressure
+towerse.distLoads.windLoads_z,m,corresponding heights
+towerse.distLoads.z,m,location along cylinder. start at bottom and go to top
+towerse.foreaft_iner,kg*m,sectional fore-aft intertia per unit length about the Y_G inertia axis
+towerse.foreaft_stff,N*m**2,sectional fore-aft bending stiffness per unit length about the Y_E elastic axis
+towerse.geometry.foundation_height,m,starting height of tower
+towerse.gravity_foundation_I,kg*m**2,
+towerse.gravity_foundation_mass,kg,point mass of transition piece
+towerse.height_constraint,m,
+towerse.hub_height,m,hub height of wind turbine above ground / sea level
+towerse.labor_cost_rate,USD/min,Labor cost
+towerse.life,,fatigue life of tower
+towerse.mass_den,kg/m,sectional mass per unit length
+towerse.material_names,Unavailable,1D array of names of materials.
+towerse.monopile_cost,USD,
+towerse.monopile_foundation_height,m,
+towerse.monopile_height,m,Scalar of the tower height computed along the z axis.
+towerse.monopile_layer_materials,Unavailable,"1D array of the names of the materials of each layer modeled in the tower
+structure."
+towerse.monopile_layer_thickness,m,"2D array of the thickness of the layers of the tower structure. The first
+dimension represents each layer, the second dimension represents each piecewise-
+constant entry of the tower sections."
+towerse.monopile_length,m,
+towerse.monopile_mass,kg,Monopile mass
+towerse.monopile_outer_diameter_in,m,cylinder diameter at corresponding locations
+towerse.monopile_outfitting_factor,,Multiplier that accounts for secondary structure mass inside of cylinder
+towerse.monopile_s,,"1D array of the non-dimensional grid defined along the tower axis (0-tower base,
+1-tower top)"
+towerse.mu_air,kg/(m*s),dynamic viscosity of air
+towerse.mu_water,kg/(m*s),dynamic viscosity of water
+towerse.nu_soil,,
+towerse.outfitting_factor,,Mass fraction added for outfitting
+towerse.outfitting_full,,
+towerse.painting_cost_rate,USD/m/m,Painting / surface finishing cost rate
+towerse.post.Fz,N,point force in z-direction
+towerse.post.Mxx,N*m,point moment about x-axis
+towerse.post.Myy,N*m,point moment about y-axis
+towerse.post.axial_stress,N/m**2,axial stress in tower elements
+towerse.post.fore_aft_freqs,,Frequencies associated with mode shapes in the tower fore-aft direction
+towerse.post.fore_aft_modes,,"6-degree polynomial coefficients of mode shapes in the tower fore-aft direction (x^2..x^6, no linear or constant term)"
+towerse.post.freqs,Hz,Natural frequencies of the structureNatural frequencies of the structure
+towerse.post.global_buckling,,Global buckling constraint.  Should be < 1 for feasibility.  Includes safety factors
+towerse.post.hoop_stress,N/m**2,hoop stress in tower elements
+towerse.post.shear_stress,N/m**2,shear stress in tower elements
+towerse.post.shell_buckling,,Shell buckling constraint.  Should be < 1 for feasibility.  Includes safety factors
+towerse.post.side_side_freqs,,Frequencies associated with mode shapes in the tower side-side direction
+towerse.post.side_side_modes,,"6-degree polynomial coefficients of mode shapes in the tower side-side direction (x^2..x^6, no linear or constant term)"
+towerse.post.stress,,Von Mises stress utilization along tower at specified locations.  incudes safety factor.
+towerse.post.structural_frequencies,Hz,First and second natural frequencyStructural frequencies outputted from FEM calculation
+towerse.post.top_deflection,m,Deflection of tower top in yaw-aligned +x direction
+towerse.post.top_deflection_in,m,Deflection of tower top in yaw-aligned +x direction
+towerse.post.turbine_F,N,Total force on tower+rna
+towerse.post.turbine_M,N*m,Total x-moment on tower+rna measured at base
+towerse.post.x_mode_freqs,,Frequencies associated with mode shapes in the x-directionFrequencies associated with mode shapes in the x-direction
+towerse.post.x_mode_shapes,,"6-degree polynomial coefficients of mode shapes in the x-direction (x^2..x^6, no linear or constant term)6-degree polynomial coefficients of mode shapes in the x-direction"
+towerse.post.y_mode_freqs,,Frequencies associated with mode shapes in the y-directionFrequencies associated with mode shapes in the y-direction
+towerse.post.y_mode_shapes,,"6-degree polynomial coefficients of mode shapes in the x-direction (x^2..x^6, no linear or constant term)6-degree polynomial coefficients of mode shapes in the x-direction"
+towerse.pre.Fx,N,point force in x-direction
+towerse.pre.Fy,N,point force in y-direction
+towerse.pre.Fz,N,point force in z-direction
+towerse.pre.Mxx,N*m,point moment about x-axis
+towerse.pre.Myy,N*m,point moment about y-axis
+towerse.pre.Mzz,N*m,point moment about z-axis
+towerse.pre.k_monopile,N/m,Stiffness BCs for ocean soil. Only used if monoflag inputis True
+towerse.pre.kidx,,indices of z where external stiffness reactions should be applied.
+towerse.pre.ktx,N/m,spring stiffness in theta_x-rotation
+towerse.pre.kty,N/m,spring stiffness in theta_y-rotation
+towerse.pre.ktz,N/m,spring stiffness in theta_z-rotation
+towerse.pre.kx,N/m,spring stiffness in x-direction
+towerse.pre.ky,N/m,spring stiffness in y-direction
+towerse.pre.kz,N/m,spring stiffness in z-direction
+towerse.pre.m,kg,added mass
+towerse.pre.mIxx,kg*m**2,x mass moment of inertia about some point p
+towerse.pre.mIxy,kg*m**2,xy mass moment of inertia about some point p
+towerse.pre.mIxz,kg*m**2,xz mass moment of inertia about some point p
+towerse.pre.mIyy,kg*m**2,y mass moment of inertia about some point p
+towerse.pre.mIyz,kg*m**2,yz mass moment of inertia about some point p
+towerse.pre.mIzz,kg*m**2,z mass moment of inertia about some point p
+towerse.pre.midx,,indices where added mass should be applied.
+towerse.pre.mrhox,m,x-location of p relative to node
+towerse.pre.mrhoy,m,y-location of p relative to node
+towerse.pre.mrhoz,m,z-location of p relative to node
+towerse.pre.plidx,,indices where point loads should be applied.
+towerse.pre.rna_F,N,rna force
+towerse.pre.rna_M,N*m,rna moment
+towerse.props.d,m,Sectional tower diameters
+towerse.props.t,m,Sectional tower wall thicknesses
+towerse.rho,kg/m**3,Density of the materials along the column sections.
+towerse.rho_air,kg/m**3,air density
+towerse.rho_full,kg/m**3,Density of the materials along the tower sections.material density
+towerse.rho_mat,kg/m**3,"1D array of the density of the materials. For composites, this is the density of
+the laminate."
+towerse.rho_water,kg/m**3,density of water
+towerse.rna_I,kg*m**2,Moments about turbine main
+towerse.rna_cg,m,Location of RNA center of mass relative to tower top
+towerse.rna_mass,kg,Mass of RNA
+towerse.sc_offst,m,offset from the sectional shear center
+towerse.sec_loc,,normalized sectional location
+towerse.shearExp,,shear exponent
+towerse.sideside_iner,kg*m,sectional side-side intertia per unit length about the Y_G inertia axis
+towerse.sideside_stff,N*m**2,sectional side-side bending stiffness per unit length about the Y_E elastic axis
+towerse.sigma_y,Pa,Isotropic yield strength of the materials along the column sections.
+towerse.sigma_y_full,N/m**2,yield stressyield stress
+towerse.sigma_y_mat,Pa,"2D array of the yield strength of the materials. Each row represents a material,
+the three columns represent Xt12, Xt13 and Xt23."
+towerse.slope,,
+towerse.soil.d0,m,diameter of base of tower
+towerse.soil.k,N/m,
+towerse.soil.k_usr,N/m,"User overrides of stiffness values. Use positive values and for rigid
+use np.inf. Order is x, theta_x, y, theta_y, z, theta_z"
+towerse.str_tw,deg,structural twist of section
+towerse.structural_cost,USD,
+towerse.structural_mass,kg,Mass of whole turbine except for mooring lines
+towerse.suctionpile_depth,m,
+towerse.t_full,m,shell thickness at corresponding locations
+towerse.tc_offst,m,offset from the sectional tension center
+towerse.tm.cylinder_I_base,kg*m**2,Mass moment of inertia of cylinder about base [xx yy zz xy xz yz]
+towerse.tm.cylinder_center_of_mass,m,z position of center of mass of cylinder
+towerse.tm.cylinder_cost,USD,Total cylinder cost
+towerse.tm.cylinder_mass,kg,Total cylinder mass
+towerse.tm.cylinder_section_center_of_mass,m,z position of center of mass of each can in the cylinder
+towerse.tor_stff,N*m**2,sectional torsional stiffness
+towerse.tower.E,N/m**2,Isotropic Youngs modulus of the materials along the column sections.
+towerse.tower.Fx,N,point force in x-direction
+towerse.tower.Fy,N,point force in y-direction
+towerse.tower.Fz,N,point force in z-direction
+towerse.tower.Fz_out,N,
+towerse.tower.G,N/m**2,Isotropic shear modulus of the materials along the column sections.
+towerse.tower.Mxx,N*m,point moment about x-axis
+towerse.tower.Mxx_out,N*m,
+towerse.tower.Myy,N*m,point moment about y-axis
+towerse.tower.Myy_out,N*m,
+towerse.tower.Mzz,N*m,point moment about z-axis
+towerse.tower.Mzz_out,N*m,
+towerse.tower.Px,N/m,force per unit length in x-direction
+towerse.tower.Py,N/m,force per unit length in y-direction
+towerse.tower.Pz,N/m,force per unit length in z-direction
+towerse.tower.Vx_out,N,
+towerse.tower.Vy_out,N,
+towerse.tower.axial_stress,N/m**2,axial stress in tower elements
+towerse.tower.base_F,N,
+towerse.tower.base_M,N*m,
+towerse.tower.d,m,Sectional tower diameters
+towerse.tower.f1,Hz,
+towerse.tower.f2,Hz,
+towerse.tower.freqs,Hz,Natural frequencies of the structure
+towerse.tower.hoop_stress,N/m**2,hoop stress in tower elements
+towerse.tower.hoop_stress_euro,N/m**2,
+towerse.tower.kidx,,indices of z where external stiffness reactions should be applied.
+towerse.tower.ktx,N/m,spring stiffness in theta_x-rotation
+towerse.tower.kty,N/m,spring stiffness in theta_y-rotation
+towerse.tower.ktz,N/m,spring stiffness in theta_z-rotation
+towerse.tower.kx,N/m,spring stiffness in x-direction
+towerse.tower.ky,N/m,spring stiffness in y-direction
+towerse.tower.kz,N/m,spring stiffness in z-direction
+towerse.tower.m,kg,added mass
+towerse.tower.mIxx,kg*m**2,x mass moment of inertia about some point p
+towerse.tower.mIxy,kg*m**2,xy mass moment of inertia about some point p
+towerse.tower.mIxz,kg*m**2,xz mass moment of inertia about some point p
+towerse.tower.mIyy,kg*m**2,y mass moment of inertia about some point p
+towerse.tower.mIyz,kg*m**2,yz mass moment of inertia about some point p
+towerse.tower.mIzz,kg*m**2,z mass moment of inertia about some point p
+towerse.tower.mass,kg,added mass
+towerse.tower.midx,,indices where added mass should be applied.
+towerse.tower.mrhox,m,x-location of p relative to node
+towerse.tower.mrhoy,m,y-location of p relative to node
+towerse.tower.mrhoz,m,z-location of p relative to node
+towerse.tower.plidx,,indices where point loads should be applied.
+towerse.tower.qdyn,N/m**2,dynamic pressure
+towerse.tower.rho,kg/m**3,Density of the materials along the column sections.
+towerse.tower.shear_stress,N/m**2,shear stress in tower elements
+towerse.tower.t,m,Sectional tower wall thicknesses
+towerse.tower.top_deflection,m,
+towerse.tower.x_mode_freqs,,Frequencies associated with mode shapes in the x-direction
+towerse.tower.x_mode_shapes,,6-degree polynomial coefficients of mode shapes in the x-direction
+towerse.tower.y_mode_freqs,,Frequencies associated with mode shapes in the y-direction
+towerse.tower.y_mode_shapes,,6-degree polynomial coefficients of mode shapes in the x-direction
+towerse.tower.z,m,location along cylinder. start at bottom and go to top
+towerse.tower_I_base,kg*m**2,Moments about tower main
+towerse.tower_center_of_mass,m,z-position of center of tower mass
+towerse.tower_cost,USD,Tower cost
+towerse.tower_foundation_height,m,
+towerse.tower_height,m,Scalar of the tower height computed along the z axis.
+towerse.tower_layer_materials,Unavailable,"1D array of the names of the materials of each layer modeled in the tower
+structure."
+towerse.tower_layer_thickness,m,"2D array of the thickness of the layers of the tower structure. The first
+dimension represents each layer, the second dimension represents each piecewise-
+constant entry of the tower sections."
+towerse.tower_mass,kg,Mass of tower
+towerse.tower_outer_diameter,m,
+towerse.tower_outer_diameter_in,m,cylinder diameter at corresponding locations
+towerse.tower_outfitting_factor,,Multiplier that accounts for secondary structure mass inside of cylinder
+towerse.tower_s,,"1D array of the non-dimensional grid defined along the tower axis (0-tower base,
+1-tower top)"
+towerse.tower_section_center_of_mass,m,
+towerse.tower_section_height,m,
+towerse.tower_wall_thickness,m,
+towerse.transition_piece_I,kg*m**2,
+towerse.transition_piece_cost,USD,Cost of transition piece
+towerse.transition_piece_height,m,height of transition piece above water line
+towerse.transition_piece_mass,kg,point mass of transition piece
+towerse.turb.turbine_I_base,kg*m**2,
+towerse.turb.turbine_center_of_mass,m,
+towerse.turbine_mass,kg,
+towerse.tw_iner,deg,inertial twist of section
+towerse.unit_cost,USD/kg,Unit costs of the materials along the column sections.
+towerse.unit_cost_full,USD/kg,"Raw material cost: steel $1.1/kg, aluminum $3.5/kg"
+towerse.unit_cost_mat,USD/kg,1D array of the unit costs of the materials.
+towerse.water_depth,m,water depth
+towerse.wave.A,m/s**2,magnitude of wave acceleration
+towerse.wave.U,m/s,magnitude of wind speed
+towerse.wave.Uc,m/s,mean current speed
+towerse.wave.V,m/s,
+towerse.wave.W,m/s,
+towerse.wave.p,N/m**2,pressure oscillation
+towerse.wave.phase_speed,m/s,
+towerse.wave.z,m,location along cylinder. start at bottom and go to top
+towerse.waveLoads.A,m/s**2,magnitude of wave acceleration
+towerse.waveLoads.U,m/s,magnitude of wind speed
+towerse.waveLoads.d,m,Sectional tower diameters
+towerse.waveLoads.p,N/m**2,pressure oscillation
+towerse.waveLoads.waveLoads_Px,N/m,"distributed loads, force per unit length in x-direction"
+towerse.waveLoads.waveLoads_Py,N/m,"distributed loads, force per unit length in y-direction"
+towerse.waveLoads.waveLoads_Pz,N/m,"distributed loads, force per unit length in z-direction"
+towerse.waveLoads.waveLoads_beta,deg,wind/wave angle relative to inertia c.s.
+towerse.waveLoads.waveLoads_d,m,corresponding diameters
+towerse.waveLoads.waveLoads_pt,N/m**2,
+towerse.waveLoads.waveLoads_qdyn,N/m**2,dynamic pressure
+towerse.waveLoads.waveLoads_z,m,corresponding heights
+towerse.waveLoads.z,m,location along cylinder. start at bottom and go to top
+towerse.wind.U,m/s,magnitude of wind speed
+towerse.wind.Uref,m/s,reference wind speed (usually at hub height)
+towerse.wind.z,m,location along cylinder. start at bottom and go to top
+towerse.windLoads.U,m/s,magnitude of wind speed
+towerse.windLoads.d,m,Sectional tower diameters
+towerse.windLoads.windLoads_Px,N/m,"distributed loads, force per unit length in x-direction"
+towerse.windLoads.windLoads_Py,N/m,"distributed loads, force per unit length in y-direction"
+towerse.windLoads.windLoads_Pz,N/m,"distributed loads, force per unit length in z-direction"
+towerse.windLoads.windLoads_beta,deg,wind/wave angle relative to inertia c.s.
+towerse.windLoads.windLoads_d,m,corresponding diameters
+towerse.windLoads.windLoads_qdyn,N/m**2,dynamic pressure
+towerse.windLoads.windLoads_z,m,corresponding heights
+towerse.windLoads.z,m,location along cylinder. start at bottom and go to top
+towerse.wind_reference_height,m,
+towerse.wind_z0,m,
+towerse.yaw,deg,yaw angle
+towerse.z_full,m,z-coordinates of section nodes
+towerse.z_param,m,"parameterized locations along tower, linear lofting between"
+towerse.z_start,m,
+wt_class.V_extreme1,m/s,
+wt_class.V_extreme50,m/s,
+wt_class.V_mean,m/s,
+wt_class.V_mean_overwrite,,overwrite value for mean velocity for using user defined CDFs
+wt_class.turbine_class,Unavailable,IEC turbine class
+﻿variables,units,description

@@ -1,7 +1,6 @@
-import pytest
 import pandas as pd
+import pytest
 import openmdao.api as om
-
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 from wisdem.landbosse.landbosse_omdao.OpenMDAODataframeCache import OpenMDAODataframeCache
 
@@ -105,3 +104,8 @@ def compare_expected_to_actual(expected_df, actual_module_type_operation_list, v
         return False
     else:
         return True
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)
