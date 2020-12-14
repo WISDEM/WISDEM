@@ -1,8 +1,8 @@
+import unittest
+
 import numpy as np
 import numpy.testing as npt
-import unittest
 import wisdem.commonse.utilization_constraints as util
-
 from wisdem.commonse import gravity as g
 
 myones = np.ones((100,))
@@ -98,7 +98,7 @@ class TestUtilization(unittest.TestCase):
         self.params['bulkhead_nodes'] = [False, False, False, False]
         self.params['wave_height'] = 0.0 # gives only static pressure
         self.params['stack_mass_in'] = 9000 * kip_to_si/g
-        
+
         self.set_geometry()
         self.myspar.section_mass = np.zeros((3,))
 
@@ -238,4 +238,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

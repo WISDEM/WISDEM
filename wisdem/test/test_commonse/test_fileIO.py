@@ -1,10 +1,11 @@
 import os
-import numpy as np
-import numpy.testing as npt
-import unittest
-from wisdem.commonse import fileIO
-import openmdao.api as om
 import glob
+import unittest
+
+import numpy as np
+import openmdao.api as om
+import numpy.testing as npt
+from wisdem.commonse import fileIO
 
 
 def clear_files():
@@ -96,18 +97,18 @@ class TestFileIO(unittest.TestCase):
 
         # Check numpy file
         npzdat = np.load("test.npz", allow_pickle=True)
-        self.assertEqual(npzdat["comp.float_in_N"], 5.0)
-        self.assertEqual(npzdat["comp.float_out_N"], 6.0)
-        self.assertEqual(npzdat["comp.fraction_in"], 0.0)
-        self.assertEqual(npzdat["comp.fraction_out"], 0.1)
-        npt.assert_equal(npzdat["comp.array_in_m"], np.zeros(3))
-        npt.assert_equal(npzdat["comp.array_out_m"], np.ones(3))
-        self.assertEqual(npzdat["comp.int_in"], 0)
-        self.assertEqual(npzdat["comp.int_out"], 1)
-        self.assertEqual(npzdat["comp.string_in"], "empty")
-        self.assertEqual(npzdat["comp.string_out"], "full")
-        npt.assert_equal(npzdat["comp.list_in"], ["empty"] * 3)
-        npt.assert_equal(npzdat["comp.list_out"], ["full"] * 3)
+        self.assertEqual(npzdat["float_in_N"], 5.0)
+        self.assertEqual(npzdat["float_out_N"], 6.0)
+        self.assertEqual(npzdat["fraction_in"], 0.0)
+        self.assertEqual(npzdat["fraction_out"], 0.1)
+        npt.assert_equal(npzdat["array_in_m"], np.zeros(3))
+        npt.assert_equal(npzdat["array_out_m"], np.ones(3))
+        self.assertEqual(npzdat["int_in"], 0)
+        self.assertEqual(npzdat["int_out"], 1)
+        self.assertEqual(npzdat["string_in"], "empty")
+        self.assertEqual(npzdat["string_out"], "full")
+        npt.assert_equal(npzdat["list_in"], ["empty"] * 3)
+        npt.assert_equal(npzdat["list_out"], ["full"] * 3)
 
 
 def suite():
@@ -117,4 +118,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

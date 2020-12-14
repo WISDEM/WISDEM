@@ -1,13 +1,10 @@
-import unittest
 import os
+import unittest
 
 import numpy as np
-
 import openmdao.api as om
 from openmdao.utils.assert_utils import assert_check_partials
-
-from wisdem.commonse.distribution import WeibullCDF, WeibullWithMeanCDF, RayleighCDF
-
+from wisdem.commonse.distribution import WeibullCDF, RayleighCDF, WeibullWithMeanCDF
 
 np.random.seed(314)
 
@@ -44,4 +41,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

@@ -5,7 +5,7 @@ import sys
 import glob
 import platform
 
-from setuptools import setup, find_packages
+from setuptools import find_packages
 
 from numpy.distutils.core import Extension, setup
 
@@ -47,7 +47,7 @@ pymapExt = Extension(
 # Top-level setup
 setup(
     name="WISDEM",
-    version="3.0.0",
+    version="3.1.0",
     description="Wind-Plant Integrated System Design & Engineering Model",
     long_description="""WISDEM is a Python package for conducting multidisciplinary analysis and
     optimization of wind turbines and plants.  It is built on top of NASA's OpenMDAO library.""",
@@ -66,8 +66,9 @@ setup(
         "xlrd",
         "jsonschema",
         "pyyaml",
+        "pytest",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     package_data={"": ["*.yaml", "*.xlsx"], "wisdem": ["*.txt"]},
     # package_dir      = {'': 'wisdem'},
     packages=find_packages(exclude=["docs", "tests", "ext"]),

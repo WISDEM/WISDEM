@@ -1,9 +1,10 @@
-import numpy as np
-import numpy.testing as npt
 import unittest
+
+import numpy as np
+import pytest
+import numpy.testing as npt
 from openmdao.api import Problem
 from wisdem.floatingse.floating import FloatingSE
-import pytest
 
 npts = 5
 nsection = npts - 1
@@ -159,7 +160,7 @@ class TestOC3Mass(unittest.TestCase):
 
         # Set environment to that used in OC3 testing campaign
         prob["water_depth"] = 320.0  # Distance to sea floor [m]
-        prob["hsig_wave"] = 0.0  # Significant wave height [m]
+        prob["Hsig_wave"] = 0.0  # Significant wave height [m]
         prob["Tsig_wave"] = 1e3  # Wave period [s]
         prob["shearExp"] = 0.11  # Shear exponent in wind power law
         prob["cm"] = 2.0  # Added mass coefficient
@@ -219,4 +220,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

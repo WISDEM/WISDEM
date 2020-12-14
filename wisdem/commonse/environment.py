@@ -9,8 +9,6 @@ Copyright (c) NREL. All rights reserved.
 
 from __future__ import print_function
 
-import math
-
 import numpy as np
 import openmdao.api as om
 from scipy.optimize import brentq
@@ -319,7 +317,7 @@ class LinearWaves(WaveBase):
         vertical location of water surface
     z_floor : float, [m]
         vertical location of sea floor
-    hsig_wave : float, [m]
+    Hsig_wave : float, [m]
         Maximum wave height (crest-to-trough)
     Tsig_wave : float, [s]
         period of maximum wave height
@@ -348,7 +346,7 @@ class LinearWaves(WaveBase):
         self.add_input("Uc", 0.0, units="m/s", desc="mean current speed")
 
         # parameters
-        self.add_input("hsig_wave", 0.0, units="m")
+        self.add_input("Hsig_wave", 0.0, units="m")
         self.add_input("Tsig_wave", 0.0, units="s")
 
         # For Ansys AQWA connection
@@ -373,13 +371,13 @@ class LinearWaves(WaveBase):
             return
 
         # design wave height
-        h = inputs["hsig_wave"]
+        h = inputs["Hsig_wave"]
 
         # circular frequency
-        omega = 2.0 * math.pi / inputs["Tsig_wave"]
+        omega = 2.0 * np.pi / inputs["Tsig_wave"]
 
         # compute wave number from dispersion relationship
-        k = brentq(lambda k: omega ** 2 - gravity * k * math.tanh(d * k), 0, 1e3 * omega ** 2 / gravity)
+        k = brentq(lambda k: omega ** 2 - gravity * k * np.tanh(d * k), 0, 1e3 * omega ** 2 / gravity)
         self.k = k
         outputs["phase_speed"] = omega / k
 
@@ -423,8 +421,8 @@ class LinearWaves(WaveBase):
             z_floor *= -1.0
         z = inputs["z"]
         d = inputs["z_surface"] - z_floor
-        h = inputs["hsig_wave"]
-        omega = 2.0 * math.pi / inputs["Tsig_wave"]
+        h = inputs["Hsig_wave"]
+        omega = 2.0 * np.pi / inputs["Tsig_wave"]
         k = self.k
         z_rel = z - inputs["z_surface"]
 

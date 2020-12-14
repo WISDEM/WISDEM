@@ -161,7 +161,7 @@ prob["rho_water"] = 1025.0
 prob["mu_air"] = 1.7934e-5
 prob["mu_water"] = 1.3351e-3
 prob["beta_wind"] = 0.0
-prob["hsig_wave"] = 4.52
+prob["Hsig_wave"] = 4.52
 prob["Tsig_wave"] = 9.52
 if modeling_options["TowerSE"]["wind"] == "PowerWind":
     prob["shearExp"] = 0.1

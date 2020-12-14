@@ -1,11 +1,12 @@
-import numpy as np
-import numpy.testing as npt
-import unittest
-import wisdem.rotorse.rotor_power as rp
-import openmdao.api as om
+import os
 import copy
 import time
-import os
+import unittest
+
+import numpy as np
+import openmdao.api as om
+import numpy.testing as npt
+import wisdem.rotorse.rotor_power as rp
 
 ARCHIVE = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "regulation.npz"
 
@@ -425,4 +426,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)
