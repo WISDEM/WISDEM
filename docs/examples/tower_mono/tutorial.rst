@@ -25,7 +25,7 @@ The tower is not restricted to 3 sections, any number of sections can be defined
 Invoking with YAML files
 *************************
 
-To run just the tower analysis from the YAML input files, we just need to include the necessary elements.  First dealing with the ``geometry_option.yaml`` file, this always includes the :code:`assembly` section. Of the :code:`components`, this means the :code:`tower` and :code:`foundation` sections.  Also, the :code:`materials`, :code:`environment`, and :code:`costs` section,
+To run just the tower analysis from the YAML input files, we just need to include the necessary elements.  First dealing with the ``geometry_option.yaml`` file, this always includes the :code:`assembly` section. Of the :code:`components`, this means just the :code:`tower` section.  Also, the :code:`materials`, :code:`environment`, and :code:`costs` section,
 
 .. literalinclude:: ../../../examples/05_tower_monopile/nrel5mw_tower.yaml
     :language: yaml
@@ -242,7 +242,7 @@ To run just the monopile, there is an additional :code:`monopile` section that m
 .. literalinclude:: ../../../examples/05_tower_monopile/nrel5mw_monopile.yaml
     :language: yaml
     :start-after: values: [0.027, 0.0222
-    :end-before: foundation:
+    :end-before: materials:
 
 The :code:`environment` section must also be updated with the offshore properties,
 
@@ -313,7 +313,7 @@ We then call :code:`setup()` as before,
     :start-after: # Set up the OpenMDAO problem
     :end-before: # ---
 
-Next, the additional inputs for the monopile include the suction pile depth and passing in the initial condition and discretization of the monopile.
+Next, the additional inputs for the monopile include its discretization of the monopile and starting depth.
 
 .. literalinclude:: ../../../examples/05_tower_monopile/monopile_direct.py
     :language: python

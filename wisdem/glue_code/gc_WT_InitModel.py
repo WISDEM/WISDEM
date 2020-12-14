@@ -80,12 +80,6 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         mooring = wt_init["components"]["mooring"]
         wt_opt = assign_mooring_values(wt_opt, modeling_options, mooring)
 
-    if modeling_options["flags"]["foundation"]:
-        foundation = wt_init["components"]["foundation"]
-        wt_opt = assign_foundation_values(wt_opt, foundation)
-    else:
-        foundation = {}
-
     if modeling_options["flags"]["bos"]:
         bos = wt_init["bos"]
         wt_opt = assign_bos_values(wt_opt, bos, offshore)
@@ -880,19 +874,9 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
     wt_opt["monopile.layer_thickness"] = 0.5 * (thickness[:, :-1] + thickness[:, 1:])
 
     wt_opt["monopile.outfitting_factor"] = monopile["internal_structure_2d_fem"]["outfitting_factor"]
-    wt_opt["monopile.transition_piece_height"] = monopile["transition_piece_height"]
     wt_opt["monopile.transition_piece_mass"] = monopile["transition_piece_mass"]
     wt_opt["monopile.transition_piece_cost"] = monopile["transition_piece_cost"]
     wt_opt["monopile.gravity_foundation_mass"] = monopile["gravity_foundation_mass"]
-    wt_opt["monopile.suctionpile_depth"] = monopile["suctionpile_depth"]
-    wt_opt["monopile.suctionpile_depth_diam_ratio"] = monopile["suctionpile_depth_diam_ratio"]
-
-    return wt_opt
-
-
-def assign_foundation_values(wt_opt, foundation):
-
-    wt_opt["foundation.height"] = foundation["height"]
 
     return wt_opt
 
@@ -963,6 +947,10 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
             wt_opt["mooring.nodes_location"][i, :] = mooring["nodes"][i]["location"]
         else:
             wt_opt["mooring.nodes_joint_name"][i] = mooring["nodes"][i]["joint"]
+        wt_opt["mooring.nodes_mass"][i] = mooring["nodes"][i]["node_mass"]
+        wt_opt["mooring.nodes_volume"][i] = mooring["nodes"][i]["node_volume"]
+        wt_opt["mooring.nodes_drag_area"][i] = mooring["nodes"][i]["drag_area"]
+        wt_opt["mooring.nodes_added_mass"][i] = mooring["nodes"][i]["added_mass"]
     for i in range(n_lines):
         wt_opt["mooring.unstretched_length"][i] = mooring["lines"][i]["unstretched_length"]
     for i in range(n_line_types):
@@ -1015,7 +1003,7 @@ def assign_configuration_values(wt_opt, assembly, opt_options):
     if int(assembly["number_of_blades"]) - assembly["number_of_blades"] != 0:
         raise Exception("ERROR: the number of blades must be an integer")
 
-    if assembly["rotor_diameter"] == 0.0 and opt_options["optimization_variables"]["rotor_diameter"]["flag"]:
+    if assembly["rotor_diameter"] == 0.0 and opt_options["design_variables"]["rotor_diameter"]["flag"]:
         raise Exception(
             "ERROR: you activated the rotor diameter as design variable, but you have not specified the rotor diameter in the geometry yaml."
         )
@@ -1031,7 +1019,7 @@ def assign_environment_values(wt_opt, environment, offshore):
         wt_opt["env.rho_water"] = environment["water_density"]
         wt_opt["env.mu_water"] = environment["water_dyn_viscosity"]
         wt_opt["env.water_depth"] = environment["water_depth"]
-        wt_opt["env.hsig_wave"] = environment["significant_wave_height"]
+        wt_opt["env.Hsig_wave"] = environment["significant_wave_height"]
         wt_opt["env.Tsig_wave"] = environment["significant_wave_period"]
     wt_opt["env.weibull_k"] = environment["weib_shape_parameter"]
     wt_opt["env.speed_sound_air"] = environment["air_speed_sound"]

@@ -36,6 +36,7 @@ Documentation Outline
    first_steps
    what_wisdem_can_do
    inputs
+   outputs
    examples
    modules
    publications

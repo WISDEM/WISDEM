@@ -379,8 +379,7 @@ components:
                   thickness:
                     grid: *grid_tower
                     values: [0.05697, 0.05697, 0.05047, 0.04664, 0.03935, 0.03354, 0.02801, 0.02357, 0.02374, 0.02241, 0.02674]
-    foundation:
-        height: 0.
+
 airfoils:
    -  name: DU08-W-210
       coordinates:

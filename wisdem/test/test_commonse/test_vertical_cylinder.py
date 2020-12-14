@@ -1,6 +1,7 @@
+import unittest
+
 import numpy as np
 import numpy.testing as npt
-import unittest
 import wisdem.commonse.vertical_cylinder as vc
 from wisdem.commonse.utilities import nodal2sectional
 
@@ -107,4 +108,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

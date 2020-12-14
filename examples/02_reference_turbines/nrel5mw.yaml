@@ -7,7 +7,7 @@ assembly:
     rotor_orientation: Upwind
     number_of_blades: 3
     hub_height: 90.
-    rotor_diameter: 126. 
+    rotor_diameter: 126.
     rated_power: 5.e+6
 components:
     blade:
@@ -295,8 +295,7 @@ components:
                   thickness:
                     grid: *grid_tower
                     values: [0.027, 0.0254, 0.0238, 0.0222, 0.0206, 0.019, 0.019]
-    foundation:
-        height: 0.
+
 airfoils:
    -  aerodynamic_center: 0.275
       polars:
@@ -563,7 +562,7 @@ materials:
       Xc: 65.36e+006
       orth: 0
       unit_cost: 3.63
-      
+
 control:
     supervisory:
         Vin: 3.0

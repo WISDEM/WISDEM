@@ -55,14 +55,17 @@ class TestTowerSE(unittest.TestCase):
     def testDiscYAML_Land_1Material(self):
 
         # Test land based, 1 material
+        self.inputs["water_depth"] = 0.0
         self.inputs["tower_s"] = np.linspace(0, 1, 5)
         self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 4))
+        self.inputs["tower_foundation_height"] = 0.0
         self.inputs["tower_height"] = 1e2
         self.inputs["tower_outer_diameter_in"] = 8 * np.ones(5)
         self.inputs["tower_outfitting_factor"] = 1.1
         self.discrete_inputs["tower_layer_materials"] = ["steel"]
         self.inputs["monopile_s"] = np.empty(0)
         self.inputs["monopile_layer_thickness"] = np.empty((0, 0))
+        self.inputs["monopile_foundation_height"] = 0.0
         self.inputs["monopile_height"] = 0.0
         self.inputs["monopile_outer_diameter_in"] = np.empty(0)
         self.inputs["monopile_outfitting_factor"] = 0.0
@@ -87,17 +90,23 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs["sigma_y"], 1e7 * np.ones(4))
         npt.assert_equal(self.outputs["rho"], 1e4 * np.ones(4))
         npt.assert_equal(self.outputs["unit_cost"], 1e1 * np.ones(4))
+        npt.assert_equal(self.outputs["z_start"], 0.0)
+        npt.assert_equal(self.outputs["transition_piece_height"], 0.0)
+        npt.assert_equal(self.outputs["suctionpile_depth"], 0.0)
 
     def testDiscYAML_Land_2Materials(self):
         # Test land based, 2 materials
+        self.inputs["water_depth"] = 0.0
         self.inputs["tower_s"] = np.linspace(0, 1, 5)
         self.inputs["tower_layer_thickness"] = np.array([[0.25, 0.25, 0.0, 0.0], [0.0, 0.0, 0.1, 0.1]])
+        self.inputs["tower_foundation_height"] = 0.0
         self.inputs["tower_height"] = 1e2
         self.inputs["tower_outer_diameter_in"] = 8 * np.ones(5)
         self.inputs["tower_outfitting_factor"] = 1.1
         self.discrete_inputs["tower_layer_materials"] = ["steel", "other"]
         self.inputs["monopile_s"] = np.empty(0)
         self.inputs["monopile_layer_thickness"] = np.empty((0, 0))
+        self.inputs["monopile_foundation_height"] = 0.0
         self.inputs["monopile_height"] = 0.0
         self.inputs["monopile_outer_diameter_in"] = np.empty(0)
         self.inputs["monopile_outfitting_factor"] = 0.0
@@ -122,16 +131,63 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs["sigma_y"], 1e7 * np.array([1, 1, 2, 2]))
         npt.assert_equal(self.outputs["rho"], 1e4 * np.array([1, 1, 2, 2]))
         npt.assert_equal(self.outputs["unit_cost"], 1e1 * np.array([1, 1, 2, 2]))
+        npt.assert_equal(self.outputs["z_start"], 0.0)
+        npt.assert_equal(self.outputs["transition_piece_height"], 0.0)
+        npt.assert_equal(self.outputs["suctionpile_depth"], 0.0)
 
     def testDiscYAML_Monopile_1Material(self):
+        self.inputs["water_depth"] = 30.0
         self.inputs["tower_s"] = np.linspace(0, 1, 5)
         self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 4))
         self.inputs["tower_height"] = 1e2
+        self.inputs["tower_foundation_height"] = 10.0
         self.inputs["tower_outer_diameter_in"] = 8 * np.ones(5)
         self.inputs["tower_outfitting_factor"] = 1.1
         self.discrete_inputs["tower_layer_materials"] = ["steel"]
         self.inputs["monopile_s"] = np.linspace(0, 1, 5)
         self.inputs["monopile_layer_thickness"] = 0.5 * np.ones((1, 4))
+        self.inputs["monopile_foundation_height"] = -40.0
+        self.inputs["monopile_height"] = 50.0
+        self.inputs["monopile_outer_diameter_in"] = 10 * np.ones(5)
+        self.inputs["monopile_outer_diameter_in"][-1] = 8
+        self.inputs["monopile_outfitting_factor"] = 1.2
+        self.discrete_inputs["monopile_layer_materials"] = ["steel"]
+        self.inputs["E_mat"] = 1e9 * np.ones((1, 3))
+        self.inputs["G_mat"] = 1e8 * np.ones((1, 3))
+        self.inputs["sigma_y_mat"] = np.array([1e7])
+        self.inputs["rho_mat"] = np.array([1e4])
+        self.inputs["unit_cost_mat"] = np.array([1e1])
+        self.discrete_inputs["material_names"] = ["steel"]
+        myobj = tow.DiscretizationYAML(
+            n_height_tower=5, n_height_monopile=5, n_layers_tower=1, n_layers_monopile=1, n_mat=1
+        )
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+
+        npt.assert_equal(self.outputs["tower_section_height"], np.r_[10.0, 15.0, 12.5 * np.ones(2), 25 * np.ones(4)])
+        npt.assert_equal(self.outputs["tower_outer_diameter"], np.r_[10 * np.ones(4), 8 * np.ones(5)])
+        npt.assert_equal(self.outputs["tower_wall_thickness"], np.r_[0.5 * np.ones(4), 0.25 * np.ones(4)])
+        npt.assert_equal(self.outputs["outfitting_factor"], np.r_[1.2 * np.ones(4), 1.1 * np.ones(4)])
+        npt.assert_equal(self.outputs["E"], 1e9 * np.ones(8))
+        npt.assert_equal(self.outputs["G"], 1e8 * np.ones(8))
+        npt.assert_equal(self.outputs["sigma_y"], 1e7 * np.ones(8))
+        npt.assert_equal(self.outputs["rho"], 1e4 * np.ones(8))
+        npt.assert_equal(self.outputs["unit_cost"], 1e1 * np.ones(8))
+        npt.assert_equal(self.outputs["z_start"], -40.0)
+        npt.assert_equal(self.outputs["transition_piece_height"], 10.0)
+        npt.assert_equal(self.outputs["suctionpile_depth"], 10.0)
+
+    def testDiscYAML_Monopile_PileShort(self):
+        self.inputs["water_depth"] = 60.0
+        self.inputs["tower_s"] = np.linspace(0, 1, 5)
+        self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 4))
+        self.inputs["tower_height"] = 1e2
+        self.inputs["tower_foundation_height"] = 10.0
+        self.inputs["tower_outer_diameter_in"] = 8 * np.ones(5)
+        self.inputs["tower_outfitting_factor"] = 1.1
+        self.discrete_inputs["tower_layer_materials"] = ["steel"]
+        self.inputs["monopile_s"] = np.linspace(0, 1, 5)
+        self.inputs["monopile_layer_thickness"] = 0.5 * np.ones((1, 4))
+        self.inputs["monopile_foundation_height"] = -40.0
         self.inputs["monopile_height"] = 50.0
         self.inputs["monopile_outer_diameter_in"] = 10 * np.ones(5)
         self.inputs["monopile_outer_diameter_in"][-1] = 8
@@ -157,16 +213,67 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs["sigma_y"], 1e7 * np.ones(8))
         npt.assert_equal(self.outputs["rho"], 1e4 * np.ones(8))
         npt.assert_equal(self.outputs["unit_cost"], 1e1 * np.ones(8))
+        npt.assert_equal(self.outputs["z_start"], -40.0)
+        npt.assert_equal(self.outputs["transition_piece_height"], 10.0)
+        npt.assert_equal(self.outputs["suctionpile_depth"], -20.0)
 
-    def testDiscYAML_Monopile_DifferentMaterials(self):
+    def testDiscYAML_Monopile_RedoPileNodes(self):
+        self.inputs["water_depth"] = 30.0
         self.inputs["tower_s"] = np.linspace(0, 1, 5)
         self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 4))
+        self.inputs["tower_height"] = 1e2
+        self.inputs["tower_foundation_height"] = 10.0
+        self.inputs["tower_outer_diameter_in"] = 8 * np.ones(5)
+        self.inputs["tower_outfitting_factor"] = 1.1
+        self.discrete_inputs["tower_layer_materials"] = ["steel"]
+        self.inputs["monopile_s"] = np.linspace(0, 1, 20)
+        self.inputs["monopile_layer_thickness"] = 0.5 * np.ones((1, 19))
+        self.inputs["monopile_foundation_height"] = -40.0
+        self.inputs["monopile_height"] = 50.0
+        self.inputs["monopile_outer_diameter_in"] = 10 * np.ones(20)
+        self.inputs["monopile_outer_diameter_in"][-1] = 8
+        self.inputs["monopile_outfitting_factor"] = 1.2
+        self.discrete_inputs["monopile_layer_materials"] = ["steel"]
+        self.inputs["E_mat"] = 1e9 * np.ones((1, 3))
+        self.inputs["G_mat"] = 1e8 * np.ones((1, 3))
+        self.inputs["sigma_y_mat"] = np.array([1e7])
+        self.inputs["rho_mat"] = np.array([1e4])
+        self.inputs["unit_cost_mat"] = np.array([1e1])
+        self.discrete_inputs["material_names"] = ["steel"]
+        myobj = tow.DiscretizationYAML(
+            n_height_tower=5, n_height_monopile=20, n_layers_tower=1, n_layers_monopile=1, n_mat=1
+        )
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+
+        npt.assert_equal(self.outputs["tower_section_height"][0], 10.0)
+        # npt.assert_almost_equal(self.outputs["tower_section_height"][1:4], (2.63157895*4-10)/4)
+        npt.assert_almost_equal(
+            self.outputs["tower_section_height"][4:], np.r_[2.63157895 * np.ones(15), 25 * np.ones(4)]
+        )
+        npt.assert_equal(self.outputs["tower_outer_diameter"], np.r_[10 * np.ones(19), 8 * np.ones(5)])
+        npt.assert_equal(self.outputs["tower_wall_thickness"], np.r_[0.5 * np.ones(19), 0.25 * np.ones(4)])
+        npt.assert_equal(self.outputs["outfitting_factor"], np.r_[1.2 * np.ones(19), 1.1 * np.ones(4)])
+        npt.assert_equal(self.outputs["E"], 1e9 * np.ones(23))
+        npt.assert_equal(self.outputs["G"], 1e8 * np.ones(23))
+        npt.assert_equal(self.outputs["sigma_y"], 1e7 * np.ones(23))
+        npt.assert_equal(self.outputs["rho"], 1e4 * np.ones(23))
+        npt.assert_equal(self.outputs["unit_cost"], 1e1 * np.ones(23))
+        npt.assert_equal(self.outputs["z_start"], -40.0)
+        npt.assert_equal(self.outputs["transition_piece_height"], 10.0)
+        npt.assert_equal(self.outputs["suctionpile_depth"], 10.0)
+
+    def testDiscYAML_Monopile_DifferentMaterials(self):
+        self.inputs["water_depth"] = 30.0
+        self.inputs["tower_s"] = np.linspace(0, 1, 5)
+        self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 4))
+        self.inputs["tower_foundation_height"] = 10.0
         self.inputs["tower_height"] = 1e2
         self.inputs["tower_outer_diameter_in"] = 8 * np.ones(5)
         self.inputs["tower_outfitting_factor"] = 1.1
         self.discrete_inputs["tower_layer_materials"] = ["steel"]
         self.inputs["monopile_s"] = np.linspace(0, 1, 5)
         self.inputs["monopile_layer_thickness"] = 0.5 * np.ones((1, 4))
+        self.inputs["monopile_foundation_height"] = -40.0
         self.inputs["monopile_height"] = 50.0
         self.inputs["monopile_outer_diameter_in"] = 10 * np.ones(5)
         self.inputs["monopile_outer_diameter_in"][-1] = 8
@@ -183,7 +290,7 @@ class TestTowerSE(unittest.TestCase):
         )
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
-        npt.assert_equal(self.outputs["tower_section_height"], np.r_[12.5 * np.ones(4), 25 * np.ones(4)])
+        npt.assert_equal(self.outputs["tower_section_height"], np.r_[10.0, 15.0, 12.5 * np.ones(2), 25 * np.ones(4)])
         npt.assert_equal(self.outputs["tower_outer_diameter"], np.r_[10 * np.ones(4), 8 * np.ones(5)])
         npt.assert_equal(self.outputs["tower_wall_thickness"], np.r_[0.5 * np.ones(4), 0.25 * np.ones(4)])
         npt.assert_equal(self.outputs["outfitting_factor"], np.r_[1.2 * np.ones(4), 1.1 * np.ones(4)])
@@ -192,16 +299,22 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs["sigma_y"], 1e7 * np.r_[2 * np.ones(4), np.ones(4)])
         npt.assert_equal(self.outputs["rho"], 1e4 * np.r_[2 * np.ones(4), np.ones(4)])
         npt.assert_equal(self.outputs["unit_cost"], 1e1 * np.r_[2 * np.ones(4), np.ones(4)])
+        npt.assert_equal(self.outputs["z_start"], -40.0)
+        npt.assert_equal(self.outputs["transition_piece_height"], 10.0)
+        npt.assert_equal(self.outputs["suctionpile_depth"], 10.0)
 
     def testDiscYAML_Bad_Inputs(self):
+        self.inputs["water_depth"] = 0.0
         self.inputs["tower_s"] = np.linspace(0, 1, 5)
         self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 4))
+        self.inputs["tower_foundation_height"] = 0.0
         self.inputs["tower_height"] = 1e2
         self.inputs["tower_outer_diameter_in"] = 8 * np.ones(5)
         self.inputs["tower_outfitting_factor"] = 1.1
         self.discrete_inputs["tower_layer_materials"] = ["steel"]
         self.inputs["monopile_s"] = np.empty(0)
         self.inputs["monopile_layer_thickness"] = np.empty((0, 0))
+        self.inputs["monopile_foundation_height"] = 0.0
         self.inputs["monopile_height"] = 0.0
         self.inputs["monopile_outer_diameter_in"] = np.empty(0)
         self.inputs["monopile_outfitting_factor"] = 0.0
@@ -239,44 +352,6 @@ class TestTowerSE(unittest.TestCase):
             self.assertTrue(False)  # Shouldn't get here
         except ValueError:
             self.assertTrue(True)
-
-    def testMonopileFoundation(self):
-        # Test Land
-        self.inputs["suctionpile_depth"] = 0.0
-        self.inputs["suctionpile_depth_diam_ratio"] = 0.0
-        self.inputs["diameter"] = 3.0
-        self.inputs["foundation_height"] = 0.0
-        myobj = tow.MonopileFoundation(monopile=False)
-        myobj.compute(self.inputs, self.outputs)
-        npt.assert_equal(self.outputs["z_start"], self.inputs["foundation_height"])
-
-        # Test Land with bad suctionpile input
-        self.inputs["suctionpile_depth"] = 10.0
-        myobj.compute(self.inputs, self.outputs)
-        npt.assert_equal(self.outputs["z_start"], self.inputs["foundation_height"])
-
-        # Test monopile with pile
-        self.inputs["suctionpile_depth"] = 10.0
-        self.inputs["foundation_height"] = -30.0
-        myobj = tow.MonopileFoundation(monopile=True)
-        myobj.compute(self.inputs, self.outputs)
-        npt.assert_equal(self.outputs["z_start"], -40.0)
-
-        self.inputs["suctionpile_depth"] = -10.0
-        myobj.compute(self.inputs, self.outputs)
-        npt.assert_equal(self.outputs["z_start"], -40.0)
-
-        # Test monopile with gravity
-        self.inputs["suctionpile_depth"] = 0.0
-        myobj = tow.MonopileFoundation(monopile=True)
-        myobj.compute(self.inputs, self.outputs)
-        npt.assert_equal(self.outputs["z_start"], self.inputs["foundation_height"])
-
-        # Test monopile with depth diam ratio
-        self.inputs["suctionpile_depth_diam_ratio"] = 4.0
-        myobj = tow.MonopileFoundation(monopile=True)
-        myobj.compute(self.inputs, self.outputs)
-        npt.assert_equal(self.outputs["z_start"], self.inputs["foundation_height"] - 12.0)
 
     def testTowerDisc(self):
         # Test Land
@@ -319,6 +394,7 @@ class TestTowerSE(unittest.TestCase):
     def testTowerMass(self):
 
         self.inputs["z_full"] = np.array([-50.0, -30, 0.0, 40.0, 80.0])
+        self.inputs["d_full"] = 10 * np.ones(5)
         self.inputs["cylinder_mass"] = 1e3 * np.ones(4)
         self.inputs["cylinder_cost"] = 1e5
         self.inputs["cylinder_center_of_mass"] = 10.0
@@ -330,7 +406,6 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["transition_piece_mass"] = 1e2
         self.inputs["transition_piece_cost"] = 1e3
         self.inputs["gravity_foundation_mass"] = 1e2
-        self.inputs["foundation_height"] = -30.0
 
         myobj = tow.TowerMass(n_height=5)
         myobj.compute(self.inputs, self.outputs)
@@ -338,7 +413,7 @@ class TestTowerSE(unittest.TestCase):
         self.assertEqual(self.outputs["structural_cost"], self.inputs["cylinder_cost"] + 1e3)
         npt.assert_equal(self.outputs["tower_I_base"], self.inputs["cylinder_I_base"])
         self.assertEqual(
-            self.outputs["tower_center_of_mass"], (4 * 1e3 * 10.0 + 1e2 * 20.0 + 1e2 * -30.0) / (4 * 1e3 + 2e2)
+            self.outputs["tower_center_of_mass"], (4 * 1e3 * 10.0 + 1e2 * 20.0 + 1e2 * -50.0) / (4 * 1e3 + 2e2)
         )
         npt.assert_equal(self.outputs["tower_section_center_of_mass"], self.inputs["cylinder_section_center_of_mass"])
         self.assertEqual(self.outputs["monopile_mass"], 1e3 * 2.5 + 2 * 1e2)
@@ -346,6 +421,8 @@ class TestTowerSE(unittest.TestCase):
         self.assertEqual(self.outputs["monopile_length"], 70.0)
         self.assertEqual(self.outputs["tower_mass"], 1e3 * (4 - 2.5))
         self.assertEqual(self.outputs["tower_cost"], self.inputs["cylinder_cost"] * 1.5 / 4.0)
+        npt.assert_equal(self.outputs["transition_piece_I"], 1e2 * 25 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
+        npt.assert_equal(self.outputs["gravity_foundation_I"], 0.5 * 1e2 * 25 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
 
     def testPreFrame(self):
 
@@ -359,8 +436,9 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["transition_piece_mass"] = 0.0
         self.inputs["transition_piece_cost"] = 0.0
         self.inputs["transition_piece_height"] = 0.0
+        self.inputs["transition_piece_I"] = np.zeros(6)
+        self.inputs["gravity_foundation_I"] = np.zeros(6)
         self.inputs["gravity_foundation_mass"] = 0.0
-        self.inputs["foundation_height"] = 0.0
         self.inputs["rna_F"] = 1e5 * np.array(
             [
                 2.0,
@@ -417,8 +495,9 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["transition_piece_mass"] = 1e3
         self.inputs["transition_piece_cost"] = 1e4
         self.inputs["transition_piece_height"] = 10.0
+        self.inputs["transition_piece_I"] = 1e3 * 9 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
+        self.inputs["gravity_foundation_I"] = 0.5 * 1e4 * 9 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
         self.inputs["gravity_foundation_mass"] = 1e4
-        self.inputs["foundation_height"] = -30.0
         self.inputs["rna_F"] = 1e5 * np.array(
             [
                 2.0,
@@ -473,13 +552,12 @@ class TestTowerSE(unittest.TestCase):
         prob.setup()
 
         prob["hub_height"] = 80.0
-        prob["foundation_height"] = 0.0
-        prob["transition_piece_height"] = 0.0
         prob["transition_piece_mass"] = 0.0
         prob["transition_piece_cost"] = 0.0
         prob["gravity_foundation_mass"] = 0.0
 
         prob["tower_s"] = np.linspace(0, 1, 3)
+        prob["tower_foundation_height"] = 0.0
         prob["tower_height"] = 80.0
         # prob['tower_section_height'] = 40.0*np.ones(2)
         prob["tower_outer_diameter_in"] = 10.0 * np.ones(3)
@@ -525,6 +603,8 @@ class TestTowerSE(unittest.TestCase):
         # All other tests from above
         mass_dens = 1e4 * (5.0 ** 2 - 4.9 ** 2) * np.pi
         npt.assert_equal(prob["z_start"], 0.0)
+        npt.assert_equal(prob["transition_piece_height"], 0.0)
+        npt.assert_equal(prob["suctionpile_depth"], 0.0)
         npt.assert_equal(prob["z_param"], np.array([0.0, 40.0, 80.0]))
 
         self.assertEqual(prob["height_constraint"], 0.0)
@@ -575,19 +655,20 @@ class TestTowerSE(unittest.TestCase):
         prob.setup()
 
         prob["hub_height"] = 80.0
-        prob["foundation_height"] = -30.0
-        prob["transition_piece_height"] = 15.0
+        prob["water_depth"] = 30.0
         prob["transition_piece_mass"] = 1e2
         prob["transition_piece_cost"] = 1e3
         prob["gravity_foundation_mass"] = 1e4
 
         prob["tower_s"] = np.linspace(0, 1, 3)
+        prob["tower_foundation_height"] = 0.0
         prob["tower_height"] = 60.0
         prob["tower_outer_diameter_in"] = 10.0 * np.ones(3)
         prob["tower_layer_thickness"] = 0.1 * np.ones(2).reshape((1, 2))
         prob["tower_outfitting_factor"] = 1.0
         hval = np.array([15.0, 30.0])
         prob["monopile_s"] = np.cumsum(np.r_[0, hval]) / hval.sum()
+        prob["monopile_foundation_height"] = -45.0
         prob["monopile_height"] = hval.sum()
         prob["monopile_outer_diameter_in"] = 10.0 * np.ones(3)
         prob["monopile_layer_thickness"] = 0.1 * np.ones(2).reshape((1, 2))
@@ -616,7 +697,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rho_water"] = 1025.0
         prob["mu_water"] = 1.3351e-3
         prob["beta_wind"] = prob["beta_wave"] = 0.0
-        prob["hsig_wave"] = 0.0
+        prob["Hsig_wave"] = 0.0
         prob["Tsig_wave"] = 1e3
         prob["wind.Uref"] = 15.0
         prob["pre.rna_F"] = 1e3 * np.array(
@@ -638,21 +719,23 @@ class TestTowerSE(unittest.TestCase):
         # All other tests from above
         mass_dens = 1e4 * (5.0 ** 2 - 4.9 ** 2) * np.pi
         npt.assert_equal(prob["z_start"], -45.0)
+        npt.assert_equal(prob["transition_piece_height"], 0.0)
+        npt.assert_equal(prob["suctionpile_depth"], 15.0)
         npt.assert_equal(prob["z_param"], np.array([-45.0, -30.0, 0.0, 30.0, 60.0]))
 
         self.assertEqual(prob["height_constraint"], 20.0)
-        npt.assert_almost_equal(prob["tower_cost"], (45.0 / 105.0) * prob["cm.cost"])
+        npt.assert_almost_equal(prob["tower_cost"], (60.0 / 105.0) * prob["cm.cost"])
         npt.assert_equal(prob["tower_I_base"][:2], prob["cm.I_base"][:2] + 1e2 * 45 ** 2)
         npt.assert_equal(prob["tower_I_base"][2:], prob["cm.I_base"][2:])
         npt.assert_almost_equal(
             prob["tower_center_of_mass"],
-            (7.5 * mass_dens * 105.0 + 15.0 * 1e2 + 1e4 * -30.0) / (mass_dens * 105 + 1e2 + 1e4),
+            (7.5 * mass_dens * 105.0 + 0.0 * 1e2 + 1e4 * -45.0) / (mass_dens * 105 + 1e2 + 1e4),
         )
         npt.assert_equal(prob["tower_section_center_of_mass"], prob["cm.section_center_of_mass"])
-        npt.assert_almost_equal(prob["monopile_cost"], (60.0 / 105.0) * prob["cm.cost"] + 1e3)
-        self.assertEqual(prob["monopile_length"], 60.0)
-        npt.assert_almost_equal(prob["monopile_mass"], mass_dens * 60.0 + 1e2 + 1e4)
-        npt.assert_almost_equal(prob["tower_mass"], mass_dens * 45.0)
+        npt.assert_almost_equal(prob["monopile_cost"], (45.0 / 105.0) * prob["cm.cost"] + 1e3)
+        self.assertEqual(prob["monopile_length"], 45.0)
+        npt.assert_almost_equal(prob["monopile_mass"], mass_dens * 45.0 + 1e2 + 1e4)
+        npt.assert_almost_equal(prob["tower_mass"], mass_dens * 60.0)
 
         npt.assert_equal(prob["pre.kidx"], np.array([0], dtype=np.int_))
         npt.assert_array_less(prob["pre.kx"], RIGID)
@@ -668,7 +751,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_array_less(0.0, prob["pre.kty"])
         npt.assert_array_less(0.0, prob["pre.ktz"])
 
-        npt.assert_equal(prob["pre.midx"], np.array([12, 7, 0]))
+        npt.assert_equal(prob["pre.midx"], np.array([12, 6, 0]))
         npt.assert_equal(prob["pre.m"], np.array([2e5, 1e2, 1e4]))
         npt.assert_equal(prob["pre.mrhox"], np.array([-3.0, 0.0, 0.0]))
         npt.assert_equal(prob["pre.mrhoy"], np.array([0.0, 0.0, 0.0]))
@@ -698,19 +781,20 @@ class TestTowerSE(unittest.TestCase):
         prob.setup()
 
         prob["hub_height"] = 80.0
-        prob["foundation_height"] = -30.0
-        prob["transition_piece_height"] = 15.0
+        prob["water_depth"] = 30.0
         prob["transition_piece_mass"] = 0.0
         prob["transition_piece_cost"] = 0.0
         prob["gravity_foundation_mass"] = 0.0
 
         prob["tower_s"] = np.linspace(0, 1, 3)
+        prob["tower_foundation_height"] = 0.0
         prob["tower_height"] = 60.0
         prob["tower_outer_diameter_in"] = 10.0 * np.ones(3)
         prob["tower_layer_thickness"] = 0.1 * np.ones(2).reshape((1, 2))
         prob["tower_outfitting_factor"] = 1.0
         hval = np.array([15.0, 30.0])
         prob["monopile_s"] = np.cumsum(np.r_[0, hval]) / hval.sum()
+        prob["monopile_foundation_height"] = -45.0
         prob["monopile_height"] = hval.sum()
         prob["monopile_outer_diameter_in"] = 10.0 * np.ones(3)
         prob["monopile_layer_thickness"] = 0.1 * np.ones(2).reshape((1, 2))
@@ -738,7 +822,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rho_water"] = 1025.0
         prob["mu_water"] = 1.3351e-3
         prob["beta_wind"] = prob["beta_wave"] = 0.0
-        prob["hsig_wave"] = 0.0
+        prob["Hsig_wave"] = 0.0
         prob["Tsig_wave"] = 1e3
         prob["wind.Uref"] = 15.0
         prob["pre.rna_F"] = 1e3 * np.array(
@@ -766,7 +850,7 @@ class TestTowerSE(unittest.TestCase):
 
         prob["transition_piece_mass"] = 1e2
         prob.run_model()
-        myFz[:7] -= 1e2 * g
+        myFz[:6] -= 1e2 * g
         npt.assert_almost_equal(prob["post.Fz"], myFz)
 
         prob["gravity_foundation_mass"] = 1e3
@@ -835,9 +919,11 @@ class TestTowerSE(unittest.TestCase):
 
         # Set common and then customized parameters
         prob["hub_height"] = prob["wind_reference_height"] = 30 + 146.1679
-        prob["foundation_height"] = 0.0  # -30.0
+        # prob["foundation_height"] = 0.0  # -30.0
 
         prob["tower_s"] = np.cumsum(np.r_[0.0, h_param]) / h_param.sum()
+        prob["tower_foundation_height"] = 0.0  # 15.0
+        prob["water_depth"] = 0.0  # 15.0
         prob["tower_height"] = h_param.sum()
         prob["tower_outer_diameter_in"] = d_param
         prob["tower_layer_thickness"] = t_param.reshape((1, len(t_param)))
@@ -853,7 +939,6 @@ class TestTowerSE(unittest.TestCase):
         prob["yaw"] = 0.0
         prob["transition_piece_mass"] = 0.0  # 100e3
         prob["transition_piece_cost"] = 0.0  # 100e3
-        prob["transition_piece_height"] = 0.0  # 15.0
         # prob['G_soil'] = 140e6
         # prob['nu_soil'] = 0.4
         prob["shearExp"] = 0.11
@@ -894,7 +979,6 @@ class TestTowerSE(unittest.TestCase):
         d_param = np.array([6.0, 4.935, 3.87])
         t_param = 1.3 * np.array([0.025, 0.021])
         z_foundation = 0.0
-        theta_stress = 0.0
         yaw = 0.0
         Koutfitting = 1.07
 
@@ -927,7 +1011,7 @@ class TestTowerSE(unittest.TestCase):
         hmax = 0.0
         T = 1.0
         cm = 1.0
-        suction_depth = 0.0
+        water_depth = 0.0
         soilG = 140e6
         soilnu = 0.4
         # ---------------
@@ -984,9 +1068,10 @@ class TestTowerSE(unittest.TestCase):
 
         # --- geometry ----
         prob["hub_height"] = h_param.sum()
-        prob["foundation_height"] = 0.0
+        prob["water_depth"] = water_depth
         # prob['tower_section_height'] = h_param
         prob["tower_s"] = np.cumsum(np.r_[0.0, h_param]) / h_param.sum()
+        prob["tower_foundation_height"] = z_foundation
         prob["tower_height"] = h_param.sum()
         prob["tower_outer_diameter_in"] = d_param
         # prob['tower_wall_thickness'] = t_param
@@ -995,7 +1080,6 @@ class TestTowerSE(unittest.TestCase):
         prob["tower_layer_materials"] = ["steel"]
         prob["material_names"] = ["steel"]
         prob["yaw"] = yaw
-        prob["suctionpile_depth"] = suction_depth
         prob["G_soil"] = soilG
         prob["nu_soil"] = soilnu
         # --- material props ---
@@ -1088,4 +1172,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

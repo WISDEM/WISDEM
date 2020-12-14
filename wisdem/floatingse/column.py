@@ -1,15 +1,15 @@
-import numpy as np
-import openmdao.api as om
 import copy
 
-from wisdem.commonse.utilities import nodal2sectional, sectional2nodal, assembleI, unassembleI, sectionalInterp
+import numpy as np
+import openmdao.api as om
 import wisdem.commonse.frustum as frustum
 import wisdem.commonse.manufacturing as manufacture
-from wisdem.commonse.utilization_constraints import shellBuckling_withStiffeners, GeometricConstraints
-from wisdem.commonse.wind_wave_drag import AeroHydroLoads, CylinderWindDrag, CylinderWaveDrag
-from wisdem.commonse import gravity, eps
-from wisdem.commonse.vertical_cylinder import CylinderDiscretization, CylinderMass, get_nfull
+from wisdem.commonse import eps, gravity
+from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, sectional2nodal, sectionalInterp
 from wisdem.commonse.environment import PowerWind, LinearWaves
+from wisdem.commonse.wind_wave_drag import AeroHydroLoads, CylinderWaveDrag, CylinderWindDrag
+from wisdem.commonse.vertical_cylinder import CylinderMass, CylinderDiscretization, get_nfull
+from wisdem.commonse.utilization_constraints import GeometricConstraints, shellBuckling_withStiffeners
 
 
 def get_inner_radius(Ro, t):
@@ -212,7 +212,7 @@ class ColumnGeometry(om.ExplicitComponent):
     ----------
     water_depth : float, [m]
         water depth
-    hsig_wave : float, [m]
+    Hsig_wave : float, [m]
         significant wave height
     freeboard : float, [m]
         Length of column above water line
@@ -295,7 +295,7 @@ class ColumnGeometry(om.ExplicitComponent):
         n_full = get_nfull(n_height)
 
         self.add_input("water_depth", 0.0, units="m")
-        self.add_input("hsig_wave", 0.0, units="m")
+        self.add_input("Hsig_wave", 0.0, units="m")
         self.add_input("freeboard", 0.0, units="m")
         self.add_input("max_draft", 0.0, units="m")
         self.add_input("z_full_in", np.zeros(n_full), units="m")
@@ -346,8 +346,8 @@ class ColumnGeometry(om.ExplicitComponent):
         # Create constraint output that draft is less than water depth
         outputs["draft_margin"] = draft / inputs["max_draft"]
 
-        # Make sure freeboard is more than 20% of hsig_wave (DNV-OS-J101)
-        outputs["wave_height_freeboard_ratio"] = inputs["hsig_wave"] / (np.abs(freeboard) + eps)
+        # Make sure freeboard is more than 20% of Hsig_wave (DNV-OS-J101)
+        outputs["wave_height_freeboard_ratio"] = inputs["Hsig_wave"] / (np.abs(freeboard) + eps)
 
         # Material properties
         z_section, _ = nodal2sectional(z_full)
@@ -1618,7 +1618,7 @@ class Column(om.Group):
             LinearWaves(nPoints=n_full),
             promotes=[
                 "Uc",
-                "hsig_wave",
+                "Hsig_wave",
                 "Tsig_wave",
                 "rho_water",
                 ("z_floor", "water_depth"),

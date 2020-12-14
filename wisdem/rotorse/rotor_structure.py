@@ -609,10 +609,10 @@ class DesignConstraints(ExplicitComponent):
         self.n_freq = n_freq = rotorse_options["n_freq"]
         n_freq2 = int(n_freq / 2)
         self.opt_options = opt_options = self.options["opt_options"]
-        self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options["optimization_variables"]["blade"]["structure"][
+        self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options["design_variables"]["blade"]["structure"][
             "spar_cap_ss"
         ]["n_opt"]
-        self.n_opt_spar_cap_ps = n_opt_spar_cap_ps = opt_options["optimization_variables"]["blade"]["structure"][
+        self.n_opt_spar_cap_ps = n_opt_spar_cap_ps = opt_options["design_variables"]["blade"]["structure"][
             "spar_cap_ps"
         ]["n_opt"]
         # Inputs strains

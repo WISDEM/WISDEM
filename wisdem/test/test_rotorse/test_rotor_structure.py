@@ -492,13 +492,13 @@ class TestRS(unittest.TestCase):
         options["RotorSE"]["gamma_freq"] = 1.1
 
         myopt = {}
-        myopt["optimization_variables"] = {}
-        myopt["optimization_variables"]["blade"] = {}
-        myopt["optimization_variables"]["blade"]["structure"] = {}
-        myopt["optimization_variables"]["blade"]["spar_cap_ss"] = {}
-        myopt["optimization_variables"]["blade"]["spar_cap_ps"] = {}
-        myopt["optimization_variables"]["blade"]["spar_cap_ss"]["n_opt"] = 3
-        myopt["optimization_variables"]["blade"]["spar_cap_ps"]["n_opt"] = 3
+        myopt["design_variables"] = {}
+        myopt["design_variables"]["blade"] = {}
+        myopt["design_variables"]["blade"]["structure"] = {}
+        myopt["design_variables"]["blade"]["spar_cap_ss"] = {}
+        myopt["design_variables"]["blade"]["spar_cap_ps"] = {}
+        myopt["design_variables"]["blade"]["spar_cap_ss"]["n_opt"] = 3
+        myopt["design_variables"]["blade"]["spar_cap_ps"]["n_opt"] = 3
 
         myobj = rs.DesignConstraints(modeling_options=options, opt_options=myopt)
 
@@ -528,4 +528,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

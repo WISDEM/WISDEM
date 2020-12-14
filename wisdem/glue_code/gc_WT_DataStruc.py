@@ -352,13 +352,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         if modeling_options["flags"]["monopile"]:
             self.add_subsystem("monopile", Monopile(towerse_options=modeling_options["TowerSE"]))
 
-        # Foundation inputs
-        if modeling_options["flags"]["foundation"]:
-            foundation_ivc = self.add_subsystem("foundation", om.IndepVarComp())
-            foundation_ivc.add_output(
-                "height", val=0.0, units="m", desc="Foundation height in respect to the ground level."
-            )
-
         if modeling_options["flags"]["floating_platform"]:
             self.add_subsystem("floating", Floating(floating_init_options=modeling_options["floating"]))
             self.add_subsystem("mooring", Mooring(mooring_init_options=modeling_options["mooring"]))
@@ -434,7 +427,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             env_ivc.add_output(
                 "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
             )
-            env_ivc.add_output("hsig_wave", val=0.0, units="m", desc="Significant wave height")
+            env_ivc.add_output("Hsig_wave", val=0.0, units="m", desc="Significant wave height")
             env_ivc.add_output("Tsig_wave", val=0.0, units="s", desc="Significant wave period")
             env_ivc.add_output("G_soil", val=140e6, units="N/m**2", desc="Shear stress of soil")
             env_ivc.add_output("nu_soil", val=0.4, desc="Poisson ratio of soil")
@@ -526,27 +519,27 @@ class Blade(om.Group):
         # Optimization parameters initialized as indipendent variable component
         opt_var = om.IndepVarComp()
         opt_var.add_output(
-            "s_opt_twist", val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
+            "s_opt_twist", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
         )
         opt_var.add_output(
-            "s_opt_chord", val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
+            "s_opt_chord", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
         )
         opt_var.add_output(
             "twist_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
         )
         opt_var.add_output(
             "chord_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
         opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
         opt_var.add_output(
             "spar_cap_ss_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
         )
         opt_var.add_output(
             "spar_cap_ps_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
         )
         self.add_subsystem("opt_var", opt_var)
 
@@ -760,7 +753,7 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             if inputs["span_end"] >= 0.98:
                 flap_start = 0.98 - inputs["span_ext"]
                 flap_end = 0.98
-                print("WARNING: span_end point reached limits and was set to r/R = 0.98")
+                # print("WARNING: span_end point reached limits and was set to r/R = 0.98")
             else:
                 flap_start = inputs["span_end"] - inputs["span_ext"]
                 flap_end = inputs["span_end"]
@@ -1454,7 +1447,7 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                         'WARNING: Web "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to %f at R=%f (i=%d)'
                         % (web_name[j], offset_old, offset, inputs["s"][i], i)
                     )
-                    print(layer_resize_warning)
+                    #print(layer_resize_warning)
                 else:
                     outputs["web_offset_y_pa"][j, i] = copy.copy(offset)
 
@@ -1476,28 +1469,28 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                         [0.0, 0.0],
                         ["suction", "pressure"],
                     )
-                    if i == 0:
-                        print(
-                            "WARNING: The web "
-                            + web_name[j]
-                            + " is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition."
-                        )
-                    if web_start_nd[j, i] < 0.0 or web_start_nd[j, i] > 1.0:
-                        print(
-                            "WARNING: Blade web "
-                            + web_name[j]
-                            + " at n.d. span position "
-                            + str(inputs["s"][i])
-                            + " has the n.d. start point outside the TE. Please check the yaml input file."
-                        )
-                    if web_end_nd[j, i] < 0.0 or web_end_nd[j, i] > 1.0:
-                        print(
-                            "WARNING: Blade web "
-                            + web_name[j]
-                            + " at n.d. span position "
-                            + str(inputs["s"][i])
-                            + " has the n.d. end point outside the TE. Please check the yaml input file."
-                        )
+                    # if i == 0:
+                    #     print(
+                    #         "WARNING: The web "
+                    #         + web_name[j]
+                    #         + " is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition."
+                    #     )
+                    # if web_start_nd[j, i] < 0.0 or web_start_nd[j, i] > 1.0:
+                    #     print(
+                    #         "WARNING: Blade web "
+                    #         + web_name[j]
+                    #         + " at n.d. span position "
+                    #         + str(inputs["s"][i])
+                    #         + " has the n.d. start point outside the TE. Please check the yaml input file."
+                    #     )
+                    # if web_end_nd[j, i] < 0.0 or web_end_nd[j, i] > 1.0:
+                    #     print(
+                    #         "WARNING: Blade web "
+                    #         + web_name[j]
+                    #         + " at n.d. span position "
+                    #         + str(inputs["s"][i])
+                    #         + " has the n.d. end point outside the TE. Please check the yaml input file."
+                    #     )
                 elif discrete_inputs["definition_web"][j] == 3:
                     web_start_nd[j, i] = inputs["web_start_nd_yaml"][j, i]
                     web_end_nd[j, i] = inputs["web_end_nd_yaml"][j, i]
@@ -1539,10 +1532,10 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                         outputs["layer_width"][j, i] = copy.copy(width)
                         outputs["layer_offset_y_pa"][j, i] = copy.copy(offset)
                         layer_resize_warning = (
-                            'WARNING: Layer "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to 0.0 and "width" changed from %f to %f at s=%f (i=%d)'
+                            'WARNING: Layer "%s" may be too large to fit within chord. "offset_y_pa" changed from %f to 0.0 and "width" changed from %f to %f at s=%f (i=%d)'
                             % (layer_name[j], offset, width_old, width, inputs["s"][i], i)
                         )
-                        print(layer_resize_warning)
+                        #print(layer_resize_warning)
                     else:
                         outputs["layer_width"][j, i] = copy.copy(width)
                         outputs["layer_offset_y_pa"][j, i] = copy.copy(offset)
@@ -1558,15 +1551,15 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = width / arc_L_i / 2.0
 
-                    # Geometry check to prevent overlap between SC and TE reinf
-                    for k in range(self.n_layers):
-                        if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
-                            if layer_end_nd[j, i] > layer_start_nd[k, i] or layer_start_nd[j, i] < layer_end_nd[k, i]:
-                                print(
-                                    "WARNING: The trailing edge reinforcement extends above the spar caps at station "
-                                    + str(i)
-                                    + ". Please reduce its width."
-                                )
+                    # # Geometry check to prevent overlap between SC and TE reinf
+                    # for k in range(self.n_layers):
+                    #     if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
+                            # if layer_end_nd[j, i] > layer_start_nd[k, i] or layer_start_nd[j, i] < layer_end_nd[k, i]:
+                            #     print(
+                            #         "WARNING: The trailing edge reinforcement extends above the spar caps at station "
+                            #         + str(i)
+                            #         + ". Please reduce its width."
+                            #     )
 
                 elif discrete_inputs["definition_layer"][j] == 5:  # Midpoint and width
                     midpoint = LE_loc
@@ -1575,29 +1568,29 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     outputs["layer_width"][j, i] = copy.copy(width)
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = midpoint + width / arc_L_i / 2.0
-                    # Geometry check to prevent overlap between SC and LE reinf
-                    for k in range(self.n_layers):
-                        if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
-                            if (
-                                discrete_inputs["layer_side"][k] == "suction"
-                                and layer_start_nd[j, i] < layer_end_nd[k, i]
-                            ):
-                                print(
-                                    "WARNING: The leading edge reinforcement extends above the spar caps at station "
-                                    + str(i)
-                                    + ". Please reduce its width."
-                                )
-                            elif (
-                                discrete_inputs["layer_side"][k] == "pressure"
-                                and layer_end_nd[j, i] > layer_start_nd[k, i]
-                            ):
-                                print(
-                                    "WARNING: The leading edge reinforcement extends above the spar caps at station "
-                                    + str(i)
-                                    + ". Please reduce its width."
-                                )
-                            else:
-                                pass
+                    # # Geometry check to prevent overlap between SC and LE reinf
+                    # for k in range(self.n_layers):
+                    #     if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
+                    #         if (
+                    #             discrete_inputs["layer_side"][k] == "suction"
+                    #             and layer_start_nd[j, i] < layer_end_nd[k, i]
+                    #         ):
+                    #             print(
+                    #                 "WARNING: The leading edge reinforcement extends above the spar caps at station "
+                    #                 + str(i)
+                    #                 + ". Please reduce its width."
+                    #             )
+                    #         elif (
+                    #             discrete_inputs["layer_side"][k] == "pressure"
+                    #             and layer_end_nd[j, i] > layer_start_nd[k, i]
+                    #         ):
+                    #             print(
+                    #                 "WARNING: The leading edge reinforcement extends above the spar caps at station "
+                    #                 + str(i)
+                    #                 + ". Please reduce its width."
+                    #             )
+                    #         else:
+                    #             pass
                 elif discrete_inputs["definition_layer"][j] == 6:  # Start and end locked to other element
                     # if inputs['layer_start_nd'][j,i] > 1:
                     layer_start_nd[j, i] = layer_end_nd[int(discrete_inputs["index_layer_start"][j]), i]
@@ -1773,14 +1766,22 @@ class Compute_Grid(om.ExplicitComponent):
             units="m",
             desc="Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.",
         )
+        self.add_output(
+            "foundation_height",
+            val=0.0,
+            units="m",
+            desc="Foundation height in respect to the ground level.",
+        )
 
         # Declare all partial derivatives.
         self.declare_partials("height", "ref_axis")
         self.declare_partials("length", "ref_axis")
         self.declare_partials("s", "ref_axis")
+        self.declare_partials("foundation_height", "ref_axis")
 
     def compute(self, inputs, outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
+        outputs["foundation_height"] = inputs["ref_axis"][0, 2]
         outputs["height"] = inputs["ref_axis"][-1, 2] - inputs["ref_axis"][0, 2]
         myarc = arc_length(inputs["ref_axis"])
         outputs["length"] = myarc[-1]
@@ -1793,6 +1794,8 @@ class Compute_Grid(om.ExplicitComponent):
         partials["height", "ref_axis"] = np.zeros((1, n_height * 3))
         partials["height", "ref_axis"][0, -1] = 1.0
         partials["height", "ref_axis"][0, 2] = -1.0
+        partials["foundation_height", "ref_axis"] = np.zeros((1, n_height * 3))
+        partials["foundation_height", "ref_axis"][0, 2] = 1.0
         arc_distances, d_arc_distances_d_points = arc_length_deriv(inputs["ref_axis"])
 
         # The length is based on only the final point in the arc,
@@ -1840,16 +1843,9 @@ class Monopile(om.Group):
         ivc.add_output(
             "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of tower"
         )
-        ivc.add_output(
-            "transition_piece_height", val=0.0, units="m", desc="point mass height of transition piece above water line"
-        )
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
-        ivc.add_output("suctionpile_depth", val=0.0, units="m", desc="depth of foundation in the soil")
-        ivc.add_output(
-            "suctionpile_depth_diam_ratio", 0.0, desc="ratio of sunction pile depth to mudline monopile diameter"
-        )
 
         self.add_subsystem("compute_monopile_grid", Compute_Grid(n_height=n_height), promotes=["*"])
 
@@ -1969,6 +1965,10 @@ class Mooring(om.Group):
 
         ivc.add_discrete_output("node_names", val=[""] * n_nodes)
         ivc.add_output("nodes_location", val=np.zeros((n_nodes, 3)), units="m")
+        ivc.add_output("nodes_mass", val=np.zeros(n_nodes), units="kg")
+        ivc.add_output("nodes_volume", val=np.zeros(n_nodes), units="m**3")
+        ivc.add_output("nodes_added_mass", val=np.zeros(n_nodes))
+        ivc.add_output("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
         ivc.add_discrete_output("nodes_joint_name", val=[""] * n_nodes)
         ivc.add_discrete_output("line_id", val=[""] * n_lines)
         ivc.add_output("unstretched_length", val=np.zeros(n_lines), units="m")
@@ -2141,7 +2141,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                 density_resin = inputs["rho"][i]
                 id_resin = i
         if self.options["composites"] and density_resin == 0.0:
-            print(
+            raise Exception(
                 "Warning: a material named resin is not defined in the input yaml.  This is required for blade composite analysis"
             )
 
@@ -2451,5 +2451,5 @@ class WT_Assembly(om.ExplicitComponent):
                     0, 2
                 ]
             else:
-                outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2]
+                outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]

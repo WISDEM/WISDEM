@@ -12,5 +12,5 @@ TowerSE
 
     intro
     theory
+    disc
     documentation
-

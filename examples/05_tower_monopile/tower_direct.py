@@ -91,7 +91,7 @@ prob.setup()
 
 # Set geometry and turbine values
 prob["hub_height"] = prob["tower_height"] = h_param.sum()
-prob["foundation_height"] = 0.0
+prob["tower_foundation_height"] = 0.0
 prob["tower_s"] = np.cumsum(np.r_[0.0, h_param]) / h_param.sum()
 prob["tower_outer_diameter_in"] = d_param
 prob["tower_layer_thickness"] = t_param.reshape((1, -1))
@@ -99,8 +99,6 @@ prob["tower_outfitting_factor"] = 1.07
 prob["yaw"] = 0.0
 
 # offshore specific
-prob["suctionpile_depth"] = 0.0
-prob["suctionpile_depth_diam_ratio"] = 3.25
 prob["G_soil"] = 140e6
 prob["nu_soil"] = 0.4
 
