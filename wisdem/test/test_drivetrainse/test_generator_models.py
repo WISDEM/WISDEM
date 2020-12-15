@@ -345,6 +345,7 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["generator_efficiency"][-1], 0.9849562794756211)
         self.assertAlmostEqual(self.outputs["Copper"], 1360.253987369221)
         self.assertAlmostEqual(self.outputs["Iron"], 11520.904698026085)
+        self.assertAlmostEqual(self.outputs["R_out"], 0.7663579416108941)
         self.assertAlmostEqual(self.outputs["Structural_mass"], 27848.15730159148)
         self.assertAlmostEqual(self.outputs["TC1"], 0.29453832454167966)
 
@@ -407,6 +408,7 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["Copper"], 354.97950026786026)
         self.assertAlmostEqual(self.outputs["Iron"], 6077.944572132577)
         self.assertAlmostEqual(self.outputs["Structural_mass"], 13075.48149780277)
+        self.assertAlmostEqual(self.outputs["R_out"], 0.8681961572673457)
         self.assertAlmostEqual(self.outputs["TC1"], 0.24790308982258036)
         self.assertAlmostEqual(self.outputs["Current_ratio"][-1], 0.17760183748148742)
 

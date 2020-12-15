@@ -2527,6 +2527,8 @@ class DFIG(GeneratorBase):
         TC1 = T_e / (2 * np.pi * sigma)
         TC2r = rad_ag ** 2 * len_s
 
+        r_out = d_se * 0.5
+        outputs["R_out"] = r_out
         outputs["B_g"] = B_g
         outputs["B_g1"] = B_g1
         outputs["B_rymax"] = B_rymax
@@ -2975,7 +2977,7 @@ class SCIG(GeneratorBase):
 
         # Calculating mass moments of inertia and center of mass
         r_out = d_se * 0.5
-
+        outputs["R_out"] = r_out
         outputs["B_tsmax"] = B_tsmax
         outputs["B_trmax"] = B_trmax
         outputs["B_rymax"] = B_rymax
