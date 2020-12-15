@@ -1,6 +1,5 @@
 import numpy as np
 from mayavi import mlab
-import matplotlib.pyplot as plt
 
 
 def sectional2nodal(x):

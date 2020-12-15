@@ -1,10 +1,10 @@
 import numpy as np
-from scipy.integrate import cumtrapz
 import openmdao.api as om
-
-from wisdem.commonse import gravity, eps, DirectionVector, NFREQ
+from scipy.integrate import cumtrapz
+from wisdem.commonse import NFREQ, DirectionVector, eps, gravity
 from wisdem.commonse.utilities import assembleI, unassembleI
 from wisdem.commonse.vertical_cylinder import get_nfull
+
 from .map_mooring import NLINES_MAX
 
 
@@ -36,7 +36,7 @@ class SubstructureGeometry(om.ExplicitComponent):
         Number of offset columns evenly spaced around main column
     tower_d_base : float, [m]
         base diameter of the tower
-    hsig_wave : float, [m]
+    Hsig_wave : float, [m]
         significant wave height
     max_survival_heel : float, [deg]
         max heel angle for turbine survival
@@ -83,7 +83,7 @@ class SubstructureGeometry(om.ExplicitComponent):
         self.add_input("radius_to_offset_column", 0.0, units="m")
         self.add_input("number_of_offset_columns", 0)
         self.add_input("tower_d_base", 0.0, units="m")
-        self.add_input("hsig_wave", 0.0, units="m")
+        self.add_input("Hsig_wave", 0.0, units="m")
         self.add_input("max_survival_heel", 0.0, units="deg")
 
         self.add_output("fairlead", 0.0, units="m")
@@ -136,7 +136,7 @@ class SubstructureGeometry(om.ExplicitComponent):
             z_fairlead = location * (z_nodes_main[-1] - z_nodes_main[0]) + z_nodes_main[0]
             outputs["fairlead_radius"] = fair_off + np.interp(z_fairlead, z_nodes_main, R_od_main)
         outputs["fairlead"] = -z_fairlead  # Fairlead defined as positive below waterline
-        outputs["wave_height_fairlead_ratio"] = inputs["hsig_wave"] / np.abs(z_fairlead)
+        outputs["wave_height_fairlead_ratio"] = inputs["Hsig_wave"] / np.abs(z_fairlead)
 
         # Constrain spar top to be at least greater than tower main
         outputs["tower_transition_buffer"] = R_od_main[-1] - R_tower_base
