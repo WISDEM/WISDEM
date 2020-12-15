@@ -27,7 +27,7 @@ class TestRegression(unittest.TestCase):
 
         self.assertAlmostEqual(wt_opt["re.precomp.blade_mass"][0], 16403.682326940743, 2)
         self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 24.0801229107, 2)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 50.982520869210894, 2)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 51.77125010334704, 2)
         self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 4.1949743155, 1)
         self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 87.6974416, 1)
 
@@ -53,7 +53,7 @@ class TestRegression(unittest.TestCase):
 
         self.assertAlmostEqual(wt_opt["re.precomp.blade_mass"][0], 14555.7435212969, 1)
         self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 13.7700592288, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 36.5740341928, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 37.56052377907683, 1)
         self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 6.5292336115, 1)
         self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 108.0, 1)
 
