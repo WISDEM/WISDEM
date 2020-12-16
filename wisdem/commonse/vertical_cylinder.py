@@ -504,6 +504,14 @@ class CylinderFrame3DD(om.ExplicitComponent):
         reactions = pyframe3dd.ReactionData(
             node, inputs["kx"], inputs["ky"], inputs["kz"], inputs["ktx"], inputs["kty"], inputs["ktz"], rigid
         )
+        sprung = (
+            np.any(np.logical_and(inputs["kx"] > 0.0, inputs["kx"] != rigid))
+            or np.any(np.logical_and(inputs["ky"] > 0.0, inputs["ky"] != rigid))
+            or np.any(np.logical_and(inputs["kz"] > 0.0, inputs["kz"] != rigid))
+            or np.any(np.logical_and(inputs["ktx"] > 0.0, inputs["ktx"] != rigid))
+            or np.any(np.logical_and(inputs["kty"] > 0.0, inputs["kty"] != rigid))
+            or np.any(np.logical_and(inputs["ktz"] > 0.0, inputs["ktz"] != rigid))
+        )
         # -----------------------------------
 
         # ------ frame element data ------------
@@ -530,7 +538,8 @@ class CylinderFrame3DD(om.ExplicitComponent):
 
         # ------ options ------------
         dx = -1.0
-        options = pyframe3dd.Options(frame3dd_opt["shear"], frame3dd_opt["geom"], dx)
+        geom = False if sprung else frame3dd_opt["geom"]
+        options = pyframe3dd.Options(frame3dd_opt["shear"], geom, dx)
         # -----------------------------------
 
         # initialize frame3dd object

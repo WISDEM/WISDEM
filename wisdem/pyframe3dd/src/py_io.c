@@ -237,7 +237,7 @@ int read_reaction_data (Reactions *reactions, int DoF, int nN,
     EKty[i] = 0.0;
     EKtz[i] = 0.0;
   }
-  
+
   *nR = reactions->nK;
   if ( verbose ) {
     fprintf(stdout," number of nodes with reactions (or extra stiffness) ");
@@ -268,37 +268,31 @@ int read_reaction_data (Reactions *reactions, int DoF, int nN,
       r[6*j-5] = 1;
     } else{
       EKx[j] = reactions->Kx[i-1];
-      if (EKx[j] > 0.0) r[6*j-5] = 2;
     }
     if (reactions->Ky[i-1] == reactions->rigid){
       r[6*j-4] = 1;
     } else{
       EKy[j] = reactions->Ky[i-1];
-      if (EKy[j] > 0.0) r[6*j-4] = 2;
     }
     if (reactions->Kz[i-1] == reactions->rigid){
       r[6*j-3] = 1;
     } else{
       EKz[j] = reactions->Kz[i-1];
-      if (EKz[j] > 0.0) r[6*j-3] = 2;
     }
     if (reactions->Ktx[i-1] == reactions->rigid){
       r[6*j-2] = 1;
     } else{
       EKtx[j] = reactions->Ktx[i-1];
-      if (EKtx[j] > 0.0) r[6*j-2] = 2;
     }
     if (reactions->Kty[i-1] == reactions->rigid){
       r[6*j-1] = 1;
     } else{
       EKty[j] = reactions->Kty[i-1];
-      if (EKty[j] > 0.0) r[6*j-1] = 2;
     }
     if (reactions->Ktz[i-1] == reactions->rigid){
       r[6*j] = 1;
     } else{
       EKtz[j] = reactions->Ktz[i-1];
-      if (EKtz[j] > 0.0) r[6*j] = 2;
     }
 
   }
