@@ -176,7 +176,7 @@ class TestOC3Mass(unittest.TestCase):
         prob["tower_height"] = prob["hub_height"] = 77.6
         prob["tower_s"] = np.linspace(0.0, 1.0, nTower + 1)
         prob["tower_outer_diameter_in"] = np.linspace(6.5, 3.87, nTower + 1)
-        prob["tower_layer_thickness"] = np.linspace(0.027, 0.019, nTower).reshape((1, nTower))
+        prob["tower_layer_thickness"] = np.linspace(0.027, 0.019, nTower + 1).reshape((1, nTower + 1))
         prob["tower_outfitting_factor"] = 1.07
 
         # Materials

@@ -57,7 +57,7 @@ class TestTowerSE(unittest.TestCase):
         # Test land based, 1 material
         self.inputs["water_depth"] = 0.0
         self.inputs["tower_s"] = np.linspace(0, 1, 5)
-        self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 4))
+        self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 5))
         self.inputs["tower_foundation_height"] = 0.0
         self.inputs["tower_height"] = 1e2
         self.inputs["tower_outer_diameter_in"] = 8 * np.ones(5)
@@ -98,7 +98,7 @@ class TestTowerSE(unittest.TestCase):
         # Test land based, 2 materials
         self.inputs["water_depth"] = 0.0
         self.inputs["tower_s"] = np.linspace(0, 1, 5)
-        self.inputs["tower_layer_thickness"] = np.array([[0.25, 0.25, 0.0, 0.0], [0.0, 0.0, 0.1, 0.1]])
+        self.inputs["tower_layer_thickness"] = np.array([[0.2, 0.2, 0.2, 0.0, 0.0], [0.0, 0.0, 0.0, 0.1, 0.1]])
         self.inputs["tower_foundation_height"] = 0.0
         self.inputs["tower_height"] = 1e2
         self.inputs["tower_outer_diameter_in"] = 8 * np.ones(5)
@@ -122,15 +122,22 @@ class TestTowerSE(unittest.TestCase):
         )
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
+        # Define mixtures
+        v = np.r_[np.mean([0.2, 0]), np.mean([0.1, 0.0])]
+        vv = v / v.sum()
+        x = np.r_[1, 2]
+        xx1 = np.sum(x * vv)  # Mass weighted
+        xx2 = 0.5 * np.sum(vv * x) + 0.5 / np.sum(vv / x)  # Volumetric method
+        xx3 = np.sum(x * x * vv) / xx1  # Mass-cost weighted
         npt.assert_equal(self.outputs["tower_section_height"], 25.0 * np.ones(4))
         npt.assert_equal(self.outputs["tower_outer_diameter"], self.inputs["tower_outer_diameter_in"])
-        npt.assert_equal(self.outputs["tower_wall_thickness"], np.array([0.25, 0.25, 0.1, 0.1]))
+        npt.assert_almost_equal(self.outputs["tower_wall_thickness"], np.array([0.2, 0.2, v.sum(), 0.1]))
         npt.assert_equal(self.outputs["outfitting_factor"], 1.1 * np.ones(4))
-        npt.assert_equal(self.outputs["E"], 1e9 * np.array([1, 1, 2, 2]))
-        npt.assert_equal(self.outputs["G"], 1e8 * np.array([1, 1, 2, 2]))
-        npt.assert_equal(self.outputs["sigma_y"], 1e7 * np.array([1, 1, 2, 2]))
-        npt.assert_equal(self.outputs["rho"], 1e4 * np.array([1, 1, 2, 2]))
-        npt.assert_equal(self.outputs["unit_cost"], 1e1 * np.array([1, 1, 2, 2]))
+        npt.assert_almost_equal(self.outputs["E"], 1e9 * np.array([1, 1, xx2, 2]))
+        npt.assert_almost_equal(self.outputs["G"], 1e8 * np.array([1, 1, xx2, 2]))
+        npt.assert_almost_equal(self.outputs["sigma_y"], 1e7 * np.array([1, 1, xx2, 2]))
+        npt.assert_almost_equal(self.outputs["rho"], 1e4 * np.array([1, 1, xx1, 2]))
+        npt.assert_almost_equal(self.outputs["unit_cost"], 1e1 * np.array([1, 1, xx3, 2]))
         npt.assert_equal(self.outputs["z_start"], 0.0)
         npt.assert_equal(self.outputs["transition_piece_height"], 0.0)
         npt.assert_equal(self.outputs["suctionpile_depth"], 0.0)
@@ -138,14 +145,14 @@ class TestTowerSE(unittest.TestCase):
     def testDiscYAML_Monopile_1Material(self):
         self.inputs["water_depth"] = 30.0
         self.inputs["tower_s"] = np.linspace(0, 1, 5)
-        self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 4))
+        self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 5))
         self.inputs["tower_height"] = 1e2
         self.inputs["tower_foundation_height"] = 10.0
         self.inputs["tower_outer_diameter_in"] = 8 * np.ones(5)
         self.inputs["tower_outfitting_factor"] = 1.1
         self.discrete_inputs["tower_layer_materials"] = ["steel"]
         self.inputs["monopile_s"] = np.linspace(0, 1, 5)
-        self.inputs["monopile_layer_thickness"] = 0.5 * np.ones((1, 4))
+        self.inputs["monopile_layer_thickness"] = 0.5 * np.ones((1, 5))
         self.inputs["monopile_foundation_height"] = -40.0
         self.inputs["monopile_height"] = 50.0
         self.inputs["monopile_outer_diameter_in"] = 10 * np.ones(5)
@@ -179,14 +186,14 @@ class TestTowerSE(unittest.TestCase):
     def testDiscYAML_Monopile_PileShort(self):
         self.inputs["water_depth"] = 60.0
         self.inputs["tower_s"] = np.linspace(0, 1, 5)
-        self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 4))
+        self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 5))
         self.inputs["tower_height"] = 1e2
         self.inputs["tower_foundation_height"] = 10.0
         self.inputs["tower_outer_diameter_in"] = 8 * np.ones(5)
         self.inputs["tower_outfitting_factor"] = 1.1
         self.discrete_inputs["tower_layer_materials"] = ["steel"]
         self.inputs["monopile_s"] = np.linspace(0, 1, 5)
-        self.inputs["monopile_layer_thickness"] = 0.5 * np.ones((1, 4))
+        self.inputs["monopile_layer_thickness"] = 0.5 * np.ones((1, 5))
         self.inputs["monopile_foundation_height"] = -40.0
         self.inputs["monopile_height"] = 50.0
         self.inputs["monopile_outer_diameter_in"] = 10 * np.ones(5)
@@ -220,14 +227,14 @@ class TestTowerSE(unittest.TestCase):
     def testDiscYAML_Monopile_RedoPileNodes(self):
         self.inputs["water_depth"] = 30.0
         self.inputs["tower_s"] = np.linspace(0, 1, 5)
-        self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 4))
+        self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 5))
         self.inputs["tower_height"] = 1e2
         self.inputs["tower_foundation_height"] = 10.0
         self.inputs["tower_outer_diameter_in"] = 8 * np.ones(5)
         self.inputs["tower_outfitting_factor"] = 1.1
         self.discrete_inputs["tower_layer_materials"] = ["steel"]
         self.inputs["monopile_s"] = np.linspace(0, 1, 20)
-        self.inputs["monopile_layer_thickness"] = 0.5 * np.ones((1, 19))
+        self.inputs["monopile_layer_thickness"] = 0.5 * np.ones((1, 20))
         self.inputs["monopile_foundation_height"] = -40.0
         self.inputs["monopile_height"] = 50.0
         self.inputs["monopile_outer_diameter_in"] = 10 * np.ones(20)
@@ -265,14 +272,14 @@ class TestTowerSE(unittest.TestCase):
     def testDiscYAML_Monopile_DifferentMaterials(self):
         self.inputs["water_depth"] = 30.0
         self.inputs["tower_s"] = np.linspace(0, 1, 5)
-        self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 4))
+        self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 5))
         self.inputs["tower_foundation_height"] = 10.0
         self.inputs["tower_height"] = 1e2
         self.inputs["tower_outer_diameter_in"] = 8 * np.ones(5)
         self.inputs["tower_outfitting_factor"] = 1.1
         self.discrete_inputs["tower_layer_materials"] = ["steel"]
         self.inputs["monopile_s"] = np.linspace(0, 1, 5)
-        self.inputs["monopile_layer_thickness"] = 0.5 * np.ones((1, 4))
+        self.inputs["monopile_layer_thickness"] = 0.5 * np.ones((1, 5))
         self.inputs["monopile_foundation_height"] = -40.0
         self.inputs["monopile_height"] = 50.0
         self.inputs["monopile_outer_diameter_in"] = 10 * np.ones(5)
@@ -306,7 +313,7 @@ class TestTowerSE(unittest.TestCase):
     def testDiscYAML_Bad_Inputs(self):
         self.inputs["water_depth"] = 0.0
         self.inputs["tower_s"] = np.linspace(0, 1, 5)
-        self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 4))
+        self.inputs["tower_layer_thickness"] = 0.25 * np.ones((1, 5))
         self.inputs["tower_foundation_height"] = 0.0
         self.inputs["tower_height"] = 1e2
         self.inputs["tower_outer_diameter_in"] = 8 * np.ones(5)
@@ -330,14 +337,14 @@ class TestTowerSE(unittest.TestCase):
         )
 
         try:
-            self.inputs["tower_layer_thickness"][0, -1] = 0.0
+            self.inputs["tower_layer_thickness"][0, -2:] = 0.0
             myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
             self.assertTrue(False)  # Shouldn't get here
         except ValueError:
             self.assertTrue(True)
 
         try:
-            self.inputs["tower_layer_thickness"][0, -1] = 0.25
+            self.inputs["tower_layer_thickness"][0, -2:] = 0.25
             self.inputs["tower_outer_diameter_in"][-1] = -1.0
             myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
             self.assertTrue(False)  # Shouldn't get here
@@ -345,7 +352,7 @@ class TestTowerSE(unittest.TestCase):
             self.assertTrue(True)
 
         try:
-            self.inputs["tower_layer_thickness"][0, -1] = 0.25
+            self.inputs["tower_layer_thickness"][0, -2:] = 0.25
             self.inputs["tower_outer_diameter_in"][-1] = 8.0
             self.inputs["tower_s"][-1] = self.inputs["tower_s"][-2]
             myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
@@ -561,7 +568,7 @@ class TestTowerSE(unittest.TestCase):
         prob["tower_height"] = 80.0
         # prob['tower_section_height'] = 40.0*np.ones(2)
         prob["tower_outer_diameter_in"] = 10.0 * np.ones(3)
-        prob["tower_layer_thickness"] = 0.1 * np.ones(2).reshape((1, 2))
+        prob["tower_layer_thickness"] = 0.1 * np.ones((1, 3))
         prob["tower_outfitting_factor"] = 1.0
         prob["tower_layer_materials"] = ["steel"]
         prob["material_names"] = ["steel"]
@@ -664,14 +671,14 @@ class TestTowerSE(unittest.TestCase):
         prob["tower_foundation_height"] = 0.0
         prob["tower_height"] = 60.0
         prob["tower_outer_diameter_in"] = 10.0 * np.ones(3)
-        prob["tower_layer_thickness"] = 0.1 * np.ones(2).reshape((1, 2))
+        prob["tower_layer_thickness"] = 0.1 * np.ones((1, 3))
         prob["tower_outfitting_factor"] = 1.0
         hval = np.array([15.0, 30.0])
         prob["monopile_s"] = np.cumsum(np.r_[0, hval]) / hval.sum()
         prob["monopile_foundation_height"] = -45.0
         prob["monopile_height"] = hval.sum()
         prob["monopile_outer_diameter_in"] = 10.0 * np.ones(3)
-        prob["monopile_layer_thickness"] = 0.1 * np.ones(2).reshape((1, 2))
+        prob["monopile_layer_thickness"] = 0.1 * np.ones((1, 3))
         prob["monopile_outfitting_factor"] = 1.0
         prob["tower_layer_materials"] = prob["monopile_layer_materials"] = ["steel"]
         prob["material_names"] = ["steel"]
@@ -771,9 +778,9 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(prob["pre.Myy"], np.array([3e4]))
         npt.assert_equal(prob["pre.Mzz"], np.array([4e4]))
 
-        npt.assert_almost_equal(prob["tower.base_F"], [3.86908254e+04 , 1.70778509e+03, -3.39826364e+07], 0)
+        npt.assert_almost_equal(prob["tower.base_F"], [3.86908254e04, 1.70778509e03, -3.39826364e07], 0)
         npt.assert_almost_equal(prob["tower.base_M"], [-294477.83027742, -2732413.3684214, 40000.0], 0)
-        
+
     def testAddedMassForces(self):
         self.modeling_options["TowerSE"]["n_height_monopile"] = 3
         self.modeling_options["TowerSE"]["n_layers_monopile"] = 1
@@ -793,14 +800,14 @@ class TestTowerSE(unittest.TestCase):
         prob["tower_foundation_height"] = 0.0
         prob["tower_height"] = 60.0
         prob["tower_outer_diameter_in"] = 10.0 * np.ones(3)
-        prob["tower_layer_thickness"] = 0.1 * np.ones(2).reshape((1, 2))
+        prob["tower_layer_thickness"] = 0.1 * np.ones((1, 3))
         prob["tower_outfitting_factor"] = 1.0
         hval = np.array([15.0, 30.0])
         prob["monopile_s"] = np.cumsum(np.r_[0, hval]) / hval.sum()
         prob["monopile_foundation_height"] = -45.0
         prob["monopile_height"] = hval.sum()
         prob["monopile_outer_diameter_in"] = 10.0 * np.ones(3)
-        prob["monopile_layer_thickness"] = 0.1 * np.ones(2).reshape((1, 2))
+        prob["monopile_layer_thickness"] = 0.1 * np.ones((1, 3))
         prob["monopile_outfitting_factor"] = 1.0
         prob["tower_layer_materials"] = prob["monopile_layer_materials"] = ["steel"]
         prob["material_names"] = ["steel"]
@@ -893,6 +900,7 @@ class TestTowerSE(unittest.TestCase):
         t_param = np.array(
             [
                 0.05534138,
+                0.05534138,
                 0.05344902,
                 0.05150928,
                 0.04952705,
@@ -980,7 +988,7 @@ class TestTowerSE(unittest.TestCase):
         # --- geometry ----
         h_param = np.diff(np.array([0.0, 43.8, 87.6]))
         d_param = np.array([6.0, 4.935, 3.87])
-        t_param = 1.3 * np.array([0.025, 0.021])
+        t_param = 1.3 * np.array([0.027, 0.023, 0.019])
         z_foundation = 0.0
         yaw = 0.0
         Koutfitting = 1.07
@@ -1162,14 +1170,14 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(
             prob["post2.shell_buckling"], [0.31204018, 0.22828066, 0.14756271, 0.12234901, 0.03991668, 0.02701307]
         )
-        npt.assert_almost_equal(prob["tower1.base_F"][0], 1300347.476206353, 2) #1.29980269e06, 2)
+        npt.assert_almost_equal(prob["tower1.base_F"][0], 1300347.476206353, 2)  # 1.29980269e06, 2)
         npt.assert_array_less(np.abs(prob["tower1.base_F"][1]), 1e2, 2)
         npt.assert_almost_equal(prob["tower1.base_F"][2], -6.31005811e06, 2)
-        npt.assert_almost_equal(prob["tower1.base_M"], [4.14775052e+06, 1.10758024e+08, -3.46827499e+05], 0)
+        npt.assert_almost_equal(prob["tower1.base_M"], [4.14775052e06, 1.10758024e08, -3.46827499e05], 0)
         npt.assert_almost_equal(prob["tower2.base_F"][0], 1617231.046083178, 2)
         npt.assert_array_less(np.abs(prob["tower2.base_F"][1]), 1e2, 2)
         npt.assert_almost_equal(prob["tower2.base_F"][2], -6.27903939e06, 2)
-        npt.assert_almost_equal(prob["tower2.base_M"], [-1.76120197e+06, 1.12569564e+08, 1.47321336e+05], 0)
+        npt.assert_almost_equal(prob["tower2.base_M"], [-1.76120197e06, 1.12569564e08, 1.47321336e05], 0)
 
 
 def suite():

@@ -898,7 +898,7 @@ class WindTurbineOntologyPython(object):
                 ] = wt_opt["tower_grid.s"].tolist()
                 self.wt_init["components"]["tower"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                     "values"
-                ] = np.hstack((wt_opt["tower.layer_thickness"][i, :], wt_opt["tower.layer_thickness"][i, -1])).tolist()
+                ] = wt_opt["tower.layer_thickness"][i, :].tolist()
 
         # Update monopile
         if self.modeling_options["flags"]["monopile"]:
