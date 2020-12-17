@@ -119,23 +119,21 @@ class DiscretizationYAML(om.ExplicitComponent):
         n_mat = self.options["n_mat"]
         if n_height_mon > 0:
             n_height = n_height_tow + n_height_mon - 1  # Should have one overlapping point
-            n_height_mon_minus = n_height_mon - 1
         else:
             n_height = n_height_tow
-            n_height_mon_minus = 0
 
         # Inputs here are the outputs from the Tower component in load_IEA_yaml
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
         self.add_input("tower_s", val=np.zeros(n_height_tow))
         self.add_discrete_input("tower_layer_materials", val=n_layers_tow * [""])
-        self.add_input("tower_layer_thickness", val=np.zeros((n_layers_tow, n_height_tow - 1)), units="m")
+        self.add_input("tower_layer_thickness", val=np.zeros((n_layers_tow, n_height_tow)), units="m")
         self.add_input("tower_height", val=0.0, units="m")
         self.add_input("tower_foundation_height", val=0.0, units="m")
         self.add_input("tower_outer_diameter_in", np.zeros(n_height_tow), units="m")
         self.add_input("tower_outfitting_factor", val=0.0)
         self.add_input("monopile_s", val=np.zeros(n_height_mon))
         self.add_discrete_input("monopile_layer_materials", val=n_layers_tow * [""])
-        self.add_input("monopile_layer_thickness", val=np.zeros((n_layers_mon, n_height_mon_minus)), units="m")
+        self.add_input("monopile_layer_thickness", val=np.zeros((n_layers_mon, n_height_mon)), units="m")
         self.add_input("monopile_foundation_height", val=0.0, units="m")
         self.add_input("monopile_height", val=0.0, units="m")
         self.add_input("monopile_outer_diameter_in", np.zeros(n_height_mon), units="m")
@@ -183,6 +181,12 @@ class DiscretizationYAML(om.ExplicitComponent):
         fh_tow = inputs["tower_foundation_height"]
         fh_mon = inputs["monopile_foundation_height"]
         water_depth = inputs["water_depth"]
+
+        # Enforce constant tower thickness per section, assuming rolling of a flat steel plate
+        # Might not have to assume this with concrete, but can account for it in input values if necessary
+        lthick_tow = 0.5 * (lthick_tow[:, :-1] + lthick_tow[:, 1:])
+        if n_height_mon > 0:
+            lthick_mon = 0.5 * (lthick_mon[:, :-1] + lthick_mon[:, 1:])
 
         outputs["transition_piece_height"] = fh_tow
 
@@ -247,10 +251,10 @@ class DiscretizationYAML(om.ExplicitComponent):
 
         else:
             outputs["tower_section_height"] = np.diff(h_tow * s_tow)
-            outputs["tower_wall_thickness"] = np.sum(inputs["tower_layer_thickness"], axis=0)
+            outputs["tower_wall_thickness"] = np.sum(lthick_tow, axis=0)
             outputs["outfitting_factor"] = inputs["tower_outfitting_factor"] * np.ones(n_height - 1)
             outputs["tower_outer_diameter"] = inputs["tower_outer_diameter_in"]
-            twall = inputs["tower_layer_thickness"]
+            twall = lthick_tow
             layer_mat = discrete_inputs["tower_layer_materials"]
             outputs["z_start"] = fh_tow
             outputs["suctionpile_depth"] = 0.0
@@ -1194,7 +1198,7 @@ class TowerLeanSE(om.Group):
         self.set_input_defaults("gravity_foundation_mass", 0.0, units="kg")
         self.set_input_defaults("transition_piece_mass", 0.0, units="kg")
         self.set_input_defaults("tower_outer_diameter", np.ones(n_height), units="m")
-        self.set_input_defaults("tower_wall_thickness", np.ones(n_height - 1), units="m")
+        self.set_input_defaults("tower_wall_thickness", np.ones(n_height), units="m")
         self.set_input_defaults("outfitting_factor", np.zeros(n_height - 1))
         self.set_input_defaults("water_depth", 0.0, units="m")
         self.set_input_defaults("hub_height", 0.0, units="m")

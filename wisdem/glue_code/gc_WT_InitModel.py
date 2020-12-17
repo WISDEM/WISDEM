@@ -803,7 +803,7 @@ def assign_tower_values(wt_opt, modeling_options, tower):
 
     wt_opt["tower.layer_name"] = layer_name
     wt_opt["tower.layer_mat"] = layer_mat
-    wt_opt["tower.layer_thickness"] = 0.5 * (thickness[:, :-1] + thickness[:, 1:])
+    wt_opt["tower.layer_thickness"] = thickness
 
     wt_opt["tower.outfitting_factor"] = tower["internal_structure_2d_fem"]["outfitting_factor"]
 
@@ -871,7 +871,7 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
 
     wt_opt["monopile.layer_name"] = layer_name
     wt_opt["monopile.layer_mat"] = layer_mat
-    wt_opt["monopile.layer_thickness"] = 0.5 * (thickness[:, :-1] + thickness[:, 1:])
+    wt_opt["monopile.layer_thickness"] = thickness
 
     wt_opt["monopile.outfitting_factor"] = monopile["internal_structure_2d_fem"]["outfitting_factor"]
     wt_opt["monopile.transition_piece_mass"] = monopile["transition_piece_mass"]

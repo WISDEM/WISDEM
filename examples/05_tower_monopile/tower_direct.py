@@ -18,7 +18,7 @@ n_load_cases = 2
 
 h_param = np.diff(np.linspace(0.0, 87.6, n_control_points))
 d_param = np.linspace(6.0, 3.87, n_control_points)
-t_param = 1.3 * np.linspace(0.025, 0.021, n_control_points - 1)
+t_param = 1.3 * np.linspace(0.025, 0.021, n_control_points)
 max_diam = 8.0
 # ---
 
