@@ -771,6 +771,9 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(prob["pre.Myy"], np.array([3e4]))
         npt.assert_equal(prob["pre.Mzz"], np.array([4e4]))
 
+        npt.assert_almost_equal(prob["tower.base_F"], [3.86908254e+04 , 1.70778509e+03, -3.39826364e+07], 0)
+        npt.assert_almost_equal(prob["tower.base_M"], [-294477.83027742, -2732413.3684214, 40000.0], 0)
+        
     def testAddedMassForces(self):
         self.modeling_options["TowerSE"]["n_height_monopile"] = 3
         self.modeling_options["TowerSE"]["n_layers_monopile"] = 1
@@ -1159,10 +1162,14 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(
             prob["post2.shell_buckling"], [0.31204018, 0.22828066, 0.14756271, 0.12234901, 0.03991668, 0.02701307]
         )
-        npt.assert_almost_equal(prob["tower1.base_F"], [1.29980269e06, 1.39698386e-09, -6.31005811e06], 2)
-        npt.assert_almost_equal(prob["tower1.base_M"], [4.14769959e06, 1.10756769e08, -3.46781682e05], 0)
-        npt.assert_almost_equal(prob["tower2.base_F"], [1.61668069e06, 6.98491931e-10, -6.27903939e06], 2)
-        npt.assert_almost_equal(prob["tower2.base_M"], [-1.76118035e06, 1.12568312e08, 1.47301970e05], 0)
+        npt.assert_almost_equal(prob["tower1.base_F"][0], 1300347.476206353, 2) #1.29980269e06, 2)
+        npt.assert_array_less(np.abs(prob["tower1.base_F"][1]), 1e2, 2)
+        npt.assert_almost_equal(prob["tower1.base_F"][2], -6.31005811e06, 2)
+        npt.assert_almost_equal(prob["tower1.base_M"], [4.14775052e+06, 1.10758024e+08, -3.46827499e+05], 0)
+        npt.assert_almost_equal(prob["tower2.base_F"][0], 1617231.046083178, 2)
+        npt.assert_array_less(np.abs(prob["tower2.base_F"][1]), 1e2, 2)
+        npt.assert_almost_equal(prob["tower2.base_F"][2], -6.27903939e06, 2)
+        npt.assert_almost_equal(prob["tower2.base_M"], [-1.76120197e+06, 1.12569564e+08, 1.47321336e+05], 0)
 
 
 def suite():
