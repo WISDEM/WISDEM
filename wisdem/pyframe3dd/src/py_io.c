@@ -298,11 +298,11 @@ int read_reaction_data (Reactions *reactions, int DoF, int nN,
   }
 
   *sumR=0;    for (i=1;i<=DoF;i++)    *sumR += r[i];
-  if ( *sumR < 4 && geom) {
-    sprintf(errMsg,"\n  error:  geometric stiffness can not be used for unrestrained structure.  set geom=0 or added more reactions.\n");
-    errorMsg(errMsg);
-    return 84;
-  }
+  //if ( *sumR < 4 && geom) {
+  //sprintf(errMsg,"\n  warning:  geometric stiffness can not be used for unrestrained structure.  set geom=0 or added more reactions.\n");
+    //errorMsg(errMsg);
+    //return 84;
+  //}
   // if ( *sumR < 4 ) {
   //     sprintf(errMsg,"\n  Warning:  un-restrained structure   %d imposed reactions.\n  At least 4 reactions are required to support static loads.\n", *sumR );
   //     errorMsg(errMsg);

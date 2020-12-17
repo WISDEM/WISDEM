@@ -504,14 +504,6 @@ class CylinderFrame3DD(om.ExplicitComponent):
         reactions = pyframe3dd.ReactionData(
             node, inputs["kx"], inputs["ky"], inputs["kz"], inputs["ktx"], inputs["kty"], inputs["ktz"], rigid
         )
-        sprung = (
-            np.any(np.logical_and(inputs["kx"] > 0.0, inputs["kx"] != rigid))
-            or np.any(np.logical_and(inputs["ky"] > 0.0, inputs["ky"] != rigid))
-            or np.any(np.logical_and(inputs["kz"] > 0.0, inputs["kz"] != rigid))
-            or np.any(np.logical_and(inputs["ktx"] > 0.0, inputs["ktx"] != rigid))
-            or np.any(np.logical_and(inputs["kty"] > 0.0, inputs["kty"] != rigid))
-            or np.any(np.logical_and(inputs["ktz"] > 0.0, inputs["ktz"] != rigid))
-        )
         # -----------------------------------
 
         # ------ frame element data ------------
@@ -538,8 +530,7 @@ class CylinderFrame3DD(om.ExplicitComponent):
 
         # ------ options ------------
         dx = -1.0
-        geom = False if sprung else frame3dd_opt["geom"]
-        options = pyframe3dd.Options(frame3dd_opt["shear"], geom, dx)
+        options = pyframe3dd.Options(frame3dd_opt["shear"], frame3dd_opt["geom"], dx)
         # -----------------------------------
 
         # initialize frame3dd object
@@ -647,8 +638,13 @@ class CylinderFrame3DD(om.ExplicitComponent):
         Mxx = -forces.Mzz[iCase, 1::2]
 
         # Record total forces and moments
-        outputs["base_F"] = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
-        outputs["base_M"] = -1.0 * np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
+        base_idx = 2 * inputs["kidx"].max()
+        outputs["base_F"] = (
+            -1.0 * np.r_[-forces.Vz[iCase, base_idx], forces.Vy[iCase, base_idx], forces.Nx[iCase, base_idx]]
+        )
+        outputs["base_M"] = (
+            -1.0 * np.r_[-forces.Mzz[iCase, base_idx], forces.Myy[iCase, base_idx], forces.Txx[iCase, base_idx]]
+        )
 
         outputs["Fz_out"] = Fz
         outputs["Vx_out"] = Vx
