@@ -635,9 +635,8 @@ class CylinderFrame3DD(om.ExplicitComponent):
         Mxx = -forces.Mzz[iCase, 1::2]
 
         # Record total forces and moments
-        outputs["base_F"] = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
-        outputs["base_M"] = -1.0 * np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
-
+        outputs["base_F"] = -1.0 * np.r_[-forces.Vz[iCase, 0], forces.Vy[iCase, 0], forces.Nx[iCase, 0]]
+        outputs["base_M"] = -1.0 * np.r_[-forces.Mzz[iCase, 0], forces.Myy[iCase, 0], forces.Txx[iCase, 0]]
         outputs["Fz_out"] = Fz
         outputs["Vx_out"] = Vx
         outputs["Vy_out"] = Vy
