@@ -493,6 +493,7 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["d_full"] = 6.0 * np.ones(self.inputs["z_full"].shape)
         self.inputs["transition_piece_mass"] = 1e3
         self.inputs["transition_piece_cost"] = 1e4
+        self.inputs["transition_piece_I"] = 1e3 * 9 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
         self.inputs["transition_piece_height"] = 10.0
         self.inputs["gravity_foundation_mass"] = 0.0  # 1e4
         self.inputs["rna_F"] = 1e5 * np.array(
@@ -824,6 +825,8 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(prob["pre.Mxx"], np.array([2e4]))
         npt.assert_equal(prob["pre.Myy"], np.array([3e4]))
         npt.assert_equal(prob["pre.Mzz"], np.array([4e4]))
+        npt.assert_almost_equal(prob["tower.base_F"], [4.61183362e04, 1.59353875e03, -2.94077236e07], 0)
+        npt.assert_almost_equal(prob["tower.base_M"], [-248566.38259147, -3286049.81237828, 40000.0], 0)
 
     def testProblemFixedPile_GBF(self):
         self.modeling_options["TowerSE"]["n_height_monopile"] = 3
@@ -876,7 +879,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rho_water"] = 1025.0
         prob["mu_water"] = 1.3351e-3
         prob["beta_wind"] = prob["beta_wave"] = 0.0
-        prob["hsig_wave"] = 0.0
+        prob["Hsig_wave"] = 0.0
         prob["Tsig_wave"] = 1e3
         prob["wind.Uref"] = 15.0
         prob["pre.rna_F"] = 1e3 * np.array(
@@ -943,6 +946,9 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(prob["pre.Mxx"], np.array([2e4]))
         npt.assert_equal(prob["pre.Myy"], np.array([3e4]))
         npt.assert_equal(prob["pre.Mzz"], np.array([4e4]))
+
+        npt.assert_almost_equal(prob["tower.base_F"], [3.74393291e04, 1.84264671e03, -3.39826364e07], 0)
+        npt.assert_almost_equal(prob["tower.base_M"], [-294477.83027742, -2732413.3684215, 40000.0], 0)
 
     def testAddedMassForces(self):
         self.modeling_options["TowerSE"]["n_height_monopile"] = 3
@@ -1330,10 +1336,14 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(
             prob["post2.shell_buckling"], [0.31204018, 0.22828066, 0.14756271, 0.12234901, 0.03991668, 0.02701307]
         )
-        npt.assert_almost_equal(prob["tower1.base_F"], [1.29980269e06, 1.39698386e-09, -6.31005811e06], 2)
-        npt.assert_almost_equal(prob["tower1.base_M"], [4.14769959e06, 1.10756769e08, -3.46781682e05], 0)
-        npt.assert_almost_equal(prob["tower2.base_F"], [1.61668069e06, 6.98491931e-10, -6.27903939e06], 2)
-        npt.assert_almost_equal(prob["tower2.base_M"], [-1.76118035e06, 1.12568312e08, 1.47301970e05], 0)
+        npt.assert_almost_equal(prob["tower1.base_F"][0], 1300347.476206353, 2)  # 1.29980269e06, 2)
+        npt.assert_array_less(np.abs(prob["tower1.base_F"][1]), 1e2, 2)
+        npt.assert_almost_equal(prob["tower1.base_F"][2], -6.31005811e06, 2)
+        npt.assert_almost_equal(prob["tower1.base_M"], [4.14775052e06, 1.10758024e08, -3.46827499e05], 0)
+        npt.assert_almost_equal(prob["tower2.base_F"][0], 1617231.046083178, 2)
+        npt.assert_array_less(np.abs(prob["tower2.base_F"][1]), 1e2, 2)
+        npt.assert_almost_equal(prob["tower2.base_F"][2], -6.27903939e06, 2)
+        npt.assert_almost_equal(prob["tower2.base_M"], [-1.76120197e06, 1.12569564e08, 1.47321336e05], 0)
 
 
 def suite():
