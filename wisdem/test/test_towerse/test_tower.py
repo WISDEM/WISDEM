@@ -771,6 +771,9 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(prob["pre.Myy"], np.array([3e4]))
         npt.assert_equal(prob["pre.Mzz"], np.array([4e4]))
 
+        npt.assert_almost_equal(prob["tower.base_F"], [3.86908254e+04 , 1.70778509e+03, -3.39826364e+07], 0)
+        npt.assert_almost_equal(prob["tower.base_M"], [-294477.83027742, -2732413.3684214, 40000.0], 0)
+        
     def testAddedMassForces(self):
         self.modeling_options["TowerSE"]["n_height_monopile"] = 3
         self.modeling_options["TowerSE"]["n_layers_monopile"] = 1
