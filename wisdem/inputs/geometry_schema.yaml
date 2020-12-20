@@ -538,7 +538,7 @@ properties:
                                 minimum: 0.0
                             hvac_mass_coefficient:
                                 type: number
-                                default: 0.08
+                                default: 0.025
                                 units: kg/kW
                                 description: Regression-based scaling coefficient on machine rating to get HVAC system mass
                                 minimum: 0.0

@@ -7,14 +7,16 @@ DriveSE:
     flag: False
 TowerSE:             # Options of TowerSE module
     flag: True
-    nLC: 2           # Number of design load cases 
-    wind: PowerWind  # Wind used 
-    gamma_f: 1.35    # Safety factor for fatigue loads 
-    gamma_m: 1.3     # Safety factor for material properties 
+    nLC: 2           # Number of design load cases
+    wind: PowerWind  # Wind used
+    gamma_f: 1.35    # Safety factor for fatigue loads
+    gamma_m: 1.3     # Safety factor for material properties
     gamma_n: 1.0     # Safety factor for ...
     gamma_b: 1.1     # Safety factor for ...
-    gamma_fatigue: 1.755  # Safety factor for fatigue loads 
-    buckling_length: 30    # Buckling parameter 
+    gamma_fatigue: 1.755  # Safety factor for fatigue loads
+    buckling_length: 30    # Buckling parameter
+    soil_springs: True
+    gravity_foundation: False
     frame3dd:
         shear: True
         geom: True

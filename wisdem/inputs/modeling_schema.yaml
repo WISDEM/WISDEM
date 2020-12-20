@@ -247,6 +247,10 @@ properties:
                 type: boolean
                 default: False
                 description: If False, then a monopile is modeled with a perfectly clamped foundation.  If True, then spring-stiffness equivalents are computed from soil properties for all DOF.
+            gravity_foundation:
+                type: boolean
+                default: False
+                description: Model the monopile base as a gravity-based foundation with no pile embedment
     BOS:
         type: object
         default: {}

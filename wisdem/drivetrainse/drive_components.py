@@ -613,7 +613,6 @@ class MiscNacelleComponents(om.ExplicitComponent):
         outputs["cover_I"] = I_cover
 
         # Regression based estimate on HVAC mass
-        print(coeff, rating, R_generator)
         m_hvac = coeff * rating * 2 * np.pi * (0.75 * R_generator)
         cm_hvac = s_generator
         I_hvac = m_hvac * (0.75 * R_generator) ** 2

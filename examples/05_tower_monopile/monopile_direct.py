@@ -39,6 +39,10 @@ modeling_options["TowerSE"] = {}
 modeling_options["TowerSE"]["buckling_length"] = 30.0
 modeling_options["flags"]["monopile"] = True
 
+# Monopile foundation
+modeling_options["TowerSE"]["soil_springs"] = True
+modeling_options["TowerSE"]["gravity_foundation"] = False
+
 # safety factors
 modeling_options["TowerSE"]["gamma_f"] = 1.35
 modeling_options["TowerSE"]["gamma_m"] = 1.3
