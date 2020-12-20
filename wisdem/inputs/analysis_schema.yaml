@@ -137,6 +137,10 @@ properties:
                                 default: {}
                                 properties:
                                     flag: *flag
+                                    equal_to_suction:
+                                        type: boolean
+                                        default: true
+                                        description: If the pressure side spar cap should be equal to the suction side spar cap
                                     n_opt:
                                         type: integer
                                         default: 8
@@ -501,6 +505,7 @@ properties:
                         default: {}
                         description: Enforce sufficient blade flexibility such that they can be transported on rail cars without exceeding maximum blade strains or derailment.  User can activate either 8-axle flatcars or 4-axle
                         properties:
+                            flag: *flag
                             8_axle: *flag
                             4_axle: *flag
                     stall:
@@ -737,7 +742,7 @@ properties:
         type: string
         description: Objective function / merit figure for optimization.  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation
         default: LCOE
-        enum: [LCOE, AEP, Cp, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass, structural_cost, blade_tip_deflection, My_std, flp1_std]
+        enum: [LCOE, AEP, Cp, blade_mass, nacelle_mass, nacelle_cost, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass, structural_cost, blade_tip_deflection, My_std, flp1_std]
 
     driver:
         type: object

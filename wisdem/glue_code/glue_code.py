@@ -153,7 +153,6 @@ class WT_RNTA(om.Group):
 
             # Connection from ra to rs for the rated conditions
             # self.connect('rp.powercurve.rated_V',        'rs.aero_rated.V_load')
-            self.connect("rp.powercurve.rated_V", "rp.gust.V_hub")
             self.connect("rp.gust.V_gust", ["rs.aero_gust.V_load", "rs.aero_hub_loads.V_load"])
             self.connect("env.shear_exp", ["rp.powercurve.shearExp", "rs.aero_gust.shearExp"])
             self.connect(
@@ -445,6 +444,7 @@ class WT_RNTA(om.Group):
                     self.connect("nacelle.hss_diameter", "drivese.generator.D_shaft", src_indices=[-1])
 
             else:
+                self.connect("generator.generator_radius_user", "drivese.generator_radius_user")
                 self.connect("generator.generator_mass_user", "drivese.generator_mass_user")
                 self.connect("generator.generator_efficiency_user", "drivese.generator_efficiency_user")
 
@@ -482,8 +482,9 @@ class WT_RNTA(om.Group):
                 self.connect("env.water_depth", "towerse.water_depth")
                 self.connect("env.rho_water", "towerse.rho_water")
                 self.connect("env.mu_water", "towerse.mu_water")
-                self.connect("env.G_soil", "towerse.G_soil")
-                self.connect("env.nu_soil", "towerse.nu_soil")
+                if modeling_options["TowerSE"]["soil_springs"]:
+                    self.connect("env.G_soil", "towerse.G_soil")
+                    self.connect("env.nu_soil", "towerse.nu_soil")
                 self.connect("env.Hsig_wave", "towerse.Hsig_wave")
                 self.connect("env.Tsig_wave", "towerse.Tsig_wave")
                 self.connect("monopile.diameter", "towerse.monopile_outer_diameter_in")

@@ -8,8 +8,8 @@ January 2020
 import numpy as np
 from openmdao.api import Group, ExplicitComponent
 from scipy.optimize import brentq, minimize, minimize_scalar
-from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from scipy.interpolate import PchipInterpolator
+from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.utilities import smooth_abs, smooth_min, linspace_with_deriv
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
 
@@ -61,6 +61,9 @@ class RotorPower(Group):
         self.add_subsystem("gust", GustETM())
         self.add_subsystem("cdf", WeibullWithMeanCDF(nspline=modeling_options["RotorSE"]["n_pc_spline"]))
         self.add_subsystem("aep", AEP(nspline=modeling_options["RotorSE"]["n_pc_spline"]), promotes=["AEP"])
+
+        # Connections to the gust calculation
+        self.connect("powercurve.rated_V", "gust.V_hub")
 
         # Connections to the Weibull CDF
         self.connect("powercurve.V_spline", "cdf.x")

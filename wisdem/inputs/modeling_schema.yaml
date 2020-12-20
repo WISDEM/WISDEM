@@ -243,6 +243,10 @@ properties:
                         maximum: 1e-1
                         default: 1e-9
                         description: Convergence tolerance for modal eigenvalue solution
+            soil_springs:
+                type: boolean
+                default: False
+                description: If False, then a monopile is modeled with a perfectly clamped foundation.  If True, then spring-stiffness equivalents are computed from soil properties for all DOF.
     BOS:
         type: object
         default: {}

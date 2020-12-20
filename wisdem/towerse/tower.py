@@ -38,7 +38,7 @@ class DiscretizationYAML(om.ExplicitComponent):
     tower_layer_materials : list of strings
         1D array of the names of the materials of each layer modeled in the tower
         structure.
-    tower_layer_thickness : numpy array[n_layers_tow, n_height_tow-1], [m]
+    tower_layer_thickness : numpy array[n_layers_tow, n_height_tow], [m]
         2D array of the thickness of the layers of the tower structure. The first
         dimension represents each layer, the second dimension represents each piecewise-
         constant entry of the tower sections.
@@ -54,7 +54,7 @@ class DiscretizationYAML(om.ExplicitComponent):
     monopile_layer_materials : list of strings
         1D array of the names of the materials of each layer modeled in the tower
         structure.
-    monopile_layer_thickness : numpy array[n_layers_mon, n_height_mon_minus], [m]
+    monopile_layer_thickness : numpy array[n_layers_mon, n_height_mon], [m]
         2D array of the thickness of the layers of the tower structure. The first
         dimension represents each layer, the second dimension represents each piecewise-
         constant entry of the tower sections.
@@ -763,7 +763,7 @@ class TowerPreFrame(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("n_height")
-        self.options.declare("monopile", default=False)
+        self.options.declare("soil_monopile", default=False)
 
     def setup(self):
         n_height = self.options["n_height"]
@@ -780,6 +780,7 @@ class TowerPreFrame(om.ExplicitComponent):
         self.add_input("gravity_foundation_I", np.zeros(6), units="kg*m**2")
         self.add_input("gravity_foundation_mass", 0.0, units="kg")
         self.add_input("transition_piece_height", 0.0, units="m")
+        self.add_input("suctionpile_depth", 0.0, units="m")
 
         # point loads
         self.add_input("rna_F", np.zeros(3), units="N")
@@ -884,7 +885,7 @@ class TowerPreFrame(om.ExplicitComponent):
 
         # Prepare for reactions: rigid at tower base
         outputs["kidx"] = np.array([0], dtype=np.int_)
-        if self.options["monopile"]:
+        if self.options["soil_monopile"]:
             kmono = inputs["k_monopile"]
             outputs["kx"] = np.array([kmono[0]])
             outputs["ky"] = np.array([kmono[2]])
@@ -1346,8 +1347,9 @@ class TowerSE(om.Group):
         self.set_input_defaults("yaw", 0.0, units="deg")
         self.set_input_defaults("E", np.zeros(n_height - 1), units="N/m**2")
         self.set_input_defaults("G", np.zeros(n_height - 1), units="N/m**2")
-        self.set_input_defaults("G_soil", 0.0, units="N/m**2")
-        self.set_input_defaults("nu_soil", 0.0)
+        if mod_opt["soil_springs"]:
+            self.set_input_defaults("G_soil", 0.0, units="N/m**2")
+            self.set_input_defaults("nu_soil", 0.0)
         self.set_input_defaults("sigma_y", np.zeros(n_height - 1), units="N/m**2")
         self.set_input_defaults("rna_mass", 0.0, units="kg")
         self.set_input_defaults("rna_cg", np.zeros(3), units="m")
@@ -1356,12 +1358,10 @@ class TowerSE(om.Group):
 
         # Load baseline discretization
         self.add_subsystem("geom", TowerLeanSE(modeling_options=self.options["modeling_options"]), promotes=["*"])
-        self.add_subsystem(
-            "soil", TowerSoil(), promotes=[("G", "G_soil"), ("nu", "nu_soil"), ("depth", "suctionpile_depth")]
-        )
-
-        # Connections for geometry and mass
-        if monopile:
+        if monopile and mod_opt["soil_springs"]:
+            self.add_subsystem(
+                "soil", TowerSoil(), promotes=[("G", "G_soil"), ("nu", "nu_soil"), ("depth", "suctionpile_depth")]
+            )
             self.connect("d_full", "soil.d0", src_indices=[0])
 
         # Add in all Components that drive load cases
@@ -1407,7 +1407,7 @@ class TowerSE(om.Group):
 
             self.add_subsystem(
                 "pre" + lc,
-                TowerPreFrame(n_height=n_height, monopile=monopile),
+                TowerPreFrame(n_height=n_height, soil_monopile=(monopile and mod_opt["soil_springs"])),
                 promotes=[
                     "transition_piece_mass",
                     "transition_piece_height",
@@ -1477,7 +1477,8 @@ class TowerSE(om.Group):
             self.connect("pre" + lc + ".Mxx", "tower" + lc + ".Mxx")
             self.connect("pre" + lc + ".Myy", "tower" + lc + ".Myy")
             self.connect("pre" + lc + ".Mzz", "tower" + lc + ".Mzz")
-            self.connect("soil.k", "pre" + lc + ".k_monopile")
+            if mod_opt["soil_springs"]:
+                self.connect("soil.k", "pre" + lc + ".k_monopile")
 
             self.connect("tower" + lc + ".freqs", "post" + lc + ".freqs")
             self.connect("tower" + lc + ".x_mode_freqs", "post" + lc + ".x_mode_freqs")

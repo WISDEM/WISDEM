@@ -643,6 +643,7 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
         wt_opt["nacelle.hss_material"] = nacelle["drivetrain"]["hss_material"]
 
     if not modeling_options["flags"]["generator"]:
+        wt_opt["generator.generator_radius_user"] = nacelle["drivetrain"]["generator_radius_user"]
         wt_opt["generator.generator_mass_user"] = nacelle["drivetrain"]["generator_mass_user"]
 
         eff_user = np.c_[
