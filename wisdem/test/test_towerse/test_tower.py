@@ -33,6 +33,9 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options["TowerSE"]["wind"] = "PowerWind"
         self.modeling_options["TowerSE"]["nLC"] = 1
 
+        self.modeling_options["TowerSE"]["soil_springs"] = False
+        self.modeling_options["TowerSE"]["gravity_foundation"] = False
+
         self.modeling_options["TowerSE"]["gamma_f"] = 1.0
         self.modeling_options["TowerSE"]["gamma_m"] = 1.0
         self.modeling_options["TowerSE"]["gamma_n"] = 1.0
@@ -446,6 +449,7 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["transition_piece_I"] = np.zeros(6)
         self.inputs["gravity_foundation_I"] = np.zeros(6)
         self.inputs["gravity_foundation_mass"] = 0.0
+        self.inputs["suctionpile_depth"] = 0.0
         self.inputs["rna_F"] = 1e5 * np.array(
             [
                 2.0,
@@ -495,7 +499,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs["Myy"], np.array([3e6]))
         npt.assert_equal(self.outputs["Mzz"], np.array([4e6]))
 
-        # Test Monopile no GBF
+        # Test Monopile no springs, no GBF
         self.inputs["z_full"] = 10.0 * np.arange(-6, 7)
         self.inputs["d_full"] = 6.0 * np.ones(self.inputs["z_full"].shape)
         self.inputs["transition_piece_mass"] = 1e3
@@ -503,6 +507,7 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["transition_piece_I"] = 1e3 * 9 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
         self.inputs["transition_piece_height"] = 10.0
         self.inputs["gravity_foundation_mass"] = 0.0  # 1e4
+        self.inputs["suctionpile_depth"] = 30.0
         self.inputs["rna_F"] = 1e5 * np.array(
             [
                 2.0,
@@ -520,7 +525,64 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["k_soil"] = (20.0 + np.arange(6))[np.newaxis, :] * np.ones((2, 6))
         self.inputs["z_soil"] = np.r_[-30.0, 0.0]
 
-        myobj = tow.TowerPreFrame(n_height=5, monopile=True)
+        myobj = tow.TowerPreFrame(n_height=5, monopile=True, soil_springs=False)
+        myobj.compute(self.inputs, self.outputs)
+
+        npt.assert_equal(self.outputs["kidx"], np.arange(4))
+        npt.assert_equal(self.outputs["kx"], RIGID)
+        npt.assert_equal(self.outputs["ky"], RIGID)
+        npt.assert_equal(self.outputs["kz"], RIGID)
+        npt.assert_equal(self.outputs["ktx"], RIGID)
+        npt.assert_equal(self.outputs["kty"], RIGID)
+        npt.assert_equal(self.outputs["ktz"], RIGID)
+
+        npt.assert_equal(self.outputs["midx"], np.array([12, 7, 0]))
+        npt.assert_equal(self.outputs["m"], np.array([1e5, 1e3, 0.0]))
+        npt.assert_equal(self.outputs["mrhox"], np.array([-3.0, 0.0, 0.0]))
+        npt.assert_equal(self.outputs["mrhoy"], np.array([0.0, 0.0, 0.0]))
+        npt.assert_equal(self.outputs["mrhoz"], np.array([1.0, 0.0, 0.0]))
+        npt.assert_equal(self.outputs["mIxx"], np.array([1e5, 1e3 * 9 * 0.5, 0]))
+        npt.assert_equal(self.outputs["mIyy"], np.array([1e5, 1e3 * 9 * 0.5, 0]))
+        npt.assert_equal(self.outputs["mIzz"], np.array([2e5, 1e3 * 9, 0]))
+        npt.assert_equal(self.outputs["mIxy"], np.zeros(3))
+        npt.assert_equal(self.outputs["mIxz"], np.zeros(3))
+        npt.assert_equal(self.outputs["mIyz"], np.zeros(3))
+
+        npt.assert_equal(self.outputs["plidx"], np.array([12]))
+        npt.assert_equal(self.outputs["Fx"], np.array([2e5]))
+        npt.assert_equal(self.outputs["Fy"], np.array([3e5]))
+        npt.assert_equal(self.outputs["Fz"], np.array([4e5]))
+        npt.assert_equal(self.outputs["Mxx"], np.array([2e6]))
+        npt.assert_equal(self.outputs["Myy"], np.array([3e6]))
+        npt.assert_equal(self.outputs["Mzz"], np.array([4e6]))
+
+        # Test Monopile springs, no GBF
+        self.inputs["z_full"] = 10.0 * np.arange(-6, 7)
+        self.inputs["d_full"] = 6.0 * np.ones(self.inputs["z_full"].shape)
+        self.inputs["transition_piece_mass"] = 1e3
+        self.inputs["transition_piece_cost"] = 1e4
+        self.inputs["transition_piece_I"] = 1e3 * 9 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
+        self.inputs["transition_piece_height"] = 10.0
+        self.inputs["gravity_foundation_mass"] = 0.0  # 1e4
+        self.inputs["suctionpile_depth"] = 30.0
+        self.inputs["rna_F"] = 1e5 * np.array(
+            [
+                2.0,
+                3.0,
+                4.0,
+            ]
+        )
+        self.inputs["rna_M"] = 1e6 * np.array(
+            [
+                2.0,
+                3.0,
+                4.0,
+            ]
+        )
+        self.inputs["k_soil"] = (20.0 + np.arange(6))[np.newaxis, :] * np.ones((2, 6))
+        self.inputs["z_soil"] = np.r_[-30.0, 0.0]
+
+        myobj = tow.TowerPreFrame(n_height=5, monopile=True, soil_springs=True)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs["kidx"], np.arange(4))
@@ -560,6 +622,7 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["transition_piece_I"] = 1e3 * 9 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
         self.inputs["gravity_foundation_I"] = 0.5 * 1e4 * 9 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
         self.inputs["gravity_foundation_mass"] = 1e4
+        self.inputs["suctionpile_depth"] = 0.0
         self.inputs["rna_F"] = 1e5 * np.array(
             [
                 2.0,
@@ -577,7 +640,7 @@ class TestTowerSE(unittest.TestCase):
         self.inputs["k_soil"] = (20.0 + np.arange(6))[np.newaxis, :] * np.ones((2, 6))
         self.inputs["z_soil"] = np.r_[-30.0, 0.0]
 
-        myobj = tow.TowerPreFrame(n_height=5, monopile=True)
+        myobj = tow.TowerPreFrame(n_height=5, monopile=True, gravity_foundation=True)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs["kidx"], np.array([0]))
@@ -634,8 +697,6 @@ class TestTowerSE(unittest.TestCase):
         prob["sigma_y_mat"] = 1e8
 
         prob["yaw"] = 0.0
-        prob["G_soil"] = 1e7
-        prob["nu_soil"] = 0.5
         prob["rna_mass"] = 2e5
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
@@ -710,6 +771,8 @@ class TestTowerSE(unittest.TestCase):
     def testProblemFixedPile(self):
         self.modeling_options["TowerSE"]["n_height_monopile"] = 3
         self.modeling_options["TowerSE"]["n_layers_monopile"] = 1
+        self.modeling_options["TowerSE"]["soil_springs"] = True
+        self.modeling_options["TowerSE"]["gravity_foundation"] = False
         self.modeling_options["flags"]["monopile"] = True
 
         prob = om.Problem()
@@ -838,6 +901,8 @@ class TestTowerSE(unittest.TestCase):
     def testProblemFixedPile_GBF(self):
         self.modeling_options["TowerSE"]["n_height_monopile"] = 3
         self.modeling_options["TowerSE"]["n_layers_monopile"] = 1
+        self.modeling_options["TowerSE"]["soil_springs"] = False
+        self.modeling_options["TowerSE"]["gravity_foundation"] = True
         self.modeling_options["flags"]["monopile"] = True
 
         prob = om.Problem()
@@ -854,14 +919,14 @@ class TestTowerSE(unittest.TestCase):
         prob["tower_foundation_height"] = 0.0
         prob["tower_height"] = 60.0
         prob["tower_outer_diameter_in"] = 10.0 * np.ones(3)
-        prob["tower_layer_thickness"] = 0.1 * np.ones(2).reshape((1, 2))
+        prob["tower_layer_thickness"] = 0.1 * np.ones(3).reshape((1, 3))
         prob["tower_outfitting_factor"] = 1.0
         hval = np.array([15.0, 30.0])
         prob["monopile_s"] = np.cumsum(np.r_[0, hval]) / hval.sum()
         prob["monopile_foundation_height"] = -45.0
         prob["monopile_height"] = hval.sum()
         prob["monopile_outer_diameter_in"] = 10.0 * np.ones(3)
-        prob["monopile_layer_thickness"] = 0.1 * np.ones(2).reshape((1, 2))
+        prob["monopile_layer_thickness"] = 0.1 * np.ones(3).reshape((1, 3))
         prob["monopile_outfitting_factor"] = 1.0
         prob["tower_layer_materials"] = prob["monopile_layer_materials"] = ["steel"]
         prob["material_names"] = ["steel"]
@@ -872,8 +937,6 @@ class TestTowerSE(unittest.TestCase):
 
         prob["outfitting_factor"] = 1.0
         prob["yaw"] = 0.0
-        prob["G_soil"] = 1e7
-        prob["nu_soil"] = 0.5
         prob["rna_mass"] = 2e5
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
@@ -960,6 +1023,8 @@ class TestTowerSE(unittest.TestCase):
     def testAddedMassForces(self):
         self.modeling_options["TowerSE"]["n_height_monopile"] = 3
         self.modeling_options["TowerSE"]["n_layers_monopile"] = 1
+        self.modeling_options["TowerSE"]["soil_springs"] = False
+        self.modeling_options["TowerSE"]["gravity_foundation"] = False
         self.modeling_options["flags"]["monopile"] = True
 
         prob = om.Problem()
@@ -993,8 +1058,8 @@ class TestTowerSE(unittest.TestCase):
         prob["sigma_y_mat"] = 1e8
 
         prob["yaw"] = 0.0
-        prob["G_soil"] = 1e7
-        prob["nu_soil"] = 0.5
+        # prob["G_soil"] = 1e7
+        # prob["nu_soil"] = 0.5
         prob["rna_mass"] = 0.0
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
@@ -1030,12 +1095,12 @@ class TestTowerSE(unittest.TestCase):
 
         prob["rna_mass"] = 1e4
         prob.run_model()
-        myFz -= 1e4 * g
+        myFz[3:] -= 1e4 * g
         npt.assert_almost_equal(prob["post.Fz"], myFz)
 
         prob["transition_piece_mass"] = 1e2
         prob.run_model()
-        myFz[:6] -= 1e2 * g
+        myFz[3:6] -= 1e2 * g
         npt.assert_almost_equal(prob["post.Fz"], myFz)
 
         prob["gravity_foundation_mass"] = 1e3
@@ -1193,9 +1258,6 @@ class TestTowerSE(unittest.TestCase):
         # ---------------
 
         # --- wave ---
-        hmax = 0.0
-        T = 1.0
-        cm = 1.0
         water_depth = 0.0
         soilG = 140e6
         soilnu = 0.4
@@ -1265,8 +1327,8 @@ class TestTowerSE(unittest.TestCase):
         prob["tower_layer_materials"] = ["steel"]
         prob["material_names"] = ["steel"]
         prob["yaw"] = yaw
-        prob["G_soil"] = soilG
-        prob["nu_soil"] = soilnu
+        # prob["G_soil"] = soilG
+        # prob["nu_soil"] = soilnu
         # --- material props ---
         prob["E_mat"] = E * np.ones((1, 3))
         prob["G_mat"] = G * np.ones((1, 3))

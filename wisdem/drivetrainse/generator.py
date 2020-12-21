@@ -304,11 +304,10 @@ class Cost(om.ExplicitComponent):
         k_e = 0.064
 
         # Material cost ($/kg) and electricity usage cost (kWh/kg)*($/kWh) for the materials with waste fraction
-        K_copper = 1.26 * Copper * (C_Cu + 96.2 * k_e)
-        K_iron = 1.21 * Iron * (C_Fe + 26.9 * k_e)
-        K_pm = 1.0 * mass_PM * (C_PM + 79.0 * k_e)
-        K_steel = 1.21 * Structural_mass * (C_Fes + 15.9 * k_e)
-
+        K_copper = Copper * (1.26 * C_Cu + 96.2 * k_e)
+        K_iron = Iron * (1.21 * C_Fe + 26.9 * k_e)
+        K_pm = mass_PM * (1.0 * C_PM + 79.0 * k_e)
+        K_steel = Structural_mass * (1.21 * C_Fes + 15.9 * k_e)
         # Account for capital cost and labor share from BLS MFP by NAICS
         outputs["generator_cost"] = (K_copper + K_pm) / 0.619 + (K_iron + K_steel) / 0.684
 

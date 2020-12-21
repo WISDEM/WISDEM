@@ -27,9 +27,9 @@ class TestRegression(unittest.TestCase):
 
         self.assertAlmostEqual(wt_opt["re.precomp.blade_mass"][0], 16403.682326940743, 2)
         self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 24.0801229107, 2)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 51.77125010334704, 2)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 51.4347570761, 2)
         self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 4.1949743155, 1)
-        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 87.6974416, 1)
+        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 87.7, 2)
 
     def test15MW(self):
         ## IEA 15MW
@@ -39,10 +39,10 @@ class TestRegression(unittest.TestCase):
         )
 
         self.assertAlmostEqual(wt_opt["re.precomp.blade_mass"][0], 73310.0985877902, 1)
-        self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 78.0371305939, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 67.61437081321105, 1)
+        self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 78.0920774194, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 67.6240695191, 1)
         self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 22.7002324979, 1)
-        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 144.386, 1)
+        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 144.386, 3)
 
     def test3p4MW(self):
         ## IEA 15MW
@@ -53,9 +53,9 @@ class TestRegression(unittest.TestCase):
 
         self.assertAlmostEqual(wt_opt["re.precomp.blade_mass"][0], 14555.7435212969, 1)
         self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 13.7700592288, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 37.56052377907683, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 37.2892680047, 1)
         self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 6.5292336115, 1)
-        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 108.0, 1)
+        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 108.0, 3)
 
 
 def suite():

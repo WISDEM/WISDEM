@@ -237,12 +237,12 @@ class WindTurbineOntologyPython(object):
                 ]["joints"][i]["cylindrical"]
 
             # Check that there is at most one transition joint
-            if self.modeling_options["floating"]["joints"]["transition"][i].count(True) > 1:
+            if self.modeling_options["floating"]["joints"]["transition"].count(True) > 1:
                 raise ValueError("Can only support one tower on the floating platform for now")
             try:
                 self.modeling_options["floating"]["transition_joint"] = self.modeling_options["floating"]["joints"][
                     "transition"
-                ][i].index(True)
+                ].index(True)
             except:
                 self.modeling_options["floating"]["transition_joint"] = None
 

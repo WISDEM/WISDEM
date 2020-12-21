@@ -1379,7 +1379,7 @@ class TowerSE(om.Group):
         self.set_input_defaults("yaw", 0.0, units="deg")
         self.set_input_defaults("E", np.zeros(n_height - 1), units="N/m**2")
         self.set_input_defaults("G", np.zeros(n_height - 1), units="N/m**2")
-        if mod_opt["soil_springs"]:
+        if monopile and mod_opt["soil_springs"]:
             self.set_input_defaults("G_soil", 0.0, units="N/m**2")
             self.set_input_defaults("nu_soil", 0.0)
         self.set_input_defaults("sigma_y", np.zeros(n_height - 1), units="N/m**2")
@@ -1465,7 +1465,7 @@ class TowerSE(om.Group):
                 "tower" + lc,
                 CylinderFrame3DD(
                     npts=nFull,
-                    nK=4 if monopile else 1,
+                    nK=4 if monopile and not mod_opt["gravity_foundation"] else 1,
                     nMass=3,
                     nPL=1,
                     frame3dd_opt=frame3dd_opt,
@@ -1518,7 +1518,7 @@ class TowerSE(om.Group):
             self.connect("pre" + lc + ".Mxx", "tower" + lc + ".Mxx")
             self.connect("pre" + lc + ".Myy", "tower" + lc + ".Myy")
             self.connect("pre" + lc + ".Mzz", "tower" + lc + ".Mzz")
-            if mod_opt["soil_springs"]:
+            if monopile and mod_opt["soil_springs"]:
                 self.connect("soil.z_k", "pre" + lc + ".z_soil")
                 self.connect("soil.k", "pre" + lc + ".k_soil")
 

@@ -97,7 +97,9 @@ class TestComponents(unittest.TestCase):
         inputs["machine_rating"] = 10e3
         inputs["rated_torque"] = 10e6
         inputs["lss_rpm"] = x = np.linspace(0.1, 10.0, 20)
+        inputs["L_generator"] = 3.6 * 1.5
         inputs["generator_mass_user"] = 0.0
+        inputs["generator_radius_user"] = 0.0
         inputs["generator_efficiency_user"] = 0.0
         myobj.compute(inputs, outputs)
         self.assertEqual(outputs["R_generator"], 1.5)
@@ -128,6 +130,12 @@ class TestComponents(unittest.TestCase):
         inputs["generator_efficiency_user"] = np.c_[x, eff]
         myobj.compute(inputs, outputs)
         npt.assert_almost_equal(outputs["generator_efficiency"], eff)
+
+        inputs["generator_mass_user"] = 2.0
+        inputs["generator_radius_user"] = 3.0
+        myobj.compute(inputs, outputs)
+        self.assertEqual(outputs["R_generator"], 3.0)
+        self.assertEqual(outputs["generator_mass"], 2.0)
 
     def testElectronics(self):
         inputs = {}
