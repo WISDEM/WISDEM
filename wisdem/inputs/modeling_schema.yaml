@@ -216,7 +216,7 @@ properties:
                 description: Buckling length factor in Eurocode safety check
                 minimum: 1.0
                 maximum: 100.0
-                default: 1.0
+                default: 10.0
                 unit: m
             frame3dd:
                 type: object
