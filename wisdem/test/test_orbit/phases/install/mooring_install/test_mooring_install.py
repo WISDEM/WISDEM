@@ -12,12 +12,11 @@ from copy import deepcopy
 
 import pandas as pd
 import pytest
-
 from wisdem.orbit import ProjectManager
-from wisdem.test.test_orbit.data import test_weather
 from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import MooringSystemInstallation
+from wisdem.test.test_orbit.data import test_weather
 
 config = extract_library_specs("config", "mooring_system_install")
 
@@ -29,7 +28,7 @@ def test_simulation_creation():
     assert sim.env
     assert sim.port
     assert sim.vessel
-    assert sim.number_systems
+    assert sim.num_systems
 
 
 @pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])

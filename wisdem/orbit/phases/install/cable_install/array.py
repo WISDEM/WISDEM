@@ -10,7 +10,6 @@ from copy import deepcopy
 
 import numpy as np
 from marmot import process
-
 from wisdem.orbit.core import Vessel
 from wisdem.orbit.core.logic import position_onsite
 from wisdem.orbit.phases.install import InstallPhase
@@ -42,6 +41,7 @@ class ArrayCableInstallation(InstallPhase):
         "array_cable_trench_vessel": "str (optional)",
         "site": {"distance": "km", "depth": "m"},
         "array_system": {
+            "system_cost": "USD",
             "num_strings": "int (optional, default: 10)",
             "free_cable_length": "km (optional, default: 'depth')",
             "cables": {
@@ -104,6 +104,12 @@ class ArrayCableInstallation(InstallPhase):
             free_cable_length=self.free_cable_length,
             **kwargs,
         )
+
+    @property
+    def system_capex(self):
+        """Returns total procurement cost of the array system."""
+
+        return self.config["array_system"]["system_cost"]
 
     def initialize_installation_vessel(self):
         """Creates the array cable installation vessel."""

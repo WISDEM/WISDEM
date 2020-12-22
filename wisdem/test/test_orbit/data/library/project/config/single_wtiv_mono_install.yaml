@@ -3,6 +3,7 @@ monopile:
   diameter: 10
   length: 50
   mass: 350
+  unit_cost: 5e6
 plant:
   num_turbines: 20
 port:
@@ -14,6 +15,7 @@ site:
 transition_piece:
   deck_space: 250
   mass: 350
+  unit_cost: 3e6
 turbine:
   hub_height: 100
 wtiv: test_wtiv

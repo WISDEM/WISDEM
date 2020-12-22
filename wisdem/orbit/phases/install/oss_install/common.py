@@ -7,8 +7,8 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 
 from marmot import process
-
 from wisdem.orbit.core import Cargo
+from wisdem.orbit.core.logic import stabilize, jackdown_if_required
 from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install.monopile_install.common import (
     bolt_transition_piece,
@@ -120,9 +120,6 @@ def install_topside(vessel, topside, **kwargs):
 
     connection = kwargs.get("topside_connection_type", "bolted")
     reequip_time = vessel.crane.reequip(**kwargs)
-    site_depth = kwargs.get("site_depth", None)
-    extension = kwargs.get("extension", site_depth + 10)
-    jackdown_time = vessel.jacksys.jacking_time(extension, site_depth)
 
     yield vessel.task(
         "Crane Reequip",
@@ -146,4 +143,4 @@ def install_topside(vessel, topside, **kwargs):
             f"Transition piece connection type '{connection}'" "not recognized. Must be 'bolted' or 'grouted'."
         )
 
-    yield vessel.task("Jackdown", jackdown_time, constraints=vessel.transit_limits, **kwargs)
+    yield jackdown_if_required(vessel, **kwargs)

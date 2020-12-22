@@ -8,17 +8,11 @@ from copy import deepcopy
 
 import pandas as pd
 import pytest
-
 from wisdem.orbit import ProjectManager
-from wisdem.test.test_orbit.data import test_weather
 from wisdem.orbit.manager import ProjectProgress
 from wisdem.orbit.core.library import extract_library_specs
-from wisdem.orbit.core.exceptions import (
-    MissingInputs,
-    PhaseNotFound,
-    WeatherProfileError,
-    PhaseDependenciesInvalid,
-)
+from wisdem.test.test_orbit.data import test_weather
+from wisdem.orbit.core.exceptions import MissingInputs, PhaseNotFound, WeatherProfileError, PhaseDependenciesInvalid
 
 weather_df = pd.DataFrame(test_weather).set_index("datetime")
 
@@ -169,7 +163,10 @@ def test_chained_dependencies():
 
     config_chained = deepcopy(config)
     config_chained["spi_vessel"] = "test_scour_protection_vessel"
-    config_chained["scour_protection"] = {"tons_per_substructure": 200}
+    config_chained["scour_protection"] = {
+        "tonnes_per_substructure": 200,
+        "cost_per_tonne": 45,
+    }
     config_chained["install_phases"] = {
         "ScourProtectionInstallation": 0,
         "MonopileInstallation": ("ScourProtectionInstallation", 0.1),
@@ -407,7 +404,10 @@ def test_circular_dependencies():
 
     circular_deps = deepcopy(config)
     circular_deps["spi_vessel"] = "test_scour_protection_vessel"
-    circular_deps["scour_protection"] = {"tons_per_substructure": 200}
+    circular_deps["scour_protection"] = {
+        "tonnes_per_substructure": 200,
+        "cost_per_tonne": 45,
+    }
     circular_deps["install_phases"] = {
         "ScourProtectionInstallation": 0,
         "MonopileInstallation": ("TurbineInstallation", 0.1),
@@ -423,7 +423,10 @@ def test_dependent_phase_ordering():
 
     wrong_order = deepcopy(config)
     wrong_order["spi_vessel"] = "test_scour_protection_vessel"
-    wrong_order["scour_protection"] = {"tons_per_substructure": 200}
+    wrong_order["scour_protection"] = {
+        "tonnes_per_substructure": 200,
+        "cost_per_tonne": 45,
+    }
     wrong_order["install_phases"] = {
         "ScourProtectionInstallation": ("TurbineInstallation", 0.1),
         "TurbineInstallation": ("MonopileInstallation", 0.1),
@@ -603,3 +606,65 @@ def test_npv():
     project = ProjectManager(config)
     project.run_project()
     assert project.npv != baseline
+
+
+def test_soft_costs():
+
+    project = ProjectManager(complete_project)
+    baseline = project.soft_capex
+
+    config = deepcopy(complete_project)
+    config["project_parameters"] = {"construction_insurance": 50}
+    project = ProjectManager(config)
+    assert project.soft_capex != baseline
+
+    config = deepcopy(complete_project)
+    config["project_parameters"] = {"construction_financing": 190}
+    project = ProjectManager(config)
+    assert project.soft_capex != baseline
+
+    config = deepcopy(complete_project)
+    config["project_parameters"] = {"contingency": 320}
+    project = ProjectManager(config)
+    assert project.soft_capex != baseline
+
+    config = deepcopy(complete_project)
+    config["project_parameters"] = {"contingency": 320}
+    project = ProjectManager(config)
+    assert project.soft_capex != baseline
+
+    config = deepcopy(complete_project)
+    config["project_parameters"] = {"commissioning": 50}
+    project = ProjectManager(config)
+    assert project.soft_capex != baseline
+
+    config = deepcopy(complete_project)
+    config["project_parameters"] = {"decommissioning": 50}
+    project = ProjectManager(config)
+    assert project.soft_capex != baseline
+
+
+def test_project_costs():
+
+    project = ProjectManager(complete_project)
+    baseline = project.project_capex
+
+    config = deepcopy(complete_project)
+    config["project_parameters"] = {"site_auction_price": 50e6}
+    project = ProjectManager(config)
+    assert project.project_capex != baseline
+
+    config = deepcopy(complete_project)
+    config["project_parameters"] = {"site_assessment_cost": 25e6}
+    project = ProjectManager(config)
+    assert project.project_capex != baseline
+
+    config = deepcopy(complete_project)
+    config["project_parameters"] = {"construction_plan_cost": 25e6}
+    project = ProjectManager(config)
+    assert project.project_capex != baseline
+
+    config = deepcopy(complete_project)
+    config["project_parameters"] = {"installation_plan_cost": 25e6}
+    project = ProjectManager(config)
+    assert project.project_capex != baseline

@@ -12,9 +12,9 @@ from math import ceil
 import numpy as np
 import simpy
 from marmot import process
-
 from wisdem.orbit.core import Vessel
 from wisdem.orbit.core.logic import (
+    jackdown_if_required,
     shuttle_items_to_queue,
     prep_for_site_operations,
     get_list_of_items_from_port,
@@ -22,14 +22,7 @@ from wisdem.orbit.core.logic import (
 from wisdem.orbit.phases.install import InstallPhase
 from wisdem.orbit.core.exceptions import ItemNotFound
 
-from .common import (
-    Blade,
-    Nacelle,
-    TowerSection,
-    install_nacelle,
-    install_tower_section,
-    install_turbine_blade,
-)
+from .common import Blade, Nacelle, TowerSection, install_nacelle, install_tower_section, install_turbine_blade
 
 
 class TurbineInstallation(InstallPhase):
@@ -89,6 +82,12 @@ class TurbineInstallation(InstallPhase):
         self.initialize_wtiv()
         self.initialize_turbines()
         self.setup_simulation(**kwargs)
+
+    @property
+    def system_capex(self):
+        """Returns 0 as turbine capex is handled at in ProjectManager."""
+
+        return 0
 
     def setup_simulation(self, **kwargs):
         """
@@ -333,19 +332,8 @@ def solo_install_turbines(vessel, port, distance, turbines, tower_sections, num_
 
                     yield install_turbine_blade(vessel, blade, **kwargs)
 
-                # Jack-down
-                site_depth = kwargs.get("site_depth", None)
-                extension = kwargs.get("extension", site_depth + 10)
-                jackdown_time = vessel.jacksys.jacking_time(extension, site_depth)
-
-                yield vessel.task(
-                    "Jackdown",
-                    jackdown_time,
-                    constraints=vessel.transit_limits,
-                )
-
+                yield jackdown_if_required(vessel, **kwargs)
                 vessel.submit_debug_log(progress="Turbine")
-
                 n += 1
 
             else:
@@ -421,15 +409,8 @@ def install_turbine_components_from_queue(wtiv, queue, distance, turbines, tower
 
                     yield install_turbine_blade(wtiv, blade, **kwargs)
 
-                # Jack-down
-                site_depth = kwargs.get("site_depth", None)
-                extension = kwargs.get("extension", site_depth + 10)
-                jackdown_time = wtiv.jacksys.jacking_time(extension, site_depth)
-
-                yield wtiv.task("Jackdown", jackdown_time, constraints=wtiv.transit_limits)
-
+                yield jackdown_if_required(wtiv, **kwargs)
                 wtiv.submit_debug_log(progress="Turbine")
-
                 n += 1
 
             else:

@@ -605,10 +605,13 @@ class WindPark(om.Group):
                 self.connect("assembly.hub_height", "orbit.hub_height")
                 self.connect("assembly.rotor_diameter", "orbit.turbine_rotor_diameter")
                 self.connect("towerse.tower_mass", "orbit.tower_mass")
+                self.connect("tower_grid.height", "orbit.tower_length")
                 if modeling_options["flags"]["monopile"]:
                     self.connect("towerse.monopile_mass", "orbit.monopile_mass")
-                    self.connect("towerse.monopile_length", "orbit.monopile_length")
+                    self.connect("towerse.monopile_cost", "orbit.monopile_cost")
+                    self.connect("monopile.height", "orbit.monopile_length")
                     self.connect("monopile.transition_piece_mass", "orbit.transition_piece_mass")
+                    self.connect("monopile.transition_piece_cost", "orbit.transition_piece_cost")
                     self.connect("monopile.diameter", "orbit.monopile_diameter", src_indices=[0])
                 else:
                     self.connect("mooring.n_lines", "orbit.num_mooring_lines")

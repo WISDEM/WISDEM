@@ -8,7 +8,6 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 import simpy
 from marmot import le, process
-
 from wisdem.orbit.core import Vessel, WetStorage
 from wisdem.orbit.phases.install import InstallPhase
 
@@ -35,6 +34,7 @@ class MooredSubInstallation(InstallPhase):
         "substructure": {
             "takt_time": "int | float (optional, default: 0)",
             "towing_speed": "int | float (optional, default: 6 km/h)",
+            "unit_cost": "USD",
         },
         "site": {"depth": "m", "distance": "km"},
         "plant": {"num_turbines": "int"},
@@ -84,6 +84,12 @@ class MooredSubInstallation(InstallPhase):
         self.initialize_queue()
         self.initialize_towing_groups()
         self.initialize_support_vessel()
+
+    @property
+    def system_capex(self):
+        """Returns total procurement cost of the substructures."""
+
+        return self.num_turbines * self.config["substructure"]["unit_cost"]
 
     def initialize_substructure_production(self):
         """

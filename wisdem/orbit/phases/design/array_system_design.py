@@ -12,7 +12,6 @@ from collections import OrderedDict
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
 from wisdem.orbit.core.library import export_library_specs, extract_library_specs
 from wisdem.orbit.phases.design._cables import Plant, CableSystem
 
@@ -77,14 +76,13 @@ class ArraySystemDesign(CableSystem):
         },
         "turbine": {"rotor_diameter": "m", "turbine_rating": "MW"},
         "array_system_design": {
-            "design_time": "hrs (optional)",
             "cables": "list | str",
             "touchdown_distance": "m (optional, default: 0)",
             "average_exclusion_percent": "float (optional)",
         },
     }
 
-    output_config = {"array_system": {"cables": "dict"}}
+    output_config = {"array_system": {"cables": "dict", "system_cost": "USD"}}
 
     def __init__(self, config, **kwargs):
         """
@@ -506,7 +504,6 @@ class CustomArraySystemDesign(ArraySystemDesign):
         "plant": {"layout": "str", "num_turbines": "int"},
         "turbine": {"turbine_rating": "int | float"},
         "array_system_design": {
-            "design_time": "int | float (optional)",
             "cables": "list | str",
             "location_data": "str",
             "distance": "bool (optional)",

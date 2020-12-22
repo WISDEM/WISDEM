@@ -623,7 +623,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         # Platforms as a fraction of bedplate mass and bundling it to call it 'platforms'
         L_platform = 2 * D_top if direct else L_cover
         W_platform = 2 * D_top if direct else W_cover
-        t_platform = 0.05
+        t_platform = 0.04
         m_platform = L_platform * W_platform * t_platform * rho_castiron
         I_platform = (
             m_platform

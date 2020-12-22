@@ -529,8 +529,6 @@ class TowerMass(om.ExplicitComponent):
         Mass of monopile from bottom of suction pile through transition piece
     monopile_cost : float, [USD]
         Total monopile cost
-    monopile_length : float, [m]
-        Length of monopile from bottom of suction pile through transition piece
 
     """
 
@@ -562,7 +560,6 @@ class TowerMass(om.ExplicitComponent):
         self.add_output("tower_I_base", np.zeros(6), units="kg*m**2")
         self.add_output("monopile_mass", val=0.0, units="kg")
         self.add_output("monopile_cost", val=0.0, units="USD")
-        self.add_output("monopile_length", val=0.0, units="m")
         self.add_output("transition_piece_I", np.zeros(6), units="kg*m**2")
         self.add_output("gravity_foundation_I", np.zeros(6), units="kg*m**2")
 
@@ -587,7 +584,6 @@ class TowerMass(om.ExplicitComponent):
             inputs["cylinder_cost"] * outputs["monopile_mass"] / m_cyl.sum() + inputs["transition_piece_cost"]
         )
         outputs["monopile_mass"] += m_trans + m_grav
-        outputs["monopile_length"] = z_trans - z[0]
 
         outputs["tower_cost"] = outputs["structural_cost"] - outputs["monopile_cost"]
         outputs["tower_mass"] = outputs["structural_mass"] - outputs["monopile_mass"]
@@ -1298,7 +1294,6 @@ class TowerLeanSE(om.Group):
                 "transition_piece_I",
                 "monopile_mass",
                 "monopile_cost",
-                "monopile_length",
                 "structural_mass",
                 "structural_cost",
             ],
