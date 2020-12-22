@@ -1,11 +1,10 @@
-import pandas as pd
-import numpy as np
+import traceback
 from math import ceil
 
+import numpy as np
+import pandas as pd
 from wisdem.landbosse.model.CostModule import CostModule
 from wisdem.landbosse.model.WeatherDelay import WeatherDelay
-
-import traceback
 
 # constants
 km_per_m = 0.001
@@ -15,7 +14,7 @@ m_per_ft = 0.3048
 
 class Point(object):
     def __init__(self, x, y):
-        if type(x) == type(pd.Series(dtype=np.float64)):
+        if type(x) == type(pd.Series()):
             self.x = float(x.values[0])
             self.y = float(y.values[0])
         elif type(x) == type(np.array([])):
