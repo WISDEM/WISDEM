@@ -105,9 +105,13 @@ class TestComponents(unittest.TestCase):
         self.assertEqual(outputs["R_generator"], 1.5)
         m = 37.68 * 10e3
         self.assertEqual(outputs["generator_mass"], m)
+        self.assertEqual(outputs["generator_rotor_mass"], 0.5 * m)
+        self.assertEqual(outputs["generator_stator_mass"], 0.5 * m)
         npt.assert_equal(
             outputs["generator_I"], m * np.r_[0.5 * 1.5 ** 2, (3 * 1.5 ** 2 + (3.6 * 1.5) ** 2) / 12 * np.ones(2)]
         )
+        npt.assert_equal(outputs["generator_rotor_I"], 0.5 * outputs["generator_I"])
+        npt.assert_equal(outputs["generator_stator_I"], 0.5 * outputs["generator_I"])
 
         eff = 1.0 - (0.01007 / x * x[-1] + 0.02 + 0.06899 * x / x[-1])
         eff = np.maximum(1e-3, eff)
@@ -118,9 +122,13 @@ class TestComponents(unittest.TestCase):
         self.assertEqual(outputs["R_generator"], 1.5)
         m = np.mean([6.4737, 10.51, 5.34]) * 10e3 ** 0.9223
         self.assertEqual(outputs["generator_mass"], m)
+        self.assertEqual(outputs["generator_rotor_mass"], 0.5 * m)
+        self.assertEqual(outputs["generator_stator_mass"], 0.5 * m)
         npt.assert_equal(
             outputs["generator_I"], m * np.r_[0.5 * 1.5 ** 2, (3 * 1.5 ** 2 + (3.6 * 1.5) ** 2) / 12 * np.ones(2)]
         )
+        npt.assert_equal(outputs["generator_rotor_I"], 0.5 * outputs["generator_I"])
+        npt.assert_equal(outputs["generator_stator_I"], 0.5 * outputs["generator_I"])
 
         eff = 1.0 - (0.01289 / x * x[-1] + 0.0851 + 0.0 * x / x[-1])
         eff = np.maximum(1e-3, eff)
@@ -136,6 +144,10 @@ class TestComponents(unittest.TestCase):
         myobj.compute(inputs, outputs)
         self.assertEqual(outputs["R_generator"], 3.0)
         self.assertEqual(outputs["generator_mass"], 2.0)
+        self.assertEqual(outputs["generator_rotor_mass"], 1.0)
+        self.assertEqual(outputs["generator_stator_mass"], 1.0)
+        npt.assert_equal(outputs["generator_rotor_I"], 0.5 * outputs["generator_I"])
+        npt.assert_equal(outputs["generator_stator_I"], 0.5 * outputs["generator_I"])
 
     def testElectronics(self):
         inputs = {}
