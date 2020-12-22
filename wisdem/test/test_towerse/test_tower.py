@@ -428,7 +428,6 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs["tower_section_center_of_mass"], self.inputs["cylinder_section_center_of_mass"])
         self.assertEqual(self.outputs["monopile_mass"], 1e3 * 2.5 + 2 * 1e2)
         self.assertEqual(self.outputs["monopile_cost"], self.inputs["cylinder_cost"] * 2.5 / 4.0 + 1e3)
-        self.assertEqual(self.outputs["monopile_length"], 70.0)
         self.assertEqual(self.outputs["tower_mass"], 1e3 * (4 - 2.5))
         self.assertEqual(self.outputs["tower_cost"], self.inputs["cylinder_cost"] * 1.5 / 4.0)
         npt.assert_equal(self.outputs["transition_piece_I"], 1e2 * 25 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
@@ -737,7 +736,6 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(prob["tower_section_center_of_mass"], prob["cm.section_center_of_mass"])
         self.assertEqual(prob["monopile_mass"], 0.0)
         self.assertEqual(prob["monopile_cost"], 0.0)
-        self.assertEqual(prob["monopile_length"], 0.0)
         npt.assert_almost_equal(prob["tower_mass"], mass_dens * 80.0)
 
         npt.assert_equal(prob["pre.kidx"], np.array([0], dtype=np.int_))
@@ -857,7 +855,6 @@ class TestTowerSE(unittest.TestCase):
         )
         npt.assert_equal(prob["tower_section_center_of_mass"], prob["cm.section_center_of_mass"])
         npt.assert_almost_equal(prob["monopile_cost"], (45.0 / 105.0) * prob["cm.cost"] + 1e3)
-        self.assertEqual(prob["monopile_length"], 45.0)
         npt.assert_almost_equal(prob["monopile_mass"], mass_dens * 45.0 + 1e2)
         npt.assert_almost_equal(prob["tower_mass"], mass_dens * 60.0)
 
@@ -985,7 +982,6 @@ class TestTowerSE(unittest.TestCase):
         )
         npt.assert_equal(prob["tower_section_center_of_mass"], prob["cm.section_center_of_mass"])
         npt.assert_almost_equal(prob["monopile_cost"], (45.0 / 105.0) * prob["cm.cost"] + 1e3)
-        self.assertEqual(prob["monopile_length"], 45.0)
         npt.assert_almost_equal(prob["monopile_mass"], mass_dens * 45.0 + 1e2 + 1e4)
         npt.assert_almost_equal(prob["tower_mass"], mass_dens * 60.0)
 

@@ -225,7 +225,7 @@ class TestComponents(unittest.TestCase):
         self.assertEqual(outputs["hvac_cm"], 6.0)
         npt.assert_equal(outputs["hvac_I"], outputs["hvac_mass"] * 1.5 ** 2 * np.r_[1.0, 0.5, 0.5])
 
-        t = 0.05
+        t = 0.04
         self.assertEqual(outputs["platform_mass"], t * 3e3 * 12 ** 2)
         npt.assert_equal(outputs["platform_cm"], 0.0)
         npt.assert_equal(
@@ -279,7 +279,7 @@ class TestComponents(unittest.TestCase):
         self.assertEqual(outputs["hvac_cm"], 6.0)
         npt.assert_equal(outputs["hvac_I"], outputs["hvac_mass"] * 1.5 ** 2 * np.r_[1.0, 0.5, 0.5])
 
-        t = 0.05
+        t = 0.04
         self.assertEqual(outputs["platform_mass"], t * 3e3 * L * W)
         npt.assert_equal(outputs["platform_cm"], 0.0)
         npt.assert_equal(
