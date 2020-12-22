@@ -2441,15 +2441,9 @@ class WT_Assembly(om.ExplicitComponent):
         if modeling_options["flags"]["tower"]:
             if inputs["hub_height_user"] != 0.0:
                 outputs["hub_height"] = inputs["hub_height_user"]
-                outputs["tower_ref_axis"][:, 2] = (
-                    inputs["tower_ref_axis_user"][:, 2] - inputs["tower_ref_axis_user"][0, 2]
-                ) * inputs["hub_height_user"] / (
-                    inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
-                ) + inputs[
-                    "tower_ref_axis_user"
-                ][
-                    0, 2
-                ]
+                outputs["tower_ref_axis"][:, 2] = (inputs["tower_ref_axis_user"][:, 2] - inputs["tower_ref_axis_user"][0, 2]
+                 + inputs["distance_tt_hub"]) * inputs["hub_height_user"] / (inputs["tower_ref_axis_user"][-1, 2]
+                 + inputs["distance_tt_hub"]) + inputs["tower_ref_axis_user"][0, 2] - inputs["distance_tt_hub"]
             else:
                 outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]
