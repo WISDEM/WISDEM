@@ -1,6 +1,4 @@
 import os
-import copy
-import time
 import unittest
 
 import numpy as np
@@ -219,7 +217,7 @@ class TestServo(unittest.TestCase):
         npt.assert_array_less(0.0, np.abs(prob["pitch"][(irated + 1) :]))
         npt.assert_array_almost_equal(prob["Cp"], prob["Cp_aero"] * 0.975 * 0.975)
         npt.assert_array_less(prob["P"][:irated], prob["P"][1 : (irated + 1)])
-        npt.assert_allclose(prob["P"][irated:], 5e6, rtol=1e-3, atol=0)
+        npt.assert_allclose(prob["P"][irated:], 5e6, rtol=1e-4, atol=0)
         # npt.assert_array_less(prob['Q'], prob['Q'][1:])
         npt.assert_array_less(prob["T"], prob["T"][irated] + 1e-1)
         # self.assertEqual(prob['rated_V'], V_expect1[-1])
