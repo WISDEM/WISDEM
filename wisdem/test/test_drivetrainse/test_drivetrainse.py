@@ -4,6 +4,7 @@ import traceback
 
 import numpy as np
 import openmdao.api as om
+import numpy.testing as npt
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
 
 npts = 12
@@ -14,6 +15,7 @@ def set_common(prob, opt):
     prob["rotor_diameter"] = 120.0
     prob["machine_rating"] = 5e3
     prob["D_top"] = 6.5
+    prob["rated_torque"] = 10.25e6  # rev 1 9.94718e6
 
     prob["F_hub"] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3, 1))
     prob["M_hub"] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3, 1))
@@ -106,7 +108,6 @@ class TestGroup(unittest.TestCase):
         prob["generator.D_shaft"] = 3.3
         prob["generator.D_nose"] = 2.2
 
-        prob["rated_torque"] = 10.25e6  # rev 1 9.94718e6
         prob["generator.P_mech"] = 10.71947704e6  # rev 1 9.94718e6
         prob["generator.rad_ag"] = 4.0  # rev 1  4.92
         prob["generator.len_s"] = 1.7  # rev 2.3
@@ -147,6 +148,19 @@ class TestGroup(unittest.TestCase):
         except Exception:
             traceback.print_exc(file=sys.stdout)
             self.assertTrue(False)
+
+        # Test that key outputs are filled
+        self.assertGreater(prob["nacelle_mass"], 100e3)
+        self.assertLess(prob["nacelle_cm"][0], 0.0)
+        self.assertGreater(prob["nacelle_cm"][2], 0.0)
+        self.assertGreater(prob["rna_mass"], 100e3)
+        self.assertLess(prob["rna_cm"][0], 0.0)
+        self.assertGreater(prob["rna_cm"][2], 0.0)
+        self.assertGreater(prob["generator_mass"], 100e3)
+        self.assertGreater(prob["generator_cost"], 100e3)
+        npt.assert_array_less(100e3, prob["generator_I"])
+        npt.assert_array_less(0.8, prob["generator_efficiency"])
+        npt.assert_array_less(prob["generator_efficiency"], 1.0)
 
     def testDirectDrive_withSimpleGen(self):
 
@@ -198,6 +212,19 @@ class TestGroup(unittest.TestCase):
         except Exception:
             traceback.print_exc(file=sys.stdout)
             self.assertTrue(False)
+
+        # Test that key outputs are filled
+        self.assertGreater(prob["nacelle_mass"], 100e3)
+        self.assertLess(prob["nacelle_cm"][0], 0.0)
+        self.assertGreater(prob["nacelle_cm"][2], 0.0)
+        self.assertGreater(prob["rna_mass"], 100e3)
+        self.assertLess(prob["rna_cm"][0], 0.0)
+        self.assertGreater(prob["rna_cm"][2], 0.0)
+        self.assertGreater(prob["generator_mass"], 100e3)
+        # self.assertGreater(prob["generator_cost"], 100e3)
+        npt.assert_array_less(100e3, prob["generator_I"])
+        npt.assert_array_less(0.8, prob["generator_efficiency"])
+        npt.assert_array_less(prob["generator_efficiency"], 1.0)
 
     def testGeared_withGen(self):
 
@@ -310,6 +337,19 @@ class TestGroup(unittest.TestCase):
             traceback.print_exc(file=sys.stdout)
             self.assertTrue(False)
 
+        # Test that key outputs are filled
+        self.assertGreater(prob["nacelle_mass"], 100e3)
+        self.assertGreater(prob["nacelle_cm"][0], 0.0)
+        self.assertGreater(prob["nacelle_cm"][2], 0.0)
+        self.assertGreater(prob["rna_mass"], 100e3)
+        self.assertGreater(prob["rna_cm"][0], 0.0)
+        self.assertGreater(prob["rna_cm"][2], 0.0)
+        self.assertGreater(prob["generator_mass"], 10e3)
+        self.assertGreater(prob["generator_cost"], 10e3)
+        npt.assert_array_less(1e3, prob["generator_I"])
+        npt.assert_array_less(0.2, prob["generator_efficiency"][1:])
+        npt.assert_array_less(prob["generator_efficiency"], 1.0)
+
     def testGeared_withSimpleGen(self):
 
         opt = {}
@@ -371,6 +411,19 @@ class TestGroup(unittest.TestCase):
         except Exception:
             traceback.print_exc(file=sys.stdout)
             self.assertTrue(False)
+
+        # Test that key outputs are filled
+        self.assertGreater(prob["nacelle_mass"], 100e3)
+        self.assertGreater(prob["nacelle_cm"][0], 0.0)
+        self.assertGreater(prob["nacelle_cm"][2], 0.0)
+        self.assertGreater(prob["rna_mass"], 100e3)
+        self.assertGreater(prob["rna_cm"][0], 0.0)
+        self.assertGreater(prob["rna_cm"][2], 0.0)
+        self.assertGreater(prob["generator_mass"], 10e3)
+        # self.assertGreater(prob["generator_cost"], 10e3)
+        npt.assert_array_less(1e3, prob["generator_I"])
+        npt.assert_array_less(0.8, prob["generator_efficiency"])
+        npt.assert_array_less(prob["generator_efficiency"], 1.0)
 
 
 def suite():

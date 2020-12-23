@@ -6,7 +6,6 @@ __maintainer__ = "Rob Hammond"
 __email__ = "robert.hammond@nrel.gov"
 
 import numpy as np
-
 from wisdem.orbit.phases.design._cables import CableSystem
 
 
@@ -203,7 +202,12 @@ class ExportSystemDesign(CableSystem):
         if self.cables is None:
             raise Exception(f"Has {self.__class__.__name__} been ran?")
 
-        output = {"export_system": {"interconnection_distance": self._distance_to_interconnection}}
+        output = {
+            "export_system": {
+                "interconnection_distance": self._distance_to_interconnection,
+                "system_cost": self.total_cost,
+            }
+        }
 
         for name, cable in self.cables.items():
 

@@ -3,8 +3,4 @@ transport_specs:
   max_windspeed: 20         # m/s
   transit_speed: 6          # km/h
 vessel_specs:
-  beam_length: 35           # m
   day_rate: 30000           # USD/day
-  max_draft: 5              # m
-  min_draft: 4              # m
-  overall_length: 60        # m

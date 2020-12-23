@@ -26,10 +26,10 @@ class TestRegression(unittest.TestCase):
         )
 
         self.assertAlmostEqual(wt_opt["re.precomp.blade_mass"][0], 16403.682326940743, 2)
-        self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 24.0801229107, 2)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 51.77125010334704, 2)
-        self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 4.1949743155, 1)
-        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 87.6974416, 1)
+        self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 23.8821935913, 2)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 51.6455656178, 2)
+        self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 4.2027339083, 1)
+        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 87.7, 2)
 
     def test15MW(self):
         ## IEA 15MW
@@ -39,10 +39,10 @@ class TestRegression(unittest.TestCase):
         )
 
         self.assertAlmostEqual(wt_opt["re.precomp.blade_mass"][0], 73310.0985877902, 1)
-        self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 78.0371305939, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 67.61437081321105, 1)
-        self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 22.7002324979, 1)
-        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 144.386, 1)
+        self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 77.6585454480, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 65.0620671670, 1)
+        self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 22.6934383489, 1)
+        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 144.386, 3)
 
     def test3p4MW(self):
         ## IEA 15MW
@@ -52,10 +52,10 @@ class TestRegression(unittest.TestCase):
         )
 
         self.assertAlmostEqual(wt_opt["re.precomp.blade_mass"][0], 14555.7435212969, 1)
-        self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 13.7700592288, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 37.56052377907683, 1)
-        self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 6.5292336115, 1)
-        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 108.0, 1)
+        self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 13.6037235499, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 37.4970510481, 1)
+        self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 6.606075926116244, 1)
+        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 108.0, 3)
 
 
 def suite():

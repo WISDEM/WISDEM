@@ -12,12 +12,11 @@ from copy import deepcopy
 
 import pandas as pd
 import pytest
-
 from wisdem.orbit import ProjectManager
-from wisdem.test.test_orbit.data import test_weather
 from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import ScourProtectionInstallation
+from wisdem.test.test_orbit.data import test_weather
 
 config = extract_library_specs("config", "scour_protection_install")
 
@@ -30,7 +29,7 @@ def test_simulation_creation():
     assert sim.port
     assert sim.spi_vessel
     assert sim.num_turbines
-    assert sim.tons_per_substructure
+    assert sim.tonnes_per_substructure
 
 
 @pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])

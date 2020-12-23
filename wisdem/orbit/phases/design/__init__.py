@@ -11,7 +11,6 @@ from .oss_design import OffshoreSubstationDesign
 from .spar_design import SparDesign
 from .monopile_design import MonopileDesign
 from .array_system_design import ArraySystemDesign, CustomArraySystemDesign
-from .project_development import ProjectDevelopment
 from .export_system_design import ExportSystemDesign
 from .mooring_system_design import MooringSystemDesign
 from .scour_protection_design import ScourProtectionDesign

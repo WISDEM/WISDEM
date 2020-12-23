@@ -368,10 +368,8 @@ class GeneratorBase(om.ExplicitComponent):
         Stack length ratio
     Losses : numpy array[n_pc], [W]
         Total loss
-    rated_efficiency : float
-        Generator efficiency at rated conditions
     generator_efficiency : numpy array[n_pc]
-        Generator efficiency values (<1)
+        Generator electromagnetic efficiency values (<1)
     u_ar : float, [m]
         Rotor radial deflection
     u_as : float, [m]
@@ -540,7 +538,7 @@ class GeneratorBase(om.ExplicitComponent):
         # Objective functions
         self.add_output("K_rad", val=0.0)
         self.add_output("Losses", val=np.zeros(n_pc), units="W")
-        self.add_output("generator_efficiency", val=np.zeros(n_pc))
+        self.add_output("eandm_efficiency", val=np.zeros(n_pc))
 
         # Structural performance
         self.add_output("u_ar", val=0.0, units="m")
@@ -1182,7 +1180,7 @@ class PMSG_Outer(GeneratorBase):
         outputs["Mass_yoke_stator"] = Mass_yoke_stator
         outputs["R_out"] = R_out
         outputs["Losses"] = Losses
-        outputs["generator_efficiency"] = np.maximum(eps, gen_eff)
+        outputs["eandm_efficiency"] = np.maximum(eps, gen_eff)
         outputs["u_ar"] = u_ar
         outputs["u_allow_r"] = u_allow_r
         outputs["y_ar"] = y_ar
@@ -1688,7 +1686,7 @@ class PMSG_Disc(GeneratorBase):
         outputs["Losses"] = Losses
 
         outputs["K_rad"] = K_rad
-        outputs["generator_efficiency"] = np.maximum(eps, gen_eff)
+        outputs["eandm_efficiency"] = np.maximum(eps, gen_eff)
         outputs["S"] = S
         outputs["Slot_aspect_ratio"] = Slot_aspect_ratio
         outputs["Copper"] = Copper
@@ -2143,7 +2141,7 @@ class PMSG_Arms(GeneratorBase):
         outputs["J_s"] = J_s
         outputs["Losses"] = Losses
         outputs["K_rad"] = K_rad
-        outputs["generator_efficiency"] = np.maximum(eps, gen_eff)
+        outputs["eandm_efficiency"] = np.maximum(eps, gen_eff)
         outputs["S"] = S
         outputs["Slot_aspect_ratio"] = Slot_aspect_ratio
         outputs["Copper"] = Copper
@@ -2572,7 +2570,7 @@ class DFIG(GeneratorBase):
         outputs["K_rad"] = K_rad
         outputs["Losses"] = Losses
 
-        outputs["generator_efficiency"] = np.maximum(eps, gen_eff)
+        outputs["eandm_efficiency"] = np.maximum(eps, gen_eff)
         outputs["Copper"] = Copper
         outputs["Iron"] = Iron
         outputs["Structural_mass"] = Structural_mass
@@ -3017,7 +3015,7 @@ class SCIG(GeneratorBase):
         outputs["K_rad_UL"] = K_rad_UL
         outputs["K_rad_LL"] = K_rad_LL
         outputs["Losses"] = Losses
-        outputs["generator_efficiency"] = np.maximum(eps, gen_eff)
+        outputs["eandm_efficiency"] = np.maximum(eps, gen_eff)
         outputs["Copper"] = Copper
         outputs["Iron"] = Iron
         outputs["Structural_mass"] = Structural_mass
@@ -3616,7 +3614,7 @@ class EESG(GeneratorBase):
         outputs["n_brushes"] = n_brushes
         outputs["J_f"] = J_f
         outputs["K_rad"] = K_rad
-        outputs["generator_efficiency"] = np.maximum(eps, gen_eff)
+        outputs["eandm_efficiency"] = np.maximum(eps, gen_eff)
         outputs["S"] = S
 
         outputs["Slot_aspect_ratio"] = Slot_aspect_ratio

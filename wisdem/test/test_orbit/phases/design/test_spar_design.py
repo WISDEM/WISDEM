@@ -8,7 +8,6 @@ from copy import deepcopy
 from itertools import product
 
 import pytest
-
 from wisdem.orbit.phases.design import SparDesign
 
 base = {
@@ -49,7 +48,7 @@ def test_design_kwargs():
 
     s = SparDesign(base)
     s.run()
-    base_cost = s.total_phase_cost
+    base_cost = s.total_cost
 
     for k, v in test_kwargs.items():
 
@@ -59,6 +58,6 @@ def test_design_kwargs():
 
         s = SparDesign(config)
         s.run()
-        cost = s.total_phase_cost
+        cost = s.total_cost
 
         assert cost != base_cost

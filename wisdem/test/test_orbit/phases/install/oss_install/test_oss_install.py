@@ -10,22 +10,23 @@ from copy import deepcopy
 
 import pandas as pd
 import pytest
-
 from wisdem.orbit import ProjectManager
-from wisdem.test.test_orbit.data import test_weather
 from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import OffshoreSubstationInstallation
+from wisdem.test.test_orbit.data import test_weather
+from wisdem.orbit.core.exceptions import MissingComponent
 
 config_single = extract_library_specs("config", "oss_install")
+config_floating = extract_library_specs("config", "floating_oss_install")
 config_multi = extract_library_specs("config", "oss_install")
 config_multi["num_feeders"] = 2
 
 
 @pytest.mark.parametrize(
     "config",
-    (config_single, config_multi),
-    ids=["single_feeder", "multi_feeder"],
+    (config_single, config_multi, config_floating),
+    ids=["single_feeder", "multi_feeder", "floating"],
 )
 def test_simulation_setup(config):
 
@@ -41,25 +42,29 @@ def test_simulation_setup(config):
 
 @pytest.mark.parametrize(
     "config",
-    (config_single, config_multi),
-    ids=["single_feeder", "multi_feeder"],
+    (config_single, config_multi, config_floating),
+    ids=["single_feeder", "multi_feeder", "floating"],
 )
 def test_vessel_initialization(config):
 
     sim = OffshoreSubstationInstallation(config)
     assert sim.oss_vessel
-    assert sim.oss_vessel.jacksys
     assert sim.oss_vessel.crane
 
+    js = sim.oss_vessel._jacksys_specs
+    dp = sim.oss_vessel._dp_specs
+
+    if not any([js, dp]):
+        assert False
+
     for feeder in sim.feeders:
-        assert feeder.jacksys
         assert feeder.storage
 
 
 @pytest.mark.parametrize(
     "config",
-    (config_single, config_multi),
-    ids=["single_feeder", "multi_feeder"],
+    (config_single, config_multi, config_floating),
+    ids=["single_feeder", "multi_feeder", "floating"],
 )
 @pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
 def test_for_complete_logging(weather, config):
