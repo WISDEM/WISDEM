@@ -40,7 +40,7 @@
 
   The input file format for FRAME is defined in doc/user_manual.html
 
-  Henri P. Gavin hpgavin@duke.edu (main FRAME3DD code) 
+  Henri P. Gavin hpgavin@duke.edu (main FRAME3DD code)
   John Pye john.pye@anu.edu.au (Microstran parser and viewer)
 
   For compilation/installation, see README.txt.
@@ -87,20 +87,20 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
 
   float	*rj = NULL,	// node size radius, for finite sizes
     *Ax,*Asy, *Asz,	// cross section areas, incl. shear
-    *Jx,*Iy,*Iz,	// section inertias		
+    *Jx,*Iy,*Iz,	// section inertias
     *E=NULL, *G=NULL,// elastic modulus and shear moduli
-    *p=NULL,	// roll of each member, radians	
+    *p=NULL,	// roll of each member, radians
     ***U=NULL,	// uniform distributed member loads
     ***W=NULL,	// trapizoidal distributed member loads
-    ***P=NULL,	// member concentrated loads	
+    ***P=NULL,	// member concentrated loads
     ***T=NULL,	// member temperature  loads
     **Dp=NULL,	// prescribed node displacements
     *d, *EMs=NULL,	// member densities and extra inertia
     *NMs=NULL, 	// mass of a node
-    *NMx,*NMy,*NMz,	// inertia of a node in global coord	
+    *NMx,*NMy,*NMz,	// inertia of a node in global coord
     *EKx, *EKy, *EKz, // extra linear stiffness in global coord
     *EKtx, *EKty, *EKtz, // extra rotational stiffness in global coord
-    gX[_NL_],	// gravitational acceleration in global X 
+    gX[_NL_],	// gravitational acceleration in global X
     gY[_NL_],	// gravitational acceleration in global Y
     gZ[_NL_],	// gravitational acceleration in global Z
     pan=1.0,	// >0: pan during animation; 0: don't
@@ -108,17 +108,17 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
     dx=1.0;		// x-increment for internal force data
 
   double	**K=NULL,	// equilibrium stiffness matrix
-    // **Ks=NULL,	// Broyden secant stiffness matrix	
+    // **Ks=NULL,	// Broyden secant stiffness matrix
     traceK = 0.0,	// trace of the global stiffness matrix
     **M = NULL,	// global mass matrix
     traceM = 0.0,	// trace of the global mass matrix
     ***eqF_mech=NULL,// equivalent end forces from mech loads global
     ***eqF_temp=NULL,// equivalent end forces from temp loads global
-    **F_mech=NULL,	// mechanical load vectors, all load cases	
+    **F_mech=NULL,	// mechanical load vectors, all load cases
     **F_temp=NULL,	// thermal load vectors, all load cases
     *F  = NULL, 	// total load vectors for a load case
     *R  = NULL,	// total reaction force vector
-    *dR = NULL,	// incremental reaction force vector 
+    *dR = NULL,	// incremental reaction force vector
     *D  = NULL,	// displacement vector
     *dD = NULL,	// incremental displacement vector
     //dDdD = 0.0,	// dD' * dD
@@ -128,9 +128,9 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
     **Q = NULL,	// local member node end-forces
     tol = 1.0e-9,	// tolerance for modal convergence
     shift = 0.0,	// shift-factor for rigid-body-modes
-    struct_mass,	// mass of structural system	
-    total_mass,	// total structural mass and extra mass 
-    *f  = NULL,	// resonant frequencies	
+    struct_mass,	// mass of structural system
+    total_mass,	// total structural mass and extra mass
+    *f  = NULL,	// resonant frequencies
     **V = NULL,	// resonant mode-shapes
     rms_resid=1.0,	// root mean square of residual displ. error
     error = 1.0,	// rms equilibrium error and reactions
@@ -140,7 +140,7 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
     exagg_modal=10;	// exaggerate modal displ. in mesh data
 
   // peak internal forces, moments, and displacments
-  // in each frame element and each load case 
+  // in each frame element and each load case
   double	**pkNx, **pkVy, **pkVz, **pkTx, **pkMy, **pkMz,
     **pkDx, **pkDy, **pkDz, **pkRx, **pkSy, **pkSz;
 
@@ -161,13 +161,13 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
     *N1, *N2,	// begin and end node numbers
     shear=0,	// indicates shear deformation
     geom=0,		// indicates  geometric nonlinearity
-    anlyz=1,	// 1: stiffness analysis, 0: data check	
+    anlyz=1,	// 1: stiffness analysis, 0: data check
     *q=NULL,*r=NULL,sumR,	// reaction data, total no. of reactions
     nM=0,		// number of desired modes
     Mmethod,	// 1: Subspace Jacobi, 2: Stodola
     nM_calc,	// number of modes to calculate
     lump=1,		// 1: lumped, 0: consistent mass matrix
-    iter=0,		// number of iterations	
+    iter=0,		// number of iterations
     ok=1,		// number of (-ve) diag. terms of L D L'
     anim[128],	// the modes to be animated
     Cdof=0,		// number of condensed degrees o freedom
@@ -208,8 +208,8 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
   DoF = 6*nN;		/* total number of degrees of freedom	*/
 
   // andrewng: read this first because want geom for check in read_reaction_data
-  ExitCode += read_run_data ( other, &shear, &geom, &exagg_static, &dx); 
-      
+  ExitCode += read_run_data ( other, &shear, &geom, &exagg_static, &dx);
+
   q   = ivector(1,DoF);	/* allocate memory for reaction data ... */
   r   = ivector(1,DoF);	/* allocate memory for reaction data ... */
   EKx =  vector(1,nN);    /* extra linear stiffness in global coord */
@@ -261,12 +261,12 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
   }
 
   if ( nL < 1 ) {	/* not enough load cases */
-    errorMsg("\n ERROR: the number of load cases must be at least 1\n"); 
+    errorMsg("\n ERROR: the number of load cases must be at least 1\n");
     exit(101);
   }
   if ( nL >= _NL_ ) { /* too many load cases */
     sprintf(errMsg,"\n ERROR: maximum of %d load cases allowed\n", _NL_-1);
-    errorMsg(errMsg); 
+    errorMsg(errMsg);
     exit(102);
   }
   /* allocate memory for loads ... */
@@ -302,12 +302,12 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
   m = ivector(1,DoF); 	/* vector of condensed mode numbers	*/
 
   // peak axial forces, shears, torques, and moments along each element
-  pkNx = dmatrix(1,nL,1,nE);	
+  pkNx = dmatrix(1,nL,1,nE);
   pkVy = dmatrix(1,nL,1,nE);
   pkVz = dmatrix(1,nL,1,nE);
   pkTx = dmatrix(1,nL,1,nE);
   pkMy = dmatrix(1,nL,1,nE);
-  pkMz = dmatrix(1,nL,1,nE); 
+  pkMz = dmatrix(1,nL,1,nE);
 
   // peak displacements and slopes along each element
   pkDx = dmatrix(1,nL,1,nE);
@@ -315,7 +315,7 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
   pkDz = dmatrix(1,nL,1,nE);
   pkRx = dmatrix(1,nL,1,nE);
   pkSy = dmatrix(1,nL,1,nE);
-  pkSz = dmatrix(1,nL,1,nE); 
+  pkSz = dmatrix(1,nL,1,nE);
 
   ExitCode += read_and_assemble_loads( loadcases, nN, nE, nL, DoF, xyz, L, Le, N1, N2,
 			   Ax,Asy,Asz, Iy,Iz, E, G, p,
@@ -341,7 +341,7 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
     fprintf(stdout," mass data ... complete\n");
   }
 
-  ExitCode += read_condensation_data( condensation, nN,nM, &nC, &Cdof, 
+  ExitCode += read_condensation_data( condensation, nN,nM, &nC, &Cdof,
 			  &Cmethod, c,m, verbose );
 
   if( nC>0 && verbose ) {	/*  display condensation data complete */
@@ -367,7 +367,7 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
 
     /*  initialize displacements and displ. increment to {0}  */
     /*  initialize reactions     and react. increment to {0}  */
-    for (i=1; i<=DoF; i++)	D[i] = dD[i] = R[i] = dR[i] = 0.0;	
+    for (i=1; i<=DoF; i++)	D[i] = dD[i] = R[i] = dR[i] = 0.0;
 
     /*  initialize internal element end forces Q = {0}	*/
     for (i=1; i<=nE; i++)	for (j=1;j<=12;j++)	Q[i][j] = 0.0;
@@ -393,7 +393,7 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
       /* increment {D_t} = {0} + {D_t} temp.-induced displ */
       for (i=1; i<=DoF; i++)	if (q[i]) D[i] += dD[i];
       /* increment {R_t} = {0} + {R_t} temp.-induced react */
-      for (i=1; i<=DoF; i++)	if (r[i]>0) R[i] += dR[i];
+      for (i=1; i<=DoF; i++)	if (r[i]) R[i] += dR[i];
 
       if (geom) {	/* assemble K = Ke + Kg */
 	/* compute   {Q}={Q_t} ... temp.-induced forces     */
@@ -411,12 +411,12 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
     }
 
     /* ... then apply mechanical loads only, if there are any ... */
-    if ( nF[lc]>0 || nU[lc]>0 || nW[lc]>0 || nP[lc]>0 || nD[lc]>0 || 
+    if ( nF[lc]>0 || nU[lc]>0 || nW[lc]>0 || nP[lc]>0 || nD[lc]>0 ||
 	 gX[lc] != 0 || gY[lc] != 0 || gZ[lc] != 0 ) {
       if ( verbose )
 	fprintf(stdout," Linear Elastic Analysis ... Mechanical Loads\n");
       /* incremental displ at react'ns = prescribed displ */
-      for (i=1; i<=DoF; i++)	if (r[i]>0) dD[i] = Dp[lc][i];
+      for (i=1; i<=DoF; i++)	if (r[i]) dD[i] = Dp[lc][i];
 
       /*  solve {F_m} = [K({D_t})] * {D_m}	*/
       solve_system(K,dD,F_mech[lc],dR,DoF,q,r,&ok,verbose,&rms_resid);
@@ -427,16 +427,16 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
 	else {		D[i]  = Dp[lc][i]; dD[i] = 0.0; }
       }
       /* combine {R} = {R_t} + {R_m} --- for linear systems */
-      for (i=1; i<=DoF; i++)	if (r[i]>0) R[i] += dR[i];
+      for (i=1; i<=DoF; i++)	if (r[i]) R[i] += dR[i];
     }
 
 
     /*  combine {F} = {F_t} + {F_m} */
-    for (i=1; i<=DoF; i++)	F[i] = F_temp[lc][i] + F_mech[lc][i]; 
+    for (i=1; i<=DoF; i++)	F[i] = F_temp[lc][i] + F_mech[lc][i];
 
-    /*  element forces {Q} for displacements {D}	*/ 
+    /*  element forces {Q} for displacements {D}	*/
     element_end_forces ( Q, nE, xyz, L, Le, N1,N2,
-			 Ax, Asy,Asz, Jx,Iy,Iz, E,G, p, 
+			 Ax, Asy,Asz, Jx,Iy,Iz, E,G, p,
 			 eqF_temp[lc], eqF_mech[lc], D, shear, geom,
 			 &axial_strain_warning );
 
@@ -447,7 +447,7 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
       fprintf(stdout,"\n Non-Linear Elastic Analysis ...\n");
 
     /*
-     * 		if ( geom ) { // initialize Broyden secant stiffness matrix, Ks 
+     * 		if ( geom ) { // initialize Broyden secant stiffness matrix, Ks
      *			Ks  = dmatrix( 1, DoF, 1, DoF );
      *			for (i=1;i<=DoF;i++) {
      *				for(j=i;j<=DoF;j++) {
@@ -468,7 +468,7 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
 		   Ax,Asy,Asz, Jx,Iy,Iz, E, G, p,
 		   shear,geom, Q, debug,
 		   EKx, EKy, EKz, EKtx, EKty, EKtz);
-		   
+
 
       /*  compute equilibrium error, {dF}, at iteration i   */
       /*  {dF}^(i) = {F} - [K({D}^(i))]*{D}^(i)	      */
@@ -491,9 +491,9 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
       /*  increment {D}^(i+1) = {D}^(i) + {dD}^(i)	      */
       for (i=1; i<=DoF; i++)	if ( q[i] )	D[i] += dD[i];
 
-      /*  element forces {Q} for displacements {D}^(i)      */ 
+      /*  element forces {Q} for displacements {D}^(i)      */
       element_end_forces ( Q, nE, xyz, L, Le, N1,N2,
-			   Ax, Asy,Asz, Jx,Iy,Iz, E,G, p, 
+			   Ax, Asy,Asz, Jx,Iy,Iz, E,G, p,
 			   eqF_temp[lc], eqF_mech[lc], D, shear, geom,
 			   &axial_strain_warning );
 
@@ -539,7 +539,7 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
       }
     */
     /*
-     *		if ( verbose ) 
+     *		if ( verbose )
      *		 printf("\n   If the program pauses here for very long,"
      *		 " hit CTRL-C to stop execution, \n"
      *		 "    reduce exagg_static in the Input Data,"
@@ -554,7 +554,7 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
 			    D, shear, error );
     /*
       write_internal_forces ( OUT_file, fp, infcpath, lc, nL, title, dx, xyz,
-      Q, nN, nE, L, N1, N2, 
+      Q, nN, nE, L, N1, N2,
       Ax, Asy, Asz, Jx, Iy, Iz, E, G, p,
       d, gX[lc], gY[lc], gZ[lc],
       nU[lc],U[lc],nW[lc],W[lc],nP[lc],P[lc],
@@ -566,12 +566,12 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
       exagg_static, D3_flag, anlyz,
       dx, scale );
     */
-	  
+
   } /* end load case loop */
-	
+
   /* andrewng commenting out because always running analysis
-     } else {		//  data check only 
-	
+     } else {		//  data check only
+
      if ( verbose ) {	// display data check only
      fprintf(stdout,"\n * %s *\n", title );
      fprintf(stdout,"  DATA CHECK ONLY.\n");
@@ -602,13 +602,13 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
 #endif
 
     for (j=1; j<=DoF; j++) { /*  compute traceK and traceM */
-      if ( r[j] == 0 ) {
+      if ( !r[j] ) {
 	traceK += K[j][j];
 	traceM += M[j][j];
       }
     }
     for (i=1; i<=DoF; i++) { /*  modify K and M for reactions    */
-      if ( r[i] == 1 ) {	/* apply full reactions to upper triangle */
+      if ( r[i] ) {	/* apply full reactions to upper triangle */
 	K[i][i] = traceK * 1e4;
 	for (j=i+1; j<=DoF; j++) K[j][i] = K[i][j] = 0.0;
 
@@ -679,7 +679,7 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
 	fprintf(stdout,"   static condensation of K complete\n");
     }
     if ( Cmethod == 2 && anlyz ) {  /*  dynamic condensation  */
-      paz_condensation(M, K, DoF, c, Cdof, Mc,Kc, Cfreq, 0 ); 
+      paz_condensation(M, K, DoF, c, Cdof, Mc,Kc, Cfreq, 0 );
       if ( verbose ) {
 	fprintf(stdout,"   Paz condensation of K and M complete");
 	fprintf(stdout," ... dynamics matched at %f Hz.\n", Cfreq );
@@ -687,7 +687,7 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
     }
     if ( Cmethod == 3 && nM > 0 && anlyz ) {
       modal_condensation(M,K, DoF, r, c, Cdof, Mc,Kc, V,f, m, 0 );
-      if ( verbose ) 
+      if ( verbose )
 	fprintf(stdout,"   modal condensation of K and M complete\n");
     }
     save_dmatrix("Kc", Kc, 1,Cdof, 1,Cdof, 0, "w" );
@@ -703,9 +703,9 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
 	       xyz, rj, L, Le, N1, N2, q,r,
 	       Ax, Asy, Asz, Jx, Iy, Iz, E, G, p,
 	       U,W,P,T, Dp, F_mech, F_temp,
-	       eqF_mech, eqF_temp, F, dF, 
-	       K, Q, D, dD, R, dR, 
-	       d,EMs,NMs,NMx,NMy,NMz, M,f,V, c, m, 
+	       eqF_mech, eqF_temp, F, dF,
+	       K, Q, D, dD, R, dR,
+	       d,EMs,NMs,NMx,NMy,NMz, M,f,V, c, m,
 	       pkNx, pkVy, pkVz, pkTx, pkMy, pkMz,
 	       pkDx, pkDy, pkDz, pkRx, pkSy, pkSz,
 	       EKx, EKy, EKz, EKtx, EKty, EKtz);

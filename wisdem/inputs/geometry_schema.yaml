@@ -382,6 +382,13 @@ properties:
                                 minimum: 0.
                                 maximum: 20.
                                 default: 2.0
+                            generator_radius_user:
+                                type: number
+                                description: User input override of generator radius, only used when using simple generator scaling
+                                unit: m
+                                minimum: 0.
+                                maximum: 20.0
+                                default: 0.0
                             generator_mass_user:
                                 type: number
                                 description: User input override of generator mass, only used when using simple generator mass scaling
@@ -531,7 +538,7 @@ properties:
                                 minimum: 0.0
                             hvac_mass_coefficient:
                                 type: number
-                                default: 0.08
+                                default: 0.025
                                 units: kg/kW
                                 description: Regression-based scaling coefficient on machine rating to get HVAC system mass
                                 minimum: 0.0

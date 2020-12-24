@@ -8,10 +8,10 @@ Copyright (c) NREL. All rights reserved.
 """
 
 import unittest
-import numpy as np
 from io import StringIO
 
-from wisdem.pyframe3dd import Frame, NodeData, ReactionData, ElementData, Options, StaticLoadCase
+import numpy as np
+from wisdem.pyframe3dd import Frame, Options, NodeData, ElementData, ReactionData, StaticLoadCase
 
 
 class FrameTestEXA(unittest.TestCase):
@@ -996,4 +996,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

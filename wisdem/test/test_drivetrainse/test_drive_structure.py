@@ -1,8 +1,9 @@
+import unittest
+
 import numpy as np
 import numpy.testing as npt
-import unittest
-import wisdem.drivetrainse.drive_structure as ds
 import wisdem.drivetrainse.layout as lay
+import wisdem.drivetrainse.drive_structure as ds
 from wisdem.commonse import gravity
 
 npts = 12
@@ -592,4 +593,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

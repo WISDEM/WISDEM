@@ -1,7 +1,6 @@
-import pytest
 import pandas as pd
+import pytest
 import openmdao.api as om
-
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 from wisdem.landbosse.landbosse_omdao.OpenMDAODataframeCache import OpenMDAODataframeCache
 
@@ -19,20 +18,6 @@ def landbosse_costs_by_module_type_operation():
     # prob.model.list_inputs(units=True)
     landbosse_costs_by_module_type_operation = prob["landbosse_costs_by_module_type_operation"]
     return landbosse_costs_by_module_type_operation
-
-
-def test_landbosse(landbosse_costs_by_module_type_operation):
-    """
-    This runs the regression test by comparing against the expected validation
-    data.
-    """
-    OpenMDAODataframeCache._cache = {}  # Clear the cache
-    expected_validation_data_sheets = OpenMDAODataframeCache.read_all_sheets_from_xlsx("ge15_expected_validation")
-    costs_by_module_type_operation = expected_validation_data_sheets["costs_by_module_type_operation"]
-    result = compare_expected_to_actual(
-        costs_by_module_type_operation, landbosse_costs_by_module_type_operation, "test.csv"
-    )
-    assert result
 
 
 def compare_expected_to_actual(expected_df, actual_module_type_operation_list, validation_output_csv):
@@ -105,3 +90,17 @@ def compare_expected_to_actual(expected_df, actual_module_type_operation_list, v
         return False
     else:
         return True
+
+
+def test_landbosse(landbosse_costs_by_module_type_operation):
+    """
+    This runs the regression test by comparing against the expected validation
+    data.
+    """
+    OpenMDAODataframeCache._cache = {}  # Clear the cache
+    expected_validation_data_sheets = OpenMDAODataframeCache.read_all_sheets_from_xlsx("ge15_expected_validation")
+    costs_by_module_type_operation = expected_validation_data_sheets["costs_by_module_type_operation"]
+    result = compare_expected_to_actual(
+        costs_by_module_type_operation, landbosse_costs_by_module_type_operation, "test.csv"
+    )
+    assert result

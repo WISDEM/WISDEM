@@ -1,12 +1,12 @@
 """generator.py
-Created by Latha Sethuraman, Katherine Dykes. 
+Created by Latha Sethuraman, Katherine Dykes.
 Copyright (c) NREL. All rights reserved.
 
 Electromagnetic design based on conventional magnetic circuit laws
 Structural design based on McDonald's thesis """
 
-import openmdao.api as om
 import numpy as np
+import openmdao.api as om
 import wisdem.drivetrainse.generator_models as gm
 
 # ----------------------------------------------------------------------------------------------
@@ -180,8 +180,6 @@ class Constraints(om.ExplicitComponent):
 
 
 # ----------------------------------------------------------------------------------------------
-
-
 class MofI(om.ExplicitComponent):
     """
     Compute moments of inertia.
@@ -300,10 +298,93 @@ class Cost(om.ExplicitComponent):
         C_Fe = inputs["C_Fe"]
         C_PM = inputs["C_PM"]
 
-        # Material cost as a function of material mass and specific cost of material
-        K_gen = Copper * C_Cu + Iron * C_Fe + C_PM * mass_PM  #%M_pm*K_pm; #
-        Cost_str = C_Fes * Structural_mass
-        outputs["generator_cost"] = K_gen + Cost_str
+        # Industrial electricity rate $/kWh https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a
+        k_e = 0.064
+
+        # Material cost ($/kg) and electricity usage cost (kWh/kg)*($/kWh) for the materials with waste fraction
+        K_copper = Copper * (1.26 * C_Cu + 96.2 * k_e)
+        K_iron = Iron * (1.21 * C_Fe + 26.9 * k_e)
+        K_pm = mass_PM * (1.0 * C_PM + 79.0 * k_e)
+        K_steel = Structural_mass * (1.21 * C_Fes + 15.9 * k_e)
+        # Account for capital cost and labor share from BLS MFP by NAICS
+        outputs["generator_cost"] = (K_copper + K_pm) / 0.619 + (K_iron + K_steel) / 0.684
+
+
+# ----------------------------------------------------------------------------------------------
+
+
+class PowerElectronicsEff(om.ExplicitComponent):
+    """
+    Compute representative efficiency of power electronics
+
+    Parameters
+    ----------
+    machine_rating : float, [W]
+        Machine rating
+    shaft_rpm : numpy array[n_pc], [rpm]
+        rated speed of input shaft (lss for direct, hss for geared)
+    eandm_efficiency : numpy array[n_pc]
+        Generator electromagnetic efficiency values (<1)
+
+    Returns
+    -------
+    converter_efficiency : numpy array[n_pc]
+        Converter efficiency values (<1)
+    transformer_efficiency : numpy array[n_pc]
+        Transformer efficiency values (<1)
+    generator_efficiency : numpy array[n_pc]
+        Full generato and power electronics efficiency values (<1)
+
+    """
+
+    def initialize(self):
+        self.options.declare("n_pc", default=20)
+
+    def setup(self):
+        n_pc = self.options["n_pc"]
+
+        self.add_input("machine_rating", val=0.0, units="W")
+        self.add_input("shaft_rpm", val=np.zeros(n_pc), units="rpm")
+        self.add_input("eandm_efficiency", val=np.zeros(n_pc))
+
+        self.add_output("converter_efficiency", val=np.zeros(n_pc))
+        self.add_output("transformer_efficiency", val=np.zeros(n_pc))
+        self.add_output("generator_efficiency", val=np.zeros(n_pc))
+
+    def compute(self, inputs, outputs):
+        # Unpack inputs
+        rating = inputs["machine_rating"]
+        rpmData = inputs["shaft_rpm"]
+        rpmRatio = rpmData / rpmData[-1]
+
+        # This converter efficiency is from the APEEM Group in 2020
+        # See Sreekant Narumanchi, Kevin Bennion, Bidzina Kekelia, Ramchandra Kotecha
+        # Converter constants
+        v_dc, v_dc0, c0, c1, c2, c3 = 6600, 6200, -2.1e-10, 1.2e-5, 1.46e-3, -2e-4
+        p_ac0, p_dc0 = 0.99 * rating, rating
+        p_s0 = 1e-3 * p_dc0
+
+        # calculated parameters
+        a = p_dc0 * (1.0 + c1 * (v_dc - v_dc0))
+        b = p_s0 * (1.0 + c2 * (v_dc - v_dc0))
+        c = c0 * (1.0 + c3 * (v_dc - v_dc0))
+
+        # Converter efficiency
+        p_dc = rpmRatio * p_dc0
+        p_ac = (p_ac0 / (a - b) - c * (a - b)) * (p_dc - b) + c * ((p_dc - b) ** 2)
+        conv_eff = p_ac / p_dc
+
+        # Transformer loss model is P_loss = P_0 + a^2 * P_k
+        # a is output power/rated
+        p0, pk, rT = 16.0, 111.0, 5.0 / 3.0
+        a = rpmRatio * (1 / rT)
+        # This gives loss in kW, so need to convert to efficiency
+        trans_eff = 1.0 - (p0 + a * a * pk) / (1e-3 * rating)
+
+        # Store outputs
+        outputs["converter_efficiency"] = conv_eff
+        outputs["transformer_efficiency"] = trans_eff
+        outputs["generator_efficiency"] = conv_eff * trans_eff * inputs["eandm_efficiency"]
 
 
 # ----------------------------------------------------------------------------------------------
@@ -450,3 +531,4 @@ class Generator(om.Group):
         self.add_subsystem("mofi", MofI(), promotes=["*"])
         self.add_subsystem("gen_cost", Cost(), promotes=["*"])
         self.add_subsystem("constr", Constraints(), promotes=["*"])
+        self.add_subsystem("eff", PowerElectronicsEff(), promotes=["*"])

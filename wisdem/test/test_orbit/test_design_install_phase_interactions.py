@@ -7,92 +7,82 @@ __email__ = "jake.nunemaker@nrel.gov"
 from copy import deepcopy
 
 from wisdem.orbit import ProjectManager
+from numpy.testing import assert_almost_equal
+from wisdem.orbit.core.library import extract_library_specs
 
-config = {
-    "wtiv": "test_wtiv",
-    "site": {"depth": 20, "distance": 20, "mean_windspeed": 9},
-    "plant": {"num_turbines": 20},
-    "turbine": {
-        "hub_height": 130,
-        "rotor_diameter": 154,
-        "rated_windspeed": 11,
-    },
-    "port": {"num_cranes": 1, "monthly_rate": 2e6},
-    "monopile": {
-        "type": "Monopile",
-        "length": 60,
-        "diameter": 8,
-        "deck_space": 0,
-        "mass": 600,
-    },
-    "transition_piece": {
-        "type": "Transition Piece",
-        "deck_space": 0,
-        "mass": 500,
-    },
-    "monopile_design": {},
-    "design_phases": ["MonopileDesign"],
-    "install_phases": ["MonopileInstallation"],
-}
+fixed = extract_library_specs("config", "complete_project")
+floating = extract_library_specs("config", "complete_floating_project")
 
 
-def test_monopile_definition():
+def test_fixed_phase_cost_passing():
 
-    test_config = deepcopy(config)
-    _ = test_config.pop("transition_piece")
-
-    project = ProjectManager(test_config)
+    project = ProjectManager(fixed)
     project.run_project()
 
-    for key, value in config["monopile"].items():
-        if key == "type":
-            continue
+    assert_almost_equal(
+        project.phases["MonopileDesign"].total_cost,
+        project.phases["MonopileInstallation"].system_capex,
+    )
 
-        assert project.config["monopile"][key] == value
+    assert_almost_equal(
+        project.phases["ScourProtectionDesign"].total_cost,
+        project.phases["ScourProtectionInstallation"].system_capex,
+    )
 
-    for key, value in config["transition_piece"].items():
-        if key == "type":
-            continue
+    assert_almost_equal(
+        project.phases["ArraySystemDesign"].total_cost,
+        project.phases["ArrayCableInstallation"].system_capex,
+    )
 
-        assert project.config["transition_piece"][key] != value
+    assert_almost_equal(
+        project.phases["ExportSystemDesign"].total_cost,
+        project.phases["ExportCableInstallation"].system_capex,
+    )
+
+    assert_almost_equal(
+        project.phases["OffshoreSubstationDesign"].total_cost,
+        project.phases["OffshoreSubstationInstallation"].system_capex,
+    )
 
 
-def test_transition_piece_definition():
+def test_floating_phase_cost_passing():
 
-    test_config = deepcopy(config)
-    _ = test_config.pop("monopile")
-
-    project = ProjectManager(test_config)
+    project = ProjectManager(floating)
     project.run_project()
 
-    for key, value in config["monopile"].items():
-        if key == "type":
-            continue
+    assert_almost_equal(
+        project.phases["MooringSystemDesign"].total_cost,
+        project.phases["MooringSystemInstallation"].system_capex,
+    )
 
-        assert project.config["monopile"][key] != value
+    assert_almost_equal(
+        project.phases["SemiSubmersibleDesign"].total_cost,
+        project.phases["MooredSubInstallation"].system_capex,
+    )
 
-    for key, value in config["transition_piece"].items():
-        if key == "type":
-            continue
+    assert_almost_equal(
+        project.phases["ArraySystemDesign"].total_cost,
+        project.phases["ArrayCableInstallation"].system_capex,
+    )
 
-        assert project.config["transition_piece"][key] == value
+    assert_almost_equal(
+        project.phases["ExportSystemDesign"].total_cost,
+        project.phases["ExportCableInstallation"].system_capex,
+    )
 
+    assert_almost_equal(
+        project.phases["OffshoreSubstationDesign"].total_cost,
+        project.phases["OffshoreSubstationInstallation"].system_capex,
+    )
 
-def test_mono_and_tp_definition():
+    spar = deepcopy(floating)
+    spar["design_phases"].remove("SemiSubmersibleDesign")
+    spar["design_phases"].append("SparDesign")
 
-    test_config = deepcopy(config)
-
-    project = ProjectManager(test_config)
+    project = ProjectManager(spar)
     project.run_project()
 
-    for key, value in config["monopile"].items():
-        if key == "type":
-            continue
-
-        assert project.config["monopile"][key] == value
-
-    for key, value in config["transition_piece"].items():
-        if key == "type":
-            continue
-
-        assert project.config["transition_piece"][key] == value
+    assert_almost_equal(
+        project.phases["SparDesign"].total_cost,
+        project.phases["MooredSubInstallation"].system_capex,
+    )

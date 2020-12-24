@@ -19,14 +19,14 @@ hubH = 87.6
 htrans = 10.0
 h_paramT = np.diff(np.linspace(htrans, hubH, n_control_points))
 d_paramT = np.linspace(7.0, 3.87, n_control_points)
-t_paramT = 1.3 * np.linspace(0.025, 0.021, n_control_points - 1)
+t_paramT = 1.3 * np.linspace(0.025, 0.021, n_control_points)
 
 # Monopile initial condition
 pile_depth = 25.0
 water_depth = 30.0
 h_paramM = np.r_[pile_depth, water_depth, htrans]
 d_paramM = np.linspace(8.0, 7.0, n_control_points)
-t_paramM = 0.025 * np.ones(n_control_points - 1)
+t_paramM = 0.025 * np.ones(n_control_points)
 
 max_diam = 8.0
 # ---
@@ -38,6 +38,10 @@ modeling_options["materials"] = {}
 modeling_options["TowerSE"] = {}
 modeling_options["TowerSE"]["buckling_length"] = 30.0
 modeling_options["flags"]["monopile"] = True
+
+# Monopile foundation
+modeling_options["TowerSE"]["soil_springs"] = True
+modeling_options["TowerSE"]["gravity_foundation"] = False
 
 # safety factors
 modeling_options["TowerSE"]["gamma_f"] = 1.35

@@ -2,8 +2,8 @@
 
 import numpy as np
 import openmdao.api as om
-from wisdem.floatingse import FloatingSE
 from wisdem.commonse import fileIO
+from wisdem.floatingse import FloatingSE
 
 plot_flag = False  # True
 opt_flag = False
@@ -156,7 +156,7 @@ nTower = prob.model.options["modeling_options"]["TowerSE"]["n_height_tower"] - 1
 prob["tower_height"] = prob["hub_height"] = 77.6
 prob["tower_s"] = np.linspace(0.0, 1.0, nTower + 1)
 prob["tower_outer_diameter_in"] = np.linspace(8.0, 3.87, nTower + 1)
-prob["tower_layer_thickness"] = np.linspace(0.04, 0.02, nTower).reshape((1, nTower))
+prob["tower_layer_thickness"] = np.linspace(0.04, 0.02, nTower + 1).reshape((1, nTower + 1))
 prob["tower_outfitting_factor"] = 1.07
 
 # Materials

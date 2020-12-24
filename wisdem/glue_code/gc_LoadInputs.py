@@ -236,6 +236,16 @@ class WindTurbineOntologyPython(object):
                     "floating_platform"
                 ]["joints"][i]["cylindrical"]
 
+            # Check that there is at most one transition joint
+            if self.modeling_options["floating"]["joints"]["transition"].count(True) > 1:
+                raise ValueError("Can only support one tower on the floating platform for now")
+            try:
+                self.modeling_options["floating"]["transition_joint"] = self.modeling_options["floating"]["joints"][
+                    "transition"
+                ].index(True)
+            except:
+                self.modeling_options["floating"]["transition_joint"] = None
+
             n_members = len(self.wt_init["components"]["floating_platform"]["members"])
             self.modeling_options["floating"]["members"] = {}
             self.modeling_options["floating"]["members"]["n_members"] = n_members
@@ -898,7 +908,7 @@ class WindTurbineOntologyPython(object):
                 ] = wt_opt["tower_grid.s"].tolist()
                 self.wt_init["components"]["tower"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                     "values"
-                ] = np.hstack((wt_opt["tower.layer_thickness"][i, :], wt_opt["tower.layer_thickness"][i, -1])).tolist()
+                ] = wt_opt["tower.layer_thickness"][i, :].tolist()
 
         # Update monopile
         if self.modeling_options["flags"]["monopile"]:

@@ -31,9 +31,11 @@ class MooringSystemDesign(DesignPhase):
             "num_lines": "int",
             "line_diam": "m, float",
             "line_mass": "t",
+            "line_cost": "USD",
             "line_length": "m",
             "anchor_mass": "t",
             "anchor_type": "str",
+            "anchor_cost": "USD",
         }
     }
 
@@ -130,43 +132,17 @@ class MooringSystemDesign(DesignPhase):
             self.anchor_mass = 50
             self.anchor_cost = sqrt(self.breaking_load / 9.81 / 1250) * 150000
 
-    def calculate_total_cost(self):
-        """
-        Returns the total cost of the mooring system.
-        """
+    @property
+    def line_cost(self):
+        """Returns cost of one line mooring line."""
+
+        return self.line_length * self.line_cost_rate
+
+    @property
+    def total_cost(self):
+        """Returns the total cost of the mooring system."""
 
         return self.num_lines * self.num_turbines * (self.anchor_cost + self.line_length * self.line_cost_rate)
-
-    @property
-    def design_result(self):
-        """Returns the results of the design phase."""
-
-        return {
-            "mooring_system": {
-                "num_lines": self.num_lines,
-                "line_diam": self.line_diam,
-                "line_mass": self.line_mass,
-                "line_length": self.line_length,
-                "anchor_mass": self.anchor_mass,
-                "anchor_type": self.anchor_type,
-            }
-        }
-
-    @property
-    def total_phase_cost(self):
-        """Returns total phase cost in $USD."""
-
-        _design = self.config.get("mooring_system_design", {})
-        design_cost = _design.get("design_cost", 0.0)
-        return self.calculate_total_cost() + design_cost
-
-    @property
-    def total_phase_time(self):
-        """Returns total phase time in hours."""
-
-        _design = self.config.get("mooring_system_design", {})
-        phase_time = _design.get("design_time", 0.0)
-        return phase_time
 
     @property
     def detailed_output(self):
@@ -177,8 +153,15 @@ class MooringSystemDesign(DesignPhase):
             "line_diam": self.line_diam,
             "line_mass": self.line_mass,
             "line_length": self.line_length,
+            "line_cost": self.line_cost,
             "anchor_type": self.anchor_type,
             "anchor_mass": self.anchor_mass,
             "anchor_cost": self.anchor_cost,
-            "system_cost": self.calculate_total_cost(),
+            "system_cost": self.total_cost,
         }
+
+    @property
+    def design_result(self):
+        """Returns the results of the design phase."""
+
+        return {"mooring_system": self.detailed_output}

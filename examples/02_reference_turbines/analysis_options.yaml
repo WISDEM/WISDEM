@@ -144,9 +144,9 @@ constraints:
             flag: False
             margin: 1.4175
         rail_transport:
-            flag: True
+            flag: False
             8_axle: False
-            4_axle: True
+            4_axle: False
         stall:
             flag: False         # Constraint on minimum stall margin
             margin: 0.05233 # Value of minimum stall margin in [rad]

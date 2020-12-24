@@ -12,12 +12,11 @@ from copy import deepcopy
 
 import pandas as pd
 import pytest
-
 from wisdem.orbit import ProjectManager
-from wisdem.test.test_orbit.data import test_weather
 from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import ExportCableInstallation
+from wisdem.test.test_orbit.data import test_weather
 
 base_config = extract_library_specs("config", "export_cable_install")
 simul_config = deepcopy(base_config)
@@ -173,7 +172,10 @@ def test_kwargs_for_export_install():
 
 def test_kwargs_for_export_install_in_ProjectManager():
 
-    new_export_system = {"cable": {"linear_density": 50.0, "sections": [1000], "number": 1}}
+    new_export_system = {
+        "cable": {"linear_density": 50.0, "sections": [1000], "number": 1},
+        "system_cost": 200e6,
+    }
     new_site = {"distance": 50, "depth": 20}
     base = deepcopy(base_config)
     base["export_system"] = new_export_system
