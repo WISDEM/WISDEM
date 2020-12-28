@@ -3,6 +3,7 @@ from openmdao.api import ExplicitComponent
 import numpy as np
 import wisdem.ccblade._bem as _bem
 from wisdem.commonse.csystem import DirectionVector
+from scipy.interpolate import PchipInterpolator
 
 
 cosd = lambda x: np.cos(np.deg2rad(x))
