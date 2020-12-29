@@ -3,6 +3,7 @@ from openmdao.api import ExplicitComponent
 import numpy as np
 import wisdem.ccblade._bem as _bem
 from wisdem.commonse.csystem import DirectionVector
+from scipy.interpolate import PchipInterpolator
 
 
 cosd = lambda x: np.cos(np.deg2rad(x))
@@ -532,6 +533,8 @@ class CCBladeTwist(ExplicitComponent):
                 )
 
         if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
+            if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["flag"]:
+                raise Exception("Twist cannot be simultaneously optimized and set to be defined inverting the BEM equations. Please check your analysis options yaml.")
             # Find cl and cd for max efficiency
             cl = np.zeros(self.n_span)
             cd = np.zeros(self.n_span)
