@@ -100,12 +100,11 @@ class WT_RNTA(om.Group):
             self.connect("configuration.ws_class", "wt_class.turbine_class")
 
             # Connections from blade aero parametrization to other modules
-            self.connect("blade.pa.twist_param", ["re.theta", "rs.theta"])
-            # self.connect('blade.pa.twist_param',            'rs.tip_pos.theta_tip',   src_indices=[-1])
+            self.connect("ccblade.theta", ["re.theta", "rs.theta"])
             self.connect("blade.pa.chord_param", "re.chord")
             self.connect("blade.pa.chord_param", ["rs.chord"])
             if modeling_options["flags"]["blade"]:
-                self.connect("blade.pa.twist_param", "rp.theta")
+                self.connect("ccblade.theta", "rp.theta")
                 self.connect("blade.pa.chord_param", "rp.chord")
             self.connect("configuration.n_blades", "rs.constr.blade_number")
 
@@ -176,8 +175,6 @@ class WT_RNTA(om.Group):
                 self.connect("drivese.lss_rpm", "rp.powercurve.lss_rpm")
                 self.connect("drivese.generator_efficiency", "rp.powercurve.generator_efficiency")
             self.connect("assembly.r_blade", "rp.r")
-            # self.connect('blade.pa.chord_param',           'rp.chord')
-            # self.connect('blade.pa.twist_param',           'rp.theta')
             self.connect("hub.radius", "rp.Rhub")
             self.connect("assembly.rotor_radius", "rp.Rtip")
             self.connect("assembly.hub_height", "rp.hub_height")
