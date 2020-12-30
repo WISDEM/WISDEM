@@ -14,7 +14,7 @@ from wisdem.commonse.utilization_constraints import GeometricConstraints
 CrossSection = collections.namedtuple("CrossSection", ["A", "rho", "Ixx", "Iyy", "Izz", "E", "G"])
 
 
-NREFINE = 2
+NREFINE = 1
 
 
 def get_nfull(npts):
@@ -46,7 +46,7 @@ class DiscretizationYAML(om.ExplicitComponent):
     layer_materials : list of strings
         1D array of the names of the materials of each layer modeled in the member
         structure.
-    layer_thickness : numpy array[n_layers_tow, n_height_tow], [m]
+    layer_thickness : numpy array[n_layers, n_height], [m]
         2D array of the thickness of the layers of the member structure. The first
         dimension represents each layer, the second dimension represents each piecewise-
         constant entry of the member sections.
@@ -72,6 +72,8 @@ class DiscretizationYAML(om.ExplicitComponent):
         1D array of the unit costs of the materials.
     outfitting_factor : float
         Multiplier that accounts for secondary structure mass inside of member
+    rho_water : float, [kg/m**3]
+        density of water
 
     Returns
     -------
@@ -97,14 +99,14 @@ class DiscretizationYAML(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare("n_height")
-        self.options.declare("n_layers")
+        self.options.declare("options")
         self.options.declare("n_mat")
 
     def setup(self):
-        n_height = self.options["n_height"]
-        n_layers = self.options["n_layers"]
-        n_ballast = self.options["n_ballast"]
+        opt = self.options["options"]
+        n_height = opt["n_height"]
+        n_layers = opt["n_layers"]
+        n_ballast = opt["n_ballast"]
         n_mat = self.options["n_mat"]
 
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
@@ -121,6 +123,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_input("rho_mat", val=np.zeros(n_mat), units="kg/m**3")
         self.add_input("unit_cost_mat", val=np.zeros(n_mat), units="USD/kg")
         self.add_input("outfitting_factor_in", val=1.0)
+        self.add_input("rho_water", 0.0, units="kg/m**3")
 
         self.add_output("section_height", val=np.zeros(n_height - 1), units="m")
         self.add_output("outer_diameter", val=np.zeros(n_height), units="m")
@@ -136,17 +139,20 @@ class DiscretizationYAML(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack dimensions
-        n_height = self.options["n_height"]
-        n_ballast = self.options["n_ballast"]
+        opt = self.options["options"]
+        n_height = opt["n_height"]
+        n_ballast = opt["n_ballast"]
 
         # Unpack values
         h_col = inputs["height"]
+        lthick = inputs["layer_thickness"]
+        lthick = 0.5 * (lthick[:, :-1] + lthick[:, 1:])
 
         outputs["section_height"] = np.diff(h_col * inputs["s"])
-        outputs["wall_thickness"] = np.sum(inputs["layer_thickness"], axis=0)
+        outputs["wall_thickness"] = np.sum(lthick, axis=0)
         outputs["outer_diameter"] = inputs["outer_diameter_in"]
         outputs["outfitting_factor"] = inputs["outfitting_factor_in"] * np.ones(n_height - 1)
-        twall = inputs["layer_thickness"]
+        twall = lthick
 
         # Check to make sure we have good values
         if np.any(outputs["section_height"] <= 0.0):
@@ -225,6 +231,10 @@ class DiscretizationYAML(om.ExplicitComponent):
             # Get the material name for this layer
             iname = ballast_mat[k]
 
+            if iname.find("water") >= 0 or iname == "":
+                rho_ballast[k] = inputs["rho_water"]
+                continue
+
             # Get the index into the material list
             imat = mat_names.index(iname)
 
@@ -300,6 +310,7 @@ class MemberDiscretization(om.ExplicitComponent):
         nFull = get_nfull(n_height)
 
         self.add_input("s", val=np.zeros(n_height))
+        self.add_input("height", val=0.0, units="m")
         self.add_input("outer_diameter", np.zeros(n_height), units="m")
         self.add_input("wall_thickness", np.zeros(n_height - 1), units="m")
         self.add_input("E", val=np.zeros(n_height - 1), units="Pa")
@@ -465,6 +476,18 @@ class MemberComponent(om.ExplicitComponent):
         inner radius of column at potential ballast mass
     constr_ballast_capacity : numpy array[n_ballast]
         Used ballast volume relative to total capacity, must be <= 1.0
+    total_mass : float, [kg]
+        Total mass of member, including permanent ballast, but without variable ballast
+    total_cost : float, [USD]
+        Total cost of member, including permanent ballast
+    structural_mass : float, [kg]
+        Total structural mass of member, which does NOT include ballast
+    structural_cost : float, [USD]
+        Total structural cost of member, which does NOT include ballast
+    z_cg : float, [m]
+        z-coordinate of center of gravity for the complete member, including permanent ballast but not variable ballast
+    I_total : numpy array[6], [kg*m**2]
+        Moments of inertia of member at the center of mass
     s_all : numpy array[npts]
         Final non-dimensional points of all internal member nodes
     center_of_mass : numpy array[3], [m]
@@ -489,16 +512,16 @@ class MemberComponent(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare("member_options")
+        self.options.declare("options")
 
     def setup(self):
-        modopt = self.options["member_options"]
-        n_height = modopt["n_height"]
+        colopt = self.options["options"]
+        n_height = colopt["n_height"]
         n_full = get_nfull(n_height)
-        n_axial = modopt["n_axial"]
-        n_bulk = modopt["n_bulkhead"]
-        n_ball = modopt["n_ballast"]
-        n_ring = modopt["n_ring"]
+        n_axial = colopt["n_axial"]
+        n_bulk = colopt["n_bulkhead"]
+        n_ball = colopt["n_ballast"]
+        n_ring = colopt["n_ring"]
         # 2 points added for bulkheads and stiffeners
         # Bulkheads at 0,1 only get 1 new point
         # No separate members for ballast
@@ -550,7 +573,7 @@ class MemberComponent(om.ExplicitComponent):
         self.add_output("bulkhead_cost", 0.0, units="USD")
         self.add_output("bulkhead_I_base", np.zeros(6), units="kg*m**2")
 
-        self.add_output("stiffener_mass", np.zeros(n_full - 1), units="kg")
+        self.add_output("stiffener_mass", 0.0, units="kg")
         self.add_output("stiffener_z_cg", 0.0, units="m")
         self.add_output("stiffener_cost", 0.0, units="USD")
         self.add_output("stiffener_I_base", np.zeros(6), units="kg*m**2")
@@ -563,6 +586,13 @@ class MemberComponent(om.ExplicitComponent):
         self.add_output("ballast_I_base", np.zeros(6), units="kg*m**2")
         self.add_output("variable_ballast_capacity", 0.0, units="m")
         self.add_output("constr_ballast_capacity", np.zeros(n_ball), units="m")
+
+        self.add_output("total_mass", 0.0, units="kg")
+        self.add_output("total_cost", 0.0, units="USD")
+        self.add_output("structural_mass", 0.0, units="kg")
+        self.add_output("structural_cost", 0.0, units="USD")
+        self.add_output("z_cg", 0.0, units="m")
+        self.add_output("I_total", np.zeros(6), units="kg*m**2")
 
         self.add_output("s_all", np.zeros(npts), units="m**2")
         self.add_output("center_of_mass", np.zeros(3), units="m")
@@ -578,6 +608,7 @@ class MemberComponent(om.ExplicitComponent):
     def add_node(self, s_new):
         # Quit if node already exists
         if s_new in self.sections:
+            # print('Node already exists,',s_new)
             return
 
         # Find section we will be interrupting
@@ -602,6 +633,8 @@ class MemberComponent(om.ExplicitComponent):
             self.sections[keys_orig[idx0]] = cross_section0
 
         # Add new section
+        # if s0 in self.sections:
+        #    print('Node already exists,',s0)
         self.sections[s0] = cross_section0
 
     def add_section(self, s0, s1, cross_section0):
@@ -1060,7 +1093,7 @@ class MemberComponent(om.ExplicitComponent):
         outputs["I_total"] = I_total
         outputs["total_cost"] = c_total
         outputs["structural_cost"] = c_total - c_ballast
-        outputs["cost_rate"] = c_total / m_total
+        # outputs["cost_rate"] = c_total / m_total
 
     def nodal_discretization(self, inputs, outputs):
         # Unpack inputs
@@ -1342,36 +1375,32 @@ class MemberHydro(om.ExplicitComponent):
 
 class Member(om.Group):
     def initialize(self):
-        self.options.declare("n_mat")
         self.options.declare("member_options")
         self.options.declare("modeling_options")
 
     def setup(self):
         opt = self.options["modeling_options"]
         colopt = self.options["member_options"]
-        n_layers = colopt["n_layers"]
         n_height = colopt["n_height"]
-        n_mat = self.options["n_mat"]
-        n_full = get_nfull(n_height)
-
-        self.set_input_defaults("layer_materials", ["steel"])
-        self.set_input_defaults("material_names", ["steel"])
+        n_mat = opt["materials"]["n_mat"]
 
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
-        self.add_subsystem(
-            "yaml", DiscretizationYAML(n_height=n_height, n_layers=n_layers, n_mat=n_mat), promotes=["*"]
-        )
+        self.add_subsystem("yaml", DiscretizationYAML(options=colopt, n_mat=n_mat), promotes=["*"])
 
         self.add_subsystem(
             "gc", GeometricConstraints(nPoints=n_height, diamFlag=True), promotes=["constr_taper", "constr_d_to_t"]
         )
+        self.connect("outer_diameter", "gc.d")
+        self.connect("wall_thickness", "gc.t")
 
         self.add_subsystem("geom", MemberDiscretization(n_height=n_height), promotes=["*"])
 
-        self.add_subsystem("comp", MemberComponent(n_height=n_height), promotes=["*"])
+        self.add_subsystem("comp", MemberComponent(options=colopt), promotes=["*"])
 
-        # self.add_subsystem("hydro", MemberHydro(nPoints=n_full), promotes=["*"])
+        """
+        self.add_subsystem("hydro", MemberHydro(nPoints=n_full), promotes=["*"])
 
+        # TODO: Get actual z coordinates into CylinderEnvironment
         prom = [
             "Uref",
             "zref",
@@ -1397,8 +1426,6 @@ class Member(om.Group):
             "yaw",
         ]
         self.add_subsystem("env", CylinderEnvironment(nPoints=n_full, water_flag=True), promotes=prom)
-
-        self.connect("outer_diameter", "gc.d")
-        self.connect("wall_thickness", "gc.t")
         self.connect("z_full", "env.z")
         self.connect("d_full", "env.d")
+        """
