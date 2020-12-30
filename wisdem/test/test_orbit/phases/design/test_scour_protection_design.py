@@ -10,7 +10,6 @@ from copy import deepcopy
 
 import numpy as np
 import pytest
-
 from wisdem.orbit.phases.design import ScourProtectionDesign
 
 config_min_defined = {
@@ -40,7 +39,6 @@ def test_default_setup():
     assert scour.phi == 33.5
     assert scour.equilibrium == 1.3
     assert scour.rock_density == 2600
-    assert scour.total_phase_time == 0.0
 
 
 def test_fully_defined_setup():
@@ -52,7 +50,6 @@ def test_fully_defined_setup():
     assert scour.phi == design["soil_friction_angle"]
     assert scour.equilibrium == design["scour_depth_equilibrium"]
     assert scour.rock_density == design["rock_density"]
-    assert scour.total_phase_time == design["design_time"]
 
 
 @pytest.mark.parametrize(
@@ -81,11 +78,4 @@ def test_total_cost(config):
         * config["scour_protection_design"]["cost_per_tonne"]
         * scour.scour_protection_tonnes
     )
-    assert scour.total_phase_cost == pytest.approx(cost, rel=1e-8)
-
-
-def test_design_result():
-    scour = ScourProtectionDesign(config_min_defined)
-    scour.run()
-
-    assert scour.design_result == {"scour_protection": {"tons_per_substructure": scour.scour_protection_tonnes}}
+    assert scour.total_cost == pytest.approx(cost, rel=1e-8)

@@ -599,7 +599,7 @@ def assign_hub_values(wt_opt, hub):
 
 def assign_nacelle_values(wt_opt, modeling_options, nacelle):
     # Common direct and geared
-    wt_opt["nacelle.uptilt"] = nacelle["drivetrain"]["uptilt_angle"]
+    wt_opt["nacelle.uptilt"] = nacelle["drivetrain"]["uptilt"]
     wt_opt["nacelle.distance_tt_hub"] = nacelle["drivetrain"]["distance_tt_hub"]
     wt_opt["nacelle.overhang"] = nacelle["drivetrain"]["overhang"]
     wt_opt["nacelle.distance_hub2mb"] = nacelle["drivetrain"]["distance_hub_mb"]
@@ -643,6 +643,7 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
         wt_opt["nacelle.hss_material"] = nacelle["drivetrain"]["hss_material"]
 
     if not modeling_options["flags"]["generator"]:
+        wt_opt["generator.generator_radius_user"] = nacelle["drivetrain"]["generator_radius_user"]
         wt_opt["generator.generator_mass_user"] = nacelle["drivetrain"]["generator_mass_user"]
 
         eff_user = np.c_[
@@ -803,7 +804,7 @@ def assign_tower_values(wt_opt, modeling_options, tower):
 
     wt_opt["tower.layer_name"] = layer_name
     wt_opt["tower.layer_mat"] = layer_mat
-    wt_opt["tower.layer_thickness"] = 0.5 * (thickness[:, :-1] + thickness[:, 1:])
+    wt_opt["tower.layer_thickness"] = thickness
 
     wt_opt["tower.outfitting_factor"] = tower["internal_structure_2d_fem"]["outfitting_factor"]
 
@@ -871,7 +872,7 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
 
     wt_opt["monopile.layer_name"] = layer_name
     wt_opt["monopile.layer_mat"] = layer_mat
-    wt_opt["monopile.layer_thickness"] = 0.5 * (thickness[:, :-1] + thickness[:, 1:])
+    wt_opt["monopile.layer_thickness"] = thickness
 
     wt_opt["monopile.outfitting_factor"] = monopile["internal_structure_2d_fem"]["outfitting_factor"]
     wt_opt["monopile.transition_piece_mass"] = monopile["transition_piece_mass"]

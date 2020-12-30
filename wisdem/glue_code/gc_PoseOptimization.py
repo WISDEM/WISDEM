@@ -182,13 +182,16 @@ class PoseOptimization(object):
         elif self.opt["merit_figure"] == "nacelle_mass":
             wt_opt.model.add_objective("drivese.nacelle_mass", ref=1e6)
 
+        elif self.opt["merit_figure"] == "nacelle_cost":
+            wt_opt.model.add_objective("tcc.nacelle_cost", ref=1e6)
+
         elif self.opt["merit_figure"] == "Cp":
             if self.modeling["flags"]["blade"]:
                 wt_opt.model.add_objective("rp.powercurve.Cp_regII", ref=-1.0)
             else:
                 wt_opt.model.add_objective("ccblade.CP", ref=-1.0)
         else:
-            raise ValueError("The merit figure " + self.opt["merit_figure"] + " is not supported.")
+            raise ValueError("The merit figure " + self.opt["merit_figure"] + " is unknown or not supported.")
 
         return wt_opt
 

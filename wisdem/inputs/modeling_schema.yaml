@@ -76,7 +76,7 @@ properties:
                 description: Number of wind speeds to determine the Cp-Ct-Cq-surfaces
             regulation_reg_III:
                 type: boolean
-                default: False
+                default: True
                 description: Flag to derive the regulation trajectory in region III in terms of pitch and TSR
             spar_cap_ss:
                 type: string
@@ -216,7 +216,7 @@ properties:
                 description: Buckling length factor in Eurocode safety check
                 minimum: 1.0
                 maximum: 100.0
-                default: 1.0
+                default: 10.0
                 unit: m
             frame3dd:
                 type: object
@@ -243,6 +243,14 @@ properties:
                         maximum: 1e-1
                         default: 1e-9
                         description: Convergence tolerance for modal eigenvalue solution
+            soil_springs:
+                type: boolean
+                default: False
+                description: If False, then a monopile is modeled with a perfectly clamped foundation.  If True, then spring-stiffness equivalents are computed from soil properties for all DOF.
+            gravity_foundation:
+                type: boolean
+                default: False
+                description: Model the monopile base as a gravity-based foundation with no pile embedment
     BOS:
         type: object
         default: {}

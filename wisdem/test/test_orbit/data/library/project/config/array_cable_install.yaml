@@ -18,6 +18,7 @@ array_system:
       - - 1.4
         - 2
       linear_density: 42.5
+  system_cost: 100e6
 plant:
   layout: grid
   num_turbines: 40

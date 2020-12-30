@@ -8,15 +8,10 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 import simpy
 from marmot import process
-
 from wisdem.orbit.core import Vessel
 from wisdem.orbit.core.logic import shuttle_items_to_queue, prep_for_site_operations
 from wisdem.orbit.phases.install import InstallPhase
-from wisdem.orbit.phases.install.monopile_install.common import (
-    Monopile,
-    upend_monopile,
-    install_monopile,
-)
+from wisdem.orbit.phases.install.monopile_install.common import Monopile, upend_monopile, install_monopile
 
 from .common import Topside, install_topside
 
@@ -33,7 +28,7 @@ class OffshoreSubstationInstallation(InstallPhase):
     expected_config = {
         "num_substations": "int",
         "oss_install_vessel": "dict | str",
-        "num_feeders": "int",
+        "num_feeders": "int (optional, default: 1)",
         "feeder": "dict | str",
         "site": {"distance": "km", "depth": "m"},
         "port": {
@@ -41,12 +36,17 @@ class OffshoreSubstationInstallation(InstallPhase):
             "monthly_rate": "USD/mo (optional)",
             "name": "str (optional)",
         },
-        "offshore_substation_topside": {"deck_space": "m2", "mass": "t"},
+        "offshore_substation_topside": {
+            "deck_space": "m2",
+            "mass": "t",
+            "unit_cost": "USD",
+        },
         "offshore_substation_substructure": {
             "type": "Monopile",
             "deck_space": "m2",
             "mass": "t",
             "length": "m",
+            "unit_cost": "USD",
         },
     }
 
@@ -69,6 +69,15 @@ class OffshoreSubstationInstallation(InstallPhase):
 
         self.initialize_port()
         self.setup_simulation(**kwargs)
+
+    @property
+    def system_capex(self):
+        """Returns procurement CapEx of the offshore substations."""
+
+        return self.config["num_substations"] * (
+            self.config["offshore_substation_topside"]["unit_cost"]
+            + self.config["offshore_substation_substructure"]["unit_cost"]
+        )
 
     def setup_simulation(self, **kwargs):
         """
@@ -142,7 +151,7 @@ class OffshoreSubstationInstallation(InstallPhase):
         Initializes feeder barge objects.
         """
 
-        number = self.config.get("num_feeders", None)
+        number = self.config.get("num_feeders", 1)
         feeder_specs = self.config.get("feeder", None)
 
         self.feeders = []

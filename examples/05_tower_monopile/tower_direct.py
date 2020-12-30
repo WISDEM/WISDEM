@@ -18,7 +18,7 @@ n_load_cases = 2
 
 h_param = np.diff(np.linspace(0.0, 87.6, n_control_points))
 d_param = np.linspace(6.0, 3.87, n_control_points)
-t_param = 1.3 * np.linspace(0.025, 0.021, n_control_points - 1)
+t_param = 1.3 * np.linspace(0.025, 0.021, n_control_points)
 max_diam = 8.0
 # ---
 
@@ -29,6 +29,10 @@ modeling_options["materials"] = {}
 modeling_options["TowerSE"] = {}
 modeling_options["TowerSE"]["buckling_length"] = 30.0
 modeling_options["flags"]["monopile"] = False
+
+# Monopile foundation only
+modeling_options["TowerSE"]["soil_springs"] = False
+modeling_options["TowerSE"]["gravity_foundation"] = False
 
 # safety factors
 modeling_options["TowerSE"]["gamma_f"] = 1.35
@@ -97,10 +101,6 @@ prob["tower_outer_diameter_in"] = d_param
 prob["tower_layer_thickness"] = t_param.reshape((1, -1))
 prob["tower_outfitting_factor"] = 1.07
 prob["yaw"] = 0.0
-
-# offshore specific
-prob["G_soil"] = 140e6
-prob["nu_soil"] = 0.4
 
 # material properties
 prob["E_mat"] = 210e9 * np.ones((n_materials, 3))

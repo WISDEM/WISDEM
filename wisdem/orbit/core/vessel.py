@@ -10,12 +10,12 @@ from collections import Counter, namedtuple
 import numpy as np
 from marmot import Agent, le, process
 from marmot._exceptions import AgentNotRegistered
-
 from wisdem.orbit.core.components import (
     Crane,
     JackingSys,
     CableCarousel,
     VesselStorage,
+    DynamicPositioning,
     ScourProtectionStorage,
 )
 from wisdem.orbit.core.exceptions import ItemNotFound, MissingComponent
@@ -133,6 +133,15 @@ class Vessel(Agent):
             raise MissingComponent(self, "Jacking System")
 
     @property
+    def dynamic_positioning(self):
+        """Returns configured `DynamicPositioning` or raises `MissingComponent`."""
+        try:
+            return self._dp_system
+
+        except AttributeError:
+            raise MissingComponent(self, "Dynamic Positioning")
+
+    @property
     def storage(self):
         """Returns configured `VesselStorage` or raises `MissingComponent`."""
         try:
@@ -168,6 +177,7 @@ class Vessel(Agent):
         self._vessel_specs = self.config.get("vessel_specs", {})
         self.extract_transport_specs()
         self.extract_jacksys_specs()
+        self.extract_dp_specs()
         self.extract_crane_specs()
         self.extract_storage_specs()
         self.extract_cable_storage_specs()
@@ -195,6 +205,13 @@ class Vessel(Agent):
         self._jacksys_specs = self.config.get("jacksys_specs", {})
         if self._jacksys_specs:
             self._jacksys = JackingSys(self._jacksys_specs)
+
+    def extract_dp_specs(self):
+        """Extracts dynamic positioning system specifications if found."""
+
+        self._dp_specs = self.config.get("dynamic_positioning_specs", {})
+        if self._dp_specs:
+            self._dp_system = DynamicPositioning(self._dp_specs)
 
     def extract_storage_specs(self):
         """Extracts storage system specifications if found."""

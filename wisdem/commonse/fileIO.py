@@ -78,6 +78,7 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
             data["description"].append(var_dict[k][1]["desc"])
         df = pd.DataFrame(data)
         df.to_excel(froot + ".xlsx", index=False)
+        df.to_csv(froot + ".csv", index=False)
 
 
 def load_data(fname, prob):

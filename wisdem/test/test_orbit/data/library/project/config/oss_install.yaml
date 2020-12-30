@@ -6,9 +6,11 @@ offshore_substation_substructure:
   length: 50
   type: Monopile
   mass: 400
+  unit_cost: 5e6
 offshore_substation_topside:
   deck_space: 200
   mass: 400
+  unit_cost: 100e6
 oss_install_vessel: test_heavy_lift_vessel
 port:
   monthly_rate: 100000

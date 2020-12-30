@@ -300,6 +300,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             else:
                 # If using simple (regression) generator scaling, this is an optional input to override default values
                 n_pc = modeling_options["RotorSE"]["n_pc"]
+                generator_ivc.add_output("generator_radius_user", val=0.0, units="m")
                 generator_ivc.add_output("generator_mass_user", val=0.0, units="kg")
                 generator_ivc.add_output("generator_efficiency_user", val=np.zeros((n_pc, 2)))
 
@@ -330,7 +331,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             )
             ivc.add_output(
                 "layer_thickness",
-                val=np.zeros((n_layers_tower, n_height_tower - 1)),
+                val=np.zeros((n_layers_tower, n_height_tower)),
                 units="m",
                 desc="2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.",
             )
@@ -1447,7 +1448,7 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                         'WARNING: Web "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to %f at R=%f (i=%d)'
                         % (web_name[j], offset_old, offset, inputs["s"][i], i)
                     )
-                    #print(layer_resize_warning)
+                    # print(layer_resize_warning)
                 else:
                     outputs["web_offset_y_pa"][j, i] = copy.copy(offset)
 
@@ -1535,7 +1536,7 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                             'WARNING: Layer "%s" may be too large to fit within chord. "offset_y_pa" changed from %f to 0.0 and "width" changed from %f to %f at s=%f (i=%d)'
                             % (layer_name[j], offset, width_old, width, inputs["s"][i], i)
                         )
-                        #print(layer_resize_warning)
+                        # print(layer_resize_warning)
                     else:
                         outputs["layer_width"][j, i] = copy.copy(width)
                         outputs["layer_offset_y_pa"][j, i] = copy.copy(offset)
@@ -1554,12 +1555,12 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     # # Geometry check to prevent overlap between SC and TE reinf
                     # for k in range(self.n_layers):
                     #     if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
-                            # if layer_end_nd[j, i] > layer_start_nd[k, i] or layer_start_nd[j, i] < layer_end_nd[k, i]:
-                            #     print(
-                            #         "WARNING: The trailing edge reinforcement extends above the spar caps at station "
-                            #         + str(i)
-                            #         + ". Please reduce its width."
-                            #     )
+                    # if layer_end_nd[j, i] > layer_start_nd[k, i] or layer_start_nd[j, i] < layer_end_nd[k, i]:
+                    #     print(
+                    #         "WARNING: The trailing edge reinforcement extends above the spar caps at station "
+                    #         + str(i)
+                    #         + ". Please reduce its width."
+                    #     )
 
                 elif discrete_inputs["definition_layer"][j] == 5:  # Midpoint and width
                     midpoint = LE_loc
@@ -1836,7 +1837,7 @@ class Monopile(om.Group):
         )
         ivc.add_output(
             "layer_thickness",
-            val=np.zeros((n_layers, n_height - 1)),
+            val=np.zeros((n_layers, n_height)),
             units="m",
             desc="2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.",
         )
@@ -2441,15 +2442,9 @@ class WT_Assembly(om.ExplicitComponent):
         if modeling_options["flags"]["tower"]:
             if inputs["hub_height_user"] != 0.0:
                 outputs["hub_height"] = inputs["hub_height_user"]
-                outputs["tower_ref_axis"][:, 2] = (
-                    inputs["tower_ref_axis_user"][:, 2] - inputs["tower_ref_axis_user"][0, 2]
-                ) * inputs["hub_height_user"] / (
-                    inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
-                ) + inputs[
-                    "tower_ref_axis_user"
-                ][
-                    0, 2
-                ]
+                outputs["tower_ref_axis"][:, 2] = (inputs["tower_ref_axis_user"][:, 2] - inputs["tower_ref_axis_user"][0, 2]
+                 + inputs["distance_tt_hub"]) * inputs["hub_height_user"] / (inputs["tower_ref_axis_user"][-1, 2]
+                 + inputs["distance_tt_hub"]) + inputs["tower_ref_axis_user"][0, 2] - inputs["distance_tt_hub"]
             else:
                 outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]

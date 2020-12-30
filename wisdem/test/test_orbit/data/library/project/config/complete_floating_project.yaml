@@ -1,0 +1,50 @@
+OffshoreSubstationInstallation:
+  feeder: test_floating_barge
+array_cable_install_vessel: test_cable_lay_vessel
+array_system:
+  free_cable_length: 0.5
+array_system_design:
+  cables:
+  - XLPE_300mm_33kV
+design_phases:
+- ArraySystemDesign
+- ExportSystemDesign
+- MooringSystemDesign
+- OffshoreSubstationDesign
+- SemiSubmersibleDesign
+export_cable_install_vessel: test_cable_lay_vessel
+export_system_design:
+  cables:
+  - XLPE_300mm_33kV
+install_phases:
+  ArrayCableInstallation: 0
+  ExportCableInstallation: 0
+  MooredSubInstallation: 0
+  MooringSystemInstallation: 0
+  OffshoreSubstationInstallation: 0
+  TurbineInstallation: 0
+mooring_install_vessel: test_support_vessel
+oss_install_vessel: test_floating_heavy_lift_vessel
+plant:
+  layout: ring
+  num_turbines: 50
+  row_spacing: 7
+  substation_distance: 1
+  turbine_spacing: 7
+port:
+  monthly_rate: 2000000.0
+  sub_assembly_lines: 1
+  turbine_assembly_cranes: 1
+site:
+  depth: 900
+  distance: 100
+  distance_to_landfall: 100
+substructure:
+  takt_time: 168
+support_vessel: test_support_vessel
+towing_vessel: test_towing_vessel
+towing_vessel_groups:
+  station_keeping_vessels: 2
+  towing_vessels: 3
+turbine: 12MW_generic
+wtiv: test_floating_heavy_lift_vessel

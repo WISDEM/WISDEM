@@ -1,9 +1,10 @@
-import pandas as pd
-import numpy as np
 import math
-from wisdem.landbosse.model.WeatherDelay import WeatherDelay as WD
 import traceback
+
+import numpy as np
+import pandas as pd
 from wisdem.landbosse.model.CostModule import CostModule
+from wisdem.landbosse.model.WeatherDelay import WeatherDelay as WD
 
 
 class SitePreparationCost(CostModule):
@@ -210,9 +211,7 @@ class SitePreparationCost(CostModule):
 
         """
 
-        if (
-            False
-        ):  # road_properties_input['road_distributed_wind'] == True or road_properties_input['turbine_rating_MW'] < 0.1:
+        if road_properties_input["road_distributed_wind"] == True or road_properties_input["turbine_rating_MW"] < 0.1:
             road_properties_output["road_volume"] = (
                 road_properties_input["road_length_adder_m"]
                 * (road_properties_input["road_width_ft"] * self._meters_per_foot)
@@ -307,9 +306,9 @@ class SitePreparationCost(CostModule):
         list_units = operation_data["Units"].unique()
 
         if (
-            False
-        ):  # (estimate_construction_time_input['road_distributed_wind'] == True and estimate_construction_time_input[
-            #'turbine_rating_MW'] >= 0.1):
+            estimate_construction_time_input["road_distributed_wind"] == True
+            and estimate_construction_time_input["turbine_rating_MW"] >= 0.1
+        ):
             estimate_construction_time_output["topsoil_volume"] = (
                 estimate_construction_time_input["site_prep_area_m2"]
                 * (estimate_construction_time_output["depth_to_subgrade_m"])
@@ -326,9 +325,9 @@ class SitePreparationCost(CostModule):
             ) / 100000  # where 10.76391 sq ft = 1 sq m
 
         elif (
-            False
-        ):  # (estimate_construction_time_input['road_distributed_wind'] == True and estimate_construction_time_input[
-            #'turbine_rating_MW'] < 0.1):
+            estimate_construction_time_input["road_distributed_wind"] == True
+            and estimate_construction_time_input["turbine_rating_MW"] < 0.1
+        ):
             estimate_construction_time_output["topsoil_volume"] = (
                 estimate_construction_time_input["road_length_adder_m"]
                 * (estimate_construction_time_input["road_width_ft"] * 0.3048)
@@ -587,9 +586,7 @@ class SitePreparationCost(CostModule):
             + labor_per_diem
         ) * calculate_cost_output_dict["wind_multiplier"]
 
-        if (
-            False
-        ):  # calculate_cost_input_dict['road_distributed_wind'] and calculate_cost_input_dict['turbine_rating_MW'] >= 0.1:
+        if calculate_cost_input_dict["road_distributed_wind"] and calculate_cost_input_dict["turbine_rating_MW"] >= 0.1:
 
             labor_for_new_roads_cost_usd = (labor_data["Cost USD"].sum()) + calculate_cost_output_dict[
                 "managament_crew_cost_before_wind_delay"
@@ -602,8 +599,8 @@ class SitePreparationCost(CostModule):
             )
 
         elif (
-            False
-        ):  # calculate_cost_input_dict['road_distributed_wind'] and calculate_cost_input_dict['turbine_rating_MW'] < 0.1:  # small DW
+            calculate_cost_input_dict["road_distributed_wind"] and calculate_cost_input_dict["turbine_rating_MW"] < 0.1
+        ):  # small DW
 
             labor_for_new_roads_cost_usd = labor_data["Cost USD"].sum()
             labor_for_new_and_old_roads_cost_usd = self.new_and_existing_total_road_cost(labor_for_new_roads_cost_usd)
@@ -812,7 +809,7 @@ class SitePreparationCost(CostModule):
             }
         )
 
-        if True:  # not input_dict['road_distributed_wind']:
+        if not input_dict["road_distributed_wind"]:
             result.append(
                 {
                     "unit": "m",

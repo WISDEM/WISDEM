@@ -100,12 +100,11 @@ class WT_RNTA(om.Group):
             self.connect("configuration.ws_class", "wt_class.turbine_class")
 
             # Connections from blade aero parametrization to other modules
-            self.connect("blade.pa.twist_param", ["re.theta", "rs.theta"])
-            # self.connect('blade.pa.twist_param',            'rs.tip_pos.theta_tip',   src_indices=[-1])
+            self.connect("ccblade.theta", ["re.theta", "rs.theta"])
             self.connect("blade.pa.chord_param", "re.chord")
             self.connect("blade.pa.chord_param", ["rs.chord"])
             if modeling_options["flags"]["blade"]:
-                self.connect("blade.pa.twist_param", "rp.theta")
+                self.connect("ccblade.theta", "rp.theta")
                 self.connect("blade.pa.chord_param", "rp.chord")
             self.connect("configuration.n_blades", "rs.constr.blade_number")
 
@@ -153,7 +152,6 @@ class WT_RNTA(om.Group):
 
             # Connection from ra to rs for the rated conditions
             # self.connect('rp.powercurve.rated_V',        'rs.aero_rated.V_load')
-            self.connect("rp.powercurve.rated_V", "rp.gust.V_hub")
             self.connect("rp.gust.V_gust", ["rs.aero_gust.V_load", "rs.aero_hub_loads.V_load"])
             self.connect("env.shear_exp", ["rp.powercurve.shearExp", "rs.aero_gust.shearExp"])
             self.connect(
@@ -177,8 +175,6 @@ class WT_RNTA(om.Group):
                 self.connect("drivese.lss_rpm", "rp.powercurve.lss_rpm")
                 self.connect("drivese.generator_efficiency", "rp.powercurve.generator_efficiency")
             self.connect("assembly.r_blade", "rp.r")
-            # self.connect('blade.pa.chord_param',           'rp.chord')
-            # self.connect('blade.pa.twist_param',           'rp.theta')
             self.connect("hub.radius", "rp.Rhub")
             self.connect("assembly.rotor_radius", "rp.Rtip")
             self.connect("assembly.hub_height", "rp.hub_height")
@@ -445,6 +441,7 @@ class WT_RNTA(om.Group):
                     self.connect("nacelle.hss_diameter", "drivese.generator.D_shaft", src_indices=[-1])
 
             else:
+                self.connect("generator.generator_radius_user", "drivese.generator_radius_user")
                 self.connect("generator.generator_mass_user", "drivese.generator_mass_user")
                 self.connect("generator.generator_efficiency_user", "drivese.generator_efficiency_user")
 
@@ -482,8 +479,9 @@ class WT_RNTA(om.Group):
                 self.connect("env.water_depth", "towerse.water_depth")
                 self.connect("env.rho_water", "towerse.rho_water")
                 self.connect("env.mu_water", "towerse.mu_water")
-                self.connect("env.G_soil", "towerse.G_soil")
-                self.connect("env.nu_soil", "towerse.nu_soil")
+                if modeling_options["TowerSE"]["soil_springs"]:
+                    self.connect("env.G_soil", "towerse.G_soil")
+                    self.connect("env.nu_soil", "towerse.nu_soil")
                 self.connect("env.Hsig_wave", "towerse.Hsig_wave")
                 self.connect("env.Tsig_wave", "towerse.Tsig_wave")
                 self.connect("monopile.diameter", "towerse.monopile_outer_diameter_in")
@@ -604,10 +602,13 @@ class WindPark(om.Group):
                 self.connect("assembly.hub_height", "orbit.hub_height")
                 self.connect("assembly.rotor_diameter", "orbit.turbine_rotor_diameter")
                 self.connect("towerse.tower_mass", "orbit.tower_mass")
+                self.connect("tower_grid.height", "orbit.tower_length")
                 if modeling_options["flags"]["monopile"]:
                     self.connect("towerse.monopile_mass", "orbit.monopile_mass")
-                    self.connect("towerse.monopile_length", "orbit.monopile_length")
+                    self.connect("towerse.monopile_cost", "orbit.monopile_cost")
+                    self.connect("monopile.height", "orbit.monopile_length")
                     self.connect("monopile.transition_piece_mass", "orbit.transition_piece_mass")
+                    self.connect("monopile.transition_piece_cost", "orbit.transition_piece_cost")
                     self.connect("monopile.diameter", "orbit.monopile_diameter", src_indices=[0])
                 else:
                     self.connect("mooring.n_lines", "orbit.num_mooring_lines")
