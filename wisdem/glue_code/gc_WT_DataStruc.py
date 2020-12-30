@@ -1872,10 +1872,21 @@ class Floating(om.Group):
             n_axial_joints = floating_init_options["members"]["n_axial_joints"][i]
             ivc.add_output("grid", val=np.zeros(n_grid))
             ivc.add_output("outer_diameter", val=np.zeros(n_grid), units="m")
+            ivc.add_output("bulkhead_grid", val=np.zeros(n_grid))
             ivc.add_output("bulkhead_thickness", val=np.zeros(n_grid), units="m")
             ivc.add_output("layer_thickness", val=np.zeros((n_layers, n_grid)), units="m")
             ivc.add_output("ballast_volume", val=np.zeros(n_ballasts), units="m**3")
             ivc.add_output("grid_axial_joints", val=np.zeros(n_axial_joints))
+            ivc.add_output("ring_stiffener_web_height", 0.0, units="m")
+            ivc.add_output("ring_stiffener_web_thickness", 0.0, units="m")
+            ivc.add_output("ring_stiffener_flange_width", 0.0, units="m")
+            ivc.add_output("ring_stiffener_flange_thickness", 0.0, units="m")
+            ivc.add_output("ring_stiffener_spacing", 0.0, units="m")
+            ivc.add_output("axial_stiffener_web_height", 0.0, units="m")
+            ivc.add_output("axial_stiffener_web_thickness", 0.0, units="m")
+            ivc.add_output("axial_stiffener_flange_width", 0.0, units="m")
+            ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
+            ivc.add_output("axial_stiffener_spacing", 0.0, units="m")
 
         self.add_subsystem("alljoints", CombineJoints(floating_init_options=floating_init_options), promotes=["*"])
 
@@ -2442,9 +2453,17 @@ class WT_Assembly(om.ExplicitComponent):
         if modeling_options["flags"]["tower"]:
             if inputs["hub_height_user"] != 0.0:
                 outputs["hub_height"] = inputs["hub_height_user"]
-                outputs["tower_ref_axis"][:, 2] = (inputs["tower_ref_axis_user"][:, 2] - inputs["tower_ref_axis_user"][0, 2]
-                 + inputs["distance_tt_hub"]) * inputs["hub_height_user"] / (inputs["tower_ref_axis_user"][-1, 2]
-                 + inputs["distance_tt_hub"]) + inputs["tower_ref_axis_user"][0, 2] - inputs["distance_tt_hub"]
+                outputs["tower_ref_axis"][:, 2] = (
+                    (
+                        inputs["tower_ref_axis_user"][:, 2]
+                        - inputs["tower_ref_axis_user"][0, 2]
+                        + inputs["distance_tt_hub"]
+                    )
+                    * inputs["hub_height_user"]
+                    / (inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"])
+                    + inputs["tower_ref_axis_user"][0, 2]
+                    - inputs["distance_tt_hub"]
+                )
             else:
                 outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]

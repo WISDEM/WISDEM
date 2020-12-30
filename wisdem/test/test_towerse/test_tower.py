@@ -700,12 +700,12 @@ class TestTowerSE(unittest.TestCase):
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
         prob["wind_reference_height"] = 80.0
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["cd_usr"] = -1.0
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
         prob["shearExp"] = 0.2
-        prob["wind.Uref"] = 15.0
+        prob["env.Uref"] = 15.0
         prob["pre.rna_F"] = 1e3 * np.array(
             [
                 2.0,
@@ -811,7 +811,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
         prob["wind_reference_height"] = 80.0
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["cd_usr"] = -1.0
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
@@ -821,7 +821,7 @@ class TestTowerSE(unittest.TestCase):
         prob["beta_wind"] = prob["beta_wave"] = 0.0
         prob["Hsig_wave"] = 0.0
         prob["Tsig_wave"] = 1e3
-        prob["wind.Uref"] = 15.0
+        prob["env.Uref"] = 15.0
         prob["pre.rna_F"] = 1e3 * np.array(
             [
                 2.0,
@@ -938,7 +938,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
         prob["wind_reference_height"] = 80.0
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["cd_usr"] = -1.0
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
@@ -948,7 +948,7 @@ class TestTowerSE(unittest.TestCase):
         prob["beta_wind"] = prob["beta_wave"] = 0.0
         prob["Hsig_wave"] = 0.0
         prob["Tsig_wave"] = 1e3
-        prob["wind.Uref"] = 15.0
+        prob["env.Uref"] = 15.0
         prob["pre.rna_F"] = 1e3 * np.array(
             [
                 2.0,
@@ -1060,7 +1060,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
         prob["wind_reference_height"] = 80.0
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["cd_usr"] = -1.0
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
@@ -1070,7 +1070,7 @@ class TestTowerSE(unittest.TestCase):
         prob["beta_wind"] = prob["beta_wave"] = 0.0
         prob["Hsig_wave"] = 0.0
         prob["Tsig_wave"] = 1e3
-        prob["wind.Uref"] = 15.0
+        prob["env.Uref"] = 15.0
         prob["pre.rna_F"] = 1e3 * np.array(
             [
                 2.0,
@@ -1189,7 +1189,7 @@ class TestTowerSE(unittest.TestCase):
         # prob['nu_soil'] = 0.4
         prob["shearExp"] = 0.11
         prob["rho_air"] = 1.225
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["mu_air"] = 1.7934e-5
         prob["life"] = 20.0
 
@@ -1203,7 +1203,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rna_I"] = np.array([mIxx, mIyy, mIzz, mIxy, mIxz, mIyz])
         prob["rna_cg"] = np.array([-5.019, 0.0, 0.0])
 
-        prob["wind.Uref"] = 0.0  # 20.00138038
+        prob["env.Uref"] = 0.0  # 20.00138038
         prob["pre.rna_F"] = np.zeros(3)  # np.array([3569257.70891496, -22787.83765441, -404483.54819059])
         prob["pre.rna_M"] = np.zeros(3)  # np.array([68746553.1515807, 16045443.38557568, 1811078.988995])
 
@@ -1345,7 +1345,7 @@ class TestTowerSE(unittest.TestCase):
 
         # --- wind & wave ---
         prob["wind_reference_height"] = wind_zref
-        prob["wind_z0"] = wind_z0
+        prob["z0"] = wind_z0
         prob["cd_usr"] = cd_usr
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
@@ -1355,14 +1355,14 @@ class TestTowerSE(unittest.TestCase):
         # ---------------
 
         # # --- loading case 1: max Thrust ---
-        prob["wind1.Uref"] = wind_Uref1
+        prob["env1.Uref"] = wind_Uref1
 
         prob["pre1.rna_F"] = np.r_[Fx1, Fy1, Fz1]
         prob["pre1.rna_M"] = np.r_[Mxx1, Myy1, Mzz1]
         # # ---------------
 
         # # --- loading case 2: max Wind Speed ---
-        prob["wind2.Uref"] = wind_Uref2
+        prob["env2.Uref"] = wind_Uref2
 
         prob["pre2.rna_F"] = np.r_[Fx2, Fy2, Fz2]
         prob["pre2.rna_M"] = np.r_[Mxx2, Myy2, Mzz2]
@@ -1378,7 +1378,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob["tower_center_of_mass"], [38.78441074])
         npt.assert_almost_equal(prob["constr_d_to_t"], [168.23076923, 161.26373626])
         npt.assert_almost_equal(prob["constr_taper"], [0.8225, 0.78419453])
-        npt.assert_almost_equal(prob["wind1.Uref"], [11.73732])
+        npt.assert_almost_equal(prob["env1.Uref"], [11.73732])
         npt.assert_almost_equal(prob["tower1.f1"], [0.33214436], 5)
         npt.assert_almost_equal(prob["post1.top_deflection"], [0.6988131])
         npt.assert_almost_equal(
@@ -1390,7 +1390,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(
             prob["post1.shell_buckling"], [0.32499783, 0.25914943, 0.18536693, 0.17037662, 0.06344361, 0.03260026]
         )
-        npt.assert_almost_equal(prob["wind2.Uref"], [70.0])
+        npt.assert_almost_equal(prob["env2.Uref"], [70.0])
         npt.assert_almost_equal(prob["tower2.f1"], [0.33218936], 5)
         npt.assert_almost_equal(prob["post2.top_deflection"], [0.6440434])
         npt.assert_almost_equal(

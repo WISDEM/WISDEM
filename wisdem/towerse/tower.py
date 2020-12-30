@@ -4,9 +4,9 @@ import numpy as np
 import openmdao.api as om
 import wisdem.commonse.utilization_constraints as util_con
 from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, sectionalInterp, interp_with_deriv
-from wisdem.commonse.environment import LogWind, PowerWind, TowerSoil, LinearWaves
+from wisdem.commonse.environment import TowerSoil
 from wisdem.commonse.cross_sections import CylindricalShellProperties
-from wisdem.commonse.wind_wave_drag import AeroHydroLoads, CylinderWaveDrag, CylinderWindDrag
+from wisdem.commonse.wind_wave_drag import CylinderEnvironment
 from wisdem.commonse.vertical_cylinder import (
     NFREQ,
     RIGID,
@@ -103,6 +103,8 @@ class DiscretizationYAML(om.ExplicitComponent):
         Density of the materials along the tower sections.
     unit_cost : numpy array[n_height-1], [USD/kg]
         Unit costs of the materials along the tower sections.
+    outfitting_factor : numpy array[n_height-1]
+        Additional outfitting multiplier in each section
 
     """
 
@@ -1363,15 +1365,6 @@ class TowerSE(om.Group):
             n_height_tow if n_height_mon == 0 else n_height_tow + n_height_mon - 1
         )  # Should have one overlapping point
         nFull = get_nfull(n_height)
-
-        self.set_input_defaults("rho_air", 1.225, units="kg/m**3")
-        self.set_input_defaults("mu_air", 1.81206e-5, units="kg/m/s")
-        self.set_input_defaults("shearExp", 0.0)
-        self.set_input_defaults("wind_z0", 0.0)
-        self.set_input_defaults("beta_wind", 0.0, units="deg")
-
-        self.set_input_defaults("cd_usr", -1.0)
-        self.set_input_defaults("yaw", 0.0, units="deg")
         self.set_input_defaults("E", np.zeros(n_height - 1), units="N/m**2")
         self.set_input_defaults("G", np.zeros(n_height - 1), units="N/m**2")
         if monopile and mod_opt["soil_springs"]:
@@ -1397,43 +1390,24 @@ class TowerSE(om.Group):
         # Add in all Components that drive load cases
         # Note multiple load cases have to be handled by replicating components and not groups/assemblies.
         # Replicating Groups replicates the IndepVarComps which doesn't play nicely in OpenMDAO
+        prom = [("zref", "wind_reference_height"), "shearExp", "z0", "cd_usr", "yaw", "beta_wind", "rho_air", "mu_air"]
+        if monopile:
+            prom += [
+                "beta_wave",
+                "rho_water",
+                "mu_water",
+                "cm",
+                "Uc",
+                "Hsig_wave",
+                "Tsig_wave",
+                "rho_water",
+                "water_depth",
+            ]
+
         for iLC in range(nLC):
             lc = "" if nLC == 1 else str(iLC + 1)
 
-            if wind is None or wind.lower() in ["power", "powerwind", ""]:
-                self.add_subsystem(
-                    "wind" + lc,
-                    PowerWind(nPoints=nFull),
-                    promotes=["shearExp", ("zref", "wind_reference_height"), ("z0", "wind_z0")],
-                )
-            elif wind.lower() == "logwind":
-                self.add_subsystem("wind" + lc, LogWind(nPoints=nFull))
-            else:
-                raise ValueError("Unknown wind type, " + wind)
-
-            self.add_subsystem(
-                "windLoads" + lc, CylinderWindDrag(nPoints=nFull), promotes=["cd_usr", "rho_air", "mu_air", "beta_wind"]
-            )
-
-            if monopile:
-                self.add_subsystem(
-                    "wave" + lc,
-                    LinearWaves(nPoints=nFull),
-                    promotes=[
-                        ("z_floor", "water_depth"),
-                        "rho_water",
-                        "Hsig_wave",
-                        "Tsig_wave",
-                        ("z_surface", "wind_z0"),
-                    ],
-                )
-                self.add_subsystem(
-                    "waveLoads" + lc,
-                    CylinderWaveDrag(nPoints=nFull),
-                    promotes=["cm", "cd_usr", "rho_water", "mu_water", "beta_wave"],
-                )
-
-            self.add_subsystem("distLoads" + lc, AeroHydroLoads(nPoints=nFull), promotes=["yaw"])
+            self.add_subsystem("env" + lc, CylinderEnvironment(nPoints=nFull, water_flag=monopile), promotes=prom)
 
             self.add_subsystem(
                 "pre" + lc,
@@ -1474,14 +1448,9 @@ class TowerSE(om.Group):
                 promotes=["life", "z_full", "d_full", "t_full", "rho_full", "E_full", "G_full", "sigma_y_full"],
             )
 
-            self.connect(
-                "z_full", ["wind" + lc + ".z", "windLoads" + lc + ".z", "distLoads" + lc + ".z", "tower" + lc + ".z"]
-            )
-            self.connect("d_full", ["windLoads" + lc + ".d", "tower" + lc + ".d"])
+            self.connect("z_full", ["env" + lc + ".z", "tower" + lc + ".z"])
+            self.connect("d_full", ["env" + lc + ".d", "tower" + lc + ".d"])
             self.connect("t_full", "tower" + lc + ".t")
-            if monopile:
-                self.connect("z_full", ["wave" + lc + ".z", "waveLoads" + lc + ".z"])
-                self.connect("d_full", "waveLoads" + lc + ".d")
 
             self.connect("rho_full", "tower" + lc + ".rho")
             self.connect("E_full", "tower" + lc + ".E")
@@ -1530,32 +1499,7 @@ class TowerSE(om.Group):
             self.connect("tower" + lc + ".hoop_stress_euro", "post" + lc + ".hoop_stress")
             self.connect("tower" + lc + ".cylinder_deflection", "post" + lc + ".tower_deflection_in")
 
-            self.connect("wind" + lc + ".U", "windLoads" + lc + ".U")
-            if monopile:
-                # connections to waveLoads1
-                self.connect("wave" + lc + ".U", "waveLoads" + lc + ".U")
-                self.connect("wave" + lc + ".A", "waveLoads" + lc + ".A")
-                self.connect("wave" + lc + ".p", "waveLoads" + lc + ".p")
-
-            # connections to distLoads1
-            self.connect("windLoads" + lc + ".windLoads_Px", "distLoads" + lc + ".windLoads_Px")
-            self.connect("windLoads" + lc + ".windLoads_Py", "distLoads" + lc + ".windLoads_Py")
-            self.connect("windLoads" + lc + ".windLoads_Pz", "distLoads" + lc + ".windLoads_Pz")
-            self.connect("windLoads" + lc + ".windLoads_qdyn", "distLoads" + lc + ".windLoads_qdyn")
-            self.connect("windLoads" + lc + ".windLoads_beta", "distLoads" + lc + ".windLoads_beta")
-            self.connect("windLoads" + lc + ".windLoads_z", "distLoads" + lc + ".windLoads_z")
-            self.connect("windLoads" + lc + ".windLoads_d", "distLoads" + lc + ".windLoads_d")
-
-            if monopile:
-                self.connect("waveLoads" + lc + ".waveLoads_Px", "distLoads" + lc + ".waveLoads_Px")
-                self.connect("waveLoads" + lc + ".waveLoads_Py", "distLoads" + lc + ".waveLoads_Py")
-                self.connect("waveLoads" + lc + ".waveLoads_Pz", "distLoads" + lc + ".waveLoads_Pz")
-                self.connect("waveLoads" + lc + ".waveLoads_pt", "distLoads" + lc + ".waveLoads_qdyn")
-                self.connect("waveLoads" + lc + ".waveLoads_beta", "distLoads" + lc + ".waveLoads_beta")
-                self.connect("waveLoads" + lc + ".waveLoads_z", "distLoads" + lc + ".waveLoads_z")
-                self.connect("waveLoads" + lc + ".waveLoads_d", "distLoads" + lc + ".waveLoads_d")
-
-            self.connect("distLoads" + lc + ".Px", "tower" + lc + ".Px")
-            self.connect("distLoads" + lc + ".Py", "tower" + lc + ".Py")
-            self.connect("distLoads" + lc + ".Pz", "tower" + lc + ".Pz")
-            self.connect("distLoads" + lc + ".qdyn", "tower" + lc + ".qdyn")
+            self.connect("env" + lc + ".Px", "tower" + lc + ".Px")
+            self.connect("env" + lc + ".Py", "tower" + lc + ".Py")
+            self.connect("env" + lc + ".Pz", "tower" + lc + ".Pz")
+            self.connect("env" + lc + ".qdyn", "tower" + lc + ".qdyn")
