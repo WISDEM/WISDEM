@@ -51,7 +51,7 @@ ones shown.
 Inputs: WindIO
 --------------
 
-The parameterization of the input variables in the Geometry YAML file into *FloatingSE* is documented within the larger `WindIO <https://windio.readthedocs.io/en/latest/>`_ effort. When running *FloatingSE* directly as a standalone with a python script, users are encouraged to review the `floating-specific examples <https://github.com/WISDEM/WISDEM/tree/develop/examples/floating>`_ for syntax.
+The parameterization of the input variables in the Geometry YAML file into *FloatingSE* is documented within the larger `WindIO <https://windio.readthedocs.io/en/latest/>`_ effort. When running *FloatingSE* directly as a standalone with a python script, users are encouraged to review the `floating-specific examples <https://github.com/WISDEM/WISDEM/tree/master/examples/09_floating>`_ for syntax.
 
 Tapered Cylinders (Vertical Frustums)
 -------------------------------------
