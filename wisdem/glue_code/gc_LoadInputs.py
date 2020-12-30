@@ -963,7 +963,7 @@ class WindTurbineOntologyPython(object):
 
         # Update controller
         if self.modeling_options["flags"]["control"]:
-            self.wt_init["control"]["tsr"] = float(wt_opt["control.rated_TSR"])
+            self.wt_init["control"]["torque"]["tsr"] = float(wt_opt["control.rated_TSR"])
 
         # Write yamls with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)
