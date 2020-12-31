@@ -2,8 +2,8 @@ import copy
 
 import numpy as np
 import openmdao.api as om
+import wisdem.commonse.utilities as util
 import wisdem.commonse.utilization_constraints as util_con
-from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, sectionalInterp, interp_with_deriv
 from wisdem.commonse.environment import TowerSoil
 from wisdem.commonse.cross_sections import CylindricalShellProperties
 from wisdem.commonse.wind_wave_drag import CylinderEnvironment
@@ -15,11 +15,6 @@ from wisdem.commonse.vertical_cylinder import (
     CylinderDiscretization,
     get_nfull,
 )
-
-
-def find_nearest(array, value):
-    return (np.abs(array - value)).argmin()
-
 
 NPTS_SOIL = 10
 
@@ -460,12 +455,12 @@ class TowerDiscretization(om.ExplicitComponent):
         z_section = 0.5 * (z_full[:-1] + z_full[1:])
 
         outputs["height_constraint"] = inputs["hub_height"] - z_param[-1]
-        outputs["rho_full"] = sectionalInterp(z_section, z_param, inputs["rho"])
-        outputs["outfitting_full"] = sectionalInterp(z_section, z_param, inputs["outfitting_factor"])
-        outputs["unit_cost_full"] = sectionalInterp(z_section, z_param, inputs["unit_cost"])
-        outputs["E_full"] = sectionalInterp(z_section, z_param, inputs["E"])
-        outputs["G_full"] = sectionalInterp(z_section, z_param, inputs["G"])
-        outputs["sigma_y_full"] = sectionalInterp(z_section, z_param, inputs["sigma_y"])
+        outputs["rho_full"] = util.sectionalInterp(z_section, z_param, inputs["rho"])
+        outputs["outfitting_full"] = util.sectionalInterp(z_section, z_param, inputs["outfitting_factor"])
+        outputs["unit_cost_full"] = util.sectionalInterp(z_section, z_param, inputs["unit_cost"])
+        outputs["E_full"] = util.sectionalInterp(z_section, z_param, inputs["E"])
+        outputs["G_full"] = util.sectionalInterp(z_section, z_param, inputs["G"])
+        outputs["sigma_y_full"] = util.sectionalInterp(z_section, z_param, inputs["sigma_y"])
 
         # Unpack for Elastodyn
         rho = outputs["rho_full"]
@@ -581,7 +576,7 @@ class TowerMass(om.ExplicitComponent):
         ) / (m_cyl.sum() + m_trans + m_grav)
         outputs["tower_section_center_of_mass"] = inputs["cylinder_section_center_of_mass"]
 
-        outputs["monopile_mass"], dydx, dydxp, dydyp = interp_with_deriv(z_trans, z, np.r_[0.0, np.cumsum(m_cyl)])
+        outputs["monopile_mass"], dydx, dydxp, dydyp = util.interp_with_deriv(z_trans, z, np.r_[0.0, np.cumsum(m_cyl)])
         outputs["monopile_cost"] = (
             inputs["cylinder_cost"] * outputs["monopile_mass"] / m_cyl.sum() + inputs["transition_piece_cost"]
         )
@@ -593,7 +588,7 @@ class TowerMass(om.ExplicitComponent):
         outputs["tower_I_base"][:2] += m_trans * (z_trans - z[0]) ** 2
 
         # Mass properties for transition piece and gravity foundation
-        itrans = find_nearest(z, z_trans)
+        itrans = util.find_nearest(z, z_trans)
         r_trans = 0.5 * d[itrans]
         r_grav = 0.5 * d[0]
         I_trans = m_trans * r_trans ** 2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]  # shell
@@ -670,9 +665,9 @@ class TurbineMass(om.ExplicitComponent):
         ]
 
         R = cg_rna
-        I_tower = assembleI(inputs["tower_I_base"])
-        I_rna = assembleI(inputs["rna_I"]) + inputs["rna_mass"] * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
-        outputs["turbine_I_base"] = unassembleI(I_tower + I_rna)
+        I_tower = util.assembleI(inputs["tower_I_base"])
+        I_rna = util.assembleI(inputs["rna_I"]) + inputs["rna_mass"] * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        outputs["turbine_I_base"] = util.unassembleI(I_tower + I_rna)
 
 
 class TowerPreFrame(om.ExplicitComponent):
@@ -859,7 +854,7 @@ class TowerPreFrame(om.ExplicitComponent):
         z = inputs["z_full"]
 
         # Prepare RNA, transition piece, and gravity foundation (if any applicable) for "extra node mass"
-        itrans = find_nearest(z, inputs["transition_piece_height"])
+        itrans = util.find_nearest(z, inputs["transition_piece_height"])
         mtrans = inputs["transition_piece_mass"]
         Itrans = inputs["transition_piece_I"]
         mgrav = inputs["gravity_foundation_mass"]
@@ -1147,8 +1142,8 @@ class TowerPostFrame(om.ExplicitComponent):
         sigma_y = inputs["sigma_y_full"]
         E = inputs["E_full"]
         t = inputs["t_full"]
-        d, _ = nodal2sectional(inputs["d_full"])
-        z_section, _ = nodal2sectional(inputs["z_full"])
+        d, _ = util.nodal2sectional(inputs["d_full"])
+        z_section, _ = util.nodal2sectional(inputs["z_full"])
         L_reinforced = self.options["modeling_options"]["buckling_length"] * np.ones(axial_stress.shape)
         gamma_f = self.options["modeling_options"]["gamma_f"]
         gamma_m = self.options["modeling_options"]["gamma_m"]
@@ -1407,7 +1402,9 @@ class TowerSE(om.Group):
         for iLC in range(nLC):
             lc = "" if nLC == 1 else str(iLC + 1)
 
-            self.add_subsystem("env" + lc, CylinderEnvironment(nPoints=nFull, water_flag=monopile), promotes=prom)
+            self.add_subsystem(
+                "env" + lc, CylinderEnvironment(nPoints=nFull, water_flag=monopile, wind=wind), promotes=prom
+            )
 
             self.add_subsystem(
                 "pre" + lc,

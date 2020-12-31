@@ -1,5 +1,6 @@
 import numpy as np
 import openmdao.api as om
+import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 from wisdem.commonse import gravity
 
@@ -8,7 +9,6 @@ from wisdem.commonse.utilities import nodal2sectional
 
 from wisdem.commonse import gravity, eps, NFREQ
 import wisdem.commonse.utilization_constraints as util
-from wisdem.commonse.utilities import get_modal_coefficients
 import wisdem.commonse.manufacturing as manufacture
 from wisdem.commonse.wind_wave_drag import CylinderWindDrag
 from wisdem.commonse.environment import PowerWind
@@ -21,6 +21,12 @@ NNODES_MAX = 1000
 NELEM_MAX = 1000
 NULL = -9999
 RIGID = 1e30
+
+# TODO:
+# - Mass summary
+# - System CG
+# - System CB
+# - Stress or buckling?
 
 
 class PlatformFrame(om.ExplicitComponent):
@@ -45,6 +51,14 @@ class PlatformFrame(om.ExplicitComponent):
             self.add_input("member" + str(k) + ":section_G", shape_by_conn=True, units="Pa")
             self.add_discrete_input("member" + str(k) + ":idx_cb", 0)
             self.add_input("member" + str(k) + ":buoyancy_force", 0.0, units="N")
+            self.add_input("member" + str(k) + ":displacement", 0.0, units="m**3")
+            self.add_input("member" + str(k) + ":center_of_buoyancy", np.zeros(3), units="m")
+            self.add_input("member" + str(k) + ":center_of_mass", np.zeros(3), units="m")
+            self.add_input("member" + str(k) + ":total_mass", 0.0, units="kg")
+            self.add_input("member" + str(k) + ":total_cost", 0.0, units="USD")
+            self.add_input("member" + str(k) + ":Awater", 0.0, units="m**2")
+            self.add_input("member" + str(k) + ":Iwater", 0.0, units="m**4")
+            self.add_input("member" + str(k) + ":added_mass", np.zeros(6), units="kg")
 
         self.add_output("platform_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
         self.add_output("platform_Fnode", NULL * np.ones((NNODES_MAX, 3)), units="N")
@@ -60,6 +74,14 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
         self.add_output("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_output("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_output("platform_displacement", 0.0, units="m**3")
+        self.add_output("platform_center_of_buoyancy", np.zeros(3), units="m")
+        self.add_output("platform_center_of_mass", np.zeros(3), units="m")
+        self.add_output("platform_mass", 0.0, units="kg")
+        self.add_output("platform_cost", 0.0, units="USD")
+        self.add_output("platform_Awater", 0.0, units="m**2")
+        self.add_output("platform_Iwater", 0.0, units="m**4")
+        self.add_output("platform_added_mass", np.zeros(6), units="kg")
 
         self.node_mem2glob = {}
         # self.node_glob2mem = {}
@@ -112,7 +134,6 @@ class PlatformFrame(om.ExplicitComponent):
         # Update global 2 member mappings
         for k in self.node_mem2glob.keys():
             self.node_mem2glob[k] = inv[self.node_mem2glob[k]]
-        # self.node_glob2mem = {v:k for k,v in self.node_mem2glob.items()}
 
     def set_node_props(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Load in number of members
@@ -160,6 +181,15 @@ class PlatformFrame(om.ExplicitComponent):
         elem_E = np.array([])
         elem_G = np.array([])
 
+        mass = 0.0
+        cost = 0.0
+        volume = 0.0
+        Awater = 0.0
+        Iwater = 0.0
+        m_added = np.zeros(6)
+        cg_plat = np.zeros(3)
+        cb_plat = np.zeros(3)
+
         # Append all member data
         for k in range(n_member):
             elem_A = np.append(elem_A, inputs["member" + str(k) + ":section_A"])
@@ -171,6 +201,21 @@ class PlatformFrame(om.ExplicitComponent):
             elem_rho = np.append(elem_rho, inputs["member" + str(k) + ":section_rho"])
             elem_E = np.append(elem_E, inputs["member" + str(k) + ":section_E"])
             elem_G = np.append(elem_G, inputs["member" + str(k) + ":section_G"])
+
+            # Mass, volume, cost tallies
+            imass = inputs["member" + str(k) + ":total_mass"]
+            ivol = inputs["member" + str(k) + ":displacement"]
+
+            mass += imass
+            volume += ivol
+            cost += inputs["member" + str(k) + ":total_mass"]
+            Awater += inputs["member" + str(k) + ":Awater"]
+            Iwater += inputs["member" + str(k) + ":Iwater"]
+            m_added += inputs["member" + str(k) + ":added_mass"]
+
+            # Center of mass / buoyancy tallies
+            cg_plat += imass * inputs["member" + str(k) + ":center_of_mass"]
+            cb_plat += ivol * inputs["member" + str(k) + ":center_of_buoyancy"]
 
         # Store outputs
         nelem = elem_A.size
@@ -194,6 +239,15 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_elem_E"][:nelem] = elem_E
         outputs["platform_elem_G"][:nelem] = elem_G
 
+        outputs["platform_mass"] = mass
+        outputs["platform_cost"] = cost
+        outputs["platform_displacement"] = volume
+        outputs["platform_center_of_mass"] = cg_plat / mass
+        outputs["platform_center_of_buoyancy"] = cb_plat / volume
+        outputs["platform_Awater"] = Awater
+        outputs["platform_Iwater"] = Iwater
+        outputs["platform_added_mass"] = m_added
+
 
 class PlatformTowerFrame(om.ExplicitComponent):
     def initialize(self):
@@ -212,6 +266,7 @@ class FrameAnalysis(om.ExplicitComponent):
 
     def setup(self):
         opt = self.options["options"]
+        n_lines = opt["mooring"]["n_lines"]
 
         self.add_input("platform_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
         self.add_input("platform_Fnode", NULL * np.ones((NNODES_MAX, 3)), units="N")
@@ -227,15 +282,18 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
         self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("mooring_neutral_load", np.zeros((n_lines, 3)), units="N")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack variables
+        n_lines = self.options["options"]["mooring"]["n_lines"]
         nodes = inputs["platform_nodes"]
         nnode = np.where(nodes[:, 0] == NULL)[0][0]
         nodes = nodes[:nnode, :]
         rnode = inputs["platform_Rnode"][:nnode]
         Fnode = inputs["platform_Fnode"][:nnode, :]
+
         N1 = discrete_inputs["platform_elem_n1"]
         nelem = np.where(N1 == NULL)[0][0]
         N1 = N1[:nelem]
@@ -251,7 +309,10 @@ class FrameAnalysis(om.ExplicitComponent):
         G = inputs["platform_elem_G"][:nelem]
         roll = np.zeros(nelem)
 
-        # Create frame3dd instance
+        fairlead_joints = inputs["mooring_fairlead_joints"]
+        mooringF = inputs["mooring_neutral_load"]
+
+        # Create frame3dd instance: nodes, elements, reactions, and options
         inodes = np.arange(nnode) + 1
         node_obj = pyframe3dd.NodeData(inodes, nodes[:, 0], nodes[:, 1], nodes[:, 2], rnode)
 
@@ -267,14 +328,19 @@ class FrameAnalysis(om.ExplicitComponent):
 
         myframe = pyframe3dd.Frame(node_obj, react_obj, elem_obj, opt_obj)
 
+        # Initialize loading with gravity, mooring line forces, and buoyancy (already in nodal forces)
         gx = gy = 0.0
         gz = -gravity
         load_obj = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
-        nF = np.where(Fnode.sum(axis=1) > 0.0)[0]
+        for k in range(n_lines):
+            ind = util.closest_node(nodes, fairlead_joints[k, :])
+            Fnode[ind, :] += mooringF[k, :]
+        nF = np.where(np.abs(Fnode).sum(axis=1) > 0.0)[0]
         M = np.zeros((nF.size, 3))
         load_obj.changePointLoads(nF + 1, Fnode[nF, 0], Fnode[nF, 1], Fnode[nF, 2], M[:, 0], M[:, 1], M[:, 2])
 
+        # Add the load case and run
         myframe.addLoadCase(load_obj)
         displacements, forces, reactions, internalForces, mass, modal = myframe.run()
 

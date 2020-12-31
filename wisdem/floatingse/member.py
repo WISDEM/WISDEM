@@ -1196,7 +1196,7 @@ class MemberHydro(om.ExplicitComponent):
     -------
     center_of_buoyancy : numpy array[3], [m]
         z-position CofB of member
-    displaced_volume : float, [m**3]
+    displacement : float, [m**3]
         Volume of water displaced by member
     buoyancy_force : float, [N]
         Net z-force from buoyancy on member
@@ -1229,7 +1229,7 @@ class MemberHydro(om.ExplicitComponent):
         self.add_input("nodes_xyz", shape_by_conn=True, units="m**2")
 
         self.add_output("center_of_buoyancy", np.zeros(3), units="m")
-        self.add_output("displaced_volume", 0.0, units="m**3")
+        self.add_output("displacement", 0.0, units="m**3")
         self.add_output("buoyancy_force", 0.0, units="N")
         self.add_discrete_output("idx_cb", 0)
         self.add_output("Awater", 0.0, units="m**2")
@@ -1269,8 +1269,8 @@ class MemberHydro(om.ExplicitComponent):
         dz = np.diff(z_under)
         V_under = frustum.frustumVol(r_under[:-1], r_under[1:], dz)
         V_under_tot = V_under.sum()
-        outputs["displaced_volume"] = V_under_tot
-        outputs["buoyancy_force"] = rho_water * outputs["displaced_volume"] * gravity
+        outputs["displacement"] = V_under_tot
+        outputs["buoyancy_force"] = rho_water * outputs["displacement"] * gravity
 
         # Compute Center of Buoyancy in z-coordinates (0=waterline)
         # First get z-coordinates of CG of all frustums
@@ -1279,9 +1279,7 @@ class MemberHydro(om.ExplicitComponent):
         s_cb = np.interp(z_cb, z_under, s_under)
         cb = xyz0 + s_cb * dxyz
         outputs["center_of_buoyancy"] = cb
-        # Closest node to CB
-        dcb = np.sqrt(np.sum((xyz - cb[np.newaxis, :]) ** 2, axis=1))
-        discrete_outputs["idx_cb"] = np.argmin(dcb)
+        discrete_outputs["idx_cb"] = util.closest_node(xyz, cb)
 
         # 2nd moment of area for circular cross section
         # Note: Assuming Iwater here depends on "water displacement" cross-section

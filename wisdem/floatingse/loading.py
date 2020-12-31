@@ -4,16 +4,12 @@ import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.manufacturing as manufacture
 import wisdem.commonse.utilization_constraints as util
 from wisdem.commonse import NFREQ, eps, gravity
-from wisdem.commonse.utilities import nodal2sectional, get_modal_coefficients
+from wisdem.commonse.utilities import find_nearest, nodal2sectional, get_modal_coefficients
 from wisdem.commonse.environment import PowerWind
 from wisdem.floatingse.map_mooring import NLINES_MAX
 from wisdem.commonse.cross_sections import Tube
 from wisdem.commonse.wind_wave_drag import CylinderWindDrag
 from wisdem.commonse.vertical_cylinder import RIGID, get_nfull
-
-
-def find_nearest(array, value):
-    return (np.abs(array - value)).argmin()
 
 
 def ghostNodes(x1, x2, r1, r2):

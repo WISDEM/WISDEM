@@ -1,12 +1,10 @@
 import unittest
 
 import numpy as np
-import pytest
 import openmdao.api as om
 import numpy.testing as npt
 import wisdem.floatingse.member as member
 from wisdem.commonse import gravity as g
-from wisdem.commonse.utilities import nodal2sectional
 
 NHEIGHT = 6
 NPTS = member.get_nfull(NHEIGHT)
@@ -503,7 +501,7 @@ class TestHydro(unittest.TestCase):
         cb_expect = np.array([0.0, 0.0, -50])
         Ixx = 0  # 0.25 * np.pi * 1e4
         Axx = 0  # np.pi * 1e2
-        self.assertAlmostEqual(self.outputs["displaced_volume"], V_expect)
+        self.assertAlmostEqual(self.outputs["displacement"], V_expect)
         self.assertAlmostEqual(self.outputs["buoyancy_force"], V_expect * rho_w * g)
         npt.assert_almost_equal(self.outputs["center_of_buoyancy"], cb_expect)
         self.assertEqual(self.discrete_outputs["idx_cb"], npts)
@@ -526,7 +524,7 @@ class TestHydro(unittest.TestCase):
         cb_expect = np.array([0.0, 0.0, -12.5])
         Ixx = 0.25 * np.pi * 625
         Axx = np.pi * 25
-        self.assertAlmostEqual(self.outputs["displaced_volume"], V_expect)
+        self.assertAlmostEqual(self.outputs["displacement"], V_expect)
         self.assertAlmostEqual(self.outputs["buoyancy_force"], V_expect * rho_w * g)
         npt.assert_almost_equal(self.outputs["center_of_buoyancy"], cb_expect)
         self.assertEqual(self.discrete_outputs["idx_cb"], int(0.5 * npts))
