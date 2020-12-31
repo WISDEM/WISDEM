@@ -7,10 +7,9 @@ import numpy.testing as npt
 import wisdem.floatingse.member as member
 from wisdem.commonse import gravity as g
 from wisdem.commonse.utilities import nodal2sectional
-from wisdem.commonse.vertical_cylinder import get_nfull
 
 NHEIGHT = 6
-NPTS = get_nfull(NHEIGHT)
+NPTS = member.get_nfull(NHEIGHT)
 myones = np.ones((NPTS,))
 secones = np.ones((NPTS - 1,))
 
@@ -172,7 +171,7 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["painting_cost_rate"] = 10.0
         self.inputs["labor_cost_rate"] = 2.0
 
-        self.inputs["bulkhead_grid"] = np.array([0.0, 0.22, 0.88, 1.0])
+        self.inputs["bulkhead_grid"] = np.array([0.0, 0.08, 0.16, 0.48, 0.88, 1.0])
         nbulk = len(self.inputs["bulkhead_grid"])
         self.inputs["bulkhead_thickness"] = 1.0 * np.ones(nbulk)
 
@@ -182,7 +181,7 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["ring_stiffener_flange_width"] = 1.0
         self.inputs["ring_stiffener_spacing"] = 20.0
 
-        self.inputs["ballast_grid"] = np.array([[0.0, 0.1], [0.1, 0.2], [0.2, 0.5]])
+        self.inputs["ballast_grid"] = np.array([[0.0, 0.08], [0.08, 0.16], [0.16, 0.48]])
         self.inputs["ballast_density"] = np.array([2e3, 4e3, 1e2])
         self.inputs["ballast_volume"] = np.pi * np.array([10.0, 10.0, 0.0])
         self.inputs["ballast_unit_cost"] = np.array([2.0, 4.0, 0.0])
@@ -195,7 +194,7 @@ class TestMemberComponent(unittest.TestCase):
         self.mem.options = {}
         self.mem.options["n_axial"] = 3
         self.mem.options["n_bulkhead"] = nbulk
-        self.mem.options["n_ballast"] = 2
+        self.mem.options["n_ballast"] = 3
         self.mem.options["n_ring"] = 5
         self.mem.sections = member.SortedDict()
 
@@ -252,12 +251,16 @@ class TestMemberComponent(unittest.TestCase):
     def testBulk(self):
         self.mem.add_main_sections(self.inputs, self.outputs)
         self.mem.add_bulkhead_sections(self.inputs, self.outputs)
+        bgrid = self.inputs["bulkhead_grid"]
 
         s_full = self.inputs["s_full"]
         key = list(self.mem.sections.keys())
-        self.assertEqual(key, np.sort(np.r_[s_full, 0.01, 0.215, 0.225, 0.875, 0.885, 0.99]).tolist())
+        bulks = np.vstack(([0.0, 0.01], np.c_[bgrid[1:-1] - 0.005, bgrid[1:-1] + 0.005], [0.99, 1.0]))
+        expect = np.unique(np.r_[s_full, bulks.flatten()])
+        npt.assert_almost_equal(key, expect)
         for k in key:
-            if k in [0.0, 0.215, 0.875, 0.99]:
+            inbulk = np.any(np.logical_and(k >= bulks[:, 0], k < bulks[:, 1]))
+            if inbulk:
                 self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 0 ** 2))
                 self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 0 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 0 ** 4) / 64)
@@ -275,20 +278,19 @@ class TestMemberComponent(unittest.TestCase):
             self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
             self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
 
+        nbulk = len(bgrid)
         R_i = 0.5 * 10 - 0.05
         m_bulk = 1.1 * 1e3 * np.pi * R_i ** 2 * 1.0
-        npt.assert_almost_equal(self.outputs["bulkhead_mass"], m_bulk * 4)
-        npt.assert_almost_equal(self.outputs["bulkhead_z_cg"], 100 * (1 + 0.88 + 0.22) / 4)
+        npt.assert_almost_equal(self.outputs["bulkhead_mass"], m_bulk * nbulk)
+        npt.assert_almost_equal(self.outputs["bulkhead_z_cg"], 100 * bgrid.mean())
 
         J0 = 0.50 * m_bulk * R_i ** 2
         I0 = 0.25 * m_bulk * R_i ** 2
 
         I = np.zeros(6)
-        I[2] = 4.0 * J0
-        I[0] = I0 + m_bulk * 0 ** 2
-        I[0] += I0 + m_bulk * 22 ** 2
-        I[0] += I0 + m_bulk * 88 ** 2
-        I[0] += I0 + m_bulk * 100 ** 2
+        I[2] = nbulk * J0
+        for k in bgrid:
+            I[0] += I0 + m_bulk * (100 * k) ** 2
         I[1] = I[0]
         npt.assert_almost_equal(self.outputs["bulkhead_I_base"], I)
 
@@ -333,11 +335,12 @@ class TestMemberComponent(unittest.TestCase):
 
         s_full = self.inputs["s_full"]
         key = list(self.mem.sections.keys())
-        npt.assert_almost_equal(
-            key, np.sort(np.r_[s_full, 0.095, 0.105, 0.295, 0.305, 0.495, 0.505, 0.695, 0.705, 0.895, 0.905])
-        )
+        stiffs = np.array([[0.095, 0.105], [0.295, 0.305], [0.495, 0.505], [0.695, 0.705], [0.895, 0.905]])
+        expect = np.unique(np.r_[s_full, stiffs.flatten()])
+        npt.assert_almost_equal(key, expect)
         for k in key:
-            if np.round(k, 3) in [0.095, 0.295, 0.495, 0.695, 0.895]:
+            instiff = np.any(np.logical_and(k >= stiffs[:, 0], k < stiffs[:, 1]))
+            if instiff:
                 self.assertAlmostEqual(
                     self.mem.sections[k].A, f * A1 + A2 + 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2)
                 )
@@ -363,7 +366,7 @@ class TestMemberComponent(unittest.TestCase):
 
         area = 0.25 * np.pi * 9.9 ** 2
         h = 10 * np.pi / area
-        cg_perm = (2 * 0.5 * h + 4 * (10 + 0.5 * h)) / 6
+        cg_perm = (2 * 0.5 * h + 4 * (8 + 0.5 * h)) / 6
         m_perm = np.pi * 6e4
 
         I_perm = np.zeros(6)
@@ -371,7 +374,7 @@ class TestMemberComponent(unittest.TestCase):
         I_perm[0] = (
             m_perm * (3 * 0.25 * 9.9 ** 2 + h ** 2) / 12.0
             + (1 / 3) * m_perm * (0.5 * h) ** 2
-            + (2 / 3) * m_perm * (10 + 0.5 * h) ** 2
+            + (2 / 3) * m_perm * (8 + 0.5 * h) ** 2
         )
         I_perm[1] = I_perm[0]
 
@@ -379,7 +382,7 @@ class TestMemberComponent(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["ballast_cost"], np.pi * 20e4)
         self.assertAlmostEqual(self.outputs["ballast_z_cg"], cg_perm)
         npt.assert_almost_equal(self.outputs["ballast_I_base"], I_perm)
-        self.assertAlmostEqual(self.outputs["variable_ballast_capacity"], area * 30)
+        self.assertAlmostEqual(self.outputs["variable_ballast_capacity"], area * 32)
 
     def testMassProp(self):
         self.mem.add_main_sections(self.inputs, self.outputs)
@@ -392,8 +395,9 @@ class TestMemberComponent(unittest.TestCase):
         R_i = 0.5 * 10 - 0.05
         cg_shell = 50
 
+        nbulk = len(self.inputs["bulkhead_grid"])
         m_bulk = 1.1 * 1e3 * np.pi * R_i ** 2 * 1.0
-        cg_bulk = 100 * (1 + 0.88 + 0.22) / 4
+        cg_bulk = 100 * self.inputs["bulkhead_grid"].mean()
 
         Rwo = 0.5 * (10 - 2 * 0.05)
         Rwi = Rwo - 0.5
@@ -409,14 +413,14 @@ class TestMemberComponent(unittest.TestCase):
 
         area = 0.25 * np.pi * 9.9 ** 2
         h = 10 * np.pi / area
-        cg_perm = (2 * 0.5 * h + 4 * (10 + 0.5 * h)) / 6
+        cg_perm = (2 * 0.5 * h + 4 * (8 + 0.5 * h)) / 6
         m_perm = np.pi * 6e4
 
-        m_tot = m_shell + 4 * m_bulk + 5 * m_stiff + m_perm
+        m_tot = m_shell + nbulk * m_bulk + 5 * m_stiff + m_perm
         self.assertAlmostEqual(self.outputs["total_mass"], m_tot)
         self.assertAlmostEqual(self.outputs["structural_mass"], m_tot - m_perm)
         self.assertAlmostEqual(
-            self.outputs["z_cg"], (50 * (m_shell + 5 * m_stiff) + 4 * m_bulk * cg_bulk + m_perm * cg_perm) / m_tot
+            self.outputs["z_cg"], (50 * (m_shell + 5 * m_stiff) + nbulk * m_bulk * cg_bulk + m_perm * cg_perm) / m_tot
         )
         self.assertEqual(
             self.outputs["total_cost"],
@@ -444,7 +448,7 @@ class TestMemberComponent(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["nodes_xyz"][:, 1], 10)
         npt.assert_almost_equal(self.outputs["nodes_xyz"][:, 2], -30 + s_all * 45)
 
-        npt.assert_almost_equal(self.outputs["section_area"], 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
+        npt.assert_almost_equal(self.outputs["section_A"], 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
         npt.assert_almost_equal(self.outputs["section_Ixx"], 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
         npt.assert_almost_equal(self.outputs["section_Iyy"], 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
         npt.assert_almost_equal(self.outputs["section_Izz"], 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
@@ -456,186 +460,84 @@ class TestMemberComponent(unittest.TestCase):
         self.mem.compute(self.inputs, self.outputs)
         # 2 points added for bulkheads and stiffeners
         # Bulkheads at 0,1 only get 1 new point
-        self.assertEqual(self.outputs["s_all"].size, NPTS + 3 + 2 * 4 - 2 + 2 * 5)
+        nbulk = len(self.inputs["bulkhead_grid"])
+        self.assertEqual(self.outputs["s_all"].size, NPTS + 3 + 2 * nbulk - 2 + 2 * 5)
+
+    def testDeconflict(self):
+        self.inputs["bulkhead_grid"] = np.array([0.0, 0.1, 1.0])
+        self.mem.add_main_sections(self.inputs, self.outputs)
+        self.mem.add_ring_stiffener_sections(self.inputs, self.outputs)
+
+        s_full = self.inputs["s_full"]
+        key = list(self.mem.sections.keys())
+        stiffs = np.array([[0.075, 0.085], [0.295, 0.305], [0.495, 0.505], [0.695, 0.705], [0.895, 0.905]])
+        expect = np.unique(np.r_[s_full, stiffs.flatten()])
+        npt.assert_almost_equal(key, expect)
 
 
-@pytest.mark.skip(reason="this function has not been updated yet")
-class TestProperties(unittest.TestCase):
+class TestHydro(unittest.TestCase):
     def setUp(self):
         self.inputs = {}
         self.outputs = {}
+        self.discrete_inputs = {}
+        self.discrete_outputs = {}
 
         # For Geometry call
-        this_nheight = 3
-        this_npts = member.get_nfull(this_nheight)
-        this_sec = np.ones(this_npts - 1)
-        this_ones = np.ones(this_npts)
-        self.inputs["z_full_in"] = np.linspace(0, 50.0, this_npts)
-        self.inputs["z_section"], _ = nodal2sectional(self.inputs["z_full_in"])
-
-        self.inputs["z_param_in"] = np.array([0.0, 20.0, 50.0])
-        self.inputs["section_height"] = np.array([20.0, 30.0])
-        self.inputs["freeboard"] = 15.0
-        self.inputs["fairlead"] = 10.0
-        self.inputs["water_depth"] = 100.0
-        self.inputs["Hsig_wave"] = 5.0
-        self.inputs["max_draft"] = 70.0
-
-        self.inputs["t_full"] = 0.5 * this_sec
-        self.inputs["d_full"] = 2 * 10.0 * this_ones
-
-        self.inputs["stack_mass_in"] = 0.0
-
-        self.inputs["shell_I_keel"] = 1e5 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-        self.inputs["stiffener_I_keel"] = 2e5 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-        self.inputs["bulkhead_I_keel"] = 3e5 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-        self.inputs["buoyancy_tank_I_keel"] = 5e6 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-        self.inputs["ballast_I_keel"] = 2e3 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
-
-        self.inputs["buoyancy_tank_diameter"] = 15.0
-
+        n_height = 3
+        npts = member.get_nfull(n_height)
+        self.inputs["s_full"] = np.linspace(0, 1.0, npts)
+        self.inputs["z_full"] = np.linspace(0, 50.0, npts)
+        self.inputs["d_full"] = 10.0 * np.ones(npts)
+        self.inputs["s_all"] = np.linspace(0, 1.0, 2 * npts)
+        self.inputs["nodes_xyz"] = np.c_[np.zeros(2 * npts), np.zeros(2 * npts), np.linspace(0, 50.0, 2 * npts) - 75]
         self.inputs["rho_water"] = 1e3
-        self.inputs["bulkhead_mass"] = 10.0 * this_sec
-        self.inputs["bulkhead_z_cg"] = -10.0
-        self.inputs["shell_mass"] = 500.0 * this_sec
-        self.inputs["stiffener_mass"] = 100.0 * this_sec
-        self.inputs["ballast_mass"] = 20.0 * this_sec
-        self.inputs["ballast_z_cg"] = -35.0
 
-        self.inputs["buoyancy_tank_mass"] = 20.0
-        self.inputs["buoyancy_tank_cg"] = -15.0
-        self.inputs["buoyancy_tank_location"] = 0.3
-        self.inputs["buoyancy_tank_displacement"] = 300.0
-        self.inputs["outfitting_factor"] = 1.05
+        self.hydro = member.MemberHydro(n_height=n_height)
 
-        self.inputs["shell_cost"] = 1.0
-        self.inputs["stiffener_cost"] = 2.0
-        self.inputs["bulkhead_cost"] = 3.0
-        self.inputs["buoyancy_tank_cost"] = 4.0
-        self.inputs["ballast_cost"] = 5.0
+    def testVerticalSubmerged(self):
+        npts = self.inputs["s_full"].size
+        self.hydro.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
-        self.inputs["mooring_mass"] = 50.0
-        self.inputs["mooring_vertical_load"] = 25.0
-        self.inputs["mooring_restoring_force"] = 1e5
-        self.inputs["mooring_cost"] = 1e4
-
-        self.inputs["outfitting_cost_rate"] = 1.0
-
-        self.inputs["unit_cost"] = 1.0 * np.ones(2)
-        self.inputs["E"] = 2e9 * np.ones(2)
-        self.inputs["G"] = 2e7 * np.ones(2)
-        self.inputs["rho"] = 7850 * np.ones(2)
-        self.inputs["sigma_y"] = 3e9 * np.ones(2)
-
-        self.inputs["stiffener_web_thickness"] = np.array([0.5, 0.5])
-        self.inputs["stiffener_flange_thickness"] = np.array([0.3, 0.3])
-        self.inputs["stiffener_web_height"] = np.array([1.0, 1.0])
-        self.inputs["stiffener_flange_width"] = np.array([2.0, 2.0])
-        self.inputs["stiffener_spacing"] = np.array([0.1, 0.1])
-
-        self.geom = member.MemberGeometry(n_height=this_nheight)
-        self.set_geometry()
-
-        self.mymember = member.MemberProperties(n_height=this_nheight)
-
-    def set_geometry(self):
-        tempOutputs = {}
-        self.geom.compute(self.inputs, tempOutputs)
-        for pairs in tempOutputs.items():
-            self.inputs[pairs[0]] = pairs[1]
-        self.inputs["z_section"], _ = nodal2sectional(self.inputs["z_full"])
-
-    def testMemberMassCG(self):
-        self.mymember.compute_member_mass_cg(self.inputs, self.outputs)
-        ibox = self.mymember.ibox
-
-        bulk = self.inputs["bulkhead_mass"]
-        bulkcg = self.inputs["bulkhead_z_cg"]
-        stiff = self.inputs["stiffener_mass"]
-        shell = self.inputs["shell_mass"]
-        box = self.inputs["buoyancy_tank_mass"]
-        boxcg = self.inputs["buoyancy_tank_cg"]
-        m_ballast = self.inputs["ballast_mass"]
-        cg_ballast = self.inputs["ballast_z_cg"]
-
-        m_member = bulk.sum() + stiff.sum() + shell.sum() + box
-        m_out = 0.05 * m_member
-        m_expect = m_member + m_ballast.sum() + m_out
-
-        mysec = stiff + shell + bulk
-        mysec[ibox] += box
-        mysec += m_ballast
-        mysec += m_out / len(mysec)
-
-        mycg = (box * boxcg + bulk.sum() * bulkcg + np.dot(stiff + shell, self.inputs["z_section"])) / m_member
-        cg_system = ((m_member + m_out) * mycg + m_ballast.sum() * cg_ballast) / m_expect
-
-        Iones = np.r_[np.ones(3), np.zeros(3)]
-        I_expect = 1.05 * 5.6e6 * Iones + 2e3 * Iones
-        I_expect[0] = I_expect[1] = I_expect[0] - m_expect * (cg_system - self.inputs["z_full"][0]) ** 2
-
-        self.assertAlmostEqual(self.outputs["member_total_mass"].sum(), m_expect)
-        self.assertAlmostEqual(self.outputs["z_center_of_mass"], cg_system)
-
-        self.assertAlmostEqual(self.outputs["member_structural_mass"], m_member + m_out)
-        self.assertAlmostEqual(self.outputs["member_outfitting_mass"], m_out)
-        npt.assert_almost_equal(self.outputs["member_total_mass"], mysec)
-        npt.assert_almost_equal(self.outputs["I_member"], I_expect)
-
-    def testBalance(self):
         rho_w = self.inputs["rho_water"]
-
-        self.mymember.compute_member_mass_cg(self.inputs, self.outputs)
-        self.mymember.balance_member(self.inputs, self.outputs)
-
-        V_member = np.pi * 100.0 * 35.0
-        V_box = self.inputs["buoyancy_tank_displacement"]
-        box_cg = self.inputs["buoyancy_tank_cg"]
-        V_expect = V_member + V_box
-        cb_expect = (-17.5 * V_member + V_box * box_cg) / V_expect
-        Ixx = 0.25 * np.pi * 1e4
-        Axx = np.pi * 1e2
-        self.assertAlmostEqual(self.outputs["displaced_volume"].sum(), V_expect)
-        self.assertAlmostEqual(self.outputs["hydrostatic_force"].sum(), V_expect * rho_w * g)
-        self.assertAlmostEqual(self.outputs["z_center_of_buoyancy"], cb_expect)
+        V_expect = np.pi * 25.0 * 50.0
+        cb_expect = np.array([0.0, 0.0, -50])
+        Ixx = 0  # 0.25 * np.pi * 1e4
+        Axx = 0  # np.pi * 1e2
+        self.assertAlmostEqual(self.outputs["displaced_volume"], V_expect)
+        self.assertAlmostEqual(self.outputs["buoyancy_force"], V_expect * rho_w * g)
+        npt.assert_almost_equal(self.outputs["center_of_buoyancy"], cb_expect)
+        self.assertEqual(self.discrete_outputs["idx_cb"], npts)
         self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
 
         m_a = np.zeros(6)
         m_a[:2] = V_expect * rho_w
-        m_a[2] = 0.5 * (8.0 / 3.0) * rho_w * 10.0 ** 3
-        m_a[3:5] = np.pi * rho_w * 100.0 * ((0 - cb_expect) ** 3.0 - (-35 - cb_expect) ** 3.0) / 3.0
-        npt.assert_almost_equal(self.outputs["member_added_mass"], m_a, decimal=-4)
+        m_a[2] = 0.5 * (8.0 / 3.0) * rho_w * 125
+        m_a[3:5] = np.pi * rho_w * 25.0 * ((-25 - cb_expect[-1]) ** 3.0 - (-75 - cb_expect[-1]) ** 3.0) / 3.0
+        npt.assert_almost_equal(self.outputs["added_mass"], m_a, decimal=-5)
 
-        # Test if everything under water
-        dz = -1.5 * self.inputs["z_full"][-1]
-        self.inputs["z_section"] += dz
-        self.inputs["z_full"] += dz
-        self.mymember.balance_member(self.inputs, self.outputs)
-        V_member = np.pi * 100.0 * 50.0
-        V_expect = V_member + V_box
-        cb_expect = (V_member * (-25.0 + self.inputs["z_full"][-1]) + V_box * box_cg) / V_expect
-        self.assertAlmostEqual(self.outputs["displaced_volume"].sum(), V_expect)
-        self.assertAlmostEqual(self.outputs["hydrostatic_force"].sum(), V_expect * rho_w * g)
-        self.assertAlmostEqual(self.outputs["z_center_of_buoyancy"], cb_expect)
+    def testVerticalWaterplane(self):
+        npts = self.inputs["s_full"].size
+        self.inputs["nodes_xyz"] = np.c_[np.zeros(2 * npts), np.zeros(2 * npts), np.linspace(0, 50.0, 2 * npts) - 25]
+        self.hydro.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
-        # Test taper- check hydrostatic via Archimedes within 1%
-        self.inputs["d_full"][5] -= 8.0
-        self.mymember.balance_member(self.inputs, self.outputs)
-        self.assertAlmostEqual(
-            self.outputs["hydrostatic_force"].sum() / (self.outputs["displaced_volume"].sum() * rho_w * g),
-            1.0,
-            delta=1e-2,
-        )
+        rho_w = self.inputs["rho_water"]
+        V_expect = np.pi * 25.0 * 25.0
+        cb_expect = np.array([0.0, 0.0, -12.5])
+        Ixx = 0.25 * np.pi * 625
+        Axx = np.pi * 25
+        self.assertAlmostEqual(self.outputs["displaced_volume"], V_expect)
+        self.assertAlmostEqual(self.outputs["buoyancy_force"], V_expect * rho_w * g)
+        npt.assert_almost_equal(self.outputs["center_of_buoyancy"], cb_expect)
+        self.assertEqual(self.discrete_outputs["idx_cb"], int(0.5 * npts))
+        self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
+        self.assertAlmostEqual(self.outputs["Awater"], Axx)
 
-    def testCheckCost(self):
-        self.outputs["member_outfitting_mass"] = 25.0
-        self.outputs["member_total_mass"] = 25 * np.ones(10)
-        self.mymember.compute_cost(self.inputs, self.outputs)
-
-        self.assertEqual(self.outputs["member_structural_cost"], (1 + 2 + 3 + 4))
-        self.assertEqual(self.outputs["member_outfitting_cost"], 1.0 * 25.0)
-        self.assertEqual(self.outputs["member_total_cost"], (1 + 2 + 3 + 4) + 1.0 * (25.0) + 5)
+        m_a = np.zeros(6)
+        m_a[:2] = V_expect * rho_w
+        m_a[2] = 0.5 * (8.0 / 3.0) * rho_w * 125
+        m_a[3:5] = np.pi * rho_w * 25.0 * ((0 - cb_expect[-1]) ** 3.0 - (-25 - cb_expect[-1]) ** 3.0) / 3.0
+        npt.assert_almost_equal(self.outputs["added_mass"], m_a, decimal=-5)
 
 
 class TestGroup(unittest.TestCase):
@@ -718,7 +620,7 @@ def suite():
     suite.addTest(unittest.makeSuite(TestInputs))
     suite.addTest(unittest.makeSuite(TestFullDiscretization))
     suite.addTest(unittest.makeSuite(TestMemberComponent))
-    # suite.addTest(unittest.makeSuite(TestProperties))
+    suite.addTest(unittest.makeSuite(TestHydro))
     suite.addTest(unittest.makeSuite(TestGroup))
     return suite
 

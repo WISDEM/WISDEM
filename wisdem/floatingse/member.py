@@ -1,17 +1,20 @@
-import collections
-
 import numpy as np
 import openmdao.api as om
 import wisdem.commonse.frustum as frustum
 import wisdem.commonse.utilities as util
 import wisdem.commonse.manufacturing as manufacture
 import wisdem.commonse.cross_sections as cs
-from wisdem.commonse import eps, gravity
+from wisdem.commonse import gravity
 from sortedcontainers import SortedDict
 from wisdem.commonse.wind_wave_drag import CylinderEnvironment
 from wisdem.commonse.utilization_constraints import GeometricConstraints
 
-CrossSection = collections.namedtuple("CrossSection", ["A", "rho", "Ixx", "Iyy", "Izz", "E", "G"])
+
+class CrossSection(object):
+    def __init__(self, A=0.0, Asx=0.0, Asy=0.0, E=0.0, G=0.0, rho=0.0, Ixx=0.0, Iyy=0.0, Izz=0.0):
+        self.A, self.Asx, self.Asy = A, Asx, Asy
+        self.E, self.G, self.rho = E, G, rho
+        self.Ixx, self.Iyy, self.Izz = Ixx, Iyy, Izz
 
 
 NREFINE = 1
@@ -596,8 +599,11 @@ class MemberComponent(om.ExplicitComponent):
 
         self.add_output("s_all", np.zeros(npts), units="m**2")
         self.add_output("center_of_mass", np.zeros(3), units="m")
+        self.add_output("nodes_r", np.zeros(npts), units="m")
         self.add_output("nodes_xyz", np.zeros((npts, 3)), units="m**2")
-        self.add_output("section_area", np.zeros(npts - 1), units="m**2")
+        self.add_output("section_A", np.zeros(npts - 1), units="m**2")
+        self.add_output("section_Asx", np.zeros(npts - 1), units="m**2")
+        self.add_output("section_Asy", np.zeros(npts - 1), units="m**2")
         self.add_output("section_Ixx", np.zeros(npts - 1), units="kg*m**2")
         self.add_output("section_Iyy", np.zeros(npts - 1), units="kg*m**2")
         self.add_output("section_Izz", np.zeros(npts - 1), units="kg*m**2")
@@ -674,6 +680,8 @@ class MemberComponent(om.ExplicitComponent):
                 Ixx=coeff[k] * itube.Jxx,
                 Iyy=coeff[k] * itube.Jyy,
                 Izz=coeff[k] * itube.J0,
+                Asx=itube.Asx,
+                Asy=itube.Asy,
                 rho=rho[k],
                 E=Emat[k],
                 G=Gmat[k],
@@ -795,6 +803,8 @@ class MemberComponent(om.ExplicitComponent):
                 Ixx=coeff_bulk[k] * itube.Jxx,
                 Iyy=coeff_bulk[k] * itube.Jyy,
                 Izz=coeff_bulk[k] * itube.J0,
+                Asx=itube.Asx,
+                Asy=itube.Asy,
                 rho=rho_bulk[k],
                 E=E_bulk[k],
                 G=G_bulk[k],
@@ -861,6 +871,7 @@ class MemberComponent(om.ExplicitComponent):
         E = inputs["E_full"]
         G = inputs["G_full"]
         coeff = inputs["outfitting_full"]
+        s_bulk = inputs["bulkhead_grid"]
 
         t_web = inputs["ring_stiffener_web_thickness"]
         t_flange = inputs["ring_stiffener_flange_thickness"]
@@ -873,8 +884,14 @@ class MemberComponent(om.ExplicitComponent):
         if n_stiff == 0:
             return
 
-        # Calculate stiffener spots along the member axis
+        # Calculate stiffener spots along the member axis and deconflict with bulkheads
         s_stiff = (np.arange(1, n_stiff + 0.1) - 0.5) * (L_stiffener / L)
+        tol = w_flange / L
+        for k, s in enumerate(s_stiff):
+            while np.any(np.abs(s_bulk - s) <= tol) and s > tol:
+                s -= tol
+            s_stiff[k] = s
+
         s0 = s_stiff - 0.5 * w_flange / L
         s1 = s_stiff + 0.5 * w_flange / L
         if s0[0] < 0.0:
@@ -915,6 +932,8 @@ class MemberComponent(om.ExplicitComponent):
                 Ixx=coeff_stiff[k] * ishell.Jxx + iflange.Jxx + iweb.Jxx * web_frac,
                 Iyy=coeff_stiff[k] * ishell.Jyy + iflange.Jyy + iweb.Jyy * web_frac,
                 Izz=coeff_stiff[k] * ishell.J0 + iflange.J0 + iweb.J0 * web_frac,
+                Asx=ishell.Asx + iflange.Asx + iweb.Asx * web_frac,
+                Asy=ishell.Asy + iflange.Asy + iweb.Asy * web_frac,
                 rho=rho_stiff[k],
                 E=E_stiff[k],
                 G=G_stiff[k],
@@ -999,6 +1018,7 @@ class MemberComponent(om.ExplicitComponent):
         # Number of points for volume integration
         npts = 10
 
+        m_ballast = rho_ballast * V_ballast
         I_ballast = np.zeros(6)
         z_cg = np.zeros(n_ballast)
         V_avail = np.zeros(n_ballast)
@@ -1006,6 +1026,7 @@ class MemberComponent(om.ExplicitComponent):
             # Find geometry of the ballast space
             sinterp = np.linspace(s_ballast[k, 0], s_ballast[k, 1], npts)
             zpts = np.interp(sinterp, s_full, z_full)
+            H = zpts[-1] - zpts[0]
             R_od_pts = np.interp(sinterp, s_full, R_od)
             twall_pts = util.sectionalInterp(sinterp, s_full, twall)
             R_id_pts = R_od_pts - twall_pts
@@ -1013,6 +1034,11 @@ class MemberComponent(om.ExplicitComponent):
             # Available volume in this ballast space
             V_pts = frustum.frustumVol(R_id_pts[:-1], R_id_pts[1:], np.diff(zpts))
             V_avail[k] = V_pts.sum()
+
+            # Augment density for these sections (should already be bulkheads at boundaries)
+            for s in self.sections:
+                if s >= s_ballast[k, 0] and s < s_ballast[k, 1]:
+                    self.sections[s].rho += m_ballast[k] / self.sections[s].A / H
 
             # If permanent ballast, compute mass properties, but have to find where ballast extends to in cavity
             if V_ballast[k] > 0.0:
@@ -1040,7 +1066,7 @@ class MemberComponent(om.ExplicitComponent):
                 outputs["variable_ballast_capacity"] = V_avail[k]
 
         # Save permanent ballast mass and variable height
-        m_ballast = rho_ballast * V_ballast
+        # TODO: Add the mass to sectional density?
         outputs["ballast_mass"] = m_ballast.sum()
         outputs["ballast_I_base"] = I_ballast
         outputs["ballast_z_cg"] = np.dot(z_cg, m_ballast) / m_ballast.sum()
@@ -1097,6 +1123,8 @@ class MemberComponent(om.ExplicitComponent):
 
     def nodal_discretization(self, inputs, outputs):
         # Unpack inputs
+        s_full = inputs["s_full"]
+        d_full = inputs["d_full"]
         z_full = inputs["z_full"]
         s_axial = inputs["grid_axial_joints"]
         xyz0 = inputs["joint0"]
@@ -1108,18 +1136,22 @@ class MemberComponent(om.ExplicitComponent):
             self.add_node(s)
 
         # Convert non-dimensional to dimensional
-        s_grid = self.sections.keys()
-        n_nodes = len(s_grid)
+        s_grid = np.array(list(self.sections.keys()))
+        r_grid = 0.5 * np.interp(s_grid, s_full, d_full)
+        n_nodes = s_grid.size
         nodes = np.outer(s_grid, dxyz) + xyz0[np.newaxis, :]
 
         # Convert axial to absolute
         outputs["center_of_mass"] = (outputs["z_cg"] / z_full[-1]) * dxyz + xyz0
 
         # Store all nodes and sections
-        outputs["s_all"] = np.array(list(s_grid))
+        outputs["s_all"] = s_grid
         outputs["nodes_xyz"] = nodes
+        outputs["nodes_r"] = r_grid
 
-        outputs["section_area"] = np.zeros(n_nodes - 1)
+        outputs["section_A"] = np.zeros(n_nodes - 1)
+        outputs["section_Asx"] = np.zeros(n_nodes - 1)
+        outputs["section_Asy"] = np.zeros(n_nodes - 1)
         outputs["section_rho"] = np.zeros(n_nodes - 1)
         outputs["section_Ixx"] = np.zeros(n_nodes - 1)
         outputs["section_Iyy"] = np.zeros(n_nodes - 1)
@@ -1129,7 +1161,9 @@ class MemberComponent(om.ExplicitComponent):
         for k, s in enumerate(s_grid):
             if s == s_grid[-1]:
                 continue
-            outputs["section_area"][k] = self.sections[s].A
+            outputs["section_A"][k] = self.sections[s].A
+            outputs["section_Asx"][k] = self.sections[s].Asx
+            outputs["section_Asy"][k] = self.sections[s].Asy
             outputs["section_rho"][k] = self.sections[s].rho
             outputs["section_Ixx"][k] = self.sections[s].Ixx
             outputs["section_Iyy"][k] = self.sections[s].Iyy
@@ -1146,89 +1180,34 @@ class MemberHydro(om.ExplicitComponent):
     ----------
     rho_water : float, [kg/m**3]
         density of water
+    s_full : numpy array[n_full], [m]
+        non-dimensional coordinates of section nodes
     z_full : numpy array[n_full], [m]
-        z-coordinates of section nodes (length = nsection+1)
-    z_section : numpy array[n_full-1], [m]
-        z-coordinates of section centers of mass (length = nsection)
+        z-coordinates of section nodes
     d_full : numpy array[n_full], [m]
         outer diameter at each section node bottom to top (length = nsection + 1)
-    t_full : numpy array[n_full-1], [m]
-        shell wall thickness at each section node bottom to top (length = nsection + 1)
-    buoyancy_tank_diameter : float, [m]
-        Radius of heave plate at bottom of member
-    shell_mass : numpy array[n_full-1], [kg]
-        mass of member shell
-    stiffener_mass : numpy array[n_full-1], [kg]
-        mass of member stiffeners
-    bulkhead_mass : numpy array[n_full-1], [kg]
-        mass of member bulkheads
-    buoyancy_tank_mass : float, [kg]
-        mass of heave plate
-    ballast_mass : numpy array[n_full-1], [kg]
-        mass of permanent ballast
-    buoyancy_tank_cg : float, [m]
-        z-coordinate of center of mass for buoyancy tank
-    ballast_z_cg : float, [m]
-        z-coordinate or permanent ballast center of gravity
-    outfitting_factor : float
-        Mass fraction added for outfitting
-    shell_I_keel : numpy array[6], [kg*m**2]
-        Moments of inertia of outer shell relative to keel point
-    bulkhead_I_keel : numpy array[6], [kg*m**2]
-        Moments of inertia of bulkheads relative to keel point
-    stiffener_I_keel : numpy array[6], [kg*m**2]
-        Moments of inertia of stiffeners relative to keel point
-    buoyancy_tank_I_keel : numpy array[6], [kg*m**2]
-        Moments of inertia of heave plate relative to keel point
-    ballast_I_keel : numpy array[6], [kg*m**2]
-        Moments of inertia of permanent ballast relative to keel point
-    buoyancy_tank_displacement : float, [m**3]
-        volume of water displaced by buoyancy tank
-    shell_cost : float, [USD]
-        mass of member shell
-    stiffener_cost : float, [USD]
-        mass of member stiffeners
-    bulkhead_cost : float, [USD]
-        mass of member bulkheads
-    ballast_cost : float, [USD]
-        cost of permanent ballast
-    buoyancy_tank_cost : float, [USD]
-        mass of heave plate
-    outfitting_cost_rate : float, [USD/kg]
-        Cost per unit mass for outfitting member
+    s_all : numpy array[npts]
+        Final non-dimensional points of all internal member nodes
+    nodes_xyz : numpy array[npts,3], [m]
+        Global dimensional coordinates (x-y-z) for all member nodes in s_all output
+
 
     Returns
     -------
-    z_center_of_mass : float, [m]
-        z-position CofG of member
-    z_center_of_buoyancy : float, [m]
+    center_of_buoyancy : numpy array[3], [m]
         z-position CofB of member
+    displaced_volume : float, [m**3]
+        Volume of water displaced by member
+    buoyancy_force : float, [N]
+        Net z-force from buoyancy on member
+    idx_cb : int
+        Index of closest node to center of buoyancy
     Awater : float, [m**2]
         Area of waterplace cross section
     Iwater : float, [m**4]
         Second moment of area of waterplace cross section
-    I_member : numpy array[6], [kg*m**2]
-        Moments of inertia of whole member relative to keel point
-    displaced_volume : numpy array[n_full-1], [m**3]
-        Volume of water displaced by member by section
-    hydrostatic_force : numpy array[n_full-1], [N]
-        Net z-force on member sections
-    member_structural_mass : float, [kg]
-        mass of member structure
-    member_outfitting_cost : float, [USD]
-        cost of outfitting the member
-    member_outfitting_mass : float, [kg]
-        cost of outfitting the member
-    member_added_mass : numpy array[6], [kg]
+    added_mass : numpy array[6], [kg]
         hydrodynamic added mass matrix diagonal
-    member_total_mass : numpy array[n_full-1], [kg]
-        total mass of member by section
-    member_total_cost : float, [USD]
-        total cost of member
-    member_structural_cost : float, [USD]
-        Cost of member without ballast or outfitting
-    tapered_member_cost_rate : float, [USD/t]
-        Cost rate of finished member
 
     """
 
@@ -1243,116 +1222,66 @@ class MemberHydro(om.ExplicitComponent):
         self.ibox = None
 
         self.add_input("rho_water", 0.0, units="kg/m**3")
-
-        # Inputs from geometry
+        self.add_input("s_full", np.zeros(n_full), units="m")
         self.add_input("z_full", np.zeros(n_full), units="m")
-        self.add_input("z_section", np.zeros(n_full - 1), units="m")
-
-        # Design variables
         self.add_input("d_full", np.zeros(n_full), units="m")
-        self.add_input("t_full", np.zeros(n_full - 1), units="m")
-        self.add_input("buoyancy_tank_diameter", 0.0, units="m")
+        self.add_input("s_all", shape_by_conn=True, units="m**2")
+        self.add_input("nodes_xyz", shape_by_conn=True, units="m**2")
 
-        # Mass correction factors from simple rules here to real life
-        self.add_input("shell_mass", np.zeros(n_full - 1), units="kg")
-        self.add_input("stiffener_mass", np.zeros(n_full - 1), units="kg")
-        self.add_input("bulkhead_mass", np.zeros(n_full - 1), units="kg")
-        self.add_input("buoyancy_tank_mass", 0.0, units="kg")
-        self.add_input("ballast_mass", np.zeros(n_full - 1), units="kg")
-
-        self.add_input("buoyancy_tank_cg", 0.0, units="m")
-        self.add_input("bulkhead_z_cg", 0.0, units="m")
-        self.add_input("ballast_z_cg", 0.0, units="m")
-        self.add_input("outfitting_factor", 0.0)
-
-        # Moments of inertia
-        self.add_input("shell_I_keel", np.zeros(6), units="kg*m**2")
-        self.add_input("bulkhead_I_keel", np.zeros(6), units="kg*m**2")
-        self.add_input("stiffener_I_keel", np.zeros(6), units="kg*m**2")
-        self.add_input("buoyancy_tank_I_keel", np.zeros(6), units="kg*m**2")
-        self.add_input("ballast_I_keel", np.zeros(6), units="kg*m**2")
-
-        # For buoyancy
-        self.add_input("buoyancy_tank_displacement", 0.0, units="m**3")
-
-        # Costs and cost rates
-        self.add_input("shell_cost", 0.0, units="USD")
-        self.add_input("stiffener_cost", 0.0, units="USD")
-        self.add_input("bulkhead_cost", 0.0, units="USD")
-        self.add_input("ballast_cost", 0.0, units="USD")
-        self.add_input("buoyancy_tank_cost", 0.0, units="USD")
-        self.add_input("outfitting_cost_rate", 0.0, units="USD/kg")
-
-        self.add_output("z_center_of_mass", 0.0, units="m")
-        self.add_output("z_center_of_buoyancy", 0.0, units="m")
+        self.add_output("center_of_buoyancy", np.zeros(3), units="m")
+        self.add_output("displaced_volume", 0.0, units="m**3")
+        self.add_output("buoyancy_force", 0.0, units="N")
+        self.add_discrete_output("idx_cb", 0)
         self.add_output("Awater", 0.0, units="m**2")
         self.add_output("Iwater", 0.0, units="m**4")
-        self.add_output("I_member", np.zeros(6), units="kg*m**2")
-        self.add_output("displaced_volume", np.zeros(n_full - 1), units="m**3")
-        self.add_output("hydrostatic_force", np.zeros(n_full - 1), units="N")
+        self.add_output("added_mass", np.zeros(6), units="kg")
 
-        self.add_output("member_structural_mass", 0.0, units="kg")
-        self.add_output("member_outfitting_cost", 0.0, units="USD")
-        self.add_output("member_outfitting_mass", 0.0, units="kg")
-
-        self.add_output("member_added_mass", np.zeros(6), units="kg")
-        self.add_output("member_total_mass", np.zeros(n_full - 1), units="kg")
-        self.add_output("member_total_cost", 0.0, units="USD")
-        self.add_output("member_structural_cost", 0.0, units="USD")
-        self.add_output("tapered_member_cost_rate", 0.0, units="USD/t")
-
-        self.declare_partials("*", "*", method="fd", form="central", step=1e-6)
-
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack variables
+        xyz = inputs["nodes_xyz"]
+        s_grid = inputs["s_all"]
+        s_full = inputs["s_full"]
+        z_full = inputs["z_full"]
         R_od = 0.5 * inputs["d_full"]
-        R_plate = 0.5 * inputs["buoyancy_tank_diameter"]
-        z_nodes = inputs["z_full"]
-        z_box = inputs["buoyancy_tank_cg"]
-        V_box = inputs["buoyancy_tank_displacement"]
         rho_water = inputs["rho_water"]
-        nsection = R_od.size - 1
+        xyz0 = xyz[0, :]
+        dxyz = xyz[-1, :] - xyz[0, :]
 
         # Compute volume of each section and mass of displaced water by section
         # Find the radius at the waterline so that we can compute the submerged volume as a sum of frustum sections
-        if z_nodes[-1] > 0.0:
-            r_waterline = np.interp(0.0, z_nodes, R_od)
-            z_under = np.r_[z_nodes[z_nodes < 0.0], 0.0]
-            r_under = np.r_[R_od[z_nodes < 0.0], r_waterline]
+        if xyz[:, 2].min() < 0.0 and xyz[:, 2].max() > 0.0:
+            s_waterline = np.interp(0.0, xyz[:, 2], s_grid)
+            ind = np.where(xyz[:, 2] < 0.0)[0]
+            s_under = np.r_[s_grid[ind], s_waterline]
+            waterline = True
+        elif xyz[:, 2].max() < 0.0:
+            s_under = s_grid
+            waterline = False
+            r_waterline = 0.0
         else:
-            r_waterline = R_od[-1]
-            r_under = R_od
-            z_under = z_nodes
+            return
+        z_under = np.interp(s_under, s_full, z_full)
+        r_under = np.interp(s_under, s_full, R_od)
+        if waterline:
+            r_waterline = r_under[-1]
 
         # Submerged volume (with zero-padding)
-        V_under = frustum.frustumVol(r_under[:-1], r_under[1:], np.diff(z_under))
-        add0 = np.maximum(0, nsection - V_under.size)
-        outputs["displaced_volume"] = np.r_[V_under, np.zeros(add0)]
-        outputs["displaced_volume"][self.ibox] += V_box
+        dz = np.diff(z_under)
+        V_under = frustum.frustumVol(r_under[:-1], r_under[1:], dz)
+        V_under_tot = V_under.sum()
+        outputs["displaced_volume"] = V_under_tot
+        outputs["buoyancy_force"] = rho_water * outputs["displaced_volume"] * gravity
 
         # Compute Center of Buoyancy in z-coordinates (0=waterline)
         # First get z-coordinates of CG of all frustums
-        z_cg_under = frustum.frustumCG(r_under[:-1], r_under[1:], np.diff(z_under))
-        z_cg_under += z_under[:-1]
-        # Now take weighted average of these CG points with volume
-        z_cb = ((V_box * z_box) + np.dot(V_under, z_cg_under)) / (outputs["displaced_volume"].sum() + eps)
-        outputs["z_center_of_buoyancy"] = z_cb
-
-        # Find total hydrostatic force by section- sign says in which direction force acts
-        # Since we are working on z_under grid, need to redefine z_section, ibox, etc.
-        z_undersec, _ = nodal2sectional(z_under)
-        if z_box > 0.0 and V_box == 0.0:
-            ibox = 0
-        else:
-            ibox = np.where(z_box >= z_under)[0][-1]
-        F_hydro = np.pi * np.diff(r_under ** 2.0) * np.maximum(0.0, -z_undersec)  # cg_under))
-        if F_hydro.size > 0:
-            F_hydro[0] += np.pi * r_under[0] ** 2 * (-z_under[0])
-            if z_nodes[-1] < 0.0:
-                F_hydro[-1] -= np.pi * r_under[-1] ** 2 * (-z_under[-1])
-            F_hydro[ibox] += V_box
-            F_hydro *= rho_water * gravity
-        outputs["hydrostatic_force"] = np.r_[F_hydro, np.zeros(add0)]
+        z_cg_under = frustum.frustumCG(r_under[:-1], r_under[1:], dz) + z_under[:-1]
+        z_cb = np.dot(z_cg_under, V_under) / V_under_tot
+        s_cb = np.interp(z_cb, z_under, s_under)
+        cb = xyz0 + s_cb * dxyz
+        outputs["center_of_buoyancy"] = cb
+        # Closest node to CB
+        dcb = np.sqrt(np.sum((xyz - cb[np.newaxis, :]) ** 2, axis=1))
+        discrete_outputs["idx_cb"] = np.argmin(dcb)
 
         # 2nd moment of area for circular cross section
         # Note: Assuming Iwater here depends on "water displacement" cross-section
@@ -1361,16 +1290,21 @@ class MemberHydro(om.ExplicitComponent):
         outputs["Awater"] = np.pi * r_waterline ** 2.0
 
         # Calculate diagonal entries of added mass matrix
-        # Prep for integrals too
-        npts = 100 * R_od.size
-        zpts = np.linspace(z_under[0], z_under[-1], npts)
-        r_under = np.interp(zpts, z_under, r_under)
+        temp = np.linspace(z_under[0], z_under[-1], 200)
+        r_under = np.interp(temp, z_under, r_under)
+        z_under = temp
         m_a = np.zeros(6)
-        m_a[:2] = rho_water * outputs["displaced_volume"].sum()  # A11 surge, A22 sway
-        m_a[2] = 0.5 * (8.0 / 3.0) * rho_water * np.maximum(R_plate, r_under.max()) ** 3.0  # A33 heave
-        m_a[3:5] = np.pi * rho_water * np.trapz((zpts - z_cb) ** 2.0 * r_under ** 2.0, zpts)  # A44 roll, A55 pitch
+        m_a[:2] = rho_water * V_under_tot  # A11 surge, A22 sway
+
+        Lxy = np.sqrt((xyz[:, 0].max() - xyz[:, 0].min()) ** 2 + (xyz[:, 1].max() - xyz[:, 1].min()) ** 2)
+        D = 2 * r_under.max()
+        Lxy = np.maximum(Lxy, D)
+        m_a[2] = (1.0 / 6.0) * rho_water * Lxy * D ** 2.0  # A33 heave
+        m_a[3:5] = (
+            np.pi * rho_water * np.trapz((z_under - z_cb) ** 2.0 * r_under ** 2.0, z_under)
+        )  # A44 roll, A55 pitch
         m_a[5] = 0.0  # A66 yaw
-        outputs["member_added_mass"] = m_a
+        outputs["added_mass"] = m_a
 
 
 class Member(om.Group):
@@ -1397,9 +1331,9 @@ class Member(om.Group):
 
         self.add_subsystem("comp", MemberComponent(options=colopt), promotes=["*"])
 
-        """
-        self.add_subsystem("hydro", MemberHydro(nPoints=n_full), promotes=["*"])
+        self.add_subsystem("hydro", MemberHydro(n_height=n_height), promotes=["*"])
 
+        """
         # TODO: Get actual z coordinates into CylinderEnvironment
         prom = [
             "Uref",

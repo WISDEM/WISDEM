@@ -1,17 +1,15 @@
 import numpy as np
-import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import openmdao.api as om
-from wisdem.commonse.utilities import nodal2sectional
-
-from wisdem.commonse import gravity, eps, NFREQ
-import wisdem.commonse.utilization_constraints as util
-from wisdem.commonse.utilities import get_modal_coefficients
+import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.manufacturing as manufacture
-from wisdem.commonse.wind_wave_drag import CylinderWindDrag
+import wisdem.commonse.utilization_constraints as util
+from wisdem.commonse import NFREQ, eps, gravity
+from wisdem.commonse.utilities import nodal2sectional, get_modal_coefficients
 from wisdem.commonse.environment import PowerWind
-from wisdem.commonse.vertical_cylinder import get_nfull, RIGID
+from wisdem.floatingse.map_mooring import NLINES_MAX
 from wisdem.commonse.cross_sections import Tube
-from .map_mooring import NLINES_MAX
+from wisdem.commonse.wind_wave_drag import CylinderWindDrag
+from wisdem.commonse.vertical_cylinder import RIGID, get_nfull
 
 
 def find_nearest(array, value):
