@@ -90,7 +90,10 @@ Blade twist as a design variable by adding or subtracting radians from the initi
     *Default* = False
 
 :code:`inverse` : Boolean
-    Words TODO?
+    When set to True, the twist is defined inverting the 
+    blade-element momentum equations to achieve a desired margin to stall, 
+    which is defined among the constraints.
+    :code:`flag` and :code:`inverse` cannot be simultaneously be set to True
 
     *Default* = False
 
@@ -172,7 +175,8 @@ Adjust airfoil positions along the blade span.
 
 :code:`af_start` : Integer
     Index of airfoil where the optimization can start shifting airfoil
-    position. The airfoil at blade tip is always locked.
+    position. The airfoil at blade tip is always locked. It is advised 
+    to keep the airfoils close to blade root locked.
 
     *Default* = 4
 

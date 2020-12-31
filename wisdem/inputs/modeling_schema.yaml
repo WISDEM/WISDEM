@@ -76,7 +76,7 @@ properties:
                 description: Number of wind speeds to determine the Cp-Ct-Cq-surfaces
             regulation_reg_III:
                 type: boolean
-                default: False
+                default: True
                 description: Flag to derive the regulation trajectory in region III in terms of pitch and TSR
             spar_cap_ss:
                 type: string
