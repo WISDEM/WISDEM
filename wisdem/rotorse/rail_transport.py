@@ -90,12 +90,6 @@ class RailTransport(ExplicitComponent):
             val=np.zeros((n_span, n_xy, 2)),
             desc="3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.",
         )
-        self.add_input(
-            "coord_xy_dim",
-            val=np.zeros((n_span, n_xy, 2)),
-            units="m",
-            desc="3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.",
-        )
 
         # Inputs - Distributed beam properties
         self.add_input("A", val=np.zeros(n_span), units="m**2", desc="airfoil cross section material area")
