@@ -249,24 +249,24 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_added_mass"] = m_added
 
 
+class TowerPreMember(om.ExplicitComponent):
+    def setup(self):
+        self.add_input("transition_node", np.zeros(3), units="m")
+        self.add_input("hub_height", np.zeros(3), units="m")
+        self.add_output("hub_node", np.zeros(3), units="m")
+
+    def compute(self, inputs, outputs):
+        transition_node = inputs["transition_node"]
+        hub_node = transition_node
+        hub_node[2] = inputs["hub_height"]
+        outputs["hub_node"] = hub_node
+
+
 class PlatformTowerFrame(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("options")
 
     def setup(self):
-        opt = self.options["options"]
-
-    def compute(self, inputs, outputs):
-        opt = self.options["options"]
-
-
-class FrameAnalysis(om.ExplicitComponent):
-    def initialize(self):
-        self.options.declare("options")
-
-    def setup(self):
-        opt = self.options["options"]
-        n_lines = opt["mooring"]["n_lines"]
 
         self.add_input("platform_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
         self.add_input("platform_Fnode", NULL * np.ones((NNODES_MAX, 3)), units="N")
@@ -282,73 +282,255 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
         self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("platform_center_of_mass", np.zeros(3), units="m")
+        self.add_input("platform_mass", 0.0, units="kg")
+
+        self.add_input("tower_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
+        self.add_input("tower_Fnode", NULL * np.ones((NNODES_MAX, 3)), units="N")
+        self.add_input("tower_Rnode", NULL * np.ones(NNODES_MAX), units="m")
+        self.add_discrete_input("tower_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_discrete_input("tower_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_input("tower_elem_A", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_input("tower_elem_Asx", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_input("tower_elem_Asy", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_input("tower_elem_Ixx", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_input("tower_elem_Iyy", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_input("tower_elem_Izz", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_input("tower_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
+        self.add_input("tower_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("tower_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("tower_center_of_mass", np.zeros(3), units="m")
+        self.add_input("tower_mass", 0.0, units="kg")
+
+        self.add_input("transition_node", np.zeros(3), units="m")
+
+        self.add_output("system_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
+        self.add_output("system_Fnode", NULL * np.ones((NNODES_MAX, 3)), units="N")
+        self.add_output("system_Rnode", NULL * np.ones(NNODES_MAX), units="m")
+        self.add_discrete_output("system_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_discrete_output("system_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_output("system_elem_A", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_output("system_elem_Asx", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_output("system_elem_Asy", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_output("system_elem_Ixx", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_output("system_elem_Iyy", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_output("system_elem_Izz", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_output("system_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
+        self.add_output("system_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_output("system_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_output("system_center_of_mass", np.zeros(3), units="m")
+        self.add_output("system_mass", 0.0, units="kg")
+
+    def compute(self, inputs, outputs):
+
+        node_platform = inputs["platform_nodes"]
+        node_tower = inputs["tower_nodes"]
+
+        nnode_platform = np.where(node_platform[:, 0] == NULL)[0][0]
+        nnode_tower = np.where(node_tower[:, 0] == NULL)[0][0]
+        nnode_system = nnode_platform + nnode_tower - 1
+
+        nelem_platform = np.where(inputs["platform_elem_A"][:, 0] == NULL)[0][0]
+        nelem_tower = np.where(inputs["tower_elem_A"][:, 0] == NULL)[0][0]
+        nelem_system = nelem_platform + nelem_tower
+
+        itrans_platform = util.closest_node(node_platform, inputs["transition_node"])
+        tower_n1 = inputs["tower_elem_n1"]
+        tower_n1[0] = itrans_platform
+
+        outputs["system_nodes"] = NULL * np.ones((NNODES_MAX, 3))
+        outputs["system_Fnode"] = NULL * np.ones((NNODES_MAX, 3))
+        outputs["system_Rnode"] = NULL * np.ones(NNODES_MAX)
+        outputs["system_elem_n1"] = NULL * np.ones(NELEM_MAX, dtype=np.int_)
+        outputs["system_elem_n2"] = NULL * np.ones(NELEM_MAX, dtype=np.int_)
+
+        outputs["system_nodes"][:nnode_system, :] = np.vstack(
+            (node_platform[:nnode_platform, :], node_tower[1:nnode_tower, :])
+        )
+        outputs["system_Fnode"][:nnode_system, :] = np.vstack(
+            (inputs["platform_Fnode"][:nnode_platform, :], inputs["tower_Fnode"][1:nnode_tower, :])
+        )
+        outputs["system_Rnode"][:nnode_system] = np.r_[
+            inputs["platform_Rnode"][:nnode_platform], inputs["tower_Rnode"][1:nnode_tower]
+        ]
+
+        outputs["system_elem_n1"][:nelem_system] = np.r_[
+            inputs["platform_elem_n1"][:nelem_platform], tower_n1[:nelem_tower] + nnode_platform
+        ]
+        outputs["system_elem_n2"][:nelem_system] = np.r_[
+            inputs["platform_elem_n2"][:nelem_platform], inputs["tower_elem_n2"][:nelem_tower] + nnode_platform
+        ]
+
+        for var in [
+            "elem_A",
+            "elem_Asx",
+            "elem_Asy",
+            "elem_Ixx",
+            "elem_Iyy",
+            "elem_Izz",
+            "elem_rho",
+            "elem_E",
+            "elem_G",
+        ]:
+            outputs["system_" + var][:nelem_system] = np.r_[
+                inputs["platform_" + var][:nelem_platform], inputs["tower_" + var][:nelem_tower]
+            ]
+
+        outputs["system_mass"] = inputs["platform_mass"] + inputs["tower_mass"] + inputs["rna_mass"]
+        outputs["system_center_of_mass"] = (
+            inputs["platform_mass"] * inputs["platform_center_of_mass"]
+            + inputs["tower_mass"] * inputs["tower_center_of_mass"]
+            + inputs["rna_mass"] * inputs["rna_cg"]
+        ) / outputs["system_mass"]
+
+
+class FrameAnalysis(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("options")
+
+    def setup(self):
+        opt = self.options["options"]
+        n_lines = opt["mooring"]["n_lines"]
+
+        self.add_input("tower_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
+        self.add_input("tower_Fnode", NULL * np.ones((NNODES_MAX, 3)), units="N")
+        self.add_input("tower_Rnode", NULL * np.ones(NNODES_MAX), units="m")
+        self.add_discrete_input("tower_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_discrete_input("tower_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_input("tower_elem_A", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_input("tower_elem_Asx", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_input("tower_elem_Asy", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_input("tower_elem_Ixx", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_input("tower_elem_Iyy", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_input("tower_elem_Izz", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_input("tower_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
+        self.add_input("tower_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("tower_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+
+        self.add_input("system_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
+        self.add_input("system_Fnode", NULL * np.ones((NNODES_MAX, 3)), units="N")
+        self.add_input("system_Rnode", NULL * np.ones(NNODES_MAX), units="m")
+        self.add_discrete_input("system_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_discrete_input("system_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_input("system_elem_A", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_input("system_elem_Asx", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_input("system_elem_Asy", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_input("system_elem_Ixx", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_input("system_elem_Iyy", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_input("system_elem_Izz", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_input("system_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
+        self.add_input("system_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("system_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+
+        self.add_input("transition_node", np.zeros(3), units="m")
         self.add_input("mooring_neutral_load", np.zeros((n_lines, 3)), units="N")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Unpack variables
         n_lines = self.options["options"]["mooring"]["n_lines"]
-        nodes = inputs["platform_nodes"]
-        nnode = np.where(nodes[:, 0] == NULL)[0][0]
-        nodes = nodes[:nnode, :]
-        rnode = inputs["platform_Rnode"][:nnode]
-        Fnode = inputs["platform_Fnode"][:nnode, :]
-
-        N1 = discrete_inputs["platform_elem_n1"]
-        nelem = np.where(N1 == NULL)[0][0]
-        N1 = N1[:nelem]
-        N2 = discrete_inputs["platform_elem_n2"][:nelem]
-        A = inputs["platform_elem_A"][:nelem]
-        Asx = inputs["platform_elem_Asx"][:nelem]
-        Asy = inputs["platform_elem_Asy"][:nelem]
-        Ixx = inputs["platform_elem_Ixx"][:nelem]
-        Iyy = inputs["platform_elem_Iyy"][:nelem]
-        Izz = inputs["platform_elem_Izz"][:nelem]
-        rho = inputs["platform_elem_rho"][:nelem]
-        E = inputs["platform_elem_E"][:nelem]
-        G = inputs["platform_elem_G"][:nelem]
-        roll = np.zeros(nelem)
+        m_trans = inputs["transition_piece_mass"]
+        I_trans = inputs["transition_piece_I"]
+        m_rna = inputs["rna_mass"]
+        cg_rna = inputs["rna_cg"]
+        I_rna = inputs["rna_I"]
 
         fairlead_joints = inputs["mooring_fairlead_joints"]
         mooringF = inputs["mooring_neutral_load"]
 
         # Create frame3dd instance: nodes, elements, reactions, and options
-        inodes = np.arange(nnode) + 1
-        node_obj = pyframe3dd.NodeData(inodes, nodes[:, 0], nodes[:, 1], nodes[:, 2], rnode)
+        for frame in ["tower", "system"]:
+            nodes = inputs[frame + "_nodes"]
+            nnode = np.where(nodes[:, 0] == NULL)[0][0]
+            nodes = nodes[:nnode, :]
+            rnode = inputs[frame + "_Rnode"][:nnode]
+            Fnode = inputs[frame + "_Fnode"][:nnode, :]
+            Mnode = np.zeros(nnode, 3)
 
-        ielem = np.arange(nelem) + 1
-        elem_obj = pyframe3dd.ElementData(ielem, N1 + 1, N2 + 1, A, Asx, Asy, Izz, Ixx, Iyy, E, G, roll, rho)
+            N1 = discrete_inputs[frame + "_elem_n1"]
+            nelem = np.where(N1 == NULL)[0][0]
+            N1 = N1[:nelem]
+            N2 = discrete_inputs[frame + "_elem_n2"][:nelem]
+            A = inputs[frame + "_elem_A"][:nelem]
+            Asx = inputs[frame + "_elem_Asx"][:nelem]
+            Asy = inputs[frame + "_elem_Asy"][:nelem]
+            Ixx = inputs[frame + "_elem_Ixx"][:nelem]
+            Iyy = inputs[frame + "_elem_Iyy"][:nelem]
+            Izz = inputs[frame + "_elem_Izz"][:nelem]
+            rho = inputs[frame + "_elem_rho"][:nelem]
+            E = inputs[frame + "_elem_E"][:nelem]
+            G = inputs[frame + "_elem_G"][:nelem]
+            roll = np.zeros(nelem)
 
-        rid = np.argmin(nodes[:, 2]) + 1
-        Rx = Ry = Rz = Rxx = Ryy = Rzz = np.array([RIGID])
-        react_obj = pyframe3dd.ReactionData(rid, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=RIGID)
+            inodes = np.arange(nnode) + 1
+            node_obj = pyframe3dd.NodeData(inodes, nodes[:, 0], nodes[:, 1], nodes[:, 2], rnode)
 
-        frame3dd_opt = self.options["floating"]["frame3dd"]
-        opt_obj = pyframe3dd.Options(frame3dd_opt["shear"], frame3dd_opt["geom"], -1.0)
+            ielem = np.arange(nelem) + 1
+            elem_obj = pyframe3dd.ElementData(ielem, N1 + 1, N2 + 1, A, Asx, Asy, Izz, Ixx, Iyy, E, G, roll, rho)
 
-        myframe = pyframe3dd.Frame(node_obj, react_obj, elem_obj, opt_obj)
+            # TODO: Hydro_K + Mooring_K for tower (system too?)
+            rid = np.argmin(nodes[:, 2]) + 1
+            Rx = Ry = Rz = Rxx = Ryy = Rzz = np.array([RIGID])
+            react_obj = pyframe3dd.ReactionData(rid, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=RIGID)
 
-        # Initialize loading with gravity, mooring line forces, and buoyancy (already in nodal forces)
-        gx = gy = 0.0
-        gz = -gravity
-        load_obj = pyframe3dd.StaticLoadCase(gx, gy, gz)
+            frame3dd_opt = self.options["floating"]["frame3dd"]
+            opt_obj = pyframe3dd.Options(frame3dd_opt["shear"], frame3dd_opt["geom"], -1.0)
 
-        for k in range(n_lines):
-            ind = util.closest_node(nodes, fairlead_joints[k, :])
-            Fnode[ind, :] += mooringF[k, :]
-        nF = np.where(np.abs(Fnode).sum(axis=1) > 0.0)[0]
-        M = np.zeros((nF.size, 3))
-        load_obj.changePointLoads(nF + 1, Fnode[nF, 0], Fnode[nF, 1], Fnode[nF, 2], M[:, 0], M[:, 1], M[:, 2])
+            myframe = pyframe3dd.Frame(node_obj, react_obj, elem_obj, opt_obj)
 
-        # Add the load case and run
-        myframe.addLoadCase(load_obj)
-        displacements, forces, reactions, internalForces, mass, modal = myframe.run()
+            # Added mass
+            if frame == "tower":
+                # TODO: Added mass and stiffness
+                m_trans += inputs["platform_mass"]
+                cg_trans = inputs["transition_node"] - inputs["platform_center_of_mass"]
+            else:
+                cg_trans = np.zeros(3)
+            add_gravity = True
+            ihub = np.argmax(nodes[:, 2]) - 1
+            itrans = util.closest_node(nodes, inputs["transition_node"])
+            mID = np.array([itrans, ihub], dtype=np.int_)
+            m_add = np.array([m_trans, m_rna])
+            I_add = np.c_[I_trans, I_rna]
+            cg_add = np.c_[cg_trans, cg_rna]
+            myframe.changeExtraNodeMass(
+                mID + 1,
+                m_add,
+                I_add[0, :],
+                I_add[1, :],
+                I_add[2, :],
+                I_add[3, :],
+                I_add[4, :],
+                I_add[5, :],
+                cg_add[0, :],
+                cg_add[1, :],
+                cg_add[2, :],
+                add_gravity,
+            )
 
-        # Determine needed variable ballast
-        F_sum = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
-        M_sum = -1.0 * np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
-        print(F_sum)
-        print(M_sum)
+            # Initialize loading with gravity, mooring line forces, and buoyancy (already in nodal forces)
+            gx = gy = 0.0
+            gz = -gravity
+            load_obj = pyframe3dd.StaticLoadCase(gx, gy, gz)
+
+            for k in range(n_lines):
+                ind = util.closest_node(nodes, fairlead_joints[k, :])
+                Fnode[ind, :] += mooringF[k, :]
+            Fnode[ihub, :] += inputs["rna_F"]
+            Mnode[ihub, :] += inputs["rna_M"]
+            nF = np.where(np.abs(Fnode).sum(axis=1) > 0.0)[0]
+            load_obj.changePointLoads(
+                nF + 1, Fnode[nF, 0], Fnode[nF, 1], Fnode[nF, 2], Mnode[nF, 0], Mnode[nF, 1], Mnode[nF, 2]
+            )
+
+            # Add the load case and run
+            myframe.addLoadCase(load_obj)
+            displacements, forces, reactions, internalForces, mass, modal = myframe.run()
+
+            # Determine needed variable ballast
+            F_sum = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
+            M_sum = -1.0 * np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
+            print(F_sum)
+            print(M_sum)
 
 
 class FloatingFrame(om.Group):
@@ -359,5 +541,32 @@ class FloatingFrame(om.Group):
         opt = self.options["modeling_options"]
 
         self.add_subsystem("plat", PlatformFrame(options=opt), promotes=["*"])
-        # self.add_subsystem("tow", PlatformTowerFrame(options=opt), promotes=["*"])
+        self.add_subsystem("pre", TowerPreMember(options=opt), promotes=["*"])
+
+        prom = [
+            "E_mat",
+            "G_mat",
+            "sigma_y_mat",
+            "rho_mat",
+            "rho_water",
+            "unit_cost_mat",
+            "material_names",
+            "painting_cost_rate",
+            "labor_cost_rate",
+        ]
+        prom += [
+            ("nodes_xyz", "tower_nodes"),
+            ("nodes_r", "tower_Rnode"),
+            ("total_mass", "tower_mass"),
+            ("total_cost", "tower_cost"),
+            ("center_of_mass", "tower_center_of_mass"),
+        ]
+        for var in ["A", "Asx", "Asy", "rho", "Ixx", "Iyy", "Izz", "E", "G"]:
+            prom += [("section_" + var, "tower_" + var)]
+        self.add_subsystem("tower", Member(options=opt), promotes=prom)
+
+        self.add_subsystem("mux", PlatformTowerFrame(options=opt), promotes=["*"])
         self.add_subsystem("frame", FrameAnalysis(options=opt), promotes=["*"])
+
+        self.connect("transition_node", "tower.joint1")
+        self.connect("hub_node", "tower.joint2")

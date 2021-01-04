@@ -531,6 +531,24 @@ class PoseOptimization(object):
             if drive_constr[k]["flag"]:
                 wt_opt.model.add_constraint("drivese.constr_" + k, lower=0.0)
 
+        # Floating platform and mooring constraints
+        float_constr = self.opt["constraints"]["floating"]
+
+        if float_constr["operational_heel"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_operational_heel", upper=1.0)
+
+        if float_constr["survival_heel"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_survival_heel", upper=1.0)
+
+        if float_constr["max_surge"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_max_surge", upper=1.0)
+
+        if float_constr["mooring_tension"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_axial_load", upper=1.0)
+
+        if float_constr["mooring_length"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_mooring_length", upper=1.0)
+
         return wt_opt
 
     def set_recorders(self, wt_opt):
@@ -584,6 +602,12 @@ class PoseOptimization(object):
         if self.modeling["flags"]["nacelle"] and self.modeling["DriveSE"]["direct"]:
             drive_constr = self.opt["constraints"]["drivetrain"]
             wt_opt["drivese.access_diameter"] = drive_constr["access"]["lower_bound"]
+
+        if self.modeling["flags"]["floating"]:
+            float_constr = self.opt["constraints"]["floating"]
+            wt_opt["floatingse.max_surge_fraction"] = float_constr["max_surge"]["upper_bound"]
+            wt_opt.set_val("floatingse.operational_heel", float_constr["operational_heel"]["upper_bound"], units="rad")
+            wt_opt.set_val("floatingse.survival_heel", float_constr["survival_heel"]["upper_bound"], units="rad")
 
         return wt_opt
 

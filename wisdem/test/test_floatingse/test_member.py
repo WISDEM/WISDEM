@@ -185,8 +185,8 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["ballast_unit_cost"] = np.array([2.0, 4.0, 0.0])
 
         self.inputs["grid_axial_joints"] = np.array([0.44, 0.55, 0.66])
-        self.inputs["joint0"] = np.array([20.0, 10.0, -30.0])
-        self.inputs["joint1"] = np.array([25.0, 10.0, 15.0])
+        self.inputs["joint1"] = np.array([20.0, 10.0, -30.0])
+        self.inputs["joint2"] = np.array([25.0, 10.0, 15.0])
 
         self.mem = member.MemberComponent()
         self.mem.options = {}
@@ -588,8 +588,8 @@ class TestGroup(unittest.TestCase):
         prob["ballast_volume"] = np.pi * np.array([10.0, 0.0])
 
         prob["grid_axial_joints"] = np.array([0.44, 0.55, 0.66])
-        prob["joint0"] = np.array([20.0, 10.0, -30.0])
-        prob["joint1"] = np.array([25.0, 10.0, 15.0])
+        prob["joint1"] = np.array([20.0, 10.0, -30.0])
+        prob["joint2"] = np.array([25.0, 10.0, 15.0])
 
         # prob["mu_water"] = 1e-5
         # prob["water_depth"] = 100.0

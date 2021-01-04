@@ -28,16 +28,9 @@ class FloatingSE(om.Group):
             "tow",
             TowerLeanSE(modeling_options=self.options["modeling_options"]),
             promotes=[
-                "tower_s",
-                "tower_height",
-                "tower_outer_diameter_in",
-                "tower_layer_thickness",
-                "tower_outfitting_factor",
                 "rna_mass",
                 "rna_cg",
                 "rna_I",
-                "tower_mass",
-                "tower_I_base",
                 "hub_height",
                 "material_names",
                 "labor_cost_rate",
@@ -47,7 +40,6 @@ class FloatingSE(om.Group):
                 "E_mat",
                 "G_mat",
                 "sigma_y_mat",
-                ("tower_foundation_height", "main_freeboard"),
             ],
         )
 

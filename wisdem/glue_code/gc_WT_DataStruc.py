@@ -1860,17 +1860,17 @@ class Floating(om.Group):
         n_joints = floating_init_options["joints"]["n_joints"]
         n_members = floating_init_options["members"]["n_members"]
 
-        jivc = self.add_subsystem("floating_joints", om.IndepVarComp())
+        jivc = self.add_subsystem("joints", om.IndepVarComp())
         jivc.add_output("location", val=np.zeros((n_joints, 3)), units="m")
 
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
-            ivc = self.add_subsystem("floating_member_" + name_member, om.IndepVarComp())
+            ivc = self.add_subsystem("member_" + name_member, om.IndepVarComp())
             n_grid = len(floating_init_options["members"]["grid_member_" + name_member])
             n_layers = floating_init_options["members"]["n_layers"][i]
             n_ballasts = floating_init_options["members"]["n_ballasts"][i]
             n_axial_joints = floating_init_options["members"]["n_axial_joints"][i]
-            ivc.add_output("grid", val=np.zeros(n_grid))
+            ivc.add_output("s", val=np.zeros(n_grid))
             ivc.add_output("outer_diameter", val=np.zeros(n_grid), units="m")
             ivc.add_output("bulkhead_grid", val=np.zeros(n_grid))
             ivc.add_output("bulkhead_thickness", val=np.zeros(n_grid), units="m")
@@ -1890,6 +1890,10 @@ class Floating(om.Group):
 
         self.add_subsystem("alljoints", CombineJoints(floating_init_options=floating_init_options), promotes=["*"])
 
+        for i in range(n_members):
+            name_member = floating_init_options["members"]["name"][i]
+            self.connect("member_" + name_member + ".grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
+
 
 class CombineJoints(om.ExplicitComponent):
     def initialize(self):
@@ -1906,7 +1910,10 @@ class CombineJoints(om.ExplicitComponent):
         for i in range(n_members):
             iname = floating_init_options["members"]["name"][i]
             i_axial_joints = floating_init_options["members"]["n_axial_joints"][i]
-            self.add_input(iname + ":grid_axial_joints", val=np.zeros(i_axial_joints))
+            self.add_input("member_" + iname + ":grid_axial_joints", val=np.zeros(i_axial_joints))
+            self.add_output("member_" + iname + ":joint0", val=np.zeros(3))
+            self.add_output("member_" + iname + ":joint1", val=np.zeros(3))
+            self.add_output("member_" + iname + ":height", val=0.0)
             self.n_joint_tot += i_axial_joints
 
         self.add_output("joints_xyz", val=np.zeros((self.n_joint_tot, 3)), units="m")
@@ -1915,8 +1922,9 @@ class CombineJoints(om.ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack options
         floating_init_options = self.options["floating_init_options"]
+        memopt = floating_init_options["members"]
         n_joints = floating_init_options["joints"]["n_joints"]
-        n_members = floating_init_options["members"]["n_members"]
+        n_members = memopt["n_members"]
 
         # Unpack inputs
         locations = inputs["location"]
@@ -1937,24 +1945,29 @@ class CombineJoints(om.ExplicitComponent):
         member_list = list(range(n_members))
         while count < self.n_joint_tot:
             for k in member_list[:]:
-                if (floating_init_options["members"]["joint1"][k] in name2idx) and (
-                    floating_init_options["members"]["joint2"][k] in name2idx
-                ):
+                if (memopt["joint1"][k] in name2idx) and (memopt["joint2"][k] in name2idx):
                     member_list.remove(k)
                 else:
                     continue
 
-                joint1xyz = locations_xyz[name2idx[floating_init_options["members"]["joint1"][k]], :]
-                joint2xyz = locations_xyz[name2idx[floating_init_options["members"]["joint2"][k]], :]
+                joint1xyz = locations_xyz[name2idx[memopt["joint1"][k]], :]
+                joint2xyz = locations_xyz[name2idx[memopt["joint2"][k]], :]
                 dxyz = joint2xyz - joint1xyz
 
-                iname = floating_init_options["members"]["name"][k]
-                i_axial_joints = floating_init_options["members"]["n_axial_joints"][k]
-                i_axial_joint_names = floating_init_options["members"]["axial_joint_name_member_" + iname]
+                iname = memopt["name"][k]
+                i_axial_joints = memopt["n_axial_joints"][k]
+                i_axial_joint_names = memopt["axial_joint_name_member_" + iname]
                 for a in range(i_axial_joints):
                     joints_xyz[count, :] = joint1xyz + inputs[iname + ":grid_axial_joints"][a] * dxyz
                     name2idx[i_axial_joint_names] = count
                     count += 1
+
+        # Record starting and ending location for each member now
+        for k in range(n_members):
+            iname = memopt["name"][k]
+            outputs["member_" + iname + ":joint1"] = joints_xyz[name2idx[memopt["joint1"][k]], :]
+            outputs["member_" + iname + ":joint2"] = joints_xyz[name2idx[memopt["joint2"][k]], :]
+            outputs["member_" + iname + ":height"] = np.sqrt(np.sum((joint2xyz - joint1xyz) ** 2))
 
         # Store outputs
         outputs["joints_xyz"] = joints_xyz
@@ -1970,8 +1983,8 @@ class Mooring(om.Group):
 
         n_nodes = mooring_init_options["n_nodes"]
         n_lines = mooring_init_options["n_lines"]
-        n_line_types = mooring_init_options["n_line_types"]
-        n_anchor_types = mooring_init_options["n_anchor_types"]
+        # n_line_types = mooring_init_options["n_line_types"]
+        # n_anchor_types = mooring_init_options["n_anchor_types"]
 
         ivc = self.add_subsystem("mooring", om.IndepVarComp(), promotes=["*"])
 
@@ -1982,26 +1995,25 @@ class Mooring(om.Group):
         ivc.add_output("nodes_added_mass", val=np.zeros(n_nodes))
         ivc.add_output("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
         ivc.add_discrete_output("nodes_joint_name", val=[""] * n_nodes)
-        ivc.add_discrete_output("line_id", val=[""] * n_lines)
         ivc.add_output("unstretched_length", val=np.zeros(n_lines), units="m")
-        ivc.add_discrete_output("n_lines", val=n_lines)
-        ivc.add_discrete_output("line_type_names", val=[""] * n_line_types)
-        ivc.add_output("line_diameter", val=np.zeros(n_line_types), units="m")
-        ivc.add_output("line_mass_density", val=np.zeros(n_line_types), units="kg/m")
-        ivc.add_output("line_stiffness", val=np.zeros(n_line_types), units="N")
-        ivc.add_output("line_breaking_load", val=np.zeros(n_line_types), units="N")
-        ivc.add_output("line_cost_rate", val=np.zeros(n_line_types), units="USD/m")
-        ivc.add_output("line_transverse_added_mass", val=np.zeros(n_line_types), units="kg/m")
-        ivc.add_output("line_tangential_added_mass", val=np.zeros(n_line_types), units="kg/m")
-        ivc.add_output("line_transverse_drag", val=np.zeros(n_line_types))
-        ivc.add_output("line_tangential_drag", val=np.zeros(n_line_types))
-        ivc.add_discrete_output("anchor_names", val=[""] * n_anchor_types)
-        ivc.add_output("anchor_mass", val=np.zeros(n_anchor_types), units="kg")
-        ivc.add_output("anchor_cost", val=np.zeros(n_anchor_types), units="USD")
-        ivc.add_output("anchor_max_vertical_load", val=np.zeros(n_anchor_types), units="N")
-        ivc.add_output("anchor_max_lateral_load", val=np.zeros(n_anchor_types), units="N")
+        ivc.add_discrete_output("line_id", val=[""] * n_lines)
+        # ivc.add_discrete_output("n_lines", val=n_lines)
+        # ivc.add_discrete_output("line_type_names", val=[""] * n_line_types)
+        ivc.add_output("line_diameter", val=np.zeros(n_lines), units="m")
+        ivc.add_output("line_mass_density_coeff", val=np.zeros(n_lines), units="kg/m**3")
+        ivc.add_output("line_stiffness_coeff", val=np.zeros(n_lines), units="N/m**2")
+        ivc.add_output("line_breaking_load_coeff", val=np.zeros(n_lines), units="N/m**2")
+        ivc.add_output("line_cost_rate_coeff", val=np.zeros(n_lines), units="USD/m**3")
+        ivc.add_output("line_transverse_added_mass_coeff", val=np.zeros(n_lines), units="kg/m**3")
+        ivc.add_output("line_tangential_added_mass_coeff", val=np.zeros(n_lines), units="kg/m**3")
+        ivc.add_output("line_transverse_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
+        ivc.add_output("line_tangential_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
+        # ivc.add_discrete_output("anchor_names", val=[""] * n_anchor_types)
+        ivc.add_output("anchor_mass", val=np.zeros(n_lines), units="kg")
+        ivc.add_output("anchor_cost", val=np.zeros(n_lines), units="USD")
+        ivc.add_output("anchor_max_vertical_load", val=np.zeros(n_lines), units="N")
+        ivc.add_output("anchor_max_lateral_load", val=np.zeros(n_lines), units="N")
 
-        self.add_subsystem("moormass", MooringMassProps(mooring_init_options=mooring_init_options), promotes=["*"])
         self.add_subsystem("moorjoint", MooringJoints(mooring_init_options=mooring_init_options), promotes=["*"])
 
 
@@ -2012,13 +2024,19 @@ class MooringJoints(om.ExplicitComponent):
     def setup(self):
         mooring_init_options = self.options["mooring_init_options"]
         n_nodes = mooring_init_options["n_nodes"]
+        n_lines = mooring_init_options["n_lines"]
 
         self.add_discrete_input("nodes_joint_name", val=[""] * n_nodes)
         self.add_discrete_input("joints_name2idx", val={})
         self.add_input("nodes_location", val=np.zeros((n_nodes, 3)), units="m")
         self.add_input("joints_xyz", shape_by_conn=True, units="m")
 
-        self.add_output("nodes_location_full", val=np.zeros((n_nodes, 3)), units="m")
+        self.add_output("mooring_nodes", val=np.zeros((n_nodes, 3)), units="m")
+        self.add_output("fairlead_nodes", val=np.zeros((n_lines, 3)), units="m")
+        self.add_output("fairlead", val=np.zeros(n_lines), units="m")
+        self.add_output("fairlead_radius", val=np.zeros(n_lines), units="m")
+        self.add_output("anchor_nodes", val=np.zeros((n_lines, 3)), units="m")
+        self.add_output("anchor_radius", val=np.zeros(n_lines), units="m")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         mooring_init_options = self.options["mooring_init_options"]
@@ -2034,45 +2052,17 @@ class MooringJoints(om.ExplicitComponent):
             idx = idx_map[node_joints[k]]
             node_loc[k, :] = joints_loc[idx, :]
 
-        outputs["nodes_location_full"] = node_loc
-
-
-class MooringMassProps(om.ExplicitComponent):
-    def initialize(self):
-        self.options.declare("mooring_init_options")
-
-    def setup(self):
-        mooring_init_options = self.options["mooring_init_options"]
-        n_lines = mooring_init_options["n_lines"]
-        n_line_types = mooring_init_options["n_line_types"]
-
-        self.add_discrete_input("line_id", val=[""] * n_lines)
-        self.add_input("unstretched_length", val=np.zeros(n_lines), units="m")
-        self.add_discrete_input("line_names", val=[""] * n_line_types)
-        self.add_input("line_mass_density", val=np.zeros(n_line_types), units="kg/m")
-        self.add_input("line_cost_rate", val=np.zeros(n_line_types), units="USD/m")
-
-        self.add_output("line_mass", val=np.zeros(n_lines), units="kg")
-        self.add_output("mooring_mass", val=0.0, units="kg")
-        self.add_output("line_cost", val=np.zeros(n_lines), units="USD")
-        self.add_output("mooring_cost", val=0.0, units="USD")
-
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        mooring_init_options = self.options["mooring_init_options"]
-        n_lines = mooring_init_options["n_lines"]
-
-        line_mass = np.zeros(n_lines)
-        line_cost = np.zeros(n_lines)
-        for ii, iname in enumerate(discrete_inputs["line_names"]):
-            for jj, jname in enumerate(discrete_inputs["line_id"]):
-                if jname == iname:
-                    line_mass[jj] = inputs["line_mass_density"][ii] * inputs["unstretched_length"][jj]
-                    line_cost[jj] = inputs["line_cost_rate"][ii] * inputs["unstretched_length"][jj]
-
-        outputs["line_mass"] = line_mass
-        outputs["line_cost"] = line_cost
-        outputs["mooring_mass"] = line_mass.sum()
-        outputs["mooring_cost"] = line_cost.sum()
+        tol = 0.5
+        z_fair = node_loc[:, 2].max()
+        z_anch = node_loc[:, 2].min()
+        ifair = np.where(np.abs(node_loc[:, 2] - z_fair) < tol)[0]
+        ianch = np.where(np.abs(node_loc[:, 2] - z_anch) < tol)[0]
+        outputs["mooring_nodes"] = node_loc
+        outputs["fairlead_nodes"] = node_loc[ifair, :]
+        outputs["anchor_nodes"] = node_loc[ianch, :]
+        outputs["fairlead"] = z_fair
+        outputs["fairlead_radius"] = np.sqrt(np.sum(node_loc[ifair, :2] ** 2, axis=1))
+        outputs["anchor_radius"] = np.sqrt(np.sum(node_loc[ianch, :2] ** 2, axis=1))
 
 
 class ComputeMaterialsProperties(om.ExplicitComponent):

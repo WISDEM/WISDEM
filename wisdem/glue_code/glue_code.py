@@ -1,6 +1,7 @@
 import numpy as np
 import openmdao.api as om
 from wisdem.towerse.tower import TowerSE
+from wisdem.floatingse.floating import FloatingSE
 from wisdem.rotorse.rotor_power import RotorPower, NoStallConstraint
 from wisdem.glue_code.gc_RunTools import Outputs_2_Screen, Convergence_Trends_Opt
 from wisdem.commonse.turbine_class import TurbineClass
@@ -60,6 +61,8 @@ class WT_RNTA(om.Group):
             self.add_subsystem("drivese", DrivetrainSE(modeling_options=modeling_options, n_dlcs=1))
         if modeling_options["flags"]["tower"]:
             self.add_subsystem("towerse", TowerSE(modeling_options=modeling_options))
+        if modeling_options["flags"]["floating"]:
+            self.add_subsystem("floatingse", FloatingSE(modeling_options=modeling_options))
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
             self.add_subsystem("tcons", TurbineConstraints(modeling_options=modeling_options))
         self.add_subsystem("tcc", Turbine_CostsSE_2015(verbosity=modeling_options["General"]["verbosity"]))
@@ -455,12 +458,12 @@ class WT_RNTA(om.Group):
                 self.connect("drivese.rna_mass", "towerse.rna_mass")
             if modeling_options["flags"]["blade"]:
                 self.connect("rp.gust.V_gust", "towerse.wind.Uref")
-            self.connect("assembly.hub_height", "towerse.wind_reference_height")  # TODO- environment
+            self.connect("assembly.hub_height", "towerse.wind_reference_height")
+            self.connect("assembly.hub_height", "towerse.hub_height")
             self.connect("env.rho_air", "towerse.rho_air")
             self.connect("env.mu_air", "towerse.mu_air")
             self.connect("env.shear_exp", "towerse.shearExp")
-            self.connect("assembly.hub_height", "towerse.hub_height")
-            self.connect("tower_grid.foundation_height", "towerse.tower_foundation_height")  # TODO: towerse.wind_z0"
+            self.connect("tower_grid.foundation_height", "towerse.tower_foundation_height")
             self.connect("tower.diameter", "towerse.tower_outer_diameter_in")
             self.connect("tower_grid.height", "towerse.tower_height")
             self.connect("tower_grid.s", "towerse.tower_s")
@@ -494,6 +497,74 @@ class WT_RNTA(om.Group):
                 self.connect("monopile.transition_piece_cost", "towerse.transition_piece_cost")
                 self.connect("monopile.transition_piece_mass", "towerse.transition_piece_mass")
                 self.connect("monopile.gravity_foundation_mass", "towerse.gravity_foundation_mass")
+
+        if modeling_options["flags"]["floating"]:
+            self.connect("env.rho_water", "floatingse.rho_water")
+            self.connect("env.water_depth", "floatingse.water_depth")
+            # self.connect("env.mu_water", "floatingse.mu_water")
+            # self.connect("env.Hsig_wave", "floatingse.Hsig_wave")
+            # self.connect("env.Tsig_wave", "floatingse.Tsig_wave")
+            # self.connect("env.rho_air", "floatingse.rho_air")
+            # self.connect("env.mu_air", "floatingse.mu_air")
+            # self.connect("env.shear_exp", "floatingse.shearExp")
+            self.connect("materials.name", "floatingse.material_names")
+            self.connect("materials.E", "floatingse.E_mat")
+            self.connect("materials.G", "floatingse.G_mat")
+            self.connect("materials.rho", "floatingse.rho_mat")
+            self.connect("materials.sigma_y", "floatingse.sigma_y_mat")
+            self.connect("materials.unit_cost", "floatingse.unit_cost_mat")
+            self.connect("costs.labor_rate", "floatingse.labor_cost_rate")
+            self.connect("costs.painting_rate", "floatingse.painting_cost_rate")
+
+            # Individual member connections
+            for k, kname in enumerate(modeling_options["flags"]["floating"]["members"]["name"]):
+                self.connect("floating.floating_member_" + kname + ".grid", "floatingse.member" + str(k) + ".s")
+                self.connect(
+                    "floating.floating_member_" + kname + ".outer_diameter",
+                    "floatingse.member" + str(k) + ".outer_diameter_in",
+                )
+                self.connect(
+                    "floating.floating_member_" + kname + ".outfitting_factor",
+                    "floatingse.member" + str(k) + ".outfitting_factor_in",
+                )
+
+                for var in [
+                    "layer_thickness",
+                    "layer_mat",
+                    "bulkhead_grid",
+                    "bulkhead_thickness",
+                    "ballast_grid",
+                    "ballast_volume",
+                    "grid_axial_joints",
+                    "ring_stiffener_web_height",
+                    "ring_stiffener_web_thickness",
+                    "ring_stiffener_flange_width",
+                    "ring_stiffener_flange_thickness",
+                    "axial_stiffener_web_height",
+                    "axial_stiffener_web_thickness",
+                    "axial_stiffener_flange_width",
+                    "axial_stiffener_flange_thickness",
+                    "axial_stiffener_spacing",
+                ]:
+                    self.connect("floating.member_" + kname + "." + var, "floatingse.member" + str(k) + "." + var)
+
+                for var in ["height", "joint0", "joint1"]:
+                    self.connect("floating.member_" + kname + ":" + var, "floatingse.member" + str(k) + "." + var)
+
+            # Mooring connections
+            self.connect("mooring.unstretched_length", "floatingse.mooring_line_length")
+            for var in [
+                "fairlead",
+                "fairlead_radius",
+                "anchor_radius",
+                "anchor_cost",
+                "line_diameter",
+                "line_mass_density_coeff",
+                "line_stiffness_coeff",
+                "line_breaking_load_coeff",
+                "line_cost_rate_coeff",
+            ]:
+                self.connect("mooring." + var, "floatingse." + var)
 
         # Connections to turbine constraints
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:

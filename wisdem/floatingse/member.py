@@ -379,9 +379,9 @@ class MemberComponent(om.ExplicitComponent):
 
     Parameters
     ----------
-    joint0 : numpy array[3], [m]
-        Global dimensional coordinates (x-y-z) for bottom node of member
     joint1 : numpy array[3], [m]
+        Global dimensional coordinates (x-y-z) for bottom node of member
+    joint2 : numpy array[3], [m]
         Global dimensional coordinates (x-y-z) for top node of member
     grid_axial_joints : numpy array[n_axial]
         non-dimensional locations along member for named axial joints
@@ -534,8 +534,8 @@ class MemberComponent(om.ExplicitComponent):
         self.sections = SortedDict()
 
         # Inputs
-        self.add_input("joint0", val=np.zeros(3), units="m")
         self.add_input("joint1", val=np.zeros(3), units="m")
+        self.add_input("joint2", val=np.zeros(3), units="m")
         self.add_input("height", val=0.0, units="m")
         self.add_input("s_full", np.zeros(n_full), units="m")
         self.add_input("z_full", np.zeros(n_full), units="m")
@@ -1127,8 +1127,8 @@ class MemberComponent(om.ExplicitComponent):
         d_full = inputs["d_full"]
         z_full = inputs["z_full"]
         s_axial = inputs["grid_axial_joints"]
-        xyz0 = inputs["joint0"]
-        xyz1 = inputs["joint1"]
+        xyz0 = inputs["joint1"]
+        xyz1 = inputs["joint2"]
         dxyz = xyz1 - xyz0
 
         # Add in axial nodes
