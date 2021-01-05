@@ -127,7 +127,7 @@ prob["painting_cost_rate"] = 30.0  # USD/m^2
 
 # wind & wave values
 prob["wind_reference_height"] = 90.0
-prob["wind_z0"] = 0.0
+prob["z0"] = 0.0
 prob["cd_usr"] = -1.0
 prob["rho_air"] = 1.225
 prob["mu_air"] = 1.7934e-5

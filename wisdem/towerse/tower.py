@@ -1402,7 +1402,7 @@ class TowerSE(om.Group):
             lc = "" if nLC == 1 else str(iLC + 1)
 
             self.add_subsystem(
-                "env" + lc, CylinderEnvironment(nPoints=nFull, water_flag=monopile, wind=wind), promotes=prom
+                "wind" + lc, CylinderEnvironment(nPoints=nFull, water_flag=monopile, wind=wind), promotes=prom
             )
 
             self.add_subsystem(
@@ -1444,8 +1444,8 @@ class TowerSE(om.Group):
                 promotes=["life", "z_full", "d_full", "t_full", "rho_full", "E_full", "G_full", "sigma_y_full"],
             )
 
-            self.connect("z_full", ["env" + lc + ".z", "tower" + lc + ".z"])
-            self.connect("d_full", ["env" + lc + ".d", "tower" + lc + ".d"])
+            self.connect("z_full", ["wind" + lc + ".z", "tower" + lc + ".z"])
+            self.connect("d_full", ["wind" + lc + ".d", "tower" + lc + ".d"])
             self.connect("t_full", "tower" + lc + ".t")
 
             self.connect("rho_full", "tower" + lc + ".rho")
@@ -1495,7 +1495,7 @@ class TowerSE(om.Group):
             self.connect("tower" + lc + ".hoop_stress_euro", "post" + lc + ".hoop_stress")
             self.connect("tower" + lc + ".cylinder_deflection", "post" + lc + ".tower_deflection_in")
 
-            self.connect("env" + lc + ".Px", "tower" + lc + ".Px")
-            self.connect("env" + lc + ".Py", "tower" + lc + ".Py")
-            self.connect("env" + lc + ".Pz", "tower" + lc + ".Pz")
-            self.connect("env" + lc + ".qdyn", "tower" + lc + ".qdyn")
+            self.connect("wind" + lc + ".Px", "tower" + lc + ".Px")
+            self.connect("wind" + lc + ".Py", "tower" + lc + ".Py")
+            self.connect("wind" + lc + ".Pz", "tower" + lc + ".Pz")
+            self.connect("wind" + lc + ".qdyn", "tower" + lc + ".qdyn")
