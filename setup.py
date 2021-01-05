@@ -67,7 +67,6 @@ setup(
         "scipy",
         "simpy",
         "sortedcontainers",
-        "xlrd",
     ],
     python_requires=">=3.7",
     package_data={"": ["*.yaml", "*.xlsx"], "wisdem": ["*.txt"]},

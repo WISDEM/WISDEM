@@ -1395,7 +1395,6 @@ class TowerSE(om.Group):
                 "Uc",
                 "Hsig_wave",
                 "Tsig_wave",
-                "rho_water",
                 "water_depth",
             ]
 

@@ -457,7 +457,7 @@ class WT_RNTA(om.Group):
                 self.connect("drivese.rna_cm", "towerse.rna_cg")
                 self.connect("drivese.rna_mass", "towerse.rna_mass")
             if modeling_options["flags"]["blade"]:
-                self.connect("rp.gust.V_gust", "towerse.wind.Uref")
+                self.connect("rp.gust.V_gust", "towerse.env.Uref")
             self.connect("assembly.hub_height", "towerse.wind_reference_height")
             self.connect("assembly.hub_height", "towerse.hub_height")
             self.connect("env.rho_air", "towerse.rho_air")

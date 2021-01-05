@@ -591,7 +591,7 @@ class CylinderEnvironment(om.Group):
             self.set_input_defaults("mu_water", 1.08e-3, units="kg/m/s")
 
         # Wind profile and loads
-        promwind = ["Uref", "zref", "shearExp", "z", "z0"]
+        promwind = ["Uref", "zref", "z", "z0"]
         if wind is None or wind.lower() in ["power", "powerwind", ""]:
             self.add_subsystem("wind", PowerWind(nPoints=nPoints), promotes=promwind + ["shearExp"])
 
