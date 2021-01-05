@@ -7,6 +7,17 @@ NLINES_MAX = 15
 NPTS_PLOT = 20
 
 
+def lines2nodes(F, nnode):
+    nline = F.shape[0]
+    ratio = int(nline / nnode)
+    if ratio == 1:
+        return F
+    Fnode = np.zeros((nnode, 3))
+    for k in range(nnode):
+        Fnode[k, :] = F[(ratio * k) : (ratio * (k + 1)), :].sum(axis=0)
+    return Fnode
+
+
 class MapMooring(om.ExplicitComponent):
     """
     Sets mooring line properties then writes MAP input file and executes MAP.
@@ -38,8 +49,6 @@ class MapMooring(om.ExplicitComponent):
         Maximum angle of heel allowable during operation
     survival_heel : float, [deg]
         max heel angle for turbine survival
-    gamma_f : float
-        Safety factor for mooring line tension
 
     Returns
     -------
@@ -72,7 +81,7 @@ class MapMooring(om.ExplicitComponent):
         self.options.declare("modeling_options")
 
     def setup(self):
-        n_lines = self.options["mooring"]["n_lines"]
+        n_lines = self.options["modeling_options"]["n_anchors"]
 
         # Variables local to the class and not OpenMDAO
         self.finput = None
@@ -82,17 +91,17 @@ class MapMooring(om.ExplicitComponent):
         self.add_input("water_depth", 0.0, units="m")
 
         # Design variables
-        self.add_input("fairlead_radius", np.zeros(n_lines), units="m")
-        self.add_input("fairlead", np.zeros(n_lines), units="m")
-        self.add_input("line_length", np.zeros(n_lines), units="m")
-        self.add_input("line_diameter", np.zeros(n_lines), units="m")
-        self.add_input("anchor_radius", np.zeros(n_lines), units="m")
+        self.add_input("fairlead_radius", 0.0, units="m")
+        self.add_input("fairlead", 0.0, units="m")
+        self.add_input("line_length", 0.0, units="m")
+        self.add_input("line_diameter", 0.0, units="m")
+        self.add_input("anchor_radius", 0.0, units="m")
         self.add_input("anchor_cost", 0.0, units="USD")
 
-        self.add_input("line_mass_density_coeff", np.zeros(n_lines), units="kg/m**3")
-        self.add_input("line_stiffness_coeff", np.zeros(n_lines), units="N/m**2")
-        self.add_input("line_breaking_load_coeff", np.zeros(n_lines), units="N/m**2")
-        self.add_input("line_cost_rate_coeff", np.zeros(n_lines), units="USD/m**3")
+        self.add_input("line_mass_density_coeff", 0.0, units="kg/m**3")
+        self.add_input("line_stiffness_coeff", 0.0, units="N/m**2")
+        self.add_input("line_breaking_load_coeff", 0.0, units="N/m**2")
+        self.add_input("line_cost_rate_coeff", 0.0, units="USD/m**3")
 
         # User inputs (could be design variables)
         # self.add_discrete_input("mooring_type", "CHAIN")
@@ -113,7 +122,7 @@ class MapMooring(om.ExplicitComponent):
         self.add_output("constr_axial_load", 0.0, units="m")
         self.add_output("constr_mooring_length", 0.0)
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
         # Set characteristics based on regressions / empirical data
         # self.set_properties(inputs, discrete_inputs)
 
@@ -121,12 +130,12 @@ class MapMooring(om.ExplicitComponent):
         self.set_geometry(inputs, outputs)
 
         # Write MAP input file and analyze the system at every angle
-        self.runMAP(inputs, discrete_inputs, outputs)
+        self.runMAP(inputs, outputs)
 
         # Compute costs for the system
-        self.compute_cost(inputs, discrete_inputs, outputs)
+        self.compute_cost(inputs, outputs)
 
-    def set_properties(self, inputs, discrete_inputs):
+    def set_properties(self, inputs):
         """
         THIS IS NOT USED BUT REMAINS FOR REFERENCE
         Sets mooring line properties: Minimum Breaking Load, Mass per Length,
@@ -337,17 +346,18 @@ class MapMooring(om.ExplicitComponent):
         self.finput.append("---------------------- LINE PROPERTIES ---------------------------------------")
         self.finput.append("Line    LineType  UnstrLen  NodeAnch  NodeFair  Flags")
         self.finput.append("(-)      (-)       (m)       (-)       (-)       (-)")
-        self.finput.append(
-            "%d   %s   %f   %d   %d   %s"
-            % (
-                line_number,
-                "myline",
-                inputs["line_length"],
-                anchor_node,
-                fairlead_node,
-                flags,
+        for k in range(len(line_number)):
+            self.finput.append(
+                "%d   %s   %f   %d   %d   %s"
+                % (
+                    line_number[k],
+                    "myline",
+                    inputs["line_length"],
+                    anchor_node[k],
+                    fairlead_node[k],
+                    flags,
+                )
             )
-        )
 
     def write_solver_options(self, inputs):
         """Writes SOLVER OPTIONS section of input.map file,
@@ -360,7 +370,7 @@ class MapMooring(om.ExplicitComponent):
         OUTPUTS  : none
         """
         # Unpack variables
-        n_lines = self.options["mooring"]["n_lines"]
+        n_nodes = self.options["modeling_options"]["n_nodes"]
 
         self.finput.append("---------------------- SOLVER OPTIONS-----------------------------------------")
         self.finput.append("Option")
@@ -381,7 +391,7 @@ class MapMooring(om.ExplicitComponent):
         self.finput.append(" inner_max_its 200")
         self.finput.append(" outer_max_its 600")
         # Repeat the details for the one mooring line multiple times
-        angles = np.linspace(0, 360, n_lines + 1)[1:-1]
+        angles = np.linspace(0, 360, n_nodes + 1)[1:-1]
         line = "repeat"
         for degree in angles:
             line += " %d" % degree
@@ -389,7 +399,7 @@ class MapMooring(om.ExplicitComponent):
         self.finput.append(" krylov_accelerator 3")
         self.finput.append(" ref_position 0.0 0.0 0.0")
 
-    def write_input_file(self, inputs, discrete_inputs, outputs):
+    def write_input_file(self, inputs):
         """Writes SOLVER OPTIONS section of input.map file,
         which includes repeating node/line arrangement in even angular spacing around structure.
 
@@ -400,39 +410,43 @@ class MapMooring(om.ExplicitComponent):
         OUTPUTS  : none
         """
         # Unpack variables
-        fairleadDepth = float(outputs["fairlead"])
-        R_fairlead = float(outputs["fairlead_radius"])
+        fairleadDepth = float(inputs["fairlead"])
+        R_fairlead = float(inputs["fairlead_radius"])
         R_anchor = float(inputs["anchor_radius"])
-        n_lines = self.options["mooring"]["n_lines"]
+        n_nodes = self.options["modeling_options"]["n_nodes"]
+        n_anchors = self.options["modeling_options"]["n_anchors"]
+        ratio = int(n_anchors / n_nodes)
 
         # Open the map input file
         self.finput = []
 
         # Write the "Line Dictionary" section
-        self.write_line_dictionary(inputs, discrete_inputs)
+        self.write_line_dictionary(inputs)
 
         # Write the "Node Properties" section
         self.write_node_properties_header()
         # One end on sea floor the other at fairlead
         self.write_node_properties(1, "VESSEL", R_fairlead, 0, -fairleadDepth)
-        if n_lines > 1:
-            angles = np.linspace(0, 2 * np.pi, n_lines + 1)[:n_lines]
+        if ratio > 1:
+            angles = np.linspace(0, 2 * np.pi, n_anchors + 1)[:ratio]
             angles -= np.mean(angles)
             anchorx = R_anchor * np.cos(angles)
             anchory = R_anchor * np.sin(angles)
-            for k in range(n_lines):
+            for k in range(ratio):
                 self.write_node_properties(k + 2, "FIX", anchorx[k], anchory[k], None)
         else:
             self.write_node_properties(2, "FIX", R_anchor, 0, None)
 
         # Write the "Line Properties" section
-        for k in range(n_lines):
-            self.write_line_properties(inputs, discrete_inputs, line_number=k + 1, anchor_node=k + 2, fairlead_node=1)
+        iline = np.arange(ratio) + 1
+        ianch = np.arange(ratio) + 2
+        ifair = np.ones(iline.shape)
+        self.write_line_properties(inputs, line_number=iline, anchor_node=ianch, fairlead_node=ifair)
 
         # Write the "Solve Options" section
         self.write_solver_options(inputs)
 
-    def runMAP(self, inputs, discrete_inputs, outputs):
+    def runMAP(self, inputs, outputs):
         """Writes MAP input file, executes, and then queries MAP to find
         maximum loading and displacement from vessel displacement around all 360 degrees
 
@@ -446,17 +460,18 @@ class MapMooring(om.ExplicitComponent):
         # Unpack variables
         rhoWater = float(inputs["rho_water"])
         waterDepth = float(inputs["water_depth"])
-        fairleadDepth = float(outputs["fairlead"])
+        fairleadDepth = float(inputs["fairlead"])
         heel = float(inputs["operational_heel"])
         max_heel = inputs["survival_heel"]
         d = inputs["line_diameter"]
         min_break_load = inputs["line_breaking_load_coeff"] * d ** 2
         gamma = self.options["modeling_options"]["gamma_f"]
-        n_lines = self.options["mooring"]["n_lines"]
+        n_nodes = self.options["modeling_options"]["n_nodes"]
+        n_lines = self.options["modeling_options"]["n_anchors"]
         offset = float(inputs["max_surge_fraction"]) * waterDepth
 
         # Write the mooring system input file for this design
-        self.write_input_file(inputs, discrete_inputs)
+        self.write_input_file(inputs)
 
         # Initiate MAP++ for this design
         mymap = pyMAP()
@@ -486,7 +501,7 @@ class MapMooring(om.ExplicitComponent):
             if self.tlpFlag:
                 # Seems to be a bug in the plot arrays from MAP++ for plotting output with taut lines
                 plotMat[k, :, 2] = np.linspace(-fairleadDepth, -waterDepth, NPTS_PLOT)
-        outputs["mooring_neutral_load"] = F_neutral
+        outputs["mooring_neutral_load"] = lines2nodes(F_neutral, n_nodes)
         outputs["mooring_plot_matrix"] = plotMat
 
         # Get the restoring moment at maximum angle of heel
@@ -500,12 +515,13 @@ class MapMooring(om.ExplicitComponent):
         mymap.update_states(0.0, 0)
         for k in range(n_lines):
             Fh[k, 0], Fh[k, 1], Fh[k, 2] = mymap.get_fairlead_force_3d(k)
-        outputs["operational_heel_restoring_force"] = Fh
+        outputs["operational_heel_restoring_force"] = lines2nodes(Fh, n_nodes)
+
         mymap.displace_vessel(0, 0, 0, 0, max_heel, 0)
         mymap.update_states(0.0, 0)
         for k in range(n_lines):
             Fh[k, 0], Fh[k, 1], Fh[k, 2] = mymap.get_fairlead_force_3d(k)
-        outputs["survival_heel_restoring_force"] = Fh
+        outputs["survival_heel_restoring_force"] = lines2nodes(Fh, n_nodes)
 
         # Get angles by which to find the weakest line
         dangle = 5.0
@@ -537,14 +553,11 @@ class MapMooring(om.ExplicitComponent):
         outputs["max_surge_restoring_force"] = Frestore.min()
 
         # Check for good convergence
-        if (plotMat[0, -1, -1] + fairleadDepth) > 1.0:
-            outputs["constr_axial_load"] = 1e30
-        else:
-            outputs["constr_axial_load"] = gamma * Tmax.max() / min_break_load
+        outputs["constr_axial_load"] = gamma * Tmax.max() / min_break_load
 
         mymap.end()
 
-    def compute_cost(self, inputs, discrete_inputs, outputs):
+    def compute_cost(self, inputs, outputs):
         """Computes cost, based on mass scaling, of mooring system.
 
         INPUTS:
@@ -555,14 +568,14 @@ class MapMooring(om.ExplicitComponent):
         OUTPUTS  : none (mooring_cost/mass unknown dictionary values set)
         """
         # Unpack variables
-        L_mooring = inputs["line_length"]
+        L_mooring = float(inputs["line_length"])
         # anchorType = discrete_inputs["anchor_type"]
-        d = inputs["line_diameter"]
-        cost_per_length = inputs["line_cost_rate_coeff"] * d ** 2
+        d = float(inputs["line_diameter"])
+        cost_per_length = float(inputs["line_cost_rate_coeff"]) * d ** 2
         # min_break_load = inputs['line_breaking_load_coeff'] * d**2
-        wet_mass_per_length = inputs["line_mass_density_coeff"] * d ** 2
-        anchor_rate = inputs["anchor_cost"]
-        n_lines = self.options["mooring"]["n_lines"]
+        wet_mass_per_length = float(inputs["line_mass_density_coeff"]) * d ** 2
+        anchor_rate = float(inputs["anchor_cost"])
+        n_anchors = n_lines = self.options["modeling_options"]["n_anchors"]
 
         # Cost of anchors
         # if anchorType.upper() == "DRAGEMBEDMENT":
@@ -571,12 +584,11 @@ class MapMooring(om.ExplicitComponent):
         #    anchor_rate = 150000.0 * np.sqrt(1e-3 * min_break_load / gravity / 1250.0)
         # else:
         #    raise ValueError("Anchor Type must be DRAGEMBEDMENT or SUCTIONPILE")
-        anchor_total = anchor_rate * n_lines
+        anchor_total = anchor_rate * n_anchors
 
         # Cost of all of the mooring lines
         legs_total = n_lines * cost_per_length * L_mooring
 
         # Total summations
-        outputs["anchor_cost"] = anchor_total
         outputs["mooring_cost"] = legs_total + anchor_total
         outputs["mooring_mass"] = wet_mass_per_length * L_mooring * n_lines
