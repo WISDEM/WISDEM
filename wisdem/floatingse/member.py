@@ -17,7 +17,7 @@ class CrossSection(object):
         self.Ixx, self.Iyy, self.Izz = Ixx, Iyy, Izz
 
 
-NREFINE = 1
+NREFINE = 2
 
 
 def get_nfull(npts):
@@ -73,7 +73,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         the laminate.
     unit_cost_mat : numpy array[n_mat], [USD/kg]
         1D array of the unit costs of the materials.
-    outfitting_factor : float
+    outfitting_factor_in : float
         Multiplier that accounts for secondary structure mass inside of member
     rho_water : float, [kg/m**3]
         density of water
@@ -528,7 +528,8 @@ class MemberComponent(om.ExplicitComponent):
         # 2 points added for bulkheads and stiffeners
         # Bulkheads at 0,1 only get 1 new point
         # No separate members for ballast
-        npts = n_full + n_axial + 2 * n_bulk - 2 + 2 * n_ring
+        blkpts = 0 if n_bulk == 0 else np.maximum(1, 2 * n_bulk - 2)
+        npts = n_full + n_axial + blkpts + 2 * n_ring
 
         # Initialize dictionary that will keep our member nodes so we can convert to OpenFAST format
         self.sections = SortedDict()
@@ -556,9 +557,9 @@ class MemberComponent(om.ExplicitComponent):
 
         self.add_input("ring_stiffener_web_height", 0.0, units="m")
         self.add_input("ring_stiffener_web_thickness", 0.0, units="m")
-        self.add_input("ring_stiffener_flange_width", 0.0, units="m")
+        self.add_input("ring_stiffener_flange_width", 1e-6, units="m")
         self.add_input("ring_stiffener_flange_thickness", 0.0, units="m")
-        self.add_input("ring_stiffener_spacing", 0.0, units="m")
+        self.add_input("ring_stiffener_spacing", 1000.0, units="m")
 
         self.add_input("ballast_grid", np.zeros((n_ball, 2)))
         self.add_input("ballast_density", np.zeros(n_ball), units="kg/m**3")
@@ -597,10 +598,10 @@ class MemberComponent(om.ExplicitComponent):
         self.add_output("z_cg", 0.0, units="m")
         self.add_output("I_total", np.zeros(6), units="kg*m**2")
 
-        self.add_output("s_all", np.zeros(npts), units="m**2")
+        self.add_output("s_all", np.zeros(npts))
         self.add_output("center_of_mass", np.zeros(3), units="m")
         self.add_output("nodes_r", np.zeros(npts), units="m")
-        self.add_output("nodes_xyz", np.zeros((npts, 3)), units="m**2")
+        self.add_output("nodes_xyz", np.zeros((npts, 3)), units="m")
         self.add_output("section_A", np.zeros(npts - 1), units="m**2")
         self.add_output("section_Asx", np.zeros(npts - 1), units="m**2")
         self.add_output("section_Asy", np.zeros(npts - 1), units="m**2")
@@ -774,8 +775,10 @@ class MemberComponent(om.ExplicitComponent):
         s_bulk = inputs["bulkhead_grid"]
         t_bulk = inputs["bulkhead_thickness"]
         coeff = inputs["outfitting_full"]
-        nbulk = s_bulk.size
         L = inputs["height"]
+        nbulk = s_bulk.size
+        if nbulk == 0:
+            return
 
         # Get z and R_id values of bulkhead locations
         z_bulk = np.interp(s_bulk, s_full, z_full)
@@ -1225,18 +1228,18 @@ class MemberHydro(om.ExplicitComponent):
         self.add_input("s_full", np.zeros(n_full), units="m")
         self.add_input("z_full", np.zeros(n_full), units="m")
         self.add_input("d_full", np.zeros(n_full), units="m")
-        self.add_input("s_all", shape_by_conn=True, units="m**2")
-        self.add_input("nodes_xyz", shape_by_conn=True, units="m**2")
+        self.add_input("s_all", shape_by_conn=True)
+        self.add_input("nodes_xyz", shape_by_conn=True, units="m")
 
         self.add_output("center_of_buoyancy", np.zeros(3), units="m")
         self.add_output("displacement", 0.0, units="m**3")
         self.add_output("buoyancy_force", 0.0, units="N")
-        self.add_discrete_output("idx_cb", 0)
+        self.add_output("idx_cb", 0)
         self.add_output("Awater", 0.0, units="m**2")
         self.add_output("Iwater", 0.0, units="m**4")
         self.add_output("added_mass", np.zeros(6), units="kg")
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
         # Unpack variables
         xyz = inputs["nodes_xyz"]
         s_grid = inputs["s_all"]
@@ -1279,7 +1282,7 @@ class MemberHydro(om.ExplicitComponent):
         s_cb = np.interp(z_cb, z_under, s_under)
         cb = xyz0 + s_cb * dxyz
         outputs["center_of_buoyancy"] = cb
-        discrete_outputs["idx_cb"] = util.closest_node(xyz, cb)
+        outputs["idx_cb"] = util.closest_node(xyz, cb)
 
         # 2nd moment of area for circular cross section
         # Note: Assuming Iwater here depends on "water displacement" cross-section

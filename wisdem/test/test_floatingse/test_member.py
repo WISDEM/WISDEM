@@ -481,7 +481,7 @@ class TestHydro(unittest.TestCase):
         self.discrete_outputs = {}
 
         # For Geometry call
-        n_height = 3
+        n_height = 4
         npts = member.get_nfull(n_height)
         self.inputs["s_full"] = np.linspace(0, 1.0, npts)
         self.inputs["z_full"] = np.linspace(0, 50.0, npts)
@@ -494,7 +494,7 @@ class TestHydro(unittest.TestCase):
 
     def testVerticalSubmerged(self):
         npts = self.inputs["s_full"].size
-        self.hydro.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        self.hydro.compute(self.inputs, self.outputs)
 
         rho_w = self.inputs["rho_water"]
         V_expect = np.pi * 25.0 * 50.0
@@ -504,7 +504,7 @@ class TestHydro(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["displacement"], V_expect)
         self.assertAlmostEqual(self.outputs["buoyancy_force"], V_expect * rho_w * g)
         npt.assert_almost_equal(self.outputs["center_of_buoyancy"], cb_expect)
-        self.assertEqual(self.discrete_outputs["idx_cb"], npts)
+        self.assertEqual(self.outputs["idx_cb"], npts - 1)  # Halfway node point
         self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
 
@@ -517,7 +517,7 @@ class TestHydro(unittest.TestCase):
     def testVerticalWaterplane(self):
         npts = self.inputs["s_full"].size
         self.inputs["nodes_xyz"] = np.c_[np.zeros(2 * npts), np.zeros(2 * npts), np.linspace(0, 50.0, 2 * npts) - 25]
-        self.hydro.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        self.hydro.compute(self.inputs, self.outputs)
 
         rho_w = self.inputs["rho_water"]
         V_expect = np.pi * 25.0 * 25.0
@@ -527,7 +527,7 @@ class TestHydro(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["displacement"], V_expect)
         self.assertAlmostEqual(self.outputs["buoyancy_force"], V_expect * rho_w * g)
         npt.assert_almost_equal(self.outputs["center_of_buoyancy"], cb_expect)
-        self.assertEqual(self.discrete_outputs["idx_cb"], int(0.5 * npts))
+        self.assertEqual(self.outputs["idx_cb"], int(0.5 * npts))
         self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
 
@@ -575,7 +575,7 @@ class TestGroup(unittest.TestCase):
         prob["painting_cost_rate"] = 10.0
         prob["labor_cost_rate"] = 2.0
 
-        prob["bulkhead_grid"] = np.array([0.0, 0.22, 0.88, 1.0])
+        prob["bulkhead_grid"] = np.array([0.0, 0.1, 0.2, 1.0])
         prob["bulkhead_thickness"] = 1.0 * np.ones(nbulk)
 
         prob["ring_stiffener_web_thickness"] = 0.2

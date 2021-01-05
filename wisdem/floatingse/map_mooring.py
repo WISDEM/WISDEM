@@ -116,6 +116,7 @@ class MapMooring(om.ExplicitComponent):
         self.add_output("mooring_neutral_load", np.zeros((n_lines, 3)), units="N")
         self.add_output("max_surge_restoring_force", 0.0, units="N")
         self.add_output("operational_heel_restoring_force", np.zeros((n_lines, 3)), units="N")
+        self.add_output("survival_heel_restoring_force", np.zeros((n_lines, 3)), units="N")
         self.add_output("mooring_plot_matrix", np.zeros((n_lines, NPTS_PLOT, 3)), units="m")
 
         # Constraints
