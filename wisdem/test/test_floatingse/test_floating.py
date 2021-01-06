@@ -13,21 +13,19 @@ class TestOC3Mass(unittest.TestCase):
 
         opt = {}
         opt["floating"] = {}
-        opt["floating"]["n_member"] = 1
-        opt["floating"]["member"] = [{}]
-        opt["floating"]["member"][0]["n_height"] = npts
-        opt["floating"]["member"][0]["n_bulkhead"] = 4
-        opt["floating"]["member"][0]["n_layers"] = 1
-        opt["floating"]["member"][0]["n_ballast"] = 0
-        opt["floating"]["member"][0]["n_ring"] = 60
-        opt["floating"]["member"][0]["n_axial"] = 1
+        opt["floating"]["members"] = {}
+        opt["floating"]["members"]["n_members"] = 1
+        opt["floating"]["members"]["n_height"] = [npts]
+        opt["floating"]["members"]["n_bulkheads"] = [4]
+        opt["floating"]["members"]["n_layers"] = [1]
+        opt["floating"]["members"]["n_ballasts"] = [0]
+        opt["floating"]["members"]["n_axial_joints"] = [1]
         opt["floating"]["tower"] = {}
-        opt["floating"]["tower"]["n_height"] = npts
-        opt["floating"]["tower"]["n_bulkhead"] = 0
-        opt["floating"]["tower"]["n_layers"] = 1
-        opt["floating"]["tower"]["n_ballast"] = 0
-        opt["floating"]["tower"]["n_ring"] = 0
-        opt["floating"]["tower"]["n_axial"] = 0
+        opt["floating"]["tower"]["n_height"] = [npts]
+        opt["floating"]["tower"]["n_bulkheads"] = [0]
+        opt["floating"]["tower"]["n_layers"] = [1]
+        opt["floating"]["tower"]["n_ballasts"] = [0]
+        opt["floating"]["tower"]["n_axial_joints"] = [0]
         opt["floating"]["frame3dd"] = {}
         opt["floating"]["frame3dd"]["shear"] = True
         opt["floating"]["frame3dd"]["geom"] = False
@@ -125,13 +123,15 @@ class TestOC3Mass(unittest.TestCase):
         # prob["zref"] = 100.0
 
         # Porperties of turbine tower
-        nTower = prob.model.options["modeling_options"]["floating"]["tower"]["n_height"] - 1
+        nTower = prob.model.options["modeling_options"]["floating"]["tower"]["n_height"][0]
         prob["tower.height"] = prob["hub_height"] = 77.6
-        prob["tower.s"] = np.linspace(0.0, 1.0, nTower + 1)
-        prob["tower.outer_diameter_in"] = np.linspace(6.5, 3.87, nTower + 1)
-        prob["tower.layer_thickness"] = np.linspace(0.027, 0.019, nTower + 1).reshape((1, nTower + 1))
+        prob["tower.s"] = np.linspace(0.0, 1.0, nTower)
+        prob["tower.outer_diameter_in"] = np.linspace(6.5, 3.87, nTower)
+        prob["tower.layer_thickness"] = np.linspace(0.027, 0.019, nTower).reshape((1, nTower))
         prob["tower.layer_materials"] = ["steel"]
         prob["tower.outfitting_factor"] = 1.07
+
+        prob["transition_node"] = prob["member0.joint2"]
 
         # Properties of rotor-nacelle-assembly (RNA)
         prob["rna_mass"] = 350e3  # Mass [kg]

@@ -6,6 +6,7 @@ import numpy.testing as npt
 import wisdem.floatingse.member as member
 from wisdem.commonse import gravity as g
 
+NULL = member.NULL
 NHEIGHT = 6
 NPTS = member.get_nfull(NHEIGHT)
 myones = np.ones((NPTS,))
@@ -37,10 +38,10 @@ class TestInputs(unittest.TestCase):
         self.inputs["outfitting_factor_in"] = 1.05
         self.discrete_inputs["material_names"] = ["steel", "slurry"]
         opt = {}
-        opt["n_height"] = 5
-        opt["n_layers"] = 1
-        opt["n_ballast"] = 3
-        myobj = member.DiscretizationYAML(options=opt, n_mat=2)
+        opt["n_height"] = [5]
+        opt["n_layers"] = [1]
+        opt["n_ballasts"] = [3]
+        myobj = member.DiscretizationYAML(options=opt, idx=0, n_mat=2)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         npt.assert_equal(self.outputs["section_height"], 25.0 * np.ones(4))
@@ -72,10 +73,10 @@ class TestInputs(unittest.TestCase):
         self.inputs["outfitting_factor_in"] = 1.05
         self.discrete_inputs["material_names"] = ["steel", "slurry", "other"]
         opt = {}
-        opt["n_height"] = 5
-        opt["n_layers"] = 2
-        opt["n_ballast"] = 3
-        myobj = member.DiscretizationYAML(options=opt, n_mat=3)
+        opt["n_height"] = [5]
+        opt["n_layers"] = [2]
+        opt["n_ballasts"] = [3]
+        myobj = member.DiscretizationYAML(options=opt, idx=0, n_mat=3)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         # Define mixtures
@@ -115,7 +116,7 @@ class TestFullDiscretization(unittest.TestCase):
         self.inputs["outfitting_factor"] = 1.05 * np.ones(4)
         self.inputs["unit_cost"] = 7.0 * np.ones(4)
 
-        self.mydis = member.MemberDiscretization(n_height=5, nRefine=2)
+        self.mydis = member.MemberDiscretization(n_height=5, n_refine=2)
 
     def testRefine2(self):
         self.mydis.compute(self.inputs, self.outputs)
@@ -188,12 +189,12 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["joint1"] = np.array([20.0, 10.0, -30.0])
         self.inputs["joint2"] = np.array([25.0, 10.0, 15.0])
 
-        self.mem = member.MemberComponent()
-        self.mem.options = {}
-        self.mem.options["n_axial"] = 3
-        self.mem.options["n_bulkhead"] = nbulk
-        self.mem.options["n_ballast"] = 3
-        self.mem.options["n_ring"] = 5
+        opt = {}
+        opt["n_height"] = [NHEIGHT]
+        opt["n_ballasts"] = [3]
+        opt["n_bulkheads"] = [nbulk]
+        opt["n_axial_joints"] = [3]
+        self.mem = member.MemberComponent(options=opt, idx=0)
         self.mem.sections = member.SortedDict()
 
     def testSortedDict(self):
@@ -305,7 +306,10 @@ class TestMemberComponent(unittest.TestCase):
         Rwi = Rwo - 0.5
         Rfi = Rwi - 0.3
         self.assertEqual(self.outputs["flange_spacing_ratio"], 0.1)
-        npt.assert_almost_equal(self.outputs["stiffener_radius_ratio"], 1 - Rfi / 5)
+        nout = np.where(self.outputs["stiffener_radius_ratio"] == NULL)[0][0]
+        self.assertEqual(nout, 5)
+        npt.assert_almost_equal(self.outputs["stiffener_radius_ratio"][nout:], NULL)
+        npt.assert_almost_equal(self.outputs["stiffener_radius_ratio"][:nout], 1 - Rfi / 5)
 
         # Test Mass
         A1 = np.pi * (Rwo ** 2 - Rwi ** 2)
@@ -439,27 +443,36 @@ class TestMemberComponent(unittest.TestCase):
 
         s_full = self.inputs["s_full"]
         s_all = self.outputs["s_all"]
-        npt.assert_almost_equal(s_all, np.sort(np.r_[s_full, 0.44, 0.55, 0.66]))
+        nout = np.where(s_all == NULL)[0][0]
+        self.assertEqual(nout, len(s_full) + 3)
+        npt.assert_almost_equal(s_all[nout:], NULL)
+        npt.assert_almost_equal(s_all[:nout], np.sort(np.r_[s_full, 0.44, 0.55, 0.66]))
 
         npt.assert_almost_equal(self.outputs["center_of_mass"], np.array([22, 10, -12]))
-        npt.assert_almost_equal(self.outputs["nodes_xyz"][:, 0], 20 + s_all * 5)
-        npt.assert_almost_equal(self.outputs["nodes_xyz"][:, 1], 10)
-        npt.assert_almost_equal(self.outputs["nodes_xyz"][:, 2], -30 + s_all * 45)
+        npt.assert_almost_equal(self.outputs["nodes_xyz"][nout:, :], NULL)
+        npt.assert_almost_equal(self.outputs["nodes_xyz"][:nout, 0], 20 + s_all[:nout] * 5)
+        npt.assert_almost_equal(self.outputs["nodes_xyz"][:nout, 1], 10)
+        npt.assert_almost_equal(self.outputs["nodes_xyz"][:nout, 2], -30 + s_all[:nout] * 45)
 
-        npt.assert_almost_equal(self.outputs["section_A"], 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
-        npt.assert_almost_equal(self.outputs["section_Ixx"], 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-        npt.assert_almost_equal(self.outputs["section_Iyy"], 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-        npt.assert_almost_equal(self.outputs["section_Izz"], 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-        npt.assert_almost_equal(self.outputs["section_rho"], 1e3)
-        npt.assert_almost_equal(self.outputs["section_E"], 1e6)
-        npt.assert_almost_equal(self.outputs["section_G"], 1e5)
+        nelem = nout - 1
+        for var in ["A", "Ixx", "Iyy", "Izz", "rho", "G", "E"]:
+            npt.assert_almost_equal(self.outputs["section_" + var][nelem:], NULL)
+        npt.assert_almost_equal(self.outputs["section_A"][:nelem], 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
+        npt.assert_almost_equal(self.outputs["section_Ixx"][:nelem], 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+        npt.assert_almost_equal(self.outputs["section_Iyy"][:nelem], 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+        npt.assert_almost_equal(self.outputs["section_Izz"][:nelem], 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+        npt.assert_almost_equal(self.outputs["section_rho"][:nelem], 1e3)
+        npt.assert_almost_equal(self.outputs["section_E"][:nelem], 1e6)
+        npt.assert_almost_equal(self.outputs["section_G"][:nelem], 1e5)
 
     def testCompute(self):
         self.mem.compute(self.inputs, self.outputs)
         # 2 points added for bulkheads and stiffeners
         # Bulkheads at 0,1 only get 1 new point
         nbulk = len(self.inputs["bulkhead_grid"])
-        self.assertEqual(self.outputs["s_all"].size, NPTS + 3 + 2 * nbulk - 2 + 2 * 5)
+        s_all = self.outputs["s_all"]
+        nout = np.where(s_all == NULL)[0][0]
+        self.assertEqual(nout, NPTS + 3 + 2 * nbulk - 2 + 2 * 5)
 
     def testDeconflict(self):
         self.inputs["bulkhead_grid"] = np.array([0.0, 0.1, 1.0])
@@ -486,8 +499,12 @@ class TestHydro(unittest.TestCase):
         self.inputs["s_full"] = np.linspace(0, 1.0, npts)
         self.inputs["z_full"] = np.linspace(0, 50.0, npts)
         self.inputs["d_full"] = 10.0 * np.ones(npts)
-        self.inputs["s_all"] = np.linspace(0, 1.0, 2 * npts)
-        self.inputs["nodes_xyz"] = np.c_[np.zeros(2 * npts), np.zeros(2 * npts), np.linspace(0, 50.0, 2 * npts) - 75]
+        self.inputs["s_all"] = NULL * np.ones(member.MEMMAX)
+        self.inputs["s_all"][: 2 * npts] = np.linspace(0, 1.0, 2 * npts)
+        self.inputs["nodes_xyz"] = NULL * np.ones((member.MEMMAX, 3))
+        self.inputs["nodes_xyz"][: 2 * npts, :] = np.c_[
+            np.zeros(2 * npts), np.zeros(2 * npts), np.linspace(0, 50.0, 2 * npts) - 75
+        ]
         self.inputs["rho_water"] = 1e3
 
         self.hydro = member.MemberHydro(n_height=n_height)
@@ -541,21 +558,15 @@ class TestHydro(unittest.TestCase):
 class TestGroup(unittest.TestCase):
     def testAll(self):
         opt = {}
-        opt["gamma_f"] = 1.0
-        opt["gamma_b"] = 1.0
-        opt["materials"] = {}
-        opt["materials"]["n_mat"] = 2
-        colopt = {}
-        colopt["n_height"] = 5
-        colopt["n_bulkhead"] = nbulk = 4
-        colopt["n_layers"] = 1
-        colopt["n_ballast"] = 2
-        colopt["n_ring"] = 5
-        colopt["n_axial"] = 3
+        opt["n_height"] = [5]
+        opt["n_layers"] = [1]
+        opt["n_bulkheads"] = nbulk = [4]
+        opt["n_ballasts"] = [2]
+        opt["n_axial_joints"] = [3]
 
         prob = om.Problem()
 
-        prob.model.add_subsystem("col", member.Member(modeling_options=opt, member_options=colopt), promotes=["*"])
+        prob.model.add_subsystem("col", member.Member(column_options=opt, idx=0, n_mat=2), promotes=["*"])
 
         prob.setup()
         prob["s"] = np.linspace(0, 1, 5)

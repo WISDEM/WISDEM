@@ -3,11 +3,10 @@ import openmdao.api as om
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 from wisdem.commonse import gravity
-from wisdem.floatingse.member import Member
+from wisdem.floatingse.member import NULL, MEMMAX, Member
 
 NNODES_MAX = 1000
 NELEM_MAX = 1000
-NULL = -9999
 RIGID = 1e30
 
 # TODO:
@@ -21,20 +20,20 @@ class PlatformFrame(om.ExplicitComponent):
 
     def setup(self):
         opt = self.options["options"]
-        n_member = opt["floating"]["n_member"]
+        n_member = opt["floating"]["members"]["n_members"]
 
         for k in range(n_member):
-            self.add_input("member" + str(k) + ":nodes_xyz", shape_by_conn=True, units="m")
-            self.add_input("member" + str(k) + ":nodes_r", shape_by_conn=True, units="m")
-            self.add_input("member" + str(k) + ":section_A", shape_by_conn=True, units="m**2")
-            self.add_input("member" + str(k) + ":section_Asx", shape_by_conn=True, units="m**2")
-            self.add_input("member" + str(k) + ":section_Asy", shape_by_conn=True, units="m**2")
-            self.add_input("member" + str(k) + ":section_Ixx", shape_by_conn=True, units="kg*m**2")
-            self.add_input("member" + str(k) + ":section_Iyy", shape_by_conn=True, units="kg*m**2")
-            self.add_input("member" + str(k) + ":section_Izz", shape_by_conn=True, units="kg*m**2")
-            self.add_input("member" + str(k) + ":section_rho", shape_by_conn=True, units="kg/m**3")
-            self.add_input("member" + str(k) + ":section_E", shape_by_conn=True, units="Pa")
-            self.add_input("member" + str(k) + ":section_G", shape_by_conn=True, units="Pa")
+            self.add_input("member" + str(k) + ":nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
+            self.add_input("member" + str(k) + ":nodes_r", NULL * np.ones(MEMMAX), units="m")
+            self.add_input("member" + str(k) + ":section_A", NULL * np.ones(MEMMAX), units="m**2")
+            self.add_input("member" + str(k) + ":section_Asx", NULL * np.ones(MEMMAX), units="m**2")
+            self.add_input("member" + str(k) + ":section_Asy", NULL * np.ones(MEMMAX), units="m**2")
+            self.add_input("member" + str(k) + ":section_Ixx", NULL * np.ones(MEMMAX), units="kg*m**2")
+            self.add_input("member" + str(k) + ":section_Iyy", NULL * np.ones(MEMMAX), units="kg*m**2")
+            self.add_input("member" + str(k) + ":section_Izz", NULL * np.ones(MEMMAX), units="kg*m**2")
+            self.add_input("member" + str(k) + ":section_rho", NULL * np.ones(MEMMAX), units="kg/m**3")
+            self.add_input("member" + str(k) + ":section_E", NULL * np.ones(MEMMAX), units="Pa")
+            self.add_input("member" + str(k) + ":section_G", NULL * np.ones(MEMMAX), units="Pa")
             self.add_input("member" + str(k) + ":idx_cb", 0)
             self.add_input("member" + str(k) + ":buoyancy_force", 0.0, units="N")
             self.add_input("member" + str(k) + ":displacement", 0.0, units="m**3")
@@ -83,7 +82,7 @@ class PlatformFrame(om.ExplicitComponent):
     def set_connectivity(self, inputs, outputs):
         # Load in number of members
         opt = self.options["options"]
-        n_member = opt["floating"]["n_member"]
+        n_member = opt["floating"]["members"]["n_members"]
 
         # Initialize running lists across all members
         nodes_temp = np.empty((0, 3))
@@ -93,7 +92,8 @@ class PlatformFrame(om.ExplicitComponent):
         # Look over members and grab all nodes and internal connections
         for k in range(n_member):
             inode_xyz = inputs["member" + str(k) + ":nodes_xyz"]
-            inodes = inode_xyz.shape[0]
+            inodes = np.where(inode_xyz[:, 0] == NULL)[0][0]
+            inode_xyz = inode_xyz[:inodes, :]
             inode_range = np.arange(inodes - 1)
 
             n = nodes_temp.shape[0]
@@ -124,7 +124,7 @@ class PlatformFrame(om.ExplicitComponent):
     def set_node_props(self, inputs, outputs):
         # Load in number of members
         opt = self.options["options"]
-        n_member = opt["floating"]["n_member"]
+        n_member = opt["floating"]["members"]["n_members"]
 
         # Number of valid nodes
         nnode = np.where(outputs["platform_nodes"][:, 0] == NULL)[0][0]
@@ -133,7 +133,7 @@ class PlatformFrame(om.ExplicitComponent):
         Rnode = np.zeros(nnode)
         for k in range(n_member):
             irnode = inputs["member" + str(k) + ":nodes_r"]
-            n = irnode.shape[0]
+            n = np.where(irnode == NULL)[0][0]
             for ii in range(n):
                 iglob = self.node_mem2glob[(k, ii)]
                 Rnode[iglob] = np.array([Rnode[iglob], irnode[ii]]).max()
@@ -154,7 +154,7 @@ class PlatformFrame(om.ExplicitComponent):
     def set_element_props(self, inputs, outputs):
         # Load in number of members
         opt = self.options["options"]
-        n_member = opt["floating"]["n_member"]
+        n_member = opt["floating"]["members"]["n_members"]
 
         # Initialize running lists across all members
         elem_A = np.array([])
@@ -178,15 +178,16 @@ class PlatformFrame(om.ExplicitComponent):
 
         # Append all member data
         for k in range(n_member):
-            elem_A = np.append(elem_A, inputs["member" + str(k) + ":section_A"])
-            elem_Asx = np.append(elem_Asx, inputs["member" + str(k) + ":section_Asx"])
-            elem_Asy = np.append(elem_Asy, inputs["member" + str(k) + ":section_Asy"])
-            elem_Ixx = np.append(elem_Ixx, inputs["member" + str(k) + ":section_Ixx"])
-            elem_Iyy = np.append(elem_Iyy, inputs["member" + str(k) + ":section_Iyy"])
-            elem_Izz = np.append(elem_Izz, inputs["member" + str(k) + ":section_Izz"])
-            elem_rho = np.append(elem_rho, inputs["member" + str(k) + ":section_rho"])
-            elem_E = np.append(elem_E, inputs["member" + str(k) + ":section_E"])
-            elem_G = np.append(elem_G, inputs["member" + str(k) + ":section_G"])
+            n = np.where(inputs["member" + str(k) + ":section_A"] == NULL)[0][0]
+            elem_A = np.append(elem_A, inputs["member" + str(k) + ":section_A"][:n])
+            elem_Asx = np.append(elem_Asx, inputs["member" + str(k) + ":section_Asx"][:n])
+            elem_Asy = np.append(elem_Asy, inputs["member" + str(k) + ":section_Asy"][:n])
+            elem_Ixx = np.append(elem_Ixx, inputs["member" + str(k) + ":section_Ixx"][:n])
+            elem_Iyy = np.append(elem_Iyy, inputs["member" + str(k) + ":section_Iyy"][:n])
+            elem_Izz = np.append(elem_Izz, inputs["member" + str(k) + ":section_Izz"][:n])
+            elem_rho = np.append(elem_rho, inputs["member" + str(k) + ":section_rho"][:n])
+            elem_E = np.append(elem_E, inputs["member" + str(k) + ":section_E"][:n])
+            elem_G = np.append(elem_G, inputs["member" + str(k) + ":section_G"][:n])
 
             # Mass, volume, cost tallies
             imass = inputs["member" + str(k) + ":total_mass"]
@@ -269,20 +270,20 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_input("platform_mass", 0.0, units="kg")
         self.add_input("platform_displacement", 0.0, units="m**3")
 
-        self.add_input("tower_nodes", shape_by_conn=True, units="m")
+        self.add_input("tower_nodes", NULL * np.ones((MEMMAX, 3)), units="m")
         self.add_output("tower_Fnode", copy_shape="tower_nodes", units="N")
-        self.add_input("tower_Rnode", shape_by_conn=True, units="m")
+        self.add_input("tower_Rnode", NULL * np.ones(MEMMAX), units="m")
         self.add_output("tower_elem_n1", copy_shape="tower_elem_A")
         self.add_output("tower_elem_n2", copy_shape="tower_elem_A")
-        self.add_input("tower_elem_A", shape_by_conn=True, units="m**2")
-        self.add_input("tower_elem_Asx", shape_by_conn=True, units="m**2")
-        self.add_input("tower_elem_Asy", shape_by_conn=True, units="m**2")
-        self.add_input("tower_elem_Ixx", shape_by_conn=True, units="kg*m**2")
-        self.add_input("tower_elem_Iyy", shape_by_conn=True, units="kg*m**2")
-        self.add_input("tower_elem_Izz", shape_by_conn=True, units="kg*m**2")
-        self.add_input("tower_elem_rho", shape_by_conn=True, units="kg/m**3")
-        self.add_input("tower_elem_E", shape_by_conn=True, units="Pa")
-        self.add_input("tower_elem_G", shape_by_conn=True, units="Pa")
+        self.add_input("tower_elem_A", NULL * np.ones(MEMMAX), units="m**2")
+        self.add_input("tower_elem_Asx", NULL * np.ones(MEMMAX), units="m**2")
+        self.add_input("tower_elem_Asy", NULL * np.ones(MEMMAX), units="m**2")
+        self.add_input("tower_elem_Ixx", NULL * np.ones(MEMMAX), units="kg*m**2")
+        self.add_input("tower_elem_Iyy", NULL * np.ones(MEMMAX), units="kg*m**2")
+        self.add_input("tower_elem_Izz", NULL * np.ones(MEMMAX), units="kg*m**2")
+        self.add_input("tower_elem_rho", NULL * np.ones(MEMMAX), units="kg/m**3")
+        self.add_input("tower_elem_E", NULL * np.ones(MEMMAX), units="Pa")
+        self.add_input("tower_elem_G", NULL * np.ones(MEMMAX), units="Pa")
         self.add_input("tower_center_of_mass", np.zeros(3), units="m")
         self.add_input("tower_mass", 0.0, units="kg")
 
@@ -317,19 +318,23 @@ class PlatformTowerFrame(om.ExplicitComponent):
         node_tower = inputs["tower_nodes"]
 
         nnode_platform = np.where(node_platform[:, 0] == NULL)[0][0]
-        nnode_tower = node_tower.shape[0]  # np.where(node_tower[:, 0] == NULL)[0][0]
-        nnode_system = nnode_platform + nnode_tower - 1
+        nnode_tower = np.where(node_tower[:, 0] == NULL)[0][0]
+        nnode_system = nnode_platform + np.maximum(1, nnode_tower) - 1
 
         nelem_platform = np.where(inputs["platform_elem_A"] == NULL)[0][0]
-        nelem_tower = inputs["tower_elem_A"].shape[0]  # np.where(inputs["tower_elem_A"] == NULL)[0][0]
+        nelem_tower = np.where(inputs["tower_elem_A"] == NULL)[0][0]
         nelem_system = nelem_platform + nelem_tower
 
-        outputs["tower_Fnode"] = np.zeros((nnode_tower, 3))
-        outputs["tower_elem_n1"] = np.arange(nelem_tower, dtype=np.int_)
-        outputs["tower_elem_n2"] = np.arange(nelem_tower, dtype=np.int_) + 1
-        itrans_platform = util.closest_node(node_platform, inputs["transition_node"])
-        tower_n1 = outputs["tower_elem_n1"] + nnode_platform - 1
-        tower_n2 = outputs["tower_elem_n2"] + nnode_platform - 1
+        outputs["tower_Fnode"] = np.zeros(node_tower.shape)
+        outputs["tower_elem_n1"] = NULL * np.ones(MEMMAX, dtype=np.int_)
+        outputs["tower_elem_n2"] = NULL * np.ones(MEMMAX, dtype=np.int_)
+        tower_n1 = np.arange(nelem_tower, dtype=np.int_)
+        tower_n2 = np.arange(nelem_tower, dtype=np.int_) + 1
+        outputs["tower_elem_n1"][:nelem_tower] = tower_n1.copy()
+        outputs["tower_elem_n2"][:nelem_tower] = tower_n2.copy()
+        itrans_platform = util.closest_node(node_platform[:nnode_platform, :], inputs["transition_node"])
+        tower_n1 += nnode_platform - 1
+        tower_n2 += nnode_platform - 1
         tower_n1[0] = itrans_platform
 
         outputs["system_nodes"] = NULL * np.ones((NNODES_MAX, 3))
@@ -399,20 +404,20 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("platform_mass", 0.0, units="kg")
         self.add_input("platform_center_of_mass", np.zeros(3), units="m")
 
-        self.add_input("tower_nodes", shape_by_conn=True, units="m")
-        self.add_input("tower_Fnode", shape_by_conn=True, units="N")
-        self.add_input("tower_Rnode", shape_by_conn=True, units="m")
-        self.add_input("tower_elem_n1", shape_by_conn=True)
-        self.add_input("tower_elem_n2", shape_by_conn=True)
-        self.add_input("tower_elem_A", shape_by_conn=True, units="m**2")
-        self.add_input("tower_elem_Asx", shape_by_conn=True, units="m**2")
-        self.add_input("tower_elem_Asy", shape_by_conn=True, units="m**2")
-        self.add_input("tower_elem_Ixx", shape_by_conn=True, units="kg*m**2")
-        self.add_input("tower_elem_Iyy", shape_by_conn=True, units="kg*m**2")
-        self.add_input("tower_elem_Izz", shape_by_conn=True, units="kg*m**2")
-        self.add_input("tower_elem_rho", shape_by_conn=True, units="kg/m**3")
-        self.add_input("tower_elem_E", shape_by_conn=True, units="Pa")
-        self.add_input("tower_elem_G", shape_by_conn=True, units="Pa")
+        self.add_input("tower_nodes", NULL * np.ones((MEMMAX, 3)), units="m")
+        self.add_input("tower_Fnode", NULL * np.ones((MEMMAX, 3)), units="N")
+        self.add_input("tower_Rnode", NULL * np.ones(MEMMAX), units="m")
+        self.add_input("tower_elem_n1", NULL * np.ones(MEMMAX))
+        self.add_input("tower_elem_n2", NULL * np.ones(MEMMAX))
+        self.add_input("tower_elem_A", NULL * np.ones(MEMMAX), units="m**2")
+        self.add_input("tower_elem_Asx", NULL * np.ones(MEMMAX), units="m**2")
+        self.add_input("tower_elem_Asy", NULL * np.ones(MEMMAX), units="m**2")
+        self.add_input("tower_elem_Ixx", NULL * np.ones(MEMMAX), units="kg*m**2")
+        self.add_input("tower_elem_Iyy", NULL * np.ones(MEMMAX), units="kg*m**2")
+        self.add_input("tower_elem_Izz", NULL * np.ones(MEMMAX), units="kg*m**2")
+        self.add_input("tower_elem_rho", NULL * np.ones(MEMMAX), units="kg/m**3")
+        self.add_input("tower_elem_E", NULL * np.ones(MEMMAX), units="Pa")
+        self.add_input("tower_elem_G", NULL * np.ones(MEMMAX), units="Pa")
 
         self.add_input("system_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
         self.add_input("system_Fnode", NULL * np.ones((NNODES_MAX, 3)), units="N")
@@ -455,7 +460,7 @@ class FrameAnalysis(om.ExplicitComponent):
         # Create frame3dd instance: nodes, elements, reactions, and options
         for frame in ["tower", "system"]:
             nodes = inputs[frame + "_nodes"]
-            nnode = nodes.shape[0] if frame == "tower" else np.where(nodes[:, 0] == NULL)[0][0]
+            nnode = np.where(nodes[:, 0] == NULL)[0][0]
             nodes = nodes[:nnode, :]
             rnode = np.zeros(nnode)  # inputs[frame + "_Rnode"][:nnode]
             Fnode = inputs[frame + "_Fnode"][:nnode, :]
@@ -464,7 +469,7 @@ class FrameAnalysis(om.ExplicitComponent):
             itrans = util.closest_node(nodes, inputs["transition_node"])
 
             N1 = np.int_(inputs[frame + "_elem_n1"])
-            nelem = N1.shape[0] if frame == "tower" else np.where(N1 == NULL)[0][0]
+            nelem = np.where(N1 == NULL)[0][0]
             N1 = N1[:nelem]
             N2 = np.int_(inputs[frame + "_elem_n2"][:nelem])
             A = inputs[frame + "_elem_A"][:nelem]
@@ -588,8 +593,9 @@ class FloatingFrame(om.Group):
         for var in ["A", "Asx", "Asy", "rho", "Ixx", "Iyy", "Izz", "E", "G"]:
             prom += [("section_" + var, "tower_elem_" + var)]
         self.add_subsystem(
-            "tower", Member(modeling_options=opt, member_options=opt["floating"]["tower"]), promotes=prom
+            "tower",
+            Member(column_options=opt["floating"]["tower"], idx=0, n_mat=opt["materials"]["n_mat"]),
+            promotes=prom,
         )
-
         self.add_subsystem("mux", PlatformTowerFrame(), promotes=["*"])
         self.add_subsystem("frame", FrameAnalysis(options=opt), promotes=["*"])
