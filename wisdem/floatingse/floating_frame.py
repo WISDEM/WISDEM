@@ -399,7 +399,7 @@ class FrameAnalysis(om.ExplicitComponent):
 
     def setup(self):
         opt = self.options["options"]
-        n_nodes = opt["mooring"]["n_nodes"]
+        n_attach = opt["mooring"]["n_attach"]
 
         self.add_input("platform_mass", 0.0, units="kg")
         self.add_input("platform_center_of_mass", np.zeros(3), units="m")
@@ -442,13 +442,13 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("rna_F", np.zeros(3), units="N")
         self.add_input("rna_M", np.zeros(3), units="N*m")
         self.add_input("rna_I", np.zeros(6), units="kg*m**2")
-        self.add_input("mooring_neutral_load", np.zeros((n_nodes, 3)), units="N")
-        self.add_input("mooring_fairlead_joints", np.zeros((n_nodes, 3)), units="m")
+        self.add_input("mooring_neutral_load", np.zeros((n_attach, 3)), units="N")
+        self.add_input("mooring_fairlead_joints", np.zeros((n_attach, 3)), units="m")
 
     def compute(self, inputs, outputs):
 
         # Unpack variables
-        n_nodes = self.options["options"]["mooring"]["n_nodes"]
+        n_attach = self.options["options"]["mooring"]["n_attach"]
         I_trans = inputs["transition_piece_I"]
         m_rna = float(inputs["rna_mass"])
         cg_rna = inputs["rna_cg"]
@@ -539,7 +539,7 @@ class FrameAnalysis(om.ExplicitComponent):
             load_obj = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
             if frame == "system":
-                for k in range(n_nodes):
+                for k in range(n_attach):
                     ind = util.closest_node(nodes, fairlead_joints[k, :])
                     Fnode[ind, :] += mooringF[k, :]
             Fnode[ihub, :] += inputs["rna_F"]

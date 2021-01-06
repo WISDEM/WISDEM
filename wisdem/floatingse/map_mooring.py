@@ -52,6 +52,8 @@ class MapMooring(om.ExplicitComponent):
 
     Returns
     -------
+    line_mass : float, [kg]
+        mass of single mooring line
     mooring_mass : float, [kg]
         total mass of mooring
     mooring_cost : float, [USD]
@@ -110,6 +112,7 @@ class MapMooring(om.ExplicitComponent):
         self.add_input("operational_heel", 0.0, units="deg")
         self.add_input("survival_heel", 0.0, units="deg")
 
+        self.add_output("line_mass", 0.0, units="kg")
         self.add_output("mooring_mass", 0.0, units="kg")
         self.add_output("mooring_cost", 0.0, units="USD")
         self.add_output("mooring_stiffness", np.zeros((6, 6)), units="N/m")
@@ -371,7 +374,7 @@ class MapMooring(om.ExplicitComponent):
         OUTPUTS  : none
         """
         # Unpack variables
-        n_nodes = self.options["modeling_options"]["n_nodes"]
+        n_attach = self.options["modeling_options"]["n_attach"]
 
         self.finput.append("---------------------- SOLVER OPTIONS-----------------------------------------")
         self.finput.append("Option")
@@ -392,7 +395,7 @@ class MapMooring(om.ExplicitComponent):
         self.finput.append(" inner_max_its 200")
         self.finput.append(" outer_max_its 600")
         # Repeat the details for the one mooring line multiple times
-        angles = np.linspace(0, 360, n_nodes + 1)[1:-1]
+        angles = np.linspace(0, 360, n_attach + 1)[1:-1]
         line = "repeat"
         for degree in angles:
             line += " %d" % degree
@@ -414,9 +417,9 @@ class MapMooring(om.ExplicitComponent):
         fairleadDepth = float(inputs["fairlead"])
         R_fairlead = float(inputs["fairlead_radius"])
         R_anchor = float(inputs["anchor_radius"])
-        n_nodes = self.options["modeling_options"]["n_nodes"]
+        n_attach = self.options["modeling_options"]["n_attach"]
         n_anchors = self.options["modeling_options"]["n_anchors"]
-        ratio = int(n_anchors / n_nodes)
+        ratio = int(n_anchors / n_attach)
 
         # Open the map input file
         self.finput = []
@@ -467,7 +470,7 @@ class MapMooring(om.ExplicitComponent):
         d = inputs["line_diameter"]
         min_break_load = inputs["line_breaking_load_coeff"] * d ** 2
         gamma = self.options["modeling_options"]["gamma_f"]
-        n_nodes = self.options["modeling_options"]["n_nodes"]
+        n_attach = self.options["modeling_options"]["n_attach"]
         n_lines = self.options["modeling_options"]["n_anchors"]
         offset = float(inputs["max_surge_fraction"]) * waterDepth
 
@@ -502,7 +505,7 @@ class MapMooring(om.ExplicitComponent):
             if self.tlpFlag:
                 # Seems to be a bug in the plot arrays from MAP++ for plotting output with taut lines
                 plotMat[k, :, 2] = np.linspace(-fairleadDepth, -waterDepth, NPTS_PLOT)
-        outputs["mooring_neutral_load"] = lines2nodes(F_neutral, n_nodes)
+        outputs["mooring_neutral_load"] = lines2nodes(F_neutral, n_attach)
         outputs["mooring_plot_matrix"] = plotMat
 
         # Get the restoring moment at maximum angle of heel
@@ -516,13 +519,13 @@ class MapMooring(om.ExplicitComponent):
         mymap.update_states(0.0, 0)
         for k in range(n_lines):
             Fh[k, 0], Fh[k, 1], Fh[k, 2] = mymap.get_fairlead_force_3d(k)
-        outputs["operational_heel_restoring_force"] = lines2nodes(Fh, n_nodes)
+        outputs["operational_heel_restoring_force"] = lines2nodes(Fh, n_attach)
 
         mymap.displace_vessel(0, 0, 0, 0, max_heel, 0)
         mymap.update_states(0.0, 0)
         for k in range(n_lines):
             Fh[k, 0], Fh[k, 1], Fh[k, 2] = mymap.get_fairlead_force_3d(k)
-        outputs["survival_heel_restoring_force"] = lines2nodes(Fh, n_nodes)
+        outputs["survival_heel_restoring_force"] = lines2nodes(Fh, n_attach)
 
         # Get angles by which to find the weakest line
         dangle = 5.0
@@ -592,4 +595,5 @@ class MapMooring(om.ExplicitComponent):
 
         # Total summations
         outputs["mooring_cost"] = legs_total + anchor_total
+        outputs["line_mass"] = wet_mass_per_length * L_mooring
         outputs["mooring_mass"] = wet_mass_per_length * L_mooring * n_lines

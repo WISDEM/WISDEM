@@ -39,6 +39,7 @@ def I_cyl(r_i, r_o, h, m):
 
 
 class DiscretizationYAML(om.ExplicitComponent):
+
     """
     Convert the YAML inputs into more native and easy to use variables.
 
@@ -1336,6 +1337,7 @@ class Member(om.Group):
     def setup(self):
         opt = self.options["column_options"]
         idx = self.options["idx"]
+
         n_height = opt["n_height"][idx]
         n_refine = NREFINE if n_height > 2 else np.maximum(NREFINE, 2)
 

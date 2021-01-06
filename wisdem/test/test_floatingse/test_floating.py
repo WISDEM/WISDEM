@@ -37,7 +37,7 @@ class TestOC3Mass(unittest.TestCase):
         opt["floating"]["gamma_fatigue"] = 1.755  # Not used
         opt["floating"]["run_modal"] = True  # Not used
         opt["mooring"] = {}
-        opt["mooring"]["n_nodes"] = 3
+        opt["mooring"]["n_attach"] = 3
         opt["mooring"]["n_anchors"] = 3
         opt["mooring"]["gamma_f"] = 1.35  # Safety factor on loads
 

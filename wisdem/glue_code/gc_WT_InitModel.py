@@ -949,6 +949,7 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
     n_line_types = mooring_init_options["n_line_types"]
     n_anchor_types = mooring_init_options["n_anchor_types"]
 
+    wt_opt["mooring.n_lines"] = n_lines  # Needed for ORBIT
     wt_opt["mooring.node_names"] = [mooring["nodes"][i]["name"] for i in range(n_nodes)]
     wt_opt["mooring.nodes_joint_name"] = ["" for i in range(n_nodes)]
     wt_opt["mooring.line_id"] = [mooring["lines"][i]["name"] for i in range(n_lines)]

@@ -386,12 +386,17 @@ class WindTurbineOntologyPython(object):
                         self.modeling_options["floating"]["members"][
                             "axial_joint_name_member_" + self.modeling_options["floating"]["members"]["name"][i]
                         ] = self.wt_init["components"]["floating_platform"]["members"][i]["axial_joints"][m]["name"]
-                        grid += self.wt_init["components"]["floating_platform"]["members"][i]["axial_joints"][m]["grid"]
+                        grid.append(
+                            self.wt_init["components"]["floating_platform"]["members"][i]["axial_joints"][m]["grid"]
+                        )
                 else:
                     self.modeling_options["floating"]["members"]["n_axial_joints"][i] = 0
+
+                final_grid = np.unique(grid)
                 self.modeling_options["floating"]["members"][
                     "grid_member_" + self.modeling_options["floating"]["members"]["name"][i]
-                ] = np.unique(grid)
+                ] = final_grid
+                self.modeling_options["floating"]["members"]["n_height"][i] = len(final_grid)
 
             # Floating tower params
             self.modeling_options["floating"]["tower"] = {}
@@ -399,15 +404,15 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["floating"]["tower"]["n_bulkheads"] = [0]
             self.modeling_options["floating"]["tower"]["n_axial_joints"] = [0]
             if self.modeling_options["flags"]["tower"]:
-                self.modeling_options["floating"]["tower"]["n_height"] = self.modeling_options["TowerSE"][
-                    "n_height_tower"
+                self.modeling_options["floating"]["tower"]["n_height"] = [
+                    self.modeling_options["TowerSE"]["n_height_tower"]
                 ]
-                self.modeling_options["floating"]["tower"]["n_layers"] = self.modeling_options["TowerSE"][
-                    "n_layers_tower"
+                self.modeling_options["floating"]["tower"]["n_layers"] = [
+                    self.modeling_options["TowerSE"]["n_layers_tower"]
                 ]
             else:
-                self.modeling_options["floating"]["tower"]["n_height"] = 0
-                self.modeling_options["floating"]["tower"]["n_layers"] = 0
+                self.modeling_options["floating"]["tower"]["n_height"] = [0]
+                self.modeling_options["floating"]["tower"]["n_layers"] = [0]
 
         # Mooring
         self.modeling_options["mooring"] = {}
@@ -418,6 +423,7 @@ class WindTurbineOntologyPython(object):
             n_anchor_types = len(self.wt_init["components"]["mooring"]["anchor_types"])
             self.modeling_options["mooring"]["n_nodes"] = n_nodes
             self.modeling_options["mooring"]["n_lines"] = n_lines
+            self.modeling_options["mooring"]["n_anchors"] = n_lines
             self.modeling_options["mooring"]["n_line_types"] = n_line_types
             self.modeling_options["mooring"]["n_anchor_types"] = n_anchor_types
             self.modeling_options["mooring"]["node_type"] = [""] * n_nodes
@@ -456,6 +462,7 @@ class WindTurbineOntologyPython(object):
                 self.modeling_options["mooring"]["anchor_type_name"][i] = self.wt_init["components"]["mooring"][
                     "anchor_types"
                 ][i]["name"]
+            self.modeling_options["mooring"]["n_attach"] = len(set(self.modeling_options["mooring"]["node1"][i]))
 
         # Assembly
         self.modeling_options["assembly"] = {}

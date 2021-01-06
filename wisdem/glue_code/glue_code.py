@@ -516,7 +516,8 @@ class WT_RNTA(om.Group):
             self.connect("costs.labor_rate", "floatingse.labor_cost_rate")
             self.connect("costs.painting_rate", "floatingse.painting_cost_rate")
             self.connect("assembly.hub_height", "floatingse.hub_height")
-            self.connect("tower_grid.foundation_height", "floatingse.tower.foundation_height")
+            self.connect("floating.transition_node", "floatingse.transition_node")
+            # self.connect("tower_grid.foundation_height", "floatingse.tower.foundation_height")
             self.connect("tower.diameter", "floatingse.tower.outer_diameter_in")
             self.connect("tower_grid.height", "floatingse.tower.height")
             self.connect("tower_grid.s", "floatingse.tower.s")
@@ -696,7 +697,7 @@ class WindPark(om.Group):
                     self.connect("monopile.transition_piece_cost", "orbit.transition_piece_cost")
                     self.connect("monopile.diameter", "orbit.monopile_diameter", src_indices=[0])
                 else:
-                    self.connect("floatingse.tower.total_mass", "orbit.tower_mass")
+                    self.connect("floatingse.tower_mass", "orbit.tower_mass")
                     self.connect("mooring.n_lines", "orbit.num_mooring_lines")
                     self.connect("floatingse.line_mass", "orbit.mooring_line_mass", src_indices=[0])
                     self.connect("mooring.line_diameter", "orbit.mooring_line_diameter", src_indices=[0])

@@ -82,7 +82,7 @@ class TestMapMooring(unittest.TestCase):
         self.inputs["operational_heel"] = 5.0
 
         opt = {}
-        opt["n_nodes"] = 3
+        opt["n_attach"] = 3
         opt["n_anchors"] = 6
         opt["gamma_f"] = 1.35
 

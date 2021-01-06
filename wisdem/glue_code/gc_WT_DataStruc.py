@@ -1989,6 +1989,7 @@ class Mooring(om.Group):
         ivc = self.add_subsystem("mooring", om.IndepVarComp(), promotes=["*"])
 
         ivc.add_discrete_output("node_names", val=[""] * n_nodes)
+        ivc.add_discrete_output("n_lines", val=0)  # Needed for ORBIT
         ivc.add_output("nodes_location", val=np.zeros((n_nodes, 3)), units="m")
         ivc.add_output("nodes_mass", val=np.zeros(n_nodes), units="kg")
         ivc.add_output("nodes_volume", val=np.zeros(n_nodes), units="m**3")
@@ -2024,6 +2025,7 @@ class MooringJoints(om.ExplicitComponent):
     def setup(self):
         mooring_init_options = self.options["mooring_init_options"]
         n_nodes = mooring_init_options["n_nodes"]
+        n_attach = mooring_init_options["n_attach"]
         n_lines = mooring_init_options["n_lines"]
 
         self.add_discrete_input("nodes_joint_name", val=[""] * n_nodes)
@@ -2032,7 +2034,7 @@ class MooringJoints(om.ExplicitComponent):
         self.add_input("joints_xyz", shape_by_conn=True, units="m")
 
         self.add_output("mooring_nodes", val=np.zeros((n_nodes, 3)), units="m")
-        self.add_output("fairlead_nodes", val=np.zeros((n_lines, 3)), units="m")
+        self.add_output("fairlead_nodes", val=np.zeros((n_attach, 3)), units="m")
         self.add_output("fairlead", val=np.zeros(n_lines), units="m")
         self.add_output("fairlead_radius", val=np.zeros(n_lines), units="m")
         self.add_output("anchor_nodes", val=np.zeros((n_lines, 3)), units="m")

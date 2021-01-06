@@ -24,7 +24,7 @@ class TestPlatform(unittest.TestCase):
         self.opt["floating"]["frame3dd"]["geom"] = True
         self.opt["floating"]["frame3dd"]["tol"] = 1e-8
         self.opt["mooring"] = {}
-        self.opt["mooring"]["n_nodes"] = 3
+        self.opt["mooring"]["n_attach"] = 3
 
         self.inputs["tower_nodes"] = NULL * np.ones((MEMMAX, 3))
         self.inputs["tower_Rnode"] = NULL * np.ones(MEMMAX)
@@ -272,7 +272,7 @@ class TestGroup(unittest.TestCase):
         opt["floating"]["gamma_fatigue"] = 1.755  # Not used
         opt["floating"]["run_modal"] = True  # Not used
         opt["mooring"] = {}
-        opt["mooring"]["n_nodes"] = 3
+        opt["mooring"]["n_attach"] = 3
         opt["mooring"]["n_anchors"] = 3
 
         opt["materials"] = {}
