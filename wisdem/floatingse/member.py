@@ -4,7 +4,7 @@ import wisdem.commonse.frustum as frustum
 import wisdem.commonse.utilities as util
 import wisdem.commonse.manufacturing as manufacture
 import wisdem.commonse.cross_sections as cs
-from wisdem.commonse import gravity
+from wisdem.commonse import eps, gravity
 from sortedcontainers import SortedDict
 from wisdem.commonse.wind_wave_drag import CylinderEnvironment
 from wisdem.commonse.utilization_constraints import GeometricConstraints
@@ -894,11 +894,12 @@ class MemberComponent(om.ExplicitComponent):
         h_web = inputs["ring_stiffener_web_height"]
         w_flange = inputs["ring_stiffener_flange_width"]
         L_stiffener = inputs["ring_stiffener_spacing"]
-        web_frac = t_web / w_flange
 
-        n_stiff = int(np.floor(L / L_stiffener))
-        if n_stiff == 0:
+        n_stiff = int(np.floor(L / (L_stiffener + eps)))
+        if L_stiffener == 0 or n_stiff == 0:
             return
+
+        web_frac = t_web / w_flange
 
         # Calculate stiffener spots along the member axis and deconflict with bulkheads
         s_stiff = (np.arange(1, n_stiff + 0.1) - 0.5) * (L_stiffener / L)

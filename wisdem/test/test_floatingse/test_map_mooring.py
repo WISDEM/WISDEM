@@ -84,9 +84,8 @@ class TestMapMooring(unittest.TestCase):
         opt = {}
         opt["n_attach"] = 3
         opt["n_anchors"] = 6
-        opt["gamma_f"] = 1.35
 
-        self.mymap = mapMooring.MapMooring(modeling_options=opt)
+        self.mymap = mapMooring.MapMooring(options=opt, gamma=1.35)
 
     def testGeometry(self):
         self.mymap.set_geometry(self.inputs, self.outputs)

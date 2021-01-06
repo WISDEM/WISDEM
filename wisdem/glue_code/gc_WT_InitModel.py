@@ -890,12 +890,22 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     for i in range(n_joints):
         wt_opt["floating.joints.location"][i, :] = floating["joints"][i]["location"]
 
+    # Set transition joint/node
+    if modeling_options["floating"]["transition_joint"] is None:
+        itrans = np.argmax(wt_opt["floating.joints.location"][:, 2])
+    else:
+        itrans = modeling_options["floating"]["transition_joint"]
+    wt_opt["floating.joints.transition_node"] = wt_opt["floating.joints.location"][itrans, :]
+
     n_members = floating_init_options["members"]["n_members"]
     # Loop through members and assign grid, outer diameter, layer thickness and ballast volume to openmdao entry. The distributed quantities are interpolated to a common grid
     for i in range(n_members):
         name_member = floating_init_options["members"]["name"][i]
         grid_member = floating_init_options["members"]["grid_member_" + floating_init_options["members"]["name"][i]]
         wt_opt["floating.member_" + name_member + ".s"] = grid_member
+        wt_opt["floating.member_" + name_member + ".outfitting_factor"] = floating["members"][i]["internal_structure"][
+            "outfitting_factor"
+        ]
         wt_opt["floating.member_" + name_member + ".outer_diameter"] = np.interp(
             grid_member,
             floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
@@ -910,27 +920,32 @@ def assign_floating_values(wt_opt, modeling_options, floating):
             )
 
         n_layers = floating_init_options["members"]["n_layers"][i]
+        layer_mat = [""] * n_layers
         for j in range(n_layers):
             wt_opt["floating.member_" + name_member + ".layer_thickness"][j, :] = np.interp(
                 grid_member,
                 floating["members"][i]["internal_structure"]["layers"][j]["thickness"]["grid"],
                 floating["members"][i]["internal_structure"]["layers"][j]["thickness"]["values"],
             )
+            layer_mat[i] = floating["members"][i]["internal_structure"]["layers"][j]["material"]
+        wt_opt["floating.member_" + name_member + ".layer_materials"] = layer_mat
+
         n_ballasts = floating_init_options["members"]["n_ballasts"][i]
+        ballast_mat = [""] * n_ballasts
         for j in range(n_ballasts):
-            wt_opt["floating.member_" + name_member + ".ballast_grid"][j] = floating["members"][i][
+            wt_opt["floating.member_" + name_member + ".ballast_grid"][j, :] = floating["members"][i][
                 "internal_structure"
             ]["ballasts"][j]["grid"]
             if floating_init_options["members"]["ballast_flag_member_" + name_member][j] == False:
                 wt_opt["floating.member_" + name_member + ".ballast_volume"][j] = floating["members"][i][
                     "internal_structure"
                 ]["ballasts"][j]["volume"]
-                wt_opt["floating.member_" + name_member + ".ballast_materials"][j] = floating["members"][i][
-                    "internal_structure"
-                ]["ballasts"][j]["material"]
+                ballast_mat[j] = floating["members"][i]["internal_structure"]["ballasts"][j]["material"]
             else:
                 wt_opt["floating.member_" + name_member + ".ballast_volume"][j] = 0.0
-                wt_opt["floating.member_" + name_member + ".ballast_materials"][j] = "seawater"
+                ballast_mat[j] = "seawater"
+        wt_opt["floating.member_" + name_member + ".ballast_materials"] = ballast_mat
+
         if floating_init_options["members"]["n_axial_joints"][i] > 0:
             for j in range(floating_init_options["members"]["n_axial_joints"][i]):
                 wt_opt["floating.member_" + name_member + ".grid_axial_joints"][j] = floating["members"][i][
@@ -952,7 +967,7 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
     wt_opt["mooring.n_lines"] = n_lines  # Needed for ORBIT
     wt_opt["mooring.node_names"] = [mooring["nodes"][i]["name"] for i in range(n_nodes)]
     wt_opt["mooring.nodes_joint_name"] = ["" for i in range(n_nodes)]
-    wt_opt["mooring.line_id"] = [mooring["lines"][i]["name"] for i in range(n_lines)]
+    wt_opt["mooring.line_id"] = [mooring["lines"][i]["line_type"] for i in range(n_lines)]
     line_names = [mooring["line_types"][i]["name"] for i in range(n_line_types)]
     anchor_names = [mooring["anchor_types"][i]["name"] for i in range(n_anchor_types)]
     for i in range(n_nodes):
@@ -978,7 +993,7 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
                 wt_opt["mooring.line_mass_density_coeff"][jj] = mooring["line_types"][ii]["mass_density"] / d2
                 wt_opt["mooring.line_stiffness_coeff"][jj] = mooring["line_types"][ii]["stiffness"] / d2
                 wt_opt["mooring.line_breaking_load_coeff"][jj] = mooring["line_types"][ii]["breaking_load"] / d2
-                wt_opt["mooring.line_cost_coeff"][jj] = mooring["line_types"][ii]["cost"] / d2
+                wt_opt["mooring.line_cost_rate_coeff"][jj] = mooring["line_types"][ii]["cost"] / d2
                 wt_opt["mooring.line_transverse_added_mass_coeff"][jj] = (
                     mooring["line_types"][ii]["transverse_added_mass"] / d2
                 )
@@ -997,6 +1012,18 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
                             "max_vertical_load"
                         ]
                         wt_opt["mooring.anchor_max_lateral_load"][jj] = mooring["anchor_types"][kk]["max_lateral_load"]
+
+    # Give warnings if we have different types or asymmetrical lines
+    if (
+        np.unique(wt_opt["mooring.unstretched_length"]).size > 1
+        or np.unique(wt_opt["mooring.line_diameter"]).size > 1
+        or np.unique(wt_opt["mooring.line_mass_density_coeff"]).size > 1
+        or np.unique(wt_opt["mooring.line_stiffness_coeff"]).size > 1
+        or np.unique(wt_opt["mooring.anchor_mass"]).size > 1
+    ):
+        print(
+            "WARNING: Multiple mooring line or anchor types entered, but can only process symmetrical arrangements for now"
+        )
 
     return wt_opt
 

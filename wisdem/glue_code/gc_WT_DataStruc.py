@@ -1862,6 +1862,7 @@ class Floating(om.Group):
 
         jivc = self.add_subsystem("joints", om.IndepVarComp())
         jivc.add_output("location", val=np.zeros((n_joints, 3)), units="m")
+        jivc.add_output("transition_node", val=np.zeros(3), units="m")
 
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
@@ -1869,14 +1870,19 @@ class Floating(om.Group):
             n_grid = len(floating_init_options["members"]["grid_member_" + name_member])
             n_layers = floating_init_options["members"]["n_layers"][i]
             n_ballasts = floating_init_options["members"]["n_ballasts"][i]
+            n_bulkheads = floating_init_options["members"]["n_bulkheads"][i]
             n_axial_joints = floating_init_options["members"]["n_axial_joints"][i]
             ivc.add_output("s", val=np.zeros(n_grid))
             ivc.add_output("outer_diameter", val=np.zeros(n_grid), units="m")
-            ivc.add_output("bulkhead_grid", val=np.zeros(n_grid))
-            ivc.add_output("bulkhead_thickness", val=np.zeros(n_grid), units="m")
+            ivc.add_output("bulkhead_grid", val=np.zeros(n_bulkheads))
+            ivc.add_output("bulkhead_thickness", val=np.zeros(n_bulkheads), units="m")
+            ivc.add_discrete_output("layer_materials", val=[""] * n_layers)
             ivc.add_output("layer_thickness", val=np.zeros((n_layers, n_grid)), units="m")
+            ivc.add_output("ballast_grid", val=np.zeros((n_ballasts, 2)))
             ivc.add_output("ballast_volume", val=np.zeros(n_ballasts), units="m**3")
+            ivc.add_discrete_output("ballast_materials", val=[""] * n_ballasts)
             ivc.add_output("grid_axial_joints", val=np.zeros(n_axial_joints))
+            ivc.add_output("outfitting_factor", 0.0)
             ivc.add_output("ring_stiffener_web_height", 0.0, units="m")
             ivc.add_output("ring_stiffener_web_thickness", 0.0, units="m")
             ivc.add_output("ring_stiffener_flange_width", 0.0, units="m")
@@ -1890,6 +1896,7 @@ class Floating(om.Group):
 
         self.add_subsystem("alljoints", CombineJoints(floating_init_options=floating_init_options), promotes=["*"])
 
+        self.connect("joints.location", "location")
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
             self.connect("member_" + name_member + ".grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
@@ -1911,9 +1918,9 @@ class CombineJoints(om.ExplicitComponent):
             iname = floating_init_options["members"]["name"][i]
             i_axial_joints = floating_init_options["members"]["n_axial_joints"][i]
             self.add_input("member_" + iname + ":grid_axial_joints", val=np.zeros(i_axial_joints))
-            self.add_output("member_" + iname + ":joint0", val=np.zeros(3))
-            self.add_output("member_" + iname + ":joint1", val=np.zeros(3))
-            self.add_output("member_" + iname + ":height", val=0.0)
+            self.add_output("member_" + iname + ":joint1", val=np.zeros(3), units="m")
+            self.add_output("member_" + iname + ":joint2", val=np.zeros(3), units="m")
+            self.add_output("member_" + iname + ":height", val=0.0, units="m")
             self.n_joint_tot += i_axial_joints
 
         self.add_output("joints_xyz", val=np.zeros((self.n_joint_tot, 3)), units="m")
@@ -1958,15 +1965,17 @@ class CombineJoints(om.ExplicitComponent):
                 i_axial_joints = memopt["n_axial_joints"][k]
                 i_axial_joint_names = memopt["axial_joint_name_member_" + iname]
                 for a in range(i_axial_joints):
-                    joints_xyz[count, :] = joint1xyz + inputs[iname + ":grid_axial_joints"][a] * dxyz
+                    joints_xyz[count, :] = joint1xyz + inputs["member_" + iname + ":grid_axial_joints"][a] * dxyz
                     name2idx[i_axial_joint_names] = count
                     count += 1
 
         # Record starting and ending location for each member now
         for k in range(n_members):
             iname = memopt["name"][k]
-            outputs["member_" + iname + ":joint1"] = joints_xyz[name2idx[memopt["joint1"][k]], :]
-            outputs["member_" + iname + ":joint2"] = joints_xyz[name2idx[memopt["joint2"][k]], :]
+            joint1xyz = locations_xyz[name2idx[memopt["joint1"][k]], :]
+            joint2xyz = locations_xyz[name2idx[memopt["joint2"][k]], :]
+            outputs["member_" + iname + ":joint1"] = joint1xyz
+            outputs["member_" + iname + ":joint2"] = joint2xyz
             outputs["member_" + iname + ":height"] = np.sqrt(np.sum((joint2xyz - joint1xyz) ** 2))
 
         # Store outputs
@@ -2036,7 +2045,7 @@ class MooringJoints(om.ExplicitComponent):
         self.add_output("mooring_nodes", val=np.zeros((n_nodes, 3)), units="m")
         self.add_output("fairlead_nodes", val=np.zeros((n_attach, 3)), units="m")
         self.add_output("fairlead", val=np.zeros(n_lines), units="m")
-        self.add_output("fairlead_radius", val=np.zeros(n_lines), units="m")
+        self.add_output("fairlead_radius", val=np.zeros(n_attach), units="m")
         self.add_output("anchor_nodes", val=np.zeros((n_lines, 3)), units="m")
         self.add_output("anchor_radius", val=np.zeros(n_lines), units="m")
 
@@ -2053,13 +2062,15 @@ class MooringJoints(om.ExplicitComponent):
                 continue
             idx = idx_map[node_joints[k]]
             node_loc[k, :] = joints_loc[idx, :]
+        outputs["mooring_nodes"] = node_loc
 
+        node_loc = np.unique(node_loc, axis=0)
         tol = 0.5
         z_fair = node_loc[:, 2].max()
         z_anch = node_loc[:, 2].min()
         ifair = np.where(np.abs(node_loc[:, 2] - z_fair) < tol)[0]
         ianch = np.where(np.abs(node_loc[:, 2] - z_anch) < tol)[0]
-        outputs["mooring_nodes"] = node_loc
+
         outputs["fairlead_nodes"] = node_loc[ifair, :]
         outputs["anchor_nodes"] = node_loc[ianch, :]
         outputs["fairlead"] = z_fair

@@ -2,7 +2,7 @@ import numpy as np
 import openmdao.api as om
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
-from wisdem.commonse import gravity
+from wisdem.commonse import NFREQ, gravity
 from wisdem.floatingse.member import NULL, MEMMAX, Member
 
 NNODES_MAX = 1000
@@ -445,6 +445,13 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("mooring_neutral_load", np.zeros((n_attach, 3)), units="N")
         self.add_input("mooring_fairlead_joints", np.zeros((n_attach, 3)), units="m")
 
+        NFREQ2 = int(NFREQ / 2)
+        self.add_output("tower_freqs", val=np.zeros(NFREQ), units="Hz")
+        self.add_output("tower_foreaft_mode_shapes", val=np.zeros((NFREQ2, 5)))
+        self.add_output("tower_sideside_mode_shapes", val=np.zeros((NFREQ2, 5)))
+        self.add_output("tower_foreaft_mode_freqs", val=np.zeros(NFREQ2))
+        self.add_output("tower_sideside_mode_freqs", val=np.zeros(NFREQ2))
+
     def compute(self, inputs, outputs):
 
         # Unpack variables
@@ -494,7 +501,7 @@ class FrameAnalysis(om.ExplicitComponent):
             Rx = Ry = Rz = Rxx = Ryy = Rzz = np.array([RIGID])
             react_obj = pyframe3dd.ReactionData(rid + 1, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=RIGID)
 
-            frame3dd_opt = self.options["options"]["floating"]["frame3dd"]
+            frame3dd_opt = self.options["options"]["FloatingSE"]["frame3dd"]
             opt_obj = pyframe3dd.Options(frame3dd_opt["shear"], frame3dd_opt["geom"], -1.0)
 
             myframe = pyframe3dd.Frame(node_obj, react_obj, elem_obj, opt_obj)
@@ -528,10 +535,10 @@ class FrameAnalysis(om.ExplicitComponent):
             )
 
             # Dynamics
-            # Mmethod = 1
-            # lump = 0
-            # shift = 0.0
-            # myframe.enableDynamics(10, Mmethod, lump, frame3dd_opt["tol"], shift)
+            Mmethod = 1
+            lump = 0
+            shift = 0.0
+            myframe.enableDynamics(2 * NFREQ, Mmethod, lump, frame3dd_opt["tol"], shift)
 
             # Initialize loading with gravity, mooring line forces, and buoyancy (already in nodal forces)
             gx = gy = 0.0
@@ -554,7 +561,21 @@ class FrameAnalysis(om.ExplicitComponent):
             # myframe.write('temp.3dd')
             displacements, forces, reactions, internalForces, mass, modal = myframe.run()
 
-            # Determine needed variable ballast
+            # natural frequncies
+            if frame == "tower":
+                outputs[frame + "_freqs"] = modal.freq[:NFREQ]
+
+                # Get all mode shapes in batch
+                NFREQ2 = int(NFREQ / 2)
+                freq_x, freq_y, mshapes_x, mshapes_y = util.get_xy_mode_shapes(
+                    nodes[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
+                )
+                outputs[frame + "_foreaft_mode_freqs"] = freq_x[:NFREQ2]
+                outputs[frame + "_sideside_mode_freqs"] = freq_y[:NFREQ2]
+                outputs[frame + "_foreaft_mode_shapes"] = mshapes_x[:NFREQ2, :]
+                outputs[frame + "_sideside_mode_shapes"] = mshapes_y[:NFREQ2, :]
+
+            # Determine forces
             F_sum = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
             M_sum = -1.0 * np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
             L = np.sqrt(np.sum((nodes[N2, :] - nodes[N1, :]) ** 2, axis=1))

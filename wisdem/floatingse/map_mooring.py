@@ -80,10 +80,12 @@ class MapMooring(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare("modeling_options")
+        self.options.declare("options")
+        self.options.declare("gamma")
 
     def setup(self):
-        n_lines = self.options["modeling_options"]["n_anchors"]
+        n_lines = self.options["options"]["n_anchors"]
+        n_attach = self.options["options"]["n_attach"]
 
         # Variables local to the class and not OpenMDAO
         self.finput = None
@@ -116,7 +118,7 @@ class MapMooring(om.ExplicitComponent):
         self.add_output("mooring_mass", 0.0, units="kg")
         self.add_output("mooring_cost", 0.0, units="USD")
         self.add_output("mooring_stiffness", np.zeros((6, 6)), units="N/m")
-        self.add_output("mooring_neutral_load", np.zeros((n_lines, 3)), units="N")
+        self.add_output("mooring_neutral_load", np.zeros((n_attach, 3)), units="N")
         self.add_output("max_surge_restoring_force", 0.0, units="N")
         self.add_output("operational_heel_restoring_force", np.zeros((n_lines, 3)), units="N")
         self.add_output("survival_heel_restoring_force", np.zeros((n_lines, 3)), units="N")
@@ -220,7 +222,7 @@ class MapMooring(om.ExplicitComponent):
         waterDepth = inputs["water_depth"]
         L_mooring = inputs["line_length"]
         max_heel = inputs["survival_heel"]
-        gamma = self.options["modeling_options"]["gamma_f"]
+        gamma = self.options["gamma"]
 
         if L_mooring > (waterDepth - fairleadDepth):
             self.tlpFlag = False
@@ -374,7 +376,7 @@ class MapMooring(om.ExplicitComponent):
         OUTPUTS  : none
         """
         # Unpack variables
-        n_attach = self.options["modeling_options"]["n_attach"]
+        n_attach = self.options["options"]["n_attach"]
 
         self.finput.append("---------------------- SOLVER OPTIONS-----------------------------------------")
         self.finput.append("Option")
@@ -417,8 +419,8 @@ class MapMooring(om.ExplicitComponent):
         fairleadDepth = float(inputs["fairlead"])
         R_fairlead = float(inputs["fairlead_radius"])
         R_anchor = float(inputs["anchor_radius"])
-        n_attach = self.options["modeling_options"]["n_attach"]
-        n_anchors = self.options["modeling_options"]["n_anchors"]
+        n_attach = self.options["options"]["n_attach"]
+        n_anchors = self.options["options"]["n_anchors"]
         ratio = int(n_anchors / n_attach)
 
         # Open the map input file
@@ -469,9 +471,9 @@ class MapMooring(om.ExplicitComponent):
         max_heel = inputs["survival_heel"]
         d = inputs["line_diameter"]
         min_break_load = inputs["line_breaking_load_coeff"] * d ** 2
-        gamma = self.options["modeling_options"]["gamma_f"]
-        n_attach = self.options["modeling_options"]["n_attach"]
-        n_lines = self.options["modeling_options"]["n_anchors"]
+        gamma = self.options["gamma"]
+        n_attach = self.options["options"]["n_attach"]
+        n_lines = self.options["options"]["n_anchors"]
         offset = float(inputs["max_surge_fraction"]) * waterDepth
 
         # Write the mooring system input file for this design
@@ -579,7 +581,7 @@ class MapMooring(om.ExplicitComponent):
         # min_break_load = inputs['line_breaking_load_coeff'] * d**2
         wet_mass_per_length = float(inputs["line_mass_density_coeff"]) * d ** 2
         anchor_rate = float(inputs["anchor_cost"])
-        n_anchors = n_lines = self.options["modeling_options"]["n_anchors"]
+        n_anchors = n_lines = self.options["options"]["n_anchors"]
 
         # Cost of anchors
         # if anchorType.upper() == "DRAGEMBEDMENT":

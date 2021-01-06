@@ -274,7 +274,7 @@ class WindTurbineOntologyPython(object):
 
                 grid = self.wt_init["components"]["floating_platform"]["members"][i]["outer_shape"]["outer_diameter"][
                     "grid"
-                ]
+                ][:]
 
                 n_layers = len(
                     self.wt_init["components"]["floating_platform"]["members"][i]["internal_structure"]["layers"]
@@ -427,11 +427,15 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["mooring"]["n_line_types"] = n_line_types
             self.modeling_options["mooring"]["n_anchor_types"] = n_anchor_types
             self.modeling_options["mooring"]["node_type"] = [""] * n_nodes
+            self.modeling_options["mooring"]["node_names"] = [""] * n_nodes
             self.modeling_options["mooring"]["anchor_type"] = [""] * n_nodes
             self.modeling_options["mooring"]["fairlead_type"] = [""] * n_nodes
             for i in range(n_nodes):
                 self.modeling_options["mooring"]["node_type"][i] = self.wt_init["components"]["mooring"]["nodes"][i][
                     "node_type"
+                ]
+                self.modeling_options["mooring"]["node_names"][i] = self.wt_init["components"]["mooring"]["nodes"][i][
+                    "name"
                 ]
                 self.modeling_options["mooring"]["anchor_type"][i] = self.wt_init["components"]["mooring"]["nodes"][i][
                     "anchor_type"
@@ -442,6 +446,7 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["mooring"]["node1"] = [""] * n_lines
             self.modeling_options["mooring"]["node2"] = [""] * n_lines
             self.modeling_options["mooring"]["line_type"] = [""] * n_lines
+            fairlead_nodes = []
             for i in range(n_lines):
                 self.modeling_options["mooring"]["node1"][i] = self.wt_init["components"]["mooring"]["lines"][i][
                     "node1"
@@ -452,6 +457,18 @@ class WindTurbineOntologyPython(object):
                 self.modeling_options["mooring"]["line_type"][i] = self.wt_init["components"]["mooring"]["lines"][i][
                     "line_type"
                 ]
+                # For the vessel attachments, find the list of fairlead nodes on the structure
+                node1id = self.modeling_options["mooring"]["node_names"].index(
+                    self.modeling_options["mooring"]["node1"][i]
+                )
+                node2id = self.modeling_options["mooring"]["node_names"].index(
+                    self.modeling_options["mooring"]["node2"][i]
+                )
+                if self.modeling_options["mooring"]["node_type"][node1id] == "vessel":
+                    fairlead_nodes.append(self.wt_init["components"]["mooring"]["nodes"][node1id]["joint"])
+                if self.modeling_options["mooring"]["node_type"][node2id] == "vessel":
+                    fairlead_nodes.append(self.wt_init["components"]["mooring"]["nodes"][node2id]["joint"])
+
             self.modeling_options["mooring"]["line_type_name"] = [""] * n_line_types
             for i in range(n_line_types):
                 self.modeling_options["mooring"]["line_type_name"][i] = self.wt_init["components"]["mooring"][
@@ -462,7 +479,7 @@ class WindTurbineOntologyPython(object):
                 self.modeling_options["mooring"]["anchor_type_name"][i] = self.wt_init["components"]["mooring"][
                     "anchor_types"
                 ][i]["name"]
-            self.modeling_options["mooring"]["n_attach"] = len(set(self.modeling_options["mooring"]["node1"][i]))
+            self.modeling_options["mooring"]["n_attach"] = len(set(fairlead_nodes))
 
         # Assembly
         self.modeling_options["assembly"] = {}
