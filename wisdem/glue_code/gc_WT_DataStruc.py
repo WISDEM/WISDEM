@@ -1921,6 +1921,7 @@ class CombineJoints(om.ExplicitComponent):
             self.add_output("member_" + iname + ":joint1", val=np.zeros(3), units="m")
             self.add_output("member_" + iname + ":joint2", val=np.zeros(3), units="m")
             self.add_output("member_" + iname + ":height", val=0.0, units="m")
+            self.add_discrete_output("member_" + iname + ":transition_flag", val=[False, False])
             self.n_joint_tot += i_axial_joints
 
         self.add_output("joints_xyz", val=np.zeros((self.n_joint_tot, 3)), units="m")
@@ -1957,26 +1958,32 @@ class CombineJoints(om.ExplicitComponent):
                 else:
                     continue
 
-                joint1xyz = locations_xyz[name2idx[memopt["joint1"][k]], :]
-                joint2xyz = locations_xyz[name2idx[memopt["joint2"][k]], :]
+                joint1xyz = joints_xyz[name2idx[memopt["joint1"][k]], :]
+                joint2xyz = joints_xyz[name2idx[memopt["joint2"][k]], :]
                 dxyz = joint2xyz - joint1xyz
 
                 iname = memopt["name"][k]
                 i_axial_joints = memopt["n_axial_joints"][k]
+                if i_axial_joints == 0:
+                    continue
                 i_axial_joint_names = memopt["axial_joint_name_member_" + iname]
                 for a in range(i_axial_joints):
                     joints_xyz[count, :] = joint1xyz + inputs["member_" + iname + ":grid_axial_joints"][a] * dxyz
-                    name2idx[i_axial_joint_names] = count
+                    name2idx[i_axial_joint_names[a]] = count
                     count += 1
 
         # Record starting and ending location for each member now
+        itrans = floating_init_options["transition_joint"]
         for k in range(n_members):
             iname = memopt["name"][k]
-            joint1xyz = locations_xyz[name2idx[memopt["joint1"][k]], :]
-            joint2xyz = locations_xyz[name2idx[memopt["joint2"][k]], :]
+            joint1id = name2idx[memopt["joint1"][k]]
+            joint2id = name2idx[memopt["joint2"][k]]
+            joint1xyz = joints_xyz[joint1id, :]
+            joint2xyz = joints_xyz[joint2id, :]
             outputs["member_" + iname + ":joint1"] = joint1xyz
             outputs["member_" + iname + ":joint2"] = joint2xyz
             outputs["member_" + iname + ":height"] = np.sqrt(np.sum((joint2xyz - joint1xyz) ** 2))
+            discrete_outputs["member_" + iname + ":transition_flag"] = [joint1id == itrans, joint2id == itrans]
 
         # Store outputs
         outputs["joints_xyz"] = joints_xyz

@@ -207,12 +207,10 @@ properties:
                         type: boolean
                         default: True
                         description: Inclusion of shear stiffening through axial loading
-                    nM:
-                        type: integer
-                        minimum: 0
-                        maximum: 20
-                        default: 6
-                        description: Number of tower eigenvalue modes to calculate
+                    modal:
+                        type: boolean
+                        default: True
+                        description: Whether or not to compute eigenvalues and natural frequencies
                     tol:
                         type: number
                         minimum: 1e-12

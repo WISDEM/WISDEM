@@ -58,6 +58,7 @@ class FloatingSE(om.Group):
         mem_vars = [
             "nodes_xyz",
             "nodes_r",
+            "transition_node",
             "section_A",
             "section_Asx",
             "section_Asy",

@@ -32,7 +32,7 @@ class MapMooring(om.ExplicitComponent):
     water_depth : float, [m]
         water depth
     fairlead_radius : float, [m]
-        Outer spar radius at fairlead depth (point of mooring attachment)
+        Mooring attachment distance from vessel centerline
     fairlead : float, [m]
         Depth below water for mooring line attachment
     line_length : float, [m]

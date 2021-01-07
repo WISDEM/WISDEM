@@ -6,15 +6,6 @@ from wisdem.commonse.utilities import assembleI, unassembleI
 from wisdem.floatingse.map_mooring import NLINES_MAX
 from wisdem.commonse.vertical_cylinder import get_nfull
 
-# Constraints to review:
-# - Wave height < fairlead depth
-# - Wave height < freeboard
-# - offset freeboard above waterline during max heel
-# - Total variable ballast needed < capacity
-# - Hydrostatic stability checks
-# - Compare mooring restore force during heel/surge to thrust force moment about CG
-# - Rigid body periods checks
-
 
 class SubstructureGeometry(om.ExplicitComponent):
     """

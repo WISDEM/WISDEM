@@ -17,12 +17,14 @@ class TestPlatform(unittest.TestCase):
 
         self.opt = {}
         self.opt["floating"] = {}
+        self.opt["FloatingSE"] = {}
         self.opt["floating"]["members"] = {}
         self.opt["floating"]["members"]["n_members"] = n_member = 6
-        self.opt["floating"]["frame3dd"] = {}
-        self.opt["floating"]["frame3dd"]["shear"] = True
-        self.opt["floating"]["frame3dd"]["geom"] = True
-        self.opt["floating"]["frame3dd"]["tol"] = 1e-8
+        self.opt["FloatingSE"]["frame3dd"] = {}
+        self.opt["FloatingSE"]["frame3dd"]["shear"] = True
+        self.opt["FloatingSE"]["frame3dd"]["geom"] = True
+        self.opt["FloatingSE"]["frame3dd"]["tol"] = 1e-8
+        self.opt["FloatingSE"]["frame3dd"]["modal"] = False
         self.opt["mooring"] = {}
         self.opt["mooring"]["n_attach"] = 3
 
@@ -69,6 +71,7 @@ class TestPlatform(unittest.TestCase):
             self.inputs["member" + str(k) + ":Awater"] = 5.0
             self.inputs["member" + str(k) + ":Iwater"] = 15.0
             self.inputs["member" + str(k) + ":added_mass"] = np.arange(6)
+            self.inputs["member" + str(k) + ":transition_node"] = NULL * np.ones(3)
 
         myones = np.ones(2)
         self.inputs["tower_nodes"][:3, :] = np.array([[0.0, 0.0, 1.0], [0.0, 0.0, 51.0], [0.0, 0.0, 101.0]])
@@ -156,6 +159,15 @@ class TestPlatform(unittest.TestCase):
         self.assertEqual(self.outputs["platform_Awater"], 30)
         self.assertEqual(self.outputs["platform_Iwater"], 6 * 15)
         npt.assert_equal(self.outputs["platform_added_mass"], 6 * np.arange(6))
+        # Should find a transition mode even though one wasn't set
+        npt.assert_equal(self.outputs["transition_node"], [0.0, 0.0, 1.0])
+
+        # Test with set transition node
+        self.inputs["member0:transition_node"] = [0.0, 0.0, 1.0]
+        myobj.node_mem2glob = {}
+        myobj.node_glob2mem = {}
+        myobj.compute(self.inputs, self.outputs)
+        npt.assert_equal(self.outputs["transition_node"], [0.0, 0.0, 1.0])
 
     def testPre(self):
         inputs = {}
@@ -248,6 +260,7 @@ class TestGroup(unittest.TestCase):
 
         opt = {}
         opt["floating"] = {}
+        opt["FloatingSE"] = {}
         opt["floating"]["members"] = {}
         opt["floating"]["members"]["n_members"] = n_member = 6
         opt["floating"]["members"]["n_height"] = [2]
@@ -261,16 +274,16 @@ class TestGroup(unittest.TestCase):
         opt["floating"]["tower"]["n_layers"] = [1]
         opt["floating"]["tower"]["n_ballasts"] = [0]
         opt["floating"]["tower"]["n_axial_joints"] = [0]
-        opt["floating"]["frame3dd"] = {}
-        opt["floating"]["frame3dd"]["shear"] = True
-        opt["floating"]["frame3dd"]["geom"] = False
-        opt["floating"]["frame3dd"]["tol"] = 1e-7
-        opt["floating"]["gamma_f"] = 1.35  # Safety factor on loads
-        opt["floating"]["gamma_m"] = 1.3  # Safety factor on materials
-        opt["floating"]["gamma_n"] = 1.0  # Safety factor on consequence of failure
-        opt["floating"]["gamma_b"] = 1.1  # Safety factor on buckling
-        opt["floating"]["gamma_fatigue"] = 1.755  # Not used
-        opt["floating"]["run_modal"] = True  # Not used
+        opt["FloatingSE"]["frame3dd"] = {}
+        opt["FloatingSE"]["frame3dd"]["shear"] = True
+        opt["FloatingSE"]["frame3dd"]["geom"] = True
+        opt["FloatingSE"]["frame3dd"]["tol"] = 1e-7
+        opt["FloatingSE"]["frame3dd"]["modal"] = False  # True
+        opt["FloatingSE"]["gamma_f"] = 1.35  # Safety factor on loads
+        opt["FloatingSE"]["gamma_m"] = 1.3  # Safety factor on materials
+        opt["FloatingSE"]["gamma_n"] = 1.0  # Safety factor on consequence of failure
+        opt["FloatingSE"]["gamma_b"] = 1.1  # Safety factor on buckling
+        opt["FloatingSE"]["gamma_fatigue"] = 1.755  # Not used
         opt["mooring"] = {}
         opt["mooring"]["n_attach"] = 3
         opt["mooring"]["n_anchors"] = 3
@@ -280,64 +293,6 @@ class TestGroup(unittest.TestCase):
 
         prob = om.Problem()
         prob.model = frame.FloatingFrame(modeling_options=opt)
-        """
-        for k in range(n_member):
-            prob.model.add_subsystem(
-                "ivc" + str(k) + "_xyz",
-                om.IndepVarComp("member" + str(k) + ":nodes_xyz", val=np.zeros((2, 3)), units="m"),
-                promotes=["*"],
-            )
-            prob.model.add_subsystem(
-                "ivc" + str(k) + "_r",
-                om.IndepVarComp("member" + str(k) + ":nodes_r", val=np.zeros(2), units="m"),
-                promotes=["*"],
-            )
-            prob.model.add_subsystem(
-                "ivc" + str(k) + "_A",
-                om.IndepVarComp("member" + str(k) + ":section_A", val=np.zeros(1), units="m**2"),
-                promotes=["*"],
-            )
-            prob.model.add_subsystem(
-                "ivc" + str(k) + "_Ax",
-                om.IndepVarComp("member" + str(k) + ":section_Asx", val=np.zeros(1), units="m**2"),
-                promotes=["*"],
-            )
-            prob.model.add_subsystem(
-                "ivc" + str(k) + "_Ay",
-                om.IndepVarComp("member" + str(k) + ":section_Asy", val=np.zeros(1), units="m**2"),
-                promotes=["*"],
-            )
-            prob.model.add_subsystem(
-                "ivc" + str(k) + "_Ix",
-                om.IndepVarComp("member" + str(k) + ":section_Ixx", val=np.zeros(1), units="kg*m**2"),
-                promotes=["*"],
-            )
-            prob.model.add_subsystem(
-                "ivc" + str(k) + "_Iy",
-                om.IndepVarComp("member" + str(k) + ":section_Iyy", val=np.zeros(1), units="kg*m**2"),
-                promotes=["*"],
-            )
-            prob.model.add_subsystem(
-                "ivc" + str(k) + "_Iz",
-                om.IndepVarComp("member" + str(k) + ":section_Izz", val=np.zeros(1), units="kg*m**2"),
-                promotes=["*"],
-            )
-            prob.model.add_subsystem(
-                "ivc" + str(k) + "_rho",
-                om.IndepVarComp("member" + str(k) + ":section_rho", val=np.zeros(1), units="kg/m**3"),
-                promotes=["*"],
-            )
-            prob.model.add_subsystem(
-                "ivc" + str(k) + "_E",
-                om.IndepVarComp("member" + str(k) + ":section_E", val=np.zeros(1), units="Pa"),
-                promotes=["*"],
-            )
-            prob.model.add_subsystem(
-                "ivc" + str(k) + "_G",
-                om.IndepVarComp("member" + str(k) + ":section_G", val=np.zeros(1), units="Pa"),
-                promotes=["*"],
-            )
-        """
         prob.setup()
 
         # Material properties

@@ -13,6 +13,7 @@ class TestOC3Mass(unittest.TestCase):
 
         opt = {}
         opt["floating"] = {}
+        opt["FloatingSE"] = {}
         opt["floating"]["members"] = {}
         opt["floating"]["members"]["n_members"] = 1
         opt["floating"]["members"]["n_height"] = [npts]
@@ -26,20 +27,20 @@ class TestOC3Mass(unittest.TestCase):
         opt["floating"]["tower"]["n_layers"] = [1]
         opt["floating"]["tower"]["n_ballasts"] = [0]
         opt["floating"]["tower"]["n_axial_joints"] = [0]
-        opt["floating"]["frame3dd"] = {}
-        opt["floating"]["frame3dd"]["shear"] = True
-        opt["floating"]["frame3dd"]["geom"] = False
-        opt["floating"]["frame3dd"]["tol"] = 1e-6
-        opt["floating"]["gamma_f"] = 1.35  # Safety factor on loads
-        opt["floating"]["gamma_m"] = 1.3  # Safety factor on materials
-        opt["floating"]["gamma_n"] = 1.0  # Safety factor on consequence of failure
-        opt["floating"]["gamma_b"] = 1.1  # Safety factor on buckling
-        opt["floating"]["gamma_fatigue"] = 1.755  # Not used
-        opt["floating"]["run_modal"] = True  # Not used
+        opt["FloatingSE"]["frame3dd"] = {}
+        opt["FloatingSE"]["frame3dd"]["shear"] = True
+        opt["FloatingSE"]["frame3dd"]["geom"] = True
+        opt["FloatingSE"]["frame3dd"]["modal"] = False
+        opt["FloatingSE"]["frame3dd"]["tol"] = 1e-6
+        opt["FloatingSE"]["gamma_f"] = 1.35  # Safety factor on loads
+        opt["FloatingSE"]["gamma_m"] = 1.3  # Safety factor on materials
+        opt["FloatingSE"]["gamma_n"] = 1.0  # Safety factor on consequence of failure
+        opt["FloatingSE"]["gamma_b"] = 1.1  # Safety factor on buckling
+        opt["FloatingSE"]["gamma_fatigue"] = 1.755  # Not used
+        opt["FloatingSE"]["run_modal"] = True  # Not used
         opt["mooring"] = {}
         opt["mooring"]["n_attach"] = 3
         opt["mooring"]["n_anchors"] = 3
-        opt["mooring"]["gamma_f"] = 1.35  # Safety factor on loads
 
         opt["materials"] = {}
         opt["materials"]["n_mat"] = 2
@@ -62,26 +63,20 @@ class TestOC3Mass(unittest.TestCase):
         prob["member0.outfitting_factor_in"] = 1.0  # Fraction of additional outfitting mass for each column
 
         # Column geometry
+        h = np.array([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
         prob["member0.grid_axial_joints"] = [0.384615]  # Fairlead at 70m
         # prob["member0.ballast_grid"] = np.empy((0,2))
         # prob["member0.ballast_volume"] = np.empty(0)
-        prob["member0.height"] = np.sum([49.0, 59.0, 8.0, 14.0])  # Length of each section [m]
-        prob["member0.s"] = np.cumsum([0.0, 49.0, 59.0, 8.0, 14.0]) / prob["member0.height"]
-        prob["member0.outer_diameter_in"] = np.array(
-            [9.4, 9.4, 9.4, 6.5, 6.5]
-        )  # Diameter at each section node (linear lofting between) [m]
-        prob["member0.layer_thickness"] = 0.05 * np.ones(
-            (1, npts)
-        )  # Shell thickness at each section node (linear lofting between) [m]
+        prob["member0.s"] = np.cumsum(np.r_[0, h]) / h.sum()
+        prob["member0.outer_diameter_in"] = np.array([9.4, 9.4, 9.4, 6.5, 6.5])
+        prob["member0.layer_thickness"] = 0.05 * np.ones((1, npts))
         prob["member0.layer_materials"] = ["steel"]
         prob["member0.ballast_materials"] = ["slurry", "seawater"]
-
+        prob["member0.joint1"] = np.array([0.0, 0.0, 10.0 - h.sum()])
         prob["member0.joint2"] = np.array([0.0, 0.0, 10.0])  # Freeboard=10
-        prob["member0.joint1"] = np.array([0.0, 0.0, 10.0 - prob["member0.height"]])  # Freeboard=10
+        prob["member0.transition_flag"] = [False, True]
         prob["member0.bulkhead_thickness"] = 0.05 * np.ones(4)  # Locations of internal bulkheads
         prob["member0.bulkhead_grid"] = np.array([0.0, 0.37692308, 0.89230769, 1.0])  # Thickness of internal bulkheads
-
-        # Column ring stiffener parameters
         prob["member0.ring_stiffener_web_height"] = 0.10
         prob["member0.ring_stiffener_web_thickness"] = 0.04
         prob["member0.ring_stiffener_flange_width"] = 0.10
@@ -124,14 +119,12 @@ class TestOC3Mass(unittest.TestCase):
 
         # Porperties of turbine tower
         nTower = prob.model.options["modeling_options"]["floating"]["tower"]["n_height"][0]
-        prob["tower.height"] = prob["hub_height"] = 77.6
+        prob["hub_height"] = 85.0
         prob["tower.s"] = np.linspace(0.0, 1.0, nTower)
         prob["tower.outer_diameter_in"] = np.linspace(6.5, 3.87, nTower)
         prob["tower.layer_thickness"] = np.linspace(0.027, 0.019, nTower).reshape((1, nTower))
         prob["tower.layer_materials"] = ["steel"]
         prob["tower.outfitting_factor"] = 1.07
-
-        prob["transition_node"] = prob["member0.joint2"]
 
         # Properties of rotor-nacelle-assembly (RNA)
         prob["rna_mass"] = 350e3  # Mass [kg]

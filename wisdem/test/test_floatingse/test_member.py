@@ -14,70 +14,82 @@ secones = np.ones((NPTS - 1,))
 
 
 class TestInputs(unittest.TestCase):
-    def setUp(self):
-        self.inputs = {}
-        self.outputs = {}
-        self.discrete_inputs = {}
-        self.discrete_outputs = {}
-
     def testDiscYAML_1Material(self):
+        inputs = {}
+        outputs = {}
+        discrete_inputs = {}
+        discrete_outputs = {}
 
         # Test land based, 1 material
-        self.inputs["s"] = np.linspace(0, 1, 5)
-        self.inputs["layer_thickness"] = 0.25 * np.ones((1, 5))
-        self.inputs["height"] = 1e2
-        self.inputs["outer_diameter_in"] = 8 * np.ones(5)
-        self.discrete_inputs["layer_materials"] = ["steel"]
-        self.discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
-        self.inputs["E_mat"] = 1e9 * np.ones((2, 3))
-        self.inputs["G_mat"] = 1e8 * np.ones((2, 3))
-        self.inputs["sigma_y_mat"] = np.array([1e7, 1e7])
-        self.inputs["rho_mat"] = np.array([1e4, 1e5])
-        self.inputs["rho_water"] = 1e3
-        self.inputs["unit_cost_mat"] = np.array([1e1, 2e1])
-        self.inputs["outfitting_factor_in"] = 1.05
-        self.discrete_inputs["material_names"] = ["steel", "slurry"]
+        inputs["s"] = np.linspace(0, 1, 5)
+        inputs["layer_thickness"] = 0.25 * np.ones((1, 5))
+        inputs["joint1"] = np.zeros(3)
+        inputs["joint2"] = np.r_[np.zeros(2), 1e2]
+        discrete_inputs["transition_flag"] = [False, False]
+        inputs["outer_diameter_in"] = 8 * np.ones(5)
+        discrete_inputs["layer_materials"] = ["steel"]
+        discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
+        inputs["E_mat"] = 1e9 * np.ones((2, 3))
+        inputs["G_mat"] = 1e8 * np.ones((2, 3))
+        inputs["sigma_y_mat"] = np.array([1e7, 1e7])
+        inputs["rho_mat"] = np.array([1e4, 1e5])
+        inputs["rho_water"] = 1e3
+        inputs["unit_cost_mat"] = np.array([1e1, 2e1])
+        inputs["outfitting_factor_in"] = 1.05
+        discrete_inputs["material_names"] = ["steel", "slurry"]
         opt = {}
         opt["n_height"] = [5]
         opt["n_layers"] = [1]
         opt["n_ballasts"] = [3]
         myobj = member.DiscretizationYAML(options=opt, idx=0, n_mat=2)
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
 
-        npt.assert_equal(self.outputs["section_height"], 25.0 * np.ones(4))
-        npt.assert_equal(self.outputs["outer_diameter"], self.inputs["outer_diameter_in"])
-        npt.assert_equal(self.outputs["wall_thickness"], 0.25 * np.ones(4))
-        npt.assert_equal(self.outputs["E"], 1e9 * np.ones(4))
-        npt.assert_equal(self.outputs["G"], 1e8 * np.ones(4))
-        npt.assert_equal(self.outputs["sigma_y"], 1e7 * np.ones(4))
-        npt.assert_equal(self.outputs["rho"], 1e4 * np.ones(4))
-        npt.assert_equal(self.outputs["unit_cost"], 1e1 * np.ones(4))
-        npt.assert_equal(self.outputs["outfitting_factor"], 1.05 * np.ones(4))
-        npt.assert_equal(self.outputs["ballast_density"], np.array([1e5, 1e5, 1e3]))
-        npt.assert_equal(self.outputs["ballast_unit_cost"], np.array([2e1, 2e1, 0.0]))
+        npt.assert_equal(outputs["section_height"], 25.0 * np.ones(4))
+        npt.assert_equal(outputs["outer_diameter"], inputs["outer_diameter_in"])
+        npt.assert_equal(outputs["wall_thickness"], 0.25 * np.ones(4))
+        npt.assert_equal(outputs["E"], 1e9 * np.ones(4))
+        npt.assert_equal(outputs["G"], 1e8 * np.ones(4))
+        npt.assert_equal(outputs["sigma_y"], 1e7 * np.ones(4))
+        npt.assert_equal(outputs["rho"], 1e4 * np.ones(4))
+        npt.assert_equal(outputs["unit_cost"], 1e1 * np.ones(4))
+        npt.assert_equal(outputs["outfitting_factor"], 1.05 * np.ones(4))
+        npt.assert_equal(outputs["ballast_density"], np.array([1e5, 1e5, 1e3]))
+        npt.assert_equal(outputs["ballast_unit_cost"], np.array([2e1, 2e1, 0.0]))
+        npt.assert_equal(outputs["transition_node"], NULL * np.ones(3))
+
+        discrete_inputs["transition_flag"] = [False, True]
+        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+        npt.assert_equal(outputs["transition_node"], np.r_[np.zeros(2), 1e2])
 
     def testDiscYAML_2Materials(self):
+        inputs = {}
+        outputs = {}
+        discrete_inputs = {}
+        discrete_outputs = {}
+
         # Test land based, 2 materials
-        self.inputs["s"] = np.linspace(0, 1, 5)
-        self.inputs["layer_thickness"] = np.array([[0.2, 0.2, 0.2, 0.0, 0.0], [0.0, 0.0, 0.0, 0.1, 0.1]])
-        self.inputs["height"] = 1e2
-        self.inputs["outer_diameter_in"] = 8 * np.ones(5)
-        self.discrete_inputs["layer_materials"] = ["steel", "other"]
-        self.discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
-        self.inputs["E_mat"] = 1e9 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
-        self.inputs["G_mat"] = 1e8 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
-        self.inputs["sigma_y_mat"] = np.array([1e7, 1e7, 2e7])
-        self.inputs["rho_mat"] = np.array([1e4, 1e5, 2e4])
-        self.inputs["rho_water"] = 1e3
-        self.inputs["unit_cost_mat"] = np.array([1e1, 2e1, 2e1])
-        self.inputs["outfitting_factor_in"] = 1.05
-        self.discrete_inputs["material_names"] = ["steel", "slurry", "other"]
+        inputs["s"] = np.linspace(0, 1, 5)
+        inputs["layer_thickness"] = np.array([[0.2, 0.2, 0.2, 0.0, 0.0], [0.0, 0.0, 0.0, 0.1, 0.1]])
+        inputs["joint1"] = np.zeros(3)
+        inputs["joint2"] = np.r_[np.zeros(2), 1e2]
+        discrete_inputs["transition_flag"] = [False, False]
+        inputs["outer_diameter_in"] = 8 * np.ones(5)
+        discrete_inputs["layer_materials"] = ["steel", "other"]
+        discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
+        inputs["E_mat"] = 1e9 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
+        inputs["G_mat"] = 1e8 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
+        inputs["sigma_y_mat"] = np.array([1e7, 1e7, 2e7])
+        inputs["rho_mat"] = np.array([1e4, 1e5, 2e4])
+        inputs["rho_water"] = 1e3
+        inputs["unit_cost_mat"] = np.array([1e1, 2e1, 2e1])
+        inputs["outfitting_factor_in"] = 1.05
+        discrete_inputs["material_names"] = ["steel", "slurry", "other"]
         opt = {}
         opt["n_height"] = [5]
         opt["n_layers"] = [2]
         opt["n_ballasts"] = [3]
         myobj = member.DiscretizationYAML(options=opt, idx=0, n_mat=3)
-        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
 
         # Define mixtures
         v = np.r_[np.mean([0.2, 0]), np.mean([0.1, 0.0])]
@@ -86,17 +98,18 @@ class TestInputs(unittest.TestCase):
         xx1 = np.sum(x * vv)  # Mass weighted
         xx2 = 0.5 * np.sum(vv * x) + 0.5 / np.sum(vv / x)  # Volumetric method
         xx3 = np.sum(x * x * vv) / xx1  # Mass-cost weighted
-        npt.assert_equal(self.outputs["section_height"], 25.0 * np.ones(4))
-        npt.assert_equal(self.outputs["outer_diameter"], self.inputs["outer_diameter_in"])
-        npt.assert_almost_equal(self.outputs["wall_thickness"], np.array([0.2, 0.2, v.sum(), 0.1]))
-        npt.assert_almost_equal(self.outputs["E"], 1e9 * np.array([1, 1, xx2, 2]))
-        npt.assert_almost_equal(self.outputs["G"], 1e8 * np.array([1, 1, xx2, 2]))
-        npt.assert_almost_equal(self.outputs["sigma_y"], 1e7 * np.array([1, 1, xx2, 2]))
-        npt.assert_almost_equal(self.outputs["rho"], 1e4 * np.array([1, 1, xx1, 2]))
-        npt.assert_almost_equal(self.outputs["unit_cost"], 1e1 * np.array([1, 1, xx3, 2]))
-        npt.assert_equal(self.outputs["outfitting_factor"], 1.05 * np.ones(4))
-        npt.assert_equal(self.outputs["ballast_density"], np.array([1e5, 1e5, 1e3]))
-        npt.assert_equal(self.outputs["ballast_unit_cost"], np.array([2e1, 2e1, 0.0]))
+        npt.assert_equal(outputs["section_height"], 25.0 * np.ones(4))
+        npt.assert_equal(outputs["outer_diameter"], inputs["outer_diameter_in"])
+        npt.assert_almost_equal(outputs["wall_thickness"], np.array([0.2, 0.2, v.sum(), 0.1]))
+        npt.assert_almost_equal(outputs["E"], 1e9 * np.array([1, 1, xx2, 2]))
+        npt.assert_almost_equal(outputs["G"], 1e8 * np.array([1, 1, xx2, 2]))
+        npt.assert_almost_equal(outputs["sigma_y"], 1e7 * np.array([1, 1, xx2, 2]))
+        npt.assert_almost_equal(outputs["rho"], 1e4 * np.array([1, 1, xx1, 2]))
+        npt.assert_almost_equal(outputs["unit_cost"], 1e1 * np.array([1, 1, xx3, 2]))
+        npt.assert_equal(outputs["outfitting_factor"], 1.05 * np.ones(4))
+        npt.assert_equal(outputs["ballast_density"], np.array([1e5, 1e5, 1e3]))
+        npt.assert_equal(outputs["ballast_unit_cost"], np.array([2e1, 2e1, 0.0]))
+        npt.assert_equal(outputs["transition_node"], NULL * np.ones(3))
 
 
 class TestFullDiscretization(unittest.TestCase):

@@ -516,10 +516,7 @@ class WT_RNTA(om.Group):
             self.connect("costs.labor_rate", "floatingse.labor_cost_rate")
             self.connect("costs.painting_rate", "floatingse.painting_cost_rate")
             self.connect("assembly.hub_height", "floatingse.hub_height")
-            self.connect("floating.joints.transition_node", "floatingse.transition_node")
-            # self.connect("tower_grid.foundation_height", "floatingse.tower.foundation_height")
             self.connect("tower.diameter", "floatingse.tower.outer_diameter_in")
-            self.connect("tower_grid.height", "floatingse.tower.height")
             self.connect("tower_grid.s", "floatingse.tower.s")
             self.connect("tower.layer_thickness", "floatingse.tower.layer_thickness")
             self.connect("tower.outfitting_factor", "floatingse.tower.outfitting_factor_in")
@@ -563,7 +560,7 @@ class WT_RNTA(om.Group):
                 ]:
                     self.connect("floating.member_" + kname + "." + var, "floatingse.member" + str(k) + "." + var)
 
-                for var in ["height", "joint1", "joint2"]:
+                for var in ["joint1", "joint2", "transition_flag"]:
                     self.connect("floating.member_" + kname + ":" + var, "floatingse.member" + str(k) + "." + var)
 
             # Mooring connections

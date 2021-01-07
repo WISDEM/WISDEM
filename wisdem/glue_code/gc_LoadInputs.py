@@ -310,6 +310,17 @@ class WindTurbineOntologyPython(object):
                         ]["values"].append(0.02)
                     # grid += bulkgrid # Handled differently in the floating code
                 else:
+                    self.wt_init["components"]["floating_platform"]["members"][i]["internal_structure"]["bulkhead"] = {}
+                    self.wt_init["components"]["floating_platform"]["members"][i]["internal_structure"]["bulkhead"][
+                        "material"
+                    ] = self.wt_init["components"]["floating_platform"]["members"][i]["internal_structure"]["layers"][
+                        0
+                    ][
+                        "material"
+                    ]
+                    self.wt_init["components"]["floating_platform"]["members"][i]["internal_structure"]["bulkhead"][
+                        "thickness"
+                    ] = {}
                     self.wt_init["components"]["floating_platform"]["members"][i]["internal_structure"]["bulkhead"][
                         "thickness"
                     ]["grid"] = [0.0, 1.0]
@@ -385,7 +396,7 @@ class WindTurbineOntologyPython(object):
                     for m in range(n_axial_joints):
                         self.modeling_options["floating"]["members"][
                             "axial_joint_name_member_" + self.modeling_options["floating"]["members"]["name"][i]
-                        ] = self.wt_init["components"]["floating_platform"]["members"][i]["axial_joints"][m]["name"]
+                        ][m] = self.wt_init["components"]["floating_platform"]["members"][i]["axial_joints"][m]["name"]
                         grid.append(
                             self.wt_init["components"]["floating_platform"]["members"][i]["axial_joints"][m]["grid"]
                         )

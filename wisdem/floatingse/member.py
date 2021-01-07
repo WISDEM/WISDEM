@@ -48,6 +48,10 @@ class DiscretizationYAML(om.ExplicitComponent):
     s : numpy array[n_height_tow]
         1D array of the non-dimensional grid defined along the member axis (0-member base,
         1-member top)
+    joint1 : numpy array[3], [m]
+        Global dimensional coordinates (x-y-z) for bottom node of member
+    joint2 : numpy array[3], [m]
+        Global dimensional coordinates (x-y-z) for top node of member
     layer_materials : list of strings
         1D array of the names of the materials of each layer modeled in the member
         structure.
@@ -55,8 +59,6 @@ class DiscretizationYAML(om.ExplicitComponent):
         2D array of the thickness of the layers of the member structure. The first
         dimension represents each layer, the second dimension represents each piecewise-
         constant entry of the member sections.
-    height : float, [m]
-        Scalar of the member height computed along the z axis.
     outer_diameter_in : numpy array[n_height_tow], [m]
         cylinder diameter at corresponding locations
     material_names : list of strings
@@ -82,6 +84,8 @@ class DiscretizationYAML(om.ExplicitComponent):
 
     Returns
     -------
+    height : float, [m]
+        Scalar of the member height computed along the z axis.
     section_height : numpy array[n_height-1], [m]
         parameterized section heights along cylinder
     outer_diameter : numpy array[n_height], [m]
@@ -118,10 +122,12 @@ class DiscretizationYAML(om.ExplicitComponent):
 
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
         self.add_input("s", val=np.zeros(n_height))
+        self.add_input("joint1", val=np.zeros(3), units="m")
+        self.add_input("joint2", val=np.zeros(3), units="m")
+        self.add_discrete_input("transition_flag", val=[False, False])
         self.add_discrete_input("layer_materials", val=n_layers * [""])
         self.add_discrete_input("ballast_materials", val=n_ballast * [""])
         self.add_input("layer_thickness", val=np.zeros((n_layers, n_height)), units="m")
-        self.add_input("height", val=0.0, units="m")
         self.add_input("outer_diameter_in", np.zeros(n_height), units="m")
         self.add_discrete_input("material_names", val=n_mat * [""])
         self.add_input("E_mat", val=np.zeros([n_mat, 3]), units="Pa")
@@ -132,6 +138,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_input("outfitting_factor_in", val=1.0)
         self.add_input("rho_water", 0.0, units="kg/m**3")
 
+        self.add_output("height", val=0.0, units="m")
         self.add_output("section_height", val=np.zeros(n_height - 1), units="m")
         self.add_output("outer_diameter", val=np.zeros(n_height), units="m")
         self.add_output("wall_thickness", val=np.zeros(n_height - 1), units="m")
@@ -143,6 +150,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_output("outfitting_factor", val=np.ones(n_height - 1))
         self.add_output("ballast_density", val=np.zeros(n_ballast), units="kg/m**3")
         self.add_output("ballast_unit_cost", val=np.zeros(n_ballast), units="USD/kg")
+        self.add_output("transition_node", NULL * np.ones(3), units="m")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack dimensions
@@ -152,10 +160,20 @@ class DiscretizationYAML(om.ExplicitComponent):
         n_ballast = opt["n_ballasts"][idx]
 
         # Unpack values
-        h_col = inputs["height"]
+        xyz0 = inputs["joint1"]
+        xyz1 = inputs["joint2"]
+        dxyz = xyz1 - xyz0
+        h_col = np.sqrt(np.sum(dxyz ** 2))
         lthick = inputs["layer_thickness"]
         lthick = 0.5 * (lthick[:, :-1] + lthick[:, 1:])
+        if discrete_inputs["transition_flag"][0]:
+            outputs["transition_node"] = xyz0
+        elif discrete_inputs["transition_flag"][1]:
+            outputs["transition_node"] = xyz1
+        else:
+            outputs["transition_node"] = NULL * np.ones(3)
 
+        outputs["height"] = h_col
         outputs["section_height"] = np.diff(h_col * inputs["s"])
         outputs["wall_thickness"] = np.sum(lthick, axis=0)
         outputs["outer_diameter"] = inputs["outer_diameter_in"]
@@ -895,8 +913,8 @@ class MemberComponent(om.ExplicitComponent):
         w_flange = inputs["ring_stiffener_flange_width"]
         L_stiffener = inputs["ring_stiffener_spacing"]
 
-        n_stiff = int(np.floor(L / (L_stiffener + eps)))
-        if L_stiffener == 0 or n_stiff == 0:
+        n_stiff = 0 if L_stiffener == 0.0 else int(np.floor(L / L_stiffener))
+        if n_stiff == 0:
             return
 
         web_frac = t_web / w_flange
@@ -1035,7 +1053,6 @@ class MemberComponent(om.ExplicitComponent):
 
         # Number of points for volume integration
         npts = 10
-
         m_ballast = rho_ballast * V_ballast
         I_ballast = np.zeros(6)
         z_cg = np.zeros(n_ballast)
@@ -1087,7 +1104,7 @@ class MemberComponent(om.ExplicitComponent):
         # TODO: Add the mass to sectional density?
         outputs["ballast_mass"] = m_ballast.sum()
         outputs["ballast_I_base"] = I_ballast
-        outputs["ballast_z_cg"] = np.dot(z_cg, m_ballast) / m_ballast.sum()
+        outputs["ballast_z_cg"] = np.dot(z_cg, m_ballast) / (m_ballast.sum() + eps)
         outputs["ballast_cost"] = np.dot(km_ballast, m_ballast)
         outputs["constr_ballast_capacity"] = V_ballast / V_avail
 

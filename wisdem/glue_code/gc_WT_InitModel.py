@@ -927,7 +927,7 @@ def assign_floating_values(wt_opt, modeling_options, floating):
                 floating["members"][i]["internal_structure"]["layers"][j]["thickness"]["grid"],
                 floating["members"][i]["internal_structure"]["layers"][j]["thickness"]["values"],
             )
-            layer_mat[i] = floating["members"][i]["internal_structure"]["layers"][j]["material"]
+            layer_mat[j] = floating["members"][i]["internal_structure"]["layers"][j]["material"]
         wt_opt["floating.member_" + name_member + ".layer_materials"] = layer_mat
 
         n_ballasts = floating_init_options["members"]["n_ballasts"][i]
