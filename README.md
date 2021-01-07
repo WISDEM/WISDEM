@@ -9,11 +9,6 @@ The Wind-Plant Integrated System Design and Engineering Model (WISDEM&reg;) is a
 
 Author: [NREL WISDEM Team](mailto:systems.engineering@nrel.gov)
 
-
-## Version
-
-This software is a version 3.0.0.
-
 ## Documentation
 
 See local documentation in the `docs`-directory or access the online version at <https://wisdem.readthedocs.io/en/master/>
