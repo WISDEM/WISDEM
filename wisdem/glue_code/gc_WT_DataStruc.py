@@ -1999,7 +1999,7 @@ class Mooring(om.Group):
 
         n_nodes = mooring_init_options["n_nodes"]
         n_lines = mooring_init_options["n_lines"]
-        # n_line_types = mooring_init_options["n_line_types"]
+        n_line_types = mooring_init_options["n_line_types"]
         # n_anchor_types = mooring_init_options["n_anchor_types"]
 
         ivc = self.add_subsystem("mooring", om.IndepVarComp(), promotes=["*"])
@@ -2015,7 +2015,7 @@ class Mooring(om.Group):
         ivc.add_output("unstretched_length", val=np.zeros(n_lines), units="m")
         ivc.add_discrete_output("line_id", val=[""] * n_lines)
         # ivc.add_discrete_output("n_lines", val=n_lines)
-        # ivc.add_discrete_output("line_type_names", val=[""] * n_line_types)
+        ivc.add_discrete_output("line_type_names", val=[""] * n_line_types)  ## For MoorDyn
         ivc.add_output("line_diameter", val=np.zeros(n_lines), units="m")
         ivc.add_output("line_mass_density_coeff", val=np.zeros(n_lines), units="kg/m**3")
         ivc.add_output("line_stiffness_coeff", val=np.zeros(n_lines), units="N/m**2")
@@ -2031,7 +2031,52 @@ class Mooring(om.Group):
         ivc.add_output("anchor_max_vertical_load", val=np.zeros(n_lines), units="N")
         ivc.add_output("anchor_max_lateral_load", val=np.zeros(n_lines), units="N")
 
+        self.add_subsystem("moorprop", MooringProperties(mooring_init_options=mooring_init_options), promotes=["*"])
         self.add_subsystem("moorjoint", MooringJoints(mooring_init_options=mooring_init_options), promotes=["*"])
+
+
+class MooringProperties(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("mooring_init_options")
+
+    def setup(self):
+        mooring_init_options = self.options["mooring_init_options"]
+        n_lines = mooring_init_options["n_lines"]
+
+        self.add_input("line_diameter", val=np.zeros(n_lines), units="m")
+        self.add_input("line_mass_density_coeff", val=np.zeros(n_lines), units="kg/m**3")
+        self.add_input("line_stiffness_coeff", val=np.zeros(n_lines), units="N/m**2")
+        self.add_input("line_breaking_load_coeff", val=np.zeros(n_lines), units="N/m**2")
+        self.add_input("line_cost_rate_coeff", val=np.zeros(n_lines), units="USD/m**3")
+        self.add_input("line_transverse_added_mass_coeff", val=np.zeros(n_lines), units="kg/m**3")
+        self.add_input("line_tangential_added_mass_coeff", val=np.zeros(n_lines), units="kg/m**3")
+        self.add_input("line_transverse_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
+        self.add_input("line_tangential_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
+
+        self.add_output("line_mass_density", val=np.zeros(n_lines), units="kg/m**2")
+        self.add_output("line_stiffness", val=np.zeros(n_lines), units="N/m")
+        self.add_output("line_breaking_load", val=np.zeros(n_lines), units="N/m")
+        self.add_output("line_cost_rate", val=np.zeros(n_lines), units="USD/m**2")
+        self.add_output("line_transverse_added_mass", val=np.zeros(n_lines), units="kg/m**2")
+        self.add_output("line_tangential_added_mass", val=np.zeros(n_lines), units="kg/m**2")
+        self.add_output("line_transverse_drag", val=np.zeros(n_lines), units="N/m")
+        self.add_output("line_tangential_drag", val=np.zeros(n_lines), units="N/m")
+
+    def compute(self, inputs, outputs):
+        d = inputs["line_diameter"]
+        d2 = d * d
+        varlist = [
+            "line_mass_density",
+            "line_stiffness",
+            "line_breaking_load",
+            "line_cost_rate",
+            "line_transverse_added_mass",
+            "line_tangential_added_mass",
+            "line_transverse_drag",
+            "line_tangential_drag",
+        ]
+        for var in varlist:
+            outputs[var] = d2 * inputs[var + "_coeff"]
 
 
 class MooringJoints(om.ExplicitComponent):

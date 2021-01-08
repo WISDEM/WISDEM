@@ -34,7 +34,7 @@ class TestPlatform(unittest.TestCase):
             self.inputs["member" + str(k) + ":nodes_xyz"] = NULL * np.ones((MEMMAX, 3))
             self.inputs["member" + str(k) + ":nodes_r"] = NULL * np.ones(MEMMAX)
 
-        for var in ["A", "Asx", "Asy", "Ixx", "Iyy", "Izz", "rho", "E", "G"]:
+        for var in ["D", "t", "A", "Asx", "Asy", "Ixx", "Iyy", "Izz", "rho", "E", "G"]:
             self.inputs["tower_elem_" + var] = NULL * np.ones(MEMMAX)
             for k in range(n_member):
                 self.inputs["member" + str(k) + ":section_" + var] = NULL * np.ones(MEMMAX)
@@ -48,6 +48,8 @@ class TestPlatform(unittest.TestCase):
         for k in range(n_member):
             L = np.sqrt(np.sum(np.diff(self.inputs["member" + str(k) + ":nodes_xyz"][:2, :], axis=0) ** 2))
             self.inputs["member" + str(k) + ":nodes_r"][:2] = 0.1 * k * np.ones(2)
+            self.inputs["member" + str(k) + ":section_D"][:1] = 2.0
+            self.inputs["member" + str(k) + ":section_t"][:1] = 0.1
             self.inputs["member" + str(k) + ":section_A"][:1] = 0.5 * k * np.ones(1) + 1
             self.inputs["member" + str(k) + ":section_Asx"][:1] = 0.5 * k * np.ones(1) + 1
             self.inputs["member" + str(k) + ":section_Asy"][:1] = 0.5 * k * np.ones(1) + 1
@@ -79,6 +81,8 @@ class TestPlatform(unittest.TestCase):
         self.inputs["tower_Rnode"][:3] = np.zeros(3)
         # self.inputs["tower_elem_n1"] = [0, 1]
         # self.inputs["tower_elem_n2"] = [1, 2]
+        self.inputs["tower_elem_D"][:2] = 2.0 * myones
+        self.inputs["tower_elem_t"][:2] = 0.1 * myones
         self.inputs["tower_elem_A"][:2] = 4.0 * myones
         self.inputs["tower_elem_Asx"][:2] = 4.1 * myones
         self.inputs["tower_elem_Asy"][:2] = 4.1 * myones
@@ -119,6 +123,8 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["platform_Rnode"][4:], NULL)
         npt.assert_equal(self.outputs["platform_elem_n1"][6:], NULL)
         npt.assert_equal(self.outputs["platform_elem_n2"][6:], NULL)
+        npt.assert_equal(self.outputs["platform_elem_D"][6:], NULL)
+        npt.assert_equal(self.outputs["platform_elem_t"][6:], NULL)
         npt.assert_equal(self.outputs["platform_elem_A"][6:], NULL)
         npt.assert_equal(self.outputs["platform_elem_Asx"][6:], NULL)
         npt.assert_equal(self.outputs["platform_elem_Asy"][6:], NULL)
@@ -140,6 +146,8 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["platform_Rnode"][:4], 0.1 * np.r_[3, 5, 5, 4])
         npt.assert_equal(self.outputs["platform_elem_n1"][:6], np.r_[0, 3, 2, 0, 3, 2])
         npt.assert_equal(self.outputs["platform_elem_n2"][:6], np.r_[3, 2, 0, 1, 1, 1])
+        npt.assert_equal(self.outputs["platform_elem_D"][:6], 2.0)
+        npt.assert_equal(self.outputs["platform_elem_t"][:6], 0.1)
         npt.assert_equal(self.outputs["platform_elem_A"][:6], 0.5 * np.arange(6) + 1)
         npt.assert_equal(self.outputs["platform_elem_Asx"][:6], 0.5 * np.arange(6) + 1)
         npt.assert_equal(self.outputs["platform_elem_Asy"][:6], 0.5 * np.arange(6) + 1)
@@ -213,6 +221,8 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["system_Rnode"][:6], 0.1 * np.r_[3, 5, 5, 4, 0, 0])
         npt.assert_equal(self.outputs["system_elem_n1"][:8], np.r_[0, 3, 2, 0, 3, 2, 1, 4])
         npt.assert_equal(self.outputs["system_elem_n2"][:8], np.r_[3, 2, 0, 1, 1, 1, 4, 5])
+        npt.assert_equal(self.outputs["system_elem_D"][:8], 2.0)
+        npt.assert_equal(self.outputs["system_elem_t"][:8], 0.1)
         npt.assert_equal(self.outputs["system_elem_A"][:8], np.r_[0.5 * np.arange(6) + 1, 4, 4])
         npt.assert_equal(self.outputs["system_elem_Asx"][:8], np.r_[0.5 * np.arange(6) + 1, 4.1, 4.1])
         npt.assert_equal(self.outputs["system_elem_Asy"][:8], np.r_[0.5 * np.arange(6) + 1, 4.1, 4.1])
@@ -316,6 +326,8 @@ class TestGroup(unittest.TestCase):
         for k in range(n_member):
             L = np.sqrt(np.sum(np.diff(prob["member" + str(k) + ":nodes_xyz"][:, 2], axis=0) ** 2))
             prob["member" + str(k) + ":nodes_r"][:2] = 0.1 * k * np.ones(2)
+            prob["member" + str(k) + ":section_D"][:1] = 2.0
+            prob["member" + str(k) + ":section_t"][:1] = 0.1
             prob["member" + str(k) + ":section_A"][:1] = 0.5 * k * np.ones(1) + 1
             prob["member" + str(k) + ":section_Asx"][:1] = 0.5 * k * np.ones(1) + 1
             prob["member" + str(k) + ":section_Asy"][:1] = 0.5 * k * np.ones(1) + 1
@@ -373,7 +385,6 @@ class TestGroup(unittest.TestCase):
         prob["rna_F"] = np.array([1e2, 1e1, 0.0])
         prob["rna_M"] = np.array([2e1, 2e2, 0.0])
         prob["transition_piece_mass"] = 1e3
-        prob["transition_piece_I"] = 1e3 * np.arange(6)
         prob["transition_node"] = prob["member4:nodes_xyz"][0, :]
 
         prob.run_model()

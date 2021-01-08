@@ -26,6 +26,8 @@ class PlatformFrame(om.ExplicitComponent):
         for k in range(n_member):
             self.add_input("member" + str(k) + ":nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
             self.add_input("member" + str(k) + ":nodes_r", NULL * np.ones(MEMMAX), units="m")
+            self.add_input("member" + str(k) + ":section_D", NULL * np.ones(MEMMAX), units="m")
+            self.add_input("member" + str(k) + ":section_t", NULL * np.ones(MEMMAX), units="m")
             self.add_input("member" + str(k) + ":section_A", NULL * np.ones(MEMMAX), units="m**2")
             self.add_input("member" + str(k) + ":section_Asx", NULL * np.ones(MEMMAX), units="m**2")
             self.add_input("member" + str(k) + ":section_Asy", NULL * np.ones(MEMMAX), units="m**2")
@@ -53,6 +55,8 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_Rnode", NULL * np.ones(NNODES_MAX), units="m")
         self.add_output("platform_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
         self.add_output("platform_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_output("platform_elem_D", NULL * np.ones(NELEM_MAX), units="m")
+        self.add_output("platform_elem_t", NULL * np.ones(NELEM_MAX), units="m")
         self.add_output("platform_elem_A", NULL * np.ones(NELEM_MAX), units="m**2")
         self.add_output("platform_elem_Asx", NULL * np.ones(NELEM_MAX), units="m**2")
         self.add_output("platform_elem_Asy", NULL * np.ones(NELEM_MAX), units="m**2")
@@ -177,6 +181,8 @@ class PlatformFrame(om.ExplicitComponent):
         n_member = opt["floating"]["members"]["n_members"]
 
         # Initialize running lists across all members
+        elem_D = np.array([])
+        elem_t = np.array([])
         elem_A = np.array([])
         elem_Asx = np.array([])
         elem_Asy = np.array([])
@@ -199,6 +205,8 @@ class PlatformFrame(om.ExplicitComponent):
         # Append all member data
         for k in range(n_member):
             n = np.where(inputs["member" + str(k) + ":section_A"] == NULL)[0][0]
+            elem_D = np.append(elem_D, inputs["member" + str(k) + ":section_D"][:n])
+            elem_t = np.append(elem_t, inputs["member" + str(k) + ":section_t"][:n])
             elem_A = np.append(elem_A, inputs["member" + str(k) + ":section_A"][:n])
             elem_Asx = np.append(elem_Asx, inputs["member" + str(k) + ":section_Asx"][:n])
             elem_Asy = np.append(elem_Asy, inputs["member" + str(k) + ":section_Asy"][:n])
@@ -226,6 +234,8 @@ class PlatformFrame(om.ExplicitComponent):
 
         # Store outputs
         nelem = elem_A.size
+        outputs["platform_elem_D"] = NULL * np.ones(NELEM_MAX)
+        outputs["platform_elem_t"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_A"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_Asx"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_Asy"] = NULL * np.ones(NELEM_MAX)
@@ -236,6 +246,8 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_elem_E"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_G"] = NULL * np.ones(NELEM_MAX)
 
+        outputs["platform_elem_D"][:nelem] = elem_D
+        outputs["platform_elem_t"][:nelem] = elem_t
         outputs["platform_elem_A"][:nelem] = elem_A
         outputs["platform_elem_Asx"][:nelem] = elem_Asx
         outputs["platform_elem_Asy"][:nelem] = elem_Asy
@@ -277,6 +289,8 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_input("platform_Rnode", NULL * np.ones(NNODES_MAX), units="m")
         self.add_input("platform_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
         self.add_input("platform_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_input("platform_elem_D", NULL * np.ones(NELEM_MAX), units="m")
+        self.add_input("platform_elem_t", NULL * np.ones(NELEM_MAX), units="m")
         self.add_input("platform_elem_A", NULL * np.ones(NELEM_MAX), units="m**2")
         self.add_input("platform_elem_Asx", NULL * np.ones(NELEM_MAX), units="m**2")
         self.add_input("platform_elem_Asy", NULL * np.ones(NELEM_MAX), units="m**2")
@@ -295,6 +309,8 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_input("tower_Rnode", NULL * np.ones(MEMMAX), units="m")
         self.add_output("tower_elem_n1", copy_shape="tower_elem_A")
         self.add_output("tower_elem_n2", copy_shape="tower_elem_A")
+        self.add_input("tower_elem_D", NULL * np.ones(MEMMAX), units="m")
+        self.add_input("tower_elem_t", NULL * np.ones(MEMMAX), units="m")
         self.add_input("tower_elem_A", NULL * np.ones(MEMMAX), units="m**2")
         self.add_input("tower_elem_Asx", NULL * np.ones(MEMMAX), units="m**2")
         self.add_input("tower_elem_Asy", NULL * np.ones(MEMMAX), units="m**2")
@@ -319,6 +335,8 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_output("system_Rnode", NULL * np.ones(NNODES_MAX), units="m")
         self.add_output("system_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
         self.add_output("system_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_output("system_elem_D", NULL * np.ones(NELEM_MAX), units="m")
+        self.add_output("system_elem_t", NULL * np.ones(NELEM_MAX), units="m")
         self.add_output("system_elem_A", NULL * np.ones(NELEM_MAX), units="m**2")
         self.add_output("system_elem_Asx", NULL * np.ones(NELEM_MAX), units="m**2")
         self.add_output("system_elem_Asy", NULL * np.ones(NELEM_MAX), units="m**2")
@@ -383,6 +401,8 @@ class PlatformTowerFrame(om.ExplicitComponent):
         ]
 
         for var in [
+            "elem_D",
+            "elem_t",
             "elem_A",
             "elem_Asx",
             "elem_Asy",
@@ -429,6 +449,8 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("tower_Rnode", NULL * np.ones(MEMMAX), units="m")
         self.add_input("tower_elem_n1", NULL * np.ones(MEMMAX))
         self.add_input("tower_elem_n2", NULL * np.ones(MEMMAX))
+        self.add_input("tower_elem_D", NULL * np.ones(MEMMAX), units="m")
+        self.add_input("tower_elem_t", NULL * np.ones(MEMMAX), units="m")
         self.add_input("tower_elem_A", NULL * np.ones(MEMMAX), units="m**2")
         self.add_input("tower_elem_Asx", NULL * np.ones(MEMMAX), units="m**2")
         self.add_input("tower_elem_Asy", NULL * np.ones(MEMMAX), units="m**2")
@@ -444,6 +466,8 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("system_Rnode", NULL * np.ones(NNODES_MAX), units="m")
         self.add_input("system_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
         self.add_input("system_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_input("system_elem_D", NULL * np.ones(NELEM_MAX), units="m")
+        self.add_input("system_elem_t", NULL * np.ones(NELEM_MAX), units="m")
         self.add_input("system_elem_A", NULL * np.ones(NELEM_MAX), units="m**2")
         self.add_input("system_elem_Asx", NULL * np.ones(NELEM_MAX), units="m**2")
         self.add_input("system_elem_Asy", NULL * np.ones(NELEM_MAX), units="m**2")
@@ -456,7 +480,6 @@ class FrameAnalysis(om.ExplicitComponent):
 
         self.add_input("transition_node", np.zeros(3), units="m")
         self.add_input("transition_piece_mass", 0.0, units="kg")
-        self.add_input("transition_piece_I", np.zeros(6), units="kg*m**2")
         self.add_input("rna_mass", 0.0, units="kg")
         self.add_input("rna_cg", np.zeros(3), units="m")
         self.add_input("rna_F", np.zeros(3), units="N")
@@ -467,17 +490,16 @@ class FrameAnalysis(om.ExplicitComponent):
 
         NFREQ2 = int(NFREQ / 2)
         self.add_output("tower_freqs", val=np.zeros(NFREQ), units="Hz")
-        self.add_output("tower_foreaft_mode_shapes", val=np.zeros((NFREQ2, 5)))
-        self.add_output("tower_sideside_mode_shapes", val=np.zeros((NFREQ2, 5)))
-        self.add_output("tower_foreaft_mode_freqs", val=np.zeros(NFREQ2))
-        self.add_output("tower_sideside_mode_freqs", val=np.zeros(NFREQ2))
+        self.add_output("tower_fore_aft_modes", val=np.zeros((NFREQ2, 5)))
+        self.add_output("tower_side_side_modes", val=np.zeros((NFREQ2, 5)))
+        self.add_output("tower_fore_aft_freqs", val=np.zeros(NFREQ2))
+        self.add_output("tower_side_side_freqs", val=np.zeros(NFREQ2))
 
     def compute(self, inputs, outputs):
 
         # Unpack variables
         opt = self.options["options"]
         n_attach = opt["mooring"]["n_attach"]
-        I_trans = inputs["transition_piece_I"]
         m_rna = float(inputs["rna_mass"])
         cg_rna = inputs["rna_cg"]
         I_rna = inputs["rna_I"]
@@ -528,12 +550,14 @@ class FrameAnalysis(om.ExplicitComponent):
             myframe = pyframe3dd.Frame(node_obj, react_obj, elem_obj, opt_obj)
 
             # Added mass
+            m_trans = float(inputs["transition_piece_mass"])
+            r_trans = inputs[frame + "_Rnode"][itrans]
+            I_trans = m_trans * r_trans ** 2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]  # shell
             if frame == "tower":
                 # TODO: Added mass and stiffness
-                m_trans = float(inputs["transition_piece_mass"] + inputs["platform_mass"])
+                m_trans += float(inputs["platform_mass"])
                 cg_trans = inputs["transition_node"] - inputs["platform_center_of_mass"]
             else:
-                m_trans = float(inputs["transition_piece_mass"])
                 cg_trans = np.zeros(3)
             add_gravity = True
             mID = np.array([itrans, ihub], dtype=np.int_).flatten()
@@ -592,10 +616,10 @@ class FrameAnalysis(om.ExplicitComponent):
                 freq_x, freq_y, mshapes_x, mshapes_y = util.get_xy_mode_shapes(
                     nodes[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
                 )
-                outputs[frame + "_foreaft_mode_freqs"] = freq_x[:NFREQ2]
-                outputs[frame + "_sideside_mode_freqs"] = freq_y[:NFREQ2]
-                outputs[frame + "_foreaft_mode_shapes"] = mshapes_x[:NFREQ2, :]
-                outputs[frame + "_sideside_mode_shapes"] = mshapes_y[:NFREQ2, :]
+                outputs[frame + "_fore_aft_freqs"] = freq_x[:NFREQ2]
+                outputs[frame + "_side_side_freqs"] = freq_y[:NFREQ2]
+                outputs[frame + "_fore_aft_modes"] = mshapes_x[:NFREQ2, :]
+                outputs[frame + "_side_side_modes"] = mshapes_y[:NFREQ2, :]
 
             # Determine forces
             F_sum = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])

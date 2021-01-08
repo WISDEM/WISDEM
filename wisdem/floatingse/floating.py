@@ -59,6 +59,8 @@ class FloatingSE(om.Group):
             "nodes_xyz",
             "nodes_r",
             "transition_node",
+            "section_D",
+            "section_t",
             "section_A",
             "section_Asx",
             "section_Asy",
