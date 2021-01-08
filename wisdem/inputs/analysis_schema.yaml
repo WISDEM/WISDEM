@@ -460,7 +460,6 @@ properties:
                             upper_bound: *sbound
             monopile: *towdv
     constraints:
-        # GB: These all need gammas or safety factors
         type: object
         default: {}
         description: Activate the constraints that are applied to a design optimization
@@ -737,6 +736,50 @@ properties:
                         description: For direct-drive configurations only, ensure that the elliptical bedplate length is greater than its height
                         properties:
                             flag: *flag
+            floating:
+                type: object
+                default: {}
+                properties:
+                    operational_heel: &heelang
+                        type: object
+                        default: {}
+                        description: Ensure that the mooring system has enough restoring force to keep the heel/pitch angle below this limit
+                        properties:
+                            flag: *flag
+                            upper_bound: &upang
+                                type: number
+                                default: 0.17453292519943295 # 10 deg
+                                minimum: 0.017453292519943295 # 1 deg
+                                maximum: 0.7853981633974483 # 45 deg
+                                unit: rad
+                    survival_heel: *heelang
+                    max_surge:
+                        type: object
+                        default: {}
+                        description: Ensure that the mooring system has enough restoring force so that this surge distance, expressed as a fraction of water depth, is not exceeded
+                        properties:
+                            flag: *flag
+                            upper_bound:
+                                type: number
+                                default: 0.1
+                                minimum: 0.01
+                                maximum: 1.0
+                                unit: none
+
+                    mooring_tension:
+                        type: object
+                        default: {}
+                        description: Keep the mooring line tension below its breaking point
+                        properties:
+                            flag: *flag
+
+                    mooring_length:
+                        type: object
+                        default: {}
+                        description: Keep the mooring line length within the bounds for catenary hang or TLP tension
+                        properties:
+                            flag: *flag
+
 
     merit_figure:
         type: string

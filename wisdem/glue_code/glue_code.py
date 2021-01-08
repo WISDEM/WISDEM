@@ -1,6 +1,7 @@
 import numpy as np
 import openmdao.api as om
 from wisdem.towerse.tower import TowerSE
+from wisdem.floatingse.floating import FloatingSE
 from wisdem.rotorse.rotor_power import RotorPower, NoStallConstraint
 from wisdem.glue_code.gc_RunTools import Outputs_2_Screen, Convergence_Trends_Opt
 from wisdem.commonse.turbine_class import TurbineClass
@@ -58,8 +59,10 @@ class WT_RNTA(om.Group):
             )
         if modeling_options["flags"]["nacelle"]:
             self.add_subsystem("drivese", DrivetrainSE(modeling_options=modeling_options, n_dlcs=1))
-        if modeling_options["flags"]["tower"]:
+        if modeling_options["flags"]["tower"] and not modeling_options["flags"]["floating"]:
             self.add_subsystem("towerse", TowerSE(modeling_options=modeling_options))
+        if modeling_options["flags"]["floating"]:
+            self.add_subsystem("floatingse", FloatingSE(modeling_options=modeling_options))
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
             self.add_subsystem("tcons", TurbineConstraints(modeling_options=modeling_options))
         self.add_subsystem("tcc", Turbine_CostsSE_2015(verbosity=modeling_options["General"]["verbosity"]))
@@ -446,7 +449,7 @@ class WT_RNTA(om.Group):
                 self.connect("generator.generator_efficiency_user", "drivese.generator_efficiency_user")
 
         # Connections to TowerSE
-        if modeling_options["flags"]["tower"]:
+        if modeling_options["flags"]["tower"] and not modeling_options["flags"]["floating"]:
             if modeling_options["flags"]["nacelle"]:
                 self.connect("drivese.base_F", "towerse.pre.rna_F")
                 self.connect("drivese.base_M", "towerse.pre.rna_M")
@@ -455,12 +458,12 @@ class WT_RNTA(om.Group):
                 self.connect("drivese.rna_mass", "towerse.rna_mass")
             if modeling_options["flags"]["blade"]:
                 self.connect("rp.gust.V_gust", "towerse.wind.Uref")
-            self.connect("assembly.hub_height", "towerse.wind_reference_height")  # TODO- environment
+            self.connect("assembly.hub_height", "towerse.wind_reference_height")
+            self.connect("assembly.hub_height", "towerse.hub_height")
             self.connect("env.rho_air", "towerse.rho_air")
             self.connect("env.mu_air", "towerse.mu_air")
             self.connect("env.shear_exp", "towerse.shearExp")
-            self.connect("assembly.hub_height", "towerse.hub_height")
-            self.connect("tower_grid.foundation_height", "towerse.tower_foundation_height")  # TODO: towerse.wind_z0"
+            self.connect("tower_grid.foundation_height", "towerse.tower_foundation_height")
             self.connect("tower.diameter", "towerse.tower_outer_diameter_in")
             self.connect("tower_grid.height", "towerse.tower_height")
             self.connect("tower_grid.s", "towerse.tower_s")
@@ -495,6 +498,86 @@ class WT_RNTA(om.Group):
                 self.connect("monopile.transition_piece_mass", "towerse.transition_piece_mass")
                 self.connect("monopile.gravity_foundation_mass", "towerse.gravity_foundation_mass")
 
+        if modeling_options["flags"]["floating"]:
+            self.connect("env.rho_water", "floatingse.rho_water")
+            self.connect("env.water_depth", "floatingse.water_depth")
+            # self.connect("env.mu_water", "floatingse.mu_water")
+            # self.connect("env.Hsig_wave", "floatingse.Hsig_wave")
+            # self.connect("env.Tsig_wave", "floatingse.Tsig_wave")
+            # self.connect("env.rho_air", "floatingse.rho_air")
+            # self.connect("env.mu_air", "floatingse.mu_air")
+            # self.connect("env.shear_exp", "floatingse.shearExp")
+            self.connect("materials.name", "floatingse.material_names")
+            self.connect("materials.E", "floatingse.E_mat")
+            self.connect("materials.G", "floatingse.G_mat")
+            self.connect("materials.rho", "floatingse.rho_mat")
+            self.connect("materials.sigma_y", "floatingse.sigma_y_mat")
+            self.connect("materials.unit_cost", "floatingse.unit_cost_mat")
+            self.connect("costs.labor_rate", "floatingse.labor_cost_rate")
+            self.connect("costs.painting_rate", "floatingse.painting_cost_rate")
+            self.connect("assembly.hub_height", "floatingse.hub_height")
+            self.connect("tower.diameter", "floatingse.tower.outer_diameter_in")
+            self.connect("tower_grid.s", "floatingse.tower.s")
+            self.connect("tower.layer_thickness", "floatingse.tower.layer_thickness")
+            self.connect("tower.outfitting_factor", "floatingse.tower.outfitting_factor_in")
+            self.connect("tower.layer_mat", "floatingse.tower.layer_materials")
+            if modeling_options["flags"]["nacelle"]:
+                self.connect("drivese.base_F", "floatingse.rna_F")
+                self.connect("drivese.base_M", "floatingse.rna_M")
+                self.connect("drivese.rna_I_TT", "floatingse.rna_I")
+                self.connect("drivese.rna_cm", "floatingse.rna_cg")
+                self.connect("drivese.rna_mass", "floatingse.rna_mass")
+
+            # Individual member connections
+            for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
+                self.connect(
+                    "floating.member_" + kname + ".outer_diameter",
+                    "floatingse.member" + str(k) + ".outer_diameter_in",
+                )
+                self.connect(
+                    "floating.member_" + kname + ".outfitting_factor",
+                    "floatingse.member" + str(k) + ".outfitting_factor_in",
+                )
+
+                for var in [
+                    "s",
+                    "layer_thickness",
+                    "layer_materials",
+                    "bulkhead_grid",
+                    "bulkhead_thickness",
+                    "ballast_grid",
+                    "ballast_volume",
+                    "grid_axial_joints",
+                    "ring_stiffener_web_height",
+                    "ring_stiffener_web_thickness",
+                    "ring_stiffener_flange_width",
+                    "ring_stiffener_flange_thickness",
+                    "axial_stiffener_web_height",
+                    "axial_stiffener_web_thickness",
+                    "axial_stiffener_flange_width",
+                    "axial_stiffener_flange_thickness",
+                    "axial_stiffener_spacing",
+                ]:
+                    self.connect("floating.member_" + kname + "." + var, "floatingse.member" + str(k) + "." + var)
+
+                for var in ["joint1", "joint2", "transition_flag"]:
+                    self.connect("floating.member_" + kname + ":" + var, "floatingse.member" + str(k) + "." + var)
+
+            # Mooring connections
+            self.connect("mooring.unstretched_length", "floatingse.line_length", src_indices=[0])
+            for var in [
+                "fairlead",
+                "fairlead_radius",
+                "anchor_radius",
+                "anchor_cost",
+                "line_diameter",
+                "line_mass_density_coeff",
+                "line_stiffness_coeff",
+                "line_breaking_load_coeff",
+                "line_cost_rate_coeff",
+            ]:
+                self.connect("mooring." + var, "floatingse." + var, src_indices=[0])
+
         # Connections to turbine constraints
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
             self.connect("configuration.rotor_orientation", "tcons.rotor_orientation")
@@ -506,7 +589,10 @@ class WT_RNTA(om.Group):
             self.connect("nacelle.overhang", "tcons.overhang")
             self.connect("assembly.tower_ref_axis", "tcons.ref_axis_tower")
             self.connect("tower.diameter", "tcons.d_full")
-            self.connect("towerse.tower.freqs", "tcons.tower_freq", src_indices=[0])
+            if modeling_options["flags"]["floating"]:
+                self.connect("floatingse.tower_freqs", "tcons.tower_freq", src_indices=[0])
+            else:
+                self.connect("towerse.tower.freqs", "tcons.tower_freq", src_indices=[0])
             self.connect("configuration.n_blades", "tcons.blade_number")
             self.connect("rp.powercurve.rated_Omega", "tcons.rated_Omega")
 
@@ -538,9 +624,12 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["generator"]:
                 self.connect("drivese.generator_cost", "tcc.generator_cost_external")
 
-        if modeling_options["flags"]["tower"]:
+        if modeling_options["flags"]["tower"] and not modeling_options["flags"]["floating"]:
             self.connect("towerse.structural_mass", "tcc.tower_mass")
             self.connect("towerse.structural_cost", "tcc.tower_cost_external")
+        elif modeling_options["flags"]["floating"]:
+            self.connect("floatingse.tower_mass", "tcc.tower_mass")
+            self.connect("floatingse.tower_cost", "tcc.tower_cost_external")
 
         self.connect("costs.blade_mass_cost_coeff", "tcc.blade_mass_cost_coeff")
         self.connect("costs.hub_mass_cost_coeff", "tcc.hub_mass_cost_coeff")
@@ -601,9 +690,9 @@ class WindPark(om.Group):
                 self.connect("configuration.n_blades", "orbit.number_of_blades")
                 self.connect("assembly.hub_height", "orbit.hub_height")
                 self.connect("assembly.rotor_diameter", "orbit.turbine_rotor_diameter")
-                self.connect("towerse.tower_mass", "orbit.tower_mass")
                 self.connect("tower_grid.height", "orbit.tower_length")
                 if modeling_options["flags"]["monopile"]:
+                    self.connect("towerse.tower_mass", "orbit.tower_mass")
                     self.connect("towerse.monopile_mass", "orbit.monopile_mass")
                     self.connect("towerse.monopile_cost", "orbit.monopile_cost")
                     self.connect("monopile.height", "orbit.monopile_length")
@@ -611,11 +700,12 @@ class WindPark(om.Group):
                     self.connect("monopile.transition_piece_cost", "orbit.transition_piece_cost")
                     self.connect("monopile.diameter", "orbit.monopile_diameter", src_indices=[0])
                 else:
+                    self.connect("floatingse.tower_mass", "orbit.tower_mass")
                     self.connect("mooring.n_lines", "orbit.num_mooring_lines")
-                    self.connect("mooring.line_mass", "orbit.mooring_line_mass", src_indices=[0])
+                    self.connect("floatingse.line_mass", "orbit.mooring_line_mass", src_indices=[0])
                     self.connect("mooring.line_diameter", "orbit.mooring_line_diameter", src_indices=[0])
                     self.connect("mooring.unstretched_length", "orbit.mooring_line_length", src_indices=[0])
-                    self.connect("mooring.anchor_mass", "orbit.anchor_mass")
+                    self.connect("mooring.anchor_mass", "orbit.anchor_mass", src_indices=[0])
                 self.connect("re.precomp.blade_mass", "orbit.blade_mass")
                 self.connect("tcc.turbine_cost_kW", "orbit.turbine_capex")
                 if modeling_options["flags"]["nacelle"]:

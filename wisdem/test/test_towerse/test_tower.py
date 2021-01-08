@@ -700,7 +700,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
         prob["wind_reference_height"] = 80.0
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["cd_usr"] = -1.0
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
@@ -811,7 +811,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
         prob["wind_reference_height"] = 80.0
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["cd_usr"] = -1.0
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
@@ -938,7 +938,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
         prob["wind_reference_height"] = 80.0
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["cd_usr"] = -1.0
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
@@ -1060,7 +1060,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
         prob["wind_reference_height"] = 80.0
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["cd_usr"] = -1.0
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
@@ -1189,7 +1189,7 @@ class TestTowerSE(unittest.TestCase):
         # prob['nu_soil'] = 0.4
         prob["shearExp"] = 0.11
         prob["rho_air"] = 1.225
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["mu_air"] = 1.7934e-5
         prob["life"] = 20.0
 
@@ -1345,7 +1345,7 @@ class TestTowerSE(unittest.TestCase):
 
         # --- wind & wave ---
         prob["wind_reference_height"] = wind_zref
-        prob["wind_z0"] = wind_z0
+        prob["z0"] = wind_z0
         prob["cd_usr"] = cd_usr
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5

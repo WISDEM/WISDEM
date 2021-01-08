@@ -888,41 +888,67 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     n_joints = floating_init_options["joints"]["n_joints"]
     # Loop through joints and assign location values to openmdao entry
     for i in range(n_joints):
-        wt_opt["floating.floating_joints.location"][i, :] = floating["joints"][i]["location"]
+        wt_opt["floating.joints.location"][i, :] = floating["joints"][i]["location"]
+
+    # Set transition joint/node
+    if modeling_options["floating"]["transition_joint"] is None:
+        itrans = np.argmax(wt_opt["floating.joints.location"][:, 2])
+    else:
+        itrans = modeling_options["floating"]["transition_joint"]
+    wt_opt["floating.joints.transition_node"] = wt_opt["floating.joints.location"][itrans, :]
 
     n_members = floating_init_options["members"]["n_members"]
     # Loop through members and assign grid, outer diameter, layer thickness and ballast volume to openmdao entry. The distributed quantities are interpolated to a common grid
     for i in range(n_members):
         name_member = floating_init_options["members"]["name"][i]
         grid_member = floating_init_options["members"]["grid_member_" + floating_init_options["members"]["name"][i]]
-        wt_opt["floating.floating_member_" + name_member + ".grid"] = grid_member
-        wt_opt["floating.floating_member_" + name_member + ".outer_diameter"] = np.interp(
+        wt_opt["floating.member_" + name_member + ".s"] = grid_member
+        wt_opt["floating.member_" + name_member + ".outfitting_factor"] = floating["members"][i]["internal_structure"][
+            "outfitting_factor"
+        ]
+        wt_opt["floating.member_" + name_member + ".outer_diameter"] = np.interp(
             grid_member,
             floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
             floating["members"][i]["outer_shape"]["outer_diameter"]["values"],
         )
         if "bulkhead" in floating["members"][i]["internal_structure"]:
-            wt_opt["floating.floating_member_" + name_member + ".bulkhead_thickness"] = np.interp(
-                grid_member,
-                floating["members"][i]["internal_structure"]["bulkhead"]["thickness"]["grid"],
+            wt_opt["floating.member_" + name_member + ".bulkhead_grid"] = floating["members"][i]["internal_structure"][
+                "bulkhead"
+            ]["thickness"]["grid"]
+            wt_opt["floating.member_" + name_member + ".bulkhead_thickness"] = (
                 floating["members"][i]["internal_structure"]["bulkhead"]["thickness"]["values"],
             )
+
         n_layers = floating_init_options["members"]["n_layers"][i]
+        layer_mat = [""] * n_layers
         for j in range(n_layers):
-            wt_opt["floating.floating_member_" + name_member + ".layer_thickness"][j, :] = np.interp(
+            wt_opt["floating.member_" + name_member + ".layer_thickness"][j, :] = np.interp(
                 grid_member,
                 floating["members"][i]["internal_structure"]["layers"][j]["thickness"]["grid"],
                 floating["members"][i]["internal_structure"]["layers"][j]["thickness"]["values"],
             )
+            layer_mat[j] = floating["members"][i]["internal_structure"]["layers"][j]["material"]
+        wt_opt["floating.member_" + name_member + ".layer_materials"] = layer_mat
+
         n_ballasts = floating_init_options["members"]["n_ballasts"][i]
+        ballast_mat = [""] * n_ballasts
         for j in range(n_ballasts):
+            wt_opt["floating.member_" + name_member + ".ballast_grid"][j, :] = floating["members"][i][
+                "internal_structure"
+            ]["ballasts"][j]["grid"]
             if floating_init_options["members"]["ballast_flag_member_" + name_member][j] == False:
-                wt_opt["floating.floating_member_" + name_member + ".ballast_volume"][j] = floating["members"][i][
+                wt_opt["floating.member_" + name_member + ".ballast_volume"][j] = floating["members"][i][
                     "internal_structure"
                 ]["ballasts"][j]["volume"]
+                ballast_mat[j] = floating["members"][i]["internal_structure"]["ballasts"][j]["material"]
+            else:
+                wt_opt["floating.member_" + name_member + ".ballast_volume"][j] = 0.0
+                ballast_mat[j] = "seawater"
+        wt_opt["floating.member_" + name_member + ".ballast_materials"] = ballast_mat
+
         if floating_init_options["members"]["n_axial_joints"][i] > 0:
             for j in range(floating_init_options["members"]["n_axial_joints"][i]):
-                wt_opt["floating.floating_member_" + name_member + ".grid_axial_joints"][j] = floating["members"][i][
+                wt_opt["floating.member_" + name_member + ".grid_axial_joints"][j] = floating["members"][i][
                     "axial_joints"
                 ][j]["grid"]
 
@@ -938,11 +964,12 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
     n_line_types = mooring_init_options["n_line_types"]
     n_anchor_types = mooring_init_options["n_anchor_types"]
 
+    wt_opt["mooring.n_lines"] = n_lines  # Needed for ORBIT
     wt_opt["mooring.node_names"] = [mooring["nodes"][i]["name"] for i in range(n_nodes)]
     wt_opt["mooring.nodes_joint_name"] = ["" for i in range(n_nodes)]
-    wt_opt["mooring.line_id"] = [mooring["lines"][i]["name"] for i in range(n_lines)]
-    wt_opt["mooring.line_names"] = [mooring["line_types"][i]["name"] for i in range(n_line_types)]
-    wt_opt["mooring.anchor_names"] = [mooring["anchor_types"][i]["name"] for i in range(n_anchor_types)]
+    wt_opt["mooring.line_id"] = [mooring["lines"][i]["line_type"] for i in range(n_lines)]
+    line_names = [mooring["line_types"][i]["name"] for i in range(n_line_types)]
+    anchor_names = [mooring["anchor_types"][i]["name"] for i in range(n_anchor_types)]
     for i in range(n_nodes):
         if "location" in mooring["nodes"][i]:
             wt_opt["mooring.nodes_location"][i, :] = mooring["nodes"][i]["location"]
@@ -952,23 +979,51 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
         wt_opt["mooring.nodes_volume"][i] = mooring["nodes"][i]["node_volume"]
         wt_opt["mooring.nodes_drag_area"][i] = mooring["nodes"][i]["drag_area"]
         wt_opt["mooring.nodes_added_mass"][i] = mooring["nodes"][i]["added_mass"]
+
     for i in range(n_lines):
         wt_opt["mooring.unstretched_length"][i] = mooring["lines"][i]["unstretched_length"]
-    for i in range(n_line_types):
-        wt_opt["mooring.line_diameter"][i] = mooring["line_types"][i]["diameter"]
-        wt_opt["mooring.line_mass_density"][i] = mooring["line_types"][i]["mass_density"]
-        wt_opt["mooring.line_stiffness"][i] = mooring["line_types"][i]["stiffness"]
-        wt_opt["mooring.line_breaking_load"][i] = mooring["line_types"][i]["breaking_load"]
-        wt_opt["mooring.line_cost"][i] = mooring["line_types"][i]["cost"]
-        wt_opt["mooring.line_transverse_added_mass"][i] = mooring["line_types"][i]["transverse_added_mass"]
-        wt_opt["mooring.line_tangential_added_mass"][i] = mooring["line_types"][i]["tangential_added_mass"]
-        wt_opt["mooring.line_transverse_drag"][i] = mooring["line_types"][i]["transverse_drag"]
-        wt_opt["mooring.line_tangential_drag"][i] = mooring["line_types"][i]["tangential_drag"]
-    for i in range(n_anchor_types):
-        wt_opt["mooring.anchor_mass"][i] = mooring["anchor_types"][i]["mass"]
-        wt_opt["mooring.anchor_cost"][i] = mooring["anchor_types"][i]["cost"]
-        wt_opt["mooring.anchor_max_vertical_load"][i] = mooring["anchor_types"][i]["max_vertical_load"]
-        wt_opt["mooring.anchor_max_lateral_load"][i] = mooring["anchor_types"][i]["max_lateral_load"]
+
+    for jj, jname in enumerate(wt_opt["mooring.line_id"]):
+        node1 = mooring["lines"][jj]["node1"]
+        node2 = mooring["lines"][jj]["node2"]
+        for ii, iname in enumerate(line_names):
+            if jname == iname:
+                d2 = mooring["line_types"][ii]["diameter"] ** 2
+                wt_opt["mooring.line_diameter"][jj] = mooring["line_types"][ii]["diameter"]
+                wt_opt["mooring.line_mass_density_coeff"][jj] = mooring["line_types"][ii]["mass_density"] / d2
+                wt_opt["mooring.line_stiffness_coeff"][jj] = mooring["line_types"][ii]["stiffness"] / d2
+                wt_opt["mooring.line_breaking_load_coeff"][jj] = mooring["line_types"][ii]["breaking_load"] / d2
+                wt_opt["mooring.line_cost_rate_coeff"][jj] = mooring["line_types"][ii]["cost"] / d2
+                wt_opt["mooring.line_transverse_added_mass_coeff"][jj] = (
+                    mooring["line_types"][ii]["transverse_added_mass"] / d2
+                )
+                wt_opt["mooring.line_tangential_added_mass_coeff"][jj] = (
+                    mooring["line_types"][ii]["tangential_added_mass"] / d2
+                )
+                wt_opt["mooring.line_transverse_drag_coeff"][jj] = mooring["line_types"][ii]["transverse_drag"] / d2
+                wt_opt["mooring.line_tangential_drag_coeff"][jj] = mooring["line_types"][ii]["tangential_drag"] / d2
+        for ii, iname in enumerate(wt_opt["mooring.node_names"]):
+            if node1 == iname or node2 == iname and mooring["nodes"][ii]["node_type"] == "fixed":
+                for kk, kname in enumerate(anchor_names):
+                    if kname == mooring["nodes"][ii]["anchor_type"]:
+                        wt_opt["mooring.anchor_mass"][jj] = mooring["anchor_types"][kk]["mass"]
+                        wt_opt["mooring.anchor_cost"][jj] = mooring["anchor_types"][kk]["cost"]
+                        wt_opt["mooring.anchor_max_vertical_load"][jj] = mooring["anchor_types"][kk][
+                            "max_vertical_load"
+                        ]
+                        wt_opt["mooring.anchor_max_lateral_load"][jj] = mooring["anchor_types"][kk]["max_lateral_load"]
+
+    # Give warnings if we have different types or asymmetrical lines
+    if (
+        np.unique(wt_opt["mooring.unstretched_length"]).size > 1
+        or np.unique(wt_opt["mooring.line_diameter"]).size > 1
+        or np.unique(wt_opt["mooring.line_mass_density_coeff"]).size > 1
+        or np.unique(wt_opt["mooring.line_stiffness_coeff"]).size > 1
+        or np.unique(wt_opt["mooring.anchor_mass"]).size > 1
+    ):
+        print(
+            "WARNING: Multiple mooring line or anchor types entered, but can only process symmetrical arrangements for now"
+        )
 
     return wt_opt
 

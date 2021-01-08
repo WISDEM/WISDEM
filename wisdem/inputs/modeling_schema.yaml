@@ -94,7 +94,7 @@ properties:
                 type: string
                 default: 'none'
                 description: Composite layer modeling the trailing edge reinforcement on the pressure side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable te_ps.
-            gamma_freq:
+            gamma_freq: &gamma_freq
                 type: number
                 description: Partial safety factor on modal frequencies
                 minimum: 1.0
@@ -113,21 +113,21 @@ properties:
                 type: boolean
                 default: False
                 description: Whether or not to do detailed generator modeling using tools formerly in GeneratorSE
-            gamma_f:
+            gamma_f: &gamma_f
                 type: number
                 description: Partial safety factor on loads
                 minimum: 1.0
                 maximum: 5.0
                 default: 1.35
                 unit: none
-            gamma_m:
+            gamma_m: &gamma_m
                 type: number
                 description: Partial safety factor for materials
                 minimum: 1.0
                 maximum: 5.0
                 default: 1.3
                 unit: none
-            gamma_n:
+            gamma_n: &gamma_n
                 type: number
                 description: Partial safety factor for consequence of failure
                 minimum: 1.0
@@ -169,42 +169,18 @@ properties:
                 enum: [PowerWind, LogisticWind]
                 default: PowerWind
                 description: Wind scaling relationship with height
-            gamma_f:
-                type: number
-                description: Partial safety factor on loads
-                minimum: 1.0
-                maximum: 5.0
-                default: 1.35
-                unit: none
-            gamma_m:
-                type: number
-                description: Partial safety factor for materials
-                minimum: 1.0
-                maximum: 5.0
-                default: 1.3
-                unit: none
-            gamma_n:
-                type: number
-                description: Partial safety factor for consequence of failure
-                minimum: 1.0
-                maximum: 5.0
-                default: 1.0
-                unit: none
-            gamma_b:
+            gamma_f: *gamma_f
+            gamma_m: *gamma_m
+            gamma_n: *gamma_n
+            gamma_b: &gamma_b
                 type: number
                 description: Partial safety factor for buckling
                 minimum: 1.0
                 maximum: 5.0
                 default: 1.1
                 unit: none
-            gamma_freq:
-                type: number
-                description: Partial safety factor on modal frequencies
-                minimum: 1.0
-                maximum: 5.0
-                default: 1.1
-                unit: none
-            gamma_fatigue:
+            gamma_freq: *gamma_freq
+            gamma_fatigue: &gamma_fatigue
                 type: number
                 description: Partial safety factor for fatigue failure
                 minimum: 1.0
@@ -218,7 +194,7 @@ properties:
                 maximum: 100.0
                 default: 10.0
                 unit: m
-            frame3dd:
+            frame3dd: &frame3dd
                 type: object
                 description: Set of Frame3DD options used for tower analysis
                 default: {}
@@ -231,12 +207,10 @@ properties:
                         type: boolean
                         default: True
                         description: Inclusion of shear stiffening through axial loading
-                    nM:
-                        type: integer
-                        minimum: 0
-                        maximum: 20
-                        default: 6
-                        description: Number of tower eigenvalue modes to calculate
+                    modal:
+                        type: boolean
+                        default: True
+                        description: Whether or not to compute eigenvalues and natural frequencies
                     tol:
                         type: number
                         minimum: 1e-12
@@ -267,6 +241,9 @@ properties:
                 type: boolean
                 default: False
                 description: Whether or not to run the floating design modules (FloatingSE)
+            frame3dd: *frame3dd
+            gamma_f: *gamma_f
+
     Loading:
         type: object
         # DO NOT PUT IN A DEFAULT HERE!  This is a field we only want present if the user specifically includes it.

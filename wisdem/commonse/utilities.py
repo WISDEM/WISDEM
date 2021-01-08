@@ -6,6 +6,7 @@ Copyright (c) NREL. All rights reserved.
 """
 
 from __future__ import print_function
+
 import numpy as np
 from scipy.linalg import solve_banded
 
@@ -504,6 +505,25 @@ def smooth_abs(x, dx=0.01):
         dydx = dydx[0]
 
     return y, dydx
+
+
+def find_nearest(array, value):
+    return (np.abs(array - value)).argmin()
+
+
+def closest_node(nodemat, inode):
+    if not nodemat.shape[1] in [2, 3]:
+        if nodemat.shape[0] in [2, 3]:
+            xyz = nodemat.T
+        else:
+            raise ValueError("Expected an m X 2/3 input node array")
+    else:
+        xyz = nodemat
+
+    if not len(inode) in [2, 3]:
+        raise ValueError("Expected a size 2 or 3 node point")
+
+    return np.sqrt(np.sum((xyz - inode[np.newaxis, :]) ** 2, axis=1)).argmin()
 
 
 def nodal2sectional(x):

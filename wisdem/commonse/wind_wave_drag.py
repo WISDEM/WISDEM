@@ -1,34 +1,11 @@
-#!/usr/bin/env python
-# encoding: utf-8
-"""
-WindWaveDrag.py
-
-Created by RRD on 2015-07-13.
-Copyright (c) NREL. All rights reserved.
-"""
-
-# -------------------------------------------------------------------------------
-# Name:        WindWaveDrag.py
-# Purpose:     It contains OpenMDAO's Components to calculate wind or wave drag
-#              on cylinders.
-#
-# Author:      ANing/RRD
-#
-# Created:     13/07/2015 - It is based on load function calculations developed for tower and jacket.
-#                             Reestablished elements needed by jacketSE that were removed. Changed names to vartrees.
-# Copyright:   (c) rdamiani 2015
-# Licence:     <Apache 2015>
-# -------------------------------------------------------------------------------
-from __future__ import print_function
 import math
+
 import numpy as np
-
 import openmdao.api as om
-from wisdem.commonse.utilities import sind, cosd  # , linspace_with_deriv, interp_with_deriv, hstack, vstack
-from wisdem.commonse.csystem import DirectionVector
-
 from wisdem.commonse.akima import Akima
-
+from wisdem.commonse.csystem import DirectionVector
+from wisdem.commonse.utilities import cosd, sind  # , linspace_with_deriv, interp_with_deriv, hstack, vstack
+from wisdem.commonse.environment import LogWind, PowerWind, LinearWaves
 
 # -----------------
 #  Helper Functions
@@ -586,6 +563,100 @@ class CylinderWaveDrag(om.ExplicitComponent):
 
 
 # ___________________________________________#
+
+
+class CylinderEnvironment(om.Group):
+    def initialize(self):
+        self.options.declare("wind", default="power")
+        self.options.declare("nPoints")
+        self.options.declare("water_flag", default=True)
+
+    def setup(self):
+        nPoints = self.options["nPoints"]
+        wind = self.options["wind"]
+        water_flag = self.options["water_flag"]
+
+        self.set_input_defaults("z0", 0.0)
+        self.set_input_defaults("cd_usr", -1.0)
+        self.set_input_defaults("yaw", 0.0, units="deg")
+
+        self.set_input_defaults("beta_wind", 0.0, units="deg")
+        self.set_input_defaults("rho_air", 1.225, units="kg/m**3")
+        self.set_input_defaults("mu_air", 1.81206e-5, units="kg/m/s")
+        self.set_input_defaults("shearExp", 0.2)
+
+        if water_flag:
+            self.set_input_defaults("beta_wave", 0.0, units="deg")
+            self.set_input_defaults("rho_water", 1025.0, units="kg/m**3")
+            self.set_input_defaults("mu_water", 1.08e-3, units="kg/m/s")
+
+        # Wind profile and loads
+        promwind = ["Uref", "zref", "z", "z0"]
+        if wind is None or wind.lower() in ["power", "powerwind", ""]:
+            self.add_subsystem("wind", PowerWind(nPoints=nPoints), promotes=promwind + ["shearExp"])
+
+        elif wind.lower() == "logwind":
+            self.add_subsystem("wind", LogWind(nPoints=nPoints), promotes=promwind)
+
+        else:
+            raise ValueError("Unknown wind type, " + wind)
+
+        self.add_subsystem(
+            "windLoads",
+            CylinderWindDrag(nPoints=nPoints),
+            promotes=["cd_usr", "beta_wind", "rho_air", "mu_air", "z", "d"],
+        )
+
+        # Wave profile and loads
+        if water_flag:
+            self.add_subsystem(
+                "wave",
+                LinearWaves(nPoints=nPoints),
+                promotes=[
+                    "z",
+                    "Uc",
+                    "Hsig_wave",
+                    "Tsig_wave",
+                    "rho_water",
+                    ("z_floor", "water_depth"),
+                    ("z_surface", "z0"),
+                ],
+            )
+
+            self.add_subsystem(
+                "waveLoads",
+                CylinderWaveDrag(nPoints=nPoints),
+                promotes=["cm", "cd_usr", "beta_wave", "rho_water", "mu_water", "z", "d"],
+            )
+
+        # Combine all loads
+        self.add_subsystem(
+            "distLoads", AeroHydroLoads(nPoints=nPoints), promotes=["Px", "Py", "Pz", "qdyn", "yaw", "z"]
+        )
+
+        # Connections
+        self.connect("wind.U", "windLoads.U")
+        if water_flag:
+            self.connect("wave.U", "waveLoads.U")
+            self.connect("wave.A", "waveLoads.A")
+            self.connect("wave.p", "waveLoads.p")
+
+        self.connect("windLoads.windLoads_Px", "distLoads.windLoads_Px")
+        self.connect("windLoads.windLoads_Py", "distLoads.windLoads_Py")
+        self.connect("windLoads.windLoads_Pz", "distLoads.windLoads_Pz")
+        self.connect("windLoads.windLoads_qdyn", "distLoads.windLoads_qdyn")
+        self.connect("windLoads.windLoads_beta", "distLoads.windLoads_beta")
+        self.connect("windLoads.windLoads_z", "distLoads.windLoads_z")
+        self.connect("windLoads.windLoads_d", "distLoads.windLoads_d")
+
+        if water_flag:
+            self.connect("waveLoads.waveLoads_Px", "distLoads.waveLoads_Px")
+            self.connect("waveLoads.waveLoads_Py", "distLoads.waveLoads_Py")
+            self.connect("waveLoads.waveLoads_Pz", "distLoads.waveLoads_Pz")
+            self.connect("waveLoads.waveLoads_pt", "distLoads.waveLoads_qdyn")
+            self.connect("waveLoads.waveLoads_beta", "distLoads.waveLoads_beta")
+            self.connect("waveLoads.waveLoads_z", "distLoads.waveLoads_z")
+            self.connect("waveLoads.waveLoads_d", "distLoads.waveLoads_d")
 
 
 def main():
