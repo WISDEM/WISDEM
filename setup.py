@@ -47,7 +47,7 @@ pymapExt = Extension(
 # Top-level setup
 setup(
     name="WISDEM",
-    version="3.1.0",
+    version="3.2.0",
     description="Wind-Plant Integrated System Design & Engineering Model",
     long_description="""WISDEM is a Python package for conducting multidisciplinary analysis and
     optimization of wind turbines and plants.  It is built on top of NASA's OpenMDAO library.""",
