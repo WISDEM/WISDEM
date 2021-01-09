@@ -15,7 +15,7 @@ class BladeCurvature(ExplicitComponent):
         self.options.declare("modeling_options")
 
     def setup(self):
-        n_span = self.options["modeling_options"]["RotorSE"]["n_span"]
+        n_span = self.options["modeling_options"]["WISDEM"]["RotorSE"]["n_span"]
 
         # Inputs
         self.add_input("r", val=np.zeros(n_span), units="m", desc="location in blade z-coordinate")
@@ -68,7 +68,7 @@ class TotalLoads(ExplicitComponent):
         self.options.declare("modeling_options")
 
     def setup(self):
-        n_span = self.options["modeling_options"]["RotorSE"]["n_span"]
+        n_span = self.options["modeling_options"]["WISDEM"]["RotorSE"]["n_span"]
 
         # Inputs
         self.add_input("r", val=np.zeros(n_span), units="m", desc="radial positions along blade going toward tip")
@@ -142,7 +142,7 @@ class RunFrame3DD(ExplicitComponent):
         self.options.declare("pbeam", default=False)  # Recover old pbeam c.s. and accuracy
 
     def setup(self):
-        rotorse_options = self.options["modeling_options"]["RotorSE"]
+        rotorse_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_freq = n_freq = rotorse_options["n_freq"]
 
@@ -604,7 +604,7 @@ class DesignConstraints(ExplicitComponent):
         self.options.declare("opt_options")
 
     def setup(self):
-        rotorse_options = self.options["modeling_options"]["RotorSE"]
+        rotorse_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_freq = n_freq = rotorse_options["n_freq"]
         n_freq2 = int(n_freq / 2)
@@ -718,7 +718,7 @@ class DesignConstraints(ExplicitComponent):
         threeP = discrete_inputs["blade_number"] * inputs["rated_Omega"] / 60.0
         flap_f = inputs["flap_mode_freqs"]
         edge_f = inputs["edge_mode_freqs"]
-        gamma = self.options["modeling_options"]["RotorSE"]["gamma_freq"]
+        gamma = self.options["modeling_options"]["WISDEM"]["RotorSE"]["gamma_freq"]
         outputs["constr_flap_f_margin"] = np.array(
             [min([threeP - (2 - gamma) * f, gamma * f - threeP]) for f in flap_f]
         ).flatten()

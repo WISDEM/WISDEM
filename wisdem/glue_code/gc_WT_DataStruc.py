@@ -28,7 +28,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # Airfoil dictionary inputs
         if modeling_options["flags"]["airfoils"]:
             airfoils = om.IndepVarComp()
-            rotorse_options = modeling_options["RotorSE"]
+            rotorse_options = modeling_options["WISDEM"]["RotorSE"]
             n_af = rotorse_options["n_af"]  # Number of airfoils
             n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
             n_Re = rotorse_options["n_Re"]  # Number of Reynolds, so far hard set at 1
@@ -80,7 +80,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem(
                 "blade",
                 Blade(
-                    rotorse_options=modeling_options["RotorSE"],
+                    rotorse_options=modeling_options["WISDEM"]["RotorSE"],
                     opt_options=opt_options,
                 ),
             )
@@ -163,7 +163,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 "bedplate_material", val="steel", desc="Material name identifier for the bedplate"
             )
 
-            if modeling_options["DriveSE"]["direct"]:
+            if modeling_options["WISDEM"]["DriveSE"]["direct"]:
                 # Direct only
                 nacelle_ivc.add_output(
                     "nose_diameter", val=np.zeros(2), units="m", desc="Diameter of nose (also called turret or spindle)"
@@ -270,7 +270,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 generator_ivc.add_output("C_Fes", val=0.0, units="USD/kg")
                 generator_ivc.add_output("C_PM", val=0.0, units="USD/kg")
 
-                if modeling_options["GeneratorSE"]["type"] in ["pmsg_outer"]:
+                if modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["pmsg_outer"]:
                     generator_ivc.add_output("N_c", 0.0)
                     generator_ivc.add_output("b", 0.0)
                     generator_ivc.add_output("c", 0.0)
@@ -287,19 +287,19 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     generator_ivc.add_output("z_allow_deg", 0.0, units="deg")
                     generator_ivc.add_output("B_tmax", 0.0, units="T")
 
-                if modeling_options["GeneratorSE"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
+                if modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
                     generator_ivc.add_output("tau_p", val=0.0, units="m")
                     generator_ivc.add_output("h_ys", val=0.0, units="m")
                     generator_ivc.add_output("h_yr", val=0.0, units="m")
                     generator_ivc.add_output("b_arm", val=0.0, units="m")
 
-                elif modeling_options["GeneratorSE"]["type"] in ["scig", "dfig"]:
+                elif modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["scig", "dfig"]:
                     generator_ivc.add_output("B_symax", val=0.0, units="T")
                     generator_ivc.add_output("S_Nmax", val=-0.2)
 
             else:
                 # If using simple (regression) generator scaling, this is an optional input to override default values
-                n_pc = modeling_options["RotorSE"]["n_pc"]
+                n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
                 generator_ivc.add_output("generator_radius_user", val=0.0, units="m")
                 generator_ivc.add_output("generator_mass_user", val=0.0, units="kg")
                 generator_ivc.add_output("generator_efficiency_user", val=np.zeros((n_pc, 2)))
@@ -308,7 +308,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Tower inputs
         if modeling_options["flags"]["tower"]:
-            tower_init_options = modeling_options["TowerSE"]
+            tower_init_options = modeling_options["WISDEM"]["TowerSE"]
             n_height_tower = tower_init_options["n_height_tower"]
             n_layers_tower = tower_init_options["n_layers_tower"]
             ivc = self.add_subsystem("tower", om.IndepVarComp())
@@ -351,7 +351,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Monopile inputs
         if modeling_options["flags"]["monopile"]:
-            self.add_subsystem("monopile", Monopile(towerse_options=modeling_options["TowerSE"]))
+            self.add_subsystem("monopile", Monopile(towerse_options=modeling_options["WISDEM"]["TowerSE"]))
 
         if modeling_options["flags"]["floating_platform"]:
             self.add_subsystem("floating", Floating(floating_init_options=modeling_options["floating"]))
@@ -2404,11 +2404,11 @@ class WT_Assembly(om.ExplicitComponent):
         modeling_options = self.options["modeling_options"]
 
         if modeling_options["flags"]["blade"]:
-            n_span = modeling_options["RotorSE"]["n_span"]
+            n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
         else:
             n_span = 0
         if modeling_options["flags"]["tower"]:
-            n_height_tower = modeling_options["TowerSE"]["n_height_tower"]
+            n_height_tower = modeling_options["WISDEM"]["TowerSE"]["n_height_tower"]
         else:
             n_height_tower = 0
 

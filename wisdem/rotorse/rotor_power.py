@@ -61,8 +61,8 @@ class RotorPower(Group):
             ],
         )
         self.add_subsystem("gust", GustETM())
-        self.add_subsystem("cdf", WeibullWithMeanCDF(nspline=modeling_options["RotorSE"]["n_pc_spline"]))
-        self.add_subsystem("aep", AEP(nspline=modeling_options["RotorSE"]["n_pc_spline"]), promotes=["AEP"])
+        self.add_subsystem("cdf", WeibullWithMeanCDF(nspline=modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]))
+        self.add_subsystem("aep", AEP(nspline=modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]), promotes=["AEP"])
 
         # Connections to the gust calculation
         self.connect("powercurve.rated_V", "gust.V_hub")
@@ -131,15 +131,15 @@ class ComputePowerCurve(ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options["modeling_options"]
-        self.n_span = n_span = modeling_options["RotorSE"]["n_span"]
-        self.n_aoa = n_aoa = modeling_options["RotorSE"]["n_aoa"]  # Number of angle of attacks
-        self.n_Re = n_Re = modeling_options["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
-        self.n_tab = n_tab = modeling_options["RotorSE"][
+        self.n_span = n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        self.n_aoa = n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]  # Number of angle of attacks
+        self.n_Re = n_Re = modeling_options["WISDEM"]["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
+        self.n_tab = n_tab = modeling_options["WISDEM"]["RotorSE"][
             "n_tab"
         ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
-        self.regulation_reg_III = modeling_options["RotorSE"]["regulation_reg_III"]
-        self.n_pc = modeling_options["RotorSE"]["n_pc"]
-        self.n_pc_spline = modeling_options["RotorSE"]["n_pc_spline"]
+        self.regulation_reg_III = modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"]
+        self.n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
+        self.n_pc_spline = modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]
 
         # parameters
         self.add_input("v_min", val=0.0, units="m/s", desc="cut-in wind speed")
@@ -622,8 +622,8 @@ class ComputeSplines(ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options["modeling_options"]
-        self.n_pc = modeling_options["RotorSE"]["n_pc"]
-        self.n_pc_spline = modeling_options["RotorSE"]["n_pc_spline"]
+        self.n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
+        self.n_pc_spline = modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]
 
         self.add_input("v_min", val=0.0, units="m/s", desc="cut-in wind speed")
         self.add_input("v_max", val=0.0, units="m/s", desc="cut-out wind speed")
@@ -677,10 +677,10 @@ class NoStallConstraint(ExplicitComponent):
     def setup(self):
 
         modeling_options = self.options["modeling_options"]
-        self.n_span = n_span = modeling_options["RotorSE"]["n_span"]
-        self.n_aoa = n_aoa = modeling_options["RotorSE"]["n_aoa"]  # Number of angle of attacks
-        self.n_Re = n_Re = modeling_options["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
-        self.n_tab = n_tab = modeling_options["RotorSE"][
+        self.n_span = n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        self.n_aoa = n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]  # Number of angle of attacks
+        self.n_Re = n_Re = modeling_options["WISDEM"]["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
+        self.n_tab = n_tab = modeling_options["WISDEM"]["RotorSE"][
             "n_tab"
         ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
 

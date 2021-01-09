@@ -22,7 +22,6 @@ import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
-
 from wisdem.glue_code.runWISDEM import run_wisdem, load_wisdem
 
 this_dir = os.path.dirname(os.path.realpath(__file__))
@@ -147,8 +146,8 @@ def create_all_plots(
     for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
         n_layers = len(yaml_data["blade.internal_structure_2d_fem.layer_thickness"][:, 0])
         for i in range(n_layers):
-            layer_name = modeling_options["RotorSE"]["layer_name"][i]
-            if modeling_options["RotorSE"]["spar_cap_ss"] == layer_name:
+            layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
+            if modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"] == layer_name:
                 axsc.plot(
                     yaml_data["blade.outer_shape_bem.s"],
                     yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
@@ -166,8 +165,8 @@ def create_all_plots(
                 axsc.plot(s_opt_sc, sc_opt, "o", color=colors[idx], markersize=3)
 
     for i in range(n_layers):
-        layer_name = modeling_options["RotorSE"]["layer_name"][i]
-        if modeling_options["RotorSE"]["spar_cap_ss"] == layer_name:
+        layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
+        if modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"] == layer_name:
             sc_init = np.interp(
                 s_opt_sc,
                 list_of_sims[0]["blade.outer_shape_bem.s"],

@@ -60,19 +60,19 @@ class TestLoadInputs(unittest.TestCase):
         self.myobj.set_opt_flags()
         self.assertEqual(
             self.myobj.analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"],
-            self.myobj.modeling_options["RotorSE"]["n_span"],
+            self.myobj.modeling_options["WISDEM"]["RotorSE"]["n_span"],
         )
         self.assertEqual(
             self.myobj.analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"],
-            self.myobj.modeling_options["RotorSE"]["n_span"],
+            self.myobj.modeling_options["WISDEM"]["RotorSE"]["n_span"],
         )
         self.assertEqual(
             self.myobj.analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"],
-            self.myobj.modeling_options["RotorSE"]["n_span"],
+            self.myobj.modeling_options["WISDEM"]["RotorSE"]["n_span"],
         )
         self.assertEqual(
             self.myobj.analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"],
-            self.myobj.modeling_options["RotorSE"]["n_span"],
+            self.myobj.modeling_options["WISDEM"]["RotorSE"]["n_span"],
         )
 
 
