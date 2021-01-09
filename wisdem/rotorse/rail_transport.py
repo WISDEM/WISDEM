@@ -29,7 +29,7 @@ class RailTransport(ExplicitComponent):
         self.options.declare("modeling_options")
 
     def setup(self):
-        rotorse_options = self.options["modeling_options"]["RotorSE"]
+        rotorse_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
 

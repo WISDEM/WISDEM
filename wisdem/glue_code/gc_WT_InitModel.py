@@ -107,7 +107,7 @@ def assign_blade_values(wt_opt, modeling_options, blade):
 def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
     # Function to assign values to the openmdao component Blade_Outer_Shape_BEM
 
-    nd_span = modeling_options["RotorSE"]["nd_span"]
+    nd_span = modeling_options["WISDEM"]["RotorSE"]["nd_span"]
 
     wt_opt["blade.outer_shape_bem.af_position"] = outer_shape_bem["airfoil_position"]["grid"]
     wt_opt["blade.opt_var.af_position"] = outer_shape_bem["airfoil_position"]["grid"]
@@ -193,8 +193,8 @@ def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
 def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_structure_2d_fem):
     # Function to assign values to the openmdao component Blade_Internal_Structure_2D_FEM
 
-    n_span = modeling_options["RotorSE"]["n_span"]
-    n_webs = modeling_options["RotorSE"]["n_webs"]
+    n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
+    n_webs = modeling_options["WISDEM"]["RotorSE"]["n_webs"]
 
     web_rotation = np.zeros((n_webs, n_span))
     web_offset_y_pa = np.zeros((n_webs, n_span))
@@ -212,7 +212,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                 else:
                     raise ValueError(
                         "Invalid rotation reference for web "
-                        + self.modeling_options["RotorSE"]["web_name"][i]
+                        + self.modeling_options["WISDEM"]["RotorSE"]["web_name"][i]
                         + ". Please check the yaml input file"
                     )
             else:
@@ -253,7 +253,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
         else:
             raise ValueError("Webs definition not supported. Please check the yaml input.")
 
-    n_layers = modeling_options["RotorSE"]["n_layers"]
+    n_layers = modeling_options["WISDEM"]["RotorSE"]["n_layers"]
     layer_name = n_layers * [""]
     layer_mat = n_layers * [""]
     thickness = np.zeros((n_layers, n_span))
@@ -272,8 +272,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
 
     # Loop through the layers, interpolate along blade span, assign the inputs, and the definition flag
     for i in range(n_layers):
-        layer_name[i] = modeling_options["RotorSE"]["layer_name"][i]
-        layer_mat[i] = modeling_options["RotorSE"]["layer_mat"][i]
+        layer_name[i] = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
+        layer_mat[i] = modeling_options["WISDEM"]["RotorSE"]["layer_mat"][i]
         thickness[i] = np.interp(
             nd_span,
             internal_structure_2d_fem["layers"][i]["thickness"]["grid"],
@@ -443,8 +443,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
 
         if "web" in internal_structure_2d_fem["layers"][i]:
             web_name_i = internal_structure_2d_fem["layers"][i]["web"]
-            for j in range(modeling_options["RotorSE"]["n_webs"]):
-                if web_name_i == modeling_options["RotorSE"]["web_name"][j]:
+            for j in range(modeling_options["WISDEM"]["RotorSE"]["n_webs"]):
+                if web_name_i == modeling_options["WISDEM"]["RotorSE"]["web_name"][j]:
                     k = j + 1
                     break
             layer_web[i] = k
@@ -475,8 +475,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
 
 def assign_te_flaps_values(wt_opt, modeling_options, blade):
     # Function to assign the trailing edge flaps data to the openmdao data structure
-    if modeling_options["RotorSE"]["n_te_flaps"] > 0:
-        n_te_flaps = modeling_options["RotorSE"]["n_te_flaps"]
+    if modeling_options["WISDEM"]["RotorSE"]["n_te_flaps"] > 0:
+        n_te_flaps = modeling_options["WISDEM"]["RotorSE"]["n_te_flaps"]
         for i in range(n_te_flaps):
             wt_opt["dac_ivc.te_flap_start"][i] = blade["aerodynamic_control"]["te_flaps"][i]["span_start"]
             wt_opt["dac_ivc.te_flap_end"][i] = blade["aerodynamic_control"]["te_flaps"][i]["span_end"]
@@ -620,7 +620,7 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
     wt_opt["nacelle.lss_wall_thickness"] = nacelle["drivetrain"]["lss_wall_thickness"]
     wt_opt["nacelle.lss_diameter"] = nacelle["drivetrain"]["lss_diameter"]
 
-    if modeling_options["DriveSE"]["direct"]:
+    if modeling_options["WISDEM"]["DriveSE"]["direct"]:
         # Direct only
         wt_opt["nacelle.nose_wall_thickness"] = nacelle["drivetrain"]["nose_wall_thickness"]
         wt_opt["nacelle.nose_diameter"] = nacelle["drivetrain"]["nose_diameter"]
@@ -650,7 +650,7 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
             nacelle["drivetrain"]["generator_rpm_efficiency_user"]["grid"],
             nacelle["drivetrain"]["generator_rpm_efficiency_user"]["values"],
         ]
-        n_pc = modeling_options["RotorSE"]["n_pc"]
+        n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
         if np.any(eff_user):
             newrpm = np.linspace(eff_user[:, 0].min(), eff_user[:, 0].max(), n_pc)
             neweff = np.interp(newrpm, eff_user[:, 0], eff_user[:, 1])
@@ -720,7 +720,7 @@ def assign_generator_values(wt_opt, modeling_options, nacelle):
     wt_opt["generator.C_Fes"] = nacelle["generator"]["C_Fes"]
     wt_opt["generator.C_PM"] = nacelle["generator"]["C_PM"]
 
-    if modeling_options["GeneratorSE"]["type"] in ["pmsg_outer"]:
+    if modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["pmsg_outer"]:
         wt_opt["generator.N_c"] = nacelle["generator"]["N_c"]
         wt_opt["generator.b"] = nacelle["generator"]["b"]
         wt_opt["generator.c"] = nacelle["generator"]["c"]
@@ -737,13 +737,13 @@ def assign_generator_values(wt_opt, modeling_options, nacelle):
         wt_opt["generator.z_allow_deg"] = nacelle["generator"]["z_allow_deg"]
         wt_opt["generator.B_tmax"] = nacelle["generator"]["B_tmax"]
 
-    if modeling_options["GeneratorSE"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
+    if modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
         wt_opt["generator.tau_p"] = nacelle["generator"]["tau_p"]
         wt_opt["generator.h_ys"] = nacelle["generator"]["h_ys"]
         wt_opt["generator.h_yr"] = nacelle["generator"]["h_yr"]
         wt_opt["generator.b_arm"] = nacelle["generator"]["b_arm"]
 
-    elif modeling_options["GeneratorSE"]["type"] in ["scig", "dfig"]:
+    elif modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["scig", "dfig"]:
         wt_opt["generator.B_symax"] = nacelle["generator"]["B_symax"]
         wt_opt["generator.S_Nmax"] = nacelle["generator"]["S_Nmax"]
 
@@ -752,8 +752,8 @@ def assign_generator_values(wt_opt, modeling_options, nacelle):
 
 def assign_tower_values(wt_opt, modeling_options, tower):
     # Function to assign values to the openmdao component Tower
-    n_height = modeling_options["TowerSE"]["n_height_tower"]  # Number of points along tower height
-    n_layers = modeling_options["TowerSE"]["n_layers_tower"]
+    n_height = modeling_options["WISDEM"]["TowerSE"]["n_height_tower"]  # Number of points along tower height
+    n_layers = modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"]
 
     svec = np.unique(
         np.r_[
@@ -823,8 +823,8 @@ def assign_tower_values(wt_opt, modeling_options, tower):
 
 def assign_monopile_values(wt_opt, modeling_options, monopile):
     # Function to assign values to the openmdao component Monopile
-    n_height = modeling_options["TowerSE"]["n_height_monopile"]  # Number of points along monopile height
-    n_layers = modeling_options["TowerSE"]["n_layers_monopile"]
+    n_height = modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"]  # Number of points along monopile height
+    n_layers = modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"]
 
     svec = np.unique(
         np.r_[
@@ -1150,12 +1150,12 @@ def assign_costs_values(wt_opt, costs):
 def assign_airfoil_values(wt_opt, modeling_options, airfoils):
     # Function to assign values to the openmdao component Airfoils
 
-    n_af = modeling_options["RotorSE"]["n_af"]
-    n_aoa = modeling_options["RotorSE"]["n_aoa"]
-    aoa = modeling_options["RotorSE"]["aoa"]
-    n_Re = modeling_options["RotorSE"]["n_Re"]
-    n_tab = modeling_options["RotorSE"]["n_tab"]
-    n_xy = modeling_options["RotorSE"]["n_xy"]
+    n_af = modeling_options["WISDEM"]["RotorSE"]["n_af"]
+    n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]
+    aoa = modeling_options["WISDEM"]["RotorSE"]["aoa"]
+    n_Re = modeling_options["WISDEM"]["RotorSE"]["n_Re"]
+    n_tab = modeling_options["WISDEM"]["RotorSE"]["n_tab"]
+    n_xy = modeling_options["WISDEM"]["RotorSE"]["n_xy"]
 
     name = n_af * [""]
     ac = np.zeros(n_af)

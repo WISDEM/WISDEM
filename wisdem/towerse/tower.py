@@ -1209,7 +1209,7 @@ class TowerLeanSE(om.Group):
         self.options.declare("modeling_options")
 
     def setup(self):
-        mod_opt = self.options["modeling_options"]["TowerSE"]
+        mod_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
         monopile = self.options["modeling_options"]["flags"]["monopile"]
 
         n_height_tow = mod_opt["n_height_tower"]
@@ -1349,7 +1349,7 @@ class TowerSE(om.Group):
         self.options.declare("modeling_options")
 
     def setup(self):
-        mod_opt = self.options["modeling_options"]["TowerSE"]
+        mod_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
         monopile = self.options["modeling_options"]["flags"]["monopile"]
         nLC = mod_opt["nLC"]  # not yet supported
         wind = mod_opt["wind"]  # not yet supported

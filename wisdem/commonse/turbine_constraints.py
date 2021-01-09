@@ -116,8 +116,8 @@ class TipDeflectionConstraint(om.ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options["modeling_options"]
-        n_span = modeling_options["RotorSE"]["n_span"]
-        n_height_tow = modeling_options["TowerSE"]["n_height_tower"]
+        n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        n_height_tow = modeling_options["WISDEM"]["TowerSE"]["n_height_tower"]
 
         self.add_discrete_input("rotor_orientation", val="upwind")
         self.add_input("tip_deflection", val=0.0, units="m")
@@ -193,5 +193,7 @@ class TurbineConstraints(om.Group):
     def setup(self):
         modeling_options = self.options["modeling_options"]
 
-        self.add_subsystem("modes", TowerModes(gamma=modeling_options["TowerSE"]["gamma_freq"]), promotes=["*"])
+        self.add_subsystem(
+            "modes", TowerModes(gamma=modeling_options["WISDEM"]["TowerSE"]["gamma_freq"]), promotes=["*"]
+        )
         self.add_subsystem("tipd", TipDeflectionConstraint(modeling_options=modeling_options), promotes=["*"])

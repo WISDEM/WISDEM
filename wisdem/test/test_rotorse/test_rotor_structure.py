@@ -22,8 +22,9 @@ class TestRS(unittest.TestCase):
         myzero = np.zeros(npts)
         myone = np.ones(npts)
         options = {}
-        options["RotorSE"] = {}
-        options["RotorSE"]["n_span"] = npts
+        options["WISDEM"] = {}
+        options["WISDEM"]["RotorSE"] = {}
+        options["WISDEM"]["RotorSE"]["n_span"] = npts
 
         myobj = rs.BladeCurvature(modeling_options=options)
 
@@ -87,8 +88,9 @@ class TestRS(unittest.TestCase):
         myzero = np.zeros(npts)
         myone = np.ones(npts)
         options = {}
-        options["RotorSE"] = {}
-        options["RotorSE"]["n_span"] = npts
+        options["WISDEM"] = {}
+        options["WISDEM"]["RotorSE"] = {}
+        options["WISDEM"]["RotorSE"]["n_span"] = npts
 
         myobj = rs.TotalLoads(modeling_options=options)
 
@@ -165,9 +167,10 @@ class TestRS(unittest.TestCase):
         myzero = np.zeros(npts)
         myone = np.ones(npts)
         options = {}
-        options["RotorSE"] = {}
-        options["RotorSE"]["n_span"] = npts
-        options["RotorSE"]["n_freq"] = nfreq
+        options["WISDEM"] = {}
+        options["WISDEM"]["RotorSE"] = {}
+        options["WISDEM"]["RotorSE"]["n_span"] = npts
+        options["WISDEM"]["RotorSE"]["n_freq"] = nfreq
 
         # myold = rs.RunpBEAM(modeling_options=options)
         # myold.n_span = npts
@@ -442,9 +445,10 @@ class TestRS(unittest.TestCase):
         myzero = np.zeros(npts)
         myone = np.ones(npts)
         options = {}
-        options["RotorSE"] = {}
-        options["RotorSE"]["n_span"] = npts
-        options["RotorSE"]["n_freq"] = nfreq
+        options["WISDEM"] = {}
+        options["WISDEM"]["RotorSE"] = {}
+        options["WISDEM"]["RotorSE"]["n_span"] = npts
+        options["WISDEM"]["RotorSE"]["n_freq"] = nfreq
 
         # Tip deflection the old pBeam way
         myobj0 = rs.RunFrame3DD(modeling_options=options, pbeam=True)
@@ -486,10 +490,11 @@ class TestRS(unittest.TestCase):
         myzero = np.zeros(npts)
         myone = np.ones(npts)
         options = {}
-        options["RotorSE"] = {}
-        options["RotorSE"]["n_span"] = npts
-        options["RotorSE"]["n_freq"] = 6
-        options["RotorSE"]["gamma_freq"] = 1.1
+        options["WISDEM"] = {}
+        options["WISDEM"]["RotorSE"] = {}
+        options["WISDEM"]["RotorSE"]["n_span"] = npts
+        options["WISDEM"]["RotorSE"]["n_freq"] = 6
+        options["WISDEM"]["RotorSE"]["gamma_freq"] = 1.1
 
         myopt = {}
         myopt["design_variables"] = {}
