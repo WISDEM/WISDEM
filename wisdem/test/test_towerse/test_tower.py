@@ -389,8 +389,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs["unit_cost_full"], self.inputs["unit_cost"][0] * np.ones(6))
 
         nout = 2
-        s = np.linspace(0, 1, nout + 1)
-        npt.assert_almost_equal(self.outputs["sec_loc"], util.nodal2sectional(s)[0])
+        npt.assert_almost_equal(self.outputs["sec_loc"], np.linspace(0, 1, nout))
         # npt.assert_equal(self.outputs["str_tw"], np.zeros(nout))
         # npt.assert_equal(self.outputs["tw_iner"], np.zeros(nout))
         npt.assert_equal(self.outputs["mass_den"], 1e3 * 9 * np.ones(nout))

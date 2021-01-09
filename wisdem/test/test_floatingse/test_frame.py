@@ -108,7 +108,6 @@ class TestPlatform(unittest.TestCase):
         self.inputs["rna_F"] = np.array([1e2, 1e1, 0.0])
         self.inputs["rna_M"] = np.array([2e1, 2e2, 0.0])
         self.inputs["transition_piece_mass"] = 1e3
-        self.inputs["transition_piece_I"] = 1e3 * np.arange(6)
         self.inputs["rho_water"] = 1e3
 
     def testTetrahedron(self):
@@ -171,11 +170,11 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["transition_node"], [0.0, 0.0, 1.0])
 
         # Test with set transition node
-        self.inputs["member0:transition_node"] = [0.0, 0.0, 1.0]
+        self.inputs["member1:transition_node"] = [0.5, 1.0, 0.0]
         myobj.node_mem2glob = {}
         myobj.node_glob2mem = {}
         myobj.compute(self.inputs, self.outputs)
-        npt.assert_equal(self.outputs["transition_node"], [0.0, 0.0, 1.0])
+        npt.assert_equal(self.outputs["transition_node"], [0.5, 1.0, 0.0])
 
     def testPre(self):
         inputs = {}
@@ -244,6 +243,7 @@ class TestPlatform(unittest.TestCase):
             )
             / 2.2e4,
         )
+        npt.assert_equal(self.outputs["transition_piece_I"], 1e3 * 0.25 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
 
     def testRunFrame(self):
         myobj = frame.PlatformFrame(options=self.opt)

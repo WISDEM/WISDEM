@@ -62,7 +62,7 @@ class TestInputs(unittest.TestCase):
         A = np.pi * (16 - 3.75 ** 2)
         I = (256.0 - 3.75 ** 4) * np.pi / 4.0
         npt.assert_equal(outputs["z_param"], 100 * np.linspace(0, 1, 5))
-        npt.assert_equal(outputs["sec_loc"], util.nodal2sectional(inputs["s"])[0])
+        npt.assert_equal(outputs["sec_loc"], np.linspace(0, 1, 4))
         # npt.assert_equal(outputs["str_tw"], np.zeros(nout))
         # npt.assert_equal(outputs["tw_iner"], np.zeros(nout))
         npt.assert_equal(outputs["mass_den"], 1e4 * A * myones)

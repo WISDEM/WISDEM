@@ -293,7 +293,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         itube = cs.Tube(D, outputs["wall_thickness"])
         Az, Ixx, Iyy, Jz = itube.Area, itube.Jxx, itube.Jyy, itube.J0
         outputs["z_param"] = z_param
-        outputs["sec_loc"] = (z - z_param[0]) / (z_param[-1] - z_param[0])
+        outputs["sec_loc"] = (z - z[0]) / (z[-1] - z[0])
         outputs["mass_den"] = rho_param * Az
         outputs["foreaft_iner"] = rho_param * Ixx
         outputs["sideside_iner"] = rho_param * Iyy

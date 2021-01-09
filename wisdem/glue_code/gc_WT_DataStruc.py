@@ -2053,14 +2053,14 @@ class MooringProperties(om.ExplicitComponent):
         self.add_input("line_transverse_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
         self.add_input("line_tangential_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
 
-        self.add_output("line_mass_density", val=np.zeros(n_lines), units="kg/m**2")
-        self.add_output("line_stiffness", val=np.zeros(n_lines), units="N/m")
-        self.add_output("line_breaking_load", val=np.zeros(n_lines), units="N/m")
-        self.add_output("line_cost_rate", val=np.zeros(n_lines), units="USD/m**2")
-        self.add_output("line_transverse_added_mass", val=np.zeros(n_lines), units="kg/m**2")
-        self.add_output("line_tangential_added_mass", val=np.zeros(n_lines), units="kg/m**2")
-        self.add_output("line_transverse_drag", val=np.zeros(n_lines), units="N/m")
-        self.add_output("line_tangential_drag", val=np.zeros(n_lines), units="N/m")
+        self.add_output("line_mass_density", val=np.zeros(n_lines), units="kg/m")
+        self.add_output("line_stiffness", val=np.zeros(n_lines), units="N")
+        self.add_output("line_breaking_load", val=np.zeros(n_lines), units="N")
+        self.add_output("line_cost_rate", val=np.zeros(n_lines), units="USD/m")
+        self.add_output("line_transverse_added_mass", val=np.zeros(n_lines), units="kg/m")
+        self.add_output("line_tangential_added_mass", val=np.zeros(n_lines), units="kg/m")
+        self.add_output("line_transverse_drag", val=np.zeros(n_lines))
+        self.add_output("line_tangential_drag", val=np.zeros(n_lines))
 
     def compute(self, inputs, outputs):
         d = inputs["line_diameter"]

@@ -471,7 +471,7 @@ class TowerDiscretization(om.ExplicitComponent):
         Ixx = util.sectionalInterp(z, z_full, inputs["Ixx"])
         Iyy = util.sectionalInterp(z, z_full, inputs["Iyy"])
         Jz = util.sectionalInterp(z, z_full, inputs["Jz"])
-        outputs["sec_loc"] = (z - z_param[0]) / (z_param[-1] - z_param[0])
+        outputs["sec_loc"] = (z - z[0]) / (z[-1] - z[0])
         outputs["mass_den"] = rho * Az
         outputs["foreaft_iner"] = rho * Ixx
         outputs["sideside_iner"] = rho * Iyy
