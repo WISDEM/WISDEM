@@ -181,9 +181,10 @@ class TestPlatform(unittest.TestCase):
         outputs = {}
         inputs["transition_node"] = np.array([1, 1, 2])
         inputs["hub_height"] = 100.0
+        inputs["distance_tt_hub"] = 5.0
         myobj = frame.TowerPreMember()
         myobj.compute(inputs, outputs)
-        npt.assert_equal(outputs["hub_node"], np.array([1, 1, 100]))
+        npt.assert_equal(outputs["hub_node"], np.array([1, 1, 95]))
 
     def testPlatformTower(self):
         myobj = frame.PlatformFrame(options=self.opt)
@@ -367,7 +368,8 @@ class TestGroup(unittest.TestCase):
 
         # Porperties of turbine tower
         nTower = prob.model.options["modeling_options"]["floating"]["tower"]["n_height"][0]
-        prob["tower.height"] = prob["hub_height"] = 77.6
+        prob["hub_height"] = 85.0
+        prob["distance_tt_hub"] = 5.0
         prob["tower.s"] = np.linspace(0.0, 1.0, nTower)
         prob["tower.outer_diameter_in"] = np.linspace(6.5, 3.87, nTower)
         prob["tower.layer_thickness"] = np.linspace(0.027, 0.019, nTower).reshape((1, nTower))

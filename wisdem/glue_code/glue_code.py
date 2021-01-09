@@ -516,6 +516,7 @@ class WT_RNTA(om.Group):
             self.connect("costs.labor_rate", "floatingse.labor_cost_rate")
             self.connect("costs.painting_rate", "floatingse.painting_cost_rate")
             self.connect("assembly.hub_height", "floatingse.hub_height")
+            self.connect("nacelle.distance_tt_hub", "floatingse.distance_tt_hub")
             self.connect("tower.diameter", "floatingse.tower.outer_diameter_in")
             self.connect("tower_grid.s", "floatingse.tower.s")
             self.connect("tower.layer_thickness", "floatingse.tower.layer_thickness")

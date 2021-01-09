@@ -271,12 +271,13 @@ class TowerPreMember(om.ExplicitComponent):
     def setup(self):
         self.add_input("transition_node", np.zeros(3), units="m")
         self.add_input("hub_height", 0.0, units="m")
+        self.add_input("distance_tt_hub", 0.0, units="m")
         self.add_output("hub_node", np.zeros(3), units="m")
 
     def compute(self, inputs, outputs):
         transition_node = inputs["transition_node"]
         hub_node = transition_node
-        hub_node[2] = float(inputs["hub_height"])
+        hub_node[2] = float(inputs["hub_height"] - inputs["distance_tt_hub"])
         outputs["hub_node"] = hub_node
 
 
