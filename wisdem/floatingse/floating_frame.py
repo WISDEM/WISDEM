@@ -522,7 +522,7 @@ class FrameAnalysis(om.ExplicitComponent):
             Rx = Ry = Rz = Rxx = Ryy = Rzz = np.array([RIGID])
             react_obj = pyframe3dd.ReactionData(rid + 1, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=RIGID)
 
-            frame3dd_opt = opt["FloatingSE"]["frame3dd"]
+            frame3dd_opt = opt["WISDEM"]["FloatingSE"]["frame3dd"]
             opt_obj = pyframe3dd.Options(frame3dd_opt["shear"], frame3dd_opt["geom"], -1.0)
 
             myframe = pyframe3dd.Frame(node_obj, react_obj, elem_obj, opt_obj)

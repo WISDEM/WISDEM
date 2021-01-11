@@ -27,7 +27,11 @@ class PoseOptimization(object):
         if blade_opt["aero_shape"]["chord"]["flag"]:
             n_DV += blade_opt["aero_shape"]["chord"]["n_opt"] - 3
         if blade_opt["aero_shape"]["af_positions"]["flag"]:
-            n_DV += self.modeling["RotorSE"]["n_af_span"] - blade_opt["aero_shape"]["af_positions"]["af_start"] - 1
+            n_DV += (
+                self.modeling["WISDEM"]["RotorSE"]["n_af_span"]
+                - blade_opt["aero_shape"]["af_positions"]["af_start"]
+                - 1
+            )
         if blade_opt["structure"]["spar_cap_ss"]["flag"]:
             n_DV += blade_opt["structure"]["spar_cap_ss"]["n_opt"] - 2
         if (
@@ -42,13 +46,17 @@ class PoseOptimization(object):
         # if self.opt["design_variables"]["control"]["servo"]["torque_control"]["flag"]:
         #    n_DV += 2
         if tower_opt["outer_diameter"]["flag"]:
-            n_DV += self.modeling["TowerSE"]["n_height_tower"]
+            n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height_tower"]
         if tower_opt["layer_thickness"]["flag"]:
-            n_DV += (self.modeling["TowerSE"]["n_height_tower"] - 1) * self.modeling["TowerSE"]["n_layers_tower"]
+            n_DV += (self.modeling["WISDEM"]["TowerSE"]["n_height_tower"] - 1) * self.modeling["WISDEM"]["TowerSE"][
+                "n_layers_tower"
+            ]
         if mono_opt["outer_diameter"]["flag"]:
-            n_DV += self.modeling["TowerSE"]["n_height_monopile"]
+            n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height_monopile"]
         if mono_opt["layer_thickness"]["flag"]:
-            n_DV += (self.modeling["TowerSE"]["n_height_monopile"] - 1) * self.modeling["TowerSE"]["n_layers_monopile"]
+            n_DV += (self.modeling["WISDEM"]["TowerSE"]["n_height_monopile"] - 1) * self.modeling["WISDEM"]["TowerSE"][
+                "n_layers_monopile"
+            ]
         if hub_opt["cone"]["flag"]:
             n_DV += 1
         if hub_opt["hub_diameter"]["flag"]:
@@ -226,7 +234,7 @@ class PoseOptimization(object):
             )
 
         if blade_opt["aero_shape"]["af_positions"]["flag"]:
-            n_af = self.modeling["RotorSE"]["n_af_span"]
+            n_af = self.modeling["WISDEM"]["RotorSE"]["n_af_span"]
             indices = range(blade_opt["aero_shape"]["af_positions"]["af_start"], n_af - 1)
             af_pos_init = wt_init["components"]["blade"]["outer_shape_bem"]["airfoil_position"]["grid"]
             step_size = self._get_step_size()
@@ -471,18 +479,18 @@ class PoseOptimization(object):
             )
 
         if tower_constr["stress"]["flag"] or monopile_constr["stress"]["flag"]:
-            for k in range(self.modeling["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["TowerSE"]["nLC"] == 0 else str(k + 1)
+            for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] == 0 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".stress", upper=1.0)
 
         if tower_constr["global_buckling"]["flag"] or monopile_constr["global_buckling"]["flag"]:
-            for k in range(self.modeling["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["TowerSE"]["nLC"] == 0 else str(k + 1)
+            for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] == 0 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".global_buckling", upper=1.0)
 
         if tower_constr["shell_buckling"]["flag"] or monopile_constr["shell_buckling"]["flag"]:
-            for k in range(self.modeling["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["TowerSE"]["nLC"] == 0 else str(k + 1)
+            for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] == 0 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".shell_buckling", upper=1.0)
 
         if tower_constr["d_to_t"]["flag"] or monopile_constr["d_to_t"]["flag"]:
@@ -506,8 +514,8 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("tcons.constr_tower_f_NPmargin", upper=0.0)
 
         elif tower_constr["frequency_1"]["flag"] or monopile_constr["frequency_1"]["flag"]:
-            for k in range(self.modeling["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["TowerSE"]["nLC"] == 0 else str(k + 1)
+            for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] == 0 else str(k + 1)
                 wt_opt.model.add_constraint(
                     "towerse.post" + kstr + ".structural_frequencies",
                     indices=[0],
@@ -599,7 +607,7 @@ class PoseOptimization(object):
             wt_opt["stall_check.stall_margin"] = blade_constr["stall"]["margin"] * 180.0 / np.pi
             wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
 
-        if self.modeling["flags"]["nacelle"] and self.modeling["DriveSE"]["direct"]:
+        if self.modeling["flags"]["nacelle"] and self.modeling["WISDEM"]["DriveSE"]["direct"]:
             drive_constr = self.opt["constraints"]["drivetrain"]
             wt_opt["drivese.access_diameter"] = drive_constr["access"]["lower_bound"]
 

@@ -68,7 +68,7 @@ class WT_RNTA(om.Group):
         self.add_subsystem("tcc", Turbine_CostsSE_2015(verbosity=modeling_options["General"]["verbosity"]))
 
         if modeling_options["flags"]["blade"]:
-            n_span = modeling_options["RotorSE"]["n_span"]
+            n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
 
             # Conncetions to ccblade
             self.connect("blade.pa.chord_param", "ccblade.chord")
@@ -308,7 +308,7 @@ class WT_RNTA(om.Group):
             self.connect("nacelle.mb2Type", "drivese.bear2.bearing_type")
             self.connect("nacelle.lss_diameter", "drivese.lss_diameter")
             self.connect("nacelle.lss_wall_thickness", "drivese.lss_wall_thickness")
-            if modeling_options["DriveSE"]["direct"]:
+            if modeling_options["WISDEM"]["DriveSE"]["direct"]:
                 self.connect("nacelle.nose_diameter", "drivese.bear1.D_shaft", src_indices=[0])
                 self.connect("nacelle.nose_diameter", "drivese.bear2.D_shaft", src_indices=[-1])
             else:
@@ -320,7 +320,7 @@ class WT_RNTA(om.Group):
             self.connect("nacelle.converter_mass_user", "drivese.converter_mass_user")
             self.connect("nacelle.transformer_mass_user", "drivese.transformer_mass_user")
 
-            if modeling_options["DriveSE"]["direct"]:
+            if modeling_options["WISDEM"]["DriveSE"]["direct"]:
                 self.connect("nacelle.nose_diameter", "drivese.nose_diameter")  # only used in direct
                 self.connect("nacelle.nose_wall_thickness", "drivese.nose_wall_thickness")  # only used in direct
                 self.connect(
@@ -409,7 +409,7 @@ class WT_RNTA(om.Group):
                 self.connect("generator.C_Fes", "drivese.generator.C_Fes")
                 self.connect("generator.C_PM", "drivese.generator.C_PM")
 
-                if modeling_options["GeneratorSE"]["type"] in ["pmsg_outer"]:
+                if modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["pmsg_outer"]:
                     self.connect("generator.N_c", "drivese.generator.N_c")
                     self.connect("generator.b", "drivese.generator.b")
                     self.connect("generator.c", "drivese.generator.c")
@@ -427,17 +427,17 @@ class WT_RNTA(om.Group):
                     self.connect("generator.B_tmax", "drivese.generator.B_tmax")
                     self.connect("rp.powercurve.rated_mech", "drivese.generator.P_mech")
 
-                if modeling_options["GeneratorSE"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
+                if modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
                     self.connect("generator.tau_p", "drivese.generator.tau_p")
                     self.connect("generator.h_ys", "drivese.generator.h_ys")
                     self.connect("generator.h_yr", "drivese.generator.h_yr")
                     self.connect("generator.b_arm", "drivese.generator.b_arm")
 
-                elif modeling_options["GeneratorSE"]["type"] in ["scig", "dfig"]:
+                elif modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["scig", "dfig"]:
                     self.connect("generator.B_symax", "drivese.generator.B_symax")
                     self.connect("generator.S_Nmax", "drivese.generator.S_Nmax")
 
-                if modeling_options["DriveSE"]["direct"]:
+                if modeling_options["WISDEM"]["DriveSE"]["direct"]:
                     self.connect("nacelle.nose_diameter", "drivese.generator.D_nose", src_indices=[-1])
                     self.connect("nacelle.lss_diameter", "drivese.generator.D_shaft", src_indices=[0])
                 else:
@@ -482,7 +482,7 @@ class WT_RNTA(om.Group):
                 self.connect("env.water_depth", "towerse.water_depth")
                 self.connect("env.rho_water", "towerse.rho_water")
                 self.connect("env.mu_water", "towerse.mu_water")
-                if modeling_options["TowerSE"]["soil_springs"]:
+                if modeling_options["WISDEM"]["TowerSE"]["soil_springs"]:
                     self.connect("env.G_soil", "towerse.G_soil")
                     self.connect("env.nu_soil", "towerse.nu_soil")
                 self.connect("env.Hsig_wave", "towerse.Hsig_wave")
@@ -665,7 +665,7 @@ class WindPark(om.Group):
         opt_options = self.options["opt_options"]
 
         self.add_subsystem("wt", WT_RNTA(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
-        if modeling_options["BOS"]["flag"]:
+        if modeling_options["WISDEM"]["BOS"]["flag"]:
             if modeling_options["flags"]["offshore"]:
                 self.add_subsystem("orbit", Orbit(floating=modeling_options["flags"]["floating_platform"]))
             else:
@@ -681,7 +681,7 @@ class WindPark(om.Group):
             self.add_subsystem("conv_plots", Convergence_Trends_Opt(opt_options=opt_options))
 
         # BOS inputs
-        if modeling_options["BOS"]["flag"]:
+        if modeling_options["WISDEM"]["BOS"]["flag"]:
             if modeling_options["flags"]["offshore"]:
                 # Inputs into ORBIT
                 self.connect("configuration.rated_power", "orbit.turbine_rating")

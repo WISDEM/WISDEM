@@ -17,14 +17,15 @@ class TestPlatform(unittest.TestCase):
 
         self.opt = {}
         self.opt["floating"] = {}
-        self.opt["FloatingSE"] = {}
+        self.opt["WISDEM"] = {}
+        self.opt["WISDEM"]["FloatingSE"] = {}
         self.opt["floating"]["members"] = {}
         self.opt["floating"]["members"]["n_members"] = n_member = 6
-        self.opt["FloatingSE"]["frame3dd"] = {}
-        self.opt["FloatingSE"]["frame3dd"]["shear"] = True
-        self.opt["FloatingSE"]["frame3dd"]["geom"] = True
-        self.opt["FloatingSE"]["frame3dd"]["tol"] = 1e-8
-        self.opt["FloatingSE"]["frame3dd"]["modal"] = False
+        self.opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
+        self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = True
+        self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = True
+        self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["tol"] = 1e-8
+        self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["modal"] = False
         self.opt["mooring"] = {}
         self.opt["mooring"]["n_attach"] = 3
 
@@ -260,7 +261,8 @@ class TestGroup(unittest.TestCase):
 
         opt = {}
         opt["floating"] = {}
-        opt["FloatingSE"] = {}
+        opt["WISDEM"] = {}
+        opt["WISDEM"]["FloatingSE"] = {}
         opt["floating"]["members"] = {}
         opt["floating"]["members"]["n_members"] = n_member = 6
         opt["floating"]["members"]["n_height"] = [2]
@@ -274,16 +276,16 @@ class TestGroup(unittest.TestCase):
         opt["floating"]["tower"]["n_layers"] = [1]
         opt["floating"]["tower"]["n_ballasts"] = [0]
         opt["floating"]["tower"]["n_axial_joints"] = [0]
-        opt["FloatingSE"]["frame3dd"] = {}
-        opt["FloatingSE"]["frame3dd"]["shear"] = True
-        opt["FloatingSE"]["frame3dd"]["geom"] = True
-        opt["FloatingSE"]["frame3dd"]["tol"] = 1e-7
-        opt["FloatingSE"]["frame3dd"]["modal"] = False  # True
-        opt["FloatingSE"]["gamma_f"] = 1.35  # Safety factor on loads
-        opt["FloatingSE"]["gamma_m"] = 1.3  # Safety factor on materials
-        opt["FloatingSE"]["gamma_n"] = 1.0  # Safety factor on consequence of failure
-        opt["FloatingSE"]["gamma_b"] = 1.1  # Safety factor on buckling
-        opt["FloatingSE"]["gamma_fatigue"] = 1.755  # Not used
+        opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = True
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = True
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["tol"] = 1e-7
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["modal"] = False  # True
+        opt["WISDEM"]["FloatingSE"]["gamma_f"] = 1.35  # Safety factor on loads
+        opt["WISDEM"]["FloatingSE"]["gamma_m"] = 1.3  # Safety factor on materials
+        opt["WISDEM"]["FloatingSE"]["gamma_n"] = 1.0  # Safety factor on consequence of failure
+        opt["WISDEM"]["FloatingSE"]["gamma_b"] = 1.1  # Safety factor on buckling
+        opt["WISDEM"]["FloatingSE"]["gamma_fatigue"] = 1.755  # Not used
         opt["mooring"] = {}
         opt["mooring"]["n_attach"] = 3
         opt["mooring"]["n_anchors"] = 3

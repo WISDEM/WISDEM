@@ -24,34 +24,35 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options["flags"] = {}
         self.modeling_options["flags"]["monopile"] = False
 
-        self.modeling_options["TowerSE"] = {}
-        self.modeling_options["TowerSE"]["buckling_length"] = 30.0
-        self.modeling_options["TowerSE"]["n_height_tower"] = 3
-        self.modeling_options["TowerSE"]["n_layers_tower"] = 1
-        self.modeling_options["TowerSE"]["n_height_monopile"] = 0
-        self.modeling_options["TowerSE"]["n_layers_monopile"] = 0
-        self.modeling_options["TowerSE"]["wind"] = "PowerWind"
-        self.modeling_options["TowerSE"]["nLC"] = 1
+        self.modeling_options["WISDEM"] = {}
+        self.modeling_options["WISDEM"]["TowerSE"] = {}
+        self.modeling_options["WISDEM"]["TowerSE"]["buckling_length"] = 30.0
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = 3
+        self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = 1
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 0
+        self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 0
+        self.modeling_options["WISDEM"]["TowerSE"]["wind"] = "PowerWind"
+        self.modeling_options["WISDEM"]["TowerSE"]["nLC"] = 1
 
-        self.modeling_options["TowerSE"]["soil_springs"] = False
-        self.modeling_options["TowerSE"]["gravity_foundation"] = False
+        self.modeling_options["WISDEM"]["TowerSE"]["soil_springs"] = False
+        self.modeling_options["WISDEM"]["TowerSE"]["gravity_foundation"] = False
 
-        self.modeling_options["TowerSE"]["gamma_f"] = 1.0
-        self.modeling_options["TowerSE"]["gamma_m"] = 1.0
-        self.modeling_options["TowerSE"]["gamma_n"] = 1.0
-        self.modeling_options["TowerSE"]["gamma_b"] = 1.0
-        self.modeling_options["TowerSE"]["gamma_fatigue"] = 1.0
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_f"] = 1.0
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_m"] = 1.0
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_n"] = 1.0
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_b"] = 1.0
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_fatigue"] = 1.0
 
         # Simplified the options available to the user
-        self.modeling_options["TowerSE"]["frame3dd"] = {}
+        self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"] = {}
         # self.modeling_options['TowerSE']['frame3dd']['DC']      = 80.0
-        self.modeling_options["TowerSE"]["frame3dd"]["shear"] = True
-        self.modeling_options["TowerSE"]["frame3dd"]["geom"] = True
+        self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["shear"] = True
+        self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["geom"] = True
         # self.modeling_options['TowerSE']['frame3dd']['dx']      = -1
         # self.modeling_options['TowerSE']['frame3dd']['nM']      = 6
         # self.modeling_options['TowerSE']['frame3dd']['Mmethod'] = 1
         # self.modeling_options['TowerSE']['frame3dd']['lump']    = 0
-        self.modeling_options["TowerSE"]["frame3dd"]["tol"] = 1e-9
+        self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["tol"] = 1e-9
         # self.modeling_options['TowerSE']['frame3dd']['shift']   = 0.0
         # self.modeling_options['TowerSE']['frame3dd']['add_gravity'] = True
 
@@ -767,10 +768,10 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(prob["pre.Mzz"], np.array([4e4]))
 
     def testProblemFixedPile(self):
-        self.modeling_options["TowerSE"]["n_height_monopile"] = 3
-        self.modeling_options["TowerSE"]["n_layers_monopile"] = 1
-        self.modeling_options["TowerSE"]["soil_springs"] = True
-        self.modeling_options["TowerSE"]["gravity_foundation"] = False
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 3
+        self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 1
+        self.modeling_options["WISDEM"]["TowerSE"]["soil_springs"] = True
+        self.modeling_options["WISDEM"]["TowerSE"]["gravity_foundation"] = False
         self.modeling_options["flags"]["monopile"] = True
 
         prob = om.Problem()
@@ -896,10 +897,10 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob["tower.base_M"], [-248566.38259147, -3286049.81237828, 40000.0], 0)
 
     def testProblemFixedPile_GBF(self):
-        self.modeling_options["TowerSE"]["n_height_monopile"] = 3
-        self.modeling_options["TowerSE"]["n_layers_monopile"] = 1
-        self.modeling_options["TowerSE"]["soil_springs"] = False
-        self.modeling_options["TowerSE"]["gravity_foundation"] = True
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 3
+        self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 1
+        self.modeling_options["WISDEM"]["TowerSE"]["soil_springs"] = False
+        self.modeling_options["WISDEM"]["TowerSE"]["gravity_foundation"] = True
         self.modeling_options["flags"]["monopile"] = True
 
         prob = om.Problem()
@@ -1017,10 +1018,10 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob["tower.base_M"], [-294477.83027742, -2732413.3684215, 40000.0], 0)
 
     def testAddedMassForces(self):
-        self.modeling_options["TowerSE"]["n_height_monopile"] = 3
-        self.modeling_options["TowerSE"]["n_layers_monopile"] = 1
-        self.modeling_options["TowerSE"]["soil_springs"] = False
-        self.modeling_options["TowerSE"]["gravity_foundation"] = False
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 3
+        self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 1
+        self.modeling_options["WISDEM"]["TowerSE"]["soil_springs"] = False
+        self.modeling_options["WISDEM"]["TowerSE"]["gravity_foundation"] = False
         self.modeling_options["flags"]["monopile"] = True
 
         prob = om.Problem()
@@ -1158,7 +1159,7 @@ class TestTowerSE(unittest.TestCase):
             ]
         )
 
-        self.modeling_options["TowerSE"]["n_height_tower"] = len(d_param)
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = len(d_param)
 
         prob = om.Problem()
         prob.model = tow.TowerSE(modeling_options=self.modeling_options)
@@ -1291,20 +1292,20 @@ class TestTowerSE(unittest.TestCase):
         life = 20.0
         # ---------------
 
-        self.modeling_options["TowerSE"]["n_height_tower"] = len(d_param)
-        self.modeling_options["TowerSE"]["n_layers_tower"] = 1
-        self.modeling_options["TowerSE"]["nLC"] = 2
-        self.modeling_options["TowerSE"]["gamma_f"] = 1.35
-        self.modeling_options["TowerSE"]["gamma_m"] = 1.3
-        self.modeling_options["TowerSE"]["gamma_n"] = 1.0
-        self.modeling_options["TowerSE"]["gamma_b"] = 1.1
-        self.modeling_options["TowerSE"]["gamma_fatigue"] = 1.35 * 1.3 * 1.0
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = len(d_param)
+        self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = 1
+        self.modeling_options["WISDEM"]["TowerSE"]["nLC"] = 2
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_f"] = 1.35
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_m"] = 1.3
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_n"] = 1.0
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_b"] = 1.1
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_fatigue"] = 1.35 * 1.3 * 1.0
 
         prob = om.Problem()
         prob.model = tow.TowerSE(modeling_options=self.modeling_options)
         prob.setup()
 
-        if self.modeling_options["TowerSE"]["wind"] == "PowerWind":
+        if self.modeling_options["WISDEM"]["TowerSE"]["wind"] == "PowerWind":
             prob["shearExp"] = shearExp
 
         # assign values to params

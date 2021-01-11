@@ -17,7 +17,7 @@ class RunPreComp(ExplicitComponent):
         self.options.declare("opt_options")
 
     def setup(self):
-        rotorse_options = self.options["modeling_options"]["RotorSE"]
+        rotorse_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_webs = n_webs = rotorse_options["n_webs"]
         self.n_layers = n_layers = rotorse_options["n_layers"]
@@ -500,8 +500,8 @@ class RunPreComp(ExplicitComponent):
             return sec
             ##############################
 
-        layer_name = self.options["modeling_options"]["RotorSE"]["layer_name"]
-        layer_mat = self.options["modeling_options"]["RotorSE"]["layer_mat"]
+        layer_name = self.options["modeling_options"]["WISDEM"]["RotorSE"]["layer_name"]
+        layer_mat = self.options["modeling_options"]["WISDEM"]["RotorSE"]["layer_mat"]
 
         upperCS = [None] * self.n_span
         lowerCS = [None] * self.n_span

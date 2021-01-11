@@ -6,19 +6,19 @@ import openmdao.api as om
 import numpy.testing as npt
 import wisdem.rotorse.rail_transport as rt
 
-class TestRT(unittest.TestCase):
 
+class TestRT(unittest.TestCase):
     def testRailTransport(self):
         prob = om.Problem()
 
         # Data structure generated with
-        # np.savez('rail.npz', blade_ref_axis = inputs['blade_ref_axis'], 
+        # np.savez('rail.npz', blade_ref_axis = inputs['blade_ref_axis'],
         # chord = inputs['chord'], theta = inputs['theta'],
-        # x_sc = inputs['x_sc'], y_sc = inputs['y_sc'], 
+        # x_sc = inputs['x_sc'], y_sc = inputs['y_sc'],
         # A = inputs['A'], rhoA = inputs['rhoA'],
-        # rhoJ = inputs['rhoJ'], GJ = inputs['GJ'], 
+        # rhoJ = inputs['rhoJ'], GJ = inputs['GJ'],
         # EA = inputs['EA'], EIxx = inputs['EIxx'],
-        # EIyy = inputs['EIyy'], EIxy = inputs['EIxy'], 
+        # EIyy = inputs['EIyy'], EIxy = inputs['EIxy'],
         # coord_xy_interp = inputs['coord_xy_interp'])
 
         path2npz = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "rail.npz"
@@ -27,28 +27,27 @@ class TestRT(unittest.TestCase):
         blade_ref_axis = data["blade_ref_axis"]
         chord = data["chord"]
         theta = data["theta"]
-        x_sc  = data["x_sc"]
-        y_sc  = data["y_sc"]
-        A     = data["A"]
-        rhoA  = data["rhoA"]
-        rhoJ  = data["rhoJ"]
-        GJ    = data["GJ"]
-        EA    = data["EA"]
-        EIxx  = data["EIxx"]
-        EIyy  = data["EIyy"]
-        EIxy  = data["EIxy"]
+        x_sc = data["x_sc"]
+        y_sc = data["y_sc"]
+        A = data["A"]
+        rhoA = data["rhoA"]
+        rhoJ = data["rhoJ"]
+        GJ = data["GJ"]
+        EA = data["EA"]
+        EIxx = data["EIxx"]
+        EIyy = data["EIyy"]
+        EIxy = data["EIxy"]
         coord_xy_interp = data["coord_xy_interp"]
 
         n_span = np.size(coord_xy_interp, axis=0)
         n_xy = np.size(coord_xy_interp, axis=1)
         modeling_options = {}
-        modeling_options["RotorSE"] = {}
-        modeling_options["RotorSE"]["n_span"] = n_span
-        modeling_options["RotorSE"]["n_xy"] = n_xy
+        modeling_options["WISDEM"] = {}
+        modeling_options["WISDEM"]["RotorSE"] = {}
+        modeling_options["WISDEM"]["RotorSE"]["n_span"] = n_span
+        modeling_options["WISDEM"]["RotorSE"]["n_xy"] = n_xy
 
-        prob.model.add_subsystem(
-            "powercurve", rt.RailTransport(modeling_options=modeling_options), promotes=["*"]
-        )
+        prob.model.add_subsystem("powercurve", rt.RailTransport(modeling_options=modeling_options), promotes=["*"])
 
         prob.setup()
 
@@ -69,12 +68,12 @@ class TestRT(unittest.TestCase):
 
         prob.run_model()
 
-        self.assertAlmostEqual(prob["constr_LV_4axle_horiz"][0], 1.441162288824471, places = 2)
-        self.assertAlmostEqual(prob["constr_LV_4axle_horiz"][1], 1.6919840589240818, places = 2)
-        self.assertAlmostEqual(prob["constr_LV_8axle_horiz"][0], 0.8586925171861572, places = 2)
-        self.assertAlmostEqual(prob["constr_LV_8axle_horiz"][1], 1.008140486233143, places = 2)
-        self.assertAlmostEqual(max(abs(prob["constr_strainPS"])), 0.39050013815507656, places = 2)
-        self.assertAlmostEqual(max(abs(prob["constr_strainSS"])), 0.432439251608084, places = 2)
+        self.assertAlmostEqual(prob["constr_LV_4axle_horiz"][0], 1.441162288824471, places=2)
+        self.assertAlmostEqual(prob["constr_LV_4axle_horiz"][1], 1.6919840589240818, places=2)
+        self.assertAlmostEqual(prob["constr_LV_8axle_horiz"][0], 0.8586925171861572, places=2)
+        self.assertAlmostEqual(prob["constr_LV_8axle_horiz"][1], 1.008140486233143, places=2)
+        self.assertAlmostEqual(max(abs(prob["constr_strainPS"])), 0.39050013815507656, places=2)
+        self.assertAlmostEqual(max(abs(prob["constr_strainSS"])), 0.432439251608084, places=2)
 
 
 def suite():
