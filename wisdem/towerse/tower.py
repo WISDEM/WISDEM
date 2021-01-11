@@ -410,39 +410,39 @@ class TowerDiscretization(om.ExplicitComponent):
         self.add_output("sigma_y_full", val=np.zeros(nFull - 1), units="Pa")
 
         # Tower Distributed Beam Properties (properties needed for ElastoDyn (OpenFAST) inputs or BModes inputs for verification purposes)
-        self.add_output("sec_loc", np.zeros(nFull - 1), desc="normalized sectional location")
-        self.add_output("str_tw", np.zeros(nFull - 1), units="deg", desc="structural twist of section")
-        self.add_output("tw_iner", np.zeros(nFull - 1), units="deg", desc="inertial twist of section")
-        self.add_output("mass_den", np.zeros(nFull - 1), units="kg/m", desc="sectional mass per unit length")
+        self.add_output("sec_loc", np.zeros(n_height - 1), desc="normalized sectional location")
+        self.add_output("str_tw", np.zeros(n_height - 1), units="deg", desc="structural twist of section")
+        self.add_output("tw_iner", np.zeros(n_height - 1), units="deg", desc="inertial twist of section")
+        self.add_output("mass_den", np.zeros(n_height - 1), units="kg/m", desc="sectional mass per unit length")
         self.add_output(
             "foreaft_iner",
-            np.zeros(nFull - 1),
+            np.zeros(n_height - 1),
             units="kg*m",
             desc="sectional fore-aft intertia per unit length about the Y_G inertia axis",
         )
         self.add_output(
             "sideside_iner",
-            np.zeros(nFull - 1),
+            np.zeros(n_height - 1),
             units="kg*m",
             desc="sectional side-side intertia per unit length about the Y_G inertia axis",
         )
         self.add_output(
             "foreaft_stff",
-            np.zeros(nFull - 1),
+            np.zeros(n_height - 1),
             units="N*m**2",
             desc="sectional fore-aft bending stiffness per unit length about the Y_E elastic axis",
         )
         self.add_output(
             "sideside_stff",
-            np.zeros(nFull - 1),
+            np.zeros(n_height - 1),
             units="N*m**2",
             desc="sectional side-side bending stiffness per unit length about the Y_E elastic axis",
         )
-        self.add_output("tor_stff", np.zeros(nFull - 1), units="N*m**2", desc="sectional torsional stiffness")
-        self.add_output("axial_stff", np.zeros(nFull - 1), units="N", desc="sectional axial stiffness")
-        self.add_output("cg_offst", np.zeros(nFull - 1), units="m", desc="offset from the sectional center of mass")
-        self.add_output("sc_offst", np.zeros(nFull - 1), units="m", desc="offset from the sectional shear center")
-        self.add_output("tc_offst", np.zeros(nFull - 1), units="m", desc="offset from the sectional tension center")
+        self.add_output("tor_stff", np.zeros(n_height - 1), units="N*m**2", desc="sectional torsional stiffness")
+        self.add_output("axial_stff", np.zeros(n_height - 1), units="N", desc="sectional axial stiffness")
+        self.add_output("cg_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional center of mass")
+        self.add_output("sc_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional shear center")
+        self.add_output("tc_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional tension center")
 
         self.declare_partials("height_constraint", ["hub_height", "z_param"], method="fd")
         self.declare_partials("outfitting_full", ["outfitting_factor"], method="fd")
@@ -463,18 +463,22 @@ class TowerDiscretization(om.ExplicitComponent):
         outputs["sigma_y_full"] = util.sectionalInterp(z_section, z_param, inputs["sigma_y"])
 
         # Unpack for Elastodyn
-        rho = outputs["rho_full"]
-        E = outputs["E_full"]
-        G = outputs["G_full"]
-        z = z_section
+        z = 0.5 * (z_param[:-1] + z_param[1:])
+        rho = inputs["rho"]
+        E = inputs["E"]
+        G = inputs["G"]
+        Az = util.sectionalInterp(z, z_full, inputs["Az"])
+        Ixx = util.sectionalInterp(z, z_full, inputs["Ixx"])
+        Iyy = util.sectionalInterp(z, z_full, inputs["Iyy"])
+        Jz = util.sectionalInterp(z, z_full, inputs["Jz"])
         outputs["sec_loc"] = (z - z[0]) / (z[-1] - z[0])
-        outputs["mass_den"] = inputs["Az"] * rho
-        outputs["foreaft_iner"] = rho * inputs["Ixx"]
-        outputs["sideside_iner"] = rho * inputs["Iyy"]
-        outputs["foreaft_stff"] = E * inputs["Ixx"]
-        outputs["sideside_stff"] = E * inputs["Iyy"]
-        outputs["tor_stff"] = G * inputs["Jz"]
-        outputs["axial_stff"] = inputs["Az"] * E
+        outputs["mass_den"] = rho * Az
+        outputs["foreaft_iner"] = rho * Ixx
+        outputs["sideside_iner"] = rho * Iyy
+        outputs["foreaft_stff"] = E * Ixx
+        outputs["sideside_stff"] = E * Iyy
+        outputs["tor_stff"] = G * Jz
+        outputs["axial_stff"] = E * Az
 
 
 class TowerMass(om.ExplicitComponent):

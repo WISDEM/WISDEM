@@ -15,10 +15,11 @@ NREFINE = 1
 
 
 class CrossSection(object):
-    def __init__(self, A=0.0, Asx=0.0, Asy=0.0, E=0.0, G=0.0, rho=0.0, Ixx=0.0, Iyy=0.0, Izz=0.0):
+    def __init__(self, D=0.0, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, Izz=0.0, E=0.0, G=0.0, rho=0.0):
+        self.D, self.t = D, t  # Needed for OpenFAST
         self.A, self.Asx, self.Asy = A, Asx, Asy
-        self.E, self.G, self.rho = E, G, rho
         self.Ixx, self.Iyy, self.Izz = Ixx, Iyy, Izz
+        self.E, self.G, self.rho = E, G, rho
 
 
 def get_nfull(npts, nref=NREFINE):
@@ -152,6 +153,42 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_output("ballast_unit_cost", val=np.zeros(n_ballast), units="USD/kg")
         self.add_output("transition_node", NULL * np.ones(3), units="m")
 
+        # Distributed Beam Properties (properties needed for ElastoDyn (OpenFAST) inputs or BModes inputs for verification purposes)
+        self.add_output("z_param", np.zeros(n_height), units="m")
+        self.add_output("sec_loc", np.zeros(n_height - 1), desc="normalized sectional location")
+        self.add_output("str_tw", np.zeros(n_height - 1), units="deg", desc="structural twist of section")
+        self.add_output("tw_iner", np.zeros(n_height - 1), units="deg", desc="inertial twist of section")
+        self.add_output("mass_den", np.zeros(n_height - 1), units="kg/m", desc="sectional mass per unit length")
+        self.add_output(
+            "foreaft_iner",
+            np.zeros(n_height - 1),
+            units="kg*m",
+            desc="sectional fore-aft intertia per unit length about the Y_G inertia axis",
+        )
+        self.add_output(
+            "sideside_iner",
+            np.zeros(n_height - 1),
+            units="kg*m",
+            desc="sectional side-side intertia per unit length about the Y_G inertia axis",
+        )
+        self.add_output(
+            "foreaft_stff",
+            np.zeros(n_height - 1),
+            units="N*m**2",
+            desc="sectional fore-aft bending stiffness per unit length about the Y_E elastic axis",
+        )
+        self.add_output(
+            "sideside_stff",
+            np.zeros(n_height - 1),
+            units="N*m**2",
+            desc="sectional side-side bending stiffness per unit length about the Y_E elastic axis",
+        )
+        self.add_output("tor_stff", np.zeros(n_height - 1), units="N*m**2", desc="sectional torsional stiffness")
+        self.add_output("axial_stff", np.zeros(n_height - 1), units="N", desc="sectional axial stiffness")
+        self.add_output("cg_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional center of mass")
+        self.add_output("sc_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional shear center")
+        self.add_output("tc_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional tension center")
+
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack dimensions
         opt = self.options["options"]
@@ -248,6 +285,22 @@ class DiscretizationYAML(om.ExplicitComponent):
         outputs["rho"] = rho_param
         outputs["sigma_y"] = sigy_param
         outputs["unit_cost"] = cost_param
+
+        # Unpack for Elastodyn
+        z_param = min(xyz0[2], xyz1[2]) + (h_col * inputs["s"])
+        z = 0.5 * (z_param[:-1] + z_param[1:])
+        D, _ = util.nodal2sectional(outputs["outer_diameter"])
+        itube = cs.Tube(D, outputs["wall_thickness"])
+        Az, Ixx, Iyy, Jz = itube.Area, itube.Jxx, itube.Jyy, itube.J0
+        outputs["z_param"] = z_param
+        outputs["sec_loc"] = (z - z[0]) / (z[-1] - z[0])
+        outputs["mass_den"] = rho_param * Az
+        outputs["foreaft_iner"] = rho_param * Ixx
+        outputs["sideside_iner"] = rho_param * Iyy
+        outputs["foreaft_stff"] = E_param * Ixx
+        outputs["sideside_stff"] = E_param * Iyy
+        outputs["tor_stff"] = G_param * Jz
+        outputs["axial_stff"] = E_param * Az
 
         # Loop over materials and associate it with its thickness
         rho_ballast = np.zeros(n_ballast)
@@ -525,8 +578,16 @@ class MemberComponent(om.ExplicitComponent):
         Global dimensional coordinates (x-y-z) for member center of mass / gravity
     nodes_xyz : numpy array[npts,3], [m]
         Global dimensional coordinates (x-y-z) for all member nodes in s_all output
-    section_area : numpy array[npts-1], [m**2]
+    section_D : numpy array[npts-1], [m]
+        Cross-sectional diameter of all member segments
+    section_t : numpy array[npts-1], [m]
+        Cross-sectional effective thickness of all member segments
+    section_A : numpy array[npts-1], [m**2]
         Cross-sectional area of all member segments
+    section_Asx : numpy array[npts-1], [m**2]
+        Cross-sectional shear area in x-direction (member c.s.) of all member segments
+    section_Asy : numpy array[npts-1], [m**2]
+        Cross-sectional shear area in y-direction (member c.s.) of all member segments
     section_Ixx : numpy array[npts-1], [kg*m**2]
         Cross-sectional moment of inertia about x-axis in member c.s. of all member segments
     section_Iyy : numpy array[npts-1], [kg*m**2]
@@ -633,6 +694,8 @@ class MemberComponent(om.ExplicitComponent):
         self.add_output("center_of_mass", np.zeros(3), units="m")
         self.add_output("nodes_r", np.zeros(MEMMAX), units="m")
         self.add_output("nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
+        self.add_output("section_D", NULL * np.ones(MEMMAX), units="m")
+        self.add_output("section_t", NULL * np.ones(MEMMAX), units="m")
         self.add_output("section_A", NULL * np.ones(MEMMAX), units="m**2")
         self.add_output("section_Asx", NULL * np.ones(MEMMAX), units="m**2")
         self.add_output("section_Asy", NULL * np.ones(MEMMAX), units="m**2")
@@ -708,6 +771,8 @@ class MemberComponent(om.ExplicitComponent):
         for k in range(len(s_full) - 1):
             itube = cs.Tube(d_sec[k], t_full[k])
             iprop = CrossSection(
+                D=d_sec[k],
+                t=coeff[k] * t_full[k],
                 A=coeff[k] * itube.Area,
                 Ixx=coeff[k] * itube.Jxx,
                 Iyy=coeff[k] * itube.Jyy,
@@ -833,13 +898,15 @@ class MemberComponent(om.ExplicitComponent):
         for k in range(nbulk):
             itube = cs.Tube(2 * R_od_bulk[k], R_od_bulk[k])  # thickness=radius for solid disk
             iprop = CrossSection(
-                A=coeff_bulk[k] * itube.Area,
-                Ixx=coeff_bulk[k] * itube.Jxx,
-                Iyy=coeff_bulk[k] * itube.Jyy,
-                Izz=coeff_bulk[k] * itube.J0,
+                D=2 * R_od_bulk[k],
+                t=R_od_bulk[k],
+                A=itube.Area,
+                Ixx=itube.Jxx,
+                Iyy=itube.Jyy,
+                Izz=itube.J0,
                 Asx=itube.Asx,
                 Asy=itube.Asy,
-                rho=rho_bulk[k],
+                rho=coeff_bulk[k] * rho_bulk[k],
                 E=E_bulk[k],
                 G=G_bulk[k],
             )
@@ -963,8 +1030,13 @@ class MemberComponent(om.ExplicitComponent):
             ishell = cs.Tube(2 * R_od_stiff[k], twall_stiff[k])
             iweb = cs.Tube(2 * R_wo[k], h_web)
             iflange = cs.Tube(2 * R_fo[k], t_flange)
+            Ak = coeff_stiff[k] * ishell.Area + iflange.Area + iweb.Area * web_frac
+            # Find effective thickness for OpenFAST
+            t_eff = R_od_stiff[k] - np.sqrt(R_od_stiff[k] ** 2 - Ak / np.pi)
             iprop = CrossSection(
-                A=coeff_stiff[k] * ishell.Area + iflange.Area + iweb.Area * web_frac,
+                D=2 * R_od_stiff[k],
+                t=t_eff,
+                A=Ak,
                 Ixx=coeff_stiff[k] * ishell.Jxx + iflange.Jxx + iweb.Jxx * web_frac,
                 Iyy=coeff_stiff[k] * ishell.Jyy + iflange.Jyy + iweb.Jyy * web_frac,
                 Izz=coeff_stiff[k] * ishell.J0 + iflange.J0 + iweb.J0 * web_frac,
@@ -1183,6 +1255,8 @@ class MemberComponent(om.ExplicitComponent):
         outputs["s_all"] = NULL * np.ones(MEMMAX)
         outputs["nodes_r"] = NULL * np.ones(MEMMAX)
         outputs["nodes_xyz"] = NULL * np.ones((MEMMAX, 3))
+        outputs["section_D"] = NULL * np.ones(MEMMAX)
+        outputs["section_t"] = NULL * np.ones(MEMMAX)
         outputs["section_A"] = NULL * np.ones(MEMMAX)
         outputs["section_Asx"] = NULL * np.ones(MEMMAX)
         outputs["section_Asy"] = NULL * np.ones(MEMMAX)
@@ -1200,6 +1274,8 @@ class MemberComponent(om.ExplicitComponent):
         for k, s in enumerate(s_grid):
             if s == s_grid[-1]:
                 continue
+            outputs["section_D"][k] = self.sections[s].D
+            outputs["section_t"][k] = self.sections[s].t
             outputs["section_A"][k] = self.sections[s].A
             outputs["section_Asx"][k] = self.sections[s].Asx
             outputs["section_Asy"][k] = self.sections[s].Asy
