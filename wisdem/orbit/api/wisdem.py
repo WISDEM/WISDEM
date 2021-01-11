@@ -7,7 +7,6 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 
 import openmdao.api as om
-
 from wisdem.orbit import ProjectManager
 
 
@@ -136,6 +135,8 @@ class OrbitWisdem(om.ExplicitComponent):
         self.add_input("mooring_line_diameter", 0.1, units="m", desc="Cross-sectional diameter of a mooring line")
         self.add_input("mooring_line_length", 1e3, units="m", desc="Unstretched mooring line length")
         self.add_input("anchor_mass", 1e4, units="kg", desc="Total mass of an anchor")
+        self.add_input("mooring_line_cost", 0.5e6, units="USD", desc="Mooring line unit cost.")
+        self.add_input("mooring_anchor_cost", 0.1e6, units="USD", desc="Mooring line unit cost.")
         self.add_discrete_input("anchor_type", "drag_embedment", desc="Number of mooring lines per platform.")
 
         # Port
@@ -152,10 +153,14 @@ class OrbitWisdem(om.ExplicitComponent):
             desc="Number of cranes used at the port to load feeders / WTIVS when assembly occurs on-site or assembly cranes when assembling at port.",
         )
 
+        # Floating Substructures
+        self.add_input("floating_substructure_cost", 10e6, units="USD", desc="Floating substructure unit cost.")
+
         # Monopile
         self.add_input("monopile_length", 100.0, units="m", desc="Length of monopile.")
         self.add_input("monopile_diameter", 7.0, units="m", desc="Diameter of monopile.")
         self.add_input("monopile_mass", 900.0, units="t", desc="mass of an individual monopile.")
+        self.add_input("monopile_cost", 4e6, units="USD", desc="Monopile unit cost.")
         self.add_input(
             "monopile_deck_space",
             0.0,
@@ -169,6 +174,7 @@ class OrbitWisdem(om.ExplicitComponent):
             units="m**2",
             desc="Deck space required to transport a transition piece. Defaults to 0 in order to not be a constraint on installation.",
         )
+        self.add_input("transition_piece_cost", 1.5e6, units="USD", desc="Transition piece unit cost.")
 
         # Project
         self.add_input("site_auction_price", 100e6, units="USD", desc="Cost to secure site lease")
@@ -261,6 +267,8 @@ class OrbitWisdem(om.ExplicitComponent):
                 "type": "Transition Piece",
                 "deck_space": float(inputs["transition_piece_deck_space"]),
                 "mass": float(inputs["transition_piece_mass"]),
+                # No double counting of cost with TowerSE
+                "unit_cost": 0.0,  # float(inputs["transition_piece_cost"]),
             },
             # Electrical
             "array_system_design": {
@@ -293,11 +301,6 @@ class OrbitWisdem(om.ExplicitComponent):
             # Phases
             # Putting monopile or semisub here would override the inputs we assume to get from WISDEM
             "design_phases": [
-                "ProjectDevelopment",
-                #'MonopileDesign',
-                #'SemiSubmersibleDesign',
-                #'MooringSystemDesign',
-                #'ScourProtectionDesign',
                 "ArraySystemDesign",
                 "ExportSystemDesign",
                 "OffshoreSubstationDesign",
@@ -306,6 +309,11 @@ class OrbitWisdem(om.ExplicitComponent):
 
         # Unique design phases
         if floating:
+            config["design_phases"] += [
+                "MooringSystemDesign",
+                # "SparDesign",
+                # "SemiSubmersibleDesign",
+            ]
             config["install_phases"] = {
                 "ExportCableInstallation": 0,
                 "OffshoreSubstationInstallation": 0,
@@ -351,7 +359,11 @@ class OrbitWisdem(om.ExplicitComponent):
                 "monthly_rate": float(inputs["port_cost_per_month"]),
             }
 
-            config["substructure"] = {"takt_time": float(inputs["takt_time"]), "towing_speed": 6}  # km/h
+            config["substructure"] = {
+                "takt_time": float(inputs["takt_time"]),
+                "unit_cost": float(inputs["floating_substructure_cost"]),
+                "towing_speed": 6,  # km/h
+            }
 
             anchorstr_in = discrete_inputs["anchor_type"].lower()
             if anchorstr_in.find("drag") >= 0:
@@ -364,8 +376,10 @@ class OrbitWisdem(om.ExplicitComponent):
                 "line_mass": 1e-3 * float(inputs["mooring_line_mass"]),
                 "line_diam": float(inputs["mooring_line_diameter"]),
                 "line_length": float(inputs["mooring_line_length"]),
+                "line_cost": float(inputs["mooring_line_cost"]),
                 "anchor_mass": 1e-3 * float(inputs["anchor_mass"]),
                 "anchor_type": anchorstr,
+                "anchor_cost": float(inputs["mooring_anchor_cost"]),
             }
         else:
             config["port"] = {
@@ -379,6 +393,8 @@ class OrbitWisdem(om.ExplicitComponent):
                 "diameter": float(inputs["monopile_diameter"]),
                 "deck_space": float(inputs["monopile_deck_space"]),
                 "mass": float(inputs["monopile_mass"]),
+                # No double counting of cost with TowerSE
+                "unit_cost": 0.0,  # float(inputs["monopile_cost"]),
             }
 
             config["scour_protection_design"] = {

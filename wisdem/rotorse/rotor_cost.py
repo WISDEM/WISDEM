@@ -1,9 +1,10 @@
-import numpy as np
-import time
 import os
+import time
+
+import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import brentq
 from openmdao.api import ExplicitComponent
+from scipy.optimize import brentq
 
 ### USING OLD NUMPY SRC FOR PMT-FUNCTION INSTEAD OF SWITCHING TO ANNOYING NUMPY-FINANCIAL
 _when_to_num = {"end": 0, "begin": 1, "e": 0, "b": 1, 0: 0, 1: 1, "beginning": 1, "start": 1, "finish": 0}
@@ -4484,7 +4485,7 @@ class RotorCost(ExplicitComponent):
 
     def setup(self):
         wt_init_options = self.options["wt_init_options"]
-        rotorse_options = wt_init_options["RotorSE"]
+        rotorse_options = wt_init_options["WISDEM"]["RotorSE"]
         self.n_span = n_span = blade_init_options["n_span"]
         opt_options = self.options["opt_options"]
         self.costs_verbosity = opt_options["costs_verbosity"]

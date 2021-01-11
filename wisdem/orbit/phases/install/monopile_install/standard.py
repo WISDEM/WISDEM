@@ -8,23 +8,12 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 import simpy
 from marmot import process
-
 from wisdem.orbit.core import Vessel
-from wisdem.orbit.core.logic import (
-    shuttle_items_to_queue,
-    prep_for_site_operations,
-    get_list_of_items_from_port,
-)
+from wisdem.orbit.core.logic import shuttle_items_to_queue, prep_for_site_operations, get_list_of_items_from_port
 from wisdem.orbit.phases.install import InstallPhase
 from wisdem.orbit.core.exceptions import ItemNotFound
 
-from .common import (
-    Monopile,
-    TransitionPiece,
-    upend_monopile,
-    install_monopile,
-    install_transition_piece,
-)
+from .common import Monopile, TransitionPiece, upend_monopile, install_monopile, install_transition_piece
 
 
 class MonopileInstallation(InstallPhase):
@@ -56,8 +45,13 @@ class MonopileInstallation(InstallPhase):
             "diameter": "m",
             "deck_space": "m2",
             "mass": "t",
+            "unit_cost": "USD",
         },
-        "transition_piece": {"deck_space": "m2", "mass": "t"},
+        "transition_piece": {
+            "deck_space": "m2",
+            "mass": "t",
+            "unit_cost": "USD",
+        },
     }
 
     def __init__(self, config, weather=None, **kwargs):
@@ -82,6 +76,14 @@ class MonopileInstallation(InstallPhase):
         self.initialize_wtiv()
         self.initialize_monopiles()
         self.setup_simulation(**kwargs)
+
+    @property
+    def system_capex(self):
+        """Returns procurement cost of the substructures."""
+
+        return (self.config["monopile"]["unit_cost"] + self.config["transition_piece"]["unit_cost"]) * self.config[
+            "plant"
+        ]["num_turbines"]
 
     def setup_simulation(self, **kwargs):
         """

@@ -9,7 +9,6 @@ __email__ = "Jake.Nunemaker@nrel.gov"
 
 
 import pytest
-
 from wisdem.orbit.core.exceptions import MissingComponent
 from wisdem.orbit.phases.install.monopile_install.common import (
     drive_monopile,
@@ -52,7 +51,6 @@ def test_task(env, wtiv, task, log, args):
         (upend_monopile, "Upend Monopile", [100]),
         (lower_monopile, "Lower Monopile", []),
         (drive_monopile, "Drive Monopile", []),
-        (lower_transition_piece, "Lower TP", []),
     ],
 )
 def test_task_fails(env, feeder, task, log, args):

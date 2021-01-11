@@ -65,9 +65,7 @@ def create_all_plots(
 
     axtw.plot(
         s_opt_twist,
-        np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["lower_bound"])
-        * 180.0
-        / np.pi,
+        np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["lower_bound"]) * 180.0 / np.pi,
         ":o",
         color=colors[idx + 1],
         markersize=3,
@@ -75,9 +73,7 @@ def create_all_plots(
     )
     axtw.plot(
         s_opt_twist,
-        np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["upper_bound"])
-        * 180.0
-        / np.pi,
+        np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["upper_bound"]) * 180.0 / np.pi,
         ":o",
         color=colors[idx + 1],
         markersize=3,
@@ -149,10 +145,9 @@ def create_all_plots(
 
     for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
         n_layers = len(yaml_data["blade.internal_structure_2d_fem.layer_thickness"][:, 0])
-        spar_ss_name = "Spar_Cap_SS"
-        spar_ps_name = "Spar_Cap_PS"
         for i in range(n_layers):
-            if modeling_options["RotorSE"]["spar_cap_ss"] == spar_ss_name:
+            layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
+            if modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"] == layer_name:
                 axsc.plot(
                     yaml_data["blade.outer_shape_bem.s"],
                     yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
@@ -170,7 +165,8 @@ def create_all_plots(
                 axsc.plot(s_opt_sc, sc_opt, "o", color=colors[idx], markersize=3)
 
     for i in range(n_layers):
-        if modeling_options["RotorSE"]["spar_cap_ss"] == spar_ss_name:
+        layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
+        if modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"] == layer_name:
             sc_init = np.interp(
                 s_opt_sc,
                 list_of_sims[0]["blade.outer_shape_bem.s"],
@@ -381,12 +377,12 @@ def create_all_plots(
 
 
 def print_results_to_screen(list_of_sims, list_of_labels, values_to_print):
-    list_of_labels = []
+    list_of_augmented_labels = []
     max_label_length = 1
     for label in list_of_labels:
-        list_of_labels.append(f"{label:15.15}")
+        list_of_augmented_labels.append(f"{label:15.15}")
 
-    case_headers = "| Data name       | " + " | ".join(list_of_labels) + " | Units          |"
+    case_headers = "| Data name       | " + " | ".join(list_of_augmented_labels) + " | Units          |"
     # Header describing what we are printing:
     title_string = "Comparison between WISDEM results from yaml files"
     spacing = (len(case_headers) - len(title_string) - 2) // 2

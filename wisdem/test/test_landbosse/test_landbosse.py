@@ -20,20 +20,6 @@ def landbosse_costs_by_module_type_operation():
     return landbosse_costs_by_module_type_operation
 
 
-def test_landbosse(landbosse_costs_by_module_type_operation):
-    """
-    This runs the regression test by comparing against the expected validation
-    data.
-    """
-    OpenMDAODataframeCache._cache = {}  # Clear the cache
-    expected_validation_data_sheets = OpenMDAODataframeCache.read_all_sheets_from_xlsx("ge15_expected_validation")
-    costs_by_module_type_operation = expected_validation_data_sheets["costs_by_module_type_operation"]
-    result = compare_expected_to_actual(
-        costs_by_module_type_operation, landbosse_costs_by_module_type_operation, "test.csv"
-    )
-    assert result
-
-
 def compare_expected_to_actual(expected_df, actual_module_type_operation_list, validation_output_csv):
     """
     This compares the expected costs as calculated by a prior model run
@@ -105,7 +91,16 @@ def compare_expected_to_actual(expected_df, actual_module_type_operation_list, v
     else:
         return True
 
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+
+def test_landbosse(landbosse_costs_by_module_type_operation):
+    """
+    This runs the regression test by comparing against the expected validation
+    data.
+    """
+    OpenMDAODataframeCache._cache = {}  # Clear the cache
+    expected_validation_data_sheets = OpenMDAODataframeCache.read_all_sheets_from_xlsx("ge15_expected_validation")
+    costs_by_module_type_operation = expected_validation_data_sheets["costs_by_module_type_operation"]
+    result = compare_expected_to_actual(
+        costs_by_module_type_operation, landbosse_costs_by_module_type_operation, "test.csv"
+    )
+    assert result

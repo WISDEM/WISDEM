@@ -1,16 +1,19 @@
-from wisdem.glue_code.runWISDEM import run_wisdem
+import os
+import sys
+import time
+
 from wisdem.commonse.mpi_tools import MPI
-import os, time, sys
+from wisdem.glue_code.runWISDEM import run_wisdem
 
 ## File management
 run_dir = os.path.dirname(os.path.realpath(__file__))
-fname_wt_input_oc4 = run_dir + os.sep + "nrel5mw-semi_oc4.yaml"
+fname_wt_input_oc3 = run_dir + os.sep + "nrel5mw-spar_oc3.yaml"
 fname_modeling_options = run_dir + os.sep + "modeling_options.yaml"
 fname_analysis_options = run_dir + os.sep + "analysis_options.yaml"
 
 
 tt = time.time()
-wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input_oc4, fname_modeling_options, fname_analysis_options)
+wt_opt, modeling_options, opt_options = run_wisdem(fname_wt_input_oc3, fname_modeling_options, fname_analysis_options)
 
 if MPI:
     rank = MPI.COMM_WORLD.Get_rank()

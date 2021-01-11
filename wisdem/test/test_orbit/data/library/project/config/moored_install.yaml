@@ -11,6 +11,7 @@ site:
 substructure:
   takt_time: 168
   towing_speed: 6
+  unit_cost: 12e6
 support_vessel: test_support_vessel
 towing_vessel: test_towing_vessel
 towing_vessel_groups:

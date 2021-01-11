@@ -237,12 +237,16 @@ class GeneratorSimple(om.ExplicitComponent):
         rotor diameter
     machine_rating : float, [kW]
         machine rating of generator
+    L_generator : float, [m]
+        Generator stack width
     rated_torque : float, [N*m]
         rotor torque at rated power
     shaft_rpm : numpy array[n_pc], [rpm]
         Input shaft rotations-per-minute (rpm)
     generator_mass_user : float, [kg]
         User input override of generator mass
+    generator_radius_user : float, [m]
+        User input override of generator radius
 
     Returns
     -------
@@ -270,7 +274,9 @@ class GeneratorSimple(om.ExplicitComponent):
         self.add_input("machine_rating", val=0.0, units="kW")
         self.add_input("rated_torque", 0.0, units="N*m")
         self.add_input("lss_rpm", np.zeros(n_pc), units="rpm")
+        self.add_input("L_generator", 0.0, units="m")
         self.add_input("generator_mass_user", 0.0, units="kg")
+        self.add_input("generator_radius_user", 0.0, units="m")
         self.add_input("generator_efficiency_user", val=np.zeros((n_pc, 2)))
 
         self.add_output("R_generator", val=0.0, units="m")
@@ -289,8 +295,10 @@ class GeneratorSimple(om.ExplicitComponent):
         rating = float(inputs["machine_rating"])
         D_rotor = float(inputs["rotor_diameter"])
         Q_rotor = float(inputs["rated_torque"])
+        R_generator = float(inputs["generator_radius_user"])
         mass = float(inputs["generator_mass_user"])
         eff_user = inputs["generator_efficiency_user"]
+        length = float(inputs["L_generator"])
 
         if mass == 0.0:
             if self.options["direct_drive"]:
@@ -304,8 +312,8 @@ class GeneratorSimple(om.ExplicitComponent):
         outputs["generator_rotor_mass"] = outputs["generator_stator_mass"] = 0.5 * mass
 
         # calculate mass properties
-        length = 1.8 * 0.015 * D_rotor
-        R_generator = 0.5 * 0.015 * D_rotor
+        if R_generator == 0.0:
+            R_generator = 0.5 * 0.015 * D_rotor
         outputs["R_generator"] = R_generator
 
         I = np.zeros(3)
@@ -615,7 +623,7 @@ class MiscNacelleComponents(om.ExplicitComponent):
         # Platforms as a fraction of bedplate mass and bundling it to call it 'platforms'
         L_platform = 2 * D_top if direct else L_cover
         W_platform = 2 * D_top if direct else W_cover
-        t_platform = 0.05
+        t_platform = 0.04
         m_platform = L_platform * W_platform * t_platform * rho_castiron
         I_platform = (
             m_platform

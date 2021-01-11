@@ -18,7 +18,7 @@ n_load_cases = 2
 
 h_param = np.diff(np.linspace(0.0, 87.6, n_control_points))
 d_param = np.linspace(6.0, 3.87, n_control_points)
-t_param = 1.3 * np.linspace(0.025, 0.021, n_control_points - 1)
+t_param = 1.3 * np.linspace(0.025, 0.021, n_control_points)
 max_diam = 8.0
 # ---
 
@@ -26,29 +26,34 @@ max_diam = 8.0
 modeling_options = {}
 modeling_options["flags"] = {}
 modeling_options["materials"] = {}
-modeling_options["TowerSE"] = {}
-modeling_options["TowerSE"]["buckling_length"] = 30.0
+modeling_options["WISDEM"] = {}
+modeling_options["WISDEM"]["TowerSE"] = {}
+modeling_options["WISDEM"]["TowerSE"]["buckling_length"] = 30.0
 modeling_options["flags"]["monopile"] = False
 
+# Monopile foundation only
+modeling_options["WISDEM"]["TowerSE"]["soil_springs"] = False
+modeling_options["WISDEM"]["TowerSE"]["gravity_foundation"] = False
+
 # safety factors
-modeling_options["TowerSE"]["gamma_f"] = 1.35
-modeling_options["TowerSE"]["gamma_m"] = 1.3
-modeling_options["TowerSE"]["gamma_n"] = 1.0
-modeling_options["TowerSE"]["gamma_b"] = 1.1
-modeling_options["TowerSE"]["gamma_fatigue"] = 1.35 * 1.3 * 1.0
+modeling_options["WISDEM"]["TowerSE"]["gamma_f"] = 1.35
+modeling_options["WISDEM"]["TowerSE"]["gamma_m"] = 1.3
+modeling_options["WISDEM"]["TowerSE"]["gamma_n"] = 1.0
+modeling_options["WISDEM"]["TowerSE"]["gamma_b"] = 1.1
+modeling_options["WISDEM"]["TowerSE"]["gamma_fatigue"] = 1.35 * 1.3 * 1.0
 
 # Frame3DD options
-modeling_options["TowerSE"]["frame3dd"] = {}
-modeling_options["TowerSE"]["frame3dd"]["shear"] = True
-modeling_options["TowerSE"]["frame3dd"]["geom"] = True
-modeling_options["TowerSE"]["frame3dd"]["tol"] = 1e-9
+modeling_options["WISDEM"]["TowerSE"]["frame3dd"] = {}
+modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["shear"] = True
+modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["geom"] = True
+modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["tol"] = 1e-9
 
-modeling_options["TowerSE"]["n_height_tower"] = n_control_points
-modeling_options["TowerSE"]["n_layers_tower"] = 1
-modeling_options["TowerSE"]["n_height_monopile"] = 0
-modeling_options["TowerSE"]["n_layers_monopile"] = 0
-modeling_options["TowerSE"]["wind"] = "PowerWind"
-modeling_options["TowerSE"]["nLC"] = n_load_cases
+modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = n_control_points
+modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = 1
+modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 0
+modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 0
+modeling_options["WISDEM"]["TowerSE"]["wind"] = "PowerWind"
+modeling_options["WISDEM"]["TowerSE"]["nLC"] = n_load_cases
 modeling_options["materials"]["n_mat"] = n_materials
 # ---
 
@@ -98,10 +103,6 @@ prob["tower_layer_thickness"] = t_param.reshape((1, -1))
 prob["tower_outfitting_factor"] = 1.07
 prob["yaw"] = 0.0
 
-# offshore specific
-prob["G_soil"] = 140e6
-prob["nu_soil"] = 0.4
-
 # material properties
 prob["E_mat"] = 210e9 * np.ones((n_materials, 3))
 prob["G_mat"] = 80.8e9 * np.ones((n_materials, 3))
@@ -127,12 +128,12 @@ prob["painting_cost_rate"] = 30.0  # USD/m^2
 
 # wind & wave values
 prob["wind_reference_height"] = 90.0
-prob["wind_z0"] = 0.0
+prob["z0"] = 0.0
 prob["cd_usr"] = -1.0
 prob["rho_air"] = 1.225
 prob["mu_air"] = 1.7934e-5
 prob["beta_wind"] = 0.0
-if modeling_options["TowerSE"]["wind"] == "PowerWind":
+if modeling_options["WISDEM"]["TowerSE"]["wind"] == "PowerWind":
     prob["shearExp"] = 0.2
 # ---
 

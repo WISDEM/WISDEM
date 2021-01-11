@@ -3,21 +3,15 @@
 
 import numpy as np
 import openmdao.api as om
-
 import wisdem.pyframe3dd.pyframe3dd as frame3dd
-from wisdem.commonse.utilization_constraints import vonMisesStressUtilization
-from wisdem.commonse.cross_sections import Tube, IBeam
-from wisdem.commonse.utilities import nodal2sectional
 from wisdem.commonse import gravity
 from wisdem.commonse.csystem import DirectionVector
-
+from wisdem.commonse.utilities import find_nearest, nodal2sectional
+from wisdem.commonse.cross_sections import Tube, IBeam
+from wisdem.commonse.utilization_constraints import vonMisesStressUtilization
 
 RIGID = 1
 FREE = 0
-
-
-def find_nearest(array, value):
-    return (np.abs(array - value)).argmin()
 
 
 def tube_prop(s, Di, ti):

@@ -11,7 +11,7 @@ from itertools import groupby
 
 import numpy as np
 import simpy
-
+import pandas as pd
 from wisdem.orbit.core import Port, Environment
 from wisdem.orbit.phases import BasePhase
 from wisdem.orbit.core.defaults import common_costs
@@ -26,7 +26,7 @@ class InstallPhase(BasePhase):
 
         Parameters
         ----------
-        weather : np.ndarray
+        weather : pd.DataFrame | np.ndarray
             Weather profile at site.
         """
 
@@ -42,6 +42,9 @@ class InstallPhase(BasePhase):
         weather : np.ndarray
             Weather profile at site.
         """
+
+        if isinstance(weather, pd.DataFrame):
+            weather = weather.to_records()
 
         env_name = kwargs.get("env_name", "Environment")
         self.env = Environment(name=env_name, state=weather, **kwargs)
@@ -110,16 +113,10 @@ class InstallPhase(BasePhase):
             return months * rate
 
     @property
-    def total_phase_cost(self):
-        """Returns total phase cost in $USD."""
+    def installation_capex(self):
+        """Returns sum of all installation costs in `self.env.actions`."""
 
-        return self.action_costs + self.port_costs
-
-    @property
-    def action_costs(self):
-        """Returns sum cost of all actions."""
-
-        return np.nansum([a["cost"] for a in self.env.actions])
+        return np.nansum([a["cost"] for a in self.env.actions]) + self.port_costs
 
     @property
     def total_phase_time(self):

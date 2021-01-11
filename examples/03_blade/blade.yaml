@@ -338,7 +338,7 @@ components:
     nacelle:
         drivetrain:
             diameter: 3.0
-            uptilt_angle: 0.10471975511965977 # 6 deg
+            uptilt: 0.10471975511965977 # 6 deg
             distance_tt_hub: 3.0
             distance_hub2mb: 1.912
             distance_mb2mb: 0.368

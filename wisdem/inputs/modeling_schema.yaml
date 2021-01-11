@@ -18,306 +18,295 @@ properties:
                 type: boolean
                 default: False
                 description: Prints additional outputs to screen (and to a file log in the future)
-    RotorSE:
+    WISDEM:
         type: object
         default: {}
         properties:
-            flag:
-                type: boolean
-                default: False
-                description: Whether or not to run RotorSE and ServoSE
-            n_aoa:
-                type: integer
-                default: 200
-                description: Number of angles of attack in a common grid to define polars
-            n_xy:
-                type: integer
-                default: 200
-                description: Number of coordinate point used to define airfoils #GB: This should depend on the airfoil. We are not resampling if the airfoils come inwith different numbers of points.  PreComp doesn't care if different airfoils have different numbers of points, right?
-            n_span:
-                type: integer
-                default: 30
-                description: Number of spanwise stations in a common grid used to define blade properties
-            n_pc:
-                type: integer
-                default: 20
-                description: Number of wind speeds to compute the power curve
-            n_pc_spline:
-                type: integer
-                default: 200
-                description: Number of wind speeds to spline the power curve
-            n_pitch_perf_surfaces:
-                type: integer
-                default: 20
-                description: Number of pitch angles to determine the Cp-Ct-Cq-surfaces
-            min_pitch_perf_surfaces:
-                type: number
-                default: -5.
-                description: Min pitch angle of the Cp-Ct-Cq-surfaces
-            max_pitch_perf_surfaces:
-                type: number
-                default: 30.
-                description: Max pitch angle of the Cp-Ct-Cq-surfaces
-            n_tsr_perf_surfaces:
-                type: integer
-                default: 20
-                description: Number of tsr values to determine the Cp-Ct-Cq-surfaces
-            min_tsr_perf_surfaces:
-                type: number
-                default: 2.
-                description: Min TSR of the Cp-Ct-Cq-surfaces
-            max_tsr_perf_surfaces:
-                type: number
-                default: 12.
-                description: Max TSR of the Cp-Ct-Cq-surfaces
-            n_U_perf_surfaces:
-                type: integer
-                default: 1
-                description: Number of wind speeds to determine the Cp-Ct-Cq-surfaces
-            regulation_reg_III:
-                type: boolean
-                default: False
-                description: Flag to derive the regulation trajectory in region III in terms of pitch and TSR
-            spar_cap_ss:
-                type: string
-                default: 'none'
-                description: Composite layer modeling the spar cap on the suction side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable spar_cap_ss.
-            spar_cap_ps:
-                type: string
-                default: 'none'
-                description: Composite layer modeling the spar cap on the pressure side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable spar_cap_ps.
-            te_ss:
-                type: string
-                default: 'none'
-                description: Composite layer modeling the trailing edge reinforcement on the suction side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable te_ss.
-            te_ps:
-                type: string
-                default: 'none'
-                description: Composite layer modeling the trailing edge reinforcement on the pressure side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable te_ps.
-            gamma_freq:
-                type: number
-                description: Partial safety factor on modal frequencies
-                minimum: 1.0
-                maximum: 5.0
-                default: 1.1
-                unit: none
-    DriveSE:
-        type: object
-        default: {}
-        properties:
-            flag:
-                type: boolean
-                default: False
-                description: Whether or not to run RotorSE and ServoSE
-            model_generator:
-                type: boolean
-                default: False
-                description: Whether or not to do detailed generator modeling using tools formerly in GeneratorSE
-            gamma_f:
-                type: number
-                description: Partial safety factor on loads
-                minimum: 1.0
-                maximum: 5.0
-                default: 1.35
-                unit: none
-            gamma_m:
-                type: number
-                description: Partial safety factor for materials
-                minimum: 1.0
-                maximum: 5.0
-                default: 1.3
-                unit: none
-            gamma_n:
-                type: number
-                description: Partial safety factor for consequence of failure
-                minimum: 1.0
-                maximum: 5.0
-                default: 1.0
-                unit: none
-            hub:
+            RotorSE:
                 type: object
                 default: {}
                 properties:
-                    hub_gamma:
-                        type: number
-                        description: Partial safety factor for hub sizing
-                        minimum: 1.0
-                        maximum: 5.0
-                        default: 2.0
-                        unit: none
-                    spinner_gamma:
-                        type: number
-                        description: Partial safety factor for spinner sizing
-                        minimum: 1.0
-                        maximum: 5.0
-                        default: 1.5
-                        unit: none
-    TowerSE:
-        type: object
-        default: {}
-        properties:
-            flag:
-                type: boolean
-                default: False
-                description: Whether or not to run RotorSE and ServoSE
-            nLC:
-                type: integer
-                default: 1
-                description: Number of load cases
-            wind:
-                type: string
-                enum: [PowerWind, LogisticWind]
-                default: PowerWind
-                description: Wind scaling relationship with height
-            gamma_f:
-                type: number
-                description: Partial safety factor on loads
-                minimum: 1.0
-                maximum: 5.0
-                default: 1.35
-                unit: none
-            gamma_m:
-                type: number
-                description: Partial safety factor for materials
-                minimum: 1.0
-                maximum: 5.0
-                default: 1.3
-                unit: none
-            gamma_n:
-                type: number
-                description: Partial safety factor for consequence of failure
-                minimum: 1.0
-                maximum: 5.0
-                default: 1.0
-                unit: none
-            gamma_b:
-                type: number
-                description: Partial safety factor for buckling
-                minimum: 1.0
-                maximum: 5.0
-                default: 1.1
-                unit: none
-            gamma_freq:
-                type: number
-                description: Partial safety factor on modal frequencies
-                minimum: 1.0
-                maximum: 5.0
-                default: 1.1
-                unit: none
-            gamma_fatigue:
-                type: number
-                description: Partial safety factor for fatigue failure
-                minimum: 1.0
-                maximum: 5.0
-                default: 1.0
-                unit: none
-            buckling_length:
-                type: number
-                description: Buckling length factor in Eurocode safety check
-                minimum: 1.0
-                maximum: 100.0
-                default: 1.0
-                unit: m
-            frame3dd:
-                type: object
-                description: Set of Frame3DD options used for tower analysis
-                default: {}
-                properties:
-                    shear:
+                    flag:
                         type: boolean
-                        default: True
-                        description: Inclusion of shear area for symmetric sections
-                    geom:
-                        type: boolean
-                        default: True
-                        description: Inclusion of shear stiffening through axial loading
-                    nM:
+                        default: False
+                        description: Whether or not to run RotorSE and ServoSE
+                    n_aoa:
                         type: integer
-                        minimum: 0
-                        maximum: 20
-                        default: 6
-                        description: Number of tower eigenvalue modes to calculate
-                    tol:
+                        default: 200
+                        description: Number of angles of attack in a common grid to define polars
+                    n_xy:
+                        type: integer
+                        default: 200
+                        description: Number of coordinate point used to define airfoils #GB: This should depend on the airfoil. We are not resampling if the airfoils come inwith different numbers of points.  PreComp doesn't care if different airfoils have different numbers of points, right?
+                    n_span:
+                        type: integer
+                        default: 30
+                        description: Number of spanwise stations in a common grid used to define blade properties
+                    n_pc:
+                        type: integer
+                        default: 20
+                        description: Number of wind speeds to compute the power curve
+                    n_pc_spline:
+                        type: integer
+                        default: 200
+                        description: Number of wind speeds to spline the power curve
+                    n_pitch_perf_surfaces:
+                        type: integer
+                        default: 20
+                        description: Number of pitch angles to determine the Cp-Ct-Cq-surfaces
+                    min_pitch_perf_surfaces:
                         type: number
-                        minimum: 1e-12
-                        maximum: 1e-1
-                        default: 1e-9
-                        description: Convergence tolerance for modal eigenvalue solution
-    BOS:
-        type: object
-        default: {}
-        properties:
-            flag:
-                type: boolean
-                default: False
-                description: Whether or not to run balance of station cost models (LandBOSSE or ORBIT)
-    FloatingSE:
-        type: object
-        default: {}
-        properties:
-            flag:
-                type: boolean
-                default: False
-                description: Whether or not to run the floating design modules (FloatingSE)
-    Loading:
-        type: object
-        # DO NOT PUT IN A DEFAULT HERE!  This is a field we only want present if the user specifically includes it.
-        description: This is only used if not running the full WISDEM turbine Group and you need to input the mass properties, forces, and moments for a tower-only or nacelle-only analysis
-        properties:
-            mass:
-                type: number
-                default: 0.0
-                units: kilogram
-                description: Mass at external boundary of the system.  For the tower, this would be the RNA mass.
-            center_of_mass:
-                type: array
-                default: [0.0, 0.0, 0.0]
-                items:
-                    type: number
-                    unit: meter
-                    minItems: 3
-                    maxItems: 3
-                    uniqueItems: false
-                description: Distance from system boundary to center of mass of the applied load.  For the tower, this would be the RNA center of mass in tower-top coordinates.
-            moment_of_inertia:
-                type: array
-                default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-                items:
-                    type: number
-                    unit: kg*m^2
-                    minItems: 6
-                    maxItems: 6
-                    uniqueItems: false
-                description: Moment of inertia of external mass in coordinate system at the system boundary.  For the tower, this would be the RNA MoI in tower-top coordinates.
-            loads:
-                type: array
+                        default: -5.
+                        description: Min pitch angle of the Cp-Ct-Cq-surfaces
+                    max_pitch_perf_surfaces:
+                        type: number
+                        default: 30.
+                        description: Max pitch angle of the Cp-Ct-Cq-surfaces
+                    n_tsr_perf_surfaces:
+                        type: integer
+                        default: 20
+                        description: Number of tsr values to determine the Cp-Ct-Cq-surfaces
+                    min_tsr_perf_surfaces:
+                        type: number
+                        default: 2.
+                        description: Min TSR of the Cp-Ct-Cq-surfaces
+                    max_tsr_perf_surfaces:
+                        type: number
+                        default: 12.
+                        description: Max TSR of the Cp-Ct-Cq-surfaces
+                    n_U_perf_surfaces:
+                        type: integer
+                        default: 1
+                        description: Number of wind speeds to determine the Cp-Ct-Cq-surfaces
+                    regulation_reg_III:
+                        type: boolean
+                        default: True
+                        description: Flag to derive the regulation trajectory in region III in terms of pitch and TSR
+                    spar_cap_ss:
+                        type: string
+                        default: 'none'
+                        description: Composite layer modeling the spar cap on the suction side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable spar_cap_ss.
+                    spar_cap_ps:
+                        type: string
+                        default: 'none'
+                        description: Composite layer modeling the spar cap on the pressure side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable spar_cap_ps.
+                    te_ss:
+                        type: string
+                        default: 'none'
+                        description: Composite layer modeling the trailing edge reinforcement on the suction side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable te_ss.
+                    te_ps:
+                        type: string
+                        default: 'none'
+                        description: Composite layer modeling the trailing edge reinforcement on the pressure side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable te_ps.
+                    gamma_freq: &gamma_freq
+                        type: number
+                        description: Partial safety factor on modal frequencies
+                        minimum: 1.0
+                        maximum: 5.0
+                        default: 1.1
+                        unit: none
+            DriveSE:
+                type: object
                 default: {}
-                description: The loading scenarios associated with the applied mass.  For the tower, this would be operating, parked, etc.
-                items:
-                    type: object
-                    properties:
-                        force:
-                            type: array
-                            default: [0.0, 0.0, 0.0]
-                            description: Force vector applied at system boundary
-                            items:
+                properties:
+                    flag:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run RotorSE and ServoSE
+                    model_generator:
+                        type: boolean
+                        default: False
+                        description: Whether or not to do detailed generator modeling using tools formerly in GeneratorSE
+                    gamma_f: &gamma_f
+                        type: number
+                        description: Partial safety factor on loads
+                        minimum: 1.0
+                        maximum: 5.0
+                        default: 1.35
+                        unit: none
+                    gamma_m: &gamma_m
+                        type: number
+                        description: Partial safety factor for materials
+                        minimum: 1.0
+                        maximum: 5.0
+                        default: 1.3
+                        unit: none
+                    gamma_n: &gamma_n
+                        type: number
+                        description: Partial safety factor for consequence of failure
+                        minimum: 1.0
+                        maximum: 5.0
+                        default: 1.0
+                        unit: none
+                    hub:
+                        type: object
+                        default: {}
+                        properties:
+                            hub_gamma:
                                 type: number
-                                unit: Newton
-                                minItems: 3
-                                maxItems: 3
-                                uniqueItems: false
-                        moment:
-                            type: array
-                            default: [0.0, 0.0, 0.0]
-                            description: Force vector applied at system boundary
-                            items:
+                                description: Partial safety factor for hub sizing
+                                minimum: 1.0
+                                maximum: 5.0
+                                default: 2.0
+                                unit: none
+                            spinner_gamma:
                                 type: number
-                                unit: N*m
-                                minItems: 3
-                                maxItems: 3
-                                uniqueItems: false
-                        velocity:
+                                description: Partial safety factor for spinner sizing
+                                minimum: 1.0
+                                maximum: 5.0
+                                default: 1.5
+                                unit: none
+            TowerSE:
+                type: object
+                default: {}
+                properties:
+                    flag:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run RotorSE and ServoSE
+                    nLC:
+                        type: integer
+                        default: 1
+                        description: Number of load cases
+                    wind:
+                        type: string
+                        enum: [PowerWind, LogisticWind]
+                        default: PowerWind
+                        description: Wind scaling relationship with height
+                    gamma_f: *gamma_f
+                    gamma_m: *gamma_m
+                    gamma_n: *gamma_n
+                    gamma_b: &gamma_b
+                        type: number
+                        description: Partial safety factor for buckling
+                        minimum: 1.0
+                        maximum: 5.0
+                        default: 1.1
+                        unit: none
+                    gamma_freq: *gamma_freq
+                    gamma_fatigue: &gamma_fatigue
+                        type: number
+                        description: Partial safety factor for fatigue failure
+                        minimum: 1.0
+                        maximum: 5.0
+                        default: 1.0
+                        unit: none
+                    buckling_length:
+                        type: number
+                        description: Buckling length factor in Eurocode safety check
+                        minimum: 1.0
+                        maximum: 100.0
+                        default: 10.0
+                        unit: m
+                    frame3dd: &frame3dd
+                        type: object
+                        description: Set of Frame3DD options used for tower analysis
+                        default: {}
+                        properties:
+                            shear:
+                                type: boolean
+                                default: True
+                                description: Inclusion of shear area for symmetric sections
+                            geom:
+                                type: boolean
+                                default: True
+                                description: Inclusion of shear stiffening through axial loading
+                            modal:
+                                type: boolean
+                                default: True
+                                description: Whether or not to compute eigenvalues and natural frequencies
+                            tol:
+                                type: number
+                                minimum: 1e-12
+                                maximum: 1e-1
+                                default: 1e-9
+                                description: Convergence tolerance for modal eigenvalue solution
+                    soil_springs:
+                        type: boolean
+                        default: False
+                        description: If False, then a monopile is modeled with a perfectly clamped foundation.  If True, then spring-stiffness equivalents are computed from soil properties for all DOF.
+                    gravity_foundation:
+                        type: boolean
+                        default: False
+                        description: Model the monopile base as a gravity-based foundation with no pile embedment
+            BOS:
+                type: object
+                default: {}
+                properties:
+                    flag:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run balance of station cost models (LandBOSSE or ORBIT)
+            FloatingSE:
+                type: object
+                default: {}
+                properties:
+                    flag:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run the floating design modules (FloatingSE)
+                    frame3dd: *frame3dd
+                    gamma_f: *gamma_f
+
+            Loading:
+                type: object
+                # DO NOT PUT IN A DEFAULT HERE!  This is a field we only want present if the user specifically includes it.
+                description: This is only used if not running the full WISDEM turbine Group and you need to input the mass properties, forces, and moments for a tower-only or nacelle-only analysis
+                properties:
+                    mass:
+                        type: number
+                        default: 0.0
+                        units: kilogram
+                        description: Mass at external boundary of the system.  For the tower, this would be the RNA mass.
+                    center_of_mass:
+                        type: array
+                        default: [0.0, 0.0, 0.0]
+                        items:
                             type: number
-                            description: Applied wind reference velocity, if necessary
-                            default: 0.0
                             unit: meter
+                            minItems: 3
+                            maxItems: 3
+                            uniqueItems: false
+                        description: Distance from system boundary to center of mass of the applied load.  For the tower, this would be the RNA center of mass in tower-top coordinates.
+                    moment_of_inertia:
+                        type: array
+                        default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                        items:
+                            type: number
+                            unit: kg*m^2
+                            minItems: 6
+                            maxItems: 6
+                            uniqueItems: false
+                        description: Moment of inertia of external mass in coordinate system at the system boundary.  For the tower, this would be the RNA MoI in tower-top coordinates.
+                    loads:
+                        type: array
+                        default: {}
+                        description: The loading scenarios associated with the applied mass.  For the tower, this would be operating, parked, etc.
+                        items:
+                            type: object
+                            properties:
+                                force:
+                                    type: array
+                                    default: [0.0, 0.0, 0.0]
+                                    description: Force vector applied at system boundary
+                                    items:
+                                        type: number
+                                        unit: Newton
+                                        minItems: 3
+                                        maxItems: 3
+                                        uniqueItems: false
+                                moment:
+                                    type: array
+                                    default: [0.0, 0.0, 0.0]
+                                    description: Force vector applied at system boundary
+                                    items:
+                                        type: number
+                                        unit: N*m
+                                        minItems: 3
+                                        maxItems: 3
+                                        uniqueItems: false
+                                velocity:
+                                    type: number
+                                    description: Applied wind reference velocity, if necessary
+                                    default: 0.0
+                                    unit: meter

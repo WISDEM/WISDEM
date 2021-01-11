@@ -8,10 +8,12 @@ January 2020
 import numpy as np
 from openmdao.api import Group, ExplicitComponent
 from scipy.optimize import brentq, minimize, minimize_scalar
-from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from scipy.interpolate import PchipInterpolator
+from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.utilities import smooth_abs, smooth_min, linspace_with_deriv
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
+
+TOL = 1e-3
 
 
 class RotorPower(Group):
@@ -59,8 +61,11 @@ class RotorPower(Group):
             ],
         )
         self.add_subsystem("gust", GustETM())
-        self.add_subsystem("cdf", WeibullWithMeanCDF(nspline=modeling_options["RotorSE"]["n_pc_spline"]))
-        self.add_subsystem("aep", AEP(nspline=modeling_options["RotorSE"]["n_pc_spline"]), promotes=["AEP"])
+        self.add_subsystem("cdf", WeibullWithMeanCDF(nspline=modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]))
+        self.add_subsystem("aep", AEP(nspline=modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]), promotes=["AEP"])
+
+        # Connections to the gust calculation
+        self.connect("powercurve.rated_V", "gust.V_hub")
 
         # Connections to the Weibull CDF
         self.connect("powercurve.V_spline", "cdf.x")
@@ -126,15 +131,15 @@ class ComputePowerCurve(ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options["modeling_options"]
-        self.n_span = n_span = modeling_options["RotorSE"]["n_span"]
-        self.n_aoa = n_aoa = modeling_options["RotorSE"]["n_aoa"]  # Number of angle of attacks
-        self.n_Re = n_Re = modeling_options["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
-        self.n_tab = n_tab = modeling_options["RotorSE"][
+        self.n_span = n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        self.n_aoa = n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]  # Number of angle of attacks
+        self.n_Re = n_Re = modeling_options["WISDEM"]["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
+        self.n_tab = n_tab = modeling_options["WISDEM"]["RotorSE"][
             "n_tab"
         ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
-        self.regulation_reg_III = modeling_options["RotorSE"]["regulation_reg_III"]
-        self.n_pc = modeling_options["RotorSE"]["n_pc"]
-        self.n_pc_spline = modeling_options["RotorSE"]["n_pc_spline"]
+        self.regulation_reg_III = modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"]
+        self.n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
+        self.n_pc_spline = modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]
 
         # parameters
         self.add_input("v_min", val=0.0, units="m/s", desc="cut-in wind speed")
@@ -420,7 +425,7 @@ class ComputePowerCurve(ExplicitComponent):
                 lambda x: maximizePower(x, Uhub[i], Omega_rpm[i]),
                 bounds=bnds,
                 method="bounded",
-                options={"disp": False, "xatol": 1e-2, "maxiter": 40},
+                options={"disp": False, "xatol": TOL, "maxiter": 40},
             )["x"]
 
             # Find associated power
@@ -468,7 +473,7 @@ class ComputePowerCurve(ExplicitComponent):
                 const = {}
                 const["type"] = "eq"
                 const["fun"] = const_Urated
-                params_rated = minimize(lambda x: x[1], x0, method="slsqp", bounds=bnds, constraints=const, tol=1e-3)
+                params_rated = minimize(lambda x: x[1], x0, method="slsqp", bounds=bnds, constraints=const, tol=TOL)
 
                 if params_rated.success and not np.isnan(params_rated.x[1]):
                     U_rated = params_rated.x[1]
@@ -484,8 +489,8 @@ class ComputePowerCurve(ExplicitComponent):
                         lambda x: const_Urated([0.0, x]),
                         Uhub[i - 1],
                         Uhub[i + 1],
-                        xtol=1e-4,
-                        rtol=1e-5,
+                        xtol=1e-1 * TOL,
+                        rtol=1e-2 * TOL,
                         maxiter=40,
                         disp=False,
                     )
@@ -494,7 +499,7 @@ class ComputePowerCurve(ExplicitComponent):
                         lambda x: np.abs(const_Urated([0.0, x])),
                         bounds=[Uhub[i - 1], Uhub[i + 1]],
                         method="bounded",
-                        options={"disp": False, "xatol": 1e-3, "maxiter": 40},
+                        options={"disp": False, "xatol": TOL, "maxiter": 40},
                     )["x"]
 
             Omega_rated = min([U_rated * tsr / R_tip, Omega_max])
@@ -544,8 +549,8 @@ class ComputePowerCurve(ExplicitComponent):
                             lambda x: rated_power_dist(x, Uhub[i], Omega_rpm[i]),
                             pitch0,
                             pitch0 + 10.0,
-                            xtol=1e-4,
-                            rtol=1e-5,
+                            xtol=1e-1 * TOL,
+                            rtol=1e-2 * TOL,
                             maxiter=40,
                             disp=False,
                         )
@@ -554,7 +559,7 @@ class ComputePowerCurve(ExplicitComponent):
                             lambda x: np.abs(rated_power_dist(x, Uhub[i], Omega_rpm[i])),
                             bounds=[pitch0 - 5.0, pitch0 + 15.0],
                             method="bounded",
-                            options={"disp": False, "xatol": 1e-3, "maxiter": 40},
+                            options={"disp": False, "xatol": TOL, "maxiter": 40},
                         )["x"]
 
                     myout, _ = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
@@ -617,8 +622,8 @@ class ComputeSplines(ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options["modeling_options"]
-        self.n_pc = modeling_options["RotorSE"]["n_pc"]
-        self.n_pc_spline = modeling_options["RotorSE"]["n_pc_spline"]
+        self.n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
+        self.n_pc_spline = modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]
 
         self.add_input("v_min", val=0.0, units="m/s", desc="cut-in wind speed")
         self.add_input("v_max", val=0.0, units="m/s", desc="cut-out wind speed")
@@ -672,10 +677,10 @@ class NoStallConstraint(ExplicitComponent):
     def setup(self):
 
         modeling_options = self.options["modeling_options"]
-        self.n_span = n_span = modeling_options["RotorSE"]["n_span"]
-        self.n_aoa = n_aoa = modeling_options["RotorSE"]["n_aoa"]  # Number of angle of attacks
-        self.n_Re = n_Re = modeling_options["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
-        self.n_tab = n_tab = modeling_options["RotorSE"][
+        self.n_span = n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        self.n_aoa = n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]  # Number of angle of attacks
+        self.n_Re = n_Re = modeling_options["WISDEM"]["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
+        self.n_tab = n_tab = modeling_options["WISDEM"]["RotorSE"][
             "n_tab"
         ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
 

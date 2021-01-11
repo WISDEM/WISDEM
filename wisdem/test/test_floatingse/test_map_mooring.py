@@ -20,16 +20,18 @@ truth = [
     "---------------------- LINE DICTIONARY ---------------------------------------",
     "LineType  Diam      MassDenInAir   EA            CB   CIntDamp  Ca   Cdn    Cdt",
     "(-)       (m)       (kg/m)        (N)           (-)   (Pa-s)    (-)  (-)    (-)",
-    "chain   0.05    49.75   213500000.0   0.65   1.0E8   0.6   -1.0   0.05",
+    "myline   0.1    0.1   20000   0.65   1.0E8   0.6   -1.0   0.05",
     "---------------------- NODE PROPERTIES ---------------------------------------",
     "Node Type X     Y    Z   M     V FX FY FZ",
     "(-)  (-) (m)   (m)  (m) (kg) (m^3) (kN) (kN) (kN)",
     "1   VESSEL   11.0   0.0   -10.0   0.0   0.0   #   #   #",
-    "2   FIX   175.0   0.0   depth   0.0   0.0   #   #   #",
+    "2   FIX   216.50635094610965   -125.0   depth   0.0   0.0   #   #   #",
+    "3   FIX   216.50635094610965   125.0   depth   0.0   0.0   #   #   #",
     "---------------------- LINE PROPERTIES ---------------------------------------",
     "Line    LineType  UnstrLen  NodeAnch  NodeFair  Flags",
     "(-)      (-)       (m)       (-)       (-)       (-)",
-    "1   chain   235.8   2   1",
+    "1   myline   270.0   2   1",
+    "2   myline   270.0   3   1",
     "---------------------- SOLVER OPTIONS-----------------------------------------",
     "Option",
     "(-)",
@@ -60,59 +62,79 @@ class TestMapMooring(unittest.TestCase):
         self.outputs = {}
         self.discrete_inputs = {}
 
-        self.inputs["fairlead"] = 10.0
-        self.inputs["fairlead_radius"] = 11.0
-        self.inputs["anchor_radius"] = 175.0
+        myones = np.ones(1)
+        self.inputs["fairlead"] = 10.0 * myones
+        self.inputs["fairlead_radius"] = 11.0 * myones
+        self.inputs["anchor_radius"] = 250.0 * myones
+        self.inputs["anchor_cost"] = 10.0
 
-        self.inputs["rho_water"] = 1025.0  # 1e3
-        self.inputs["water_depth"] = 218.0  # 100.0
+        self.inputs["rho_water"] = 1e3
+        self.inputs["water_depth"] = 200.0  # 100.0
 
-        self.inputs["number_of_mooring_connections"] = 3
-        self.inputs["mooring_lines_per_connection"] = 1
-        self.inputs["mooring_line_length"] = 0.6 * (self.inputs["water_depth"] + self.inputs["anchor_radius"])
-        self.inputs["mooring_diameter"] = 0.05
-        self.discrete_inputs["mooring_type"] = "chain"
-        self.discrete_inputs["anchor_type"] = "suctionpile"
-        self.inputs["drag_embedment_extra_length"] = 300.0
-        self.inputs["max_offset"] = 10.0
-        self.inputs["max_survival_heel"] = 10.0
-        self.inputs["operational_heel"] = 10.0
-        self.inputs["mooring_cost_factor"] = 1.1
+        self.inputs["line_length"] = 0.6 * (self.inputs["water_depth"] + self.inputs["anchor_radius"]) * myones
+        self.inputs["line_diameter"] = 0.1 * myones
+        self.inputs["line_mass_density_coeff"] = 10.0 * myones
+        self.inputs["line_stiffness_coeff"] = 2e6 * myones
+        self.inputs["line_breaking_load_coeff"] = 30.0 * myones
+        self.inputs["line_cost_rate_coeff"] = 40.0 * myones
+        self.inputs["max_surge_fraction"] = 0.2
+        self.inputs["survival_heel"] = 10.0
+        self.inputs["operational_heel"] = 5.0
 
         opt = {}
-        opt["gamma_f"] = 1.35
+        opt["n_attach"] = 3
+        opt["n_anchors"] = 6
 
-        self.mymap = mapMooring.MapMooring(modeling_options=opt)
-        self.mymap.set_properties(self.inputs, self.discrete_inputs)
+        self.mymap = mapMooring.MapMooring(options=opt, gamma=1.35)
+
+    def testGeometry(self):
         self.mymap.set_geometry(self.inputs, self.outputs)
+        self.assertFalse(self.mymap.tlpFlag)
+        npt.assert_equal(self.outputs["constr_mooring_length"], 0.6 * 450 / (0.95 * 440))
+
+        self.inputs["line_length"] = 150.0
+        self.mymap.set_geometry(self.inputs, self.outputs)
+        self.assertTrue(self.mymap.tlpFlag)
+        npt.assert_equal(self.outputs["constr_mooring_length"], 150 / (200 - 10 - 1.35 * 11 * np.sin(np.deg2rad(10))))
 
     def testWriteInputAll(self):
-        self.mymap.write_input_file(self.inputs, self.discrete_inputs)
+        self.mymap.set_geometry(self.inputs, self.outputs)
+        self.mymap.write_input_file(self.inputs)
         actual = self.mymap.finput[:]
         expect = truth[:]
-        self.assertEqual(len(expect), len(actual))
+        # for k in actual: print(k)
+        self.assertEqual(len(actual), len(expect))
 
         for n in range(len(actual)):
             actualTok = actual[n].split()
             expectTok = expect[n].split()
-            self.assertEqual(len(expectTok), len(actualTok))
+            self.assertEqual(len(actualTok), len(expectTok))
 
             for k in range(len(actualTok)):
                 if myisnumber(actualTok[k]):
-                    self.assertEqual(float(actualTok[k]), float(expectTok[k]))
+                    self.assertAlmostEqual(float(actualTok[k]), float(expectTok[k]), 6)
                 else:
                     self.assertEqual(actualTok[k], expectTok[k])
 
     def testRunMap(self):
-        self.mymap.runMAP(self.inputs, self.discrete_inputs, self.outputs)
+        self.mymap.compute(self.inputs, self.outputs)
+        npt.assert_almost_equal(self.outputs["mooring_neutral_load"].sum(axis=0)[:2], 0.0, decimal=2)
+        self.assertEqual(self.outputs["mooring_neutral_load"].shape[0], 3)
+        self.assertGreater(self.outputs["constr_axial_load"], 1.0)
+        self.assertGreater(self.outputs["max_surge_restoring_force"], 1e3)
 
-        self.assertEqual(np.count_nonzero(self.outputs["mooring_neutral_load"]), 9)
-        self.assertEqual(np.count_nonzero(self.outputs["mooring_stiffness"]), 36)
-        self.assertEqual(np.count_nonzero(self.outputs["operational_heel_restoring_force"]), 9)
-        self.assertGreater(np.count_nonzero(self.outputs["mooring_plot_matrix"]), 9 * 20 - 3)
+        self.assertEqual(self.outputs["operational_heel_restoring_force"].shape[0], 3)
+        self.assertGreater(0.0, self.outputs["operational_heel_restoring_force"].sum(axis=0)[0])
+        self.assertAlmostEqual(self.outputs["operational_heel_restoring_force"].sum(axis=0)[1], 0.0, 2)
+        self.assertGreater(0.0, self.outputs["operational_heel_restoring_force"].sum(axis=0)[2])
 
-    def testCost(self):
-        self.mymap.compute_cost(self.inputs, self.discrete_inputs, self.outputs)
+        self.assertEqual(self.outputs["survival_heel_restoring_force"].shape[0], 3)
+        self.assertGreater(0.0, self.outputs["survival_heel_restoring_force"].sum(axis=0)[0])
+        self.assertAlmostEqual(self.outputs["survival_heel_restoring_force"].sum(axis=0)[1], 0.0, 2)
+        self.assertGreater(0.0, self.outputs["survival_heel_restoring_force"].sum(axis=0)[2])
+
+        self.assertAlmostEqual(self.outputs["mooring_mass"], 6 * 270 * 0.1)
+        self.assertAlmostEqual(self.outputs["mooring_cost"], 6 * 270 * 0.4 + 6 * 10)
 
     def testListEntry(self):
         # Initiate MAP++ for this design

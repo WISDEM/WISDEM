@@ -9,15 +9,10 @@ Copyright (c) NREL. All rights reserved.
 
 from __future__ import print_function
 
-import sys
-import math
-
 import numpy as np
 import openmdao.api as om
 from scipy.optimize import brentq
-
-from .constants import gravity
-from .utilities import hstack, vstack
+from wisdem.commonse.constants import gravity
 
 # TODO CHECK
 
@@ -379,10 +374,10 @@ class LinearWaves(WaveBase):
         h = inputs["Hsig_wave"]
 
         # circular frequency
-        omega = 2.0 * math.pi / inputs["Tsig_wave"]
+        omega = 2.0 * np.pi / inputs["Tsig_wave"]
 
         # compute wave number from dispersion relationship
-        k = brentq(lambda k: omega ** 2 - gravity * k * math.tanh(d * k), 0, 1e3 * omega ** 2 / gravity)
+        k = brentq(lambda k: omega ** 2 - gravity * k * np.tanh(d * k), 0, 1e3 * omega ** 2 / gravity)
         self.k = k
         outputs["phase_speed"] = omega / k
 
@@ -427,7 +422,7 @@ class LinearWaves(WaveBase):
         z = inputs["z"]
         d = inputs["z_surface"] - z_floor
         h = inputs["Hsig_wave"]
-        omega = 2.0 * math.pi / inputs["Tsig_wave"]
+        omega = 2.0 * np.pi / inputs["Tsig_wave"]
         k = self.k
         z_rel = z - inputs["z_surface"]
 
@@ -497,19 +492,23 @@ class TowerSoil(om.ExplicitComponent):
         Spring stiffness (x, theta_x, y, theta_y, z, theta_z)
     """
 
+    def initialize(self):
+        self.options.declare("npts", default=1)
+
     def setup(self):
-        super(TowerSoil, self).setup()
+        npts = self.options["npts"]
 
         # variable
         self.add_input("d0", 1.0, units="m")
-        self.add_input("depth", 1.0, units="m")
+        self.add_input("depth", 0.0, units="m")
 
         # inputeter
         self.add_input("G", 140e6, units="Pa")
         self.add_input("nu", 0.4)
         self.add_input("k_usr", -1 * np.ones(6), units="N/m")
 
-        self.add_output("k", np.zeros(6), units="N/m")
+        self.add_output("z_k", np.zeros(npts), units="N/m")
+        self.add_output("k", np.zeros((npts, 6)), units="N/m")
 
         self.declare_partials("k", ["d0", "depth"])
 
@@ -517,7 +516,7 @@ class TowerSoil(om.ExplicitComponent):
 
         G = inputs["G"]
         nu = inputs["nu"]
-        h = inputs["depth"]
+        h = np.linspace(inputs["depth"], 0.0, self.options["npts"])
         r0 = 0.5 * inputs["d0"]
 
         # vertical
@@ -533,17 +532,18 @@ class TowerSoil(om.ExplicitComponent):
         k_thetax = 8.0 * G * r0 ** 3 * eta / (3.0 * (1.0 - nu))
 
         # torsional
-        k_phi = 16.0 * G * r0 ** 3 / 3.0
+        k_phi = 16.0 * G * r0 ** 3 * np.ones(h.size) / 3.0
 
-        outputs["k"] = np.array([k_x, k_thetax, k_x, k_thetax, k_z, k_phi]).flatten()
+        outputs["k"] = np.c_[k_x, k_thetax, k_x, k_thetax, k_z, k_phi]
+        outputs["z_k"] = -h
         ind = np.nonzero(inputs["k_usr"] >= 0.0)[0]
-        outputs["k"][ind] = inputs["k_usr"][ind]
+        outputs["k"][:, ind] = inputs["k_usr"][np.newaxis, ind]
 
     def compute_partials(self, inputs, J):
 
         G = inputs["G"]
         nu = inputs["nu"]
-        h = inputs["depth"]
+        h = np.linspace(inputs["depth"], 0.0, self.options["npts"])
         r0 = 0.5 * inputs["d0"]
 
         # vertical
@@ -574,13 +574,13 @@ class TowerSoil(om.ExplicitComponent):
         dkphi_dr0 = 16.0 * G * 3 * r0 ** 2 / 3.0
         dkphi_dh = 0.0
 
-        dk_dr0 = np.array([dkx_dr0, dkthetax_dr0, dkx_dr0, dkthetax_dr0, dkz_dr0, dkphi_dr0])
+        dk_dr0 = np.c_[dkx_dr0, dkthetax_dr0, dkx_dr0, dkthetax_dr0, dkz_dr0, dkphi_dr0]
         # dk_dr0[inputs['rigid']] = 0.0
-        dk_dh = np.array([dkx_dh, dkthetax_dh, dkx_dh, dkthetax_dh, dkz_dh, dkphi_dh])
+        dk_dh = np.c_[dkx_dh, dkthetax_dh, dkx_dh, dkthetax_dh, dkz_dh, dkphi_dh]
         # dk_dh[inputs['rigid']] = 0.0
 
         J["k", "d0"] = 0.5 * dk_dr0
         J["k", "depth"] = dk_dh
         ind = np.nonzero(inputs["k_usr"] >= 0.0)[0]
-        J["k", "d0"][ind] = 0.0
-        J["k", "depth"][ind] = 0.0
+        J["k", "d0"][:, ind] = 0.0
+        J["k", "depth"][:, ind] = 0.0

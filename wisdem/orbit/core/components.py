@@ -6,14 +6,8 @@ __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
 import simpy
-
 from wisdem.orbit.core.defaults import process_times as pt
-from wisdem.orbit.core.exceptions import (
-    ItemNotFound,
-    CargoMassExceeded,
-    DeckSpaceExceeded,
-    InsufficientCable,
-)
+from wisdem.orbit.core.exceptions import ItemNotFound, CargoMassExceeded, DeckSpaceExceeded, InsufficientCable
 
 # TODO: __str__ methods for Components
 
@@ -42,10 +36,6 @@ class Crane:
         crane_specs : dict
             Dictionary of crane specifications.
         """
-
-        # Physical Dimensions
-        self.boom_length = crane_specs.get("boom_length", None)
-        self.radius = crane_specs.get("radius", None)
 
         # Operational Parameters
         self.max_lift = crane_specs.get("max_lift", None)
@@ -80,6 +70,34 @@ class Crane:
         return duration
 
 
+class DynamicPositioning:
+    """Base Dynamic Positioning Class"""
+
+    def __init__(self, dp_specs):
+        """
+        Creates an instance of DynamicPositioning.
+
+        Parameters
+        ----------
+        dp_specs : dict
+            Dictionary containing dynamic positioning specs.
+        """
+
+        self.extract_dp_specs(dp_specs)
+
+    def extract_dp_specs(self, dp_specs):
+        """
+        Extracts and defines jacking system specifications.
+
+        Parameters
+        ----------
+        jacksys_specs : dict
+            Dictionary containing jacking system specifications.
+        """
+
+        self.dp_class = dp_specs.get("class", 1)
+
+
 class JackingSys:
     """Base Jacking System Class"""
 
@@ -106,7 +124,6 @@ class JackingSys:
         """
 
         # Physical Dimensions
-        self.num_legs = jacksys_specs.get("num_legs", None)
         self.leg_length = jacksys_specs.get("leg_length", None)
         self.air_gap = jacksys_specs.get("air_gap", None)
         self.leg_pen = jacksys_specs.get("leg_pen", None)
