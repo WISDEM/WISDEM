@@ -1201,6 +1201,10 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
             desc="2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
 
+        ivc.add_output("joint_position", val=0.0, desc="Spanwise position of the segmentation joint.",)
+        ivc.add_output("joint_mass", val=0.0, desc="Mass of the joint.")
+        ivc.add_output("joint_cost", val=0.0, units='USD', desc="Cost of the joint.")
+
         self.add_subsystem(
             "compute_internal_structure_2d_fem",
             Compute_Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
