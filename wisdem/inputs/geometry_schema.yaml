@@ -276,30 +276,26 @@ properties:
                                 type: object
                                 default: {}
                                 description: This is a spanwise joint along the blade, usually adopted to ease transportation constraints. WISDEM currently supports a single joint.
-                                required:
-                                    - position
-                                    - mass
-                                    - cost
                                 properties:
                                     position:
                                         type: number
                                         description: Spanwise position of the segmentation joint.
                                         unit: none
-                                        default: 0.
-                                        minimum: 0.001
-                                        maximum: 0.999
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 1.0
                                     mass:
                                         type: number
                                         description: Mass of the joint.
                                         unit: kg
-                                        default: 0.
+                                        default: 0.0
                                         minimum: 0.0
                                         maximum: 1.e+6
                                     cost:
                                         type: number
                                         description: Cost of the joint.
                                         unit: USD
-                                        default: 0.
+                                        default: 0.0
                                         minimum: 0.0
                                         maximum: 1.e+6
                     # cfd_geometry:
