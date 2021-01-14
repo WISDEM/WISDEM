@@ -787,24 +787,24 @@ class MemberComponent(om.ExplicitComponent):
             self.add_section(s_full[k], s_full[k + 1], iprop)
 
         # Adjust for ghost sections
-        s_ghost1 = inputs["s_ghost1"]
-        s_ghost2 = inputs["s_ghost2"]
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
         if s_ghost1 > 0.0:
             self.add_node(s_ghost1)
             for s in self.sections:
                 if s >= s_ghost1:
                     break
                 self.sections[s].rho = 1e-2
-                self.sections[s].E *= 1e3
-                self.sections[s].G *= 1e3
+                self.sections[s].E *= 1e2
+                self.sections[s].G *= 1e2
         if s_ghost2 < 1.0:
             self.add_node(s_ghost2)
             for s in self.sections:
                 if s < s_ghost2 or s == 1.0:
                     continue
                 self.sections[s].rho = 1e-2
-                self.sections[s].E *= 1e3
-                self.sections[s].G *= 1e3
+                self.sections[s].E *= 1e2
+                self.sections[s].G *= 1e2
 
         # Shell mass properties with new interpolation in case ghost nodes were added
         s_grid = np.array(list(self.sections.keys()))
@@ -908,8 +908,8 @@ class MemberComponent(om.ExplicitComponent):
         t_bulk = inputs["bulkhead_thickness"]
         coeff = inputs["outfitting_full"]
         L = inputs["height"]
-        s_ghost1 = inputs["s_ghost1"]
-        s_ghost2 = inputs["s_ghost2"]
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
         nbulk = s_bulk.size
         if nbulk == 0:
             return
@@ -1014,8 +1014,8 @@ class MemberComponent(om.ExplicitComponent):
         G = inputs["G_full"]
         coeff = inputs["outfitting_full"]
         s_bulk = inputs["bulkhead_grid"]
-        s_ghost1 = inputs["s_ghost1"]
-        s_ghost2 = inputs["s_ghost2"]
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
 
         t_web = inputs["ring_stiffener_web_thickness"]
         t_flange = inputs["ring_stiffener_flange_thickness"]
@@ -1168,8 +1168,8 @@ class MemberComponent(om.ExplicitComponent):
         rho_ballast = inputs["ballast_density"]
         V_ballast = inputs["ballast_volume"]
         km_ballast = inputs["ballast_unit_cost"]
-        s_ghost1 = inputs["s_ghost1"]
-        s_ghost2 = inputs["s_ghost2"]
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
         n_ballast = len(V_ballast)
         if n_ballast == 0:
             return

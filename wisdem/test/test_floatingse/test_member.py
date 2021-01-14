@@ -317,8 +317,8 @@ class TestMemberComponent(unittest.TestCase):
                     self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
                 else:
                     self.assertAlmostEqual(self.mem.sections[k].rho, 0.01)
-                    self.assertAlmostEqual(self.mem.sections[k].E, 1e9)
-                    self.assertAlmostEqual(self.mem.sections[k].G, 1e8)
+                    self.assertAlmostEqual(self.mem.sections[k].E, 1e8)
+                    self.assertAlmostEqual(self.mem.sections[k].G, 1e7)
 
     def testBulk(self):
         self.mem.add_main_sections(self.inputs, self.outputs)
@@ -408,8 +408,8 @@ class TestMemberComponent(unittest.TestCase):
                     self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
                 else:
                     self.assertAlmostEqual(self.mem.sections[k].rho, 0.01)
-                    self.assertAlmostEqual(self.mem.sections[k].E, 1e9)
-                    self.assertAlmostEqual(self.mem.sections[k].G, 1e8)
+                    self.assertAlmostEqual(self.mem.sections[k].E, 1e8)
+                    self.assertAlmostEqual(self.mem.sections[k].G, 1e7)
 
             self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
 
@@ -571,8 +571,8 @@ class TestMemberComponent(unittest.TestCase):
                     self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
                 else:
                     self.assertAlmostEqual(self.mem.sections[k].rho, 0.01)
-                    self.assertAlmostEqual(self.mem.sections[k].E, 1e9)
-                    self.assertAlmostEqual(self.mem.sections[k].G, 1e8)
+                    self.assertAlmostEqual(self.mem.sections[k].E, 1e8)
+                    self.assertAlmostEqual(self.mem.sections[k].G, 1e7)
 
             self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
 
