@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 import openmdao.api as om
 import wisdem.commonse.frustum as frustum
@@ -293,7 +295,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         itube = cs.Tube(D, outputs["wall_thickness"])
         Az, Ixx, Iyy, Jz = itube.Area, itube.Jxx, itube.Jyy, itube.J0
         outputs["z_param"] = z_param
-        outputs["sec_loc"] = (z - z[0]) / (z[-1] - z[0])
+        outputs["sec_loc"] = 0.0 if len(z) == 1 else (z - z[0]) / (z[-1] - z[0])
         outputs["mass_den"] = rho_param * Az
         outputs["foreaft_iner"] = rho_param * Ixx
         outputs["sideside_iner"] = rho_param * Iyy
@@ -658,6 +660,9 @@ class MemberComponent(om.ExplicitComponent):
         self.add_input("ballast_volume", np.zeros(n_ball), units="m**3")
         self.add_input("ballast_unit_cost", np.zeros(n_ball), units="USD/kg")
 
+        self.add_input("s_ghost1", 0.0)
+        self.add_input("s_ghost2", 1.0)
+
         # Outputs
         self.add_output("shell_cost", val=0.0, units="USD")
         self.add_output("shell_mass", val=0.0, units="kg")
@@ -718,7 +723,7 @@ class MemberComponent(om.ExplicitComponent):
             raise ValueError("Cannot insert node before start of list")
 
         keys_orig = self.sections.keys()
-        self.sections[s_new] = self.sections[keys_orig[idx]]
+        self.sections[s_new] = copy.copy(self.sections[keys_orig[idx]])
 
     def insert_section(self, s0, s1, cross_section0):
 
@@ -756,10 +761,6 @@ class MemberComponent(om.ExplicitComponent):
         s_full = inputs["s_full"]
         t_full = inputs["t_full"]
         d_full = inputs["d_full"]
-        zz = inputs["z_full"]
-        Rb = 0.5 * d_full[:-1]
-        Rt = 0.5 * d_full[1:]
-        H = np.diff(zz)
         rho = inputs["rho_full"]
         Emat = inputs["E_full"]
         Gmat = inputs["G_full"]
@@ -784,6 +785,41 @@ class MemberComponent(om.ExplicitComponent):
                 G=Gmat[k],
             )
             self.add_section(s_full[k], s_full[k + 1], iprop)
+
+        # Adjust for ghost sections
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
+        if s_ghost1 > 0.0:
+            self.add_node(s_ghost1)
+            for s in self.sections:
+                if s >= s_ghost1:
+                    break
+                self.sections[s].rho = 1e-2
+                self.sections[s].E *= 1e2
+                self.sections[s].G *= 1e2
+        if s_ghost2 < 1.0:
+            self.add_node(s_ghost2)
+            for s in self.sections:
+                if s < s_ghost2 or s == 1.0:
+                    continue
+                self.sections[s].rho = 1e-2
+                self.sections[s].E *= 1e2
+                self.sections[s].G *= 1e2
+
+        # Shell mass properties with new interpolation in case ghost nodes were added
+        s_grid = np.array(list(self.sections.keys()))
+        s_section = 0.5 * (s_grid[:-1] + s_grid[1:])
+        R = np.interp(s_grid, s_full, 0.5 * d_full)
+        Rb = R[:-1]
+        Rt = R[1:]
+        zz = np.interp(s_grid, s_full, inputs["z_full"])
+        H = np.diff(zz)
+        t_full = util.sectionalInterp(s_section, s_full, inputs["t_full"])
+        rho = util.sectionalInterp(s_section, s_full, inputs["rho_full"])
+        rho[s_section < s_ghost1] = 0.0
+        rho[s_section > s_ghost2] = 0.0
+        coeff = util.sectionalInterp(s_section, s_full, coeff)
+        k_m = util.sectionalInterp(s_section, s_full, inputs["unit_cost_full"])
 
         # Total mass of cylinder
         V_shell = frustum.frustumShellVol(Rb, Rt, t_full, H)
@@ -815,7 +851,7 @@ class MemberComponent(om.ExplicitComponent):
         nsec = t_full.size
         mshell = rho * V_shell
         mshell_tot = np.sum(rho * V_shell)
-        k_m = inputs["unit_cost_full"]  # 1.1 # USD / kg carbon steel plate
+        # k_m = inputs["unit_cost_full"]  # 1.1 # USD / kg carbon steel plate
         k_f = inputs["labor_cost_rate"]  # 1.0 # USD / min labor
         k_p = inputs["painting_cost_rate"]  # USD / m^2 painting
         k_e = 0.064  # Industrial electricity rate $/kWh https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a
@@ -872,9 +908,14 @@ class MemberComponent(om.ExplicitComponent):
         t_bulk = inputs["bulkhead_thickness"]
         coeff = inputs["outfitting_full"]
         L = inputs["height"]
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
         nbulk = s_bulk.size
         if nbulk == 0:
             return
+
+        # Make sure we are not working in ghost regions
+        s_bulk = np.unique(np.minimum(np.maximum(s_bulk, s_ghost1), s_ghost2))
 
         # Get z and R_id values of bulkhead locations
         z_bulk = np.interp(s_bulk, s_full, z_full)
@@ -889,12 +930,12 @@ class MemberComponent(om.ExplicitComponent):
         # Add bulkhead sections: assumes bulkhead and shell are made of same material!
         s0 = s_bulk - 0.5 * t_bulk / L
         s1 = s_bulk + 0.5 * t_bulk / L
-        if s0[0] < 0.0:
-            s0[0] = 0.0
-            s1[0] = t_bulk[0] / L
-        if s1[-1] > 1.0:
-            s0[-1] = 1 - t_bulk[-1] / L
-            s1[-1] = 1.0
+        if s0[0] < s_ghost1:
+            s0[0] = s_ghost1
+            s1[0] = s_ghost1 + t_bulk[0] / L
+        if s1[-1] > s_ghost2:
+            s0[-1] = s_ghost2 - t_bulk[-1] / L
+            s1[-1] = s_ghost2
         for k in range(nbulk):
             itube = cs.Tube(2 * R_od_bulk[k], R_od_bulk[k])  # thickness=radius for solid disk
             iprop = CrossSection(
@@ -973,6 +1014,8 @@ class MemberComponent(om.ExplicitComponent):
         G = inputs["G_full"]
         coeff = inputs["outfitting_full"]
         s_bulk = inputs["bulkhead_grid"]
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
 
         t_web = inputs["ring_stiffener_web_thickness"]
         t_flange = inputs["ring_stiffener_flange_thickness"]
@@ -988,6 +1031,12 @@ class MemberComponent(om.ExplicitComponent):
 
         # Calculate stiffener spots along the member axis and deconflict with bulkheads
         s_stiff = (np.arange(1, n_stiff + 0.1) - 0.5) * (L_stiffener / L)
+
+        # Make sure we are not working in ghost regions
+        s_stiff = s_stiff[s_stiff > s_ghost1]
+        s_stiff = s_stiff[s_stiff < s_ghost2]
+        n_stiff = s_stiff.size
+
         tol = w_flange / L
         for k, s in enumerate(s_stiff):
             while np.any(np.abs(s_bulk - s) <= tol) and s > tol:
@@ -1119,9 +1168,15 @@ class MemberComponent(om.ExplicitComponent):
         rho_ballast = inputs["ballast_density"]
         V_ballast = inputs["ballast_volume"]
         km_ballast = inputs["ballast_unit_cost"]
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
         n_ballast = len(V_ballast)
         if n_ballast == 0:
             return
+
+        # Move away from ghost regions
+        s_ballast += s_ghost1
+        s_ballast = np.minimum(s_ballast, s_ghost2)
 
         # Number of points for volume integration
         npts = 10

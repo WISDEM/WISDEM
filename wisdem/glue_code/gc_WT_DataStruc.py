@@ -1900,6 +1900,8 @@ class Floating(om.Group):
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
             self.connect("member_" + name_member + ".grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
+            self.connect("member_" + name_member + ".outer_diameter", "member_" + name_member + ":outer_diameter")
+            self.connect("member_" + name_member + ".s", "member_" + name_member + ":s")
 
 
 class CombineJoints(om.ExplicitComponent):
@@ -1917,10 +1919,17 @@ class CombineJoints(om.ExplicitComponent):
         for i in range(n_members):
             iname = floating_init_options["members"]["name"][i]
             i_axial_joints = floating_init_options["members"]["n_axial_joints"][i]
+            i_grid = len(floating_init_options["members"]["grid_member_" + iname])
+
+            self.add_input("member_" + iname + ":s", val=np.zeros(i_grid))
+            self.add_input("member_" + iname + ":outer_diameter", val=np.zeros(i_grid), units="m")
             self.add_input("member_" + iname + ":grid_axial_joints", val=np.zeros(i_axial_joints))
+
             self.add_output("member_" + iname + ":joint1", val=np.zeros(3), units="m")
             self.add_output("member_" + iname + ":joint2", val=np.zeros(3), units="m")
             self.add_output("member_" + iname + ":height", val=0.0, units="m")
+            self.add_output("member_" + iname + ":s_ghost1", val=0.0)
+            self.add_output("member_" + iname + ":s_ghost2", val=1.0)
             self.add_discrete_output("member_" + iname + ":transition_flag", val=[False, False])
             self.n_joint_tot += i_axial_joints
 
@@ -1949,6 +1958,10 @@ class CombineJoints(om.ExplicitComponent):
         name2idx = dict(zip(floating_init_options["joints"]["name"], range(n_joints)))
         count = n_joints
 
+        # Initial biggest radius at each node
+        node_r = np.zeros(joints_xyz.shape[0])
+        intersects = np.zeros(joints_xyz.shape[0])
+
         # Now add axial joints
         member_list = list(range(n_members))
         while count < self.n_joint_tot:
@@ -1962,17 +1975,29 @@ class CombineJoints(om.ExplicitComponent):
                 joint2xyz = joints_xyz[name2idx[memopt["joint2"][k]], :]
                 dxyz = joint2xyz - joint1xyz
 
-                iname = memopt["name"][k]
                 i_axial_joints = memopt["n_axial_joints"][k]
                 if i_axial_joints == 0:
                     continue
+
+                iname = memopt["name"][k]
                 i_axial_joint_names = memopt["axial_joint_name_member_" + iname]
+
+                s = 0.5 * inputs["member_" + iname + ":s"]
+                Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
+
                 for a in range(i_axial_joints):
-                    joints_xyz[count, :] = joint1xyz + inputs["member_" + iname + ":grid_axial_joints"][a] * dxyz
+                    s_axial = inputs["member_" + iname + ":grid_axial_joints"][a]
+                    joints_xyz[count, :] = joint1xyz + s_axial * dxyz
                     name2idx[i_axial_joint_names[a]] = count
+
+                    Ra = np.interp(s_axial, s, Rk)
+                    node_r[count] = max(node_r[count], Ra)
+                    intersects[count] += 1
+
                     count += 1
 
-        # Record starting and ending location for each member now
+        # Record starting and ending location for each member now.
+        # Also log biggest radius at each node intersection to compute ghost nodes
         itrans = floating_init_options["transition_joint"]
         for k in range(n_members):
             iname = memopt["name"][k]
@@ -1984,6 +2009,29 @@ class CombineJoints(om.ExplicitComponent):
             outputs["member_" + iname + ":joint2"] = joint2xyz
             outputs["member_" + iname + ":height"] = np.sqrt(np.sum((joint2xyz - joint1xyz) ** 2))
             discrete_outputs["member_" + iname + ":transition_flag"] = [joint1id == itrans, joint2id == itrans]
+
+            # Largest radius at connection points for this member
+            Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
+            node_r[joint1id] = max(node_r[joint1id], Rk[0])
+            node_r[joint2id] = max(node_r[joint2id], Rk[-1])
+            intersects[joint1id] += 1
+            intersects[joint2id] += 1
+
+        # Store the ghost node non-dimensional locations
+        for k in range(n_members):
+            iname = memopt["name"][k]
+            joint1id = name2idx[memopt["joint1"][k]]
+            joint2id = name2idx[memopt["joint2"][k]]
+            hk = outputs["member_" + iname + ":height"]
+            Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
+            s_ghost1 = 0.0
+            s_ghost2 = 1.0
+            if intersects[joint1id] > 1 and node_r[joint1id] > Rk[0]:
+                s_ghost1 = node_r[joint1id] / hk
+            if intersects[joint2id] > 1 and node_r[joint2id] > Rk[-1]:
+                s_ghost2 = 1.0 - node_r[joint2id] / hk
+            outputs["member_" + iname + ":s_ghost1"] = s_ghost1
+            outputs["member_" + iname + ":s_ghost2"] = s_ghost2
 
         # Store outputs
         outputs["joints_xyz"] = joints_xyz

@@ -589,7 +589,7 @@ class FrameAnalysis(om.ExplicitComponent):
             )
 
             # Dynamics
-            if frame3dd_opt["modal"]:
+            if frame == "tower" and frame3dd_opt["modal"]:
                 Mmethod = 1
                 lump = 0
                 shift = 0.0

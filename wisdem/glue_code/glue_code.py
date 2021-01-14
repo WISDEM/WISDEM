@@ -561,7 +561,7 @@ class WT_RNTA(om.Group):
                 ]:
                     self.connect("floating.member_" + kname + "." + var, "floatingse.member" + str(k) + "." + var)
 
-                for var in ["joint1", "joint2", "transition_flag"]:
+                for var in ["joint1", "joint2", "s_ghost1", "s_ghost2", "transition_flag"]:
                     self.connect("floating.member_" + kname + ":" + var, "floatingse.member" + str(k) + "." + var)
 
             # Mooring connections
