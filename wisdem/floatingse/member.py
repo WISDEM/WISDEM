@@ -658,6 +658,9 @@ class MemberComponent(om.ExplicitComponent):
         self.add_input("ballast_volume", np.zeros(n_ball), units="m**3")
         self.add_input("ballast_unit_cost", np.zeros(n_ball), units="USD/kg")
 
+        self.add_input("s_ghost1", 0.0)
+        self.add_input("s_ghost2", 1.0)
+
         # Outputs
         self.add_output("shell_cost", val=0.0, units="USD")
         self.add_output("shell_mass", val=0.0, units="kg")
@@ -756,10 +759,6 @@ class MemberComponent(om.ExplicitComponent):
         s_full = inputs["s_full"]
         t_full = inputs["t_full"]
         d_full = inputs["d_full"]
-        zz = inputs["z_full"]
-        Rb = 0.5 * d_full[:-1]
-        Rt = 0.5 * d_full[1:]
-        H = np.diff(zz)
         rho = inputs["rho_full"]
         Emat = inputs["E_full"]
         Gmat = inputs["G_full"]
@@ -784,6 +783,38 @@ class MemberComponent(om.ExplicitComponent):
                 G=Gmat[k],
             )
             self.add_section(s_full[k], s_full[k + 1], iprop)
+
+        # Adjust for ghost sections
+        s_ghost1 = inputs["s_ghost1"]
+        s_ghost2 = inputs["s_ghost2"]
+        if s_ghost1 > 0.0:
+            self.add_node(s_ghost1)
+            for s in self.sections:
+                if s >= s_ghost1:
+                    break
+                self.sections[s].rho = 1e-2
+                self.sections[s].E *= 1e3
+                self.sections[s].G *= 1e3
+        if s_ghost2 < 1.0:
+            self.add_node(s_ghost2)
+            for s in self.sections:
+                if s < s_ghost2:
+                    continue
+                self.sections[s].rho = 1e-2
+                self.sections[s].E *= 1e3
+                self.sections[s].G *= 1e3
+
+        # Shell mass properties with new interpolation in case ghost nodes were added
+        s_grid = np.array(list(self.sections.keys()))
+        s_section = 0.5 * (s_grid[:-1] + s_grid[1:])
+        R = np.interp(s_grid, s_full, 0.5 * d_full)
+        Rb = R[:-1]
+        Rt = R[1:]
+        zz = np.interp(s_grid, s_full, inputs["z_full"])
+        H = np.diff(zz)
+        rho = util.sectionalInterp(s_section, s_grid, inputs["rho_full"])
+        rho[s_section < s_ghost1] = 0.0
+        rho[s_section > s_ghost2] = 0.0
 
         # Total mass of cylinder
         V_shell = frustum.frustumShellVol(Rb, Rt, t_full, H)
@@ -872,9 +903,14 @@ class MemberComponent(om.ExplicitComponent):
         t_bulk = inputs["bulkhead_thickness"]
         coeff = inputs["outfitting_full"]
         L = inputs["height"]
+        s_ghost1 = inputs["s_ghost1"]
+        s_ghost2 = inputs["s_ghost2"]
         nbulk = s_bulk.size
         if nbulk == 0:
             return
+
+        # Make sure we are not working in ghost regions
+        s_bulk = np.unique(np.minimum(np.maximum(s_bulk, s_ghost1), s_ghost2))
 
         # Get z and R_id values of bulkhead locations
         z_bulk = np.interp(s_bulk, s_full, z_full)
@@ -973,6 +1009,8 @@ class MemberComponent(om.ExplicitComponent):
         G = inputs["G_full"]
         coeff = inputs["outfitting_full"]
         s_bulk = inputs["bulkhead_grid"]
+        s_ghost1 = inputs["s_ghost1"]
+        s_ghost2 = inputs["s_ghost2"]
 
         t_web = inputs["ring_stiffener_web_thickness"]
         t_flange = inputs["ring_stiffener_flange_thickness"]
@@ -988,6 +1026,11 @@ class MemberComponent(om.ExplicitComponent):
 
         # Calculate stiffener spots along the member axis and deconflict with bulkheads
         s_stiff = (np.arange(1, n_stiff + 0.1) - 0.5) * (L_stiffener / L)
+
+        # Make sure we are not working in ghost regions
+        s_stiff = s_stiff[s_stiff > s_ghost1]
+        s_stiff = s_stiff[s_stiff < s_ghost2]
+
         tol = w_flange / L
         for k, s in enumerate(s_stiff):
             while np.any(np.abs(s_bulk - s) <= tol) and s > tol:
@@ -1119,9 +1162,15 @@ class MemberComponent(om.ExplicitComponent):
         rho_ballast = inputs["ballast_density"]
         V_ballast = inputs["ballast_volume"]
         km_ballast = inputs["ballast_unit_cost"]
+        s_ghost1 = inputs["s_ghost1"]
+        s_ghost2 = inputs["s_ghost2"]
         n_ballast = len(V_ballast)
         if n_ballast == 0:
             return
+
+        # Move away from ghost regions
+        s_ballast += s_ghost1
+        s_ballast = np.minimum(s_ballast, s_ghost2)
 
         # Number of points for volume integration
         npts = 10

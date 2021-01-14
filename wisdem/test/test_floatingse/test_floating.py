@@ -75,6 +75,8 @@ class TestOC3Mass(unittest.TestCase):
         prob["member0.ballast_materials"] = ["slurry", "seawater"]
         prob["member0.joint1"] = np.array([0.0, 0.0, 10.0 - h.sum()])
         prob["member0.joint2"] = np.array([0.0, 0.0, 10.0])  # Freeboard=10
+        prob["member0.s_ghost1"] = 0.0
+        prob["member0.s_ghost2"] = 1.0
         prob["member0.transition_flag"] = [False, True]
         prob["member0.bulkhead_thickness"] = 0.05 * np.ones(4)  # Locations of internal bulkheads
         prob["member0.bulkhead_grid"] = np.array([0.0, 0.37692308, 0.89230769, 1.0])  # Thickness of internal bulkheads
