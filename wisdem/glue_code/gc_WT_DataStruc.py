@@ -1920,14 +1920,14 @@ class CombineJoints(om.ExplicitComponent):
             i_axial_joints = floating_init_options["members"]["n_axial_joints"][i]
             i_grid = len(floating_init_options["members"]["grid_member_" + iname])
 
-            self.add_input("member_" + iname + ":outer_diameter", val=np.zeros(i_grid))
+            self.add_input("member_" + iname + ":outer_diameter", val=np.zeros(i_grid), units="m")
             self.add_input("member_" + iname + ":grid_axial_joints", val=np.zeros(i_axial_joints))
 
             self.add_output("member_" + iname + ":joint1", val=np.zeros(3), units="m")
             self.add_output("member_" + iname + ":joint2", val=np.zeros(3), units="m")
             self.add_output("member_" + iname + ":height", val=0.0, units="m")
-            self.add_output("member_" + iname + ":s_ghost1", val=0.0, units="m")
-            self.add_output("member_" + iname + ":s_ghost2", val=1.0, units="m")
+            self.add_output("member_" + iname + ":s_ghost1", val=0.0)
+            self.add_output("member_" + iname + ":s_ghost2", val=1.0)
             self.add_discrete_output("member_" + iname + ":transition_flag", val=[False, False])
             self.n_joint_tot += i_axial_joints
 
@@ -2017,6 +2017,8 @@ class CombineJoints(om.ExplicitComponent):
                 s_ghost2 = 1.0 - node_r[joint2id] / hk
             outputs["member_" + iname + ":s_ghost1"] = s_ghost1
             outputs["member_" + iname + ":s_ghost2"] = s_ghost2
+            print(s_ghost1, node_r[joint1id], Rk[0])
+            print(s_ghost2, node_r[joint2id], Rk[-1])
 
         # Store outputs
         outputs["joints_xyz"] = joints_xyz
