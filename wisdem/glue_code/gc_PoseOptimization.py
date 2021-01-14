@@ -161,14 +161,14 @@ class PoseOptimization(object):
                 generator = om.UniformGenerator(
                     num_samples = self.opt['driver']['design_of_experiments']['num_samples'],
                     seed = self.opt['driver']['design_of_experiments']['seed'])
-            elif: self.opt['driver']['design_of_experiments']['generator'].lower() == 'fullfact':
+            elif self.opt['driver']['design_of_experiments']['generator'].lower() == 'fullfact':
                 generator = om.FullFactorialGenerator(
                     levels = self.opt['driver']['design_of_experiments']['num_samples'])
-            elif: self.opt['driver']['design_of_experiments']['generator'].lower() == 'plackettburman':
+            elif self.opt['driver']['design_of_experiments']['generator'].lower() == 'plackettburman':
                 generator = om.PlackettBurmanGenerator()
-            elif: self.opt['driver']['design_of_experiments']['generator'].lower() == 'boxbehnken':
+            elif self.opt['driver']['design_of_experiments']['generator'].lower() == 'boxbehnken':
                 generator = om.BoxBehnkenGenerator()
-            elif: self.opt['driver']['design_of_experiments']['generator'].lower() == 'latinhypercube':
+            elif self.opt['driver']['design_of_experiments']['generator'].lower() == 'latinhypercube':
                 generator = om.LatinHypercubeGenerator(
                     samples = self.opt['driver']['design_of_experiments']['num_samples'],
                     criterion = self.opt['driver']['design_of_experiments']['criterion'],
