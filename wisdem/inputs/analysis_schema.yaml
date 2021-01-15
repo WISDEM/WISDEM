@@ -789,44 +789,93 @@ properties:
 
     driver:
         type: object
-        description: Specification of the optimization driver (optimization algorithm) parameters
         default: {}
         properties:
-            tol:
-                type: number
-                description: Convergence tolerance (relative)
-                default: 1e-6
-                minimum: 1e-12
-                maximum: 1.0
-                unit: none
-            max_iter:
-                type: integer
-                description: Max number of optimization iterations
-                default: 100
-                minimum: 0
-                maximum: 100000
-            max_function_calls:
-                type: integer
-                description: Max number of calls to objective function evaluation
-                default: 100000
-                minimum: 0
-                maximum: 100000000
-            solver:
-                type: string
-                description: Optimization driver.  Can be one of [SLSQP, CONMIN, COBYLA, SNOPT]
-                default: SLSQP
-                enum: [SLSQP, CONMIN, COBYLA, SNOPT]
-            step_size:
-                type: number
-                description: Maximum step size
-                default: 1e-3
-                minimum: 1e-10
-                maximum: 100.0
-            form:
-                type: string
-                description: Finite difference calculation mode
-                default: central
-                enum: [central, forward, complex]
+            optimization:
+                type: object
+                description: Specification of the optimization driver (optimization algorithm) parameters
+                default: {}
+                properties:
+                    flag: *flag
+                    tol:
+                        type: number
+                        description: Convergence tolerance (relative)
+                        default: 1e-6
+                        minimum: 1e-12
+                        maximum: 1.0
+                        unit: none
+                    max_iter:
+                        type: integer
+                        description: Max number of optimization iterations
+                        default: 100
+                        minimum: 0
+                        maximum: 100000
+                    max_function_calls:
+                        type: integer
+                        description: Max number of calls to objective function evaluation
+                        default: 100000
+                        minimum: 0
+                        maximum: 100000000
+                    solver:
+                        type: string
+                        description: Optimization driver.  Can be one of [SLSQP, CONMIN, COBYLA, SNOPT]
+                        default: SLSQP
+                        enum: [SLSQP, CONMIN, COBYLA, SNOPT]
+                    step_size:
+                        type: number
+                        description: Maximum step size
+                        default: 1e-3
+                        minimum: 1e-10
+                        maximum: 100.0
+                    form:
+                        type: string
+                        description: Finite difference calculation mode
+                        default: central
+                        enum: [central, forward, complex]
+            design_of_experiments:
+                type: object
+                description: Specification of the design of experiments driver parameters
+                default: {}
+                properties:
+                    flag: *flag
+                    run_parallel:
+                        type: boolean
+                        default: True
+                        description: Toggle parallel model runs
+                    generator:
+                        type: string
+                        description: Type of model input generator. 
+                        default: Uniform
+                        enum: [Uniform, FullFact, PlackettBurman, BoxBehnken, LatinHypercube]
+                    num_samples:
+                        type: integer
+                        description: Number of samples to evaluate model at (Uniform and LatinHypercube only)
+                        default: 5
+                        minimum: 1
+                        maximum: 1000000
+                    seed: 
+                        type: integer
+                        description: Random seed to use if design is randomized 
+                        default: 2
+                        minimum: 1
+                        maximum: 1000000
+                    levels:
+                        type: integer
+                        description: Number of evenly spaced levels between each design variable lower and upper bound (FullFactorial only)
+                        default: 2
+                        minimum: 1
+                        maximum: 1000000
+                    criterion: 
+                        type: string
+                        description: Descriptor of sampling method for LatinHypercube generator
+                        default: None
+                        enum: [None, center, c, maximin, m, centermaximin, cm, correelation, corr]
+                    iterations: 
+                        type: integer
+                        description: Number of iterations in maximin and correlations algorithms (LatinHypercube only)
+                        default: 2
+                        minimum: 1
+                        maximum: 1000000
 
     recorder:
         type: object
