@@ -1201,6 +1201,14 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
             desc="2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
 
+        ivc.add_output(
+            "joint_position",
+            val=0.0,
+            desc="Spanwise position of the segmentation joint.",
+        )
+        ivc.add_output("joint_mass", val=0.0, desc="Mass of the joint.")
+        ivc.add_output("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
+
         self.add_subsystem(
             "compute_internal_structure_2d_fem",
             Compute_Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
@@ -1857,9 +1865,19 @@ class Floating(om.Group):
 
     def setup(self):
         floating_init_options = self.options["floating_init_options"]
+        n_joints = floating_init_options["joints"]["n_joints"]
         n_members = floating_init_options["members"]["n_members"]
 
-        self.add_subsystem("joints", JointInit())
+        jivc = self.add_subsystem("joints", om.IndepVarComp())
+        jivc.add_output("location_in", val=np.zeros((n_joints, 3)), units="m")
+        jivc.add_output("transition_node", val=np.zeros(3), units="m")
+
+        # Additions for optimizing multiple nodes concurrently
+        self.add_subsystem(
+            "nodedv", NodeDVs(linked_node_data=floating_init_options["linked_node_data"]), promotes=["*"]
+        )
+        for k in range(len(floating_init_options["joints"]["linked_joint_data"])):
+            jivc.add_output(f"jointdv_{k}", val=0.0, units="m")
 
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
@@ -1891,9 +1909,10 @@ class Floating(om.Group):
             ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_spacing", 0.0, units="m")
 
-        self.add_subsystem("alljoints", CombineJoints(floating_init_options=floating_init_options), promotes=["*"])
+        self.add_subsystem("alljoints", AggregateJoints(floating_init_options=floating_init_options), promotes=["*"])
 
         self.connect("joints.location", "location")
+
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
             self.connect("member_" + name_member + ".grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
@@ -1901,18 +1920,35 @@ class Floating(om.Group):
             self.connect("member_" + name_member + ".s", "member_" + name_member + ":s")
 
 
-class JointInit(om.ExplicitComponent):
+# Component that links certain nodes together in a specific dimension for optimization
+class NodeDVs(om.ExplicitComponent):
     def initialize(self):
-        self.options.declare("floating_init_options")
+        self.options.declare("options")
 
     def setup(self):
-        floating_init_options = self.options["floating_init_options"]
-        n_joints = floating_init_options["joints"]["n_joints"]
-        self.add_output("location", val=np.zeros((n_joints, 3)), units="m")
-        self.add_output("transition_node", val=np.zeros(3), units="m")
+        opt = self.options["options"]
+        n_joints = opt["joints"]["n_joints"]
+        self.add_input("location_in", val=np.zeros((n_joints, 3)), units="m")
+
+        linked_data = opt["joints"]["linked_joint_data"]
+        for k in range(len(linked_data)):
+            self.add_input(f"jointdv_{k}", val=0.0, units="m")
+
+        self.add_output("location", val=np.zeros((10, 2)))
+
+    def compute(self, inputs, outputs):
+        opt = self.options["options"]
+
+        xyz = inputs["location_in"]
+        for i, linked_node_dict in enumerate(opt["joints"]["linked_joint_data"]):
+            idx = linked_node_dict["indices"]
+            dim = linked_node_dict["dimension"]
+            xyz[idx, dim] = inputs[f"jointdv_{i}"]
+
+        outputs["location"] = xyz
 
 
-class CombineJoints(om.ExplicitComponent):
+class AggregateJoints(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("floating_init_options")
 

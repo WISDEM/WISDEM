@@ -365,8 +365,41 @@ class PoseOptimization(object):
                 )
 
         # -- Floating & Mooring --
-        if len(float_opt["joints"]["z_coordinate"]["linked"]) > 0:
-            ivc = wt_opt.model.add_subsystem("zlinked", om.IndepVarComp())
+        jointz = float_opt["joints"]["z_coordinate"]
+        jointr = float_opt["joints"]["r_coordinate"]
+
+        count = 0
+        for k in range(len(jointz["linked"])):
+            wt_opt.model.add_design_var(
+                f"floating.joints.mydv_z_{count}",
+                lower=jointz["linked"][k]["lower_bound"],
+                upper=jointz["linked"][k]["upper_bound"],
+            )
+            count += 1
+        for k in range(len(jointz["independent"])):
+            wt_opt.model.add_design_var(
+                f"floating.joints.mydv_z_{count}",
+                lower=jointz["independent"][k]["lower_bound"],
+                upper=jointz["independent"][k]["upper_bound"],
+            )
+            count += 1
+
+        count = 0
+        for k in range(len(jointr["linked"])):
+            wt_opt.model.add_design_var(
+                f"floating.joints.mydv_r_{count}",
+                lower=jointr["linked"][k]["lower_bound"],
+                upper=jointr["linked"][k]["upper_bound"],
+            )
+            count += 1
+        for k in range(len(jointr["independent"])):
+            wt_opt.model.add_design_var(
+                f"floating.joints.mydv_r_{count}",
+                lower=jointr["independent"][k]["lower_bound"],
+                upper=jointr["independent"][k]["upper_bound"],
+            )
+            count += 1
+
         return wt_opt
 
     def set_constraints(self, wt_opt):
