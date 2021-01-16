@@ -26,6 +26,7 @@ class TestAny(unittest.TestCase):
     def testModalCoefficients(self):
         # Test exact 6-deg polynomial
         p = np.random.random((7,))
+        p[:2] = 0.0
         x = np.linspace(0, 1)
         y = np.polynomial.polynomial.polyval(x, p)
 
