@@ -9,7 +9,8 @@ from __future__ import print_function
 
 import numpy as np
 from scipy.linalg import solve_banded
-from scipy.optimize import curve_fit
+
+# from scipy.optimize import curve_fit
 
 
 def mode_fit(x, c2, c3, c4, c5, c6):
