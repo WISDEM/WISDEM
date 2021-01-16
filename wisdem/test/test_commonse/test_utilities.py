@@ -41,7 +41,7 @@ class TestAny(unittest.TestCase):
         pp = util.get_modal_coefficients(x, y)
         cc, _ = curve_fit(util.mode_fit, x, y)
         cc /= cc.sum()
-        npt.assert_almost_equal(pp, cc, 5)
+        npt.assert_almost_equal(pp, cc, 4)
 
     def testGetXYModes(self):
         r = np.linspace(0, 1, 20)
