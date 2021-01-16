@@ -9,6 +9,7 @@ from __future__ import print_function
 
 import numpy as np
 from scipy.linalg import solve_banded
+from scipy.optimize import curve_fit
 
 
 def mode_fit(x, c2, c3, c4, c5, c6):
@@ -20,15 +21,17 @@ def get_modal_coefficients(x, y, deg=6):
     xn = (x - x.min()) / (x.max() - x.min())
 
     # Get coefficients to 6th order polynomial
-    p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
-    # coef, pcov = curve_fit(mode_fit, xn, y)
+    # NOTE: POLYFIT does not give the correct modal settings.  Have to use curve_fit
+    # p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
 
     # Normalize for Elastodyn
     if y.ndim > 1:
-        p6 = p6[2:, :]
+        p6 = np.zeros((5, y.shape[1]))
+        for k in range(y.shape[1]):
+            p6[:, k], _ = curve_fit(mode_fit, xn, y[:, k])
         p6 /= p6.sum(axis=0)[np.newaxis, :]
     else:
-        p6 = p6[2:]
+        p6, _ = curve_fit(mode_fit, xn, y)
         p6 /= p6.sum()
 
     return p6
