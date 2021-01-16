@@ -41,10 +41,7 @@ class PoseOptimization(object):
             n_DV += blade_opt["structure"]["spar_cap_ps"]["n_opt"] - 2
         if self.opt["design_variables"]["control"]["tsr"]["flag"]:
             n_DV += 1
-        # if self.opt["design_variables"]["control"]["servo"]["pitch_control"]["flag"]:
-        #    n_DV += 2
-        # if self.opt["design_variables"]["control"]["servo"]["torque_control"]["flag"]:
-        #    n_DV += 2
+
         if tower_opt["outer_diameter"]["flag"]:
             n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height_tower"]
         if tower_opt["layer_thickness"]["flag"]:
@@ -213,7 +210,9 @@ class PoseOptimization(object):
         control_opt = self.opt["design_variables"]["control"]
         hub_opt = self.opt["design_variables"]["hub"]
         drive_opt = self.opt["design_variables"]["drivetrain"]
+        float_opt = self.opt["design_variables"]["floating"]
 
+        # -- Rotor & Blade --
         if rotorD_opt["flag"]:
             wt_opt.model.add_design_var(
                 "configuration.rotor_diameter_user", lower=rotorD_opt["minimum"], upper=rotorD_opt["minimum"], ref=1.0e2
@@ -365,6 +364,9 @@ class PoseOptimization(object):
                     "nacelle." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"], ref=1e-2
                 )
 
+        # -- Floating & Mooring --
+        if len(float_opt["joints"]["z_coordinate"]["linked"]) > 0:
+            ivc = wt_opt.model.add_subsystem("zlinked", om.IndepVarComp())
         return wt_opt
 
     def set_constraints(self, wt_opt):

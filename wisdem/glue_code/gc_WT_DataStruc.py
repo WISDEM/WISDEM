@@ -1857,12 +1857,9 @@ class Floating(om.Group):
 
     def setup(self):
         floating_init_options = self.options["floating_init_options"]
-        n_joints = floating_init_options["joints"]["n_joints"]
         n_members = floating_init_options["members"]["n_members"]
 
-        jivc = self.add_subsystem("joints", om.IndepVarComp())
-        jivc.add_output("location", val=np.zeros((n_joints, 3)), units="m")
-        jivc.add_output("transition_node", val=np.zeros(3), units="m")
+        self.add_subsystem("joints", JointInit())
 
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
@@ -1902,6 +1899,17 @@ class Floating(om.Group):
             self.connect("member_" + name_member + ".grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
             self.connect("member_" + name_member + ".outer_diameter", "member_" + name_member + ":outer_diameter")
             self.connect("member_" + name_member + ".s", "member_" + name_member + ":s")
+
+
+class JointInit(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("floating_init_options")
+
+    def setup(self):
+        floating_init_options = self.options["floating_init_options"]
+        n_joints = floating_init_options["joints"]["n_joints"]
+        self.add_output("location", val=np.zeros((n_joints, 3)), units="m")
+        self.add_output("transition_node", val=np.zeros(3), units="m")
 
 
 class CombineJoints(om.ExplicitComponent):
