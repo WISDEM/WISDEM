@@ -23,12 +23,12 @@ class PoseOptimization(object):
         if rotorD_opt["flag"]:
             n_DV += 1
         if blade_opt["aero_shape"]["twist"]["flag"]:
-            n_DV += blade_opt["aero_shape"]["twist"]["n_opt"] - 
-                    (blade_opt["aero_shape"]["twist"]["lock_root"] +
+            n_DV += blade_opt["aero_shape"]["twist"]["n_opt"] - (
+                    blade_opt["aero_shape"]["twist"]["lock_root"] + 
                     blade_opt["aero_shape"]["twist"]["lock_tip"])
         if blade_opt["aero_shape"]["chord"]["flag"]:
-            n_DV += blade_opt["aero_shape"]["chord"]["n_opt"] - 
-                    (blade_opt["aero_shape"]["chord"]["lock_root"] +
+            n_DV += blade_opt["aero_shape"]["chord"]["n_opt"] - (
+                    blade_opt["aero_shape"]["chord"]["lock_root"] +
                     blade_opt["aero_shape"]["chord"]["lock_tip"])
         if blade_opt["aero_shape"]["af_positions"]["flag"]:
             n_DV += (
@@ -37,15 +37,15 @@ class PoseOptimization(object):
                 - 1
             )
         if blade_opt["structure"]["spar_cap_ss"]["flag"]:
-            n_DV += blade_opt["structure"]["spar_cap_ss"]["n_opt"] - 
-                    (blade_opt["aero_shape"]["spar_cap_ss"]["lock_root"] +
+            n_DV += blade_opt["structure"]["spar_cap_ss"]["n_opt"] - (
+                    blade_opt["aero_shape"]["spar_cap_ss"]["lock_root"] +
                     blade_opt["aero_shape"]["spar_cap_ss"]["lock_tip"])
         if (
             blade_opt["structure"]["spar_cap_ps"]["flag"]
             and not blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
         ):
-            n_DV += blade_opt["structure"]["spar_cap_ps"]["n_opt"] - 
-                    (blade_opt["aero_shape"]["spar_cap_ps"]["lock_root"] +
+            n_DV += blade_opt["structure"]["spar_cap_ps"]["n_opt"] - (
+                    blade_opt["aero_shape"]["spar_cap_ps"]["lock_root"] +
                     blade_opt["aero_shape"]["spar_cap_ps"]["lock_tip"])
         if self.opt["design_variables"]["control"]["tsr"]["flag"]:
             n_DV += 1
