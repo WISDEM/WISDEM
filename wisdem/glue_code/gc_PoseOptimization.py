@@ -23,9 +23,13 @@ class PoseOptimization(object):
         if rotorD_opt["flag"]:
             n_DV += 1
         if blade_opt["aero_shape"]["twist"]["flag"]:
-            n_DV += blade_opt["aero_shape"]["twist"]["n_opt"] - 2
+            n_DV += blade_opt["aero_shape"]["twist"]["n_opt"] - (
+                    blade_opt["aero_shape"]["twist"]["lock_root"] + 
+                    blade_opt["aero_shape"]["twist"]["lock_tip"])
         if blade_opt["aero_shape"]["chord"]["flag"]:
-            n_DV += blade_opt["aero_shape"]["chord"]["n_opt"] - 3
+            n_DV += blade_opt["aero_shape"]["chord"]["n_opt"] - (
+                    blade_opt["aero_shape"]["chord"]["lock_root"] +
+                    blade_opt["aero_shape"]["chord"]["lock_tip"])
         if blade_opt["aero_shape"]["af_positions"]["flag"]:
             n_DV += (
                 self.modeling["WISDEM"]["RotorSE"]["n_af_span"]
@@ -33,12 +37,16 @@ class PoseOptimization(object):
                 - 1
             )
         if blade_opt["structure"]["spar_cap_ss"]["flag"]:
-            n_DV += blade_opt["structure"]["spar_cap_ss"]["n_opt"] - 2
+            n_DV += blade_opt["structure"]["spar_cap_ss"]["n_opt"] - (
+                    blade_opt["aero_shape"]["spar_cap_ss"]["lock_root"] +
+                    blade_opt["aero_shape"]["spar_cap_ss"]["lock_tip"])
         if (
             blade_opt["structure"]["spar_cap_ps"]["flag"]
             and not blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
         ):
-            n_DV += blade_opt["structure"]["spar_cap_ps"]["n_opt"] - 2
+            n_DV += blade_opt["structure"]["spar_cap_ps"]["n_opt"] - (
+                    blade_opt["aero_shape"]["spar_cap_ps"]["lock_root"] +
+                    blade_opt["aero_shape"]["spar_cap_ps"]["lock_tip"])
         if self.opt["design_variables"]["control"]["tsr"]["flag"]:
             n_DV += 1
         # if self.opt["design_variables"]["control"]["servo"]["pitch_control"]["flag"]:
@@ -250,13 +258,18 @@ class PoseOptimization(object):
                 "configuration.rotor_diameter_user", lower=rotorD_opt["minimum"], upper=rotorD_opt["minimum"], ref=1.0e2
             )
 
-        if blade_opt["aero_shape"]["twist"]["flag"]:
-            indices = range(2, blade_opt["aero_shape"]["twist"]["n_opt"])
+        twist_options = blade_opt["aero_shape"]["twist"]
+        if twist_options["flag"]:
+            indices = range(twist_options["lock_root"],
+                            twist_options["n_opt"] - 
+                            twist_options["lock_tip"])
             wt_opt.model.add_design_var("blade.opt_var.twist_opt_gain", indices=indices, lower=0.0, upper=1.0)
 
         chord_options = blade_opt["aero_shape"]["chord"]
         if chord_options["flag"]:
-            indices = range(3, chord_options["n_opt"] - 1)
+            indices = range(chord_options["lock_root"],
+                            chord_options["n_opt"]["n_opt"] - 
+                            chord_options["lock_tip"])
             wt_opt.model.add_design_var(
                 "blade.opt_var.chord_opt_gain",
                 indices=indices,
@@ -283,7 +296,9 @@ class PoseOptimization(object):
 
         spar_cap_ss_options = blade_opt["structure"]["spar_cap_ss"]
         if spar_cap_ss_options["flag"]:
-            indices = range(1, spar_cap_ss_options["n_opt"] - 1)
+            indices = range(spar_cap_ss_options["lock_root"],
+                            spar_cap_ss_options["n_opt"]["n_opt"] - 
+                            spar_cap_ss_options["lock_tip"])
             wt_opt.model.add_design_var(
                 "blade.opt_var.spar_cap_ss_opt_gain",
                 indices=indices,
@@ -295,7 +310,9 @@ class PoseOptimization(object):
         # `equal_to_suction` as False in the optimization yaml.
         spar_cap_ps_options = blade_opt["structure"]["spar_cap_ps"]
         if spar_cap_ps_options["flag"] and not spar_cap_ps_options["equal_to_suction"]:
-            indices = range(1, spar_cap_ps_options["n_opt"] - 1)
+            indices = range(spar_cap_ps_options["lock_root"],
+                            spar_cap_ps_options["n_opt"]["n_opt"] - 
+                            spar_cap_ps_options["lock_tip"])
             wt_opt.model.add_design_var(
                 "blade.opt_var.spar_cap_ps_opt_gain",
                 indices=indices,

@@ -81,6 +81,14 @@ properties:
                                         items:
                                             type: number
                                             unit: rad
+                                    lock_root:
+                                        type: integer
+                                        default: 2
+                                        description: How many DVs along span are locked starting from blade root
+                                    lock_tip:
+                                        type: integer
+                                        default: 0
+                                        description: How many DVs along span are locked starting from blade tip
                             chord:
                                 type: object
                                 default: {}
@@ -102,6 +110,14 @@ properties:
                                         default: 1.5
                                         unit: none
                                         description: Upper bound on scalar multiplier that will be applied to value at control points
+                                    lock_root:
+                                        type: integer
+                                        default: 2
+                                        description: How many DVs along span are locked starting from blade root
+                                    lock_tip:
+                                        type: integer
+                                        default: 1
+                                        description: How many DVs along span are locked starting from blade tip
                             af_positions:
                                 type: object
                                 default: {}
@@ -131,6 +147,14 @@ properties:
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
+                                    lock_root: &lockroot_structure
+                                        type: integer
+                                        default: 1
+                                        description: How many DVs along span are locked starting from blade root
+                                    lock_tip:  &locktip_structure
+                                        type: integer
+                                        default: 1
+                                        description: How many DVs along span are locked starting from blade tip
                             spar_cap_ps:
                                 type: object
                                 description: Blade pressure-side spar cap thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
@@ -148,6 +172,8 @@ properties:
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
+                                    lock_root: *lockroot_structure
+                                    lock_tip: *locktip_structure
                             te_ss:
                                 type: object
                                 default: {}
@@ -161,6 +187,8 @@ properties:
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
+                                    lock_root: *lockroot_structure
+                                    lock_tip: *locktip_structure
                             te_ps:
                                 type: object
                                 description: Blade pressure-side trailing edge reinforcement thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
@@ -174,6 +202,8 @@ properties:
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
+                                    lock_root: *lockroot_structure
+                                    lock_tip: *locktip_structure
             control:
                 type: object
                 default: {}
