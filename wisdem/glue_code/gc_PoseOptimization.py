@@ -182,7 +182,7 @@ class PoseOptimization(object):
                     criterion = self.opt['driver']['design_of_experiments']['criterion'],
                     seed = self.opt['driver']['design_of_experiments']['seed'])
             else:
-                exit('The generator type {} is unsupported.'.format(
+                raise Exception('The generator type {} is unsupported.'.format(
                     self.opt['driver']['design_of_experiments']['generator']))
 
             # Initialize driver
@@ -192,7 +192,7 @@ class PoseOptimization(object):
             wt_opt.driver.options['run_parallel'] = self.opt['driver']['design_of_experiments']['run_parallel']
 
         else:
-            exit('Design variables are set to be optimized or studied, but no driver is selected. Please enable a driver.')
+            raise Exception('Design variables are set to be optimized or studied, but no driver is selected. Please enable a driver.')
 
         return wt_opt
 
@@ -268,7 +268,7 @@ class PoseOptimization(object):
         chord_options = blade_opt["aero_shape"]["chord"]
         if chord_options["flag"]:
             indices = range(chord_options["lock_root"],
-                            chord_options["n_opt"]["n_opt"] - 
+                            chord_options["n_opt"] - 
                             chord_options["lock_tip"])
             wt_opt.model.add_design_var(
                 "blade.opt_var.chord_opt_gain",
@@ -297,7 +297,7 @@ class PoseOptimization(object):
         spar_cap_ss_options = blade_opt["structure"]["spar_cap_ss"]
         if spar_cap_ss_options["flag"]:
             indices = range(spar_cap_ss_options["lock_root"],
-                            spar_cap_ss_options["n_opt"]["n_opt"] - 
+                            spar_cap_ss_options["n_opt"] - 
                             spar_cap_ss_options["lock_tip"])
             wt_opt.model.add_design_var(
                 "blade.opt_var.spar_cap_ss_opt_gain",
@@ -311,7 +311,7 @@ class PoseOptimization(object):
         spar_cap_ps_options = blade_opt["structure"]["spar_cap_ps"]
         if spar_cap_ps_options["flag"] and not spar_cap_ps_options["equal_to_suction"]:
             indices = range(spar_cap_ps_options["lock_root"],
-                            spar_cap_ps_options["n_opt"]["n_opt"] - 
+                            spar_cap_ps_options["n_opt"] - 
                             spar_cap_ps_options["lock_tip"])
             wt_opt.model.add_design_var(
                 "blade.opt_var.spar_cap_ps_opt_gain",
