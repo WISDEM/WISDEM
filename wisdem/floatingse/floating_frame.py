@@ -23,30 +23,30 @@ class PlatformFrame(om.ExplicitComponent):
         n_member = opt["floating"]["members"]["n_members"]
 
         for k in range(n_member):
-            self.add_input("member" + str(k) + ":nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
-            self.add_input("member" + str(k) + ":nodes_r", NULL * np.ones(MEMMAX), units="m")
-            self.add_input("member" + str(k) + ":section_D", NULL * np.ones(MEMMAX), units="m")
-            self.add_input("member" + str(k) + ":section_t", NULL * np.ones(MEMMAX), units="m")
-            self.add_input("member" + str(k) + ":section_A", NULL * np.ones(MEMMAX), units="m**2")
-            self.add_input("member" + str(k) + ":section_Asx", NULL * np.ones(MEMMAX), units="m**2")
-            self.add_input("member" + str(k) + ":section_Asy", NULL * np.ones(MEMMAX), units="m**2")
-            self.add_input("member" + str(k) + ":section_Ixx", NULL * np.ones(MEMMAX), units="kg*m**2")
-            self.add_input("member" + str(k) + ":section_Iyy", NULL * np.ones(MEMMAX), units="kg*m**2")
-            self.add_input("member" + str(k) + ":section_Izz", NULL * np.ones(MEMMAX), units="kg*m**2")
-            self.add_input("member" + str(k) + ":section_rho", NULL * np.ones(MEMMAX), units="kg/m**3")
-            self.add_input("member" + str(k) + ":section_E", NULL * np.ones(MEMMAX), units="Pa")
-            self.add_input("member" + str(k) + ":section_G", NULL * np.ones(MEMMAX), units="Pa")
-            self.add_input("member" + str(k) + ":idx_cb", 0)
-            self.add_input("member" + str(k) + ":buoyancy_force", 0.0, units="N")
-            self.add_input("member" + str(k) + ":displacement", 0.0, units="m**3")
-            self.add_input("member" + str(k) + ":center_of_buoyancy", np.zeros(3), units="m")
-            self.add_input("member" + str(k) + ":center_of_mass", np.zeros(3), units="m")
-            self.add_input("member" + str(k) + ":total_mass", 0.0, units="kg")
-            self.add_input("member" + str(k) + ":total_cost", 0.0, units="USD")
-            self.add_input("member" + str(k) + ":Awater", 0.0, units="m**2")
-            self.add_input("member" + str(k) + ":Iwater", 0.0, units="m**4")
-            self.add_input("member" + str(k) + ":added_mass", np.zeros(6), units="kg")
-            self.add_input("member" + str(k) + ":transition_node", NULL * np.ones(3), units="m")
+            self.add_input(f"member{k}:nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
+            self.add_input(f"member{k}:nodes_r", NULL * np.ones(MEMMAX), units="m")
+            self.add_input(f"member{k}:section_D", NULL * np.ones(MEMMAX), units="m")
+            self.add_input(f"member{k}:section_t", NULL * np.ones(MEMMAX), units="m")
+            self.add_input(f"member{k}:section_A", NULL * np.ones(MEMMAX), units="m**2")
+            self.add_input(f"member{k}:section_Asx", NULL * np.ones(MEMMAX), units="m**2")
+            self.add_input(f"member{k}:section_Asy", NULL * np.ones(MEMMAX), units="m**2")
+            self.add_input(f"member{k}:section_Ixx", NULL * np.ones(MEMMAX), units="kg*m**2")
+            self.add_input(f"member{k}:section_Iyy", NULL * np.ones(MEMMAX), units="kg*m**2")
+            self.add_input(f"member{k}:section_Izz", NULL * np.ones(MEMMAX), units="kg*m**2")
+            self.add_input(f"member{k}:section_rho", NULL * np.ones(MEMMAX), units="kg/m**3")
+            self.add_input(f"member{k}:section_E", NULL * np.ones(MEMMAX), units="Pa")
+            self.add_input(f"member{k}:section_G", NULL * np.ones(MEMMAX), units="Pa")
+            self.add_input(f"member{k}:idx_cb", 0)
+            self.add_input(f"member{k}:buoyancy_force", 0.0, units="N")
+            self.add_input(f"member{k}:displacement", 0.0, units="m**3")
+            self.add_input(f"member{k}:center_of_buoyancy", np.zeros(3), units="m")
+            self.add_input(f"member{k}:center_of_mass", np.zeros(3), units="m")
+            self.add_input(f"member{k}:total_mass", 0.0, units="kg")
+            self.add_input(f"member{k}:total_cost", 0.0, units="USD")
+            self.add_input(f"member{k}:Awater", 0.0, units="m**2")
+            self.add_input(f"member{k}:Iwater", 0.0, units="m**4")
+            self.add_input(f"member{k}:added_mass", np.zeros(6), units="kg")
+            self.add_input(f"member{k}:transition_node", NULL * np.ones(3), units="m")
 
         self.add_output("transition_node", np.zeros(3), units="m")
         self.add_output("platform_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
@@ -98,7 +98,7 @@ class PlatformFrame(om.ExplicitComponent):
 
         # Look over members and grab all nodes and internal connections
         for k in range(n_member):
-            inode_xyz = inputs["member" + str(k) + ":nodes_xyz"]
+            inode_xyz = inputs[f"member{k}:nodes_xyz"]
             inodes = np.where(inode_xyz[:, 0] == NULL)[0][0]
             inode_xyz = inode_xyz[:inodes, :]
             inode_range = np.arange(inodes - 1)
@@ -111,7 +111,7 @@ class PlatformFrame(om.ExplicitComponent):
             elem_n2 = np.append(elem_n2, n + inode_range + 1)
             nodes_temp = np.append(nodes_temp, inode_xyz, axis=0)
 
-            itrans = inputs["member" + str(k) + ":transition_node"]
+            itrans = inputs[f"member{k}:transition_node"]
             if np.all(itrans != NULL):
                 if node_trans is None:
                     node_trans = itrans
@@ -155,7 +155,7 @@ class PlatformFrame(om.ExplicitComponent):
         # Find greatest radius of all members at node intersections
         Rnode = np.zeros(nnode)
         for k in range(n_member):
-            irnode = inputs["member" + str(k) + ":nodes_r"]
+            irnode = inputs[f"member{k}:nodes_r"]
             n = np.where(irnode == NULL)[0][0]
             for ii in range(n):
                 iglob = self.node_mem2glob[(k, ii)]
@@ -164,9 +164,9 @@ class PlatformFrame(om.ExplicitComponent):
         # Find forces on nodes
         Fnode = np.zeros((nnode, 3))
         for k in range(n_member):
-            icb = int(inputs["member" + str(k) + ":idx_cb"])
+            icb = int(inputs[f"member{k}:idx_cb"])
             iglob = self.node_mem2glob[(k, icb)]
-            Fnode[iglob, 2] += inputs["member" + str(k) + ":buoyancy_force"]
+            Fnode[iglob, 2] += inputs[f"member{k}:buoyancy_force"]
 
         # Store outputs
         outputs["platform_Rnode"] = NULL * np.ones(NNODES_MAX)
@@ -203,33 +203,33 @@ class PlatformFrame(om.ExplicitComponent):
 
         # Append all member data
         for k in range(n_member):
-            n = np.where(inputs["member" + str(k) + ":section_A"] == NULL)[0][0]
-            elem_D = np.append(elem_D, inputs["member" + str(k) + ":section_D"][:n])
-            elem_t = np.append(elem_t, inputs["member" + str(k) + ":section_t"][:n])
-            elem_A = np.append(elem_A, inputs["member" + str(k) + ":section_A"][:n])
-            elem_Asx = np.append(elem_Asx, inputs["member" + str(k) + ":section_Asx"][:n])
-            elem_Asy = np.append(elem_Asy, inputs["member" + str(k) + ":section_Asy"][:n])
-            elem_Ixx = np.append(elem_Ixx, inputs["member" + str(k) + ":section_Ixx"][:n])
-            elem_Iyy = np.append(elem_Iyy, inputs["member" + str(k) + ":section_Iyy"][:n])
-            elem_Izz = np.append(elem_Izz, inputs["member" + str(k) + ":section_Izz"][:n])
-            elem_rho = np.append(elem_rho, inputs["member" + str(k) + ":section_rho"][:n])
-            elem_E = np.append(elem_E, inputs["member" + str(k) + ":section_E"][:n])
-            elem_G = np.append(elem_G, inputs["member" + str(k) + ":section_G"][:n])
+            n = np.where(inputs[f"member{k}:section_A"] == NULL)[0][0]
+            elem_D = np.append(elem_D, inputs[f"member{k}:section_D"][:n])
+            elem_t = np.append(elem_t, inputs[f"member{k}:section_t"][:n])
+            elem_A = np.append(elem_A, inputs[f"member{k}:section_A"][:n])
+            elem_Asx = np.append(elem_Asx, inputs[f"member{k}:section_Asx"][:n])
+            elem_Asy = np.append(elem_Asy, inputs[f"member{k}:section_Asy"][:n])
+            elem_Ixx = np.append(elem_Ixx, inputs[f"member{k}:section_Ixx"][:n])
+            elem_Iyy = np.append(elem_Iyy, inputs[f"member{k}:section_Iyy"][:n])
+            elem_Izz = np.append(elem_Izz, inputs[f"member{k}:section_Izz"][:n])
+            elem_rho = np.append(elem_rho, inputs[f"member{k}:section_rho"][:n])
+            elem_E = np.append(elem_E, inputs[f"member{k}:section_E"][:n])
+            elem_G = np.append(elem_G, inputs[f"member{k}:section_G"][:n])
 
             # Mass, volume, cost tallies
-            imass = inputs["member" + str(k) + ":total_mass"]
-            ivol = inputs["member" + str(k) + ":displacement"]
+            imass = inputs[f"member{k}:total_mass"]
+            ivol = inputs[f"member{k}:displacement"]
 
             mass += imass
             volume += ivol
-            cost += inputs["member" + str(k) + ":total_cost"]
-            Awater += inputs["member" + str(k) + ":Awater"]
-            Iwater += inputs["member" + str(k) + ":Iwater"]
-            m_added += inputs["member" + str(k) + ":added_mass"]
+            cost += inputs[f"member{k}:total_cost"]
+            Awater += inputs[f"member{k}:Awater"]
+            Iwater += inputs[f"member{k}:Iwater"]
+            m_added += inputs[f"member{k}:added_mass"]
 
             # Center of mass / buoyancy tallies
-            cg_plat += imass * inputs["member" + str(k) + ":center_of_mass"]
-            cb_plat += ivol * inputs["member" + str(k) + ":center_of_buoyancy"]
+            cg_plat += imass * inputs[f"member{k}:center_of_mass"]
+            cb_plat += ivol * inputs[f"member{k}:center_of_buoyancy"]
 
         # Store outputs
         nelem = elem_A.size

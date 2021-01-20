@@ -19,6 +19,7 @@ class PoseOptimization(object):
         mono_opt = self.opt["design_variables"]["monopile"]
         hub_opt = self.opt["design_variables"]["hub"]
         drive_opt = self.opt["design_variables"]["drivetrain"]
+        float_opt = self.opt["design_variables"]["floating"]
 
         if rotorD_opt["flag"]:
             n_DV += 1
@@ -85,6 +86,10 @@ class PoseOptimization(object):
                 n_DV += 2
         if drive_opt["bedplate_wall_thickness"]["flag"]:
             n_DV += 4
+
+        if float_opt["joints"]["flag"]:
+            n_DV += len(float_opt["joints"]["z-coordinate"]) + len(float_opt["joints"]["r-coordinate"])
+
         if self.opt["driver"]["form"] == "central":
             n_DV *= 2
 
@@ -365,40 +370,26 @@ class PoseOptimization(object):
                 )
 
         # -- Floating & Mooring --
-        jointz = float_opt["joints"]["z_coordinate"]
-        jointr = float_opt["joints"]["r_coordinate"]
+        if float_opt["joints"]["flag"]:
+            jointz = float_opt["joints"]["z-coordinate"]
+            jointr = float_opt["joints"]["r-coordinate"]
 
-        count = 0
-        for k in range(len(jointz["linked"])):
-            wt_opt.model.add_design_var(
-                f"floating.joints.mydv_z_{count}",
-                lower=jointz["linked"][k]["lower_bound"],
-                upper=jointz["linked"][k]["upper_bound"],
-            )
-            count += 1
-        for k in range(len(jointz["independent"])):
-            wt_opt.model.add_design_var(
-                f"floating.joints.mydv_z_{count}",
-                lower=jointz["independent"][k]["lower_bound"],
-                upper=jointz["independent"][k]["upper_bound"],
-            )
-            count += 1
+            count = 0
+            for k in range(len(jointz)):
+                wt_opt.model.add_design_var(
+                    f"floating.jointdv_{count}",
+                    lower=jointz[k]["lower_bound"],
+                    upper=jointz[k]["upper_bound"],
+                )
+                count += 1
 
-        count = 0
-        for k in range(len(jointr["linked"])):
-            wt_opt.model.add_design_var(
-                f"floating.joints.mydv_r_{count}",
-                lower=jointr["linked"][k]["lower_bound"],
-                upper=jointr["linked"][k]["upper_bound"],
-            )
-            count += 1
-        for k in range(len(jointr["independent"])):
-            wt_opt.model.add_design_var(
-                f"floating.joints.mydv_r_{count}",
-                lower=jointr["independent"][k]["lower_bound"],
-                upper=jointr["independent"][k]["upper_bound"],
-            )
-            count += 1
+            for k in range(len(jointr)):
+                wt_opt.model.add_design_var(
+                    f"floating.jointdv_{count}",
+                    lower=jointr[k]["lower_bound"],
+                    upper=jointr[k]["upper_bound"],
+                )
+                count += 1
 
         return wt_opt
 

@@ -888,14 +888,20 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     n_joints = floating_init_options["joints"]["n_joints"]
     # Loop through joints and assign location values to openmdao entry
     for i in range(n_joints):
-        wt_opt["floating.joints.location"][i, :] = floating["joints"][i]["location"]
+        wt_opt["floating.location_in"][i, :] = floating["joints"][i]["location"]
 
     # Set transition joint/node
     if modeling_options["floating"]["transition_joint"] is None:
-        itrans = np.argmax(wt_opt["floating.joints.location"][:, 2])
+        itrans = np.argmax(wt_opt["floating.location_in"][:, 2])
     else:
         itrans = modeling_options["floating"]["transition_joint"]
-    wt_opt["floating.joints.transition_node"] = wt_opt["floating.joints.location"][itrans, :]
+    wt_opt["floating.transition_node"] = wt_opt["floating.location"][itrans, :]
+
+    # Make sure IVCs are initialized too
+    for k, linked_node_dict in enumerate(modeling_options["floating"]["joints"]["design_variable_data"]):
+        idx = linked_node_dict["indices"]
+        dim = linked_node_dict["dimension"]
+        wt_opt[f"floating.jointdv_{k}"] = wt_opt["floating.location_in"][idx, dim].mean()
 
     n_members = floating_init_options["members"]["n_members"]
     # Loop through members and assign grid, outer diameter, layer thickness and ballast volume to openmdao entry. The distributed quantities are interpolated to a common grid

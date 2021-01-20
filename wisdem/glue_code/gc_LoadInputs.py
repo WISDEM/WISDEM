@@ -561,6 +561,32 @@ class WindTurbineOntologyPython(object):
         elif blade_opt_options["structure"]["spar_cap_ps"]["n_opt"] < 4:
             raise ValueError("Cannot optimize spar cap pressure side with less than 4 control points along blade span")
 
+        # Handle linked joints and members in floating platform
+        float_opt_options = self.analysis_options["design_variables"]["floating"]
+
+        dv_info = []
+        for c in ["z", "r"]:
+            for idv in float_opt_options["joints"][c + "-coordinate"]:
+                inames = idv["names"]
+                idx = [self.modeling_options["floating"]["joints"]["name"].index(m) for m in inames]
+
+                idict = {}
+                idict["indices"] = idx
+                idict["dimension"] = 0 if c == "r" else 2
+                dv_info.append(idict)
+
+        # Check for r-coordinate dv and cylindrical consistency
+        for idict in dv_info:
+            if idict["dimension"] != 0:
+                continue
+            for k in idict["indices"]:
+                m = self.modeling_options["floating"]["joints"]["name"][k]
+                if not self.modeling_options["floating"]["joints"]["cylindrical"][k]:
+                    raise ValueError(f"Cannot optimize r-coordinate of, {m}, becase it is not a cylindrical joint")
+
+        # Store DV information for needed linking and IVC assignment
+        self.modeling_options["floating"]["joints"]["design_variable_data"] = dv_info
+
     def write_ontology(self, wt_opt, fname_output):
 
         # Update blade

@@ -1868,15 +1868,13 @@ class Floating(om.Group):
         n_joints = floating_init_options["joints"]["n_joints"]
         n_members = floating_init_options["members"]["n_members"]
 
-        jivc = self.add_subsystem("joints", om.IndepVarComp())
+        jivc = self.add_subsystem("joints", om.IndepVarComp(), promotes=["*"])
         jivc.add_output("location_in", val=np.zeros((n_joints, 3)), units="m")
         jivc.add_output("transition_node", val=np.zeros(3), units="m")
 
-        # Additions for optimizing multiple nodes concurrently
-        self.add_subsystem(
-            "nodedv", NodeDVs(linked_node_data=floating_init_options["linked_node_data"]), promotes=["*"]
-        )
-        for k in range(len(floating_init_options["joints"]["linked_joint_data"])):
+        # Additions for optimizing individual nodes or multiple nodes concurrently
+        self.add_subsystem("nodedv", NodeDVs(options=floating_init_options["joints"]), promotes=["*"])
+        for k in range(len(floating_init_options["joints"]["design_variable_data"])):
             jivc.add_output(f"jointdv_{k}", val=0.0, units="m")
 
         for i in range(n_members):
@@ -1911,8 +1909,6 @@ class Floating(om.Group):
 
         self.add_subsystem("alljoints", AggregateJoints(floating_init_options=floating_init_options), promotes=["*"])
 
-        self.connect("joints.location", "location")
-
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
             self.connect("member_" + name_member + ".grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
@@ -1927,20 +1923,19 @@ class NodeDVs(om.ExplicitComponent):
 
     def setup(self):
         opt = self.options["options"]
-        n_joints = opt["joints"]["n_joints"]
+        n_joints = opt["n_joints"]
         self.add_input("location_in", val=np.zeros((n_joints, 3)), units="m")
 
-        linked_data = opt["joints"]["linked_joint_data"]
-        for k in range(len(linked_data)):
+        for k in range(len(opt["design_variable_data"])):
             self.add_input(f"jointdv_{k}", val=0.0, units="m")
 
-        self.add_output("location", val=np.zeros((10, 2)))
+        self.add_output("location", val=np.zeros((n_joints, 3)), units="m")
 
     def compute(self, inputs, outputs):
         opt = self.options["options"]
 
         xyz = inputs["location_in"]
-        for i, linked_node_dict in enumerate(opt["joints"]["linked_joint_data"]):
+        for i, linked_node_dict in enumerate(opt["design_variable_data"]):
             idx = linked_node_dict["indices"]
             dim = linked_node_dict["dimension"]
             xyz[idx, dim] = inputs[f"jointdv_{i}"]
@@ -2049,9 +2044,10 @@ class AggregateJoints(om.ExplicitComponent):
             joint2id = name2idx[memopt["joint2"][k]]
             joint1xyz = joints_xyz[joint1id, :]
             joint2xyz = joints_xyz[joint2id, :]
+            hk = np.sqrt(np.sum((joint2xyz - joint1xyz) ** 2))
             outputs["member_" + iname + ":joint1"] = joint1xyz
             outputs["member_" + iname + ":joint2"] = joint2xyz
-            outputs["member_" + iname + ":height"] = np.sqrt(np.sum((joint2xyz - joint1xyz) ** 2))
+            outputs["member_" + iname + ":height"] = hk
             discrete_outputs["member_" + iname + ":transition_flag"] = [joint1id == itrans, joint2id == itrans]
 
             # Largest radius at connection points for this member
