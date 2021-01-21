@@ -892,7 +892,9 @@ def assign_floating_values(wt_opt, modeling_options, floating):
 
     # Set transition joint/node
     if modeling_options["floating"]["transition_joint"] is None:
-        itrans = np.argmax(wt_opt["floating.location_in"][:, 2])
+        centroid = wt_opt["floating.location_in"][:, :2].mean(axis=0)
+        zmax = wt_opt["floating.location_in"][:, 2].max()
+        itrans = util.closest_node(wt_opt["floating.location_in"], np.r_[centroid, zmax])
     else:
         itrans = modeling_options["floating"]["transition_joint"]
     wt_opt["floating.transition_node"] = wt_opt["floating.location"][itrans, :]

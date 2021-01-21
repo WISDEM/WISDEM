@@ -522,6 +522,7 @@ class WT_RNTA(om.Group):
             self.connect("tower.layer_thickness", "floatingse.tower.layer_thickness")
             self.connect("tower.outfitting_factor", "floatingse.tower.outfitting_factor_in")
             self.connect("tower.layer_mat", "floatingse.tower.layer_materials")
+            self.connect("floating.transition_node", "floatingse.transition_node")
             if modeling_options["flags"]["nacelle"]:
                 self.connect("drivese.base_F", "floatingse.rna_F")
                 self.connect("drivese.base_M", "floatingse.rna_M")
@@ -561,7 +562,7 @@ class WT_RNTA(om.Group):
                 ]:
                     self.connect("floating.member_" + kname + "." + var, "floatingse.member" + str(k) + "." + var)
 
-                for var in ["joint1", "joint2", "s_ghost1", "s_ghost2", "transition_flag"]:
+                for var in ["joint1", "joint2", "s_ghost1", "s_ghost2"]:
                     self.connect("floating.member_" + kname + ":" + var, "floatingse.member" + str(k) + "." + var)
 
             # Mooring connections

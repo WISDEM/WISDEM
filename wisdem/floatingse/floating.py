@@ -1,4 +1,3 @@
-import numpy as np
 import openmdao.api as om
 from wisdem.floatingse.member import Member
 from wisdem.floatingse.map_mooring import MapMooring
@@ -60,7 +59,6 @@ class FloatingSE(om.Group):
         mem_vars = [
             "nodes_xyz",
             "nodes_r",
-            "transition_node",
             "section_D",
             "section_t",
             "section_A",

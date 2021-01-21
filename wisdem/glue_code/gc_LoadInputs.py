@@ -256,13 +256,15 @@ class WindTurbineOntologyPython(object):
                     "floating_platform"
                 ]["joints"][i]["cylindrical"]
 
+            # Create name->index dictionary for joint names, will add on axial joints later
+            name2idx = dict(zip(self.modeling_options["floating"]["joints"]["name"], range(n_joints)))
+
             # Check that there is at most one transition joint
             if self.modeling_options["floating"]["joints"]["transition"].count(True) > 1:
                 raise ValueError("Can only support one tower on the floating platform for now")
             try:
-                self.modeling_options["floating"]["transition_joint"] = self.modeling_options["floating"]["joints"][
-                    "transition"
-                ].index(True)
+                itrans = self.modeling_options["floating"]["joints"]["transition"].index(True)
+                self.modeling_options["floating"]["transition_joint"] = itrans
             except:
                 self.modeling_options["floating"]["transition_joint"] = None
 
@@ -420,6 +422,9 @@ class WindTurbineOntologyPython(object):
                         grid.append(
                             self.wt_init["components"]["floating_platform"]["members"][i]["axial_joints"][m]["grid"]
                         )
+                        name2idx[
+                            self.wt_init["components"]["floating_platform"]["members"][i]["axial_joints"][m]["name"]
+                        ] = len(name2idx)
                 else:
                     self.modeling_options["floating"]["members"]["n_axial_joints"][i] = 0
 
@@ -428,6 +433,9 @@ class WindTurbineOntologyPython(object):
                     "grid_member_" + self.modeling_options["floating"]["members"]["name"][i]
                 ] = final_grid
                 self.modeling_options["floating"]["members"]["n_height"][i] = len(final_grid)
+
+            # Store joint info
+            self.modeling_options["floating"]["name2idx"] = name2idx
 
             # Floating tower params
             self.modeling_options["floating"]["tower"] = {}

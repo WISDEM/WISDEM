@@ -46,9 +46,7 @@ class PlatformFrame(om.ExplicitComponent):
             self.add_input(f"member{k}:Awater", 0.0, units="m**2")
             self.add_input(f"member{k}:Iwater", 0.0, units="m**4")
             self.add_input(f"member{k}:added_mass", np.zeros(6), units="kg")
-            self.add_input(f"member{k}:transition_node", NULL * np.ones(3), units="m")
 
-        self.add_output("transition_node", np.zeros(3), units="m")
         self.add_output("platform_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
         self.add_output("platform_Fnode", NULL * np.ones((NNODES_MAX, 3)), units="N")
         self.add_output("platform_Rnode", NULL * np.ones(NNODES_MAX), units="m")
@@ -94,7 +92,6 @@ class PlatformFrame(om.ExplicitComponent):
         nodes_temp = np.empty((0, 3))
         elem_n1 = np.array([], dtype=np.int_)
         elem_n2 = np.array([], dtype=np.int_)
-        node_trans = None
 
         # Look over members and grab all nodes and internal connections
         for k in range(n_member):
@@ -111,27 +108,11 @@ class PlatformFrame(om.ExplicitComponent):
             elem_n2 = np.append(elem_n2, n + inode_range + 1)
             nodes_temp = np.append(nodes_temp, inode_xyz, axis=0)
 
-            itrans = inputs[f"member{k}:transition_node"]
-            if np.all(itrans != NULL):
-                if node_trans is None:
-                    node_trans = itrans
-                else:
-                    raise ValueError("More than one transition node is flagged")
-
         # Reveal connectivity by using mapping to unique node positions
-        nodes, idx, inv = np.unique(nodes_temp.round(4), axis=0, return_index=True, return_inverse=True)
+        nodes, idx, inv = np.unique(nodes_temp.round(8), axis=0, return_index=True, return_inverse=True)
         nnode = nodes.shape[0]
         outputs["platform_nodes"] = NULL * np.ones((NNODES_MAX, 3))
         outputs["platform_nodes"][:nnode, :] = nodes
-
-        # Set transition node
-        if node_trans is None:
-            centroid = nodes[:, :2].mean(axis=0)
-            zmax = nodes[:, 2].max()
-            itrans = util.closest_node(nodes, np.r_[centroid, zmax])
-            outputs["transition_node"] = nodes[itrans, :]
-        else:
-            outputs["transition_node"] = node_trans
 
         # Use mapping to set references to node joints
         nelem = elem_n1.size
@@ -613,7 +594,7 @@ class FrameAnalysis(om.ExplicitComponent):
 
             # Add the load case and run
             myframe.addLoadCase(load_obj)
-            # myframe.write('temp.3dd')
+            myframe.write(frame + ".3dd")
             displacements, forces, reactions, internalForces, mass, modal = myframe.run()
 
             # natural frequncies

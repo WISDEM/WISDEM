@@ -127,7 +127,6 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_input("s", val=np.zeros(n_height))
         self.add_input("joint1", val=np.zeros(3), units="m")
         self.add_input("joint2", val=np.zeros(3), units="m")
-        self.add_discrete_input("transition_flag", val=[False, False])
         self.add_discrete_input("layer_materials", val=n_layers * [""])
         self.add_discrete_input("ballast_materials", val=n_ballast * [""])
         self.add_input("layer_thickness", val=np.zeros((n_layers, n_height)), units="m")
@@ -153,7 +152,6 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_output("outfitting_factor", val=np.ones(n_height - 1))
         self.add_output("ballast_density", val=np.zeros(n_ballast), units="kg/m**3")
         self.add_output("ballast_unit_cost", val=np.zeros(n_ballast), units="USD/kg")
-        self.add_output("transition_node", NULL * np.ones(3), units="m")
 
         # Distributed Beam Properties (properties needed for ElastoDyn (OpenFAST) inputs or BModes inputs for verification purposes)
         self.add_output("z_param", np.zeros(n_height), units="m")
@@ -205,12 +203,6 @@ class DiscretizationYAML(om.ExplicitComponent):
         h_col = np.sqrt(np.sum(dxyz ** 2))
         lthick = inputs["layer_thickness"]
         lthick = 0.5 * (lthick[:, :-1] + lthick[:, 1:])
-        if discrete_inputs["transition_flag"][0]:
-            outputs["transition_node"] = xyz0
-        elif discrete_inputs["transition_flag"][1]:
-            outputs["transition_node"] = xyz1
-        else:
-            outputs["transition_node"] = NULL * np.ones(3)
 
         outputs["height"] = h_col
         outputs["section_height"] = np.diff(h_col * inputs["s"])
@@ -619,9 +611,6 @@ class MemberComponent(om.ExplicitComponent):
         n_bulk = opt["n_bulkheads"][idx]
         n_ball = opt["n_ballasts"][idx]
 
-        # Initialize dictionary that will keep our member nodes so we can convert to OpenFAST format
-        self.sections = SortedDict()
-
         # Inputs
         self.add_input("joint1", val=np.zeros(3), units="m")
         self.add_input("joint2", val=np.zeros(3), units="m")
@@ -748,6 +737,8 @@ class MemberComponent(om.ExplicitComponent):
         self.sections[s1] = None
 
     def compute(self, inputs, outputs):
+        # Initialize dictionary that will keep our member nodes so we can convert to OpenFAST format
+        self.sections = SortedDict()
 
         self.add_main_sections(inputs, outputs)
         self.add_bulkhead_sections(inputs, outputs)
