@@ -82,6 +82,7 @@ properties:
                 minimum: 0
     components:
         type: object
+        default: {}
         optional:
             - blade
             - hub
@@ -172,6 +173,7 @@ properties:
 
                     internal_structure_2d_fem:
                         type: object
+                        default: {}
                         required:
                             - reference_axis
                             - layers
@@ -270,6 +272,32 @@ properties:
                                             $ref: "#/definitions/distributed_data/rotation"
                                         offset_y_pa:
                                             $ref: "#/definitions/distributed_data/offset"
+                            joint:
+                                type: object
+                                default: {}
+                                description: This is a spanwise joint along the blade, usually adopted to ease transportation constraints. WISDEM currently supports a single joint.
+                                properties:
+                                    position:
+                                        type: number
+                                        description: Spanwise position of the segmentation joint.
+                                        unit: none
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 1.0
+                                    mass:
+                                        type: number
+                                        description: Mass of the joint.
+                                        unit: kg
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 1.e+6
+                                    cost:
+                                        type: number
+                                        description: Cost of the joint.
+                                        unit: USD
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 1.e+6
                     # cfd_geometry:
                         # type: object
                         # TODO

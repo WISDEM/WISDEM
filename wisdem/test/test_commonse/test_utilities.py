@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import wisdem.commonse.utilities as util
+from scipy.optimize import curve_fit
 
 npts = 100
 myones = np.ones((npts,))
@@ -26,11 +27,21 @@ class TestAny(unittest.TestCase):
     def testModalCoefficients(self):
         # Test exact 6-deg polynomial
         p = np.random.random((7,))
+        p[:2] = 0.0
         x = np.linspace(0, 1)
         y = np.polynomial.polynomial.polyval(x, p)
 
         pp = util.get_modal_coefficients(x, y)
         npt.assert_almost_equal(p[2:] / p[2:].sum(), pp)
+
+        # Test more complex and ensure get the same answer as curve fit
+        p = np.random.random((10,))
+        y = np.polynomial.polynomial.polyval(x, p)
+
+        pp = util.get_modal_coefficients(x, y)
+        cc, _ = curve_fit(util.mode_fit, x, y)
+        cc /= cc.sum()
+        npt.assert_almost_equal(pp, cc, 4)
 
     def testGetXYModes(self):
         r = np.linspace(0, 1, 20)

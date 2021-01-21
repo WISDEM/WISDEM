@@ -10,25 +10,30 @@ from __future__ import print_function
 import numpy as np
 from scipy.linalg import solve_banded
 
+# from scipy.optimize import curve_fit
+
 
 def mode_fit(x, c2, c3, c4, c5, c6):
     return c2 * x ** 2.0 + c3 * x ** 3.0 + c4 * x ** 4.0 + c5 * x ** 5.0 + c6 * x ** 6.0
 
 
-def get_modal_coefficients(x, y, deg=6):
+def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6]):
     # Normalize x input
     xn = (x - x.min()) / (x.max() - x.min())
 
-    # Get coefficients to 6th order polynomial
+    # Get coefficients to 2-6th order polynomial
     p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
-    # coef, pcov = curve_fit(mode_fit, xn, y)
 
     # Normalize for Elastodyn
     if y.ndim > 1:
         p6 = p6[2:, :]
+        # p6 = np.zeros((5, y.shape[1]))
+        # for k in range(y.shape[1]):
+        #    p6[:, k], _ = curve_fit(mode_fit, xn, y[:, k])
         p6 /= p6.sum(axis=0)[np.newaxis, :]
     else:
         p6 = p6[2:]
+        # p6, _ = curve_fit(mode_fit, xn, y)
         p6 /= p6.sum()
 
     return p6
@@ -40,7 +45,7 @@ def get_xy_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
 
     # Get mode shapes in batch
     mpfs = np.abs(np.c_[xmpf, ympf, zmpf])
-    polys = get_modal_coefficients(r, np.vstack((xdsp, ydsp)).T, 6)
+    polys = get_modal_coefficients(r, np.vstack((xdsp, ydsp)).T)
     xpolys = polys[:, :nfreq].T
     ypolys = polys[:, nfreq:].T
 

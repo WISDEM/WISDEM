@@ -470,6 +470,11 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     wt_opt["blade.internal_structure_2d_fem.layer_end_nd_yaml"] = layer_end_nd
     wt_opt["blade.internal_structure_2d_fem.layer_rotation_yaml"] = layer_rotation
 
+    # Spanwise joint
+    wt_opt["blade.internal_structure_2d_fem.joint_position"] = internal_structure_2d_fem["joint"]["position"]
+    wt_opt["blade.internal_structure_2d_fem.joint_mass"] = internal_structure_2d_fem["joint"]["mass"]
+    wt_opt["blade.internal_structure_2d_fem.joint_cost"] = internal_structure_2d_fem["joint"]["cost"]
+
     return wt_opt
 
 

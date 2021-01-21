@@ -99,9 +99,7 @@ Blade twist as a design variable by adding or subtracting radians from the initi
 
 :code:`n_opt` : Integer
     Number of equally-spaced control points of the spline
-    parametrizing the twist distribution along blade span. By default,
-    the first two points are locked to prevent the optimizer to try to
-    optimize the twist of the blade root cylinder.
+    parametrizing the twist distribution along blade span. 
 
     *Default* = 8
 
@@ -119,6 +117,17 @@ Blade twist as a design variable by adding or subtracting radians from the initi
 
     *Default* = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 
+:code:`lock_root` : Integer
+    Integer setting how many DVs along span are locked starting from blade root.
+    By default, the first two points are locked to prevent the optimizer to try to
+    optimize the twist of the blade root cylinder.
+
+    *Default* = 2
+
+:code:`lock_tip` : Integer
+    Integer setting how many DVs along span are locked starting from blade tip.
+
+    *Default* = 0
 
 
 chord
@@ -134,15 +143,7 @@ Blade chord as a design variable by scaling (multiplying) the initial value at s
 
 :code:`n_opt` : Integer
     Number of equally-spaced control points of the spline
-    parametrizing the chord distribution along blade span. By default,
-    the first two points close to blade root and the last point are
-    locked. The first two points impact the diameter of the blade root
-    cylinder, and the models implemented in WISDEM do not have the
-    level of fidelity to appropriately size the blade root diameter.
-    The last point controls the chord length at blade tip and due to
-    the imperfect tip loss models of CCBlade, it is usually a good
-    idea to taper the chord manually and do not let a numerical
-    optimizer control it.
+    parametrizing the chord distribution along blade span.
 
     *Default* = 8
 
@@ -160,6 +161,23 @@ Blade chord as a design variable by scaling (multiplying) the initial value at s
 
     *Default* = 1.5
 
+:code:`lock_root` : Integer
+    Integer setting how many DVs along span are locked starting from blade root.
+    By default, the first two points close to blade root are
+    locked. The first two points impact the diameter of the blade root
+    cylinder, and the models implemented in WISDEM do not have the
+    level of fidelity to appropriately size the blade root diameter.
+
+    *Default* = 2
+
+:code:`lock_tip` : Integer
+    Integer setting how many DVs along span are locked starting from blade tip.
+    The last point controls the chord length at blade tip and due to
+    the imperfect tip loss models of CCBlade, it is usually a good
+    idea to taper the chord manually and do not let a numerical
+    optimizer control it. The default is therefore set to 1.
+
+    *Default* = 1
 
 
 af_positions
@@ -206,10 +224,6 @@ Blade suction-side spar cap thickness as a design variable by scaling (multiplyi
 :code:`n_opt` : Integer
     Number of equally-spaced control points of the spline
     parametrizing the thickness of the spar cap on the suction side.
-    By default, the first point close to blade root and the last point
-    close to blade tip are locked. This is done to impose a pre-
-    defined taper to small thicknesses and mimic a blade
-    manufacturability constraint.
 
     *Default* = 8
 
@@ -227,6 +241,23 @@ Blade suction-side spar cap thickness as a design variable by scaling (multiplyi
 
     *Default* = 1.5
 
+:code:`lock_root` : Integer
+    Integer setting how many DVs along span are locked starting from blade root.
+    By default, the first point close to blade root is locked. 
+    This is done to impose a pre-
+    defined taper to small thicknesses and mimic a blade
+    manufacturability constraint.
+
+    *Default* = 1
+
+:code:`lock_tip` : Integer
+    Integer setting how many DVs along span are locked starting from blade tip.
+    By default, the last point close to blade tip is locked. 
+    This is done to impose a pre-
+    defined taper to small thicknesses and mimic a blade
+    manufacturability constraint.
+
+    *Default* = 1
 
 
 spar_cap_ps
@@ -243,10 +274,6 @@ Blade pressure-side spar cap thickness as a design variable by scaling (multiply
 :code:`n_opt` : Integer
     Number of equally-spaced control points of the spline
     parametrizing the thickness of the spar cap on the pressure side.
-    By default, the first point close to blade root and the last point
-    close to blade tip are locked. This is done to impose a pre-
-    defined taper to small thicknesses and mimic a blade
-    manufacturability constraint.
 
     *Default* = 8
 
@@ -264,6 +291,23 @@ Blade pressure-side spar cap thickness as a design variable by scaling (multiply
 
     *Default* = 1.5
 
+:code:`lock_root` : Integer
+    Integer setting how many DVs along span are locked starting from blade root.
+    By default, the first point close to blade root is locked. 
+    This is done to impose a pre-
+    defined taper to small thicknesses and mimic a blade
+    manufacturability constraint.
+
+    *Default* = 1
+
+:code:`lock_tip` : Integer
+    Integer setting how many DVs along span are locked starting from blade tip.
+    By default, the last point close to blade tip is locked. 
+    This is done to impose a pre-
+    defined taper to small thicknesses and mimic a blade
+    manufacturability constraint.
+
+    *Default* = 1
 
 
 te_ss

@@ -81,6 +81,14 @@ properties:
                                         items:
                                             type: number
                                             unit: rad
+                                    lock_root:
+                                        type: integer
+                                        default: 2
+                                        description: How many DVs along span are locked starting from blade root
+                                    lock_tip:
+                                        type: integer
+                                        default: 0
+                                        description: How many DVs along span are locked starting from blade tip
                             chord:
                                 type: object
                                 default: {}
@@ -102,6 +110,14 @@ properties:
                                         default: 1.5
                                         unit: none
                                         description: Upper bound on scalar multiplier that will be applied to value at control points
+                                    lock_root:
+                                        type: integer
+                                        default: 2
+                                        description: How many DVs along span are locked starting from blade root
+                                    lock_tip:
+                                        type: integer
+                                        default: 1
+                                        description: How many DVs along span are locked starting from blade tip
                             af_positions:
                                 type: object
                                 default: {}
@@ -131,6 +147,14 @@ properties:
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
+                                    lock_root: &lockroot_structure
+                                        type: integer
+                                        default: 1
+                                        description: How many DVs along span are locked starting from blade root
+                                    lock_tip:  &locktip_structure
+                                        type: integer
+                                        default: 1
+                                        description: How many DVs along span are locked starting from blade tip
                             spar_cap_ps:
                                 type: object
                                 description: Blade pressure-side spar cap thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
@@ -148,6 +172,8 @@ properties:
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
+                                    lock_root: *lockroot_structure
+                                    lock_tip: *locktip_structure
                             te_ss:
                                 type: object
                                 default: {}
@@ -161,6 +187,8 @@ properties:
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
+                                    lock_root: *lockroot_structure
+                                    lock_tip: *locktip_structure
                             te_ps:
                                 type: object
                                 description: Blade pressure-side trailing edge reinforcement thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
@@ -174,6 +202,8 @@ properties:
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
                                     min_gain: *mingain
                                     max_gain: *maxgain
+                                    lock_root: *lockroot_structure
+                                    lock_tip: *locktip_structure
             control:
                 type: object
                 default: {}
@@ -890,44 +920,93 @@ properties:
 
     driver:
         type: object
-        description: Specification of the optimization driver (optimization algorithm) parameters
         default: {}
         properties:
-            tol:
-                type: number
-                description: Convergence tolerance (relative)
-                default: 1e-6
-                minimum: 1e-12
-                maximum: 1.0
-                unit: none
-            max_iter:
-                type: integer
-                description: Max number of optimization iterations
-                default: 100
-                minimum: 0
-                maximum: 100000
-            max_function_calls:
-                type: integer
-                description: Max number of calls to objective function evaluation
-                default: 100000
-                minimum: 0
-                maximum: 100000000
-            solver:
-                type: string
-                description: Optimization driver.  Can be one of [SLSQP, CONMIN, COBYLA, SNOPT]
-                default: SLSQP
-                enum: [SLSQP, CONMIN, COBYLA, SNOPT]
-            step_size:
-                type: number
-                description: Maximum step size
-                default: 1e-3
-                minimum: 1e-10
-                maximum: 100.0
-            form:
-                type: string
-                description: Finite difference calculation mode
-                default: central
-                enum: [central, forward, complex]
+            optimization:
+                type: object
+                description: Specification of the optimization driver (optimization algorithm) parameters
+                default: {}
+                properties:
+                    flag: *flag
+                    tol:
+                        type: number
+                        description: Convergence tolerance (relative)
+                        default: 1e-6
+                        minimum: 1e-12
+                        maximum: 1.0
+                        unit: none
+                    max_iter:
+                        type: integer
+                        description: Max number of optimization iterations
+                        default: 100
+                        minimum: 0
+                        maximum: 100000
+                    max_function_calls:
+                        type: integer
+                        description: Max number of calls to objective function evaluation
+                        default: 100000
+                        minimum: 0
+                        maximum: 100000000
+                    solver:
+                        type: string
+                        description: Optimization driver.  Can be one of [SLSQP, CONMIN, COBYLA, SNOPT]
+                        default: SLSQP
+                        enum: [SLSQP, CONMIN, COBYLA, SNOPT]
+                    step_size:
+                        type: number
+                        description: Maximum step size
+                        default: 1e-3
+                        minimum: 1e-10
+                        maximum: 100.0
+                    form:
+                        type: string
+                        description: Finite difference calculation mode
+                        default: central
+                        enum: [central, forward, complex]
+            design_of_experiments:
+                type: object
+                description: Specification of the design of experiments driver parameters
+                default: {}
+                properties:
+                    flag: *flag
+                    run_parallel:
+                        type: boolean
+                        default: True
+                        description: Toggle parallel model runs
+                    generator:
+                        type: string
+                        description: Type of model input generator.
+                        default: Uniform
+                        enum: [Uniform, FullFact, PlackettBurman, BoxBehnken, LatinHypercube]
+                    num_samples:
+                        type: integer
+                        description: Number of samples to evaluate model at (Uniform and LatinHypercube only)
+                        default: 5
+                        minimum: 1
+                        maximum: 1000000
+                    seed:
+                        type: integer
+                        description: Random seed to use if design is randomized
+                        default: 2
+                        minimum: 1
+                        maximum: 1000000
+                    levels:
+                        type: integer
+                        description: Number of evenly spaced levels between each design variable lower and upper bound (FullFactorial only)
+                        default: 2
+                        minimum: 1
+                        maximum: 1000000
+                    criterion:
+                        type: string
+                        description: Descriptor of sampling method for LatinHypercube generator
+                        default: None
+                        enum: [None, center, c, maximin, m, centermaximin, cm, correelation, corr]
+                    iterations:
+                        type: integer
+                        description: Number of iterations in maximin and correlations algorithms (LatinHypercube only)
+                        default: 2
+                        minimum: 1
+                        maximum: 1000000
 
     recorder:
         type: object
