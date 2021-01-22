@@ -435,7 +435,7 @@ class WindTurbineOntologyPython(object):
                 self.modeling_options["floating"]["members"]["n_height"][i] = len(final_grid)
 
             # Store joint info
-            self.modeling_options["floating"]["name2idx"] = name2idx
+            self.modeling_options["floating"]["joints"]["name2idx"] = name2idx
 
             # Floating tower params
             self.modeling_options["floating"]["tower"] = {}
@@ -572,9 +572,10 @@ class WindTurbineOntologyPython(object):
         # Handle linked joints and members in floating platform
         float_opt_options = self.analysis_options["design_variables"]["floating"]
 
+        # First the joints
         dv_info = []
         for c in ["z", "r"]:
-            for idv in float_opt_options["joints"][c + "-coordinate"]:
+            for idv in float_opt_options["joints"][c + "_coordinate"]:
                 inames = idv["names"]
                 idx = [self.modeling_options["floating"]["joints"]["name"].index(m) for m in inames]
 
@@ -594,6 +595,30 @@ class WindTurbineOntologyPython(object):
 
         # Store DV information for needed linking and IVC assignment
         self.modeling_options["floating"]["joints"]["design_variable_data"] = dv_info
+
+        # Now the members
+        memgrps = [[m] for m in self.modeling_options["floating"]["members"]["name"]]
+        for idv in float_opt_options["members"]["groups"]:
+            inames = idv["names"]
+            idx = [self.modeling_options["floating"]["members"]["name"].index(m) for m in inames]
+            for k in range(1, len(idx)):
+                try:
+                    memgrps[idx[k]].remove(inames[k])
+                    memgrps[idx[0]].append(inames[k])
+                except ValueError:
+                    raise ValueError("Cannot put member," + inames[k] + ", as part of multiple groups")
+
+        # Remove entries for members that are now linked with others
+        while [] in memgrps:
+            memgrps.remove([])
+        self.modeling_options["floating"]["members"]["linked_members"] = memgrps
+
+        # Make a name 2 group index lookup
+        name2grp = {}
+        for k, kgrp in enumerate(memgrps):
+            for kname in kgrp:
+                name2grp[kname] = k
+        self.modeling_options["floating"]["members"]["name2idx"] = name2grp
 
     def write_ontology(self, wt_opt, fname_output):
 

@@ -1876,14 +1876,18 @@ class Floating(om.Group):
         for k in range(len(floating_init_options["joints"]["design_variable_data"])):
             jivc.add_output(f"jointdv_{k}", val=0.0, units="m")
 
-        for i in range(n_members):
-            name_member = floating_init_options["members"]["name"][i]
-            ivc = self.add_subsystem("member_" + name_member, om.IndepVarComp())
+        # Members added in groups to allow for symmetry
+        member_link_data = floating_init_options["members"]["linked_members"]
+        for k in range(len(member_link_data)):
+            name_member = member_link_data[k][0]
+            memidx = floating_init_options["members"]["name"].index(name_member)
             n_grid = len(floating_init_options["members"]["grid_member_" + name_member])
-            n_layers = floating_init_options["members"]["n_layers"][i]
-            n_ballasts = floating_init_options["members"]["n_ballasts"][i]
-            n_bulkheads = floating_init_options["members"]["n_bulkheads"][i]
-            n_axial_joints = floating_init_options["members"]["n_axial_joints"][i]
+            n_layers = floating_init_options["members"]["n_layers"][memidx]
+            n_ballasts = floating_init_options["members"]["n_ballasts"][memidx]
+            n_bulkheads = floating_init_options["members"]["n_bulkheads"][memidx]
+            n_axial_joints = floating_init_options["members"]["n_axial_joints"][memidx]
+
+            ivc = self.add_subsystem(f"memgrp{k}", om.IndepVarComp())
             ivc.add_output("s", val=np.zeros(n_grid))
             ivc.add_output("outer_diameter", val=np.zeros(n_grid), units="m")
             ivc.add_output("bulkhead_grid", val=np.zeros(n_bulkheads))
@@ -1910,9 +1914,10 @@ class Floating(om.Group):
 
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
-            self.connect("member_" + name_member + ".grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
-            self.connect("member_" + name_member + ".outer_diameter", "member_" + name_member + ":outer_diameter")
-            self.connect("member_" + name_member + ".s", "member_" + name_member + ":s")
+            idx = floating_init_options["members"]["name2idx"][name_member]
+            self.connect(f"memgrp{idx}.grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
+            self.connect(f"memgrp{idx}.outer_diameter", "member_" + name_member + ":outer_diameter")
+            self.connect(f"memgrp{idx}.s", "member_" + name_member + ":s")
 
 
 # Component that links certain nodes together in a specific dimension for optimization
@@ -1949,7 +1954,7 @@ class AggregateJoints(om.ExplicitComponent):
     def setup(self):
         floating_init_options = self.options["floating_init_options"]
         n_joints = floating_init_options["joints"]["n_joints"]
-        n_joints_tot = len(floating_init_options["name2idx"])
+        n_joints_tot = len(floating_init_options["joints"]["name2idx"])
         n_members = floating_init_options["members"]["n_members"]
 
         self.add_input("location", val=np.zeros((n_joints, 3)), units="m")
@@ -1977,7 +1982,7 @@ class AggregateJoints(om.ExplicitComponent):
         memopt = floating_init_options["members"]
         n_joints = floating_init_options["joints"]["n_joints"]
         n_members = memopt["n_members"]
-        name2idx = floating_init_options["name2idx"]
+        name2idx = floating_init_options["joints"]["name2idx"]
         NULL = -9999.0
 
         # Unpack inputs
@@ -2186,7 +2191,7 @@ class MooringJoints(om.ExplicitComponent):
         node_joints = discrete_inputs["nodes_joint_name"]
         node_loc = inputs["nodes_location"]
         joints_loc = inputs["joints_xyz"]
-        idx_map = self.options["options"]["floating"]["name2idx"]
+        idx_map = self.options["options"]["floating"]["joints"]["name2idx"]
         for k in range(n_nodes):
             if node_joints[k] == "":
                 continue

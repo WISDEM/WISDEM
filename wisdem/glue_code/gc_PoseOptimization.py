@@ -54,15 +54,17 @@ class PoseOptimization(object):
         if tower_opt["outer_diameter"]["flag"]:
             n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height_tower"]
         if tower_opt["layer_thickness"]["flag"]:
-            n_DV += (self.modeling["WISDEM"]["TowerSE"]["n_height_tower"] - 1) * self.modeling["WISDEM"]["TowerSE"][
-                "n_layers_tower"
-            ]
+            n_DV += (
+                self.modeling["WISDEM"]["TowerSE"]["n_height_tower"]
+                * self.modeling["WISDEM"]["TowerSE"]["n_layers_tower"]
+            )
         if mono_opt["outer_diameter"]["flag"]:
             n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height_monopile"]
         if mono_opt["layer_thickness"]["flag"]:
-            n_DV += (self.modeling["WISDEM"]["TowerSE"]["n_height_monopile"] - 1) * self.modeling["WISDEM"]["TowerSE"][
-                "n_layers_monopile"
-            ]
+            n_DV += (
+                self.modeling["WISDEM"]["TowerSE"]["n_height_monopile"]
+                * self.modeling["WISDEM"]["TowerSE"]["n_layers_monopile"]
+            )
         if hub_opt["cone"]["flag"]:
             n_DV += 1
         if hub_opt["hub_diameter"]["flag"]:
@@ -96,7 +98,33 @@ class PoseOptimization(object):
             n_DV += 4
 
         if float_opt["joints"]["flag"]:
-            n_DV += len(float_opt["joints"]["z-coordinate"]) + len(float_opt["joints"]["r-coordinate"])
+            n_DV += len(float_opt["joints"]["z_coordinate"]) + len(float_opt["joints"]["r_coordinate"])
+
+        if float_opt["members"]["flag"]:
+            for k, kgrp in enumerate(float_opt["members"]["groups"]):
+                memname = kgrp["names"][0]
+                memidx = self.modeling["floating"]["members"]["name"].index(memname)
+                n_grid = len(self.modeling["floating"]["members"]["grid_member_" + memname])
+                n_layers = self.modeling["floating"]["members"]["n_layers"][memidx]
+                if "diameter" in kgrp:
+                    n_DV += n_grid
+                if "thickness" in kgrp:
+                    n_DV += n_grid * n_layers
+                if "ballast" in kgrp:
+                    n_DV += self.modeling["floating"]["members"]["ballast_flag_member_" + memname].count(False)
+                if "stiffeners" in kgrp:
+                    if "ring" in kgrp["stiffeners"]:
+                        if "size" in kgrp["stiffeners"]["ring"]:
+                            pass
+                        if "spacing" in kgrp["stiffeners"]["ring"]:
+                            n_DV += 1
+                    if "longitudinal" in kgrp["stiffeners"]:
+                        if "size" in kgrp["stiffeners"]["longitudinal"]:
+                            pass
+                        if "spacing" in kgrp["stiffeners"]["longitudinal"]:
+                            n_DV += 1
+                if "axial_joints" in kgrp:
+                    n_DV += len(kgrp["axial_joints"])
 
         # Wrap-up at end with multiplier for finite differencing
         if self.opt["driver"]["optimization"]["form"] == "central":
@@ -436,8 +464,8 @@ class PoseOptimization(object):
 
         # -- Floating & Mooring --
         if float_opt["joints"]["flag"]:
-            jointz = float_opt["joints"]["z-coordinate"]
-            jointr = float_opt["joints"]["r-coordinate"]
+            jointz = float_opt["joints"]["z_coordinate"]
+            jointr = float_opt["joints"]["r_coordinate"]
 
             count = 0
             for k in range(len(jointz)):
@@ -455,6 +483,76 @@ class PoseOptimization(object):
                     upper=jointr[k]["upper_bound"],
                 )
                 count += 1
+
+        if float_opt["members"]["flag"]:
+            for kgrp in float_opt["members"]["groups"]:
+                memname = kgrp["names"][0]
+                idx = self.modeling["floating"]["members"]["name2idx"][memname]
+
+                if "diameter" in kgrp:
+                    wt_opt.model.add_design_var(
+                        f"floating.memgrp{idx}.outer_diameter",
+                        lower=kgrp["diameter"]["lower_bound"],
+                        upper=kgrp["diameter"]["upper_bound"],
+                    )
+                if "thickness" in kgrp:
+                    wt_opt.model.add_design_var(
+                        f"floating.memgrp{idx}.layer_thickness",
+                        lower=kgrp["thickness"]["lower_bound"],
+                        upper=kgrp["thickness"]["upper_bound"],
+                    )
+                if "ballast" in kgrp and wt_opt[f"floating.memgrp{idx}.ballast_volume"].size > 0:
+                    idx = np.where(wt_opt[f"floating.memgrp{idx}.ballast_volume"] > 0.0)[0]
+                    if idx.size > 0:
+                        wt_opt.model.add_design_var(
+                            f"floating.memgrp{idx}.ballast_volume",
+                            lower=kgrp["ballast"]["lower_bound"],
+                            upper=kgrp["ballast"]["upper_bound"],
+                            indices=idx,
+                        )
+                if "stiffeners" in kgrp:
+                    if "ring" in kgrp["stiffeners"]:
+                        if "size" in kgrp["stiffeners"]["ring"]:
+                            pass
+                        if "spacing" in kgrp["stiffeners"]["ring"]:
+                            wt_opt.model.add_design_var(
+                                f"floating.memgrp{idx}.ring_stiffener_spacing",
+                                lower=kgrp["stiffeners"]["ring"]["spacing"]["lower_bound"],
+                                upper=kgrp["stiffeners"]["ring"]["spacing"]["upper_bound"],
+                            )
+                    if "longitudinal" in kgrp["stiffeners"]:
+                        if "size" in kgrp["stiffeners"]["longitudinal"]:
+                            pass
+                        if "spacing" in kgrp["stiffeners"]["longitudinal"]:
+                            wt_opt.model.add_design_var(
+                                f"floating.memgrp{idx}.axial_stiffener_spacing",
+                                lower=kgrp["stiffeners"]["longitudinal"]["spacing"]["lower_bound"],
+                                upper=kgrp["stiffeners"]["longitudinal"]["spacing"]["upper_bound"],
+                            )
+                if "axial_joints" in kgrp:
+                    aidx = []
+                    lower = []
+                    upper = []
+                    mem_axial_names = self.modeling["floating"]["members"]["axial_joint_name_member_" + memname]
+                    for agrp in kgrp["axial_joints"]:
+                        tryidx = None
+                        agrp_names = agrp["names"]
+                        lower.append(agrp["lower_bound"])
+                        upper.append(agrp["upper_bound"])
+                        for iname in agrp_names:
+                            try:
+                                tryidx = mem_axial_names.index(iname)
+                                aidx.append(tryidx)
+                                break
+                            except:
+                                continue
+                        if tryidx is None:
+                            raise ValueError(
+                                f"None of these axial joint names were found in member, {memname}:{agrp_names}"
+                            )
+                    wt_opt.model.add_design_var(
+                        f"floating.memgrp{idx}.grid_axial_joints", lower=lower, upper=upper, indices=aidx
+                    )
 
         return wt_opt
 

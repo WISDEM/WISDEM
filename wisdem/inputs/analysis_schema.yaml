@@ -500,14 +500,14 @@ properties:
                         default: {}
                         properties:
                             flag: *flag
-                            z-coordinate: &link_m
+                            z_coordinate: &link_m
                                 type: array
                                 description: List of joints or members by name sets that should be adjusted. A single entry for an independent joint/member or a list of names for joints/members that are linked by symmetry
                                 default: []
                                 items:
                                     type: object
                                     properties:
-                                        names:
+                                        names: &floatname
                                             type: array
                                             description: Joint or member names of those that are linked
                                             items:
@@ -520,61 +520,123 @@ properties:
                                             type: number
                                             unit: m
                                             description: Design variable bound
-                            r-coordinate: *link_m
+                            r_coordinate: *link_m
                     members:
                         type: object
-                        description: Design variables associated with the node locations used in the floating platform
+                        description: Design variables associated with the members used in the floating platform
                         default: {}
                         properties:
-                            diameter: *link_m
-                            thickness: *link_m
-                            ballast:
+                            flag: *flag
+                            groups:
                                 type: array
-                                description: List of joints or members by name sets that should be adjusted. A single entry for an independent joint/member or a list of names for joints/members that are linked by symmetry
+                                description: Sets of members that share the same design
                                 default: []
                                 items:
                                     type: object
                                     properties:
-                                        names:
+                                        names: *floatname
+                                        diameter:
+                                            type: object
+                                            description: Diameter optimization of member group
+                                            properties:
+                                                lower_bound: *dbound
+                                                upper_bound: *dbound
+                                        thickness:
+                                            type: object
+                                            description: Thickness optimization of member group
+                                            properties:
+                                                lower_bound: *tbound
+                                                upper_bound: *tbound
+                                        ballast:
+                                            type: object
+                                            description: Ballast volume optimization of member group
+                                            properties:
+                                                lower_bound:
+                                                    type: number
+                                                    unit: m^3
+                                                    description: Design variable bound
+                                                    default: 0.0
+                                                    minimum: 0.0
+                                                upper_bound:
+                                                    type: number
+                                                    unit: m^3
+                                                    description: Design variable bound
+                                                    minimum: 0.0
+                                        axial_joints:
                                             type: array
-                                            description: Joint or member names of those that are linked
+                                            description: List of axial joint sets in this member group that are optimized as one
                                             items:
-                                                type: string
-                                        lower_bound:
-                                            type: number
-                                            unit: m^3
-                                            description: Design variable bound
-                                            default: 0.0
-                                            minimum: 0.0
-                                        upper_bound:
-                                            type: number
-                                            unit: m^3
-                                            description: Design variable bound
-                                            minimum: 0.0
-                            axial_joints:
-                                type: array
-                                description: List of joints or members by name sets that should be adjusted. A single entry for an independent joint/member or a list of names for joints/members that are linked by symmetry
-                                default: []
-                                items:
-                                    type: object
-                                    properties:
-                                        names:
-                                            type: array
-                                            description: Joint or member names of those that are linked
-                                            items:
-                                                type: string
-                                        lower_bound:
-                                            type: number
-                                            description: Design variable bound
-                                            default: 0.0
-                                            minimum: 0.0
-                                            maximum: 1.0
-                                        upper_bound:
-                                            type: number
-                                            description: Design variable bound
-                                            minimum: 0.0
-                                            maximum: 1.0
-                                            default: 1.0
+                                                type: object
+                                                properties:
+                                                    names: *floatname
+                                                    lower_bound:
+                                                        type: number
+                                                        description: Design variable bound
+                                                        default: 0.0
+                                                        minimum: 0.0
+                                                        maximum: 1.0
+                                                    upper_bound:
+                                                        type: number
+                                                        description: Design variable bound
+                                                        minimum: 0.0
+                                                        maximum: 1.0
+                                                        default: 1.0
+                                        stiffeners:
+                                            type: object
+                                            description: Stiffener optimization of member group
+                                            properties:
+                                                ring:
+                                                    type: object
+                                                    description: Ring stiffener optimization of member group
+                                                    properties:
+                                                        size:
+                                                            type: object
+                                                            description: Ring stiffener sizing multiplier on T-shape
+                                                            properties:
+                                                                min_gain: *mingain
+                                                                max_gain: *maxgain
+                                                        spacing:
+                                                            type: object
+                                                            description: Ring stiffener spacing along member axis
+                                                            properties:
+                                                                lower_bound:
+                                                                    type: number
+                                                                    unit: m
+                                                                    description: Design variable bound
+                                                                    default: 0.0
+                                                                    minimum: 0.0
+                                                                upper_bound:
+                                                                    type: number
+                                                                    unit: m
+                                                                    description: Design variable bound
+                                                                    minimum: 0.0
+                                                longitudinal:
+                                                    type: object
+                                                    description: Longitudinal stiffener optimization of member group
+                                                    properties:
+                                                        size:
+                                                            type: object
+                                                            description: Longitudinal stiffener sizing multiplier on T-shape
+                                                            properties:
+                                                                min_gain: *mingain
+                                                                max_gain: *maxgain
+                                                        spacing:
+                                                            type: object
+                                                            description: Longitudinal stiffener spacing around member annulus
+                                                            properties:
+                                                                lower_bound:
+                                                                    type: number
+                                                                    unit: rad
+                                                                    description: Design variable bound
+                                                                    default: 0.0
+                                                                    minimum: 0.0
+                                                                    maximum: 1.5707963267948966 #180 deg
+                                                                upper_bound:
+                                                                    type: number
+                                                                    unit: rad
+                                                                    description: Design variable bound
+                                                                    minimum: 0.0
+                                                                    maximum: 1.5707963267948966 #180 deg
 
                     mooring:
                         type: object

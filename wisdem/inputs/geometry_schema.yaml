@@ -1399,7 +1399,7 @@ properties:
                                                 - spacing
                                             properties:
                                                 material: *material
-                                                flange_height: &stiff_fh
+                                                flange_thickness: &stiff_ft
                                                     type: number
                                                     unit: m
                                                     minimum: 0
@@ -1432,7 +1432,7 @@ properties:
                                                 - spacing
                                             properties:
                                                 material: *material
-                                                flange_height: *stiff_fh
+                                                flange_thickness: *stiff_ft
                                                 flange_width: *stiff_fw
                                                 web_height: *stiff_wh
                                                 web_thickness: *stiff_wt
