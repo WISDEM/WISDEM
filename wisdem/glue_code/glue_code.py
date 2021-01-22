@@ -149,7 +149,6 @@ class WT_RNTA(om.Group):
             if opt_options["constraints"]["blade"]["rail_transport"]["flag"]:
                 self.connect("blade.outer_shape_bem.pitch_axis", "re.rail.pitch_axis")
                 self.connect("assembly.blade_ref_axis", "re.rail.blade_ref_axis")
-                self.connect("blade.interp_airfoils.coord_xy_dim", "re.rail.coord_xy_dim")
                 self.connect("blade.interp_airfoils.coord_xy_interp", "re.rail.coord_xy_interp")
 
             # Connections from blade struct parametrization to rotor load anlysis
