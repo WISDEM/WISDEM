@@ -73,7 +73,6 @@ prob["member0.layer_materials"] = ["steel"]
 prob["member0.ballast_materials"] = ["slurry", "seawater"]
 prob["member0.joint1"] = np.array([0.0, 0.0, 10.0 - h.sum()])
 prob["member0.joint2"] = np.array([0.0, 0.0, 10.0])  # Freeboard=10
-prob["member0.transition_flag"] = [False, True]
 prob["member0.bulkhead_thickness"] = 0.05 * np.ones(4)  # Locations of internal bulkheads
 prob["member0.bulkhead_grid"] = np.array([0.0, 0.25, 0.5, 1.0])
 
@@ -94,7 +93,6 @@ for k in range(1, 4):
     prob["member" + str(k) + ".ballast_materials"] = ["slurry", "seawater"]
     prob["member" + str(k) + ".joint1"] = np.array([xc, yc, 12.0 - h.sum()])
     prob["member" + str(k) + ".joint2"] = np.array([xc, yc, 12.0])  # Freeboard=10
-    prob["member" + str(k) + ".transition_flag"] = [False, False]
     prob["member" + str(k) + ".bulkhead_thickness"] = 0.05 * np.ones(4)  # Locations of internal bulkheads
     prob["member" + str(k) + ".bulkhead_grid"] = np.array([0.0, 0.25, 0.5, 1.0])
 
@@ -107,7 +105,6 @@ for k in range(4, 7):
     prob["member" + str(k) + ".layer_materials"] = ["steel"]
     prob["member" + str(k) + ".joint1"] = np.array([xc, yc, 12.0 - h.sum()])
     prob["member" + str(k) + ".joint2"] = np.array([0, 0, 12.0 - h.sum()])
-    prob["member" + str(k) + ".transition_flag"] = [False, False]
     prob["member" + str(k) + ".bulkhead_thickness"] = 0.02 * np.ones(2)  # Locations of internal bulkheads
     prob["member" + str(k) + ".bulkhead_grid"] = np.array([0.0, 1.0])
 
@@ -153,6 +150,8 @@ prob["tower.outer_diameter_in"] = np.linspace(6.5, 3.87, nTower)
 prob["tower.layer_thickness"] = np.linspace(0.027, 0.019, nTower).reshape((1, nTower))
 prob["tower.layer_materials"] = ["steel"]
 prob["tower.outfitting_factor"] = 1.07
+
+prob["transition_node"] = prob["member0.joint2"]
 
 # Properties of rotor-nacelle-assembly (RNA)
 prob["rna_mass"] = 350e3
