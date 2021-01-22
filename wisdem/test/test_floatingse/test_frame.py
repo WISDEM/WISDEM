@@ -74,7 +74,6 @@ class TestPlatform(unittest.TestCase):
             self.inputs["member" + str(k) + ":Awater"] = 5.0
             self.inputs["member" + str(k) + ":Iwater"] = 15.0
             self.inputs["member" + str(k) + ":added_mass"] = np.arange(6)
-            self.inputs["member" + str(k) + ":transition_node"] = NULL * np.ones(3)
 
         myones = np.ones(2)
         self.inputs["tower_nodes"][:3, :] = np.array([[0.0, 0.0, 1.0], [0.0, 0.0, 51.0], [0.0, 0.0, 101.0]])
@@ -168,14 +167,14 @@ class TestPlatform(unittest.TestCase):
         self.assertEqual(self.outputs["platform_Iwater"], 6 * 15)
         npt.assert_equal(self.outputs["platform_added_mass"], 6 * np.arange(6))
         # Should find a transition mode even though one wasn't set
-        npt.assert_equal(self.outputs["transition_node"], [0.0, 0.0, 1.0])
+        # npt.assert_equal(self.outputs["transition_node"], [0.0, 0.0, 1.0])
 
         # Test with set transition node
-        self.inputs["member1:transition_node"] = [0.5, 1.0, 0.0]
-        myobj.node_mem2glob = {}
-        myobj.node_glob2mem = {}
-        myobj.compute(self.inputs, self.outputs)
-        npt.assert_equal(self.outputs["transition_node"], [0.5, 1.0, 0.0])
+        # self.inputs["member1:transition_node"] = [0.5, 1.0, 0.0]
+        # myobj.node_mem2glob = {}
+        # myobj.node_glob2mem = {}
+        # myobj.compute(self.inputs, self.outputs)
+        # npt.assert_equal(self.outputs["transition_node"], [0.5, 1.0, 0.0])
 
     def testPre(self):
         inputs = {}

@@ -594,7 +594,7 @@ class FrameAnalysis(om.ExplicitComponent):
 
             # Add the load case and run
             myframe.addLoadCase(load_obj)
-            myframe.write(frame + ".3dd")
+            # myframe.write(frame + ".3dd")
             displacements, forces, reactions, internalForces, mass, modal = myframe.run()
 
             # natural frequncies
