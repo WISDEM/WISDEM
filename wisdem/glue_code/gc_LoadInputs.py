@@ -570,55 +570,56 @@ class WindTurbineOntologyPython(object):
             raise ValueError("Cannot optimize spar cap pressure side with less than 4 control points along blade span")
 
         # Handle linked joints and members in floating platform
-        float_opt_options = self.analysis_options["design_variables"]["floating"]
+        if self.modeling_options["flags"]["floating"]:
+            float_opt_options = self.analysis_options["design_variables"]["floating"]
 
-        # First the joints
-        dv_info = []
-        for c in ["z", "r"]:
-            for idv in float_opt_options["joints"][c + "_coordinate"]:
+            # First the joints
+            dv_info = []
+            for c in ["z", "r"]:
+                for idv in float_opt_options["joints"][c + "_coordinate"]:
+                    inames = idv["names"]
+                    idx = [self.modeling_options["floating"]["joints"]["name"].index(m) for m in inames]
+
+                    idict = {}
+                    idict["indices"] = idx
+                    idict["dimension"] = 0 if c == "r" else 2
+                    dv_info.append(idict)
+
+            # Check for r-coordinate dv and cylindrical consistency
+            for idict in dv_info:
+                if idict["dimension"] != 0:
+                    continue
+                for k in idict["indices"]:
+                    m = self.modeling_options["floating"]["joints"]["name"][k]
+                    if not self.modeling_options["floating"]["joints"]["cylindrical"][k]:
+                        raise ValueError(f"Cannot optimize r-coordinate of, {m}, becase it is not a cylindrical joint")
+
+            # Store DV information for needed linking and IVC assignment
+            self.modeling_options["floating"]["joints"]["design_variable_data"] = dv_info
+
+            # Now the members
+            memgrps = [[m] for m in self.modeling_options["floating"]["members"]["name"]]
+            for idv in float_opt_options["members"]["groups"]:
                 inames = idv["names"]
-                idx = [self.modeling_options["floating"]["joints"]["name"].index(m) for m in inames]
+                idx = [self.modeling_options["floating"]["members"]["name"].index(m) for m in inames]
+                for k in range(1, len(idx)):
+                    try:
+                        memgrps[idx[k]].remove(inames[k])
+                        memgrps[idx[0]].append(inames[k])
+                    except ValueError:
+                        raise ValueError("Cannot put member," + inames[k] + ", as part of multiple groups")
 
-                idict = {}
-                idict["indices"] = idx
-                idict["dimension"] = 0 if c == "r" else 2
-                dv_info.append(idict)
+            # Remove entries for members that are now linked with others
+            while [] in memgrps:
+                memgrps.remove([])
+            self.modeling_options["floating"]["members"]["linked_members"] = memgrps
 
-        # Check for r-coordinate dv and cylindrical consistency
-        for idict in dv_info:
-            if idict["dimension"] != 0:
-                continue
-            for k in idict["indices"]:
-                m = self.modeling_options["floating"]["joints"]["name"][k]
-                if not self.modeling_options["floating"]["joints"]["cylindrical"][k]:
-                    raise ValueError(f"Cannot optimize r-coordinate of, {m}, becase it is not a cylindrical joint")
-
-        # Store DV information for needed linking and IVC assignment
-        self.modeling_options["floating"]["joints"]["design_variable_data"] = dv_info
-
-        # Now the members
-        memgrps = [[m] for m in self.modeling_options["floating"]["members"]["name"]]
-        for idv in float_opt_options["members"]["groups"]:
-            inames = idv["names"]
-            idx = [self.modeling_options["floating"]["members"]["name"].index(m) for m in inames]
-            for k in range(1, len(idx)):
-                try:
-                    memgrps[idx[k]].remove(inames[k])
-                    memgrps[idx[0]].append(inames[k])
-                except ValueError:
-                    raise ValueError("Cannot put member," + inames[k] + ", as part of multiple groups")
-
-        # Remove entries for members that are now linked with others
-        while [] in memgrps:
-            memgrps.remove([])
-        self.modeling_options["floating"]["members"]["linked_members"] = memgrps
-
-        # Make a name 2 group index lookup
-        name2grp = {}
-        for k, kgrp in enumerate(memgrps):
-            for kname in kgrp:
-                name2grp[kname] = k
-        self.modeling_options["floating"]["members"]["name2idx"] = name2grp
+            # Make a name 2 group index lookup
+            name2grp = {}
+            for k, kgrp in enumerate(memgrps):
+                for kname in kgrp:
+                    name2grp[kname] = k
+            self.modeling_options["floating"]["members"]["name2idx"] = name2grp
 
     def write_ontology(self, wt_opt, fname_output):
 
