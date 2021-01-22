@@ -38,15 +38,15 @@ class PoseOptimization(object):
             )
         if blade_opt["structure"]["spar_cap_ss"]["flag"]:
             n_DV += blade_opt["structure"]["spar_cap_ss"]["n_opt"] - (
-                    blade_opt["aero_shape"]["spar_cap_ss"]["lock_root"] +
-                    blade_opt["aero_shape"]["spar_cap_ss"]["lock_tip"])
+                    blade_opt["structure"]["spar_cap_ss"]["lock_root"] +
+                    blade_opt["structure"]["spar_cap_ss"]["lock_tip"])
         if (
             blade_opt["structure"]["spar_cap_ps"]["flag"]
             and not blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
         ):
             n_DV += blade_opt["structure"]["spar_cap_ps"]["n_opt"] - (
-                    blade_opt["aero_shape"]["spar_cap_ps"]["lock_root"] +
-                    blade_opt["aero_shape"]["spar_cap_ps"]["lock_tip"])
+                    blade_opt["structure"]["spar_cap_ps"]["lock_root"] +
+                    blade_opt["structure"]["spar_cap_ps"]["lock_tip"])
         if self.opt["design_variables"]["control"]["tsr"]["flag"]:
             n_DV += 1
         # if self.opt["design_variables"]["control"]["servo"]["pitch_control"]["flag"]:
