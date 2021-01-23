@@ -903,7 +903,7 @@ def assign_floating_values(wt_opt, modeling_options, floating):
         itrans = util.closest_node(wt_opt["floating.location_in"], np.r_[centroid, zmax])
     else:
         itrans = modeling_options["floating"]["transition_joint"]
-    wt_opt["floating.transition_node"] = wt_opt["floating.location"][itrans, :]
+    wt_opt["floating.transition_node"] = wt_opt["floating.location_in"][itrans, :]
 
     # Make sure IVCs are initialized too
     for k, linked_node_dict in enumerate(modeling_options["floating"]["joints"]["design_variable_data"]):
