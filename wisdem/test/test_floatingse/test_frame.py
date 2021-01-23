@@ -71,6 +71,7 @@ class TestPlatform(unittest.TestCase):
             ].mean(axis=0)
             self.inputs["member" + str(k) + ":total_mass"] = 1e3
             self.inputs["member" + str(k) + ":total_cost"] = 2e3
+            self.inputs["member" + str(k) + ":I_total"] = 1e2 + np.arange(6)
             self.inputs["member" + str(k) + ":Awater"] = 5.0
             self.inputs["member" + str(k) + ":Iwater"] = 15.0
             self.inputs["member" + str(k) + ":added_mass"] = np.arange(6)
@@ -166,6 +167,7 @@ class TestPlatform(unittest.TestCase):
         self.assertEqual(self.outputs["platform_Awater"], 30)
         self.assertEqual(self.outputs["platform_Iwater"], 6 * 15)
         npt.assert_equal(self.outputs["platform_added_mass"], 6 * np.arange(6))
+        npt.assert_array_less(1e2, self.outputs["platform_I_total"])
         # Should find a transition mode even though one wasn't set
         # npt.assert_equal(self.outputs["transition_node"], [0.0, 0.0, 1.0])
 

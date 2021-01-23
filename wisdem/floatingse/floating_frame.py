@@ -43,6 +43,7 @@ class PlatformFrame(om.ExplicitComponent):
             self.add_input(f"member{k}:center_of_mass", np.zeros(3), units="m")
             self.add_input(f"member{k}:total_mass", 0.0, units="kg")
             self.add_input(f"member{k}:total_cost", 0.0, units="USD")
+            self.add_input(f"member{k}:I_total", np.zeros(6), units="kg*m**2")
             self.add_input(f"member{k}:Awater", 0.0, units="m**2")
             self.add_input(f"member{k}:Iwater", 0.0, units="m**4")
             self.add_input(f"member{k}:added_mass", np.zeros(6), units="kg")
@@ -67,6 +68,7 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_center_of_buoyancy", np.zeros(3), units="m")
         self.add_output("platform_center_of_mass", np.zeros(3), units="m")
         self.add_output("platform_mass", 0.0, units="kg")
+        self.add_output("platform_I_total", np.zeros(6), units="kg*m**2")
         self.add_output("platform_cost", 0.0, units="USD")
         self.add_output("platform_Awater", 0.0, units="m**2")
         self.add_output("platform_Iwater", 0.0, units="m**4")
@@ -212,6 +214,33 @@ class PlatformFrame(om.ExplicitComponent):
             cg_plat += imass * inputs[f"member{k}:center_of_mass"]
             cb_plat += ivol * inputs[f"member{k}:center_of_buoyancy"]
 
+        # Finalize outputs
+        cg_plat /= mass
+        cb_plat /= volume
+
+        # With CG known, loop back through to compute platform I
+        unit_z = np.array([0.0, 0.0, 1.0])
+        I_total = np.zeros((3, 3))
+        for k in range(n_member):
+            xyz_k = inputs[f"member{k}:nodes_xyz"]
+            inodes = np.where(xyz_k[:, 0] == NULL)[0][0]
+            xyz_k = xyz_k[:inodes, :]
+
+            imass = inputs[f"member{k}:total_mass"]
+            cg_k = inputs[f"member{k}:center_of_mass"]
+            R = cg_plat - cg_k
+
+            # Figure out angle to make member parallel to global c.s.
+            vec_k = xyz_k[-1, :] - xyz_k[0, :]
+            T = util.rotate_align_vectors(vec_k, unit_z)
+
+            # Rotate member inertia tensor
+            I_k = util.assembleI(inputs[f"member{k}:I_total"])
+            I_k2 = T * np.asmatrix(I_k) * T.T
+
+            # Now do parallel axis theorem
+            I_total += np.array(I_k2) + imass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+
         # Store outputs
         nelem = elem_A.size
         outputs["platform_elem_D"] = NULL * np.ones(NELEM_MAX)
@@ -241,8 +270,9 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_mass"] = mass
         outputs["platform_cost"] = cost
         outputs["platform_displacement"] = volume
-        outputs["platform_center_of_mass"] = cg_plat / mass
-        outputs["platform_center_of_buoyancy"] = cb_plat / volume
+        outputs["platform_center_of_mass"] = cg_plat
+        outputs["platform_center_of_buoyancy"] = cb_plat
+        outputs["platform_I_total"] = util.unassembleI(I_total)
         outputs["platform_Awater"] = Awater
         outputs["platform_Iwater"] = Iwater
         outputs["platform_added_mass"] = m_added

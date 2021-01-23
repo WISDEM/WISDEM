@@ -77,6 +77,7 @@ class FloatingSE(om.Group):
             "center_of_mass",
             "total_mass",
             "total_cost",
+            "I_total",
             "Awater",
             "Iwater",
             "added_mass",

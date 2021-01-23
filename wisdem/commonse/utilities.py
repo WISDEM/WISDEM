@@ -336,6 +336,20 @@ def rotateI(I, th, axis="z"):
     return Iout
 
 
+def rotate_align_vectors(a, b):
+    # https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
+    mag_a = np.linalg.norm(a)
+    mag_b = np.linalg.norm(b)
+    unita = a / mag_a
+    unitb = b / mag_b
+    v = np.cross(unita, unitb)
+    s = np.linalg.norm(v)
+    c = np.dot(unita, unitb)
+    vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    r = np.eye(3) + vx + np.dot(vx, vx) / (1 + c)  # *(1-c)/(s**2)
+    return np.asmatrix(r)
+
+
 def cubic_with_deriv(x, xp, yp):
     """deprecated"""
 
