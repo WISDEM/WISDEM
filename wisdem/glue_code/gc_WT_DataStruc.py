@@ -355,9 +355,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         if modeling_options["flags"]["floating_platform"]:
             self.add_subsystem("floating", Floating(floating_init_options=modeling_options["floating"]))
-            self.add_subsystem("mooring", Mooring(mooring_init_options=modeling_options["mooring"]))
+            self.add_subsystem("mooring", Mooring(options=modeling_options))
             self.connect("floating.joints_xyz", "mooring.joints_xyz")
-            self.connect("floating.joints_name2idx", "mooring.joints_name2idx")
 
         # Control inputs
         if modeling_options["flags"]["control"]:
@@ -1201,9 +1200,13 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
             desc="2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
 
-        ivc.add_output("joint_position", val=0.0, desc="Spanwise position of the segmentation joint.",)
+        ivc.add_output(
+            "joint_position",
+            val=0.0,
+            desc="Spanwise position of the segmentation joint.",
+        )
         ivc.add_output("joint_mass", val=0.0, desc="Mass of the joint.")
-        ivc.add_output("joint_cost", val=0.0, units='USD', desc="Cost of the joint.")
+        ivc.add_output("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
 
         self.add_subsystem(
             "compute_internal_structure_2d_fem",
@@ -1864,18 +1867,27 @@ class Floating(om.Group):
         n_joints = floating_init_options["joints"]["n_joints"]
         n_members = floating_init_options["members"]["n_members"]
 
-        jivc = self.add_subsystem("joints", om.IndepVarComp())
-        jivc.add_output("location", val=np.zeros((n_joints, 3)), units="m")
+        jivc = self.add_subsystem("joints", om.IndepVarComp(), promotes=["*"])
+        jivc.add_output("location_in", val=np.zeros((n_joints, 3)), units="m")
         jivc.add_output("transition_node", val=np.zeros(3), units="m")
 
-        for i in range(n_members):
-            name_member = floating_init_options["members"]["name"][i]
-            ivc = self.add_subsystem("member_" + name_member, om.IndepVarComp())
+        # Additions for optimizing individual nodes or multiple nodes concurrently
+        self.add_subsystem("nodedv", NodeDVs(options=floating_init_options["joints"]), promotes=["*"])
+        for k in range(len(floating_init_options["joints"]["design_variable_data"])):
+            jivc.add_output(f"jointdv_{k}", val=0.0, units="m")
+
+        # Members added in groups to allow for symmetry
+        member_link_data = floating_init_options["members"]["linked_members"]
+        for k in range(len(member_link_data)):
+            name_member = member_link_data[k][0]
+            memidx = floating_init_options["members"]["name"].index(name_member)
             n_grid = len(floating_init_options["members"]["grid_member_" + name_member])
-            n_layers = floating_init_options["members"]["n_layers"][i]
-            n_ballasts = floating_init_options["members"]["n_ballasts"][i]
-            n_bulkheads = floating_init_options["members"]["n_bulkheads"][i]
-            n_axial_joints = floating_init_options["members"]["n_axial_joints"][i]
+            n_layers = floating_init_options["members"]["n_layers"][memidx]
+            n_ballasts = floating_init_options["members"]["n_ballasts"][memidx]
+            n_bulkheads = floating_init_options["members"]["n_bulkheads"][memidx]
+            n_axial_joints = floating_init_options["members"]["n_axial_joints"][memidx]
+
+            ivc = self.add_subsystem(f"memgrp{k}", om.IndepVarComp())
             ivc.add_output("s", val=np.zeros(n_grid))
             ivc.add_output("outer_diameter", val=np.zeros(n_grid), units="m")
             ivc.add_output("bulkhead_grid", val=np.zeros(n_bulkheads))
@@ -1898,28 +1910,55 @@ class Floating(om.Group):
             ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_spacing", 0.0, units="m")
 
-        self.add_subsystem("alljoints", CombineJoints(floating_init_options=floating_init_options), promotes=["*"])
+        self.add_subsystem("alljoints", AggregateJoints(floating_init_options=floating_init_options), promotes=["*"])
 
-        self.connect("joints.location", "location")
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
-            self.connect("member_" + name_member + ".grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
-            self.connect("member_" + name_member + ".outer_diameter", "member_" + name_member + ":outer_diameter")
-            self.connect("member_" + name_member + ".s", "member_" + name_member + ":s")
+            idx = floating_init_options["members"]["name2idx"][name_member]
+            self.connect(f"memgrp{idx}.grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
+            self.connect(f"memgrp{idx}.outer_diameter", "member_" + name_member + ":outer_diameter")
+            self.connect(f"memgrp{idx}.s", "member_" + name_member + ":s")
 
 
-class CombineJoints(om.ExplicitComponent):
+# Component that links certain nodes together in a specific dimension for optimization
+class NodeDVs(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("options")
+
+    def setup(self):
+        opt = self.options["options"]
+        n_joints = opt["n_joints"]
+        self.add_input("location_in", val=np.zeros((n_joints, 3)), units="m")
+
+        for k in range(len(opt["design_variable_data"])):
+            self.add_input(f"jointdv_{k}", val=0.0, units="m")
+
+        self.add_output("location", val=np.zeros((n_joints, 3)), units="m")
+
+    def compute(self, inputs, outputs):
+        opt = self.options["options"]
+
+        xyz = inputs["location_in"]
+        for i, linked_node_dict in enumerate(opt["design_variable_data"]):
+            idx = linked_node_dict["indices"]
+            dim = linked_node_dict["dimension"]
+            xyz[idx, dim] = inputs[f"jointdv_{i}"]
+
+        outputs["location"] = xyz
+
+
+class AggregateJoints(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("floating_init_options")
 
     def setup(self):
         floating_init_options = self.options["floating_init_options"]
         n_joints = floating_init_options["joints"]["n_joints"]
+        n_joints_tot = len(floating_init_options["joints"]["name2idx"])
         n_members = floating_init_options["members"]["n_members"]
 
         self.add_input("location", val=np.zeros((n_joints, 3)), units="m")
 
-        self.n_joint_tot = n_joints
         for i in range(n_members):
             iname = floating_init_options["members"]["name"][i]
             i_axial_joints = floating_init_options["members"]["n_axial_joints"][i]
@@ -1934,22 +1973,21 @@ class CombineJoints(om.ExplicitComponent):
             self.add_output("member_" + iname + ":height", val=0.0, units="m")
             self.add_output("member_" + iname + ":s_ghost1", val=0.0)
             self.add_output("member_" + iname + ":s_ghost2", val=1.0)
-            self.add_discrete_output("member_" + iname + ":transition_flag", val=[False, False])
-            self.n_joint_tot += i_axial_joints
 
-        self.add_output("joints_xyz", val=np.zeros((self.n_joint_tot, 3)), units="m")
-        self.add_discrete_output("joints_name2idx", val={})
+        self.add_output("joints_xyz", val=np.zeros((n_joints_tot, 3)), units="m")
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
         # Unpack options
         floating_init_options = self.options["floating_init_options"]
         memopt = floating_init_options["members"]
         n_joints = floating_init_options["joints"]["n_joints"]
         n_members = memopt["n_members"]
+        name2idx = floating_init_options["joints"]["name2idx"]
+        NULL = -9999.0
 
         # Unpack inputs
         locations = inputs["location"]
-        joints_xyz = np.zeros(outputs["joints_xyz"].shape)
+        joints_xyz = NULL * np.ones(outputs["joints_xyz"].shape)
 
         # Handle cylindrical coordinate joints
         icyl = floating_init_options["joints"]["cylindrical"]
@@ -1958,41 +1996,37 @@ class CombineJoints(om.ExplicitComponent):
         locations_xyz[icyl, 1] = locations[icyl, 0] * np.sin(locations[icyl, 1])
         joints_xyz[:n_joints, :] = locations_xyz.copy()
 
-        # Create initial name-to-index mapping
-        name2idx = dict(zip(floating_init_options["joints"]["name"], range(n_joints)))
-        count = n_joints
-
         # Initial biggest radius at each node
         node_r = np.zeros(joints_xyz.shape[0])
         intersects = np.zeros(joints_xyz.shape[0])
 
         # Now add axial joints
         member_list = list(range(n_members))
-        while count < self.n_joint_tot:
+        count = n_joints
+        n_joint_tot = len(name2idx)
+        while count < n_joint_tot:
             for k in member_list[:]:
-                if (memopt["joint1"][k] in name2idx) and (memopt["joint2"][k] in name2idx):
+                joint1xyz = joints_xyz[name2idx[memopt["joint1"][k]], :]
+                joint2xyz = joints_xyz[name2idx[memopt["joint2"][k]], :]
+
+                # Check if we are ready to compute xyz position of axial joints in this member
+                if np.all(joint1xyz != NULL) and np.all(joint2xyz != NULL):
                     member_list.remove(k)
                 else:
                     continue
-
-                joint1xyz = joints_xyz[name2idx[memopt["joint1"][k]], :]
-                joint2xyz = joints_xyz[name2idx[memopt["joint2"][k]], :]
-                dxyz = joint2xyz - joint1xyz
 
                 i_axial_joints = memopt["n_axial_joints"][k]
                 if i_axial_joints == 0:
                     continue
 
                 iname = memopt["name"][k]
-                i_axial_joint_names = memopt["axial_joint_name_member_" + iname]
-
                 s = 0.5 * inputs["member_" + iname + ":s"]
                 Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
+                dxyz = joint2xyz - joint1xyz
 
                 for a in range(i_axial_joints):
                     s_axial = inputs["member_" + iname + ":grid_axial_joints"][a]
                     joints_xyz[count, :] = joint1xyz + s_axial * dxyz
-                    name2idx[i_axial_joint_names[a]] = count
 
                     Ra = np.interp(s_axial, s, Rk)
                     node_r[count] = max(node_r[count], Ra)
@@ -2002,17 +2036,16 @@ class CombineJoints(om.ExplicitComponent):
 
         # Record starting and ending location for each member now.
         # Also log biggest radius at each node intersection to compute ghost nodes
-        itrans = floating_init_options["transition_joint"]
         for k in range(n_members):
             iname = memopt["name"][k]
             joint1id = name2idx[memopt["joint1"][k]]
             joint2id = name2idx[memopt["joint2"][k]]
             joint1xyz = joints_xyz[joint1id, :]
             joint2xyz = joints_xyz[joint2id, :]
+            hk = np.sqrt(np.sum((joint2xyz - joint1xyz) ** 2))
             outputs["member_" + iname + ":joint1"] = joint1xyz
             outputs["member_" + iname + ":joint2"] = joint2xyz
-            outputs["member_" + iname + ":height"] = np.sqrt(np.sum((joint2xyz - joint1xyz) ** 2))
-            discrete_outputs["member_" + iname + ":transition_flag"] = [joint1id == itrans, joint2id == itrans]
+            outputs["member_" + iname + ":height"] = hk
 
             # Largest radius at connection points for this member
             Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
@@ -2039,15 +2072,14 @@ class CombineJoints(om.ExplicitComponent):
 
         # Store outputs
         outputs["joints_xyz"] = joints_xyz
-        discrete_outputs["joints_name2idx"] = name2idx
 
 
 class Mooring(om.Group):
     def initialize(self):
-        self.options.declare("mooring_init_options")
+        self.options.declare("options")
 
     def setup(self):
-        mooring_init_options = self.options["mooring_init_options"]
+        mooring_init_options = self.options["options"]["mooring"]
 
         n_nodes = mooring_init_options["n_nodes"]
         n_lines = mooring_init_options["n_lines"]
@@ -2084,7 +2116,7 @@ class Mooring(om.Group):
         ivc.add_output("anchor_max_lateral_load", val=np.zeros(n_lines), units="N")
 
         self.add_subsystem("moorprop", MooringProperties(mooring_init_options=mooring_init_options), promotes=["*"])
-        self.add_subsystem("moorjoint", MooringJoints(mooring_init_options=mooring_init_options), promotes=["*"])
+        self.add_subsystem("moorjoint", MooringJoints(options=self.options["options"]), promotes=["*"])
 
 
 class MooringProperties(om.ExplicitComponent):
@@ -2133,16 +2165,15 @@ class MooringProperties(om.ExplicitComponent):
 
 class MooringJoints(om.ExplicitComponent):
     def initialize(self):
-        self.options.declare("mooring_init_options")
+        self.options.declare("options")
 
     def setup(self):
-        mooring_init_options = self.options["mooring_init_options"]
+        mooring_init_options = self.options["options"]["mooring"]
         n_nodes = mooring_init_options["n_nodes"]
         n_attach = mooring_init_options["n_attach"]
         n_lines = mooring_init_options["n_lines"]
 
         self.add_discrete_input("nodes_joint_name", val=[""] * n_nodes)
-        self.add_discrete_input("joints_name2idx", val={})
         self.add_input("nodes_location", val=np.zeros((n_nodes, 3)), units="m")
         self.add_input("joints_xyz", shape_by_conn=True, units="m")
 
@@ -2154,13 +2185,13 @@ class MooringJoints(om.ExplicitComponent):
         self.add_output("anchor_radius", val=np.zeros(n_lines), units="m")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        mooring_init_options = self.options["mooring_init_options"]
+        mooring_init_options = self.options["options"]["mooring"]
         n_nodes = mooring_init_options["n_nodes"]
 
         node_joints = discrete_inputs["nodes_joint_name"]
         node_loc = inputs["nodes_location"]
         joints_loc = inputs["joints_xyz"]
-        idx_map = discrete_inputs["joints_name2idx"]
+        idx_map = self.options["options"]["floating"]["joints"]["name2idx"]
         for k in range(n_nodes):
             if node_joints[k] == "":
                 continue

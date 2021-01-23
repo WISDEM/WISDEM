@@ -26,7 +26,6 @@ class TestInputs(unittest.TestCase):
         inputs["layer_thickness"] = 0.25 * np.ones((1, 5))
         inputs["joint1"] = np.zeros(3)
         inputs["joint2"] = np.r_[np.zeros(2), 1e2]
-        discrete_inputs["transition_flag"] = [False, False]
         inputs["outer_diameter_in"] = 8 * np.ones(5)
         discrete_inputs["layer_materials"] = ["steel"]
         discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
@@ -58,7 +57,6 @@ class TestInputs(unittest.TestCase):
         npt.assert_equal(outputs["outfitting_factor"], 1.05 * myones)
         npt.assert_equal(outputs["ballast_density"], np.array([1e5, 1e5, 1e3]))
         npt.assert_equal(outputs["ballast_unit_cost"], np.array([2e1, 2e1, 0.0]))
-        npt.assert_equal(outputs["transition_node"], NULL * np.ones(3))
         A = np.pi * (16 - 3.75 ** 2)
         I = (256.0 - 3.75 ** 4) * np.pi / 4.0
         npt.assert_equal(outputs["z_param"], 100 * np.linspace(0, 1, 5))
@@ -76,10 +74,6 @@ class TestInputs(unittest.TestCase):
         # npt.assert_equal(outputs["sc_offst"], np.zeros(nout))
         # npt.assert_equal(outputs["tc_offst"], np.zeros(nout))
 
-        discrete_inputs["transition_flag"] = [False, True]
-        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
-        npt.assert_equal(outputs["transition_node"], np.r_[np.zeros(2), 1e2])
-
     def testDiscYAML_2Materials(self):
         inputs = {}
         outputs = {}
@@ -91,7 +85,6 @@ class TestInputs(unittest.TestCase):
         inputs["layer_thickness"] = np.array([[0.2, 0.2, 0.2, 0.0, 0.0], [0.0, 0.0, 0.0, 0.1, 0.1]])
         inputs["joint1"] = np.zeros(3)
         inputs["joint2"] = np.r_[np.zeros(2), 1e2]
-        discrete_inputs["transition_flag"] = [False, False]
         inputs["outer_diameter_in"] = 8 * np.ones(5)
         discrete_inputs["layer_materials"] = ["steel", "other"]
         discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
@@ -129,7 +122,6 @@ class TestInputs(unittest.TestCase):
         npt.assert_equal(outputs["outfitting_factor"], 1.05 * np.ones(4))
         npt.assert_equal(outputs["ballast_density"], np.array([1e5, 1e5, 1e3]))
         npt.assert_equal(outputs["ballast_unit_cost"], np.array([2e1, 2e1, 0.0]))
-        npt.assert_equal(outputs["transition_node"], NULL * np.ones(3))
 
 
 class TestFullDiscretization(unittest.TestCase):

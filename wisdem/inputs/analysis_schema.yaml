@@ -489,6 +489,169 @@ properties:
                                 description: Design variable bound
                             upper_bound: *sbound
             monopile: *towdv
+            floating:
+                type: object
+                description: Design variables associated with the floating platform
+                default: {}
+                properties:
+                    joints:
+                        type: object
+                        description: Design variables associated with the node/joint locations used in the floating platform
+                        default: {}
+                        properties:
+                            flag: *flag
+                            z_coordinate: &link_m
+                                type: array
+                                description: List of joints or members by name sets that should be adjusted. A single entry for an independent joint/member or a list of names for joints/members that are linked by symmetry
+                                default: []
+                                items:
+                                    type: object
+                                    properties:
+                                        names: &floatname
+                                            type: array
+                                            description: Joint or member names of those that are linked
+                                            items:
+                                                type: string
+                                        lower_bound:
+                                            type: number
+                                            unit: m
+                                            description: Design variable bound
+                                        upper_bound:
+                                            type: number
+                                            unit: m
+                                            description: Design variable bound
+                            r_coordinate: *link_m
+                    members:
+                        type: object
+                        description: Design variables associated with the members used in the floating platform
+                        default: {}
+                        properties:
+                            flag: *flag
+                            groups:
+                                type: array
+                                description: Sets of members that share the same design
+                                default: []
+                                items:
+                                    type: object
+                                    properties:
+                                        names: *floatname
+                                        diameter:
+                                            type: object
+                                            description: Diameter optimization of member group
+                                            properties:
+                                                lower_bound: *dbound
+                                                upper_bound: *dbound
+                                        thickness:
+                                            type: object
+                                            description: Thickness optimization of member group
+                                            properties:
+                                                lower_bound: *tbound
+                                                upper_bound: *tbound
+                                        ballast:
+                                            type: object
+                                            description: Ballast volume optimization of member group
+                                            properties:
+                                                lower_bound:
+                                                    type: number
+                                                    unit: m^3
+                                                    description: Design variable bound
+                                                    default: 0.0
+                                                    minimum: 0.0
+                                                upper_bound:
+                                                    type: number
+                                                    unit: m^3
+                                                    description: Design variable bound
+                                                    minimum: 0.0
+                                        axial_joints:
+                                            type: array
+                                            description: List of axial joint sets in this member group that are optimized as one
+                                            items:
+                                                type: object
+                                                properties:
+                                                    names: *floatname
+                                                    lower_bound:
+                                                        type: number
+                                                        description: Design variable bound
+                                                        default: 0.0
+                                                        minimum: 0.0
+                                                        maximum: 1.0
+                                                    upper_bound:
+                                                        type: number
+                                                        description: Design variable bound
+                                                        minimum: 0.0
+                                                        maximum: 1.0
+                                                        default: 1.0
+                                        stiffeners:
+                                            type: object
+                                            description: Stiffener optimization of member group
+                                            properties:
+                                                ring:
+                                                    type: object
+                                                    description: Ring stiffener optimization of member group
+                                                    properties:
+                                                        size:
+                                                            type: object
+                                                            description: Ring stiffener sizing multiplier on T-shape
+                                                            properties:
+                                                                min_gain: *mingain
+                                                                max_gain: *maxgain
+                                                        spacing:
+                                                            type: object
+                                                            description: Ring stiffener spacing along member axis
+                                                            properties:
+                                                                lower_bound:
+                                                                    type: number
+                                                                    unit: m
+                                                                    description: Design variable bound
+                                                                    default: 0.0
+                                                                    minimum: 0.0
+                                                                upper_bound:
+                                                                    type: number
+                                                                    unit: m
+                                                                    description: Design variable bound
+                                                                    minimum: 0.0
+                                                longitudinal:
+                                                    type: object
+                                                    description: Longitudinal stiffener optimization of member group
+                                                    properties:
+                                                        size:
+                                                            type: object
+                                                            description: Longitudinal stiffener sizing multiplier on T-shape
+                                                            properties:
+                                                                min_gain: *mingain
+                                                                max_gain: *maxgain
+                                                        spacing:
+                                                            type: object
+                                                            description: Longitudinal stiffener spacing around member annulus
+                                                            properties:
+                                                                lower_bound:
+                                                                    type: number
+                                                                    unit: rad
+                                                                    description: Design variable bound
+                                                                    default: 0.0
+                                                                    minimum: 0.0
+                                                                    maximum: 1.5707963267948966 #180 deg
+                                                                upper_bound:
+                                                                    type: number
+                                                                    unit: rad
+                                                                    description: Design variable bound
+                                                                    minimum: 0.0
+                                                                    maximum: 1.5707963267948966 #180 deg
+
+                    mooring:
+                        type: object
+                        description: Design variables associated with the node locations used in the floating platform
+                        default: {}
+                        properties:
+                            anchor_radius:
+                                type: object
+                                default: {}
+                            line_length:
+                                type: object
+                                default: {}
+                            line_diameter:
+                                type: object
+                                default: {}
     constraints:
         type: object
         default: {}
@@ -874,7 +1037,7 @@ properties:
                         description: Toggle parallel model runs
                     generator:
                         type: string
-                        description: Type of model input generator. 
+                        description: Type of model input generator.
                         default: Uniform
                         enum: [Uniform, FullFact, PlackettBurman, BoxBehnken, LatinHypercube]
                     num_samples:
@@ -883,9 +1046,9 @@ properties:
                         default: 5
                         minimum: 1
                         maximum: 1000000
-                    seed: 
+                    seed:
                         type: integer
-                        description: Random seed to use if design is randomized 
+                        description: Random seed to use if design is randomized
                         default: 2
                         minimum: 1
                         maximum: 1000000
@@ -895,12 +1058,12 @@ properties:
                         default: 2
                         minimum: 1
                         maximum: 1000000
-                    criterion: 
+                    criterion:
                         type: string
                         description: Descriptor of sampling method for LatinHypercube generator
                         default: None
                         enum: [None, center, c, maximin, m, centermaximin, cm, correelation, corr]
-                    iterations: 
+                    iterations:
                         type: integer
                         description: Number of iterations in maximin and correlations algorithms (LatinHypercube only)
                         default: 2

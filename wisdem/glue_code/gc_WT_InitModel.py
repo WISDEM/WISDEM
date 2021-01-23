@@ -1,4 +1,5 @@
 import numpy as np
+import wisdem.commonse.utilities as util
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 
 
@@ -893,69 +894,95 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     n_joints = floating_init_options["joints"]["n_joints"]
     # Loop through joints and assign location values to openmdao entry
     for i in range(n_joints):
-        wt_opt["floating.joints.location"][i, :] = floating["joints"][i]["location"]
+        wt_opt["floating.location_in"][i, :] = floating["joints"][i]["location"]
 
     # Set transition joint/node
     if modeling_options["floating"]["transition_joint"] is None:
-        itrans = np.argmax(wt_opt["floating.joints.location"][:, 2])
+        centroid = wt_opt["floating.location_in"][:, :2].mean(axis=0)
+        zmax = wt_opt["floating.location_in"][:, 2].max()
+        itrans = util.closest_node(wt_opt["floating.location_in"], np.r_[centroid, zmax])
     else:
         itrans = modeling_options["floating"]["transition_joint"]
-    wt_opt["floating.joints.transition_node"] = wt_opt["floating.joints.location"][itrans, :]
+    wt_opt["floating.transition_node"] = wt_opt["floating.location"][itrans, :]
 
+    # Make sure IVCs are initialized too
+    for k, linked_node_dict in enumerate(modeling_options["floating"]["joints"]["design_variable_data"]):
+        idx = linked_node_dict["indices"]
+        dim = linked_node_dict["dimension"]
+        wt_opt[f"floating.jointdv_{k}"] = wt_opt["floating.location_in"][idx, dim].mean()
+
+    # Now do members by assigning to unique member groups
     n_members = floating_init_options["members"]["n_members"]
-    # Loop through members and assign grid, outer diameter, layer thickness and ballast volume to openmdao entry. The distributed quantities are interpolated to a common grid
     for i in range(n_members):
         name_member = floating_init_options["members"]["name"][i]
         grid_member = floating_init_options["members"]["grid_member_" + floating_init_options["members"]["name"][i]]
-        wt_opt["floating.member_" + name_member + ".s"] = grid_member
-        wt_opt["floating.member_" + name_member + ".outfitting_factor"] = floating["members"][i]["internal_structure"][
+        idx = floating_init_options["members"]["name2idx"][name_member]
+
+        wt_opt[f"floating.memgrp{idx}.s"] = grid_member
+        wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["internal_structure"][
             "outfitting_factor"
         ]
-        wt_opt["floating.member_" + name_member + ".outer_diameter"] = np.interp(
+        wt_opt[f"floating.memgrp{idx}.outer_diameter"] = np.interp(
             grid_member,
             floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
             floating["members"][i]["outer_shape"]["outer_diameter"]["values"],
         )
-        if "bulkhead" in floating["members"][i]["internal_structure"]:
-            wt_opt["floating.member_" + name_member + ".bulkhead_grid"] = floating["members"][i]["internal_structure"][
-                "bulkhead"
-            ]["thickness"]["grid"]
-            wt_opt["floating.member_" + name_member + ".bulkhead_thickness"] = (
-                floating["members"][i]["internal_structure"]["bulkhead"]["thickness"]["values"],
-            )
+
+        istruct = floating["members"][i]["internal_structure"]
+        if "bulkhead" in istruct:
+            wt_opt[f"floating.memgrp{idx}.bulkhead_grid"] = istruct["bulkhead"]["thickness"]["grid"]
+            wt_opt[f"floating.memgrp{idx}.bulkhead_thickness"] = istruct["bulkhead"]["thickness"]["values"]
 
         n_layers = floating_init_options["members"]["n_layers"][i]
         layer_mat = [""] * n_layers
         for j in range(n_layers):
-            wt_opt["floating.member_" + name_member + ".layer_thickness"][j, :] = np.interp(
+            wt_opt[f"floating.memgrp{idx}.layer_thickness"][j, :] = np.interp(
                 grid_member,
-                floating["members"][i]["internal_structure"]["layers"][j]["thickness"]["grid"],
-                floating["members"][i]["internal_structure"]["layers"][j]["thickness"]["values"],
+                istruct["layers"][j]["thickness"]["grid"],
+                istruct["layers"][j]["thickness"]["values"],
             )
-            layer_mat[j] = floating["members"][i]["internal_structure"]["layers"][j]["material"]
-        wt_opt["floating.member_" + name_member + ".layer_materials"] = layer_mat
+            layer_mat[j] = istruct["layers"][j]["material"]
+        wt_opt[f"floating.memgrp{idx}.layer_materials"] = layer_mat
+
+        if "ring_stiffeners" in istruct:
+            wt_opt[f"floating.memgrp{idx}.ring_stiffener_web_height"] = istruct["ring_stiffeners"]["web_height"]
+            wt_opt[f"floating.memgrp{idx}.ring_stiffener_web_thickness"] = istruct["ring_stiffeners"]["web_thickness"]
+            wt_opt[f"floating.memgrp{idx}.ring_stiffener_flange_thickness"] = istruct["ring_stiffeners"][
+                "flange_thickness"
+            ]
+            wt_opt[f"floating.memgrp{idx}.ring_stiffener_flange_width"] = istruct["ring_stiffeners"]["flange_width"]
+            wt_opt[f"floating.memgrp{idx}.ring_stiffener_spacing"] = istruct["ring_stiffeners"]["spacing"]
+
+        if "longitudinal_stiffeners" in istruct:
+            wt_opt[f"floating.memgrp{idx}.axial_stiffener_web_height"] = istruct["longitudinal_stiffeners"][
+                "web_height"
+            ]
+            wt_opt[f"floating.memgrp{idx}.axial_stiffener_web_thickness"] = istruct["longitudinal_stiffeners"][
+                "web_thickness"
+            ]
+            wt_opt[f"floating.memgrp{idx}.axial_stiffener_flange_thickness"] = istruct["longitudinal_stiffeners"][
+                "flange_thickness"
+            ]
+            wt_opt[f"floating.memgrp{idx}.axial_stiffener_flange_width"] = istruct["longitudinal_stiffeners"][
+                "flange_width"
+            ]
+            wt_opt[f"floating.memgrp{idx}.axial_stiffener_spacing"] = istruct["longitudinal_stiffeners"]["spacing"]
 
         n_ballasts = floating_init_options["members"]["n_ballasts"][i]
         ballast_mat = [""] * n_ballasts
         for j in range(n_ballasts):
-            wt_opt["floating.member_" + name_member + ".ballast_grid"][j, :] = floating["members"][i][
-                "internal_structure"
-            ]["ballasts"][j]["grid"]
+            wt_opt[f"floating.memgrp{idx}.ballast_grid"][j, :] = istruct["ballasts"][j]["grid"]
             if floating_init_options["members"]["ballast_flag_member_" + name_member][j] == False:
-                wt_opt["floating.member_" + name_member + ".ballast_volume"][j] = floating["members"][i][
-                    "internal_structure"
-                ]["ballasts"][j]["volume"]
-                ballast_mat[j] = floating["members"][i]["internal_structure"]["ballasts"][j]["material"]
+                wt_opt[f"floating.memgrp{idx}.ballast_volume"][j] = istruct["ballasts"][j]["volume"]
+                ballast_mat[j] = istruct["ballasts"][j]["material"]
             else:
-                wt_opt["floating.member_" + name_member + ".ballast_volume"][j] = 0.0
+                wt_opt[f"floating.memgrp{idx}.ballast_volume"][j] = 0.0
                 ballast_mat[j] = "seawater"
-        wt_opt["floating.member_" + name_member + ".ballast_materials"] = ballast_mat
+        wt_opt[f"floating.memgrp{idx}.ballast_materials"] = ballast_mat
 
         if floating_init_options["members"]["n_axial_joints"][i] > 0:
             for j in range(floating_init_options["members"]["n_axial_joints"][i]):
-                wt_opt["floating.member_" + name_member + ".grid_axial_joints"][j] = floating["members"][i][
-                    "axial_joints"
-                ][j]["grid"]
+                wt_opt[f"floating.memgrp{idx}.grid_axial_joints"][j] = floating["members"][i]["axial_joints"][j]["grid"]
 
     return wt_opt
 

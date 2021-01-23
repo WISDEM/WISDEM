@@ -66,6 +66,13 @@ class TestAny(unittest.TestCase):
         Irot = util.rotateI(I, th, axis="z")
         npt.assert_almost_equal(Irot, np.array([-2.5, 5.5, 3, -0.5, -0.5 * np.sqrt(2), 5.5 * np.sqrt(2)]))
 
+    def testRotateAlignVectors(self):
+        a = np.array([np.cos(0.25 * np.pi), np.sin(0.25 * np.pi), 0])
+        b = np.array([0.0, 0.0, 1.0])
+        R = util.rotate_align_vectors(a, b)
+        b2 = np.array(R * np.asmatrix(a).T).flatten()
+        npt.assert_almost_equal(b, b2)
+
 
 def suite():
     suite = unittest.TestSuite()

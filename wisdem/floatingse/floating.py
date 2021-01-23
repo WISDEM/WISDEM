@@ -1,4 +1,3 @@
-import numpy as np
 import openmdao.api as om
 from wisdem.floatingse.member import Member
 from wisdem.floatingse.map_mooring import MapMooring
@@ -40,7 +39,7 @@ class FloatingSE(om.Group):
         #            "rho_water", "mu_water", "Uc", "Hsig_wave","Tsig_wave","rho_water","water_depth"]
         for k in range(n_member):
             self.add_subsystem(
-                "member" + str(k),
+                f"member{k}",
                 Member(column_options=opt["floating"]["members"], idx=k, n_mat=opt["materials"]["n_mat"]),
                 promotes=mem_prom,
             )
@@ -60,7 +59,6 @@ class FloatingSE(om.Group):
         mem_vars = [
             "nodes_xyz",
             "nodes_r",
-            "transition_node",
             "section_D",
             "section_t",
             "section_A",
@@ -79,13 +77,14 @@ class FloatingSE(om.Group):
             "center_of_mass",
             "total_mass",
             "total_cost",
+            "I_total",
             "Awater",
             "Iwater",
             "added_mass",
         ]
         for k in range(n_member):
             for var in mem_vars:
-                self.connect("member" + str(k) + "." + var, "member" + str(k) + ":" + var)
+                self.connect(f"member{k}." + var, f"member{k}:" + var)
 
         """
         self.connect("max_offset_restoring_force", "mooring_surge_restoring_force")
