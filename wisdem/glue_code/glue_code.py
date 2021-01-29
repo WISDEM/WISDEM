@@ -504,7 +504,7 @@ class WT_RNTA(om.Group):
             self.connect("env.rho_water", "floatingse.rho_water")
             self.connect("env.water_depth", "floatingse.water_depth")
             # self.connect("env.mu_water", "floatingse.mu_water")
-            # self.connect("env.Hsig_wave", "floatingse.Hsig_wave")
+            self.connect("env.Hsig_wave", "floatingse.Hsig_wave")
             # self.connect("env.Tsig_wave", "floatingse.Tsig_wave")
             # self.connect("env.rho_air", "floatingse.rho_air")
             # self.connect("env.mu_air", "floatingse.mu_air")

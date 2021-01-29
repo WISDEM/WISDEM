@@ -317,21 +317,21 @@ def rotateI(I, th, axis="z"):
         Iin = I.copy()
     else:
         raise ValueError("Unknown size for input, I:", I)
-    Imat = np.asmatrix(assembleI(Iin))
+    Imat = assembleI(Iin)
 
     # Build rotation matrix
     ct = np.cos(th)
     st = np.sin(th)
     if axis in ["z", "Z", 2]:
-        R = np.asmatrix(np.array([[ct, -st, 0], [st, ct, 0], [0, 0, 1]]))
+        R = np.array([[ct, -st, 0], [st, ct, 0], [0, 0, 1]])
     elif axis in ["y", "Y", 1]:
-        R = np.asmatrix(np.array([[ct, 0, st], [0, 1, 0], [-st, 0, ct]]))
+        R = np.array([[ct, 0, st], [0, 1, 0], [-st, 0, ct]])
     elif axis in ["x", "X", 0]:
-        R = np.asmatrix(np.array([[1, 0, 0], [0, ct, -st], [0, st, ct]]))
+        R = np.array([[1, 0, 0], [0, ct, -st], [0, st, ct]])
     else:
         raise ValueError("Axis must be either x/y/z or 0/1/2")
 
-    Iout = unassembleI(R * Imat * R.T)
+    Iout = unassembleI(R @ Imat @ R.T)
 
     return Iout
 
@@ -347,7 +347,7 @@ def rotate_align_vectors(a, b):
     c = np.dot(unita, unitb)
     vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
     r = np.eye(3) + vx + np.dot(vx, vx) / (1 + c)  # *(1-c)/(s**2)
-    return np.asmatrix(r)
+    return r
 
 
 def cubic_with_deriv(x, xp, yp):
