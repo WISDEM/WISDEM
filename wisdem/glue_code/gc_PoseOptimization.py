@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+
 import openmdao.api as om
 
 
@@ -200,6 +201,8 @@ class PoseOptimization(object):
                     wt_opt.driver.hist_file = self.opt["driver"]["optimization"]["hist_file_name"]
                 if "verify_level" in self.opt["driver"]["optimization"]:
                     wt_opt.driver.opt_settings["Verify level"] = self.opt["driver"]["optimization"]["verify_level"]
+                else:
+                    wt_opt.driver.opt_settings["Verify level"] = -1
                 # wt_opt.driver.declare_coloring()
                 if "hotstart_file" in self.opt["driver"]["optimization"]:
                     wt_opt.driver.hotstart_file = self.opt["driver"]["optimization"]["hotstart_file"]
