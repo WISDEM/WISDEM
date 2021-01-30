@@ -684,7 +684,7 @@ class MemberComponent(om.ExplicitComponent):
         self.add_output("variable_ballast_capacity", 0.0, units="m**3")
         self.add_output("variable_ballast_Vpts", val=np.zeros(10), units="m**3")
         self.add_output("variable_ballast_spts", val=np.zeros(10))
-        self.add_output("constr_ballast_capacity", np.zeros(n_ball), units="m")
+        self.add_output("constr_ballast_capacity", np.zeros(n_ball))
 
         self.add_output("total_mass", 0.0, units="kg")
         self.add_output("total_cost", 0.0, units="USD")

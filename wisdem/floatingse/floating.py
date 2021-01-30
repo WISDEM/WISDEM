@@ -73,6 +73,7 @@ class FloatingSE(om.Group):
             "variable_ballast_capacity",
             "variable_ballast_Vpts",
             "variable_ballast_spts",
+            "constr_ballast_capacity",
             "buoyancy_force",
             "displacement",
             "center_of_buoyancy",

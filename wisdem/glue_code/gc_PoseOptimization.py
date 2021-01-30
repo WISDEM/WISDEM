@@ -731,14 +731,32 @@ class PoseOptimization(object):
         # Floating platform and mooring constraints
         float_constr = self.opt["constraints"]["floating"]
 
-        if float_constr["operational_heel"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_operational_heel", upper=1.0)
+        if float_constr["buoyancy"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.variable_ballast_mass", lower=0.0)
 
-        if float_constr["survival_heel"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_survival_heel", upper=1.0)
+        if float_constr["fixed_ballast_capacity"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_fixed_margin", upper=1.0)
 
-        if float_constr["max_surge"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_max_surge", upper=1.0)
+        if float_constr["variable_ballast_capacity"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_variable_margin", upper=1.0)
+
+        if float_constr["metacentric_height"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.metacentric_height", lower=0.0)
+
+        if float_constr["freeboard_margin"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_freeboard_heel_margin", upper=1.0)
+
+        if float_constr["draft_margin"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_draft_heel_margin", upper=1.0)
+
+        if float_constr["fairlead_depth"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_fairlead_wave", upper=1.0)
+
+        if float_constr["mooring_heel"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_mooring_heel", upper=1.0)
+
+        if float_constr["mooring_surge"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_mooring_surge", upper=1.0)
 
         if float_constr["mooring_tension"]["flag"]:
             wt_opt.model.add_constraint("floatingse.constr_axial_load", upper=1.0)
