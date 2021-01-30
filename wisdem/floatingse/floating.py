@@ -4,8 +4,6 @@ from wisdem.floatingse.constraints import FloatingConstraints
 from wisdem.floatingse.map_mooring import MapMooring
 from wisdem.floatingse.floating_frame import FloatingFrame
 
-# from wisdem.floatingse.substructure import Substructure, SubstructureGeometry
-
 
 class FloatingSE(om.Group):
     def initialize(self):

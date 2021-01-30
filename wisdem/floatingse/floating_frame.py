@@ -8,6 +8,7 @@ from wisdem.floatingse.member import NULL, MEMMAX, Member
 NNODES_MAX = 1000
 NELEM_MAX = 1000
 RIGID = 1e30
+EPS = 1e-6
 
 # TODO:
 # - Added mass, hydro stiffness?
@@ -47,6 +48,7 @@ class PlatformFrame(om.ExplicitComponent):
             self.add_input(f"member{k}:Awater", 0.0, units="m**2")
             self.add_input(f"member{k}:Iwater", 0.0, units="m**4")
             self.add_input(f"member{k}:added_mass", np.zeros(6), units="kg")
+            self.add_input(f"member{k}:waterline_centroid", np.zeros(2), units="m")
             self.add_input(f"member{k}:variable_ballast_capacity", val=0.0, units="m**3")
 
         self.add_output("platform_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
@@ -308,7 +310,7 @@ class PlatformTowerFrame(om.ExplicitComponent):
 
     def setup(self):
         opt = self.options["options"]
-        n_member = opt["floating"]["members"]["n_member"]
+        n_member = opt["floating"]["members"]["n_members"]
         n_attach = opt["mooring"]["n_attach"]
 
         self.add_input("platform_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
@@ -380,6 +382,8 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_output("system_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
         self.add_output("system_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_output("system_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_output("system_structural_center_of_mass", np.zeros(3), units="m")
+        self.add_output("system_structural_mass", 0.0, units="kg")
         self.add_output("system_center_of_mass", np.zeros(3), units="m")
         self.add_output("system_mass", 0.0, units="kg")
         self.add_output("variable_ballast_mass", 0.0, units="kg")
@@ -463,14 +467,21 @@ class PlatformTowerFrame(om.ExplicitComponent):
         m_rna = inputs["rna_mass"]
         m_trans = inputs["transition_piece_mass"]
         m_sys = m_platform + m_tower + m_rna + m_trans
-        outputs["system_mass"] = m_sys
+        outputs["system_structural_mass"] = m_sys
+
+        outputs["system_structural_center_of_mass"] = (
+            m_platform * inputs["platform_center_of_mass"]
+            + m_tower * inputs["tower_center_of_mass"]
+            + m_rna * (inputs["rna_cg"] + inputs["tower_top_node"])
+            + m_trans * inputs["transition_node"]
+        ) / m_sys
 
         # Balance out variable ballast
         mooringFz = inputs["mooring_neutral_load"][:, 2].sum()
         capacity = inputs["platform_variable_capacity"]
-        capacity_sum = capacity.sum()
+        capacity_sum = capacity.sum() + EPS  # Avoid divide by zeros
         rho_water = inputs["rho_water"]
-        m_variable = inputs["platform_displacement"] * rho_water - m_sys - mooringFz / gravity
+        m_variable = inputs["platform_displacement"] * rho_water - m_sys + mooringFz / gravity
         V_variable = m_variable / rho_water
         outputs["variable_ballast_mass"] = m_variable
         outputs["constr_variable_margin"] = V_variable / capacity_sum
@@ -498,13 +509,10 @@ class PlatformTowerFrame(om.ExplicitComponent):
         cg_variable = np.dot(V_variable_member, cg_variable_member) / V_variable
 
         # Now find total system mass
+        outputs["system_mass"] = m_sys + m_variable
         outputs["system_center_of_mass"] = (
-            m_platform * inputs["platform_center_of_mass"]
-            + m_tower * inputs["tower_center_of_mass"]
-            + m_rna * (inputs["rna_cg"] + inputs["tower_top_node"])
-            + m_trans * inputs["transition_node"]
-            + m_variable * cg_variable
-        ) / m_sys
+            m_sys * outputs["system_structural_center_of_mass"] + m_variable * cg_variable
+        ) / (m_sys + m_variable)
 
         # Transition piece properties
         m_trans = float(inputs["transition_piece_mass"])

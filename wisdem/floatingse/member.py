@@ -542,6 +542,10 @@ class MemberComponent(om.ExplicitComponent):
         ratio between flange and stiffener spacing
     stiffener_radius_ratio : numpy array[n_full-1]
         ratio between stiffener height and radius
+    constr_flange_compactness : float
+        Standard check on ring stiffener flange geometry and material properties from API (<1)
+    constr_web_compactness : float
+        Standard check on ring stiffener web geometry and material properties from API (<1)
     ballast_cost : float, [USD]
         cost of permanent ballast
     ballast_mass : float, [kg]
@@ -622,6 +626,7 @@ class MemberComponent(om.ExplicitComponent):
         self.add_input("E_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_input("G_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_input("rho_full", val=np.zeros(n_full - 1), units="kg/m**3")
+        self.add_input("sigma_y_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_input("unit_cost_full", val=np.zeros(n_full - 1), units="USD/kg")
         self.add_input("outfitting_full", val=np.ones(n_full - 1))
         self.add_input("labor_cost_rate", 0.0, units="USD/min")
@@ -669,6 +674,8 @@ class MemberComponent(om.ExplicitComponent):
         self.add_output("stiffener_I_base", np.zeros(6), units="kg*m**2")
         self.add_output("flange_spacing_ratio", 0.0)
         self.add_output("stiffener_radius_ratio", NULL * np.ones(MEMMAX))
+        self.add_output("constr_flange_compactness", 0.0)
+        self.add_output("constr_web_compactness", 0.0)
 
         self.add_output("ballast_cost", 0.0, units="USD")
         self.add_output("ballast_mass", 0.0, units="kg")
@@ -1062,8 +1069,8 @@ class MemberComponent(om.ExplicitComponent):
         outputs["stiffener_radius_ratio"][:n_stiff] = (h_web + t_flange + twall_stiff) / R_od_stiff
         # "compactness" check on stiffener geometry (must be >= 1)
         fact = np.sqrt(E / sigma_y).min()
-        outputs["flange_compactness"] = 0.375 * (t_flange / (0.5 * w_flange)) * fact
-        outputs["web_compactness"] = 1.0 * (t_web / h_web) * fact
+        outputs["constr_flange_compactness"] = 0.375 * (t_flange / (0.5 * w_flange)) * fact
+        outputs["constr_web_compactness"] = 1.0 * (t_web / h_web) * fact
 
         # Outer and inner radius of web by section
         R_wo = R_id_stiff
@@ -1228,7 +1235,6 @@ class MemberComponent(om.ExplicitComponent):
                 outputs["variable_ballast_spts"] = sinterp
 
         # Save permanent ballast mass and variable height
-        # TODO: Add the mass to sectional density?
         outputs["ballast_mass"] = m_ballast.sum()
         outputs["ballast_I_base"] = I_ballast
         outputs["ballast_z_cg"] = np.dot(z_cg, m_ballast) / (m_ballast.sum() + eps)
@@ -1434,6 +1440,7 @@ class MemberHydro(om.ExplicitComponent):
             s_under = s_grid
             waterline = False
             r_waterline = 0.0
+            outputs["waterline_centroid"] = np.zeros(2)
         else:
             return
         z_under = np.interp(s_under, s_full, z_full)
