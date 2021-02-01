@@ -49,7 +49,7 @@ class FloatingConstraints(om.ExplicitComponent):
 
         # Unpack inputs
         Hsig = inputs["Hsig_wave"]
-        fairlead = inputs["fairlead"]
+        fairlead = np.abs(inputs["fairlead"])
         R_fairlead = inputs["fairlead_radius"]
         max_heel = np.deg2rad(inputs["survival_heel"])
         cg = inputs["system_center_of_mass"]
@@ -122,6 +122,7 @@ class FloatingConstraints(om.ExplicitComponent):
         surge_restore = inputs["max_surge_restoring_force"]
         heel_restore = inputs["operational_heel_restoring_force"].sum(axis=0)
         outputs["constr_mooring_surge"] = surge_restore - F_rna[0]
-        M_heel_restore = R_fairlead * heel_restore[2] + (cg[2] - fairlead) * heel_restore[:2].sum()
+        # (fairlead is assumed negative, made positive above, would otherwise be cg-fairlead)
+        M_heel_restore = R_fairlead * heel_restore[2] + (cg[2] + fairlead) * heel_restore[:2].sum()
         tt2cg = inputs["tower_top_node"][2] - cg[2]
         outputs["constr_mooring_heel"] = M_heel_restore - F_rna[0] * tt2cg - M_rna[1]
