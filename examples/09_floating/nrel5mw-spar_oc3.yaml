@@ -328,10 +328,10 @@ components:
                 ballasts:
                     - variable_flag: False
                       material: slurry
-                      volume: 1e3
-                      grid: [0.0, 0.1]
+                      volume: 1e2
+                      grid: [0.0, 0.4]
                     - variable_flag: True
-                      grid: [0.1, 0.5]
+                      grid: [0.4, 1.0]
 
               axial_joints:
                 - name: fairlead
@@ -391,8 +391,8 @@ components:
         line_types:
             - name: main
               diameter: 0.09
-              mass_density: 77.7066
-              stiffness: 384.243e6
+              mass_density: 100.0 #77.7066
+              stiffness: 350e6 #384.243e6
               breaking_load: 1e8
               cost: 100.0
               transverse_added_mass: 1.0

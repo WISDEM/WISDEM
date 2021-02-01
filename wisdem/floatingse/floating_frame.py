@@ -293,14 +293,13 @@ class PlatformFrame(om.ExplicitComponent):
 class TowerPreMember(om.ExplicitComponent):
     def setup(self):
         self.add_input("transition_node", np.zeros(3), units="m")
-        self.add_input("hub_height", 0.0, units="m")
-        self.add_input("distance_tt_hub", 0.0, units="m")
+        self.add_input("tower_height", 0.0, units="m")
         self.add_output("tower_top_node", np.zeros(3), units="m")
 
     def compute(self, inputs, outputs):
         transition_node = inputs["transition_node"]
         tower_top_node = transition_node
-        tower_top_node[2] = float(inputs["hub_height"] - inputs["distance_tt_hub"])
+        tower_top_node[2] += float(inputs["tower_height"])
         outputs["tower_top_node"] = tower_top_node
 
 

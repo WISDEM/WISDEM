@@ -364,7 +364,7 @@ driver:
         run_parallel: True    # Flag to run using parallel processing
         generator: Uniform    # Type of input generator. (Uniform)
         num_samples: 5        # number of samples for (Uniform only)
-    
+
 recorder:
-    flag: True                            # Flag to activate OpenMDAO recorder
+    flag: False                            # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql    # Name of OpenMDAO recorder

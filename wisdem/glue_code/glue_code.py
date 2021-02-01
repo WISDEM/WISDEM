@@ -517,14 +517,14 @@ class WT_RNTA(om.Group):
             self.connect("materials.unit_cost", "floatingse.unit_cost_mat")
             self.connect("costs.labor_rate", "floatingse.labor_cost_rate")
             self.connect("costs.painting_rate", "floatingse.painting_cost_rate")
-            self.connect("assembly.hub_height", "floatingse.hub_height")
-            self.connect("nacelle.distance_tt_hub", "floatingse.distance_tt_hub")
             self.connect("tower.diameter", "floatingse.tower.outer_diameter_in")
             self.connect("tower_grid.s", "floatingse.tower.s")
             self.connect("tower.layer_thickness", "floatingse.tower.layer_thickness")
             self.connect("tower.outfitting_factor", "floatingse.tower.outfitting_factor_in")
             self.connect("tower.layer_mat", "floatingse.tower.layer_materials")
             self.connect("floating.transition_node", "floatingse.transition_node")
+            if modeling_options["flags"]["tower"]:
+                self.connect("tower_grid.height", "floatingse.tower_height")
             if modeling_options["flags"]["nacelle"]:
                 self.connect("drivese.base_F", "floatingse.rna_F")
                 self.connect("drivese.base_M", "floatingse.rna_M")

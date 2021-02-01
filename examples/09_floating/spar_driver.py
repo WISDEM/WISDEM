@@ -9,7 +9,7 @@ from wisdem.glue_code.runWISDEM import run_wisdem
 run_dir = os.path.dirname(os.path.realpath(__file__))
 fname_wt_input_oc3 = run_dir + os.sep + "nrel5mw-spar_oc3.yaml"
 fname_modeling_options = run_dir + os.sep + "modeling_options_noRNA.yaml"
-fname_analysis_options = run_dir + os.sep + "analysis_options_sparopt.yaml"
+fname_analysis_options = run_dir + os.sep + "analysis_options.yaml"
 
 
 tt = time.time()

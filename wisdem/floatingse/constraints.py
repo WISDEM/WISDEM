@@ -11,7 +11,7 @@ class FloatingConstraints(om.ExplicitComponent):
     def setup(self):
         opt = self.options["modeling_options"]
         n_member = opt["floating"]["members"]["n_members"]
-        n_attach = opt["mooring"]["n_attach"]
+        n_lines = opt["mooring"]["n_anchors"]
 
         self.add_input("Hsig_wave", val=0.0, units="m")
         self.add_input("variable_ballast_mass", val=0.0, units="kg")
@@ -34,8 +34,8 @@ class FloatingConstraints(om.ExplicitComponent):
         self.add_input("rna_F", np.zeros(3), units="N")
         self.add_input("rna_M", np.zeros(3), units="N*m")
         self.add_input("max_surge_restoring_force", 0.0, units="N")
-        self.add_input("operational_heel_restoring_force", np.zeros((n_attach, 3)), units="N")
-        self.add_input("survival_heel_restoring_force", np.zeros((n_attach, 3)), units="N")
+        self.add_input("operational_heel_restoring_force", np.zeros((n_lines, 3)), units="N")
+        self.add_input("survival_heel_restoring_force", np.zeros((n_lines, 3)), units="N")
 
         self.add_output("constr_freeboard_heel_margin", val=np.zeros(n_member))
         self.add_output("constr_draft_heel_margin", val=np.zeros(n_member))
