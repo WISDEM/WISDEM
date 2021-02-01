@@ -19,10 +19,12 @@ class FloatingConstraints(om.ExplicitComponent):
         self.add_input("fairlead", 0.0, units="m")
         self.add_input("operational_heel", 0.0, units="deg")
         self.add_input("survival_heel", 0.0, units="deg")
+        tot_ball = 0
         for k in range(n_member):
             n_ball = opt["floating"]["members"]["n_ballasts"][k]
             self.add_input(f"member{k}:nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
             self.add_input(f"member{k}:constr_ballast_capacity", np.zeros(n_ball))
+            tot_ball += n_ball
         self.add_input("platform_Iwater", 0.0, units="m**4")
         self.add_input("platform_displacement", 0.0, units="m**3")
         self.add_input("platform_center_of_buoyancy", np.zeros(3), units="m")
@@ -37,7 +39,7 @@ class FloatingConstraints(om.ExplicitComponent):
 
         self.add_output("constr_freeboard_heel_margin", val=np.zeros(n_member))
         self.add_output("constr_draft_heel_margin", val=np.zeros(n_member))
-        self.add_output("constr_fixed_margin", val=np.zeros(n_member))
+        self.add_output("constr_fixed_margin", val=np.zeros(tot_ball))
         self.add_output("constr_fairlead_wave", val=0.0)
         self.add_output("constr_mooring_surge", val=0.0)
         self.add_output("constr_mooring_heel", val=0.0)
@@ -59,9 +61,9 @@ class FloatingConstraints(om.ExplicitComponent):
         # where freeboard does not get submerged and keel does not come out water
         freeboard_margin = np.zeros(n_member)
         draft_margin = np.zeros(n_member)
-        ballast_margin = np.zeros(n_member)
+        ballast_margin = []
         for k in range(n_member):
-            ballast_margin[k] = inputs[f"member{k}:constr_ballast_capacity"]
+            ballast_margin.extend(inputs[f"member{k}:constr_ballast_capacity"].tolist())
 
             xyz = inputs[f"member{k}:nodes_xyz"]
             inodes = np.where(xyz[:, 0] == NULL)[0][0]
@@ -95,7 +97,7 @@ class FloatingConstraints(om.ExplicitComponent):
         # Ensure members have enough clearance from the waterline
         outputs["constr_freeboard_heel_margin"] = freeboard_margin
         outputs["constr_draft_heel_margin"] = draft_margin
-        outputs["constr_fixed_margin"] = ballast_margin
+        outputs["constr_fixed_margin"] = np.array(ballast_margin)
 
         # Make sure the fairlead depth is greater than the wave height with margin.  Should be <1
         outputs["constr_fairlead_wave"] = Hsig * gamma / fairlead

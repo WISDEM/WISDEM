@@ -24,7 +24,7 @@ class TestConstraints(unittest.TestCase):
 
         for k in range(n_member):
             inputs[f"member{k}:nodes_xyz"] = NULL * np.ones((MEMMAX, 3))
-            inputs[f"member{k}:constr_ballast_capacity"] = 0.6
+            inputs[f"member{k}:constr_ballast_capacity"] = np.array([0.6])
             inputs[f"member{k}:nodes_xyz"][:2, :] = np.array([[0, 0, -1], [0, 0, 1]])
 
         inputs["Hsig_wave"] = 10.0
