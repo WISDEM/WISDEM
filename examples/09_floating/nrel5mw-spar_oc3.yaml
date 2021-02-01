@@ -319,7 +319,7 @@ components:
                       material: steel
                       thickness:
                         grid: [0.0, 1.0]
-                        values: [0.05, 0.05]
+                        values: [0.08, 0.08]
                 bulkhead:
                     material: steel
                     thickness:
@@ -329,9 +329,9 @@ components:
                     - variable_flag: False
                       material: slurry
                       volume: 1e3
-                      grid: [0.0, 0.1]
+                      grid: [0.0, 0.4]
                     - variable_flag: True
-                      grid: [0.1, 0.5]
+                      grid: [0.4, 1.0]
 
               axial_joints:
                 - name: fairlead

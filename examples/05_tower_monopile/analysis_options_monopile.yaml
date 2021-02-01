@@ -74,15 +74,6 @@ constraints:
             lower_bound: 0.0
 
 driver:
-    tol: 1.e-3                        # Optimality tolerance
-    max_major_iter: 10        # Maximum number of major design iterations (SNOPT)
-    max_minor_iter: 100     # Maximum number of minor design iterations (SNOPT)
-    max_iter: 100                 # Maximum number of iterations (SLSQP)
-    solver: SLSQP                 # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
-    step_size: 1.e-6            # Step size for finite differencing
-    form: forward                 # Finite differencing mode, either forward or central
-
-driver:
     optimization:
         flag: True            # Flag to enable optimization
         tol: 1.e-3            # Optimality tolerance
@@ -97,7 +88,7 @@ driver:
         run_parallel: True    # Flag to run using parallel processing
         generator: Uniform    # Type of input generator. (Uniform)
         num_samples: 5        # number of samples for (Uniform only)
-    
+
 recorder:
     flag: False                            # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql    # Name of OpenMDAO recorder

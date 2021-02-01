@@ -121,8 +121,7 @@ class TestOC3Mass(unittest.TestCase):
 
         # Porperties of turbine tower
         nTower = prob.model.options["modeling_options"]["floating"]["tower"]["n_height"][0]
-        prob["hub_height"] = 85.0
-        prob["distance_tt_hub"] = 5.0
+        prob["tower_height"] = 85.0 - prob["member0.joint2"][2]
         prob["tower.s"] = np.linspace(0.0, 1.0, nTower)
         prob["tower.outer_diameter_in"] = np.linspace(6.5, 3.87, nTower)
         prob["tower.layer_thickness"] = np.linspace(0.027, 0.019, nTower).reshape((1, nTower))

@@ -1,0 +1,150 @@
+general:
+    folder_output: outputs
+    fname_output: refturb_output
+design_variables:
+
+    floating:
+        joints:
+            flag: True
+            z_coordinate:
+                - names: [col1_keel, col2_keel, col3_keel]
+                  lower_bound: -40.0
+                  upper_bound: -15.0
+                - names: [main_keel]
+                  lower_bound: -40.0
+                  upper_bound: -15.0
+            r_coordinate:
+                - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]
+                  lower_bound: 25.0
+                  upper_bound: 50.0
+        members:
+            flag: True
+            groups:
+                - names: [column1, column2, column3]
+                  diameter:
+                      lower_bound: 1.0
+                      upper_bound: 20.0
+                  thickness:
+                      lower_bound: 0.01
+                      upper_bound: 1.0
+                  axial_joints:
+                      - names: [col1_fairlead, col2_fairlead, col3_fairlead]
+                        lower_bound: 0.0
+                        upper_bound: 1.0
+
+                - names: [delta_pontoon_lower12, delta_pontoon_lower23, delta_pontoon_lower31]
+                  diameter:
+                      lower_bound: 2.0
+                      upper_bound: 5.0
+                  thickness:
+                      lower_bound: 0.1
+                      upper_bound: 1.0
+
+                - names: [delta_pontoon_upper12, delta_pontoon_upper23, delta_pontoon_upper31]
+                  diameter:
+                      lower_bound: 2.0
+                      upper_bound: 5.0
+                  thickness:
+                      lower_bound: 0.1
+                      upper_bound: 1.0
+
+                - names: [main_column]
+                  diameter:
+                      lower_bound: 1.0
+                      upper_bound: 20.0
+                  thickness:
+                      lower_bound: 0.01
+                      upper_bound: 1.0
+                  stiffeners:
+                        ring:
+                            size:
+                                min_gain: 0.5
+                                max_gain: 3.0
+                            spacing:
+                                lower_bound: 0.1
+                                upper_bound: 1.0
+
+    mooring:
+            anchor_radius:
+                # This adjusts the radius of all anchor nodes from (0,0)
+                flag: False
+                lower_bound: 10.0
+                upper_bound: 1000.0
+            line_length:
+                # Adjust the unstretched line length of the mooring segments
+                linked_lines:
+                    # This will set the same line length for all segments listed in the same names entry
+                    - names: [line1, line2, line3]
+                      flag: False
+                      lower_bound: 100.0
+                      upper_bound: 2000.0
+                    - names: [bridle11, bridle12, bridle21, bridle22, bridle31, bridle32]
+                      flag: False
+                      lower_bound: 100.0
+                      upper_bound: 2000.0
+            line_diameter:
+                # Adjust the diameter of the mooring segments
+                linked_lines:
+                    # This will set the same diameter for all segments listed in the same names entry
+                    - names: [line1, line2, line3]
+                      flag: False
+                      lower_bound: 0.1
+                      upper_bound: 2.0
+                    - names: [bridle11, bridle12, bridle21, bridle22, bridle31, bridle32]
+                      flag: False
+                      lower_bound: 0.1
+                      upper_bound: 2.0
+
+merit_figure: LCOE
+
+constraints:
+    floating:
+        operational_heel:
+            upper_bound: 0.08726646259971647 # 5 deg
+        survival_heel:
+            upper_bound: 0.17453292519943295 # 10 deg
+        max_surge:
+            flag: false
+            upper_bound: 0.1
+        buoyancy:
+            flag: True
+        fixed_ballast_capacity:
+            flag: True
+        variable_ballast_capacity:
+            flag: True
+        metacentric_height:
+            flag: True
+        freeboard_margin:
+            flag: false
+        draft_margin:
+            flag: false
+        fairlead_depth:
+            flag: false
+        mooring_surge:
+            flag: false
+        mooring_heel:
+            flag: false
+        mooring_tension:
+            flag: false
+        mooring_length:
+            flag: false
+
+driver:
+    optimization:
+        flag: False         # Flag to enable optimization
+        tol: 1.e-2          # Optimality tolerance
+        max_major_iter: 10  # Maximum number of major design iterations (SNOPT)
+        max_minor_iter: 100 # Maximum number of minor design iterations (SNOPT)
+        max_iter: 100         # Maximum number of iterations (SLSQP)
+        solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        step_size: 1.e-3    # Step size for finite differencing
+        form: central       # Finite differencing mode, either forward or central
+    design_of_experiments:
+        flag: False           # Flag to enable design of experiments
+        run_parallel: True    # Flag to run using parallel processing
+        generator: Uniform    # Type of input generator. (Uniform)
+        num_samples: 5        # number of samples for (Uniform only)
+
+recorder:
+    flag: False                            # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql    # Name of OpenMDAO recorder
