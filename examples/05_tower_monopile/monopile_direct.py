@@ -1,6 +1,8 @@
 # Tower-Monopile analysis
 # Optimization by flag
 # Two load cases
+import os
+
 import numpy as np
 import openmdao.api as om
 from wisdem.towerse.tower import TowerSE
@@ -205,7 +207,7 @@ if opt_flag:
     prob.run_driver()
 else:
     prob.run_model()
-save_data("monopile_example", prob)
+save_data(os.path.join("outputs", "monopile_example"), prob)
 # ---
 
 

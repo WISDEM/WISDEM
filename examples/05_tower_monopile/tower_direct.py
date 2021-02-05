@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import os
+
 # Tower analysis
 # Optimization by flag
 # Two load cases
@@ -170,7 +172,7 @@ if opt_flag:
     prob.run_driver()
 else:
     prob.run_model()
-save_data("tower_example", prob)
+save_data(os.path.join("outputs", "tower_example"), prob)
 # ---
 
 # print results from the analysis or optimization
