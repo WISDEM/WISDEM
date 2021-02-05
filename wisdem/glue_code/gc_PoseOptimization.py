@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-
 import openmdao.api as om
 
 
@@ -286,6 +285,12 @@ class PoseOptimization(object):
         elif self.opt["merit_figure"] == "nacelle_cost":
             wt_opt.model.add_objective("tcc.nacelle_cost", ref=1e6)
 
+        elif self.opt["merit_figure"] == "platform_mass":
+            wt_opt.model.add_objective("floatingse.platform_mass", ref=1e6)
+
+        elif self.opt["merit_figure"] == "platform_cost":
+            wt_opt.model.add_objective("floatingse.platform_cost", ref=1e6)
+
         elif self.opt["merit_figure"] == "Cp":
             if self.modeling["flags"]["blade"]:
                 wt_opt.model.add_objective("rp.powercurve.Cp_regII", ref=-1.0)
@@ -491,6 +496,8 @@ class PoseOptimization(object):
             for kgrp in float_opt["members"]["groups"]:
                 memname = kgrp["names"][0]
                 idx = self.modeling["floating"]["members"]["name2idx"][memname]
+                imem = self.modeling["floating"]["members"]["name"].index(memname)
+                istruct = wt_init["components"]["floating_platform"]["members"][imem]["internal_structure"]
 
                 if "diameter" in kgrp:
                     wt_opt.model.add_design_var(
@@ -504,14 +511,19 @@ class PoseOptimization(object):
                         lower=kgrp["thickness"]["lower_bound"],
                         upper=kgrp["thickness"]["upper_bound"],
                     )
-                if "ballast" in kgrp and wt_opt[f"floating.memgrp{idx}.ballast_volume"].size > 0:
-                    idx = np.where(wt_opt[f"floating.memgrp{idx}.ballast_volume"] > 0.0)[0]
-                    if idx.size > 0:
+                if "ballast" in kgrp and len(istruct["ballasts"]) > 0:
+                    V_ballast = np.zeros(len(istruct["ballasts"]))
+                    for j in range(V_ballast.size):
+                        if "volume" in istruct["ballasts"][j]:
+                            V_ballast[j] = istruct["ballasts"][j]["volume"]
+                    iball = np.where(V_ballast > 0.0)[0]
+                    if iball.size > 0:
                         wt_opt.model.add_design_var(
                             f"floating.memgrp{idx}.ballast_volume",
                             lower=kgrp["ballast"]["lower_bound"],
                             upper=kgrp["ballast"]["upper_bound"],
-                            indices=idx,
+                            indices=iball,
+                            ref=1e3,
                         )
                 if "stiffeners" in kgrp:
                     if "ring" in kgrp["stiffeners"]:
@@ -672,17 +684,17 @@ class PoseOptimization(object):
 
         if tower_constr["stress"]["flag"] or monopile_constr["stress"]["flag"]:
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] == 0 else str(k + 1)
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".stress", upper=1.0)
 
         if tower_constr["global_buckling"]["flag"] or monopile_constr["global_buckling"]["flag"]:
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] == 0 else str(k + 1)
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".global_buckling", upper=1.0)
 
         if tower_constr["shell_buckling"]["flag"] or monopile_constr["shell_buckling"]["flag"]:
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] == 0 else str(k + 1)
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".shell_buckling", upper=1.0)
 
         if tower_constr["d_to_t"]["flag"] or monopile_constr["d_to_t"]["flag"]:
@@ -707,7 +719,7 @@ class PoseOptimization(object):
 
         elif tower_constr["frequency_1"]["flag"] or monopile_constr["frequency_1"]["flag"]:
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] == 0 else str(k + 1)
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint(
                     "towerse.post" + kstr + ".structural_frequencies",
                     indices=[0],
@@ -734,14 +746,32 @@ class PoseOptimization(object):
         # Floating platform and mooring constraints
         float_constr = self.opt["constraints"]["floating"]
 
-        if float_constr["operational_heel"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_operational_heel", upper=1.0)
+        if float_constr["buoyancy"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.variable_ballast_mass", lower=0.0)
 
-        if float_constr["survival_heel"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_survival_heel", upper=1.0)
+        if float_constr["fixed_ballast_capacity"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_fixed_margin", upper=1.0)
 
-        if float_constr["max_surge"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_max_surge", upper=1.0)
+        if float_constr["variable_ballast_capacity"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_variable_margin", upper=1.0)
+
+        if float_constr["metacentric_height"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.metacentric_height", lower=0.0)
+
+        if float_constr["freeboard_margin"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_freeboard_heel_margin", upper=1.0)
+
+        if float_constr["draft_margin"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_draft_heel_margin", upper=1.0)
+
+        if float_constr["fairlead_depth"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_fairlead_wave", upper=1.0)
+
+        if float_constr["mooring_heel"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_mooring_heel", upper=1.0)
+
+        if float_constr["mooring_surge"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_mooring_surge", upper=1.0)
 
         if float_constr["mooring_tension"]["flag"]:
             wt_opt.model.add_constraint("floatingse.constr_axial_load", upper=1.0)
