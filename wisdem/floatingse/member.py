@@ -1415,6 +1415,7 @@ class MemberHydro(om.ExplicitComponent):
         self.add_output("Iwater", 0.0, units="m**4")
         self.add_output("added_mass", np.zeros(6), units="kg")
         self.add_output("waterline_centroid", np.zeros(2), units="m")
+        self.add_ooutput("z_dim", np.zeros(n_full), units="m")
 
     def compute(self, inputs, outputs):
         # Unpack variables
@@ -1427,6 +1428,7 @@ class MemberHydro(om.ExplicitComponent):
         rho_water = inputs["rho_water"]
         xyz0 = xyz[0, :]
         dxyz = xyz[-1, :] - xyz[0, :]
+        outputs["z_dim"] = xyz0[2] + s_full * dxyz[2]
 
         # Compute volume of each section and mass of displaced water by section
         # Find the radius at the waterline so that we can compute the submerged volume as a sum of frustum sections
@@ -1500,6 +1502,7 @@ class Member(om.Group):
 
         n_height = opt["n_height"][idx]
         n_refine = NREFINE if n_height > 2 else np.maximum(NREFINE, 2)
+        n_full = get_nfull(n_height, nref=n_refine)
 
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
         self.add_subsystem(
@@ -1518,7 +1521,6 @@ class Member(om.Group):
 
         self.add_subsystem("hydro", MemberHydro(n_height=n_height, n_refine=n_refine), promotes=["*"])
 
-        """
         # TODO: Get actual z coordinates into CylinderEnvironment
         prom = [
             "Uref",
@@ -1538,13 +1540,12 @@ class Member(om.Group):
             "Tsig_wave",
             "rho_water",
             "water_depth",
+            "qdyn",
+            "yaw",
             "Px",
             "Py",
             "Pz",
-            "qdyn",
-            "yaw",
         ]
         self.add_subsystem("env", CylinderEnvironment(nPoints=n_full, water_flag=True), promotes=prom)
-        self.connect("z_full", "env.z")
+        self.connect("z_dim", "env.z")
         self.connect("d_full", "env.d")
-        """

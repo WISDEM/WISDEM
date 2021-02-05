@@ -3,7 +3,7 @@ import openmdao.api as om
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 from wisdem.commonse import NFREQ, gravity
-from wisdem.floatingse.member import NULL, MEMMAX, Member
+from wisdem.floatingse.member import NULL, MEMMAX, NREFINE, Member, get_nfull
 
 NNODES_MAX = 1000
 NELEM_MAX = 1000
@@ -24,6 +24,10 @@ class PlatformFrame(om.ExplicitComponent):
         n_member = opt["floating"]["members"]["n_members"]
 
         for k in range(n_member):
+            n_height = opt["floating"]["members"]["n_height"][k]
+            n_refine = NREFINE if n_height > 2 else np.maximum(NREFINE, 2)
+            n_full = get_nfull(n_height, nref=n_refine)
+
             self.add_input(f"member{k}:nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
             self.add_input(f"member{k}:nodes_r", NULL * np.ones(MEMMAX), units="m")
             self.add_input(f"member{k}:section_D", NULL * np.ones(MEMMAX), units="m")
@@ -50,6 +54,10 @@ class PlatformFrame(om.ExplicitComponent):
             self.add_input(f"member{k}:added_mass", np.zeros(6), units="kg")
             self.add_input(f"member{k}:waterline_centroid", np.zeros(2), units="m")
             self.add_input(f"member{k}:variable_ballast_capacity", val=0.0, units="m**3")
+            self.add_input(f"member{k}:z_dim", np.zeros(n_full), units="m")
+            self.add_input(f"member{k}:Px", np.zeros(n_full), units="N/m")
+            self.add_input(f"member{k}:Py", np.zeros(n_full), units="N/m")
+            self.add_input(f"member{k}:Pz", np.zeros(n_full), units="N/m")
 
         self.add_output("platform_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
         self.add_output("platform_Fnode", NULL * np.ones((NNODES_MAX, 3)), units="N")
@@ -67,6 +75,12 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
         self.add_output("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_output("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_output("platform_elem_Px1", NULL * np.ones(NELEM_MAX), units="N/m")
+        self.add_output("platform_elem_Px2", NULL * np.ones(NELEM_MAX), units="N/m")
+        self.add_output("platform_elem_Py1", NULL * np.ones(NELEM_MAX), units="N/m")
+        self.add_output("platform_elem_Py2", NULL * np.ones(NELEM_MAX), units="N/m")
+        self.add_output("platform_elem_Pz1", NULL * np.ones(NELEM_MAX), units="N/m")
+        self.add_output("platform_elem_Pz2", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_output("platform_displacement", 0.0, units="m**3")
         self.add_output("platform_center_of_buoyancy", np.zeros(3), units="m")
         self.add_output("platform_center_of_mass", np.zeros(3), units="m")
@@ -180,6 +194,12 @@ class PlatformFrame(om.ExplicitComponent):
         elem_rho = np.array([])
         elem_E = np.array([])
         elem_G = np.array([])
+        elem_Px1 = np.array([])
+        elem_Px2 = np.array([])
+        elem_Py1 = np.array([])
+        elem_Py2 = np.array([])
+        elem_Pz1 = np.array([])
+        elem_Pz2 = np.array([])
 
         mass = 0.0
         cost = 0.0
@@ -230,6 +250,7 @@ class PlatformFrame(om.ExplicitComponent):
         cb_plat /= volume
 
         # With CG known, loop back through to compute platform I
+        unit_x = np.array([1.0, 0.0, 0.0])
         unit_z = np.array([0.0, 0.0, 1.0])
         I_total = np.zeros((3, 3))
         for k in range(n_member):
@@ -252,6 +273,21 @@ class PlatformFrame(om.ExplicitComponent):
             # Now do parallel axis theorem
             I_total += np.array(I_k2) + imass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
 
+            # Put loads on local element grid
+            Px = np.interp(xyz_k[:, 2], inputs[f"member{k}:z_dim"], inputs[f"member{k}:Px"])
+            Py = np.interp(xyz_k[:, 2], inputs[f"member{k}:z_dim"], inputs[f"member{k}:Py"])
+            Pz = np.interp(xyz_k[:, 2], inputs[f"member{k}:z_dim"], inputs[f"member{k}:Pz"])
+
+            T2 = util.rotate_align_vectors(unit_x, vec_k)
+            P_local = T2 @ np.c_[Px, Py, Pz].T
+
+            elem_Px1 = np.append(elem_Px1, P_local[0, :-1])
+            elem_Px2 = np.append(elem_Px2, P_local[0, 1:])
+            elem_Py1 = np.append(elem_Py1, P_local[1, :-1])
+            elem_Py2 = np.append(elem_Py2, P_local[1, 1:])
+            elem_Pz1 = np.append(elem_Pz1, P_local[2, :-1])
+            elem_Pz2 = np.append(elem_Pz2, P_local[2, 1:])
+
         # Store outputs
         nelem = elem_A.size
         outputs["platform_elem_D"] = NULL * np.ones(NELEM_MAX)
@@ -265,6 +301,12 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_elem_rho"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_E"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_G"] = NULL * np.ones(NELEM_MAX)
+        outputs["platform_elem_Px1"] = NULL * np.ones(NELEM_MAX)
+        outputs["platform_elem_Px2"] = NULL * np.ones(NELEM_MAX)
+        outputs["platform_elem_Py1"] = NULL * np.ones(NELEM_MAX)
+        outputs["platform_elem_Py2"] = NULL * np.ones(NELEM_MAX)
+        outputs["platform_elem_Pz1"] = NULL * np.ones(NELEM_MAX)
+        outputs["platform_elem_Pz2"] = NULL * np.ones(NELEM_MAX)
 
         outputs["platform_elem_D"][:nelem] = elem_D
         outputs["platform_elem_t"][:nelem] = elem_t
@@ -277,6 +319,12 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_elem_rho"][:nelem] = elem_rho
         outputs["platform_elem_E"][:nelem] = elem_E
         outputs["platform_elem_G"][:nelem] = elem_G
+        outputs["platform_elem_Px1"][:nelem] = elem_Px1
+        outputs["platform_elem_Px2"][:nelem] = elem_Px2
+        outputs["platform_elem_Py1"][:nelem] = elem_Py1
+        outputs["platform_elem_Py2"][:nelem] = elem_Py2
+        outputs["platform_elem_Pz1"][:nelem] = elem_Pz1
+        outputs["platform_elem_Pz2"][:nelem] = elem_Pz2
 
         outputs["platform_mass"] = mass
         outputs["platform_cost"] = cost
@@ -328,6 +376,12 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
         self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("platform_elem_Px1", NULL * np.ones(NELEM_MAX), units="N/m")
+        self.add_input("platform_elem_Px2", NULL * np.ones(NELEM_MAX), units="N/m")
+        self.add_input("platform_elem_Py1", NULL * np.ones(NELEM_MAX), units="N/m")
+        self.add_input("platform_elem_Py2", NULL * np.ones(NELEM_MAX), units="N/m")
+        self.add_input("platform_elem_Pz1", NULL * np.ones(NELEM_MAX), units="N/m")
+        self.add_input("platform_elem_Pz2", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_input("platform_center_of_mass", np.zeros(3), units="m")
         self.add_input("platform_mass", 0.0, units="kg")
         self.add_input("platform_displacement", 0.0, units="m**3")
@@ -350,6 +404,10 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_input("tower_elem_G", NULL * np.ones(MEMMAX), units="Pa")
         self.add_input("tower_center_of_mass", np.zeros(3), units="m")
         self.add_input("tower_mass", 0.0, units="kg")
+        self.add_input("tower_z_dim", np.zeros(n_full), units="m")
+        self.add_input("tower_Px", np.zeros(n_full), units="N/m")
+        self.add_input("tower_Py", np.zeros(n_full), units="N/m")
+        self.add_input("tower_Pz", np.zeros(n_full), units="N/m")
 
         self.add_input("rho_water", 0.0, units="kg/m**3")
         self.add_input("tower_top_node", np.zeros(3), units="m")
@@ -621,6 +679,7 @@ class FrameAnalysis(om.ExplicitComponent):
             E = inputs[frame + "_elem_E"][:nelem]
             G = inputs[frame + "_elem_G"][:nelem]
             roll = np.zeros(nelem)
+            L = np.sqrt(np.sum((nodes[N2, :] - nodes[N1, :]) ** 2, axis=1))
 
             inodes = np.arange(nnode) + 1
             node_obj = pyframe3dd.NodeData(inodes, nodes[:, 0], nodes[:, 1], nodes[:, 2], rnode)
@@ -688,6 +747,17 @@ class FrameAnalysis(om.ExplicitComponent):
             load_obj.changePointLoads(
                 nF + 1, Fnode[nF, 0], Fnode[nF, 1], Fnode[nF, 2], Mnode[nF, 0], Mnode[nF, 1], Mnode[nF, 2]
             )
+
+            # trapezoidally distributed loads
+            xx1 = xy1 = xz1 = np.zeros(ielem.size)
+            xx2 = xy2 = xz2 = L - 1e-6  # subtract small number b.c. of precision
+            wx1 = Px[:-1]
+            wx2 = Px[1:]
+            wy1 = Py[:-1]
+            wy2 = Py[1:]
+            wz1 = Pz[:-1]
+            wz2 = Pz[1:]
+            load_obj.changeTrapezoidalLoads(ielem, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
 
             # Add the load case and run
             myframe.addLoadCase(load_obj)
