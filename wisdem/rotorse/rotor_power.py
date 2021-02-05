@@ -60,7 +60,7 @@ class RotorPower(Group):
                 "mu",
             ],
         )
-        self.add_subsystem("gust", GustETM())
+        self.add_subsystem("gust", GustETM(std=modeling_options["WISDEM"]["RotorSE"]["gust_std"]))
         self.add_subsystem("cdf", WeibullWithMeanCDF(nspline=modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]))
         self.add_subsystem("aep", AEP(nspline=modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]), promotes=["AEP"])
 
@@ -78,12 +78,15 @@ class RotorPower(Group):
 class GustETM(ExplicitComponent):
     # OpenMDAO component that generates an "equivalent gust" wind speed by summing an user-defined wind speed at hub height with 3 times sigma. sigma is the turbulent wind speed standard deviation for the extreme turbulence model, see IEC-61400-1 Eq. 19 paragraph 6.3.2.3
 
+    def initialize(self):
+        # number of standard deviations for strength of gust
+        self.options.declare("std", default=3.0)
+
     def setup(self):
         # Inputs
         self.add_input("V_mean", val=0.0, units="m/s", desc="IEC average wind speed for turbine class")
         self.add_input("V_hub", val=0.0, units="m/s", desc="hub height wind speed")
         self.add_discrete_input("turbulence_class", val="A", desc="IEC turbulence class")
-        self.add_input("std", val=3.0, desc="number of standard deviations for strength of gust")
 
         # Output
         self.add_output("V_gust", val=0.0, units="m/s", desc="gust wind speed")
@@ -91,7 +94,7 @@ class GustETM(ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         V_mean = inputs["V_mean"]
         V_hub = inputs["V_hub"]
-        std = inputs["std"]
+        std = self.options["std"]
         turbulence_class = discrete_inputs["turbulence_class"]
 
         if turbulence_class.upper() == "A":
