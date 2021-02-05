@@ -684,17 +684,17 @@ class PoseOptimization(object):
 
         if tower_constr["stress"]["flag"] or monopile_constr["stress"]["flag"]:
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] == 0 else str(k + 1)
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".stress", upper=1.0)
 
         if tower_constr["global_buckling"]["flag"] or monopile_constr["global_buckling"]["flag"]:
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] == 0 else str(k + 1)
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".global_buckling", upper=1.0)
 
         if tower_constr["shell_buckling"]["flag"] or monopile_constr["shell_buckling"]["flag"]:
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] == 0 else str(k + 1)
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".shell_buckling", upper=1.0)
 
         if tower_constr["d_to_t"]["flag"] or monopile_constr["d_to_t"]["flag"]:
@@ -719,7 +719,7 @@ class PoseOptimization(object):
 
         elif tower_constr["frequency_1"]["flag"] or monopile_constr["frequency_1"]["flag"]:
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] == 0 else str(k + 1)
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint(
                     "towerse.post" + kstr + ".structural_frequencies",
                     indices=[0],

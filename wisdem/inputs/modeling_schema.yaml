@@ -105,6 +105,13 @@ properties:
                         maximum: 5.0
                         default: 1.1
                         unit: none
+                    gust_std:
+                        type: number
+                        description: number of standard deviations for strength of gust
+                        minimum: 0.0
+                        maximum: 5.0
+                        default: 3.0
+                        unit: none
             DriveSE:
                 type: object
                 default: {}

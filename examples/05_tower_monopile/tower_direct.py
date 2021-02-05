@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import os
+
 # Tower analysis
 # Optimization by flag
 # Two load cases

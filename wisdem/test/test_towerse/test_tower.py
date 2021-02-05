@@ -1388,7 +1388,7 @@ class TestTowerSE(unittest.TestCase):
             prob["post1.stress"], [0.45829036, 0.41279744, 0.35017613, 0.31497356, 0.17978006, 0.12034969]
         )
         npt.assert_almost_equal(
-            prob["post1.global_buckling"], [0.50459926, 0.47009267, 0.42172339, 0.40495796, 0.29807777, 0.25473308]
+            prob["post1.global_buckling"], [0.5170422, 0.4829785, 0.4351583, 0.4221748, 0.3168518, 0.2755187]
         )
         npt.assert_almost_equal(
             prob["post1.shell_buckling"], [0.32499783, 0.25914943, 0.18536693, 0.17037662, 0.06344361, 0.03260026]
@@ -1400,7 +1400,7 @@ class TestTowerSE(unittest.TestCase):
             prob["post2.stress"], [0.44626187, 0.3821702, 0.30578917, 0.25648781, 0.13131541, 0.10609859]
         )
         npt.assert_almost_equal(
-            prob["post2.global_buckling"], [0.49412205, 0.4442257, 0.38450749, 0.35599809, 0.25784865, 0.24625576]
+            prob["post2.global_buckling"], [0.5064959, 0.4570302, 0.3978452, 0.373074, 0.276448, 0.2668201]
         )
         npt.assert_almost_equal(
             prob["post2.shell_buckling"], [0.31204018, 0.22828066, 0.14756271, 0.12234901, 0.03991668, 0.02701307]

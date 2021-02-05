@@ -924,8 +924,8 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         self._mass_table["MoI_xy"] = I_list[:, 3]
         self._mass_table["MoI_xz"] = I_list[:, 4]
         self._mass_table["MoI_yz"] = I_list[:, 5]
-        self._mass_table.set_index("Component")
-        self._mass_table.loc["Total"] = self._mass_table.sum()
+        self._mass_table.set_index("Component", inplace=True)
+        self._mass_table.loc["Nacelle"] = self._mass_table.sum()
 
         outputs["nacelle_mass"] = m_nac
         outputs["nacelle_cm"] = cm_nac
@@ -1025,7 +1025,7 @@ class RNA_Adder(om.ExplicitComponent):
 
         # rna I
         hub_I = util.assembleI(util.rotateI(inputs["hub_system_I"], -Cup * tilt, axis="y"))
-        blades_I = util.assembleI(inputs["blades_I"])
+        blades_I = util.assembleI(util.rotateI(inputs["blades_I"], -Cup * tilt, axis="y"))
         nac_I = util.assembleI(inputs["nacelle_I"])
         rotor_I = blades_I + hub_I
 

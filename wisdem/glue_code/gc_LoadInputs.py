@@ -812,12 +812,12 @@ class WindTurbineOntologyPython(object):
             for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_span"]):
                 Ii = np.zeros(21)
                 Ii[0] = wt_opt["re.rhoA"][i]
-                Ii[5] = -wt_opt["re.rhoA"][i] * wt_opt["re.precomp.y_cg"][i]
+                Ii[5] = -wt_opt["re.rhoA"][i] * wt_opt["re.y_cg"][i]
                 Ii[6] = wt_opt["re.rhoA"][i]
-                Ii[10] = wt_opt["re.rhoA"][i] * wt_opt["re.precomp.x_cg"][i]
+                Ii[10] = wt_opt["re.rhoA"][i] * wt_opt["re.x_cg"][i]
                 Ii[11] = wt_opt["re.rhoA"][i]
-                Ii[12] = wt_opt["re.rhoA"][i] * wt_opt["re.precomp.y_cg"][i]
-                Ii[13] = -wt_opt["re.rhoA"][i] * wt_opt["re.precomp.x_cg"][i]
+                Ii[12] = wt_opt["re.rhoA"][i] * wt_opt["re.y_cg"][i]
+                Ii[13] = -wt_opt["re.rhoA"][i] * wt_opt["re.x_cg"][i]
                 Ii[15] = wt_opt["re.precomp.edge_iner"][i]
                 Ii[16] = wt_opt["re.precomp.edge_iner"][i]
                 # Ii[18] = wt_opt['re.precomp.edge_iner'][i]

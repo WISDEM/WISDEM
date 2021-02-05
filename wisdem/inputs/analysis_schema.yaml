@@ -1027,9 +1027,8 @@ properties:
 
     merit_figure:
         type: string
-        description: Objective function / merit figure for optimization.  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation
+        description: Objective function / merit figure for optimization (not checked via schema, but in python).  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation
         default: LCOE
-        enum: [LCOE, AEP, Cp, blade_mass, nacelle_mass, nacelle_cost, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass, structural_cost, platform_mass, platform_cost, blade_tip_deflection, My_std, flp1_std]
 
     driver:
         type: object
