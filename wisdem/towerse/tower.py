@@ -1016,6 +1016,7 @@ class TowerPostFrame(om.ExplicitComponent):
         self.add_input("z_full", np.zeros(nFull), units="m")
         self.add_input("d_full", np.zeros(nFull), units="m")
         self.add_input("t_full", np.zeros(nFull - 1), units="m")
+        self.add_input("suctionpile_depth", 0.0, units="m")
 
         # Material properties
         self.add_input("E_full", np.zeros(nFull - 1), units="N/m**2", desc="modulus of elasticity")
@@ -1176,7 +1177,7 @@ class TowerPostFrame(om.ExplicitComponent):
         )
 
         # global buckling
-        tower_height = inputs["z_full"][-1] - inputs["z_full"][0]
+        tower_height = inputs["z_full"][-1] - inputs["z_full"][0] - float(inputs["suctionpile_depth"])
         M = np.sqrt(inputs["Mxx"] ** 2 + inputs["Myy"] ** 2)
         outputs["global_buckling"] = util_con.bucklingGL(
             d, t, inputs["Fz"], M, tower_height, E, sigma_y, gamma_f, gamma_b
@@ -1445,7 +1446,17 @@ class TowerSE(om.Group):
             self.add_subsystem(
                 "post" + lc,
                 TowerPostFrame(n_height=n_height, modeling_options=mod_opt),
-                promotes=["life", "z_full", "d_full", "t_full", "rho_full", "E_full", "G_full", "sigma_y_full"],
+                promotes=[
+                    "life",
+                    "z_full",
+                    "d_full",
+                    "t_full",
+                    "rho_full",
+                    "E_full",
+                    "G_full",
+                    "sigma_y_full",
+                    "suctionpile_depth",
+                ],
             )
 
             self.connect("z_full", ["wind" + lc + ".z", "tower" + lc + ".z"])
