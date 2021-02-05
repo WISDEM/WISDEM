@@ -938,7 +938,6 @@ properties:
                         default: {}
                         description: Ensure that the mooring system has enough restoring force to keep the heel/pitch angle below this limit
                         properties:
-                            flag: *flag
                             upper_bound: &upang
                                 type: number
                                 default: 0.17453292519943295 # 10 deg
@@ -958,14 +957,66 @@ properties:
                                 minimum: 0.01
                                 maximum: 1.0
                                 unit: none
-
+                    buoyancy:
+                        type: object
+                        default: {}
+                        description: Ensures that the platform displacement is sufficient to support the weight of the turbine system
+                        properties:
+                            flag: *flag
+                    fixed_ballast_capacity:
+                        type: object
+                        default: {}
+                        description: Ensures that there is sufficient volume to hold the specified fixed (permanent) ballast
+                        properties:
+                            flag: *flag
+                    variable_ballast_capacity:
+                        type: object
+                        default: {}
+                        description: Ensures that there is sufficient volume to hold the needed water (variable) ballast to achieve neutral buoyancy
+                        properties:
+                            flag: *flag
+                    metacentric_height:
+                        type: object
+                        default: {}
+                        description: Ensures hydrostatic stability with a positive metacentric height
+                        properties:
+                            flag: *flag
+                    freeboard_margin:
+                        type: object
+                        default: {}
+                        description: Ensures that the freeboard (top points of structure) of floating platform stays above the waterline at the survival heel offset
+                        properties:
+                            flag: *flag
+                    draft_margin:
+                        type: object
+                        default: {}
+                        description: Ensures that the draft (bottom points of structure) of floating platform stays beneath the waterline at the survival heel offset
+                        properties:
+                            flag: *flag
+                    fairlead_depth:
+                        type: object
+                        default: {}
+                        description: Ensures that the mooring line attachment depth (fairlead) is sufficiently beneath the water line that it is not exposed at the significant wave height
+                        properties:
+                            flag: *flag
+                    mooring_surge:
+                        type: object
+                        default: {}
+                        description: Ensures that the mooring lines have sufficient restoring force to overcome rotor thrust at the max surge offset
+                        properties:
+                            flag: *flag
+                    mooring_heel:
+                        type: object
+                        default: {}
+                        description: Ensures that the mooring lines have sufficient restoring force to overcome rotor thrust at the max heel offset
+                        properties:
+                            flag: *flag
                     mooring_tension:
                         type: object
                         default: {}
                         description: Keep the mooring line tension below its breaking point
                         properties:
                             flag: *flag
-
                     mooring_length:
                         type: object
                         default: {}
@@ -978,7 +1029,7 @@ properties:
         type: string
         description: Objective function / merit figure for optimization.  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation
         default: LCOE
-        enum: [LCOE, AEP, Cp, blade_mass, nacelle_mass, nacelle_cost, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass, structural_cost, blade_tip_deflection, My_std, flp1_std]
+        enum: [LCOE, AEP, Cp, blade_mass, nacelle_mass, nacelle_cost, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass, structural_cost, platform_mass, platform_cost, blade_tip_deflection, My_std, flp1_std]
 
     driver:
         type: object

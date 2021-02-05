@@ -190,6 +190,7 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["rho_full"] = 1e3 * secones
         self.inputs["E_full"] = 1e6 * secones
         self.inputs["G_full"] = 1e5 * secones
+        self.inputs["sigma_y_full"] = 2e5 * secones
         self.inputs["outfitting_full"] = 1.1 * secones
         self.inputs["unit_cost_full"] = 1.0 * secones
         self.inputs["painting_cost_rate"] = 10.0
@@ -438,6 +439,8 @@ class TestMemberComponent(unittest.TestCase):
         self.assertEqual(nout, 5)
         npt.assert_almost_equal(self.outputs["stiffener_radius_ratio"][nout:], NULL)
         npt.assert_almost_equal(self.outputs["stiffener_radius_ratio"][:nout], 1 - Rfi / 5)
+        self.assertEqual(self.outputs["constr_flange_compactness"], 0.375 * np.sqrt(5) * 2 * 0.3)
+        self.assertEqual(self.outputs["constr_web_compactness"], np.sqrt(5) * 0.2 / 0.5)
 
         # Test Mass
         A1 = np.pi * (Rwo ** 2 - Rwi ** 2)
@@ -509,6 +512,8 @@ class TestMemberComponent(unittest.TestCase):
         self.assertEqual(nout, 4)
         npt.assert_almost_equal(self.outputs["stiffener_radius_ratio"][nout:], NULL)
         npt.assert_almost_equal(self.outputs["stiffener_radius_ratio"][:nout], 1 - Rfi / 5)
+        self.assertEqual(self.outputs["constr_flange_compactness"], 0.375 * np.sqrt(5) * 2 * 0.3)
+        self.assertEqual(self.outputs["constr_web_compactness"], np.sqrt(5) * 0.2 / 0.5)
 
         # Test Mass
         A1 = np.pi * (Rwo ** 2 - Rwi ** 2)
@@ -591,6 +596,8 @@ class TestMemberComponent(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["ballast_z_cg"], cg_perm)
         npt.assert_almost_equal(self.outputs["ballast_I_base"], I_perm)
         self.assertAlmostEqual(self.outputs["variable_ballast_capacity"], area * 32)
+        npt.assert_almost_equal(self.outputs["variable_ballast_Vpts"], area * 32 / 9.0 * np.arange(10))
+        npt.assert_almost_equal(self.outputs["variable_ballast_spts"], np.linspace(0.16, 0.48, 10))
 
     def testBallastWithGhost(self):
         self.inputs["s_ghost1"] = 0.1
@@ -617,6 +624,8 @@ class TestMemberComponent(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["ballast_z_cg"], cg_perm)
         npt.assert_almost_equal(self.outputs["ballast_I_base"], I_perm, 6)
         self.assertAlmostEqual(self.outputs["variable_ballast_capacity"], area * 32)
+        npt.assert_almost_equal(self.outputs["variable_ballast_Vpts"], area * 32 / 9.0 * np.arange(10))
+        npt.assert_almost_equal(self.outputs["variable_ballast_spts"], np.linspace(0.26, 0.58, 10))
 
     def testMassProp(self):
         self.mem.add_main_sections(self.inputs, self.outputs)
@@ -736,7 +745,7 @@ class TestHydro(unittest.TestCase):
         self.inputs["s_all"][: 2 * npts] = np.linspace(0, 1.0, 2 * npts)
         self.inputs["nodes_xyz"] = NULL * np.ones((member.MEMMAX, 3))
         self.inputs["nodes_xyz"][: 2 * npts, :] = np.c_[
-            np.zeros(2 * npts), np.zeros(2 * npts), np.linspace(0, 50.0, 2 * npts) - 75
+            1 * np.ones(2 * npts), 2 * np.ones(2 * npts), np.linspace(0, 50.0, 2 * npts) - 75
         ]
         self.inputs["rho_water"] = 1e3
 
@@ -748,7 +757,7 @@ class TestHydro(unittest.TestCase):
 
         rho_w = self.inputs["rho_water"]
         V_expect = np.pi * 25.0 * 50.0
-        cb_expect = np.array([0.0, 0.0, -50])
+        cb_expect = np.array([1.0, 2.0, -50])
         Ixx = 0  # 0.25 * np.pi * 1e4
         Axx = 0  # np.pi * 1e2
         self.assertAlmostEqual(self.outputs["displacement"], V_expect)
@@ -757,6 +766,7 @@ class TestHydro(unittest.TestCase):
         self.assertEqual(self.outputs["idx_cb"], npts - 1)  # Halfway node point
         self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
+        npt.assert_equal(self.outputs["waterline_centroid"], [0.0, 0.0])
 
         m_a = np.zeros(6)
         m_a[:2] = V_expect * rho_w
@@ -766,12 +776,14 @@ class TestHydro(unittest.TestCase):
 
     def testVerticalWaterplane(self):
         npts = self.inputs["s_full"].size
-        self.inputs["nodes_xyz"] = np.c_[np.zeros(2 * npts), np.zeros(2 * npts), np.linspace(0, 50.0, 2 * npts) - 25]
+        self.inputs["nodes_xyz"] = np.c_[
+            1 * np.ones(2 * npts), 2 * np.ones(2 * npts), np.linspace(0, 50.0, 2 * npts) - 25
+        ]
         self.hydro.compute(self.inputs, self.outputs)
 
         rho_w = self.inputs["rho_water"]
         V_expect = np.pi * 25.0 * 25.0
-        cb_expect = np.array([0.0, 0.0, -12.5])
+        cb_expect = np.array([1.0, 2.0, -12.5])
         Ixx = 0.25 * np.pi * 625
         Axx = np.pi * 25
         self.assertAlmostEqual(self.outputs["displacement"], V_expect)
@@ -780,6 +792,7 @@ class TestHydro(unittest.TestCase):
         self.assertEqual(self.outputs["idx_cb"], int(0.5 * npts))
         self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
+        npt.assert_equal(self.outputs["waterline_centroid"], [1.0, 2.0])
 
         m_a = np.zeros(6)
         m_a[:2] = V_expect * rho_w

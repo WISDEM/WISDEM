@@ -542,6 +542,10 @@ class MemberComponent(om.ExplicitComponent):
         ratio between flange and stiffener spacing
     stiffener_radius_ratio : numpy array[n_full-1]
         ratio between stiffener height and radius
+    constr_flange_compactness : float
+        Standard check on ring stiffener flange geometry and material properties from API (<1)
+    constr_web_compactness : float
+        Standard check on ring stiffener web geometry and material properties from API (<1)
     ballast_cost : float, [USD]
         cost of permanent ballast
     ballast_mass : float, [kg]
@@ -550,7 +554,7 @@ class MemberComponent(om.ExplicitComponent):
         z-coordinate or permanent ballast center of gravity
     ballast_I_base : numpy array[6], [kg*m**2]
         Moments of inertia of permanent ballast relative to bottom point
-    variable_ballast_capacity : float, [m]
+    variable_ballast_capacity : float, [m**3]
         inner radius of column at potential ballast mass
     constr_ballast_capacity : numpy array[n_ballast]
         Used ballast volume relative to total capacity, must be <= 1.0
@@ -622,6 +626,7 @@ class MemberComponent(om.ExplicitComponent):
         self.add_input("E_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_input("G_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_input("rho_full", val=np.zeros(n_full - 1), units="kg/m**3")
+        self.add_input("sigma_y_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_input("unit_cost_full", val=np.zeros(n_full - 1), units="USD/kg")
         self.add_input("outfitting_full", val=np.ones(n_full - 1))
         self.add_input("labor_cost_rate", 0.0, units="USD/min")
@@ -669,13 +674,17 @@ class MemberComponent(om.ExplicitComponent):
         self.add_output("stiffener_I_base", np.zeros(6), units="kg*m**2")
         self.add_output("flange_spacing_ratio", 0.0)
         self.add_output("stiffener_radius_ratio", NULL * np.ones(MEMMAX))
+        self.add_output("constr_flange_compactness", 0.0)
+        self.add_output("constr_web_compactness", 0.0)
 
         self.add_output("ballast_cost", 0.0, units="USD")
         self.add_output("ballast_mass", 0.0, units="kg")
         self.add_output("ballast_z_cg", 0.0, units="m")
         self.add_output("ballast_I_base", np.zeros(6), units="kg*m**2")
-        self.add_output("variable_ballast_capacity", 0.0, units="m")
-        self.add_output("constr_ballast_capacity", np.zeros(n_ball), units="m")
+        self.add_output("variable_ballast_capacity", 0.0, units="m**3")
+        self.add_output("variable_ballast_Vpts", val=np.zeros(10), units="m**3")
+        self.add_output("variable_ballast_spts", val=np.zeros(10))
+        self.add_output("constr_ballast_capacity", np.zeros(n_ball))
 
         self.add_output("total_mass", 0.0, units="kg")
         self.add_output("total_cost", 0.0, units="USD")
@@ -1003,6 +1012,7 @@ class MemberComponent(om.ExplicitComponent):
         rho = inputs["rho_full"]
         E = inputs["E_full"]
         G = inputs["G_full"]
+        sigma_y = inputs["sigma_y_full"]
         coeff = inputs["outfitting_full"]
         s_bulk = inputs["bulkhead_grid"]
         s_ghost1 = float(inputs["s_ghost1"])
@@ -1057,6 +1067,10 @@ class MemberComponent(om.ExplicitComponent):
         outputs["flange_spacing_ratio"] = w_flange / (0.5 * L_stiffener)
         outputs["stiffener_radius_ratio"] = NULL * np.ones(MEMMAX)
         outputs["stiffener_radius_ratio"][:n_stiff] = (h_web + t_flange + twall_stiff) / R_od_stiff
+        # "compactness" check on stiffener geometry (must be >= 1)
+        fact = np.sqrt(E / sigma_y).min()
+        outputs["constr_flange_compactness"] = 0.375 * (t_flange / (0.5 * w_flange)) * fact
+        outputs["constr_web_compactness"] = 1.0 * (t_web / h_web) * fact
 
         # Outer and inner radius of web by section
         R_wo = R_id_stiff
@@ -1217,9 +1231,10 @@ class MemberComponent(om.ExplicitComponent):
                 I_ballast += rho_ballast[k] * util.unassembleI(I_temp)
             else:
                 outputs["variable_ballast_capacity"] = V_avail[k]
+                outputs["variable_ballast_Vpts"] = np.cumsum(np.r_[0, V_pts])
+                outputs["variable_ballast_spts"] = sinterp
 
         # Save permanent ballast mass and variable height
-        # TODO: Add the mass to sectional density?
         outputs["ballast_mass"] = m_ballast.sum()
         outputs["ballast_I_base"] = I_ballast
         outputs["ballast_z_cg"] = np.dot(z_cg, m_ballast) / (m_ballast.sum() + eps)
@@ -1369,6 +1384,8 @@ class MemberHydro(om.ExplicitComponent):
         Second moment of area of waterplace cross section
     added_mass : numpy array[6], [kg]
         hydrodynamic added mass matrix diagonal
+    waterline_centroid : numpy array[2], [m]
+        x-y center of waterplane crossing for this member
 
     """
 
@@ -1397,6 +1414,7 @@ class MemberHydro(om.ExplicitComponent):
         self.add_output("Awater", 0.0, units="m**2")
         self.add_output("Iwater", 0.0, units="m**4")
         self.add_output("added_mass", np.zeros(6), units="kg")
+        self.add_output("waterline_centroid", np.zeros(2), units="m")
 
     def compute(self, inputs, outputs):
         # Unpack variables
@@ -1417,10 +1435,12 @@ class MemberHydro(om.ExplicitComponent):
             ind = np.where(xyz[:, 2] < 0.0)[0]
             s_under = np.r_[s_grid[ind], s_waterline]
             waterline = True
+            outputs["waterline_centroid"] = (xyz0 + s_waterline * dxyz)[:2]
         elif xyz[:, 2].max() < 0.0:
             s_under = s_grid
             waterline = False
             r_waterline = 0.0
+            outputs["waterline_centroid"] = np.zeros(2)
         else:
             return
         z_under = np.interp(s_under, s_full, z_full)

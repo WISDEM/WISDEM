@@ -70,7 +70,7 @@ class TestAny(unittest.TestCase):
         a = np.array([np.cos(0.25 * np.pi), np.sin(0.25 * np.pi), 0])
         b = np.array([0.0, 0.0, 1.0])
         R = util.rotate_align_vectors(a, b)
-        b2 = np.array(R * np.asmatrix(a).T).flatten()
+        b2 = np.matmul(R, a.T).flatten()
         npt.assert_almost_equal(b, b2)
 
 
