@@ -42,261 +42,402 @@ def create_all_plots(
     font_size,
     extension,
 ):
+    mult_flag = len(list_of_sims) > 1
+
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    if not mult_flag:
+        colors = ["k"] + colors
 
     # Twist
-    ftw, axtw = plt.subplots(1, 1, figsize=(5.3, 4))
+    try:
+        ftw, axtw = plt.subplots(1, 1, figsize=(5.3, 4))
 
-    for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+        for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            axtw.plot(
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["blade.outer_shape_bem.twist"] * 180.0 / np.pi,
+                "-",
+                color=colors[idx],
+                label=label,
+            )
+            s_opt_twist = np.linspace(0.0, 1.0, 8)
+            twist_opt = np.interp(
+                s_opt_twist,
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["ccblade.theta"],
+            )
+            axtw.plot(s_opt_twist, twist_opt * 180.0 / np.pi, "o", color=colors[idx], markersize=3)
+
         axtw.plot(
-            yaml_data["blade.outer_shape_bem.s"],
-            yaml_data["blade.outer_shape_bem.twist"] * 180.0 / np.pi,
-            "-",
-            color=colors[idx],
-            label=label,
-        )
-        s_opt_twist = np.linspace(0.0, 1.0, 8)
-        twist_opt = np.interp(
             s_opt_twist,
-            yaml_data["blade.outer_shape_bem.s"],
-            yaml_data["ccblade.theta"],
+            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["lower_bound"])
+            * 180.0
+            / np.pi,
+            ":o",
+            color=colors[idx + 1],
+            markersize=3,
+            label="Bounds",
         )
-        axtw.plot(s_opt_twist, twist_opt * 180.0 / np.pi, "o", color=colors[idx], markersize=3)
-
-    axtw.plot(
-        s_opt_twist,
-        np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["lower_bound"]) * 180.0 / np.pi,
-        ":o",
-        color=colors[idx + 1],
-        markersize=3,
-        label="Bounds",
-    )
-    axtw.plot(
-        s_opt_twist,
-        np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["upper_bound"]) * 180.0 / np.pi,
-        ":o",
-        color=colors[idx + 1],
-        markersize=3,
-    )
-    axtw.legend(fontsize=font_size)
-
-    axtw.set_ylim([-5, 20])
-    plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
-    plt.ylabel("Twist [deg]", fontsize=font_size + 2, fontweight="bold")
-    plt.xticks(fontsize=font_size)
-    plt.yticks(fontsize=font_size)
-    plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
-    plt.subplots_adjust(bottom=0.15, left=0.15)
-    fig_name = "twist_opt" + extension
-    ftw.savefig(os.path.join(folder_output, fig_name))
-
-    # Chord
-    fc, axc = plt.subplots(1, 1, figsize=(5.3, 4))
-
-    for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
-        axc.plot(
-            yaml_data["blade.outer_shape_bem.s"],
-            yaml_data["blade.outer_shape_bem.chord"],
-            "-",
-            color=colors[idx],
-            label=label,
+        axtw.plot(
+            s_opt_twist,
+            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["upper_bound"])
+            * 180.0
+            / np.pi,
+            ":o",
+            color=colors[idx + 1],
+            markersize=3,
         )
-        s_opt_chord = np.linspace(0.0, 1.0, 8)
-        chord_opt = np.interp(
+        if mult_flag:
+            axtw.legend(fontsize=font_size)
+
+        axtw.set_ylim([-5, 20])
+        plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
+        plt.ylabel("Twist [deg]", fontsize=font_size + 2, fontweight="bold")
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
+        plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
+        plt.subplots_adjust(bottom=0.15, left=0.15)
+        fig_name = "twist_opt" + extension
+        ftw.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+    except KeyError:
+        pass
+
+    try:
+        # Chord
+        fc, axc = plt.subplots(1, 1, figsize=(5.3, 4))
+
+        for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            axc.plot(
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["blade.outer_shape_bem.chord"],
+                "-",
+                color=colors[idx],
+                label=label,
+            )
+            s_opt_chord = np.linspace(0.0, 1.0, 8)
+            chord_opt = np.interp(
+                s_opt_chord,
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["ccblade.chord"],
+            )
+            axc.plot(s_opt_chord, chord_opt, "o", color=colors[idx], markersize=3)
+
+        chord_init = np.interp(
             s_opt_chord,
-            yaml_data["blade.outer_shape_bem.s"],
+            list_of_sims[0]["blade.outer_shape_bem.s"],
             yaml_data["ccblade.chord"],
         )
-        axc.plot(s_opt_chord, chord_opt, "o", color=colors[idx], markersize=3)
+        axc.plot(
+            s_opt_chord,
+            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["min_gain"]) * chord_init,
+            ":o",
+            color=colors[idx + 1],
+            markersize=3,
+            label="Bounds",
+        )
+        axc.plot(
+            s_opt_chord,
+            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["max_gain"]) * chord_init,
+            ":o",
+            color=colors[idx + 1],
+            markersize=3,
+        )
 
-    chord_init = np.interp(
-        s_opt_chord,
-        list_of_sims[0]["blade.outer_shape_bem.s"],
-        yaml_data["ccblade.chord"],
-    )
-    axc.plot(
-        s_opt_chord,
-        np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["min_gain"]) * chord_init,
-        ":o",
-        color=colors[idx + 1],
-        markersize=3,
-        label="Bounds",
-    )
-    axc.plot(
-        s_opt_chord,
-        np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["max_gain"]) * chord_init,
-        ":o",
-        color=colors[idx + 1],
-        markersize=3,
-    )
-
-    axc.legend(fontsize=font_size)
-    plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
-    plt.ylabel("Chord [m]", fontsize=font_size + 2, fontweight="bold")
-    plt.xticks(fontsize=font_size)
-    plt.yticks(fontsize=font_size)
-    plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
-    plt.subplots_adjust(bottom=0.15, left=0.15)
-    fig_name = "chord" + extension
-    fc.savefig(os.path.join(folder_output, fig_name))
+        if mult_flag:
+            axc.legend(fontsize=font_size)
+        plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
+        plt.ylabel("Chord [m]", fontsize=font_size + 2, fontweight="bold")
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
+        plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
+        plt.subplots_adjust(bottom=0.15, left=0.15)
+        fig_name = "chord" + extension
+        fc.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+    except KeyError:
+        pass
 
     # Spar caps
-    fsc, axsc = plt.subplots(1, 1, figsize=(5.3, 4))
+    try:
+        fsc, axsc = plt.subplots(1, 1, figsize=(5.3, 4))
 
-    for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
-        n_layers = len(yaml_data["blade.internal_structure_2d_fem.layer_thickness"][:, 0])
+        for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            n_layers = len(yaml_data["blade.internal_structure_2d_fem.layer_thickness"][:, 0])
+            for i in range(n_layers):
+                layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
+                if modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"] == layer_name:
+                    axsc.plot(
+                        yaml_data["blade.outer_shape_bem.s"],
+                        yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
+                        "-",
+                        color=colors[idx],
+                        label=label,
+                    )
+
+                    s_opt_sc = np.linspace(0.0, 1.0, 8)
+                    sc_opt = np.interp(
+                        s_opt_sc,
+                        yaml_data["blade.outer_shape_bem.s"],
+                        yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
+                    )
+                    axsc.plot(s_opt_sc, sc_opt, "o", color=colors[idx], markersize=3)
+
         for i in range(n_layers):
             layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
             if modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"] == layer_name:
-                axsc.plot(
-                    yaml_data["blade.outer_shape_bem.s"],
-                    yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
-                    "-",
-                    color=colors[idx],
-                    label=label,
-                )
-
-                s_opt_sc = np.linspace(0.0, 1.0, 8)
-                sc_opt = np.interp(
+                sc_init = np.interp(
                     s_opt_sc,
-                    yaml_data["blade.outer_shape_bem.s"],
-                    yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
+                    list_of_sims[0]["blade.outer_shape_bem.s"],
+                    list_of_sims[0]["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
                 )
-                axsc.plot(s_opt_sc, sc_opt, "o", color=colors[idx], markersize=3)
+                axsc.plot(
+                    s_opt_sc,
+                    np.array(analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["min_gain"])
+                    * sc_init,
+                    ":o",
+                    color=colors[idx + 1],
+                    markersize=3,
+                    label="Bounds",
+                )
+                axsc.plot(
+                    s_opt_sc,
+                    np.array(analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["max_gain"])
+                    * sc_init,
+                    ":o",
+                    color=colors[idx + 1],
+                    markersize=3,
+                )
 
-    for i in range(n_layers):
-        layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
-        if modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"] == layer_name:
-            sc_init = np.interp(
-                s_opt_sc,
-                list_of_sims[0]["blade.outer_shape_bem.s"],
-                list_of_sims[0]["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
-            )
-            axsc.plot(
-                s_opt_sc,
-                np.array(analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["min_gain"])
-                * sc_init,
-                ":o",
-                color=colors[idx + 1],
-                markersize=3,
-                label="Bounds",
-            )
-            axsc.plot(
-                s_opt_sc,
-                np.array(analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["max_gain"])
-                * sc_init,
-                ":o",
-                color=colors[idx + 1],
-                markersize=3,
-            )
-
-    axsc.legend(fontsize=font_size)
-    plt.ylim([0.0, 200])
-    plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
-    plt.ylabel("Spar Caps Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
-    plt.xticks(fontsize=font_size)
-    plt.yticks(fontsize=font_size)
-    plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
-    plt.subplots_adjust(bottom=0.15, left=0.15)
-    fig_name = "sc_opt" + extension
-    fsc.savefig(os.path.join(folder_output, fig_name))
+        if mult_flag:
+            axsc.legend(fontsize=font_size)
+        plt.ylim([0.0, 200])
+        plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
+        plt.ylabel("Spar Caps Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
+        plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
+        plt.subplots_adjust(bottom=0.15, left=0.15)
+        fig_name = "sc_opt" + extension
+        fsc.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+    except KeyError:
+        pass
 
     # Skins
-    f, ax = plt.subplots(1, 1, figsize=(5.3, 4))
-    for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
-        ax.plot(
-            yaml_data["blade.outer_shape_bem.s"],
-            yaml_data["blade.internal_structure_2d_fem.layer_thickness"][1, :] * 1.0e3,
-            "--",
-            color=colors[idx],
-            label=label,
-        )
-    ax.legend(fontsize=font_size)
-    # plt.ylim([0., 120])
-    plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
-    plt.ylabel("Outer Shell Skin Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
-    plt.xticks(fontsize=font_size)
-    plt.yticks(fontsize=font_size)
-    plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
-    plt.subplots_adjust(bottom=0.15, left=0.15)
-    fig_name = "skin_opt" + extension
-    f.savefig(os.path.join(folder_output, fig_name))
+    try:
+        f, ax = plt.subplots(1, 1, figsize=(5.3, 4))
+        for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            ax.plot(
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["blade.internal_structure_2d_fem.layer_thickness"][1, :] * 1.0e3,
+                "-",
+                color=colors[idx],
+                label=label,
+            )
+        if mult_flag:
+            ax.legend(fontsize=font_size)
+        # plt.ylim([0., 120])
+        plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
+        plt.ylabel("Outer Shell Skin Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
+        plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
+        plt.subplots_adjust(bottom=0.15, left=0.15)
+        fig_name = "skin_opt" + extension
+        f.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+    except KeyError:
+        pass
 
     # Strains spar caps
-    feps, axeps = plt.subplots(1, 1, figsize=(5.3, 4))
-    for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
-        axeps.plot(
-            yaml_data["blade.outer_shape_bem.s"],
-            yaml_data["rs.frame.strainU_spar"] * 1.0e6,
-            "--",
-            color=colors[idx],
-            label=label,
-        )
-        axeps.plot(
-            yaml_data["blade.outer_shape_bem.s"],
-            yaml_data["rs.frame.strainL_spar"] * 1.0e6,
-            "--",
-            color=colors[idx],
-        )
+    try:
+        feps, axeps = plt.subplots(1, 1, figsize=(5.3, 4))
+        for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            axeps.plot(
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["rs.frame.strainU_spar"] * 1.0e6,
+                "-",
+                color=colors[idx],
+                label=label,
+            )
+            axeps.plot(
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["rs.frame.strainL_spar"] * 1.0e6,
+                "-",
+                color=colors[idx],
+            )
 
-    plt.ylim([-5e3, 5e3])
-    axeps.legend(fontsize=font_size)
-    plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
-    plt.ylabel("Spar Caps Strains [mu eps]", fontsize=font_size + 2, fontweight="bold")
-    plt.xticks(fontsize=font_size)
-    plt.yticks(fontsize=font_size)
-    plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
-    plt.subplots_adjust(bottom=0.15, left=0.2)
-    fig_name = "strains_opt" + extension
-    feps.savefig(os.path.join(folder_output, fig_name))
+        plt.ylim([-5e3, 5e3])
+        if mult_flag:
+            axeps.legend(fontsize=font_size)
+        plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
+        plt.ylabel("Spar Caps Strains [mu eps]", fontsize=font_size + 2, fontweight="bold")
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
+        plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
+        plt.subplots_adjust(bottom=0.15, left=0.2)
+        fig_name = "strains_opt" + extension
+        feps.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+    except KeyError:
+        pass
 
     # Angle of attack and stall angle
-    faoa, axaoa = plt.subplots(1, 1, figsize=(5.3, 4))
-    for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+    try:
+        faoa, axaoa = plt.subplots(1, 1, figsize=(5.3, 4))
+        for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            axaoa.plot(
+                yaml_data["stall_check.s"],
+                yaml_data["stall_check.aoa_along_span"],
+                "-",
+                color=colors[idx],
+                label=label,
+            )
         axaoa.plot(
             yaml_data["stall_check.s"],
-            yaml_data["stall_check.aoa_along_span"],
-            "--",
-            color=colors[idx],
-            label=label,
+            yaml_data["stall_check.stall_angle_along_span"],
+            ":",
+            color=colors[idx + 1],
+            label="Stall",
         )
-    axaoa.plot(
-        yaml_data["stall_check.s"],
-        yaml_data["stall_check.stall_angle_along_span"],
-        ":",
-        color=colors[idx + 1],
-        label="Stall",
-    )
-    axaoa.legend(fontsize=font_size)
-    axaoa.set_ylim([0, 20])
-    plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
-    plt.ylabel("Angle of Attack [deg]", fontsize=font_size + 2, fontweight="bold")
-    plt.xticks(fontsize=font_size)
-    plt.yticks(fontsize=font_size)
-    plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
-    plt.subplots_adjust(bottom=0.15, left=0.15)
-    fig_name = "aoa" + extension
-    faoa.savefig(os.path.join(folder_output, fig_name))
+        if mult_flag:
+            axaoa.legend(fontsize=font_size)
+        axaoa.set_ylim([0, 20])
+        plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
+        plt.ylabel("Angle of Attack [deg]", fontsize=font_size + 2, fontweight="bold")
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
+        plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
+        plt.subplots_adjust(bottom=0.15, left=0.15)
+        fig_name = "aoa" + extension
+        faoa.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+    except KeyError:
+        pass
 
     # Airfoil efficiency
-    feff, axeff = plt.subplots(1, 1, figsize=(5.3, 4))
+    try:
+        feff, axeff = plt.subplots(1, 1, figsize=(5.3, 4))
+        for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            axeff.plot(
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["rp.powercurve.cl_regII"] / yaml_data["rp.powercurve.cd_regII"],
+                "-",
+                color=colors[idx],
+                label=label,
+            )
+        if mult_flag:
+            axeff.legend(fontsize=font_size)
+        plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
+        plt.ylabel("Airfoil Efficiency [-]", fontsize=font_size + 2, fontweight="bold")
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
+        plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
+        plt.subplots_adjust(bottom=0.15, left=0.15)
+        fig_name = "af_efficiency" + extension
+        feff.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+    except KeyError:
+        pass
+
+    # Prebend and sweep
+    try:
+        fbend, axbend = plt.subplots(1, 1, figsize=(5.3, 4))
+        for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            axbend.plot(
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["blade.outer_shape_bem.ref_axis"][:, 0],
+                "-",
+                color=colors[idx],
+                label=label,
+            )
+        if mult_flag:
+            axbend.legend(fontsize=font_size)
+        plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
+        plt.ylabel("Prebend [m]", fontsize=font_size + 2, fontweight="bold")
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
+        plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
+        plt.subplots_adjust(bottom=0.15, left=0.15)
+        fig_name = "prebend" + extension
+        fbend.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+
+        fsweep, axsweep = plt.subplots(1, 1, figsize=(5.3, 4))
+        for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            axsweep.plot(
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["blade.outer_shape_bem.ref_axis"][:, 1],
+                "-",
+                color=colors[idx],
+                label=label,
+            )
+        if mult_flag:
+            axsweep.legend(fontsize=font_size)
+        plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
+        plt.ylabel("Sweep [m]", fontsize=font_size + 2, fontweight="bold")
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
+        plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
+        plt.subplots_adjust(bottom=0.15, left=0.15)
+        fig_name = "sweep" + extension
+        fsweep.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+    except KeyError:
+        pass
+
+    # Tower geometry
+    # try:
+    brown = np.array([150.0, 75.0, 0.0]) / 256.0
+    ftow = plt.figure(figsize=(11, 4))
+    ax1 = ftow.add_subplot(121)
     for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
-        axeff.plot(
-            yaml_data["blade.outer_shape_bem.s"],
-            yaml_data["rp.powercurve.cl_regII"] / yaml_data["rp.powercurve.cd_regII"],
-            "--",
+        ax1.plot(
+            yaml_data["towerse.tower_outer_diameter"],
+            yaml_data["towerse.z_param"],
+            "-",
             color=colors[idx],
             label=label,
         )
-    axeff.legend(fontsize=font_size)
-    plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
-    plt.ylabel("Airfoil Efficiency [-]", fontsize=font_size + 2, fontweight="bold")
+    vx = ax1.get_xlim()
+    zs = list_of_sims[0]["towerse.z_param"]
+    if zs.min() < -5.0:
+        water_depth = list_of_sims[0]["env.water_depth"]
+        h_trans = list_of_sims[0]["towerse.transition_piece_height"]
+        ax1.plot(vx, np.zeros(2), color="b", linestyle="--")
+        ax1.plot(vx, -water_depth * np.ones(2), color=brown, linestyle="--")
+        ax1.plot(vx, h_trans * np.ones(2), color="g", linestyle="--")
+        ax1.text(vx[0] + 0.02 * np.diff(vx), 2, "Water line", color="b", fontsize=12)
+        ax1.text(vx[0] + 0.02 * np.diff(vx), -water_depth + 2, "Mud line", color=brown, fontsize=12)
+        ax1.text(vx[0] + 0.02 * np.diff(vx), h_trans + 2, "Tower transition", color="g", fontsize=12)
+    ax1.set_xlim(vx)
+    plt.xlabel("Outer Diameter [m]", fontsize=font_size + 2, fontweight="bold")
+    plt.ylabel("Tower Height [m]", fontsize=font_size + 2, fontweight="bold")
     plt.xticks(fontsize=font_size)
     plt.yticks(fontsize=font_size)
     plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
+
+    ax2 = ftow.add_subplot(122)
+    for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+        y = yaml_data.get_val("towerse.tower_wall_thickness", "mm")
+        ax2.step(
+            np.r_[y, y[-1]],
+            yaml_data["towerse.z_param"],
+            "-",
+            color=colors[idx],
+            label=label,
+            where="post",
+        )
+    vx = ax2.get_xlim()
+    if zs.min() < -5.0:
+        ax2.plot(vx, np.zeros(2), color="b", linestyle="--")
+        ax2.plot(vx, -water_depth * np.ones(2), color=brown, linestyle="--")
+        ax2.plot(vx, 20 * np.ones(2), color="g", linestyle="--")
+    ax2.set_xlim(vx)
+    if mult_flag:
+        ax2.legend(fontsize=font_size)
+    plt.xlabel("Wall Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
+    plt.xticks(fontsize=font_size)
+    plt.setp(ax2.get_yticklabels(), visible=False)
+    plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
     plt.subplots_adjust(bottom=0.15, left=0.15)
-    fig_name = "af_efficiency" + extension
-    feff.savefig(os.path.join(folder_output, fig_name))
+    fig_name = "tower_geometry" + extension
+    ftow.subplots_adjust(hspace=0.02, wspace=0.02, bottom=0.15, left=0.15)
+    ftow.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+    # except KeyError:
+    #    pass
 
     def simple_plot_results(x_axis_label, y_axis_label, x_axis_data_name, y_axis_data_name, plot_filename):
         f, ax = plt.subplots(1, 1, figsize=(5.3, 4))
@@ -304,11 +445,12 @@ def create_all_plots(
             ax.plot(
                 yaml_data[x_axis_data_name],
                 yaml_data[y_axis_data_name],
-                "--",
+                "-",
                 color=colors[i_yaml],
                 label=list_of_labels[i_yaml],
             )
-        ax.legend(fontsize=font_size)
+        if mult_flag:
+            ax.legend(fontsize=font_size)
         plt.xlabel(x_axis_label, fontsize=font_size + 2, fontweight="bold")
         plt.ylabel(y_axis_label, fontsize=font_size + 2, fontweight="bold")
         plt.xticks(fontsize=font_size)
@@ -316,61 +458,188 @@ def create_all_plots(
         plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
         plt.subplots_adjust(bottom=0.15, left=0.15)
         fig_name = plot_filename + extension
-        f.savefig(os.path.join(folder_output, fig_name))
+        f.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+        plt.close()
 
-    # Edgewise stiffness
-    simple_plot_results(
-        "Blade Nondimensional Span [-]",
-        "Edgewise Stiffness [Nm2]",
-        "blade.outer_shape_bem.s",
-        "re.EIxx",
-        "edge",
-    )
+    try:
+        # Edgewise stiffness
+        simple_plot_results(
+            "Blade Nondimensional Span [-]",
+            "Edgewise Stiffness [Nm2]",
+            "blade.outer_shape_bem.s",
+            "re.EIxx",
+            "edge",
+        )
 
-    # Torsional stiffness
-    simple_plot_results(
-        "Blade Nondimensional Span [-]",
-        "Torsional Stiffness [Nm2]",
-        "blade.outer_shape_bem.s",
-        "re.GJ",
-        "torsion",
-    )
+        # Torsional stiffness
+        simple_plot_results(
+            "Blade Nondimensional Span [-]",
+            "Torsional Stiffness [Nm2]",
+            "blade.outer_shape_bem.s",
+            "re.GJ",
+            "torsion",
+        )
 
-    # Flapwise stiffness
-    simple_plot_results(
-        "Blade Nondimensional Span [-]",
-        "Flapwise Stiffness [Nm2]",
-        "blade.outer_shape_bem.s",
-        "re.EIyy",
-        "flap",
-    )
+        # Flapwise stiffness
+        simple_plot_results(
+            "Blade Nondimensional Span [-]",
+            "Flapwise Stiffness [Nm2]",
+            "blade.outer_shape_bem.s",
+            "re.EIyy",
+            "flap",
+        )
 
-    # Mass
-    simple_plot_results(
-        "Blade Nondimensional Span [-]",
-        "Unit Mass [kg/m]",
-        "blade.outer_shape_bem.s",
-        "re.rhoA",
-        "mass",
-    )
+        # Mass
+        simple_plot_results(
+            "Blade Nondimensional Span [-]",
+            "Unit Mass [kg/m]",
+            "blade.outer_shape_bem.s",
+            "re.rhoA",
+            "mass",
+        )
+    except KeyError:
+        pass
 
-    # Induction
-    simple_plot_results(
-        "Blade Nondimensional Span [-]",
-        "Axial Induction [-]",
-        "blade.outer_shape_bem.s",
-        "rp.powercurve.ax_induct_regII",
-        "induction",
-    )
+    try:
+        # Relative thickness
+        simple_plot_results(
+            "Blade Nondimensional Span [-]",
+            "Relative Thickness [-]",
+            "blade.outer_shape_bem.s",
+            "blade.interp_airfoils.r_thick_interp",
+            "r_thick",
+        )
+    except KeyError:
+        pass
 
-    # Lift coefficient
-    simple_plot_results(
-        "Blade Nondimensional Span [-]",
-        "Lift Coefficient [-]",
-        "blade.outer_shape_bem.s",
-        "rp.powercurve.cl_regII",
-        "lift_coeff",
-    )
+    try:
+        # Induction
+        simple_plot_results(
+            "Blade Nondimensional Span [-]",
+            "Axial Induction [-]",
+            "blade.outer_shape_bem.s",
+            "rp.powercurve.ax_induct_regII",
+            "induction",
+        )
+
+        # Lift coefficient
+        simple_plot_results(
+            "Blade Nondimensional Span [-]",
+            "Lift Coefficient [-]",
+            "blade.outer_shape_bem.s",
+            "rp.powercurve.cl_regII",
+            "lift_coeff",
+        )
+
+        # Power curve pitch
+        simple_plot_results(
+            "Wind velocity [m/s]",
+            "Pitch angle [deg]",
+            "rp.powercurve.V",
+            "rp.powercurve.pitch",
+            "pitch",
+        )
+
+        # Power curve power
+        simple_plot_results(
+            "Wind velocity [m/s]",
+            "Electrical Power [W]",
+            "rp.powercurve.V",
+            "rp.powercurve.P",
+            "power_elec",
+        )
+
+        # Power curve power (mechanical)
+        simple_plot_results(
+            "Wind velocity [m/s]",
+            "Mechanical Power [W]",
+            "rp.powercurve.V",
+            "rp.powercurve.P_aero",
+            "power_aero",
+        )
+
+        # Power curve power coeff
+        simple_plot_results(
+            "Wind velocity [m/s]",
+            "Electrical Power Coefficient [-]",
+            "rp.powercurve.V",
+            "rp.powercurve.Cp",
+            "cp_elec",
+        )
+
+        # Power curve power coeff (mechanical)
+        simple_plot_results(
+            "Wind velocity [m/s]",
+            "Mechanical Power Coefficient [-]",
+            "rp.powercurve.V",
+            "rp.powercurve.Cp_aero",
+            "cp_aero",
+        )
+
+        # Power curve rpm
+        simple_plot_results(
+            "Wind velocity [m/s]",
+            "Rotor speed [rpm]",
+            "rp.powercurve.V",
+            "rp.powercurve.Omega",
+            "omega",
+        )
+
+        # Power curve thrust
+        simple_plot_results(
+            "Wind velocity [m/s]",
+            "Thrust [N]",
+            "rp.powercurve.V",
+            "rp.powercurve.T",
+            "thrust",
+        )
+
+        # Power curve thrust coeff
+        simple_plot_results(
+            "Wind velocity [m/s]",
+            "Thrust Coefficient [-]",
+            "rp.powercurve.V",
+            "rp.powercurve.Ct_aero",
+            "ct_aero",
+        )
+
+        # Power curve torque
+        simple_plot_results(
+            "Wind velocity [m/s]",
+            "Torque [Nm]",
+            "rp.powercurve.V",
+            "rp.powercurve.Q",
+            "torque",
+        )
+
+        # Power curve torque coeff
+        simple_plot_results(
+            "Wind velocity [m/s]",
+            "Torque Coefficient [-]",
+            "rp.powercurve.V",
+            "rp.powercurve.Cq_aero",
+            "cq_aero",
+        )
+
+        # Power curve moment
+        simple_plot_results(
+            "Wind velocity [m/s]",
+            "Blade moment [Nm]",
+            "rp.powercurve.V",
+            "rp.powercurve.M",
+            "moment",
+        )
+
+        # Power curve moment coeff
+        simple_plot_results(
+            "Wind velocity [m/s]",
+            "Blade moment coefficient [-]",
+            "rp.powercurve.V",
+            "rp.powercurve.Cm_aero",
+            "cm_aero",
+        )
+    except KeyError:
+        pass
 
     if show_plots:
         plt.show()
@@ -399,7 +668,10 @@ def print_results_to_screen(list_of_sims, list_of_labels, values_to_print):
         units = values_to_print[key][1]
         units_str = f" | {units}" + (15 - len(str(units))) * " " + "|"
 
-        value_sizer = list_of_sims[0].get_val(value_name, units)
+        try:
+            value_sizer = list_of_sims[0].get_val(value_name, units)
+        except KeyError:
+            continue
         size_of_variable = len(value_sizer)
 
         for idx in range(size_of_variable):
@@ -429,17 +701,20 @@ def print_results_to_screen(list_of_sims, list_of_labels, values_to_print):
 
 def save_lcoe_data_to_file(list_of_sims, folder_output):
     lcoe_data = np.zeros((8, len(list_of_sims)))
-    for idx, yaml_data in enumerate(list_of_sims):
-        lcoe_data[0, idx] = yaml_data["financese.turbine_number"]
-        lcoe_data[1, idx] = yaml_data["financese.machine_rating"][0]
-        lcoe_data[2, idx] = yaml_data["financese.tcc_per_kW"][0]
-        lcoe_data[3, idx] = yaml_data["financese.bos_per_kW"][0]
-        lcoe_data[4, idx] = yaml_data["financese.opex_per_kW"][0]
-        lcoe_data[5, idx] = yaml_data["financese.turbine_aep"][0] * 1.0e-6
-        lcoe_data[6, idx] = yaml_data["financese.fixed_charge_rate"][0] * 100.0
-        lcoe_data[7, idx] = yaml_data["financese.lcoe"][0] * 1000.0
+    try:
+        for idx, yaml_data in enumerate(list_of_sims):
+            lcoe_data[0, idx] = yaml_data["financese.turbine_number"]
+            lcoe_data[1, idx] = yaml_data["financese.machine_rating"][0]
+            lcoe_data[2, idx] = yaml_data["financese.tcc_per_kW"][0]
+            lcoe_data[3, idx] = yaml_data["financese.bos_per_kW"][0]
+            lcoe_data[4, idx] = yaml_data["financese.opex_per_kW"][0]
+            lcoe_data[5, idx] = yaml_data["financese.turbine_aep"][0] * 1.0e-6
+            lcoe_data[6, idx] = yaml_data["financese.fixed_charge_rate"][0] * 100.0
+            lcoe_data[7, idx] = yaml_data["financese.lcoe"][0] * 1000.0
 
-    np.savetxt(os.path.join(folder_output, "lcoe.dat"), lcoe_data)
+        np.savetxt(os.path.join(folder_output, "lcoe.dat"), lcoe_data)
+    except:
+        pass
 
 
 def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
@@ -456,11 +731,19 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
     # the second string is the units to print the value in,
     # and the optional third string is the multiplicative scalar on the value to be printed.
     values_to_print = {
+        "Rotor Diameter": ["assembly.rotor_diameter", "m"],
+        "TSR": ["control.rated_TSR", None],
         "AEP": ["rp.AEP", "GW*h"],
-        "Blade mass": ["re.precomp.blade_mass", "kg"],
         "LCOE": ["financese.lcoe", "USD/(MW*h)"],
-        "Cp": ["rp.powercurve.Cp_aero", None],
+        # "Cp": ["rp.powercurve.Cp_aero", None],
+        "Rated velocity": ["rp.powercurve.rated_V", "m/s"],
+        "Rated rpm": ["rp.powercurve.rated_Omega", "rpm"],
+        "Rated pitch": ["control.rated_pitch", "deg"],
+        "Rated thrust": ["rp.powercurve.rated_T", "kN"],
+        "Rated torque": ["rp.powercurve.rated_Q", "kN*m"],
+        "Blade mass": ["re.precomp.blade_mass", "kg"],
         "Blade cost": ["re.precomp.total_blade_cost", "USD"],
+        "Tip defl": ["tcons.tip_deflection", "m"],
         "Tip defl ratio": ["tcons.tip_deflection_ratio", None],
         "Flap freqs": ["rs.frame.flap_mode_freqs", "Hz"],
         "Edge freqs": ["rs.frame.edge_mode_freqs", "Hz"],
@@ -468,6 +751,13 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "6P freq": ["rp.powercurve.rated_Omega", None, 6.0 / 60],
         "Hub forces": ["rs.aero_hub_loads.Fxyz_hub_aero", "kN"],
         "Hub moments": ["rs.aero_hub_loads.Mxyz_hub_aero", "kN*m"],
+        "Nacelle mass": ["drivese.nacelle_mass", "kg"],
+        "RNA mass": ["drivese.rna_mass", "kg"],
+        "Tower mass": ["towerse.tower_mass", "kg"],
+        "Tower cost": ["towerse.tower_cost", "USD"],
+        "Monopile mass": ["towerse.monopile_mass", "kg"],
+        "Monopile cost": ["towerse.monopile_cost", "USD"],
+        "Tower-Monopile freqs": ["towerse.post.structural_frequencies", "Hz"],
     }
 
     # Generally it's not necessary to change the code below here, unless you
