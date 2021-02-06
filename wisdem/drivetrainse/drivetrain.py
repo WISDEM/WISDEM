@@ -186,7 +186,7 @@ class DrivetrainSE(om.Group):
 
         # Final tallying
         self.add_subsystem("misc", dc.MiscNacelleComponents(), promotes=["*"])
-        self.add_subsystem("nac", dc.NacelleSystemAdder(), promotes=["*"])
+        self.add_subsystem("nac", dc.NacelleSystemAdder(direct_drive=direct), promotes=["*"])
         self.add_subsystem("rna", dc.RNA_Adder(), promotes=["*"])
 
         # Structural analysis
