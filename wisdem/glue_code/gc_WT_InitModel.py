@@ -613,6 +613,7 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
     wt_opt["nacelle.L_generator"] = nacelle["drivetrain"]["generator_length"]
     wt_opt["nacelle.gear_ratio"] = nacelle["drivetrain"]["gear_ratio"]
     wt_opt["nacelle.gearbox_efficiency"] = nacelle["drivetrain"]["gearbox_efficiency"]
+    wt_opt["nacelle.damping_ratio"] = nacelle["drivetrain"]["damping_ratio"]
     wt_opt["nacelle.mb1Type"] = nacelle["drivetrain"]["mb1Type"]
     wt_opt["nacelle.mb2Type"] = nacelle["drivetrain"]["mb2Type"]
     wt_opt["nacelle.uptower"] = nacelle["drivetrain"]["uptower"]

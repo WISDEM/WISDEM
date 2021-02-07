@@ -306,6 +306,7 @@ class WT_RNTA(om.Group):
             self.connect("nacelle.distance_tt_hub", "drivese.drive_height")
             self.connect("nacelle.uptilt", "drivese.tilt")
             self.connect("nacelle.gear_ratio", "drivese.gear_ratio")
+            self.connect("nacelle.damping_ratio", "drivese.damping_ratio")
             self.connect("nacelle.mb1Type", "drivese.bear1.bearing_type")
             self.connect("nacelle.mb2Type", "drivese.bear2.bearing_type")
             self.connect("nacelle.lss_diameter", "drivese.lss_diameter")

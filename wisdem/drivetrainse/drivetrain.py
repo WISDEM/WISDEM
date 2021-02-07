@@ -201,6 +201,9 @@ class DrivetrainSE(om.Group):
             self.add_subsystem("hss", ds.HSS_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=["*"])
             self.add_subsystem("bed", ds.Bedplate_IBeam_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=["*"])
 
+        # Dynamics
+        self.add_subsystem("dyn", dc.DriveDynamics(), promotes=["*"])
+
         # Output-to-input connections
         self.connect("bedplate_rho", ["pitch_system.rho", "spinner.metal_rho"])
         self.connect("bedplate_Xy", ["pitch_system.Xy", "spinner.Xy"])

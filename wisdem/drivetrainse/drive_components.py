@@ -1052,3 +1052,65 @@ class RNA_Adder(om.ExplicitComponent):
 
 
 # --------------------------------------------
+
+
+class DriveDynamics(om.ExplicitComponent):
+    """
+    Compute equivalent spring constant and damping for the drivetrain system
+
+    Parameters
+    ----------
+    lss_spring_constant : float, [N*m/rad]
+        Equivalent spring constant for the low speed shaft froom T=(G*J/L)*theta
+    hss_spring_constant : float, [N*m/rad]
+        Equivalent spring constant for the high speed shaft froom T=(G*J/L)*theta
+    gear_ratio : float
+        overall gearbox ratio
+    damping_ratio : float
+        Fraction of critical damping value for drivetrain system
+    blades_I : numpy array[6], [kg*m**2]
+        Mass moments of inertia of all blades about hub center
+    hub_system_I : numpy array[6], [kg*m**2]
+        Mass moments of inertia of hub system about its CofM
+
+
+    Returns
+    -------
+    drivetrain_spring_constant : float, [N*m/rad]
+        Equivalent spring constant for the drivetrain system
+    drivetrain_damping_coefficient : float, [N*m/rad]
+        Equivalent spring constant for the drivetrain system
+    """
+
+    def setup(self):
+
+        self.add_input("lss_spring_constant", 0.0, units="N*m/rad")
+        self.add_input("hss_spring_constant", 0.0, units="N*m/rad")
+        self.add_input("gear_ratio", val=1.0)
+        self.add_input("damping_ratio", val=0.0)
+        self.add_input("blades_I", np.zeros(6), units="kg*m**2")
+        self.add_input("hub_system_I", np.zeros(6), units="kg*m**2")
+
+        self.add_output("drivetrain_spring_constant", 0.0, units="N*m/rad")
+        self.add_output("drivetrain_damping_coefficient", 0.0, units="N*m*s/rad")
+
+    def compute(self, inputs, outputs):
+
+        # Unpack inputs
+        k_lss = inputs["lss_spring_constant"]
+        k_hss = inputs["hss_spring_constant"]
+        gbr = inputs["gear_ratio"]
+        zeta = inputs["damping_ratio"]
+        rotor_I = inputs["blades_I"] + inputs["hub_system_I"]
+
+        # springs in series, should be n^2*k1*k2/(k1+n^2*k2)
+        # https://www.nrel.gov/docs/fy09osti/41160.pdf
+        k_drive = k_lss if gbr == 1.0 else 1.0 / (1 / k_lss + 1 / k_hss / gbr / gbr)
+        outputs["drivetrain_spring_constant"] = k_drive
+
+        # Critical damping value
+        c_crit = 2.0 * np.sqrt(k_drive * rotor_I[0])
+        outputs["drivetrain_damping_coefficient"] = zeta * c_crit
+
+
+# --------------------------------------------
