@@ -362,6 +362,7 @@ components:
                 values: [0.05, 0.05]
             gear_ratio: 1.0
             gearbox_efficiency: 1.0
+            damping_ratio: 0.01
             mb1Type: CARB
             mb2Type: SRB
             uptower: True
