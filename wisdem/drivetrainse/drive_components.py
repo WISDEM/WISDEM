@@ -1079,7 +1079,7 @@ class DriveDynamics(om.ExplicitComponent):
     drivetrain_spring_constant : float, [N*m/rad]
         Equivalent spring constant for the drivetrain system
     drivetrain_damping_coefficient : float, [N*m/rad]
-        Equivalent spring constant for the drivetrain system
+        Equivalent damping coefficient for the drivetrain system
     """
 
     def setup(self):
