@@ -426,6 +426,7 @@ class Electronics(om.ExplicitComponent):
 
         outputs["transformer_mass"] = m_transformer
         outputs["transformer_cm"] = cm
+        outputs["transformer_cm"][1] *= -1.0
         outputs["transformer_I"] = (1.0 / 6.0) * m_transformer * sides ** 2 * np.ones(3)
 
 
@@ -747,6 +748,8 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
 
     Returns
     -------
+    shaft_start : numpy array[3], [m]
+        coordinate of start of shaft relative to tower top
     other_mass : float, [kg]
         mass of high speed shaft, hvac, main frame, yaw, cover, and electronics
     mean_bearing_mass : float, [kg]
@@ -824,6 +827,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         self.add_input("x_bedplate", val=np.zeros(12), units="m")
         self.add_input("constr_height", 0.0, units="m")
 
+        self.add_output("shaft_start", np.zeros(3), units="m")
         self.add_output("other_mass", 0.0, units="kg")
         self.add_output("mean_bearing_mass", 0.0, units="kg")
         self.add_output("total_bedplate_mass", 0.0, units="kg")
@@ -866,6 +870,8 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         shaft0[-1] += inputs["constr_height"]
         if self.options["direct_drive"]:
             shaft0[0] += inputs["x_bedplate"][-1]
+        outputs["shaft_start"] = shaft0
+
         for k in components:
             m_i = inputs[k + "_mass"]
             cm_i = inputs[k + "_cm"]
@@ -882,9 +888,9 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
 
         # Now find total I about nacelle CofM
         I_nac = np.zeros(6)
-        m_list = np.zeros((len(components) + 1,))
-        cm_list = np.zeros((len(components) + 1, 3))
-        I_list = np.zeros((len(components) + 1, 6))
+        m_list = np.zeros((len(components) + 2,))
+        cm_list = np.zeros((len(components) + 2, 3))
+        I_list = np.zeros((len(components) + 2, 6))
         for ic, c in enumerate(components):
             m_i = inputs[c + "_mass"]
             cm_i = inputs[c + "_cm"]
@@ -902,15 +908,16 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
             I_add = util.unassembleI(I_add)
             I_nac += I_add
 
+            # Record mass, cm, and I for output table (about component cg)
             m_list[ic] = m_i
             cm_list[ic, :] = cm_i
-            I_list[ic, :] = I_add
+            I_i = inputs[c + "_I"]
+            I_list[ic, :] = I_i if I_i.size == 6 else np.r_[I_i, np.zeros(3)]
 
         outputs["above_yaw_mass"] = copy.copy(m_nac)
         outputs["above_yaw_cm"] = copy.copy(cm_nac)
         outputs["above_yaw_I"] = copy.copy(I_nac)
 
-        components.append("yaw")
         m_nac += inputs["yaw_mass"]
         cm_nac = (outputs["above_yaw_mass"] * outputs["above_yaw_cm"] + inputs["yaw_cm"] * inputs["yaw_mass"]) / m_nac
         r = inputs["yaw_cm"] - cm_nac
@@ -919,25 +926,6 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         )
         I_add = util.unassembleI(I_add)
         I_nac += I_add
-
-        # Wrap up nacelle mass table
-        m_list[-1] = inputs["yaw_mass"]
-        cm_list[-1, :] = inputs["yaw_cm"]
-        I_list[-1, :] = I_add
-        self._mass_table = pd.DataFrame()
-        self._mass_table["Component"] = components
-        self._mass_table["Mass"] = m_list
-        self._mass_table["CoM_x"] = cm_list[:, 0]
-        self._mass_table["CoM_y"] = cm_list[:, 1]
-        self._mass_table["CoM_z"] = cm_list[:, 2]
-        self._mass_table["MoI_xx"] = I_list[:, 0]
-        self._mass_table["MoI_yy"] = I_list[:, 1]
-        self._mass_table["MoI_zz"] = I_list[:, 2]
-        self._mass_table["MoI_xy"] = I_list[:, 3]
-        self._mass_table["MoI_xz"] = I_list[:, 4]
-        self._mass_table["MoI_yz"] = I_list[:, 5]
-        self._mass_table.set_index("Component", inplace=True)
-        self._mass_table.loc["Nacelle"] = np.r_[m_nac, cm_nac.flatten(), I_nac.flatten()]
 
         outputs["nacelle_mass"] = m_nac
         outputs["nacelle_cm"] = cm_nac
@@ -958,6 +946,29 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         outputs["mean_bearing_mass"] = 0.5 * (inputs["mb1_mass"] + inputs["mb2_mass"])
         outputs["total_bedplate_mass"] = inputs["nose_mass"] + inputs["bedplate_mass"]
 
+        # Wrap up nacelle mass table
+        components.append("yaw")
+        m_list[-2] = inputs["yaw_mass"]
+        cm_list[-2, :] = inputs["yaw_cm"]
+        I_list[-2, :] = np.r_[inputs["yaw_I"], np.zeros(3)]
+        components.append("nacelle")
+        m_list[-1] = m_nac
+        cm_list[-1, :] = cm_nac
+        I_list[-1, :] = I_nac
+        self._mass_table = pd.DataFrame()
+        self._mass_table["Component"] = components
+        self._mass_table["Mass"] = m_list
+        self._mass_table["CoM_TT_x"] = cm_list[:, 0]
+        self._mass_table["CoM_TT_y"] = cm_list[:, 1]
+        self._mass_table["CoM_TT_z"] = cm_list[:, 2]
+        self._mass_table["MoI_CoM_xx"] = I_list[:, 0]
+        self._mass_table["MoI_CoM_yy"] = I_list[:, 1]
+        self._mass_table["MoI_CoM_zz"] = I_list[:, 2]
+        self._mass_table["MoI_CoM_xy"] = I_list[:, 3]
+        self._mass_table["MoI_CoM_xz"] = I_list[:, 4]
+        self._mass_table["MoI_CoM_yz"] = I_list[:, 5]
+        self._mass_table.set_index("Component", inplace=True)
+
 
 # --------------------------------------------
 
@@ -974,6 +985,8 @@ class RNA_Adder(om.ExplicitComponent):
         Shaft tilt
     L_drive : float, [m]
         Length of drivetrain from bedplate to hub flang
+    shaft_start : numpy array[3], [m]
+        coordinate of start of shaft relative to tower top
     blades_mass : float, [kg]
         Mass of all bladea
     hub_system_mass : float, [kg]
@@ -1008,6 +1021,7 @@ class RNA_Adder(om.ExplicitComponent):
         self.add_discrete_input("upwind", True)
         self.add_input("tilt", 0.0, units="deg")
         self.add_input("L_drive", 0.0, units="m")
+        self.add_input("shaft_start", np.zeros(3), units="m")
         self.add_input("blades_mass", 0.0, units="kg")
         self.add_input("hub_system_mass", 0.0, units="kg")
         self.add_input("nacelle_mass", 0.0, units="kg")
@@ -1035,9 +1049,10 @@ class RNA_Adder(om.ExplicitComponent):
         outputs["rna_mass"] = rotor_mass + nac_mass
 
         # rna cm
+        shaft0 = inputs["shaft_start"]
         hub_cm = inputs["hub_system_cm"]
         L_drive = inputs["L_drive"]
-        hub_cm = (L_drive + hub_cm) * np.array([Cup * np.cos(tilt), 0.0, np.sin(tilt)])
+        hub_cm = shaft0 + (L_drive + hub_cm) * np.array([Cup * np.cos(tilt), 0.0, np.sin(tilt)])
         outputs["rna_cm"] = (rotor_mass * hub_cm + nac_mass * inputs["nacelle_cm"]) / outputs["rna_mass"]
 
         # rna I

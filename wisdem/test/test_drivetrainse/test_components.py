@@ -163,22 +163,22 @@ class TestComponents(unittest.TestCase):
         s = 0.015 * 200
         m = np.mean([740.0, 817.5]) * 10 + np.mean([101.37, 503.83])
         self.assertAlmostEqual(outputs["converter_mass"], m)
-        npt.assert_equal(outputs["converter_cm"], np.r_[0.0, 2.5 + 0.5 * s, 0.5 * s])
+        npt.assert_equal(outputs["converter_cm"], np.r_[0.0, -(2.5 + 0.5 * s), 0.5 * s])
         npt.assert_almost_equal(outputs["converter_I"], (1.0 / 6.0) * m * s ** 2)
 
         m = 1915 * 10 + 1910.0
         self.assertEqual(outputs["transformer_mass"], m)
-        npt.assert_equal(outputs["transformer_cm"], np.r_[0.0, 2.5 + 0.5 * s, 0.5 * s])
+        npt.assert_equal(outputs["transformer_cm"], np.r_[0.0, -(2.5 + 0.5 * s), 0.5 * s])
         npt.assert_almost_equal(outputs["transformer_I"], (1.0 / 6.0) * m * s ** 2)
 
         inputs["converter_mass_user"] = 42.0
         inputs["transformer_mass_user"] = 420.0
         myobj.compute(inputs, outputs)
         self.assertAlmostEqual(outputs["converter_mass"], 42.0)
-        npt.assert_equal(outputs["converter_cm"], np.r_[0.0, 2.5 + 0.5 * s, 0.5 * s])
+        npt.assert_equal(outputs["converter_cm"], np.r_[0.0, -(2.5 + 0.5 * s), 0.5 * s])
         npt.assert_almost_equal(outputs["converter_I"], (1.0 / 6.0) * 42 * s ** 2)
         self.assertEqual(outputs["transformer_mass"], 420.0)
-        npt.assert_equal(outputs["transformer_cm"], np.r_[0.0, 2.5 + 0.5 * s, 0.5 * s])
+        npt.assert_equal(outputs["transformer_cm"], np.r_[0.0, -(2.5 + 0.5 * s), 0.5 * s])
         npt.assert_almost_equal(outputs["transformer_I"], (1.0 / 6.0) * 420 * s ** 2)
 
     def testYaw(self):
@@ -443,6 +443,7 @@ class TestComponents(unittest.TestCase):
         inputs["hub_system_mass"] = 25e3
         inputs["hub_system_I"] = 25e3 * np.arange(1, 7)
         inputs["hub_system_cm"] = 2.0
+        inputs["shaft_start"] = np.zeros(3)
 
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertEqual(outputs["rotor_mass"], 125e3)
