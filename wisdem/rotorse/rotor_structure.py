@@ -499,7 +499,7 @@ class RunFrame3DD(ExplicitComponent):
 
         # Mode shapes and frequencies
         n_freq2 = int(self.n_freq / 2)
-        freq_x, freq_y, mshapes_x, mshapes_y = util.get_xy_mode_shapes(
+        freq_x, freq_y, _, mshapes_x, mshapes_y, _ = util.get_xyz_mode_shapes(
             r, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
         )
         freq_x = freq_x[:n_freq2]

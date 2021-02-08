@@ -30,7 +30,8 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6]):
         # p6 = np.zeros((5, y.shape[1]))
         # for k in range(y.shape[1]):
         #    p6[:, k], _ = curve_fit(mode_fit, xn, y[:, k])
-        p6 /= p6.sum(axis=0)[np.newaxis, :]
+        normval = np.maximum(p6.sum(axis=0), 1e-6)
+        p6 /= normval[np.newaxis, :]
     else:
         p6 = p6[2:]
         # p6, _ = curve_fit(mode_fit, xn, y)
@@ -39,23 +40,27 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6]):
     return p6
 
 
-def get_xy_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
+def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
     # Number of frequencies and modes
     nfreq = len(freqs)
 
     # Get mode shapes in batch
     mpfs = np.abs(np.c_[xmpf, ympf, zmpf])
-    polys = get_modal_coefficients(r, np.vstack((xdsp, ydsp)).T)
+    polys = get_modal_coefficients(r, np.vstack((xdsp, ydsp, zdsp)).T)
     xpolys = polys[:, :nfreq].T
-    ypolys = polys[:, nfreq:].T
+    ypolys = polys[:, nfreq : (2 * nfreq)].T
+    zpolys = polys[:, (2 * nfreq) :].T
 
     nfreq2 = int(nfreq / 2)
     mshapes_x = np.zeros((nfreq2, 5))
     mshapes_y = np.zeros((nfreq2, 5))
+    mshapes_z = np.zeros((nfreq2, 5))
     freq_x = np.zeros(nfreq2)
     freq_y = np.zeros(nfreq2)
+    freq_z = np.zeros(nfreq2)
     ix = 0
     iy = 0
+    iz = 0
     for m in range(nfreq):
         if mpfs[m, :].max() < 1e-11:
             continue
@@ -72,8 +77,14 @@ def get_xy_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
             mshapes_y[iy, :] = ypolys[m, :]
             freq_y[iy] = freqs[m]
             iy += 1
+        elif imode == 2:
+            if iz >= nfreq2:
+                continue
+            mshapes_z[iz, :] = zpolys[m, :]
+            freq_z[iz] = freqs[m]
+            iz += 1
 
-    return freq_x, freq_y, mshapes_x, mshapes_y
+    return freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z
 
 
 def rotate(xo, yo, xp, yp, angle):

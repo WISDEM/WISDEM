@@ -352,10 +352,18 @@ class CylinderFrame3DD(om.ExplicitComponent):
         Second natural frequency
     freqs : numpy array[NFREQ], [Hz]
         Natural frequencies of the structure
+    x_mode_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the x-direction
+    y_mode_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the y-direction
+    z_mode_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the z-direction
     x_mode_shapes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the x-direction
     y_mode_shapes : numpy array[NFREQ2, 5]
-        6-degree polynomial coefficients of mode shapes in the x-direction
+        6-degree polynomial coefficients of mode shapes in the y-direction
+    z_mode_shapes : numpy array[NFREQ2, 5]
+        6-degree polynomial coefficients of mode shapes in the z-direction
     cylinder_deflection : numpy array[npts], [m]
         Deflection of cylinder nodes in yaw-aligned +x direction
     Fz_out : numpy array[npts-1], [N]
@@ -462,8 +470,10 @@ class CylinderFrame3DD(om.ExplicitComponent):
         self.add_output("freqs", val=np.zeros(NFREQ), units="Hz")
         self.add_output("x_mode_shapes", val=np.zeros((NFREQ2, 5)))
         self.add_output("y_mode_shapes", val=np.zeros((NFREQ2, 5)))
-        self.add_output("x_mode_freqs", val=np.zeros(NFREQ2))
-        self.add_output("y_mode_freqs", val=np.zeros(NFREQ2))
+        self.add_output("z_mode_shapes", val=np.zeros((NFREQ2, 5)))
+        self.add_output("x_mode_freqs", val=np.zeros(NFREQ2), units="Hz")
+        self.add_output("y_mode_freqs", val=np.zeros(NFREQ2), units="Hz")
+        self.add_output("z_mode_freqs", val=np.zeros(NFREQ2), units="Hz")
         self.add_output("cylinder_deflection", val=np.zeros(npts), units="m")
         self.add_output("Fz_out", val=np.zeros(npts - 1), units="N")
         self.add_output("Vx_out", val=np.zeros(npts - 1), units="N")
@@ -615,13 +625,15 @@ class CylinderFrame3DD(om.ExplicitComponent):
 
         # Get all mode shapes in batch
         NFREQ2 = int(NFREQ / 2)
-        freq_x, freq_y, mshapes_x, mshapes_y = util.get_xy_mode_shapes(
+        freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
             z, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
         )
         outputs["x_mode_freqs"] = freq_x[:NFREQ2]
         outputs["y_mode_freqs"] = freq_y[:NFREQ2]
+        outputs["z_mode_freqs"] = freq_z[:NFREQ2]
         outputs["x_mode_shapes"] = mshapes_x[:NFREQ2, :]
         outputs["y_mode_shapes"] = mshapes_y[:NFREQ2, :]
+        outputs["z_mode_shapes"] = mshapes_z[:NFREQ2, :]
 
         # deflections due to loading (from cylinder top and wind/wave loads)
         outputs["cylinder_deflection"] = np.sqrt(
