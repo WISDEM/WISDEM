@@ -580,8 +580,10 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_output("tower_freqs", val=np.zeros(NFREQ), units="Hz")
         self.add_output("tower_fore_aft_modes", val=np.zeros((NFREQ2, 5)))
         self.add_output("tower_side_side_modes", val=np.zeros((NFREQ2, 5)))
+        self.add_output("tower_torsion_modes", val=np.zeros((NFREQ2, 5)))
         self.add_output("tower_fore_aft_freqs", val=np.zeros(NFREQ2))
         self.add_output("tower_side_side_freqs", val=np.zeros(NFREQ2))
+        self.add_output("tower_torsion_freqs", val=np.zeros(NFREQ2))
 
     def compute(self, inputs, outputs):
 
@@ -700,13 +702,15 @@ class FrameAnalysis(om.ExplicitComponent):
 
                 # Get all mode shapes in batch
                 NFREQ2 = int(NFREQ / 2)
-                freq_x, freq_y, mshapes_x, mshapes_y = util.get_xy_mode_shapes(
+                freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
                     nodes[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
                 )
                 outputs[frame + "_fore_aft_freqs"] = freq_x[:NFREQ2]
                 outputs[frame + "_side_side_freqs"] = freq_y[:NFREQ2]
+                outputs[frame + "_torsion_freqs"] = freq_z[:NFREQ2]
                 outputs[frame + "_fore_aft_modes"] = mshapes_x[:NFREQ2, :]
                 outputs[frame + "_side_side_modes"] = mshapes_y[:NFREQ2, :]
+                outputs[frame + "_torsion_modes"] = mshapes_z[:NFREQ2, :]
 
             # Determine forces
             F_sum = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
