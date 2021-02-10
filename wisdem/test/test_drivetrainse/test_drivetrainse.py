@@ -16,6 +16,7 @@ def set_common(prob, opt):
     prob["machine_rating"] = 5e3
     prob["D_top"] = 6.5
     prob["rated_torque"] = 10.25e6  # rev 1 9.94718e6
+    prob["damping_ratio"] = 0.01
 
     prob["F_hub"] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3, 1))
     prob["M_hub"] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3, 1))
@@ -162,6 +163,8 @@ class TestGroup(unittest.TestCase):
         npt.assert_array_less(100e3, prob["generator_I"])
         npt.assert_array_less(0.8, prob["generator_efficiency"])
         npt.assert_array_less(prob["generator_efficiency"], 1.0)
+        self.assertGreater(prob["drivetrain_spring_constant"], 1e10)
+        self.assertGreater(prob["drivetrain_damping_coefficient"], 1e7)
 
     def testDirectDrive_withSimpleGen(self):
 
@@ -227,6 +230,8 @@ class TestGroup(unittest.TestCase):
         npt.assert_array_less(100e3, prob["generator_I"])
         npt.assert_array_less(0.8, prob["generator_efficiency"])
         npt.assert_array_less(prob["generator_efficiency"], 1.0)
+        self.assertGreater(prob["drivetrain_spring_constant"], 1e10)
+        self.assertGreater(prob["drivetrain_damping_coefficient"], 1e7)
 
     def testGeared_withGen(self):
 
@@ -352,6 +357,8 @@ class TestGroup(unittest.TestCase):
         npt.assert_array_less(1e3, prob["generator_I"])
         npt.assert_array_less(0.2, prob["generator_efficiency"][1:])
         npt.assert_array_less(prob["generator_efficiency"], 1.0)
+        self.assertGreater(prob["drivetrain_spring_constant"], 1e10)
+        self.assertGreater(prob["drivetrain_damping_coefficient"], 1e7)
 
     def testGeared_withSimpleGen(self):
 
@@ -428,6 +435,8 @@ class TestGroup(unittest.TestCase):
         npt.assert_array_less(1e3, prob["generator_I"])
         npt.assert_array_less(0.8, prob["generator_efficiency"])
         npt.assert_array_less(prob["generator_efficiency"], 1.0)
+        self.assertGreater(prob["drivetrain_spring_constant"], 1e10)
+        self.assertGreater(prob["drivetrain_damping_coefficient"], 1e7)
 
 
 def suite():

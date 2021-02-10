@@ -39,9 +39,9 @@ class TestRegression(unittest.TestCase):
         )
 
         self.assertAlmostEqual(wt_opt["re.precomp.blade_mass"][0], 73310.0985877902, 1)
-        self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 77.6585454480, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 65.0620671670, 1)
-        self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 22.6934383489, 1)
+        self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 77.76990259134561, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 64.96645153851577, 1)
+        self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 22.6791658058, 1)
         self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 144.386, 3)
 
     def test3p4MW(self):

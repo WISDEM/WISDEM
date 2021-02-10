@@ -56,9 +56,10 @@ class TestAny(unittest.TestCase):
         ym[1] = ym[4] = ym[7] = 1
         zm[2] = zm[5] = zm[8] = 1
 
-        freq_x, freq_y, _, _ = util.get_xy_mode_shapes(r, freqs, dx, dy, dz, xm, ym, zm)
+        freq_x, freq_y, freq_z, _, _, _ = util.get_xyz_mode_shapes(r, freqs, dx, dy, dz, xm, ym, zm)
         npt.assert_array_equal(freq_x, np.r_[0, 3, 6, 9, np.zeros(n2 - 4)])
         npt.assert_array_equal(freq_y, np.r_[1, 4, 7, np.zeros(n2 - 3)])
+        npt.assert_array_equal(freq_z, np.r_[2, 5, 8, np.zeros(n2 - 3)])
 
     def testRotateI(self):
         I = np.arange(6) + 1
