@@ -163,22 +163,22 @@ class TestComponents(unittest.TestCase):
         s = 0.015 * 200
         m = np.mean([740.0, 817.5]) * 10 + np.mean([101.37, 503.83])
         self.assertAlmostEqual(outputs["converter_mass"], m)
-        npt.assert_equal(outputs["converter_cm"], np.r_[0.0, 2.5 + 0.5 * s, 0.5 * s])
+        npt.assert_equal(outputs["converter_cm"], np.r_[0.0, -(2.5 + 0.5 * s), 0.5 * s])
         npt.assert_almost_equal(outputs["converter_I"], (1.0 / 6.0) * m * s ** 2)
 
         m = 1915 * 10 + 1910.0
         self.assertEqual(outputs["transformer_mass"], m)
-        npt.assert_equal(outputs["transformer_cm"], np.r_[0.0, 2.5 + 0.5 * s, 0.5 * s])
+        npt.assert_equal(outputs["transformer_cm"], np.r_[0.0, -(2.5 + 0.5 * s), 0.5 * s])
         npt.assert_almost_equal(outputs["transformer_I"], (1.0 / 6.0) * m * s ** 2)
 
         inputs["converter_mass_user"] = 42.0
         inputs["transformer_mass_user"] = 420.0
         myobj.compute(inputs, outputs)
         self.assertAlmostEqual(outputs["converter_mass"], 42.0)
-        npt.assert_equal(outputs["converter_cm"], np.r_[0.0, 2.5 + 0.5 * s, 0.5 * s])
+        npt.assert_equal(outputs["converter_cm"], np.r_[0.0, -(2.5 + 0.5 * s), 0.5 * s])
         npt.assert_almost_equal(outputs["converter_I"], (1.0 / 6.0) * 42 * s ** 2)
         self.assertEqual(outputs["transformer_mass"], 420.0)
-        npt.assert_equal(outputs["transformer_cm"], np.r_[0.0, 2.5 + 0.5 * s, 0.5 * s])
+        npt.assert_equal(outputs["transformer_cm"], np.r_[0.0, -(2.5 + 0.5 * s), 0.5 * s])
         npt.assert_almost_equal(outputs["transformer_I"], (1.0 / 6.0) * 420 * s ** 2)
 
     def testYaw(self):
@@ -313,6 +313,8 @@ class TestComponents(unittest.TestCase):
         discrete_inputs["upwind"] = True
         discrete_inputs["uptower"] = True
         inputs["tilt"] = 0.0
+        inputs["constr_height"] = 2.0
+        inputs["x_bedplate"] = -2 * np.ones(5)
         components = [
             "mb1",
             "mb2",
@@ -335,30 +337,31 @@ class TestComponents(unittest.TestCase):
             inputs[k + "_mass"] = 1e3
             inputs[k + "_I"] = 1e3 * np.array([1, 2, 3])
             if k in cm3:
-                inputs[k + "_cm"] = np.array([-3.0, 0.0, 0.0])
+                inputs[k + "_cm"] = np.array([-5.0, 0.0, 2.0])
             else:
                 inputs[k + "_cm"] = [3.0]
 
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertEqual(outputs["other_mass"], 1e3 * 6)
         self.assertEqual(outputs["nacelle_mass"], 1e3 * len(components))
-        npt.assert_equal(outputs["nacelle_cm"], np.r_[-3.0, 0.0, 0.0])
+        npt.assert_equal(outputs["nacelle_cm"], np.r_[-5.0, 0.0, 2.0])
         npt.assert_equal(outputs["nacelle_I"], 1e3 * len(components) * np.r_[1.0, 2.0, 3.0, np.zeros(3)])
 
         discrete_inputs["upwind"] = False
         for k in cm3:
-            inputs[k + "_cm"] *= -1.0
+            inputs[k + "_cm"][0] *= -1.0
+        inputs["x_bedplate"] *= -1.0
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertEqual(outputs["other_mass"], 1e3 * 6)
         self.assertEqual(outputs["nacelle_mass"], 1e3 * len(components))
-        npt.assert_equal(outputs["nacelle_cm"], np.r_[3.0, 0.0, 0.0])
+        npt.assert_equal(outputs["nacelle_cm"], np.r_[5.0, 0.0, 2.0])
         npt.assert_equal(outputs["nacelle_I"], 1e3 * len(components) * np.r_[1.0, 2.0, 3.0, np.zeros(3)])
 
         discrete_inputs["uptower"] = False
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertEqual(outputs["other_mass"], 1e3 * 6)
         self.assertEqual(outputs["nacelle_mass"], 1e3 * (len(components) - 2))
-        npt.assert_equal(outputs["nacelle_cm"], np.r_[3.0, 0.0, 0.0])
+        npt.assert_equal(outputs["nacelle_cm"], np.r_[5.0, 0.0, 2.0])
         npt.assert_equal(outputs["nacelle_I"], 1e3 * (len(components) - 2) * np.r_[1.0, 2.0, 3.0, np.zeros(3)])
 
     def testNacelle_withTilt(self):
@@ -372,6 +375,8 @@ class TestComponents(unittest.TestCase):
         discrete_inputs["uptower"] = True
         inputs["tilt"] = 5.0
         tr = 5 * np.pi / 180.0
+        inputs["constr_height"] = 2.0
+        inputs["x_bedplate"] = -2 * np.ones(5)
         components = [
             "mb1",
             "mb2",
@@ -394,30 +399,31 @@ class TestComponents(unittest.TestCase):
             inputs[k + "_mass"] = 1e3
             inputs[k + "_I"] = 1e3 * np.array([1, 2, 3])
             if k in cm3:
-                inputs[k + "_cm"] = np.array([-3.0 * np.cos(tr), 0.0, 3.0 * np.sin(tr)])
+                inputs[k + "_cm"] = np.array([-3.0 * np.cos(tr) - 2, 0.0, 2 + 3.0 * np.sin(tr)])
             else:
                 inputs[k + "_cm"] = [3.0]
 
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertEqual(outputs["other_mass"], 1e3 * 6)
         self.assertEqual(outputs["nacelle_mass"], 1e3 * len(components))
-        npt.assert_almost_equal(outputs["nacelle_cm"], np.r_[-3.0 * np.cos(tr), 0.0, 3.0 * np.sin(tr)])
+        npt.assert_almost_equal(outputs["nacelle_cm"], np.r_[-3.0 * np.cos(tr) - 2, 0.0, 2 + 3.0 * np.sin(tr)])
         # npt.assert_equal(outputs['nacelle_I'], 1e3*len(components)*np.r_[1.0, 2.0, 3.0, np.zeros(3)])
 
         discrete_inputs["upwind"] = False
         for k in cm3:
             inputs[k + "_cm"][0] *= -1.0
+        inputs["x_bedplate"] *= -1.0
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertEqual(outputs["other_mass"], 1e3 * 6)
         self.assertEqual(outputs["nacelle_mass"], 1e3 * len(components))
-        npt.assert_almost_equal(outputs["nacelle_cm"], np.r_[3.0 * np.cos(tr), 0.0, 3.0 * np.sin(tr)])
+        npt.assert_almost_equal(outputs["nacelle_cm"], np.r_[3.0 * np.cos(tr) + 2, 0.0, 2 + 3.0 * np.sin(tr)])
         # npt.assert_equal(outputs['nacelle_I'], 1e3*len(components)*np.r_[1.0, 2.0, 3.0, np.zeros(3)])
 
         discrete_inputs["uptower"] = False
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertEqual(outputs["other_mass"], 1e3 * 6)
         self.assertEqual(outputs["nacelle_mass"], 1e3 * (len(components) - 2))
-        npt.assert_almost_equal(outputs["nacelle_cm"], np.r_[3.0 * np.cos(tr), 0.0, 3.0 * np.sin(tr)])
+        npt.assert_almost_equal(outputs["nacelle_cm"], np.r_[3.0 * np.cos(tr) + 2, 0.0, 2 + 3.0 * np.sin(tr)])
 
     def testRNA(self):
         inputs = {}
@@ -432,11 +438,12 @@ class TestComponents(unittest.TestCase):
         inputs["blades_mass"] = 100e3
         inputs["blades_I"] = 100e3 * np.arange(1, 7)
         inputs["nacelle_mass"] = 200e3
-        inputs["nacelle_I"] = 200e3 * np.arange(1, 7)
+        inputs["nacelle_I_TT"] = 200e3 * np.arange(1, 7)
         inputs["nacelle_cm"] = np.array([-5.0, 0.0, 0.0])
         inputs["hub_system_mass"] = 25e3
         inputs["hub_system_I"] = 25e3 * np.arange(1, 7)
         inputs["hub_system_cm"] = 2.0
+        inputs["shaft_start"] = np.zeros(3)
 
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertEqual(outputs["rotor_mass"], 125e3)
@@ -444,7 +451,6 @@ class TestComponents(unittest.TestCase):
         npt.assert_equal(outputs["rna_cm"], np.r_[(-125 * 12 - 200 * 5) / 325, 0.0, 0.0])
         I0 = 325e3 * np.arange(1, 7)
         I0[1:3] += 125e3 * 12 ** 2
-        I0[1:3] += 200e3 * 5 ** 2
         npt.assert_equal(outputs["rna_I_TT"], I0)
 
         discrete_inputs["upwind"] = False
@@ -463,6 +469,27 @@ class TestComponents(unittest.TestCase):
         npt.assert_almost_equal(
             outputs["rna_cm"], np.r_[(125 * 12 * np.cos(tr) + 200 * 5) / 325, 0.0, 125 * 12 * np.sin(tr) / 325]
         )
+
+    def testDynamics(self):
+        inputs = {}
+        outputs = {}
+        myobj = dc.DriveDynamics()
+
+        inputs["lss_spring_constant"] = 2.0
+        inputs["hss_spring_constant"] = 3.0
+        inputs["gear_ratio"] = 1.0
+        inputs["damping_ratio"] = 0.5
+        inputs["blades_I"] = 30 * np.ones(6)
+        inputs["hub_system_I"] = 20 * np.ones(6)
+
+        myobj.compute(inputs, outputs)
+        self.assertEqual(outputs["drivetrain_spring_constant"], 2.0)
+        self.assertEqual(outputs["drivetrain_damping_coefficient"], 10)
+
+        inputs["gear_ratio"] = 5.0
+        myobj.compute(inputs, outputs)
+        self.assertAlmostEqual(outputs["drivetrain_spring_constant"], 150.0 / (2 + 75))
+        self.assertAlmostEqual(outputs["drivetrain_damping_coefficient"], np.sqrt(50 * 150.0 / (2 + 75)))
 
 
 def suite():

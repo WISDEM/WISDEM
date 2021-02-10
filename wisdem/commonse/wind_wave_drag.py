@@ -458,7 +458,7 @@ class CylinderWaveDrag(om.ExplicitComponent):
         # beta0 = inputs['beta0']
 
         # dynamic pressure
-        q = 0.5 * rho * U ** 2
+        q = 0.5 * rho * U * np.abs(U)
         # q0= 0.5*rho*U0**2
 
         # Reynolds number and drag

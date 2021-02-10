@@ -139,9 +139,13 @@ class RunPreComp(ExplicitComponent):
             desc="1D array of the density of the materials. For composites, this is the density of the laminate.",
         )
 
-        self.add_input("joint_position", val=0.0, desc="Spanwise position of the segmentation joint.",)
+        self.add_input(
+            "joint_position",
+            val=0.0,
+            desc="Spanwise position of the segmentation joint.",
+        )
         self.add_input("joint_mass", val=0.0, desc="Mass of the joint.")
-        self.add_input("joint_cost", val=0.0, units='USD', desc="Cost of the joint.")
+        self.add_input("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
 
         # Outputs - Distributed beam properties
         self.add_output("z", val=np.zeros(n_span), units="m", desc="locations of properties along beam")
@@ -157,7 +161,7 @@ class RunPreComp(ExplicitComponent):
             "EIyy",
             val=np.zeros(n_span),
             units="N*m**2",
-            desc="flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)",
+            desc="flapwise stiffness (bending about y-direction of airfoil aligned coordinate system)",
         )
         self.add_output("EIxy", val=np.zeros(n_span), units="N*m**2", desc="coupled flap-edge stiffness")
         self.add_output(
@@ -287,7 +291,7 @@ class RunPreComp(ExplicitComponent):
             "I_all_blades",
             shape=6,
             units="kg*m**2",
-            desc="mass moments of inertia of all blades in yaw c.s. order:Ixx, Iyy, Izz, Ixy, Ixz, Iyz",
+            desc="mass moments of inertia of all blades in hub c.s. order:Ixx, Iyy, Izz, Ixy, Ixz, Iyz",
         )
 
         # Placeholder - rotor cost
@@ -840,11 +844,15 @@ class RunPreComp(ExplicitComponent):
                     if j in lowerCS[i].mat_idx[sector_idx_strain_te_ps[i]]:
                         outputs["te_ps_mats"][i, j] = 1.0
 
-        if inputs["joint_mass"] > 0.:
+        if inputs["joint_mass"] > 0.0:
             s = (inputs["r"] - inputs["r"][0]) / (inputs["r"][-1] - inputs["r"][0])
             id_station = np.argmin(abs(inputs["joint_position"] - s))
-            span = np.average([inputs["r"][id_station] - inputs["r"][id_station - 1],
-                               inputs["r"][id_station + 1] - inputs["r"][id_station]])
+            span = np.average(
+                [
+                    inputs["r"][id_station] - inputs["r"][id_station - 1],
+                    inputs["r"][id_station + 1] - inputs["r"][id_station],
+                ]
+            )
             rhoA[id_station] += inputs["joint_mass"] / span
 
         outputs["z"] = inputs["r"]
@@ -891,9 +899,7 @@ class RunPreComp(ExplicitComponent):
         Ixy = 0.0
         Ixz = 0.0
         Iyz = 0.0  # azimuthal average for 2 blades, exact for 3+
-        # rotate to yaw c.s.
-        I = DirectionVector(Ixx, Iyy, Izz).hubToYaw(tilt)  # because off-diagonal components are all zero
-        I_all_blades = np.r_[I.x, I.y, I.z, Ixy, Ixz, Iyz]
+        I_all_blades = np.r_[Ixx, Iyy, Izz, Ixy, Ixz, Iyz]
 
         outputs["blade_mass"] = blade_mass
         outputs["blade_moment_of_inertia"] = blade_moment_of_inertia
@@ -965,7 +971,7 @@ class RunPreComp(ExplicitComponent):
         bcm.le_location = inputs["pitch_axis"]
         blade_cost, blade_mass = bcm.execute_blade_cost_model()
 
-        if inputs["joint_mass"] > 0.:
+        if inputs["joint_mass"] > 0.0:
             blade_cost += inputs["joint_cost"]
 
         outputs["total_blade_cost"] = blade_cost
@@ -995,6 +1001,10 @@ class RotorElasticity(Group):
                 "presweep",
                 "x_ec",
                 "y_ec",
+                "x_tc",
+                "y_tc",
+                "x_cg",
+                "y_cg",
                 "sc_ss_mats",
                 "sc_ps_mats",
                 "te_ss_mats",

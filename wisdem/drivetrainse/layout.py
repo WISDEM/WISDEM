@@ -3,8 +3,8 @@
 
 import numpy as np
 import openmdao.api as om
-from scipy.special import ellipeinc
 import wisdem.commonse.utilities as util
+from scipy.special import ellipeinc
 from wisdem.commonse.cross_sections import IBeam
 
 
@@ -366,7 +366,7 @@ class DirectLayout(Layout):
             R_k = np.array([x_c_sec[k] - x_c[0], 0.0, z_c_sec[k]])
             I_bed += util.assembleI(I_sec_rot) + mass[k] * (np.dot(R_k, R_k) * np.eye(3) - np.outer(R_k, R_k))
 
-        # Now shift originn to be at tower top
+        # Now shift origin to be at tower top
         cm[0] -= x_c[0]
         x_inner -= x_c[0]
         x_outer -= x_c[0]

@@ -1,7 +1,7 @@
-import openmdao.api as om
 import numpy as np
-from wisdem.drivetrainse.generator import Generator
+import openmdao.api as om
 import wisdem.commonse.fileIO as fio
+from wisdem.drivetrainse.generator import Generator
 
 opt_flag = False
 n_pc = 20
@@ -16,7 +16,7 @@ if opt_flag:
     prob.driver.options["optimizer"] = "SLSQP"
 
     # Specificiency target efficiency(%)
-    Eta_Target = 93.0
+    Eta_Target = 0.930
 
     eps = 1e-6
 
@@ -26,8 +26,8 @@ if opt_flag:
     prob.model.add_design_var("len_s", lower=0.5, upper=2.5)
     prob.model.add_design_var("h_s", lower=0.06, upper=0.15)
     prob.model.add_design_var("tau_p", lower=0.04, upper=0.2)
-    prob.model.add_design_var("N_f", lower=10, upper=300)
-    prob.model.add_design_var("I_f", lower=1, upper=500)
+    prob.model.add_design_var("N_f", lower=10, upper=300, ref=1e2)
+    prob.model.add_design_var("I_f", lower=1, upper=500, ref=1e2)
     prob.model.add_design_var("n_r", lower=5.0, upper=15.0)
     prob.model.add_design_var("h_yr", lower=0.01, upper=0.25)
     prob.model.add_design_var("h_ys", lower=0.01, upper=0.25)
@@ -42,7 +42,7 @@ if opt_flag:
     # Constraints
     prob.model.add_constraint("B_gfm", lower=0.617031, upper=1.057768)
     prob.model.add_constraint("B_pc", upper=2.0)
-    prob.model.add_constraint("E_s", lower=500.0, upper=5000.0)
+    prob.model.add_constraint("E_s", lower=500.0, upper=5000.0, ref=1e3)
     prob.model.add_constraint("J_f", upper=6.0)
     prob.model.add_constraint("n_brushes", upper=6)
     prob.model.add_constraint("Power_ratio", upper=2 - eps)
@@ -58,12 +58,12 @@ if opt_flag:
     prob.model.add_constraint("con_TC2r", lower=0.0 + eps)
     prob.model.add_constraint("con_TC2s", lower=0.0 + eps)
     prob.model.add_constraint("con_bst", lower=0.0 - eps)
-    prob.model.add_constraint("A_1", upper=60000.0 - eps)
+    prob.model.add_constraint("A_1", upper=60000.0 - eps, ref=1e5, indices=[-1])
     prob.model.add_constraint("J_s", upper=6.0)
-    prob.model.add_constraint("A_Cuscalc", lower=5.0, upper=300)
+    prob.model.add_constraint("A_Cuscalc", lower=5.0, upper=300, ref=1e2)
     prob.model.add_constraint("K_rad", lower=0.2 + eps, upper=0.27)
     prob.model.add_constraint("Slot_aspect_ratio", lower=4.0, upper=10.0)
-    prob.model.add_constraint("generator_efficiency", lower=Eta_Target)
+    prob.model.add_constraint("generator_efficiency", lower=Eta_Target, indices=[-1])
     prob.model.add_constraint("con_zar", lower=0.0 + eps)
     prob.model.add_constraint("con_br", lower=0.0 + eps)
 

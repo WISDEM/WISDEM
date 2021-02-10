@@ -1,7 +1,7 @@
-import openmdao.api as om
 import numpy as np
-from wisdem.drivetrainse.generator import Generator
+import openmdao.api as om
 import wisdem.commonse.fileIO as fio
+from wisdem.drivetrainse.generator import Generator
 
 opt_flag = False
 n_pc = 20
@@ -16,7 +16,7 @@ if opt_flag:
     prob.driver.options["optimizer"] = "SLSQP"
 
     # Specificiency target efficiency(%)
-    Eta_Target = 93.0
+    Eta_Target = 0.930
 
     eps = 1e-6
 
@@ -25,18 +25,18 @@ if opt_flag:
     prob.model.add_design_var("len_s", lower=0.4, upper=2.0)
     prob.model.add_design_var("h_s", lower=0.04, upper=0.1)
     prob.model.add_design_var("B_symax", lower=1.0, upper=2.0 - eps)
-    prob.model.add_design_var("I_0", lower=5.0, upper=100.0)
+    prob.model.add_design_var("I_0", lower=5.0, upper=100.0, ref=1e2)
     prob.model.add_design_var("S_Nmax", lower=-0.3, upper=-0.1)
 
     # Constraints
-    prob.model.add_constraint("generator_efficiency", lower=Eta_Target)
-    prob.model.add_constraint("E_p", lower=500.0 + eps, upper=5000.0 - eps)
+    prob.model.add_constraint("generator_efficiency", lower=Eta_Target, indices=[-1])
+    prob.model.add_constraint("E_p", lower=500.0 + eps, upper=5000.0 - eps, ref=1e3)
     prob.model.add_constraint("TCr", lower=0.0 + eps)
     prob.model.add_constraint("TCs", lower=0.0 + eps)
     prob.model.add_constraint("B_g", lower=0.7, upper=1.2)
     prob.model.add_constraint("B_trmax", upper=2.0 - eps)
     prob.model.add_constraint("B_tsmax", upper=2.0 - eps)
-    prob.model.add_constraint("A_1", upper=60000.0 - eps)
+    prob.model.add_constraint("A_1", upper=60000.0 - eps, ref=1e5, indices=[-1])
     prob.model.add_constraint("J_s", upper=6.0)
     prob.model.add_constraint("J_r", upper=6.0)
     prob.model.add_constraint("Slot_aspect_ratio1", lower=4.0, upper=10.0)

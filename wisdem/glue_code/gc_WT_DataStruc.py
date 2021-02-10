@@ -124,6 +124,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             nacelle_ivc.add_output(
                 "gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive"
             )
+            nacelle_ivc.add_output("damping_ratio", val=0.0, desc="Damping ratio for the drivetrain system")
             nacelle_ivc.add_output(
                 "brake_mass_user",
                 val=0.0,

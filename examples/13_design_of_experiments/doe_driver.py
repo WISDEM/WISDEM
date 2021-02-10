@@ -5,7 +5,7 @@ from wisdem.commonse.mpi_tools import MPI
 from wisdem.postprocessing.compare_designs import run
 
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
-fname_wt_input = mydir + os.sep + "IEA-15-240-RWT.yaml"
+fname_wt_input = os.path.join(os.path.dirname(mydir), "02_reference_turbines", "IEA-15-240-RWT.yaml")
 fname_modeling_options = mydir + os.sep + "modeling_options.yaml"
 fname_analysis_options = mydir + os.sep + "analysis_options.yaml"
 

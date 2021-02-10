@@ -964,10 +964,14 @@ class TowerPostFrame(om.ExplicitComponent):
         Frequencies associated with mode shapes in the x-direction
     y_mode_freqs : numpy array[NFREQ2]
         Frequencies associated with mode shapes in the y-direction
+    z_mode_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the z-direction
     x_mode_shapes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the x-direction
     y_mode_shapes : numpy array[NFREQ2, 5]
-        6-degree polynomial coefficients of mode shapes in the x-direction
+        6-degree polynomial coefficients of mode shapes in the y-direction
+    z_mode_shapes : numpy array[NFREQ2, 5]
+        6-degree polynomial coefficients of mode shapes in the z-direction
 
     Returns
     -------
@@ -977,11 +981,16 @@ class TowerPostFrame(om.ExplicitComponent):
         Frequencies associated with mode shapes in the tower fore-aft direction
     side_side_freqs : numpy array[NFREQ2]
         Frequencies associated with mode shapes in the tower side-side direction
+    torsion_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the tower torsion direction
     fore_aft_modes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the tower fore-aft direction
         (without constant term)
     side_side_modes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the tower side-side direction
+        (without constant term)
+    torsion_modes : numpy array[NFREQ2, 5]
+        6-degree polynomial coefficients of mode shapes in the tower torsion direction
         (without constant term)
     tower_deflection : numpy array[nFull], [m]
         Deflection of tower nodes in yaw-aligned +x direction
@@ -1016,6 +1025,7 @@ class TowerPostFrame(om.ExplicitComponent):
         self.add_input("z_full", np.zeros(nFull), units="m")
         self.add_input("d_full", np.zeros(nFull), units="m")
         self.add_input("t_full", np.zeros(nFull - 1), units="m")
+        self.add_input("suctionpile_depth", 0.0, units="m")
 
         # Material properties
         self.add_input("E_full", np.zeros(nFull - 1), units="N/m**2", desc="modulus of elasticity")
@@ -1065,13 +1075,30 @@ class TowerPostFrame(om.ExplicitComponent):
         self.add_input(
             "y_mode_shapes",
             val=np.zeros((NFREQ2, 5)),
-            desc="6-degree polynomial coefficients of mode shapes in the x-direction (x^2..x^6, no linear or constant term)",
+            desc="6-degree polynomial coefficients of mode shapes in the y-direction (x^2..x^6, no linear or constant term)",
         )
         self.add_input(
-            "x_mode_freqs", val=np.zeros(NFREQ2), desc="Frequencies associated with mode shapes in the x-direction"
+            "z_mode_shapes",
+            val=np.zeros((NFREQ2, 5)),
+            desc="6-degree polynomial coefficients of mode shapes in the z-direction (x^2..x^6, no linear or constant term)",
         )
         self.add_input(
-            "y_mode_freqs", val=np.zeros(NFREQ2), desc="Frequencies associated with mode shapes in the y-direction"
+            "x_mode_freqs",
+            val=np.zeros(NFREQ2),
+            units="Hz",
+            desc="Frequencies associated with mode shapes in the x-direction",
+        )
+        self.add_input(
+            "y_mode_freqs",
+            val=np.zeros(NFREQ2),
+            units="Hz",
+            desc="Frequencies associated with mode shapes in the y-direction",
+        )
+        self.add_input(
+            "z_mode_freqs",
+            val=np.zeros(NFREQ2),
+            units="Hz",
+            desc="Frequencies associated with mode shapes in the z-direction",
         )
 
         # outputs
@@ -1089,13 +1116,26 @@ class TowerPostFrame(om.ExplicitComponent):
             desc="6-degree polynomial coefficients of mode shapes in the tower side-side direction (x^2..x^6, no linear or constant term)",
         )
         self.add_output(
+            "torsion_modes",
+            np.zeros((NFREQ2, 5)),
+            desc="6-degree polynomial coefficients of mode shapes in the tower torsion direction (x^2..x^6, no linear or constant term)",
+        )
+        self.add_output(
             "fore_aft_freqs",
             np.zeros(NFREQ2),
+            units="Hz",
             desc="Frequencies associated with mode shapes in the tower fore-aft direction",
         )
         self.add_output(
             "side_side_freqs",
             np.zeros(NFREQ2),
+            units="Hz",
+            desc="Frequencies associated with mode shapes in the tower side-side direction",
+        )
+        self.add_output(
+            "torsion_freqs",
+            np.zeros(NFREQ2),
+            units="Hz",
             desc="Frequencies associated with mode shapes in the tower side-side direction",
         )
         self.add_output(
@@ -1158,8 +1198,10 @@ class TowerPostFrame(om.ExplicitComponent):
         outputs["structural_frequencies"] = inputs["freqs"]
         outputs["fore_aft_freqs"] = inputs["x_mode_freqs"]
         outputs["side_side_freqs"] = inputs["y_mode_freqs"]
+        outputs["torsion_freqs"] = inputs["z_mode_freqs"]
         outputs["fore_aft_modes"] = inputs["x_mode_shapes"]
         outputs["side_side_modes"] = inputs["y_mode_shapes"]
+        outputs["torsion_modes"] = inputs["z_mode_shapes"]
 
         # Tower top deflection
         outputs["tower_deflection"] = inputs["tower_deflection_in"]
@@ -1176,7 +1218,7 @@ class TowerPostFrame(om.ExplicitComponent):
         )
 
         # global buckling
-        tower_height = inputs["z_full"][-1] - inputs["z_full"][0]
+        tower_height = inputs["z_full"][-1] - inputs["z_full"][0] - float(inputs["suctionpile_depth"])
         M = np.sqrt(inputs["Mxx"] ** 2 + inputs["Myy"] ** 2)
         outputs["global_buckling"] = util_con.bucklingGL(
             d, t, inputs["Fz"], M, tower_height, E, sigma_y, gamma_f, gamma_b
@@ -1445,7 +1487,17 @@ class TowerSE(om.Group):
             self.add_subsystem(
                 "post" + lc,
                 TowerPostFrame(n_height=n_height, modeling_options=mod_opt),
-                promotes=["life", "z_full", "d_full", "t_full", "rho_full", "E_full", "G_full", "sigma_y_full"],
+                promotes=[
+                    "life",
+                    "z_full",
+                    "d_full",
+                    "t_full",
+                    "rho_full",
+                    "E_full",
+                    "G_full",
+                    "sigma_y_full",
+                    "suctionpile_depth",
+                ],
             )
 
             self.connect("z_full", ["wind" + lc + ".z", "tower" + lc + ".z"])
@@ -1489,8 +1541,10 @@ class TowerSE(om.Group):
             self.connect("tower" + lc + ".freqs", "post" + lc + ".freqs")
             self.connect("tower" + lc + ".x_mode_freqs", "post" + lc + ".x_mode_freqs")
             self.connect("tower" + lc + ".y_mode_freqs", "post" + lc + ".y_mode_freqs")
+            self.connect("tower" + lc + ".z_mode_freqs", "post" + lc + ".z_mode_freqs")
             self.connect("tower" + lc + ".x_mode_shapes", "post" + lc + ".x_mode_shapes")
             self.connect("tower" + lc + ".y_mode_shapes", "post" + lc + ".y_mode_shapes")
+            self.connect("tower" + lc + ".z_mode_shapes", "post" + lc + ".z_mode_shapes")
             self.connect("tower" + lc + ".Fz_out", "post" + lc + ".Fz")
             self.connect("tower" + lc + ".Mxx_out", "post" + lc + ".Mxx")
             self.connect("tower" + lc + ".Myy_out", "post" + lc + ".Myy")
