@@ -1909,7 +1909,7 @@ class Floating(om.Group):
             ivc.add_output("axial_stiffener_web_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_flange_width", 0.0, units="m")
             ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
-            ivc.add_output("axial_stiffener_spacing", 0.0, units="m")
+            ivc.add_output("axial_stiffener_spacing", 0.0, units="rad")
 
         self.add_subsystem("alljoints", AggregateJoints(floating_init_options=floating_init_options), promotes=["*"])
 
