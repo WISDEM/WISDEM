@@ -1588,7 +1588,7 @@ class Global2MemberLoads(om.ExplicitComponent):
         # Get rotation matrix that puts x along member axis
         unit_x = np.array([1.0, 0.0, 0.0])
         dxyz = xyz[-1, :] - xyz[0, :]
-        R = util.rotate_align_vectors(unit_x, dxyz)
+        R = util.rotate_align_vectors(dxyz, unit_x)
         P_local = R @ np.c_[Px_g, Py_g, Pz_g].T
 
         # Store local loads

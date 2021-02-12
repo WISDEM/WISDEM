@@ -896,21 +896,30 @@ class TestGlobal2Member(unittest.TestCase):
             1 * np.zeros(2 * npts), 2 * np.zeros(2 * npts), np.linspace(0, 50.0, 2 * npts) - 75
         ]
 
+        Px = NULL * np.ones(member.MEMMAX)
+        Py = NULL * np.ones(member.MEMMAX)
+        Pz = NULL * np.ones(member.MEMMAX)
         inputs["Px_global"] = np.zeros(npts)
         inputs["Py_global"] = np.zeros(npts)
         inputs["Pz_global"] = np.ones(npts)
+        Px[: (2 * npts)] = 1.0
+        Py[: (2 * npts)] = 0.0
+        Pz[: (2 * npts)] = 0.0
         myobj.compute(inputs, outputs)
-        npt.assert_almost_equal(outputs["Px"], 1.0)
-        npt.assert_almost_equal(outputs["Py"], 0.0)
-        npt.assert_almost_equal(outputs["Pz"], 0.0)
+        npt.assert_almost_equal(outputs["Px"], Px)
+        npt.assert_almost_equal(outputs["Py"], Py)
+        npt.assert_almost_equal(outputs["Pz"], Pz)
 
         inputs["Px_global"] = np.ones(npts)
         inputs["Py_global"] = np.zeros(npts)
         inputs["Pz_global"] = np.zeros(npts)
+        Px[: (2 * npts)] = 0.0
+        Py[: (2 * npts)] = 0.0
+        Pz[: (2 * npts)] = -1.0
         myobj.compute(inputs, outputs)
-        npt.assert_almost_equal(outputs["Px"], 0.0)
-        npt.assert_almost_equal(outputs["Py"], 0.0)
-        npt.assert_almost_equal(outputs["Pz"], -1.0)
+        npt.assert_almost_equal(outputs["Px"], Px)
+        npt.assert_almost_equal(outputs["Py"], Py)
+        npt.assert_almost_equal(outputs["Pz"], Pz)
 
 
 class TestGroup(unittest.TestCase):
@@ -1007,6 +1016,7 @@ def suite():
     suite.addTest(unittest.makeSuite(TestFullDiscretization))
     suite.addTest(unittest.makeSuite(TestMemberComponent))
     suite.addTest(unittest.makeSuite(TestHydro))
+    suite.addTest(unittest.makeSuite(TestGlobal2Member))
     suite.addTest(unittest.makeSuite(TestGroup))
     return suite
 

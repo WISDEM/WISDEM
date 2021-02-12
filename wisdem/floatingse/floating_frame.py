@@ -3,7 +3,7 @@ import openmdao.api as om
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 from wisdem.commonse import NFREQ, gravity
-from wisdem.floatingse.member import NULL, MEMMAX, NREFINE, Member, get_nfull
+from wisdem.floatingse.member import NULL, MEMMAX, Member
 
 NNODES_MAX = 1000
 NELEM_MAX = 1000
@@ -11,7 +11,7 @@ RIGID = 1e30
 EPS = 1e-6
 
 # TODO:
-# - Added mass, hydro stiffness?
+# - Added mass, hydro stiffness for tower sim
 # - Stress or buckling?
 
 
