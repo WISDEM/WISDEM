@@ -1,10 +1,10 @@
-import numpy as np
-import numpy.testing as npt
 import unittest
-import openmdao.api as om
-from openmdao.utils.assert_utils import assert_check_partials
-import wisdem.commonse.wind_wave_drag as wwd
 
+import numpy as np
+import openmdao.api as om
+import numpy.testing as npt
+import wisdem.commonse.wind_wave_drag as wwd
+from openmdao.utils.assert_utils import assert_check_partials
 
 npts = 100
 myones = np.ones((npts,))
@@ -56,7 +56,6 @@ class TestDrag(unittest.TestCase):
         npt.assert_equal(self.unknowns["waveLoads_pt"], q + 3.0)
         npt.assert_equal(self.unknowns["waveLoads_z"], -100.0)
         npt.assert_equal(self.unknowns["waveLoads_beta"], 0.0)
-        npt.assert_equal(self.unknowns["waveLoads_d"], 10.0)
 
     def testCDset(self):
         self.params["cd_usr"] = 2.0
@@ -135,4 +134,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

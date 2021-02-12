@@ -3,21 +3,15 @@
 
 import numpy as np
 import openmdao.api as om
-
 import wisdem.pyframe3dd.pyframe3dd as frame3dd
-from wisdem.commonse.utilization_constraints import vonMisesStressUtilization
-from wisdem.commonse.cross_sections import Tube, IBeam
-from wisdem.commonse.utilities import nodal2sectional
 from wisdem.commonse import gravity
 from wisdem.commonse.csystem import DirectionVector
-
+from wisdem.commonse.utilities import find_nearest, nodal2sectional
+from wisdem.commonse.cross_sections import Tube, IBeam
+from wisdem.commonse.utilization_constraints import vonMisesStressUtilization
 
 RIGID = 1
 FREE = 0
-
-
-def find_nearest(array, value):
-    return (np.abs(array - value)).argmin()
 
 
 def tube_prop(s, Di, ti):
@@ -86,6 +80,8 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
 
     Returns
     -------
+    lss_spring_constant : float, [N*m/rad]
+        Equivalent spring constant for the low speed shaft froom T=(G*J/L)*theta
     torq_deflection : float, [m]
         Maximum deflection distance at rotor (direct) or gearbox (geared) attachment
     torq_rotation : float, [rad]
@@ -147,6 +143,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         self.add_input("lss_rho", val=0.0, units="kg/m**3")
         self.add_input("lss_Xy", val=0.0, units="Pa")
 
+        self.add_output("lss_spring_constant", 0.0, units="N*m/rad")
         self.add_output("torq_deflection", val=0.0, units="m")
         self.add_output("torq_rotation", val=0.0, units="rad")
         self.add_output("lss_axial_stress", np.zeros((4, n_dlcs)), units="Pa")
@@ -257,6 +254,9 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         elements = frame3dd.ElementData(
             ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones
         )
+
+        lss_stiff = G * J0 / np.diff(s_lss)
+        outputs["lss_spring_constant"] = 1.0 / np.sum(1.0 / lss_stiff)
         # -----------------------------------
 
         # ------ options ------------
@@ -403,6 +403,8 @@ class HSS_Frame(om.ExplicitComponent):
 
     Returns
     -------
+    hss_spring_constant : float, [N*m/rad]
+        Equivalent spring constant for the high speed shaft froom T=(G*J/L)*theta
     hss_axial_stress : numpy array[5, n_dlcs], [Pa]
         Axial stress in Curved_beam structure
     hss_shear_stress : numpy array[5, n_dlcs], [Pa]
@@ -441,6 +443,7 @@ class HSS_Frame(om.ExplicitComponent):
         self.add_input("hss_rho", val=0.0, units="kg/m**3")
         self.add_input("hss_Xy", val=0.0, units="Pa")
 
+        self.add_output("hss_spring_constant", 0.0, units="N*m/rad")
         self.add_output("hss_axial_stress", np.zeros((2, n_dlcs)), units="Pa")
         self.add_output("hss_shear_stress", np.zeros((2, n_dlcs)), units="Pa")
         self.add_output("hss_bending_stress", np.zeros((2, n_dlcs)), units="Pa")
@@ -507,6 +510,9 @@ class HSS_Frame(om.ExplicitComponent):
         elements = frame3dd.ElementData(
             ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones
         )
+
+        hss_stiff = G * J0 / np.diff(s_hss)
+        outputs["hss_spring_constant"] = 1.0 / np.sum(1.0 / hss_stiff)
         # -----------------------------------
 
         # ------ options ------------

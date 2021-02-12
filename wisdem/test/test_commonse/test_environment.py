@@ -1,11 +1,11 @@
-import numpy as np
-import numpy.testing as npt
 import unittest
+
+import numpy as np
+import openmdao.api as om
+import numpy.testing as npt
 import wisdem.commonse.environment as env
 from wisdem.commonse import gravity as g
-import openmdao.api as om
 from openmdao.utils.assert_utils import assert_check_partials
-
 
 npts = 100
 myones = np.ones((npts,))
@@ -53,7 +53,7 @@ class TestLinearWaves(unittest.TestCase):
         self.resid = None
 
         self.params["rho_water"] = 1e3
-        self.params["hsig_wave"] = 2.0
+        self.params["Hsig_wave"] = 2.0
         self.params["Uc"] = 5.0
         self.params["z_floor"] = -30.0
         self.params["z_surface"] = 0.0
@@ -68,7 +68,7 @@ class TestLinearWaves(unittest.TestCase):
         self.params["Tsig_wave"] = 2.0 * np.pi / omega
 
         self.wave.compute(self.params, self.unknowns)
-        a = 1.0  # 0.5*hsig_wave
+        a = 1.0  # 0.5*Hsig_wave
         z = -2.0
         rho = 1e3
         U_exp = 5 + omega * a * np.cosh(k * (z + D)) / np.sinh(k * D)
@@ -103,7 +103,7 @@ class TestLinearWaves(unittest.TestCase):
         npt.assert_equal(self.unknowns["p"], 0.0)
 
     def testQuiet(self):
-        self.params["hsig_wave"] = 0.0
+        self.params["Hsig_wave"] = 0.0
         self.params["Tsig_wave"] = 2.0
         self.wave.compute(self.params, self.unknowns)
         p_exp = 2e3 * g
@@ -180,7 +180,7 @@ class TestLogWindGradients(unittest.TestCase):
 #         prob['p.Uc'] = 7.0
 #         prob['p.z_floor'] = z_floor
 #         prob['p.z_surface'] = z_surface
-#         prob['p.hsig_wave'] = 10.0
+#         prob['p.Hsig_wave'] = 10.0
 #         prob['p.Tsig_wave'] = 2.0
 #
 #         prob.run_model()
@@ -228,4 +228,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

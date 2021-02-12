@@ -9,7 +9,7 @@ assembly:
     hub_height: 90.
     rotor_diameter: 126.
     rated_power: 5.e+6
-    
+
 components:
     tower:
         outer_shape_bem:
@@ -38,12 +38,10 @@ components:
                   thickness:
                     grid: *grid_tower
                     values: [0.027, 0.0222, 0.019]
-                    
+
     monopile:
-        transition_piece_height: 10.0
         transition_piece_mass: 100e3
         transition_piece_cost: 100e3
-        suctionpile_depth: 25.0
         outer_shape_bem:
             reference_axis: &ref_axis_mono
                 x:
@@ -70,9 +68,7 @@ components:
                   thickness:
                     grid: *grid_mono
                     values: [0.055, 0.055, 0.055, 0.055]
-    foundation:
-        height: -30.0
-        
+
 materials:
    -  name: steel
       description: Steel of the tower and monopile, ASTM A572 Grade 50
@@ -91,7 +87,7 @@ materials:
       S: 0
       Xy: 345.e+6
       unit_cost: 0.7
-      
+
 environment:
     air_density: 1.225
     air_dyn_viscosity: 1.81e-5
@@ -105,7 +101,7 @@ environment:
     significant_wave_period: 9.45
     soil_shear_modulus: 140.e+6
     soil_poisson: 0.4
-    
+
 costs:
     labor_rate: 58.8
     painting_rate: 30.0

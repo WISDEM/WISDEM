@@ -82,13 +82,13 @@ properties:
                 minimum: 0
     components:
         type: object
+        default: {}
         optional:
             - blade
             - hub
             - nacelle
             - tower
             - monopile
-            - foundation
             - floating_platform
             - mooring
             - RNA
@@ -173,6 +173,7 @@ properties:
 
                     internal_structure_2d_fem:
                         type: object
+                        default: {}
                         required:
                             - reference_axis
                             - layers
@@ -271,6 +272,32 @@ properties:
                                             $ref: "#/definitions/distributed_data/rotation"
                                         offset_y_pa:
                                             $ref: "#/definitions/distributed_data/offset"
+                            joint:
+                                type: object
+                                default: {}
+                                description: This is a spanwise joint along the blade, usually adopted to ease transportation constraints. WISDEM currently supports a single joint.
+                                properties:
+                                    position:
+                                        type: number
+                                        description: Spanwise position of the segmentation joint.
+                                        unit: none
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 1.0
+                                    mass:
+                                        type: number
+                                        description: Mass of the joint.
+                                        unit: kg
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 1.e+6
+                                    cost:
+                                        type: number
+                                        description: Cost of the joint.
+                                        unit: USD
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 1.e+6
                     # cfd_geometry:
                         # type: object
                         # TODO
@@ -383,6 +410,13 @@ properties:
                                 minimum: 0.
                                 maximum: 20.
                                 default: 2.0
+                            generator_radius_user:
+                                type: number
+                                description: User input override of generator radius, only used when using simple generator scaling
+                                unit: m
+                                minimum: 0.
+                                maximum: 20.0
+                                default: 0.0
                             generator_mass_user:
                                 type: number
                                 description: User input override of generator mass, only used when using simple generator mass scaling
@@ -402,13 +436,6 @@ properties:
                                         $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
                                         $ref: "#/definitions/distributed_data/length"
-                            access_diameter:
-                                type: number
-                                description: Minimum diameter for hollow shafts for maintenance access
-                                unit: meter
-                                minimum: 0.
-                                maximum: 5.
-                                default: 2.0
                             gear_ratio:
                                 type: number
                                 description: Gear ratio of the drivetrain. Set it to 1 for direct drive machines.
@@ -423,6 +450,13 @@ properties:
                                 minimum: 0.8
                                 maximum: 1.
                                 default: 1.0
+                            damping_ratio:
+                                type: number
+                                description: Damping ratio for the drivetrain system
+                                unit: none
+                                minimum: 0.0
+                                maximum: 1.
+                                default: 0.005
                             lss_diameter:
                                 type: array
                                 description: Diameter of the low speed shaft at beginning (generator/gearbox) and end (hub) points
@@ -539,7 +573,7 @@ properties:
                                 minimum: 0.0
                             hvac_mass_coefficient:
                                 type: number
-                                default: 0.08
+                                default: 0.025
                                 units: kg/kW
                                 description: Regression-based scaling coefficient on machine rating to get HVAC system mass
                                 minimum: 0.0
@@ -1055,20 +1089,10 @@ properties:
                     - outer_shape_bem
                     - internal_structure_2d_fem
                 optional:
-                    - transition_piece_height
                     - transition_piece_mass
                     - transition_piece_cost
                     - gravity_foundation_mass
-                    - suctionpile_depth
-                    - suctionpile_depth_diam_ratio
                 properties:
-                    transition_piece_height:
-                        type: number
-                        description: Height of transition piece top where tower attaches
-                        unit: m
-                        minimum: 0.0
-                        maximum: 100.0
-                        default: 0.0
                     transition_piece_mass:
                         type: number
                         description: Total mass of transition piece
@@ -1086,20 +1110,6 @@ properties:
                         description: Total mass of gravity foundation addition onto monopile
                         unit: kg
                         minimum: 0.0
-                        default: 0.0
-                    suctionpile_depth:
-                        type: number
-                        description: Depth below sea floor that monopile length extends
-                        unit: m
-                        minimum: 0.0
-                        maximum: 100.0
-                        default: 0.0
-                    suctionpile_depth_diam_ratio:
-                        type: number
-                        description: Let suction pile depth be determined by multiplying this value by the monopile diameter at the mudline
-                        unit: m
-                        minimum: 0.0
-                        maximum: 50.0
                         default: 0.0
                     outer_shape:
                         type: object
@@ -1183,17 +1193,6 @@ properties:
                                                     $ref: "#/definitions/distributed_data/grid_nd"
                                                 values:
                                                     $ref: "#/definitions/distributed_data/length"
-            foundation:
-                type: object
-                required:
-                    - height
-                properties:
-                    height:
-                        type: number
-                        description: Height of the onshore foundation above ground, always defined positive.
-                        unit: meter
-                        minimum: -1000
-                        maximum: 100
             floating_platform:
                 description: Ontology definition for floating platforms (substructures) suitable for use with the WEIS co-design analysis tool
                 type: object
@@ -1407,7 +1406,7 @@ properties:
                                                 - spacing
                                             properties:
                                                 material: *material
-                                                flange_height: &stiff_fh
+                                                flange_thickness: &stiff_ft
                                                     type: number
                                                     unit: m
                                                     minimum: 0
@@ -1440,7 +1439,7 @@ properties:
                                                 - spacing
                                             properties:
                                                 material: *material
-                                                flange_height: *stiff_fh
+                                                flange_thickness: *stiff_ft
                                                 flange_width: *stiff_fw
                                                 web_height: *stiff_wh
                                                 web_thickness: *stiff_wt
@@ -1670,19 +1669,23 @@ properties:
                                     units: kilogram
                                     description: Clump weight mass
                                     minimum: 0.0
+                                    default: 0.0
                                 node_volume:
                                     type: number
                                     units: meter^3
                                     description: Floater volume
                                     minimum: 0.0
+                                    default: 0.0
                                 drag_area:
                                     type: number
                                     units: meter^2
                                     description: Product of drag coefficient and projected area (assumed constant in all directions) to calculate a drag force for the node
                                     minimum: 0.0
+                                    default: 0.0
                                 added_mass:
                                     type: number
                                     description: Added mass coefficient used along with node volume to calculate added mass on node
+                                    default: 0.0
                     lines:
                         type: array
                         description: List of all mooring line properties in the mooring system
@@ -1969,11 +1972,12 @@ properties:
                             uniqueItems: false
                             minimum: 0
                 nu:
-                    description: Poisson ratio. For orthotropic materials, it consists of an array with nu12, nu13 and nu23
+                    description: Poisson ratio. For orthotropic materials, it consists of an array with nu12, nu13 and nu23. For isotropic materials, a minimum of -1 and a maximum of 0.5 are imposed. No limits are imposed to anisotropic materials.
                     oneOf:
                         - type: number
                           unit: none
-                          minimum: 0
+                          minimum: -1.
+                          maximum: 0.5
                         - type: array
                           items:
                             type: number
@@ -1981,8 +1985,6 @@ properties:
                             minItems: 3
                             maxItems: 3
                             uniqueItems: false
-                            minimum: 0
-                            maximum: 0.6
                 alpha:
                     description: Thermal coefficient of expansion
                     oneOf:
@@ -2091,8 +2093,7 @@ properties:
                     type: integer
                     description: Flag used by the NREL blade cost model https://www.nrel.gov/docs/fy19osti/73585.pdf to define the manufacturing process behind the laminate. 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.
                     unit: none
-                    minimum : 0
-                    maximum: 5
+                    enum: [0,1,2,3,4,5]
                 waste:
                     type: number
                     description: Fraction of material that ends up wasted during manufacturing. This quantity is used in the NREL blade cost model https://www.nrel.gov/docs/fy19osti/73585.pdf
@@ -2743,15 +2744,49 @@ properties:
                     sensors:
                         type: array
                         description: List of sensors used as control inputs, could be any OpenFAST output(?)  # DZ: within ROSCO, probably not...needs to be in avrSWAP
-                        items:
-                            sensor:
-                                $ref: "#/definitions/sensor"
+                        items: &sensor
+                            type: string
+                            description: Sensor used as control input, could be any OpenFAST output (in Simluink), enumerating avrSWAP now  # DZ: within ROSCO, probably not...needs to be in   avrSWAP
+                            enum:
+                                - gen_speed
+                                - nac_IMU
+                                - wind_speed_estimate
+                                - gust_measure
+                                - RootMyc1
+                                - RootMyc2
+                                - RootMyc3
+                                - RootMyT   # MBC of above
+                                - RootMyY   # MBC of above
+                                - azimuth
+                                - YawBrTAxp
+                                - YawBrTAyp
+                                - RootMxc1
+                                - RootMxc2
+                                - RootMxc3
+                                - LSSTipMya
+                                - LSSTipMza
+                                - LSSTipMxa
+                                - LSSTipMys
+                                - LSSTipMzs
+                                - YawBrMyn
+                                - YawBrMzn
+                                - NcIMURAxs  # avrSWAP names don't always match OpenFAST output names
+                                - NcIMURAzs
+                                # No platform info from avrSWAP, will they be added?
                     actuators:
                         type: array
                         description: List of actuators used as control outputs
-                        items:
-                            actuator:
-                                $ref: "#/definitions/actuator"
+                        items: &actuator
+                            type: string
+                            description: Actuator used as control output
+                            enum:
+                                - pitch
+                                - torque   #called generator above, keep consistent?
+                                - tower_TMD
+                                - hull_TMD
+                                - active_tension
+                                - passive_weather_vane
+                                - passive_buoy_can
                     control_model:
                         type: object
                         description: Linear model of controller in state-space form # MIMO harder to clearly define in transfer function form
@@ -2772,10 +2807,8 @@ properties:
                 optional:
                     - activator
                 properties:
-                    sensor:
-                        $ref: "#/definitions/sensor"
-                    actuator:
-                        $ref: "#/definitions/actuator"
+                    sensor: *sensor
+                    actuator: *actuator
                     control_model:
                         type: object
                         description: Linear model of controller in transfer function form, SISO only # MIMO harder to clearly define in transfer function form
@@ -2795,8 +2828,7 @@ properties:
                 optional:
                     - optimize
                 properties:
-                    actuator:
-                        $ref: "#/definitions/actuator"
+                    actuator: *actuator
                     timeseries:
                         $ref: "#/definitions/timeseries"
             user_defined_OL_2: *u_ol
@@ -3254,10 +3286,6 @@ properties:
                 maximum: 1.e+6
                 default: 12.e+3
 definitions:
-
-
-
-
     distributed_data:
         grid_nd:
             type: array
@@ -3917,47 +3945,6 @@ definitions:
                                 minItems: 21
                                 maxItems: 21
                                 uniqueItems: false
-
-    actuator:
-        type: string
-        description: Actuator used as control output
-        enum:
-            - pitch
-            - torque   #called generator above, keep consistent?
-            - tower_TMD
-            - hull_TMD
-            - active_tension
-            - passive_weather_vane
-            - passive_buoy_can
-    sensor:
-        type: string
-        description: Sensor used as control input, could be any OpenFAST output (in Simluink), enumerating avrSWAP now  # DZ: within ROSCO, probably not...needs to be in avrSWAP
-        enum:
-            - gen_speed
-            - nac_IMU
-            - wind_speed_estimate
-            - gust_measure
-            - RootMyc1
-            - RootMyc2
-            - RootMyc3
-            - RootMyT   # MBC of above
-            - RootMyY   # MBC of above
-            - azimuth
-            - YawBrTAxp
-            - YawBrTAyp
-            - RootMxc1
-            - RootMxc2
-            - RootMxc3
-            - LSSTipMya
-            - LSSTipMza
-            - LSSTipMxa
-            - LSSTipMys
-            - LSSTipMzs
-            - YawBrMyn
-            - YawBrMzn
-            - NcIMURAxs  # avrSWAP names don't always match OpenFAST output names
-            - NcIMURAzs
-            # No platform info from avrSWAP, will they be added?
     filter:
         type: object
         description: Linear filter, could be a LPF, HPF, NF, INF, or user_defined

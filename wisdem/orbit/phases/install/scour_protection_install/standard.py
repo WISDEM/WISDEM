@@ -10,7 +10,6 @@ from math import ceil
 
 import simpy
 from marmot import process
-
 from wisdem.orbit.core import Vessel
 from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import InstallPhase
@@ -34,7 +33,10 @@ class ScourProtectionInstallation(InstallPhase):
             "monthly_rate": "USD/mo (optional)",
             "name": "str (optional)",
         },
-        "scour_protection": {"tons_per_substructure": "float"},
+        "scour_protection": {
+            "tonnes_per_substructure": "t",
+            "cost_per_tonne": "USD/t",
+        },
     }
 
     phase = "Scour Protection Installation"
@@ -77,7 +79,9 @@ class ScourProtectionInstallation(InstallPhase):
         if turbine_distance is None:
             turbine_distance = rotor_diameter * self.config["plant"]["turbine_spacing"] / 1000.0
 
-        self.tons_per_substructure = ceil(self.config["scour_protection"]["tons_per_substructure"])
+        self.tonnes_per_substructure = ceil(self.config["scour_protection"]["tonnes_per_substructure"])
+
+        self.cost_per_tonne = self.config["scour_protection"]["cost_per_tonne"]
 
         install_scour_protection(
             self.spi_vessel,
@@ -85,9 +89,15 @@ class ScourProtectionInstallation(InstallPhase):
             site_distance=site_distance,
             turbines=self.num_turbines,
             turbine_distance=turbine_distance,
-            tons_per_substructure=self.tons_per_substructure,
+            tonnes_per_substructure=self.tonnes_per_substructure,
             **kwargs,
         )
+
+    @property
+    def system_capex(self):
+        """Returns total procurement cost of scour protection material."""
+
+        return self.num_turbines * self.tonnes_per_substructure * self.cost_per_tonne
 
     def initialize_port(self):
         """
@@ -129,7 +139,7 @@ def install_scour_protection(
     site_distance,
     turbines,
     turbine_distance,
-    tons_per_substructure,
+    tonnes_per_substructure,
     **kwargs,
 ):
     """
@@ -148,8 +158,8 @@ def install_scour_protection(
         For now this assumes it traverses an edge and not a diagonal.
     turbines_to_install : int
         Number of turbines where scouring protection must be installed.
-    tons_per_substructure : int
-        Number of tons required to be installed at each substation
+    tonnes_per_substructure : int
+        Number of tonnes required to be installed at each substation
     """
 
     while turbines > 0:
@@ -163,13 +173,13 @@ def install_scour_protection(
             vessel.at_site = True
 
         elif vessel.at_site:
-            if vessel.rock_storage.level >= tons_per_substructure:
+            if vessel.rock_storage.level >= tonnes_per_substructure:
                 # Drop scour protection material
-                yield drop_material(vessel, tons_per_substructure, **kwargs)
+                yield drop_material(vessel, tonnes_per_substructure, **kwargs)
                 turbines -= 1
 
                 # Transit to another turbine
-                if vessel.rock_storage.level >= tons_per_substructure and turbines > 0:
+                if vessel.rock_storage.level >= tonnes_per_substructure and turbines > 0:
                     yield vessel.transit(turbine_distance)
 
                 else:

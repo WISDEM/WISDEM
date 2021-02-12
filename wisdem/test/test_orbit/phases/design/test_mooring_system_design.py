@@ -9,7 +9,6 @@ __email__ = "jake.nunemaker@nrel.gov"
 from copy import deepcopy
 
 import pytest
-
 from wisdem.orbit.phases.design import MooringSystemDesign
 
 base = {
@@ -29,7 +28,7 @@ def test_depth_sweep(depth):
     m.run()
 
     assert m.design_result
-    assert m.total_phase_cost
+    assert m.total_cost
 
 
 @pytest.mark.parametrize("rating", range(3, 15, 1))
@@ -42,7 +41,7 @@ def test_rating_sweeip(rating):
     m.run()
 
     assert m.design_result
-    assert m.total_phase_cost
+    assert m.total_cost
 
 
 def test_drag_embedment_fixed_length():

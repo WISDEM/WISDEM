@@ -1,8 +1,9 @@
+import unittest
+
 import numpy as np
 import numpy.testing as npt
-import unittest
-import wisdem.drivetrainse.drive_structure as ds
 import wisdem.drivetrainse.layout as lay
+import wisdem.drivetrainse.drive_structure as ds
 from wisdem.commonse import gravity
 
 npts = 12
@@ -370,6 +371,9 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_mb1"], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_mb2"][[0, 2]], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_torq"], 0.0, decimal=2)
+        self.assertAlmostEqual(
+            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3 ** 4 - 2.4 ** 4) / 32 / self.inputs["L_lss"], 4
+        )
 
         g = np.array([30e2, 40e2, 50e2])
         self.inputs["F_hub"] = g.reshape((3, 1))
@@ -402,6 +406,9 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_mb1"], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_mb2"][[0, 2]], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_torq"], 0.0, decimal=2)
+        self.assertAlmostEqual(
+            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3 ** 4 - 2.4 ** 4) / 32 / self.inputs["L_lss"], 4
+        )
 
         g = np.array([30e2, 40e2, 50e2])
         self.inputs["F_hub"] = g.reshape((3, 1))
@@ -434,6 +441,9 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_mb1"], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_mb2"][[0, 2]], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_torq"], 0.0, decimal=2)
+        self.assertAlmostEqual(
+            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3 ** 4 - 2.4 ** 4) / 32 / self.inputs["L_lss"], 4
+        )
 
         g = np.array([30e2, 40e2, 50e2])
         self.inputs["F_hub"] = g.reshape((3, 1))
@@ -467,6 +477,9 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_mb1"], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_mb2"][[0, 2]], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_torq"], 0.0, decimal=2)
+        self.assertAlmostEqual(
+            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3 ** 4 - 2.4 ** 4) / 32 / self.inputs["L_lss"], 4
+        )
 
         g = np.array([30e2, 40e2, 50e2])
         self.inputs["F_hub"] = g.reshape((3, 1))
@@ -592,4 +605,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

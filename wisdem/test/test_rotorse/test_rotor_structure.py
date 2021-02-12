@@ -1,12 +1,13 @@
-import numpy as np
-import numpy.testing as npt
-import unittest
-import wisdem.rotorse.rotor_structure as rs
-from wisdem.commonse import gravity
-import openmdao.api as om
+import os
 import copy
 import time
-import os
+import unittest
+
+import numpy as np
+import openmdao.api as om
+import numpy.testing as npt
+import wisdem.rotorse.rotor_structure as rs
+from wisdem.commonse import gravity
 
 ARCHIVE = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "nrel5mw_test.npz"
 
@@ -21,8 +22,9 @@ class TestRS(unittest.TestCase):
         myzero = np.zeros(npts)
         myone = np.ones(npts)
         options = {}
-        options["blade"] = {}
-        options["blade"]["n_span"] = npts
+        options["WISDEM"] = {}
+        options["WISDEM"]["RotorSE"] = {}
+        options["WISDEM"]["RotorSE"]["n_span"] = npts
 
         myobj = rs.BladeCurvature(modeling_options=options)
 
@@ -86,8 +88,9 @@ class TestRS(unittest.TestCase):
         myzero = np.zeros(npts)
         myone = np.ones(npts)
         options = {}
-        options["blade"] = {}
-        options["blade"]["n_span"] = npts
+        options["WISDEM"] = {}
+        options["WISDEM"]["RotorSE"] = {}
+        options["WISDEM"]["RotorSE"]["n_span"] = npts
 
         myobj = rs.TotalLoads(modeling_options=options)
 
@@ -164,9 +167,10 @@ class TestRS(unittest.TestCase):
         myzero = np.zeros(npts)
         myone = np.ones(npts)
         options = {}
-        options["blade"] = {}
-        options["blade"]["n_span"] = npts
-        options["blade"]["n_freq"] = nfreq
+        options["WISDEM"] = {}
+        options["WISDEM"]["RotorSE"] = {}
+        options["WISDEM"]["RotorSE"]["n_span"] = npts
+        options["WISDEM"]["RotorSE"]["n_freq"] = nfreq
 
         # myold = rs.RunpBEAM(modeling_options=options)
         # myold.n_span = npts
@@ -441,9 +445,10 @@ class TestRS(unittest.TestCase):
         myzero = np.zeros(npts)
         myone = np.ones(npts)
         options = {}
-        options["blade"] = {}
-        options["blade"]["n_span"] = npts
-        options["blade"]["n_freq"] = nfreq
+        options["WISDEM"] = {}
+        options["WISDEM"]["RotorSE"] = {}
+        options["WISDEM"]["RotorSE"]["n_span"] = npts
+        options["WISDEM"]["RotorSE"]["n_freq"] = nfreq
 
         # Tip deflection the old pBeam way
         myobj0 = rs.RunFrame3DD(modeling_options=options, pbeam=True)
@@ -478,23 +483,27 @@ class TestRS(unittest.TestCase):
     def testConstraints(self):
         inputs = {}
         outputs = {}
+        discrete_inputs = {}
+        discrete_outputs = {}
 
         npts = 101
         myzero = np.zeros(npts)
         myone = np.ones(npts)
         options = {}
-        options["blade"] = {}
-        options["blade"]["n_span"] = npts
-        options["blade"]["n_freq"] = 6
+        options["WISDEM"] = {}
+        options["WISDEM"]["RotorSE"] = {}
+        options["WISDEM"]["RotorSE"]["n_span"] = npts
+        options["WISDEM"]["RotorSE"]["n_freq"] = 6
+        options["WISDEM"]["RotorSE"]["gamma_freq"] = 1.1
 
         myopt = {}
-        myopt["optimization_variables"] = {}
-        myopt["optimization_variables"]["blade"] = {}
-        myopt["optimization_variables"]["blade"]["structure"] = {}
-        myopt["optimization_variables"]["blade"]["spar_cap_ss"] = {}
-        myopt["optimization_variables"]["blade"]["spar_cap_ps"] = {}
-        myopt["optimization_variables"]["blade"]["spar_cap_ss"]["n_opt"] = 3
-        myopt["optimization_variables"]["blade"]["spar_cap_ps"]["n_opt"] = 3
+        myopt["design_variables"] = {}
+        myopt["design_variables"]["blade"] = {}
+        myopt["design_variables"]["blade"]["structure"] = {}
+        myopt["design_variables"]["blade"]["spar_cap_ss"] = {}
+        myopt["design_variables"]["blade"]["spar_cap_ps"] = {}
+        myopt["design_variables"]["blade"]["spar_cap_ss"]["n_opt"] = 3
+        myopt["design_variables"]["blade"]["spar_cap_ps"]["n_opt"] = 3
 
         myobj = rs.DesignConstraints(modeling_options=options, opt_options=myopt)
 
@@ -506,11 +515,11 @@ class TestRS(unittest.TestCase):
         inputs["s"] = np.linspace(0, 1, npts)
         inputs["s_opt_spar_cap_ss"] = inputs["s_opt_spar_cap_ps"] = np.array([0.0, 0.5, 1.0])
         inputs["rated_Omega"] = 10.0
-        inputs["delta_f"] = 1.1
         inputs["flap_mode_freqs"] = 0.6 * np.ones(3)
         inputs["edge_mode_freqs"] = 0.4 * np.ones(3)
+        discrete_inputs["blade_number"] = 3
 
-        myobj.compute(inputs, outputs)
+        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         npt.assert_equal(outputs["constr_max_strainU_spar"], np.array([0.8, 1.0, 1.2]))
         npt.assert_equal(outputs["constr_max_strainL_spar"], 1.2 * np.ones(3))
         npt.assert_almost_equal(outputs["constr_flap_f_margin"], 0.5 - 0.9 * 0.6)
@@ -524,4 +533,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

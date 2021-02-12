@@ -1,0 +1,77 @@
+general:
+    folder_output: outputs
+    fname_output: refturb_output
+design_variables:
+
+    floating:
+        joints:
+            flag: False
+            z_coordinate:
+                - names: [spar_keel]
+                  lower_bound: -40.0
+                  upper_bound: -15.0
+                - names: [spar_freeboard]
+                  lower_bound: -40.0
+                  upper_bound: -15.0
+        members:
+            flag: True
+            groups:
+                - names: [spar]
+                  ballast:
+                      lower_bound: 1.0
+                      upper_bound: 1e4
+
+
+merit_figure: platform_mass
+
+constraints:
+    floating:
+        operational_heel:
+            upper_bound: 0.08726646259971647 # 5 deg
+        survival_heel:
+            upper_bound: 0.17453292519943295 # 10 deg
+        max_surge:
+            flag: false
+            upper_bound: 0.1
+        buoyancy:
+            flag: True
+        fixed_ballast_capacity:
+            flag: True
+        variable_ballast_capacity:
+            flag: True
+        metacentric_height:
+            flag: False
+        freeboard_margin:
+            flag: false
+        draft_margin:
+            flag: false
+        fairlead_depth:
+            flag: false
+        mooring_surge:
+            flag: false
+        mooring_heel:
+            flag: false
+        mooring_tension:
+            flag: false
+        mooring_length:
+            flag: false
+
+driver:
+    optimization:
+        flag: True         # Flag to enable optimization
+        tol: 1.e-6          # Optimality tolerance
+        max_major_iter: 10  # Maximum number of major design iterations (SNOPT)
+        max_minor_iter: 100 # Maximum number of minor design iterations (SNOPT)
+        max_iter: 100         # Maximum number of iterations (SLSQP)
+        solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        step_size: 1.e-6    # Step size for finite differencing
+        form: forward       # Finite differencing mode, either forward or central
+    design_of_experiments:
+        flag: False           # Flag to enable design of experiments
+        run_parallel: True    # Flag to run using parallel processing
+        generator: Uniform    # Type of input generator. (Uniform)
+        num_samples: 5        # number of samples for (Uniform only)
+
+recorder:
+    flag: False                            # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql    # Name of OpenMDAO recorder

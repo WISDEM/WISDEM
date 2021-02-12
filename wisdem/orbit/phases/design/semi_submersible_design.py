@@ -22,12 +22,16 @@ class SemiSubmersibleDesign(DesignPhase):
             "heave_plate_CR": "$/t (optional, default: 6250)",
             "secondary_steel_CR": "$/t (optional, default: 7250)",
             "towing_speed": "km/h (optional, default: 6)",
-            "design_time": "h, (optional, default: 0)",
-            "design_cost": "h, (optional, default: 0)",
         },
     }
 
-    output_config = {}
+    output_config = {
+        "substructure": {
+            "mass": "t",
+            "unit_cost": "USD",
+            "towing_speed": "km/h",
+        }
+    }
 
     def __init__(self, config, **kwargs):
         """
@@ -49,11 +53,11 @@ class SemiSubmersibleDesign(DesignPhase):
 
         substructure = {
             "mass": self.substructure_mass,
-            "cost": self.substructure_cost,
+            "unit_cost": self.substructure_cost,
             "towing_speed": self._design.get("towing_speed", 6),
         }
 
-        self._outputs["semisubmersible"] = substructure
+        self._outputs["substructure"] = substructure
 
     @property
     def stiffened_column_mass(self):
@@ -163,13 +167,6 @@ class SemiSubmersibleDesign(DesignPhase):
         return num * self.substructure_mass
 
     @property
-    def total_substructure_cost(self):
-        """Retruns cost of all substructures."""
-
-        num = self.config["plant"]["num_turbines"]
-        return num * self.substructure_cost
-
-    @property
     def design_result(self):
         """Returns the result of `self.run()`"""
 
@@ -179,21 +176,11 @@ class SemiSubmersibleDesign(DesignPhase):
         return self._outputs
 
     @property
-    def total_phase_cost(self):
+    def total_cost(self):
         """Returns total phase cost in $USD."""
 
-        _design = self.config.get("semisubmersible_design", {})
-        design_cost = _design.get("design_cost", 0.0)
-
-        return design_cost + self.total_substructure_cost
-
-    @property
-    def total_phase_time(self):
-        """Returns total phase time in hours."""
-
-        _design = self.config.get("semisubmersible_design", {})
-        phase_time = _design.get("design_time", 0.0)
-        return phase_time
+        num = self.config["plant"]["num_turbines"]
+        return num * self.substructure_cost
 
     @property
     def detailed_output(self):

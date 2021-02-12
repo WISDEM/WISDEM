@@ -12,12 +12,11 @@ from copy import deepcopy
 
 import pandas as pd
 import pytest
-
 from wisdem.orbit import ProjectManager
-from wisdem.test.test_orbit.data import test_weather
 from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import ArrayCableInstallation
+from wisdem.test.test_orbit.data import test_weather
 
 base_config = extract_library_specs("config", "array_cable_install")
 simul_config = deepcopy(base_config)

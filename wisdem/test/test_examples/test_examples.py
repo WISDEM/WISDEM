@@ -1,5 +1,5 @@
-import unittest
 import os
+import unittest
 import importlib
 from pathlib import Path
 
@@ -10,13 +10,12 @@ root_dir = os.path.dirname(os.path.dirname(os.path.dirname(thisdir)))
 examples_dir = os.path.join(root_dir, "examples")
 all_examples = Path(examples_dir).rglob("*.py") if os.path.exists(examples_dir) else []
 
+# 02_ref turbines are regression tested in test_gluecode, no need to duplicate runtime
 all_scripts = [
     "01_nrel_csm/costs",
     "01_nrel_csm/mass",
     "01_nrel_csm/mass_and_cost",
     "01_nrel_csm/parametric",
-    "02_reference_turbines/iea15mw_driver",
-    "02_reference_turbines/nrel5mw_driver",
     "03_blade/blade_driver",
     "04_openmdao/betz_limit",
     "04_openmdao/sellar",
@@ -34,16 +33,18 @@ all_scripts = [
     "07_generator/scig",
     "08_plant_finance/example",
     "09_floating/mooring_opt",
-    "09_floating/semi_example",
-    "09_floating/spar_example",
+    "09_floating/semi_driver",
+    "09_floating/spar_driver",
     "09_floating/spar_opt",
     "09_floating/tlp_example",
-    "09_weis_floating/wisdem_driver",
+    "09_floating/nrel5mw-spar_oc3_driver",
+    "09_floating/nrel5mw-semi_oc4_driver",
     "10_ccblade/example",
     "10_ccblade/gradients",
     "10_ccblade/precurve",
     "11_airfoilprep/example",
     "12_pyframe3dd/exB",
+    "13_design_of_experiments/doe_driver",
 ]
 
 
@@ -208,4 +209,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

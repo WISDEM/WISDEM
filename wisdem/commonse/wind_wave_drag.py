@@ -1,34 +1,11 @@
-#!/usr/bin/env python
-# encoding: utf-8
-"""
-WindWaveDrag.py
-
-Created by RRD on 2015-07-13.
-Copyright (c) NREL. All rights reserved.
-"""
-
-# -------------------------------------------------------------------------------
-# Name:        WindWaveDrag.py
-# Purpose:     It contains OpenMDAO's Components to calculate wind or wave drag
-#              on cylinders.
-#
-# Author:      ANing/RRD
-#
-# Created:     13/07/2015 - It is based on load function calculations developed for tower and jacket.
-#                             Reestablished elements needed by jacketSE that were removed. Changed names to vartrees.
-# Copyright:   (c) rdamiani 2015
-# Licence:     <Apache 2015>
-# -------------------------------------------------------------------------------
-from __future__ import print_function
 import math
+
 import numpy as np
-
 import openmdao.api as om
-from wisdem.commonse.utilities import sind, cosd  # , linspace_with_deriv, interp_with_deriv, hstack, vstack
-from wisdem.commonse.csystem import DirectionVector
-
 from wisdem.commonse.akima import Akima
-
+from wisdem.commonse.csystem import DirectionVector
+from wisdem.commonse.utilities import cosd, sind  # , linspace_with_deriv, interp_with_deriv, hstack, vstack
+from wisdem.commonse.environment import LogWind, PowerWind, LinearWaves
 
 # -----------------
 #  Helper Functions
@@ -127,8 +104,6 @@ class AeroHydroLoads(om.ExplicitComponent):
         dynamic pressure
     windLoads_z : numpy array[nPoints], [m]
         corresponding heights
-    windLoads_d : numpy array[nPoints], [m]
-        corresponding diameters
     windLoads_beta : float, [deg]
         wind/wave angle relative to inertia c.s.
     waveLoads_Px : numpy array[nPoints], [N/m]
@@ -141,8 +116,6 @@ class AeroHydroLoads(om.ExplicitComponent):
         dynamic pressure
     waveLoads_z : numpy array[nPoints], [m]
         corresponding heights
-    waveLoads_d : numpy array[nPoints], [m]
-        corresponding diameters
     waveLoads_beta : float, [deg]
         wind/wave angle relative to inertia c.s.
     z : numpy array[nPoints], [m]
@@ -174,14 +147,12 @@ class AeroHydroLoads(om.ExplicitComponent):
         self.add_input("windLoads_Pz", np.zeros(nPoints), units="N/m")
         self.add_input("windLoads_qdyn", np.zeros(nPoints), units="N/m**2")
         self.add_input("windLoads_z", np.zeros(nPoints), units="m")
-        self.add_input("windLoads_d", np.zeros(nPoints), units="m")
         self.add_input("windLoads_beta", 0.0, units="deg")
         self.add_input("waveLoads_Px", np.zeros(nPoints), units="N/m")
         self.add_input("waveLoads_Py", np.zeros(nPoints), units="N/m")
         self.add_input("waveLoads_Pz", np.zeros(nPoints), units="N/m")
         self.add_input("waveLoads_qdyn", np.zeros(nPoints), units="N/m**2")
         self.add_input("waveLoads_z", np.zeros(nPoints), units="m")
-        self.add_input("waveLoads_d", np.zeros(nPoints), units="m")
         self.add_input("waveLoads_beta", 0.0, units="deg")
         self.add_input("z", np.zeros(nPoints), units="m")
         self.add_input("yaw", 0.0, units="deg")
@@ -193,7 +164,6 @@ class AeroHydroLoads(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         z = inputs["z"]
-        hubHt = z[-1]  # top of cylinder
         windLoads = (
             DirectionVector(inputs["windLoads_Px"], inputs["windLoads_Py"], inputs["windLoads_Pz"])
             .inertialToWind(inputs["windLoads_beta"])
@@ -255,8 +225,6 @@ class CylinderWindDrag(om.ExplicitComponent):
         dynamic pressure
     windLoads_z : numpy array[nPoints], [m]
         corresponding heights
-    windLoads_d : numpy array[nPoints], [m]
-        corresponding diameters
     windLoads_beta : float, [deg]
         wind/wave angle relative to inertia c.s.
 
@@ -282,7 +250,6 @@ class CylinderWindDrag(om.ExplicitComponent):
         self.add_output("windLoads_Pz", np.zeros(nPoints), units="N/m")
         self.add_output("windLoads_qdyn", np.zeros(nPoints), units="N/m**2")
         self.add_output("windLoads_z", np.zeros(nPoints), units="m")
-        self.add_output("windLoads_d", np.zeros(nPoints), units="m")
         self.add_output("windLoads_beta", 0.0, units="deg")
 
         arange = np.arange(nPoints)
@@ -417,8 +384,6 @@ class CylinderWaveDrag(om.ExplicitComponent):
         total (static+dynamic) pressure
     waveLoads_z : numpy array[nPoints], [m]
         corresponding heights
-    waveLoads_d : numpy array[nPoints], [m]
-        corresponding diameters
     waveLoads_beta : float, [deg]
         wind/wave angle relative to inertia c.s.
 
@@ -448,7 +413,6 @@ class CylinderWaveDrag(om.ExplicitComponent):
         self.add_output("waveLoads_qdyn", np.zeros(nPoints), units="N/m**2")
         self.add_output("waveLoads_pt", np.zeros(nPoints), units="N/m**2")
         self.add_output("waveLoads_z", np.zeros(nPoints), units="m")
-        self.add_output("waveLoads_d", np.zeros(nPoints), units="m")
         self.add_output("waveLoads_beta", 0.0, units="deg")
 
         self.declare_partials("*", "rho_water", method="fd")
@@ -463,7 +427,6 @@ class CylinderWaveDrag(om.ExplicitComponent):
         self.declare_partials("waveLoads_pt", "U", rows=arange, cols=arange)
         self.declare_partials("waveLoads_pt", "p", rows=arange, cols=arange, val=1.0)
         self.declare_partials("waveLoads_z", "z", rows=arange, cols=arange, val=1.0)
-        self.declare_partials("waveLoads_d", "d", rows=arange, cols=arange, val=1.0)
         self.declare_partials("waveLoads_beta", "beta_wave", val=1.0)
 
     def compute(self, inputs, outputs):
@@ -481,7 +444,7 @@ class CylinderWaveDrag(om.ExplicitComponent):
         # beta0 = inputs['beta0']
 
         # dynamic pressure
-        q = 0.5 * rho * U ** 2
+        q = 0.5 * rho * U * np.abs(U)
         # q0= 0.5*rho*U0**2
 
         # Reynolds number and drag
@@ -536,7 +499,6 @@ class CylinderWaveDrag(om.ExplicitComponent):
         outputs["waveLoads_pt"] = q + inputs["p"]
         outputs["waveLoads_z"] = inputs["z"]
         outputs["waveLoads_beta"] = beta
-        outputs["waveLoads_d"] = d
 
     def compute_partials(self, inputs, J):
 
@@ -586,6 +548,98 @@ class CylinderWaveDrag(om.ExplicitComponent):
 
 
 # ___________________________________________#
+
+
+class CylinderEnvironment(om.Group):
+    def initialize(self):
+        self.options.declare("wind", default="power")
+        self.options.declare("nPoints")
+        self.options.declare("water_flag", default=True)
+
+    def setup(self):
+        nPoints = self.options["nPoints"]
+        wind = self.options["wind"]
+        water_flag = self.options["water_flag"]
+
+        self.set_input_defaults("z0", 0.0)
+        self.set_input_defaults("cd_usr", -1.0)
+        self.set_input_defaults("yaw", 0.0, units="deg")
+
+        self.set_input_defaults("beta_wind", 0.0, units="deg")
+        self.set_input_defaults("rho_air", 1.225, units="kg/m**3")
+        self.set_input_defaults("mu_air", 1.81206e-5, units="kg/m/s")
+        self.set_input_defaults("shearExp", 0.2)
+
+        if water_flag:
+            self.set_input_defaults("beta_wave", 0.0, units="deg")
+            self.set_input_defaults("rho_water", 1025.0, units="kg/m**3")
+            self.set_input_defaults("mu_water", 1.08e-3, units="kg/m/s")
+
+        # Wind profile and loads
+        promwind = ["Uref", "zref", "z", "z0"]
+        if wind is None or wind.lower() in ["power", "powerwind", ""]:
+            self.add_subsystem("wind", PowerWind(nPoints=nPoints), promotes=promwind + ["shearExp"])
+
+        elif wind.lower() == "logwind":
+            self.add_subsystem("wind", LogWind(nPoints=nPoints), promotes=promwind)
+
+        else:
+            raise ValueError("Unknown wind type, " + wind)
+
+        self.add_subsystem(
+            "windLoads",
+            CylinderWindDrag(nPoints=nPoints),
+            promotes=["cd_usr", "beta_wind", "rho_air", "mu_air", "z", "d"],
+        )
+
+        # Wave profile and loads
+        if water_flag:
+            self.add_subsystem(
+                "wave",
+                LinearWaves(nPoints=nPoints),
+                promotes=[
+                    "z",
+                    "Uc",
+                    "Hsig_wave",
+                    "Tsig_wave",
+                    "rho_water",
+                    ("z_floor", "water_depth"),
+                    ("z_surface", "z0"),
+                ],
+            )
+
+            self.add_subsystem(
+                "waveLoads",
+                CylinderWaveDrag(nPoints=nPoints),
+                promotes=["cm", "cd_usr", "beta_wave", "rho_water", "mu_water", "z", "d"],
+            )
+
+        # Combine all loads
+        self.add_subsystem(
+            "distLoads", AeroHydroLoads(nPoints=nPoints), promotes=["Px", "Py", "Pz", "qdyn", "yaw", "z"]
+        )
+
+        # Connections
+        self.connect("wind.U", "windLoads.U")
+        if water_flag:
+            self.connect("wave.U", "waveLoads.U")
+            self.connect("wave.A", "waveLoads.A")
+            self.connect("wave.p", "waveLoads.p")
+
+        self.connect("windLoads.windLoads_Px", "distLoads.windLoads_Px")
+        self.connect("windLoads.windLoads_Py", "distLoads.windLoads_Py")
+        self.connect("windLoads.windLoads_Pz", "distLoads.windLoads_Pz")
+        self.connect("windLoads.windLoads_qdyn", "distLoads.windLoads_qdyn")
+        self.connect("windLoads.windLoads_beta", "distLoads.windLoads_beta")
+        self.connect("windLoads.windLoads_z", "distLoads.windLoads_z")
+
+        if water_flag:
+            self.connect("waveLoads.waveLoads_Px", "distLoads.waveLoads_Px")
+            self.connect("waveLoads.waveLoads_Py", "distLoads.waveLoads_Py")
+            self.connect("waveLoads.waveLoads_Pz", "distLoads.waveLoads_Pz")
+            self.connect("waveLoads.waveLoads_pt", "distLoads.waveLoads_qdyn")
+            self.connect("waveLoads.waveLoads_beta", "distLoads.waveLoads_beta")
+            self.connect("waveLoads.waveLoads_z", "distLoads.waveLoads_z")
 
 
 def main():

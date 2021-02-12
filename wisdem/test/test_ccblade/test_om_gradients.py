@@ -1,13 +1,10 @@
-import unittest
 import os
+import unittest
 
 import numpy as np
-
 import openmdao.api as om
 from openmdao.utils.assert_utils import assert_check_partials
-
-from wisdem.ccblade.ccblade_component import CCBladeGeometry, CCBladeLoads, AeroHubLoads, CCBladeTwist, CCBladeEvaluate
-
+from wisdem.ccblade.ccblade_component import AeroHubLoads, CCBladeLoads, CCBladeTwist, CCBladeEvaluate, CCBladeGeometry
 
 np.random.seed(314)
 
@@ -47,11 +44,12 @@ class Test(unittest.TestCase):
         n_Re = npzfile["Re"].size
 
         modeling_options = {}
-        modeling_options["RotorSE"] = {}
-        modeling_options["RotorSE"]["n_span"] = n_span
-        modeling_options["RotorSE"]["n_aoa"] = n_aoa
-        modeling_options["RotorSE"]["n_Re"] = n_Re
-        modeling_options["RotorSE"]["n_tab"] = 1
+        modeling_options["WISDEM"] = {}
+        modeling_options["WISDEM"]["RotorSE"] = {}
+        modeling_options["WISDEM"]["RotorSE"]["n_span"] = n_span
+        modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
+        modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
+        modeling_options["WISDEM"]["RotorSE"]["n_tab"] = 1
 
         n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile["cl"][:, :, :, np.newaxis], 0, 1).shape
         modeling_options["airfoils"] = {}
@@ -137,11 +135,12 @@ class Test(unittest.TestCase):
         n_Re = npzfile["Re"].size
 
         modeling_options = {}
-        modeling_options["RotorSE"] = {}
-        modeling_options["RotorSE"]["n_span"] = n_span
-        modeling_options["RotorSE"]["n_aoa"] = n_aoa
-        modeling_options["RotorSE"]["n_Re"] = n_Re
-        modeling_options["RotorSE"]["n_tab"] = 1
+        modeling_options["WISDEM"] = {}
+        modeling_options["WISDEM"]["RotorSE"] = {}
+        modeling_options["WISDEM"]["RotorSE"]["n_span"] = n_span
+        modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
+        modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
+        modeling_options["WISDEM"]["RotorSE"]["n_tab"] = 1
 
         modeling_options["assembly"] = {}
         modeling_options["assembly"]["number_of_blades"] = 3
@@ -227,11 +226,12 @@ class Test(unittest.TestCase):
         n_Re = npzfile["Re"].size
 
         modeling_options = {}
-        modeling_options["RotorSE"] = {}
-        modeling_options["RotorSE"]["n_span"] = n_span
-        modeling_options["RotorSE"]["n_aoa"] = n_aoa
-        modeling_options["RotorSE"]["n_Re"] = n_Re
-        modeling_options["RotorSE"]["n_tab"] = 1
+        modeling_options["WISDEM"] = {}
+        modeling_options["WISDEM"]["RotorSE"] = {}
+        modeling_options["WISDEM"]["RotorSE"]["n_span"] = n_span
+        modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
+        modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
+        modeling_options["WISDEM"]["RotorSE"]["n_tab"] = 1
 
         modeling_options["assembly"] = {}
         modeling_options["assembly"]["number_of_blades"] = 3
@@ -243,14 +243,14 @@ class Test(unittest.TestCase):
         modeling_options["airfoils"]["n_tab"] = n_tab
 
         opt_options = {}
-        opt_options["optimization_variables"] = {}
-        opt_options["optimization_variables"]["blade"] = {}
-        opt_options["optimization_variables"]["blade"]["aero_shape"] = {}
-        opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"] = {}
-        opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"] = 8
-        opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"] = {}
-        opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"] = 8
-        opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["inverse"] = False
+        opt_options["design_variables"] = {}
+        opt_options["design_variables"]["blade"] = {}
+        opt_options["design_variables"]["blade"]["aero_shape"] = {}
+        opt_options["design_variables"]["blade"]["aero_shape"]["chord"] = {}
+        opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"] = 8
+        opt_options["design_variables"]["blade"]["aero_shape"]["twist"] = {}
+        opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"] = 8
+        opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"] = False
         opt_options["constraints"] = {}
         opt_options["constraints"]["blade"] = {}
         opt_options["constraints"]["blade"]["stall"] = {}
@@ -322,11 +322,12 @@ class Test(unittest.TestCase):
         n_Re = npzfile["Re"].size
 
         modeling_options = {}
-        modeling_options["RotorSE"] = {}
-        modeling_options["RotorSE"]["n_span"] = n_span
-        modeling_options["RotorSE"]["n_aoa"] = n_aoa
-        modeling_options["RotorSE"]["n_Re"] = n_Re
-        modeling_options["RotorSE"]["n_tab"] = 1
+        modeling_options["WISDEM"] = {}
+        modeling_options["WISDEM"]["RotorSE"] = {}
+        modeling_options["WISDEM"]["RotorSE"]["n_span"] = n_span
+        modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
+        modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
+        modeling_options["WISDEM"]["RotorSE"]["n_tab"] = 1
 
         modeling_options["assembly"] = {}
         modeling_options["assembly"]["number_of_blades"] = 3
@@ -403,4 +404,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

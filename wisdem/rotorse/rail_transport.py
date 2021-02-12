@@ -1,14 +1,10 @@
 import numpy as np
 import scipy.constants as spc
-from scipy.optimize import brentq, minimize_scalar, minimize
-from openmdao.api import ExplicitComponent
-import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.utilities as util
+import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
+from openmdao.api import ExplicitComponent
+from scipy.optimize import brentq, minimize, minimize_scalar
 from wisdem.commonse.constants import gravity
-
-
-def find_nearest(array, value):
-    return (np.abs(array - value)).argmin()
 
 
 # This isn't used, but keeping around the code for now
@@ -33,7 +29,7 @@ class RailTransport(ExplicitComponent):
         self.options.declare("modeling_options")
 
     def setup(self):
-        rotorse_options = self.options["modeling_options"]["RotorSE"]
+        rotorse_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
 
@@ -89,12 +85,6 @@ class RailTransport(ExplicitComponent):
             "coord_xy_interp",
             val=np.zeros((n_span, n_xy, 2)),
             desc="3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.",
-        )
-        self.add_input(
-            "coord_xy_dim",
-            val=np.zeros((n_span, n_xy, 2)),
-            units="m",
-            desc="3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.",
         )
 
         # Inputs - Distributed beam properties
@@ -562,7 +552,7 @@ class RailTransport(ExplicitComponent):
 
         # Compute node radii starting points to determine if within clearance boundary
         r_blade = np.sqrt(nodes.y**2 + nodes.z**2)
-        
+
         # Initialize frame3dd object
         blade = pyframe3dd.Frame(nodes, reactions, elements, options)
 
@@ -573,7 +563,7 @@ class RailTransport(ExplicitComponent):
         node_dr           = np.minimum(r_envelopeV_outer - r_blade, 0)
         node_dy           = node_dr*np.cos(arcsV)
         node_dz           = node_dr*np.sin(arcsV)
-        
+
         # Load case 1: gravity + hill
         dx = dM = np.zeros(ireact.size)
         load1 = pyframe3dd.StaticLoadCase(gx, gy, gz)
@@ -586,7 +576,7 @@ class RailTransport(ExplicitComponent):
         node_dr           = np.maximum(r_envelopeV_inner - r_blade, 0)
         node_dy           = node_dr*np.cos(arcsV)
         node_dz           = node_dr*np.sin(arcsV)
-        
+
         # Load case 2: gravity + sag
         load2 = pyframe3dd.StaticLoadCase(gx, gy, gz)
         load2.changePrescribedDisplacements(ireact+1, dx, node_dy[ireact], node_dz[ireact], dM, dM, dM)
@@ -616,7 +606,7 @@ class RailTransport(ExplicitComponent):
             # compute strain at the two points
             strainLE[:,k] = -(M1/EI11*le2 - M2/EI22*le1 + Fz/EA)
             strainTE[:,k] = -(M1/EI11*te2 - M2/EI22*te1 + Fz/EA)
-            
+
         # Find best points for middle reaction and formulate as constraints
         constr_derailV_8axle = (np.abs(RF_derailV.T) / (0.5 * mass_car_8axle * gravity)) / max_LV
         constr_derailV_4axle = (np.abs(RF_derailV.T) / (0.5 * mass_car_4axle * gravity)) / max_LV

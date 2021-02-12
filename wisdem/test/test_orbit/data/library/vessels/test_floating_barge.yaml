@@ -1,0 +1,14 @@
+crane_specs:
+  max_lift: 500             # t
+dynamic_positioning_specs:
+  class: 2                  # 1, 2 or 3
+storage_specs:
+  max_cargo: 8000           # t
+  max_deck_load: 8          # t/m^2
+  max_deck_space: 1000      # m^2
+transport_specs:
+  max_waveheight: 2.5       # m
+  max_windspeed: 20         # m/s
+  transit_speed: 6          # km/h
+vessel_specs:
+  day_rate: 120000          # USD/day

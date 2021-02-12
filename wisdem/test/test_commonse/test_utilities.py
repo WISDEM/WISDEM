@@ -1,7 +1,9 @@
+import unittest
+
 import numpy as np
 import numpy.testing as npt
-import unittest
 import wisdem.commonse.utilities as util
+from scipy.optimize import curve_fit
 
 npts = 100
 myones = np.ones((npts,))
@@ -25,11 +27,21 @@ class TestAny(unittest.TestCase):
     def testModalCoefficients(self):
         # Test exact 6-deg polynomial
         p = np.random.random((7,))
+        p[:2] = 0.0
         x = np.linspace(0, 1)
         y = np.polynomial.polynomial.polyval(x, p)
 
         pp = util.get_modal_coefficients(x, y)
         npt.assert_almost_equal(p[2:] / p[2:].sum(), pp)
+
+        # Test more complex and ensure get the same answer as curve fit
+        p = np.random.random((10,))
+        y = np.polynomial.polynomial.polyval(x, p)
+
+        pp = util.get_modal_coefficients(x, y)
+        cc, _ = curve_fit(util.mode_fit, x, y)
+        cc /= cc.sum()
+        npt.assert_almost_equal(pp, cc, 4)
 
     def testGetXYModes(self):
         r = np.linspace(0, 1, 20)
@@ -44,15 +56,30 @@ class TestAny(unittest.TestCase):
         ym[1] = ym[4] = ym[7] = 1
         zm[2] = zm[5] = zm[8] = 1
 
-        freq_x, freq_y, _, _ = util.get_xy_mode_shapes(r, freqs, dx, dy, dz, xm, ym, zm)
+        freq_x, freq_y, freq_z, _, _, _ = util.get_xyz_mode_shapes(r, freqs, dx, dy, dz, xm, ym, zm)
         npt.assert_array_equal(freq_x, np.r_[0, 3, 6, 9, np.zeros(n2 - 4)])
         npt.assert_array_equal(freq_y, np.r_[1, 4, 7, np.zeros(n2 - 3)])
+        npt.assert_array_equal(freq_z, np.r_[2, 5, 8, np.zeros(n2 - 3)])
 
     def testRotateI(self):
         I = np.arange(6) + 1
         th = np.deg2rad(45)
         Irot = util.rotateI(I, th, axis="z")
         npt.assert_almost_equal(Irot, np.array([-2.5, 5.5, 3, -0.5, -0.5 * np.sqrt(2), 5.5 * np.sqrt(2)]))
+
+    def testRotateAlignVectors(self):
+        a = np.array([np.cos(0.25 * np.pi), np.sin(0.25 * np.pi), 0])
+        b = np.array([0.0, 0.0, 1.0])
+        R = util.rotate_align_vectors(a, b)
+        b2 = np.matmul(R, a.T).flatten()
+        npt.assert_almost_equal(b, b2)
+
+        a = b
+        R = util.rotate_align_vectors(a, b)
+        npt.assert_almost_equal(R, np.eye(3))
+        a = -b
+        R = util.rotate_align_vectors(a, b)
+        npt.assert_almost_equal(R, np.eye(3))
 
 
 def suite():
@@ -62,4 +89,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

@@ -1,16 +1,17 @@
-import openmdao.api as om
-from math import pi, ceil
-import numpy as np
 import warnings
+from math import ceil
+
+import numpy as np
+import openmdao.api as om
+from wisdem.landbosse.model.Manager import Manager
+from wisdem.landbosse.model.DefaultMasterInputDict import DefaultMasterInputDict
+from wisdem.landbosse.landbosse_omdao.OpenMDAODataframeCache import OpenMDAODataframeCache
+from wisdem.landbosse.landbosse_omdao.WeatherWindowCSVReader import read_weather_window
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
     import pandas as pd
 
-from wisdem.landbosse.model.Manager import Manager
-from wisdem.landbosse.model.DefaultMasterInputDict import DefaultMasterInputDict
-from wisdem.landbosse.landbosse_omdao.OpenMDAODataframeCache import OpenMDAODataframeCache
-from wisdem.landbosse.landbosse_omdao.WeatherWindowCSVReader import read_weather_window
 
 use_default_component_data = -1.0
 
@@ -445,6 +446,9 @@ class LandBOSSE_API(om.ExplicitComponent):
             discrete_inputs["num_turbines"] * inputs["turbine_rating_MW"]
         )
 
+        # Needed to avoid distributed wind keys
+        incomplete_input_dict["road_distributed_wind"] = False
+
         defaults = DefaultMasterInputDict()
         master_input_dict = defaults.populate_input_dict(incomplete_input_dict)
 
@@ -764,7 +768,7 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         tower_section_mass = tower_mass_tonnes / number_of_sections
 
-        tower_section_surface_area_m2 = pi * tower_section_height_m * (tower_radius ** 2)
+        tower_section_surface_area_m2 = np.pi * tower_section_height_m * (tower_radius ** 2)
 
         sections = []
         for i in range(number_of_sections):

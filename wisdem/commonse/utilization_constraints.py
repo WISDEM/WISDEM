@@ -7,18 +7,19 @@ Copyright (c) NREL. All rights reserved.
 """
 
 from math import atan2
+
 import numpy as np
+import openmdao.api as om
+from scipy.optimize import brentq, minimize_scalar
 from wisdem.commonse.constants import eps
 from wisdem.commonse.utilities import (
     CubicSplineSegment,
-    cubic_spline_eval,
     smooth_max,
     smooth_min,
     nodal2sectional,
     sectional2nodal,
+    cubic_spline_eval,
 )
-import openmdao.api as om
-from scipy.optimize import brentq, minimize_scalar
 
 # -------------------------------------------------------------------------------
 # Name:        UtilizationSupplement.py
@@ -224,7 +225,7 @@ def hoopStressEurocode(z, d, t, L_reinforced, q_dyn):
     return hoopStress(d, t, Peq)
 
 
-def bucklingGL(d, t, Fz, Myy, tower_height, E, sigma_y, gamma_f=1.2, gamma_b=1.1, gamma_g=1.1):
+def bucklingGL(d, t, Fz, Myy, tower_height, E, sigma_y, gamma_f=1.2, gamma_b=1.1):
 
     # other factors
     alpha = 0.21  # buckling imperfection factor
@@ -238,7 +239,7 @@ def bucklingGL(d, t, Fz, Myy, tower_height, E, sigma_y, gamma_f=1.2, gamma_b=1.1
     Wp = I / (d / 2.0)
 
     # applied loads
-    Nd = -Fz * gamma_g
+    Nd = -Fz * gamma_f
     Md = Myy * gamma_f
 
     # plastic resistance

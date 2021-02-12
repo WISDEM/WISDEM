@@ -10,7 +10,7 @@ environment, and the operational constraints, are required to evaluate
 the total mass, cost, and code compliance. These variables are also
 included in the `WindIO <https://windio.readthedocs.io/en/latest/>`_
 effort or found in the `floating-specific examples
-<https://github.com/WISDEM/WISDEM/tree/develop/examples/floating>`_
+<https://github.com/WISDEM/WISDEM/tree/master/examples/09_floating>`_
 for standalone execution.
 
 
@@ -71,7 +71,7 @@ Examples
 --------
 
 As mentioned previously `floating-specific examples
-<https://github.com/WISDEM/WISDEM/tree/develop/examples/floating>`_
+<https://github.com/WISDEM/WISDEM/tree/master/examples/09_floating>`_
 examples are provided. These files are encoded with default starting
 configurations (from :cite:`OC3` and :cite:`OC4`, respectively), with
 some modifications. There is an additional spar example that also has

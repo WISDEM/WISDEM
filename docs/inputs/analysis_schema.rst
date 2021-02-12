@@ -3,12 +3,15 @@
 ******************************
 Analysis Options Inputs
 ******************************
-The following inputs describe the options available in the ``analysis_options`` file.
+The following inputs describe the options available in the ``analysis_options`` file. This example is from the :code:`03_blade` case in the :code:`examples` directory.
 
 
+.. literalinclude:: /../examples/03_blade/analysis_options_aerostruct.yaml
+    :language: yaml
 
 general
 ****************************************
+
 
 :code:`folder_output` : String
     Name of folder to dump output files
@@ -22,8 +25,40 @@ general
 
 
 
-optimization_variables
+design_variables
 ****************************************
+
+
+Sets the design variables in a design optimization and analysis
+
+
+
+rotor_diameter
+########################################
+
+
+Adjust the rotor diameter by changing the blade length (all blade properties constant with respect to non-dimensional span coordinates)
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`minimum` : Float, m
+
+
+    *Default* = 0.0
+
+    *Minimum* = 0.0    *Maximum* = 1000.0
+
+
+:code:`maximum` : Float, m
+
+
+    *Default* = 0.0
+
+    *Minimum* = 0.0    *Maximum* = 1000.0
+
 
 
 
@@ -31,14 +66,23 @@ blade
 ########################################
 
 
+Design variables associated with the wind turbine blades
+
+
 
 aero_shape
 ========================================
 
 
+Design variables associated with the blade aerodynamic shape
+
+
 
 twist
 ----------------------------------------
+
+
+Blade twist as a design variable by adding or subtracting radians from the initial value at spline control points along the span.
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
@@ -46,29 +90,51 @@ twist
     *Default* = False
 
 :code:`inverse` : Boolean
-    Words TODO?
+    When set to True, the twist is defined inverting the 
+    blade-element momentum equations to achieve a desired margin to stall, 
+    which is defined among the constraints.
+    :code:`flag` and :code:`inverse` cannot be simultaneously be set to True
 
     *Default* = False
 
 :code:`n_opt` : Integer
-    Number of control points to use
+    Number of equally-spaced control points of the spline
+    parametrizing the twist distribution along blade span. 
 
     *Default* = 8
 
-:code:`lower_bound` : Array of Floats, rad
+    *Minimum* = 4
 
+:code:`lower_bound` : Array of Floats, rad
+    Lowest number of radians that can be added (typically negative to
+    explore smaller twist angles)
 
     *Default* = [-0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1]
 
 :code:`upper_bound` : Array of Floats, rad
-
+    Largest number of radians that can be added (typically postive to
+    explore greater twist angles)
 
     *Default* = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 
+:code:`lock_root` : Integer
+    Integer setting how many DVs along span are locked starting from blade root.
+    By default, the first two points are locked to prevent the optimizer to try to
+    optimize the twist of the blade root cylinder.
+
+    *Default* = 2
+
+:code:`lock_tip` : Integer
+    Integer setting how many DVs along span are locked starting from blade tip.
+
+    *Default* = 0
 
 
 chord
 ----------------------------------------
+
+
+Blade chord as a design variable by scaling (multiplying) the initial value at spline control points along the span.
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
@@ -76,9 +142,12 @@ chord
     *Default* = False
 
 :code:`n_opt` : Integer
-    Number of control points to use
+    Number of equally-spaced control points of the spline
+    parametrizing the chord distribution along blade span.
 
     *Default* = 8
+
+    *Minimum* = 4
 
 :code:`min_gain` : Float
     Lower bound on scalar multiplier that will be applied to value at
@@ -92,10 +161,30 @@ chord
 
     *Default* = 1.5
 
+:code:`lock_root` : Integer
+    Integer setting how many DVs along span are locked starting from blade root.
+    By default, the first two points close to blade root are
+    locked. The first two points impact the diameter of the blade root
+    cylinder, and the models implemented in WISDEM do not have the
+    level of fidelity to appropriately size the blade root diameter.
+
+    *Default* = 2
+
+:code:`lock_tip` : Integer
+    Integer setting how many DVs along span are locked starting from blade tip.
+    The last point controls the chord length at blade tip and due to
+    the imperfect tip loss models of CCBlade, it is usually a good
+    idea to taper the chord manually and do not let a numerical
+    optimizer control it. The default is therefore set to 1.
+
+    *Default* = 1
 
 
 af_positions
 ----------------------------------------
+
+
+Adjust airfoil positions along the blade span.
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
@@ -104,9 +193,12 @@ af_positions
 
 :code:`af_start` : Integer
     Index of airfoil where the optimization can start shifting airfoil
-    position
+    position. The airfoil at blade tip is always locked. It is advised 
+    to keep the airfoils close to blade root locked.
 
     *Default* = 4
+
+    *Minimum* = 1
 
 
 
@@ -114,14 +206,15 @@ structure
 ========================================
 
 
+Design variables associated with the internal blade structure
+
+
 
 spar_cap_ss
 ----------------------------------------
 
-:code:`name` : String
-    Layer name of this design variable in the geometry yaml
 
-    *Default* = none
+Blade suction-side spar cap thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
@@ -129,9 +222,12 @@ spar_cap_ss
     *Default* = False
 
 :code:`n_opt` : Integer
-    Number of control points to use
+    Number of equally-spaced control points of the spline
+    parametrizing the thickness of the spar cap on the suction side.
 
     *Default* = 8
+
+    *Minimum* = 4
 
 :code:`min_gain` : Float
     Lower bound on scalar multiplier that will be applied to value at
@@ -145,15 +241,30 @@ spar_cap_ss
 
     *Default* = 1.5
 
+:code:`lock_root` : Integer
+    Integer setting how many DVs along span are locked starting from blade root.
+    By default, the first point close to blade root is locked. 
+    This is done to impose a pre-
+    defined taper to small thicknesses and mimic a blade
+    manufacturability constraint.
+
+    *Default* = 1
+
+:code:`lock_tip` : Integer
+    Integer setting how many DVs along span are locked starting from blade tip.
+    By default, the last point close to blade tip is locked. 
+    This is done to impose a pre-
+    defined taper to small thicknesses and mimic a blade
+    manufacturability constraint.
+
+    *Default* = 1
 
 
 spar_cap_ps
 ----------------------------------------
 
-:code:`name` : String
-    Layer name of this design variable in the geometry yaml
 
-    *Default* = none
+Blade pressure-side spar cap thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
@@ -161,9 +272,12 @@ spar_cap_ps
     *Default* = False
 
 :code:`n_opt` : Integer
-    Number of control points to use
+    Number of equally-spaced control points of the spline
+    parametrizing the thickness of the spar cap on the pressure side.
 
     *Default* = 8
+
+    *Minimum* = 4
 
 :code:`min_gain` : Float
     Lower bound on scalar multiplier that will be applied to value at
@@ -177,15 +291,30 @@ spar_cap_ps
 
     *Default* = 1.5
 
+:code:`lock_root` : Integer
+    Integer setting how many DVs along span are locked starting from blade root.
+    By default, the first point close to blade root is locked. 
+    This is done to impose a pre-
+    defined taper to small thicknesses and mimic a blade
+    manufacturability constraint.
+
+    *Default* = 1
+
+:code:`lock_tip` : Integer
+    Integer setting how many DVs along span are locked starting from blade tip.
+    By default, the last point close to blade tip is locked. 
+    This is done to impose a pre-
+    defined taper to small thicknesses and mimic a blade
+    manufacturability constraint.
+
+    *Default* = 1
 
 
 te_ss
 ----------------------------------------
 
-:code:`name` : String
-    Layer name of this design variable in the geometry yaml
 
-    *Default* = none
+Blade suction-side trailing edge reinforcement thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
@@ -193,9 +322,16 @@ te_ss
     *Default* = False
 
 :code:`n_opt` : Integer
-    Number of control points to use
+    Number of equally-spaced control points of the spline
+    parametrizing the thickness of the trailing edge reinforcement on
+    the suction side. By default, the first point close to blade root
+    and the last point close to blade tip are locked. This is done to
+    impose a pre-defined taper to small thicknesses and mimic a blade
+    manufacturability constraint.
 
     *Default* = 8
+
+    *Minimum* = 4
 
 :code:`min_gain` : Float
     Lower bound on scalar multiplier that will be applied to value at
@@ -214,10 +350,8 @@ te_ss
 te_ps
 ----------------------------------------
 
-:code:`name` : String
-    Layer name of this design variable in the geometry yaml
 
-    *Default* = none
+Blade pressure-side trailing edge reinforcement thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
@@ -225,9 +359,16 @@ te_ps
     *Default* = False
 
 :code:`n_opt` : Integer
-    Number of control points to use
+    Number of equally-spaced control points of the spline
+    parametrizing the thickness of the trailing edge reinforcement on
+    the pressure side. By default, the first point close to blade root
+    and the last point close to blade tip are locked. This is done to
+    impose a pre-defined taper to small thicknesses and mimic a blade
+    manufacturability constraint.
 
     *Default* = 8
+
+    *Minimum* = 4
 
 :code:`min_gain` : Float
     Lower bound on scalar multiplier that will be applied to value at
@@ -247,167 +388,408 @@ control
 ########################################
 
 
+Design variables associated with the control of the wind turbine
+
+
 
 tsr
 ========================================
 
-:code:`flag` : Boolean
-    Activates as a design variable or constraint
 
-    *Default* = False
-
-:code:`min_gain` : Float
-    Lower bound on scalar multiplier that will be applied to value at
-    control points
-
-    *Default* = 0.5
-
-:code:`max_gain` : Float
-    Upper bound on scalar multiplier that will be applied to value at
-    control points
-
-    *Default* = 1.5
-
-
-
-servo
-========================================
-
-
-
-pitch_control
-----------------------------------------
+Adjust the tip-speed ratio (ratio between blade tip velocity and steady hub-height wind speed)
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
 
     *Default* = False
 
-:code:`omega_min` : Float
+:code:`minimum` : Float
+    Minimum allowable value
 
+    *Default* = 0.0
 
-    *Default* = 0.1
+    *Minimum* = 0.0    *Maximum* = 30.0
 
-    *Minimum* = 0.0    *Maximum* = 10.0
 
+:code:`maximum` : Float
+    Maximum allowable value
 
-:code:`omega_max` : Float
+    *Default* = 0.0
 
+    *Minimum* = 0.0    *Maximum* = 30.0
 
-    *Default* = 0.7
 
-    *Minimum* = 0.0    *Maximum* = 10.0
 
 
-:code:`zeta_min` : Float
-
-
-    *Default* = 0.4
-
-    *Minimum* = 0.0    *Maximum* = 10.0
-
-
-:code:`zeta_max` : Float
-
-
-    *Default* = 1.5
-
-    *Minimum* = 0.0    *Maximum* = 10.0
-
-
-
-
-torque_control
-----------------------------------------
-
-:code:`flag` : Boolean
-    Activates as a design variable or constraint
-
-    *Default* = False
-
-:code:`omega_min` : Float
-
-
-    *Default* = 0.1
-
-    *Minimum* = 0.0    *Maximum* = 10.0
-
-
-:code:`omega_max` : Float
-
-
-    *Default* = 0.7
-
-    *Minimum* = 0.0    *Maximum* = 10.0
-
-
-:code:`zeta_min` : Float
-
-
-    *Default* = 0.4
-
-    *Minimum* = 0.0    *Maximum* = 10.0
-
-
-:code:`zeta_max` : Float
-
-
-    *Default* = 1.5
-
-    *Minimum* = 0.0    *Maximum* = 10.0
-
-
-
-
-flap_control
-----------------------------------------
-
-:code:`flag` : Boolean
-    Activates as a design variable or constraint
-
-    *Default* = False
-
-:code:`omega_min` : Float
-
-
-    *Default* = 0.1
-
-    *Minimum* = 0.0    *Maximum* = 10.0
-
-
-:code:`omega_max` : Float
-
-
-    *Default* = 0.7
-
-    *Minimum* = 0.0    *Maximum* = 10.0
-
-
-:code:`zeta_min` : Float
-
-
-    *Default* = 0.4
-
-    *Minimum* = 0.0    *Maximum* = 10.0
-
-
-:code:`zeta_max` : Float
-
-
-    *Default* = 1.5
-
-    *Minimum* = 0.0    *Maximum* = 10.0
-
-
-
-
-tower
+hub
 ########################################
 
 
+Design variables associated with the hub
 
-outer_diameter
+
+
+cone
 ========================================
+
+
+Adjust the blade attachment coning angle (positive values are always away from the tower whether upwind or downwind)
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, rad
+    Design variable bound
+
+    *Default* = 0.0
+
+    *Minimum* = 0.0    *Maximum* = 0.5235987756
+
+
+:code:`upper_bound` : Float, rad
+    Design variable bound
+
+    *Default* = 0.0
+
+    *Minimum* = 0.0    *Maximum* = 0.5235987756
+
+
+
+
+hub_diameter
+========================================
+
+
+Adjust the rotor hub diameter
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+    Lowest value allowable for hub diameter
+
+    *Default* = 0.0
+
+    *Minimum* = 0.0    *Maximum* = 30.0
+
+
+:code:`upper_bound` : Float, m
+    Highest value allowable for hub diameter
+
+    *Default* = 30.0
+
+    *Minimum* = 0.0    *Maximum* = 30.0
+
+
+
+
+drivetrain
+########################################
+
+
+Design variables associated with the drivetrain
+
+
+
+uptilt
+========================================
+
+
+Adjust the drive shaft tilt angle (positive values tilt away from the tower whether upwind or downwind)
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, rad
+    Design variable bound
+
+    *Default* = 0.0
+
+    *Minimum* = 0.0    *Maximum* = 0.5235987756
+
+
+:code:`upper_bound` : Float, rad
+    Design variable bound
+
+    *Default* = 0.0
+
+    *Minimum* = 0.0    *Maximum* = 0.5235987756
+
+
+
+
+overhang
+========================================
+
+
+Adjust the x-distance, parallel to the ground or still water line, from the tower top center to the rotor apex.
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+    Lowest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+:code:`upper_bound` : Float, m
+    Highest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+
+
+distance_tt_hub
+========================================
+
+
+Adjust the z-dimension height from the tower top to the rotor apex
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+    Lowest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+:code:`upper_bound` : Float, m
+    Highest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+
+
+distance_hub_mb
+========================================
+
+
+Adjust the distance along the drive staft from the hub flange to the first main bearing
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+    Lowest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+:code:`upper_bound` : Float, m
+    Highest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+
+
+distance_mb_mb
+========================================
+
+
+Adjust the distance along the drive staft from the first to the second main bearing
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+    Lowest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+:code:`upper_bound` : Float, m
+    Highest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+
+
+generator_length
+========================================
+
+
+Adjust the distance along the drive staft between the generator rotor drive shaft attachment to the stator bedplate attachment
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+    Lowest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+:code:`upper_bound` : Float, m
+    Highest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+
+
+gear_ratio
+========================================
+
+
+For geared configurations only, adjust the gear ratio of the gearbox that multiplies the shaft speed and divides the torque
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float
+
+
+    *Default* = 1.0
+
+    *Minimum* = 1.0    *Maximum* = 500.0
+
+
+:code:`upper_bound` : Float
+
+
+    *Default* = 150.0
+
+    *Minimum* = 1.0    *Maximum* = 1000.0
+
+
+
+
+lss_diameter
+========================================
+
+
+Adjust the diameter at the beginning and end of the low speed shaft (assumes a linear taper)
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+    Lowest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+:code:`upper_bound` : Float, m
+    Highest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+
+
+hss_diameter
+========================================
+
+
+Adjust the diameter at the beginning and end of the high speed shaft (assumes a linear taper)
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+    Lowest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+:code:`upper_bound` : Float, m
+    Highest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+
+
+nose_diameter
+========================================
+
+
+For direct-drive configurations only, adjust the diameter at the beginning and end of the nose/turret (assumes a linear taper)
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+    Lowest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+:code:`upper_bound` : Float, m
+    Highest value allowable for design variable
+
+    *Default* = 0.1
+
+    *Minimum* = 0.1    *Maximum* = 30.0
+
+
+
+
+lss_wall_thickness
+========================================
+
+
+Adjust the thickness at the beginning and end of the low speed shaft (assumes a linear taper)
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
@@ -417,13 +799,224 @@ outer_diameter
 :code:`lower_bound` : Float, m
 
 
+    *Default* = 0.001
+
+    *Minimum* = 0.001    *Maximum* = 3.0
+
+
+:code:`upper_bound` : Float, m
+
+
+    *Default* = 1.0
+
+    *Minimum* = 0.01    *Maximum* = 5.0
+
+
+
+
+hss_wall_thickness
+========================================
+
+
+Adjust the thickness at the beginning and end of the high speed shaft (assumes a linear taper)
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+
+
+    *Default* = 0.001
+
+    *Minimum* = 0.001    *Maximum* = 3.0
+
+
+:code:`upper_bound` : Float, m
+
+
+    *Default* = 1.0
+
+    *Minimum* = 0.01    *Maximum* = 5.0
+
+
+
+
+nose_wall_thickness
+========================================
+
+
+For direct-drive configurations only, adjust the thickness at the beginning and end of the nose/turret (assumes a linear taper)
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+
+
+    *Default* = 0.001
+
+    *Minimum* = 0.001    *Maximum* = 3.0
+
+
+:code:`upper_bound` : Float, m
+
+
+    *Default* = 1.0
+
+    *Minimum* = 0.01    *Maximum* = 5.0
+
+
+
+
+bedplate_wall_thickness
+========================================
+
+
+For direct-drive configurations only, adjust the wall thickness along the elliptical bedplate
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+
+
+    *Default* = 0.001
+
+    *Minimum* = 0.001    *Maximum* = 3.0
+
+
+:code:`upper_bound` : Float, m
+
+
+    *Default* = 1.0
+
+    *Minimum* = 0.01    *Maximum* = 5.0
+
+
+
+
+bedplate_web_thickness
+========================================
+
+
+For geared configurations only, adjust the I-beam web thickness of the bedplate
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+
+
+    *Default* = 0.001
+
+    *Minimum* = 0.001    *Maximum* = 3.0
+
+
+:code:`upper_bound` : Float, m
+
+
+    *Default* = 1.0
+
+    *Minimum* = 0.01    *Maximum* = 5.0
+
+
+
+
+bedplate_flange_thickness
+========================================
+
+
+For geared configurations only, adjust the I-beam flange thickness of the bedplate
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+
+
+    *Default* = 0.001
+
+    *Minimum* = 0.001    *Maximum* = 3.0
+
+
+:code:`upper_bound` : Float, m
+
+
+    *Default* = 1.0
+
+    *Minimum* = 0.01    *Maximum* = 5.0
+
+
+
+
+bedplate_flange_width
+========================================
+
+
+For geared configurations only, adjust the I-beam flange width of the bedplate
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+
+
+    *Default* = 0.001
+
+    *Minimum* = 0.001    *Maximum* = 3.0
+
+
+:code:`upper_bound` : Float, m
+
+
+    *Default* = 1.0
+
+    *Minimum* = 0.01    *Maximum* = 5.0
+
+
+
+
+tower
+########################################
+
+
+Design variables associated with the tower or monopile
+
+
+
+outer_diameter
+========================================
+
+
+Adjust the outer diamter of the cylindrical column at nodes along the height.  Linear tapering is assumed between the nodes, creating conical frustums in each section
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+    Design variable bound
+
     *Default* = 5.0
 
     *Minimum* = 0.1    *Maximum* = 100.0
 
 
 :code:`upper_bound` : Float, m
-
+    Design variable bound
 
     *Default* = 5.0
 
@@ -435,13 +1028,16 @@ outer_diameter
 layer_thickness
 ========================================
 
+
+Adjust the layer thickness of each section in the column
+
 :code:`flag` : Boolean
     Activates as a design variable or constraint
 
     *Default* = False
 
 :code:`lower_bound` : Float, m
-
+    Design variable bound
 
     *Default* = 0.01
 
@@ -449,7 +1045,7 @@ layer_thickness
 
 
 :code:`upper_bound` : Float, m
-
+    Design variable bound
 
     *Default* = 0.01
 
@@ -461,13 +1057,16 @@ layer_thickness
 section_height
 ========================================
 
+
+Adjust the height of each conical section
+
 :code:`flag` : Boolean
     Activates as a design variable or constraint
 
     *Default* = False
 
 :code:`lower_bound` : Float, m
-
+    Design variable bound
 
     *Default* = 5.0
 
@@ -475,7 +1074,102 @@ section_height
 
 
 :code:`upper_bound` : Float, m
+    Design variable bound
 
+    *Default* = 5.0
+
+    *Minimum* = 0.1    *Maximum* = 100.0
+
+
+
+
+monopile
+########################################
+
+
+Design variables associated with the tower or monopile
+
+
+
+outer_diameter
+========================================
+
+
+Adjust the outer diamter of the cylindrical column at nodes along the height.  Linear tapering is assumed between the nodes, creating conical frustums in each section
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+    Design variable bound
+
+    *Default* = 5.0
+
+    *Minimum* = 0.1    *Maximum* = 100.0
+
+
+:code:`upper_bound` : Float, m
+    Design variable bound
+
+    *Default* = 5.0
+
+    *Minimum* = 0.1    *Maximum* = 100.0
+
+
+
+
+layer_thickness
+========================================
+
+
+Adjust the layer thickness of each section in the column
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+    Design variable bound
+
+    *Default* = 0.01
+
+    *Minimum* = 1e-05    *Maximum* = 1.0
+
+
+:code:`upper_bound` : Float, m
+    Design variable bound
+
+    *Default* = 0.01
+
+    *Minimum* = 1e-05    *Maximum* = 1.0
+
+
+
+
+section_height
+========================================
+
+
+Adjust the height of each conical section
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+    Design variable bound
+
+    *Default* = 5.0
+
+    *Minimum* = 0.1    *Maximum* = 100.0
+
+
+:code:`upper_bound` : Float, m
+    Design variable bound
 
     *Default* = 5.0
 
@@ -488,14 +1182,23 @@ constraints
 ****************************************
 
 
+Activate the constraints that are applied to a design optimization
+
+
 
 blade
 ########################################
 
 
+Constraints associated with the blade design
+
+
 
 strains_spar_cap_ss
 ========================================
+
+
+Enforce a maximum allowable strain in the suction-side spar caps
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
@@ -503,7 +1206,7 @@ strains_spar_cap_ss
     *Default* = False
 
 :code:`max` : Float
-
+    Maximum allowable strain value
 
     *Default* = 0.004
 
@@ -515,13 +1218,16 @@ strains_spar_cap_ss
 strains_spar_cap_ps
 ========================================
 
+
+Enforce a maximum allowable strain in the pressure-side spar caps
+
 :code:`flag` : Boolean
     Activates as a design variable or constraint
 
     *Default* = False
 
 :code:`max` : Float
-
+    Maximum allowable strain value
 
     *Default* = 0.004
 
@@ -533,17 +1239,20 @@ strains_spar_cap_ps
 tip_deflection
 ========================================
 
+
+Enforce a maximum allowable blade tip deflection towards the tower expressed as a safety factor on the parked margin.  Meaning a parked distance to the tower of 30m and a constraint value here of 1.5 would mean that 30/1.5=20m of deflection is the maximum allowable
+
 :code:`flag` : Boolean
     Activates as a design variable or constraint
 
     *Default* = False
 
-:code:`ratio` : Float
+:code:`margin` : Float
 
 
-    *Default* = 0.8
+    *Default* = 1.4175
 
-    *Minimum* = 0.0    *Maximum* = 2.0
+    *Minimum* = 1.0    *Maximum* = 10.0
 
 
 
@@ -551,10 +1260,8 @@ tip_deflection
 rail_transport
 ========================================
 
-:code:`flag` : Boolean
-    Activates as a design variable or constraint
 
-    *Default* = False
+Enforce sufficient blade flexibility such that they can be transported on rail cars without exceeding maximum blade strains or derailment.  User can activate either 8-axle flatcars or 4-axle
 
 :code:`8_axle` : Boolean
     Activates as a design variable or constraint
@@ -571,12 +1278,15 @@ rail_transport
 stall
 ========================================
 
+
+Ensuring blade angles of attacks do not approach the stall point. Margin is expressed in radians from stall.
+
 :code:`flag` : Boolean
     Activates as a design variable or constraint
 
     *Default* = False
 
-:code:`margin` : Float
+:code:`margin` : Float, radians
 
 
     *Default* = 0.05233
@@ -589,12 +1299,15 @@ stall
 chord
 ========================================
 
+
+Enforcing max chord length limit at all points along blade span.
+
 :code:`flag` : Boolean
     Activates as a design variable or constraint
 
     *Default* = False
 
-:code:`max` : Float
+:code:`max` : Float, meter
 
 
     *Default* = 4.3
@@ -607,22 +1320,15 @@ chord
 frequency
 ========================================
 
-:code:`flap_above_3P` : Boolean
+
+Frequency separation constraint between blade fundamental frequency and blade passing (3P) frequency at rated conditions using gamma_freq margin. Can be activated for blade flap and/or edge modes.
+
+:code:`flap_3P` : Boolean
     Activates as a design variable or constraint
 
     *Default* = False
 
-:code:`edge_above_3P` : Boolean
-    Activates as a design variable or constraint
-
-    *Default* = False
-
-:code:`flap_below_3P` : Boolean
-    Activates as a design variable or constraint
-
-    *Default* = False
-
-:code:`edge_below_3P` : Boolean
+:code:`edge_3P` : Boolean
     Activates as a design variable or constraint
 
     *Default* = False
@@ -631,6 +1337,9 @@ frequency
 
 moment_coefficient
 ========================================
+
+
+(EXPERIMENTAL) Targeted blade moment coefficient (useful for managing root flap loads or inverse design approaches that is not recommendend for general use)
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
@@ -658,6 +1367,9 @@ moment_coefficient
 match_cl_cd
 ========================================
 
+
+(EXPERIMENTAL) Targeted airfoil cl/cd ratio (useful for inverse design approaches that is not recommendend for general use)
+
 :code:`flag_cl` : Boolean
     Activates as a design variable or constraint
 
@@ -677,6 +1389,9 @@ match_cl_cd
 
 match_L_D
 ========================================
+
+
+(EXPERIMENTAL) Targeted blade moment coefficient (useful for managing root flap loads or inverse design approaches that is not recommendend for general use)
 
 :code:`flag_L` : Boolean
     Activates as a design variable or constraint
@@ -699,9 +1414,15 @@ tower
 ########################################
 
 
+Constraints associated with the tower design
+
+
 
 height_constraint
 ========================================
+
+
+Double-sided constraint to ensure total tower height meets target hub height when adjusting section heights
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
@@ -729,113 +1450,60 @@ height_constraint
 stress
 ========================================
 
+
+Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n
+
 :code:`flag` : Boolean
     Activates as a design variable or constraint
 
     *Default* = False
-
-:code:`ratio` : Float
-
-
-    *Default* = 0.8
-
-    *Minimum* = 0.0    *Maximum* = 2.0
-
 
 
 
 global_buckling
 ========================================
 
+
+Enforce a global buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b
+
 :code:`flag` : Boolean
     Activates as a design variable or constraint
 
     *Default* = False
-
-:code:`ratio` : Float
-
-
-    *Default* = 0.8
-
-    *Minimum* = 0.0    *Maximum* = 2.0
-
 
 
 
 shell_buckling
 ========================================
 
-:code:`flag` : Boolean
-    Activates as a design variable or constraint
 
-    *Default* = False
-
-:code:`ratio` : Float
-
-
-    *Default* = 0.8
-
-    *Minimum* = 0.0    *Maximum* = 2.0
-
-
-
-
-weldability
-========================================
+Enforce a shell buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
 
     *Default* = False
-
-:code:`ratio` : Float
-
-
-    *Default* = 0.8
-
-    *Minimum* = 0.0    *Maximum* = 2.0
-
-
-
-
-manufacturability
-========================================
-
-:code:`flag` : Boolean
-    Activates as a design variable or constraint
-
-    *Default* = False
-
-:code:`ratio` : Float
-
-
-    *Default* = 0.8
-
-    *Minimum* = 0.0    *Maximum* = 2.0
-
 
 
 
 slope
 ========================================
 
+
+Ensure that the diameter moving up the tower at any node is always equal or less than the diameter of the node preceding it
+
 :code:`flag` : Boolean
     Activates as a design variable or constraint
 
     *Default* = False
 
-:code:`ratio` : Float
 
 
-    *Default* = 0.8
-
-    *Minimum* = 0.0    *Maximum* = 2.0
-
-
-
-
-frequency_1
+d_to_t
 ========================================
+
+
+Double-sided constraint to ensure target diameter to thickness ratio for manufacturing and structural objectives
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
@@ -845,52 +1513,414 @@ frequency_1
 :code:`lower_bound` : Float
 
 
-    *Default* = 0.1
+    *Default* = 50.0
 
-    *Minimum* = 0.01    *Maximum* = 1.0
+    *Minimum* = 1.0    *Maximum* = 2000.0
 
 
 :code:`upper_bound` : Float
 
 
-    *Default* = 0.1
+    *Default* = 50.0
 
-    *Minimum* = 0.01    *Maximum* = 1.0
-
-
-
-
-control
-########################################
+    *Minimum* = 1.0    *Maximum* = 2000.0
 
 
 
-flap_control
+
+taper
 ========================================
+
+
+Enforcing a max allowable conical frustum taper ratio per section
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint
 
     *Default* = False
 
-:code:`min` : Float
+:code:`lower_bound` : Float
 
 
-    *Default* = 0.05
+    *Default* = 0.5
 
-    *Minimum* = 0.0    *Maximum* = 1.0
-
-
-:code:`max` : Float
+    *Minimum* = 0.001    *Maximum* = 1.0
 
 
-    *Default* = 0.05
-
-    *Minimum* = 0.0    *Maximum* = 1.0
 
 
-:code:`merit_figure` : String from, ['LCOE', 'AEP', 'Cp', 'blade_mass', 'tower_mass', 'tower_cost', 'blade_tip_deflection', 'My_std', 'flp1_std']
-    Objective function / merit figure for optimization
+frequency
+========================================
+
+
+Frequency separation constraint between all tower modal frequencies and blade period (1P) and passing (3P) frequencies at rated conditions using gamma_freq margin.
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
+frequency_1
+========================================
+
+
+Targeted range for tower first frequency constraint.  Since first and second frequencies are generally the same for the tower, this usually governs the second frequency as well (both fore-aft and side-side first frequency)
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, Hz
+
+
+    *Default* = 0.1
+
+    *Minimum* = 0.01    *Maximum* = 1.0
+
+
+:code:`upper_bound` : Float, Hz
+
+
+    *Default* = 0.1
+
+    *Minimum* = 0.01    *Maximum* = 1.0
+
+
+
+
+monopile
+########################################
+
+
+Constraints associated with the monopile design
+
+
+
+pile_depth
+========================================
+
+
+Ensures that the submerged suction pile depth meets a minimum value
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, m
+
+
+    *Default* = 0.0
+
+    *Minimum* = 0.0    *Maximum* = 200.0
+
+
+
+
+stress
+========================================
+
+
+Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
+global_buckling
+========================================
+
+
+Enforce a global buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
+shell_buckling
+========================================
+
+
+Enforce a shell buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
+slope
+========================================
+
+
+Ensure that the diameter moving up the tower at any node is always equal or less than the diameter of the node preceding it
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
+d_to_t
+========================================
+
+
+Double-sided constraint to ensure target diameter to thickness ratio for manufacturing and structural objectives
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float
+
+
+    *Default* = 50.0
+
+    *Minimum* = 1.0    *Maximum* = 2000.0
+
+
+:code:`upper_bound` : Float
+
+
+    *Default* = 50.0
+
+    *Minimum* = 1.0    *Maximum* = 2000.0
+
+
+
+
+taper
+========================================
+
+
+Enforcing a max allowable conical frustum taper ratio per section
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float
+
+
+    *Default* = 0.5
+
+    *Minimum* = 0.001    *Maximum* = 1.0
+
+
+
+
+frequency
+========================================
+
+
+Frequency separation constraint between all tower modal frequencies and blade period (1P) and passing (3P) frequencies at rated conditions using gamma_freq margin.
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
+frequency_1
+========================================
+
+
+Targeted range for tower first frequency constraint.  Since first and second frequencies are generally the same for the tower, this usually governs the second frequency as well (both fore-aft and side-side first frequency)
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, Hz
+
+
+    *Default* = 0.1
+
+    *Minimum* = 0.01    *Maximum* = 1.0
+
+
+:code:`upper_bound` : Float, Hz
+
+
+    *Default* = 0.1
+
+    *Minimum* = 0.01    *Maximum* = 1.0
+
+
+
+
+hub
+########################################
+
+
+
+
+hub_diameter
+========================================
+
+
+Ensure that the diameter of the hub is sufficient to accommodate the number of blades and blade root diameter
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
+drivetrain
+########################################
+
+
+
+
+lss
+========================================
+
+
+Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
+hss
+========================================
+
+
+Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
+bedplate
+========================================
+
+
+Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
+mb1
+========================================
+
+
+Ensure that the angular deflection at this meain bearing does not exceed the maximum allowable deflection for the bearing type
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
+mb2
+========================================
+
+
+Ensure that the angular deflection at this meain bearing does not exceed the maximum allowable deflection for the bearing type
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
+length
+========================================
+
+
+Ensure that the bedplate length is sufficient to meet desired overhang value
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
+height
+========================================
+
+
+Ensure that the bedplate height is sufficient to meet desired nacelle height value
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+
+
+access
+========================================
+
+
+For direct-drive configurations only, ensure that the inner diameter of the nose/turret is big enough to allow human access
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`lower_bound` : Float, meter
+    Minimum size to ensure human maintenance access
+
+    *Default* = 2.0
+
+    *Minimum* = 0.1    *Maximum* = 5.0
+
+
+
+
+ecc
+========================================
+
+
+For direct-drive configurations only, ensure that the elliptical bedplate length is greater than its height
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
+
+:code:`merit_figure` : String from, ['LCOE', 'AEP', 'Cp', 'blade_mass', 'tower_mass', 'tower_cost', 'monopile_mass', 'monopile_cost', 'structural_mass', 'structural_cost', 'blade_tip_deflection', 'My_std', 'flp1_std']
+    Objective function / merit figure for optimization.  Choices are
+    LCOE- levelized cost of energy, AEP- turbine annual energy
+    production, Cp- rotor power coefficient, blade_mass, tower_mass,
+    tower_cost, monopile_mass, monopile_cost, structural_mass-
+    tower+monopile mass, structural_cost- tower+monopile cost,
+    blade_tip_deflection- blade tip deflection distance towards tower,
+    My_std- blade flap moment standard deviation, flp1_std- trailing
+    flap standard deviation
 
     *Default* = LCOE
 
@@ -898,6 +1928,9 @@ flap_control
 
 driver
 ****************************************
+
+
+Specification of the optimization driver (optimization algorithm) parameters
 
 :code:`tol` : Float
     Convergence tolerance (relative)
@@ -924,7 +1957,7 @@ driver
 
 
 :code:`solver` : String from, ['SLSQP', 'CONMIN', 'COBYLA', 'SNOPT']
-    Optimization driver
+    Optimization driver.  Can be one of [SLSQP, CONMIN, COBYLA, SNOPT]
 
     *Default* = SLSQP
 
@@ -945,6 +1978,9 @@ driver
 
 recorder
 ****************************************
+
+
+Optimization iteration recording via OpenMDAO
 
 :code:`flag` : Boolean
     Activates as a design variable or constraint

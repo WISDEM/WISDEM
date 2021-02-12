@@ -9,7 +9,6 @@ __email__ = "jake.nunemaker@nrel.gov"
 from math import pi, log
 
 from scipy.optimize import fsolve
-
 from wisdem.orbit.core.defaults import common_costs
 from wisdem.orbit.phases.design import DesignPhase
 
@@ -40,8 +39,6 @@ class MonopileDesign(DesignPhase):
             "weibull_scale_factor": "float (optional)",
             "weibull_shape_factor": "float (optional)",
             "turb_length_scale": "m (optional)",
-            "design_time": "h (optional)",
-            "design_cost": "USD (optional)",
             "monopile_steel_cost": "USD/t (optional)",
             "tp_steel_cost": "USD/t (optional)",
         },
@@ -56,8 +53,14 @@ class MonopileDesign(DesignPhase):
             "length": "m",
             "mass": "t",
             "deck_space": "m2",
+            "unit_cost": "USD",
         },
-        "transition_piece": {"length": "m", "mass": "t", "deck_space": "m2"},
+        "transition_piece": {
+            "length": "m",
+            "mass": "t",
+            "deck_space": "m2",
+            "unit_cost": "USD",
+        },
     }
 
     def __init__(self, config, **kwargs):
@@ -125,8 +128,8 @@ class MonopileDesign(DesignPhase):
 
         Returns
         -------
-        sizing : dict
-            Dictionary of monopile sizing.
+        monopile : dict
+            Dictionary of monopile sizing and costs.
 
             - ``diameter`` - Pile diameter (m)
             - ``thickness`` - Pile wall thickness (m)
@@ -158,33 +161,34 @@ class MonopileDesign(DesignPhase):
         )
 
         data = (yield_stress, material_factor, M_50y)
-        sizing = {}
+        monopile = {}
 
         # Monopile sizing
-        sizing["diameter"] = fsolve(self.pile_diam_equation, 10, args=data)[0]
-        sizing["thickness"] = self.pile_thickness(sizing["diameter"])
-        sizing["moment"] = self.pile_moment(sizing["diameter"], sizing["thickness"])
-        sizing["embedment_length"] = self.pile_embedment_length(sizing["moment"], **kwargs)
+        monopile["diameter"] = fsolve(self.pile_diam_equation, 10, args=data)[0]
+        monopile["thickness"] = self.pile_thickness(monopile["diameter"])
+        monopile["moment"] = self.pile_moment(monopile["diameter"], monopile["thickness"])
+        monopile["embedment_length"] = self.pile_embedment_length(monopile["moment"], **kwargs)
 
         # Total length
         airgap = kwargs.get("airgap", 10)  # m
-        sizing["length"] = sizing["embedment_length"] + site_depth + airgap
-        sizing["mass"] = self.pile_mass(
-            Dp=sizing["diameter"],
-            tp=sizing["thickness"],
-            Lt=sizing["length"],
+        monopile["length"] = monopile["embedment_length"] + site_depth + airgap
+        monopile["mass"] = self.pile_mass(
+            Dp=monopile["diameter"],
+            tp=monopile["thickness"],
+            Lt=monopile["length"],
             **kwargs,
         )
 
         # Deck space
-        sizing["deck_space"] = sizing["diameter"] ** 2
+        monopile["deck_space"] = monopile["diameter"] ** 2
 
-        self.monopile_sizing = sizing
+        # Costs
+        monopile["unit_cost"] = monopile["mass"] * self.monopile_steel_cost
 
-        return sizing
+        self.monopile_sizing = monopile
+        return monopile
 
-    @staticmethod
-    def design_transition_piece(D_p, t_p, **kwargs):
+    def design_transition_piece(self, D_p, t_p, **kwargs):
         """
         Designs transition piece given the results of the monopile design.
 
@@ -218,15 +222,14 @@ class MonopileDesign(DesignPhase):
             "mass": m_tp,
             "length": L_tp,
             "deck_space": D_tp ** 2,
+            "unit_cost": m_tp * self.tp_steel_cost,
         }
 
         return tp_design
 
     @property
     def design_result(self):
-        """
-        Returns the results of :py:meth:`.design_monopile`.
-        """
+        """Returns the results of :py:meth:`.design_monopile`."""
 
         if not self._outputs:
             raise Exception("Has MonopileDesign been ran yet?")
@@ -234,22 +237,10 @@ class MonopileDesign(DesignPhase):
         return self._outputs
 
     @property
-    def total_phase_cost(self):
-        """Returns total phase cost in $USD."""
+    def total_cost(self):
+        """Returns total cost of the substructures and transition pieces."""
 
-        _design = self.config.get("monopile_design", {})
-        design_cost = _design.get("design_cost", 0.0)
-        material_cost = sum([v for _, v in self.material_cost.items()])
-
-        return design_cost + material_cost
-
-    @property
-    def total_phase_time(self):
-        """Returns total phase time in hours."""
-
-        _design = self.config.get("monopile_design", {})
-        phase_time = _design.get("design_time", 0.0)
-        return phase_time
+        return sum([v for _, v in self.material_cost.items()])
 
     @property
     def detailed_output(self):

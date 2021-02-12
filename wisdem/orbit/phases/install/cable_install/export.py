@@ -10,7 +10,6 @@ from copy import deepcopy
 from math import ceil
 
 from marmot import process
-
 from wisdem.orbit.core import Vessel
 from wisdem.orbit.core.logic import position_onsite
 from wisdem.orbit.phases.install import InstallPhase
@@ -113,6 +112,12 @@ class ExportCableInstallation(InstallPhase):
             free_cable_length=self.free_cable_length,
             **kwargs,
         )
+
+    @property
+    def system_capex(self):
+        """Returns total procurement cost of the array system."""
+
+        return self.config["export_system"]["system_cost"]
 
     def extract_distances(self):
         """Extracts distances from input configuration or default values."""

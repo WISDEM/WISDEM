@@ -8,10 +8,9 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 import pandas as pd
 import pytest
-
-from wisdem.test.test_orbit.data import test_weather
 from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.phases.install import GravityBasedInstallation
+from wisdem.test.test_orbit.data import test_weather
 
 config = extract_library_specs("config", "moored_install")
 no_supply = extract_library_specs("config", "moored_install_no_supply")

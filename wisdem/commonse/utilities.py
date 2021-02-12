@@ -6,50 +6,61 @@ Copyright (c) NREL. All rights reserved.
 """
 
 from __future__ import print_function
+
 import numpy as np
 from scipy.linalg import solve_banded
+
+# from scipy.optimize import curve_fit
 
 
 def mode_fit(x, c2, c3, c4, c5, c6):
     return c2 * x ** 2.0 + c3 * x ** 3.0 + c4 * x ** 4.0 + c5 * x ** 5.0 + c6 * x ** 6.0
 
 
-def get_modal_coefficients(x, y, deg=6):
+def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6]):
     # Normalize x input
     xn = (x - x.min()) / (x.max() - x.min())
 
-    # Get coefficients to 6th order polynomial
+    # Get coefficients to 2-6th order polynomial
     p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
-    # coef, pcov = curve_fit(mode_fit, xn, y)
 
     # Normalize for Elastodyn
     if y.ndim > 1:
         p6 = p6[2:, :]
-        p6 /= p6.sum(axis=0)[np.newaxis, :]
+        # p6 = np.zeros((5, y.shape[1]))
+        # for k in range(y.shape[1]):
+        #    p6[:, k], _ = curve_fit(mode_fit, xn, y[:, k])
+        normval = np.maximum(p6.sum(axis=0), 1e-6)
+        p6 /= normval[np.newaxis, :]
     else:
         p6 = p6[2:]
+        # p6, _ = curve_fit(mode_fit, xn, y)
         p6 /= p6.sum()
 
     return p6
 
 
-def get_xy_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
+def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
     # Number of frequencies and modes
     nfreq = len(freqs)
 
     # Get mode shapes in batch
     mpfs = np.abs(np.c_[xmpf, ympf, zmpf])
-    polys = get_modal_coefficients(r, np.vstack((xdsp, ydsp)).T, 6)
+    polys = get_modal_coefficients(r, np.vstack((xdsp, ydsp, zdsp)).T)
     xpolys = polys[:, :nfreq].T
-    ypolys = polys[:, nfreq:].T
+    ypolys = polys[:, nfreq : (2 * nfreq)].T
+    zpolys = polys[:, (2 * nfreq) :].T
 
     nfreq2 = int(nfreq / 2)
     mshapes_x = np.zeros((nfreq2, 5))
     mshapes_y = np.zeros((nfreq2, 5))
+    mshapes_z = np.zeros((nfreq2, 5))
     freq_x = np.zeros(nfreq2)
     freq_y = np.zeros(nfreq2)
+    freq_z = np.zeros(nfreq2)
     ix = 0
     iy = 0
+    iz = 0
     for m in range(nfreq):
         if mpfs[m, :].max() < 1e-11:
             continue
@@ -66,8 +77,14 @@ def get_xy_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
             mshapes_y[iy, :] = ypolys[m, :]
             freq_y[iy] = freqs[m]
             iy += 1
+        elif imode == 2:
+            if iz >= nfreq2:
+                continue
+            mshapes_z[iz, :] = zpolys[m, :]
+            freq_z[iz] = freqs[m]
+            iz += 1
 
-    return freq_x, freq_y, mshapes_x, mshapes_y
+    return freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z
 
 
 def rotate(xo, yo, xp, yp, angle):
@@ -311,23 +328,38 @@ def rotateI(I, th, axis="z"):
         Iin = I.copy()
     else:
         raise ValueError("Unknown size for input, I:", I)
-    Imat = np.asmatrix(assembleI(Iin))
+    Imat = assembleI(Iin)
 
     # Build rotation matrix
     ct = np.cos(th)
     st = np.sin(th)
     if axis in ["z", "Z", 2]:
-        R = np.asmatrix(np.array([[ct, -st, 0], [st, ct, 0], [0, 0, 1]]))
+        R = np.array([[ct, -st, 0], [st, ct, 0], [0, 0, 1]])
     elif axis in ["y", "Y", 1]:
-        R = np.asmatrix(np.array([[ct, 0, st], [0, 1, 0], [-st, 0, ct]]))
+        R = np.array([[ct, 0, st], [0, 1, 0], [-st, 0, ct]])
     elif axis in ["x", "X", 0]:
-        R = np.asmatrix(np.array([[1, 0, 0], [0, ct, -st], [0, st, ct]]))
+        R = np.array([[1, 0, 0], [0, ct, -st], [0, st, ct]])
     else:
         raise ValueError("Axis must be either x/y/z or 0/1/2")
 
-    Iout = unassembleI(R * Imat * R.T)
+    Iout = unassembleI(R @ Imat @ R.T)
 
     return Iout
+
+
+def rotate_align_vectors(a, b):
+    # https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
+    mag_a = np.linalg.norm(a)
+    mag_b = np.linalg.norm(b)
+    unita = a / mag_a
+    unitb = b / mag_b
+    v = np.cross(unita, unitb)
+    s = np.linalg.norm(v)
+    c = np.dot(unita, unitb)
+    vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    radd = np.zeros((3, 3)) if s < 1e-6 else vx + np.dot(vx, vx) / (1 + c)  # *(1-c)/(s**2) #
+    r = np.eye(3) + radd
+    return r
 
 
 def cubic_with_deriv(x, xp, yp):
@@ -504,6 +536,25 @@ def smooth_abs(x, dx=0.01):
         dydx = dydx[0]
 
     return y, dydx
+
+
+def find_nearest(array, value):
+    return (np.abs(array - value)).argmin()
+
+
+def closest_node(nodemat, inode):
+    if not nodemat.shape[1] in [2, 3]:
+        if nodemat.shape[0] in [2, 3]:
+            xyz = nodemat.T
+        else:
+            raise ValueError("Expected an m X 2/3 input node array")
+    else:
+        xyz = nodemat
+
+    if not len(inode) in [2, 3]:
+        raise ValueError("Expected a size 2 or 3 node point")
+
+    return np.sqrt(np.sum((xyz - inode[np.newaxis, :]) ** 2, axis=1)).argmin()
 
 
 def nodal2sectional(x):

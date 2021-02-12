@@ -1,11 +1,10 @@
-import numpy as np
-import numpy.testing as npt
-import unittest
-import wisdem.rotorse.rotor_power as rp
-import openmdao.api as om
-import copy
-import time
 import os
+import unittest
+
+import numpy as np
+import openmdao.api as om
+import numpy.testing as npt
+import wisdem.rotorse.rotor_power as rp
 
 ARCHIVE = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "regulation.npz"
 
@@ -17,11 +16,10 @@ class TestServo(unittest.TestCase):
         discrete_inputs = {}
         discrete_outputs = {}
 
-        myobj = rp.GustETM()
+        myobj = rp.GustETM(std=2.5)
 
         inputs["V_mean"] = 10.0
         inputs["V_hub"] = 15.0
-        inputs["std"] = 2.5
         discrete_inputs["turbulence_class"] = "A"
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         sigma = 0.32 * (0.072 * 8.0 * 3.5 + 10.0)
@@ -54,14 +52,15 @@ class TestServo(unittest.TestCase):
         n_pc = 22
 
         modeling_options = {}
-        modeling_options["RotorSE"] = {}
-        modeling_options["RotorSE"]["n_span"] = n_span
-        modeling_options["RotorSE"]["n_aoa"] = n_aoa
-        modeling_options["RotorSE"]["n_Re"] = n_Re
-        modeling_options["RotorSE"]["n_tab"] = 1
-        modeling_options["RotorSE"]["regulation_reg_III"] = True
-        modeling_options["RotorSE"]["n_pc"] = n_pc
-        modeling_options["RotorSE"]["n_pc_spline"] = n_pc
+        modeling_options["WISDEM"] = {}
+        modeling_options["WISDEM"]["RotorSE"] = {}
+        modeling_options["WISDEM"]["RotorSE"]["n_span"] = n_span
+        modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
+        modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
+        modeling_options["WISDEM"]["RotorSE"]["n_tab"] = 1
+        modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = True
+        modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
+        modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
 
         n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile["cl"][:, :, :, np.newaxis], 0, 1).shape
         modeling_options["airfoils"] = {}
@@ -291,14 +290,15 @@ class TestServo(unittest.TestCase):
         n_pc = 22
 
         modeling_options = {}
-        modeling_options["RotorSE"] = {}
-        modeling_options["RotorSE"]["n_span"] = n_span
-        modeling_options["RotorSE"]["n_aoa"] = n_aoa
-        modeling_options["RotorSE"]["n_Re"] = n_Re
-        modeling_options["RotorSE"]["n_tab"] = 1
-        modeling_options["RotorSE"]["regulation_reg_III"] = False
-        modeling_options["RotorSE"]["n_pc"] = n_pc
-        modeling_options["RotorSE"]["n_pc_spline"] = n_pc
+        modeling_options["WISDEM"] = {}
+        modeling_options["WISDEM"]["RotorSE"] = {}
+        modeling_options["WISDEM"]["RotorSE"]["n_span"] = n_span
+        modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
+        modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
+        modeling_options["WISDEM"]["RotorSE"]["n_tab"] = 1
+        modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = False
+        modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
+        modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
 
         n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile["cl"][:, :, :, np.newaxis], 0, 1).shape
         modeling_options["airfoils"] = {}
@@ -425,4 +425,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

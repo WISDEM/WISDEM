@@ -197,7 +197,7 @@ components:
     nacelle:
         drivetrain:
             diameter: 3.0
-            uptilt_angle: 0.08726
+            uptilt: 0.08726
             distance_tt_hub: 2.3
             distance_hub2mb: 1.912
             distance_mb2mb: 0.368
@@ -215,6 +215,7 @@ components:
             planet_numbers: [3, 3, 0]
             gear_configuration: eep
             gearbox_efficiency: 0.975
+            damping_ratio: 0.01
             mb1Type: CARB
             mb2Type: SRB
             uptower: True

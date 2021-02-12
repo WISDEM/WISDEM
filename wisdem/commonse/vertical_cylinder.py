@@ -1,13 +1,11 @@
 import numpy as np
 import openmdao.api as om
-
-from wisdem.commonse import gravity, eps, NFREQ
 import wisdem.commonse.frustum as frustum
-import wisdem.commonse.manufacturing as manufacture
-from wisdem.commonse.utilization_constraints import hoopStressEurocode, hoopStress
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
-
+import wisdem.commonse.manufacturing as manufacture
+from wisdem.commonse import NFREQ, eps, gravity
+from wisdem.commonse.utilization_constraints import hoopStress, hoopStressEurocode
 
 RIGID = 1e30
 NREFINE = 3
@@ -61,6 +59,7 @@ class CylinderDiscretization(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("nPoints")
         self.options.declare("nRefine", default=NREFINE)
+        self.options.declare("nPin", default=0)
 
     def setup(self):
         nPoints = self.options["nPoints"]
@@ -90,12 +89,14 @@ class CylinderDiscretization(om.ExplicitComponent):
 
         nRefine = int(np.round(self.options["nRefine"]))
         z_param = float(inputs["foundation_height"]) + np.r_[0.0, np.cumsum(inputs["section_height"].flatten())]
+
         # Have to regine each element one at a time so that we preserve input nodes
         z_full = np.array([])
         for k in range(z_param.size - 1):
             zref = np.linspace(z_param[k], z_param[k + 1], nRefine + 1)
             z_full = np.append(z_full, zref)
         z_full = np.unique(z_full)
+
         outputs["z_full"] = z_full
         outputs["d_full"] = np.interp(z_full, z_param, inputs["diameter"])
         z_section = 0.5 * (z_full[:-1] + z_full[1:])
@@ -351,12 +352,20 @@ class CylinderFrame3DD(om.ExplicitComponent):
         Second natural frequency
     freqs : numpy array[NFREQ], [Hz]
         Natural frequencies of the structure
+    x_mode_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the x-direction
+    y_mode_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the y-direction
+    z_mode_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the z-direction
     x_mode_shapes : numpy array[NFREQ2, 5]
         6-degree polynomial coefficients of mode shapes in the x-direction
     y_mode_shapes : numpy array[NFREQ2, 5]
-        6-degree polynomial coefficients of mode shapes in the x-direction
-    top_deflection : float, [m]
-        Deflection of cylinder top in yaw-aligned +x direction
+        6-degree polynomial coefficients of mode shapes in the y-direction
+    z_mode_shapes : numpy array[NFREQ2, 5]
+        6-degree polynomial coefficients of mode shapes in the z-direction
+    cylinder_deflection : numpy array[npts], [m]
+        Deflection of cylinder nodes in yaw-aligned +x direction
     Fz_out : numpy array[npts-1], [N]
         Axial foce in vertical z-direction in cylinder structure.
     Vx_out : numpy array[npts-1], [N]
@@ -461,9 +470,11 @@ class CylinderFrame3DD(om.ExplicitComponent):
         self.add_output("freqs", val=np.zeros(NFREQ), units="Hz")
         self.add_output("x_mode_shapes", val=np.zeros((NFREQ2, 5)))
         self.add_output("y_mode_shapes", val=np.zeros((NFREQ2, 5)))
-        self.add_output("x_mode_freqs", val=np.zeros(NFREQ2))
-        self.add_output("y_mode_freqs", val=np.zeros(NFREQ2))
-        self.add_output("top_deflection", val=0.0, units="m")
+        self.add_output("z_mode_shapes", val=np.zeros((NFREQ2, 5)))
+        self.add_output("x_mode_freqs", val=np.zeros(NFREQ2), units="Hz")
+        self.add_output("y_mode_freqs", val=np.zeros(NFREQ2), units="Hz")
+        self.add_output("z_mode_freqs", val=np.zeros(NFREQ2), units="Hz")
+        self.add_output("cylinder_deflection", val=np.zeros(npts), units="m")
         self.add_output("Fz_out", val=np.zeros(npts - 1), units="N")
         self.add_output("Vx_out", val=np.zeros(npts - 1), units="N")
         self.add_output("Vy_out", val=np.zeros(npts - 1), units="N")
@@ -614,16 +625,20 @@ class CylinderFrame3DD(om.ExplicitComponent):
 
         # Get all mode shapes in batch
         NFREQ2 = int(NFREQ / 2)
-        freq_x, freq_y, mshapes_x, mshapes_y = util.get_xy_mode_shapes(
+        freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
             z, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
         )
         outputs["x_mode_freqs"] = freq_x[:NFREQ2]
         outputs["y_mode_freqs"] = freq_y[:NFREQ2]
+        outputs["z_mode_freqs"] = freq_z[:NFREQ2]
         outputs["x_mode_shapes"] = mshapes_x[:NFREQ2, :]
         outputs["y_mode_shapes"] = mshapes_y[:NFREQ2, :]
+        outputs["z_mode_shapes"] = mshapes_z[:NFREQ2, :]
 
         # deflections due to loading (from cylinder top and wind/wave loads)
-        outputs["top_deflection"] = displacements.dx[iCase, n - 1]  # in yaw-aligned direction
+        outputs["cylinder_deflection"] = np.sqrt(
+            displacements.dx[iCase, :] ** 2 + displacements.dy[iCase, :] ** 2
+        )  # in yaw-aligned direction
 
         # shear and bending, one per element (convert from local to global c.s.)
         Fz = forces.Nx[iCase, 1::2]
@@ -635,8 +650,13 @@ class CylinderFrame3DD(om.ExplicitComponent):
         Mxx = -forces.Mzz[iCase, 1::2]
 
         # Record total forces and moments
-        outputs["base_F"] = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
-        outputs["base_M"] = -1.0 * np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
+        base_idx = 2 * int(inputs["kidx"].max())
+        outputs["base_F"] = (
+            -1.0 * np.r_[-forces.Vz[iCase, base_idx], forces.Vy[iCase, base_idx], forces.Nx[iCase, base_idx]]
+        )
+        outputs["base_M"] = (
+            -1.0 * np.r_[-forces.Mzz[iCase, base_idx], forces.Myy[iCase, base_idx], forces.Txx[iCase, base_idx]]
+        )
 
         outputs["Fz_out"] = Fz
         outputs["Vx_out"] = Vx

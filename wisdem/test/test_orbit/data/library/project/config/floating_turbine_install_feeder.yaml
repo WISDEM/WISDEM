@@ -1,0 +1,24 @@
+feeder: test_floating_barge
+num_feeders: 1
+plant:
+  num_turbines: 20
+port:
+  monthly_rate: 100000
+  name: Test Port
+  num_cranes: 1
+site:
+  depth: 500
+  distance: 50
+turbine:
+  blade:
+    deck_space: 100
+    mass: 100
+  hub_height: 100
+  nacelle:
+    deck_space: 200
+    mass: 400
+  tower:
+    deck_space: 100
+    mass: 400
+    length: 100
+wtiv: test_floating_heavy_lift_vessel

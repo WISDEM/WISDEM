@@ -1,9 +1,9 @@
-from wisdem.ccblade import CCAirfoil, CCBlade
-from openmdao.api import ExplicitComponent
 import numpy as np
 import wisdem.ccblade._bem as _bem
+from openmdao.api import ExplicitComponent
+from scipy.interpolate import PchipInterpolator
+from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.csystem import DirectionVector
-
 
 cosd = lambda x: np.cos(np.deg2rad(x))
 sind = lambda x: np.sin(np.deg2rad(x))
@@ -172,7 +172,7 @@ class CCBladeLoads(ExplicitComponent):
         self.options.declare("modeling_options")
 
     def setup(self):
-        rotorse_options = self.options["modeling_options"]["RotorSE"]
+        rotorse_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_aoa = n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
         self.n_Re = n_Re = rotorse_options["n_Re"]  # Number of Reynolds
@@ -385,15 +385,15 @@ class CCBladeTwist(ExplicitComponent):
     def setup(self):
         modeling_options = self.options["modeling_options"]
         opt_options = self.options["opt_options"]
-        self.n_span = n_span = modeling_options["RotorSE"]["n_span"]
+        self.n_span = n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
         # self.n_af          = n_af      = af_init_options['n_af'] # Number of airfoils
-        self.n_aoa = n_aoa = modeling_options["RotorSE"]["n_aoa"]  # Number of angle of attacks
-        self.n_Re = n_Re = modeling_options["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
-        self.n_tab = n_tab = modeling_options["RotorSE"][
+        self.n_aoa = n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]  # Number of angle of attacks
+        self.n_Re = n_Re = modeling_options["WISDEM"]["RotorSE"]["n_Re"]  # Number of Reynolds, so far hard set at 1
+        self.n_tab = n_tab = modeling_options["WISDEM"]["RotorSE"][
             "n_tab"
         ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
-        n_opt_chord = opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]
-        n_opt_twist = opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
+        n_opt_chord = opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]
+        n_opt_twist = opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
 
         # Inputs
         self.add_input("Uhub", val=9.0, units="m/s", desc="Undisturbed wind speed")
@@ -486,7 +486,7 @@ class CCBladeTwist(ExplicitComponent):
         self.add_output("alpha", val=np.zeros(n_span), units="deg", desc="Angles of attack along blade span")
         self.add_output("cl", val=np.zeros(n_span), desc="Lift coefficients along blade span")
         self.add_output("cd", val=np.zeros(n_span), desc="Drag coefficients along blade span")
-        n_opt = opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
+        n_opt = opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
         self.add_output("cl_n_opt", val=np.zeros(n_opt), desc="Lift coefficients along blade span")
         self.add_output("cd_n_opt", val=np.zeros(n_opt), desc="Drag coefficients along blade span")
         self.add_output(
@@ -531,7 +531,11 @@ class CCBladeTwist(ExplicitComponent):
                     inputs["airfoils_cm"][i, :, :, 0],
                 )
 
-        if self.options["opt_options"]["optimization_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
+        if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
+            if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["flag"]:
+                raise Exception(
+                    "Twist cannot be simultaneously optimized and set to be defined inverting the BEM equations. Please check your analysis options yaml."
+                )
             # Find cl and cd for max efficiency
             cl = np.zeros(self.n_span)
             cd = np.zeros(self.n_span)
@@ -673,7 +677,7 @@ class CCBladeTwist(ExplicitComponent):
         myout, derivs = get_cp_cm.evaluate([inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=True)
         _, _, _, _, CP, CT, CQ, CM = [myout[key] for key in ["P", "T", "Q", "M", "CP", "CT", "CQ", "CM"]]
 
-        # if self.options['opt_options']['optimization_variables']['blade']['aero_shape']['twist']['flag']:
+        # if self.options['opt_options']['design_variables']['blade']['aero_shape']['twist']['flag']:
         get_cp_cm.induction = False
         get_cp_cm.induction_inflow = True
         loads, deriv = get_cp_cm.distributedAeroLoads(inputs["Uhub"][0], Omega[0], inputs["pitch"][0], 0.0)
@@ -799,7 +803,7 @@ class AeroHubLoads(ExplicitComponent):
         self.options.declare("modeling_options")
 
     def setup(self):
-        rotorse_options = self.options["modeling_options"]["RotorSE"]
+        rotorse_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
         n_blades = self.options["modeling_options"]["assembly"]["number_of_blades"]
 
         self.n_span = n_span = rotorse_options["n_span"]
@@ -1029,7 +1033,7 @@ class CCBladeEvaluate(ExplicitComponent):
         self.options.declare("modeling_options")
 
     def setup(self):
-        rotorse_init_options = self.options["modeling_options"]["RotorSE"]
+        rotorse_init_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
         self.n_span = n_span = rotorse_init_options["n_span"]
         self.n_aoa = n_aoa = rotorse_init_options["n_aoa"]  # Number of angle of attacks
         self.n_Re = n_Re = rotorse_init_options["n_Re"]  # Number of Reynolds

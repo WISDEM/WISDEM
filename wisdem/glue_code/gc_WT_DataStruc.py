@@ -1,10 +1,11 @@
-import numpy as np
 import copy
-from scipy.interpolate import PchipInterpolator, interp1d
+
+import numpy as np
 import openmdao.api as om
-from wisdem.rotorse.geometry_tools.geometry import trailing_edge_smoothing, remap2grid
-from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
+from scipy.interpolate import PchipInterpolator, interp1d
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
+from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
+from wisdem.rotorse.geometry_tools.geometry import remap2grid, trailing_edge_smoothing
 
 
 class WindTurbineOntologyOpenMDAO(om.Group):
@@ -27,7 +28,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # Airfoil dictionary inputs
         if modeling_options["flags"]["airfoils"]:
             airfoils = om.IndepVarComp()
-            rotorse_options = modeling_options["RotorSE"]
+            rotorse_options = modeling_options["WISDEM"]["RotorSE"]
             n_af = rotorse_options["n_af"]  # Number of airfoils
             n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
             n_Re = rotorse_options["n_Re"]  # Number of Reynolds, so far hard set at 1
@@ -79,7 +80,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem(
                 "blade",
                 Blade(
-                    rotorse_options=modeling_options["RotorSE"],
+                    rotorse_options=modeling_options["WISDEM"]["RotorSE"],
                     opt_options=opt_options,
                 ),
             )
@@ -123,6 +124,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             nacelle_ivc.add_output(
                 "gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive"
             )
+            nacelle_ivc.add_output("damping_ratio", val=0.0, desc="Damping ratio for the drivetrain system")
             nacelle_ivc.add_output(
                 "brake_mass_user",
                 val=0.0,
@@ -162,14 +164,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 "bedplate_material", val="steel", desc="Material name identifier for the bedplate"
             )
 
-            if modeling_options["DriveSE"]["direct"]:
+            if modeling_options["WISDEM"]["DriveSE"]["direct"]:
                 # Direct only
-                nacelle_ivc.add_output(
-                    "access_diameter",
-                    val=0.0,
-                    units="m",
-                    desc="Minimum diameter for hollow shafts for maintenance access",
-                )
                 nacelle_ivc.add_output(
                     "nose_diameter", val=np.zeros(2), units="m", desc="Diameter of nose (also called turret or spindle)"
                 )
@@ -275,7 +271,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 generator_ivc.add_output("C_Fes", val=0.0, units="USD/kg")
                 generator_ivc.add_output("C_PM", val=0.0, units="USD/kg")
 
-                if modeling_options["GeneratorSE"]["type"] in ["pmsg_outer"]:
+                if modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["pmsg_outer"]:
                     generator_ivc.add_output("N_c", 0.0)
                     generator_ivc.add_output("b", 0.0)
                     generator_ivc.add_output("c", 0.0)
@@ -292,19 +288,20 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     generator_ivc.add_output("z_allow_deg", 0.0, units="deg")
                     generator_ivc.add_output("B_tmax", 0.0, units="T")
 
-                if modeling_options["GeneratorSE"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
+                if modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["eesg", "pmsg_arms", "pmsg_disc"]:
                     generator_ivc.add_output("tau_p", val=0.0, units="m")
                     generator_ivc.add_output("h_ys", val=0.0, units="m")
                     generator_ivc.add_output("h_yr", val=0.0, units="m")
                     generator_ivc.add_output("b_arm", val=0.0, units="m")
 
-                elif modeling_options["GeneratorSE"]["type"] in ["scig", "dfig"]:
+                elif modeling_options["WISDEM"]["GeneratorSE"]["type"] in ["scig", "dfig"]:
                     generator_ivc.add_output("B_symax", val=0.0, units="T")
                     generator_ivc.add_output("S_Nmax", val=-0.2)
 
             else:
                 # If using simple (regression) generator scaling, this is an optional input to override default values
-                n_pc = modeling_options["RotorSE"]["n_pc"]
+                n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
+                generator_ivc.add_output("generator_radius_user", val=0.0, units="m")
                 generator_ivc.add_output("generator_mass_user", val=0.0, units="kg")
                 generator_ivc.add_output("generator_efficiency_user", val=np.zeros((n_pc, 2)))
 
@@ -312,7 +309,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Tower inputs
         if modeling_options["flags"]["tower"]:
-            tower_init_options = modeling_options["TowerSE"]
+            tower_init_options = modeling_options["WISDEM"]["TowerSE"]
             n_height_tower = tower_init_options["n_height_tower"]
             n_layers_tower = tower_init_options["n_layers_tower"]
             ivc = self.add_subsystem("tower", om.IndepVarComp())
@@ -329,11 +326,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 desc="1D array of the outer diameter values defined along the tower axis.",
             )
             ivc.add_output(
-                "cd", val=np.zeros(n_height_tower), desc="1D array of the drag coefficients defined along the tower height."
+                "cd",
+                val=np.zeros(n_height_tower),
+                desc="1D array of the drag coefficients defined along the tower height.",
             )
             ivc.add_output(
                 "layer_thickness",
-                val=np.zeros((n_layers_tower, n_height_tower - 1)),
+                val=np.zeros((n_layers_tower, n_height_tower)),
                 units="m",
                 desc="2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.",
             )
@@ -353,20 +352,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Monopile inputs
         if modeling_options["flags"]["monopile"]:
-            self.add_subsystem("monopile", Monopile(towerse_options=modeling_options["TowerSE"]))
-
-        # Foundation inputs
-        if modeling_options["flags"]["foundation"]:
-            foundation_ivc = self.add_subsystem("foundation", om.IndepVarComp())
-            foundation_ivc.add_output(
-                "height", val=0.0, units="m", desc="Foundation height in respect to the ground level."
-            )
+            self.add_subsystem("monopile", Monopile(towerse_options=modeling_options["WISDEM"]["TowerSE"]))
 
         if modeling_options["flags"]["floating_platform"]:
             self.add_subsystem("floating", Floating(floating_init_options=modeling_options["floating"]))
-            self.add_subsystem("mooring", Mooring(mooring_init_options=modeling_options["mooring"]))
+            self.add_subsystem("mooring", Mooring(options=modeling_options))
             self.connect("floating.joints_xyz", "mooring.joints_xyz")
-            self.connect("floating.joints_name2idx", "mooring.joints_name2idx")
 
         # Control inputs
         if modeling_options["flags"]["control"]:
@@ -437,7 +428,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             env_ivc.add_output(
                 "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
             )
-            env_ivc.add_output("hsig_wave", val=0.0, units="m", desc="Significant wave height")
+            env_ivc.add_output("Hsig_wave", val=0.0, units="m", desc="Significant wave height")
             env_ivc.add_output("Tsig_wave", val=0.0, units="s", desc="Significant wave period")
             env_ivc.add_output("G_soil", val=140e6, units="N/m**2", desc="Shear stress of soil")
             env_ivc.add_output("nu_soil", val=0.4, desc="Poisson ratio of soil")
@@ -529,27 +520,27 @@ class Blade(om.Group):
         # Optimization parameters initialized as indipendent variable component
         opt_var = om.IndepVarComp()
         opt_var.add_output(
-            "s_opt_twist", val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
+            "s_opt_twist", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
         )
         opt_var.add_output(
-            "s_opt_chord", val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
+            "s_opt_chord", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
         )
         opt_var.add_output(
             "twist_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
         )
         opt_var.add_output(
             "chord_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
         opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
         opt_var.add_output(
             "spar_cap_ss_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
         )
         opt_var.add_output(
             "spar_cap_ps_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
         )
         self.add_subsystem("opt_var", opt_var)
 
@@ -763,7 +754,7 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             if inputs["span_end"] >= 0.98:
                 flap_start = 0.98 - inputs["span_ext"]
                 flap_end = 0.98
-                print("WARNING: span_end point reached limits and was set to r/R = 0.98")
+                # print("WARNING: span_end point reached limits and was set to r/R = 0.98")
             else:
                 flap_start = inputs["span_end"] - inputs["span_ext"]
                 flap_end = inputs["span_end"]
@@ -1210,11 +1201,17 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
             desc="2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
 
+        ivc.add_output(
+            "joint_position",
+            val=0.0,
+            desc="Spanwise position of the segmentation joint.",
+        )
+        ivc.add_output("joint_mass", val=0.0, desc="Mass of the joint.")
+        ivc.add_output("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
+
         self.add_subsystem(
             "compute_internal_structure_2d_fem",
-            Compute_Blade_Internal_Structure_2D_FEM(
-                rotorse_options=rotorse_options
-            ),
+            Compute_Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
             promotes=["*"],
         )
 
@@ -1459,7 +1456,7 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                         'WARNING: Web "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to %f at R=%f (i=%d)'
                         % (web_name[j], offset_old, offset, inputs["s"][i], i)
                     )
-                    print(layer_resize_warning)
+                    # print(layer_resize_warning)
                 else:
                     outputs["web_offset_y_pa"][j, i] = copy.copy(offset)
 
@@ -1481,28 +1478,28 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                         [0.0, 0.0],
                         ["suction", "pressure"],
                     )
-                    if i == 0:
-                        print(
-                            "WARNING: The web "
-                            + web_name[j]
-                            + " is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition."
-                        )
-                    if web_start_nd[j, i] < 0.0 or web_start_nd[j, i] > 1.0:
-                        print(
-                            "WARNING: Blade web "
-                            + web_name[j]
-                            + " at n.d. span position "
-                            + str(inputs["s"][i])
-                            + " has the n.d. start point outside the TE. Please check the yaml input file."
-                        )
-                    if web_end_nd[j, i] < 0.0 or web_end_nd[j, i] > 1.0:
-                        print(
-                            "WARNING: Blade web "
-                            + web_name[j]
-                            + " at n.d. span position "
-                            + str(inputs["s"][i])
-                            + " has the n.d. end point outside the TE. Please check the yaml input file."
-                        )
+                    # if i == 0:
+                    #     print(
+                    #         "WARNING: The web "
+                    #         + web_name[j]
+                    #         + " is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition."
+                    #     )
+                    # if web_start_nd[j, i] < 0.0 or web_start_nd[j, i] > 1.0:
+                    #     print(
+                    #         "WARNING: Blade web "
+                    #         + web_name[j]
+                    #         + " at n.d. span position "
+                    #         + str(inputs["s"][i])
+                    #         + " has the n.d. start point outside the TE. Please check the yaml input file."
+                    #     )
+                    # if web_end_nd[j, i] < 0.0 or web_end_nd[j, i] > 1.0:
+                    #     print(
+                    #         "WARNING: Blade web "
+                    #         + web_name[j]
+                    #         + " at n.d. span position "
+                    #         + str(inputs["s"][i])
+                    #         + " has the n.d. end point outside the TE. Please check the yaml input file."
+                    #     )
                 elif discrete_inputs["definition_web"][j] == 3:
                     web_start_nd[j, i] = inputs["web_start_nd_yaml"][j, i]
                     web_end_nd[j, i] = inputs["web_end_nd_yaml"][j, i]
@@ -1544,10 +1541,10 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                         outputs["layer_width"][j, i] = copy.copy(width)
                         outputs["layer_offset_y_pa"][j, i] = copy.copy(offset)
                         layer_resize_warning = (
-                            'WARNING: Layer "%s" may be too large to fit within chord. "offset_x_pa" changed from %f to 0.0 and "width" changed from %f to %f at s=%f (i=%d)'
+                            'WARNING: Layer "%s" may be too large to fit within chord. "offset_y_pa" changed from %f to 0.0 and "width" changed from %f to %f at s=%f (i=%d)'
                             % (layer_name[j], offset, width_old, width, inputs["s"][i], i)
                         )
-                        print(layer_resize_warning)
+                        # print(layer_resize_warning)
                     else:
                         outputs["layer_width"][j, i] = copy.copy(width)
                         outputs["layer_offset_y_pa"][j, i] = copy.copy(offset)
@@ -1563,15 +1560,15 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = width / arc_L_i / 2.0
 
-                    # Geometry check to prevent overlap between SC and TE reinf
-                    for k in range(self.n_layers):
-                        if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
-                            if layer_end_nd[j, i] > layer_start_nd[k, i] or layer_start_nd[j, i] < layer_end_nd[k, i]:
-                                print(
-                                    "WARNING: The trailing edge reinforcement extends above the spar caps at station "
-                                    + str(i)
-                                    + ". Please reduce its width."
-                                )
+                    # # Geometry check to prevent overlap between SC and TE reinf
+                    # for k in range(self.n_layers):
+                    #     if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
+                    # if layer_end_nd[j, i] > layer_start_nd[k, i] or layer_start_nd[j, i] < layer_end_nd[k, i]:
+                    #     print(
+                    #         "WARNING: The trailing edge reinforcement extends above the spar caps at station "
+                    #         + str(i)
+                    #         + ". Please reduce its width."
+                    #     )
 
                 elif discrete_inputs["definition_layer"][j] == 5:  # Midpoint and width
                     midpoint = LE_loc
@@ -1580,29 +1577,29 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     outputs["layer_width"][j, i] = copy.copy(width)
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = midpoint + width / arc_L_i / 2.0
-                    # Geometry check to prevent overlap between SC and LE reinf
-                    for k in range(self.n_layers):
-                        if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
-                            if (
-                                discrete_inputs["layer_side"][k] == "suction"
-                                and layer_start_nd[j, i] < layer_end_nd[k, i]
-                            ):
-                                print(
-                                    "WARNING: The leading edge reinforcement extends above the spar caps at station "
-                                    + str(i)
-                                    + ". Please reduce its width."
-                                )
-                            elif (
-                                discrete_inputs["layer_side"][k] == "pressure"
-                                and layer_end_nd[j, i] > layer_start_nd[k, i]
-                            ):
-                                print(
-                                    "WARNING: The leading edge reinforcement extends above the spar caps at station "
-                                    + str(i)
-                                    + ". Please reduce its width."
-                                )
-                            else:
-                                pass
+                    # # Geometry check to prevent overlap between SC and LE reinf
+                    # for k in range(self.n_layers):
+                    #     if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
+                    #         if (
+                    #             discrete_inputs["layer_side"][k] == "suction"
+                    #             and layer_start_nd[j, i] < layer_end_nd[k, i]
+                    #         ):
+                    #             print(
+                    #                 "WARNING: The leading edge reinforcement extends above the spar caps at station "
+                    #                 + str(i)
+                    #                 + ". Please reduce its width."
+                    #             )
+                    #         elif (
+                    #             discrete_inputs["layer_side"][k] == "pressure"
+                    #             and layer_end_nd[j, i] > layer_start_nd[k, i]
+                    #         ):
+                    #             print(
+                    #                 "WARNING: The leading edge reinforcement extends above the spar caps at station "
+                    #                 + str(i)
+                    #                 + ". Please reduce its width."
+                    #             )
+                    #         else:
+                    #             pass
                 elif discrete_inputs["definition_layer"][j] == 6:  # Start and end locked to other element
                     # if inputs['layer_start_nd'][j,i] > 1:
                     layer_start_nd[j, i] = layer_end_nd[int(discrete_inputs["index_layer_start"][j]), i]
@@ -1778,14 +1775,22 @@ class Compute_Grid(om.ExplicitComponent):
             units="m",
             desc="Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.",
         )
+        self.add_output(
+            "foundation_height",
+            val=0.0,
+            units="m",
+            desc="Foundation height in respect to the ground level.",
+        )
 
         # Declare all partial derivatives.
         self.declare_partials("height", "ref_axis")
         self.declare_partials("length", "ref_axis")
         self.declare_partials("s", "ref_axis")
+        self.declare_partials("foundation_height", "ref_axis")
 
     def compute(self, inputs, outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
+        outputs["foundation_height"] = inputs["ref_axis"][0, 2]
         outputs["height"] = inputs["ref_axis"][-1, 2] - inputs["ref_axis"][0, 2]
         myarc = arc_length(inputs["ref_axis"])
         outputs["length"] = myarc[-1]
@@ -1798,6 +1803,8 @@ class Compute_Grid(om.ExplicitComponent):
         partials["height", "ref_axis"] = np.zeros((1, n_height * 3))
         partials["height", "ref_axis"][0, -1] = 1.0
         partials["height", "ref_axis"][0, 2] = -1.0
+        partials["foundation_height", "ref_axis"] = np.zeros((1, n_height * 3))
+        partials["foundation_height", "ref_axis"][0, 2] = 1.0
         arc_distances, d_arc_distances_d_points = arc_length_deriv(inputs["ref_axis"])
 
         # The length is based on only the final point in the arc,
@@ -1838,23 +1845,16 @@ class Monopile(om.Group):
         )
         ivc.add_output(
             "layer_thickness",
-            val=np.zeros((n_layers, n_height - 1)),
+            val=np.zeros((n_layers, n_height)),
             units="m",
             desc="2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.",
         )
         ivc.add_output(
             "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of tower"
         )
-        ivc.add_output(
-            "transition_piece_height", val=0.0, units="m", desc="point mass height of transition piece above water line"
-        )
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
-        ivc.add_output("suctionpile_depth", val=0.0, units="m", desc="depth of foundation in the soil")
-        ivc.add_output(
-            "suctionpile_depth_diam_ratio", 0.0, desc="ratio of sunction pile depth to mudline monopile diameter"
-        )
 
         self.add_subsystem("compute_monopile_grid", Compute_Grid(n_height=n_height), promotes=["*"])
 
@@ -1868,56 +1868,127 @@ class Floating(om.Group):
         n_joints = floating_init_options["joints"]["n_joints"]
         n_members = floating_init_options["members"]["n_members"]
 
-        jivc = self.add_subsystem("floating_joints", om.IndepVarComp())
-        jivc.add_output("location", val=np.zeros((n_joints, 3)), units="m")
+        jivc = self.add_subsystem("joints", om.IndepVarComp(), promotes=["*"])
+        jivc.add_output("location_in", val=np.zeros((n_joints, 3)), units="m")
+        jivc.add_output("transition_node", val=np.zeros(3), units="m")
+
+        # Additions for optimizing individual nodes or multiple nodes concurrently
+        self.add_subsystem("nodedv", NodeDVs(options=floating_init_options["joints"]), promotes=["*"])
+        for k in range(len(floating_init_options["joints"]["design_variable_data"])):
+            jivc.add_output(f"jointdv_{k}", val=0.0, units="m")
+
+        # Members added in groups to allow for symmetry
+        member_link_data = floating_init_options["members"]["linked_members"]
+        for k in range(len(member_link_data)):
+            name_member = member_link_data[k][0]
+            memidx = floating_init_options["members"]["name"].index(name_member)
+            n_grid = len(floating_init_options["members"]["grid_member_" + name_member])
+            n_layers = floating_init_options["members"]["n_layers"][memidx]
+            n_ballasts = floating_init_options["members"]["n_ballasts"][memidx]
+            n_bulkheads = floating_init_options["members"]["n_bulkheads"][memidx]
+            n_axial_joints = floating_init_options["members"]["n_axial_joints"][memidx]
+
+            ivc = self.add_subsystem(f"memgrp{k}", om.IndepVarComp())
+            ivc.add_output("s", val=np.zeros(n_grid))
+            ivc.add_output("outer_diameter", val=np.zeros(n_grid), units="m")
+            ivc.add_output("bulkhead_grid", val=np.zeros(n_bulkheads))
+            ivc.add_output("bulkhead_thickness", val=np.zeros(n_bulkheads), units="m")
+            ivc.add_discrete_output("layer_materials", val=[""] * n_layers)
+            ivc.add_output("layer_thickness", val=np.zeros((n_layers, n_grid)), units="m")
+            ivc.add_output("ballast_grid", val=np.zeros((n_ballasts, 2)))
+            ivc.add_output("ballast_volume", val=np.zeros(n_ballasts), units="m**3")
+            ivc.add_discrete_output("ballast_materials", val=[""] * n_ballasts)
+            ivc.add_output("grid_axial_joints", val=np.zeros(n_axial_joints))
+            ivc.add_output("outfitting_factor", 0.0)
+            ivc.add_output("ring_stiffener_web_height", 0.0, units="m")
+            ivc.add_output("ring_stiffener_web_thickness", 0.0, units="m")
+            ivc.add_output("ring_stiffener_flange_width", 0.0, units="m")
+            ivc.add_output("ring_stiffener_flange_thickness", 0.0, units="m")
+            ivc.add_output("ring_stiffener_spacing", 0.0, units="m")
+            ivc.add_output("axial_stiffener_web_height", 0.0, units="m")
+            ivc.add_output("axial_stiffener_web_thickness", 0.0, units="m")
+            ivc.add_output("axial_stiffener_flange_width", 0.0, units="m")
+            ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
+            ivc.add_output("axial_stiffener_spacing", 0.0, units="rad")
+
+        self.add_subsystem("alljoints", AggregateJoints(floating_init_options=floating_init_options), promotes=["*"])
 
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
-            ivc = self.add_subsystem("floating_member_" + name_member, om.IndepVarComp())
-            n_grid = len(floating_init_options["members"]["grid_member_" + name_member])
-            n_layers = floating_init_options["members"]["n_layers"][i]
-            n_ballasts = floating_init_options["members"]["n_ballasts"][i]
-            n_axial_joints = floating_init_options["members"]["n_axial_joints"][i]
-            ivc.add_output("grid", val=np.zeros(n_grid))
-            ivc.add_output("outer_diameter", val=np.zeros(n_grid), units="m")
-            ivc.add_output("bulkhead_thickness", val=np.zeros(n_grid), units="m")
-            ivc.add_output("layer_thickness", val=np.zeros((n_layers, n_grid)), units="m")
-            ivc.add_output("ballast_volume", val=np.zeros(n_ballasts), units="m**3")
-            ivc.add_output("grid_axial_joints", val=np.zeros(n_axial_joints))
-
-        self.add_subsystem("alljoints", CombineJoints(floating_init_options=floating_init_options), promotes=["*"])
+            idx = floating_init_options["members"]["name2idx"][name_member]
+            self.connect(f"memgrp{idx}.grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
+            self.connect(f"memgrp{idx}.outer_diameter", "member_" + name_member + ":outer_diameter")
+            self.connect(f"memgrp{idx}.s", "member_" + name_member + ":s")
 
 
-class CombineJoints(om.ExplicitComponent):
+# Component that links certain nodes together in a specific dimension for optimization
+class NodeDVs(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("options")
+
+    def setup(self):
+        opt = self.options["options"]
+        n_joints = opt["n_joints"]
+        self.add_input("location_in", val=np.zeros((n_joints, 3)), units="m")
+
+        for k in range(len(opt["design_variable_data"])):
+            self.add_input(f"jointdv_{k}", val=0.0, units="m")
+
+        self.add_output("location", val=np.zeros((n_joints, 3)), units="m")
+
+    def compute(self, inputs, outputs):
+        opt = self.options["options"]
+
+        xyz = inputs["location_in"]
+        for i, linked_node_dict in enumerate(opt["design_variable_data"]):
+            idx = linked_node_dict["indices"]
+            dim = linked_node_dict["dimension"]
+            xyz[idx, dim] = inputs[f"jointdv_{i}"]
+
+        outputs["location"] = xyz
+
+
+class AggregateJoints(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("floating_init_options")
 
     def setup(self):
         floating_init_options = self.options["floating_init_options"]
         n_joints = floating_init_options["joints"]["n_joints"]
+        n_joints_tot = len(floating_init_options["joints"]["name2idx"])
         n_members = floating_init_options["members"]["n_members"]
 
         self.add_input("location", val=np.zeros((n_joints, 3)), units="m")
 
-        self.n_joint_tot = n_joints
         for i in range(n_members):
             iname = floating_init_options["members"]["name"][i]
             i_axial_joints = floating_init_options["members"]["n_axial_joints"][i]
-            self.add_input(iname + ":grid_axial_joints", val=np.zeros(i_axial_joints))
-            self.n_joint_tot += i_axial_joints
+            i_grid = len(floating_init_options["members"]["grid_member_" + iname])
 
-        self.add_output("joints_xyz", val=np.zeros((self.n_joint_tot, 3)), units="m")
-        self.add_discrete_output("joints_name2idx", val={})
+            self.add_input("member_" + iname + ":s", val=np.zeros(i_grid))
+            self.add_input("member_" + iname + ":outer_diameter", val=np.zeros(i_grid), units="m")
+            self.add_input("member_" + iname + ":grid_axial_joints", val=np.zeros(i_axial_joints))
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+            self.add_output("member_" + iname + ":joint1", val=np.zeros(3), units="m")
+            self.add_output("member_" + iname + ":joint2", val=np.zeros(3), units="m")
+            self.add_output("member_" + iname + ":height", val=0.0, units="m")
+            self.add_output("member_" + iname + ":s_ghost1", val=0.0)
+            self.add_output("member_" + iname + ":s_ghost2", val=1.0)
+
+        self.add_output("joints_xyz", val=np.zeros((n_joints_tot, 3)), units="m")
+
+    def compute(self, inputs, outputs):
         # Unpack options
         floating_init_options = self.options["floating_init_options"]
+        memopt = floating_init_options["members"]
         n_joints = floating_init_options["joints"]["n_joints"]
-        n_members = floating_init_options["members"]["n_members"]
+        n_members = memopt["n_members"]
+        name2idx = floating_init_options["joints"]["name2idx"]
+        NULL = -9999.0
 
         # Unpack inputs
         locations = inputs["location"]
-        joints_xyz = np.zeros(outputs["joints_xyz"].shape)
+        joints_xyz = NULL * np.ones(outputs["joints_xyz"].shape)
 
         # Handle cylindrical coordinate joints
         icyl = floating_init_options["joints"]["cylindrical"]
@@ -1926,146 +1997,221 @@ class CombineJoints(om.ExplicitComponent):
         locations_xyz[icyl, 1] = locations[icyl, 0] * np.sin(locations[icyl, 1])
         joints_xyz[:n_joints, :] = locations_xyz.copy()
 
-        # Create initial name-to-index mapping
-        name2idx = dict(zip(floating_init_options["joints"]["name"], range(n_joints)))
-        count = n_joints
+        # Initial biggest radius at each node
+        node_r = np.zeros(joints_xyz.shape[0])
+        intersects = np.zeros(joints_xyz.shape[0])
 
         # Now add axial joints
         member_list = list(range(n_members))
-        while count < self.n_joint_tot:
+        count = n_joints
+        n_joint_tot = len(name2idx)
+        while count < n_joint_tot:
             for k in member_list[:]:
-                if (floating_init_options["members"]["joint1"][k] in name2idx) and (
-                    floating_init_options["members"]["joint2"][k] in name2idx
-                ):
+                joint1xyz = joints_xyz[name2idx[memopt["joint1"][k]], :]
+                joint2xyz = joints_xyz[name2idx[memopt["joint2"][k]], :]
+
+                # Check if we are ready to compute xyz position of axial joints in this member
+                if np.all(joint1xyz != NULL) and np.all(joint2xyz != NULL):
                     member_list.remove(k)
                 else:
                     continue
 
-                joint1xyz = locations_xyz[name2idx[floating_init_options["members"]["joint1"][k]], :]
-                joint2xyz = locations_xyz[name2idx[floating_init_options["members"]["joint2"][k]], :]
+                i_axial_joints = memopt["n_axial_joints"][k]
+                if i_axial_joints == 0:
+                    continue
+
+                iname = memopt["name"][k]
+                s = 0.5 * inputs["member_" + iname + ":s"]
+                Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
                 dxyz = joint2xyz - joint1xyz
 
-                iname = floating_init_options["members"]["name"][k]
-                i_axial_joints = floating_init_options["members"]["n_axial_joints"][k]
-                i_axial_joint_names = floating_init_options["members"]["axial_joint_name_member_" + iname]
                 for a in range(i_axial_joints):
-                    joints_xyz[count, :] = joint1xyz + inputs[iname + ":grid_axial_joints"][a] * dxyz
-                    name2idx[i_axial_joint_names] = count
+                    s_axial = inputs["member_" + iname + ":grid_axial_joints"][a]
+                    joints_xyz[count, :] = joint1xyz + s_axial * dxyz
+
+                    Ra = np.interp(s_axial, s, Rk)
+                    node_r[count] = max(node_r[count], Ra)
+                    intersects[count] += 1
+
                     count += 1
+
+        # Record starting and ending location for each member now.
+        # Also log biggest radius at each node intersection to compute ghost nodes
+        for k in range(n_members):
+            iname = memopt["name"][k]
+            joint1id = name2idx[memopt["joint1"][k]]
+            joint2id = name2idx[memopt["joint2"][k]]
+            joint1xyz = joints_xyz[joint1id, :]
+            joint2xyz = joints_xyz[joint2id, :]
+            hk = np.sqrt(np.sum((joint2xyz - joint1xyz) ** 2))
+            outputs["member_" + iname + ":joint1"] = joint1xyz
+            outputs["member_" + iname + ":joint2"] = joint2xyz
+            outputs["member_" + iname + ":height"] = hk
+
+            # Largest radius at connection points for this member
+            Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
+            node_r[joint1id] = max(node_r[joint1id], Rk[0])
+            node_r[joint2id] = max(node_r[joint2id], Rk[-1])
+            intersects[joint1id] += 1
+            intersects[joint2id] += 1
+
+        # Store the ghost node non-dimensional locations
+        for k in range(n_members):
+            iname = memopt["name"][k]
+            joint1id = name2idx[memopt["joint1"][k]]
+            joint2id = name2idx[memopt["joint2"][k]]
+            hk = outputs["member_" + iname + ":height"]
+            Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
+            s_ghost1 = 0.0
+            s_ghost2 = 1.0
+            if intersects[joint1id] > 1 and node_r[joint1id] > Rk[0]:
+                s_ghost1 = node_r[joint1id] / hk
+            if intersects[joint2id] > 1 and node_r[joint2id] > Rk[-1]:
+                s_ghost2 = 1.0 - node_r[joint2id] / hk
+            outputs["member_" + iname + ":s_ghost1"] = s_ghost1
+            outputs["member_" + iname + ":s_ghost2"] = s_ghost2
 
         # Store outputs
         outputs["joints_xyz"] = joints_xyz
-        discrete_outputs["joints_name2idx"] = name2idx
 
 
 class Mooring(om.Group):
     def initialize(self):
-        self.options.declare("mooring_init_options")
+        self.options.declare("options")
 
     def setup(self):
-        mooring_init_options = self.options["mooring_init_options"]
+        mooring_init_options = self.options["options"]["mooring"]
 
         n_nodes = mooring_init_options["n_nodes"]
         n_lines = mooring_init_options["n_lines"]
         n_line_types = mooring_init_options["n_line_types"]
-        n_anchor_types = mooring_init_options["n_anchor_types"]
+        # n_anchor_types = mooring_init_options["n_anchor_types"]
 
         ivc = self.add_subsystem("mooring", om.IndepVarComp(), promotes=["*"])
 
         ivc.add_discrete_output("node_names", val=[""] * n_nodes)
+        ivc.add_discrete_output("n_lines", val=0)  # Needed for ORBIT
         ivc.add_output("nodes_location", val=np.zeros((n_nodes, 3)), units="m")
+        ivc.add_output("nodes_mass", val=np.zeros(n_nodes), units="kg")
+        ivc.add_output("nodes_volume", val=np.zeros(n_nodes), units="m**3")
+        ivc.add_output("nodes_added_mass", val=np.zeros(n_nodes))
+        ivc.add_output("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
         ivc.add_discrete_output("nodes_joint_name", val=[""] * n_nodes)
-        ivc.add_discrete_output("line_id", val=[""] * n_lines)
         ivc.add_output("unstretched_length", val=np.zeros(n_lines), units="m")
-        ivc.add_discrete_output("n_lines", val=n_lines)
-        ivc.add_discrete_output("line_type_names", val=[""] * n_line_types)
-        ivc.add_output("line_diameter", val=np.zeros(n_line_types), units="m")
-        ivc.add_output("line_mass_density", val=np.zeros(n_line_types), units="kg/m")
-        ivc.add_output("line_stiffness", val=np.zeros(n_line_types), units="N")
-        ivc.add_output("line_breaking_load", val=np.zeros(n_line_types), units="N")
-        ivc.add_output("line_cost_rate", val=np.zeros(n_line_types), units="USD/m")
-        ivc.add_output("line_transverse_added_mass", val=np.zeros(n_line_types), units="kg/m")
-        ivc.add_output("line_tangential_added_mass", val=np.zeros(n_line_types), units="kg/m")
-        ivc.add_output("line_transverse_drag", val=np.zeros(n_line_types))
-        ivc.add_output("line_tangential_drag", val=np.zeros(n_line_types))
-        ivc.add_discrete_output("anchor_names", val=[""] * n_anchor_types)
-        ivc.add_output("anchor_mass", val=np.zeros(n_anchor_types), units="kg")
-        ivc.add_output("anchor_cost", val=np.zeros(n_anchor_types), units="USD")
-        ivc.add_output("anchor_max_vertical_load", val=np.zeros(n_anchor_types), units="N")
-        ivc.add_output("anchor_max_lateral_load", val=np.zeros(n_anchor_types), units="N")
+        ivc.add_discrete_output("line_id", val=[""] * n_lines)
+        # ivc.add_discrete_output("n_lines", val=n_lines)
+        ivc.add_discrete_output("line_type_names", val=[""] * n_line_types)  ## For MoorDyn
+        ivc.add_output("line_diameter", val=np.zeros(n_lines), units="m")
+        ivc.add_output("line_mass_density_coeff", val=np.zeros(n_lines), units="kg/m**3")
+        ivc.add_output("line_stiffness_coeff", val=np.zeros(n_lines), units="N/m**2")
+        ivc.add_output("line_breaking_load_coeff", val=np.zeros(n_lines), units="N/m**2")
+        ivc.add_output("line_cost_rate_coeff", val=np.zeros(n_lines), units="USD/m**3")
+        ivc.add_output("line_transverse_added_mass_coeff", val=np.zeros(n_lines), units="kg/m**3")
+        ivc.add_output("line_tangential_added_mass_coeff", val=np.zeros(n_lines), units="kg/m**3")
+        ivc.add_output("line_transverse_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
+        ivc.add_output("line_tangential_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
+        # ivc.add_discrete_output("anchor_names", val=[""] * n_anchor_types)
+        ivc.add_output("anchor_mass", val=np.zeros(n_lines), units="kg")
+        ivc.add_output("anchor_cost", val=np.zeros(n_lines), units="USD")
+        ivc.add_output("anchor_max_vertical_load", val=np.zeros(n_lines), units="N")
+        ivc.add_output("anchor_max_lateral_load", val=np.zeros(n_lines), units="N")
 
-        self.add_subsystem("moormass", MooringMassProps(mooring_init_options=mooring_init_options), promotes=["*"])
-        self.add_subsystem("moorjoint", MooringJoints(mooring_init_options=mooring_init_options), promotes=["*"])
+        self.add_subsystem("moorprop", MooringProperties(mooring_init_options=mooring_init_options), promotes=["*"])
+        self.add_subsystem("moorjoint", MooringJoints(options=self.options["options"]), promotes=["*"])
 
 
-class MooringJoints(om.ExplicitComponent):
+class MooringProperties(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("mooring_init_options")
 
     def setup(self):
         mooring_init_options = self.options["mooring_init_options"]
+        n_lines = mooring_init_options["n_lines"]
+
+        self.add_input("line_diameter", val=np.zeros(n_lines), units="m")
+        self.add_input("line_mass_density_coeff", val=np.zeros(n_lines), units="kg/m**3")
+        self.add_input("line_stiffness_coeff", val=np.zeros(n_lines), units="N/m**2")
+        self.add_input("line_breaking_load_coeff", val=np.zeros(n_lines), units="N/m**2")
+        self.add_input("line_cost_rate_coeff", val=np.zeros(n_lines), units="USD/m**3")
+        self.add_input("line_transverse_added_mass_coeff", val=np.zeros(n_lines), units="kg/m**3")
+        self.add_input("line_tangential_added_mass_coeff", val=np.zeros(n_lines), units="kg/m**3")
+        self.add_input("line_transverse_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
+        self.add_input("line_tangential_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
+
+        self.add_output("line_mass_density", val=np.zeros(n_lines), units="kg/m")
+        self.add_output("line_stiffness", val=np.zeros(n_lines), units="N")
+        self.add_output("line_breaking_load", val=np.zeros(n_lines), units="N")
+        self.add_output("line_cost_rate", val=np.zeros(n_lines), units="USD/m")
+        self.add_output("line_transverse_added_mass", val=np.zeros(n_lines), units="kg/m")
+        self.add_output("line_tangential_added_mass", val=np.zeros(n_lines), units="kg/m")
+        self.add_output("line_transverse_drag", val=np.zeros(n_lines))
+        self.add_output("line_tangential_drag", val=np.zeros(n_lines))
+
+    def compute(self, inputs, outputs):
+        d = inputs["line_diameter"]
+        d2 = d * d
+        varlist = [
+            "line_mass_density",
+            "line_stiffness",
+            "line_breaking_load",
+            "line_cost_rate",
+            "line_transverse_added_mass",
+            "line_tangential_added_mass",
+            "line_transverse_drag",
+            "line_tangential_drag",
+        ]
+        for var in varlist:
+            outputs[var] = d2 * inputs[var + "_coeff"]
+
+
+class MooringJoints(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("options")
+
+    def setup(self):
+        mooring_init_options = self.options["options"]["mooring"]
         n_nodes = mooring_init_options["n_nodes"]
+        n_attach = mooring_init_options["n_attach"]
+        n_lines = mooring_init_options["n_lines"]
 
         self.add_discrete_input("nodes_joint_name", val=[""] * n_nodes)
-        self.add_discrete_input("joints_name2idx", val={})
         self.add_input("nodes_location", val=np.zeros((n_nodes, 3)), units="m")
         self.add_input("joints_xyz", shape_by_conn=True, units="m")
 
-        self.add_output("nodes_location_full", val=np.zeros((n_nodes, 3)), units="m")
+        self.add_output("mooring_nodes", val=np.zeros((n_nodes, 3)), units="m")
+        self.add_output("fairlead_nodes", val=np.zeros((n_attach, 3)), units="m")
+        self.add_output("fairlead", val=np.zeros(n_lines), units="m")
+        self.add_output("fairlead_radius", val=np.zeros(n_attach), units="m")
+        self.add_output("anchor_nodes", val=np.zeros((n_lines, 3)), units="m")
+        self.add_output("anchor_radius", val=np.zeros(n_lines), units="m")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        mooring_init_options = self.options["mooring_init_options"]
+        mooring_init_options = self.options["options"]["mooring"]
         n_nodes = mooring_init_options["n_nodes"]
 
         node_joints = discrete_inputs["nodes_joint_name"]
         node_loc = inputs["nodes_location"]
         joints_loc = inputs["joints_xyz"]
-        idx_map = discrete_inputs["joints_name2idx"]
+        idx_map = self.options["options"]["floating"]["joints"]["name2idx"]
         for k in range(n_nodes):
             if node_joints[k] == "":
                 continue
             idx = idx_map[node_joints[k]]
             node_loc[k, :] = joints_loc[idx, :]
+        outputs["mooring_nodes"] = node_loc
 
-        outputs["nodes_location_full"] = node_loc
+        node_loc = np.unique(node_loc, axis=0)
+        tol = 0.5
+        z_fair = node_loc[:, 2].max()
+        z_anch = node_loc[:, 2].min()
+        ifair = np.where(np.abs(node_loc[:, 2] - z_fair) < tol)[0]
+        ianch = np.where(np.abs(node_loc[:, 2] - z_anch) < tol)[0]
 
-
-class MooringMassProps(om.ExplicitComponent):
-    def initialize(self):
-        self.options.declare("mooring_init_options")
-
-    def setup(self):
-        mooring_init_options = self.options["mooring_init_options"]
-        n_lines = mooring_init_options["n_lines"]
-        n_line_types = mooring_init_options["n_line_types"]
-
-        self.add_discrete_input("line_id", val=[""] * n_lines)
-        self.add_input("unstretched_length", val=np.zeros(n_lines), units="m")
-        self.add_discrete_input("line_names", val=[""] * n_line_types)
-        self.add_input("line_mass_density", val=np.zeros(n_line_types), units="kg/m")
-        self.add_input("line_cost_rate", val=np.zeros(n_line_types), units="USD/m")
-
-        self.add_output("line_mass", val=np.zeros(n_lines), units="kg")
-        self.add_output("mooring_mass", val=0.0, units="kg")
-        self.add_output("line_cost", val=np.zeros(n_lines), units="USD")
-        self.add_output("mooring_cost", val=0.0, units="USD")
-
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        mooring_init_options = self.options["mooring_init_options"]
-        n_lines = mooring_init_options["n_lines"]
-
-        line_mass = np.zeros(n_lines)
-        line_cost = np.zeros(n_lines)
-        for ii, iname in enumerate(discrete_inputs["line_names"]):
-            for jj, jname in enumerate(discrete_inputs["line_id"]):
-                if jname == iname:
-                    line_mass[jj] = inputs["line_mass_density"][ii] * inputs["unstretched_length"][jj]
-                    line_cost[jj] = inputs["line_cost_rate"][ii] * inputs["unstretched_length"][jj]
-
-        outputs["line_mass"] = line_mass
-        outputs["line_cost"] = line_cost
-        outputs["mooring_mass"] = line_mass.sum()
-        outputs["mooring_cost"] = line_cost.sum()
+        outputs["fairlead_nodes"] = node_loc[ifair, :]
+        outputs["anchor_nodes"] = node_loc[ianch, :]
+        outputs["fairlead"] = z_fair
+        outputs["fairlead_radius"] = np.sqrt(np.sum(node_loc[ifair, :2] ** 2, axis=1))
+        outputs["anchor_radius"] = np.sqrt(np.sum(node_loc[ianch, :2] ** 2, axis=1))
 
 
 class ComputeMaterialsProperties(om.ExplicitComponent):
@@ -2146,7 +2292,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                 density_resin = inputs["rho"][i]
                 id_resin = i
         if self.options["composites"] and density_resin == 0.0:
-            print(
+            raise Exception(
                 "Warning: a material named resin is not defined in the input yaml.  This is required for blade composite analysis"
             )
 
@@ -2342,11 +2488,11 @@ class WT_Assembly(om.ExplicitComponent):
         modeling_options = self.options["modeling_options"]
 
         if modeling_options["flags"]["blade"]:
-            n_span = modeling_options["RotorSE"]["n_span"]
+            n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
         else:
             n_span = 0
         if modeling_options["flags"]["tower"]:
-            n_height_tower = modeling_options["TowerSE"]["n_height_tower"]
+            n_height_tower = modeling_options["WISDEM"]["TowerSE"]["n_height_tower"]
         else:
             n_height_tower = 0
 
@@ -2447,14 +2593,16 @@ class WT_Assembly(om.ExplicitComponent):
             if inputs["hub_height_user"] != 0.0:
                 outputs["hub_height"] = inputs["hub_height_user"]
                 outputs["tower_ref_axis"][:, 2] = (
-                    inputs["tower_ref_axis_user"][:, 2] - inputs["tower_ref_axis_user"][0, 2]
-                ) * inputs["hub_height_user"] / (
-                    inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
-                ) + inputs[
-                    "tower_ref_axis_user"
-                ][
-                    0, 2
-                ]
+                    (
+                        inputs["tower_ref_axis_user"][:, 2]
+                        - inputs["tower_ref_axis_user"][0, 2]
+                        + inputs["distance_tt_hub"]
+                    )
+                    * inputs["hub_height_user"]
+                    / (inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"])
+                    + inputs["tower_ref_axis_user"][0, 2]
+                    - inputs["distance_tt_hub"]
+                )
             else:
-                outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2]
+                outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]

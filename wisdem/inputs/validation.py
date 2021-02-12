@@ -1,3 +1,6 @@
+import os
+
+import numpy as np
 import jsonschema as json
 
 try:
@@ -8,13 +11,9 @@ except:
     except:
         raise ImportError("No module named ruamel.yaml or ruamel_yaml")
 
-import os
 
-fdefaults_geom = os.path.join(os.path.dirname(os.path.realpath(__file__)), "geometry_defaults.yaml")
 fschema_geom = os.path.join(os.path.dirname(os.path.realpath(__file__)), "geometry_schema.yaml")
-fdefaults_model = os.path.join(os.path.dirname(os.path.realpath(__file__)), "modeling_defaults.yaml")
 fschema_model = os.path.join(os.path.dirname(os.path.realpath(__file__)), "modeling_schema.yaml")
-fdefaults_opt = os.path.join(os.path.dirname(os.path.realpath(__file__)), "analysis_defaults.yaml")
 fschema_opt = os.path.join(os.path.dirname(os.path.realpath(__file__)), "analysis_schema.yaml")
 
 
@@ -79,6 +78,23 @@ def integrate_defaults(instance, defaults, yaml_schema):
     return instance
 
 
+def simple_types(indict):
+    rv = indict
+    for k in rv.keys():
+        if type(rv[k]) == type(np.array([])):
+            rv[k] = rv[k].tolist()
+        elif isinstance(rv[k], (float, int, list, dict, bool, str)):
+            pass
+        else:
+            rv[k] = ""
+
+        try:
+            simple_types(rv[k])
+        except:
+            continue
+    return rv
+
+
 # ---------------------
 # See: https://python-jsonschema.readthedocs.io/en/stable/faq/#why-doesn-t-my-schema-s-default-property-set-the-default-on-my-instance
 def extend_with_default(validator_class):
@@ -113,12 +129,16 @@ def validate_with_defaults(finput, fschema):
 
 
 # ---------------------
-def load_default_geometry_yaml():
-    return load_yaml(fdefaults_geom)
-
-
 def load_geometry_yaml(finput):
     return validate_with_defaults(finput, fschema_geom)
+
+
+def load_modeling_yaml(finput):
+    return validate_with_defaults(finput, fschema_model)
+
+
+def load_analysis_yaml(finput):
+    return validate_with_defaults(finput, fschema_opt)
 
 
 def write_geometry_yaml(instance, foutput):
@@ -129,33 +149,33 @@ def write_geometry_yaml(instance, foutput):
     write_yaml(instance, foutput + sfx_str)
 
 
-def load_modeling_yaml(finput):
-    return validate_with_defaults(finput, fschema_model)
-
-
 def write_modeling_yaml(instance, foutput):
     validate_without_defaults(instance, fschema_model)
     sfx_str = ".yaml"
     if foutput[-5:] == sfx_str:
-        sfx_str = ""
-    write_yaml(instance, foutput + sfx_str)
+        foutput = foutput[-5:]
+    elif foutput[-4:] == ".yml":
+        foutput = foutput[-4:]
+    sfx_str = "-modeling.yaml"
 
-
-def load_analysis_yaml(finput):
-    return validate_with_defaults(finput, fschema_opt)
+    instance2 = simple_types(instance)
+    write_yaml(instance2, foutput + sfx_str)
 
 
 def write_analysis_yaml(instance, foutput):
     validate_without_defaults(instance, fschema_opt)
     sfx_str = ".yaml"
     if foutput[-5:] == sfx_str:
-        sfx_str = ""
+        foutput = foutput[-5:]
+    elif foutput[-4:] == ".yml":
+        foutput = foutput[-4:]
+    sfx_str = "-analysis.yaml"
     write_yaml(instance, foutput + sfx_str)
 
 
 if __name__ == "__main__":
     yaml_schema = load_yaml(fschema_opt)
-    myobj = load_yaml(fdefaults_opt)
+    myobj = load_yaml("sample_analysis.yaml")
     DefaultValidatingDraft7Validator(yaml_schema).validate(myobj)
     # validator.validate( myobj )
     print([k for k in myobj.keys()])

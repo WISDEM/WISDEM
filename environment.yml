@@ -1,31 +1,31 @@
+name: test
+
 channels:
   - conda-forge
   - defaults
 
 dependencies:
-  - python
+  - coveralls
+  - cython
+  - git
+  - jsonschema
+  - make
+  - matplotlib
+  - numpy
+  - openmdao
+  - openpyxl
+  - pandas
+  - pip
+  - pyside2
   - pytest
   - pytest-cov
-  - coveralls
-  - openmdao=3.4.0
-  - jsonschema
-  - ruamel_yaml
+  - python
   - pyyaml
-  - make
-  - xlrd
-  - openpyxl
-  - cython
-  - swig
-  - pandas
-  - numpydoc
-  - six
-  - setuptools
-  - git
-  - numpy
+  - ruamel_yaml
   - scipy
-  - matplotlib
-  - geopy
-  - pyside2
+  - setuptools
+  - sortedcontainers
+  - swig
   - pip:
     - simpy
     - marmot-agents

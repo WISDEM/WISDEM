@@ -1,4 +1,5 @@
 import textwrap
+
 import validation
 
 mywidth = 70
@@ -98,7 +99,7 @@ class Schema2RST(object):
             self.f.write(rsthdr[idepth - 1] * 40 + "\n\n")
         self.f.write("\n")
         if not desc is None:
-            self.f.write(desc + "\n")
+            self.f.write(desc + "\n\n")
         for k in rv.keys():
             print(k)
             if "type" in rv[k]:

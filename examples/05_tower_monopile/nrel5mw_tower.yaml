@@ -38,9 +38,7 @@ components:
                   thickness:
                     grid: *grid_tower
                     values: [0.027, 0.0222, 0.019]
-    foundation:
-        height: 0.
-        
+
 materials:
    -  name: steel
       description: Steel of the tower and monopile, ASTM A572 Grade 50
@@ -59,7 +57,7 @@ materials:
       S: 0
       Xy: 345.e+6
       unit_cost: 0.7
-      
+
 environment:
     air_density: 1.225
     air_dyn_viscosity: 1.81e-5

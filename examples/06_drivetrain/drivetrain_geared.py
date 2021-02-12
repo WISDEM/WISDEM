@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
 # Import needed libraries
-import openmdao.api as om
 import numpy as np
-
-from wisdem.drivetrainse.drivetrain import DrivetrainSE
+import openmdao.api as om
 from wisdem.commonse.fileIO import save_data
+from wisdem.drivetrainse.drivetrain import DrivetrainSE
 
 opt_flag = False  # True
 # ---
 
 # Set input options
 opt = {}
-opt["DriveSE"] = {}
-opt["DriveSE"]["direct"] = False
-opt["DriveSE"]["hub"] = {}
-opt["DriveSE"]["hub"]["hub_gamma"] = 2.0
-opt["DriveSE"]["hub"]["spinner_gamma"] = 1.5
-opt["DriveSE"]["gamma_f"] = 1.35
-opt["DriveSE"]["gamma_m"] = 1.3
-opt["DriveSE"]["gamma_n"] = 1.0
-opt["RotorSE"] = {}
-opt["RotorSE"]["n_pc"] = 20
+opt["WISDEM"] = {}
+opt["WISDEM"]["DriveSE"] = {}
+opt["WISDEM"]["DriveSE"]["direct"] = False
+opt["WISDEM"]["DriveSE"]["hub"] = {}
+opt["WISDEM"]["DriveSE"]["hub"]["hub_gamma"] = 2.0
+opt["WISDEM"]["DriveSE"]["hub"]["spinner_gamma"] = 1.5
+opt["WISDEM"]["DriveSE"]["gamma_f"] = 1.35
+opt["WISDEM"]["DriveSE"]["gamma_m"] = 1.3
+opt["WISDEM"]["DriveSE"]["gamma_n"] = 1.0
+opt["WISDEM"]["RotorSE"] = {}
+opt["WISDEM"]["RotorSE"]["n_pc"] = 20
 opt["materials"] = {}
 opt["materials"]["n_mat"] = 4
 opt["flags"] = {}
