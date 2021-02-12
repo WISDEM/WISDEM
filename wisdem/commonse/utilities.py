@@ -357,7 +357,8 @@ def rotate_align_vectors(a, b):
     s = np.linalg.norm(v)
     c = np.dot(unita, unitb)
     vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
-    r = np.eye(3) + vx + np.dot(vx, vx) / (1 + c)  # *(1-c)/(s**2)
+    radd = np.zeros((3, 3)) if s < 1e-6 else vx + np.dot(vx, vx) / (1 + c)  # *(1-c)/(s**2) #
+    r = np.eye(3) + radd
     return r
 
 

@@ -42,7 +42,7 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
             elif type(value) == type(""):
                 array_dict[iname] = np.str_(value)
             elif type(value) == type([]):
-                temp_val = np.empty(len(value), dtype=np.object)
+                temp_val = np.empty(len(value), dtype=object)
                 temp_val[:] = value[:]
                 array_dict[iname] = temp_val
             # else:

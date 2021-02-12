@@ -213,7 +213,7 @@ class Akima(object):
         p3 = self.p3
 
         # All vectorized points uses same grid, so find these once.
-        j_idx = np.zeros(n, dtype=np.int)
+        j_idx = np.zeros(n, dtype=np.int_)
         for i in range(n):
 
             # Find location in array (use end segments if out of bounds)

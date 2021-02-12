@@ -56,7 +56,6 @@ class TestDrag(unittest.TestCase):
         npt.assert_equal(self.unknowns["waveLoads_pt"], q + 3.0)
         npt.assert_equal(self.unknowns["waveLoads_z"], -100.0)
         npt.assert_equal(self.unknowns["waveLoads_beta"], 0.0)
-        npt.assert_equal(self.unknowns["waveLoads_d"], 10.0)
 
     def testCDset(self):
         self.params["cd_usr"] = 2.0
