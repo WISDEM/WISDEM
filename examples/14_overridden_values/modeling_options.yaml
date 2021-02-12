@@ -1,0 +1,18 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+
+WISDEM:
+    RotorSE:
+        flag: True
+        n_pitch_perf_surfaces: 5
+        n_tsr_perf_surfaces: 5
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+    TowerSE:
+        flag: True
+    DriveSE:
+        flag: True
+    FloatingSE:
+        flag: True
+    BOS:
+        flag: True
