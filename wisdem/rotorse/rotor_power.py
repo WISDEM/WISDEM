@@ -6,9 +6,10 @@ January 2020
 """
 
 import numpy as np
-from openmdao.api import Group, ExplicitComponent
 from scipy.optimize import brentq, minimize, minimize_scalar
 from scipy.interpolate import PchipInterpolator
+
+from openmdao.api import Group, ExplicitComponent
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.utilities import smooth_abs, smooth_min, linspace_with_deriv
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
@@ -195,28 +196,6 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_input("precurveTip", val=0.0, units="m", desc="precurve at tip")
         self.add_input("presweep", val=np.zeros(n_span), units="m", desc="presweep at each section")
         self.add_input("presweepTip", val=0.0, units="m", desc="presweep at tip")
-
-        # self.add_discrete_input('airfoils',  val=[0]*n_span,                      desc='CCAirfoil instances')
-        self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="lift coefficients, spanwise")
-        self.add_input("airfoils_cd", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="drag coefficients, spanwise")
-        self.add_input("airfoils_cm", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="moment coefficients, spanwise")
-        self.add_input("airfoils_aoa", val=np.zeros((n_aoa)), units="deg", desc="angle of attack grid for polars")
-        self.add_input("airfoils_Re", val=np.zeros((n_Re)), desc="Reynolds numbers of polars")
-        self.add_discrete_input("nBlades", val=0, desc="number of blades")
-        self.add_input("rho", val=1.225, units="kg/m**3", desc="density of air")
-        self.add_input("mu", val=1.81e-5, units="kg/(m*s)", desc="dynamic viscosity of air")
-        self.add_input("shearExp", val=0.0, desc="shear exponent")
-        self.add_discrete_input(
-            "nSector", val=4, desc="number of sectors to divide rotor face into in computing thrust and power"
-        )
-        self.add_discrete_input("tiploss", val=True, desc="include Prandtl tip loss model")
-        self.add_discrete_input("hubloss", val=True, desc="include Prandtl hub loss model")
-        self.add_discrete_input(
-            "wakerotation",
-            val=True,
-            desc="include effect of wake rotation (i.e., tangential induction factor is nonzero)",
-        )
-        self.add_discrete_input("usecd", val=True, desc="use drag coefficient in computing induction factors")
 
         # self.add_discrete_input('airfoils',  val=[0]*n_span,                      desc='CCAirfoil instances')
         self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="lift coefficients, spanwise")
@@ -596,7 +575,7 @@ class ComputePowerCurve(ExplicitComponent):
                 Cm_aero[i_3:] = 0
 
         # Optional correction of pitch for peak thrust shaving
-        peak_thrust_shaving = True
+        peak_thrust_shaving = False
         if peak_thrust_shaving:
             max_T = 0.8 * np.max(T)
             identify_new_rated = True
