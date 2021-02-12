@@ -298,6 +298,7 @@ components:
             planet_numbers: [3, 3, 0]
             gear_configuration: eep
             gearbox_efficiency: 0.955
+            damping_ratio: 0.01
             mb1Type: CARB
             mb2Type: SRB
             uptower: True

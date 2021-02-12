@@ -35,10 +35,13 @@ class TestPlatform(unittest.TestCase):
             self.inputs[f"member{k}:nodes_xyz"] = NULL * np.ones((MEMMAX, 3))
             self.inputs[f"member{k}:nodes_r"] = NULL * np.ones(MEMMAX)
 
-        for var in ["D", "t", "A", "Asx", "Asy", "Ixx", "Iyy", "Izz", "rho", "E", "G"]:
+        for var in ["D", "t", "A", "Asx", "Asy", "Ixx", "Iyy", "Izz", "rho", "E", "G", "Px", "Py", "Pz"]:
             self.inputs["tower_elem_" + var] = NULL * np.ones(MEMMAX)
             for k in range(n_member):
-                self.inputs[f"member{k}:section_" + var] = NULL * np.ones(MEMMAX)
+                if var[0] == "P":
+                    self.inputs[f"member{k}:{var}"] = NULL * np.ones(MEMMAX)
+                else:
+                    self.inputs[f"member{k}:section_{var}"] = NULL * np.ones(MEMMAX)
 
         self.inputs["member0:nodes_xyz"][:2, :] = np.array([[0, 0, 0], [1, 0, 0]])
         self.inputs["member1:nodes_xyz"][:2, :] = np.array([[1, 0, 0], [0.5, 1, 0]])
@@ -75,6 +78,9 @@ class TestPlatform(unittest.TestCase):
             self.inputs[f"member{k}:variable_ballast_spts"] = np.linspace(0, 0.5, 10)
             self.inputs[f"member{k}:variable_ballast_Vpts"] = np.arange(10)
             self.inputs[f"member{k}:waterline_centroid"] = self.inputs[f"member{k}:nodes_xyz"][:2, :2].mean(axis=0)
+            self.inputs[f"member{k}:Px"][:2] = 1.0
+            self.inputs[f"member{k}:Py"][:2] = 2.0
+            self.inputs[f"member{k}:Pz"][:2] = 3.0
 
         myones = np.ones(2)
         self.inputs["tower_nodes"][:3, :] = np.array([[0.0, 0.0, 1.0], [0.0, 0.0, 51.0], [0.0, 0.0, 101.0]])
@@ -93,6 +99,9 @@ class TestPlatform(unittest.TestCase):
         self.inputs["tower_elem_rho"][:2] = 5e3 / 4 / 100 * myones
         self.inputs["tower_elem_E"][:2] = 30.0 * myones
         self.inputs["tower_elem_G"][:2] = 40.0 * myones
+        self.inputs["tower_elem_Px"][:3] = 1.0
+        self.inputs["tower_elem_Py"][:3] = 2.0
+        self.inputs["tower_elem_Pz"][:3] = 3.0
         self.inputs["tower_center_of_mass"] = self.inputs["tower_nodes"][:3, :].mean(axis=0)
         self.inputs["tower_mass"] = 5e3
 
@@ -134,6 +143,12 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["platform_elem_rho"][6:], NULL)
         npt.assert_equal(self.outputs["platform_elem_E"][6:], NULL)
         npt.assert_equal(self.outputs["platform_elem_G"][6:], NULL)
+        npt.assert_equal(self.outputs["platform_elem_Px1"][6:], NULL)
+        npt.assert_equal(self.outputs["platform_elem_Py1"][6:], NULL)
+        npt.assert_equal(self.outputs["platform_elem_Pz1"][6:], NULL)
+        npt.assert_equal(self.outputs["platform_elem_Px2"][6:], NULL)
+        npt.assert_equal(self.outputs["platform_elem_Py2"][6:], NULL)
+        npt.assert_equal(self.outputs["platform_elem_Pz2"][6:], NULL)
 
         npt.assert_equal(
             self.outputs["platform_nodes"][:4, :],
@@ -157,6 +172,12 @@ class TestPlatform(unittest.TestCase):
         # npt.assert_equal(self.outputs["platform_elem_rho"][:6], 3 * np.arange(6)+1)
         npt.assert_equal(self.outputs["platform_elem_E"][:6], 3 * np.arange(6) + 1)
         npt.assert_equal(self.outputs["platform_elem_G"][:6], 4 * np.arange(6) + 1)
+        npt.assert_equal(self.outputs["platform_elem_Px1"][:6], 1.0)
+        npt.assert_equal(self.outputs["platform_elem_Py1"][:6], 2.0)
+        npt.assert_equal(self.outputs["platform_elem_Pz1"][:6], 3.0)
+        npt.assert_equal(self.outputs["platform_elem_Px2"][:6], 1.0)
+        npt.assert_equal(self.outputs["platform_elem_Py2"][:6], 2.0)
+        npt.assert_equal(self.outputs["platform_elem_Pz2"][:6], 3.0)
         self.assertEqual(self.outputs["platform_displacement"], 6e1)
         centroid = np.array([0.375, 0.25, 0.25])
         R = np.zeros(6)
@@ -243,6 +264,12 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["system_elem_E"][:8], np.r_[3 * np.arange(6) + 1, 30, 30])
         npt.assert_equal(self.outputs["system_elem_G"][:8], np.r_[4 * np.arange(6) + 1, 40, 40])
         self.assertEqual(self.outputs["system_structural_mass"], 6e3 + 5e3 + 1e4 + 1e3)
+        npt.assert_equal(self.outputs["system_elem_Px1"][:8], 1.0)
+        npt.assert_equal(self.outputs["system_elem_Px2"][:8], 1.0)
+        npt.assert_equal(self.outputs["system_elem_Py1"][:8], 2.0)
+        npt.assert_equal(self.outputs["system_elem_Py2"][:8], 2.0)
+        npt.assert_equal(self.outputs["system_elem_Pz1"][:8], 3.0)
+        npt.assert_equal(self.outputs["system_elem_Pz2"][:8], 3.0)
         npt.assert_equal(
             self.outputs["system_structural_center_of_mass"],
             (
@@ -383,23 +410,25 @@ class TestGroup(unittest.TestCase):
             prob[f"member{k}:Awater"] = 5.0
             prob[f"member{k}:Iwater"] = 15.0
             prob[f"member{k}:added_mass"] = np.arange(6)
+            prob[f"member{k}:Px"][:2] = 1.0
+            prob[f"member{k}:Py"][:2] = 2.0
+            prob[f"member{k}:Pz"][:2] = 3.0
 
         # Set environment to that used in OC3 testing campaign
-        # prob["rho_air"] = 1.226  # Density of air [kg/m^3]
-        # prob["mu_air"] = 1.78e-5  # Viscosity of air [kg/m/s]
+        prob["rho_air"] = 1.226  # Density of air [kg/m^3]
+        prob["mu_air"] = 1.78e-5  # Viscosity of air [kg/m/s]
         prob["rho_water"] = 1025.0  # Density of water [kg/m^3]
-        # prob["mu_water"] = 1.08e-3  # Viscosity of water [kg/m/s]
-        # prob["water_depth"] = 320.0  # Distance to sea floor [m]
-        # prob["Hsig_wave"] = 0.0  # Significant wave height [m]
-        # prob["Tsig_wave"] = 1e3  # Wave period [s]
-        # prob["shearExp"] = 0.11  # Shear exponent in wind power law
-        # prob["cm"] = 2.0  # Added mass coefficient
-        # prob["Uc"] = 0.0  # Mean current speed
-        # prob["yaw"] = 0.0  # Turbine yaw angle
-        # prob["beta_wind"] = prob["beta_wave"] = 0.0
-        # prob["cd_usr"] = -1.0  # Compute drag coefficient
-        # prob["Uref"] = 10.0
-        # prob["zref"] = 100.0
+        prob["mu_water"] = 1.08e-3  # Viscosity of water [kg/m/s]
+        prob["water_depth"] = 320.0  # Distance to sea floor [m]
+        prob["Hsig_wave"] = 0.0  # Significant wave height [m]
+        prob["Tsig_wave"] = 1e3  # Wave period [s]
+        prob["shearExp"] = 0.11  # Shear exponent in wind power law
+        prob["cm"] = 2.0  # Added mass coefficient
+        prob["Uc"] = 0.0  # Mean current speed
+        prob["beta_wind"] = prob["beta_wave"] = 0.0
+        prob["cd_usr"] = -1.0  # Compute drag coefficient
+        prob["Uref"] = 10.0
+        prob["zref"] = 100.0
 
         # Porperties of turbine tower
         nTower = prob.model.options["modeling_options"]["floating"]["tower"]["n_height"][0]

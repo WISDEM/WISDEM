@@ -647,7 +647,7 @@ class MemberComponent(om.ExplicitComponent):
         self.add_input("axial_stiffener_web_thickness", 0.0, units="m")
         self.add_input("axial_stiffener_flange_width", 1e-6, units="m")
         self.add_input("axial_stiffener_flange_thickness", 0.0, units="m")
-        self.add_input("axial_stiffener_spacing", 1000.0, units="m")
+        self.add_input("axial_stiffener_spacing", 0.0, units="rad")
 
         self.add_input("ballast_grid", np.zeros((n_ball, 2)))
         self.add_input("ballast_density", np.zeros(n_ball), units="kg/m**3")
@@ -766,18 +766,43 @@ class MemberComponent(om.ExplicitComponent):
         Gmat = inputs["G_full"]
         coeff = inputs["outfitting_full"]
 
-        # Add sections for structural analysis
-        # TODO: Longitudinal stiffeners
+        t_web = inputs["axial_stiffener_web_thickness"]
+        t_flange = inputs["axial_stiffener_flange_thickness"]
+        h_web = inputs["axial_stiffener_web_height"]
+        w_flange = inputs["axial_stiffener_flange_width"]
+        th_stiffener = inputs["axial_stiffener_spacing"]
+
+        # Number of axial stiffeners
+        n_stiff = 0 if th_stiffener == 0.0 else 2 * np.pi / th_stiffener
+
+        # Outer and inner radius of web by section
         d_sec, _ = util.nodal2sectional(d_full)
+        R_wo = 0.5 * d_sec - t_full
+        R_wi = R_wo - h_web
+        R_w = 0.5 * (R_wo + R_wi)
+
+        # Outer and inner radius of flange by section
+        R_fo = R_wi
+        R_fi = R_fo - t_flange
+        R_f = 0.5 * (R_fo + R_fi)
+
+        A_web = h_web * t_web
+        A_flange = w_flange * t_flange
+        A_stiff = n_stiff * (A_web + A_flange)
+        Ix_stiff = 0.5 * n_stiff * (A_web * R_w ** 2 + A_flange * R_f ** 2)
+        Iz_stiff = 2 * Ix_stiff
+        t_eff = A_stiff / (2 * np.pi * R_w)
+
+        # Add sections for structural analysis
         for k in range(len(s_full) - 1):
             itube = cs.Tube(d_sec[k], t_full[k])
             iprop = CrossSection(
                 D=d_sec[k],
-                t=coeff[k] * t_full[k],
-                A=coeff[k] * itube.Area,
-                Ixx=coeff[k] * itube.Jxx,
-                Iyy=coeff[k] * itube.Jyy,
-                Izz=coeff[k] * itube.J0,
+                t=coeff[k] * t_full[k] + t_eff[k],
+                A=coeff[k] * itube.Area + A_stiff,
+                Ixx=coeff[k] * itube.Jxx + Ix_stiff[k],
+                Iyy=coeff[k] * itube.Jyy + Ix_stiff[k],
+                Izz=coeff[k] * itube.J0 + Iz_stiff[k],
                 Asx=itube.Asx,
                 Asy=itube.Asy,
                 rho=rho[k],
@@ -820,10 +845,14 @@ class MemberComponent(om.ExplicitComponent):
         rho[s_section > s_ghost2] = 0.0
         coeff = util.sectionalInterp(s_section, s_full, coeff)
         k_m = util.sectionalInterp(s_section, s_full, inputs["unit_cost_full"])
+        R_w = 0.5 * (Rb + Rt) - t_full - 0.5 * h_web
+        R_f = 0.5 * (Rb + Rt) - t_full - h_web - 0.5 * t_flange
+        Ix_stiff = 0.5 * n_stiff * (A_web * R_w ** 2 + A_flange * R_f ** 2)
+        Iz_stiff = 2 * Ix_stiff
 
         # Total mass of cylinder
         V_shell = frustum.frustumShellVol(Rb, Rt, t_full, H)
-        mass = coeff * rho * V_shell
+        mass = coeff * rho * (V_shell + A_stiff * H)
         outputs["shell_mass"] = mass.sum()
 
         # Center of mass
@@ -831,8 +860,8 @@ class MemberComponent(om.ExplicitComponent):
         outputs["shell_z_cg"] = np.dot(cm_section, mass) / mass.sum()
 
         # Moments of inertia
-        Izz_section = coeff * rho * frustum.frustumShellIzz(Rb, Rt, t_full, H)
-        Ixx_section = Iyy_section = coeff * rho * frustum.frustumShellIxx(Rb, Rt, t_full, H)
+        Izz_section = coeff * rho * (frustum.frustumShellIzz(Rb, Rt, t_full, H) + H * Iz_stiff)
+        Ixx_section = Iyy_section = coeff * rho * (frustum.frustumShellIxx(Rb, Rt, t_full, H) + H * Ix_stiff)
 
         # Sum up each cylinder section using parallel axis theorem
         I_base = np.zeros((3, 3))
@@ -1362,9 +1391,9 @@ class MemberHydro(om.ExplicitComponent):
         z-coordinates of section nodes
     d_full : numpy array[n_full], [m]
         outer diameter at each section node bottom to top (length = nsection + 1)
-    s_all : numpy array[npts]
+    s_all : numpy array[MEMAX]
         Final non-dimensional points of all internal member nodes
-    nodes_xyz : numpy array[npts,3], [m]
+    nodes_xyz : numpy array[MEMAX,3], [m]
         Global dimensional coordinates (x-y-z) for all member nodes in s_all output
 
 
@@ -1390,12 +1419,10 @@ class MemberHydro(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare("n_height")
-        self.options.declare("n_refine", default=NREFINE)
+        self.options.declare("n_full")
 
     def setup(self):
-        n_height = self.options["n_height"]
-        n_full = get_nfull(n_height, nref=self.options["n_refine"])
+        n_full = self.options["n_full"]
 
         # Variables local to the class and not OpenMDAO
         self.ibox = None
@@ -1415,6 +1442,8 @@ class MemberHydro(om.ExplicitComponent):
         self.add_output("Iwater", 0.0, units="m**4")
         self.add_output("added_mass", np.zeros(6), units="kg")
         self.add_output("waterline_centroid", np.zeros(2), units="m")
+        self.add_output("z_dim", np.zeros(n_full), units="m")
+        self.add_output("d_eff", np.zeros(n_full), units="m")
 
     def compute(self, inputs, outputs):
         # Unpack variables
@@ -1427,6 +1456,11 @@ class MemberHydro(om.ExplicitComponent):
         rho_water = inputs["rho_water"]
         xyz0 = xyz[0, :]
         dxyz = xyz[-1, :] - xyz[0, :]
+
+        # Dimensions away from vertical
+        tilt = np.arctan(dxyz[0] / (1e-8 + dxyz[2]))
+        outputs["z_dim"] = xyz0[2] + s_full * dxyz[2]
+        outputs["d_eff"] = inputs["d_full"] / np.cos(tilt)
 
         # Compute volume of each section and mass of displaced water by section
         # Find the radius at the waterline so that we can compute the submerged volume as a sum of frustum sections
@@ -1477,15 +1511,96 @@ class MemberHydro(om.ExplicitComponent):
         m_a = np.zeros(6)
         m_a[:2] = rho_water * V_under_tot  # A11 surge, A22 sway
 
-        Lxy = np.sqrt((xyz[:, 0].max() - xyz[:, 0].min()) ** 2 + (xyz[:, 1].max() - xyz[:, 1].min()) ** 2)
+        # Lxy = np.sqrt((xyz[:, 0].max() - xyz[:, 0].min()) ** 2 + (xyz[:, 1].max() - xyz[:, 1].min()) ** 2)
         D = 2 * r_under.max()
-        Lxy = np.maximum(Lxy, D)
-        m_a[2] = (1.0 / 6.0) * rho_water * Lxy * D ** 2.0  # A33 heave
+        # Lxy = np.maximum(Lxy, D)
+        m_a[2] = (1.0 / 6.0) * rho_water * D ** 3.0  # A33 heave * Lxy *
         m_a[3:5] = (
             np.pi * rho_water * np.trapz((z_under - z_cb) ** 2.0 * r_under ** 2.0, z_under)
         )  # A44 roll, A55 pitch
         m_a[5] = 0.0  # A66 yaw
         outputs["added_mass"] = m_a
+
+
+class Global2MemberLoads(om.ExplicitComponent):
+    """
+    Converts the loading from the global c.s. to the member (element) c.s.
+
+    Parameters
+    ----------
+    s_full : numpy array[n_full], [m]
+        non-dimensional coordinates of section nodes
+    s_all : numpy array[MEMMAX]
+        Final non-dimensional points of all internal member nodes
+    nodes_xyz : numpy array[MEMMAX,3], [m]
+        Global dimensional coordinates (x-y-z) for all member nodes in s_all output
+    Px_global : numpy array[npts], [N/m]
+        x-Force density in global coordinates at member nodes
+    Py_global : numpy array[npts], [N/m]
+        y-Force density in global coordinates at member nodes
+    Pz_global : numpy array[npts], [N/m]
+        z-Force density in global coordinates at member nodes
+
+
+    Returns
+    -------
+    Px : numpy array[MEMMAX], [N/m]
+        x-Force density in element coordinates (x along axis) at member nodes
+    Py : numpy array[MEMMAX], [N/m]
+        y-Force density in element coordinates (x along axis) at member nodes
+    Pz : numpy array[MEMMAX], [N/m]
+        z-Force density in element coordinates (x along axis) at member nodes
+
+    """
+
+    def initialize(self):
+        self.options.declare("n_full")
+
+    def setup(self):
+        n_full = self.options["n_full"]
+
+        # Variables local to the class and not OpenMDAO
+        self.ibox = None
+
+        self.add_input("s_full", np.zeros(n_full), units="m")
+        self.add_input("s_all", NULL * np.ones(MEMMAX))
+        self.add_input("nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
+        self.add_input("Px_global", np.zeros(n_full), units="N/m")
+        self.add_input("Py_global", np.zeros(n_full), units="N/m")
+        self.add_input("Pz_global", np.zeros(n_full), units="N/m")
+
+        self.add_output("Px", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_output("Py", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_output("Pz", NULL * np.ones(MEMMAX), units="N/m")
+
+    def compute(self, inputs, outputs):
+        # Unpack variables
+        s_full = inputs["s_full"]
+        nnode = np.where(inputs["s_all"] == NULL)[0][0]
+        s_grid = inputs["s_all"][:nnode]
+        xyz = inputs["nodes_xyz"][:nnode, :]
+
+        # Put global loads on denser grid
+        Px_g = np.interp(s_grid, s_full, inputs["Px_global"])
+        Py_g = np.interp(s_grid, s_full, inputs["Py_global"])
+        Pz_g = np.interp(s_grid, s_full, inputs["Pz_global"])
+
+        # Get rotation matrix that puts x along member axis
+        unit_x = np.array([1.0, 0.0, 0.0])
+        dxyz = xyz[-1, :] - xyz[0, :]
+        R = util.rotate_align_vectors(dxyz, unit_x)
+        P_local = R @ np.c_[Px_g, Py_g, Pz_g].T
+
+        # Store local loads
+        Px = NULL * np.ones(MEMMAX)
+        Py = NULL * np.ones(MEMMAX)
+        Pz = NULL * np.ones(MEMMAX)
+        Px[:nnode] = P_local[0, :]
+        Py[:nnode] = P_local[1, :]
+        Pz[:nnode] = P_local[2, :]
+        outputs["Px"] = Px
+        outputs["Py"] = Py
+        outputs["Pz"] = Pz
 
 
 class Member(om.Group):
@@ -1500,6 +1615,7 @@ class Member(om.Group):
 
         n_height = opt["n_height"][idx]
         n_refine = NREFINE if n_height > 2 else np.maximum(NREFINE, 2)
+        n_full = get_nfull(n_height, nref=n_refine)
 
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
         self.add_subsystem(
@@ -1516,10 +1632,8 @@ class Member(om.Group):
 
         self.add_subsystem("comp", MemberComponent(options=opt, idx=idx, n_refine=n_refine), promotes=["*"])
 
-        self.add_subsystem("hydro", MemberHydro(n_height=n_height, n_refine=n_refine), promotes=["*"])
+        self.add_subsystem("hydro", MemberHydro(n_full=n_full), promotes=["*"])
 
-        """
-        # TODO: Get actual z coordinates into CylinderEnvironment
         prom = [
             "Uref",
             "zref",
@@ -1530,21 +1644,23 @@ class Member(om.Group):
             "beta_wind",
             "rho_air",
             "mu_air",
-            "beta_water",
+            "beta_wave",
             "rho_water",
             "mu_water",
             "Uc",
             "Hsig_wave",
             "Tsig_wave",
-            "rho_water",
             "water_depth",
-            "Px",
-            "Py",
-            "Pz",
             "qdyn",
             "yaw",
         ]
         self.add_subsystem("env", CylinderEnvironment(nPoints=n_full, water_flag=True), promotes=prom)
-        self.connect("z_full", "env.z")
-        self.connect("d_full", "env.d")
-        """
+        self.connect("z_dim", "env.z")
+        self.connect("d_eff", "env.d")
+
+        self.add_subsystem(
+            "g2e", Global2MemberLoads(n_full=n_full), promotes=["nodes_xyz", "s_all", "s_full", "Px", "Py", "Pz"]
+        )
+        self.connect("env.Px", "g2e.Px_global")
+        self.connect("env.Py", "g2e.Py_global")
+        self.connect("env.Pz", "g2e.Pz_global")

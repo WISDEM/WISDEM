@@ -34,8 +34,23 @@ class FloatingSE(om.Group):
             "painting_cost_rate",
             "labor_cost_rate",
         ]
-        # mem_prom += ["Uref", "zref", "shearExp", "z0", "cd_usr", "cm", "beta_wind", "rho_air", "mu_air", "beta_water",
-        #            "rho_water", "mu_water", "Uc", "Hsig_wave","Tsig_wave","rho_water","water_depth"]
+        mem_prom += [
+            "Uref",
+            "zref",
+            "z0",
+            "shearExp",
+            "cd_usr",
+            "cm",
+            "beta_wind",
+            "rho_air",
+            "mu_air",
+            "beta_wave",
+            "mu_water",
+            "Uc",
+            "Hsig_wave",
+            "Tsig_wave",
+            "water_depth",
+        ]
         for k in range(n_member):
             self.add_subsystem(
                 f"member{k}",

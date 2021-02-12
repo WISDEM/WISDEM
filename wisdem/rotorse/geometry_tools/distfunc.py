@@ -1,6 +1,7 @@
 from __future__ import division
+
 import numpy as np
-from scipy.optimize import fsolve, root
+from scipy.optimize import root, fsolve
 
 
 def distfunc(dinp, ival=1):
@@ -36,14 +37,14 @@ def distfunc(dinp, ival=1):
     fdist[0] = 0.0
     s0 = dinp[0, 0]
     d0 = dinp[0, 1]
-    n0 = np.int(dinp[0, 2]) - 1
+    n0 = np.int_(dinp[0, 2]) - 1
 
     for i in range(1, nn):
         s1 = dinp[i, 0]
         if i > 0 and d0 < 0.0:
             d0 = fdist[n0] - fdist[n0 - 1]
         d1 = dinp[i, 1]
-        n1 = np.int(dinp[i, 2]) - 1
+        n1 = np.int_(dinp[i, 2]) - 1
         _len = s1 - s0
         delta1 = d0
         delta2 = d1

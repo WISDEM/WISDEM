@@ -124,6 +124,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             nacelle_ivc.add_output(
                 "gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive"
             )
+            nacelle_ivc.add_output("damping_ratio", val=0.0, desc="Damping ratio for the drivetrain system")
             nacelle_ivc.add_output(
                 "brake_mass_user",
                 val=0.0,
@@ -1908,7 +1909,7 @@ class Floating(om.Group):
             ivc.add_output("axial_stiffener_web_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_flange_width", 0.0, units="m")
             ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
-            ivc.add_output("axial_stiffener_spacing", 0.0, units="m")
+            ivc.add_output("axial_stiffener_spacing", 0.0, units="rad")
 
         self.add_subsystem("alljoints", AggregateJoints(floating_init_options=floating_init_options), promotes=["*"])
 

@@ -206,6 +206,12 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["ring_stiffener_flange_width"] = 1.0
         self.inputs["ring_stiffener_spacing"] = 20.0
 
+        self.inputs["axial_stiffener_web_thickness"] = 0.0
+        self.inputs["axial_stiffener_flange_thickness"] = 0.0
+        self.inputs["axial_stiffener_web_height"] = 0.0
+        self.inputs["axial_stiffener_flange_width"] = 0.0
+        self.inputs["axial_stiffener_spacing"] = 0.0
+
         self.inputs["ballast_grid"] = np.array([[0.0, 0.08], [0.08, 0.16], [0.16, 0.48]])
         self.inputs["ballast_density"] = np.array([2e3, 4e3, 1e2])
         self.inputs["ballast_volume"] = np.pi * np.array([10.0, 10.0, 0.0])
@@ -276,6 +282,47 @@ class TestMemberComponent(unittest.TestCase):
                 self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
+                self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
+                self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
+
+    def testMainSectionsWithAxial(self):
+
+        self.inputs["axial_stiffener_web_thickness"] = 0.2
+        self.inputs["axial_stiffener_flange_thickness"] = 0.3
+        self.inputs["axial_stiffener_web_height"] = 0.5
+        self.inputs["axial_stiffener_flange_width"] = 1.0
+        self.inputs["axial_stiffener_spacing"] = 0.25 * np.pi
+
+        self.mem.add_main_sections(self.inputs, self.outputs)
+
+        A_stiff = 0.2 * 0.5 + 1 * 0.3
+        n_stiff = 8
+        m = np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2) * 1e3 * 1.1 * 100.0
+        Iax = 0.5 * m * 0.25 * (10.0 ** 2 + 9.9 ** 2)
+        Ix = (1 / 12.0) * m * (3 * 0.25 * (10.0 ** 2 + 9.9 ** 2) + 100 ** 2) + m * 50 * 50  # parallel axis on last term
+        m += n_stiff * A_stiff * 1e3 * 1.1 * 100.0
+        Iz_stiff = n_stiff * (0.2 * 0.5 * (0.5 * 9.9 - 0.25) ** 2 + 1 * 0.3 * (0.5 * 9.9 - 0.5 - 0.15) ** 2)
+        Iax += Iz_stiff * 1e3 * 1.1 * 100
+        self.assertAlmostEqual(self.outputs["shell_mass"], m)
+        self.assertAlmostEqual(self.outputs["shell_z_cg"], 50.0)
+        self.assertAlmostEqual(self.outputs["shell_I_base"][2], Iax, 5)
+        self.assertGreater(self.outputs["shell_cost"], 1e3)
+
+        key = list(self.mem.sections.keys())
+        self.assertEqual(key, self.inputs["s_full"].tolist())
+        for k in key:
+            if k == 1.0:
+                self.assertEqual(self.mem.sections[k], None)
+            else:
+                self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
+                self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05 + n_stiff * A_stiff / (2 * np.pi * 4.7))
+                self.assertAlmostEqual(
+                    self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2) + n_stiff * A_stiff
+                )
+                self.assertAlmostEqual(
+                    self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64 + Iz_stiff
+                )
                 self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
                 self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
                 self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
@@ -749,7 +796,7 @@ class TestHydro(unittest.TestCase):
         ]
         self.inputs["rho_water"] = 1e3
 
-        self.hydro = member.MemberHydro(n_height=n_height)
+        self.hydro = member.MemberHydro(n_full=npts)
 
     def testVerticalSubmerged(self):
         npts = self.inputs["s_full"].size
@@ -767,6 +814,8 @@ class TestHydro(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
         npt.assert_equal(self.outputs["waterline_centroid"], [0.0, 0.0])
+        npt.assert_almost_equal(self.outputs["z_dim"], np.linspace(0, 50.0, npts) - 75)
+        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["d_full"])
 
         m_a = np.zeros(6)
         m_a[:2] = V_expect * rho_w
@@ -793,12 +842,84 @@ class TestHydro(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
         npt.assert_equal(self.outputs["waterline_centroid"], [1.0, 2.0])
+        npt.assert_almost_equal(self.outputs["z_dim"], np.linspace(0, 50.0, npts) - 25)
+        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["d_full"])
 
         m_a = np.zeros(6)
         m_a[:2] = V_expect * rho_w
         m_a[2] = 0.5 * (8.0 / 3.0) * rho_w * 125
         m_a[3:5] = np.pi * rho_w * 25.0 * ((0 - cb_expect[-1]) ** 3.0 - (-25 - cb_expect[-1]) ** 3.0) / 3.0
         npt.assert_almost_equal(self.outputs["added_mass"], m_a, decimal=-5)
+
+    def test45deg(self):
+        npts = self.inputs["s_full"].size
+        xy = np.linspace(0, 50.0, 2 * npts) - 25
+        self.inputs["nodes_xyz"] = np.c_[xy, np.zeros(2 * npts), xy]
+        self.hydro.compute(self.inputs, self.outputs)
+
+        rho_w = self.inputs["rho_water"]
+        V_expect = np.pi * 25.0 * 25.0
+        cb_expect = np.array([-12.5, 0.0, -12.5])
+        Ixx = 0.25 * np.pi * 625
+        Axx = np.pi * 25
+        self.assertAlmostEqual(self.outputs["displacement"], V_expect)
+        self.assertAlmostEqual(self.outputs["buoyancy_force"], V_expect * rho_w * g)
+        npt.assert_almost_equal(self.outputs["center_of_buoyancy"], cb_expect)
+        self.assertEqual(self.outputs["idx_cb"], int(0.5 * npts))
+        self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
+        self.assertAlmostEqual(self.outputs["Awater"], Axx)
+        npt.assert_almost_equal(self.outputs["waterline_centroid"], [0.0, 0.0])
+        npt.assert_almost_equal(self.outputs["z_dim"], np.linspace(0, 50.0, npts) - 25)
+        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["d_full"] / np.cos(0.25 * np.pi))
+
+        m_a = np.zeros(6)
+        m_a[:2] = V_expect * rho_w
+        m_a[2] = 0.5 * (8.0 / 3.0) * rho_w * 125
+        m_a[3:5] = np.pi * rho_w * 25.0 * ((0 - cb_expect[-1]) ** 3.0 - (-25 - cb_expect[-1]) ** 3.0) / 3.0
+        for k in range(6):
+            self.assertAlmostEqual(self.outputs["added_mass"][k], m_a[k], -5)
+
+
+class TestGlobal2Member(unittest.TestCase):
+    def testAll(self):
+        n_height = 4
+        npts = member.get_nfull(n_height)
+        myobj = member.Global2MemberLoads(n_full=npts)
+
+        inputs = {}
+        outputs = {}
+        inputs["s_full"] = np.linspace(0, 1.0, npts)
+        inputs["s_all"] = NULL * np.ones(member.MEMMAX)
+        inputs["s_all"][: 2 * npts] = np.linspace(0, 1.0, 2 * npts)
+        inputs["nodes_xyz"] = NULL * np.ones((member.MEMMAX, 3))
+        inputs["nodes_xyz"][: 2 * npts, :] = np.c_[
+            1 * np.zeros(2 * npts), 2 * np.zeros(2 * npts), np.linspace(0, 50.0, 2 * npts) - 75
+        ]
+
+        Px = NULL * np.ones(member.MEMMAX)
+        Py = NULL * np.ones(member.MEMMAX)
+        Pz = NULL * np.ones(member.MEMMAX)
+        inputs["Px_global"] = np.zeros(npts)
+        inputs["Py_global"] = np.zeros(npts)
+        inputs["Pz_global"] = np.ones(npts)
+        Px[: (2 * npts)] = 1.0
+        Py[: (2 * npts)] = 0.0
+        Pz[: (2 * npts)] = 0.0
+        myobj.compute(inputs, outputs)
+        npt.assert_almost_equal(outputs["Px"], Px)
+        npt.assert_almost_equal(outputs["Py"], Py)
+        npt.assert_almost_equal(outputs["Pz"], Pz)
+
+        inputs["Px_global"] = np.ones(npts)
+        inputs["Py_global"] = np.zeros(npts)
+        inputs["Pz_global"] = np.zeros(npts)
+        Px[: (2 * npts)] = 0.0
+        Py[: (2 * npts)] = 0.0
+        Pz[: (2 * npts)] = -1.0
+        myobj.compute(inputs, outputs)
+        npt.assert_almost_equal(outputs["Px"], Px)
+        npt.assert_almost_equal(outputs["Py"], Py)
+        npt.assert_almost_equal(outputs["Pz"], Pz)
 
 
 class TestGroup(unittest.TestCase):
@@ -841,6 +962,12 @@ class TestGroup(unittest.TestCase):
         prob["ring_stiffener_flange_width"] = 1.0
         prob["ring_stiffener_spacing"] = 20.0
 
+        prob["axial_stiffener_web_thickness"] = 0.2
+        prob["axial_stiffener_flange_thickness"] = 0.3
+        prob["axial_stiffener_web_height"] = 0.5
+        prob["axial_stiffener_flange_width"] = 1.0
+        prob["axial_stiffener_spacing"] = 0.25 * np.pi
+
         prob["ballast_grid"] = np.array([[0.0, 0.1], [0.1, 0.2]])
         prob["ballast_volume"] = np.pi * np.array([10.0, 0.0])
 
@@ -850,25 +977,36 @@ class TestGroup(unittest.TestCase):
         prob["s_ghost1"] = 0.0
         prob["s_ghost2"] = 1.0
 
-        # prob["mu_water"] = 1e-5
-        # prob["water_depth"] = 100.0
-        # prob["beta_wave"] = 0.0
-        # prob["z0"] = 0.0
-        # prob["Hsig_wave"] = 5.0
-        # prob["Tsig_wave"] = 10.0
-        # prob["zref"] = 100.0
-        # prob["Uref"] = 10.0
-        # prob["rho_air"] = 1.0
-        # prob["mu_air"] = 1e-5
-        # prob["shearExp"] = 0.1
-        # prob["beta_wind"] = 0.0
-        # prob["loading"] = "hydrostatic"
-        # prob["cd_usr"] = -1.0
-        # prob["cm"] = 0.0
-        # prob["Uc"] = 0.0
-        # prob["yaw"] = 0.0
+        prob["mu_water"] = 1e-5
+        prob["water_depth"] = 100.0
+        prob["beta_wave"] = 0.0
+        prob["z0"] = 0.0
+        prob["Hsig_wave"] = 5.0
+        prob["Tsig_wave"] = 10.0
+        prob["zref"] = 100.0
+        prob["Uref"] = 10.0
+        prob["rho_air"] = 1.0
+        prob["mu_air"] = 1e-5
+        prob["shearExp"] = 0.1
+        prob["beta_wind"] = 0.0
+        prob["cd_usr"] = -1.0
+        prob["cm"] = 0.0
+        prob["Uc"] = 0.0
 
         prob.run_model()
+        out_list = prob.model.list_outputs(values=True, prom_name=True, units=False, out_stream=None)
+        for k in out_list:
+            if np.all(k[1]["value"] == 0.0) or np.all(k[1]["value"] == NULL):
+                name = k[1]["prom_name"]
+                if (
+                    name.find("Py") > 0
+                    or name.find("Pz") > 0
+                    or name.find("beta") > 0
+                    or name.find("offst") > 0
+                    or name.find("tw") >= 0
+                ):
+                    continue
+                print(f"{name} is all zero!")
         self.assertTrue(True)
 
 
@@ -878,6 +1016,7 @@ def suite():
     suite.addTest(unittest.makeSuite(TestFullDiscretization))
     suite.addTest(unittest.makeSuite(TestMemberComponent))
     suite.addTest(unittest.makeSuite(TestHydro))
+    suite.addTest(unittest.makeSuite(TestGlobal2Member))
     suite.addTest(unittest.makeSuite(TestGroup))
     return suite
 

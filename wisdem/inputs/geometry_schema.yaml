@@ -450,6 +450,13 @@ properties:
                                 minimum: 0.8
                                 maximum: 1.
                                 default: 1.0
+                            damping_ratio:
+                                type: number
+                                description: Damping ratio for the drivetrain system
+                                unit: none
+                                minimum: 0.0
+                                maximum: 1.
+                                default: 0.005
                             lss_diameter:
                                 type: array
                                 description: Diameter of the low speed shaft at beginning (generator/gearbox) and end (hub) points

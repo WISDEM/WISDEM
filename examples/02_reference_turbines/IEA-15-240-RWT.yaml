@@ -362,6 +362,7 @@ components:
                 values: [0.05, 0.05]
             gear_ratio: 1.0
             gearbox_efficiency: 1.0
+            damping_ratio: 0.01
             mb1Type: CARB
             mb2Type: SRB
             uptower: True
@@ -895,7 +896,7 @@ environment:
     air_dyn_viscosity: 1.81e-5
     weib_shape_parameter: 2.
     air_speed_sound: 340.
-    shear_exp: 0.2
+    shear_exp: 0.12
     water_density: 1025.0
     water_dyn_viscosity: 1.3351e-3
     soil_shear_modulus: 140e6

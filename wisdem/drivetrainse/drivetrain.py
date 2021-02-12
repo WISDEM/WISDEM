@@ -186,7 +186,7 @@ class DrivetrainSE(om.Group):
 
         # Final tallying
         self.add_subsystem("misc", dc.MiscNacelleComponents(), promotes=["*"])
-        self.add_subsystem("nac", dc.NacelleSystemAdder(), promotes=["*"])
+        self.add_subsystem("nac", dc.NacelleSystemAdder(direct_drive=direct), promotes=["*"])
         self.add_subsystem("rna", dc.RNA_Adder(), promotes=["*"])
 
         # Structural analysis
@@ -200,6 +200,9 @@ class DrivetrainSE(om.Group):
         else:
             self.add_subsystem("hss", ds.HSS_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=["*"])
             self.add_subsystem("bed", ds.Bedplate_IBeam_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=["*"])
+
+        # Dynamics
+        self.add_subsystem("dyn", dc.DriveDynamics(), promotes=["*"])
 
         # Output-to-input connections
         self.connect("bedplate_rho", ["pitch_system.rho", "spinner.metal_rho"])
