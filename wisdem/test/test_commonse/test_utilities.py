@@ -74,6 +74,13 @@ class TestAny(unittest.TestCase):
         b2 = np.matmul(R, a.T).flatten()
         npt.assert_almost_equal(b, b2)
 
+        a = b
+        R = util.rotate_align_vectors(a, b)
+        npt.assert_almost_equal(R, np.eye(3))
+        a = -b
+        R = util.rotate_align_vectors(a, b)
+        npt.assert_almost_equal(R, np.eye(3))
+
 
 def suite():
     suite = unittest.TestSuite()
