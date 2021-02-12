@@ -389,15 +389,15 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_input("tower_elem_rho", NULL * np.ones(MEMMAX), units="kg/m**3")
         self.add_input("tower_elem_E", NULL * np.ones(MEMMAX), units="Pa")
         self.add_input("tower_elem_G", NULL * np.ones(MEMMAX), units="Pa")
-        self.add_input("tower_elem_Px", np.zeros(MEMMAX), units="N/m")
-        self.add_output("tower_elem_Px1", np.zeros(MEMMAX), units="N/m")
-        self.add_output("tower_elem_Px2", np.zeros(MEMMAX), units="N/m")
-        self.add_input("tower_elem_Py", np.zeros(MEMMAX), units="N/m")
-        self.add_output("tower_elem_Py1", np.zeros(MEMMAX), units="N/m")
-        self.add_output("tower_elem_Py2", np.zeros(MEMMAX), units="N/m")
-        self.add_input("tower_elem_Pz", np.zeros(MEMMAX), units="N/m")
-        self.add_output("tower_elem_Pz1", np.zeros(MEMMAX), units="N/m")
-        self.add_output("tower_elem_Pz2", np.zeros(MEMMAX), units="N/m")
+        self.add_input("tower_elem_Px", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_output("tower_elem_Px1", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_output("tower_elem_Px2", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_input("tower_elem_Py", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_output("tower_elem_Py1", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_output("tower_elem_Py2", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_input("tower_elem_Pz", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_output("tower_elem_Pz1", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_output("tower_elem_Pz2", NULL * np.ones(MEMMAX), units="N/m")
         self.add_input("tower_center_of_mass", np.zeros(3), units="m")
         self.add_input("tower_mass", 0.0, units="kg")
 
@@ -519,13 +519,13 @@ class PlatformTowerFrame(om.ExplicitComponent):
         # Have to divide up tower member loads to beginning and end points
         for var in ["elem_Px1", "elem_Py1", "elem_Pz1", "elem_Px2", "elem_Py2", "elem_Pz2"]:
             outputs["system_" + var] = NULL * np.ones(NELEM_MAX)
-            outputs["tower_" + var] = NULL * np.ones(NELEM_MAX)
+            outputs["tower_" + var] = NULL * np.ones(MEMMAX)
             tower_P = inputs["tower_" + var[:-1]]
             outputs["tower_" + var][:nelem_tower] = (
                 tower_P[:nelem_tower] if var[-1] == "1" else tower_P[1 : (nelem_tower + 1)]
             )
             outputs["system_" + var][:nelem_system] = np.r_[
-                inputs["platform_" + var][:nelem_platform], inputs["tower_" + var][:nelem_tower]
+                inputs["platform_" + var][:nelem_platform], outputs["tower_" + var][:nelem_tower]
             ]
 
         # Mass summaries
@@ -615,12 +615,12 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("tower_elem_rho", NULL * np.ones(MEMMAX), units="kg/m**3")
         self.add_input("tower_elem_E", NULL * np.ones(MEMMAX), units="Pa")
         self.add_input("tower_elem_G", NULL * np.ones(MEMMAX), units="Pa")
-        self.add_input("tower_elem_Px1", np.zeros(MEMMAX), units="N/m")
-        self.add_input("tower_elem_Px2", np.zeros(MEMMAX), units="N/m")
-        self.add_input("tower_elem_Py1", np.zeros(MEMMAX), units="N/m")
-        self.add_input("tower_elem_Py2", np.zeros(MEMMAX), units="N/m")
-        self.add_input("tower_elem_Py1", np.zeros(MEMMAX), units="N/m")
-        self.add_input("tower_elem_Py2", np.zeros(MEMMAX), units="N/m")
+        self.add_input("tower_elem_Px1", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_input("tower_elem_Px2", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_input("tower_elem_Py1", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_input("tower_elem_Py2", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_input("tower_elem_Pz1", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_input("tower_elem_Pz2", NULL * np.ones(MEMMAX), units="N/m")
 
         self.add_input("system_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
         self.add_input("system_Fnode", NULL * np.ones((NNODES_MAX, 3)), units="N")
@@ -775,12 +775,12 @@ class FrameAnalysis(om.ExplicitComponent):
             # trapezoidally distributed loads
             xx1 = xy1 = xz1 = np.zeros(ielem.size)
             xx2 = xy2 = xz2 = L - 1e-6  # subtract small number b.c. of precision
-            wx1 = inputs[frame + "elem_Px1"][:nelem]
-            wx2 = inputs[frame + "elem_Px2"][:nelem]
-            wy1 = inputs[frame + "elem_Py1"][:nelem]
-            wy2 = inputs[frame + "elem_Py2"][:nelem]
-            wz1 = inputs[frame + "elem_Pz1"][:nelem]
-            wz2 = inputs[frame + "elem_Pz2"][:nelem]
+            wx1 = inputs[frame + "_elem_Px1"][:nelem]
+            wx2 = inputs[frame + "_elem_Px2"][:nelem]
+            wy1 = inputs[frame + "_elem_Py1"][:nelem]
+            wy2 = inputs[frame + "_elem_Py2"][:nelem]
+            wz1 = inputs[frame + "_elem_Pz1"][:nelem]
+            wz2 = inputs[frame + "_elem_Pz2"][:nelem]
             load_obj.changeTrapezoidalLoads(ielem, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
 
             # Add the load case and run
@@ -845,6 +845,24 @@ class FloatingFrame(om.Group):
         ]
         for var in ["D", "t", "A", "Asx", "Asy", "rho", "Ixx", "Iyy", "Izz", "E", "G"]:
             prom += [("section_" + var, "tower_elem_" + var)]
+
+        prom += [
+            "Uref",
+            "zref",
+            "z0",
+            "shearExp",
+            "cd_usr",
+            "cm",
+            "beta_wind",
+            "rho_air",
+            "mu_air",
+            "beta_wave",
+            "mu_water",
+            "Uc",
+            "Hsig_wave",
+            "Tsig_wave",
+            "water_depth",
+        ]
         self.add_subsystem(
             "tower",
             Member(column_options=opt["floating"]["tower"], idx=0, n_mat=opt["materials"]["n_mat"]),
