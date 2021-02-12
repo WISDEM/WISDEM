@@ -1,0 +1,3 @@
+general:
+    folder_output: outputs
+    fname_output: output
