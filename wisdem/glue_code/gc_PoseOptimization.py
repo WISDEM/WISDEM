@@ -149,12 +149,22 @@ class PoseOptimization(object):
             # Solver has specific meaning in OpenMDAO
             wt_opt.model.approx_totals(method="fd", step=step_size, form=self.opt["driver"]["optimization"]["form"])
 
-            # Set optimization solver and options. First, Scipy's SLSQP
-            if self.opt["driver"]["optimization"]["solver"] == "SLSQP":
+            # Set optimization solver and options. First, Scipy's SLSQP and COBYLA
+            if (
+                self.opt["driver"]["optimization"]["solver"] == "SLSQP"
+                or self.opt["driver"]["optimization"]["solver"] == "COBYLA"
+            ):
                 wt_opt.driver = om.ScipyOptimizeDriver()
                 wt_opt.driver.options["optimizer"] = self.opt["driver"]["optimization"]["solver"]
                 wt_opt.driver.options["tol"] = self.opt["driver"]["optimization"]["tol"]
                 wt_opt.driver.options["maxiter"] = self.opt["driver"]["optimization"]["max_iter"]
+
+            if self.opt["driver"]["optimization"]["solver"] == "Nelder-Mead":
+                wt_opt.driver = om.ScipyOptimizeDriver()
+                wt_opt.driver.options["optimizer"] = self.opt["driver"]["optimization"]["solver"]
+                wt_opt.driver.options["tol"] = self.opt["driver"]["optimization"]["tol"]
+                if "adaptive" in self.opt["driver"]["optimization"]:
+                    wt_opt.driver.options["adaptive"] = self.opt["driver"]["optimization"]["adaptive"]
 
             # The next two optimization methods require pyOptSparse.
             elif self.opt["driver"]["optimization"]["solver"] == "CONMIN":
@@ -206,10 +216,34 @@ class PoseOptimization(object):
                 if "hotstart_file" in self.opt["driver"]["optimization"]:
                     wt_opt.driver.hotstart_file = self.opt["driver"]["optimization"]["hotstart_file"]
 
+            if self.opt["driver"]["optimization"]["solver"] == "GA":
+                wt_opt.driver = om.SimpleGADriver()
+                option_keys = [
+                    "Pc",
+                    "Pm",
+                    "bits",
+                    "compute_pareto",
+                    "cross_bits",
+                    "elitism",
+                    "gray",
+                    "max_gen",
+                    "multi_obj_exponent",
+                    "multi_obj_weights",
+                    "penalty_exponent",
+                    "penalty_parameter",
+                    "pop_size",
+                    "procs_per_model",
+                    "run_parallel",
+                ]
+                for key in option_keys:
+                    if key in self.opt["driver"]["optimization"]:
+                        wt_opt.driver.options[key] = self.opt["driver"]["optimization"][key]
+
             else:
-                raise ValueError(
-                    "The optimizer " + self.opt["driver"]["optimization"]["solver"] + "is not yet supported!"
-                )
+                raise ValueError(f"The {self.opt['driver']['optimization']['solver']} optimizer is not yet supported!")
+
+            if self.opt["driver"]["optimization"]["debug_print"]:
+                wt_opt.driver.options["debug_print"] = ["desvars", "ln_cons", "nl_cons", "objs", "totals"]
 
         elif self.opt["driver"]["design_of_experiments"]["flag"]:
             if self.opt["driver"]["design_of_experiments"]["generator"].lower() == "uniform":

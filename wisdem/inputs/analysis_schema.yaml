@@ -1061,12 +1061,12 @@ properties:
                         maximum: 100000000
                     solver:
                         type: string
-                        description: Optimization driver.  Can be one of [SLSQP, CONMIN, COBYLA, SNOPT]
+                        description: Optimization driver.
                         default: SLSQP
-                        enum: [SLSQP, CONMIN, COBYLA, SNOPT]
+                        enum: [SLSQP, CONMIN, COBYLA, SNOPT, Nelder-Mead, GA]
                     step_size:
                         type: number
-                        description: Maximum step size
+                        description: Maximum step size for finite difference approximation
                         default: 1e-3
                         minimum: 1e-10
                         maximum: 100.0
@@ -1075,6 +1075,10 @@ properties:
                         description: Finite difference calculation mode
                         default: central
                         enum: [central, forward, complex]
+                    debug_print:
+                        type: boolean
+                        default: False
+                        description: Toggle driver debug printing
             design_of_experiments:
                 type: object
                 description: Specification of the design of experiments driver parameters
