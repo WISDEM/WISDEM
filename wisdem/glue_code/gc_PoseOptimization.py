@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+
 import openmdao.api as om
 
 
@@ -159,7 +160,7 @@ class PoseOptimization(object):
                 wt_opt.driver.options["tol"] = self.opt["driver"]["optimization"]["tol"]
                 wt_opt.driver.options["maxiter"] = self.opt["driver"]["optimization"]["max_iter"]
 
-            if self.opt["driver"]["optimization"]["solver"] == "Nelder-Mead":
+            elif self.opt["driver"]["optimization"]["solver"] == "Nelder-Mead":
                 wt_opt.driver = om.ScipyOptimizeDriver()
                 wt_opt.driver.options["optimizer"] = self.opt["driver"]["optimization"]["solver"]
                 wt_opt.driver.options["tol"] = self.opt["driver"]["optimization"]["tol"]
