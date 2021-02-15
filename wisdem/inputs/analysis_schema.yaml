@@ -1,7 +1,7 @@
 $schema: "http://json-schema.org/draft-07/schema#"
 $id: WISDEM_optimization_options_schema_v00
 title: WISDEM wind turbine optimization options schema
-description: Scehma that describes the analysis and optimization options for WISDEM
+description: Schema that describes the analysis and optimization options for WISDEM
 type: object
 properties:
     general:
@@ -1123,7 +1123,33 @@ properties:
                         default: 2
                         minimum: 1
                         maximum: 1000000
-
+            step_size_study:
+                type: object
+                description: Specification of the step size study parameters
+                default: {}
+                properties:
+                    flag: *flag
+                    step_sizes:
+                        type: array
+                        default: [1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5, 5e-6, 1e-6, 5e-7, 1e-7, 5e-8, 1e-8]
+                        description: List of step size values to use for the study
+                    form:
+                        type: string
+                        description: Finite difference calculation mode
+                        default: central
+                        enum: [central, forward, complex]
+                    of:
+                        type: array
+                        description: Functions of interest for which we'll compute total derivatives
+                        default: []
+                    wrt:
+                        type: array
+                        description: Design variables we'll perturb for the step size study
+                        default: []
+                    driver_scaling:
+                        type: boolean
+                        description: When True, return derivatives that are scaled according to either the adder and scaler or the ref and ref0 values that were specified when add_design_var, add_objective, and add_constraint were called on the model.
+                        default: False
     recorder:
         type: object
         default: {}
