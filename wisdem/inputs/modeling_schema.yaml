@@ -82,6 +82,14 @@ properties:
                         type: boolean
                         default: True
                         description: Flag to derive the regulation trajectory in region III in terms of pitch and TSR
+                    peak_thrust_shaving:
+                        type: boolean
+                        default: False
+                        description: If True, apply peak thrust shaving within RotorSE.
+                    thrust_shaving_coeff:
+                        type: number
+                        default: 1.0
+                        description: Scalar applied to the max torque within RotorSE for peak thrust shaving. Only used if `peak_thrust_shaving` is True.
                     spar_cap_ss:
                         type: string
                         default: 'none'

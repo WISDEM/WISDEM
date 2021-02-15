@@ -144,6 +144,9 @@ class ComputePowerCurve(ExplicitComponent):
         self.regulation_reg_III = modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"]
         self.n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
         self.n_pc_spline = modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]
+        self.peak_thrust_shaving = modeling_options["WISDEM"]["RotorSE"]["peak_thrust_shaving"]
+        if self.peak_thrust_shaving:
+            self.thrust_shaving_coeff = modeling_options["WISDEM"]["RotorSE"]["thrust_shaving_coeff"]
 
         # parameters
         self.add_input("v_min", val=0.0, units="m/s", desc="cut-in wind speed")
@@ -575,9 +578,8 @@ class ComputePowerCurve(ExplicitComponent):
                 Cm_aero[i_3:] = 0
 
         # Optional correction of pitch for peak thrust shaving
-        peak_thrust_shaving = False
-        if peak_thrust_shaving:
-            max_T = 0.8 * np.max(T)
+        if self.peak_thrust_shaving:
+            max_T = self.thrust_shaving_coeff * np.max(T)
             identify_new_rated = True
             for i in range(self.n_pc):
                 if T[i] > max_T:
