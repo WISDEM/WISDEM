@@ -217,7 +217,7 @@ class PoseOptimization(object):
                 if "hotstart_file" in self.opt["driver"]["optimization"]:
                     wt_opt.driver.hotstart_file = self.opt["driver"]["optimization"]["hotstart_file"]
 
-            if self.opt["driver"]["optimization"]["solver"] == "GA":
+            elif self.opt["driver"]["optimization"]["solver"] == "GA":
                 wt_opt.driver = om.SimpleGADriver()
                 option_keys = [
                     "Pc",
