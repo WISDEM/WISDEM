@@ -9,6 +9,7 @@ import numpy as np
 from openmdao.api import Group, ExplicitComponent
 from scipy.optimize import brentq, minimize, minimize_scalar
 from scipy.interpolate import PchipInterpolator
+from wisdem.ccblade.Polar import Polar
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.utilities import smooth_abs, smooth_min, linspace_with_deriv
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
@@ -843,25 +844,20 @@ def eval_unsteady(alpha, cl, cd, cm):
     # calculate unsteady coefficients from polars for OpenFAST's Aerodyn
 
     unsteady = {}
-
-    alpha_rad = np.radians(alpha)
-    cn = cl * np.cos(alpha_rad) + cd * np.sin(alpha_rad)
-
-    # alpha0, Cd0, Cm0
-    aoa_l = [-30.0]
-    aoa_h = [30.0]
-    idx_low = np.argmin(np.abs(alpha - aoa_l))
-    idx_high = np.argmin(np.abs(alpha - aoa_h))
-
-    if np.abs(np.gradient(cl)).max() > 0.0:
-        unsteady["alpha0"] = np.interp(0.0, cl[idx_low:idx_high], alpha[idx_low:idx_high])
-        unsteady["Cd0"] = np.interp(0.0, cl[idx_low:idx_high], cd[idx_low:idx_high])
-        unsteady["Cm0"] = np.interp(0.0, cl[idx_low:idx_high], cm[idx_low:idx_high])
-    else:
-        unsteady["alpha0"] = 0.0
-        unsteady["Cd0"] = cd[np.argmin(np.abs(alpha - 0.0))]
-        unsteady["Cm0"] = 0.0
-
+    Re = 1e6  # Does not factor into any calculations
+    try:
+        mypolar = Polar(Re, alpha, cl, cd, cm, compute_params=True, radians=False)
+        (alpha0, alpha1, alpha2, cnSlope, cn1, cn2, cd0, cm0) = mypolar.unsteadyParams()
+    except:
+        alpha0 = alpha1 = alpha2 = cnSlope = cn1 = cn2 = cd0 = cm0 = 0.0
+    unsteady["alpha0"] = alpha0
+    unsteady["alpha1"] = alpha1
+    unsteady["alpha2"] = alpha2
+    unsteady["Cd0"] = cd0
+    unsteady["Cm0"] = cm0
+    unsteady["Cn1"] = cn1
+    unsteady["Cn2"] = cn2
+    unsteady["C_nalpha"] = cnSlope
     unsteady["eta_e"] = 1
     unsteady["T_f0"] = "Default"
     unsteady["T_V0"] = "Default"
@@ -877,97 +873,6 @@ def eval_unsteady(alpha, cl, cd, cm):
     unsteady["S2"] = 0
     unsteady["S3"] = 0
     unsteady["S4"] = 0
-
-    def find_breakpoint(x, y, idx0, idx1, multi=1.0):
-        lin_fit = np.interp(x[idx0:idx1], [x[idx0], x[idx1]], [y[idx0], y[idx1]])
-        idx_break = 0
-        lin_diff = 0
-        # GB: Seems like this for loop can be replaced in two lines:
-        test_diff = np.abs(y[idx0:idx1] - lin_fit) if multi == 0.0 else multi * (y[idx0:idx1] - lin_fit)
-        idx_break2 = np.argmax(test_diff) + idx0
-        for i, (fit, yi) in enumerate(zip(lin_fit, y[idx0:idx1])):
-            if multi == 0:
-                diff_i = np.abs(yi - fit)
-            else:
-                diff_i = multi * (yi - fit)
-            if diff_i > lin_diff:
-                lin_diff = diff_i
-                idx_break = i
-        idx_break += idx0
-        # print(idx_break, idx_break2)
-        return idx_break
-
-    # Cn1
-    idx_alpha0 = np.argmin(np.abs(alpha - unsteady["alpha0"]))
-
-    if np.abs(np.gradient(cm)).max() > 1.0e-10:
-        # print('aoa_h',aoa_h, alpha[idx_alpha0] + 35.0)
-        aoa_h = alpha[idx_alpha0] + 35.0
-        idx_high = high0 = np.argmin(np.abs(alpha - aoa_h))
-
-        # GB: Don't really understand what this is doing.  Also seems like idx_high will always be the last index?
-        cm_temp = cm[idx_low:idx_high]
-        idx_cm_min = [
-            i
-            for i, local_min in enumerate(
-                np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True]
-            )
-            if local_min
-        ] + idx_low
-        idx_high = idx_cm_min[-1]
-        # print('0', high0, idx_high)
-        idx_Cn1 = find_breakpoint(alpha, cm, idx_alpha0, idx_high)
-        unsteady["Cn1"] = cn[idx_Cn1]
-    else:
-        idx_Cn1 = np.argmin(np.abs(alpha - 0.0))
-        unsteady["Cn1"] = 0.0
-
-    # Cn2
-    if np.abs(np.gradient(cm)).max() > 1.0e-10:
-        # print('aoa_l',aoa_l, np.mean([alpha[idx_alpha0], alpha[idx_Cn1]]) - 30.0)
-        aoa_l = np.mean([alpha[idx_alpha0], alpha[idx_Cn1]]) - 30.0
-        idx_low = np.argmin(np.abs(alpha - aoa_l))
-
-        # GB: Don't really understand what this is doing.  Also seems like idx_high will always be the last index?
-        # GB: idx_high isn't even used here.  Should this be idx_low?
-        # cm_temp = cm[idx_low:idx_high]
-        # idx_cm_min = [
-        #    i
-        #    for i, local_min in enumerate(
-        #        np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True]
-        #    )
-        #    if local_min
-        # ] + idx_low
-        # idx_high = idx_cm_min[-1]
-
-        idx_Cn2 = find_breakpoint(alpha, cm, idx_low, idx_alpha0, multi=0.0)
-        unsteady["Cn2"] = cn[idx_Cn2]
-    else:
-        idx_Cn2 = np.argmin(np.abs(alpha - 0.0))
-        unsteady["Cn2"] = 0.0
-
-    # C_nalpha
-    # GB: Added index check to avoid backwards cases
-    if np.abs(np.gradient(cm)).max() > 1.0e-10 and (idx_Cn1 > idx_alpha0):
-        # unsteady['C_nalpha'] = np.gradient(cn, alpha_rad)[idx_alpha0]
-        unsteady["C_nalpha"] = np.gradient(cn[idx_alpha0:idx_Cn1], alpha_rad[idx_alpha0:idx_Cn1]).max()
-    else:
-        unsteady["C_nalpha"] = 0.0
-
-    # alpha1, alpha2
-    # finding the break point in drag as a proxy for Trailing Edge separation, f=0.7
-    # 3d stall corrections cause erroneous f calculations
-    # GB: Added index check to avoid backwards cases
-    if np.abs(np.gradient(cm)).max() > 1.0e-10 and (alpha[idx_Cn1] > 0.0):
-        aoa_l = [0.0]
-        idx_low = np.argmin(np.abs(alpha - aoa_l))
-        idx_alpha1 = find_breakpoint(alpha, cd, idx_low, idx_Cn1, multi=-1.0)
-        unsteady["alpha1"] = alpha[idx_alpha1]
-    else:
-        idx_alpha1 = np.argmin(np.abs(alpha - 0.0))
-        unsteady["alpha1"] = 0.0
-    unsteady["alpha2"] = -1.0 * unsteady["alpha1"]
-
     unsteady["St_sh"] = "Default"
     unsteady["k0"] = 0
     unsteady["k1"] = 0
@@ -977,7 +882,6 @@ def eval_unsteady(alpha, cl, cd, cm):
     unsteady["x_cp_bar"] = "Default"
     unsteady["UACutout"] = "Default"
     unsteady["filtCutOff"] = "Default"
-
     unsteady["Alpha"] = alpha
     unsteady["Cl"] = cl
     unsteady["Cd"] = cd

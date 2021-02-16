@@ -1,12 +1,15 @@
-from __future__ import print_function, division
-import numpy as np
+from __future__ import division, print_function
+
 import os
 
-""" This module contains: 
+import numpy as np
+
+
+""" This module contains:
   - Polar: class to represent a polar (computes steady/unsteady parameters, corrections etc.)
   - blend: function to blend two polars
-  - thicknessinterp_from_one_set: interpolate polars at different thickeness based on one set of polars 
-  
+  - thicknessinterp_from_one_set: interpolate polars at different thickeness based on one set of polars
+
   JPJ 7/20 : This class can probably be combined with Polar() from airfoilprep.py.
   They do not have one-to-one matching for the methods.
   Because both are not tested extensively, we first need to write tests for both
@@ -769,7 +772,7 @@ class Polar(object):
 
         # Ensuring everything is in harmony
         cl_inv = cla * (self.alpha - alpha0)
-        f_st = (self.cl - cl_fs) / (cl_inv - cl_fs)
+        f_st = (self.cl - cl_fs) / (cl_inv - cl_fs + 1e-10)
         f_st[np.where(f_st < 1e-15)] = 0
         # Storing
         self.f_st = f_st
@@ -942,6 +945,7 @@ def _find_alpha0(alpha, coeff, window):
     alpha = alpha[iwindow]
     coeff = coeff[iwindow]
     alpha_zc, i_zc = _zero_crossings(x=alpha, y=coeff, direction="up")
+
     if len(alpha_zc) > 1:
         raise Exception(
             "Cannot find alpha0, {} zero crossings of Coeff in the range of alpha values: [{} {}] ".format(
