@@ -148,9 +148,12 @@ class WindTurbineOntologyPython(object):
                     + " is not a multiple of 4 and an equally spaced grid is adopted."
                 )
             Re_all = []
+            self.modeling_options["WISDEM"]["RotorSE"]["AFTabMod"] = 1
             for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_af"]):
                 for j in range(len(self.wt_init["airfoils"][i]["polars"])):
                     Re_all.append(self.wt_init["airfoils"][i]["polars"][j]["re"])
+                if len(self.wt_init["airfoils"][i]["polars"]) > 1:
+                    self.modeling_options["WISDEM"]["RotorSE"]["AFTabMod"] = 2
             self.modeling_options["WISDEM"]["RotorSE"]["n_Re"] = len(np.unique(Re_all))
             self.modeling_options["WISDEM"]["RotorSE"]["n_tab"] = 1
             self.modeling_options["WISDEM"]["RotorSE"]["n_xy"] = self.modeling_options["WISDEM"]["RotorSE"]["n_xy"]
