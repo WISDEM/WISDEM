@@ -1224,7 +1224,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils):
         j_Re = np.zeros(n_Re_i, dtype=int)
         for j in range(n_Re_i):
             Re_j[j] = airfoils[i]["polars"][j]["re"]
-            j_Re[j] = np.argmin(Re - Re_j)
+            j_Re[j] = np.argmin(abs(Re - Re_j[j]))
             for k in range(n_tab):
                 cl[i, :, j_Re[j], k] = np.interp(
                     aoa, airfoils[i]["polars"][j]["c_l"]["grid"], airfoils[i]["polars"][j]["c_l"]["values"]
@@ -1242,7 +1242,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils):
                         "WARNING: Airfoil "
                         + name[i]
                         + " has the lift coefficient at Re "
-                        + str(Re_j)
+                        + str(Re_j[j])
                         + " different between + and - pi rad. This is fixed automatically, but please check the input data."
                     )
                 if abs(cd[i, 0, j, k] - cd[i, -1, j, k]) > 1.0e-5:
@@ -1251,7 +1251,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils):
                         "WARNING: Airfoil "
                         + name[i]
                         + " has the drag coefficient at Re "
-                        + str(Re_j)
+                        + str(Re_j[j])
                         + " different between + and - pi rad. This is fixed automatically, but please check the input data."
                     )
                 if abs(cm[i, 0, j, k] - cm[i, -1, j, k]) > 1.0e-5:
@@ -1260,7 +1260,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils):
                         "WARNING: Airfoil "
                         + name[i]
                         + " has the moment coefficient at Re "
-                        + str(Re_j)
+                        + str(Re_j[j])
                         + " different between + and - pi rad. This is fixed automatically, but please check the input data."
                     )
 
@@ -1302,7 +1302,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils):
     wt_opt["airfoils.name"] = name
     wt_opt["airfoils.ac"] = ac
     wt_opt["airfoils.r_thick"] = r_thick
-    wt_opt["airfoils.Re"] = Re  # Not yet implemented!
+    wt_opt["airfoils.Re"] = Re
     wt_opt["airfoils.cl"] = cl
     wt_opt["airfoils.cd"] = cd
     wt_opt["airfoils.cm"] = cm
