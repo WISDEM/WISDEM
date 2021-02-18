@@ -86,6 +86,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             )
             self.connect("airfoils.name", "blade.interp_airfoils.name")
             self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick")
+            self.connect("airfoils.ac", "blade.interp_airfoils.ac")
             self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
             self.connect("airfoils.aoa", "blade.interp_airfoils.aoa")
             self.connect("airfoils.cl", "blade.interp_airfoils.cl")
@@ -895,6 +896,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
 
         # Reconstruct the blade relative thickness along span with a pchip
         r_thick_used = np.zeros(self.n_af_span)
+        ac_used = np.zeros(self.n_af_span)
         coord_xy_used = np.zeros((self.n_af_span, self.n_xy, 2))
         coord_xy_interp = np.zeros((self.n_span, self.n_xy, 2))
         coord_xy_dim = np.zeros((self.n_span, self.n_xy, 2))
@@ -909,6 +911,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             for j in range(self.n_af):
                 if self.af_used[i] == discrete_inputs["name"][j]:
                     r_thick_used[i] = inputs["r_thick"][j]
+                    ac_used[i] = inputs["ac"][j]
                     coord_xy_used[i, :, :] = inputs["coord_xy"][j]
                     cl_used[i, :, :, :] = inputs["cl"][j, :, :, :]
                     cd_used[i, :, :, :] = inputs["cd"][j, :, :, :]
@@ -919,7 +922,9 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.PchipInterpolator.derivative.html#scipy.interpolate.PchipInterpolator.derivative
         spline = PchipInterpolator
         rthick_spline = spline(inputs["af_position"], r_thick_used)
+        ac_spline = spline(inputs["af_position"], ac_used)
         outputs["r_thick_interp"] = rthick_spline(inputs["s"])
+        outputs["ac_interp"] = ac_spline(inputs["s"])
 
         # Spanwise interpolation of the profile coordinates with a pchip
         r_thick_unique, indices = np.unique(r_thick_used, return_index=True)
