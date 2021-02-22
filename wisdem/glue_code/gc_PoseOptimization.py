@@ -316,7 +316,7 @@ class PoseOptimization(object):
         # -- Rotor & Blade --
         if rotorD_opt["flag"]:
             wt_opt.model.add_design_var(
-                "configuration.rotor_diameter_user", lower=rotorD_opt["minimum"], upper=rotorD_opt["minimum"], ref=1.0e2
+                "configuration.rotor_diameter_user", lower=rotorD_opt["minimum"], upper=rotorD_opt["maximum"], ref=1.0e2
             )
 
         twist_options = blade_opt["aero_shape"]["twist"]
