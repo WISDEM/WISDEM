@@ -135,6 +135,20 @@ RotorSE
 
     *Minimum* = 1.0    *Maximum* = 5.0
 
+:code:`gust_std` : Float
+    Number of standard deviations for strength of gust
+
+    *Default* = 3.0
+
+    *Minimum* = 0.0    *Maximum* = 5.0
+
+:code:`root_fastener_s_f` : Float
+    Safety factor for the max stress of blade root fasteners
+
+    *Default* = 2.5
+
+    *Minimum* = 0.1    *Maximum* = 1.e+2
+
 
 DriveSE
 ****************************************

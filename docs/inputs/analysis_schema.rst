@@ -1315,7 +1315,16 @@ Enforcing max chord length limit at all points along blade span.
     *Minimum* = 0.1    *Maximum* = 20.0
 
 
+root_circle_diameter
+========================================
 
+
+Enforcing the minimum blade root circle diameter.
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
 
 frequency
 ========================================

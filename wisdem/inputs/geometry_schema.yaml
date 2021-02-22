@@ -178,6 +178,24 @@ properties:
                             - reference_axis
                             - layers
                         properties:
+                            root:
+                                type: object
+                                default: {}
+                                properties:
+                                    d_f:
+                                        type: number
+                                        default: 0.03
+                                        minimum: 0.01
+                                        maximum: 0.2
+                                        unit: m
+                                        description: Diameter of the fastener, default is M30, so 0.03 meters
+                                    sigma_max:
+                                        type: number
+                                        default: 675.e+6
+                                        minimum: 1.e+5
+                                        maximum: 1.e+10
+                                        unit: Pa
+                                        description: Max stress on bolt
                             reference_axis:
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
                             webs:
