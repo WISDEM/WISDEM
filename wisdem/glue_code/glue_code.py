@@ -251,6 +251,13 @@ class WT_RNTA(om.Group):
             self.connect("re.precomp.yl_strain_te", "rs.yl_strain_te")
             self.connect("blade.outer_shape_bem.s", "rs.constr.s")
 
+            self.connect("blade.internal_structure_2d_fem.d_f", "rs.brs.d_f")
+            self.connect("blade.internal_structure_2d_fem.sigma_max", "rs.brs.sigma_max")
+            self.connect("blade.pa.chord_param", "rs.brs.rootD", src_indices=[0])
+            self.connect("blade.ps.layer_thickness_param", "rs.brs.layer_thickness")
+            self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rs.brs.layer_start_nd")
+            self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rs.brs.layer_end_nd")
+
             # Connections to rotorse-rc
             # self.connect('blade.length',                                    'rotorse.rc.blade_length')
             # self.connect('blade.outer_shape_bem.s',                         'rotorse.rc.s')
@@ -598,13 +605,6 @@ class WT_RNTA(om.Group):
                 self.connect("towerse.tower.freqs", "tcons.tower_freq", src_indices=[0])
             self.connect("configuration.n_blades", "tcons.blade_number")
             self.connect("rp.powercurve.rated_Omega", "tcons.rated_Omega")
-            self.connect("blade.internal_structure_2d_fem.d_f", "tcons.brs.d_f")
-            self.connect("blade.internal_structure_2d_fem.sigma_max", "tcons.brs.sigma_max")
-            self.connect("blade.pa.chord_param", "tcons.brs.rootD", src_indices=[0])
-            self.connect("blade.ps.layer_thickness_param", "tcons.brs.layer_thickness")
-            self.connect("blade.internal_structure_2d_fem.layer_start_nd", "tcons.brs.layer_start_nd")
-            self.connect("blade.internal_structure_2d_fem.layer_end_nd", "tcons.brs.layer_end_nd")
-            self.connect("rs.frame.root_M", "tcons.brs.root_M")
 
         # Connections to turbine capital cost
         self.connect("configuration.n_blades", "tcc.blade_number")

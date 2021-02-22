@@ -621,7 +621,7 @@ class PoseOptimization(object):
 
         if blade_constr["root_circle_diameter"]["flag"]:
             if blade_opt["aero_shape"]["chord"]["flag"] and blade_opt["aero_shape"]["chord"]["lock_root"] == 0.:
-                wt_opt.model.add_constraint("tcons.brs.ratio", upper=blade_constr["root_circle_diameter"]["max_ratio"])
+                wt_opt.model.add_constraint("rs.brs.ratio", upper=blade_constr["root_circle_diameter"]["max_ratio"])
             else:
                 print(
                     "WARNING: the blade root size is set to be constrained, but chord at blade root is not an active design variable. The constraint is not enforced."
