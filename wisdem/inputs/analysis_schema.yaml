@@ -714,16 +714,28 @@ properties:
                                 unit: radians
                     chord:
                         type: object
-                        description: Enforcing max chord length limit at all points along blade span.
+                        description: Enforcing the maximum chord length limit at all points along blade span.
                         default: {}
                         properties:
                             flag: *flag
                             max:
                                 type: number
-                                default: 4.3
+                                default: 4.75
                                 minimum: 0.1
                                 maximum: 20.0
                                 unit: meter
+                    root_circle_diameter: 
+                        type: object
+                        description: Enforcing the minimum blade root circle diameter.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max_ratio:
+                                type: number
+                                description: Maximum ratio between the recommended root circle diameter and the actual chord at blade root. The optimizer will make sure that the ratio stays below this value.
+                                default: 1.
+                                minimum: 0.01
+                                maximum: 10.0
                     frequency:
                         type: object
                         description: Frequency separation constraint between blade fundamental frequency and blade passing (3P) frequency at rated conditions using gamma_freq margin. Can be activated for blade flap and/or edge modes.

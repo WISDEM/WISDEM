@@ -1214,6 +1214,9 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
         ivc.add_output("joint_mass", val=0.0, desc="Mass of the joint.")
         ivc.add_output("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
 
+        ivc.add_output("d_f", val=0., units="m", desc="Diameter of the fastener")
+        ivc.add_output("sigma_max", val=0., units="Pa", desc="Max stress on bolt")
+
         self.add_subsystem(
             "compute_internal_structure_2d_fem",
             Compute_Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),

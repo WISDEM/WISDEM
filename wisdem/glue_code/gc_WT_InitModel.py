@@ -476,6 +476,10 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     wt_opt["blade.internal_structure_2d_fem.joint_mass"] = internal_structure_2d_fem["joint"]["mass"]
     wt_opt["blade.internal_structure_2d_fem.joint_cost"] = internal_structure_2d_fem["joint"]["cost"]
 
+    # Blade root
+    wt_opt["blade.internal_structure_2d_fem.d_f"] = internal_structure_2d_fem["root"]["d_f"]
+    wt_opt["blade.internal_structure_2d_fem.sigma_max"] = internal_structure_2d_fem["root"]["sigma_max"]
+
     return wt_opt
 
 
