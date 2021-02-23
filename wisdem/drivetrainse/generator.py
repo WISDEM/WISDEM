@@ -531,4 +531,4 @@ class Generator(om.Group):
         self.add_subsystem("mofi", MofI(), promotes=["*"])
         self.add_subsystem("gen_cost", Cost(), promotes=["*"])
         self.add_subsystem("constr", Constraints(), promotes=["*"])
-        self.add_subsystem("eff", PowerElectronicsEff(), promotes=["*"])
+        self.add_subsystem("eff", PowerElectronicsEff(n_pc=n_pc), promotes=["*"])
