@@ -260,6 +260,10 @@ properties:
                         description: Whether or not to run the floating design modules (FloatingSE)
                     frame3dd: *frame3dd
                     gamma_f: *gamma_f
+                    symmetric_moorings:
+                        type: boolean
+                        default: True
+                        description: Whether or not to assume a symmetric mooring system
 
             Loading:
                 type: object

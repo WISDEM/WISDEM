@@ -1009,6 +1009,7 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
     n_lines = mooring_init_options["n_lines"]
     n_line_types = mooring_init_options["n_line_types"]
     n_anchor_types = mooring_init_options["n_anchor_types"]
+    n_design = 1 if mooring_init_options["symmetric"] else n_lines
 
     wt_opt["mooring.n_lines"] = n_lines  # Needed for ORBIT
     wt_opt["mooring.node_names"] = [mooring["nodes"][i]["name"] for i in range(n_nodes)]
@@ -1026,8 +1027,8 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
         wt_opt["mooring.nodes_drag_area"][i] = mooring["nodes"][i]["drag_area"]
         wt_opt["mooring.nodes_added_mass"][i] = mooring["nodes"][i]["added_mass"]
 
-    for i in range(n_lines):
-        wt_opt["mooring.unstretched_length"][i] = mooring["lines"][i]["unstretched_length"]
+    for i in range(n_design):
+        wt_opt["mooring.unstretched_length_in"][i] = mooring["lines"][i]["unstretched_length"]
 
     for jj, jname in enumerate(wt_opt["mooring.line_id"]):
         node1 = mooring["lines"][jj]["node1"]
@@ -1035,7 +1036,8 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
         for ii, iname in enumerate(line_names):
             if jname == iname:
                 d2 = mooring["line_types"][ii]["diameter"] ** 2
-                wt_opt["mooring.line_diameter"][jj] = mooring["line_types"][ii]["diameter"]
+                if jj < n_design:
+                    wt_opt["mooring.line_diameter_in"][jj] = mooring["line_types"][ii]["diameter"]
                 wt_opt["mooring.line_mass_density_coeff"][jj] = mooring["line_types"][ii]["mass_density"] / d2
                 wt_opt["mooring.line_stiffness_coeff"][jj] = mooring["line_types"][ii]["stiffness"] / d2
                 wt_opt["mooring.line_breaking_load_coeff"][jj] = mooring["line_types"][ii]["breaking_load"] / d2
