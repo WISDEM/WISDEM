@@ -329,11 +329,19 @@ class PoseOptimization(object):
 
         twist_options = blade_opt["aero_shape"]["twist"]
         if twist_options["flag"]:
+            if blade_opt["aero_shape"]["twist"]["index_end"] > blade_opt["aero_shape"]["twist"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade twist is higher than the number of DVs n_opt")
+            elif blade_opt["aero_shape"]["twist"]["index_end"] == 0:
+                blade_opt["aero_shape"]["twist"]["index_end"] = blade_opt["aero_shape"]["twist"]["n_opt"]
             indices_twist = range(twist_options["index_start"], twist_options["index_end"])
             wt_opt.model.add_design_var("blade.opt_var.twist_opt_gain", indices=indices_twist, lower=0.0, upper=1.0)
 
         chord_options = blade_opt["aero_shape"]["chord"]
         if chord_options["flag"]:
+            if blade_opt["aero_shape"]["chord"]["index_end"] > blade_opt["aero_shape"]["chord"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade chord is higher than the number of DVs n_opt")
+            elif blade_opt["aero_shape"]["chord"]["index_end"] == 0:
+                blade_opt["aero_shape"]["chord"]["index_end"] = blade_opt["aero_shape"]["chord"]["n_opt"]
             indices_chord = range(chord_options["index_start"], chord_options["index_end"])
             wt_opt.model.add_design_var(
                 "blade.opt_var.chord_opt_gain",
@@ -361,6 +369,10 @@ class PoseOptimization(object):
 
         spar_cap_ss_options = blade_opt["structure"]["spar_cap_ss"]
         if spar_cap_ss_options["flag"]:
+            if blade_opt["structure"]["spar_cap_ss"]["index_end"] > blade_opt["structure"]["spar_cap_ss"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade spar_cap_ss is higher than the number of DVs n_opt")
+            elif blade_opt["structure"]["spar_cap_ss"]["index_end"] == 0:
+                blade_opt["structure"]["spar_cap_ss"]["index_end"] = blade_opt["structure"]["spar_cap_ss"]["n_opt"]
             indices_spar_cap_ss = range(
                 spar_cap_ss_options["index_start"], spar_cap_ss_options["index_end"]
             )
@@ -375,6 +387,10 @@ class PoseOptimization(object):
         # `equal_to_suction` as False in the optimization yaml.
         spar_cap_ps_options = blade_opt["structure"]["spar_cap_ps"]
         if spar_cap_ps_options["flag"] and not spar_cap_ps_options["equal_to_suction"]:
+            if blade_opt["structure"]["spar_cap_ps"]["index_end"] > blade_opt["structure"]["spar_cap_ps"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade spar_cap_ps is higher than the number of DVs n_opt")
+            elif blade_opt["structure"]["spar_cap_ps"]["index_end"] == 0:
+                blade_opt["structure"]["spar_cap_ps"]["index_end"] = blade_opt["structure"]["spar_cap_ps"]["n_opt"]
             indices_spar_cap_ps = range(
                 spar_cap_ps_options["index_start"], spar_cap_ps_options["index_end"]
             )
