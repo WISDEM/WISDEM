@@ -637,29 +637,29 @@ properties:
                                                                     description: Design variable bound
                                                                     minimum: 0.0
                                                                     maximum: 1.5707963267948966 #180 deg
-
-                    mooring:
+            mooring:
+                type: object
+                description: Design variables associated with the mooring system
+                default: {}
+                properties:
+                    anchor_radius:
                         type: object
-                        description: Design variables associated with the mooring system
+                        default: {}
+                    line_length:
+                        type: object
                         default: {}
                         properties:
-                            anchor_radius:
-                                type: object
-                                default: {}
-                            line_length:
-                                type: object
-                                default: {}
-                                properties:
-                                    flag: *flag
-                                    lower_bound: *lboundm
-                                    upper_bound: *uboundm
-                            line_diameter:
-                                type: object
-                                default: {}
-                                properties:
-                                    flag: *flag
-                                    lower_bound: *lboundm
-                                    upper_bound: *uboundm
+                            flag: *flag
+                            lower_bound: *lboundm
+                            upper_bound: *uboundm
+                    line_diameter:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *lboundm
+                            upper_bound: *uboundm
+
     constraints:
         type: object
         default: {}
