@@ -642,9 +642,6 @@ properties:
                 description: Design variables associated with the mooring system
                 default: {}
                 properties:
-                    anchor_radius:
-                        type: object
-                        default: {}
                     line_length:
                         type: object
                         default: {}
