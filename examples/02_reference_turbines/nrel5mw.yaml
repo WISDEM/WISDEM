@@ -569,8 +569,6 @@ control:
         Vin: 3.0
         Vout: 25.0
         maxTS: 80.
-        minOmega: 0.72256
-        maxOmega: 1.26711
     pitch:
         PC_zeta: 0.7                      # Pitch controller desired damping ratio [-]
         PC_omega: 0.5                     # Pitch controller desired natural frequency [rad/s]
