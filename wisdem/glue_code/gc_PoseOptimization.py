@@ -825,9 +825,11 @@ class PoseOptimization(object):
                     wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"],
                     wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"],
                 )
-                lb_twist = np.array(blade_opt["aero_shape"]["twist"]["lower_bound"])
-                ub_twist = np.array(blade_opt["aero_shape"]["twist"]["upper_bound"])
-                wt_opt["blade.opt_var.twist_opt_gain"] = (init_twist_opt - lb_twist) / (ub_twist - lb_twist)
+                lb_twist = init_twist_opt - blade_opt["aero_shape"]["twist"]["max_decrease"]
+                ub_twist = init_twist_opt + blade_opt["aero_shape"]["twist"]["max_increase"]
+                blade_opt["aero_shape"]["twist"]["lower_bound"] = lb_twist
+                blade_opt["aero_shape"]["twist"]["upper_bound"] = ub_twist
+                wt_opt["blade.opt_var.twist_opt_gain"] = np.ones(blade_opt["aero_shape"]["twist"]["n_opt"]) * blade_opt["aero_shape"]["twist"]["max_decrease"] / (blade_opt["aero_shape"]["twist"]["max_increase"] + blade_opt["aero_shape"]["twist"]["max_decrease"])
                 if (
                     max(wt_opt["blade.opt_var.twist_opt_gain"]) > 1.0
                     or min(wt_opt["blade.opt_var.twist_opt_gain"]) < 0.0

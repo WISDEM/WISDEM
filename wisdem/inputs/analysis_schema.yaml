@@ -67,20 +67,16 @@ properties:
                                         default: 8
                                         minimum: 4
                                         description: Number of equally-spaced control points of the spline parametrizing the twist distribution along blade span. By default, the first two points are locked to prevent the optimizer to try to optimize the twist of the blade root cylinder.
-                                    lower_bound:
-                                        type: array
-                                        description: Lowest number of radians that can be added (typically negative to explore smaller twist angles)
-                                        default: [-0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1]
-                                        items:
-                                            type: number
-                                            unit: rad
-                                    upper_bound:
-                                        type: array
-                                        description: Largest number of radians that can be added (typically postive to explore greater twist angles)
-                                        default: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
-                                        items:
-                                            type: number
-                                            unit: rad
+                                    max_decrease:
+                                        type: number
+                                        description: Maximum allowable decrease of twist at each DV location along blade span.
+                                        default: 0.1
+                                        unit: rad
+                                    max_increase:
+                                        type: number
+                                        description: Maximum allowable increase of twist at each DV location along blade span.
+                                        default: 0.1
+                                        unit: rad
                                     index_start: &index_start
                                         type: integer
                                         default: 0
@@ -666,18 +662,8 @@ properties:
                                 default: 4000.e-6
                                 minimum: 1.e-8
                                 maximum: 1.e-1
-                            index_start: &index_start
-                                type: integer
-                                description: First spar cap optimization station where the strains are constrained
-                                default: 0
-                                minimum: 0
-                                maximum: 100
-                            index_end: &index_end
-                                type: integer
-                                description: Last spar cap optimization station where the strains are constrained
-                                default: 8
-                                minimum: 1
-                                maximum: 100
+                            index_start: *index_start
+                            index_end: *index_end
                     strains_spar_cap_ps:
                         type: object
                         default: {}
