@@ -24,13 +24,17 @@ class PoseOptimization(object):
         if rotorD_opt["flag"]:
             n_DV += 1
         if blade_opt["aero_shape"]["twist"]["flag"]:
-            n_DV += blade_opt["aero_shape"]["twist"]["n_opt"] - (
-                blade_opt["aero_shape"]["twist"]["lock_root"] + blade_opt["aero_shape"]["twist"]["lock_tip"]
-            )
+            if blade_opt["aero_shape"]["twist"]["index_end"] > blade_opt["aero_shape"]["twist"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade twist is higher than the number of DVs n_opt")
+            elif blade_opt["aero_shape"]["twist"]["index_end"] == 0:
+                blade_opt["aero_shape"]["twist"]["index_end"] = blade_opt["aero_shape"]["twist"]["n_opt"]
+            n_DV += blade_opt["aero_shape"]["twist"]["index_end"] - blade_opt["aero_shape"]["twist"]["index_start"]
         if blade_opt["aero_shape"]["chord"]["flag"]:
-            n_DV += blade_opt["aero_shape"]["chord"]["n_opt"] - (
-                blade_opt["aero_shape"]["chord"]["lock_root"] + blade_opt["aero_shape"]["chord"]["lock_tip"]
-            )
+            if blade_opt["aero_shape"]["chord"]["index_end"] > blade_opt["aero_shape"]["chord"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade chord is higher than the number of DVs n_opt")
+            elif blade_opt["aero_shape"]["chord"]["index_end"] == 0:
+                blade_opt["aero_shape"]["chord"]["index_end"] = blade_opt["aero_shape"]["chord"]["n_opt"]
+            n_DV += blade_opt["aero_shape"]["chord"]["index_end"] - blade_opt["aero_shape"]["chord"]["index_start"]
         if blade_opt["aero_shape"]["af_positions"]["flag"]:
             n_DV += (
                 self.modeling["WISDEM"]["RotorSE"]["n_af_span"]
@@ -38,16 +42,20 @@ class PoseOptimization(object):
                 - 1
             )
         if blade_opt["structure"]["spar_cap_ss"]["flag"]:
-            n_DV += blade_opt["structure"]["spar_cap_ss"]["n_opt"] - (
-                blade_opt["structure"]["spar_cap_ss"]["lock_root"] + blade_opt["structure"]["spar_cap_ss"]["lock_tip"]
-            )
+            if blade_opt["structure"]["spar_cap_ss"]["index_end"] > blade_opt["structure"]["spar_cap_ss"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade spar_cap_ss is higher than the number of DVs n_opt")
+            elif blade_opt["structure"]["spar_cap_ss"]["index_end"] == 0:
+                blade_opt["structure"]["spar_cap_ss"]["index_end"] = blade_opt["structure"]["spar_cap_ss"]["n_opt"]
+            n_DV += blade_opt["structure"]["spar_cap_ss"]["index_end"] - blade_opt["structure"]["spar_cap_ss"]["index_start"]
         if (
             blade_opt["structure"]["spar_cap_ps"]["flag"]
             and not blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
         ):
-            n_DV += blade_opt["structure"]["spar_cap_ps"]["n_opt"] - (
-                blade_opt["structure"]["spar_cap_ps"]["lock_root"] + blade_opt["structure"]["spar_cap_ps"]["lock_tip"]
-            )
+            if blade_opt["structure"]["spar_cap_ps"]["index_end"] > blade_opt["structure"]["spar_cap_ps"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade spar_cap_ps is higher than the number of DVs n_opt")
+            elif blade_opt["structure"]["spar_cap_ps"]["index_end"] == 0:
+                blade_opt["structure"]["spar_cap_ps"]["index_end"] = blade_opt["structure"]["spar_cap_ps"]["n_opt"]
+            n_DV += blade_opt["structure"]["spar_cap_ps"]["index_end"] - blade_opt["structure"]["spar_cap_ps"]["index_start"]
         if self.opt["design_variables"]["control"]["tsr"]["flag"]:
             n_DV += 1
 
@@ -321,44 +329,44 @@ class PoseOptimization(object):
 
         twist_options = blade_opt["aero_shape"]["twist"]
         if twist_options["flag"]:
-            indices = range(twist_options["lock_root"], twist_options["n_opt"] - twist_options["lock_tip"])
-            wt_opt.model.add_design_var("blade.opt_var.twist_opt_gain", indices=indices, lower=0.0, upper=1.0)
+            indices_twist = range(twist_options["index_start"], twist_options["index_end"])
+            wt_opt.model.add_design_var("blade.opt_var.twist_opt_gain", indices=indices_twist, lower=0.0, upper=1.0)
 
         chord_options = blade_opt["aero_shape"]["chord"]
         if chord_options["flag"]:
-            indices = range(chord_options["lock_root"], chord_options["n_opt"] - chord_options["lock_tip"])
+            indices_chord = range(chord_options["index_start"], chord_options["index_end"])
             wt_opt.model.add_design_var(
                 "blade.opt_var.chord_opt_gain",
-                indices=indices,
+                indices=indices_chord,
                 lower=chord_options["min_gain"],
                 upper=chord_options["max_gain"],
             )
 
         if blade_opt["aero_shape"]["af_positions"]["flag"]:
             n_af = self.modeling["WISDEM"]["RotorSE"]["n_af_span"]
-            indices = range(blade_opt["aero_shape"]["af_positions"]["af_start"], n_af - 1)
+            indices_af = range(blade_opt["aero_shape"]["af_positions"]["af_start"], n_af - 1)
             af_pos_init = wt_init["components"]["blade"]["outer_shape_bem"]["airfoil_position"]["grid"]
             step_size = self._get_step_size()
             lb_af = np.zeros(n_af)
             ub_af = np.zeros(n_af)
-            for i in range(1, indices[0]):
+            for i in range(1, indices_af[0]):
                 lb_af[i] = ub_af[i] = af_pos_init[i]
-            for i in indices:
+            for i in indices_af:
                 lb_af[i] = 0.5 * (af_pos_init[i - 1] + af_pos_init[i]) + step_size
                 ub_af[i] = 0.5 * (af_pos_init[i + 1] + af_pos_init[i]) - step_size
             lb_af[-1] = ub_af[-1] = 1.0
             wt_opt.model.add_design_var(
-                "blade.opt_var.af_position", indices=indices, lower=lb_af[indices], upper=ub_af[indices]
+                "blade.opt_var.af_position", indices=indices_af, lower=lb_af[indices_af], upper=ub_af[indices_af]
             )
 
         spar_cap_ss_options = blade_opt["structure"]["spar_cap_ss"]
         if spar_cap_ss_options["flag"]:
-            indices = range(
-                spar_cap_ss_options["lock_root"], spar_cap_ss_options["n_opt"] - spar_cap_ss_options["lock_tip"]
+            indices_spar_cap_ss = range(
+                spar_cap_ss_options["index_start"], spar_cap_ss_options["index_end"]
             )
             wt_opt.model.add_design_var(
                 "blade.opt_var.spar_cap_ss_opt_gain",
-                indices=indices,
+                indices=indices_spar_cap_ss,
                 lower=spar_cap_ss_options["min_gain"],
                 upper=spar_cap_ss_options["max_gain"],
             )
@@ -367,12 +375,12 @@ class PoseOptimization(object):
         # `equal_to_suction` as False in the optimization yaml.
         spar_cap_ps_options = blade_opt["structure"]["spar_cap_ps"]
         if spar_cap_ps_options["flag"] and not spar_cap_ps_options["equal_to_suction"]:
-            indices = range(
-                spar_cap_ps_options["lock_root"], spar_cap_ps_options["n_opt"] - spar_cap_ps_options["lock_tip"]
+            indices_spar_cap_ps = range(
+                spar_cap_ps_options["index_start"], spar_cap_ps_options["index_end"]
             )
             wt_opt.model.add_design_var(
                 "blade.opt_var.spar_cap_ps_opt_gain",
-                indices=indices,
+                indices=indices_spar_cap_ps,
                 lower=spar_cap_ps_options["min_gain"],
                 upper=spar_cap_ps_options["max_gain"],
             )
@@ -620,7 +628,7 @@ class PoseOptimization(object):
                 )
 
         if blade_constr["root_circle_diameter"]["flag"]:
-            if blade_opt["aero_shape"]["chord"]["flag"] and blade_opt["aero_shape"]["chord"]["lock_root"] == 0.:
+            if blade_opt["aero_shape"]["chord"]["flag"] and blade_opt["aero_shape"]["chord"]["index_start"] == 0.:
                 wt_opt.model.add_constraint("rs.brs.ratio", upper=blade_constr["root_circle_diameter"]["max_ratio"])
             else:
                 print(
