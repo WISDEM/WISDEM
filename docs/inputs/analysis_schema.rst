@@ -150,15 +150,13 @@ Blade chord as a design variable by scaling (multiplying) the initial value at s
 
     *Minimum* = 4
 
-:code:`min_gain` : Float
-    Lower bound on scalar multiplier that will be applied to value at
-    control points
+:code:`max_decrease` : Float
+    Maximum nondimensional decrease of the blade chord at each optimization location
 
     *Default* = 0.5
 
-:code:`max_gain` : Float
-    Upper bound on scalar multiplier that will be applied to value at
-    control points
+:code:`max_increase` : Float
+    Maximum nondimensional increase of the blade chord at each optimization location
 
     *Default* = 1.5
 
@@ -229,15 +227,13 @@ Blade suction-side spar cap thickness as a design variable by scaling (multiplyi
 
     *Minimum* = 4
 
-:code:`min_gain` : Float
-    Lower bound on scalar multiplier that will be applied to value at
-    control points
+:code:`max_decrease` : Float
+    Maximum nondimensional decrease of the spar cap thickness on the suction-side at each optimization location
 
     *Default* = 0.5
 
-:code:`max_gain` : Float
-    Upper bound on scalar multiplier that will be applied to value at
-    control points
+:code:`max_increase` : Float
+    Maximum nondimensional increase of the spar cap thickness on the suction-side at each optimization location
 
     *Default* = 1.5
 
@@ -278,15 +274,13 @@ Blade pressure-side spar cap thickness as a design variable by scaling (multiply
 
     *Minimum* = 4
 
-:code:`min_gain` : Float
-    Lower bound on scalar multiplier that will be applied to value at
-    control points
+:code:`max_decrease` : Float
+    Maximum nondimensional decrease of the spar cap thickness on the pressure-side at each optimization location
 
     *Default* = 0.5
 
-:code:`max_gain` : Float
-    Upper bound on scalar multiplier that will be applied to value at
-    control points
+:code:`max_increase` : Float
+    Maximum nondimensional increase of the spar cap thickness on the pressure-side at each optimization location
 
     *Default* = 1.5
 
