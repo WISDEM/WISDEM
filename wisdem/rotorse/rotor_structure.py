@@ -94,9 +94,9 @@ class TotalLoads(ExplicitComponent):
         )
 
         # Outputs
-        self.add_output("Px_af", val=np.zeros(n_span), desc="total distributed loads in airfoil x-direction")
-        self.add_output("Py_af", val=np.zeros(n_span), desc="total distributed loads in airfoil y-direction")
-        self.add_output("Pz_af", val=np.zeros(n_span), desc="total distributed loads in airfoil z-direction")
+        self.add_output("Px_af", val=np.zeros(n_span), units="N/m", desc="total distributed loads in airfoil x-direction")
+        self.add_output("Py_af", val=np.zeros(n_span), units="N/m", desc="total distributed loads in airfoil y-direction")
+        self.add_output("Pz_af", val=np.zeros(n_span), units="N/m", desc="total distributed loads in airfoil z-direction")
 
     def compute(self, inputs, outputs):
 
@@ -163,13 +163,13 @@ class RunFrame3DD(ExplicitComponent):
 
         # all inputs/outputs in airfoil coordinate system
         self.add_input(
-            "Px_af", val=np.zeros(n_span), desc="distributed load (force per unit length) in airfoil x-direction"
+            "Px_af", val=np.zeros(n_span), units="N/m", desc="distributed load (force per unit length) in airfoil x-direction"
         )
         self.add_input(
-            "Py_af", val=np.zeros(n_span), desc="distributed load (force per unit length) in airfoil y-direction"
+            "Py_af", val=np.zeros(n_span), units="N/m", desc="distributed load (force per unit length) in airfoil y-direction"
         )
         self.add_input(
-            "Pz_af", val=np.zeros(n_span), desc="distributed load (force per unit length) in airfoil z-direction"
+            "Pz_af", val=np.zeros(n_span), units="N/m", desc="distributed load (force per unit length) in airfoil z-direction"
         )
 
         self.add_input(

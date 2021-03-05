@@ -27,39 +27,39 @@ class ParametrizeBladeAero(ExplicitComponent):
             val=np.zeros(n_span),
             desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
         )
-        # Blade twist
-        self.add_input(
-            "twist_original",
-            val=np.zeros(n_span),
-            units="rad",
-            desc="1D array of the twist values defined along blade span. The twist is the one defined in the yaml.",
-        )
+        # # Blade twist
+        # self.add_input(
+        #     "twist_original",
+        #     val=np.zeros(n_span),
+        #     units="rad",
+        #     desc="1D array of the twist values defined along blade span. The twist is the one defined in the yaml.",
+        # )
         self.add_input(
             "s_opt_twist",
             val=np.zeros(n_opt_twist),
             desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade twist angle",
         )
         self.add_input(
-            "twist_opt_gain",
-            val=np.ones(n_opt_twist),
-            desc="1D array of the non-dimensional gains to optimize the blade spanwise distribution of the twist angle",
+            "twist_opt",
+            val=np.ones(n_opt_twist), units = "rad",
+            desc="1D array of the twist angle being optimized at the n_opt locations.",
         )
         # Blade chord
-        self.add_input(
-            "chord_original",
-            val=np.zeros(n_span),
-            units="m",
-            desc="1D array of the chord values defined along blade span. The chord is the one defined in the yaml.",
-        )
+        # self.add_input(
+        #     "chord_original",
+        #     val=np.zeros(n_span),
+        #     units="m",
+        #     desc="1D array of the chord values defined along blade span. The chord is the one defined in the yaml.",
+        # )
         self.add_input(
             "s_opt_chord",
             val=np.zeros(n_opt_chord),
             desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade chord",
         )
         self.add_input(
-            "chord_opt_gain",
-            val=np.ones(n_opt_chord),
-            desc="1D array of the non-dimensional gains to optimize the blade spanwise distribution of the chord",
+            "chord_opt",
+            val=np.ones(n_opt_chord), units="m",
+            desc="1D array of the chord being optimized at the n_opt locations.",
         )
 
         # Outputs
@@ -84,28 +84,10 @@ class ParametrizeBladeAero(ExplicitComponent):
     def compute(self, inputs, outputs):
 
         spline = PchipInterpolator
-
-        if self.opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["flag"] == True:
-            lb_twist = np.array(
-                self.opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["lower_bound"]
-            )
-            ub_twist = np.array(
-                self.opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["upper_bound"]
-            )
-            twist_opt_gain_nd = inputs["twist_opt_gain"]
-            twist_upper = np.ones(self.n_opt_twist) * ub_twist
-            twist_lower = np.ones(self.n_opt_twist) * lb_twist
-            twist_opt_rad = twist_opt_gain_nd * (twist_upper - twist_lower) + twist_lower
-
-            spline = PchipInterpolator
-            twist_spline = spline(inputs["s_opt_twist"], twist_opt_rad)
-            outputs["twist_param"] = twist_spline(inputs["s"])
-        else:
-            outputs["twist_param"] = inputs["twist_original"]
-
-        chord_spline = spline(inputs["s_opt_chord"], inputs["chord_opt_gain"])
-        outputs["chord_param"] = inputs["chord_original"] * chord_spline(inputs["s"])
-
+        twist_spline = spline(inputs["s_opt_twist"], inputs["twist_opt"])
+        outputs["twist_param"] = twist_spline(inputs["s"])
+        chord_spline = spline(inputs["s_opt_chord"], inputs["chord_opt"])
+        outputs["chord_param"] = chord_spline(inputs["s"])
         chord_opt = spline(inputs["s"], outputs["chord_param"])
         max_chord = self.opt_options["constraints"]["blade"]["chord"]["max"]
         outputs["max_chord_constr"] = chord_opt(inputs["s_opt_chord"]) / max_chord
@@ -142,26 +124,28 @@ class ParametrizeBladeStruct(ExplicitComponent):
             units="m",
             desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
-        self.add_output(
+        self.add_input(
             "s_opt_spar_cap_ss",
             val=np.zeros(n_opt_spar_cap_ss),
             desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side",
         )
         self.add_input(
-            "spar_cap_ss_opt_gain",
+            "spar_cap_ss_opt",
             val=np.ones(n_opt_spar_cap_ss),
-            desc="1D array of the non-dimensional gains to optimize the blade spanwise distribution of the spar caps suction side",
+            units="m",
+            desc="1D array of the the blade spanwise distribution of the spar caps suction side being optimized",
         )
         # Blade spar suction side
-        self.add_output(
+        self.add_input(
             "s_opt_spar_cap_ps",
             val=np.zeros(n_opt_spar_cap_ps),
             desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap pressure side",
         )
         self.add_input(
-            "spar_cap_ps_opt_gain",
+            "spar_cap_ps_opt",
             val=np.ones(n_opt_spar_cap_ps),
-            desc="1D array of the non-dimensional gains to optimize the blade spanwise distribution of the spar caps pressure side",
+            units="m",
+            desc="1D array of the the blade spanwise distribution of the spar caps pressure side being optimized",
         )
 
         # Outputs
@@ -178,23 +162,26 @@ class ParametrizeBladeStruct(ExplicitComponent):
         spar_cap_ps_name = self.options["rotorse_options"]["spar_cap_ps"]
 
         layer_name = self.options["rotorse_options"]["layer_name"]
-
+        ss_before_ps = False
+        opt_ss = self.opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]['flag']
+        opt_ps = self.opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]['flag']
         for i in range(self.n_layers):
-            if layer_name[i] == spar_cap_ss_name:
-                opt_gain_m_interp = np.interp(inputs["s"], outputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt_gain"])
-            elif layer_name[i] == spar_cap_ps_name:
+            if layer_name[i] == spar_cap_ss_name and opt_ss and opt_ps:
+                opt_m_interp = np.interp(inputs["s"], inputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt"])
+                ss_before_ps = True
+            elif layer_name[i] == spar_cap_ps_name and opt_ss and opt_ps:
                 if (
                     self.opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
                     == False
-                ):
-                    opt_gain_m_interp = np.interp(
-                        inputs["s"], outputs["s_opt_spar_cap_ps"], inputs["spar_cap_ps_opt_gain"]
+                ) or ss_before_ps == False:
+                    opt_m_interp = np.interp(
+                        inputs["s"], inputs["s_opt_spar_cap_ps"], inputs["spar_cap_ps_opt"]
                     )
                 else:
-                    opt_gain_m_interp = np.interp(
-                        inputs["s"], outputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt_gain"]
+                    opt_m_interp = np.interp(
+                        inputs["s"], inputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt"]
                     )
             else:
-                opt_gain_m_interp = np.ones(self.n_span)
+                opt_m_interp = inputs["layer_thickness_original"][i, :]
 
-            outputs["layer_thickness_param"][i, :] = inputs["layer_thickness_original"][i, :] * opt_gain_m_interp
+            outputs["layer_thickness_param"][i, :] = opt_m_interp
