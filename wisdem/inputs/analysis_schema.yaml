@@ -599,13 +599,13 @@ properties:
                                                             type: object
                                                             description: Ring stiffener spacing along member axis
                                                             properties:
-                                                                lower_bound:
+                                                                lower_bound: &lboundm
                                                                     type: number
                                                                     unit: m
                                                                     description: Design variable bound
                                                                     default: 0.0
                                                                     minimum: 0.0
-                                                                upper_bound:
+                                                                upper_bound: &uboundm
                                                                     type: number
                                                                     unit: m
                                                                     description: Design variable bound
@@ -637,21 +637,26 @@ properties:
                                                                     description: Design variable bound
                                                                     minimum: 0.0
                                                                     maximum: 1.5707963267948966 #180 deg
-
-                    mooring:
+            mooring:
+                type: object
+                description: Design variables associated with the mooring system
+                default: {}
+                properties:
+                    line_length:
                         type: object
-                        description: Design variables associated with the node locations used in the floating platform
                         default: {}
                         properties:
-                            anchor_radius:
-                                type: object
-                                default: {}
-                            line_length:
-                                type: object
-                                default: {}
-                            line_diameter:
-                                type: object
-                                default: {}
+                            flag: *flag
+                            lower_bound: *lboundm
+                            upper_bound: *uboundm
+                    line_diameter:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *lboundm
+                            upper_bound: *uboundm
+
     constraints:
         type: object
         default: {}
@@ -724,7 +729,7 @@ properties:
                                 minimum: 0.1
                                 maximum: 20.0
                                 unit: meter
-                    root_circle_diameter: 
+                    root_circle_diameter:
                         type: object
                         description: Enforcing the minimum blade root circle diameter.
                         default: {}
