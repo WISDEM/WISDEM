@@ -905,7 +905,7 @@ class PoseOptimization(object):
                                 wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
                         else:
                             init_spar_cap_ps_opt = init_spar_cap_ss_opt
-                if ss_before_ps:
+                if not ss_before_ps:
                     raise Exception("Please set the spar cap names for suction and pressure sides among the RotorSE modeling options")
                 wt_opt["blade.opt_var.spar_cap_ss_opt"] = init_spar_cap_ss_opt
                 wt_opt["blade.opt_var.spar_cap_ps_opt"] = init_spar_cap_ps_opt
