@@ -124,7 +124,7 @@ class ParametrizeBladeStruct(ExplicitComponent):
             units="m",
             desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
-        self.add_output(
+        self.add_input(
             "s_opt_spar_cap_ss",
             val=np.zeros(n_opt_spar_cap_ss),
             desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side",
@@ -136,7 +136,7 @@ class ParametrizeBladeStruct(ExplicitComponent):
             desc="1D array of the the blade spanwise distribution of the spar caps suction side being optimized",
         )
         # Blade spar suction side
-        self.add_output(
+        self.add_input(
             "s_opt_spar_cap_ps",
             val=np.zeros(n_opt_spar_cap_ps),
             desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap pressure side",
@@ -162,21 +162,24 @@ class ParametrizeBladeStruct(ExplicitComponent):
         spar_cap_ps_name = self.options["rotorse_options"]["spar_cap_ps"]
 
         layer_name = self.options["rotorse_options"]["layer_name"]
-
+        ss_before_ps = False
+        opt_ss = self.opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]['flag']
+        opt_ps = self.opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]['flag']
         for i in range(self.n_layers):
-            if layer_name[i] == spar_cap_ss_name:
-                opt_m_interp = np.interp(inputs["s"], outputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt"])
-            elif layer_name[i] == spar_cap_ps_name:
+            if layer_name[i] == spar_cap_ss_name and opt_ss and opt_ps:
+                opt_m_interp = np.interp(inputs["s"], inputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt"])
+                ss_before_ps = True
+            elif layer_name[i] == spar_cap_ps_name and opt_ss and opt_ps:
                 if (
                     self.opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
                     == False
-                ):
+                ) or ss_before_ps == False:
                     opt_m_interp = np.interp(
-                        inputs["s"], outputs["s_opt_spar_cap_ps"], inputs["spar_cap_ps_opt"]
+                        inputs["s"], inputs["s_opt_spar_cap_ps"], inputs["spar_cap_ps_opt"]
                     )
                 else:
                     opt_m_interp = np.interp(
-                        inputs["s"], outputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt"]
+                        inputs["s"], inputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt"]
                     )
             else:
                 opt_m_interp = inputs["layer_thickness_original"][i, :]

@@ -613,7 +613,9 @@ class Blade(om.Group):
 
         # Connections to blade struct parametrization
         self.connect("opt_var.spar_cap_ss_opt", "ps.spar_cap_ss_opt")
+        self.connect("opt_var.s_opt_spar_cap_ss", "ps.s_opt_spar_cap_ss")
         self.connect("opt_var.spar_cap_ps_opt", "ps.spar_cap_ps_opt")
+        self.connect("opt_var.s_opt_spar_cap_ps", "ps.s_opt_spar_cap_ps")
         self.connect("outer_shape_bem.s", "ps.s")
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
         self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
