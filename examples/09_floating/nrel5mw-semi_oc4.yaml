@@ -329,6 +329,19 @@ components:
             - name: col3_freeboard
               location: [28.86751, -1.0471976, 12.0] #-1.0471975 = -60 deg
               cylindrical: True
+
+            - name: anchor1
+              location: [837.6, 0.0, -200.0]
+              cylindrical: True
+
+            - name: anchor2
+              location: [837.6, 2.0943951023931953, -200.0] # 120deg
+              cylindrical: True
+
+            - name: anchor3
+              location: [837.6, 4.1887902047863905, -200.0] # 240deg
+              cylindrical: True
+
         members:
             - name: main_column
               joint1: main_keel
@@ -577,15 +590,15 @@ components:
         nodes:
             - name: line1_anchor
               node_type: fixed
-              location: [837.6, 0.0, -200.0]
+              joint: anchor1
               anchor_type: drag_embedment
             - name: line2_anchor
               node_type: fixed
-              location: [418.8, 725.383, -200.0]
+              joint: anchor2
               anchor_type: drag_embedment
             - name: line3_anchor
               node_type: fixed
-              location: [418.8, -725.383, -200.0]
+              joint: anchor3
               anchor_type: drag_embedment
 
             - name: line1_vessel

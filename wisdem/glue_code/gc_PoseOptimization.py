@@ -20,6 +20,7 @@ class PoseOptimization(object):
         hub_opt = self.opt["design_variables"]["hub"]
         drive_opt = self.opt["design_variables"]["drivetrain"]
         float_opt = self.opt["design_variables"]["floating"]
+        mooring_opt = self.opt["design_variables"]["mooring"]
 
         if rotorD_opt["flag"]:
             n_DV += 1
@@ -133,6 +134,12 @@ class PoseOptimization(object):
                             n_DV += 1
                 if "axial_joints" in kgrp:
                     n_DV += len(kgrp["axial_joints"])
+
+        n_design = 1 if self.modeling["mooring"]["symmetric"] else self.modeling["mooring"]["n_lines"]
+        if mooring_opt["line_length"]["flag"]:
+            n_DV += n_design
+        if mooring_opt["line_diameter"]["flag"]:
+            n_DV += n_design
 
         # Wrap-up at end with multiplier for finite differencing
         if self.opt["driver"]["optimization"]["form"] == "central":
@@ -299,6 +306,12 @@ class PoseOptimization(object):
         elif self.opt["merit_figure"] == "platform_cost":
             wt_opt.model.add_objective("floatingse.platform_cost", ref=1e6)
 
+        elif self.opt["merit_figure"] == "mooring_mass":
+            wt_opt.model.add_objective("floatingse.mooring_mass", ref=1e4)
+
+        elif self.opt["merit_figure"] == "mooring_cost":
+            wt_opt.model.add_objective("floatingse.mooring_cost", ref=1e4)
+
         elif self.opt["merit_figure"] == "Cp":
             if self.modeling["flags"]["blade"]:
                 wt_opt.model.add_objective("rp.powercurve.Cp_regII", ref=-1.0)
@@ -320,6 +333,7 @@ class PoseOptimization(object):
         hub_opt = self.opt["design_variables"]["hub"]
         drive_opt = self.opt["design_variables"]["drivetrain"]
         float_opt = self.opt["design_variables"]["floating"]
+        mooring_opt = self.opt["design_variables"]["mooring"]
 
         # -- Rotor & Blade --
         if rotorD_opt["flag"]:
@@ -524,7 +538,7 @@ class PoseOptimization(object):
                     "nacelle." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"], ref=1e-2
                 )
 
-        # -- Floating & Mooring --
+        # -- Floating --
         if float_opt["joints"]["flag"]:
             jointz = float_opt["joints"]["z_coordinate"]
             jointr = float_opt["joints"]["r_coordinate"]
@@ -622,6 +636,23 @@ class PoseOptimization(object):
                     wt_opt.model.add_design_var(
                         f"floating.memgrp{idx}.grid_axial_joints", lower=lower, upper=upper, indices=aidx
                     )
+
+        # -- Mooring --
+        if mooring_opt["line_length"]["flag"]:
+            wt_opt.model.add_design_var(
+                "mooring.unstretched_length_in",
+                lower=mooring_opt["line_length"]["lower_bound"],
+                upper=mooring_opt["line_length"]["upper_bound"],
+                ref=1e2,
+            )
+
+        if mooring_opt["line_diameter"]["flag"]:
+            wt_opt.model.add_design_var(
+                "mooring.line_diameter_in",
+                lower=mooring_opt["line_diameter"]["lower_bound"],
+                upper=mooring_opt["line_diameter"]["upper_bound"],
+                ref=1e-1,
+            )
 
         return wt_opt
 

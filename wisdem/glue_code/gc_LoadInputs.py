@@ -463,6 +463,9 @@ class WindTurbineOntologyPython(object):
             n_lines = len(self.wt_init["components"]["mooring"]["lines"])
             n_line_types = len(self.wt_init["components"]["mooring"]["line_types"])
             n_anchor_types = len(self.wt_init["components"]["mooring"]["anchor_types"])
+            self.modeling_options["mooring"]["symmetric"] = self.modeling_options["WISDEM"]["FloatingSE"][
+                "symmetric_moorings"
+            ]
             self.modeling_options["mooring"]["n_nodes"] = n_nodes
             self.modeling_options["mooring"]["n_lines"] = n_lines
             self.modeling_options["mooring"]["n_anchors"] = n_lines
@@ -1160,6 +1163,24 @@ class WindTurbineOntologyPython(object):
                     for j in range(self.modeling_options["floating"]["members"]["n_axial_joints"][i]):
                         yaml_out["members"][i]["axial_joints"][j]["grid"] = float(
                             wt_opt[f"floating.memgrp{idx}.grid_axial_joints"][j]
+                        )
+
+        if self.modeling_options["flags"]["mooring"]:
+            n_lines = self.modeling_options["mooring"]["n_lines"]
+            n_line_types = self.modeling_options["mooring"]["n_line_types"]
+            line_names = [self.wt_init["components"]["mooring"]["line_types"][i]["name"] for i in range(n_line_types)]
+            line_id = [self.wt_init["components"]["mooring"]["lines"][i]["line_type"] for i in range(n_lines)]
+
+            for i in range(n_lines):
+                self.wt_init["components"]["mooring"]["lines"][i]["unstretched_length"] = float(
+                    wt_opt["mooring.unstretched_length"][i]
+                )
+
+            for jj, jname in enumerate(line_id):
+                for ii, iname in enumerate(line_names):
+                    if jname == iname:
+                        self.wt_init["components"]["mooring"]["line_types"][ii]["diameter"] = float(
+                            wt_opt["mooring.line_diameter"][jj]
                         )
 
         # Update rotor nacelle assembly
