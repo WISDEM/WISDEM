@@ -4,6 +4,7 @@ import unittest
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
+
 import wisdem.rotorse.rotor_power as rp
 
 ARCHIVE = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "regulation.npz"
@@ -61,6 +62,7 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = True
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
+        modeling_options["WISDEM"]["RotorSE"]["peak_thrust_shaving"] = False
 
         n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile["cl"][:, :, :, np.newaxis], 0, 1).shape
         modeling_options["airfoils"] = {}
@@ -299,6 +301,7 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = False
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
+        modeling_options["WISDEM"]["RotorSE"]["peak_thrust_shaving"] = False
 
         n_span, n_aoa, n_Re, n_tab = np.moveaxis(npzfile["cl"][:, :, :, np.newaxis], 0, 1).shape
         modeling_options["airfoils"] = {}
