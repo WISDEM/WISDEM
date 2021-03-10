@@ -33,8 +33,8 @@ all_scripts = [
     "07_generator/scig",
     "08_plant_finance/example",
     "09_floating/mooring_opt",
-    "09_floating/semi_driver",
-    "09_floating/spar_driver",
+    "09_floating/semi_only_driver",
+    "09_floating/spar_only_driver",
     "09_floating/spar_opt",
     "09_floating/tlp_example",
     "09_floating/nrel5mw-spar_oc3_driver",
@@ -45,6 +45,7 @@ all_scripts = [
     "11_airfoilprep/example",
     "12_pyframe3dd/exB",
     "13_design_of_experiments/doe_driver",
+    "14_overridden_values/driver",
 ]
 
 
@@ -170,6 +171,24 @@ class TestExamples(unittest.TestCase):
 
     def test_pyframe3dd(self):
         scripts = [m for m in all_scripts if m.find("pyframe") >= 0]
+        for k in scripts:
+            try:
+                execute_script(k)
+            except:
+                print("Failed to run,", k)
+                self.assertTrue(False)
+
+    def test_doe(self):
+        scripts = [m for m in all_scripts if m.find("design_of_experiments") >= 0]
+        for k in scripts:
+            try:
+                execute_script(k)
+            except:
+                print("Failed to run,", k)
+                self.assertTrue(False)
+
+    def test_overridden(self):
+        scripts = [m for m in all_scripts if m.find("overridden_values") >= 0]
         for k in scripts:
             try:
                 execute_script(k)

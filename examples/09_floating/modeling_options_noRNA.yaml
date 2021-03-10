@@ -8,6 +8,9 @@ WISDEM:
         flag: False
     TowerSE:             # Options of TowerSE module
         flag: True
+    FloatingSE:
+        flag: True
+        symmetric_moorings: True
     BOS:
         flag: False
 

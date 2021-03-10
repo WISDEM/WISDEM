@@ -67,28 +67,28 @@ properties:
                                         default: 8
                                         minimum: 4
                                         description: Number of equally-spaced control points of the spline parametrizing the twist distribution along blade span. By default, the first two points are locked to prevent the optimizer to try to optimize the twist of the blade root cylinder.
-                                    lower_bound:
-                                        type: array
-                                        description: Lowest number of radians that can be added (typically negative to explore smaller twist angles)
-                                        default: [-0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1]
-                                        items:
-                                            type: number
-                                            unit: rad
-                                    upper_bound:
-                                        type: array
-                                        description: Largest number of radians that can be added (typically postive to explore greater twist angles)
-                                        default: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
-                                        items:
-                                            type: number
-                                            unit: rad
-                                    lock_root:
-                                        type: integer
-                                        default: 2
-                                        description: How many DVs along span are locked starting from blade root
-                                    lock_tip:
+                                    max_decrease:
+                                        type: number
+                                        description: Maximum allowable decrease of twist at each DV location along blade span.
+                                        default: 0.1
+                                        unit: rad
+                                    max_increase:
+                                        type: number
+                                        description: Maximum allowable increase of twist at each DV location along blade span.
+                                        default: 0.1
+                                        unit: rad
+                                    index_start: &index_start
                                         type: integer
                                         default: 0
-                                        description: How many DVs along span are locked starting from blade tip
+                                        minimum: 0
+                                        unit: none
+                                        description: First index of the array of design variables/constraints that is optimized/constrained
+                                    index_end: &index_end
+                                        type: integer
+                                        default: 0
+                                        minimum: 0
+                                        unit: none
+                                        description: Last index of the array of design variables/constraints that is optimized/constrained
                             chord:
                                 type: object
                                 default: {}
@@ -100,24 +100,16 @@ properties:
                                         default: 8
                                         minimum: 4
                                         description: Number of equally-spaced control points of the spline parametrizing the chord distribution along blade span. By default, the first two points close to blade root and the last point are locked. The first two points impact the diameter of the blade root cylinder, and the models implemented in WISDEM do not have the level of fidelity to appropriately size the blade root diameter. The last point controls the chord length at blade tip and due to the imperfect tip loss models of CCBlade, it is usually a good idea to taper the chord manually and do not let a numerical optimizer control it.
-                                    min_gain:  &mingain
+                                    max_decrease: &max_decrease
                                         type: number
+                                        description: Maximum nondimensional decrease at each optimization location
                                         default: 0.5
-                                        unit: none
-                                        description: Lower bound on scalar multiplier that will be applied to value at control points
-                                    max_gain: &maxgain
+                                    max_increase: &max_increase
                                         type: number
+                                        description: Maximum nondimensional increase at each optimization location
                                         default: 1.5
-                                        unit: none
-                                        description: Upper bound on scalar multiplier that will be applied to value at control points
-                                    lock_root:
-                                        type: integer
-                                        default: 2
-                                        description: How many DVs along span are locked starting from blade root
-                                    lock_tip:
-                                        type: integer
-                                        default: 1
-                                        description: How many DVs along span are locked starting from blade tip
+                                    index_start: *index_start
+                                    index_end: *index_end
                             af_positions:
                                 type: object
                                 default: {}
@@ -145,16 +137,10 @@ properties:
                                         default: 8
                                         minimum: 4
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
-                                    min_gain: *mingain
-                                    max_gain: *maxgain
-                                    lock_root: &lockroot_structure
-                                        type: integer
-                                        default: 1
-                                        description: How many DVs along span are locked starting from blade root
-                                    lock_tip:  &locktip_structure
-                                        type: integer
-                                        default: 1
-                                        description: How many DVs along span are locked starting from blade tip
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
                             spar_cap_ps:
                                 type: object
                                 description: Blade pressure-side spar cap thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
@@ -170,10 +156,10 @@ properties:
                                         default: 8
                                         minimum: 4
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
-                                    min_gain: *mingain
-                                    max_gain: *maxgain
-                                    lock_root: *lockroot_structure
-                                    lock_tip: *locktip_structure
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
                             te_ss:
                                 type: object
                                 default: {}
@@ -185,10 +171,10 @@ properties:
                                         default: 8
                                         minimum: 4
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
-                                    min_gain: *mingain
-                                    max_gain: *maxgain
-                                    lock_root: *lockroot_structure
-                                    lock_tip: *locktip_structure
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
                             te_ps:
                                 type: object
                                 description: Blade pressure-side trailing edge reinforcement thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
@@ -200,10 +186,10 @@ properties:
                                         default: 8
                                         minimum: 4
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
-                                    min_gain: *mingain
-                                    max_gain: *maxgain
-                                    lock_root: *lockroot_structure
-                                    lock_tip: *locktip_structure
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
             control:
                 type: object
                 default: {}
@@ -593,19 +579,26 @@ properties:
                                                             type: object
                                                             description: Ring stiffener sizing multiplier on T-shape
                                                             properties:
-                                                                min_gain: *mingain
-                                                                max_gain: *maxgain
+                                                                min_gain:  &mingain
+                                                                    type: number
+                                                                    default: 0.5
+                                                                    unit: none
+                                                                    description: Lower bound on scalar multiplier that will be applied to value at control points
+                                                                max_gain: &maxgain
+                                                                    type: number
+                                                                    default: 1.5
+                                                                    unit: none
                                                         spacing:
                                                             type: object
                                                             description: Ring stiffener spacing along member axis
                                                             properties:
-                                                                lower_bound:
+                                                                lower_bound: &lboundm
                                                                     type: number
                                                                     unit: m
                                                                     description: Design variable bound
                                                                     default: 0.0
                                                                     minimum: 0.0
-                                                                upper_bound:
+                                                                upper_bound: &uboundm
                                                                     type: number
                                                                     unit: m
                                                                     description: Design variable bound
@@ -637,21 +630,26 @@ properties:
                                                                     description: Design variable bound
                                                                     minimum: 0.0
                                                                     maximum: 1.5707963267948966 #180 deg
-
-                    mooring:
+            mooring:
+                type: object
+                description: Design variables associated with the mooring system
+                default: {}
+                properties:
+                    line_length:
                         type: object
-                        description: Design variables associated with the node locations used in the floating platform
                         default: {}
                         properties:
-                            anchor_radius:
-                                type: object
-                                default: {}
-                            line_length:
-                                type: object
-                                default: {}
-                            line_diameter:
-                                type: object
-                                default: {}
+                            flag: *flag
+                            lower_bound: *lboundm
+                            upper_bound: *uboundm
+                    line_diameter:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *lboundm
+                            upper_bound: *uboundm
+
     constraints:
         type: object
         default: {}
@@ -671,9 +669,11 @@ properties:
                             max: &maxstrain
                                 type: number
                                 description: Maximum allowable strain value
-                                default: 4000e-6
-                                minimum: 1e-8
-                                maximum: 1e-1
+                                default: 4000.e-6
+                                minimum: 1.e-8
+                                maximum: 1.e-1
+                            index_start: *index_start
+                            index_end: *index_end
                     strains_spar_cap_ps:
                         type: object
                         default: {}
@@ -681,6 +681,8 @@ properties:
                         properties:
                             flag: *flag
                             max: *maxstrain
+                            index_start: *index_start
+                            index_end: *index_end
                     tip_deflection:
                         type: object
                         default: {}
@@ -714,16 +716,28 @@ properties:
                                 unit: radians
                     chord:
                         type: object
-                        description: Enforcing max chord length limit at all points along blade span.
+                        description: Enforcing the maximum chord length limit at all points along blade span.
                         default: {}
                         properties:
                             flag: *flag
                             max:
                                 type: number
-                                default: 4.3
+                                default: 4.75
                                 minimum: 0.1
                                 maximum: 20.0
                                 unit: meter
+                    root_circle_diameter:
+                        type: object
+                        description: Enforcing the minimum blade root circle diameter.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max_ratio:
+                                type: number
+                                description: Maximum ratio between the recommended root circle diameter and the actual chord at blade root. The optimizer will make sure that the ratio stays below this value.
+                                default: 1.
+                                minimum: 0.01
+                                maximum: 10.0
                     frequency:
                         type: object
                         description: Frequency separation constraint between blade fundamental frequency and blade passing (3P) frequency at rated conditions using gamma_freq margin. Can be activated for blade flap and/or edge modes.

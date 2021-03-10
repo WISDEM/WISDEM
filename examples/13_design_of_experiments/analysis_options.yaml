@@ -8,8 +8,8 @@ design_variables:
         flag: False  # Flag to optimize the twist
         inverse: False # Flag to determine twist from the user-defined desired margin to stall (defined in constraints)
         n_opt: 8     # Number of control points along blade span
-        lower_bound: [0.3490658503988659, 0.08726646259971647, 0.08726646259971647, 0., -0.08726646259971647, -0.08726646259971647, -0.08726646259971647, -0.08726646259971647]          # Lower bounds for the twist in [rad] at the n_opt locations
-        upper_bound: [0.4363323129985824, 0.3490658503988659, 0.3490658503988659, 0.2617993877991494, 0.2617993877991494, 0.17453292519943295, 0.17453292519943295, 0.08726646259971647] # Upper bounds for the twist in [rad] at the n_opt locations
+        max_decrease: 0.08722222222222221 # Maximum decrease for the twist in [rad] at the n_opt locations
+        max_increase: 0.08722222222222221 # Maximum increase for the twist in [rad] at the n_opt locations      
       chord:
         flag: True     # Flag to optimize the chord
         n_opt: 8        # Number of control points along blade span

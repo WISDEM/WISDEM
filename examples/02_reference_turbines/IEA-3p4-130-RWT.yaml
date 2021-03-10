@@ -650,26 +650,24 @@ control:
         Vout: 25.0
         maxTS: 80.
         rated_power: 3.37e+6
-        minOmega: 0.72256
-        maxOmega: 1.26711
     pitch:
-        PC_zeta: 1.0                      # Pitch controller desired damping ratio [-]
-        PC_omega: 0.2                     # Pitch controller desired natural frequency [rad/s]
-        ps_percent: 0.8                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
-        max_pitch: 1.57                     # Maximum pitch angle [rad], {default = 90 degrees}
+        PC_zeta: 1.0
+        PC_omega: 0.2
+        ps_percent: 0.8 
+        max_pitch: 1.57
         max_pitch_rate: 0.12217304763960307 # 7 deg/s
-        min_pitch: 0.                      # Minimum pitch angle [rad], {default = 0 degrees}
+        min_pitch: 0.
     torque:
         control_type: tsr_tracking
         tsr: 8.01754386
-        VS_zeta: 1.0                      # Torque controller desired damping ratio [-]
-        VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
+        VS_zeta: 1.0
+        VS_omega: 0.2
         max_torque_rate: 1500000.
-        VS_minspd: 0.0                # Minimum rotor speed [rad/s], {default = 0 rad/s}
-        VS_maxspd: 2.00000                # Minimum rotor speed [rad/s], {default = 0 rad/s}
+        VS_minspd: 0.0
+        VS_maxspd: 2.00000
     setpoint_smooth:
-        ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
-        ss_pcgain: .001                    # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
+        ss_vsgain: 1
+        ss_pcgain: .001
     shutdown:
         limit_type: gen_speed
         limit_value: 2.0

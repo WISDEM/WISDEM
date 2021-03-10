@@ -890,7 +890,8 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         I_nac = np.zeros(6)
         m_list = np.zeros((len(components) + 2,))
         cm_list = np.zeros((len(components) + 2, 3))
-        I_list = np.zeros((len(components) + 2, 6))
+        I_cm_list = np.zeros((len(components) + 2, 6))
+        I_TT_list = np.zeros((len(components) + 2, 6))
         for ic, c in enumerate(components):
             m_i = inputs[c + "_mass"]
             cm_i = inputs[c + "_cm"]
@@ -908,11 +909,14 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
             I_add = util.unassembleI(I_add)
             I_nac += I_add
 
-            # Record mass, cm, and I for output table (about component cg)
+            # Record mass, cm, and I for output table
             m_list[ic] = m_i
             cm_list[ic, :] = cm_i
+            I_TT_list[ic, :] = util.unassembleI(
+                util.assembleI(I_i) + m_i * (np.dot(cm_i, cm_i) * np.eye(3) - np.outer(cm_i, cm_i))
+            )
             I_i = inputs[c + "_I"]
-            I_list[ic, :] = I_i if I_i.size == 6 else np.r_[I_i, np.zeros(3)]
+            I_cm_list[ic, :] = I_i if I_i.size == 6 else np.r_[I_i, np.zeros(3)]
 
         outputs["above_yaw_mass"] = copy.copy(m_nac)
         outputs["above_yaw_cm"] = copy.copy(cm_nac)
@@ -931,10 +935,12 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         outputs["nacelle_cm"] = cm_nac
         outputs["nacelle_I"] = I_nac
 
+        # Find nacelle MoI about tower top
         R = cm_nac
-        I_nac_TT = util.assembleI(I_nac) + m_nac * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
-        outputs["nacelle_I_TT"] = util.unassembleI(I_nac_TT)
+        parallel_axis = m_nac * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        outputs["nacelle_I_TT"] = util.unassembleI(util.assembleI(I_nac) + parallel_axis)
 
+        # Store other misc outputs
         outputs["other_mass"] = (
             inputs["hvac_mass"]
             + inputs["platform_mass"]
@@ -950,23 +956,30 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         components.append("yaw")
         m_list[-2] = inputs["yaw_mass"]
         cm_list[-2, :] = inputs["yaw_cm"]
-        I_list[-2, :] = np.r_[inputs["yaw_I"], np.zeros(3)]
+        I_cm_list[-2, :] = I_TT_list[-2, :] = np.r_[inputs["yaw_I"], np.zeros(3)]
         components.append("nacelle")
         m_list[-1] = m_nac
         cm_list[-1, :] = cm_nac
-        I_list[-1, :] = I_nac
+        I_cm_list[-1, :] = I_nac
+        I_TT_list[-1, :] = outputs["nacelle_I_TT"]
         self._mass_table = pd.DataFrame()
         self._mass_table["Component"] = components
         self._mass_table["Mass"] = m_list
         self._mass_table["CoM_TT_x"] = cm_list[:, 0]
         self._mass_table["CoM_TT_y"] = cm_list[:, 1]
         self._mass_table["CoM_TT_z"] = cm_list[:, 2]
-        self._mass_table["MoI_CoM_xx"] = I_list[:, 0]
-        self._mass_table["MoI_CoM_yy"] = I_list[:, 1]
-        self._mass_table["MoI_CoM_zz"] = I_list[:, 2]
-        self._mass_table["MoI_CoM_xy"] = I_list[:, 3]
-        self._mass_table["MoI_CoM_xz"] = I_list[:, 4]
-        self._mass_table["MoI_CoM_yz"] = I_list[:, 5]
+        self._mass_table["MoI_CoM_xx"] = I_cm_list[:, 0]
+        self._mass_table["MoI_CoM_yy"] = I_cm_list[:, 1]
+        self._mass_table["MoI_CoM_zz"] = I_cm_list[:, 2]
+        self._mass_table["MoI_CoM_xy"] = I_cm_list[:, 3]
+        self._mass_table["MoI_CoM_xz"] = I_cm_list[:, 4]
+        self._mass_table["MoI_CoM_yz"] = I_cm_list[:, 5]
+        self._mass_table["MoI_TT_xx"] = I_TT_list[:, 0]
+        self._mass_table["MoI_TT_yy"] = I_TT_list[:, 1]
+        self._mass_table["MoI_TT_zz"] = I_TT_list[:, 2]
+        self._mass_table["MoI_TT_xy"] = I_TT_list[:, 3]
+        self._mass_table["MoI_TT_xz"] = I_TT_list[:, 4]
+        self._mass_table["MoI_TT_yz"] = I_TT_list[:, 5]
         self._mass_table.set_index("Component", inplace=True)
 
 
