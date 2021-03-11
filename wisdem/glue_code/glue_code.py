@@ -557,6 +557,7 @@ class WT_RNTA(om.Group):
                     "bulkhead_thickness",
                     "ballast_grid",
                     "ballast_volume",
+                    "ballast_materials",
                     "grid_axial_joints",
                     "ring_stiffener_web_height",
                     "ring_stiffener_web_thickness",
