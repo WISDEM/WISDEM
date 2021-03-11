@@ -209,6 +209,9 @@ class OrbitWisdem(om.ExplicitComponent):
         self.add_output("installation_time", 0.0, units="h", desc="Total balance of system installation time.")
         self.add_output("installation_capex", 0.0, units="USD", desc="Total balance of system installation cost.")
 
+        # Will hold the bigger orbit project datastructure
+        self.project = None
+
     def compile_orbit_config_file(self, inputs, outputs, discrete_inputs, discrete_outputs):
         """"""
 
@@ -408,11 +411,11 @@ class OrbitWisdem(om.ExplicitComponent):
 
         config = self.compile_orbit_config_file(inputs, outputs, discrete_inputs, discrete_outputs)
 
-        project = ProjectManager(config)
-        project.run_project()
+        self.project = ProjectManager(config)
+        self.project.run_project()
 
-        outputs["bos_capex"] = project.bos_capex
-        outputs["total_capex"] = project.total_capex
-        outputs["total_capex_kW"] = project.total_capex_per_kw
-        outputs["installation_time"] = project.installation_time
-        outputs["installation_capex"] = project.installation_capex
+        outputs["bos_capex"] = self.project.bos_capex
+        outputs["total_capex"] = self.project.total_capex
+        outputs["total_capex_kW"] = self.project.total_capex_per_kw
+        outputs["installation_time"] = self.project.installation_time
+        outputs["installation_capex"] = self.project.installation_capex
