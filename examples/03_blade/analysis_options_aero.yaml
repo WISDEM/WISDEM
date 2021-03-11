@@ -18,8 +18,8 @@ design_variables:
                 n_opt: 4     # Number of control points along blade span
                 max_decrease: 0.3 # Minimum multiplicative gain on existing chord at the n_opt locations
                 max_increase: 3. # Maximum multiplicative gain on existing chord at the n_opt locations
-                index_start: 0 # Start by optimizing chord at blade root
-                index_end: 4 # Lock chord at blade tip
+                index_start: 1 # Start by optimizing chord at blade root
+                index_end: 3 # Lock chord at blade tip
 
 merit_figure: AEP
 
@@ -32,7 +32,7 @@ constraints:
             flag: True # Constraint max chord to its default value (4.75 m)
         root_circle_diameter:
             flag: True # Constraint for the minimum blade root circle diameter
-            max_ratio: 1.2 # The recommended value can be up to 20% larger than the actual 
+            max_ratio: 1.2 # The recommended value can be up to 20% larger than the actual
 
 driver:
     optimization:
@@ -44,7 +44,7 @@ driver:
         solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         step_size: 1.e-3    # Step size for finite differencing
         form: forward       # Finite differencing mode, either forward or central
-    
+
 recorder:
     flag: False              # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder
