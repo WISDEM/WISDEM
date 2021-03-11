@@ -527,20 +527,30 @@ class Blade(om.Group):
             "s_opt_chord", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
         )
         opt_var.add_output(
-            "twist_opt_gain",
+            "twist_opt",
             val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
+            units="rad",
         )
         opt_var.add_output(
-            "chord_opt_gain",
+            "chord_opt",
+            units="m",
             val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
         opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
         opt_var.add_output(
-            "spar_cap_ss_opt_gain",
+            "s_opt_spar_cap_ss", val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"])
+        )
+        opt_var.add_output(
+            "s_opt_spar_cap_ps", val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"])
+        )
+        opt_var.add_output(
+            "spar_cap_ss_opt",
+            units="m",
             val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
         )
         opt_var.add_output(
-            "spar_cap_ps_opt_gain",
+            "spar_cap_ps_opt",
+            units="m",
             val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
         )
         self.add_subsystem("opt_var", opt_var)
@@ -562,12 +572,12 @@ class Blade(om.Group):
         # Connections to blade aero parametrization
         self.connect("opt_var.s_opt_twist", "pa.s_opt_twist")
         self.connect("opt_var.s_opt_chord", "pa.s_opt_chord")
-        self.connect("opt_var.twist_opt_gain", "pa.twist_opt_gain")
-        self.connect("opt_var.chord_opt_gain", "pa.chord_opt_gain")
+        self.connect("opt_var.twist_opt", "pa.twist_opt")
+        self.connect("opt_var.chord_opt", "pa.chord_opt")
 
         self.connect("outer_shape_bem.s", "pa.s")
-        self.connect("outer_shape_bem.twist", "pa.twist_original")
-        self.connect("outer_shape_bem.chord", "pa.chord_original")
+        # self.connect("outer_shape_bem.twist", "pa.twist_original")
+        # self.connect("outer_shape_bem.chord", "pa.chord_original")
 
         # Connections from oute_shape_bem to interp_airfoils
         self.connect("outer_shape_bem.s", "interp_airfoils.s")
@@ -602,8 +612,10 @@ class Blade(om.Group):
         )  # Parameterize struct (spar caps ss and ps)
 
         # Connections to blade struct parametrization
-        self.connect("opt_var.spar_cap_ss_opt_gain", "ps.spar_cap_ss_opt_gain")
-        self.connect("opt_var.spar_cap_ps_opt_gain", "ps.spar_cap_ps_opt_gain")
+        self.connect("opt_var.spar_cap_ss_opt", "ps.spar_cap_ss_opt")
+        self.connect("opt_var.s_opt_spar_cap_ss", "ps.s_opt_spar_cap_ss")
+        self.connect("opt_var.spar_cap_ps_opt", "ps.spar_cap_ps_opt")
+        self.connect("opt_var.s_opt_spar_cap_ps", "ps.s_opt_spar_cap_ps")
         self.connect("outer_shape_bem.s", "ps.s")
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
         self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")

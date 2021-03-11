@@ -152,8 +152,8 @@ class WT_RNTA(om.Group):
                 self.connect("blade.interp_airfoils.coord_xy_interp", "re.rail.coord_xy_interp")
 
             # Connections from blade struct parametrization to rotor load anlysis
-            self.connect("blade.ps.s_opt_spar_cap_ss", "rs.constr.s_opt_spar_cap_ss")
-            self.connect("blade.ps.s_opt_spar_cap_ps", "rs.constr.s_opt_spar_cap_ps")
+            self.connect("blade.opt_var.s_opt_spar_cap_ss", "rs.constr.s_opt_spar_cap_ss")
+            self.connect("blade.opt_var.s_opt_spar_cap_ps", "rs.constr.s_opt_spar_cap_ps")
 
             # Connection from ra to rs for the rated conditions
             # self.connect('rp.powercurve.rated_V',        'rs.aero_rated.V_load')
