@@ -604,7 +604,6 @@ class ComputePowerCurve(ExplicitComponent):
                 return P_i - P_rated
 
             # Solve for Region 3 pitch
-            options = {"disp": False}
             if self.regulation_reg_III:
                 for i in range(i_3, self.n_pc):
                     pitch0 = pitch[i - 1]
@@ -612,8 +611,8 @@ class ComputePowerCurve(ExplicitComponent):
                     try:
                         pitch[i] = brentq(
                             lambda x: rated_power_dist(x, Uhub[i], Omega_rpm[i]),
-                            pitch0,
-                            pitch0 + 10.0,
+                            bnds[0][0],
+                            bnds[0][1],
                             xtol=1e-1 * TOL,
                             rtol=1e-2 * TOL,
                             maxiter=40,
@@ -622,7 +621,7 @@ class ComputePowerCurve(ExplicitComponent):
                     except ValueError:
                         pitch[i] = minimize_scalar(
                             lambda x: np.abs(rated_power_dist(x, Uhub[i], Omega_rpm[i])),
-                            bounds=bnds,
+                            bounds=bnds[0],
                             method="bounded",
                             options={"disp": False, "xatol": TOL, "maxiter": 40},
                         )["x"]

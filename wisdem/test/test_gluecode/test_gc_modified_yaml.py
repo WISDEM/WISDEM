@@ -30,7 +30,7 @@ class TestRegression(unittest.TestCase):
         )
 
         self.assertAlmostEqual(wt_opt["re.precomp.blade_mass"][0], 73310.0985, 1)
-        self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 77.5886698, 1)
+        self.assertAlmostEqual(wt_opt["rp.AEP"][0] * 1.0e-6, 77.84277082383369, 1)
         self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 65.1182, 1)
         self.assertAlmostEqual(wt_opt["rs.tip_pos.tip_deflection"][0], 22.67916, 1)
         self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 144.3859, 3)
