@@ -48,6 +48,9 @@ class blade_bom(object):
         self.websCS = []
         self.profile = []
 
+        self.blade_specs = {}
+        self.mat_dictionary = {}
+
         # # Material inputs
         # self.density_epoxy  = 1150.        # [kg/m3] Mixed density of resin Huntsman LY1564 and hardener Huntsman XP3416
         # material_dict       = {}
@@ -130,7 +133,7 @@ class blade_bom(object):
 
     def extract_specs(self):
 
-        mat_dictionary = self.materials
+        self.mat_dictionary = self.materials
         mat_options = self.mat_options
 
         core_mat_id = mat_options["core_mat_id"]
@@ -154,93 +157,94 @@ class blade_bom(object):
         # for i in range(n_mat):
         #     if i != id_resin:
         #         name = self.materials[i]['name']
-        #         mat_dictionary[name]             = {}
-        #         mat_dictionary[name]['id']       = i + 1
-        #         mat_dictionary[name]['name']     = self.materials[i]['name']
-        #         mat_dictionary[name]['density']  = self.materials[i]['rho']
+        #         self.mat_dictionary[name]             = {}
+        #         self.mat_dictionary[name]['id']       = i + 1
+        #         self.mat_dictionary[name]['name']     = self.materials[i]['name']
+        #         self.mat_dictionary[name]['density']  = self.materials[i]['rho']
         #         # # try:
-        #         mat_dictionary[name]['unit_cost']= self.materials[i]['unit_cost']
-        #         mat_dictionary[name]['waste']    = self.materials[i]['waste_fraction'] * 100.
+        #         self.mat_dictionary[name]['unit_cost']= self.materials[i]['unit_cost']
+        #         self.mat_dictionary[name]['waste']    = self.materials[i]['waste_fraction'] * 100.
         #         if self.materials[i]['component_id'] > 1: # It's a composite
-        #             mat_dictionary[name]['fiber_density']  = self.materials[i]['fiber_density']
-        #             mat_dictionary[name]['area_density_dry']  = self.materials[i]['area_density_dry']
-        #             mat_dictionary[name]['fvf']  = (mat_dictionary[name]['density'] - density_resin) / (mat_dictionary[name]['fiber_density'] - density_resin) * 100. # [%] Fiber volume fraction
+        #             self.mat_dictionary[name]['fiber_density']  = self.materials[i]['fiber_density']
+        #             self.mat_dictionary[name]['area_density_dry']  = self.materials[i]['area_density_dry']
+        #             self.mat_dictionary[name]['fvf']  = (self.mat_dictionary[name]['density'] - density_resin) / (self.mat_dictionary[name]['fiber_density'] - density_resin) * 100. # [%] Fiber volume fraction
         #             if 'fvf' in self.materials[i]:
-        #                 if abs(self.materials[i]['fvf']*100. - mat_dictionary[name]['fvf']) > 1e-3:
-        #                     raise ValueError('Error: the fvf of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['fvf'] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(mat_dictionary[name]['fvf']) + '%')
-        #             mat_dictionary[name]['fwf']  = mat_dictionary[name]['fiber_density'] * mat_dictionary[name]['fvf'] / 100. / (density_resin + ((mat_dictionary[name]['fiber_density'] - density_resin) * mat_dictionary[name]['fvf'] / 100.)) * 100.
+        #                 if abs(self.materials[i]['fvf']*100. - self.mat_dictionary[name]['fvf']) > 1e-3:
+        #                     raise ValueError('Error: the fvf of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['fvf'] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(self.mat_dictionary[name]['fvf']) + '%')
+        #             self.mat_dictionary[name]['fwf']  = self.mat_dictionary[name]['fiber_density'] * self.mat_dictionary[name]['fvf'] / 100. / (density_resin + ((self.mat_dictionary[name]['fiber_density'] - density_resin) * self.mat_dictionary[name]['fvf'] / 100.)) * 100.
         #             if 'fwf' in self.materials[i]:
-        #                 if abs(self.materials[i]['fwf']*100. - mat_dictionary[name]['fwf']) > 1e-3:
-        #                     raise ValueError('Error: the fwf of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['fwf'] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(mat_dictionary[name]['fwf']) + '%')
-        #             mat_dictionary[name]['ply_t']= mat_dictionary[name]['area_density_dry'] / mat_dictionary[name]['density'] / (mat_dictionary[name]['fwf'] / 100.)
+        #                 if abs(self.materials[i]['fwf']*100. - self.mat_dictionary[name]['fwf']) > 1e-3:
+        #                     raise ValueError('Error: the fwf of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['fwf'] * 100) + '%, but this value is not compatible to the other values provided. It should instead be equal to ' + str(self.mat_dictionary[name]['fwf']) + '%')
+        #             self.mat_dictionary[name]['ply_t']= self.mat_dictionary[name]['area_density_dry'] / self.mat_dictionary[name]['density'] / (self.mat_dictionary[name]['fwf'] / 100.)
         #             if 'ply_t' in self.materials[i]:
-        #                 if abs(self.materials[i]['ply_t'] - mat_dictionary[name]['ply_t']) > 1e-3:
-        #                     raise ValueError('Error: the ply_t of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['ply_t']) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(mat_dictionary[name]['ply_t']) + 'm')
+        #                 if abs(self.materials[i]['ply_t'] - self.mat_dictionary[name]['ply_t']) > 1e-3:
+        #                     raise ValueError('Error: the ply_t of composite ' + name + ' specified in the yaml is equal to '+ str(self.materials[i]['ply_t']) + 'm, but this value is not compatible to the other values provided. It should instead be equal to ' + str(self.mat_dictionary[name]['ply_t']) + 'm')
         #             if self.materials[i]['component_id'] > 3: # The material does not need to be cut@station
-        #                 mat_dictionary[name]['cut@station'] = 'N'
+        #                 self.mat_dictionary[name]['cut@station'] = 'N'
         #             else:
-        #                 mat_dictionary[name]['cut@station'] = 'Y'
-        #                 mat_dictionary[name]['roll_mass']   = self.materials[i]['roll_mass']
+        #                 self.mat_dictionary[name]['cut@station'] = 'Y'
+        #                 self.mat_dictionary[name]['roll_mass']   = self.materials[i]['roll_mass']
         #         else:
-        #             mat_dictionary[name]['fvf']  = 100.
-        #             mat_dictionary[name]['fwf']  = 100.
-        #             mat_dictionary[name]['cut@station'] = 'N'
+        #             self.mat_dictionary[name]['fvf']  = 100.
+        #             self.mat_dictionary[name]['fwf']  = 100.
+        #             self.mat_dictionary[name]['cut@station'] = 'N'
         #             if self.materials[i]['component_id'] <= 0:
-        #                 mat_dictionary[name]['ply_t']  = self.materials[i]['ply_thickness']
+        #                 self.mat_dictionary[name]['ply_t']  = self.materials[i]['ply_thickness']
 
         #         if self.materials[i]['component_id'] == 0:
-        #             coating_mat_id = mat_dictionary[name]['id']        # Assigning the material to the coating
+        #             coating_mat_id = self.mat_dictionary[name]['id']        # Assigning the material to the coating
         #         elif self.materials[i]['component_id'] == 1:
-        #             core_mat_id[mat_dictionary[name]['id'] - 1]  = 1   # Assigning the material to the core
+        #             core_mat_id[self.mat_dictionary[name]['id'] - 1]  = 1   # Assigning the material to the core
         #         elif self.materials[i]['component_id'] == 2:
-        #             skin_mat_id    = mat_dictionary[name]['id']        # Assigning the material to the shell skin
+        #             skin_mat_id    = self.mat_dictionary[name]['id']        # Assigning the material to the shell skin
         #         elif self.materials[i]['component_id'] == 3:
-        #             skinwebs_mat_id= mat_dictionary[name]['id']        # Assigning the material to the webs skin
+        #             skinwebs_mat_id= self.mat_dictionary[name]['id']        # Assigning the material to the webs skin
         #         elif self.materials[i]['component_id'] == 4:
-        #             sc_mat_id      = mat_dictionary[name]['id']        # Assigning the material to the spar caps
+        #             sc_mat_id      = self.mat_dictionary[name]['id']        # Assigning the material to the spar caps
         #         elif self.materials[i]['component_id'] == 5:
-        #             le_reinf_mat_id= mat_dictionary[name]['id']        # Assigning the material to the te reinf
-        #             te_reinf_mat_id= mat_dictionary[name]['id']        # Assigning the material to the le reinf
+        #             le_reinf_mat_id= self.mat_dictionary[name]['id']        # Assigning the material to the te reinf
+        #             te_reinf_mat_id= self.mat_dictionary[name]['id']        # Assigning the material to the le reinf
 
         #         # except:
         #             # raise ValueError('ERROR: The material ' + name + ' does not have its properties fully defined. Please set them in the first lines of blade_bom.py in RotorSE')
 
-        # print(mat_dictionary)
+        # print(self.mat_dictionary)
         # raise ValueError()
         # Width and thickness of the flanges
-        blade_specs = {}
-        blade_specs[
+        self.blade_specs[
             "flange_width_inboard_LETE"
         ] = 0.10  # [m] Width of the flanges of the outer surface until 70% of blade span
-        blade_specs["flange_span_reduce_LETE"] = 70  # [%] Spanwise position after which flanges are reduced in width
-        blade_specs["flange_width_tip_LETE"] = 0.01  # [m] Width of the flanges of the outer surface at blade tip
-        blade_specs["flange_width_webs_SW"] = 0.05  # [m] Width of the flanges of the webs
+        self.blade_specs[
+            "flange_span_reduce_LETE"
+        ] = 70  # [%] Spanwise position after which flanges are reduced in width
+        self.blade_specs["flange_width_tip_LETE"] = 0.01  # [m] Width of the flanges of the outer surface at blade tip
+        self.blade_specs["flange_width_webs_SW"] = 0.05  # [m] Width of the flanges of the webs
 
         # ###############################################################################################################################
         # Code
 
-        mat_names = mat_dictionary.keys()
+        mat_names = self.mat_dictionary.keys()
 
         if self.options["verbosity"]:
-            print("Number of composite laminates defined: %u" % (len(mat_dictionary) - sum(core_mat_id)))
+            print("Number of composite laminates defined: %u" % (len(self.mat_dictionary) - sum(core_mat_id)))
             print("Number of core fillers defined:        %u" % (sum(core_mat_id)))
-            print("Total number of materials defined:     %u" % (len(mat_dictionary)))
+            print("Total number of materials defined:     %u" % (len(self.mat_dictionary)))
 
         t_layer = np.zeros(len(mat_names))
         density = np.zeros(len(mat_names))
 
         for i, name in enumerate(mat_names):
-            # if core_mat_id[mat_dictionary[name]['id'] - 1] == 0:
-            if "ply_t" in mat_dictionary[name]:
-                if mat_dictionary[name]["ply_t"] != 0.0:
+            # if core_mat_id[self.mat_dictionary[name]['id'] - 1] == 0:
+            if "ply_t" in self.mat_dictionary[name]:
+                if self.mat_dictionary[name]["ply_t"] != 0.0:
                     if self.options["verbosity"]:
                         print("Composite :" + name)
-                    t_layer[mat_dictionary[name]["id"] - 1] = mat_dictionary[name]["ply_t"]
+                    t_layer[self.mat_dictionary[name]["id"] - 1] = self.mat_dictionary[name]["ply_t"]
                 else:
                     if self.options["verbosity"]:
                         print("Non-composite material: " + name)
 
-            density[mat_dictionary[name]["id"] - 1] = mat_dictionary[name]["density"]
+            density[self.mat_dictionary[name]["id"] - 1] = self.mat_dictionary[name]["density"]
 
         # Reconstruct number of plies from laminate thickness and single ply thickness
         composite_rounding = False
@@ -297,11 +301,13 @@ class blade_bom(object):
                 "WARNING: number of composite plies not consistent with the thicknesses specified along the blade. Rounding is performed."
             )
 
-        blade_specs["blade_length"] = self.bladeLength
-        blade_specs["root_D"] = self.chord[0]
-        blade_specs["max_chord"] = max(self.chord)
-        blade_specs["root_preform_length"] = 0.01 * blade_specs["blade_length"]  # Currently assumed as 1% of BL
-        blade_specs["n_webs"] = n_webs
+        self.blade_specs["blade_length"] = self.bladeLength
+        self.blade_specs["root_D"] = self.chord[0]
+        self.blade_specs["max_chord"] = max(self.chord)
+        self.blade_specs["root_preform_length"] = (
+            0.01 * self.blade_specs["blade_length"]
+        )  # Currently assumed as 1% of BL
+        self.blade_specs["n_webs"] = n_webs
 
         # Reconstruct total area of the mold and total area per ply
         npts = len(self.r)
@@ -356,7 +362,7 @@ class blade_bom(object):
         sc_end_section_hp = 0.0
 
         # Distinction between root preform and outer sheel skin
-        root_preform_end = np.argmin(abs(self.r - blade_specs["root_preform_length"]))
+        root_preform_end = np.argmin(abs(self.r - self.blade_specs["root_preform_length"]))
         matrix_unit_mass = 0.0
         #############################################################################################################################
         # Low pressure (upper) mold
@@ -487,70 +493,76 @@ class blade_bom(object):
                 sc_end_section_lp = i_section
 
         # Mold dimensions
-        blade_specs["LE_length"] = blade_specs["blade_length"]
-        blade_specs["TE_length"] = blade_specs["blade_length"]
-        blade_specs["skin_perimeter_wo_root"] = 2.0 * blade_specs["blade_length"]
-        blade_specs["skin_perimeter_w_root"] = blade_specs["skin_perimeter_wo_root"] + np.pi * blade_specs["root_D"]
+        self.blade_specs["LE_length"] = self.blade_specs["blade_length"]
+        self.blade_specs["TE_length"] = self.blade_specs["blade_length"]
+        self.blade_specs["skin_perimeter_wo_root"] = 2.0 * self.blade_specs["blade_length"]
+        self.blade_specs["skin_perimeter_w_root"] = (
+            self.blade_specs["skin_perimeter_wo_root"] + np.pi * self.blade_specs["root_D"]
+        )
         # Flanges extend to 70% of blade span at full width and they do taper down towards the tip
-        blade_specs["flange_area_LETE"] = (
-            blade_specs["skin_perimeter_wo_root"]
-            * blade_specs["flange_span_reduce_LETE"]
+        self.blade_specs["flange_area_LETE"] = (
+            self.blade_specs["skin_perimeter_wo_root"]
+            * self.blade_specs["flange_span_reduce_LETE"]
             / 100
-            * blade_specs["flange_width_inboard_LETE"]
-            + blade_specs["skin_perimeter_wo_root"]
-            * (1 - blade_specs["flange_span_reduce_LETE"] / 100)
-            * (blade_specs["flange_width_inboard_LETE"] - blade_specs["flange_width_tip_LETE"])
+            * self.blade_specs["flange_width_inboard_LETE"]
+            + self.blade_specs["skin_perimeter_wo_root"]
+            * (1 - self.blade_specs["flange_span_reduce_LETE"] / 100)
+            * (self.blade_specs["flange_width_inboard_LETE"] - self.blade_specs["flange_width_tip_LETE"])
             / 2
         )
-        blade_specs["area_lpskin_wo_flanges"] = np.trapz(edge_lpskin_wo_flanges, self.r)
-        blade_specs["area_lpskin_w_flanges"] = blade_specs["area_lpskin_wo_flanges"] + blade_specs["flange_area_LETE"]
+        self.blade_specs["area_lpskin_wo_flanges"] = np.trapz(edge_lpskin_wo_flanges, self.r)
+        self.blade_specs["area_lpskin_w_flanges"] = (
+            self.blade_specs["area_lpskin_wo_flanges"] + self.blade_specs["flange_area_LETE"]
+        )
 
         # Shell
-        blade_specs["fabric2lay_shell_lp"] = np.trapz(edge_fabric2lay_shell_lp, self.r)
-        blade_specs["volume_shell_lp"] = blade_specs["fabric2lay_shell_lp"] * t_layer[skin_mat_id - 1]
-        blade_specs["mass_shell_lp"] = blade_specs["volume_shell_lp"] * density[skin_mat_id - 1]
+        self.blade_specs["fabric2lay_shell_lp"] = np.trapz(edge_fabric2lay_shell_lp, self.r)
+        self.blade_specs["volume_shell_lp"] = self.blade_specs["fabric2lay_shell_lp"] * t_layer[skin_mat_id - 1]
+        self.blade_specs["mass_shell_lp"] = self.blade_specs["volume_shell_lp"] * density[skin_mat_id - 1]
 
         # Root preform
-        blade_specs["area_lp_root"] = np.trapz(edge_lp_root, self.r)
-        blade_specs["volume_root_preform_lp"] = (
+        self.blade_specs["area_lp_root"] = np.trapz(edge_lp_root, self.r)
+        self.blade_specs["volume_root_preform_lp"] = (
             np.trapz(edge_fabric2lay_root_preform_lp, self.r) * t_layer[skin_mat_id - 1]
         )
-        blade_specs["mass_root_preform_lp"] = blade_specs["volume_root_preform_lp"] * density[skin_mat_id - 1]
-        blade_specs["n_plies_root_lp"] = n_plies_root_lp[0]
+        self.blade_specs["mass_root_preform_lp"] = self.blade_specs["volume_root_preform_lp"] * density[skin_mat_id - 1]
+        self.blade_specs["n_plies_root_lp"] = n_plies_root_lp[0]
 
         # Spar cap
-        blade_specs["length_sc_lp"] = self.r[sc_end_section_lp] - self.r[sc_start_section_lp]  # [m]
-        blade_specs["width_sc_start_lp"] = width_sc_start_lp  # [m]
-        blade_specs["width_sc_end_lp"] = width_sc_end_lp  # [m]
-        blade_specs["area_sc_lp"] = blade_specs["width_sc_start_lp"] * blade_specs["length_sc_lp"]  # [m2]
-        blade_specs["fabric2lay_sc_lp"] = np.trapz(n_plies_sc_lp, self.r)  # [m]
-        blade_specs["volume2lay_sc_lp"] = np.trapz(edge_fabric2lay_sc_lp, self.r) * t_layer[sc_mat_id - 1]  # [m3]
-        blade_specs["mass_sc_lp"] = blade_specs["volume2lay_sc_lp"] * density[sc_mat_id - 1]  # [kg]
+        self.blade_specs["length_sc_lp"] = self.r[sc_end_section_lp] - self.r[sc_start_section_lp]  # [m]
+        self.blade_specs["width_sc_start_lp"] = width_sc_start_lp  # [m]
+        self.blade_specs["width_sc_end_lp"] = width_sc_end_lp  # [m]
+        self.blade_specs["area_sc_lp"] = (
+            self.blade_specs["width_sc_start_lp"] * self.blade_specs["length_sc_lp"]
+        )  # [m2]
+        self.blade_specs["fabric2lay_sc_lp"] = np.trapz(n_plies_sc_lp, self.r)  # [m]
+        self.blade_specs["volume2lay_sc_lp"] = np.trapz(edge_fabric2lay_sc_lp, self.r) * t_layer[sc_mat_id - 1]  # [m3]
+        self.blade_specs["mass_sc_lp"] = self.blade_specs["volume2lay_sc_lp"] * density[sc_mat_id - 1]  # [kg]
         if width_sc_start_lp != width_sc_end_lp and self.options["show_warnings"]:
             print(
                 "WARNING: the spar cap on the low pressure side is not straight. This is currently not supported by the code. Straight spar cap is assumed."
             )
 
         # LE reinforcement
-        blade_specs["fabric2lay_le_reinf_lp"] = np.trapz(n_plies_le_lp, self.r)
+        self.blade_specs["fabric2lay_le_reinf_lp"] = np.trapz(n_plies_le_lp, self.r)
         if le_reinf_mat_id > -1:
-            blade_specs["volume_le_reinf_lp"] = np.trapz(edge_le_lp, self.r) * t_layer[le_reinf_mat_id - 1]
+            self.blade_specs["volume_le_reinf_lp"] = np.trapz(edge_le_lp, self.r) * t_layer[le_reinf_mat_id - 1]
         else:
-            blade_specs["volume_le_reinf_lp"] = 0.0
-        blade_specs["mass_le_reinf_lp"] = blade_specs["volume_le_reinf_lp"] * density[le_reinf_mat_id - 1]
+            self.blade_specs["volume_le_reinf_lp"] = 0.0
+        self.blade_specs["mass_le_reinf_lp"] = self.blade_specs["volume_le_reinf_lp"] * density[le_reinf_mat_id - 1]
 
         # TE reinforcement
-        blade_specs["fabric2lay_te_reinf_lp"] = np.trapz(n_plies_te_lp, self.r)
+        self.blade_specs["fabric2lay_te_reinf_lp"] = np.trapz(n_plies_te_lp, self.r)
         if te_reinf_mat_id > -1:
-            blade_specs["volume_te_reinf_lp"] = np.trapz(edge_te_lp, self.r) * t_layer[te_reinf_mat_id - 1]
+            self.blade_specs["volume_te_reinf_lp"] = np.trapz(edge_te_lp, self.r) * t_layer[te_reinf_mat_id - 1]
         else:
-            blade_specs["volume_te_reinf_lp"] = 0.0
-        blade_specs["mass_te_reinf_lp"] = blade_specs["volume_te_reinf_lp"] * density[te_reinf_mat_id - 1]
+            self.blade_specs["volume_te_reinf_lp"] = 0.0
+        self.blade_specs["mass_te_reinf_lp"] = self.blade_specs["volume_te_reinf_lp"] * density[te_reinf_mat_id - 1]
 
         # Core
-        blade_specs["areacore2lay_shell_lp"] = np.trapz(edgecore2lay_shell_lp, self.r)
-        blade_specs["volume_core_shell_lp"] = np.trapz(thick_core_shell_lp, self.r)
-        blade_specs["mass_core_shell_lp"] = np.trapz(unit_mass_core_shell_lp, self.r)
+        self.blade_specs["areacore2lay_shell_lp"] = np.trapz(edgecore2lay_shell_lp, self.r)
+        self.blade_specs["volume_core_shell_lp"] = np.trapz(thick_core_shell_lp, self.r)
+        self.blade_specs["mass_core_shell_lp"] = np.trapz(unit_mass_core_shell_lp, self.r)
 
         #############################################################################################################################
         # High pressure (lower) mold
@@ -680,55 +692,59 @@ class blade_bom(object):
                 sc_end_section_hp = i_section
 
         # Mold
-        blade_specs["area_hpskin_wo_flanges"] = np.trapz(edge_hpskin_wo_flanges, self.r)
-        blade_specs["area_hpskin_w_flanges"] = blade_specs["area_hpskin_wo_flanges"] + blade_specs["flange_area_LETE"]
+        self.blade_specs["area_hpskin_wo_flanges"] = np.trapz(edge_hpskin_wo_flanges, self.r)
+        self.blade_specs["area_hpskin_w_flanges"] = (
+            self.blade_specs["area_hpskin_wo_flanges"] + self.blade_specs["flange_area_LETE"]
+        )
 
         # Shell
-        blade_specs["fabric2lay_shell_hp"] = np.trapz(edge_fabric2lay_shell_hp, self.r)
-        blade_specs["volume_shell_hp"] = blade_specs["fabric2lay_shell_hp"] * t_layer[skin_mat_id - 1]
-        blade_specs["mass_shell_hp"] = blade_specs["volume_shell_hp"] * density[skin_mat_id - 1]
+        self.blade_specs["fabric2lay_shell_hp"] = np.trapz(edge_fabric2lay_shell_hp, self.r)
+        self.blade_specs["volume_shell_hp"] = self.blade_specs["fabric2lay_shell_hp"] * t_layer[skin_mat_id - 1]
+        self.blade_specs["mass_shell_hp"] = self.blade_specs["volume_shell_hp"] * density[skin_mat_id - 1]
 
         # Root preform
-        blade_specs["area_hp_root"] = np.trapz(edge_hp_root, self.r)
-        blade_specs["volume_root_preform_hp"] = (
+        self.blade_specs["area_hp_root"] = np.trapz(edge_hp_root, self.r)
+        self.blade_specs["volume_root_preform_hp"] = (
             np.trapz(edge_fabric2lay_root_preform_hp, self.r) * t_layer[skin_mat_id - 1]
         )
-        blade_specs["mass_root_preform_hp"] = blade_specs["volume_root_preform_hp"] * density[skin_mat_id - 1]
-        blade_specs["n_plies_root_hp"] = n_plies_root_hp[0]
+        self.blade_specs["mass_root_preform_hp"] = self.blade_specs["volume_root_preform_hp"] * density[skin_mat_id - 1]
+        self.blade_specs["n_plies_root_hp"] = n_plies_root_hp[0]
 
         # Spar cap
-        blade_specs["length_sc_hp"] = self.r[sc_end_section_hp] - self.r[sc_start_section_hp]  # [m]
-        blade_specs["width_sc_start_hp"] = width_sc_start_hp  # [m]
-        blade_specs["width_sc_end_hp"] = width_sc_end_hp  # [m]
-        blade_specs["area_sc_hp"] = blade_specs["width_sc_start_hp"] * blade_specs["length_sc_hp"]  # [m2]
-        blade_specs["fabric2lay_sc_hp"] = np.trapz(n_plies_sc_hp, self.r)  # [m]
-        blade_specs["volume2lay_sc_hp"] = np.trapz(edge_fabric2lay_sc_hp, self.r) * t_layer[sc_mat_id - 1]  # [m3]
-        blade_specs["mass_sc_hp"] = blade_specs["volume2lay_sc_hp"] * density[sc_mat_id - 1]  # [kg]
+        self.blade_specs["length_sc_hp"] = self.r[sc_end_section_hp] - self.r[sc_start_section_hp]  # [m]
+        self.blade_specs["width_sc_start_hp"] = width_sc_start_hp  # [m]
+        self.blade_specs["width_sc_end_hp"] = width_sc_end_hp  # [m]
+        self.blade_specs["area_sc_hp"] = (
+            self.blade_specs["width_sc_start_hp"] * self.blade_specs["length_sc_hp"]
+        )  # [m2]
+        self.blade_specs["fabric2lay_sc_hp"] = np.trapz(n_plies_sc_hp, self.r)  # [m]
+        self.blade_specs["volume2lay_sc_hp"] = np.trapz(edge_fabric2lay_sc_hp, self.r) * t_layer[sc_mat_id - 1]  # [m3]
+        self.blade_specs["mass_sc_hp"] = self.blade_specs["volume2lay_sc_hp"] * density[sc_mat_id - 1]  # [kg]
         if width_sc_start_hp != width_sc_end_hp and self.options["show_warnings"]:
             print(
                 "WARNING: the spar cap on the high pressure side is not straight. This is currently not supported by the code. Straight spar cap is assumed."
             )
 
         # LE reinforcement
-        blade_specs["fabric2lay_le_reinf_hp"] = np.trapz(n_plies_le_hp, self.r)
+        self.blade_specs["fabric2lay_le_reinf_hp"] = np.trapz(n_plies_le_hp, self.r)
         if le_reinf_mat_id > -1:
-            blade_specs["volume_le_reinf_hp"] = np.trapz(edge_le_hp, self.r) * t_layer[le_reinf_mat_id - 1]
+            self.blade_specs["volume_le_reinf_hp"] = np.trapz(edge_le_hp, self.r) * t_layer[le_reinf_mat_id - 1]
         else:
-            blade_specs["volume_le_reinf_hp"] = 0.0
-        blade_specs["mass_le_reinf_hp"] = blade_specs["volume_le_reinf_hp"] * density[le_reinf_mat_id - 1]
+            self.blade_specs["volume_le_reinf_hp"] = 0.0
+        self.blade_specs["mass_le_reinf_hp"] = self.blade_specs["volume_le_reinf_hp"] * density[le_reinf_mat_id - 1]
 
         # TE reinforcement
-        blade_specs["fabric2lay_te_reinf_hp"] = np.trapz(n_plies_te_hp, self.r)
+        self.blade_specs["fabric2lay_te_reinf_hp"] = np.trapz(n_plies_te_hp, self.r)
         if te_reinf_mat_id > -1:
-            blade_specs["volume_te_reinf_hp"] = np.trapz(edge_te_hp, self.r) * t_layer[te_reinf_mat_id - 1]
+            self.blade_specs["volume_te_reinf_hp"] = np.trapz(edge_te_hp, self.r) * t_layer[te_reinf_mat_id - 1]
         else:
-            blade_specs["volume_te_reinf_hp"] = 0.0
-        blade_specs["mass_te_reinf_hp"] = blade_specs["volume_te_reinf_hp"] * density[te_reinf_mat_id - 1]
+            self.blade_specs["volume_te_reinf_hp"] = 0.0
+        self.blade_specs["mass_te_reinf_hp"] = self.blade_specs["volume_te_reinf_hp"] * density[te_reinf_mat_id - 1]
 
         # Core
-        blade_specs["areacore2lay_shell_hp"] = np.trapz(edgecore2lay_shell_hp, self.r)
-        blade_specs["volume_core_shell_hp"] = np.trapz(thick_core_shell_hp, self.r)
-        blade_specs["mass_core_shell_hp"] = np.trapz(unit_mass_core_shell_hp, self.r)
+        self.blade_specs["areacore2lay_shell_hp"] = np.trapz(edgecore2lay_shell_hp, self.r)
+        self.blade_specs["volume_core_shell_hp"] = np.trapz(thick_core_shell_hp, self.r)
+        self.blade_specs["mass_core_shell_hp"] = np.trapz(unit_mass_core_shell_hp, self.r)
 
         #############################################################################################################################
         # Shear webs
@@ -799,132 +815,145 @@ class blade_bom(object):
 
         #############################################################################################################################
         # Summary
-        blade_specs["height_webs_start"] = height_webs_start
-        blade_specs["height_webs_end"] = height_webs_end
-        blade_specs["length_webs"] = np.zeros(n_webs)
-        blade_specs["volume_core_webs"] = np.zeros(n_webs)
-        blade_specs["mass_core_webs"] = np.zeros(n_webs)
-        blade_specs["area_webs_wo_flanges"] = np.zeros(n_webs)
-        blade_specs["area_webs_w_core"] = np.zeros(n_webs)
-        blade_specs["fabric2lay_webs"] = np.zeros(n_webs)
-        blade_specs["volumeskin2lay_webs"] = np.zeros(n_webs)
-        blade_specs["area_webs_w_flanges"] = np.zeros(n_webs)
-        blade_specs["mass_webs"] = np.zeros(n_webs)
+        self.blade_specs["height_webs_start"] = height_webs_start
+        self.blade_specs["height_webs_end"] = height_webs_end
+        self.blade_specs["length_webs"] = np.zeros(n_webs)
+        self.blade_specs["volume_core_webs"] = np.zeros(n_webs)
+        self.blade_specs["mass_core_webs"] = np.zeros(n_webs)
+        self.blade_specs["area_webs_wo_flanges"] = np.zeros(n_webs)
+        self.blade_specs["area_webs_w_core"] = np.zeros(n_webs)
+        self.blade_specs["fabric2lay_webs"] = np.zeros(n_webs)
+        self.blade_specs["volumeskin2lay_webs"] = np.zeros(n_webs)
+        self.blade_specs["area_webs_w_flanges"] = np.zeros(n_webs)
+        self.blade_specs["mass_webs"] = np.zeros(n_webs)
 
         for i_web in range(n_webs):
-            blade_specs["length_webs"][i_web] = (
+            self.blade_specs["length_webs"][i_web] = (
                 self.r[int(webs_end_section[i_web])] - self.r[int(webs_start_section[i_web])]
             )
-            blade_specs["volume_core_webs"][i_web] = np.trapz(thick_core_webs[i_web, :], self.r)
-            blade_specs["mass_core_webs"][i_web] = np.trapz(unit_mass_core_webs[i_web, :], self.r)
-            blade_specs["area_webs_wo_flanges"][i_web] = np.trapz(web_height[i_web, :], self.r)
-            blade_specs["area_webs_w_core"][i_web] = np.trapz(edgecore2lay_webs[i_web, :], self.r)
-            blade_specs["fabric2lay_webs"][i_web] = np.trapz(fabric2lay_webs[i_web, :], self.r)
-            blade_specs["volumeskin2lay_webs"][i_web] = np.trapz(volumeskin2lay_webs[i_web, :], self.r)
-            blade_specs["mass_webs"][i_web] = blade_specs["volumeskin2lay_webs"][i_web] * density[skinwebs_mat_id - 1]
-            blade_specs["area_webs_w_flanges"][i_web] = (
-                blade_specs["area_webs_wo_flanges"][i_web]
-                + 2 * blade_specs["length_webs"][i_web] * blade_specs["flange_width_webs_SW"]
+            self.blade_specs["volume_core_webs"][i_web] = np.trapz(thick_core_webs[i_web, :], self.r)
+            self.blade_specs["mass_core_webs"][i_web] = np.trapz(unit_mass_core_webs[i_web, :], self.r)
+            self.blade_specs["area_webs_wo_flanges"][i_web] = np.trapz(web_height[i_web, :], self.r)
+            self.blade_specs["area_webs_w_core"][i_web] = np.trapz(edgecore2lay_webs[i_web, :], self.r)
+            self.blade_specs["fabric2lay_webs"][i_web] = np.trapz(fabric2lay_webs[i_web, :], self.r)
+            self.blade_specs["volumeskin2lay_webs"][i_web] = np.trapz(volumeskin2lay_webs[i_web, :], self.r)
+            self.blade_specs["mass_webs"][i_web] = (
+                self.blade_specs["volumeskin2lay_webs"][i_web] * density[skinwebs_mat_id - 1]
+            )
+            self.blade_specs["area_webs_w_flanges"][i_web] = (
+                self.blade_specs["area_webs_wo_flanges"][i_web]
+                + 2 * self.blade_specs["length_webs"][i_web] * self.blade_specs["flange_width_webs_SW"]
             )
 
         mass_per_comp = np.trapz(unit_mass_mat, self.r)
 
-        blade_specs["blade_mass"] = np.trapz(unit_mass_tot, self.r)
+        self.blade_specs["blade_mass"] = np.trapz(unit_mass_tot, self.r)
 
-        blade_specs["matrix_total_mass_wo_waste"] = 0.0
+        self.blade_specs["matrix_total_mass_wo_waste"] = 0.0
 
         for name in mat_names:
-            mat_dictionary[name]["total_mass_wo_waste"] = (
-                mass_per_comp[mat_dictionary[name]["id"] - 1] * mat_dictionary[name]["fwf"] / 100.0
+            self.mat_dictionary[name]["total_mass_wo_waste"] = (
+                mass_per_comp[self.mat_dictionary[name]["id"] - 1] * self.mat_dictionary[name]["fwf"] / 100.0
             )
-            mat_dictionary[name]["total_mass_w_waste"] = mat_dictionary[name]["total_mass_wo_waste"] * (
-                1 + mat_dictionary[name]["waste"] / 100.0
-            )
-
-            blade_specs["matrix_total_mass_wo_waste"] = blade_specs["matrix_total_mass_wo_waste"] + mat_dictionary[
-                name
-            ]["total_mass_wo_waste"] / (mat_dictionary[name]["fwf"] / 100.0) * (1 - mat_dictionary[name]["fwf"] / 100.0)
-
-            mat_dictionary[name]["total_cost_wo_waste"] = (
-                mat_dictionary[name]["total_mass_wo_waste"] * mat_dictionary[name]["unit_cost"]
-            )
-            mat_dictionary[name]["total_cost_w_waste"] = (
-                mat_dictionary[name]["total_mass_w_waste"] * mat_dictionary[name]["unit_cost"]
+            self.mat_dictionary[name]["total_mass_w_waste"] = self.mat_dictionary[name]["total_mass_wo_waste"] * (
+                1 + self.mat_dictionary[name]["waste"] / 100.0
             )
 
-            if core_mat_id[mat_dictionary[name]["id"] - 1] != 0:
-                mat_dictionary[name]["total_ply_area_wo_waste"] = (
-                    blade_specs["areacore2lay_shell_lp"]
-                    + blade_specs["areacore2lay_shell_hp"]
-                    + sum(blade_specs["area_webs_w_core"])
-                )
-                mat_dictionary[name]["total_ply_area_w_waste"] = mat_dictionary[name]["total_ply_area_wo_waste"] * (
-                    1.0 + mat_dictionary[name]["waste"] / 100.0
-                )
+            self.blade_specs["matrix_total_mass_wo_waste"] = self.blade_specs[
+                "matrix_total_mass_wo_waste"
+            ] + self.mat_dictionary[name]["total_mass_wo_waste"] / (self.mat_dictionary[name]["fwf"] / 100.0) * (
+                1 - self.mat_dictionary[name]["fwf"] / 100.0
+            )
 
-                mat_dictionary[name]["total_volume_wo_waste"] = (
-                    blade_specs["volume_core_shell_lp"]
-                    + blade_specs["volume_core_shell_hp"]
-                    + sum(blade_specs["volume_core_webs"])
-                )
-                mat_dictionary[name]["total_volume_w_waste"] = mat_dictionary[name]["total_volume_wo_waste"] * (
-                    1.0 + mat_dictionary[name]["waste"] / 100.0
-                )
-            elif "ply_t" in mat_dictionary[name]:
-                if mat_dictionary[name]["ply_t"] != 0.0:
-                    mat_dictionary[name]["total_volume_wo_waste"] = (
-                        mass_per_comp[mat_dictionary[name]["id"] - 1]
-                        / mat_dictionary[name]["density"]
-                        * mat_dictionary[name]["fvf"]
-                    )
-                    mat_dictionary[name]["total_volume_w_waste"] = mat_dictionary[name]["total_volume_wo_waste"] * (
-                        1 + mat_dictionary[name]["waste"] / 100.0
-                    )
+            self.mat_dictionary[name]["total_cost_wo_waste"] = (
+                self.mat_dictionary[name]["total_mass_wo_waste"] * self.mat_dictionary[name]["unit_cost"]
+            )
+            self.mat_dictionary[name]["total_cost_w_waste"] = (
+                self.mat_dictionary[name]["total_mass_w_waste"] * self.mat_dictionary[name]["unit_cost"]
+            )
 
-                    mat_dictionary[name]["total_ply_area_wo_waste"] = (
-                        mass_per_comp[mat_dictionary[name]["id"] - 1]
-                        / mat_dictionary[name]["density"]
-                        / mat_dictionary[name]["ply_t"]
+            if core_mat_id[self.mat_dictionary[name]["id"] - 1] != 0:
+                self.mat_dictionary[name]["total_ply_area_wo_waste"] = (
+                    self.blade_specs["areacore2lay_shell_lp"]
+                    + self.blade_specs["areacore2lay_shell_hp"]
+                    + sum(self.blade_specs["area_webs_w_core"])
+                )
+                self.mat_dictionary[name]["total_ply_area_w_waste"] = self.mat_dictionary[name][
+                    "total_ply_area_wo_waste"
+                ] * (1.0 + self.mat_dictionary[name]["waste"] / 100.0)
+
+                self.mat_dictionary[name]["total_volume_wo_waste"] = (
+                    self.blade_specs["volume_core_shell_lp"]
+                    + self.blade_specs["volume_core_shell_hp"]
+                    + sum(self.blade_specs["volume_core_webs"])
+                )
+                self.mat_dictionary[name]["total_volume_w_waste"] = self.mat_dictionary[name][
+                    "total_volume_wo_waste"
+                ] * (1.0 + self.mat_dictionary[name]["waste"] / 100.0)
+            elif "ply_t" in self.mat_dictionary[name]:
+                if self.mat_dictionary[name]["ply_t"] != 0.0:
+                    self.mat_dictionary[name]["total_volume_wo_waste"] = (
+                        mass_per_comp[self.mat_dictionary[name]["id"] - 1]
+                        / self.mat_dictionary[name]["density"]
+                        * self.mat_dictionary[name]["fvf"]
                     )
-                    mat_dictionary[name]["total_ply_area_w_waste"] = mat_dictionary[name]["total_ply_area_wo_waste"] * (
-                        1 + mat_dictionary[name]["waste"] / 100.0
+                    self.mat_dictionary[name]["total_volume_w_waste"] = self.mat_dictionary[name][
+                        "total_volume_wo_waste"
+                    ] * (1 + self.mat_dictionary[name]["waste"] / 100.0)
+
+                    self.mat_dictionary[name]["total_ply_area_wo_waste"] = (
+                        mass_per_comp[self.mat_dictionary[name]["id"] - 1]
+                        / self.mat_dictionary[name]["density"]
+                        / self.mat_dictionary[name]["ply_t"]
                     )
+                    self.mat_dictionary[name]["total_ply_area_w_waste"] = self.mat_dictionary[name][
+                        "total_ply_area_wo_waste"
+                    ] * (1 + self.mat_dictionary[name]["waste"] / 100.0)
                 else:
-                    mat_dictionary[name]["total_volume_wo_waste"] = 0.0
-                    mat_dictionary[name]["total_volume_w_waste"] = 0.0
-                    mat_dictionary[name]["total_ply_area_wo_waste"] = 0.0
-                    mat_dictionary[name]["total_ply_area_w_waste"] = 0.0
+                    self.mat_dictionary[name]["total_volume_wo_waste"] = 0.0
+                    self.mat_dictionary[name]["total_volume_w_waste"] = 0.0
+                    self.mat_dictionary[name]["total_ply_area_wo_waste"] = 0.0
+                    self.mat_dictionary[name]["total_ply_area_w_waste"] = 0.0
             else:
-                mat_dictionary[name]["total_volume_wo_waste"] = 0.0
-                mat_dictionary[name]["total_volume_w_waste"] = 0.0
-                mat_dictionary[name]["total_ply_area_wo_waste"] = 0.0
-                mat_dictionary[name]["total_ply_area_w_waste"] = 0.0
+                self.mat_dictionary[name]["total_volume_wo_waste"] = 0.0
+                self.mat_dictionary[name]["total_volume_w_waste"] = 0.0
+                self.mat_dictionary[name]["total_ply_area_wo_waste"] = 0.0
+                self.mat_dictionary[name]["total_ply_area_w_waste"] = 0.0
 
             if self.options["verbosity"]:
                 print(name)
                 print(
                     "surface no waste  %.2f m2  \t \t ---  \t \t volume no waste   %.2f m3"
-                    % (mat_dictionary[name]["total_ply_area_wo_waste"], mat_dictionary[name]["total_volume_wo_waste"])
+                    % (
+                        self.mat_dictionary[name]["total_ply_area_wo_waste"],
+                        self.mat_dictionary[name]["total_volume_wo_waste"],
+                    )
                 )
                 print(
                     "mass no waste   %.2f kg  \t \t ---  \t \t mass with waste %.2f kg"
-                    % (mat_dictionary[name]["total_mass_wo_waste"], mat_dictionary[name]["total_mass_w_waste"])
+                    % (
+                        self.mat_dictionary[name]["total_mass_wo_waste"],
+                        self.mat_dictionary[name]["total_mass_w_waste"],
+                    )
                 )
                 print(
                     "cost no waste   %.2f $   \t \t ---  \t \t cost with waste   %.2f \n"
-                    % (mat_dictionary[name]["total_cost_wo_waste"], mat_dictionary[name]["total_cost_w_waste"])
+                    % (
+                        self.mat_dictionary[name]["total_cost_wo_waste"],
+                        self.mat_dictionary[name]["total_cost_w_waste"],
+                    )
                 )
 
-        return blade_specs, mat_dictionary
+        return self.blade_specs, self.mat_dictionary
 
-    def compute_matrix_bonding(self, blade_specs, mat_dictionary):
+    def compute_matrix_bonding(self):
 
         # Resin and hardener
         matrix = {}
-        if mat_dictionary["resin"]["unit_cost"] == 0.0:
+        if self.mat_dictionary["resin"]["unit_cost"] == 0.0:
             print("WARNING: The resin cost is not defined in the input yaml.")
-        matrix["resin_unit_cost"] = mat_dictionary["resin"]["unit_cost"]  # $/kg
-        matrix["hardener_unit_cost"] = mat_dictionary["resin"]["unit_cost"]  # $/kg
+        matrix["resin_unit_cost"] = self.mat_dictionary["resin"]["unit_cost"]  # $/kg
+        matrix["hardener_unit_cost"] = self.mat_dictionary["resin"]["unit_cost"]  # $/kg
         matrix["mix_ratio"] = 0.3  # Mix ratio by mass
         # Bonding
         bonding = {}
@@ -942,8 +971,8 @@ class blade_bom(object):
         if self.options["verbosity"]:
             print("\n################################\nBOM - Resin, hardener and adhesive:")
 
-        matrix["resin_total_mass"] = blade_specs["matrix_total_mass_wo_waste"] / (1 + matrix["mix_ratio"])
-        matrix["hardener_total_mass"] = blade_specs["matrix_total_mass_wo_waste"] / (1 + (1 / matrix["mix_ratio"]))
+        matrix["resin_total_mass"] = self.blade_specs["matrix_total_mass_wo_waste"] / (1 + matrix["mix_ratio"])
+        matrix["hardener_total_mass"] = self.blade_specs["matrix_total_mass_wo_waste"] / (1 + (1 / matrix["mix_ratio"]))
         matrix["resin_total_cost"] = matrix["resin_total_mass"] * matrix["resin_unit_cost"]
         matrix["hardener_total_cost"] = matrix["hardener_total_mass"] * matrix["hardener_unit_cost"]
 
@@ -957,20 +986,20 @@ class blade_bom(object):
                 % (matrix["hardener_total_mass"], matrix["hardener_total_cost"])
             )
 
-        bonding_lines_vol = np.zeros(1 + blade_specs["n_webs"])
+        bonding_lines_vol = np.zeros(1 + self.blade_specs["n_webs"])
         # Volume of the leading and trailing edge bonding line
         bonding_lines_vol[0] = (
             bonding["line_thick_LETE"]
-            * blade_specs["flange_area_LETE"]
+            * self.blade_specs["flange_area_LETE"]
             * (1 + bonding["flange_adhesive_squeezed"] / 100.0)
         )
 
-        for i in range(blade_specs["n_webs"]):
+        for i in range(self.blade_specs["n_webs"]):
             bonding_lines_vol[i + 1] = (
                 2
                 * bonding["line_thick_SW"]
-                * blade_specs["length_webs"][i]
-                * blade_specs["flange_width_webs_SW"]
+                * self.blade_specs["length_webs"][i]
+                * self.blade_specs["flange_width_webs_SW"]
                 * (1 + bonding["flange_adhesive_squeezed"] / 100.0)
             )
 
@@ -990,7 +1019,7 @@ class blade_bom(object):
 
         return matrix, bonding
 
-    def compute_metallic_parts(self, blade_specs):
+    def compute_metallic_parts(self):
 
         # Hub connection and lightning protection
         metallic_parts = {}
@@ -1008,9 +1037,9 @@ class blade_bom(object):
 
         # Number of root bolts is scaled linearly with the root circumference preserving spacing between bolts[-]
         if self.options["discrete"]:
-            metallic_parts["n_bolts"] = round(np.pi * blade_specs["root_D"] / metallic_parts["t_bolt_spacing"])
+            metallic_parts["n_bolts"] = round(np.pi * self.blade_specs["root_D"] / metallic_parts["t_bolt_spacing"])
         else:
-            metallic_parts["n_bolts"] = np.pi * blade_specs["root_D"] / metallic_parts["t_bolt_spacing"]
+            metallic_parts["n_bolts"] = np.pi * self.blade_specs["root_D"] / metallic_parts["t_bolt_spacing"]
 
         # Hub connection and lightning protection system
         if self.options["verbosity"]:
@@ -1028,11 +1057,11 @@ class blade_bom(object):
             )
         mid_span_station = np.argmin(abs(self.eta - 0.5))
         metallic_parts["LPS_mass"] = metallic_parts["LPS_unit_mass"] * (
-            blade_specs["blade_length"] + self.chord[mid_span_station]
+            self.blade_specs["blade_length"] + self.chord[mid_span_station]
         )
 
         metallic_parts["LPS_cost"] = metallic_parts["LPS_unit_cost"] * (
-            blade_specs["blade_length"] + self.chord[mid_span_station]
+            self.blade_specs["blade_length"] + self.chord[mid_span_station]
         )
         if self.options["verbosity"]:
             print(
@@ -1046,7 +1075,7 @@ class blade_bom(object):
 
         return metallic_parts
 
-    def compute_consumables(self, blade_specs):
+    def compute_consumables(self):
 
         # Consumables
         if self.options["verbosity"]:
@@ -1057,7 +1086,7 @@ class blade_bom(object):
         # consumables['LE_tape']['unit_length']                = 250. # [m] Roll length
         # consumables['LE_tape']['unit_cost']                  = 576. # [$/roll]
         # consumables['LE_tape']['waste']                      = 5.   # [%]
-        # consumables['LE_tape']['units_per_blade']            = blade_specs['LE_length'] / consumables['LE_tape']['unit_length'] # Rolls per blade
+        # consumables['LE_tape']['units_per_blade']            = self.blade_specs['LE_length'] / consumables['LE_tape']['unit_length'] # Rolls per blade
         # consumables['LE_tape']['total_cost_wo_waste']        = consumables['LE_tape']['units_per_blade'] * consumables['LE_tape']['unit_cost']
         # consumables['LE_tape']['total_cost_w_waste']         = consumables['LE_tape']['total_cost_wo_waste'] * (1 + consumables['LE_tape']['waste']/100)
         # if self.options['verbosity']:
@@ -1067,13 +1096,13 @@ class blade_bom(object):
         consumables["peel_ply"]["unit_cost"] = 1.94  # [$/m2] 0.18 $/sqft
         consumables["peel_ply"]["waste"] = 15.0  # [%]
         consumables["peel_ply"]["total_cost_wo_waste"] = (
-            sum(blade_specs["area_webs_w_flanges"])
-            + blade_specs["area_lpskin_w_flanges"]
-            + blade_specs["area_hpskin_w_flanges"]
-            + blade_specs["area_sc_lp"]
-            + blade_specs["area_sc_hp"]
-            + blade_specs["area_lp_root"]
-            + blade_specs["area_hp_root"]
+            sum(self.blade_specs["area_webs_w_flanges"])
+            + self.blade_specs["area_lpskin_w_flanges"]
+            + self.blade_specs["area_hpskin_w_flanges"]
+            + self.blade_specs["area_sc_lp"]
+            + self.blade_specs["area_sc_hp"]
+            + self.blade_specs["area_lp_root"]
+            + self.blade_specs["area_hp_root"]
         ) * consumables["peel_ply"]["unit_cost"]
         consumables["peel_ply"]["total_cost_w_waste"] = consumables["peel_ply"]["total_cost_wo_waste"] * (
             1 + consumables["peel_ply"]["waste"] / 100
@@ -1091,7 +1120,7 @@ class blade_bom(object):
         consumables["ns_peel_ply"]["total_cost_wo_waste"] = (
             consumables["ns_peel_ply"]["unit_width"]
             * 2
-            * (blade_specs["TE_length"] + blade_specs["LE_length"] + sum(blade_specs["length_webs"]))
+            * (self.blade_specs["TE_length"] + self.blade_specs["LE_length"] + sum(self.blade_specs["length_webs"]))
             * consumables["ns_peel_ply"]["unit_cost"]
         )
         consumables["ns_peel_ply"]["total_cost_w_waste"] = consumables["ns_peel_ply"]["total_cost_wo_waste"] * (
@@ -1109,7 +1138,7 @@ class blade_bom(object):
         consumables["chopped_strand"]["waste"] = 5.0  # [%]
         consumables["chopped_strand"]["total_cost_wo_waste"] = (
             consumables["chopped_strand"]["mass_length"]
-            * blade_specs["blade_length"]
+            * self.blade_specs["blade_length"]
             * consumables["chopped_strand"]["unit_cost"]
         )
         consumables["chopped_strand"]["total_cost_w_waste"] = consumables["chopped_strand"]["total_cost_wo_waste"] * (
@@ -1131,13 +1160,13 @@ class blade_bom(object):
         consumables["adhesive_bulk"]["total_cost_wo_waste"] = (
             consumables["adhesive_bulk"]["volume_area"]
             * (
-                sum(blade_specs["area_webs_w_flanges"])
-                + blade_specs["area_lpskin_w_flanges"]
-                + blade_specs["area_hpskin_w_flanges"]
-                + blade_specs["area_sc_lp"]
-                + blade_specs["area_sc_hp"]
-                + blade_specs["area_lp_root"]
-                + blade_specs["area_hp_root"]
+                sum(self.blade_specs["area_webs_w_flanges"])
+                + self.blade_specs["area_lpskin_w_flanges"]
+                + self.blade_specs["area_hpskin_w_flanges"]
+                + self.blade_specs["area_sc_lp"]
+                + self.blade_specs["area_sc_hp"]
+                + self.blade_specs["area_lp_root"]
+                + self.blade_specs["area_hp_root"]
             )
             * consumables["adhesive_bulk"]["unit_cost"]
         )
@@ -1158,13 +1187,13 @@ class blade_bom(object):
         consumables["adhesive_cans"]["waste"] = 5.0  # [%]
         consumables["adhesive_cans"]["units_area"] = 0.022  # [each/m2] 0.002 each/sf
         consumables["adhesive_cans"]["units_blade"] = consumables["adhesive_cans"]["units_area"] * (
-            sum(blade_specs["area_webs_w_flanges"])
-            + blade_specs["area_lpskin_w_flanges"]
-            + blade_specs["area_hpskin_w_flanges"]
-            + blade_specs["area_sc_lp"]
-            + blade_specs["area_sc_hp"]
-            + blade_specs["area_lp_root"]
-            + blade_specs["area_hp_root"]
+            sum(self.blade_specs["area_webs_w_flanges"])
+            + self.blade_specs["area_lpskin_w_flanges"]
+            + self.blade_specs["area_hpskin_w_flanges"]
+            + self.blade_specs["area_sc_lp"]
+            + self.blade_specs["area_sc_hp"]
+            + self.blade_specs["area_lp_root"]
+            + self.blade_specs["area_hp_root"]
         )
         consumables["adhesive_cans"]["total_cost_wo_waste"] = (
             consumables["adhesive_cans"]["units_blade"] * consumables["adhesive_cans"]["unit_cost"]
@@ -1188,13 +1217,13 @@ class blade_bom(object):
         consumables["release_agent"]["total_cost_wo_waste"] = (
             consumables["release_agent"]["volume_area"]
             * (
-                sum(blade_specs["area_webs_w_flanges"])
-                + blade_specs["area_lpskin_w_flanges"]
-                + blade_specs["area_hpskin_w_flanges"]
-                + blade_specs["area_sc_lp"]
-                + blade_specs["area_sc_hp"]
-                + blade_specs["area_lp_root"]
-                + blade_specs["area_hp_root"]
+                sum(self.blade_specs["area_webs_w_flanges"])
+                + self.blade_specs["area_lpskin_w_flanges"]
+                + self.blade_specs["area_hpskin_w_flanges"]
+                + self.blade_specs["area_sc_lp"]
+                + self.blade_specs["area_sc_hp"]
+                + self.blade_specs["area_lp_root"]
+                + self.blade_specs["area_hp_root"]
             )
             * consumables["release_agent"]["unit_cost"]
         )
@@ -1216,13 +1245,13 @@ class blade_bom(object):
         consumables["flow_medium"]["coverage"] = 70.0  # [%]
         consumables["flow_medium"]["total_cost_wo_waste"] = (
             (
-                sum(blade_specs["area_webs_w_flanges"])
-                + blade_specs["area_lpskin_w_flanges"]
-                + blade_specs["area_hpskin_w_flanges"]
-                + blade_specs["area_sc_lp"]
-                + blade_specs["area_sc_hp"]
-                + blade_specs["area_lp_root"]
-                + blade_specs["area_hp_root"]
+                sum(self.blade_specs["area_webs_w_flanges"])
+                + self.blade_specs["area_lpskin_w_flanges"]
+                + self.blade_specs["area_hpskin_w_flanges"]
+                + self.blade_specs["area_sc_lp"]
+                + self.blade_specs["area_sc_hp"]
+                + self.blade_specs["area_lp_root"]
+                + self.blade_specs["area_hp_root"]
             )
             * consumables["flow_medium"]["coverage"]
             / 100
@@ -1242,7 +1271,7 @@ class blade_bom(object):
         consumables["tubing3/8"]["waste"] = 10.0  # [%]
         consumables["tubing3/8"]["length_per_length_blade"] = 5  # [m/m]
         consumables["tubing3/8"]["length"] = (
-            consumables["tubing3/8"]["length_per_length_blade"] * blade_specs["blade_length"]
+            consumables["tubing3/8"]["length_per_length_blade"] * self.blade_specs["blade_length"]
         )
         consumables["tubing3/8"]["total_cost_wo_waste"] = (
             consumables["tubing3/8"]["length"] * consumables["tubing3/8"]["unit_cost"]
@@ -1261,7 +1290,7 @@ class blade_bom(object):
         consumables["tubing1/2"]["waste"] = 10.0  # [%]
         consumables["tubing1/2"]["length_per_length_blade"] = 5  # [m/m]
         consumables["tubing1/2"]["length"] = (
-            consumables["tubing1/2"]["length_per_length_blade"] * blade_specs["blade_length"]
+            consumables["tubing1/2"]["length_per_length_blade"] * self.blade_specs["blade_length"]
         )
         consumables["tubing1/2"]["total_cost_wo_waste"] = (
             consumables["tubing1/2"]["length"] * consumables["tubing1/2"]["unit_cost"]
@@ -1280,7 +1309,7 @@ class blade_bom(object):
         consumables["tubing5/8"]["waste"] = 10.0  # [%]
         consumables["tubing5/8"]["length_per_length_blade"] = 5  # [m/m]
         consumables["tubing5/8"]["length"] = (
-            consumables["tubing5/8"]["length_per_length_blade"] * blade_specs["blade_length"]
+            consumables["tubing5/8"]["length_per_length_blade"] * self.blade_specs["blade_length"]
         )
         consumables["tubing5/8"]["total_cost_wo_waste"] = (
             consumables["tubing5/8"]["length"] * consumables["tubing5/8"]["unit_cost"]
@@ -1299,7 +1328,7 @@ class blade_bom(object):
         consumables["tubing3/4"]["waste"] = 10.0  # [%]
         consumables["tubing3/4"]["length_per_length_blade"] = 5  # [m/m]
         consumables["tubing3/4"]["length"] = (
-            consumables["tubing3/4"]["length_per_length_blade"] * blade_specs["blade_length"]
+            consumables["tubing3/4"]["length_per_length_blade"] * self.blade_specs["blade_length"]
         )
         consumables["tubing3/4"]["total_cost_wo_waste"] = (
             consumables["tubing3/4"]["length"] * consumables["tubing3/4"]["unit_cost"]
@@ -1318,7 +1347,7 @@ class blade_bom(object):
         consumables["tubing7/8"]["waste"] = 10.0  # [%]
         consumables["tubing7/8"]["length_per_length_blade"] = 5  # [m/m]
         consumables["tubing7/8"]["length"] = (
-            consumables["tubing7/8"]["length_per_length_blade"] * blade_specs["blade_length"]
+            consumables["tubing7/8"]["length_per_length_blade"] * self.blade_specs["blade_length"]
         )
         consumables["tubing7/8"]["total_cost_wo_waste"] = (
             consumables["tubing7/8"]["length"] * consumables["tubing7/8"]["unit_cost"]
@@ -1336,7 +1365,9 @@ class blade_bom(object):
         consumables["tacky_tape"]["unit_length"] = 3.5  # [m/roll]
         consumables["tacky_tape"]["unit_cost"] = 21.11  # [$/roll]
         consumables["tacky_tape"]["waste"] = 5.0  # [%]
-        consumables["tacky_tape"]["units_per_blade"] = (10.0 * blade_specs["blade_length"]) / consumables["tacky_tape"][
+        consumables["tacky_tape"]["units_per_blade"] = (10.0 * self.blade_specs["blade_length"]) / consumables[
+            "tacky_tape"
+        ][
             "unit_length"
         ]  # [-]
         consumables["tacky_tape"]["total_cost_wo_waste"] = (
@@ -1356,7 +1387,7 @@ class blade_bom(object):
         consumables["masking_tape"]["waste"] = 10.0  # [%]
         consumables["masking_tape"]["roll_per_length"] = 0.328  # [roll/m]
         consumables["masking_tape"]["units_per_blade"] = (
-            blade_specs["blade_length"] * consumables["masking_tape"]["roll_per_length"]
+            self.blade_specs["blade_length"] * consumables["masking_tape"]["roll_per_length"]
         )  # [-]
         consumables["masking_tape"]["total_cost_wo_waste"] = (
             consumables["masking_tape"]["units_per_blade"] * consumables["masking_tape"]["unit_cost"]
@@ -1379,7 +1410,7 @@ class blade_bom(object):
         consumables["chop_fiber"]["waste"] = 10.0  # [%]
         consumables["chop_fiber"]["total_cost_wo_waste"] = (
             consumables["chop_fiber"]["mass_area"]
-            * (blade_specs["area_lpskin_wo_flanges"] + blade_specs["area_hpskin_wo_flanges"])
+            * (self.blade_specs["area_lpskin_wo_flanges"] + self.blade_specs["area_hpskin_wo_flanges"])
             * consumables["chop_fiber"]["unit_cost"]
         )
         consumables["chop_fiber"]["total_cost_w_waste"] = consumables["chop_fiber"]["total_cost_wo_waste"] * (
@@ -1397,7 +1428,7 @@ class blade_bom(object):
         consumables["white_lightning"]["volume_area"] = 2.04e-5  # [m3/m2] 0.0005 ga/sf
         consumables["white_lightning"]["total_cost_wo_waste"] = (
             consumables["white_lightning"]["volume_area"]
-            * (blade_specs["area_lpskin_wo_flanges"] + blade_specs["area_hpskin_wo_flanges"])
+            * (self.blade_specs["area_lpskin_wo_flanges"] + self.blade_specs["area_hpskin_wo_flanges"])
             * consumables["white_lightning"]["unit_cost"]
         )
         consumables["white_lightning"]["total_cost_w_waste"] = consumables["white_lightning"]["total_cost_wo_waste"] * (
@@ -1417,7 +1448,7 @@ class blade_bom(object):
         consumables["hardener"]["waste"] = 10.0  # [%]
         consumables["hardener"]["units_area"] = 0.012  # [each/m2] 0.0011 tube/sf
         consumables["hardener"]["units_blade"] = consumables["hardener"]["units_area"] * (
-            blade_specs["area_lpskin_wo_flanges"] + blade_specs["area_hpskin_wo_flanges"]
+            self.blade_specs["area_lpskin_wo_flanges"] + self.blade_specs["area_hpskin_wo_flanges"]
         )
         consumables["hardener"]["total_cost_wo_waste"] = (
             consumables["hardener"]["units_blade"] * consumables["hardener"]["unit_cost"]
@@ -1437,7 +1468,7 @@ class blade_bom(object):
         consumables["putty"]["waste"] = 10.0  # [%]
         consumables["putty"]["total_cost_wo_waste"] = (
             consumables["putty"]["mass_area"]
-            * (blade_specs["area_lpskin_wo_flanges"] + blade_specs["area_hpskin_wo_flanges"])
+            * (self.blade_specs["area_lpskin_wo_flanges"] + self.blade_specs["area_hpskin_wo_flanges"])
             * consumables["putty"]["unit_cost"]
         )
         consumables["putty"]["total_cost_w_waste"] = consumables["putty"]["total_cost_wo_waste"] * (
@@ -1455,7 +1486,7 @@ class blade_bom(object):
         consumables["catalyst"]["waste"] = 10.0  # [%]
         consumables["catalyst"]["total_cost_wo_waste"] = (
             consumables["catalyst"]["mass_area"]
-            * (blade_specs["area_lpskin_wo_flanges"] + blade_specs["area_hpskin_wo_flanges"])
+            * (self.blade_specs["area_lpskin_wo_flanges"] + self.blade_specs["area_hpskin_wo_flanges"])
             * consumables["catalyst"]["unit_cost"]
         )
         consumables["catalyst"]["total_cost_w_waste"] = consumables["catalyst"]["total_cost_wo_waste"] * (
@@ -1469,7 +1500,7 @@ class blade_bom(object):
 
         return consumables
 
-    def compute_bom(self, blade_specs, mat_dictionary, matrix, bonding, metallic_parts, consumables):
+    def compute_bom(self, matrix, bonding, metallic_parts, consumables):
 
         # Composites, core and coating
         if self.options["verbosity"]:
@@ -1488,13 +1519,13 @@ class blade_bom(object):
             tex_table_file.write("Material & Cost with waste [\\$] \\\\ \n")
             tex_table_file.write("\\midrule\n")
 
-        mat_names = mat_dictionary.keys()
+        mat_names = self.mat_dictionary.keys()
         for name in mat_names:
-            total_mat_cost_wo_waste = total_mat_cost_wo_waste + mat_dictionary[name]["total_cost_wo_waste"]
-            total_mat_cost_w_waste = total_mat_cost_w_waste + mat_dictionary[name]["total_cost_w_waste"]
+            total_mat_cost_wo_waste = total_mat_cost_wo_waste + self.mat_dictionary[name]["total_cost_wo_waste"]
+            total_mat_cost_w_waste = total_mat_cost_w_waste + self.mat_dictionary[name]["total_cost_w_waste"]
 
             if self.options["tex_table"]:
-                tex_table_file.write("%s & %.2f \\\\ \n" % (name, mat_dictionary[name]["total_cost_w_waste"]))
+                tex_table_file.write("%s & %.2f \\\\ \n" % (name, self.mat_dictionary[name]["total_cost_w_waste"]))
 
         if self.options["tex_table"]:
             tex_table_file.write("\\textbf{Total} & \\textbf{%.2f} \\\\ \n" % total_mat_cost_w_waste)
@@ -1509,7 +1540,7 @@ class blade_bom(object):
                 % (total_mat_cost_wo_waste, total_mat_cost_w_waste)
             )
 
-        blade_specs["composite_cost"] = total_mat_cost_w_waste
+        self.blade_specs["composite_cost"] = total_mat_cost_w_waste
 
         # Resin, hardener and bonding
         if self.options["verbosity"]:
@@ -1601,7 +1632,7 @@ class blade_bom(object):
             + total_metallic_parts_cost
             + total_consumable_cost_w_waste
         )
-        blade_mass = blade_specs["blade_mass"]
+        blade_mass = self.blade_specs["blade_mass"]
         blade_mass_with_metallic = blade_mass + metallic_parts["tot_mass"]
 
         if self.options["verbosity"]:
@@ -4308,31 +4339,31 @@ class blade_cost_model(object):
         t_init = time.time()
 
         # Bill of Materials
-        bom = blade_bom()
-        bom.options = self.options
-        bom.name = self.name
-        bom.bladeLength = self.bladeLength
-        # bom.eta                                                        = self.eta
-        bom.r = self.r
-        bom.chord = self.chord
-        bom.le_location = self.le_location
-        bom.materials = self.materials
-        bom.mat_options = self.mat_options
-        bom.upperCS = self.upperCS
-        bom.lowerCS = self.lowerCS
-        bom.websCS = self.websCS
-        bom.profile = self.profile
+        self.bom = blade_bom()
+        self.bom.options = self.options
+        self.bom.name = self.name
+        self.bom.bladeLength = self.bladeLength
+        # self.bom.eta                                                        = self.eta
+        self.bom.r = self.r
+        self.bom.chord = self.chord
+        self.bom.le_location = self.le_location
+        self.bom.materials = self.materials
+        self.bom.mat_options = self.mat_options
+        self.bom.upperCS = self.upperCS
+        self.bom.lowerCS = self.lowerCS
+        self.bom.websCS = self.websCS
+        self.bom.profile = self.profile
 
-        blade_specs, mat_dictionary = bom.extract_specs()
-        matrix, bonding = bom.compute_matrix_bonding(blade_specs, mat_dictionary)
-        metallic_parts = bom.compute_metallic_parts(blade_specs)
-        consumables = bom.compute_consumables(blade_specs)
-        self.total_blade_mat_cost_w_waste, self.blade_mass = bom.compute_bom(
-            blade_specs, mat_dictionary, matrix, bonding, metallic_parts, consumables
+        self.bom.extract_specs()
+        matrix, bonding = self.bom.compute_matrix_bonding()
+        metallic_parts = self.bom.compute_metallic_parts()
+        consumables = self.bom.compute_consumables()
+        self.total_blade_mat_cost_w_waste, self.blade_mass = self.bom.compute_bom(
+            matrix, bonding, metallic_parts, consumables
         )
 
         # Labor and cycle time
-        labor_ct = blade_labor_ct(blade_specs, mat_dictionary, metallic_parts)
+        labor_ct = blade_labor_ct(self.bom.blade_specs, self.bom.mat_dictionary, metallic_parts)
         labor_ct.options = self.options
         labor_ct.name = self.name
         operation, labor_hours, skin_mold_gating_ct, non_gating_ct = labor_ct.execute_blade_labor_ct()
@@ -4341,7 +4372,7 @@ class blade_cost_model(object):
         total_non_gating_ct = sum(non_gating_ct)
 
         # Virtual factory
-        vf = virtual_factory(blade_specs, operation, skin_mold_gating_ct, non_gating_ct, self.options)
+        vf = virtual_factory(self.bom.blade_specs, operation, skin_mold_gating_ct, non_gating_ct, self.options)
         vf.options = self.options
         self.total_cost_labor, self.total_labor_overhead = vf.execute_direct_labor_cost(operation, labor_hours)
         self.total_cost_utility = vf.execute_utility_cost(operation, skin_mold_gating_ct + non_gating_ct)

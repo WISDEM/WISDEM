@@ -448,11 +448,11 @@ components:
                     grid: [0.0, 1.0]
                     values: [0.0, 0.0]
                 z:
-                    grid: &grid_tower [0.0, 7.728811463372998e-05, 0.10047454902385111, 0.10055183713848485, 0.20094909804770222, 0.20102638616233595, 0.30142364707155334, 0.30150093518618704, 0.40189819609540445, 0.40197548421003826, 0.5023727451192556, 0.5024500332338894, 0.6028472941431067, 0.6029245822577405, 0.7033218431669578, 0.7033991312815916, 0.8037963921908089, 0.8038736803054427, 0.90427094121466, 0.9043482293292937, 1.0]
-                    values: [15, 15.01, 28, 28.01, 41, 41.01, 54, 54.01, 67, 67.01, 80, 80.01, 93, 93.01, 106, 106.01, 119, 119.01, 132, 132.01, 144.386]
+                    grid: &grid_tower [0.0,  0.10032257566637343,  0.10033029278757853,  0.20064515133274685,  0.20065286845395192,  0.3009677269991203,  0.30097544412032534,  0.4012903026654937,  0.4012980197866988,  0.5016128783318671,  0.5016205954530722,  0.6019354539982406,  0.6019431711194456,  0.7022580296646139,  0.7022657467858191,  0.8025806053309874,  0.8025883224521925,  0.9029031809973608,  0.902910898118566,  1.0]
+                    values: [15.0,  28.0,  28.001,  41.0,  41.001,  54.0,  54.001,  67.0,  67.001,  80.0,  80.001,  93.0,  93.001,  106.0,  106.001,  119.0,  119.001,  132.0,  132.001,  144.582]
             outer_diameter:
                 grid: *grid_tower
-                values: [10., 10., 10., 10., 9.926, 9.926, 9.443, 9.443, 8.833, 8.833, 8.151, 8.151, 7.39, 7.39, 6.909, 6.909, 6.748, 6.748, 6.572, 6.572, 6.5]
+                values: [10.0,  9.964,  9.964,  9.967,  9.967,  9.927,  9.927,  9.528,  9.528,  9.149,  9.149,  8.945,  8.945,  8.735,  8.735,  8.405,  8.405,  7.321,  7.321,  6.5]
             drag_coefficient:
                 grid: [0.0, 1.0]
                 values: [0.5, 0.5]
@@ -464,35 +464,286 @@ components:
                   material: steel
                   thickness:
                     grid: *grid_tower
-                    values: [0.041058, 0.039496, 0.039496, 0.036456, 0.036456, 0.033779, 0.033779, 0.032192, 0.032192, 0.030708, 0.030708, 0.029101, 0.029101, 0.027213, 0.027213, 0.024009, 0.024009, 0.020826, 0.020826, 0.023998, 0.023998]
-    monopile:
-        transition_piece_mass: 100e3
-        outer_shape_bem:
-            reference_axis:  &ref_axis_mono
-                x:
+                    values: [0.082954,  0.082954,  0.083073,  0.083073,  0.08279900000000001,  0.08279900000000001,  0.0299,  0.0299,  0.027842,  0.027842,  0.025567,  0.025567,  0.022854,  0.022854,  0.02025,  0.02025,  0.018338999999999998,  0.018338999999999998,  0.021211,  0.021211]
+    floating_platform:
+        joints:
+            - name: main_keel
+              location: [0.0, 0.0, -20.0]
+
+            - name: main_freeboard
+              location: [0.0, 0.0, 15.0]
+              transition: True
+
+            - name: col1_keel
+              location: [51.75, 3.14159265, -20.0] #3.14159265 = 180deg
+              cylindrical: True
+
+            - name: col1_freeboard
+              location: [51.75, 3.14159265, 15.0] # 3.14159265 = 180deg
+              cylindrical: True
+
+            - name: col2_keel
+              location: [51.75, 1.0471976, -20.0] #1.0471975 = 60 deg
+              cylindrical: True
+
+            - name: col2_freeboard
+              location: [51.75, 1.0471975, 15.0]
+              cylindrical: True
+
+            - name: col3_keel
+              location: [51.75, -1.0471976, -20.0] #-1.0471975 = -60 deg
+              cylindrical: True
+
+            - name: col3_freeboard
+              location: [51.75, -1.0471976, 15.0] #-1.0471975 = -60 deg
+              cylindrical: True
+
+            - name: anchor1
+              location: [837.8, 0.0, -200.0]
+              cylindrical: True
+
+            - name: anchor2
+              location: [837.8, 2.0943951023931953, -200.0] # 120deg
+              cylindrical: True
+
+            - name: anchor3
+              location: [837.8, 4.1887902047863905, -200.0] # 240deg
+              cylindrical: True
+
+        members:
+            - name: main_column
+              joint1: main_keel
+              joint2: main_freeboard
+              Ca: 1.0
+              Cd: 0.8
+              outer_shape:
+                shape: circular
+                outer_diameter:
                     grid: [0.0, 1.0]
-                    values: [0.0, 0.0]
-                y:
+                    values: [10.0, 10.0]
+              internal_structure:
+                layers:
+                    - name: main_twall
+                      material: steel
+                      thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.05, 0.05]
+                bulkhead:
+                    material: steel
+                    thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.05, 0.05]
+              axial_joints:
+                - name: main_upper_pontoon
+                  grid: 0.987
+
+                - name: main_lower_pontoon
+                  grid: 0.1
+
+            - name: column1
+              joint1: col1_keel
+              joint2: col1_freeboard
+              Ca: 1.0
+              Cd: 0.8
+              outer_shape: &col_out
+                shape: circular
+                outer_diameter:
                     grid: [0.0, 1.0]
-                    values: [0.0, 0.0]
-                z:
-                    grid: &grid_mono [0.0, 0.5, 0.50001111, 0.55555556, 0.55556667, 0.61111111, 0.61112222, 0.66666667, 0.66667778, 0.72222222, 0.72223333, 0.77777778, 0.77778889, 0.83333333, 0.83334444, 0.88888889, 0.8889  , 0.94444444, 0.94445556, 1.0]
-                    values: [-75, -30., -29.999, -25., -24.999, -20., -19.999, -15., -14.999, -10., -9.999, -5., -4.999, 0., 0.001, 5., 5.001, 10., 10.001, 15.]
-            outer_diameter:
-                grid: *grid_mono
-                values: [10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10., 10.]
-            drag_coefficient:
-                grid: [0.0, 1.0]
-                values: [0.5, 0.5]
-        internal_structure_2d_fem:
-            outfitting_factor: 1.07
-            reference_axis: *ref_axis_mono
-            layers:
-                - name: monopile_wall
-                  material: steel
-                  thickness:
-                    grid: *grid_mono
-                    values: [0.055341, 0.055341, 0.055341, 0.055341, 0.053449, 0.053449, 0.051509, 0.051509, 0.049527, 0.049527, 0.047517, 0.047517, 0.045517, 0.045517, 0.043527, 0.043527, 0.042242, 0.042242, 0.041058, 0.041058]
+                    values: [12.5, 12.5]
+              internal_structure: &col_int
+                layers:
+                    - name: col_twall
+                      material: steel
+                      thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.05, 0.05]
+                bulkhead:
+                    material: steel
+                    thickness:
+                        grid: [0.0, 0.05, 0.2, 1.0]
+                        values: [0.05, 0.05, 0.05, 0.05]
+                ballasts:
+                    - variable_flag: False
+                      material: slurry
+                      volume: 169.33
+                      grid: [0.0, 0.05]
+                    - variable_flag: True
+                      grid: [0.05, 0.2]
+              axial_joints:
+                - name: col1_upper_pontoon
+                  grid: 0.987
+
+                - name: col1_lower_pontoon
+                  grid: 0.1
+
+                - name: col1_fairlead
+                  grid: 0.1714
+
+            - name: column2
+              joint1: col2_keel
+              joint2: col2_freeboard
+              Ca: 1.0
+              Cd: 0.8
+              outer_shape: *col_out
+              internal_structure: *col_int
+              axial_joints:
+                - name: col2_upper_pontoon
+                  grid: 0.987
+
+                - name: col2_lower_pontoon
+                  grid: 0.1
+
+                - name: col2_fairlead
+                  grid: 0.1714
+
+            - name: column3
+              joint1: col3_keel
+              joint2: col3_freeboard
+              Ca: 1.0
+              Cd: 0.8
+              outer_shape: *col_out
+              internal_structure: *col_int
+              axial_joints:
+                - name: col3_upper_pontoon
+                  grid: 0.987
+
+                - name: col3_lower_pontoon
+                  grid: 0.1
+
+                - name: col3_fairlead
+                  grid: 0.1714
+
+
+            - name: Y_pontoon_upper1
+              joint1: main_upper_pontoon
+              joint2: col1_upper_pontoon
+              Ca: 1.0
+              Cd: 0.8
+              outer_shape: &pontup_out
+                shape: circular
+                outer_diameter:
+                    grid: [0.0, 1.0]
+                    values: [0.91, 0.91]
+              internal_structure: &pontup_int
+                layers:
+                    - name: pontoon_upper_twall
+                      material: steel
+                      thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.02, 0.02]
+
+            - name: Y_pontoon_upper2
+              joint1: main_upper_pontoon
+              joint2: col2_upper_pontoon
+              Ca: 1.0
+              Cd: 0.8
+              outer_shape: *pontup_out
+              internal_structure: *pontup_int
+
+            - name: Y_pontoon_upper3
+              joint1: main_upper_pontoon
+              joint2: col3_upper_pontoon
+              Ca: 1.0
+              Cd: 0.8
+              outer_shape: *pontup_out
+              internal_structure: *pontup_int
+
+            - name: Y_pontoon_lower1
+              joint1: main_lower_pontoon
+              joint2: col1_lower_pontoon
+              Ca: 1.0
+              Cd: 0.8
+              outer_shape: &pontlow_out
+                shape: circular
+                outer_diameter:
+                    grid: [0.0, 1.0]
+                    values: [9.6148, 9.6148] #equates displacement not circle: [12.5, 12.5]
+              internal_structure: &pontlow_int
+                  # Probably needs longitudinal stiffeners
+                layers:
+                    - name: pontoon_lower_twall
+                      material: steel
+                      thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.04, 0.04]
+                ballasts:
+                    - variable_flag: True
+                      grid: [0.0, 1.0]
+
+            - name: Y_pontoon_lower2
+              joint1: main_lower_pontoon
+              joint2: col2_lower_pontoon
+              outer_shape: *pontlow_out
+              internal_structure: *pontlow_int
+
+            - name: Y_pontoon_lower3
+              joint1: main_lower_pontoon
+              joint2: col3_lower_pontoon
+              outer_shape: *pontlow_out
+              internal_structure: *pontlow_int
+    mooring:
+        nodes:
+            - name: line1_anchor
+              node_type: fixed
+              joint: anchor1
+              anchor_type: drag_embedment
+            - name: line2_anchor
+              node_type: fixed
+              joint: anchor2
+              anchor_type: drag_embedment
+            - name: line3_anchor
+              node_type: fixed
+              joint: anchor3
+              anchor_type: drag_embedment
+
+            - name: line1_vessel
+              node_type: vessel
+              joint: col1_fairlead
+              fairlead_type: rigid
+            - name: line2_vessel
+              node_type: vessel
+              joint: col2_fairlead
+              fairlead_type: rigid
+            - name: line3_vessel
+              joint: col3_fairlead
+              node_type: vessel
+              fairlead_type: rigid
+
+        lines:
+            - name: line1
+              node1: line1_anchor
+              node2: line1_vessel
+              line_type: main
+              unstretched_length: 850.0
+            - name: line2
+              node1: line2_anchor
+              node2: line2_vessel
+              line_type: main
+              unstretched_length: 850.0
+            - name: line3
+              node1: line3_anchor
+              node2: line3_vessel
+              line_type: main
+              unstretched_length: 850.0
+
+        line_types:
+            - name: main
+              diameter: 0.185
+              mass_density: 685.0
+              stiffness: 3270e6
+              breaking_load: 1e8
+              cost: 100.0
+              transverse_added_mass: 1.0
+              tangential_added_mass: 0.0
+              transverse_drag: 1.6
+              tangential_drag: 0.1
+
+        anchor_types:
+            - name: drag_embedment
+              mass: 1e3
+              cost: 1e4
+              max_vertical_load: 0.0
+              max_lateral_load: 1e5
 
 airfoils:
    -  name: circular
@@ -834,6 +1085,18 @@ materials:
       alpha: 0.0
       orth: 0
       unit_cost: 3.63
+   -  name: slurry
+      description: fixed/permanent ballast
+      E: 1.0 # compliant
+      nu: 0.3  #Place holder, currently not used
+      G: 1.0  # compliant
+      Xt: 0  #Place holder, currently not used
+      Xc: 0  #Place holder, currently not used
+      S: 0  #Place holder, currently not used
+      rho: 5000.
+      alpha: 0.0
+      unit_cost: 1.0
+      orth: 0.0
 
 control:
     supervisory:
@@ -841,23 +1104,23 @@ control:
         Vout: 25.0
         maxTS: 95.
     pitch:
-        PC_zeta: 1.0
-        PC_omega: 0.2
-        ps_percent: 0.8
-        max_pitch: 1.57
-        max_pitch_rate: 0.03490658503988659
-        min_pitch: 0.
+        PC_zeta: 1.0                      # Pitch controller desired damping ratio [-]
+        PC_omega: 0.2                     # Pitch controller desired natural frequency [rad/s]
+        ps_percent: 0.8                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
+        max_pitch: 1.57                     # Maximum pitch angle [rad], {default = 90 degrees}
+        max_pitch_rate: 0.03490658503988659 # 2 deg/s
+        min_pitch: 0.                     # Minimum pitch angle [rad], {default = 0 degrees}
     torque:
         control_type: tsr_tracking
         tsr: 9.0
-        VS_zeta: 1.0
-        VS_omega: 0.2
+        VS_zeta: 1.0                      # Torque controller desired damping ratio [-]
+        VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
         max_torque_rate: 1500000.
-        VS_minspd: 0.5235987755982988
-        VS_maxspd: 0.7916813487046278
+        VS_minspd: 0.5235987755982988     # Minimum rotor speed [rad/s], {default = 0 rad/s}
+        VS_maxspd: 0.7916813487046278     # Minimum rotor speed [rad/s], {default = 0 rad/s}
     setpoint_smooth:
-        ss_vsgain: 1
-        ss_pcgain: .001
+        ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
+        ss_pcgain: .001                   # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
     shutdown:
         limit_type: gen_speed
         limit_value: 2.0

@@ -42,6 +42,7 @@ class PlatformFrame(om.ExplicitComponent):
             self.add_input(f"member{k}:displacement", 0.0, units="m**3")
             self.add_input(f"member{k}:center_of_buoyancy", np.zeros(3), units="m")
             self.add_input(f"member{k}:center_of_mass", np.zeros(3), units="m")
+            self.add_input(f"member{k}:ballast_mass", 0.0, units="kg")
             self.add_input(f"member{k}:total_mass", 0.0, units="kg")
             self.add_input(f"member{k}:total_cost", 0.0, units="USD")
             self.add_input(f"member{k}:I_total", np.zeros(6), units="kg*m**2")
@@ -80,6 +81,8 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_center_of_buoyancy", np.zeros(3), units="m")
         self.add_output("platform_center_of_mass", np.zeros(3), units="m")
         self.add_output("platform_centroid", np.zeros(3), units="m")
+        self.add_output("platform_ballast_mass", 0.0, units="kg")
+        self.add_output("platform_hull_mass", 0.0, units="kg")
         self.add_output("platform_mass", 0.0, units="kg")
         self.add_output("platform_I_total", np.zeros(6), units="kg*m**2")
         self.add_output("platform_cost", 0.0, units="USD")
@@ -197,6 +200,7 @@ class PlatformFrame(om.ExplicitComponent):
         elem_Pz2 = np.array([])
 
         mass = 0.0
+        m_ball = 0.0
         cost = 0.0
         volume = 0.0
         Awater = 0.0
@@ -237,6 +241,7 @@ class PlatformFrame(om.ExplicitComponent):
             mass += imass
             volume += ivol
             cost += inputs[f"member{k}:total_cost"]
+            m_ball += inputs[f"member{k}:ballast_mass"]
             Awater_k = inputs[f"member{k}:Awater"]
             Awater += Awater_k
             Rwater2 = np.sum((inputs[f"member{k}:waterline_centroid"] - centroid) ** 2)
@@ -314,6 +319,8 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_elem_Pz2"][:nelem] = elem_Pz2
 
         outputs["platform_mass"] = mass
+        outputs["platform_ballast_mass"] = m_ball
+        outputs["platform_hull_mass"] = mass - m_ball
         outputs["platform_cost"] = cost
         outputs["platform_displacement"] = volume
         outputs["platform_center_of_mass"] = cg_plat

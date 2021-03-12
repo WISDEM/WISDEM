@@ -2238,7 +2238,7 @@ class MooringJoints(om.ExplicitComponent):
 
         outputs["fairlead_nodes"] = node_loc[ifair, :]
         outputs["anchor_nodes"] = node_loc[ianch, :]
-        outputs["fairlead"] = z_fair
+        outputs["fairlead"] = -z_fair  # Positive is defined below the waterline here
         outputs["fairlead_radius"] = np.sqrt(np.sum(node_loc[ifair, :2] ** 2, axis=1))
         outputs["anchor_radius"] = np.sqrt(np.sum(node_loc[ianch, :2] ** 2, axis=1))
 
