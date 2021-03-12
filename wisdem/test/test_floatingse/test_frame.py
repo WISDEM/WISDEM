@@ -74,6 +74,7 @@ class TestPlatform(unittest.TestCase):
             self.inputs[f"member{k}:Awater"] = 5.0
             self.inputs[f"member{k}:Iwater"] = 15.0
             self.inputs[f"member{k}:added_mass"] = np.arange(6)
+            self.inputs[f"member{k}:ballast_mass"] = 1e2
             self.inputs[f"member{k}:variable_ballast_capacity"] = 10 + k
             self.inputs[f"member{k}:variable_ballast_spts"] = np.linspace(0, 0.5, 10)
             self.inputs[f"member{k}:variable_ballast_Vpts"] = np.arange(10)
@@ -192,6 +193,8 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["platform_centroid"], centroid)
         npt.assert_equal(self.outputs["platform_center_of_mass"], centroid)
         self.assertEqual(self.outputs["platform_mass"], 6e3)
+        self.assertEqual(self.outputs["platform_ballast_mass"], 6e2)
+        self.assertEqual(self.outputs["platform_hull_mass"], 6e3 - 6e2)
         self.assertEqual(self.outputs["platform_cost"], 6 * 2e3)
         self.assertEqual(self.outputs["platform_Awater"], 30)
         self.assertEqual(self.outputs["platform_Iwater"], 6 * 15 + 5 * R.sum())

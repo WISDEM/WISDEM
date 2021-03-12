@@ -970,6 +970,7 @@ class RunPreComp(ExplicitComponent):
         bcm.bladeLength = inputs["r"][-1] - inputs["r"][0]
         bcm.le_location = inputs["pitch_axis"]
         blade_cost, blade_mass = bcm.execute_blade_cost_model()
+        self._bcm = bcm
 
         if inputs["joint_mass"] > 0.0:
             blade_cost += inputs["joint_cost"]
