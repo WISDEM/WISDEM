@@ -529,6 +529,15 @@ def create_all_plots(
             "lift_coeff",
         )
 
+        # Drag coefficient
+        simple_plot_results(
+            "Blade Nondimensional Span [-]",
+            "Drag Coefficient [-]",
+            "blade.outer_shape_bem.s",
+            "rp.powercurve.cd_regII",
+            "drag_coeff",
+        )
+
         # Power curve pitch
         simple_plot_results(
             "Wind velocity [m/s]",
