@@ -1067,6 +1067,18 @@ properties:
                         default: 100
                         minimum: 0
                         maximum: 100000
+                    max_major_iter:
+                        type: integer
+                        description: Max number of major optimization iterations of SNOPT
+                        default: 10
+                        minimum: 0
+                        maximum: 100000
+                    max_minor_iter:
+                        type: integer
+                        description: Max number of minor optimization iterations of SNOPT
+                        default: 100
+                        minimum: 0
+                        maximum: 100000
                     max_function_calls:
                         type: integer
                         description: Max number of calls to objective function evaluation
