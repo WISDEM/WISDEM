@@ -75,6 +75,26 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             )
             self.add_subsystem("airfoils", airfoils)
 
+            if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
+                inn_af = om.IndepVarComp()
+                inn_af.add_output(
+                    "s_opt_r_thick", 
+                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["t/c"]["n_opt"])
+                )
+                inn_af.add_output(
+                    "r_thick_opt", 
+                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["t/c"]["n_opt"]),
+                )
+                inn_af.add_output(
+                    "s_opt_L_D", 
+                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["L/D"]["n_opt"])
+                )
+                inn_af.add_output(
+                    "L_D_opt", 
+                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["L/D"]["n_opt"]),
+                )
+                self.add_subsystem("inn_af", inn_af)
+
         # Blade inputs and connections from airfoils
         if modeling_options["flags"]["blade"]:
             self.add_subsystem(

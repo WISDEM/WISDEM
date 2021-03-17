@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import openmdao.api as om
+from scipy.interpolate import PchipInterpolator
 
 
 class PoseOptimization(object):
@@ -912,6 +913,18 @@ class PoseOptimization(object):
                 wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"],
                 wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"])
             wt_opt["blade.opt_var.chord_opt"] = init_chord_opt
+            if self.modeling["WISDEM"]["RotorSE"]["inn_af"]:
+                wt_opt["inn_af.s_opt_r_thick"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["t/c"]["n_opt"])
+                init_r_thick_opt = np.interp(wt_opt["inn_af.s_opt_r_thick"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["grid"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"])
+                wt_opt["inn_af.r_thick_opt"] = init_r_thick_opt
+                wt_opt["inn_af.s_opt_L_D"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["L/D"]["n_opt"])
+                init_L_D_opt = np.interp(wt_opt["inn_af.s_opt_L_D"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"])
+                wt_opt["inn_af.L_D_opt"] = init_L_D_opt
+
             if blade_opt["structure"]["spar_cap_ss"]['flag'] or blade_opt["structure"]["spar_cap_ss"]['flag']:
                 wt_opt["blade.opt_var.s_opt_spar_cap_ss"] = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"])
                 wt_opt["blade.opt_var.s_opt_spar_cap_ps"] = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ps"]["n_opt"])

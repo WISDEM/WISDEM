@@ -561,6 +561,16 @@ class WindTurbineOntologyPython(object):
         elif blade_opt_options["aero_shape"]["chord"]["n_opt"] < 4:
             raise ValueError("Cannot optimize chord with less than 4 control points along blade span")
 
+        if not blade_opt_options["aero_shape"]["t/c"]["flag"]:
+            blade_opt_options["aero_shape"]["t/c"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        elif blade_opt_options["aero_shape"]["t/c"]["n_opt"] < 4:
+            raise ValueError("Cannot optimize t/c with less than 4 control points along blade span")
+
+        if not blade_opt_options["aero_shape"]["L/D"]["flag"]:
+            blade_opt_options["aero_shape"]["L/D"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        elif blade_opt_options["aero_shape"]["L/D"]["n_opt"] < 4:
+            raise ValueError("Cannot optimize L/D with less than 4 control points along blade span")
+
         if not blade_opt_options["structure"]["spar_cap_ss"]["flag"]:
             blade_opt_options["structure"]["spar_cap_ss"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"][
                 "n_span"

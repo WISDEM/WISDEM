@@ -126,6 +126,10 @@ properties:
                         minimum: 0.1
                         maximum: 1.e+2
                         description: Safety factor for the max stress of blade root fasteners
+                    inn_af:
+                        type: boolean
+                        default: False
+                        description: Flag switching on and off the inverted neural network for airfoil design
             DriveSE:
                 type: object
                 default: {}
