@@ -114,6 +114,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("airfoils.cm", "blade.interp_airfoils.cm")
 
             if modeling_options["WISDEM"]["RotorSE"]["inn_af"]: 
+                self.connect("airfoils.aoa", "blade.run_inn_af.aoa")
                 self.connect("inn_af.s_opt_r_thick", "blade.run_inn_af.s_opt_r_thick")
                 self.connect("inn_af.s_opt_L_D", "blade.run_inn_af.s_opt_L_D")
                 self.connect("inn_af.r_thick_opt", "blade.run_inn_af.r_thick_opt")
@@ -1099,6 +1100,12 @@ class INN_Airfoils(om.ExplicitComponent):
             desc="1D array of the aerodynamic center of the blade defined along span.",
         )
         self.add_input(
+            "aoa",
+            val=np.zeros(n_aoa),
+            units="rad",
+            desc="1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.",
+        )
+        self.add_input(
             "cl_interp_yaml",
             val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
             desc="4D array with the lift coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
@@ -1134,31 +1141,61 @@ class INN_Airfoils(om.ExplicitComponent):
             "L_D_opt", 
             val=np.ones(aero_shape_opt_options["L/D"]["n_opt"]),
         )
+    
     def compute(self, inputs, outputs):
         
+        try:
+            from INN_interface.INN import INN
+        except:
+            raise Exception("The INN framework for airfoil design is activated, but not installed correctly")
+        import matplotlib
+        matplotlib.use('TkAgg')
+        import matplotlib.pyplot as plt
+        # Interpolate t/c and L/D from opt grid to full grid
         spline = PchipInterpolator
         r_thick_spline = spline(inputs["s_opt_r_thick"], inputs["r_thick_opt"])
         r_thick = r_thick_spline(inputs["s"])
         L_D_spline = spline(inputs["s_opt_L_D"], inputs["L_D_opt"])
         L_D = L_D_spline(inputs["s"])
 
-        # for i in range(self.n_span):
-        #     cd = 0.015
-        #     stall_margin = 5.
-        #     Re = 9000000.
-        #     inn = INN()
-        #     cst, alpha = inn.inverse_design(cd, L_D[i], stall_margin, r_thick[i], Re, 
-        #                                     N=1, process_samples=True)
-        #     alpha = np.arange(-4, 20, 0.25)
-        #     cd, cl = inn.generate_polars(cst, Re, alpha=alpha)
+        # Find indices for start and end of the optimization
+        max_t_c = self.options["rotorse_options"]["inn_af_max_t/c"]
+        min_t_c = self.options["rotorse_options"]["inn_af_min_t/c"]
+        r_thick_index_start = np.argmin(abs(r_thick - max_t_c))
+        r_thick_index_end = np.argmin(abs(r_thick - min_t_c))
 
-        # import matplotlib.pyplot as plt
-        # plt.plot(inputs["s_opt_r_thick"], inputs["r_thick_opt"])
-        # plt.plot(inputs["s"], inputs["r_thick_interp_yaml"])
-        # plt.show()
-        # exit()
+        for i in range(r_thick_index_start, r_thick_index_end):
+            cd = 0.015
+            stall_margin = 5.
+            Re = 9000000.
+            inn = INN()
+            try:
+                cst, alpha = inn.inverse_design(cd, L_D[i], stall_margin, r_thick[i], Re, 
+                                                N=1, process_samples=True)
+            except:
+                raise Exception("The INN for airfoil design failed in the inverse mode")
+            alpha = np.arange(-4, 20, 0.25)
+            try:
+                cd, cl = inn.generate_polars(cst, Re, alpha=alpha)
+            except:
+                raise Exception("The INN for airfoil design failed in the forward mode")
+            
+            f, ax = plt.subplots(2, 1, figsize=(5.3, 4))
+            ax[0].plot(alpha, cl[0,:], label="INN")
+            ax[0].plot(inputs["aoa"] * 180. / np.pi, inputs["cl_interp_yaml"][i,:,0,0], label="yaml")
+            ax[0].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            ax[0].legend()
+            ax[0].set_ylabel("CL (-)", fontweight="bold")
+            ax[0].set_title("Span Location {:2.2%}".format(inputs["s"][i]), fontweight="bold")
+            ax[1].plot(alpha, cd[0,:], label="INN")
+            ax[1].plot(inputs["aoa"] * 180. / np.pi, inputs["cd_interp_yaml"][i,:,0,0], label="yaml")
+            ax[1].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            ax[1].set_ylabel("CD (-)", fontweight="bold")
+            ax[1].set_xlabel("Angles of Attack (deg)", fontweight="bold")
+            mydir = os.path.dirname(os.path.realpath(__file__))
+            plt.savefig(os.path.join(mydir, "outputs/span{:2.2}.pdf".format(inputs["s"][i])))
+            plt.show()
         
-        pass
 
 
 class Blade_Lofted_Shape(om.ExplicitComponent):
