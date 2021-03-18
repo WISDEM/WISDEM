@@ -663,18 +663,19 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["blade"]["outer_shape_bem"]["pitch_axis"]["values"] = wt_opt[
                 "blade.outer_shape_bem.pitch_axis"
             ].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["grid"] = wt_opt[
-                "blade.outer_shape_bem.s"
-            ].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"] = wt_opt[
-                "blade.interp_airfoils.r_thick_interp"
-            ].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"] = wt_opt[
-                "blade.outer_shape_bem.s"
-            ].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"] = wt_opt[
-                "rp.powercurve.L_D"
-            ].tolist()
+            if self.modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["grid"] = wt_opt[
+                    "blade.outer_shape_bem.s"
+                ].tolist()
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"] = wt_opt[
+                    "blade.interp_airfoils.r_thick_interp"
+                ].tolist()
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"] = wt_opt[
+                    "blade.outer_shape_bem.s"
+                ].tolist()
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"] = wt_opt[
+                    "rp.powercurve.L_D"
+                ].tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["x"]["grid"] = wt_opt[
                 "blade.outer_shape_bem.s"
             ].tolist()
