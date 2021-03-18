@@ -612,12 +612,12 @@ class Blade(om.Group):
                 INN_Airfoils(rotorse_options=rotorse_options, 
                 aero_shape_opt_options=opt_options["design_variables"]["blade"]["aero_shape"]),
             )
-        self.connect("outer_shape_bem.s", "run_inn_af.s")
-        self.connect("interp_airfoils.r_thick_interp", "run_inn_af.r_thick_interp_yaml")
-        self.connect("interp_airfoils.cl_interp", "run_inn_af.cl_interp_yaml")
-        self.connect("interp_airfoils.cd_interp", "run_inn_af.cd_interp_yaml")
-        self.connect("interp_airfoils.cm_interp", "run_inn_af.cm_interp_yaml")
-        self.connect("interp_airfoils.coord_xy_interp", "run_inn_af.coord_xy_interp_yaml")
+            self.connect("outer_shape_bem.s", "run_inn_af.s")
+            self.connect("interp_airfoils.r_thick_interp", "run_inn_af.r_thick_interp_yaml")
+            self.connect("interp_airfoils.cl_interp", "run_inn_af.cl_interp_yaml")
+            self.connect("interp_airfoils.cd_interp", "run_inn_af.cd_interp_yaml")
+            self.connect("interp_airfoils.cm_interp", "run_inn_af.cm_interp_yaml")
+            self.connect("interp_airfoils.coord_xy_interp", "run_inn_af.coord_xy_interp_yaml")
 
         # If the flag is true, generate the 3D x,y,z points of the outer blade shape
         if rotorse_options["lofted_output"] == True:
