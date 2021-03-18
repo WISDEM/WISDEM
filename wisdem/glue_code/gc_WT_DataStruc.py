@@ -1,5 +1,4 @@
 import copy
-
 import numpy as np
 import openmdao.api as om
 from scipy.interpolate import PchipInterpolator, interp1d
@@ -95,6 +94,27 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 )
                 self.add_subsystem("inn_af", inn_af)
 
+        # Hub inputs
+        if modeling_options["flags"]["hub"]:
+            self.add_subsystem("hub", Hub())
+
+        # Control inputs
+        if modeling_options["flags"]["control"]:
+            ctrl_ivc = self.add_subsystem("control", om.IndepVarComp())
+            ctrl_ivc.add_output(
+                "V_in", val=0.0, units="m/s", desc="Cut in wind speed. This is the wind speed where region II begins."
+            )
+            ctrl_ivc.add_output(
+                "V_out", val=0.0, units="m/s", desc="Cut out wind speed. This is the wind speed where region III ends."
+            )
+            ctrl_ivc.add_output("minOmega", val=0.0, units="rad/s", desc="Minimum allowed rotor speed.")
+            ctrl_ivc.add_output("maxOmega", val=0.0, units="rad/s", desc="Maximum allowed rotor speed.")
+            ctrl_ivc.add_output("max_TS", val=0.0, units="m/s", desc="Maximum allowed blade tip speed.")
+            ctrl_ivc.add_output("max_pitch_rate", val=0.0, units="rad/s", desc="Maximum allowed blade pitch rate")
+            ctrl_ivc.add_output("max_torque_rate", val=0.0, units="N*m/s", desc="Maximum allowed generator torque rate")
+            ctrl_ivc.add_output("rated_TSR", val=0.0, desc="Constant tip speed ratio in region II.")
+            ctrl_ivc.add_output("rated_pitch", val=0.0, units="rad", desc="Constant pitch angle in region II.")
+
         # Blade inputs and connections from airfoils
         if modeling_options["flags"]["blade"]:
             self.add_subsystem(
@@ -114,15 +134,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("airfoils.cm", "blade.interp_airfoils.cm")
 
             if modeling_options["WISDEM"]["RotorSE"]["inn_af"]: 
+
                 self.connect("airfoils.aoa", "blade.run_inn_af.aoa")
                 self.connect("inn_af.s_opt_r_thick", "blade.run_inn_af.s_opt_r_thick")
                 self.connect("inn_af.s_opt_L_D", "blade.run_inn_af.s_opt_L_D")
                 self.connect("inn_af.r_thick_opt", "blade.run_inn_af.r_thick_opt")
                 self.connect("inn_af.L_D_opt", "blade.run_inn_af.L_D_opt")
-
-        # Hub inputs
-        if modeling_options["flags"]["hub"]:
-            self.add_subsystem("hub", Hub())
+                self.connect("control.rated_TSR", "blade.run_inn_af.rated_TSR")
 
         # Nacelle inputs
         if modeling_options["flags"]["nacelle"]:
@@ -387,23 +405,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem("mooring", Mooring(options=modeling_options))
             self.connect("floating.joints_xyz", "mooring.joints_xyz")
 
-        # Control inputs
-        if modeling_options["flags"]["control"]:
-            ctrl_ivc = self.add_subsystem("control", om.IndepVarComp())
-            ctrl_ivc.add_output(
-                "V_in", val=0.0, units="m/s", desc="Cut in wind speed. This is the wind speed where region II begins."
-            )
-            ctrl_ivc.add_output(
-                "V_out", val=0.0, units="m/s", desc="Cut out wind speed. This is the wind speed where region III ends."
-            )
-            ctrl_ivc.add_output("minOmega", val=0.0, units="rad/s", desc="Minimum allowed rotor speed.")
-            ctrl_ivc.add_output("maxOmega", val=0.0, units="rad/s", desc="Maximum allowed rotor speed.")
-            ctrl_ivc.add_output("max_TS", val=0.0, units="m/s", desc="Maximum allowed blade tip speed.")
-            ctrl_ivc.add_output("max_pitch_rate", val=0.0, units="rad/s", desc="Maximum allowed blade pitch rate")
-            ctrl_ivc.add_output("max_torque_rate", val=0.0, units="N*m/s", desc="Maximum allowed generator torque rate")
-            ctrl_ivc.add_output("rated_TSR", val=0.0, desc="Constant tip speed ratio in region II.")
-            ctrl_ivc.add_output("rated_pitch", val=0.0, units="rad", desc="Constant pitch angle in region II.")
-
         # Wind turbine configuration inputs
         conf_ivc = self.add_subsystem("configuration", om.IndepVarComp())
         conf_ivc.add_discrete_output(
@@ -614,6 +615,7 @@ class Blade(om.Group):
                 aero_shape_opt_options=opt_options["design_variables"]["blade"]["aero_shape"]),
             )
             self.connect("outer_shape_bem.s", "run_inn_af.s")
+            self.connect("pa.chord_param", "run_inn_af.chord")
             self.connect("interp_airfoils.r_thick_interp", "run_inn_af.r_thick_interp_yaml")
             self.connect("interp_airfoils.cl_interp", "run_inn_af.cl_interp_yaml")
             self.connect("interp_airfoils.cd_interp", "run_inn_af.cd_interp_yaml")
@@ -1141,6 +1143,10 @@ class INN_Airfoils(om.ExplicitComponent):
             "L_D_opt", 
             val=np.ones(aero_shape_opt_options["L/D"]["n_opt"]),
         )
+        self.add_input(
+            "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
+        )
+        self.add_input("rated_TSR", val=0.0, desc="Constant tip speed ratio in region II.")
     
     def compute(self, inputs, outputs):
         
@@ -1151,6 +1157,8 @@ class INN_Airfoils(om.ExplicitComponent):
         import matplotlib
         matplotlib.use('TkAgg')
         import matplotlib.pyplot as plt
+        from wisdem.ccblade.Polar import Polar
+
         # Interpolate t/c and L/D from opt grid to full grid
         spline = PchipInterpolator
         r_thick_spline = spline(inputs["s_opt_r_thick"], inputs["r_thick_opt"])
@@ -1180,23 +1188,38 @@ class INN_Airfoils(om.ExplicitComponent):
             except:
                 raise Exception("The INN for airfoil design failed in the forward mode")
             
-            f, ax = plt.subplots(2, 1, figsize=(5.3, 4))
-            ax[0].plot(alpha, cl[0,:], label="INN")
+            inn_polar = Polar(Re, alpha, cl[0,:], cd[0,:], np.zeros_like(cl[0,:]))
+            polar3d = inn_polar.correction3D(inputs["s"][i], inputs["chord"][i]/103., inputs["rated_TSR"])
+            cdmax = 1.5
+            polar = polar3d.extrapolate(cdmax)  # Extrapolate polars for alpha between -180 deg and 180 deg
+
+            cl_interp = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cl)
+            cd_interp = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cd)
+            cm_interp = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cm)
+
+
+            f, ax = plt.subplots(3, 1, figsize=(5.3, 8))
+            ax[0].plot(inputs["aoa"] * 180. / np.pi, cl_interp, label="INN")
             ax[0].plot(inputs["aoa"] * 180. / np.pi, inputs["cl_interp_yaml"][i,:,0,0], label="yaml")
             ax[0].grid(color=[0.8, 0.8, 0.8], linestyle="--")
             ax[0].legend()
             ax[0].set_ylabel("CL (-)", fontweight="bold")
             ax[0].set_title("Span Location {:2.2%}".format(inputs["s"][i]), fontweight="bold")
-            ax[1].plot(alpha, cd[0,:], label="INN")
-            ax[1].plot(inputs["aoa"] * 180. / np.pi, inputs["cd_interp_yaml"][i,:,0,0], label="yaml")
+            ax[0].set_xlim(left=-4, right=20)
+            ax[1].semilogy(inputs["aoa"] * 180. / np.pi, cd_interp, label="INN")
+            ax[1].semilogy(inputs["aoa"] * 180. / np.pi, inputs["cd_interp_yaml"][i,:,0,0], label="yaml")
             ax[1].grid(color=[0.8, 0.8, 0.8], linestyle="--")
             ax[1].set_ylabel("CD (-)", fontweight="bold")
-            ax[1].set_xlabel("Angles of Attack (deg)", fontweight="bold")
-            mydir = os.path.dirname(os.path.realpath(__file__))
-            plt.savefig(os.path.join(mydir, "outputs/span{:2.2}.pdf".format(inputs["s"][i])))
-            plt.show()
-        
-
+            ax[1].set_xlim(left=-4, right=20)
+            ax[2].plot(inputs["aoa"] * 180. / np.pi, cl_interp/cd_interp, label="INN")
+            ax[2].plot(inputs["aoa"] * 180. / np.pi, inputs["cl_interp_yaml"][i,:,0,0]/inputs["cd_interp_yaml"][i,:,0,0], label="yaml")
+            ax[2].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            ax[2].set_ylabel("CL/CD (-)", fontweight="bold")
+            ax[2].set_xlabel("Angles of Attack (deg)", fontweight="bold")
+            ax[2].set_xlim(left=-4, right=20)
+            ax[2].set_ylim(top=200, bottom=-50)
+            # plt.show()
+            plt.close()
 
 class Blade_Lofted_Shape(om.ExplicitComponent):
     # Openmdao component to generate the x, y, z coordinates of the points describing the blade outer shape.
