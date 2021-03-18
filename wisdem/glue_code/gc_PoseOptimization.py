@@ -10,6 +10,20 @@ class PoseOptimization(object):
         self.modeling = modeling_options
         self.opt = analysis_options
 
+        self.nlopt_methods = [
+            "GN_DIRECT",
+            "GN_DIRECT_L",
+            "GN_DIRECT_L_NOSCAL",
+            "GN_ORIG_DIRECT",
+            "GN_ORIG_DIRECT_L",
+            "GN_AGS",
+            "GN_ISRES",
+            "LN_COBYLA",
+            "LD_MMA",
+            "LD_CCSAQ",
+            "LD_SLSQP",
+        ]
+
     def get_number_design_variables(self):
         # Determine the number of design variables
         n_DV = 0
@@ -145,85 +159,75 @@ class PoseOptimization(object):
         folder_output = self.opt["general"]["folder_output"]
 
         if self.opt["driver"]["optimization"]["flag"]:
+            opt_options = self.opt["driver"]["optimization"]
             step_size = self._get_step_size()
 
             # Solver has specific meaning in OpenMDAO
-            wt_opt.model.approx_totals(method="fd", step=step_size, form=self.opt["driver"]["optimization"]["form"])
+            wt_opt.model.approx_totals(method="fd", step=step_size, form=opt_options["form"])
 
             # Set optimization solver and options. First, Scipy's SLSQP and COBYLA
-            if (
-                self.opt["driver"]["optimization"]["solver"] == "SLSQP"
-                or self.opt["driver"]["optimization"]["solver"] == "COBYLA"
-            ):
+            if opt_options["solver"] == "SLSQP" or opt_options["solver"] == "COBYLA":
                 wt_opt.driver = om.ScipyOptimizeDriver()
-                wt_opt.driver.options["optimizer"] = self.opt["driver"]["optimization"]["solver"]
-                wt_opt.driver.options["tol"] = self.opt["driver"]["optimization"]["tol"]
-                wt_opt.driver.options["maxiter"] = self.opt["driver"]["optimization"]["max_iter"]
-                if "rhobeg" in self.opt["driver"]["optimization"]:
-                    wt_opt.driver.opt_settings["rhobeg"] = self.opt["driver"]["optimization"]["rhobeg"]
-                if "catol" in self.opt["driver"]["optimization"]:
-                    wt_opt.driver.opt_settings["catol"] = self.opt["driver"]["optimization"]["catol"]
-                if "disp" in self.opt["driver"]["optimization"]:
-                    wt_opt.driver.options["disp"] = self.opt["driver"]["optimization"]["disp"]
+                wt_opt.driver.options["optimizer"] = opt_options["solver"]
+                wt_opt.driver.options["tol"] = opt_options["tol"]
+                wt_opt.driver.options["maxiter"] = opt_options["max_iter"]
+                if "rhobeg" in opt_options:
+                    wt_opt.driver.opt_settings["rhobeg"] = opt_options["rhobeg"]
+                if "catol" in opt_options["max_iter"]:
+                    wt_opt.driver.opt_settings["catol"] = opt_options["max_iter"]["catol"]
+                if "disp" in opt_options["max_iter"]:
+                    wt_opt.driver.options["disp"] = opt_options["max_iter"]["disp"]
 
-            elif self.opt["driver"]["optimization"]["solver"] == "Nelder-Mead":
+            elif opt_options["solver"] == "Nelder-Mead":
                 wt_opt.driver = om.ScipyOptimizeDriver()
-                wt_opt.driver.options["optimizer"] = self.opt["driver"]["optimization"]["solver"]
-                wt_opt.driver.options["tol"] = self.opt["driver"]["optimization"]["tol"]
-                if "adaptive" in self.opt["driver"]["optimization"]:
-                    wt_opt.driver.options["adaptive"] = self.opt["driver"]["optimization"]["adaptive"]
+                wt_opt.driver.options["optimizer"] = opt_options["solver"]
+                wt_opt.driver.options["tol"] = opt_options["tol"]
+                if "adaptive" in opt_options:
+                    wt_opt.driver.options["adaptive"] = opt_options["adaptive"]
 
             # The next two optimization methods require pyOptSparse.
-            elif self.opt["driver"]["optimization"]["solver"] == "CONMIN":
+            elif opt_options["solver"] == "CONMIN":
                 try:
                     from openmdao.api import pyOptSparseDriver
                 except:
                     raise ImportError(
-                        "You requested the optimization solver CONMIN, but you have not installed the pyOptSparseDriver. Please do so and rerun."
+                        "You requested the optimization solver CONMIN, but you have not installed the pyOptSparse. Please do so and rerun."
                     )
                 wt_opt.driver = pyOptSparseDriver()
-                wt_opt.driver.options["optimizer"] = self.opt["driver"]["optimization"]["solver"]
-                wt_opt.driver.opt_settings["ITMAX"] = self.opt["driver"]["optimization"]["max_iter"]
+                wt_opt.driver.options["optimizer"] = opt_options["solver"]
+                wt_opt.driver.opt_settings["ITMAX"] = opt_options["max_iter"]
 
-            elif self.opt["driver"]["optimization"]["solver"] == "SNOPT":
+            elif opt_options["solver"] == "SNOPT":
                 try:
                     from openmdao.api import pyOptSparseDriver
                 except:
                     raise ImportError(
-                        "You requested the optimization solver SNOPT, but you have not installed the pyOptSparseDriver. Please do so and rerun."
+                        "You requested the optimization solver SNOPT, but you have not installed the pyOptSparse. Please do so and rerun."
                     )
                 wt_opt.driver = pyOptSparseDriver()
                 try:
-                    wt_opt.driver.options["optimizer"] = self.opt["driver"]["optimization"]["solver"]
+                    wt_opt.driver.options["optimizer"] = opt_options["solver"]
                 except:
                     raise ImportError(
-                        "You requested the optimization solver SNOPT, but you have not installed it within the pyOptSparseDriver. Please do so and rerun."
+                        "You requested the optimization solver SNOPT, but you have not installed it within the pyOptSparse. Please do so and rerun."
                     )
-                wt_opt.driver.opt_settings["Major optimality tolerance"] = float(
-                    self.opt["driver"]["optimization"]["tol"]
-                )
-                wt_opt.driver.opt_settings["Major iterations limit"] = int(
-                    self.opt["driver"]["optimization"]["max_major_iter"]
-                )
-                wt_opt.driver.opt_settings["Iterations limit"] = int(
-                    self.opt["driver"]["optimization"]["max_minor_iter"]
-                )
-                wt_opt.driver.opt_settings["Major feasibility tolerance"] = float(
-                    self.opt["driver"]["optimization"]["tol"]
-                )
+                wt_opt.driver.opt_settings["Major optimality tolerance"] = float(opt_options["tol"])
+                wt_opt.driver.opt_settings["Major iterations limit"] = int(opt_options["max_major_iter"])
+                wt_opt.driver.opt_settings["Iterations limit"] = int(opt_options["max_minor_iter"])
+                wt_opt.driver.opt_settings["Major feasibility tolerance"] = float(opt_options["tol"])
                 wt_opt.driver.opt_settings["Summary file"] = os.path.join(folder_output, "SNOPT_Summary_file.txt")
                 wt_opt.driver.opt_settings["Print file"] = os.path.join(folder_output, "SNOPT_Print_file.txt")
-                if "hist_file_name" in self.opt["driver"]["optimization"]:
-                    wt_opt.driver.hist_file = self.opt["driver"]["optimization"]["hist_file_name"]
-                if "verify_level" in self.opt["driver"]["optimization"]:
-                    wt_opt.driver.opt_settings["Verify level"] = self.opt["driver"]["optimization"]["verify_level"]
+                if "hist_file_name" in opt_options:
+                    wt_opt.driver.hist_file = opt_options["hist_file_name"]
+                if "verify_level" in opt_options:
+                    wt_opt.driver.opt_settings["Verify level"] = opt_options["verify_level"]
                 else:
                     wt_opt.driver.opt_settings["Verify level"] = -1
                 # wt_opt.driver.declare_coloring()
-                if "hotstart_file" in self.opt["driver"]["optimization"]:
-                    wt_opt.driver.hotstart_file = self.opt["driver"]["optimization"]["hotstart_file"]
+                if "hotstart_file" in opt_options:
+                    wt_opt.driver.hotstart_file = opt_options["hotstart_file"]
 
-            elif self.opt["driver"]["optimization"]["solver"] == "GA":
+            elif opt_options["solver"] == "GA":
                 wt_opt.driver = om.SimpleGADriver()
                 option_keys = [
                     "Pc",
@@ -243,45 +247,56 @@ class PoseOptimization(object):
                     "run_parallel",
                 ]
                 for key in option_keys:
-                    if key in self.opt["driver"]["optimization"]:
-                        wt_opt.driver.options[key] = self.opt["driver"]["optimization"][key]
+                    if key in opt_options:
+                        wt_opt.driver.options[key] = opt_options[key]
+
+            elif opt_options["solver"] in self.nlopt_methods:
+                try:
+                    from weis.optimization_drivers.nlopt_driver import NLoptDriver
+                except:
+                    raise ImportError(
+                        "You requested an optimization method from NLopt, but need to first install WEIS to use this method."
+                    )
+
+                prob.driver = NLoptDriver()
+                prob.driver.options["optimizer"] = opt_options["solver"]
+                prob.driver.options["tol"] = opt_options["tol"]
+                prob.driver.options["xtol"] = opt_options["xtol"]
 
             else:
                 raise ValueError(f"The {self.opt['driver']['optimization']['solver']} optimizer is not yet supported!")
 
-            if self.opt["driver"]["optimization"]["debug_print"]:
+            if opt_options["debug_print"]:
                 wt_opt.driver.options["debug_print"] = ["desvars", "ln_cons", "nl_cons", "objs", "totals"]
 
         elif self.opt["driver"]["design_of_experiments"]["flag"]:
-            if self.opt["driver"]["design_of_experiments"]["generator"].lower() == "uniform":
+            doe_options = self.opt["driver"]["design_of_experiments"]
+            if doe_options["generator"].lower() == "uniform":
                 generator = om.UniformGenerator(
-                    num_samples=self.opt["driver"]["design_of_experiments"]["num_samples"],
-                    seed=self.opt["driver"]["design_of_experiments"]["seed"],
+                    num_samples=doe_options["num_samples"],
+                    seed=doe_options["seed"],
                 )
-            elif self.opt["driver"]["design_of_experiments"]["generator"].lower() == "fullfact":
-                generator = om.FullFactorialGenerator(levels=self.opt["driver"]["design_of_experiments"]["num_samples"])
-            elif self.opt["driver"]["design_of_experiments"]["generator"].lower() == "plackettburman":
+            elif doe_options["generator"].lower() == "fullfact":
+                generator = om.FullFactorialGenerator(levels=doe_options["num_samples"])
+            elif doe_options["generator"].lower() == "plackettburman":
                 generator = om.PlackettBurmanGenerator()
-            elif self.opt["driver"]["design_of_experiments"]["generator"].lower() == "boxbehnken":
+            elif doe_options["generator"].lower() == "boxbehnken":
                 generator = om.BoxBehnkenGenerator()
-            elif self.opt["driver"]["design_of_experiments"]["generator"].lower() == "latinhypercube":
+            elif doe_options["generator"].lower() == "latinhypercube":
                 generator = om.LatinHypercubeGenerator(
-                    samples=self.opt["driver"]["design_of_experiments"]["num_samples"],
-                    criterion=self.opt["driver"]["design_of_experiments"]["criterion"],
-                    seed=self.opt["driver"]["design_of_experiments"]["seed"],
+                    samples=doe_options["num_samples"],
+                    criterion=doe_options["criterion"],
+                    seed=doe_options["seed"],
                 )
             else:
-                raise Exception(
-                    "The generator type {} is unsupported.".format(
-                        self.opt["driver"]["design_of_experiments"]["generator"]
-                    )
-                )
+                raise Exception("The generator type {} is unsupported.".format(doe_options["generator"]))
 
             # Initialize driver
             wt_opt.driver = om.DOEDriver(generator)
 
             # options
-            wt_opt.driver.options["run_parallel"] = self.opt["driver"]["design_of_experiments"]["run_parallel"]
+            wt_opt.driver.options["run_parallel"] = doe_options["run_parallel"]
+
         elif self.opt["driver"]["step_size_study"]["flag"]:
             pass
 
