@@ -612,6 +612,7 @@ class Blade(om.Group):
                 INN_Airfoils(rotorse_options=rotorse_options, 
                 aero_shape_opt_options=opt_options["design_variables"]["blade"]["aero_shape"]),
             )
+        self.connect("outer_shape_bem.s", "run_inn_af.s")
         self.connect("interp_airfoils.r_thick_interp", "run_inn_af.r_thick_interp_yaml")
         self.connect("interp_airfoils.cl_interp", "run_inn_af.cl_interp_yaml")
         self.connect("interp_airfoils.cd_interp", "run_inn_af.cd_interp_yaml")
@@ -1083,6 +1084,11 @@ class INN_Airfoils(om.ExplicitComponent):
 
         # Polars and coordinates interpolated along span
         self.add_input(
+            "s",
+            val=np.zeros(n_span),
+            desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
+        )
+        self.add_input(
             "r_thick_interp_yaml",
             val=np.zeros(n_span),
             desc="1D array of the relative thicknesses of the blade defined along span.",
@@ -1129,6 +1135,29 @@ class INN_Airfoils(om.ExplicitComponent):
             val=np.ones(aero_shape_opt_options["L/D"]["n_opt"]),
         )
     def compute(self, inputs, outputs):
+        
+        spline = PchipInterpolator
+        r_thick_spline = spline(inputs["s_opt_r_thick"], inputs["r_thick_opt"])
+        r_thick = r_thick_spline(inputs["s"])
+        L_D_spline = spline(inputs["s_opt_L_D"], inputs["L_D_opt"])
+        L_D = L_D_spline(inputs["s"])
+
+        # for i in range(self.n_span):
+        #     cd = 0.015
+        #     stall_margin = 5.
+        #     Re = 9000000.
+        #     inn = INN()
+        #     cst, alpha = inn.inverse_design(cd, L_D[i], stall_margin, r_thick[i], Re, 
+        #                                     N=1, process_samples=True)
+        #     alpha = np.arange(-4, 20, 0.25)
+        #     cd, cl = inn.generate_polars(cst, Re, alpha=alpha)
+
+        # import matplotlib.pyplot as plt
+        # plt.plot(inputs["s_opt_r_thick"], inputs["r_thick_opt"])
+        # plt.plot(inputs["s"], inputs["r_thick_interp_yaml"])
+        # plt.show()
+        # exit()
+        
         pass
 
 
