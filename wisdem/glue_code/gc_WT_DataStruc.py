@@ -113,6 +113,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("airfoils.cd", "blade.interp_airfoils.cd")
             self.connect("airfoils.cm", "blade.interp_airfoils.cm")
 
+            if modeling_options["WISDEM"]["RotorSE"]["inn_af"]: 
+                self.connect("inn_af.s_opt_r_thick", "blade.run_inn_af.s_opt_r_thick")
+                self.connect("inn_af.s_opt_L_D", "blade.run_inn_af.s_opt_L_D")
+                self.connect("inn_af.r_thick_opt", "blade.run_inn_af.r_thick_opt")
+                self.connect("inn_af.L_D_opt", "blade.run_inn_af.L_D_opt")
+
         # Hub inputs
         if modeling_options["flags"]["hub"]:
             self.add_subsystem("hub", Hub())
@@ -582,28 +588,35 @@ class Blade(om.Group):
         self.add_subsystem(
             "pa", ParametrizeBladeAero(rotorse_options=rotorse_options, opt_options=opt_options)
         )  # Parameterize aero (chord and twist)
+        # Connections to blade aero parametrization
+        self.connect("opt_var.s_opt_twist", "pa.s_opt_twist")
+        self.connect("opt_var.s_opt_chord", "pa.s_opt_chord")
+        self.connect("opt_var.twist_opt", "pa.twist_opt")
+        self.connect("opt_var.chord_opt", "pa.chord_opt")
+        self.connect("outer_shape_bem.s", "pa.s")
 
         # Interpolate airfoil profiles and coordinates
         self.add_subsystem(
             "interp_airfoils",
             Blade_Interp_Airfoils(rotorse_options=rotorse_options),
         )
-
-        # Connections to blade aero parametrization
-        self.connect("opt_var.s_opt_twist", "pa.s_opt_twist")
-        self.connect("opt_var.s_opt_chord", "pa.s_opt_chord")
-        self.connect("opt_var.twist_opt", "pa.twist_opt")
-        self.connect("opt_var.chord_opt", "pa.chord_opt")
-
-        self.connect("outer_shape_bem.s", "pa.s")
-        # self.connect("outer_shape_bem.twist", "pa.twist_original")
-        # self.connect("outer_shape_bem.chord", "pa.chord_original")
-
         # Connections from oute_shape_bem to interp_airfoils
         self.connect("outer_shape_bem.s", "interp_airfoils.s")
         self.connect("pa.chord_param", "interp_airfoils.chord")
         self.connect("outer_shape_bem.pitch_axis", "interp_airfoils.pitch_axis")
         self.connect("opt_var.af_position", "interp_airfoils.af_position")
+
+        if rotorse_options["inn_af"]:
+            self.add_subsystem(
+                "run_inn_af",
+                INN_Airfoils(rotorse_options=rotorse_options, 
+                aero_shape_opt_options=opt_options["design_variables"]["blade"]["aero_shape"]),
+            )
+        self.connect("interp_airfoils.r_thick_interp", "run_inn_af.r_thick_interp_yaml")
+        self.connect("interp_airfoils.cl_interp", "run_inn_af.cl_interp_yaml")
+        self.connect("interp_airfoils.cd_interp", "run_inn_af.cd_interp_yaml")
+        self.connect("interp_airfoils.cm_interp", "run_inn_af.cm_interp_yaml")
+        self.connect("interp_airfoils.coord_xy_interp", "run_inn_af.coord_xy_interp_yaml")
 
         # If the flag is true, generate the 3D x,y,z points of the outer blade shape
         if rotorse_options["lofted_output"] == True:
@@ -1049,6 +1062,74 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         # axat.legend()
         # plt.show()
         # print(np.flip(s_interp_rt))
+
+
+class INN_Airfoils(om.ExplicitComponent):
+    # Openmdao component to run the inverted neural network framework for airfoil design
+    def initialize(self):
+        self.options.declare("rotorse_options")
+        self.options.declare("aero_shape_opt_options")
+
+    def setup(self):
+        rotorse_options = self.options["rotorse_options"]
+        aero_shape_opt_options = self.options["aero_shape_opt_options"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_aoa = n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
+        self.n_Re = n_Re = rotorse_options["n_Re"]  # Number of Reynolds, so far hard set at 1
+        self.n_tab = n_tab = rotorse_options[
+            "n_tab"
+        ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
+
+        # Polars and coordinates interpolated along span
+        self.add_input(
+            "r_thick_interp_yaml",
+            val=np.zeros(n_span),
+            desc="1D array of the relative thicknesses of the blade defined along span.",
+        )
+        self.add_input(
+            "ac_interp_yaml",
+            val=np.zeros(n_span),
+            desc="1D array of the aerodynamic center of the blade defined along span.",
+        )
+        self.add_input(
+            "cl_interp_yaml",
+            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
+            desc="4D array with the lift coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+        )
+        self.add_input(
+            "cd_interp_yaml",
+            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
+            desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+        )
+        self.add_input(
+            "cm_interp_yaml",
+            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
+            desc="4D array with the moment coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+        )
+        self.add_input(
+            "coord_xy_interp_yaml",
+            val=np.zeros((n_span, n_xy, 2)),
+            desc="3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.",
+        )
+        self.add_input(
+            "s_opt_r_thick", 
+            val=np.ones(aero_shape_opt_options["t/c"]["n_opt"])
+        )
+        self.add_input(
+            "r_thick_opt", 
+            val=np.ones(aero_shape_opt_options["t/c"]["n_opt"]),
+        )
+        self.add_input(
+            "s_opt_L_D", 
+            val=np.ones(aero_shape_opt_options["L/D"]["n_opt"])
+        )
+        self.add_input(
+            "L_D_opt", 
+            val=np.ones(aero_shape_opt_options["L/D"]["n_opt"]),
+        )
+    def compute(self, inputs, outputs):
+        pass
 
 
 class Blade_Lofted_Shape(om.ExplicitComponent):
