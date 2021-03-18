@@ -1,5 +1,7 @@
 import os
+
 import matplotlib.pyplot as plt
+
 import openmdao.api as om
 from wisdem.commonse.mpi_tools import MPI
 
@@ -22,14 +24,12 @@ class Convergence_Trends_Opt(om.ExplicitComponent):
         else:
             rank = 0
         if os.path.exists(optimization_log) and rank == 0:
-
             cr = om.CaseReader(optimization_log)
-            cases = cr.list_cases()
+            cases = cr.get_cases()
             rec_data = {}
             iterations = []
-            for i, casei in enumerate(cases):
+            for i, it_data in enumerate(cases):
                 iterations.append(i)
-                it_data = cr.get_case(casei)
 
                 # parameters = it_data.get_responses()
                 for parameters in [it_data.get_responses(), it_data.get_design_vars()]:
