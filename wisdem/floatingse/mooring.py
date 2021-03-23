@@ -1,6 +1,6 @@
 import numpy as np
+import moorpy as mp
 import openmdao.api as om
-from wisdem.pymap import pyMAP
 from wisdem.commonse import gravity
 
 NLINES_MAX = 15
@@ -18,7 +18,7 @@ def lines2nodes(F, nnode):
     return Fnode
 
 
-class MapMooring(om.ExplicitComponent):
+class Mooring(om.ExplicitComponent):
     """
     Sets mooring line properties then writes MAP input file and executes MAP.
 
@@ -141,7 +141,7 @@ class MapMooring(om.ExplicitComponent):
         # Compute costs for the system
         self.compute_cost(inputs, outputs)
 
-    def set_properties(self, inputs):
+    def set_properties(self, inputs, discrete_inputs):
         """
         THIS IS NOT USED BUT REMAINS FOR REFERENCE
         Sets mooring line properties: Minimum Breaking Load, Mass per Length,
@@ -415,13 +415,6 @@ class MapMooring(om.ExplicitComponent):
 
         OUTPUTS  : none
         """
-        # Unpack variables
-        fairleadDepth = float(inputs["fairlead"])
-        R_fairlead = float(inputs["fairlead_radius"])
-        R_anchor = float(inputs["anchor_radius"])
-        n_attach = self.options["options"]["n_attach"]
-        n_anchors = self.options["options"]["n_anchors"]
-        ratio = int(n_anchors / n_attach)
 
         # Open the map input file
         self.finput = []
@@ -467,6 +460,8 @@ class MapMooring(om.ExplicitComponent):
         rhoWater = float(inputs["rho_water"])
         waterDepth = float(inputs["water_depth"])
         fairleadDepth = float(inputs["fairlead"])
+        R_fairlead = float(inputs["fairlead_radius"])
+        R_anchor = float(inputs["anchor_radius"])
         heel = float(inputs["operational_heel"])
         max_heel = inputs["survival_heel"]
         d = inputs["line_diameter"]
@@ -475,9 +470,93 @@ class MapMooring(om.ExplicitComponent):
         n_attach = self.options["options"]["n_attach"]
         n_lines = self.options["options"]["n_anchors"]
         offset = float(inputs["max_surge_fraction"]) * waterDepth
+        n_anchors = self.options["options"]["n_anchors"]
+        ratio = int(n_anchors / n_attach)
 
-        # Write the mooring system input file for this design
-        self.write_input_file(inputs)
+        # Create a MoorPy system
+        ms = mp.System()
+        ms.depth = waterDepth
+
+        # Add the line type
+        name = "myline"
+        massden = inputs["line_mass_density_coeff"] * d ** 2
+        EA = inputs["line_stiffness_coeff"] * d ** 2
+        MBL = inputs["line_breaking_load_coeff"] * d ** 2
+        cost = inputs["line_cost_rate_coeff"] * d ** 2
+
+        ms.LineTypes[name] = mp.LineType(name, d, massden, EA, MBL=MBL, cost=cost, notes="")
+
+        # SHOULD MOORPY FIND THE EQUILIBRIUM?  NEED TO DISCUSS
+        ms.addBody(
+            -1,
+            r6,
+            m=mTOT,
+            v=VTOT,
+            rCG=rCG_TOT,
+            AWP=AWP_TOT,
+            rM=np.r_[0, 0, zMeta],
+            f6Ext=np.r_[Fthrust, 0, 0, 0, Mthrust, 0],
+        )
+
+        # One end on sea floor the other at fairlead
+        self.write_node_properties(1, "VESSEL", R_fairlead, 0, -fairleadDepth)
+        if ratio > 1:
+            angles = np.linspace(0, 2 * np.pi, n_anchors + 1)[:ratio]
+            angles -= np.mean(angles)
+            anchorx = R_anchor * np.cos(angles)
+            anchory = R_anchor * np.sin(angles)
+            for k in range(ratio):
+                self.write_node_properties(k + 2, "FIX", anchorx[k], anchory[k], None)
+        else:
+            self.write_node_properties(2, "FIX", R_anchor, 0, None)
+
+        # Add points to the sytem
+        for i in range(n_nodes):
+            ID = wt_opt["mooring.node_id"][i]  # <<<<<<<<< not 100% on the syntax of these calls
+
+            if wt_opt["mooring.node_type"][i] == "fixed":
+                type = 1
+            elif wt_opt["mooring.node_type"][i] == "vessel":
+                type = -1
+            elif wt_opt["mooring.node_type"][i] == "connection":
+                type = 0
+
+            r = np.array(wt_opt["mooring.nodes_location"][i, :], dtype=float)
+            # TODO - can add in other variables for the point like anchor ID, fairlead_type, node_mass, node_volume, drag area, added mass
+            ms.PointList.append(mp.Point(ID, type, r))
+
+            # attach body points to the body
+            # the nodes_location array is relative to inertial frame if Fixed or Connect, but relative to platform frame if Vessel
+            if type == -1:
+                ms.BodyList[0].addPoint(ID, r)
+
+        # Add and attach lines to the nodes of the system
+        n_lines = len(wt_opt["mooring.unstretched_length"])
+        for i in range(n_lines):
+            ID = wt_opt["mooring.line_id"][i]
+            LineLength = wt_opt["mooring.unstretched_length"][i]
+            linetype = wt_opt["mooring.line_type"][i]
+
+            ms.LineList.append(mp.Line(ID, LineLength, LineTypes[linetype]))
+
+            node1 = wt_opt["mooring.node1_id"]
+            node2 = wt_opt["mooring.node2_id"]
+            # Run an if statement to make sure that node1 is the deeper point
+            if ms.PointList[node1].r[2] < ms.PointList[node2].r[2]:
+                pass
+            elif ms.PointList[node1].r[2] > ms.PointList[node2].r[2]:
+                node1 = node2
+                node2 = node1
+            else:
+                pass  # if the z value of both points is the same, then it doesn't matter
+
+            ms.PointList[node1].addLine(ID, 0)
+            ms.PointList[node2].addLine(ID, 1)
+
+            # TODO - anchor types
+
+            # Turn on the system
+        ms.initialize()
 
         # Initiate MAP++ for this design
         mymap = pyMAP()
