@@ -1531,10 +1531,6 @@ properties:
                                                 minimum: 0.0
                                                 maximum: 1.0
                                                 description: Non-dimensional value along member axis
-                                model_potential: &hydro
-                                    description: Should potential flow be used to model this member?
-                                    type: boolean
-                                    default: False
                                 Ca: &ca
                                     description: User-defined added mass coefficient
                                     type: number
@@ -1594,7 +1590,6 @@ properties:
                                         maxItems: 3
                                         minItems: 3
                                         minimum: 0
-                                model_potential: *hydro
                                 Ca: *ca
                                 Cp: *cp
                                 Cd: *cd

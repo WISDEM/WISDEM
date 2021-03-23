@@ -283,7 +283,6 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["floating"]["members"]["n_ballasts"] = np.zeros(n_members, dtype=int)
             self.modeling_options["floating"]["members"]["n_bulkheads"] = np.zeros(n_members, dtype=int)
             self.modeling_options["floating"]["members"]["n_axial_joints"] = np.zeros(n_members, dtype=int)
-            self.modeling_options["floating"]["members"]["model_potential"] = [False] * n_members
             for i in range(n_members):
                 self.modeling_options["floating"]["members"]["name"][i] = self.wt_init["components"][
                     "floating_platform"
@@ -431,10 +430,6 @@ class WindTurbineOntologyPython(object):
                         ] = len(name2idx)
                 else:
                     self.modeling_options["floating"]["members"]["n_axial_joints"][i] = 0
-
-                self.modeling_options["floating"]["members"]["model_potential"][i] = self.wt_init["components"][
-                    "floating_platform"
-                ]["members"][i]["model_potential"]
 
                 final_grid = np.unique(grid)
                 self.modeling_options["floating"]["members"][
