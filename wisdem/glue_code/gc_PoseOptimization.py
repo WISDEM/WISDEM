@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-
 import openmdao.api as om
 
 
@@ -24,6 +23,17 @@ class PoseOptimization(object):
             "LD_SLSQP",
         ]
 
+        self.scipy_methods = [
+            "SLSQP",
+            "Nelder-Mead",
+            "COBYLA",
+        ]
+
+        self.pyoptsparse_methods = [
+            "SNOPT",
+            "CONMIN",
+        ]
+
     def get_number_design_variables(self):
         # Determine the number of design variables
         n_DV = 0
@@ -41,13 +51,17 @@ class PoseOptimization(object):
             n_DV += 1
         if blade_opt["aero_shape"]["twist"]["flag"]:
             if blade_opt["aero_shape"]["twist"]["index_end"] > blade_opt["aero_shape"]["twist"]["n_opt"]:
-                raise Exception("Check the analysis options yaml, index_end of the blade twist is higher than the number of DVs n_opt")
+                raise Exception(
+                    "Check the analysis options yaml, index_end of the blade twist is higher than the number of DVs n_opt"
+                )
             elif blade_opt["aero_shape"]["twist"]["index_end"] == 0:
                 blade_opt["aero_shape"]["twist"]["index_end"] = blade_opt["aero_shape"]["twist"]["n_opt"]
             n_DV += blade_opt["aero_shape"]["twist"]["index_end"] - blade_opt["aero_shape"]["twist"]["index_start"]
         if blade_opt["aero_shape"]["chord"]["flag"]:
             if blade_opt["aero_shape"]["chord"]["index_end"] > blade_opt["aero_shape"]["chord"]["n_opt"]:
-                raise Exception("Check the analysis options yaml, index_end of the blade chord is higher than the number of DVs n_opt")
+                raise Exception(
+                    "Check the analysis options yaml, index_end of the blade chord is higher than the number of DVs n_opt"
+                )
             elif blade_opt["aero_shape"]["chord"]["index_end"] == 0:
                 blade_opt["aero_shape"]["chord"]["index_end"] = blade_opt["aero_shape"]["chord"]["n_opt"]
             n_DV += blade_opt["aero_shape"]["chord"]["index_end"] - blade_opt["aero_shape"]["chord"]["index_start"]
@@ -59,19 +73,29 @@ class PoseOptimization(object):
             )
         if blade_opt["structure"]["spar_cap_ss"]["flag"]:
             if blade_opt["structure"]["spar_cap_ss"]["index_end"] > blade_opt["structure"]["spar_cap_ss"]["n_opt"]:
-                raise Exception("Check the analysis options yaml, index_end of the blade spar_cap_ss is higher than the number of DVs n_opt")
+                raise Exception(
+                    "Check the analysis options yaml, index_end of the blade spar_cap_ss is higher than the number of DVs n_opt"
+                )
             elif blade_opt["structure"]["spar_cap_ss"]["index_end"] == 0:
                 blade_opt["structure"]["spar_cap_ss"]["index_end"] = blade_opt["structure"]["spar_cap_ss"]["n_opt"]
-            n_DV += blade_opt["structure"]["spar_cap_ss"]["index_end"] - blade_opt["structure"]["spar_cap_ss"]["index_start"]
+            n_DV += (
+                blade_opt["structure"]["spar_cap_ss"]["index_end"]
+                - blade_opt["structure"]["spar_cap_ss"]["index_start"]
+            )
         if (
             blade_opt["structure"]["spar_cap_ps"]["flag"]
             and not blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
         ):
             if blade_opt["structure"]["spar_cap_ps"]["index_end"] > blade_opt["structure"]["spar_cap_ps"]["n_opt"]:
-                raise Exception("Check the analysis options yaml, index_end of the blade spar_cap_ps is higher than the number of DVs n_opt")
+                raise Exception(
+                    "Check the analysis options yaml, index_end of the blade spar_cap_ps is higher than the number of DVs n_opt"
+                )
             elif blade_opt["structure"]["spar_cap_ps"]["index_end"] == 0:
                 blade_opt["structure"]["spar_cap_ps"]["index_end"] = blade_opt["structure"]["spar_cap_ps"]["n_opt"]
-            n_DV += blade_opt["structure"]["spar_cap_ps"]["index_end"] - blade_opt["structure"]["spar_cap_ps"]["index_start"]
+            n_DV += (
+                blade_opt["structure"]["spar_cap_ps"]["index_end"]
+                - blade_opt["structure"]["spar_cap_ps"]["index_start"]
+            )
         if self.opt["design_variables"]["control"]["tsr"]["flag"]:
             n_DV += 1
 
@@ -170,6 +194,52 @@ class PoseOptimization(object):
             else self.opt["driver"]["optimization"]["step_size"]
         )
 
+    def _set_optimizer_properties(self, wt_opt, options_keys=[], opt_settings_keys=[], mapped_keys={}):
+        """
+        Set the optimizer properties, both the `driver.options` and
+        `driver.opt_settings`. See OpenMDAO documentation on drivers
+        to determine which settings are set by either options or
+        opt_settings.
+
+        Parameters
+        ----------
+        wt_opt : OpenMDAO problem object
+            The wind turbine problem object.
+        options_keys : list
+            List of keys for driver options to be set.
+        opt_settings_keys: list
+            List of keys for driver opt_settings to be set.
+        mapped_keys: dict
+            Key pairs where the yaml name differs from what's expected
+            by the driver. Specifically, the key is what's given in the yaml
+            and the value is what's expected by the driver.
+
+        Returns
+        -------
+        wt_opt : OpenMDAO problem object
+            The updated wind turbine problem object with driver settings applied.
+        """
+
+        opt_options = self.opt["driver"]["optimization"]
+
+        # Loop through all of the options provided and set them in the OM driver object
+        for key in options_keys:
+            if key in opt_options:
+                if key in mapped_keys:
+                    wt_opt.driver.options[mapped_keys[key]] = opt_options[key]
+                else:
+                    wt_opt.driver.options[key] = opt_options[key]
+
+        # Loop through all of the opt_settings provided and set them in the OM driver object
+        for key in opt_settings_keys:
+            if key in opt_options:
+                if key in mapped_keys:
+                    wt_opt.driver.opt_settings[mapped_keys[key]] = opt_options[key]
+                else:
+                    wt_opt.driver.opt_settings[key] = opt_options[key]
+
+        return wt_opt
+
     def set_driver(self, wt_opt):
         folder_output = self.opt["general"]["folder_output"]
 
@@ -177,74 +247,58 @@ class PoseOptimization(object):
             opt_options = self.opt["driver"]["optimization"]
             step_size = self._get_step_size()
 
-            # Solver has specific meaning in OpenMDAO
             wt_opt.model.approx_totals(method="fd", step=step_size, form=opt_options["form"])
 
             # Set optimization solver and options. First, Scipy's SLSQP and COBYLA
-            if opt_options["solver"] == "SLSQP" or opt_options["solver"] == "COBYLA":
+            if opt_options["solver"] in self.scipy_methods:
                 wt_opt.driver = om.ScipyOptimizeDriver()
                 wt_opt.driver.options["optimizer"] = opt_options["solver"]
-                wt_opt.driver.options["tol"] = opt_options["tol"]
-                wt_opt.driver.options["maxiter"] = opt_options["max_iter"]
-                if "rhobeg" in opt_options:
-                    wt_opt.driver.opt_settings["rhobeg"] = opt_options["rhobeg"]
-                if "catol" in opt_options["max_iter"]:
-                    wt_opt.driver.opt_settings["catol"] = opt_options["max_iter"]["catol"]
-                if "disp" in opt_options["max_iter"]:
-                    wt_opt.driver.options["disp"] = opt_options["max_iter"]["disp"]
 
-            elif opt_options["solver"] == "Nelder-Mead":
-                wt_opt.driver = om.ScipyOptimizeDriver()
-                wt_opt.driver.options["optimizer"] = opt_options["solver"]
-                wt_opt.driver.options["tol"] = opt_options["tol"]
-                if "adaptive" in opt_options:
-                    wt_opt.driver.options["adaptive"] = opt_options["adaptive"]
+                options_keys = ["tol", "max_iter", "disp", "adaptive"]
+                opt_settings_keys = ["rhobeg", "catol"]
+                mapped_keys = {"max_iter": "maxiter"}
+                wt_opt = _set_optimizer_properties(wt_opt, options_keys, opt_settings_keys, mapped_keys)
 
             # The next two optimization methods require pyOptSparse.
-            elif opt_options["solver"] == "CONMIN":
+            elif opt_options["solver"] in self.pyoptsparse_methods:
                 try:
                     from openmdao.api import pyOptSparseDriver
                 except:
                     raise ImportError(
-                        "You requested the optimization solver CONMIN, but you have not installed the pyOptSparse. Please do so and rerun."
-                    )
-                wt_opt.driver = pyOptSparseDriver()
-                wt_opt.driver.options["optimizer"] = opt_options["solver"]
-                wt_opt.driver.opt_settings["ITMAX"] = opt_options["max_iter"]
-
-            elif opt_options["solver"] == "SNOPT":
-                try:
-                    from openmdao.api import pyOptSparseDriver
-                except:
-                    raise ImportError(
-                        "You requested the optimization solver SNOPT, but you have not installed the pyOptSparse. Please do so and rerun."
+                        f"You requested the optimization solver {opt_options['solver']}, but you have not installed pyOptSparse. Please do so and rerun."
                     )
                 wt_opt.driver = pyOptSparseDriver()
                 try:
                     wt_opt.driver.options["optimizer"] = opt_options["solver"]
                 except:
                     raise ImportError(
-                        "You requested the optimization solver SNOPT, but you have not installed it within the pyOptSparse. Please do so and rerun."
+                        f"You requested the optimization solver {opt_options['solver']}, but you have not installed it within pyOptSparse. Please build {opt_options['solver']} and rerun."
                     )
-                wt_opt.driver.opt_settings["Major optimality tolerance"] = float(opt_options["tol"])
-                wt_opt.driver.opt_settings["Major iterations limit"] = int(opt_options["max_major_iter"])
-                wt_opt.driver.opt_settings["Iterations limit"] = int(opt_options["max_minor_iter"])
-                wt_opt.driver.opt_settings["Major feasibility tolerance"] = float(opt_options["tol"])
-                wt_opt.driver.opt_settings["Summary file"] = os.path.join(folder_output, "SNOPT_Summary_file.txt")
-                wt_opt.driver.opt_settings["Print file"] = os.path.join(folder_output, "SNOPT_Print_file.txt")
-                if "hist_file_name" in opt_options:
-                    wt_opt.driver.hist_file = opt_options["hist_file_name"]
-                if "verify_level" in opt_options:
-                    wt_opt.driver.opt_settings["Verify level"] = opt_options["verify_level"]
-                else:
-                    wt_opt.driver.opt_settings["Verify level"] = -1
-                # wt_opt.driver.declare_coloring()
+
+                # Most of the pyOptSparse options have special synatx when setting them,
+                # so here we set them by hand instead of using `_set_optimizer_properties`.
+                if opt_options["solver"] == "CONMIN":
+                    wt_opt.driver.opt_settings["ITMAX"] = opt_options["max_iter"]
+
+                elif opt_options["solver"] == "SNOPT":
+                    wt_opt.driver.opt_settings["Major optimality tolerance"] = float(opt_options["tol"])
+                    wt_opt.driver.opt_settings["Major iterations limit"] = int(opt_options["max_major_iter"])
+                    wt_opt.driver.opt_settings["Iterations limit"] = int(opt_options["max_minor_iter"])
+                    wt_opt.driver.opt_settings["Major feasibility tolerance"] = float(opt_options["tol"])
+                    wt_opt.driver.opt_settings["Summary file"] = os.path.join(folder_output, "SNOPT_Summary_file.txt")
+                    wt_opt.driver.opt_settings["Print file"] = os.path.join(folder_output, "SNOPT_Print_file.txt")
+                    if "hist_file_name" in opt_options:
+                        wt_opt.driver.hist_file = opt_options["hist_file_name"]
+                    if "verify_level" in opt_options:
+                        wt_opt.driver.opt_settings["Verify level"] = opt_options["verify_level"]
+                    else:
+                        wt_opt.driver.opt_settings["Verify level"] = -1
                 if "hotstart_file" in opt_options:
                     wt_opt.driver.hotstart_file = opt_options["hotstart_file"]
 
             elif opt_options["solver"] == "GA":
                 wt_opt.driver = om.SimpleGADriver()
-                option_keys = [
+                options_keys = [
                     "Pc",
                     "Pm",
                     "bits",
@@ -261,9 +315,7 @@ class PoseOptimization(object):
                     "procs_per_model",
                     "run_parallel",
                 ]
-                for key in option_keys:
-                    if key in opt_options:
-                        wt_opt.driver.options[key] = opt_options[key]
+                wt_opt = _set_optimizer_properties(wt_opt, options_keys)
 
             elif opt_options["solver"] in self.nlopt_methods:
                 try:
@@ -273,10 +325,13 @@ class PoseOptimization(object):
                         "You requested an optimization method from NLopt, but need to first install WEIS to use this method."
                     )
 
-                prob.driver = NLoptDriver()
-                prob.driver.options["optimizer"] = opt_options["solver"]
-                prob.driver.options["tol"] = opt_options["tol"]
-                prob.driver.options["xtol"] = opt_options["xtol"]
+                wt_opt.driver = NLoptDriver()
+                wt_opt.driver.options["optimizer"] = opt_options["solver"]
+                options_keys = [
+                    "tol",
+                    "xtol",
+                ]
+                wt_opt = _set_optimizer_properties(wt_opt, options_keys)
 
             else:
                 raise ValueError(f"The {self.opt['driver']['optimization']['solver']} optimizer is not yet supported!")
@@ -402,28 +457,37 @@ class PoseOptimization(object):
         twist_options = blade_opt["aero_shape"]["twist"]
         if twist_options["flag"]:
             if blade_opt["aero_shape"]["twist"]["index_end"] > blade_opt["aero_shape"]["twist"]["n_opt"]:
-                raise Exception("Check the analysis options yaml, index_end of the blade twist is higher than the number of DVs n_opt")
+                raise Exception(
+                    "Check the analysis options yaml, index_end of the blade twist is higher than the number of DVs n_opt"
+                )
             elif blade_opt["aero_shape"]["twist"]["index_end"] == 0:
                 blade_opt["aero_shape"]["twist"]["index_end"] = blade_opt["aero_shape"]["twist"]["n_opt"]
             indices_twist = range(twist_options["index_start"], twist_options["index_end"])
             s_opt_twist = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["twist"]["n_opt"])
-            init_twist_opt = np.interp(s_opt_twist,
+            init_twist_opt = np.interp(
+                s_opt_twist,
                 wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"],
                 wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"],
             )
-            wt_opt.model.add_design_var("blade.opt_var.twist_opt", indices=indices_twist, 
-                lower=init_twist_opt[indices_twist] - blade_opt["aero_shape"]["twist"]["max_decrease"], 
-                upper=init_twist_opt[indices_twist] + blade_opt["aero_shape"]["twist"]["max_increase"])
+            wt_opt.model.add_design_var(
+                "blade.opt_var.twist_opt",
+                indices=indices_twist,
+                lower=init_twist_opt[indices_twist] - blade_opt["aero_shape"]["twist"]["max_decrease"],
+                upper=init_twist_opt[indices_twist] + blade_opt["aero_shape"]["twist"]["max_increase"],
+            )
 
         chord_options = blade_opt["aero_shape"]["chord"]
         if chord_options["flag"]:
             if blade_opt["aero_shape"]["chord"]["index_end"] > blade_opt["aero_shape"]["chord"]["n_opt"]:
-                raise Exception("Check the analysis options yaml, index_end of the blade chord is higher than the number of DVs n_opt")
+                raise Exception(
+                    "Check the analysis options yaml, index_end of the blade chord is higher than the number of DVs n_opt"
+                )
             elif blade_opt["aero_shape"]["chord"]["index_end"] == 0:
                 blade_opt["aero_shape"]["chord"]["index_end"] = blade_opt["aero_shape"]["chord"]["n_opt"]
             indices_chord = range(chord_options["index_start"], chord_options["index_end"])
             s_opt_chord = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["chord"]["n_opt"])
-            init_chord_opt = np.interp(s_opt_chord,
+            init_chord_opt = np.interp(
+                s_opt_chord,
                 wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"],
                 wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"],
             )
@@ -454,54 +518,60 @@ class PoseOptimization(object):
         spar_cap_ss_options = blade_opt["structure"]["spar_cap_ss"]
         if spar_cap_ss_options["flag"]:
             if blade_opt["structure"]["spar_cap_ss"]["index_end"] > blade_opt["structure"]["spar_cap_ss"]["n_opt"]:
-                raise Exception("Check the analysis options yaml, index_end of the blade spar_cap_ss is higher than the number of DVs n_opt")
+                raise Exception(
+                    "Check the analysis options yaml, index_end of the blade spar_cap_ss is higher than the number of DVs n_opt"
+                )
             elif blade_opt["structure"]["spar_cap_ss"]["index_end"] == 0:
                 blade_opt["structure"]["spar_cap_ss"]["index_end"] = blade_opt["structure"]["spar_cap_ss"]["n_opt"]
-            indices_spar_cap_ss = range(
-                spar_cap_ss_options["index_start"], spar_cap_ss_options["index_end"]
-            )
+            indices_spar_cap_ss = range(spar_cap_ss_options["index_start"], spar_cap_ss_options["index_end"])
             s_opt_spar_cap_ss = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"])
             spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"]
             layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
             n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
             for i in range(n_layers):
                 if layer_name[i] == spar_cap_ss_name:
-                    init_spar_cap_ss_opt = np.interp(s_opt_spar_cap_ss,
+                    init_spar_cap_ss_opt = np.interp(
+                        s_opt_spar_cap_ss,
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                    )
             wt_opt.model.add_design_var(
                 "blade.opt_var.spar_cap_ss_opt",
                 indices=indices_spar_cap_ss,
                 lower=init_spar_cap_ss_opt[indices_spar_cap_ss] * spar_cap_ss_options["max_decrease"],
                 upper=init_spar_cap_ss_opt[indices_spar_cap_ss] * spar_cap_ss_options["max_increase"],
-                ref=1.e-2)
+                ref=1.0e-2,
+            )
 
         # Only add the pressure side design variables if we do set
         # `equal_to_suction` as False in the optimization yaml.
         spar_cap_ps_options = blade_opt["structure"]["spar_cap_ps"]
         if spar_cap_ps_options["flag"] and not spar_cap_ps_options["equal_to_suction"]:
             if blade_opt["structure"]["spar_cap_ps"]["index_end"] > blade_opt["structure"]["spar_cap_ps"]["n_opt"]:
-                raise Exception("Check the analysis options yaml, index_end of the blade spar_cap_ps is higher than the number of DVs n_opt")
+                raise Exception(
+                    "Check the analysis options yaml, index_end of the blade spar_cap_ps is higher than the number of DVs n_opt"
+                )
             elif blade_opt["structure"]["spar_cap_ps"]["index_end"] == 0:
                 blade_opt["structure"]["spar_cap_ps"]["index_end"] = blade_opt["structure"]["spar_cap_ps"]["n_opt"]
-            indices_spar_cap_ps = range(
-                spar_cap_ps_options["index_start"], spar_cap_ps_options["index_end"]
-            )
+            indices_spar_cap_ps = range(spar_cap_ps_options["index_start"], spar_cap_ps_options["index_end"])
             s_opt_spar_cap_ps = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ps"]["n_opt"])
             spar_cap_ps_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ps"]
             layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
             n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
             for i in range(n_layers):
                 if layer_name[i] == spar_cap_ps_name:
-                    init_spar_cap_ps_opt = np.interp(s_opt_spar_cap_ps,
+                    init_spar_cap_ps_opt = np.interp(
+                        s_opt_spar_cap_ps,
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                    )
             wt_opt.model.add_design_var(
                 "blade.opt_var.spar_cap_ps_opt",
                 indices=indices_spar_cap_ps,
                 lower=init_spar_cap_ps_opt[indices_spar_cap_ps] * spar_cap_ps_options["max_decrease"],
                 upper=init_spar_cap_ps_opt[indices_spar_cap_ps] * spar_cap_ps_options["max_increase"],
-                ref=1.e-2)
+                ref=1.0e-2,
+            )
 
         # -- Tower & Monopile --
         if tower_opt["outer_diameter"]["flag"]:
@@ -722,9 +792,15 @@ class PoseOptimization(object):
         if blade_constr["strains_spar_cap_ss"]["flag"]:
             if blade_opt["structure"]["spar_cap_ss"]["flag"]:
                 if blade_constr["strains_spar_cap_ss"]["index_end"] > blade_opt["structure"]["spar_cap_ss"]["n_opt"]:
-                    raise Exception("Check the analysis options yaml, index_end of the blade strains_spar_cap_ss is higher than the number of DVs n_opt")
-                indices_strains_spar_cap_ss = range(blade_constr["strains_spar_cap_ss"]["index_start"], blade_constr["strains_spar_cap_ss"]["index_end"])
-                wt_opt.model.add_constraint("rs.constr.constr_max_strainU_spar", indices = indices_strains_spar_cap_ss, upper=1.0)
+                    raise Exception(
+                        "Check the analysis options yaml, index_end of the blade strains_spar_cap_ss is higher than the number of DVs n_opt"
+                    )
+                indices_strains_spar_cap_ss = range(
+                    blade_constr["strains_spar_cap_ss"]["index_start"], blade_constr["strains_spar_cap_ss"]["index_end"]
+                )
+                wt_opt.model.add_constraint(
+                    "rs.constr.constr_max_strainU_spar", indices=indices_strains_spar_cap_ss, upper=1.0
+                )
             else:
                 print(
                     "WARNING: the strains of the suction-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced."
@@ -736,9 +812,15 @@ class PoseOptimization(object):
                 or blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
             ):
                 if blade_constr["strains_spar_cap_ps"]["index_end"] > blade_opt["structure"]["spar_cap_ps"]["n_opt"]:
-                    raise Exception("Check the analysis options yaml, index_end of the blade strains_spar_cap_ps is higher than the number of DVs n_opt")
-                indices_strains_spar_cap_ps = range(blade_constr["strains_spar_cap_ps"]["index_start"], blade_constr["strains_spar_cap_ps"]["index_end"])
-                wt_opt.model.add_constraint("rs.constr.constr_max_strainL_spar", indices = indices_strains_spar_cap_ps, upper=1.0)
+                    raise Exception(
+                        "Check the analysis options yaml, index_end of the blade strains_spar_cap_ps is higher than the number of DVs n_opt"
+                    )
+                indices_strains_spar_cap_ps = range(
+                    blade_constr["strains_spar_cap_ps"]["index_start"], blade_constr["strains_spar_cap_ps"]["index_end"]
+                )
+                wt_opt.model.add_constraint(
+                    "rs.constr.constr_max_strainL_spar", indices=indices_strains_spar_cap_ps, upper=1.0
+                )
             else:
                 print(
                     "WARNING: the strains of the pressure-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced."
@@ -769,7 +851,7 @@ class PoseOptimization(object):
                 )
 
         if blade_constr["root_circle_diameter"]["flag"]:
-            if blade_opt["aero_shape"]["chord"]["flag"] and blade_opt["aero_shape"]["chord"]["index_start"] == 0.:
+            if blade_opt["aero_shape"]["chord"]["flag"] and blade_opt["aero_shape"]["chord"]["index_start"] == 0.0:
                 wt_opt.model.add_constraint("rs.brs.ratio", upper=blade_constr["root_circle_diameter"]["max_ratio"])
             else:
                 print(
@@ -960,19 +1042,26 @@ class PoseOptimization(object):
 
         if self.modeling["flags"]["blade"]:
             wt_opt["blade.opt_var.s_opt_twist"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["twist"]["n_opt"])
-            init_twist_opt = np.interp(wt_opt["blade.opt_var.s_opt_twist"],
+            init_twist_opt = np.interp(
+                wt_opt["blade.opt_var.s_opt_twist"],
                 wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"],
                 wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"],
             )
             wt_opt["blade.opt_var.twist_opt"] = init_twist_opt
             wt_opt["blade.opt_var.s_opt_chord"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["chord"]["n_opt"])
-            init_chord_opt = np.interp(wt_opt["blade.opt_var.s_opt_chord"],
+            init_chord_opt = np.interp(
+                wt_opt["blade.opt_var.s_opt_chord"],
                 wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"])
+                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"],
+            )
             wt_opt["blade.opt_var.chord_opt"] = init_chord_opt
-            if blade_opt["structure"]["spar_cap_ss"]['flag'] or blade_opt["structure"]["spar_cap_ss"]['flag']:
-                wt_opt["blade.opt_var.s_opt_spar_cap_ss"] = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"])
-                wt_opt["blade.opt_var.s_opt_spar_cap_ps"] = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ps"]["n_opt"])
+            if blade_opt["structure"]["spar_cap_ss"]["flag"] or blade_opt["structure"]["spar_cap_ss"]["flag"]:
+                wt_opt["blade.opt_var.s_opt_spar_cap_ss"] = np.linspace(
+                    0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"]
+                )
+                wt_opt["blade.opt_var.s_opt_spar_cap_ps"] = np.linspace(
+                    0.0, 1.0, blade_opt["structure"]["spar_cap_ps"]["n_opt"]
+                )
                 spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"]
                 spar_cap_ps_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ps"]
                 layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
@@ -980,22 +1069,36 @@ class PoseOptimization(object):
                 ss_before_ps = False
                 for i in range(n_layers):
                     if layer_name[i] == spar_cap_ss_name:
-                        init_spar_cap_ss_opt = np.interp(wt_opt["blade.opt_var.s_opt_spar_cap_ss"],
-                            wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-                            wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
+                        init_spar_cap_ss_opt = np.interp(
+                            wt_opt["blade.opt_var.s_opt_spar_cap_ss"],
+                            wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                "grid"
+                            ],
+                            wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                "values"
+                            ],
+                        )
                         ss_before_ps = True
                     elif layer_name[i] == spar_cap_ps_name:
                         if (
                             self.opt["design_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
                             == False
                         ) or ss_before_ps == False:
-                            init_spar_cap_ps_opt = np.interp(wt_opt["blade.opt_var.s_opt_spar_cap_ps"],
-                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
+                            init_spar_cap_ps_opt = np.interp(
+                                wt_opt["blade.opt_var.s_opt_spar_cap_ps"],
+                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                    "grid"
+                                ],
+                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                    "values"
+                                ],
+                            )
                         else:
                             init_spar_cap_ps_opt = init_spar_cap_ss_opt
                 if not ss_before_ps:
-                    raise Exception("Please set the spar cap names for suction and pressure sides among the RotorSE modeling options")
+                    raise Exception(
+                        "Please set the spar cap names for suction and pressure sides among the RotorSE modeling options"
+                    )
                 wt_opt["blade.opt_var.spar_cap_ss_opt"] = init_spar_cap_ss_opt
                 wt_opt["blade.opt_var.spar_cap_ps_opt"] = init_spar_cap_ps_opt
             blade_constr = self.opt["constraints"]["blade"]
