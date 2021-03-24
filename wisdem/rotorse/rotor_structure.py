@@ -507,11 +507,6 @@ class RunFrame3DD(ExplicitComponent):
         # For now, just 1 load case and blade
         iCase = 0
 
-        # Displacements in global (blade) c.s.
-        dx = displacements.dx[iCase, :]
-        dy = displacements.dy[iCase, :]
-        dz = displacements.dz[iCase, :]
-
         # Mode shapes and frequencies
         n_freq2 = int(self.n_freq / 2)
         freq_x, freq_y, _, mshapes_x, mshapes_y, _ = util.get_xyz_mode_shapes(
@@ -525,7 +520,7 @@ class RunFrame3DD(ExplicitComponent):
         # shear and bending, one per element (convert from local to global c.s.)
         Fz = np.r_[-forces.Nx[iCase, 0], forces.Nx[iCase, 1::2]]
         # Vy = np.r_[-forces.Vy[iCase, 0], forces.Vy[iCase, 1::2]]
-        # Vx = np.r_[forces.Vz[iCase, 0], -forces.Vz[iCase, 1::2]]
+        # Vx = np.r_[-forces.Vz[iCase, 0], forces.Vz[iCase, 1::2]]
 
         # Tz = np.r_[-forces.Txx[iCase, 0], forces.Txx[iCase, 1::2]]
         My = np.r_[-forces.Myy[iCase, 0], forces.Myy[iCase, 1::2]]
@@ -566,9 +561,10 @@ class RunFrame3DD(ExplicitComponent):
         outputs["edge_mode_freqs"] = freq_y
         outputs["flap_mode_freqs"] = freq_x
         outputs["freq_distance"] = freq_y[0] / freq_x[0]
-        outputs["dx"] = dx
-        outputs["dy"] = dy
-        outputs["dz"] = dz
+        # Displacements in global (blade) c.s.
+        outputs["dx"] = displacements.dx[iCase, :]
+        outputs["dy"] = displacements.dy[iCase, :]
+        outputs["dz"] = displacements.dz[iCase, :]
         outputs["strainU_spar"] = strainU_spar
         outputs["strainL_spar"] = strainL_spar
         outputs["strainU_te"] = strainU_te
