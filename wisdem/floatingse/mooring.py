@@ -1,6 +1,6 @@
 import numpy as np
-import moorpy as mp
 import openmdao.api as om
+import wisdem.moorpy.MoorPy as mp
 
 NLINES_MAX = 15
 NPTS_PLOT = 21
@@ -242,7 +242,7 @@ class Mooring(om.ExplicitComponent):
         R_fairlead = float(inputs["fairlead_radius"])
         R_anchor = float(inputs["anchor_radius"])
         heel = float(inputs["operational_heel"])
-        max_heel = inputs["survival_heel"]
+        max_heel = float(inputs["survival_heel"])
         d = inputs["line_diameter"]
         L_mooring = inputs["line_length"]
         min_break_load = inputs["line_breaking_load_coeff"] * d ** 2

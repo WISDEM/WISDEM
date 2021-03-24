@@ -60,7 +60,7 @@ class FloatingSE(om.Group):
 
         # Next run MapMooring
         self.add_subsystem(
-            "mm", MapMooring(options=opt["mooring"], gamma=opt["WISDEM"]["FloatingSE"]["gamma_f"]), promotes=["*"]
+            "mm", Mooring(options=opt["mooring"], gamma=opt["WISDEM"]["FloatingSE"]["gamma_f"]), promotes=["*"]
         )
 
         # Add in the connecting truss

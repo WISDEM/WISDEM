@@ -5,55 +5,6 @@ import numpy.testing as npt
 import wisdem.floatingse.mooring as mm
 
 
-def myisnumber(instr):
-    try:
-        float(instr)
-    except:
-        return False
-    return True
-
-
-myones = np.ones((100,))
-truth = [
-    "---------------------- LINE DICTIONARY ---------------------------------------",
-    "LineType  Diam      MassDenInAir   EA            CB   CIntDamp  Ca   Cdn    Cdt",
-    "(-)       (m)       (kg/m)        (N)           (-)   (Pa-s)    (-)  (-)    (-)",
-    "myline   0.1    0.1   20000   0.65   1.0E8   0.6   -1.0   0.05",
-    "---------------------- NODE PROPERTIES ---------------------------------------",
-    "Node Type X     Y    Z   M     V FX FY FZ",
-    "(-)  (-) (m)   (m)  (m) (kg) (m^3) (kN) (kN) (kN)",
-    "1   VESSEL   11.0   0.0   -10.0   0.0   0.0   #   #   #",
-    "2   FIX   216.50635094610965   -125.0   depth   0.0   0.0   #   #   #",
-    "3   FIX   216.50635094610965   125.0   depth   0.0   0.0   #   #   #",
-    "---------------------- LINE PROPERTIES ---------------------------------------",
-    "Line    LineType  UnstrLen  NodeAnch  NodeFair  Flags",
-    "(-)      (-)       (m)       (-)       (-)       (-)",
-    "1   myline   270.0   2   1",
-    "2   myline   270.0   3   1",
-    "---------------------- SOLVER OPTIONS-----------------------------------------",
-    "Option",
-    "(-)",
-    "help",
-    " integration_dt 0",
-    " kb_default 3.0e6",
-    " cb_default 3.0e5",
-    " wave_kinematics",
-    "inner_ftol 1e-5",
-    "inner_gtol 1e-5",
-    "inner_xtol 1e-5",
-    "outer_tol 1e-3",
-    " pg_cooked 10000 1",
-    " outer_fd",
-    " outer_bd",
-    " outer_cd",
-    " inner_max_its 200",
-    " outer_max_its 600",
-    "repeat 120 240",
-    " krylov_accelerator 3",
-    " ref_position 0.0 0.0 0.0",
-]
-
-
 class TestMooring(unittest.TestCase):
     def setUp(self):
         self.inputs = {}
