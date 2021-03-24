@@ -563,6 +563,7 @@ class WT_RNTA(om.Group):
                     "ring_stiffener_web_thickness",
                     "ring_stiffener_flange_width",
                     "ring_stiffener_flange_thickness",
+                    "ring_stiffener_spacing",
                     "axial_stiffener_web_height",
                     "axial_stiffener_web_thickness",
                     "axial_stiffener_flange_width",

@@ -292,6 +292,8 @@ class TestPlatform(unittest.TestCase):
         V_frac = self.outputs["variable_ballast_mass"] / 1e3 * frac
         npt.assert_almost_equal(self.outputs["member_variable_volume"], V_frac)
         s_cg = np.interp(0.5 * V_frac, np.arange(10), np.linspace(0, 0.5, 10))
+        s_end = np.interp(V_frac, np.arange(10), np.linspace(0, 0.5, 10))
+        npt.assert_almost_equal(self.outputs["member_variable_height"], s_end)
         cg_mem = np.zeros((6, 3))
         for k in range(6):
             cg_mem[k, :] = (
