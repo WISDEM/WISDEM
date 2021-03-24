@@ -416,10 +416,11 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                 else:
                     definition_layer[i] = 6
                     flag = False
-                    if layer_name[k] == internal_structure_2d_fem["layers"][i]["end_nd_arc"]["fixed"]:
-                        index_layer_end[i] = k
-                        flag = True
-                        break
+                    for k in range(n_layers):
+                        if layer_name[k] == internal_structure_2d_fem["layers"][i]["end_nd_arc"]["fixed"]:
+                            index_layer_end[i] = k
+                            flag = True
+                            break
                     if flag == False:
                         raise ValueError("Error with layer " + internal_structure_2d_fem["layers"][i]["name"])
             else:
