@@ -86,6 +86,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             )
             self.connect("airfoils.name", "blade.interp_airfoils.name")
             self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick")
+            self.connect("airfoils.ac", "blade.interp_airfoils.ac")
             self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
             self.connect("airfoils.aoa", "blade.interp_airfoils.aoa")
             self.connect("airfoils.cl", "blade.interp_airfoils.cl")
@@ -526,20 +527,30 @@ class Blade(om.Group):
             "s_opt_chord", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
         )
         opt_var.add_output(
-            "twist_opt_gain",
+            "twist_opt",
             val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
+            units="rad",
         )
         opt_var.add_output(
-            "chord_opt_gain",
+            "chord_opt",
+            units="m",
             val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
         opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
         opt_var.add_output(
-            "spar_cap_ss_opt_gain",
+            "s_opt_spar_cap_ss", val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"])
+        )
+        opt_var.add_output(
+            "s_opt_spar_cap_ps", val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"])
+        )
+        opt_var.add_output(
+            "spar_cap_ss_opt",
+            units="m",
             val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
         )
         opt_var.add_output(
-            "spar_cap_ps_opt_gain",
+            "spar_cap_ps_opt",
+            units="m",
             val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
         )
         self.add_subsystem("opt_var", opt_var)
@@ -561,12 +572,12 @@ class Blade(om.Group):
         # Connections to blade aero parametrization
         self.connect("opt_var.s_opt_twist", "pa.s_opt_twist")
         self.connect("opt_var.s_opt_chord", "pa.s_opt_chord")
-        self.connect("opt_var.twist_opt_gain", "pa.twist_opt_gain")
-        self.connect("opt_var.chord_opt_gain", "pa.chord_opt_gain")
+        self.connect("opt_var.twist_opt", "pa.twist_opt")
+        self.connect("opt_var.chord_opt", "pa.chord_opt")
 
         self.connect("outer_shape_bem.s", "pa.s")
-        self.connect("outer_shape_bem.twist", "pa.twist_original")
-        self.connect("outer_shape_bem.chord", "pa.chord_original")
+        # self.connect("outer_shape_bem.twist", "pa.twist_original")
+        # self.connect("outer_shape_bem.chord", "pa.chord_original")
 
         # Connections from oute_shape_bem to interp_airfoils
         self.connect("outer_shape_bem.s", "interp_airfoils.s")
@@ -601,8 +612,10 @@ class Blade(om.Group):
         )  # Parameterize struct (spar caps ss and ps)
 
         # Connections to blade struct parametrization
-        self.connect("opt_var.spar_cap_ss_opt_gain", "ps.spar_cap_ss_opt_gain")
-        self.connect("opt_var.spar_cap_ps_opt_gain", "ps.spar_cap_ps_opt_gain")
+        self.connect("opt_var.spar_cap_ss_opt", "ps.spar_cap_ss_opt")
+        self.connect("opt_var.s_opt_spar_cap_ss", "ps.s_opt_spar_cap_ss")
+        self.connect("opt_var.spar_cap_ps_opt", "ps.spar_cap_ps_opt")
+        self.connect("opt_var.s_opt_spar_cap_ps", "ps.s_opt_spar_cap_ps")
         self.connect("outer_shape_bem.s", "ps.s")
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
         self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
@@ -895,6 +908,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
 
         # Reconstruct the blade relative thickness along span with a pchip
         r_thick_used = np.zeros(self.n_af_span)
+        ac_used = np.zeros(self.n_af_span)
         coord_xy_used = np.zeros((self.n_af_span, self.n_xy, 2))
         coord_xy_interp = np.zeros((self.n_span, self.n_xy, 2))
         coord_xy_dim = np.zeros((self.n_span, self.n_xy, 2))
@@ -909,6 +923,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             for j in range(self.n_af):
                 if self.af_used[i] == discrete_inputs["name"][j]:
                     r_thick_used[i] = inputs["r_thick"][j]
+                    ac_used[i] = inputs["ac"][j]
                     coord_xy_used[i, :, :] = inputs["coord_xy"][j]
                     cl_used[i, :, :, :] = inputs["cl"][j, :, :, :]
                     cd_used[i, :, :, :] = inputs["cd"][j, :, :, :]
@@ -919,7 +934,9 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.PchipInterpolator.derivative.html#scipy.interpolate.PchipInterpolator.derivative
         spline = PchipInterpolator
         rthick_spline = spline(inputs["af_position"], r_thick_used)
+        ac_spline = spline(inputs["af_position"], ac_used)
         outputs["r_thick_interp"] = rthick_spline(inputs["s"])
+        outputs["ac_interp"] = ac_spline(inputs["s"])
 
         # Spanwise interpolation of the profile coordinates with a pchip
         r_thick_unique, indices = np.unique(r_thick_used, return_index=True)
@@ -1208,6 +1225,9 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
         )
         ivc.add_output("joint_mass", val=0.0, desc="Mass of the joint.")
         ivc.add_output("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
+
+        ivc.add_output("d_f", val=0.0, units="m", desc="Diameter of the fastener")
+        ivc.add_output("sigma_max", val=0.0, units="Pa", desc="Max stress on bolt")
 
         self.add_subsystem(
             "compute_internal_structure_2d_fem",
@@ -2087,6 +2107,8 @@ class Mooring(om.Group):
         n_line_types = mooring_init_options["n_line_types"]
         # n_anchor_types = mooring_init_options["n_anchor_types"]
 
+        n_design = 1 if mooring_init_options["symmetric"] else n_lines
+
         ivc = self.add_subsystem("mooring", om.IndepVarComp(), promotes=["*"])
 
         ivc.add_discrete_output("node_names", val=[""] * n_nodes)
@@ -2097,11 +2119,11 @@ class Mooring(om.Group):
         ivc.add_output("nodes_added_mass", val=np.zeros(n_nodes))
         ivc.add_output("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
         ivc.add_discrete_output("nodes_joint_name", val=[""] * n_nodes)
-        ivc.add_output("unstretched_length", val=np.zeros(n_lines), units="m")
+        ivc.add_output("unstretched_length_in", val=np.zeros(n_design), units="m")
         ivc.add_discrete_output("line_id", val=[""] * n_lines)
         # ivc.add_discrete_output("n_lines", val=n_lines)
         ivc.add_discrete_output("line_type_names", val=[""] * n_line_types)  ## For MoorDyn
-        ivc.add_output("line_diameter", val=np.zeros(n_lines), units="m")
+        ivc.add_output("line_diameter_in", val=np.zeros(n_design), units="m")
         ivc.add_output("line_mass_density_coeff", val=np.zeros(n_lines), units="kg/m**3")
         ivc.add_output("line_stiffness_coeff", val=np.zeros(n_lines), units="N/m**2")
         ivc.add_output("line_breaking_load_coeff", val=np.zeros(n_lines), units="N/m**2")
@@ -2127,8 +2149,10 @@ class MooringProperties(om.ExplicitComponent):
     def setup(self):
         mooring_init_options = self.options["mooring_init_options"]
         n_lines = mooring_init_options["n_lines"]
+        n_design = 1 if mooring_init_options["symmetric"] else n_lines
 
-        self.add_input("line_diameter", val=np.zeros(n_lines), units="m")
+        self.add_input("unstretched_length_in", val=np.zeros(n_design), units="m")
+        self.add_input("line_diameter_in", val=np.zeros(n_design), units="m")
         self.add_input("line_mass_density_coeff", val=np.zeros(n_lines), units="kg/m**3")
         self.add_input("line_stiffness_coeff", val=np.zeros(n_lines), units="N/m**2")
         self.add_input("line_breaking_load_coeff", val=np.zeros(n_lines), units="N/m**2")
@@ -2138,6 +2162,8 @@ class MooringProperties(om.ExplicitComponent):
         self.add_input("line_transverse_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
         self.add_input("line_tangential_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
 
+        self.add_output("unstretched_length", val=np.zeros(n_lines), units="m")
+        self.add_output("line_diameter", val=np.zeros(n_lines), units="m")
         self.add_output("line_mass_density", val=np.zeros(n_lines), units="kg/m")
         self.add_output("line_stiffness", val=np.zeros(n_lines), units="N")
         self.add_output("line_breaking_load", val=np.zeros(n_lines), units="N")
@@ -2148,7 +2174,10 @@ class MooringProperties(om.ExplicitComponent):
         self.add_output("line_tangential_drag", val=np.zeros(n_lines))
 
     def compute(self, inputs, outputs):
-        d = inputs["line_diameter"]
+        n_lines = self.options["mooring_init_options"]["n_lines"]
+        outputs["line_diameter"] = d = inputs["line_diameter_in"] * np.ones(n_lines)
+        outputs["unstretched_length"] = inputs["unstretched_length_in"] * np.ones(n_lines)
+
         d2 = d * d
         varlist = [
             "line_mass_density",
@@ -2209,7 +2238,7 @@ class MooringJoints(om.ExplicitComponent):
 
         outputs["fairlead_nodes"] = node_loc[ifair, :]
         outputs["anchor_nodes"] = node_loc[ianch, :]
-        outputs["fairlead"] = z_fair
+        outputs["fairlead"] = -z_fair  # Positive is defined below the waterline here
         outputs["fairlead_radius"] = np.sqrt(np.sum(node_loc[ifair, :2] ** 2, axis=1))
         outputs["anchor_radius"] = np.sqrt(np.sum(node_loc[ianch, :2] ** 2, axis=1))
 

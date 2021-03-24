@@ -305,6 +305,19 @@ components:
             - name: spar_freeboard
               location: [0.0, 0.0, 10.0]
               transition: True
+
+            - name: anchor1
+              location: [853.87, 0.0, -320.0]
+              cylindrical: True
+
+            - name: anchor2
+              location: [853.87, 2.0943951023931953, -320.0] # 120deg
+              cylindrical: True
+
+            - name: anchor3
+              location: [853.87, 4.1887902047863905, -320.0] # 240deg
+              cylindrical: True
+
         members:
             - name: spar
               joint1: spar_keel
@@ -342,17 +355,17 @@ components:
         nodes:
             - name: line1_anchor
               node_type: fixed
-              location: [853.87, 0.0, -320.0]
+              joint: anchor1
               anchor_type: drag_embedment
 
             - name: line2_anchor
               node_type: fixed
-              location: [-426.94, 739.47, -320.0]
+              joint: anchor2
               anchor_type: drag_embedment
 
             - name: line3_anchor
               node_type: fixed
-              location: [-426.94, -739.47, -320.0]
+              joint: anchor3
               anchor_type: drag_embedment
 
             - name: line1_vessel
@@ -674,6 +687,18 @@ materials:
       Xc: 65.36e+006
       orth: 0
       unit_cost: 3.63
+   -  name: slurry
+      description: fixed/permanent ballast
+      E: 1.0 # compliant
+      nu: 0.3  #Place holder, currently not used
+      G: 1.0  # compliant
+      Xt: 0  #Place holder, currently not used
+      Xc: 0  #Place holder, currently not used
+      S: 0  #Place holder, currently not used
+      rho: 5000.
+      alpha: 0.0
+      unit_cost: 1.0
+      orth: 0.0
 control:
     supervisory:
         Vin: 3.0

@@ -82,6 +82,14 @@ properties:
                         type: boolean
                         default: True
                         description: Flag to derive the regulation trajectory in region III in terms of pitch and TSR
+                    peak_thrust_shaving:
+                        type: boolean
+                        default: False
+                        description: If True, apply peak thrust shaving within RotorSE.
+                    thrust_shaving_coeff:
+                        type: number
+                        default: 1.0
+                        description: Scalar applied to the max torque within RotorSE for peak thrust shaving. Only used if `peak_thrust_shaving` is True.
                     spar_cap_ss:
                         type: string
                         default: 'none'
@@ -107,11 +115,17 @@ properties:
                         unit: none
                     gust_std:
                         type: number
-                        description: number of standard deviations for strength of gust
+                        description: Number of standard deviations for strength of gust
                         minimum: 0.0
                         maximum: 5.0
                         default: 3.0
                         unit: none
+                    root_fastener_s_f:
+                        type: number
+                        default: 2.5
+                        minimum: 0.1
+                        maximum: 1.e+2
+                        description: Safety factor for the max stress of blade root fasteners
             DriveSE:
                 type: object
                 default: {}
@@ -254,6 +268,10 @@ properties:
                         description: Whether or not to run the floating design modules (FloatingSE)
                     frame3dd: *frame3dd
                     gamma_f: *gamma_f
+                    symmetric_moorings:
+                        type: boolean
+                        default: True
+                        description: Whether or not to assume a symmetric mooring system
 
             Loading:
                 type: object

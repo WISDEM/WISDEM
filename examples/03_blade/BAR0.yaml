@@ -36,6 +36,9 @@ components:
                     values: [0.0, 3.4481471658071863, 6.8962943316143726, 10.34444149742156, 13.792588663228745, 17.240735829035934, 20.68888299484312, 24.137030160650305, 27.58517732645749, 31.03332449226468, 34.48147165807187, 37.929618823879046, 41.37776598968624, 44.825913155493424, 48.2740603213006, 51.722207487107795, 55.17035465291498, 58.618501818722166, 62.06664898452936, 65.51479615033654, 68.96294331614372, 72.41109048195092, 75.8592376477581, 79.30738481356529, 82.75553197937248, 86.20367914517965, 89.65182631098685, 93.09997347679402, 96.5481206426012, 99.9962678084084]
         internal_structure_2d_fem:
             reference_axis: *id001
+            root:
+                d_f: 0.03
+                sigma_max: 675.e+6
             webs:
                -  name: fore_web
                   rotation:
@@ -709,23 +712,23 @@ control:
         Vout: 25.0
         maxTS: 85.
     pitch:
-        PC_zeta: 1.1                      # Pitch controller desired damping ratio [-]
-        PC_omega: 0.2                     # Pitch controller desired natural frequency [rad/s]
-        ps_percent: 0.8                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
-        max_pitch: 1.57                     # Maximum pitch angle [rad], {default = 90 degrees}
-        max_pitch_rate: 0.03488888888888889 # 2 deg/s
-        min_pitch: 0.                     # Minimum pitch angle [rad], {default = 0 degrees}
+        PC_zeta: 1.1   
+        PC_omega: 0.2  
+        ps_percent: 0.8
+        max_pitch: 1.57
+        max_pitch_rate: 0.03488888888888889
+        min_pitch: 0.
     torque:
         control_type: tsr_tracking
         tsr: 10.5
-        VS_zeta: 0.5                      # Torque controller desired damping ratio [-]
-        VS_omega: 0.1                     # Torque controller desired natural frequency [rad/s]
+        VS_zeta: 0.5
+        VS_omega: 0.1
         max_torque_rate: 4500000.
-        VS_minspd: 0.0                    # Minimum rotor speed [rad/s], {default = 0 rad/s}
-        VS_maxspd: 0.9927432785343746     # Minimum rotor speed [rad/s], {default = 0 rad/s}
+        VS_minspd: 0.0
+        VS_maxspd: 0.9927432785343746
     setpoint_smooth:
-        ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
-        ss_pcgain: .001                   # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
+        ss_vsgain: 1
+        ss_pcgain: .001
     shutdown:
         limit_type: gen_speed
         limit_value: 2.0

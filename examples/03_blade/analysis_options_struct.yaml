@@ -7,15 +7,19 @@ design_variables:
         structure:
             spar_cap_ss:
                 flag: True             # Flag to optimize the spar cap thickness on the suction side
-                n_opt: 8               # Number of control points along blade span
-                min_gain: 0.7          # Nondimensional lower bound at the n_opt locations
-                max_gain: 1.3          # Nondimensional upper bound at the n_opt locations
+                n_opt: 4               # Number of control points along blade span
+                max_decrease: 0.7      # Maximum nondimensional decrease at the n_opt locations
+                max_increase: 1.3      # Maximum nondimensional increase at the n_opt locations
+                index_start: 1         # Lock the first DV from blade root
+                index_end: 3           # The last DV at blade tip is locked
             spar_cap_ps:
                 flag: True             # Flag to optimize the spar cap thickness on the pressure side
                 equal_to_suction: True # Flag to impose the spar cap thickness on pressure and suction sides equal
-                n_opt: 8               # Number of control points along blade span
-                min_gain: 0.7          # Nondimensional lower bound at the n_opt locations
-                max_gain: 1.3          # Nondimensional upper bound at the n_opt locations
+                n_opt: 4               # Number of control points along blade span
+                max_decrease: 0.7      # Maximum nondimensional decrease at the n_opt locations
+                max_increase: 1.3      # Maximum nondimensional increase at the n_opt locations
+                index_start: 1         # Lock the first DV from blade root
+                index_end: 3           # The last DV at blade tip is locked
 
 merit_figure: blade_mass
 
@@ -24,9 +28,13 @@ constraints:
         strains_spar_cap_ss:
             flag: True         # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade suction side
             max:    3500.e-6   # Value of maximum strains [-]
+            index_start: 1     # Do not enforce constraint at the first station from blade root of the n_opt from spar_cap_ss
+            index_end: 3       # Do not enforce constraint at the last station at blade tip of the n_opt from spar_cap_ss
         strains_spar_cap_ps:
             flag: True         # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade pressure side
             max:    3500.e-6   # Value of maximum strains [-]
+            index_start: 1     # Do not enforce constraint at the first station from blade root of the n_opt from spar_cap_ps
+            index_end: 3       # Do not enforce constraint at the last station at blade tip of the n_opt from spar_cap_ps
         tip_deflection:
             flag: True
             margin: 1.134 #1.4175
@@ -37,11 +45,11 @@ driver:
         tol: 1.e-3          # Optimality tolerance
         # max_major_iter: 10  # Maximum number of major design iterations (SNOPT)
         # max_minor_iter: 100 # Maximum number of minor design iterations (SNOPT)
-        max_iter: 5         # Maximum number of iterations (SLSQP)
+        max_iter: 2         # Maximum number of iterations (SLSQP)
         solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         step_size: 1.e-3    # Step size for finite differencing
         form: forward       # Finite differencing mode, either forward or central
-    
+
 recorder:
     flag: False             # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql # Name of OpenMDAO recorder

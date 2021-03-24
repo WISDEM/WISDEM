@@ -94,9 +94,9 @@ class TotalLoads(ExplicitComponent):
         )
 
         # Outputs
-        self.add_output("Px_af", val=np.zeros(n_span), desc="total distributed loads in airfoil x-direction")
-        self.add_output("Py_af", val=np.zeros(n_span), desc="total distributed loads in airfoil y-direction")
-        self.add_output("Pz_af", val=np.zeros(n_span), desc="total distributed loads in airfoil z-direction")
+        self.add_output("Px_af", val=np.zeros(n_span), units="N/m", desc="total distributed loads in airfoil x-direction")
+        self.add_output("Py_af", val=np.zeros(n_span), units="N/m", desc="total distributed loads in airfoil y-direction")
+        self.add_output("Pz_af", val=np.zeros(n_span), units="N/m", desc="total distributed loads in airfoil z-direction")
 
     def compute(self, inputs, outputs):
 
@@ -163,13 +163,13 @@ class RunFrame3DD(ExplicitComponent):
 
         # all inputs/outputs in airfoil coordinate system
         self.add_input(
-            "Px_af", val=np.zeros(n_span), desc="distributed load (force per unit length) in airfoil x-direction"
+            "Px_af", val=np.zeros(n_span), units="N/m", desc="distributed load (force per unit length) in airfoil x-direction"
         )
         self.add_input(
-            "Py_af", val=np.zeros(n_span), desc="distributed load (force per unit length) in airfoil y-direction"
+            "Py_af", val=np.zeros(n_span), units="N/m", desc="distributed load (force per unit length) in airfoil y-direction"
         )
         self.add_input(
-            "Pz_af", val=np.zeros(n_span), desc="distributed load (force per unit length) in airfoil z-direction"
+            "Pz_af", val=np.zeros(n_span), units="N/m", desc="distributed load (force per unit length) in airfoil z-direction"
         )
 
         self.add_input(
@@ -727,6 +727,99 @@ class DesignConstraints(ExplicitComponent):
         ).flatten()
 
 
+class BladeRootSizing(ExplicitComponent):
+    """
+    Compute the minimum blade root fastener circle diameter given the blade root moment
+
+    Parameters
+    ----------
+    rootD : float, [m]
+        Blade root outer diameter / Chord at blade span station 0
+    layer_thickness : numpy array[n_layers, n_span], [m]
+        Thickness of the blade structural layers along blade span
+    layer_start_nd : numpy array[n_layers, n_span]
+        Non-dimensional start point defined along the outer profile of a layer along blade span
+    layer_end_nd : numpy array[n_layers, n_span]
+        Non-dimensional end point defined along the outer profile of a layer along blade span
+    root_M : numpy array[3], [N*m]
+        Blade root moment in blade coordinate system
+    s_f : float
+        Safety factor on maximum stress per fastener
+    d_f : float, [m]
+        Diameter of the fastener
+    sigma_max : float , [Pa]
+        Maxmim stress per fastener
+
+    Returns
+    -------
+    d_r : float , [m]
+        Recommended diameter of the blade root fastener circle
+    ratio : float
+        Ratio of recommended diameter over actual diameter. It can be constrained to be smaller than 1
+        
+    """
+
+    def initialize(self):
+        self.options.declare("rotorse_options")
+
+    def setup(self):
+        
+        rotorse_options = self.options["rotorse_options"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_layers = n_layers = rotorse_options["n_layers"]
+
+        self.add_input("rootD", val=0., units="m", desc="Blade root outer diameter / Chord at blade span station 0")
+        self.add_input(
+            "layer_thickness",
+            val=np.zeros((n_layers, n_span)),
+            units="m",
+            desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        self.add_input(
+            "layer_start_nd",
+            val=np.zeros((n_layers, n_span)),
+            desc="2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        self.add_input(
+            "layer_end_nd",
+            val=np.zeros((n_layers, n_span)),
+            desc="2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        self.add_input("root_M", val=np.zeros(3), units="N*m", desc="Blade root moment in blade c.s.")
+        self.add_input("s_f", val=rotorse_options["root_fastener_s_f"], desc="Safety factor")
+        self.add_input("d_f", val=0., units="m", desc="Diameter of the fastener")
+        self.add_input("sigma_max", val=0., units="Pa", desc="Max stress on bolt")
+
+        self.add_output("d_r", val=0., units="m", desc="Root fastener circle diameter")
+        self.add_output("ratio", val=0., desc="Ratio of recommended diameter over actual diameter. It can be constrained to be smaller than 1")
+
+    def compute(self, inputs, outputs):
+        
+        Mxy = np.sqrt(inputs["root_M"][0]**2. + inputs["root_M"][1]**2.)
+
+        d_r = np.sqrt((48. * Mxy * inputs["s_f"])/(np.pi**2. * inputs["sigma_max"] * inputs["d_f"] ))
+        
+        sectors = np.array([])
+        for i in range(self.n_layers):
+            sectors = np.unique(np.hstack([sectors, inputs["layer_start_nd"][i,0], inputs["layer_end_nd"][i,0]]))
+
+        thick = np.zeros(len(sectors))
+        for j in range(len(sectors)):
+            for i in range(self.n_layers):
+                if inputs["layer_start_nd"][i,0] <= sectors[j] and inputs["layer_end_nd"][i,0] >= sectors[j]:
+                    thick[j] += inputs["layer_thickness"][i,0]
+
+        # check = np.all(thick == thick[0])
+        # if not check:
+        #     raise Exception('All Values in Array are not same')
+        d_r_actual = inputs["rootD"] - 0.5 * thick[0]
+        
+        ratio = d_r / d_r_actual
+
+        outputs["d_r"] = d_r
+        outputs["ratio"] = ratio
+
+
 # class BladeFatigue(ExplicitComponent):
 #     # OpenMDAO component that calculates the Miner's Rule cummulative fatigue damage, given precalculated rainflow counting of bending moments
 
@@ -1045,6 +1138,7 @@ class RotorStructure(Group):
             "aero_hub_loads", AeroHubLoads(modeling_options=modeling_options), promotes=promoteListAeroLoads
         )
         self.add_subsystem("constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options))
+        self.add_subsystem("brs", BladeRootSizing(rotorse_options=modeling_options["WISDEM"]["RotorSE"]))
 
         # if modeling_options['rotorse']['FatigueMode'] > 0:
         #     promoteListFatigue = ['r', 'gamma_f', 'gamma_m', 'E', 'Xt', 'Xc', 'x_tc', 'y_tc', 'EIxx', 'EIyy', 'pitch_axis', 'chord', 'layer_name', 'layer_mat', 'definition_layer', 'sc_ss_mats','sc_ps_mats','te_ss_mats','te_ps_mats','rthick']
@@ -1080,3 +1174,6 @@ class RotorStructure(Group):
         self.connect("frame.strainL_spar", "constr.strainL_spar")
         self.connect("frame.flap_mode_freqs", "constr.flap_mode_freqs")
         self.connect("frame.edge_mode_freqs", "constr.edge_mode_freqs")
+
+        # Blade root moment to blade root sizing
+        self.connect("frame.root_M", "brs.root_M")

@@ -49,7 +49,7 @@ class TowerModes(om.ExplicitComponent):
             desc="constraint on tower frequency such that ratio of 1P/f is above or below gamma with constraint <= 0",
         )
 
-        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials("*", "*", method="fd", form="central", step=1e-6)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         freq_struct = inputs["tower_freq"]
@@ -184,7 +184,6 @@ class TipDeflectionConstraint(om.ExplicitComponent):
             parked_margin = overhang + blade_yaw.x - r_interp
         outputs["blade_tip_tower_clearance"] = parked_margin
         outputs["tip_deflection_ratio"] = delta * inputs["max_allowable_td_ratio"] / parked_margin
-
 
 class TurbineConstraints(om.Group):
     def initialize(self):

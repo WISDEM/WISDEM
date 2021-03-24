@@ -8,11 +8,18 @@ design_variables:
             twist:
                 flag: True  # Flag to optimize the twist
                 inverse: False # Flag to determine twist from the user-defined desired margin to stall (defined in constraints)
-                n_opt: 8     # Number of control points along blade span
-                lower_bound: [0.3490658503988659, 0.08726646259971647, 0.08726646259971647, 0., -0.08726646259971647, -0.08726646259971647, -0.08726646259971647, -0.08726646259971647]          # Lower bounds for the twist in [rad] at the n_opt locations
-                upper_bound: [0.4363323129985824, 0.3490658503988659, 0.3490658503988659, 0.2617993877991494, 0.2617993877991494, 0.17453292519943295, 0.17453292519943295, 0.08726646259971647] # Upper bounds for the twist in [rad] at the n_opt locations
-                lock_root: 2 # Lock the first two DVs from blade root
-                lock_tip: 0 # All DVs close to blade tip are active
+                n_opt: 4     # Number of control points along blade span
+                max_decrease: 0.08722222222222221 # Maximum decrease for the twist in [rad] at the n_opt locations
+                max_increase: 0.08722222222222221 # Maximum increase for the twist in [rad] at the n_opt locations
+                index_start: 2 # Lock the first two DVs from blade root
+                index_end: 4 # All DVs close to blade tip are active
+            chord:
+                flag: True  # Flag to optimize the chord
+                n_opt: 4     # Number of control points along blade span
+                max_decrease: 0.3 # Minimum multiplicative gain on existing chord at the n_opt locations
+                max_increase: 3. # Maximum multiplicative gain on existing chord at the n_opt locations
+                index_start: 1 # Start by optimizing chord at blade root
+                index_end: 3 # Lock chord at blade tip
 
 merit_figure: AEP
 
@@ -21,6 +28,11 @@ constraints:
         stall:
             flag: True     # Constraint on minimum stall margin
             margin: 0.087 # Value of minimum stall margin in [rad]
+        chord:
+            flag: True # Constraint max chord to its default value (4.75 m)
+        root_circle_diameter:
+            flag: True # Constraint for the minimum blade root circle diameter
+            max_ratio: 1.2 # The recommended value can be up to 20% larger than the actual
 
 driver:
     optimization:
@@ -32,7 +44,7 @@ driver:
         solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         step_size: 1.e-3    # Step size for finite differencing
         form: forward       # Finite differencing mode, either forward or central
-    
+
 recorder:
     flag: False              # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder

@@ -93,6 +93,7 @@ class FloatingSE(om.Group):
             "displacement",
             "center_of_buoyancy",
             "center_of_mass",
+            "ballast_mass",
             "total_mass",
             "total_cost",
             "I_total",

@@ -70,7 +70,7 @@ def create_all_plots(
 
         axtw.plot(
             s_opt_twist,
-            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["lower_bound"])
+            (twist_opt - analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["max_decrease"])
             * 180.0
             / np.pi,
             ":o",
@@ -80,7 +80,7 @@ def create_all_plots(
         )
         axtw.plot(
             s_opt_twist,
-            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["upper_bound"])
+            (twist_opt + analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["max_increase"])
             * 180.0
             / np.pi,
             ":o",
@@ -90,7 +90,6 @@ def create_all_plots(
         if mult_flag:
             axtw.legend(fontsize=font_size)
 
-        axtw.set_ylim([-5, 20])
         plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
         plt.ylabel("Twist [deg]", fontsize=font_size + 2, fontweight="bold")
         plt.xticks(fontsize=font_size)
@@ -129,7 +128,7 @@ def create_all_plots(
         )
         axc.plot(
             s_opt_chord,
-            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["min_gain"]) * chord_init,
+            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["max_decrease"]) * chord_init,
             ":o",
             color=colors[idx + 1],
             markersize=3,
@@ -137,7 +136,7 @@ def create_all_plots(
         )
         axc.plot(
             s_opt_chord,
-            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["max_gain"]) * chord_init,
+            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["max_increase"]) * chord_init,
             ":o",
             color=colors[idx + 1],
             markersize=3,
@@ -191,7 +190,7 @@ def create_all_plots(
                 )
                 axsc.plot(
                     s_opt_sc,
-                    np.array(analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["min_gain"])
+                    np.array(analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["max_decrease"])
                     * sc_init,
                     ":o",
                     color=colors[idx + 1],
@@ -200,7 +199,7 @@ def create_all_plots(
                 )
                 axsc.plot(
                     s_opt_sc,
-                    np.array(analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["max_gain"])
+                    np.array(analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["max_increase"])
                     * sc_init,
                     ":o",
                     color=colors[idx + 1],
@@ -209,7 +208,6 @@ def create_all_plots(
 
         if mult_flag:
             axsc.legend(fontsize=font_size)
-        plt.ylim([0.0, 200])
         plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
         plt.ylabel("Spar Caps Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
         plt.xticks(fontsize=font_size)
@@ -529,6 +527,15 @@ def create_all_plots(
             "blade.outer_shape_bem.s",
             "rp.powercurve.cl_regII",
             "lift_coeff",
+        )
+
+        # Drag coefficient
+        simple_plot_results(
+            "Blade Nondimensional Span [-]",
+            "Drag Coefficient [-]",
+            "blade.outer_shape_bem.s",
+            "rp.powercurve.cd_regII",
+            "drag_coeff",
         )
 
         # Power curve pitch

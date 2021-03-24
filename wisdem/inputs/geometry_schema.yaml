@@ -178,6 +178,24 @@ properties:
                             - reference_axis
                             - layers
                         properties:
+                            root:
+                                type: object
+                                default: {}
+                                properties:
+                                    d_f:
+                                        type: number
+                                        default: 0.03
+                                        minimum: 0.01
+                                        maximum: 0.2
+                                        unit: m
+                                        description: Diameter of the fastener, default is M30, so 0.03 meters
+                                    sigma_max:
+                                        type: number
+                                        default: 675.e+6
+                                        minimum: 1.e+5
+                                        maximum: 1.e+10
+                                        unit: Pa
+                                        description: Max stress on bolt
                             reference_axis:
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
                             webs:
@@ -1617,7 +1635,7 @@ properties:
                             then:
                                 required:
                                     - anchor_type
-                                    - location
+                                    - joint
                             else:
                                 if:
                                     # If node_type == vessel, then we need to specify the fairlead_type
@@ -1642,7 +1660,7 @@ properties:
                                         - connection
                                         - vessel
                                 location:
-                                    type: array # I don't think we need to define x, y, and z explicitely
+                                    type: array
                                     description: – Coordinates x, y, and z of the connection (relative to inertial reference frame if Fixed or Connect, relative to platform reference frame if Vessel). In the case of Connect nodes, it is simply an initial guess for position before MoorDyn calculates the equilibrium initial position.
                                     items:
                                         type: number
@@ -1651,7 +1669,7 @@ properties:
                                         maxItems: 3
                                 joint:
                                     type: string
-                                    description: For fairlead attachments, reference a joint name from the "joints" section or an "axial_joint" on a member
+                                    description: For anchor positions and fairlead attachments, reference a joint name from the "joints" section or an "axial_joint" on a member
                                     default: none
                                 anchor_type:
                                     type: string

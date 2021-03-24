@@ -152,8 +152,8 @@ class WT_RNTA(om.Group):
                 self.connect("blade.interp_airfoils.coord_xy_interp", "re.rail.coord_xy_interp")
 
             # Connections from blade struct parametrization to rotor load anlysis
-            self.connect("blade.ps.s_opt_spar_cap_ss", "rs.constr.s_opt_spar_cap_ss")
-            self.connect("blade.ps.s_opt_spar_cap_ps", "rs.constr.s_opt_spar_cap_ps")
+            self.connect("blade.opt_var.s_opt_spar_cap_ss", "rs.constr.s_opt_spar_cap_ss")
+            self.connect("blade.opt_var.s_opt_spar_cap_ps", "rs.constr.s_opt_spar_cap_ps")
 
             # Connection from ra to rs for the rated conditions
             # self.connect('rp.powercurve.rated_V',        'rs.aero_rated.V_load')
@@ -250,6 +250,13 @@ class WT_RNTA(om.Group):
             self.connect("re.precomp.yu_strain_te", "rs.yu_strain_te")
             self.connect("re.precomp.yl_strain_te", "rs.yl_strain_te")
             self.connect("blade.outer_shape_bem.s", "rs.constr.s")
+
+            self.connect("blade.internal_structure_2d_fem.d_f", "rs.brs.d_f")
+            self.connect("blade.internal_structure_2d_fem.sigma_max", "rs.brs.sigma_max")
+            self.connect("blade.pa.chord_param", "rs.brs.rootD", src_indices=[0])
+            self.connect("blade.ps.layer_thickness_param", "rs.brs.layer_thickness")
+            self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rs.brs.layer_start_nd")
+            self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rs.brs.layer_end_nd")
 
             # Connections to rotorse-rc
             # self.connect('blade.length',                                    'rotorse.rc.blade_length')
@@ -550,6 +557,7 @@ class WT_RNTA(om.Group):
                     "bulkhead_thickness",
                     "ballast_grid",
                     "ballast_volume",
+                    "ballast_materials",
                     "grid_axial_joints",
                     "ring_stiffener_web_height",
                     "ring_stiffener_web_thickness",
