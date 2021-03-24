@@ -33,6 +33,7 @@ class ExportCableInstallation(InstallPhase):
     """Export Cable Installation Phase"""
 
     phase = "Export Cable Installation"
+    capex_category = "Export System"
 
     #:
     expected_config = {

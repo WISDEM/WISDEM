@@ -20,6 +20,7 @@ dependencies:
   - pytest
   - pytest-cov
   - python
+  - python-benedict
   - pyyaml
   - ruamel_yaml
   - scipy
