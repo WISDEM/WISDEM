@@ -344,11 +344,9 @@ class PoseOptimization(object):
 
                 wt_opt.driver = NLoptDriver()
                 wt_opt.driver.options["optimizer"] = opt_options["solver"]
-                options_keys = [
-                    "tol",
-                    "xtol",
-                ]
-                wt_opt = self._set_optimizer_properties(wt_opt, options_keys)
+                options_keys = ["tol", "xtol", "max_iter", "max_time", "numgen"]
+                mapped_keys = {"max_iter": "maxiter", "max_time": "maxtime"}
+                wt_opt = self._set_optimizer_properties(wt_opt, options_keys, mapped_keys=mapped_keys)
 
             else:
                 raise ValueError(f"The {self.opt['driver']['optimization']['solver']} optimizer is not yet supported!")
