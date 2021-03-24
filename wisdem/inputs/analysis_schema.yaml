@@ -1077,7 +1077,7 @@ properties:
                         type: string
                         description: Optimization driver.
                         default: SLSQP
-                        enum: [SLSQP, CONMIN, COBYLA, SNOPT, Nelder-Mead, GA, GN_DIRECT, GN_DIRECT_L, GN_DIRECT_L_NOSCAL, GN_ORIG_DIRECT, GN_ORIG_DIRECT_L, GN_AGS, GN_ISRES, LN_COBYLA, LD_MMA, LD_CCSAQ, LD_SLSQP]
+                        enum: [SLSQP, CONMIN, COBYLA, SNOPT, Nelder-Mead, GA, GN_DIRECT, GN_DIRECT_L, GN_DIRECT_L_NOSCAL, GN_ORIG_DIRECT, GN_ORIG_DIRECT_L, GN_AGS, GN_ISRES, LN_COBYLA, LD_MMA, LD_CCSAQ, LD_SLSQP, NSGA2]
                     step_size:
                         type: number
                         description: Maximum step size for finite difference approximation

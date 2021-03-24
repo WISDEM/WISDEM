@@ -32,6 +32,7 @@ class PoseOptimization(object):
         self.pyoptsparse_methods = [
             "SNOPT",
             "CONMIN",
+            "NSGA2",
         ]
 
     def get_number_design_variables(self):
@@ -254,10 +255,10 @@ class PoseOptimization(object):
                 wt_opt.driver = om.ScipyOptimizeDriver()
                 wt_opt.driver.options["optimizer"] = opt_options["solver"]
 
-                options_keys = ["tol", "max_iter", "disp", "adaptive"]
-                opt_settings_keys = ["rhobeg", "catol"]
+                options_keys = ["tol", "max_iter", "disp"]
+                opt_settings_keys = ["rhobeg", "catol", "adaptive"]
                 mapped_keys = {"max_iter": "maxiter"}
-                wt_opt = _set_optimizer_properties(wt_opt, options_keys, opt_settings_keys, mapped_keys)
+                wt_opt = self._set_optimizer_properties(wt_opt, options_keys, opt_settings_keys, mapped_keys)
 
             # The next two optimization methods require pyOptSparse.
             elif opt_options["solver"] in self.pyoptsparse_methods:
@@ -275,10 +276,26 @@ class PoseOptimization(object):
                         f"You requested the optimization solver {opt_options['solver']}, but you have not installed it within pyOptSparse. Please build {opt_options['solver']} and rerun."
                     )
 
-                # Most of the pyOptSparse options have special synatx when setting them,
-                # so here we set them by hand instead of using `_set_optimizer_properties`.
+                # Most of the pyOptSparse options have special syntax when setting them,
+                # so here we set them by hand instead of using `_set_optimizer_properties` for SNOPT and CONMIN.
                 if opt_options["solver"] == "CONMIN":
                     wt_opt.driver.opt_settings["ITMAX"] = opt_options["max_iter"]
+
+                if opt_options["solver"] == "NSGA2":
+                    opt_settings_keys = [
+                        "PopSize",
+                        "maxGen",
+                        "pCross_real",
+                        "pMut_real",
+                        "eta_c",
+                        "eta_m",
+                        "pCross_bin",
+                        "pMut_bin",
+                        "PrintOut",
+                        "seed",
+                        "xinit",
+                    ]
+                    wt_opt = self._set_optimizer_properties(wt_opt, opt_settings_keys=opt_settings_keys)
 
                 elif opt_options["solver"] == "SNOPT":
                     wt_opt.driver.opt_settings["Major optimality tolerance"] = float(opt_options["tol"])
@@ -315,7 +332,7 @@ class PoseOptimization(object):
                     "procs_per_model",
                     "run_parallel",
                 ]
-                wt_opt = _set_optimizer_properties(wt_opt, options_keys)
+                wt_opt = self._set_optimizer_properties(wt_opt, options_keys)
 
             elif opt_options["solver"] in self.nlopt_methods:
                 try:
@@ -331,7 +348,7 @@ class PoseOptimization(object):
                     "tol",
                     "xtol",
                 ]
-                wt_opt = _set_optimizer_properties(wt_opt, options_keys)
+                wt_opt = self._set_optimizer_properties(wt_opt, options_keys)
 
             else:
                 raise ValueError(f"The {self.opt['driver']['optimization']['solver']} optimizer is not yet supported!")
