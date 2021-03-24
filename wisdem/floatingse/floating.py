@@ -1,7 +1,7 @@
 import openmdao.api as om
 from wisdem.floatingse.member import Member
+from wisdem.floatingse.mooring import Mooring
 from wisdem.floatingse.constraints import FloatingConstraints
-from wisdem.floatingse.map_mooring import MapMooring
 from wisdem.floatingse.floating_frame import FloatingFrame
 
 
