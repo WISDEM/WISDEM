@@ -134,12 +134,12 @@ class PoseOptimization(object):
                             n_DV += 1
                 if "axial_joints" in kgrp:
                     n_DV += len(kgrp["axial_joints"])
-
-        n_design = 1 if self.modeling["mooring"]["symmetric"] else self.modeling["mooring"]["n_lines"]
-        if mooring_opt["line_length"]["flag"]:
-            n_DV += n_design
-        if mooring_opt["line_diameter"]["flag"]:
-            n_DV += n_design
+        if self.modeling["flags"]["mooring"]:
+            n_design = 1 if self.modeling["mooring"]["symmetric"] else self.modeling["mooring"]["n_lines"]
+            if mooring_opt["line_length"]["flag"]:
+                n_DV += n_design
+            if mooring_opt["line_diameter"]["flag"]:
+                n_DV += n_design
 
         # Wrap-up at end with multiplier for finite differencing
         if self.opt["driver"]["optimization"]["form"] == "central":
