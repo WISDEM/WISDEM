@@ -11,7 +11,7 @@ import numpy as np
 from wisdem import run_wisdem
 
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
-fname_wt_input = mydir + os.sep + "nrel5mw_tower.yaml"
+fname_wt_input = os.path.join(os.path.dirname(mydir), "05_tower_monopile", "nrel5mw_tower.yaml")
 fname_modeling_options = mydir + os.sep + "modeling_options.yaml"
 fname_analysis_options = mydir + os.sep + "analysis_options.yaml"
 
