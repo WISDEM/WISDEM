@@ -198,7 +198,7 @@ class TestExamples(unittest.TestCase):
                 print("Failed to run,", k)
                 self.assertTrue(False)
 
-    def test_overridden(self):
+    def test_step_size_study(self):
         scripts = [m for m in all_scripts if m.find("step_size_study") >= 0]
         for k in scripts:
             try:
