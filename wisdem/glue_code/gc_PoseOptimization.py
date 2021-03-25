@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+
 import openmdao.api as om
 
 
@@ -336,10 +337,10 @@ class PoseOptimization(object):
 
             elif opt_options["solver"] in self.nlopt_methods:
                 try:
-                    from weis.optimization_drivers.nlopt_driver import NLoptDriver
+                    from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
                 except:
                     raise ImportError(
-                        "You requested an optimization method from NLopt, but need to first install WEIS to use this method."
+                        "You requested an optimization method from NLopt, but need to first install NLopt to use this method."
                     )
 
                 wt_opt.driver = NLoptDriver()
