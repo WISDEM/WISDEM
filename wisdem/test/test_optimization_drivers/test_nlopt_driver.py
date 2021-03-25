@@ -1289,37 +1289,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["x"], 7.1666666, 1e-6)
         assert_near_equal(prob["y"], -7.83333333, 1e-6)
 
-    def test_simple_paraboloid_upper_GN_ISRES(self):
-
-        prob = om.Problem()
-        model = prob.model
-
-        model.add_subsystem("p1", om.IndepVarComp("x", 25.0), promotes=["*"])
-        model.add_subsystem("p2", om.IndepVarComp("y", 25.0), promotes=["*"])
-        model.add_subsystem("comp", Paraboloid(), promotes=["*"])
-        model.add_subsystem("con", om.ExecComp("c = - x + y"), promotes=["*"])
-
-        prob.set_solver_print(level=0)
-
-        prob.driver = NLoptDriver()
-        prob.driver.options["optimizer"] = "GN_ISRES"
-        prob.driver.options["tol"] = 1e-12
-
-        prob.driver.options["maxiter"] = 10000
-
-        model.add_design_var("x", lower=-50.0, upper=50.0)
-        model.add_design_var("y", lower=-50.0, upper=50.0)
-        model.add_objective("f_xy")
-        model.add_constraint("c", upper=-15.0)
-
-        prob.setup()
-
-        failed = prob.run_driver()
-
-        # Just get pretty close to the optimum
-        assert_near_equal(prob["x"], 7.1666666, 1e-2)
-        assert_near_equal(prob["y"], -7.83333333, 1e-2)
-
     def test_simple_paraboloid_upper_GN_ORIG_DIRECT(self):
 
         prob = om.Problem()
@@ -1429,7 +1398,7 @@ class TestNLoptDriver(unittest.TestCase):
         prob.driver.options["optimizer"] = "GN_ISRES"
         prob.driver.options["tol"] = 1e-6
 
-        prob.driver.options["maxiter"] = 20000
+        prob.driver.options["maxiter"] = 10000
 
         model.add_design_var("x", lower=7.0, upper=7.5)
         model.add_design_var("y", lower=-8.0, upper=-7.5)
@@ -1442,8 +1411,8 @@ class TestNLoptDriver(unittest.TestCase):
 
         # Minimum should be at (7.166667, -7.833334)
         # Loose tolerance
-        assert_near_equal(prob["x"], 7.16667, 1e-2)
-        assert_near_equal(prob["y"], -7.833334, 1e-2)
+        assert_near_equal(prob["x"], 7.16667, 0.05)
+        assert_near_equal(prob["y"], -7.833334, 0.05)
 
     def test_simple_paraboloid_equality_failure_MMA(self):
 

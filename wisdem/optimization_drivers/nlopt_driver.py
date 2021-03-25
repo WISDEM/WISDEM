@@ -160,16 +160,16 @@ class NLoptDriver(Driver):
             + "method `set_ftol_rel()` from NLOpt.",
         )
         self.options.declare("maxiter", 200, lower=0, desc="Maximum number of iterations.")
-        self.options.declare("numgen", 10, lower=0, desc="Maximum number of iterations.")
+        self.options.declare("numgen", 10000, lower=0, desc="Maximum number of iterations.")
         self.options.declare(
             "maxtime",
-            0.0,
+            1.0e10,
             lower=0.0,
             desc="Maximum time in seconds to perform optimization.",
         )
         self.options.declare(
             "xtol",
-            1.0e-3,
+            1.0e-12,
             lower=0.0,
             desc="Tolerance for termination. Based on "
             + "relative function value change. Uses the "
