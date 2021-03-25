@@ -1531,30 +1531,20 @@ properties:
                                                 minimum: 0.0
                                                 maximum: 1.0
                                                 description: Non-dimensional value along member axis
-                                hydrodynamic_approach: &hydro
-                                    # TODO: Move these to the modeling file?
-                                    description: How should this member be modeled?
-                                    type: string
-                                    default: strip
-                                    enum:
-                                        - strip
-                                        - potential
-                                        - both
                                 Ca: &ca
-                                    # TODO: Move these to the modeling file?
-                                    description: Added mass coefficient
+                                    description: User-defined added mass coefficient
                                     type: number
                                     default: 0.0
+                                    minimum: 0.0
                                 Cp: &cp
-                                    # TODO: Move these to the modeling file?
-                                    description: Pressure coefficient
+                                    description: User-defined pressure coefficient
                                     type: number
                                     default: 0.0
                                 Cd: &cd
-                                    # TODO: Move these to the modeling file?
-                                    description: Drag coefficient
+                                    description: User-defined drag coefficient
                                     type: number
                                     default: 0.0
+                                    minimum: 0.0
                     rigid_bodies:
                         type: array
                         descriptions: Additional point masses at joints with user-customized properties
@@ -1600,7 +1590,6 @@ properties:
                                         maxItems: 3
                                         minItems: 3
                                         minimum: 0
-                                hydrodynamic_approach: *hydro
                                 Ca: *ca
                                 Cp: *cp
                                 Cd: *cd

@@ -641,6 +641,7 @@ class TestMemberComponent(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["ballast_mass"], m_perm)
         self.assertAlmostEqual(self.outputs["ballast_cost"], np.pi * 20e4)
         self.assertAlmostEqual(self.outputs["ballast_z_cg"], cg_perm)
+        npt.assert_almost_equal(self.outputs["ballast_height"], np.r_[h, h, 0.0] / 100)
         npt.assert_almost_equal(self.outputs["ballast_I_base"], I_perm)
         self.assertAlmostEqual(self.outputs["variable_ballast_capacity"], area * 32)
         npt.assert_almost_equal(self.outputs["variable_ballast_Vpts"], area * 32 / 9.0 * np.arange(10))

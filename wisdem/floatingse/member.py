@@ -552,6 +552,8 @@ class MemberComponent(om.ExplicitComponent):
         mass of permanent ballast
     ballast_z_cg : float, [m]
         z-coordinate or permanent ballast center of gravity
+    ballast_height : numpy array[n_ballast]
+        Non-dimensional s-coordinate height of each ballast section. Only non-zero here for permanent ballast.
     ballast_I_base : numpy array[6], [kg*m**2]
         Moments of inertia of permanent ballast relative to bottom point
     variable_ballast_capacity : float, [m**3]
@@ -679,6 +681,7 @@ class MemberComponent(om.ExplicitComponent):
 
         self.add_output("ballast_cost", 0.0, units="USD")
         self.add_output("ballast_mass", 0.0, units="kg")
+        self.add_output("ballast_height", np.zeros(n_ball))
         self.add_output("ballast_z_cg", 0.0, units="m")
         self.add_output("ballast_I_base", np.zeros(6), units="kg*m**2")
         self.add_output("variable_ballast_capacity", 0.0, units="m**3")
@@ -1216,6 +1219,7 @@ class MemberComponent(om.ExplicitComponent):
         npts = 10
         m_ballast = rho_ballast * V_ballast
         I_ballast = np.zeros(6)
+        s_end = s_ballast[:, 0].copy()
         z_cg = np.zeros(n_ballast)
         V_avail = np.zeros(n_ballast)
         for k in range(n_ballast):
@@ -1238,6 +1242,7 @@ class MemberComponent(om.ExplicitComponent):
 
             # If permanent ballast, compute mass properties, but have to find where ballast extends to in cavity
             if V_ballast[k] > 0.0:
+                s_end[k] = np.interp(V_ballast[k], np.cumsum(np.r_[0, V_pts]), sinterp)
                 z_end = np.interp(V_ballast[k], np.cumsum(np.r_[0, V_pts]), zpts)
                 zpts = np.linspace(zpts[0], z_end, npts)
                 H = np.diff(zpts)
@@ -1268,6 +1273,7 @@ class MemberComponent(om.ExplicitComponent):
         outputs["ballast_I_base"] = I_ballast
         outputs["ballast_z_cg"] = np.dot(z_cg, m_ballast) / (m_ballast.sum() + eps)
         outputs["ballast_cost"] = np.dot(km_ballast, m_ballast)
+        outputs["ballast_height"] = s_end - s_ballast[:, 0]
         outputs["constr_ballast_capacity"] = V_ballast / V_avail
 
     def compute_mass_properties(self, inputs, outputs):

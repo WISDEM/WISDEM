@@ -451,6 +451,7 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_output("variable_ballast_mass", 0.0, units="kg")
         self.add_output("constr_variable_margin", val=0.0)
         self.add_output("member_variable_volume", val=np.zeros(n_member), units="m**3")
+        self.add_output("member_variable_height", val=np.zeros(n_member))
         self.add_output("transition_piece_I", np.zeros(6), units="kg*m**2")
 
     def compute(self, inputs, outputs):
@@ -564,6 +565,7 @@ class PlatformTowerFrame(om.ExplicitComponent):
 
         # Now find the CG of the variable mass assigned to each member
         n_member = capacity.size
+        outputs["member_variable_height"] = np.zeros(n_member)
         cg_variable_member = np.zeros((n_member, 3))
         for k in range(n_member):
             if V_variable_member[k] == 0.0:
@@ -576,9 +578,12 @@ class PlatformTowerFrame(om.ExplicitComponent):
 
             spts = inputs[f"member{k}:variable_ballast_spts"]
             Vpts = inputs[f"member{k}:variable_ballast_Vpts"]
-            s_cg = np.interp(0.5 * V_variable_member[k], Vpts, spts)
 
+            s_cg = np.interp(0.5 * V_variable_member[k], Vpts, spts)
             cg_variable_member[k, :] = xyz[0, :] + s_cg * dxyz
+
+            s_end = np.interp(V_variable_member[k], Vpts, spts)
+            outputs["member_variable_height"][k] = s_end - spts[0]
 
         cg_variable = np.dot(V_variable_member, cg_variable_member) / V_variable
 
