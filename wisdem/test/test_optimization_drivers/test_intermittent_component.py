@@ -5,7 +5,6 @@ import platform
 import unittest
 
 import numpy as np
-from mpi4py import MPI
 
 import openmdao.api as om
 from openmdao.utils.assert_utils import assert_near_equal
@@ -91,9 +90,6 @@ class TestIntermittentComponent(unittest.TestCase):
 
         prob.setup()
         prob.run_driver()
-
-        comm = MPI.COMM_WORLD
-        rank = comm.Get_rank()
 
         assert_near_equal(prob["f"][0], 0.0, tolerance=1e-2)
         assert_near_equal(prob["x"], np.ones(4), tolerance=1e-1)
