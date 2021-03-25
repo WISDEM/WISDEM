@@ -94,9 +94,15 @@ class TotalLoads(ExplicitComponent):
         )
 
         # Outputs
-        self.add_output("Px_af", val=np.zeros(n_span), units="N/m", desc="total distributed loads in airfoil x-direction")
-        self.add_output("Py_af", val=np.zeros(n_span), units="N/m", desc="total distributed loads in airfoil y-direction")
-        self.add_output("Pz_af", val=np.zeros(n_span), units="N/m", desc="total distributed loads in airfoil z-direction")
+        self.add_output(
+            "Px_af", val=np.zeros(n_span), units="N/m", desc="total distributed loads in airfoil x-direction"
+        )
+        self.add_output(
+            "Py_af", val=np.zeros(n_span), units="N/m", desc="total distributed loads in airfoil y-direction"
+        )
+        self.add_output(
+            "Pz_af", val=np.zeros(n_span), units="N/m", desc="total distributed loads in airfoil z-direction"
+        )
 
     def compute(self, inputs, outputs):
 
@@ -163,13 +169,22 @@ class RunFrame3DD(ExplicitComponent):
 
         # all inputs/outputs in airfoil coordinate system
         self.add_input(
-            "Px_af", val=np.zeros(n_span), units="N/m", desc="distributed load (force per unit length) in airfoil x-direction"
+            "Px_af",
+            val=np.zeros(n_span),
+            units="N/m",
+            desc="distributed load (force per unit length) in airfoil x-direction",
         )
         self.add_input(
-            "Py_af", val=np.zeros(n_span), units="N/m", desc="distributed load (force per unit length) in airfoil y-direction"
+            "Py_af",
+            val=np.zeros(n_span),
+            units="N/m",
+            desc="distributed load (force per unit length) in airfoil y-direction",
         )
         self.add_input(
-            "Pz_af", val=np.zeros(n_span), units="N/m", desc="distributed load (force per unit length) in airfoil z-direction"
+            "Pz_af",
+            val=np.zeros(n_span),
+            units="N/m",
+            desc="distributed load (force per unit length) in airfoil z-direction",
         )
 
         self.add_input(
@@ -365,7 +380,7 @@ class RunFrame3DD(ExplicitComponent):
         EIxy_cs -= x_ec_cs * y_ec_cs * EA
 
         # get rotation angle
-        alpha = 0.5 * np.arctan(2 * EIxy_cs / (EIyy_cs - EIxx_cs))
+        alpha = 0.5 * np.arctan2(2 * EIxy_cs, (EIyy_cs - EIxx_cs))
 
         # get moments and positions in principal axes
         EI11 = EIxx_cs - EIxy_cs * np.tan(alpha)
@@ -387,10 +402,10 @@ class RunFrame3DD(ExplicitComponent):
         rad = np.zeros(n)  # 'radius' of rigidity at node- set to zero
         inode = 1 + np.arange(n)  # Node numbers (1-based indexing)
         if self.options["pbeam"]:
-            nodes = pyframe3dd.NodeData(inode, np.zeros(n), np.zeros(n), r, rad)
+            nodes = pyframe3dd.NodeData(inode, np.zeros(n), np.zeros(n), -r, rad)
             L = np.diff(r)
         else:
-            nodes = pyframe3dd.NodeData(inode, x_az, y_az, z_az, rad)
+            nodes = pyframe3dd.NodeData(inode, y_az, x_az, -z_az, rad)
             L = np.sqrt(np.diff(x_az) ** 2 + np.diff(y_az) ** 2 + np.diff(z_az) ** 2)
         # -----------------------------------
 
@@ -471,7 +486,7 @@ class RunFrame3DD(ExplicitComponent):
             Py_af = P.y
             Pz_af = P.z
 
-        Px, Py, Pz = Pz_af, Py_af, -Px_af  # switch to local c.s.
+        Px, Py, Pz = Pz_af, Py_af, Px_af  # switch to local c.s.
         xx1 = xy1 = xz1 = np.zeros(n - 1)
         xx2 = xy2 = xz2 = L - 1e-6  # subtract small number b.c. of precision
         wx1 = Px[:-1]
@@ -492,11 +507,6 @@ class RunFrame3DD(ExplicitComponent):
         # For now, just 1 load case and blade
         iCase = 0
 
-        # Displacements in global (blade) c.s.
-        dx = displacements.dx[iCase, :]
-        dy = displacements.dy[iCase, :]
-        dz = displacements.dz[iCase, :]
-
         # Mode shapes and frequencies
         n_freq2 = int(self.n_freq / 2)
         freq_x, freq_y, _, mshapes_x, mshapes_y, _ = util.get_xyz_mode_shapes(
@@ -509,12 +519,12 @@ class RunFrame3DD(ExplicitComponent):
 
         # shear and bending, one per element (convert from local to global c.s.)
         Fz = np.r_[-forces.Nx[iCase, 0], forces.Nx[iCase, 1::2]]
-        Vy = np.r_[-forces.Vy[iCase, 0], forces.Vy[iCase, 1::2]]
-        Vx = np.r_[forces.Vz[iCase, 0], -forces.Vz[iCase, 1::2]]
+        # Vy = np.r_[-forces.Vy[iCase, 0], forces.Vy[iCase, 1::2]]
+        # Vx = np.r_[-forces.Vz[iCase, 0], forces.Vz[iCase, 1::2]]
 
-        Tz = np.r_[-forces.Txx[iCase, 0], forces.Txx[iCase, 1::2]]
+        # Tz = np.r_[-forces.Txx[iCase, 0], forces.Txx[iCase, 1::2]]
         My = np.r_[-forces.Myy[iCase, 0], forces.Myy[iCase, 1::2]]
-        Mx = np.r_[forces.Mzz[iCase, 0], -forces.Mzz[iCase, 1::2]]
+        Mx = np.r_[-forces.Mzz[iCase, 0], forces.Mzz[iCase, 1::2]]
 
         def strain(xu, yu, xl, yl):
             # use profile c.s. to use Hansen's notation
@@ -529,12 +539,10 @@ class RunFrame3DD(ExplicitComponent):
 
             # compute strain
             x, y = rotate(xuu, yuu)
-            strainU = -(
-                M1 / EI11 * y - M2 / EI22 * x + Fz / EA
-            )  # negative sign because Hansen c3 is opposite of Precomp z
+            strainU = M1 / EI11 * y - M2 / EI22 * x - Fz / EA
 
             x, y = rotate(xll, yll)
-            strainL = -(M1 / EI11 * y - M2 / EI22 * x + Fz / EA)
+            strainL = M1 / EI11 * y - M2 / EI22 * x - Fz / EA
 
             return strainU, strainL
 
@@ -553,9 +561,10 @@ class RunFrame3DD(ExplicitComponent):
         outputs["edge_mode_freqs"] = freq_y
         outputs["flap_mode_freqs"] = freq_x
         outputs["freq_distance"] = freq_y[0] / freq_x[0]
-        outputs["dx"] = dx
-        outputs["dy"] = dy
-        outputs["dz"] = dz
+        # Displacements in global (blade) c.s.
+        outputs["dx"] = displacements.dx[iCase, :]
+        outputs["dy"] = displacements.dy[iCase, :]
+        outputs["dz"] = displacements.dz[iCase, :]
         outputs["strainU_spar"] = strainU_spar
         outputs["strainL_spar"] = strainL_spar
         outputs["strainU_te"] = strainU_te
@@ -756,19 +765,19 @@ class BladeRootSizing(ExplicitComponent):
         Recommended diameter of the blade root fastener circle
     ratio : float
         Ratio of recommended diameter over actual diameter. It can be constrained to be smaller than 1
-        
+
     """
 
     def initialize(self):
         self.options.declare("rotorse_options")
 
     def setup(self):
-        
+
         rotorse_options = self.options["rotorse_options"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_layers = n_layers = rotorse_options["n_layers"]
 
-        self.add_input("rootD", val=0., units="m", desc="Blade root outer diameter / Chord at blade span station 0")
+        self.add_input("rootD", val=0.0, units="m", desc="Blade root outer diameter / Chord at blade span station 0")
         self.add_input(
             "layer_thickness",
             val=np.zeros((n_layers, n_span)),
@@ -787,33 +796,37 @@ class BladeRootSizing(ExplicitComponent):
         )
         self.add_input("root_M", val=np.zeros(3), units="N*m", desc="Blade root moment in blade c.s.")
         self.add_input("s_f", val=rotorse_options["root_fastener_s_f"], desc="Safety factor")
-        self.add_input("d_f", val=0., units="m", desc="Diameter of the fastener")
-        self.add_input("sigma_max", val=0., units="Pa", desc="Max stress on bolt")
+        self.add_input("d_f", val=0.0, units="m", desc="Diameter of the fastener")
+        self.add_input("sigma_max", val=0.0, units="Pa", desc="Max stress on bolt")
 
-        self.add_output("d_r", val=0., units="m", desc="Root fastener circle diameter")
-        self.add_output("ratio", val=0., desc="Ratio of recommended diameter over actual diameter. It can be constrained to be smaller than 1")
+        self.add_output("d_r", val=0.0, units="m", desc="Root fastener circle diameter")
+        self.add_output(
+            "ratio",
+            val=0.0,
+            desc="Ratio of recommended diameter over actual diameter. It can be constrained to be smaller than 1",
+        )
 
     def compute(self, inputs, outputs):
-        
-        Mxy = np.sqrt(inputs["root_M"][0]**2. + inputs["root_M"][1]**2.)
 
-        d_r = np.sqrt((48. * Mxy * inputs["s_f"])/(np.pi**2. * inputs["sigma_max"] * inputs["d_f"] ))
-        
+        Mxy = np.sqrt(inputs["root_M"][0] ** 2.0 + inputs["root_M"][1] ** 2.0)
+
+        d_r = np.sqrt((48.0 * Mxy * inputs["s_f"]) / (np.pi ** 2.0 * inputs["sigma_max"] * inputs["d_f"]))
+
         sectors = np.array([])
         for i in range(self.n_layers):
-            sectors = np.unique(np.hstack([sectors, inputs["layer_start_nd"][i,0], inputs["layer_end_nd"][i,0]]))
+            sectors = np.unique(np.hstack([sectors, inputs["layer_start_nd"][i, 0], inputs["layer_end_nd"][i, 0]]))
 
         thick = np.zeros(len(sectors))
         for j in range(len(sectors)):
             for i in range(self.n_layers):
-                if inputs["layer_start_nd"][i,0] <= sectors[j] and inputs["layer_end_nd"][i,0] >= sectors[j]:
-                    thick[j] += inputs["layer_thickness"][i,0]
+                if inputs["layer_start_nd"][i, 0] <= sectors[j] and inputs["layer_end_nd"][i, 0] >= sectors[j]:
+                    thick[j] += inputs["layer_thickness"][i, 0]
 
         # check = np.all(thick == thick[0])
         # if not check:
         #     raise Exception('All Values in Array are not same')
         d_r_actual = inputs["rootD"] - 0.5 * thick[0]
-        
+
         ratio = d_r / d_r_actual
 
         outputs["d_r"] = d_r

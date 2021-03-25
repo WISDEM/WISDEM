@@ -85,7 +85,7 @@ properties:
                                         description: First index of the array of design variables/constraints that is optimized/constrained
                                     index_end: &index_end
                                         type: integer
-                                        default: 0
+                                        default: 8
                                         minimum: 0
                                         unit: none
                                         description: Last index of the array of design variables/constraints that is optimized/constrained
