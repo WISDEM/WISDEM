@@ -1,0 +1,114 @@
+import openmdao.api as om
+from wisdem.rotorse.rotor_power import RotorPower, NoStallConstraint
+from wisdem.commonse.turbine_class import TurbineClass
+from wisdem.rotorse.rotor_structure import RotorStructure
+from wisdem.rotorse.rotor_elasticity import RotorElasticity
+from wisdem.ccblade.ccblade_component import CCBladeTwist
+
+
+class RotorSE(om.Group):
+    def initialize(self):
+        self.options.declare("modeling_options")
+        self.options.declare("opt_options")
+
+    def setup(self):
+        modeling_options = self.options["modeling_options"]
+        opt_options = self.options["opt_options"]
+
+        promoteGeom = [
+            "A",
+            "EA",
+            "EIxx",
+            "EIyy",
+            "EIxy",
+            "GJ",
+            "rhoA",
+            "rhoJ",
+            "x_ec",
+            "y_ec",
+            "xu_strain_spar",
+            "xl_strain_spar",
+            "yu_strain_spar",
+            "yl_strain_spar",
+            "xu_strain_te",
+            "xl_strain_te",
+            "yu_strain_te",
+            "yl_strain_te",
+        ]
+
+        promoteCC = [
+            "chord",
+            "theta",
+            "r",
+            "Rtip",
+            "Rhub",
+            "hub_height",
+            "precone",
+            "tilt",
+            "precurve",
+            "presweep",
+            "airfoils_aoa",
+            "airfoils_Re",
+            "airfoils_cl",
+            "airfoils_cd",
+            "airfoils_cm",
+            "nBlades",
+            ("rho", "rho_air"),
+            ("mu", "mu_air"),
+            "shearExp",
+            "hubloss",
+            "tiploss",
+            "wakerotation",
+            "usecd",
+            "nSector",
+            "yaw",
+        ]
+
+        self.add_subsystem(
+            "ccblade",
+            CCBladeTwist(modeling_options=modeling_options, opt_options=opt_options),
+            promotes=promoteCC + ["pitch", "tsr", "precurveTip", "presweepTip"],
+        )  # Run standalone CCBlade and possibly determine optimal twist from user-defined margin to stall
+
+        self.add_subsystem("wt_class", TurbineClass())
+
+        self.add_subsystem(
+            "re",
+            RotorElasticity(modeling_options=modeling_options, opt_options=opt_options),
+            promotes=promoteGeom + ["chord", "theta", "r", "precurve", "presweep"],
+        )
+
+        self.add_subsystem(
+            "rp",
+            RotorPower(modeling_options=modeling_options),
+            promotes=promoteCC + ["precurveTip", "presweepTip", ("tsr_operational", "tsr"), ("control_pitch", "pitch")],
+        )
+
+        self.add_subsystem(
+            "stall_check",
+            NoStallConstraint(modeling_options=modeling_options),
+            promotes=["s", "airfoils_aoa", "airfoils_cl", "airfoils_cd", "airfoils_cm"],
+        )
+
+        self.add_subsystem(
+            "rs",
+            RotorStructure(modeling_options=modeling_options, opt_options=opt_options, freq_run=False),
+            promotes=promoteGeom + promoteCC + ["s", "precurveTip"],
+        )
+
+        # Connection from ra to rs for the rated conditions
+        self.connect("rp.gust.V_gust", ["rs.aero_gust.V_load", "rs.aero_hub_loads.V_load"])
+        self.connect(
+            "rp.powercurve.rated_Omega", ["rs.Omega_load", "rs.tot_loads_gust.aeroloads_Omega", "rs.constr.rated_Omega"]
+        )
+        self.connect("rp.powercurve.rated_pitch", ["rs.pitch_load", "rs.tot_loads_gust.aeroloads_pitch"])
+
+        # Connections to RotorPower
+        self.connect("wt_class.V_mean", "rp.cdf.xbar")
+        self.connect("wt_class.V_mean", "rp.gust.V_mean")
+
+        # Connections to the stall check
+        if modeling_options["flags"]["blade"]:
+            self.connect("rp.powercurve.aoa_regII", "stall_check.aoa_along_span")
+        else:
+            self.connect("ccblade.alpha", "stall_check.aoa_along_span")
