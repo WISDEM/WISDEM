@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-
 import openmdao.api as om
 
 
@@ -397,10 +396,10 @@ class PoseOptimization(object):
 
         # Set merit figure. Each objective has its own scaling.
         if self.opt["merit_figure"] == "AEP":
-            wt_opt.model.add_objective("rp.AEP", ref=-1.0e6)
+            wt_opt.model.add_objective("rotorse.rp.AEP", ref=-1.0e6)
 
         elif self.opt["merit_figure"] == "blade_mass":
-            wt_opt.model.add_objective("re.precomp.blade_mass", ref=1.0e4)
+            wt_opt.model.add_objective("rotorse.re.precomp.blade_mass", ref=1.0e4)
 
         elif self.opt["merit_figure"] == "LCOE":
             wt_opt.model.add_objective("financese.lcoe", ref=0.1)
@@ -443,9 +442,9 @@ class PoseOptimization(object):
 
         elif self.opt["merit_figure"] == "Cp":
             if self.modeling["flags"]["blade"]:
-                wt_opt.model.add_objective("rp.powercurve.Cp_regII", ref=-1.0)
+                wt_opt.model.add_objective("rotorse.rp.powercurve.Cp_regII", ref=-1.0)
             else:
-                wt_opt.model.add_objective("ccblade.CP", ref=-1.0)
+                wt_opt.model.add_objective("rotorse.ccblade.CP", ref=-1.0)
         else:
             raise ValueError("The merit figure " + self.opt["merit_figure"] + " is unknown or not supported.")
 
@@ -815,7 +814,7 @@ class PoseOptimization(object):
                     blade_constr["strains_spar_cap_ss"]["index_start"], blade_constr["strains_spar_cap_ss"]["index_end"]
                 )
                 wt_opt.model.add_constraint(
-                    "rs.constr.constr_max_strainU_spar", indices=indices_strains_spar_cap_ss, upper=1.0
+                    "rotorse.rs.constr.constr_max_strainU_spar", indices=indices_strains_spar_cap_ss, upper=1.0
                 )
             else:
                 print(
@@ -835,7 +834,7 @@ class PoseOptimization(object):
                     blade_constr["strains_spar_cap_ps"]["index_start"], blade_constr["strains_spar_cap_ps"]["index_end"]
                 )
                 wt_opt.model.add_constraint(
-                    "rs.constr.constr_max_strainL_spar", indices=indices_strains_spar_cap_ps, upper=1.0
+                    "rotorse.rs.constr.constr_max_strainL_spar", indices=indices_strains_spar_cap_ps, upper=1.0
                 )
             else:
                 print(
@@ -844,7 +843,7 @@ class PoseOptimization(object):
 
         if blade_constr["stall"]["flag"]:
             if blade_opt["aero_shape"]["twist"]["flag"]:
-                wt_opt.model.add_constraint("stall_check.no_stall_constraint", upper=1.0)
+                wt_opt.model.add_constraint("rotorse.stall_check.no_stall_constraint", upper=1.0)
             else:
                 print(
                     "WARNING: the margin to stall is set to be constrained, but twist is not an active design variable. The constraint is not enforced."
@@ -868,7 +867,9 @@ class PoseOptimization(object):
 
         if blade_constr["root_circle_diameter"]["flag"]:
             if blade_opt["aero_shape"]["chord"]["flag"] and blade_opt["aero_shape"]["chord"]["index_start"] == 0.0:
-                wt_opt.model.add_constraint("rs.brs.ratio", upper=blade_constr["root_circle_diameter"]["max_ratio"])
+                wt_opt.model.add_constraint(
+                    "rotorse.rs.brs.ratio", upper=blade_constr["root_circle_diameter"]["max_ratio"]
+                )
             else:
                 print(
                     "WARNING: the blade root size is set to be constrained, but chord at blade root is not an active design variable. The constraint is not enforced."
@@ -876,27 +877,27 @@ class PoseOptimization(object):
 
         if blade_constr["frequency"]["flap_3P"]:
             if blade_opt["structure"]["spar_cap_ss"]["flag"] or blade_opt["structure"]["spar_cap_ps"]["flag"]:
-                wt_opt.model.add_constraint("rs.constr.constr_flap_f_margin", upper=0.0)
+                wt_opt.model.add_constraint("rotorse.rs.constr.constr_flap_f_margin", upper=0.0)
             else:
                 print(
                     "WARNING: the blade flap frequencies are set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced."
                 )
 
         if blade_constr["frequency"]["edge_3P"]:
-            wt_opt.model.add_constraint("rs.constr.constr_edge_f_margin", upper=0.0)
+            wt_opt.model.add_constraint("rotorse.rs.constr.constr_edge_f_margin", upper=0.0)
 
         if blade_constr["rail_transport"]["8_axle"]:
-            wt_opt.model.add_constraint("re.rail.constr_LV_8axle_horiz", lower=0.8, upper=1.0)
-            wt_opt.model.add_constraint("re.rail.constr_strainPS", upper=1.0)
-            wt_opt.model.add_constraint("re.rail.constr_strainSS", upper=1.0)
+            wt_opt.model.add_constraint("rotorse.re.rail.constr_LV_8axle_horiz", lower=0.8, upper=1.0)
+            wt_opt.model.add_constraint("rotorse.re.rail.constr_strainPS", upper=1.0)
+            wt_opt.model.add_constraint("rotorse.re.rail.constr_strainSS", upper=1.0)
         elif blade_constr["rail_transport"]["4_axle"]:
-            wt_opt.model.add_constraint("re.rail.constr_LV_4axle_horiz", upper=1.0)
-            wt_opt.model.add_constraint("re.rail.constr_strainPS", upper=1.0)
-            wt_opt.model.add_constraint("re.rail.constr_strainSS", upper=1.0)
+            wt_opt.model.add_constraint("rotorse.re.rail.constr_LV_4axle_horiz", upper=1.0)
+            wt_opt.model.add_constraint("rotorse.re.rail.constr_strainPS", upper=1.0)
+            wt_opt.model.add_constraint("rotorse.re.rail.constr_strainSS", upper=1.0)
 
         if self.opt["constraints"]["blade"]["moment_coefficient"]["flag"]:
             wt_opt.model.add_constraint(
-                "ccblade.CM",
+                "rotorse.ccblade.CM",
                 lower=self.opt["constraints"]["blade"]["moment_coefficient"]["min"],
                 upper=self.opt["constraints"]["blade"]["moment_coefficient"]["max"],
             )
@@ -910,9 +911,13 @@ class PoseOptimization(object):
             target_cd = np.interp(eta_opt, data_target[:, 0], data_target[:, 4])
             eps_cl = 1.0e-2
             if self.opt["constraints"]["blade"]["match_cl_cd"]["flag_cl"]:
-                wt_opt.model.add_constraint("ccblade.cl_n_opt", lower=target_cl - eps_cl, upper=target_cl + eps_cl)
+                wt_opt.model.add_constraint(
+                    "rotorse.ccblade.cl_n_opt", lower=target_cl - eps_cl, upper=target_cl + eps_cl
+                )
             if self.opt["constraints"]["blade"]["match_cl_cd"]["flag_cd"]:
-                wt_opt.model.add_constraint("ccblade.cd_n_opt", lower=target_cd - eps_cl, upper=target_cd + eps_cl)
+                wt_opt.model.add_constraint(
+                    "rotorse.ccblade.cd_n_opt", lower=target_cd - eps_cl, upper=target_cd + eps_cl
+                )
         if (
             self.opt["constraints"]["blade"]["match_L_D"]["flag_L"]
             or self.opt["constraints"]["blade"]["match_L_D"]["flag_D"]
@@ -923,9 +928,9 @@ class PoseOptimization(object):
             target_D = np.interp(eta_opt, data_target[:, 0], data_target[:, 8])
         eps_L = 1.0e2
         if self.opt["constraints"]["blade"]["match_L_D"]["flag_L"]:
-            wt_opt.model.add_constraint("ccblade.L_n_opt", lower=target_L - eps_L, upper=target_L + eps_L)
+            wt_opt.model.add_constraint("rotorse.ccblade.L_n_opt", lower=target_L - eps_L, upper=target_L + eps_L)
         if self.opt["constraints"]["blade"]["match_L_D"]["flag_D"]:
-            wt_opt.model.add_constraint("ccblade.D_n_opt", lower=target_D - eps_L, upper=target_D + eps_L)
+            wt_opt.model.add_constraint("rotorse.ccblade.D_n_opt", lower=target_D - eps_L, upper=target_D + eps_L)
 
         # Tower and monopile contraints
         tower_constr = self.opt["constraints"]["tower"]
@@ -1118,9 +1123,9 @@ class PoseOptimization(object):
                 wt_opt["blade.opt_var.spar_cap_ss_opt"] = init_spar_cap_ss_opt
                 wt_opt["blade.opt_var.spar_cap_ps_opt"] = init_spar_cap_ps_opt
             blade_constr = self.opt["constraints"]["blade"]
-            wt_opt["rs.constr.max_strainU_spar"] = blade_constr["strains_spar_cap_ss"]["max"]
-            wt_opt["rs.constr.max_strainL_spar"] = blade_constr["strains_spar_cap_ps"]["max"]
-            wt_opt["stall_check.stall_margin"] = blade_constr["stall"]["margin"] * 180.0 / np.pi
+            wt_opt["rotorse.rs.constr.max_strainU_spar"] = blade_constr["strains_spar_cap_ss"]["max"]
+            wt_opt["rotorse.rs.constr.max_strainL_spar"] = blade_constr["strains_spar_cap_ps"]["max"]
+            wt_opt["rotorse.stall_check.stall_margin"] = blade_constr["stall"]["margin"] * 180.0 / np.pi
             wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
 
         if self.modeling["flags"]["nacelle"] and self.modeling["WISDEM"]["DriveSE"]["direct"]:

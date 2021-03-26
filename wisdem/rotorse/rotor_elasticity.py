@@ -990,7 +990,22 @@ class RotorElasticity(Group):
         opt_options = self.options["opt_options"]
 
         # Get elastic properties by running precomp
-        promote_list = ["chord", "theta", "A", "EA", "EIxx", "EIyy", "EIxy", "GJ", "rhoA", "rhoJ", "x_sc", "y_sc"]
+        promote_list = [
+            "chord",
+            "theta",
+            "A",
+            "EA",
+            "EIxx",
+            "EIyy",
+            "EIxy",
+            "GJ",
+            "rhoA",
+            "rhoJ",
+            "x_sc",
+            "y_sc",
+            "pitch_axis",
+            "coord_xy_interp",
+        ]
         self.add_subsystem(
             "precomp",
             RunPreComp(modeling_options=modeling_options, opt_options=opt_options),
@@ -1010,6 +1025,14 @@ class RotorElasticity(Group):
                 "sc_ps_mats",
                 "te_ss_mats",
                 "te_ps_mats",
+                "xu_strain_spar",
+                "xl_strain_spar",
+                "yu_strain_spar",
+                "yl_strain_spar",
+                "xu_strain_te",
+                "xl_strain_te",
+                "yu_strain_te",
+                "yl_strain_te",
             ],
         )
         # Check rail transportabiliy

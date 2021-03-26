@@ -152,7 +152,7 @@ class CCBladeLoads(ExplicitComponent):
     hubloss : boolean
         Include Prandtl hub loss model.
     wakerotation : boolean
-        Iclude effect of wake rotation (i.e., tangential induction factor is nonzero).
+        Include effect of wake rotation (i.e., tangential induction factor is nonzero).
     usecd : boolean
         Use drag coefficient in computing induction factors.
 
