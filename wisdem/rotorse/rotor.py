@@ -64,6 +64,14 @@ class RotorSE(om.Group):
             "yaw",
         ]
 
+        ivc = om.IndepVarComp()
+        ivc.add_discrete_output("hubloss", val=modeling_options["WISDEM"]["RotorSE"]["hubloss"])
+        ivc.add_discrete_output("tiploss", val=modeling_options["WISDEM"]["RotorSE"]["tiploss"])
+        ivc.add_discrete_output("wakerotation", val=modeling_options["WISDEM"]["RotorSE"]["wakerotation"])
+        ivc.add_discrete_output("usecd", val=modeling_options["WISDEM"]["RotorSE"]["usecd"])
+        ivc.add_discrete_output("nSector", val=modeling_options["WISDEM"]["RotorSE"]["n_sector"])
+        self.add_subsystem("ivc", ivc, promotes=["*"])
+
         self.add_subsystem(
             "ccblade",
             CCBladeTwist(modeling_options=modeling_options, opt_options=opt_options),
