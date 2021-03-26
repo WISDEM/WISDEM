@@ -24,7 +24,7 @@ print(f"Tip deflection: {wt_opt['rotorse.rs.tip_pos.tip_deflection'][0]} meters"
 
 # Construct a dict with values to overwrite
 overridden_values = {}
-overridden_values["wt_class.V_mean_overwrite"] = 11.5
+overridden_values["rotorse.wt_class.V_mean_overwrite"] = 11.5
 
 # Run the modified simulation with the overwritten values
 wt_opt, modeling_options, opt_options = run_wisdem(
