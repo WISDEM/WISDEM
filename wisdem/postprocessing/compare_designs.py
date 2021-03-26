@@ -281,14 +281,14 @@ def create_all_plots(
         faoa, axaoa = plt.subplots(1, 1, figsize=(5.3, 4))
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             axaoa.plot(
-                yaml_data["rotorse.stall_check.s"],
+                yaml_data["rotorse.s"],
                 yaml_data["rotorse.stall_check.aoa_along_span"],
                 "-",
                 color=colors[idx],
                 label=label,
             )
         axaoa.plot(
-            yaml_data["rotorse.stall_check.s"],
+            yaml_data["rotorse.s"],
             yaml_data["rotorse.stall_check.stall_angle_along_span"],
             ":",
             color=colors[idx + 1],
