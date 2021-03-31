@@ -5,7 +5,8 @@ import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.manufacturing as manufacture
 from wisdem.commonse import NFREQ, eps, gravity
-from wisdem.commonse.utilization_constraints import hoopStress, hoopStressEurocode
+from wisdem.commonse.utilization_eurocode import hoopStressEurocode
+from wisdem.commonse.utilization_constraints import hoopStress
 
 RIGID = 1e30
 NREFINE = 3
@@ -400,7 +401,6 @@ class CylinderFrame3DD(om.ExplicitComponent):
         self.options.declare("nMass")
         self.options.declare("nPL")
         self.options.declare("frame3dd_opt")
-        self.options.declare("buckling_length")
 
     def setup(self):
         npts = self.options["npts"]
@@ -486,7 +486,6 @@ class CylinderFrame3DD(om.ExplicitComponent):
         self.add_output("axial_stress", val=np.zeros(npts - 1), units="N/m**2")
         self.add_output("shear_stress", val=np.zeros(npts - 1), units="N/m**2")
         self.add_output("hoop_stress", val=np.zeros(npts - 1), units="N/m**2")
-        self.add_output("hoop_stress_euro", val=np.zeros(npts - 1), units="N/m**2")
 
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
@@ -667,25 +666,23 @@ class CylinderFrame3DD(om.ExplicitComponent):
 
         # axial and shear stress
         d, _ = util.nodal2sectional(inputs["d"])
+        r = 0.5 * d
         qdyn, _ = util.nodal2sectional(inputs["qdyn"])
 
         ##R = self.d/2.0
         ##x_stress = R*np.cos(self.theta_stress)
         ##y_stress = R*np.sin(self.theta_stress)
-        ##axial_stress = Fz/self.Az + Mxx/self.Ixx*y_stress - Myy/self.Iyy*x_stress
+        ##axial_stress = Fz/self.Az + Mxx/self.Ixx*y_stress - Myy/Iyy*x_stress
         #        V = Vy*x_stress/R - Vx*y_stress/R  # shear stress orthogonal to direction x,y
         #        shear_stress = 2. * V / self.Az  # coefficient of 2 for a hollow circular section, but should be conservative for other shapes
-        outputs["axial_stress"] = (
-            Fz / inputs["Az"] - np.sqrt(Mxx ** 2 + Myy ** 2) / inputs["Iyy"] * d / 2.0
-        )  # More conservative, just use the tilted bending and add total max shear as well at the same point, if you do not like it go back to the previous lines
 
-        outputs["shear_stress"] = (
-            2.0 * np.sqrt(Vx ** 2 + Vy ** 2) / inputs["Az"]
-        )  # coefficient of 2 for a hollow circular section, but should be conservative for other shapes
+        # See http://svn.code.sourceforge.net/p/frame3dd/code/trunk/doc/Frame3DD-manual.html#structuralmodeling
+        M = np.sqrt(Mxx ** 2 + Myy ** 2)
+        V = np.sqrt(Vx ** 2 + Vy ** 2)
 
-        # hoop_stress (Eurocode method)
-        L_reinforced = self.options["buckling_length"] * np.ones(Fz.shape)
-        outputs["hoop_stress_euro"] = hoopStressEurocode(inputs["z"], d, inputs["t"], L_reinforced, qdyn)
+        outputs["axial_stress"] = Fz / Az + M * r / Iyy
+
+        outputs["shear_stress"] = np.abs(Mzz) / Jz * r + V / Asx
 
         # Simpler hoop stress used in API calculations
         outputs["hoop_stress"] = hoopStress(d, inputs["t"], qdyn)

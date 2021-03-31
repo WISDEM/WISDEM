@@ -27,6 +27,7 @@ class TestTowerSE(unittest.TestCase):
 
         self.modeling_options["WISDEM"] = {}
         self.modeling_options["WISDEM"]["TowerSE"] = {}
+        self.modeling_options["WISDEM"]["TowerSE"]["buckling_method"] = "eurocode"
         self.modeling_options["WISDEM"]["TowerSE"]["buckling_length"] = 30.0
         self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = 3
         self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = 1
@@ -1303,74 +1304,78 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_b"] = 1.1
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_fatigue"] = 1.35 * 1.3 * 1.0
 
-        prob = om.Problem()
-        prob.model = tow.TowerSE(modeling_options=self.modeling_options)
-        prob.setup()
+        def fill_prob():
+            prob = om.Problem()
+            prob.model = tow.TowerSE(modeling_options=self.modeling_options)
+            prob.setup()
 
-        if self.modeling_options["WISDEM"]["TowerSE"]["wind"] == "PowerWind":
-            prob["shearExp"] = shearExp
+            if self.modeling_options["WISDEM"]["TowerSE"]["wind"] == "PowerWind":
+                prob["shearExp"] = shearExp
 
-        # assign values to params
+            # assign values to params
 
-        # --- geometry ----
-        prob["hub_height"] = h_param.sum()
-        prob["water_depth"] = water_depth
-        # prob['tower_section_height'] = h_param
-        prob["tower_s"] = np.cumsum(np.r_[0.0, h_param]) / h_param.sum()
-        prob["tower_foundation_height"] = z_foundation
-        prob["tower_height"] = h_param.sum()
-        prob["tower_outer_diameter_in"] = d_param
-        # prob['tower_wall_thickness'] = t_param
-        prob["tower_layer_thickness"] = t_param.reshape((1, len(t_param)))
-        prob["tower_outfitting_factor"] = Koutfitting
-        prob["tower_layer_materials"] = ["steel"]
-        prob["material_names"] = ["steel"]
-        prob["yaw"] = yaw
-        # prob["G_soil"] = soilG
-        # prob["nu_soil"] = soilnu
-        # --- material props ---
-        prob["E_mat"] = E * np.ones((1, 3))
-        prob["G_mat"] = G * np.ones((1, 3))
-        prob["rho_mat"] = rho
-        prob["sigma_y_mat"] = sigma_y
+            # --- geometry ----
+            prob["hub_height"] = h_param.sum()
+            prob["water_depth"] = water_depth
+            # prob['tower_section_height'] = h_param
+            prob["tower_s"] = np.cumsum(np.r_[0.0, h_param]) / h_param.sum()
+            prob["tower_foundation_height"] = z_foundation
+            prob["tower_height"] = h_param.sum()
+            prob["tower_outer_diameter_in"] = d_param
+            # prob['tower_wall_thickness'] = t_param
+            prob["tower_layer_thickness"] = t_param.reshape((1, len(t_param)))
+            prob["tower_outfitting_factor"] = Koutfitting
+            prob["tower_layer_materials"] = ["steel"]
+            prob["material_names"] = ["steel"]
+            prob["yaw"] = yaw
+            # prob["G_soil"] = soilG
+            # prob["nu_soil"] = soilnu
+            # --- material props ---
+            prob["E_mat"] = E * np.ones((1, 3))
+            prob["G_mat"] = G * np.ones((1, 3))
+            prob["rho_mat"] = rho
+            prob["sigma_y_mat"] = sigma_y
 
-        # --- extra mass ----
-        prob["rna_mass"] = m
-        prob["rna_I"] = mI
-        prob["rna_cg"] = mrho
-        # -----------
+            # --- extra mass ----
+            prob["rna_mass"] = m
+            prob["rna_I"] = mI
+            prob["rna_cg"] = mrho
+            # -----------
 
-        # --- costs ---
-        prob["unit_cost"] = material_cost
-        prob["labor_cost_rate"] = labor_cost
-        prob["painting_cost_rate"] = painting_cost
-        # -----------
+            # --- costs ---
+            prob["unit_cost"] = material_cost
+            prob["labor_cost_rate"] = labor_cost
+            prob["painting_cost_rate"] = painting_cost
+            # -----------
 
-        # --- wind & wave ---
-        prob["wind_reference_height"] = wind_zref
-        prob["z0"] = wind_z0
-        prob["cd_usr"] = cd_usr
-        prob["rho_air"] = 1.225
-        prob["mu_air"] = 1.7934e-5
+            # --- wind & wave ---
+            prob["wind_reference_height"] = wind_zref
+            prob["z0"] = wind_z0
+            prob["cd_usr"] = cd_usr
+            prob["rho_air"] = 1.225
+            prob["mu_air"] = 1.7934e-5
 
-        # --- fatigue ---
-        prob["life"] = life
-        # ---------------
+            # --- fatigue ---
+            prob["life"] = life
+            # ---------------
 
-        # # --- loading case 1: max Thrust ---
-        prob["wind1.Uref"] = wind_Uref1
+            # # --- loading case 1: max Thrust ---
+            prob["wind1.Uref"] = wind_Uref1
 
-        prob["pre1.rna_F"] = np.r_[Fx1, Fy1, Fz1]
-        prob["pre1.rna_M"] = np.r_[Mxx1, Myy1, Mzz1]
-        # # ---------------
+            prob["pre1.rna_F"] = np.r_[Fx1, Fy1, Fz1]
+            prob["pre1.rna_M"] = np.r_[Mxx1, Myy1, Mzz1]
+            # # ---------------
 
-        # # --- loading case 2: max Wind Speed ---
-        prob["wind2.Uref"] = wind_Uref2
+            # # --- loading case 2: max Wind Speed ---
+            prob["wind2.Uref"] = wind_Uref2
 
-        prob["pre2.rna_F"] = np.r_[Fx2, Fy2, Fz2]
-        prob["pre2.rna_M"] = np.r_[Mxx2, Myy2, Mzz2]
+            prob["pre2.rna_F"] = np.r_[Fx2, Fy2, Fz2]
+            prob["pre2.rna_M"] = np.r_[Mxx2, Myy2, Mzz2]
+
+            return prob
 
         # # --- run ---
+        prob = fill_prob()
         prob.run_model()
 
         npt.assert_almost_equal(prob["z_full"], [0.0, 14.6, 29.2, 43.8, 58.4, 73.0, 87.6])
@@ -1385,25 +1390,67 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob["tower1.f1"], [0.33214436], 5)
         npt.assert_almost_equal(prob["post1.top_deflection"], [0.6988131])
         npt.assert_almost_equal(
-            prob["post1.stress"], [0.45829036, 0.41279744, 0.35017613, 0.31497356, 0.17978006, 0.12034969]
+            prob["post1.stress"], [0.3844339, 0.3436128, 0.2856628, 0.2421312, 0.1121663, 0.0623614]
         )
         npt.assert_almost_equal(
             prob["post1.global_buckling"], [0.5170422, 0.4829785, 0.4351583, 0.4221748, 0.3168518, 0.2755187]
         )
         npt.assert_almost_equal(
-            prob["post1.shell_buckling"], [0.32499783, 0.25914943, 0.18536693, 0.17037662, 0.06344361, 0.03260026]
+            prob["post1.shell_buckling"], [0.2371124, 0.1861889, 0.1282914, 0.1073705, 0.0295743, 0.0130323]
         )
         npt.assert_almost_equal(prob["wind2.Uref"], [70.0])
         npt.assert_almost_equal(prob["tower2.f1"], [0.33218936], 5)
         npt.assert_almost_equal(prob["post2.top_deflection"], [0.6440434])
-        npt.assert_almost_equal(
-            prob["post2.stress"], [0.44626187, 0.3821702, 0.30578917, 0.25648781, 0.13131541, 0.10609859]
-        )
+        npt.assert_almost_equal(prob["post2.stress"], [0.3728837, 0.3137352, 0.2421504, 0.18487, 0.0662662, 0.0471034])
         npt.assert_almost_equal(
             prob["post2.global_buckling"], [0.5064959, 0.4570302, 0.3978452, 0.373074, 0.276448, 0.2668201]
         )
         npt.assert_almost_equal(
-            prob["post2.shell_buckling"], [0.31204018, 0.22828066, 0.14756271, 0.12234901, 0.03991668, 0.02701307]
+            prob["post2.shell_buckling"], [0.2258567, 0.1599288, 0.0970113, 0.0700506, 0.0156922, 0.0100741]
+        )
+        npt.assert_almost_equal(prob["tower1.base_F"][0], 1300347.476206353, 2)  # 1.29980269e06, 2)
+        npt.assert_array_less(np.abs(prob["tower1.base_F"][1]), 1e2, 2)
+        npt.assert_almost_equal(prob["tower1.base_F"][2], -6.31005811e06, 2)
+        npt.assert_almost_equal(prob["tower1.base_M"], [4.14775052e06, 1.10758024e08, -3.46827499e05], 0)
+        npt.assert_almost_equal(prob["tower2.base_F"][0], 1617231.046083178, 2)
+        npt.assert_array_less(np.abs(prob["tower2.base_F"][1]), 1e2, 2)
+        npt.assert_almost_equal(prob["tower2.base_F"][2], -6.27903939e06, 2)
+        npt.assert_almost_equal(prob["tower2.base_M"], [-1.76120197e06, 1.12569564e08, 1.47321336e05], 0)
+
+        # Now regression on DNV-GL C202 methods
+        self.modeling_options["WISDEM"]["TowerSE"]["buckling_method"] = "dnvgl"
+        prob = fill_prob()
+        prob.run_model()
+
+        npt.assert_almost_equal(prob["z_full"], [0.0, 14.6, 29.2, 43.8, 58.4, 73.0, 87.6])
+        npt.assert_almost_equal(prob["d_full"], [6.0, 5.645, 5.29, 4.935, 4.58, 4.225, 3.87])
+        npt.assert_almost_equal(prob["t_full"], [0.0325, 0.0325, 0.0325, 0.0273, 0.0273, 0.0273])
+
+        npt.assert_almost_equal(prob["tower_mass"], [370541.14008246])
+        npt.assert_almost_equal(prob["tower_center_of_mass"], [38.78441074])
+        npt.assert_almost_equal(prob["constr_d_to_t"], [168.23076923, 161.26373626])
+        npt.assert_almost_equal(prob["constr_taper"], [0.8225, 0.78419453])
+        npt.assert_almost_equal(prob["wind1.Uref"], [11.73732])
+        npt.assert_almost_equal(prob["tower1.f1"], [0.33214436], 5)
+        npt.assert_almost_equal(prob["post1.top_deflection"], [0.6988131])
+        npt.assert_almost_equal(
+            prob["post1.stress"], [0.3844339, 0.3436128, 0.2856628, 0.2421312, 0.1121663, 0.0623614]
+        )
+        npt.assert_almost_equal(
+            prob["post1.global_buckling"], [0.6274373, 0.5691916, 0.4884754, 0.454831, 0.2769742, 0.2022617]
+        )
+        npt.assert_almost_equal(
+            prob["post1.shell_buckling"], [0.0357574, 0.0318343, 0.0281723, 0.0347622, 0.0310088, 0.0276982]
+        )
+        npt.assert_almost_equal(prob["wind2.Uref"], [70.0])
+        npt.assert_almost_equal(prob["tower2.f1"], [0.33218936], 5)
+        npt.assert_almost_equal(prob["post2.top_deflection"], [0.6440434])
+        npt.assert_almost_equal(prob["post2.stress"], [0.3728837, 0.3137352, 0.2421504, 0.18487, 0.0662662, 0.0471034])
+        npt.assert_almost_equal(
+            prob["post2.global_buckling"], [0.616188, 0.532396, 0.4323648, 0.378272, 0.2126512, 0.1896404]
+        )
+        npt.assert_almost_equal(
+            prob["post2.shell_buckling"], [0.0393843, 0.0397039, 0.0368479, 0.0463734, 0.0428983, 0.0394461]
         )
         npt.assert_almost_equal(prob["tower1.base_F"][0], 1300347.476206353, 2)  # 1.29980269e06, 2)
         npt.assert_array_less(np.abs(prob["tower1.base_F"][1]), 1e2, 2)
