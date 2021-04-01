@@ -674,7 +674,13 @@ class WindTurbineOntologyPython(object):
                     "blade.outer_shape_bem.s"
                 ].tolist()
                 self.wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"] = wt_opt[
-                    "rp.powercurve.L_D"
+                    "rotorse.rp.powercurve.L_D"
+                ].tolist()
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"] = wt_opt[
+                    "blade.outer_shape_bem.s"
+                ].tolist()
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"] = wt_opt[
+                    "rotorse.rp.powercurve.cd_regII"
                 ].tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["x"]["grid"] = wt_opt[
                 "blade.outer_shape_bem.s"

@@ -92,7 +92,52 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     "L_D_opt", 
                     val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["L/D"]["n_opt"]),
                 )
+                inn_af.add_output(
+                    "s_opt_c_d", 
+                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["c_d"]["n_opt"])
+                )
+                inn_af.add_output(
+                    "c_d_opt", 
+                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["c_d"]["n_opt"]),
+                )
                 self.add_subsystem("inn_af", inn_af)
+
+        # Wind turbine configuration inputs
+        conf_ivc = self.add_subsystem("configuration", om.IndepVarComp())
+        conf_ivc.add_discrete_output(
+            "ws_class",
+            val="",
+            desc="IEC wind turbine class. I - offshore, II coastal, III - land-based, IV - low wind speed site.",
+        )
+        conf_ivc.add_discrete_output(
+            "turb_class",
+            val="",
+            desc="IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).",
+        )
+        conf_ivc.add_discrete_output(
+            "gearbox_type", val="geared", desc="Gearbox configuration (geared, direct-drive, etc.)."
+        )
+        conf_ivc.add_discrete_output(
+            "rotor_orientation", val="upwind", desc="Rotor orientation, either upwind or downwind."
+        )
+        conf_ivc.add_discrete_output(
+            "upwind", val=True, desc="Convenient boolean for upwind (True) or downwind (False)."
+        )
+        conf_ivc.add_discrete_output("n_blades", val=3, desc="Number of blades of the rotor.")
+        conf_ivc.add_output("rated_power", val=0.0, units="W", desc="Electrical rated power of the generator.")
+
+        conf_ivc.add_output(
+            "rotor_diameter_user",
+            val=0.0,
+            units="m",
+            desc="Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.",
+        )
+        conf_ivc.add_output(
+            "hub_height_user",
+            val=0.0,
+            units="m",
+            desc="Height of the hub center over the ground (land-based) or the mean sea level (offshore) specified by the user.",
+        )
 
         # Hub inputs
         if modeling_options["flags"]["hub"]:
@@ -138,9 +183,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 self.connect("airfoils.aoa", "blade.run_inn_af.aoa")
                 self.connect("inn_af.s_opt_r_thick", "blade.run_inn_af.s_opt_r_thick")
                 self.connect("inn_af.s_opt_L_D", "blade.run_inn_af.s_opt_L_D")
+                self.connect("inn_af.s_opt_c_d", "blade.run_inn_af.s_opt_c_d")
                 self.connect("inn_af.r_thick_opt", "blade.run_inn_af.r_thick_opt")
                 self.connect("inn_af.L_D_opt", "blade.run_inn_af.L_D_opt")
+                self.connect("inn_af.c_d_opt", "blade.run_inn_af.c_d_opt")
                 self.connect("control.rated_TSR", "blade.run_inn_af.rated_TSR")
+                self.connect("configuration.rotor_diameter_user", "blade.run_inn_af.rotor_diameter")
+                self.connect("hub.radius", "blade.run_inn_af.hub_radius")
 
         # Nacelle inputs
         if modeling_options["flags"]["nacelle"]:
@@ -404,43 +453,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem("floating", Floating(floating_init_options=modeling_options["floating"]))
             self.add_subsystem("mooring", Mooring(options=modeling_options))
             self.connect("floating.joints_xyz", "mooring.joints_xyz")
-
-        # Wind turbine configuration inputs
-        conf_ivc = self.add_subsystem("configuration", om.IndepVarComp())
-        conf_ivc.add_discrete_output(
-            "ws_class",
-            val="",
-            desc="IEC wind turbine class. I - offshore, II coastal, III - land-based, IV - low wind speed site.",
-        )
-        conf_ivc.add_discrete_output(
-            "turb_class",
-            val="",
-            desc="IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).",
-        )
-        conf_ivc.add_discrete_output(
-            "gearbox_type", val="geared", desc="Gearbox configuration (geared, direct-drive, etc.)."
-        )
-        conf_ivc.add_discrete_output(
-            "rotor_orientation", val="upwind", desc="Rotor orientation, either upwind or downwind."
-        )
-        conf_ivc.add_discrete_output(
-            "upwind", val=True, desc="Convenient boolean for upwind (True) or downwind (False)."
-        )
-        conf_ivc.add_discrete_output("n_blades", val=3, desc="Number of blades of the rotor.")
-        conf_ivc.add_output("rated_power", val=0.0, units="W", desc="Electrical rated power of the generator.")
-
-        conf_ivc.add_output(
-            "rotor_diameter_user",
-            val=0.0,
-            units="m",
-            desc="Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.",
-        )
-        conf_ivc.add_output(
-            "hub_height_user",
-            val=0.0,
-            units="m",
-            desc="Height of the hub center over the ground (land-based) or the mean sea level (offshore) specified by the user.",
-        )
 
         # Environment inputs
         if modeling_options["flags"]["environment"]:
@@ -1144,9 +1156,26 @@ class INN_Airfoils(om.ExplicitComponent):
             val=np.ones(aero_shape_opt_options["L/D"]["n_opt"]),
         )
         self.add_input(
+            "s_opt_c_d", 
+            val=np.ones(aero_shape_opt_options["c_d"]["n_opt"])
+        )
+        self.add_input(
+            "c_d_opt", 
+            val=np.ones(aero_shape_opt_options["c_d"]["n_opt"]),
+        )
+        self.add_input(
             "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
         )
         self.add_input("rated_TSR", val=0.0, desc="Constant tip speed ratio in region II.")
+
+        self.add_input("hub_radius", val=0.0, units="m", 
+            desc = "Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line."
+        )
+        self.add_input("rotor_diameter",
+            val=0.0,
+            units="m",
+            desc="Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.",
+        )
     
     def compute(self, inputs, outputs):
         
@@ -1165,6 +1194,8 @@ class INN_Airfoils(om.ExplicitComponent):
         r_thick = r_thick_spline(inputs["s"])
         L_D_spline = spline(inputs["s_opt_L_D"], inputs["L_D_opt"])
         L_D = L_D_spline(inputs["s"])
+        c_d_spline = spline(inputs["s_opt_c_d"], inputs["c_d_opt"])
+        c_d = c_d_spline(inputs["s"])
 
         # Find indices for start and end of the optimization
         max_t_c = self.options["rotorse_options"]["inn_af_max_t/c"]
@@ -1173,12 +1204,13 @@ class INN_Airfoils(om.ExplicitComponent):
         r_thick_index_end = np.argmin(abs(r_thick - min_t_c))
 
         for i in range(r_thick_index_start, r_thick_index_end):
-            cd = 0.015
             stall_margin = 5.
             Re = 9000000.
             inn = INN()
             try:
-                cst, alpha = inn.inverse_design(cd, L_D[i], stall_margin, r_thick[i], Re, 
+                print(c_d[i])
+                # cst, alpha = inn.inverse_design(c_d[i], L_D[i], stall_margin, r_thick[i], Re, 
+                cst, alpha = inn.inverse_design(0.015, L_D[i], stall_margin, r_thick[i], Re, 
                                                 N=1, process_samples=True)
             except:
                 raise Exception("The INN for airfoil design failed in the inverse mode")
@@ -1220,6 +1252,7 @@ class INN_Airfoils(om.ExplicitComponent):
             ax[2].set_ylim(top=200, bottom=-50)
             # plt.show()
             plt.close()
+
 
 class Blade_Lofted_Shape(om.ExplicitComponent):
     # Openmdao component to generate the x, y, z coordinates of the points describing the blade outer shape.

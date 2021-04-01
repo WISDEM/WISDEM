@@ -1088,6 +1088,11 @@ class PoseOptimization(object):
                     wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
                     wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"])
                 wt_opt["inn_af.L_D_opt"] = init_L_D_opt
+                wt_opt["inn_af.s_opt_c_d"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["c_d"]["n_opt"])
+                init_c_d_opt = np.interp(wt_opt["inn_af.s_opt_c_d"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"])
+                wt_opt["inn_af.c_d_opt"] = init_c_d_opt
 
             if blade_opt["structure"]["spar_cap_ss"]['flag'] or blade_opt["structure"]["spar_cap_ss"]['flag']:
                 wt_opt["blade.opt_var.s_opt_spar_cap_ss"] = np.linspace(
