@@ -264,6 +264,11 @@ class ComputePowerCurve(ExplicitComponent):
             units="deg",
             desc="angle of attack distribution along blade span at cut-in wind speed",
         )
+        self.add_output(
+            "L_D",
+            val=np.zeros(n_span),
+            desc="Lift over drag distribution along blade span at cut-in wind speed",
+        )
         self.add_output("Cp_regII", val=0.0, desc="power coefficient at cut-in wind speed")
         self.add_output(
             "cl_regII", val=np.zeros(n_span), desc="lift coefficient distribution along blade span at cut-in wind speed"
@@ -718,6 +723,7 @@ class ComputePowerCurve(ExplicitComponent):
         outputs["aoa_regII"] = loads["alpha"]
         outputs["cl_regII"] = loads["Cl"]
         outputs["cd_regII"] = loads["Cd"]
+        outputs["L_D"] = loads["Cl"] / loads["Cd"]
         outputs["Cp_regII"] = Cp_aero[id_regII]
 
 
