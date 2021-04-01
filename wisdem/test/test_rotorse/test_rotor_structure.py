@@ -153,10 +153,7 @@ class TestRS(unittest.TestCase):
 
     def testRunFrame3DD(self):
         inputs = {}
-        outputs0 = {}
         outputs = {}
-        discrete_inputs = {}
-        discrete_outputs = {}
 
         nrel5mw = np.load(ARCHIVE)
         for k in nrel5mw.files:
@@ -164,8 +161,6 @@ class TestRS(unittest.TestCase):
 
         npts = len(inputs["r"])
         nfreq = 10
-        myzero = np.zeros(npts)
-        myone = np.ones(npts)
         options = {}
         options["WISDEM"] = {}
         options["WISDEM"]["RotorSE"] = {}

@@ -59,6 +59,12 @@ class RotorPower(Group):
                 "nBlades",
                 "rho",
                 "mu",
+                "shearExp",
+                "hubloss",
+                "tiploss",
+                "wakerotation",
+                "usecd",
+                "nSector",
             ],
         )
         self.add_subsystem("gust", GustETM(std=modeling_options["WISDEM"]["RotorSE"]["gust_std"]))

@@ -401,12 +401,16 @@ class RunFrame3DD(ExplicitComponent):
         n = len(z_az)
         rad = np.zeros(n)  # 'radius' of rigidity at node- set to zero
         inode = 1 + np.arange(n)  # Node numbers (1-based indexing)
-        if self.options["pbeam"]:
-            nodes = pyframe3dd.NodeData(inode, np.zeros(n), np.zeros(n), -r, rad)
-            L = np.diff(r)
-        else:
-            nodes = pyframe3dd.NodeData(inode, y_az, x_az, -z_az, rad)
-            L = np.sqrt(np.diff(x_az) ** 2 + np.diff(y_az) ** 2 + np.diff(z_az) ** 2)
+        # Frame3DD does a coordinate rotation for the local axis and when x_az is negative for precurve, this makes the local axis
+        # rotate relative to the global axis and we get inconsistent results.  Best to compute deflections on the reference axis (x=y=0)
+        nodes = pyframe3dd.NodeData(inode, np.zeros(n), np.zeros(n), r, rad)
+        L = np.diff(r)
+        # if self.options["pbeam"]:
+        #    nodes = pyframe3dd.NodeData(inode, np.zeros(n), np.zeros(n), r, rad)
+        #    L = np.diff(r)
+        # else:
+        #    nodes = pyframe3dd.NodeData(inode, x_az, y_az, z_az, rad)
+        #    L = np.sqrt(np.diff(x_az) ** 2 + np.diff(y_az) ** 2 + np.diff(z_az) ** 2)
         # -----------------------------------
 
         # ------ reaction data ------------
@@ -562,9 +566,9 @@ class RunFrame3DD(ExplicitComponent):
         outputs["flap_mode_freqs"] = freq_x
         outputs["freq_distance"] = freq_y[0] / freq_x[0]
         # Displacements in global (blade) c.s.
-        outputs["dx"] = displacements.dx[iCase, :]
+        outputs["dx"] = -displacements.dx[iCase, :]
         outputs["dy"] = displacements.dy[iCase, :]
-        outputs["dz"] = displacements.dz[iCase, :]
+        outputs["dz"] = -displacements.dz[iCase, :]
         outputs["strainU_spar"] = strainU_spar
         outputs["strainL_spar"] = strainL_spar
         outputs["strainU_te"] = strainU_te
@@ -1089,6 +1093,8 @@ class RotorStructure(Group):
             "Rhub",
             "hub_height",
             "precone",
+            "precurve",
+            "precurveTip",
             "tilt",
             "airfoils_aoa",
             "airfoils_Re",
@@ -1100,10 +1106,18 @@ class RotorStructure(Group):
             "mu",
             "Omega_load",
             "pitch_load",
+            "shearExp",
+            "hubloss",
+            "tiploss",
+            "wakerotation",
+            "usecd",
+            "yaw",
         ]
         # self.add_subsystem('aero_rated',        CCBladeLoads(modeling_options = modeling_options), promotes=promoteListAeroLoads)
 
-        self.add_subsystem("aero_gust", CCBladeLoads(modeling_options=modeling_options), promotes=promoteListAeroLoads)
+        self.add_subsystem(
+            "aero_gust", CCBladeLoads(modeling_options=modeling_options), promotes=promoteListAeroLoads + ["nSector"]
+        )
         # self.add_subsystem('aero_storm_1yr',    CCBladeLoads(modeling_options = modeling_options), promotes=promoteListAeroLoads)
         # self.add_subsystem('aero_storm_50yr',   CCBladeLoads(modeling_options = modeling_options), promotes=promoteListAeroLoads)
         # Add centrifugal and gravity loading to aero loading
@@ -1150,7 +1164,9 @@ class RotorStructure(Group):
         self.add_subsystem(
             "aero_hub_loads", AeroHubLoads(modeling_options=modeling_options), promotes=promoteListAeroLoads
         )
-        self.add_subsystem("constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options))
+        self.add_subsystem(
+            "constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options), promotes=["s"]
+        )
         self.add_subsystem("brs", BladeRootSizing(rotorse_options=modeling_options["WISDEM"]["RotorSE"]))
 
         # if modeling_options['rotorse']['FatigueMode'] > 0:
