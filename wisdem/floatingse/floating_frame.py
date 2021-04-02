@@ -819,7 +819,6 @@ class FrameAnalysis(om.ExplicitComponent):
             # Determine forces
             F_sum = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
             M_sum = -1.0 * np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
-            L = np.sqrt(np.sum((nodes[N2, :] - nodes[N1, :]) ** 2, axis=1))
 
 
 class FloatingFrame(om.Group):
