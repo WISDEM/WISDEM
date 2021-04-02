@@ -130,8 +130,8 @@ def fatigue(M_DEL, N_DEL, d, t, m=4, DC=80.0, eta=1.265, stress_factor=1.0, weld
     # convert to mm
     dvec = np.array(d) * 1e3
     tvec = np.array(t) * 1e3
+    r = 0.5 * dvec
 
-    t = sectional2nodal(t)
     nvec = len(d)
     damage = np.zeros(nvec)
 
@@ -140,38 +140,28 @@ def fatigue(M_DEL, N_DEL, d, t, m=4, DC=80.0, eta=1.265, stress_factor=1.0, weld
         x1 = 24.0
         x2 = 26.0
         spline = CubicSplineSegment(x1, x2, 1.0, (25.0 / x2) ** 0.25, 0.0, 25.0 ** 0.25 * -0.25 * x2 ** -1.25)
+        weld = spline.eval(tvec)
+        weld[tvec >= x2] = (25.0 / tvec[tvec >= x2]) ** 0.25
+        weld[tvec <= x1] = 1.0
+    else:
+        weld = 1.0
 
-    for i in range(nvec):
+    # stress
+    I = np.pi * r ** 3 * tvec
+    sigma = M_DEL * r / I * stress_factor * 1e3  # convert to N/mm^2
 
-        d = dvec[i]
-        t = tvec[i]
+    # maximum allowed stress
+    Smax = DC * weld / eta
 
-        # weld factor
-        if not weld_factor or t <= x1:
-            weld = 1.0
-        elif t >= x2:
-            weld = (25.0 / t) ** 0.25
-        else:
-            weld = spline.eval(t)
+    # number of cycles to failure
+    Nf = (Smax / sigma) ** m
 
-        # stress
-        r = d / 2.0
-        I = np.pi * r ** 3 * t
-        c = r
-        sigma = M_DEL[i] * c / I * stress_factor * 1e3  # convert to N/mm^2
+    # number of cycles for this load
+    N1 = 2e6  # TODO: where does this come from?
+    N = N_DEL / N1
 
-        # maximum allowed stress
-        Smax = DC * weld / eta
-
-        # number of cycles to failure
-        Nf = (Smax / sigma) ** m
-
-        # number of cycles for this load
-        N1 = 2e6  # TODO: where does this come from?
-        N = N_DEL[i] / N1
-
-        # damage
-        damage[i] = N / Nf
+    # damage
+    damage = N / Nf
 
     return damage
 
