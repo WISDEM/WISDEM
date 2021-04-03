@@ -194,48 +194,13 @@ class Mooring(om.ExplicitComponent):
         # Set characteristics based on regressions / empirical data
         # self.set_properties(inputs, discrete_inputs)
 
-        # Set geometry profile
-        self.geometry_constraints(inputs, outputs)
-
         # Write MAP input file and analyze the system at every angle
         self.evaluate_mooring(inputs, outputs)
 
         # Compute costs for the system
         self.compute_cost(inputs, outputs)
 
-    def geometry_constraints(self, inputs, outputs):
-        # Unpack variables
-        fairleadDepth = inputs["fairlead"]
-        R_fairlead = inputs["fairlead_radius"]
-        R_anchor = inputs["anchor_radius"]
-        waterDepth = inputs["water_depth"]
-        L_mooring = inputs["line_length"]
-        max_heel = inputs["survival_heel"]
-        gamma = self.options["gamma"]
-
-        if L_mooring > (waterDepth - fairleadDepth):
-            self.tlpFlag = False
-
-            # Create constraint that line isn't too long that there is no catenary hang
-            outputs["constr_mooring_length"] = L_mooring / (0.95 * (R_anchor + waterDepth - fairleadDepth))
-        else:
-            self.tlpFlag = True
-            # Create constraint that we don't lose line tension
-            outputs["constr_mooring_length"] = L_mooring / (
-                (waterDepth - fairleadDepth - gamma * R_fairlead * np.sin(max_heel))
-            )
-
     def evaluate_mooring(self, inputs, outputs):
-        """Writes MAP input file, executes, and then queries MAP to find
-        maximum loading and displacement from vessel displacement around all 360 degrees
-
-        INPUTS:
-        ----------
-        inputs   : dictionary of input parameters
-        outputs : dictionary of output parameters
-
-        OUTPUTS  : none (multiple unknown dictionary values set)
-        """
         # Unpack variables
         water_depth = float(inputs["water_depth"])
         fairlead_depth = float(inputs["fairlead"])
@@ -252,8 +217,22 @@ class Mooring(om.ExplicitComponent):
         offset = float(inputs["max_surge_fraction"]) * water_depth
         n_anchors = self.options["options"]["n_anchors"]
         ratio = int(n_anchors / n_attach)
+        gamma = self.options["gamma"]
 
-        # Create input dictionary
+        # Geometric constraints on line length
+        if L_mooring > (water_depth - fairlead_depth):
+            self.tlpFlag = False
+
+            # Create constraint that line isn't too long that there is no catenary hang
+            outputs["constr_mooring_length"] = L_mooring / (0.95 * (R_anchor + water_depth - fairlead_depth))
+        else:
+            self.tlpFlag = True
+            # Create constraint that we don't lose line tension
+            outputs["constr_mooring_length"] = L_mooring / (
+                (water_depth - fairlead_depth - gamma * R_fairlead * np.sin(max_heel))
+            )
+
+        # Create MoorPy input dictionary
         config = {}
         config["water_depth"] = water_depth
 
@@ -308,8 +287,11 @@ class Mooring(om.ExplicitComponent):
         outputs["mooring_stiffness"] = ms.getCoupledStiffness(lines_only=True)
 
         # Get the vertical load in the neutral position
-        F_neut = ms.getForces(DOFtype="coupled", lines_only=True)
-        outputs["mooring_neutral_load"] = np.outer(np.ones(n_attach), F_neut[:3] / n_attach)
+        F_neut = np.zeros((n_attach, 3))
+        for k in range(n_attach):
+            if np.abs(ms.PointList[k].r[-1] + fairlead_depth) < 0.1:
+                F_neut[k, :] = ms.PointList[k].getForces(lines_only=True)
+        outputs["mooring_neutral_load"] = F_neut
 
         # Plotting data
         plotMat = np.zeros((n_lines, NPTS_PLOT, 3))
@@ -361,19 +343,10 @@ class Mooring(om.ExplicitComponent):
         # Store the weakest restoring force when the vessel is offset the maximum amount
         outputs["max_surge_restoring_force"] = np.abs(Frestore).min()
 
-        # Check for good convergence
+        # Check the highest line tension in those offsets
         outputs["constr_axial_load"] = gamma * Tmax.max() / min_break_load
 
     def compute_cost(self, inputs, outputs):
-        """Computes cost, based on mass scaling, of mooring system.
-
-        INPUTS:
-        ----------
-        inputs   : dictionary of input parameters
-        outputs : dictionary of output parameters
-
-        OUTPUTS  : none (mooring_cost/mass unknown dictionary values set)
-        """
         # Unpack variables
         L_mooring = float(inputs["line_length"])
         # anchorType = discrete_inputs["anchor_type"]

@@ -37,11 +37,11 @@ class TestMooring(unittest.TestCase):
         self.mymap = mm.Mooring(options=opt, gamma=1.35)
 
     def testGeometry(self):
-        self.mymap.geometry_constraints(self.inputs, self.outputs)
+        self.mymap.compute(self.inputs, self.outputs)
         npt.assert_equal(self.outputs["constr_mooring_length"], 0.6 * 450 / (0.95 * 440))
 
         self.inputs["line_length"] = 150.0
-        self.mymap.geometry_constraints(self.inputs, self.outputs)
+        self.mymap.compute(self.inputs, self.outputs)
         npt.assert_equal(self.outputs["constr_mooring_length"], 150 / (200 - 10 - 1.35 * 11 * np.sin(np.deg2rad(10))))
 
     def testRunMap(self):
