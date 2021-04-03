@@ -2,6 +2,7 @@ import copy
 
 import numpy as np
 import openmdao.api as om
+
 import wisdem.commonse.utilities as util
 import wisdem.commonse.utilization_constraints as util_con
 from wisdem.commonse.environment import TowerSoil

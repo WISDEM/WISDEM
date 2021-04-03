@@ -59,6 +59,12 @@ class RotorPower(Group):
                 "nBlades",
                 "rho",
                 "mu",
+                "shearExp",
+                "hubloss",
+                "tiploss",
+                "wakerotation",
+                "usecd",
+                "nSector",
             ],
         )
         self.add_subsystem("gust", GustETM(std=modeling_options["WISDEM"]["RotorSE"]["gust_std"]))
@@ -257,6 +263,11 @@ class ComputePowerCurve(ExplicitComponent):
             val=np.zeros(n_span),
             units="deg",
             desc="angle of attack distribution along blade span at cut-in wind speed",
+        )
+        self.add_output(
+            "L_D",
+            val=np.zeros(n_span),
+            desc="Lift over drag distribution along blade span at cut-in wind speed",
         )
         self.add_output("Cp_regII", val=0.0, desc="power coefficient at cut-in wind speed")
         self.add_output(
@@ -712,6 +723,7 @@ class ComputePowerCurve(ExplicitComponent):
         outputs["aoa_regII"] = loads["alpha"]
         outputs["cl_regII"] = loads["Cl"]
         outputs["cd_regII"] = loads["Cd"]
+        outputs["L_D"] = loads["Cl"] / loads["Cd"]
         outputs["Cp_regII"] = Cp_aero[id_regII]
 
 

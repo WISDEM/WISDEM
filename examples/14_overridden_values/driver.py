@@ -19,12 +19,12 @@ fname_modeling_options = mydir + os.sep + "modeling_options.yaml"
 fname_analysis_options = mydir + os.sep + "analysis_options.yaml"
 
 wt_opt, modeling_options, analysis_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
-print(f"Tip deflection: {wt_opt['rs.tip_pos.tip_deflection'][0]} meters")
+print(f"Tip deflection: {wt_opt['rotorse.rs.tip_pos.tip_deflection'][0]} meters")
 
 
 # Construct a dict with values to overwrite
 overridden_values = {}
-overridden_values["wt_class.V_mean_overwrite"] = 11.5
+overridden_values["rotorse.wt_class.V_mean_overwrite"] = 11.5
 
 # Run the modified simulation with the overwritten values
 wt_opt, modeling_options, opt_options = run_wisdem(
@@ -33,4 +33,4 @@ wt_opt, modeling_options, opt_options = run_wisdem(
     fname_analysis_options,
     overridden_values=overridden_values,
 )
-print(f"Tip deflection: {wt_opt['rs.tip_pos.tip_deflection'][0]} meters")
+print(f"Tip deflection: {wt_opt['rotorse.rs.tip_pos.tip_deflection'][0]} meters")

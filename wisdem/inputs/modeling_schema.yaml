@@ -126,6 +126,44 @@ properties:
                         minimum: 0.1
                         maximum: 1.e+2
                         description: Safety factor for the max stress of blade root fasteners
+                    hubloss:
+                        type: boolean
+                        default: True
+                        description: Include Prandtl hub loss model in CCBlade calls
+                    tiploss:
+                        type: boolean
+                        default: True
+                        description: Include Prandtl tip loss model in CCBlade calls
+                    wakerotation:
+                        type: boolean
+                        default: True
+                        description: Include effect of wake rotation (i.e., tangential induction factor is nonzero) in CCBlade calls
+                    usecd:
+                        type: boolean
+                        default: True
+                        description: Use drag coefficient in computing induction factors in CCBlade calls
+                    n_sector:
+                        type: integer
+                        default: 4
+                        minimum: 1
+                        maximum: 10
+                        description: Number of sectors to divide rotor face into in computing thrust and power.
+                    inn_af:
+                        type: boolean
+                        default: False
+                        description: Flag switching on and off the inverted neural network for airfoil design
+                    inn_af_max_t/c: 
+                        type: number
+                        default: 0.4
+                        minimum: 0.
+                        maximum: 1.
+                        description: Maximum airfoil thickness supported by the INN for airfoil design
+                    inn_af_min_t/c: 
+                        type: number
+                        default: 0.15
+                        minimum: 0.
+                        maximum: 1.
+                        description: Minimum airfoil thickness supported by the INN for airfoil design
             DriveSE:
                 type: object
                 default: {}

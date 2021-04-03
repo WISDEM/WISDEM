@@ -47,6 +47,7 @@ all_scripts = [
     "12_pyframe3dd/exB",
     "13_design_of_experiments/doe_driver",
     "14_overridden_values/driver",
+    "15_step_size_study/driver",
 ]
 
 
@@ -190,6 +191,15 @@ class TestExamples(unittest.TestCase):
 
     def test_overridden(self):
         scripts = [m for m in all_scripts if m.find("overridden_values") >= 0]
+        for k in scripts:
+            try:
+                execute_script(k)
+            except:
+                print("Failed to run,", k)
+                self.assertTrue(False)
+
+    def test_step_size_study(self):
+        scripts = [m for m in all_scripts if m.find("step_size_study") >= 0]
         for k in scripts:
             try:
                 execute_script(k)

@@ -250,14 +250,14 @@ def create_all_plots(
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             axeps.plot(
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["rs.frame.strainU_spar"] * 1.0e6,
+                yaml_data["rotorse.rs.frame.strainU_spar"] * 1.0e6,
                 "-",
                 color=colors[idx],
                 label=label,
             )
             axeps.plot(
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["rs.frame.strainL_spar"] * 1.0e6,
+                yaml_data["rotorse.rs.frame.strainL_spar"] * 1.0e6,
                 "-",
                 color=colors[idx],
             )
@@ -281,15 +281,15 @@ def create_all_plots(
         faoa, axaoa = plt.subplots(1, 1, figsize=(5.3, 4))
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             axaoa.plot(
-                yaml_data["stall_check.s"],
-                yaml_data["stall_check.aoa_along_span"],
+                yaml_data["rotorse.s"],
+                yaml_data["rotorse.stall_check.aoa_along_span"],
                 "-",
                 color=colors[idx],
                 label=label,
             )
         axaoa.plot(
-            yaml_data["stall_check.s"],
-            yaml_data["stall_check.stall_angle_along_span"],
+            yaml_data["rotorse.s"],
+            yaml_data["rotorse.stall_check.stall_angle_along_span"],
             ":",
             color=colors[idx + 1],
             label="Stall",
@@ -314,7 +314,7 @@ def create_all_plots(
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             axeff.plot(
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["rp.powercurve.cl_regII"] / yaml_data["rp.powercurve.cd_regII"],
+                yaml_data["rotorse.rp.powercurve.cl_regII"] / yaml_data["rotorse.rp.powercurve.cd_regII"],
                 "-",
                 color=colors[idx],
                 label=label,
@@ -465,7 +465,7 @@ def create_all_plots(
             "Blade Nondimensional Span [-]",
             "Edgewise Stiffness [Nm2]",
             "blade.outer_shape_bem.s",
-            "re.EIxx",
+            "rotorse.EIxx",
             "edge",
         )
 
@@ -474,7 +474,7 @@ def create_all_plots(
             "Blade Nondimensional Span [-]",
             "Torsional Stiffness [Nm2]",
             "blade.outer_shape_bem.s",
-            "re.GJ",
+            "rotorse.GJ",
             "torsion",
         )
 
@@ -483,7 +483,7 @@ def create_all_plots(
             "Blade Nondimensional Span [-]",
             "Flapwise Stiffness [Nm2]",
             "blade.outer_shape_bem.s",
-            "re.EIyy",
+            "rotorse.EIyy",
             "flap",
         )
 
@@ -492,7 +492,7 @@ def create_all_plots(
             "Blade Nondimensional Span [-]",
             "Unit Mass [kg/m]",
             "blade.outer_shape_bem.s",
-            "re.rhoA",
+            "rotorse.rhoA",
             "mass",
         )
     except KeyError:
@@ -516,7 +516,7 @@ def create_all_plots(
             "Blade Nondimensional Span [-]",
             "Axial Induction [-]",
             "blade.outer_shape_bem.s",
-            "rp.powercurve.ax_induct_regII",
+            "rotorse.rp.powercurve.ax_induct_regII",
             "induction",
         )
 
@@ -525,7 +525,7 @@ def create_all_plots(
             "Blade Nondimensional Span [-]",
             "Lift Coefficient [-]",
             "blade.outer_shape_bem.s",
-            "rp.powercurve.cl_regII",
+            "rotorse.rp.powercurve.cl_regII",
             "lift_coeff",
         )
 
@@ -534,7 +534,7 @@ def create_all_plots(
             "Blade Nondimensional Span [-]",
             "Drag Coefficient [-]",
             "blade.outer_shape_bem.s",
-            "rp.powercurve.cd_regII",
+            "rotorse.rp.powercurve.cd_regII",
             "drag_coeff",
         )
 
@@ -542,8 +542,8 @@ def create_all_plots(
         simple_plot_results(
             "Wind velocity [m/s]",
             "Pitch angle [deg]",
-            "rp.powercurve.V",
-            "rp.powercurve.pitch",
+            "rotorse.rp.powercurve.V",
+            "rotorse.rp.powercurve.pitch",
             "pitch",
         )
 
@@ -551,8 +551,8 @@ def create_all_plots(
         simple_plot_results(
             "Wind velocity [m/s]",
             "Electrical Power [W]",
-            "rp.powercurve.V",
-            "rp.powercurve.P",
+            "rotorse.rp.powercurve.V",
+            "rotorse.rp.powercurve.P",
             "power_elec",
         )
 
@@ -560,8 +560,8 @@ def create_all_plots(
         simple_plot_results(
             "Wind velocity [m/s]",
             "Mechanical Power [W]",
-            "rp.powercurve.V",
-            "rp.powercurve.P_aero",
+            "rotorse.rp.powercurve.V",
+            "rotorse.rp.powercurve.P_aero",
             "power_aero",
         )
 
@@ -569,8 +569,8 @@ def create_all_plots(
         simple_plot_results(
             "Wind velocity [m/s]",
             "Electrical Power Coefficient [-]",
-            "rp.powercurve.V",
-            "rp.powercurve.Cp",
+            "rotorse.rp.powercurve.V",
+            "rotorse.rp.powercurve.Cp",
             "cp_elec",
         )
 
@@ -578,8 +578,8 @@ def create_all_plots(
         simple_plot_results(
             "Wind velocity [m/s]",
             "Mechanical Power Coefficient [-]",
-            "rp.powercurve.V",
-            "rp.powercurve.Cp_aero",
+            "rotorse.rp.powercurve.V",
+            "rotorse.rp.powercurve.Cp_aero",
             "cp_aero",
         )
 
@@ -587,8 +587,8 @@ def create_all_plots(
         simple_plot_results(
             "Wind velocity [m/s]",
             "Rotor speed [rpm]",
-            "rp.powercurve.V",
-            "rp.powercurve.Omega",
+            "rotorse.rp.powercurve.V",
+            "rotorse.rp.powercurve.Omega",
             "omega",
         )
 
@@ -596,8 +596,8 @@ def create_all_plots(
         simple_plot_results(
             "Wind velocity [m/s]",
             "Thrust [N]",
-            "rp.powercurve.V",
-            "rp.powercurve.T",
+            "rotorse.rp.powercurve.V",
+            "rotorse.rp.powercurve.T",
             "thrust",
         )
 
@@ -605,8 +605,8 @@ def create_all_plots(
         simple_plot_results(
             "Wind velocity [m/s]",
             "Thrust Coefficient [-]",
-            "rp.powercurve.V",
-            "rp.powercurve.Ct_aero",
+            "rotorse.rp.powercurve.V",
+            "rotorse.rp.powercurve.Ct_aero",
             "ct_aero",
         )
 
@@ -614,8 +614,8 @@ def create_all_plots(
         simple_plot_results(
             "Wind velocity [m/s]",
             "Torque [Nm]",
-            "rp.powercurve.V",
-            "rp.powercurve.Q",
+            "rotorse.rp.powercurve.V",
+            "rotorse.rp.powercurve.Q",
             "torque",
         )
 
@@ -623,8 +623,8 @@ def create_all_plots(
         simple_plot_results(
             "Wind velocity [m/s]",
             "Torque Coefficient [-]",
-            "rp.powercurve.V",
-            "rp.powercurve.Cq_aero",
+            "rotorse.rp.powercurve.V",
+            "rotorse.rp.powercurve.Cq_aero",
             "cq_aero",
         )
 
@@ -632,8 +632,8 @@ def create_all_plots(
         simple_plot_results(
             "Wind velocity [m/s]",
             "Blade moment [Nm]",
-            "rp.powercurve.V",
-            "rp.powercurve.M",
+            "rotorse.rp.powercurve.V",
+            "rotorse.rp.powercurve.M",
             "moment",
         )
 
@@ -641,8 +641,8 @@ def create_all_plots(
         simple_plot_results(
             "Wind velocity [m/s]",
             "Blade moment coefficient [-]",
-            "rp.powercurve.V",
-            "rp.powercurve.Cm_aero",
+            "rotorse.rp.powercurve.V",
+            "rotorse.rp.powercurve.Cm_aero",
             "cm_aero",
         )
     except KeyError:
@@ -740,24 +740,24 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
     values_to_print = {
         "Rotor Diameter": ["assembly.rotor_diameter", "m"],
         "TSR": ["control.rated_TSR", None],
-        "AEP": ["rp.AEP", "GW*h"],
+        "AEP": ["rotorse.rp.AEP", "GW*h"],
         "LCOE": ["financese.lcoe", "USD/(MW*h)"],
-        # "Cp": ["rp.powercurve.Cp_aero", None],
-        "Rated velocity": ["rp.powercurve.rated_V", "m/s"],
-        "Rated rpm": ["rp.powercurve.rated_Omega", "rpm"],
+        # "Cp": ["rotorse.rp.powercurve.Cp_aero", None],
+        "Rated velocity": ["rotorse.rp.powercurve.rated_V", "m/s"],
+        "Rated rpm": ["rotorse.rp.powercurve.rated_Omega", "rpm"],
         "Rated pitch": ["control.rated_pitch", "deg"],
-        "Rated thrust": ["rp.powercurve.rated_T", "kN"],
-        "Rated torque": ["rp.powercurve.rated_Q", "kN*m"],
-        "Blade mass": ["re.precomp.blade_mass", "kg"],
-        "Blade cost": ["re.precomp.total_blade_cost", "USD"],
+        "Rated thrust": ["rotorse.rp.powercurve.rated_T", "kN"],
+        "Rated torque": ["rotorse.rp.powercurve.rated_Q", "kN*m"],
+        "Blade mass": ["rotorse.re.precomp.blade_mass", "kg"],
+        "Blade cost": ["rotorse.re.precomp.total_blade_cost", "USD"],
         "Tip defl": ["tcons.tip_deflection", "m"],
         "Tip defl ratio": ["tcons.tip_deflection_ratio", None],
-        "Flap freqs": ["rs.frame.flap_mode_freqs", "Hz"],
-        "Edge freqs": ["rs.frame.edge_mode_freqs", "Hz"],
-        "3P freq": ["rp.powercurve.rated_Omega", None, 3.0 / 60],
-        "6P freq": ["rp.powercurve.rated_Omega", None, 6.0 / 60],
-        "Hub forces": ["rs.aero_hub_loads.Fxyz_hub_aero", "kN"],
-        "Hub moments": ["rs.aero_hub_loads.Mxyz_hub_aero", "kN*m"],
+        "Flap freqs": ["rotorse.rs.frame.flap_mode_freqs", "Hz"],
+        "Edge freqs": ["rotorse.rs.frame.edge_mode_freqs", "Hz"],
+        "3P freq": ["rotorse.rp.powercurve.rated_Omega", None, 3.0 / 60],
+        "6P freq": ["rotorse.rp.powercurve.rated_Omega", None, 6.0 / 60],
+        "Hub forces": ["rotorse.rs.aero_hub_loads.Fxyz_hub_aero", "kN"],
+        "Hub moments": ["rotorse.rs.aero_hub_loads.Mxyz_hub_aero", "kN*m"],
         "Nacelle mass": ["drivese.nacelle_mass", "kg"],
         "RNA mass": ["drivese.rna_mass", "kg"],
         "Tower mass": ["towerse.tower_mass", "kg"],
