@@ -1,8 +1,8 @@
 import os
 
-import openmdao.api as om
 import matplotlib.pyplot as plt
 
+import openmdao.api as om
 from wisdem.commonse.mpi_tools import MPI
 
 
@@ -47,7 +47,6 @@ class Convergence_Trends_Opt(om.ExplicitComponent):
                         responses[resp].append(response[resp])
 
                 # parameters = it_data.get_responses()
-                # Collect all parameters for convergence plots
                 for parameters in [it_data.get_responses(), it_data.get_design_vars()]:
                     for j, param in enumerate(parameters.keys()):
                         if i == 0:
@@ -64,40 +63,20 @@ class Convergence_Trends_Opt(om.ExplicitComponent):
                         fig.savefig(os.path.join(folder_output, fig_name))
                         plt.close(fig)
 
-                # Iteration plot
-                circle_style = dict(
-                    marker="o", markersize=20, linestyle="none", markerfacecolor="white", mew=2, markeredgecolor="k"
-                )
-                for dv in design_vars.keys():
-                    if dv != "tower.layer_thickness" and dv != "tower.diameter":
-                        fig, ax = plt.subplots(len(responses), 1, figsize=(5, len(responses) * 4))
-                        for i_resp, resp in enumerate(responses):
-                            for it, (d, r) in enumerate(zip(design_vars[dv], responses[resp])):
-                                ax[i_resp].plot(d, r, **circle_style)
-                                iter_style = dict(
-                                    marker="$" + str(it) + "$",
-                                    markersize=10,
-                                    linestyle="none",
-                                    markerfacecolor="k",
-                                    markeredgecolor="k",
-                                )
-                                ax[i_resp].plot(d, r, **iter_style)
-                                ax[i_resp].set(xlabel=dv, ylabel=resp)
-                                ax[i_resp].grid(True)
-                                fig_name = "DesignVar_iterations_" + dv + ".png"
-                                fig.savefig(os.path.join(folder_output, fig_name), bbox_inches="tight")
-                                plt.close(fig)
-
             elif self.options["opt_options"]["driver"]["design_of_experiments"]["flag"]:
                 for resp in responses:
                     fig, ax = plt.subplots(1, 1, figsize=(5.3, 4))
-                    # if len(design_vars) == 1:   # can just plot all results vs dv now, since we don't have anything better currently
                     for dv in design_vars:
-                        ax.scatter(design_vars[dv], responses[resp])
-                        ax.set(xlabel=dv, ylabel=resp)
-                        fig_name = "Experiment_result_" + resp + ".png"
-                        fig.savefig(os.path.join(folder_output, fig_name))
-                        plt.close(fig)
+                        try:
+                            ax.scatter(design_vars[dv], responses[resp])
+                            ax.set(xlabel=dv, ylabel=resp)
+                            fig_name = "Experiment_result_" + resp + ".png"
+                            fig.savefig(os.path.join(folder_output, fig_name))
+                            plt.close(fig)
+                        except ValueError:
+                            print(
+                                f"Warning: Design of experiments plot not printed for {dv} and {resp} as they are array values. Plot generation currently only works for scalar values."
+                            )
 
 
 class Outputs_2_Screen(om.ExplicitComponent):
