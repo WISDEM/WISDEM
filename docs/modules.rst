@@ -18,10 +18,10 @@ Module documentation
    wisdem/floatingse/index
    wisdem/glue_code/index
    wisdem/landbosse/index
+   wisdem/moorpy/index
    wisdem/nrelcsm/index
    wisdem/orbit/index
    wisdem/plantfinancese/index
    wisdem/pyframe3dd/index
-   wisdem/pymap/index
    wisdem/rotorse/index
    wisdem/towerse/index

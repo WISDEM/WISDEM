@@ -40,6 +40,7 @@ class ScourProtectionInstallation(InstallPhase):
     }
 
     phase = "Scour Protection Installation"
+    capex_category = "Scour Protection"
 
     def __init__(self, config, weather=None, **kwargs):
         """
