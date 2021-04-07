@@ -95,8 +95,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 self.add_subsystem("inn_af", inn_af)
 
         # Hub inputs
-        if modeling_options["flags"]["hub"]:
-            self.add_subsystem("hub", Hub())
+        if modeling_options["flags"]["hub"] or modeling_options["flags"]["blade"]:
+            self.add_subsystem("hub", Hub(flags=modeling_options["flags"]))
 
         # Control inputs
         if modeling_options["flags"]["control"]:
@@ -143,7 +143,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 self.connect("control.rated_TSR", "blade.run_inn_af.rated_TSR")
 
         # Nacelle inputs
-        if modeling_options["flags"]["nacelle"]:
+        if modeling_options["flags"]["nacelle"] or modeling_options["flags"]["blade"]:
             nacelle_ivc = om.IndepVarComp()
             # Common direct and geared
             nacelle_ivc.add_output(
@@ -156,99 +156,100 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 "overhang", val=0.0, units="m", desc="Horizontal distance from tower top edge to hub flange"
             )
             nacelle_ivc.add_output(
-                "distance_hub2mb", val=0.0, units="m", desc="Distance from hub flange to first main bearing along shaft"
-            )
-            nacelle_ivc.add_output(
-                "distance_mb2mb", val=0.0, units="m", desc="Distance from first to second main bearing along shaft"
-            )
-            nacelle_ivc.add_output("L_generator", val=0.0, units="m", desc="Generator length along shaft")
-            nacelle_ivc.add_output("lss_diameter", val=np.zeros(2), units="m", desc="Diameter of low speed shaft")
-            nacelle_ivc.add_output(
-                "lss_wall_thickness", val=np.zeros(2), units="m", desc="Thickness of low speed shaft"
-            )
-            nacelle_ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
-            nacelle_ivc.add_output(
                 "gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive"
             )
-            nacelle_ivc.add_output("damping_ratio", val=0.0, desc="Damping ratio for the drivetrain system")
-            nacelle_ivc.add_output(
-                "brake_mass_user",
-                val=0.0,
-                units="kg",
-                desc="Override regular regression-based calculation of brake mass with this value",
-            )
-            nacelle_ivc.add_output(
-                "hvac_mass_coeff",
-                val=0.025,
-                units="kg/kW/m",
-                desc="Regression-based scaling coefficient on machine rating to get HVAC system mass",
-            )
-            nacelle_ivc.add_output(
-                "converter_mass_user",
-                val=0.0,
-                units="kg",
-                desc="Override regular regression-based calculation of converter mass with this value",
-            )
-            nacelle_ivc.add_output(
-                "transformer_mass_user",
-                val=0.0,
-                units="kg",
-                desc="Override regular regression-based calculation of transformer mass with this value",
-            )
-            nacelle_ivc.add_discrete_output("mb1Type", val="CARB", desc="Type of main bearing: CARB / CRB / SRB / TRB")
-            nacelle_ivc.add_discrete_output("mb2Type", val="SRB", desc="Type of main bearing: CARB / CRB / SRB / TRB")
-            nacelle_ivc.add_discrete_output(
-                "uptower", val=True, desc="If power electronics are located uptower (True) or at tower base (False)"
-            )
-            nacelle_ivc.add_discrete_output(
-                "lss_material", val="steel", desc="Material name identifier for the low speed shaft"
-            )
-            nacelle_ivc.add_discrete_output(
-                "hss_material", val="steel", desc="Material name identifier for the high speed shaft"
-            )
-            nacelle_ivc.add_discrete_output(
-                "bedplate_material", val="steel", desc="Material name identifier for the bedplate"
-            )
+            nacelle_ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
+            if modeling_options["flags"]["nacelle"]:
+                nacelle_ivc.add_output(
+                    "distance_hub2mb", val=0.0, units="m", desc="Distance from hub flange to first main bearing along shaft"
+                )
+                nacelle_ivc.add_output(
+                    "distance_mb2mb", val=0.0, units="m", desc="Distance from first to second main bearing along shaft"
+                )
+                nacelle_ivc.add_output("L_generator", val=0.0, units="m", desc="Generator length along shaft")
+                nacelle_ivc.add_output("lss_diameter", val=np.zeros(2), units="m", desc="Diameter of low speed shaft")
+                nacelle_ivc.add_output(
+                    "lss_wall_thickness", val=np.zeros(2), units="m", desc="Thickness of low speed shaft"
+                )
+                nacelle_ivc.add_output("damping_ratio", val=0.0, desc="Damping ratio for the drivetrain system")
+                nacelle_ivc.add_output(
+                    "brake_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override regular regression-based calculation of brake mass with this value",
+                )
+                nacelle_ivc.add_output(
+                    "hvac_mass_coeff",
+                    val=0.025,
+                    units="kg/kW/m",
+                    desc="Regression-based scaling coefficient on machine rating to get HVAC system mass",
+                )
+                nacelle_ivc.add_output(
+                    "converter_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override regular regression-based calculation of converter mass with this value",
+                )
+                nacelle_ivc.add_output(
+                    "transformer_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override regular regression-based calculation of transformer mass with this value",
+                )
+                nacelle_ivc.add_discrete_output("mb1Type", val="CARB", desc="Type of main bearing: CARB / CRB / SRB / TRB")
+                nacelle_ivc.add_discrete_output("mb2Type", val="SRB", desc="Type of main bearing: CARB / CRB / SRB / TRB")
+                nacelle_ivc.add_discrete_output(
+                    "uptower", val=True, desc="If power electronics are located uptower (True) or at tower base (False)"
+                )
+                nacelle_ivc.add_discrete_output(
+                    "lss_material", val="steel", desc="Material name identifier for the low speed shaft"
+                )
+                nacelle_ivc.add_discrete_output(
+                    "hss_material", val="steel", desc="Material name identifier for the high speed shaft"
+                )
+                nacelle_ivc.add_discrete_output(
+                    "bedplate_material", val="steel", desc="Material name identifier for the bedplate"
+                )
 
-            if modeling_options["WISDEM"]["DriveSE"]["direct"]:
-                # Direct only
-                nacelle_ivc.add_output(
-                    "nose_diameter", val=np.zeros(2), units="m", desc="Diameter of nose (also called turret or spindle)"
-                )
-                nacelle_ivc.add_output(
-                    "nose_wall_thickness",
-                    val=np.zeros(2),
-                    units="m",
-                    desc="Thickness of nose (also called turret or spindle)",
-                )
-                nacelle_ivc.add_output(
-                    "bedplate_wall_thickness",
-                    val=np.zeros(4),
-                    units="m",
-                    desc="Thickness of hollow elliptical bedplate",
-                )
-            else:
-                # Geared only
-                nacelle_ivc.add_output("hss_length", val=0.0, units="m", desc="Length of high speed shaft")
-                nacelle_ivc.add_output("hss_diameter", val=np.zeros(2), units="m", desc="Diameter of high speed shaft")
-                nacelle_ivc.add_output(
-                    "hss_wall_thickness", val=np.zeros(2), units="m", desc="Wall thickness of high speed shaft"
-                )
-                nacelle_ivc.add_output("bedplate_flange_width", val=0.0, units="m", desc="Bedplate I-beam flange width")
-                nacelle_ivc.add_output(
-                    "bedplate_flange_thickness", val=0.0, units="m", desc="Bedplate I-beam flange thickness"
-                )
-                nacelle_ivc.add_output(
-                    "bedplate_web_thickness", val=0.0, units="m", desc="Bedplate I-beam web thickness"
-                )
-                nacelle_ivc.add_discrete_output(
-                    "gear_configuration",
-                    val="eep",
-                    desc="3-letter string of Es or Ps to denote epicyclic or parallel gear configuration",
-                )
-                nacelle_ivc.add_discrete_output(
-                    "planet_numbers", val=[3, 3, 0], desc="Number of planets for epicyclic stages (use 0 for parallel)"
-                )
+                if modeling_options["WISDEM"]["DriveSE"]["direct"]:
+                    # Direct only
+                    nacelle_ivc.add_output(
+                        "nose_diameter", val=np.zeros(2), units="m", desc="Diameter of nose (also called turret or spindle)"
+                    )
+                    nacelle_ivc.add_output(
+                        "nose_wall_thickness",
+                        val=np.zeros(2),
+                        units="m",
+                        desc="Thickness of nose (also called turret or spindle)",
+                    )
+                    nacelle_ivc.add_output(
+                        "bedplate_wall_thickness",
+                        val=np.zeros(4),
+                        units="m",
+                        desc="Thickness of hollow elliptical bedplate",
+                    )
+                else:
+                    # Geared only
+                    nacelle_ivc.add_output("hss_length", val=0.0, units="m", desc="Length of high speed shaft")
+                    nacelle_ivc.add_output("hss_diameter", val=np.zeros(2), units="m", desc="Diameter of high speed shaft")
+                    nacelle_ivc.add_output(
+                        "hss_wall_thickness", val=np.zeros(2), units="m", desc="Wall thickness of high speed shaft"
+                    )
+                    nacelle_ivc.add_output("bedplate_flange_width", val=0.0, units="m", desc="Bedplate I-beam flange width")
+                    nacelle_ivc.add_output(
+                        "bedplate_flange_thickness", val=0.0, units="m", desc="Bedplate I-beam flange thickness"
+                    )
+                    nacelle_ivc.add_output(
+                        "bedplate_web_thickness", val=0.0, units="m", desc="Bedplate I-beam web thickness"
+                    )
+                    nacelle_ivc.add_discrete_output(
+                        "gear_configuration",
+                        val="eep",
+                        desc="3-letter string of Es or Ps to denote epicyclic or parallel gear configuration",
+                    )
+                    nacelle_ivc.add_discrete_output(
+                        "planet_numbers", val=[3, 3, 0], desc="Number of planets for epicyclic stages (use 0 for parallel)"
+                    )
 
             # Mulit-body properties
             # GB: I understand these will need to be in there for OpenFAST, but if running DrivetrainSE & OpenFAST this might cause problems?
@@ -1916,6 +1917,9 @@ def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.0):
 
 class Hub(om.Group):
     # Openmdao group with the hub data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare("flags")
+    
     def setup(self):
         ivc = self.add_subsystem("hub_indep_vars", om.IndepVarComp(), promotes=["*"])
 
@@ -1927,19 +1931,20 @@ class Hub(om.Group):
         )
         # ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.') # GB: this doesn't connect to anything
         ivc.add_output("diameter", val=0.0, units="m")
-        ivc.add_output("flange_t2shell_t", val=0.0)
-        ivc.add_output("flange_OD2hub_D", val=0.0)
-        ivc.add_output("flange_ID2flange_OD", val=0.0)
-        ivc.add_output("hub_stress_concentration", val=0.0)
-        ivc.add_discrete_output("n_front_brackets", val=0)
-        ivc.add_discrete_output("n_rear_brackets", val=0)
-        ivc.add_output("clearance_hub_spinner", val=0.0, units="m")
-        ivc.add_output("spin_hole_incr", val=0.0)
-        ivc.add_output("pitch_system_scaling_factor", val=0.54)
-        ivc.add_output("spinner_gust_ws", val=70.0, units="m/s")
-        ivc.add_output("hub_in2out_circ", val=1.2)
-        ivc.add_discrete_output("hub_material", val="steel")
-        ivc.add_discrete_output("spinner_material", val="carbon")
+        if self.options["flags"]["hub"]:
+            ivc.add_output("flange_t2shell_t", val=0.0)
+            ivc.add_output("flange_OD2hub_D", val=0.0)
+            ivc.add_output("flange_ID2flange_OD", val=0.0)
+            ivc.add_output("hub_stress_concentration", val=0.0)
+            ivc.add_discrete_output("n_front_brackets", val=0)
+            ivc.add_discrete_output("n_rear_brackets", val=0)
+            ivc.add_output("clearance_hub_spinner", val=0.0, units="m")
+            ivc.add_output("spin_hole_incr", val=0.0)
+            ivc.add_output("pitch_system_scaling_factor", val=0.54)
+            ivc.add_output("spinner_gust_ws", val=70.0, units="m/s")
+            ivc.add_output("hub_in2out_circ", val=1.2)
+            ivc.add_discrete_output("hub_material", val="steel")
+            ivc.add_discrete_output("spinner_material", val="carbon")
 
         exec_comp = om.ExecComp(
             "radius = 0.5 * diameter",
