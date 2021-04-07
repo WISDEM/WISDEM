@@ -438,7 +438,7 @@ class ComputePowerCurve(ExplicitComponent):
             if region2p5:
                 # Have to search over both pitch and speed
                 x0 = [0.0, Uhub[i_rated]]
-                bnds = [[0.0, 15.0], [Uhub[i_rated - 1], Uhub[i_rated + 1]]]
+                bnds = [[0.0, 15.0], [Uhub[i_rated - 3] + TOL, Uhub[i_rated + 2] - TOL]]
                 const = {}
                 const["type"] = "eq"
                 const["fun"] = const_Urated
@@ -510,7 +510,7 @@ class ComputePowerCurve(ExplicitComponent):
 
                 # Have to search over both pitch and speed
                 x0 = [0.0, Uhub[i_rated]]
-                bnds = [[0.0, 15.0], [Uhub[i_rated], Uhub[-1]]]
+                bnds = [[0.0, 15.0], [Uhub[i_rated - 2] + TOL, Uhub[-1] - TOL]]
                 const = {}
                 const["type"] = "eq"
                 const["fun"] = const_Urated_Tpeak
@@ -544,7 +544,7 @@ class ComputePowerCurve(ExplicitComponent):
             Uhub[i_rated] = U_rated
 
             # Sometimes rated speed needs to be inserted in different point in array, try to trap that error
-            if (Uhub[i_rated] < Uhub[i_rated - 1]) or (Uhub[i_rated] > Uhub[i_rated + 1]):
+            if (Uhub[i_rated] <= Uhub[i_rated - 1]) or (Uhub[i_rated] >= Uhub[i_rated + 1]):
                 isort = np.argsort(Uhub)
                 Omega = Omega[isort]
                 Omega_rpm = Omega_rpm[isort]
@@ -562,6 +562,7 @@ class ComputePowerCurve(ExplicitComponent):
                 Cm_aero = Cm_aero[isort]
                 eff = eff[isort]
                 i_rated = np.where(Uhub == U_rated)[0][0]
+                i_3 = i_rated + 1
 
         ## REGION II ##
         # Functions to be used inside of power maximization until Region 3
