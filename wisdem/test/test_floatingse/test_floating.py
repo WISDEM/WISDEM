@@ -99,8 +99,8 @@ class TestOC3Mass(unittest.TestCase):
 
         # Mooring constraints
         prob["max_surge_fraction"] = 0.1  # Max surge/sway offset [m]
-        prob["survival_heel"] = 10.0  # Max heel (pitching) angle [deg]
-        prob["operational_heel"] = 5.0  # Max heel (pitching) angle [deg]
+        prob["survival_heel"] = np.deg2rad(10.0)  # Max heel (pitching) angle [deg->rad]
+        prob["operational_heel"] = np.deg2rad(5.0)  # Max heel (pitching) angle [deg->rad]
 
         # Set environment to that used in OC3 testing campaign
         prob["rho_air"] = 1.226  # Density of air [kg/m^3]

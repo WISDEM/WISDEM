@@ -171,7 +171,7 @@ def test_kwargs_in_ProjectManager():
     base["install_phases"] = ["TurbineInstallation"]
 
     project = ProjectManager(base)
-    project.run_project()
+    project.run()
     baseline = project.phase_times["TurbineInstallation"]
 
     keywords = [
@@ -199,7 +199,7 @@ def test_kwargs_in_ProjectManager():
         new_config["processes"] = processes
 
         new_project = ProjectManager(new_config)
-        new_project.run_project()
+        new_project.run()
         new_time = new_project.phase_times["TurbineInstallation"]
 
         if new_time > baseline:

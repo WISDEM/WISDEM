@@ -104,7 +104,7 @@ def test_kwargs_in_ProjectManager(anchor, key):
     base["install_phases"] = ["MooringSystemInstallation"]
 
     project = ProjectManager(base)
-    project.run_project()
+    project.run()
     baseline = project.phase_times["MooringSystemInstallation"]
 
     keywords = ["mooring_system_load_time", "mooring_site_survey_time", key]
@@ -119,7 +119,7 @@ def test_kwargs_in_ProjectManager(anchor, key):
         new_config["processes"] = processes
 
         new_project = ProjectManager(new_config)
-        new_project.run_project()
+        new_project.run()
         new_time = new_project.phase_times["MooringSystemInstallation"]
 
         if new_time > baseline:
