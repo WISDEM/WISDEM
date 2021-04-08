@@ -466,7 +466,7 @@ class ComputePowerCurve(ExplicitComponent):
                 # P_i,_  = compute_P_and_eff(P_aero_i.flatten(), P_rated, Omega_i_rpm, driveType, driveEta)
                 eff_i = np.interp(Omega_i_rpm, lss_rpm, driveEta)
                 P_i = float(P_aero_i * eff_i)
-                return P_i - P_rated
+                return 1e-4 * (P_i - P_rated)
 
             if region2p5:
                 # Have to search over both pitch and speed
@@ -539,7 +539,7 @@ class ComputePowerCurve(ExplicitComponent):
                     eff_i = np.interp(Omega_i_rpm, lss_rpm, driveEta)
                     P_i = float(P_aero_i * eff_i)
                     T_i = float(myout["T"])
-                    return P_i - P_rated, T_i - max_T
+                    return 1e-4 * (P_i - P_rated), 1e-4 * (T_i - max_T)
 
                 # Have to search over both pitch and speed
                 x0 = [0.0, U_rated]
@@ -621,11 +621,11 @@ class ComputePowerCurve(ExplicitComponent):
         # Functions to be used inside of power maximization until Region 3
         def maximizePower(pitch_i, Uhub_i, Omega_rpm_i):
             myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_rpm_i], [pitch_i], coefficients=False)
-            return -myout["P"]
+            return -myout["P"] * 1e-6
 
         def constr_Tmax(pitch_i, Uhub_i, Omega_rpm_i):
             myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_rpm_i], [pitch_i], coefficients=False)
-            return max_T - float(myout["T"])
+            return 1e-5 * (max_T - float(myout["T"]))
 
         # Maximize power until rated
         for i in range(i_3):
@@ -648,13 +648,13 @@ class ComputePowerCurve(ExplicitComponent):
                 params = minimize(
                     lambda x: maximizePower(x, Uhub[i], Omega_rpm[i]),
                     pitch0,
-                    method="slsqp",
+                    method="slsqp",  # "cobyla",
                     bounds=[bnds],
                     constraints=const,
                     tol=TOL,
+                    options={"maxiter": 20},  #'catol':0.01*max_T},
                 )
-                if params.success and not np.isnan(params.x[0]):
-                    pitch[i] = params.x[0]
+                pitch[i] = params.x[0]
             else:
                 # Only adjust pitch
                 pitch[i] = minimize_scalar(
@@ -682,10 +682,9 @@ class ComputePowerCurve(ExplicitComponent):
             def rated_power_dist(pitch_i, Uhub_i, Omega_rpm_i):
                 myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_rpm_i], [pitch_i], coefficients=False)
                 P_aero_i = myout["P"]
-                # P_i, _   = compute_P_and_eff(P_aero_i, P_rated, Omega_rpm_i, driveType, driveEta)
                 eff_i = np.interp(Omega_rpm_i, lss_rpm, driveEta)
                 P_i = P_aero_i * eff_i
-                return P_i - P_rated
+                return 1e-4 * (P_i - P_rated)
 
             # Solve for Region 3 pitch
             if self.regulation_reg_III:
@@ -714,7 +713,6 @@ class ComputePowerCurve(ExplicitComponent):
                     P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [
                         myout[key] for key in ["P", "T", "Q", "M", "CP", "CT", "CQ", "CM"]
                     ]
-                    # P[i], eff[i] = compute_P_and_eff(P_aero[i], P_rated, Omega_rpm[i], driveType, driveEta)
                     eff[i] = np.interp(Omega_rpm[i], lss_rpm, driveEta)
                     P[i] = P_aero[i] * eff[i]
                     Cp[i] = Cp_aero[i] * eff[i]
@@ -740,7 +738,6 @@ class ComputePowerCurve(ExplicitComponent):
                         P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [
                             myout[key] for key in ["P", "T", "Q", "M", "CP", "CT", "CQ", "CM"]
                         ]
-                        # P[i], eff[i] = compute_P_and_eff(P_aero[i], P_rated, Omega_rpm[i], driveType, driveEta)
                         eff[i] = np.interp(Omega_rpm[i], lss_rpm, driveEta)
                         P[i] = P_aero[i] * eff[i]
                         Cp[i] = Cp_aero[i] * eff[i]
