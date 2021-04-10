@@ -552,7 +552,7 @@ class CCBlade(object):
             if True, derivatives along with function values will be returned for the various methods
         """
         r = np.array(r)
-        self.r = r
+        self.r = r.copy()
         self.chord = np.array(chord)
         self.theta = np.deg2rad(theta)
         self.af = af
@@ -579,9 +579,9 @@ class CCBlade(object):
             presweep = np.zeros(len(r))
             presweepTip = 0.0
 
-        self.precurve = precurve
+        self.precurve = precurve.copy()
         self.precurveTip = precurveTip
-        self.presweep = presweep
+        self.presweep = presweep.copy()
         self.presweepTip = presweepTip
 
         # Enfore unique points at tip and hub
@@ -593,10 +593,10 @@ class CCBlade(object):
         if Rtip == r[-1]:
             self.r[-1] = np.interp(nd_tip, r_nd, r)
         if precurveTip == precurve[-1]:
-            self.precurve[-1] = np.interp(nd_tip, r_nd, self.precurve)
+            self.precurve[-1] = np.interp(nd_tip, r_nd, precurve)
         if presweepTip == presweep[-1]:
-            self.presweep[-1] = np.interp(nd_tip, r_nd, self.presweep)
-        
+            self.presweep[-1] = np.interp(nd_tip, r_nd, presweep)
+
         # # rotor radius
         # if self.precurveTip != 0 and self.precone != 0.0:
         # print('rotor diameter may be modified in unexpected ways if tip precurve and precone are both nonzero')
