@@ -63,6 +63,20 @@ class TestRegression(unittest.TestCase):
             fname_wt_input, fname_modeling_options, new_fname_analysis_options
         )
 
+    def test_ld_slsqp(self):
+        analysis_options = load_yaml(fname_analysis_options)
+
+        solver = "LD_SLSQP"
+        analysis_options["driver"]["optimization"]["solver"] = solver
+        analysis_options["driver"]["optimization"]["max_iter"] = 1
+
+        new_fname_analysis_options = f"{fname_analysis_options.split('/')[-1].split('.')[0]}_{solver}.yaml"
+        write_yaml(analysis_options, new_fname_analysis_options)
+
+        wt_opt, modeling_options, opt_options = run_wisdem(
+            fname_wt_input, fname_modeling_options, new_fname_analysis_options
+        )
+
 
 def suite():
     suite = unittest.TestSuite()

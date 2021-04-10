@@ -66,3 +66,10 @@ def spi_vessel():
 def simple_cable():
 
     return SimpleCable(linear_density=50.0)
+
+
+@pytest.fixture(scope="function")
+def tmp_yaml_del():
+
+    yield
+    os.remove("tmp.yaml")

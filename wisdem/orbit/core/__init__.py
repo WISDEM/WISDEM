@@ -9,5 +9,6 @@ __email__ = "jake.nunemaker@nrel.gov"
 from .port import Port, WetStorage
 from .cargo import Cargo
 from .vessel import Vessel
+from .library import loader
 from .components import Crane, JackingSys
 from .environment import OrbitEnvironment as Environment

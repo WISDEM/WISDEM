@@ -11,14 +11,12 @@ class FloatingConstraints(om.ExplicitComponent):
     def setup(self):
         opt = self.options["modeling_options"]
         n_member = opt["floating"]["members"]["n_members"]
-        n_lines = opt["mooring"]["n_anchors"]
 
         self.add_input("Hsig_wave", val=0.0, units="m")
         self.add_input("variable_ballast_mass", val=0.0, units="kg")
         self.add_input("fairlead_radius", 0.0, units="m")
         self.add_input("fairlead", 0.0, units="m")
-        self.add_input("operational_heel", 0.0, units="deg")
-        self.add_input("survival_heel", 0.0, units="deg")
+        self.add_input("survival_heel", 0.0, units="rad")
         tot_ball = 0
         for k in range(n_member):
             n_ball = opt["floating"]["members"]["n_ballasts"][k]
@@ -34,8 +32,8 @@ class FloatingConstraints(om.ExplicitComponent):
         self.add_input("rna_F", np.zeros(3), units="N")
         self.add_input("rna_M", np.zeros(3), units="N*m")
         self.add_input("max_surge_restoring_force", 0.0, units="N")
-        self.add_input("operational_heel_restoring_force", np.zeros((n_lines, 3)), units="N")
-        self.add_input("survival_heel_restoring_force", np.zeros((n_lines, 3)), units="N")
+        self.add_input("operational_heel_restoring_force", np.zeros(6), units="N")
+        self.add_input("survival_heel_restoring_force", np.zeros(6), units="N")
 
         self.add_output("constr_freeboard_heel_margin", val=np.zeros(n_member))
         self.add_output("constr_draft_heel_margin", val=np.zeros(n_member))
@@ -53,7 +51,7 @@ class FloatingConstraints(om.ExplicitComponent):
         Hsig = inputs["Hsig_wave"]
         fairlead = np.abs(inputs["fairlead"])
         R_fairlead = inputs["fairlead_radius"]
-        max_heel = np.deg2rad(inputs["survival_heel"])
+        max_heel = inputs["survival_heel"]
         cg = inputs["system_center_of_mass"]
         gamma = 1.1
 
@@ -122,9 +120,9 @@ class FloatingConstraints(om.ExplicitComponent):
         F_rna = inputs["rna_F"]
         M_rna = inputs["rna_M"]
         surge_restore = inputs["max_surge_restoring_force"]
-        heel_restore = inputs["operational_heel_restoring_force"].sum(axis=0)
         outputs["constr_mooring_surge"] = surge_restore - F_rna[0]
+        heel_restore = inputs["operational_heel_restoring_force"]
         # (fairlead is assumed negative, made positive above, would otherwise be cg-fairlead)
-        M_heel_restore = R_fairlead * heel_restore[2] + (cg[2] + fairlead) * heel_restore[:2].sum()
+        M_heel_restore = R_fairlead * heel_restore[2] + (cg[2] + fairlead) * heel_restore[:2].sum() + heel_restore[4]
         tt2cg = inputs["tower_top_node"][2] - cg[2]
         outputs["constr_mooring_heel"] = M_heel_restore - F_rna[0] * tt2cg - M_rna[1]

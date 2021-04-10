@@ -211,6 +211,7 @@ class OrbitWisdem(om.ExplicitComponent):
 
         # Will hold the bigger orbit project datastructure
         self.project = None
+        self.config = None
 
     def compile_orbit_config_file(self, inputs, outputs, discrete_inputs, discrete_outputs):
         """"""
@@ -404,15 +405,14 @@ class OrbitWisdem(om.ExplicitComponent):
                 "cost_per_tonne": 20,
             }
 
-        self._orbit_config = config
-        return config
+        self.config = config
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        config = self.compile_orbit_config_file(inputs, outputs, discrete_inputs, discrete_outputs)
+        self.compile_orbit_config_file(inputs, outputs, discrete_inputs, discrete_outputs)
+        self.project = ProjectManager(self.config)
 
-        self.project = ProjectManager(config)
-        self.project.run_project()
+        self.project.run()
 
         outputs["bos_capex"] = self.project.bos_capex
         outputs["total_capex"] = self.project.total_capex
