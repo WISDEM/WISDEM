@@ -148,6 +148,22 @@ properties:
                         minimum: 1
                         maximum: 10
                         description: Number of sectors to divide rotor face into in computing thrust and power.
+                    inn_af:
+                        type: boolean
+                        default: False
+                        description: Flag switching on and off the inverted neural network for airfoil design
+                    inn_af_max_t/c: 
+                        type: number
+                        default: 0.4
+                        minimum: 0.
+                        maximum: 1.
+                        description: Maximum airfoil thickness supported by the INN for airfoil design
+                    inn_af_min_t/c: 
+                        type: number
+                        default: 0.15
+                        minimum: 0.
+                        maximum: 1.
+                        description: Minimum airfoil thickness supported by the INN for airfoil design
             DriveSE:
                 type: object
                 default: {}

@@ -66,7 +66,7 @@ properties:
                                         type: integer
                                         default: 8
                                         minimum: 4
-                                        description: Number of equally-spaced control points of the spline parametrizing the twist distribution along blade span. By default, the first two points are locked to prevent the optimizer to try to optimize the twist of the blade root cylinder.
+                                        description: Number of equally-spaced control points of the spline parametrizing the twist distribution along blade span.
                                     max_decrease:
                                         type: number
                                         description: Maximum allowable decrease of twist at each DV location along blade span.
@@ -99,7 +99,7 @@ properties:
                                         type: integer
                                         default: 8
                                         minimum: 4
-                                        description: Number of equally-spaced control points of the spline parametrizing the chord distribution along blade span. By default, the first two points close to blade root and the last point are locked. The first two points impact the diameter of the blade root cylinder, and the models implemented in WISDEM do not have the level of fidelity to appropriately size the blade root diameter. The last point controls the chord length at blade tip and due to the imperfect tip loss models of CCBlade, it is usually a good idea to taper the chord manually and do not let a numerical optimizer control it.
+                                        description: Number of equally-spaced control points of the spline parametrizing the chord distribution along blade span.
                                     max_decrease: &max_decrease
                                         type: number
                                         description: Maximum nondimensional decrease at each optimization location
@@ -121,6 +121,36 @@ properties:
                                         default: 4
                                         minimum: 1
                                         description: Index of airfoil where the optimization can start shifting airfoil position. The airfoil at blade tip is always locked.
+                            t/c:
+                                type: object
+                                default: {}
+                                description: Blade relative thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span. This requires the INN for airfoil design
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the relative thickness distribution along blade span.
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
+                            L/D:
+                                type: object
+                                default: {}
+                                description: Lift to drag ratio as a design variable by scaling (multiplying) the initial value at spline control points along the span. This requires the INN for airfoil design
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the lift to drag ratio distribution along blade span.
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
                     structure:
                         type: object
                         default: {}
@@ -1064,6 +1094,18 @@ properties:
                     max_iter:
                         type: integer
                         description: Max number of optimization iterations
+                        default: 100
+                        minimum: 0
+                        maximum: 100000
+                    max_major_iter:
+                        type: integer
+                        description: Max number of major optimization iterations of SNOPT
+                        default: 10
+                        minimum: 0
+                        maximum: 100000
+                    max_minor_iter:
+                        type: integer
+                        description: Max number of minor optimization iterations of SNOPT
                         default: 100
                         minimum: 0
                         maximum: 100000

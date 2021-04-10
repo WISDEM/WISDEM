@@ -17,7 +17,7 @@ floating = extract_library_specs("config", "complete_floating_project")
 def test_fixed_phase_cost_passing():
 
     project = ProjectManager(fixed)
-    project.run_project()
+    project.run()
 
     assert_almost_equal(
         project.phases["MonopileDesign"].total_cost,
@@ -48,7 +48,7 @@ def test_fixed_phase_cost_passing():
 def test_floating_phase_cost_passing():
 
     project = ProjectManager(floating)
-    project.run_project()
+    project.run()
 
     assert_almost_equal(
         project.phases["MooringSystemDesign"].total_cost,
@@ -80,7 +80,7 @@ def test_floating_phase_cost_passing():
     spar["design_phases"].append("SparDesign")
 
     project = ProjectManager(spar)
-    project.run_project()
+    project.run()
 
     assert_almost_equal(
         project.phases["SparDesign"].total_cost,

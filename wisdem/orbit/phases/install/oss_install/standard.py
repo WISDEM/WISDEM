@@ -23,6 +23,7 @@ class OffshoreSubstationInstallation(InstallPhase):
     """
 
     phase = "Offshore Substation Installation"
+    capex_category = "Offshore Substation"
 
     #:
     expected_config = {

@@ -26,6 +26,7 @@ class MonopileInstallation(InstallPhase):
     """
 
     phase = "Monopile Installation"
+    capex_category = "Substructure"
 
     #:
     expected_config = {

@@ -18,7 +18,7 @@ design_variables:
                 n_opt: 4     # Number of control points along blade span
                 max_decrease: 0.3 # Minimum multiplicative gain on existing chord at the n_opt locations
                 max_increase: 3. # Maximum multiplicative gain on existing chord at the n_opt locations
-                index_start: 1 # Start by optimizing chord at blade root
+                index_start: 0 # Start by optimizing chord at blade root
                 index_end: 3 # Lock chord at blade tip
 
 merit_figure: AEP
