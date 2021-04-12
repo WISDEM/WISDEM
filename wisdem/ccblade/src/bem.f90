@@ -374,6 +374,7 @@ SUBROUTINE INDUCTIONFACTORS_DV(r, chord, rhub, rtip, phi, cl, cd, b, &
   IMPLICIT NONE
   INTEGER, PARAMETER :: dp=KIND(0.d0)
 ! in
+  INTEGER, intent(in) :: nbdirs
   REAL(dp), INTENT(IN) :: r, chord, rhub, rtip, phi, cl, cd
   REAL(dp), DIMENSION(nbdirs), INTENT(IN) :: rd, chordd, rhubd, rtipd&
 & , phid, cld, cdd
@@ -381,7 +382,6 @@ SUBROUTINE INDUCTIONFACTORS_DV(r, chord, rhub, rtip, phi, cl, cd, b, &
   REAL(dp), INTENT(IN) :: vx, vy
   REAL(dp), DIMENSION(nbdirs), INTENT(IN) :: vxd, vyd
   LOGICAL, INTENT(IN) :: usecd, hubloss, tiploss, wakerotation
-  INTEGER, intent(in) :: nbdirs
 !f2py logical, optional, intent(in) :: useCd = 1, hubLoss = 1, tipLoss = 1, wakerotation = 1
 ! out
   REAL(dp), INTENT(OUT) :: fzero, a, ap
@@ -642,12 +642,12 @@ SUBROUTINE RELATIVEWIND_DV(phi, phid, a, ad, ap, apd, vx, vxd, vy, vyd, &
   IMPLICIT NONE
   INTEGER, PARAMETER :: dp=KIND(0.d0)
 ! in
+  INTEGER, intent(in) :: nbdirs
   REAL(dp), INTENT(IN) :: phi, a, ap, vx, vy, pitch
   REAL(dp), DIMENSION(nbdirs), INTENT(IN) :: phid, ad, apd, vxd, vyd&
 & , pitchd
   REAL(dp), INTENT(IN) :: chord, theta, rho, mu
   REAL(dp), DIMENSION(nbdirs), INTENT(IN) :: chordd, thetad
-  INTEGER, intent(in) :: nbdirs
 ! out
   REAL(dp), INTENT(OUT) :: alpha, w, re
   REAL(dp), DIMENSION(nbdirs), INTENT(OUT) :: alphad, wd, red
@@ -735,6 +735,7 @@ SUBROUTINE WINDCOMPONENTS_DV(n, r, rd, precurve, precurved, presweep, &
   INTEGER, PARAMETER :: dp=KIND(0.d0)
 ! in
   INTEGER, INTENT(IN) :: n
+  INTEGER, intent(in) :: nbdirs
   REAL(dp), DIMENSION(n), INTENT(IN) :: r, precurve, presweep
   REAL(dp), DIMENSION(nbdirs, n), INTENT(IN) :: rd, precurved, &
 & presweepd
@@ -742,7 +743,6 @@ SUBROUTINE WINDCOMPONENTS_DV(n, r, rd, precurve, precurved, presweep, &
 & hubht, shearexp
   REAL(dp), DIMENSION(nbdirs), INTENT(IN) :: preconed, yawd, tiltd, &
 & azimuthd, uinfd, omegarpmd, hubhtd
-  INTEGER, intent(in) :: nbdirs
 ! out
   REAL(dp), DIMENSION(n), INTENT(OUT) :: vx, vy
   REAL(dp), DIMENSION(nbdirs, n), INTENT(OUT) :: vxd, vyd
@@ -848,12 +848,12 @@ SUBROUTINE DEFINECURVATURE_DV(n, r, rd, precurve, precurved, presweep, &
   INTEGER, PARAMETER :: dp=KIND(0.d0)
 ! in
   INTEGER, INTENT(IN) :: n
+  INTEGER, intent(in) :: nbdirs
   REAL(dp), DIMENSION(n), INTENT(IN) :: r, precurve, presweep
   REAL(dp), DIMENSION(nbdirs, n), INTENT(IN) :: rd, precurved, &
 & presweepd
   REAL(dp), INTENT(IN) :: precone
   REAL(dp), DIMENSION(nbdirs), INTENT(IN) :: preconed
-  INTEGER, intent(in) :: nbdirs
 ! out
   REAL(dp), DIMENSION(n), INTENT(OUT) :: x_az, y_az, z_az, cone, s
   REAL(dp), DIMENSION(nbdirs, n), INTENT(OUT) :: x_azd, y_azd, z_azd&
@@ -957,10 +957,10 @@ SUBROUTINE THRUSTTORQUE_BV(n, np, tp, r, precurve, presweep, precone, &
   INTEGER, PARAMETER :: dp=KIND(0.d0)
 ! in
   INTEGER, INTENT(IN) :: n
+  INTEGER, intent(in) :: nbdirs
   REAL(dp), DIMENSION(n), INTENT(IN) :: np, tp, r, precurve, presweep
   REAL(dp), INTENT(IN) :: precone, rhub, rtip, precurvetip, presweeptip
   REAL(dp), DIMENSION(nbdirs), intent(in) :: tb, qb
-  INTEGER, intent(in) :: nbdirs
 ! out
 !   REAL(dp) :: t, q
   REAL(dp), DIMENSION(nbdirs, n), intent(out) :: npb, tpb, rb, precurveb, &
@@ -1081,11 +1081,11 @@ SUBROUTINE DEFINECURVATURE_BV(n, r, rb, precurve, precurveb, presweep, &
   INTEGER, PARAMETER :: dp=KIND(0.d0)
 ! in
   INTEGER, INTENT(IN) :: n
+  INTEGER, intent(in) :: nbdirs
   REAL(dp), DIMENSION(n), INTENT(IN) :: r, precurve, presweep
   REAL(dp), DIMENSION(nbdirs, n) :: rb, precurveb, presweepb
   REAL(dp), INTENT(IN) :: precone
   REAL(dp), DIMENSION(nbdirs) :: preconeb
-  INTEGER, intent(in) :: nbdirs
 ! out
   REAL(dp), DIMENSION(n) :: x_az, y_az, z_az, cone, s
   REAL(dp), DIMENSION(nbdirs, n) :: x_azb, z_azb, coneb, sb
@@ -1210,9 +1210,9 @@ SUBROUTINE DEFINECURVATURE_DV2(n, r, rd, precurve, precurved, presweep, &
   INTEGER, PARAMETER :: dp=KIND(0.d0)
 ! in
   INTEGER, INTENT(IN) :: n
+  INTEGER, intent(in) :: nbdirs
   REAL(dp), DIMENSION(n), INTENT(IN) :: r, precurve, presweep
   REAL(dp), DIMENSION(nbdirs, n), INTENT(IN) :: rd, precurved, presweepd
-  INTEGER, intent(in) :: nbdirs
   REAL(dp), INTENT(IN) :: precone
   REAL(dp), DIMENSION(nbdirs), INTENT(IN) :: preconed
 ! out

@@ -21,20 +21,18 @@ limitations under the License.
 """
 
 from __future__ import print_function
+
+import os
+import warnings
+import multiprocessing as mp
+
 import numpy as np
-from math import pi, radians, sin, cos, isnan
+import wisdem.ccblade._bem as _bem
 from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
-import warnings
-import os
-import multiprocessing as mp
 
 # from wisdem.ccblade.Polar import Polar
-import multiprocessing as mp
-from wisdem.commonse.mpi_tools import MPI
 from wisdem.airfoilprep import Airfoil
-import wisdem.ccblade._bem as _bem
-
 
 # ------------------
 #  Airfoil Class
@@ -63,7 +61,7 @@ class CCAirfoil(object):
             cd[i, j] is the drag coefficient at alpha[i] and Re[j]
         """
 
-        alpha = np.radians(alpha)
+        alpha = np.deg2rad(alpha)
         self.x = x
         self.y = y
         self.AFName = AFName
@@ -233,7 +231,7 @@ class CCAirfoil(object):
 
         unsteady = {}
 
-        alpha_rad = np.radians(alpha)
+        alpha_rad = np.deg2rad(alpha)
         cn = cl * np.cos(alpha_rad) + cd * np.sin(alpha_rad)
 
         # alpha0, Cd0, Cm0
@@ -553,19 +551,19 @@ class CCBlade(object):
         derivatives : boolean, optional
             if True, derivatives along with function values will be returned for the various methods
         """
-
-        self.r = np.array(r)
+        r = np.array(r)
+        self.r = r.copy()
         self.chord = np.array(chord)
-        self.theta = np.radians(theta)
+        self.theta = np.deg2rad(theta)
         self.af = af
         self.Rhub = Rhub
         self.Rtip = Rtip
         self.B = B
         self.rho = rho
         self.mu = mu
-        self.precone = radians(precone)
-        self.tilt = radians(tilt)
-        self.yaw = radians(yaw)
+        self.precone = np.deg2rad(precone)
+        self.tilt = np.deg2rad(tilt)
+        self.yaw = np.deg2rad(yaw)
         self.shearExp = shearExp
         self.hubHt = hubHt
         self.bemoptions = dict(usecd=usecd, tiploss=tiploss, hubloss=hubloss, wakerotation=wakerotation)
@@ -581,16 +579,29 @@ class CCBlade(object):
             presweep = np.zeros(len(r))
             presweepTip = 0.0
 
-        self.precurve = precurve
+        self.precurve = precurve.copy()
         self.precurveTip = precurveTip
-        self.presweep = presweep
+        self.presweep = presweep.copy()
         self.presweepTip = presweepTip
+
+        # Enfore unique points at tip and hub
+        r_nd = (np.array(r) - r[0]) / (r[-1] - r[0])
+        nd_hub = np.minimum(0.01, r_nd[:2].mean())
+        nd_tip = np.maximum(0.99, r_nd[-2:].mean())
+        if Rhub == r[0]:
+            self.r[0] = np.interp(nd_hub, r_nd, r)
+        if Rtip == r[-1]:
+            self.r[-1] = np.interp(nd_tip, r_nd, r)
+        if precurveTip == precurve[-1]:
+            self.precurve[-1] = np.interp(nd_tip, r_nd, precurve)
+        if presweepTip == presweep[-1]:
+            self.presweep[-1] = np.interp(nd_tip, r_nd, presweep)
 
         # # rotor radius
         # if self.precurveTip != 0 and self.precone != 0.0:
         # print('rotor diameter may be modified in unexpected ways if tip precurve and precone are both nonzero')
 
-        self.rotorR = Rtip * cos(self.precone) + self.precurveTip * sin(self.precone)
+        self.rotorR = Rtip * np.cos(self.precone) + self.precurveTip * np.sin(self.precone)
 
         # azimuthal discretization
         if self.tilt == 0.0 and self.yaw == 0.0 and self.shearExp == 0.0:
@@ -717,8 +728,8 @@ class CCBlade(object):
         """normal and tangential loads at one section (and optionally derivatives)"""
         if Vx != 0.0 and Vy != 0.0:
 
-            cphi = cos(phi)
-            sphi = sin(phi)
+            cphi = np.cos(phi)
+            sphi = np.sin(phi)
 
             if rotating:
                 _, a, ap, cl, cd = self.__runBEM(phi, r, chord, theta, af, Vx, Vy)
@@ -922,8 +933,8 @@ class CCBlade(object):
                 derivatives of tangential loads.  Same keys as dNp.
         """
 
-        self.pitch = radians(pitch)
-        azimuth = radians(azimuth)
+        self.pitch = np.deg2rad(pitch)
+        azimuth = np.deg2rad(azimuth)
 
         # component of velocity at each radial station
         Vx, Vy, dVx_dw, dVy_dw, dVx_dcurve, dVy_dcurve = self.__windComponents(Uinf, Omega, azimuth)
@@ -968,7 +979,7 @@ class CCBlade(object):
 
             if not rotating:  # non-rotating
 
-                phi_star = pi / 2.0
+                phi_star = np.pi / 2.0
 
             else:
 
@@ -977,16 +988,16 @@ class CCBlade(object):
                 # set standard limits
                 epsilon = 1e-6
                 phi_lower = epsilon
-                phi_upper = pi / 2
+                phi_upper = np.pi / 2
 
                 if errf(phi_lower, *args) * errf(phi_upper, *args) > 0:  # an uncommon but possible case
 
-                    if errf(-pi / 4, *args) < 0 and errf(-epsilon, *args) > 0:
-                        phi_lower = -pi / 4
+                    if errf(-np.pi / 4, *args) < 0 and errf(-epsilon, *args) > 0:
+                        phi_lower = -np.pi / 4
                         phi_upper = -epsilon
                     else:
-                        phi_lower = pi / 2
-                        phi_upper = pi - epsilon
+                        phi_lower = np.pi / 2
+                        phi_upper = np.pi - epsilon
 
                 try:
                     phi_star = brentq(errf, phi_lower, phi_upper, args=args)
@@ -1022,7 +1033,8 @@ class CCBlade(object):
                 dR_dx,
             ) = self.__loads(phi_star, rotating, *args)
 
-            if isnan(Np[i]):
+            if np.isnan(Np[i]):
+                print(f"NaNs at {i}/{n}: {phi_lower} {phi_star} {phi_upper}")
                 a[i] = 0.0
                 ap[i] = 0.0
                 Np[i] = 0.0
@@ -1078,8 +1090,8 @@ class CCBlade(object):
 
             # add chain rule for conversion to radians
             ridx = [2, 6, 7, 9, 10, 13]
-            dNp_dX[ridx, :] *= pi / 180.0
-            dTp_dX[ridx, :] *= pi / 180.0
+            dNp_dX[ridx, :] *= np.pi / 180.0
+            dTp_dX[ridx, :] *= np.pi / 180.0
 
             # save these values as the packing in one matrix is convenient for evaluate
             # (intended for internal use only.  not to be accessed by user)
@@ -1255,12 +1267,12 @@ class CCBlade(object):
                 M[i] += Msub / nsec
 
         # Power
-        P = Q * Omega * pi / 30.0  # RPM to rad/s
+        P = Q * Omega * np.pi / 30.0  # RPM to rad/s
 
         # normalize if necessary
         if coefficients:
             q = 0.5 * self.rho * Uinf ** 2
-            A = pi * self.rotorR ** 2
+            A = np.pi * self.rotorR ** 2
             CP = P / (q * A * Uinf)
             CT = T / (q * A)
             CQ = Q / (q * self.rotorR * A)
@@ -1271,12 +1283,13 @@ class CCBlade(object):
                 # s = [precone, tilt, hubHt, Rhub, Rtip, precurvetip, presweeptip, yaw, Uinf, Omega, pitch]
 
                 dR_ds = np.r_[
-                    -self.Rtip * sin(self.precone) * pi / 180.0 + self.precurveTip * cos(self.precone) * pi / 180.0,
+                    -self.Rtip * np.sin(self.precone) * np.pi / 180.0
+                    + self.precurveTip * np.cos(self.precone) * np.pi / 180.0,
                     0.0,
                     0.0,
                     0.0,
-                    cos(self.precone),
-                    sin(self.precone),
+                    np.cos(self.precone),
+                    np.sin(self.precone),
                     0.0,
                     0.0,
                     0.0,
@@ -1285,7 +1298,7 @@ class CCBlade(object):
                 ]
                 dR_ds = np.dot(np.ones((npts, 1)), np.array([dR_ds]))  # same for each operating condition
 
-                dA_ds = 2 * pi * self.rotorR * dR_ds
+                dA_ds = 2 * np.pi * self.rotorR * dR_ds
 
                 dU_ds = np.zeros((npts, 11))
                 dU_ds[:, 8] = 1.0
@@ -1311,9 +1324,9 @@ class CCBlade(object):
             # scalars = [precone, tilt, hubHt, Rhub, Rtip, precurvetip, presweeptip, yaw, Uinf, Omega, pitch]
             # vectors = [r, chord, theta, precurve, presweep]
 
-            dP_ds = (dQ_ds.T * Omega * pi / 30.0).T
-            dP_ds[:, 9] += Q * pi / 30.0
-            dP_dv = (dQ_dv.T * Omega * pi / 30.0).T
+            dP_ds = (dQ_ds.T * Omega * np.pi / 30.0).T
+            dP_ds[:, 9] += Q * np.pi / 30.0
+            dP_dv = (dQ_dv.T * Omega * np.pi / 30.0).T
 
             # pack derivatives into dictionary
             dT, dQ, dP = self.__thrustTorqueDictionary(dT_ds, dQ_ds, dP_ds, dT_dv, dQ_dv, dP_dv, npts)
@@ -1389,8 +1402,8 @@ class CCBlade(object):
         dQ_dRtip = np.sum(dQ_dX[4, :]) + Rtipb[1]
         dT_dpresweep = dT_dX[5, :] + presweepb[0, :]
         dQ_dpresweep = dQ_dX[5, :] + presweepb[1, :]
-        dT_dprecone = np.sum(dT_dX[6, :]) + preconeb[0] * pi / 180.0
-        dQ_dprecone = np.sum(dQ_dX[6, :]) + preconeb[1] * pi / 180.0
+        dT_dprecone = np.sum(dT_dX[6, :]) + preconeb[0] * np.pi / 180.0
+        dQ_dprecone = np.sum(dQ_dX[6, :]) + preconeb[1] * np.pi / 180.0
         dT_dtilt = np.sum(dT_dX[7, :])
         dQ_dtilt = np.sum(dQ_dX[7, :])
         dT_dhubht = np.sum(dT_dX[8, :])
