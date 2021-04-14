@@ -64,7 +64,7 @@ def create_all_plots(
             twist_opt = np.interp(
                 s_opt_twist,
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["ccblade.theta"],
+                yaml_data["rotorse.theta"],
             )
             axtw.plot(s_opt_twist, twist_opt * 180.0 / np.pi, "o", color=colors[idx], markersize=3)
 
@@ -117,14 +117,14 @@ def create_all_plots(
             chord_opt = np.interp(
                 s_opt_chord,
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["ccblade.chord"],
+                yaml_data["rotorse.chord"],
             )
             axc.plot(s_opt_chord, chord_opt, "o", color=colors[idx], markersize=3)
 
         chord_init = np.interp(
             s_opt_chord,
             list_of_sims[0]["blade.outer_shape_bem.s"],
-            yaml_data["ccblade.chord"],
+            yaml_data["rotorse.chord"],
         )
         axc.plot(
             s_opt_chord,

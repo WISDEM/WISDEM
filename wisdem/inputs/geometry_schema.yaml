@@ -363,7 +363,7 @@ properties:
                                 description: Rotor precone angle, defined positive for both upwind and downwind rotors.
                                 unit: rad
                                 minimum: 0
-                                maximum: 0.2
+                                maximum: 0.4
                             drag_coefficient:
                                 type: number
                                 description: Equivalent drag coefficient to compute the aerodynamic forces generated on the hub.
