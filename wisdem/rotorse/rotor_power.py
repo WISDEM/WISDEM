@@ -507,8 +507,6 @@ class ComputePowerCurve(ExplicitComponent):
             Omega_tsr_rated = U_rated * tsr / R_tip
             Omega_rated = np.minimum(Omega_tsr_rated, Omega_max)
             Omega_rpm_rated = Omega_rated * 30.0 / np.pi
-            Omega = np.minimum(Omega, Omega_rated)  # Stay at this speed if hit rated too early
-            Omega_rpm = Omega * 30.0 / np.pi
             myout, _ = self.ccblade.evaluate([U_rated], [Omega_rpm_rated], [pitch_rated], coefficients=True)
             (
                 P_aero_rated,
@@ -616,6 +614,10 @@ class ComputePowerCurve(ExplicitComponent):
 
         i_rated = np.where(Uhub == U_rated)[0][0]
         i_3 = np.minimum(i_rated + 1, self.n_pc)
+
+        # Set rated conditions for rest of powercurve
+        Omega[i_rated:] = Omega_rated  # Stay at this speed if hit rated too early
+        Omega_rpm = Omega * 30.0 / np.pi
 
         ## REGION II ##
         # Functions to be used inside of power maximization until Region 3
