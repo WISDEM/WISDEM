@@ -912,7 +912,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
                 I_i = np.r_[I_i, np.zeros(3)]
 
             r = cm_i - cm_nac
-            if not k in ["generator_rotor", "generator_stator"]:
+            if not c in ["generator_rotor", "generator_stator"]:
                 I_add = util.assembleI(I_i) + m_i * (np.dot(r, r) * np.eye(3) - np.outer(r, r))
                 I_add = util.unassembleI(I_add)
                 I_nac += I_add
