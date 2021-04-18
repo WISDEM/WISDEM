@@ -6442,7 +6442,7 @@ class TestGradients_RHub_Tip(unittest.TestCase):
 
         np.testing.assert_allclose(dT_dpresweep_fd, dT_dpresweep, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dQ_dpresweep_fd, dQ_dpresweep, rtol=3e-4, atol=1e-8)
-        np.testing.assert_allclose(dM_dpresweep_fd, dM_dpresweep, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dM_dpresweep_fd, dM_dpresweep, rtol=4e-4, atol=1e-8)
         np.testing.assert_allclose(dP_dpresweep_fd, dP_dpresweep, rtol=3e-4, atol=1e-8)
 
     def test_dpresweep3(self):
