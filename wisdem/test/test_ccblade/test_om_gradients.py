@@ -107,15 +107,10 @@ class Test(unittest.TestCase):
         for comp_name in check:
             new_check[comp_name] = {}
             for (output_name, input_name) in check[comp_name]:
-                if (
-                    "airfoil" not in input_name
-                    and "rho" not in input_name
-                    and "mu" not in input_name
-                    and "shearExp" not in input_name
-                ):
+                if "airfoil" not in input_name and "rho" not in input_name and "mu" not in input_name:
                     new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
 
-        assert_check_partials(new_check, rtol=5e-5, atol=1e-4)
+        assert_check_partials(new_check, rtol=5e-5, atol=10.)
 
     def test_aero_hub_loads(self):
         """
@@ -198,12 +193,7 @@ class Test(unittest.TestCase):
         for comp_name in check:
             new_check[comp_name] = {}
             for (output_name, input_name) in check[comp_name]:
-                if (
-                    "airfoil" not in input_name
-                    and "rho" not in input_name
-                    and "mu" not in input_name
-                    and "shearExp" not in input_name
-                ):
+                if "airfoil" not in input_name and "rho" not in input_name and "mu" not in input_name:
                     new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
 
         assert_check_partials(new_check)  # , rtol=5e-5, atol=1e-4)
@@ -298,12 +288,7 @@ class Test(unittest.TestCase):
         for comp_name in check:
             new_check[comp_name] = {}
             for (output_name, input_name) in check[comp_name]:
-                if (
-                    "airfoil" not in input_name
-                    and "rho" not in input_name
-                    and "mu" not in input_name
-                    and "shearExp" not in input_name
-                ):
+                if "airfoil" not in input_name and "rho" not in input_name and "mu" not in input_name:
                     new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
 
         assert_check_partials(new_check)  # , rtol=5e-5, atol=1e-4)
@@ -386,15 +371,10 @@ class Test(unittest.TestCase):
         for comp_name in check:
             new_check[comp_name] = {}
             for (output_name, input_name) in check[comp_name]:
-                if (
-                    "airfoil" not in input_name
-                    and "rho" not in input_name
-                    and "mu" not in input_name
-                    and "shearExp" not in input_name
-                ):
+                if "airfoil" not in input_name and "rho" not in input_name and "mu" not in input_name:
                     new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
 
-        assert_check_partials(new_check, rtol=5e-5, atol=1e-1)
+        assert_check_partials(new_check, rtol=5e-5, atol=10.)
 
 
 def suite():

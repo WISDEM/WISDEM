@@ -281,13 +281,12 @@ class GeneratorSimple(om.ExplicitComponent):
 
         self.add_output("R_generator", val=0.0, units="m")
         self.add_output("generator_mass", val=0.0, units="kg")
-        self.add_output("stator_mass", val=0.0, units="kg")
         self.add_output("generator_rotor_mass", val=0.0, units="kg")
         self.add_output("generator_stator_mass", val=0.0, units="kg")
-        self.add_output("generator_efficiency", val=np.zeros(n_pc))
         self.add_output("generator_rotor_I", val=np.zeros(3), units="kg*m**2")
         self.add_output("generator_stator_I", val=np.zeros(3), units="kg*m**2")
         self.add_output("generator_I", val=np.zeros(3), units="kg*m**2")
+        self.add_output("generator_efficiency", val=np.zeros(n_pc))
 
     def compute(self, inputs, outputs):
 
@@ -795,8 +794,12 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         self.add_input("brake_cm", 0.0, units="m")
         self.add_input("brake_I", np.zeros(3), units="kg*m**2")
         self.add_input("generator_mass", 0.0, units="kg")
+        self.add_input("generator_rotor_mass", val=0.0, units="kg")
+        self.add_input("generator_stator_mass", val=0.0, units="kg")
         self.add_input("generator_cm", 0.0, units="m")
         self.add_input("generator_I", np.zeros(3), units="kg*m**2")
+        self.add_input("generator_rotor_I", val=np.zeros(3), units="kg*m**2")
+        self.add_input("generator_stator_I", val=np.zeros(3), units="kg*m**2")
         self.add_input("nose_mass", val=0.0, units="kg")
         self.add_input("nose_cm", val=0.0, units="m")
         self.add_input("nose_I", val=np.zeros(3), units="kg*m**2")
@@ -853,6 +856,8 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
             "hss",
             "brake",
             "gearbox",
+            "generator_rotor",
+            "generator_stator",
             "generator",
             "hvac",
             "nose",
@@ -873,6 +878,8 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         outputs["shaft_start"] = shaft0
 
         for k in components:
+            if k in ["generator_rotor", "generator_stator"]:
+                continue
             m_i = inputs[k + "_mass"]
             cm_i = inputs[k + "_cm"]
 
@@ -894,7 +901,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         I_TT_list = np.zeros((len(components) + 2, 6))
         for ic, c in enumerate(components):
             m_i = inputs[c + "_mass"]
-            cm_i = inputs[c + "_cm"]
+            cm_i = inputs["generator_cm"] if c.find("generator") >= 0 else inputs[c + "_cm"]
             I_i = inputs[c + "_I"]
 
             # Rotate MofI if in hub c.s.
@@ -905,9 +912,10 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
                 I_i = np.r_[I_i, np.zeros(3)]
 
             r = cm_i - cm_nac
-            I_add = util.assembleI(I_i) + m_i * (np.dot(r, r) * np.eye(3) - np.outer(r, r))
-            I_add = util.unassembleI(I_add)
-            I_nac += I_add
+            if not c in ["generator_rotor", "generator_stator"]:
+                I_add = util.assembleI(I_i) + m_i * (np.dot(r, r) * np.eye(3) - np.outer(r, r))
+                I_add = util.unassembleI(I_add)
+                I_nac += I_add
 
             # Record mass, cm, and I for output table
             m_list[ic] = m_i
