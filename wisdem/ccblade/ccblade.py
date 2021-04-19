@@ -30,7 +30,6 @@ import numpy as np
 import wisdem.ccblade._bem as _bem
 from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
-
 from wisdem.airfoilprep import Airfoil
 
 # ------------------
@@ -1250,7 +1249,6 @@ class CCBlade(object):
                         Np, Tp, self._dNp_dX, self._dTp_dX, self._dNp_dprecurve, self._dTp_dprecurve, *args
                     )
 
-                    # TODO: Why no self.B* for the Moment?
                     dT_ds[i, :] += self.B * dT_ds_sub / nsec
                     dQ_ds[i, :] += self.B * dQ_ds_sub / nsec
                     dM_ds[i, :] += dM_ds_sub / nsec
@@ -1260,7 +1258,7 @@ class CCBlade(object):
 
                 Tsub, Qsub, Msub = _bem.thrusttorque(Np, Tp, *args)
 
-                # TODO: Why no self.B* for the Moment?
+                # Scale rotor quantities (thrust & torque) by num blades.  Keep blade root moment as is
                 T[i] += self.B * Tsub / nsec
                 Q[i] += self.B * Qsub / nsec
                 M[i] += Msub / nsec
