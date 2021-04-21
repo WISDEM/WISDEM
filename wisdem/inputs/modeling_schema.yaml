@@ -250,6 +250,11 @@ properties:
                         maximum: 5.0
                         default: 1.0
                         unit: none
+                    buckling_method:
+                        type: string
+                        enum: [Eurocode, Euro-code, eurocode, euro-code, DNVGL, dnvgl, DNV-GL, dnv-gl]
+                        description: Buckling utilization calculation method- Eurocode 1994 or DNVGL RP-C202
+                        default: dnvgl
                     buckling_length:
                         type: number
                         description: Buckling length factor in Eurocode safety check

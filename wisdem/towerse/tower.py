@@ -2,8 +2,9 @@ import copy
 
 import numpy as np
 import openmdao.api as om
-
 import wisdem.commonse.utilities as util
+import wisdem.commonse.utilization_dnvgl as util_dnvgl
+import wisdem.commonse.utilization_eurocode as util_euro
 import wisdem.commonse.utilization_constraints as util_con
 from wisdem.commonse.environment import TowerSoil
 from wisdem.commonse.cross_sections import CylindricalShellProperties
@@ -1143,6 +1144,7 @@ class TowerPostFrame(om.ExplicitComponent):
             "tower_deflection", np.zeros(nFull), units="m", desc="Deflection of tower top in yaw-aligned +x direction"
         )
         self.add_output("top_deflection", 0.0, units="m", desc="Deflection of tower top in yaw-aligned +x direction")
+        self.add_output("hoop_stress_euro", val=np.zeros(nFull - 1), units="N/m**2")
         self.add_output(
             "stress",
             np.zeros(nFull - 1),
@@ -1186,10 +1188,15 @@ class TowerPostFrame(om.ExplicitComponent):
         hoop_stress = inputs["hoop_stress"]
         sigma_y = inputs["sigma_y_full"]
         E = inputs["E_full"]
+        G = inputs["G_full"]
+        z = inputs["z_full"]
         t = inputs["t_full"]
-        d, _ = util.nodal2sectional(inputs["d_full"])
-        z_section, _ = util.nodal2sectional(inputs["z_full"])
-        L_reinforced = self.options["modeling_options"]["buckling_length"] * np.ones(axial_stress.shape)
+        d = inputs["d_full"]
+        d_sec, _ = util.nodal2sectional(d)
+        z_sec, _ = util.nodal2sectional(z)
+
+        L_suction = float(inputs["suctionpile_depth"])
+        L_buckling = self.options["modeling_options"]["buckling_length"] * np.ones(axial_stress.shape)
         gamma_f = self.options["modeling_options"]["gamma_f"]
         gamma_m = self.options["modeling_options"]["gamma_m"]
         gamma_n = self.options["modeling_options"]["gamma_n"]
@@ -1213,20 +1220,36 @@ class TowerPostFrame(om.ExplicitComponent):
             axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigma_y
         )
 
-        # shell buckling
-        outputs["shell_buckling"] = util_con.shellBucklingEurocode(
-            d, t, axial_stress, hoop_stress, shear_stress, L_reinforced, E, sigma_y, gamma_f, gamma_b
-        )
-
-        # global buckling
-        tower_height = inputs["z_full"][-1] - inputs["z_full"][0] - float(inputs["suctionpile_depth"])
+        # Buckling checks
         M = np.sqrt(inputs["Mxx"] ** 2 + inputs["Myy"] ** 2)
-        outputs["global_buckling"] = util_con.bucklingGL(
-            d, t, inputs["Fz"], M, tower_height, E, sigma_y, gamma_f, gamma_b
-        )
+        Fz = inputs["Fz"]
+
+        if self.options["modeling_options"]["buckling_method"].lower().find("euro") >= 0:
+            # Use Euro-code method
+            hoop_euro = util_euro.hoopStressEurocode(d_sec, t, L_buckling, hoop_stress)
+            outputs["hoop_stress_euro"] = hoop_euro
+
+            shell_buckling = util_euro.shellBucklingEurocode(
+                d, t, axial_stress, hoop_euro, shear_stress, L_buckling, E, sigma_y, gamma_f, gamma_b
+            )
+
+            tower_height = z[-1] - z[0] - L_suction
+            global_buckling = util_euro.bucklingGL(d_sec, t, Fz, M, tower_height, E, sigma_y, gamma_f, gamma_b)
+
+        else:
+            # Use DNV-GL CP202 Method
+            check = util_dnvgl.CylinderBuckling(
+                z, d, t, E=E, G=G, sigma_y=sigma_y, gamma=gamma_f * gamma_b, mod_length=L_suction
+            )
+            results = check.run_buckling_checks(Fz, M, axial_stress, hoop_stress, shear_stress)
+            shell_buckling = results["Shell"]
+            global_buckling = results["Global"]
+
+        outputs["shell_buckling"] = shell_buckling
+        outputs["global_buckling"] = global_buckling
 
         # fatigue
-        N_DEL = 365.0 * 24.0 * 3600.0 * inputs["life"] * np.ones(len(t))
+        # N_DEL = 365.0 * 24.0 * 3600.0 * inputs["life"] * np.ones(len(t))
         # outputs['damage'] = np.zeros(N_DEL.shape)
 
         # if any(inputs['M_DEL']):
@@ -1481,7 +1504,6 @@ class TowerSE(om.Group):
                     nMass=3,
                     nPL=1,
                     frame3dd_opt=frame3dd_opt,
-                    buckling_length=mod_opt["buckling_length"],
                 ),
                 promotes=["Az", "Asx", "Asy", "Ixx", "Iyy", "Jz"],
             )
@@ -1551,7 +1573,7 @@ class TowerSE(om.Group):
             self.connect("tower" + lc + ".Myy_out", "post" + lc + ".Myy")
             self.connect("tower" + lc + ".axial_stress", "post" + lc + ".axial_stress")
             self.connect("tower" + lc + ".shear_stress", "post" + lc + ".shear_stress")
-            self.connect("tower" + lc + ".hoop_stress_euro", "post" + lc + ".hoop_stress")
+            self.connect("tower" + lc + ".hoop_stress", "post" + lc + ".hoop_stress")
             self.connect("tower" + lc + ".cylinder_deflection", "post" + lc + ".tower_deflection_in")
 
             self.connect("wind" + lc + ".Px", "tower" + lc + ".Px")
