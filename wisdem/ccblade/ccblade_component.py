@@ -924,10 +924,10 @@ class AeroHubLoads(ExplicitComponent):
         dx_dx = np.eye(3 * n)
 
         x_az, x_azd, y_az, y_azd, z_az, z_azd, cone, coned, s, sd = _bem.definecurvature_dv2(
-            r, dx_dx[:, :n], precurve, dx_dx[:, n : 2 * n], presweep, dx_dx[:, 2 * n :], precone, np.zeros(3 * n)
+            r, dx_dx[:, :n], precurve, dx_dx[:, n : 2 * n], presweep, dx_dx[:, 2 * n :], float(np.deg2rad(precone)), np.zeros(3 * n)
         )
 
-        totalCone = precone + np.degrees(cone)
+        totalCone = np.degrees(cone)
         s = r[0] + s
 
         af = [None] * self.n_span
