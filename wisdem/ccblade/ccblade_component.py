@@ -721,17 +721,9 @@ class CCBladeTwist(ExplicitComponent):
 
 class AeroHubLoads(ExplicitComponent):
     """
-    Compute the aerodynamic loading at hub center.
+    Estimate the aerodynamic loading at hub center 
+    by running three instances of CCBlade at azimuth 0/120/240 degs
 
-    This component instantiates and calls a CCBlade instance to compute the loads.
-    Currently, finite difference is used to compute the derivatives.
-
-    A good chunk of code here is shared with CCBladeLoads() and there's a
-    possibility of refactoring this so the code duplication is minimized.
-    That would involve piecing out this component into a few components
-    within a group, with instances of CCBladeLoads() within that group too.
-    BladeCurvature() already exists in rotor_loads_defl_strains.py and would
-    be helpful to include in that group.
 
     Parameters
     ----------
@@ -764,6 +756,10 @@ class AeroHubLoads(ExplicitComponent):
         Precurve at each section.
     precurveTip : float
         Precurve at tip.
+    presweep : numpy array[n_span]
+        Presweep at each section.
+    presweepTip : float
+        Presweep at tip.
     airfoils_cl : numpy array[n_span, n_aoa, n_Re, n_tab]
         Lift coefficients, spanwise.
     airfoils_cd : numpy array[n_span, n_aoa, n_Re, n_tab]
@@ -793,14 +789,10 @@ class AeroHubLoads(ExplicitComponent):
 
     Returns
     -------
-    loads_r : numpy array[n_span]
-        Radial positions along blade going toward tip.
-    loads_Px : numpy array[n_span]
-         Distributed loads in blade-aligned x-direction.
-    loads_Py : numpy array[n_span]
-         Distributed loads in blade-aligned y-direction.
-    loads_Pz : numpy array[n_span]
-         Distributed loads in blade-aligned z-direction.
+    Fxyz_hub_aero : numpy array [6]
+        Aerodynamic forces at hub center in the hub aligned coordinate system
+    Mxyz_hub_aero : numpy array [6]
+        Aerodynamic moments at hub center in the hub aligned coordinate system
     """
 
     def initialize(self):
@@ -834,6 +826,8 @@ class AeroHubLoads(ExplicitComponent):
         self.add_input("yaw", val=0.0, units="deg")
         self.add_input("precurve", val=np.zeros(n_span), units="m")
         self.add_input("precurveTip", val=0.0, units="m")
+        self.add_input("presweep", val=np.zeros(n_span), units="m")
+        self.add_input("presweepTip", val=0.0, units="m")
 
         # parameters
         self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re, n_tab)))
@@ -852,24 +846,12 @@ class AeroHubLoads(ExplicitComponent):
         self.add_discrete_input("usecd", val=True)
 
         # outputs
-        self.add_output(
-            "Fxyz_blade_aero",
-            val=np.zeros((n_blades, 6)),
-            units="N",
-            desc="Forces at blade root from aerodynamic loading in the blade c.s.",
-        )
-        self.add_output(
-            "Mxyz_blade_aero",
-            val=np.zeros((n_blades, 6)),
-            units="N*m",
-            desc="Moments at blade root from aerodynamic loading in the blade c.s.",
-        )
         self.add_output("Fxyz_hub_aero", val=np.zeros(3), units="N")
         self.add_output("Mxyz_hub_aero", val=np.zeros(3), units="N*m")
 
         # Just finite difference over the relevant derivatives for now
         self.declare_partials(
-            ["Fxyz_blade_aero", "Fxyz_hub_aero", "Mxyz_blade_aero", "Mxyz_hub_aero"],
+            ["Fxyz_hub_aero", "Mxyz_hub_aero"],
             [
                 "Omega_load",
                 "Rhub",
@@ -901,7 +883,9 @@ class AeroHubLoads(ExplicitComponent):
         tilt = inputs["tilt"]
         yaw = inputs["yaw"]
         precurve = inputs["precurve"]
+        presweep = inputs["presweep"]
         precurveTip = inputs["precurveTip"]
+        presweepTip = inputs["presweepTip"]
         B = discrete_inputs["nBlades"]
         rho = inputs["rho"]
         mu = inputs["mu"]
@@ -917,18 +901,6 @@ class AeroHubLoads(ExplicitComponent):
 
         if len(precurve) == 0:
             precurve = np.zeros_like(r)
-
-        presweep = np.zeros_like(r)
-
-        n = len(r)
-        dx_dx = np.eye(3 * n)
-
-        x_az, x_azd, y_az, y_azd, z_az, z_azd, cone, coned, s, sd = _bem.definecurvature_dv2(
-            r, dx_dx[:, :n], precurve, dx_dx[:, n : 2 * n], presweep, dx_dx[:, 2 * n :], float(np.deg2rad(precone)), np.zeros(3 * n)
-        )
-
-        totalCone = np.degrees(cone)
-        s = r[0] + s
 
         af = [None] * self.n_span
         for i in range(self.n_span):
@@ -968,60 +940,44 @@ class AeroHubLoads(ExplicitComponent):
         azimuth_blades = np.linspace(0, 360, B + 1)
 
         # distributed loads
+        args = (
+                r,
+                precurve,
+                presweep,
+                np.deg2rad(precone),
+                Rhub,
+                Rtip,
+                precurveTip,
+                presweepTip,
+            )
+            
+        F_blade_hub_cs = np.zeros((B,3))
+        M_blade_hub_cs = np.zeros((B,3))
+        
         for i_blade in range(B):
-            loads, self.derivs = ccblade.distributedAeroLoads(V_load, Omega_load, pitch_load, azimuth_blades[i_blade])
+
+            # Get normal and tangential loads along the blade
+            loads, derivs = ccblade.distributedAeroLoads(V_load, Omega_load, pitch_load, azimuth_blades[i_blade])
             Np = loads["Np"]
             Tp = loads["Tp"]
 
-            # conform to blade-aligned coordinate system
-            Px = Np
-            Py = -Tp
-            Pz = 0.0 * Np
+            # Integrate blade loads along span
+            Tsub, Qsub, Msub, Vsub, Ssub = _bem.thrusttorque(Np, Tp, *args)
 
-            # Integrate to get shear forces
-            Fx = np.trapz(Px, r)
-            Fy = np.trapz(Py, r)
-            Fz = np.trapz(Pz, r)
-            Fxy = np.sqrt(Fx ** 2 + Fy ** 2)
-            Fyz = np.sqrt(Fy ** 2 + Fz ** 2)
-            Fxz = np.sqrt(Fx ** 2 + Fz ** 2)
-
-            # loads in azimuthal c.s.
-            P = DirectionVector(Px, Py, Pz).bladeToAzimuth(totalCone)
-
-            # distributed bending load in azimuth coordinate ysstem
-            az = DirectionVector(x_az, y_az, z_az)
-            Mp = az.cross(P)
-
-            # Integrate to obtain moments
-            Mx = np.trapz(Mp.x, r)
-            My = np.trapz(Mp.y, r)
-            Mz = np.trapz(Mp.z, r)
-            Mxy = np.sqrt(Mx ** 2 + My ** 2)
-            Myz = np.sqrt(My ** 2 + Mz ** 2)
-            Mxz = np.sqrt(Mx ** 2 + Mz ** 2)
-
-            outputs["Fxyz_blade_aero"][i_blade, :] = np.array([Fx, Fy, Fz, Fxy, Fyz, Fxz])
-            outputs["Mxyz_blade_aero"][i_blade, :] = np.array([Mx, My, Mz, Mxy, Myz, Mxz])
-
-        # Initialize summation
-        F_hub_tot = np.zeros((3,))
-        M_hub_tot = np.zeros((3,))
-        # Convert from blade to hub c.s.
-        for i_blade in range(B):
-            myF = DirectionVector.fromArray(outputs["Fxyz_blade_aero"][i_blade, :]).azimuthToHub(
+            # Rotate forces and moments from azimuth c.s. to hub c.s. 
+            myF = DirectionVector.fromArray([Tsub, Ssub, Vsub]).azimuthToHub(
                 azimuth_blades[i_blade]
             )
-            myM = DirectionVector.fromArray(outputs["Mxyz_blade_aero"][i_blade, :]).azimuthToHub(
+            myM = DirectionVector.fromArray([Qsub, Msub, 0.]).azimuthToHub(
                 azimuth_blades[i_blade]
             )
 
-            F_hub_tot += myF.toArray().flatten()
-            M_hub_tot += myM.toArray().flatten()
+            F_blade_hub_cs[i_blade,:] = np.array([myF.x, myF.y, myF.z])
+            M_blade_hub_cs[i_blade,:] = np.array([myM.x, myM.y, myM.z])
 
-        # Now sum over all blades
-        outputs["Fxyz_hub_aero"] = F_hub_tot
-        outputs["Mxyz_hub_aero"] = M_hub_tot
+        # Vector sum of the contributions from the three blades
+        outputs["Fxyz_hub_aero"] = np.sum(F_blade_hub_cs, axis=0)
+        outputs["Mxyz_hub_aero"] = np.sum(M_blade_hub_cs, axis=0)
 
 
 class CCBladeEvaluate(ExplicitComponent):

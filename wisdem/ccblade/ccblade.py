@@ -1241,6 +1241,13 @@ class CCBlade(object):
                 loads, derivs = self.distributedAeroLoads(Uinf[i], Omega[i], pitch[i], azimuth)
                 Np, Tp = (loads["Np"], loads["Tp"])
 
+                Tsub, Qsub, Msub, _, _ = _bem.thrusttorque(Np, Tp, *args)
+                
+                # Scale rotor quantities (thrust & torque) by num blades.  Keep blade root moment as is
+                T[i] += self.B * Tsub / nsec
+                Q[i] += self.B * Qsub / nsec
+                M[i] += Msub / nsec
+
                 if self.derivatives:
                     dNp = derivs["dNp"]
                     dTp = derivs["dTp"]
@@ -1255,13 +1262,6 @@ class CCBlade(object):
                     dT_dv[i, :, :] += self.B * dT_dv_sub / nsec
                     dQ_dv[i, :, :] += self.B * dQ_dv_sub / nsec
                     dM_dv[i, :, :] += dM_dv_sub / nsec
-
-                Tsub, Qsub, Msub = _bem.thrusttorque(Np, Tp, *args)
-
-                # Scale rotor quantities (thrust & torque) by num blades.  Keep blade root moment as is
-                T[i] += self.B * Tsub / nsec
-                Q[i] += self.B * Qsub / nsec
-                M[i] += Msub / nsec
 
         # Power
         P = Q * Omega * np.pi / 30.0  # RPM to rad/s
