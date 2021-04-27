@@ -14,7 +14,6 @@ limitations under the License.
 
 import unittest
 from os import path
-from math import pi
 
 import numpy as np
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
@@ -148,7 +147,7 @@ class TestGradients(unittest.TestCase):
         self.Uinf = 10.0
         tsr = 7.55
         self.pitch = 0.0
-        self.Omega = self.Uinf * tsr / self.Rtip * 30.0 / pi  # convert to RPM
+        self.Omega = self.Uinf * tsr / self.Rtip * 30.0 / np.pi  # convert to RPM
         self.azimuth = 90
 
         loads, derivs = self.rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
@@ -158,12 +157,12 @@ class TestGradients(unittest.TestCase):
         self.dTp = derivs["dTp"]
 
         outputs, derivs = self.rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
-        self.P, self.T, self.Q, self.M = [outputs[k] for k in ("P", "T", "Q", "M")]
-        self.dP, self.dT, self.dQ, self.dM = [derivs[k] for k in ("dP", "dT", "dQ", "dM")]
+        self.P, self.T, self.Y, self.Z, self.Q, self.M, self.Mb = [outputs[k] for k in ("P", "T", "Y", "Z", "Q", "M", "Mb")]
+        self.dP, self.dT, self.dY, self.dZ, self.dQ, self.dM, self.dMb = [derivs[k] for k in ("dP", "dT", "dY", "dZ", "dQ", "dM", "dMb")]
 
         outputs, derivs = self.rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
-        self.CP, self.CT, self.CQ, self.CM = [outputs[k] for k in ("CP", "CT", "CQ", "CM")]
-        self.dCP, self.dCT, self.dCQ, self.dCM = [derivs[k] for k in ("dCP", "dCT", "dCQ", "dCM")]
+        self.CP, self.CT, self.CY, self.CZ, self.CQ, self.CM, self.CMb = [outputs[k] for k in ("CP", "CT", "CY", "CZ", "CQ", "CM", "CMb")]
+        self.dCP, self.dCT, self.dCY, self.dCZ, self.dCQ, self.dCM, self.dCMb = [derivs[k] for k in ("dCP", "dCT", "dCY", "dCZ", "dCQ", "dCM", "dCMb")]
 
         self.rotor.derivatives = False
         self.n = len(self.r)
@@ -213,12 +212,18 @@ class TestGradients(unittest.TestCase):
     def test_dr2(self):
 
         dT_dr = self.dT["dr"]
+        dY_dr = self.dY["dr"]
+        dZ_dr = self.dZ["dr"]
         dQ_dr = self.dQ["dr"]
         dM_dr = self.dM["dr"]
+        dMb_dr = self.dMb["dr"]
         dP_dr = self.dP["dr"]
         dT_dr_fd = np.zeros((self.npts, self.n))
+        dY_dr_fd = np.zeros((self.npts, self.n))
+        dZ_dr_fd = np.zeros((self.npts, self.n))
         dQ_dr_fd = np.zeros((self.npts, self.n))
         dM_dr_fd = np.zeros((self.npts, self.n))
+        dMb_dr_fd = np.zeros((self.npts, self.n))
         dP_dr_fd = np.zeros((self.npts, self.n))
 
         for i in range(self.n):
@@ -248,28 +253,43 @@ class TestGradients(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
             Pd = outputs["P"]
             Td = outputs["T"]
+            Yd = outputs["Y"]
+            Zd = outputs["Z"]
             Qd = outputs["Q"]
             Md = outputs["M"]
+            Mbd = outputs["Mb"]
 
             dT_dr_fd[:, i] = (Td - self.T) / delta
+            dY_dr_fd[:, i] = (Yd - self.Y) / delta
+            dZ_dr_fd[:, i] = (Zd - self.Z) / delta
             dQ_dr_fd[:, i] = (Qd - self.Q) / delta
             dM_dr_fd[:, i] = (Md - self.M) / delta
+            dMb_dr_fd[:, i] = (Mbd - self.Mb) / delta
             dP_dr_fd[:, i] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dr_fd, dT_dr, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dr_fd, dY_dr, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dZ_dr_fd, dZ_dr, rtol=4e-3, atol=1e-8)
         np.testing.assert_allclose(dQ_dr_fd, dQ_dr, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dM_dr_fd, dM_dr, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dMb_dr_fd, dMb_dr, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dP_dr_fd, dP_dr, rtol=3e-4, atol=1e-8)
 
     def test_dr3(self):
 
         dCT_dr = self.dCT["dr"]
+        dCY_dr = self.dCY["dr"]
+        dCZ_dr = self.dCZ["dr"]
         dCQ_dr = self.dCQ["dr"]
         dCM_dr = self.dCM["dr"]
+        dCMb_dr = self.dCMb["dr"]
         dCP_dr = self.dCP["dr"]
         dCT_dr_fd = np.zeros((self.npts, self.n))
+        dCY_dr_fd = np.zeros((self.npts, self.n))
+        dCZ_dr_fd = np.zeros((self.npts, self.n))
         dCQ_dr_fd = np.zeros((self.npts, self.n))
         dCM_dr_fd = np.zeros((self.npts, self.n))
+        dCMb_dr_fd = np.zeros((self.npts, self.n))
         dCP_dr_fd = np.zeros((self.npts, self.n))
 
         for i in range(self.n):
@@ -299,17 +319,26 @@ class TestGradients(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
             CPd = outputs["CP"]
             CTd = outputs["CT"]
+            CYd = outputs["CY"]
+            CZd = outputs["CZ"]
             CQd = outputs["CQ"]
             CMd = outputs["CM"]
+            CMbd = outputs["CMb"]
 
             dCT_dr_fd[:, i] = (CTd - self.CT) / delta
+            dCY_dr_fd[:, i] = (CYd - self.CY) / delta
+            dCZ_dr_fd[:, i] = (CZd - self.CZ) / delta
             dCQ_dr_fd[:, i] = (CQd - self.CQ) / delta
             dCM_dr_fd[:, i] = (CMd - self.CM) / delta
+            dCMb_dr_fd[:, i] = (CMbd - self.CMb) / delta
             dCP_dr_fd[:, i] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dr_fd, dCT_dr, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dr_fd, dCY_dr, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dr_fd, dCZ_dr, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dr_fd, dCQ_dr, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCM_dr_fd, dCM_dr, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dr_fd, dCMb_dr, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCP_dr_fd, dCP_dr, rtol=3e-4, atol=1e-8)
 
     def test_dchord1(self):
@@ -356,12 +385,18 @@ class TestGradients(unittest.TestCase):
     def test_dchord2(self):
 
         dT_dchord = self.dT["dchord"]
+        dY_dchord = self.dY["dchord"]
+        dZ_dchord = self.dZ["dchord"]
         dQ_dchord = self.dQ["dchord"]
         dM_dchord = self.dM["dchord"]
+        dMb_dchord = self.dMb["dchord"]
         dP_dchord = self.dP["dchord"]
         dT_dchord_fd = np.zeros((self.npts, self.n))
+        dY_dchord_fd = np.zeros((self.npts, self.n))
+        dZ_dchord_fd = np.zeros((self.npts, self.n))
         dQ_dchord_fd = np.zeros((self.npts, self.n))
         dM_dchord_fd = np.zeros((self.npts, self.n))
+        dMb_dchord_fd = np.zeros((self.npts, self.n))
         dP_dchord_fd = np.zeros((self.npts, self.n))
 
         for i in range(self.n):
@@ -391,28 +426,43 @@ class TestGradients(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
             Pd = outputs["P"]
             Td = outputs["T"]
+            Yd = outputs["Y"]
+            Zd = outputs["Z"]
             Qd = outputs["Q"]
             Md = outputs["M"]
+            Mbd = outputs["Mb"]
 
             dT_dchord_fd[:, i] = (Td - self.T) / delta
+            dY_dchord_fd[:, i] = (Yd - self.Y) / delta
+            dZ_dchord_fd[:, i] = (Zd - self.Z) / delta
             dQ_dchord_fd[:, i] = (Qd - self.Q) / delta
             dM_dchord_fd[:, i] = (Md - self.M) / delta
+            dMb_dchord_fd[:, i] = (Mbd - self.Mb) / delta
             dP_dchord_fd[:, i] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dchord_fd, dT_dchord, rtol=5e-6, atol=1e-8)
+        np.testing.assert_allclose(dY_dchord_fd, dY_dchord, rtol=7e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dchord_fd, dZ_dchord, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dchord_fd, dQ_dchord, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dchord_fd, dM_dchord, rtol=7e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dchord_fd, dMb_dchord, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dchord_fd, dP_dchord, rtol=7e-5, atol=1e-8)
 
     def test_dchord3(self):
 
         dCT_dchord = self.dCT["dchord"]
+        dCY_dchord = self.dCY["dchord"]
+        dCZ_dchord = self.dCZ["dchord"]
         dCQ_dchord = self.dCQ["dchord"]
         dCM_dchord = self.dCM["dchord"]
+        dCMb_dchord = self.dCMb["dchord"]
         dCP_dchord = self.dCP["dchord"]
         dCT_dchord_fd = np.zeros((self.npts, self.n))
+        dCY_dchord_fd = np.zeros((self.npts, self.n))
+        dCZ_dchord_fd = np.zeros((self.npts, self.n))
         dCQ_dchord_fd = np.zeros((self.npts, self.n))
         dCM_dchord_fd = np.zeros((self.npts, self.n))
+        dCMb_dchord_fd = np.zeros((self.npts, self.n))
         dCP_dchord_fd = np.zeros((self.npts, self.n))
 
         for i in range(self.n):
@@ -442,17 +492,26 @@ class TestGradients(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
             CPd = outputs["CP"]
             CTd = outputs["CT"]
+            CYd = outputs["CY"]
+            CZd = outputs["CZ"]
             CQd = outputs["CQ"]
             CMd = outputs["CM"]
+            CMbd = outputs["CMb"]
 
             dCT_dchord_fd[:, i] = (CTd - self.CT) / delta
+            dCY_dchord_fd[:, i] = (CYd - self.CY) / delta
+            dCZ_dchord_fd[:, i] = (CZd - self.CZ) / delta
             dCQ_dchord_fd[:, i] = (CQd - self.CQ) / delta
             dCM_dchord_fd[:, i] = (CMd - self.CM) / delta
+            dCMb_dchord_fd[:, i] = (CMbd - self.CMb) / delta
             dCP_dchord_fd[:, i] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dchord_fd, dCT_dchord, rtol=5e-6, atol=1e-8)
+        np.testing.assert_allclose(dCY_dchord_fd, dCY_dchord, rtol=5e-6, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dchord_fd, dCZ_dchord, rtol=5e-6, atol=1e-8)
         np.testing.assert_allclose(dCQ_dchord_fd, dCQ_dchord, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dchord_fd, dCM_dchord, rtol=7e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dchord_fd, dCMb_dchord, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dchord_fd, dCP_dchord, rtol=7e-5, atol=1e-8)
 
     def test_dtheta1(self):
@@ -499,12 +558,18 @@ class TestGradients(unittest.TestCase):
     def test_dtheta2(self):
 
         dT_dtheta = self.dT["dtheta"]
+        dY_dtheta = self.dY["dtheta"]
+        dZ_dtheta = self.dZ["dtheta"]
         dQ_dtheta = self.dQ["dtheta"]
         dM_dtheta = self.dM["dtheta"]
+        dMb_dtheta = self.dMb["dtheta"]
         dP_dtheta = self.dP["dtheta"]
         dT_dtheta_fd = np.zeros((self.npts, self.n))
+        dY_dtheta_fd = np.zeros((self.npts, self.n))
+        dZ_dtheta_fd = np.zeros((self.npts, self.n))
         dQ_dtheta_fd = np.zeros((self.npts, self.n))
         dM_dtheta_fd = np.zeros((self.npts, self.n))
+        dMb_dtheta_fd = np.zeros((self.npts, self.n))
         dP_dtheta_fd = np.zeros((self.npts, self.n))
 
         for i in range(self.n):
@@ -534,28 +599,43 @@ class TestGradients(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
             Pd = outputs["P"]
             Td = outputs["T"]
+            Yd = outputs["Y"]
+            Zd = outputs["Z"]
             Qd = outputs["Q"]
             Md = outputs["M"]
+            Mbd = outputs["Mb"]
 
             dT_dtheta_fd[:, i] = (Td - self.T) / delta
+            dY_dtheta_fd[:, i] = (Yd - self.Y) / delta
+            dZ_dtheta_fd[:, i] = (Zd - self.Z) / delta
             dQ_dtheta_fd[:, i] = (Qd - self.Q) / delta
             dM_dtheta_fd[:, i] = (Md - self.M) / delta
+            dMb_dtheta_fd[:, i] = (Mbd - self.Mb) / delta
             dP_dtheta_fd[:, i] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dtheta_fd, dT_dtheta, rtol=7e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dtheta_fd, dY_dtheta, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dZ_dtheta_fd, dZ_dtheta, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dtheta_fd, dQ_dtheta, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dtheta_fd, dM_dtheta, rtol=7e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dtheta_fd, dMb_dtheta, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dtheta_fd, dP_dtheta, rtol=7e-5, atol=1e-8)
 
     def test_dtheta3(self):
 
         dCT_dtheta = self.dCT["dtheta"]
+        dCY_dtheta = self.dCY["dtheta"]
+        dCZ_dtheta = self.dCZ["dtheta"]
         dCQ_dtheta = self.dCQ["dtheta"]
         dCM_dtheta = self.dCM["dtheta"]
+        dCMb_dtheta = self.dCMb["dtheta"]
         dCP_dtheta = self.dCP["dtheta"]
         dCT_dtheta_fd = np.zeros((self.npts, self.n))
+        dCY_dtheta_fd = np.zeros((self.npts, self.n))
+        dCZ_dtheta_fd = np.zeros((self.npts, self.n))
         dCQ_dtheta_fd = np.zeros((self.npts, self.n))
         dCM_dtheta_fd = np.zeros((self.npts, self.n))
+        dCMb_dtheta_fd = np.zeros((self.npts, self.n))
         dCP_dtheta_fd = np.zeros((self.npts, self.n))
 
         for i in range(self.n):
@@ -585,17 +665,26 @@ class TestGradients(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
             CPd = outputs["CP"]
             CTd = outputs["CT"]
+            CYd = outputs["CY"]
+            CZd = outputs["CZ"]
             CQd = outputs["CQ"]
             CMd = outputs["CM"]
+            CMbd = outputs["CMb"]
 
             dCT_dtheta_fd[:, i] = (CTd - self.CT) / delta
+            dCY_dtheta_fd[:, i] = (CYd - self.CY) / delta
+            dCZ_dtheta_fd[:, i] = (CZd - self.CZ) / delta
             dCQ_dtheta_fd[:, i] = (CQd - self.CQ) / delta
             dCM_dtheta_fd[:, i] = (CMd - self.CM) / delta
+            dCMb_dtheta_fd[:, i] = (CMbd - self.CMb) / delta
             dCP_dtheta_fd[:, i] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dtheta_fd, dCT_dtheta, rtol=5e-6, atol=1e-8)
+        np.testing.assert_allclose(dCY_dtheta_fd, dCY_dtheta, rtol=5e-6, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dtheta_fd, dCZ_dtheta, rtol=5e-6, atol=1e-8)
         np.testing.assert_allclose(dCQ_dtheta_fd, dCQ_dtheta, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dtheta_fd, dCM_dtheta, rtol=7e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dtheta_fd, dCMb_dtheta, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dtheta_fd, dCP_dtheta, rtol=7e-5, atol=1e-8)
 
     def test_dRhub1(self):
@@ -642,13 +731,19 @@ class TestGradients(unittest.TestCase):
     def test_dRhub2(self):
 
         dT_dRhub = self.dT["dRhub"]
+        dY_dRhub = self.dY["dRhub"]
+        dZ_dRhub = self.dZ["dRhub"]
         dQ_dRhub = self.dQ["dRhub"]
         dM_dRhub = self.dM["dRhub"]
+        dMb_dRhub = self.dMb["dRhub"]
         dP_dRhub = self.dP["dRhub"]
 
         dT_dRhub_fd = np.zeros((self.npts, 1))
+        dY_dRhub_fd = np.zeros((self.npts, 1))
+        dZ_dRhub_fd = np.zeros((self.npts, 1))
         dQ_dRhub_fd = np.zeros((self.npts, 1))
         dM_dRhub_fd = np.zeros((self.npts, 1))
+        dMb_dRhub_fd = np.zeros((self.npts, 1))
         dP_dRhub_fd = np.zeros((self.npts, 1))
 
         Rhub = float(self.Rhub)
@@ -677,29 +772,44 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dRhub_fd[:, 0] = (Td - self.T) / delta
+        dY_dRhub_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dRhub_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dRhub_fd[:, 0] = (Qd - self.Q) / delta
         dM_dRhub_fd[:, 0] = (Md - self.M) / delta
+        dMb_dRhub_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dRhub_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dRhub_fd, dT_dRhub, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dRhub_fd, dY_dRhub, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dRhub_fd, dZ_dRhub, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dRhub_fd, dQ_dRhub, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dRhub_fd, dM_dRhub, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dRhub_fd, dMb_dRhub, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dRhub_fd, dP_dRhub, rtol=5e-5, atol=1e-8)
 
     def test_dRhub3(self):
 
         dCT_dRhub = self.dCT["dRhub"]
+        dCY_dRhub = self.dCY["dRhub"]
+        dCZ_dRhub = self.dCZ["dRhub"]
         dCQ_dRhub = self.dCQ["dRhub"]
         dCM_dRhub = self.dCM["dRhub"]
+        dCMb_dRhub = self.dCMb["dRhub"]
         dCP_dRhub = self.dCP["dRhub"]
 
         dCT_dRhub_fd = np.zeros((self.npts, 1))
+        dCY_dRhub_fd = np.zeros((self.npts, 1))
+        dCZ_dRhub_fd = np.zeros((self.npts, 1))
         dCQ_dRhub_fd = np.zeros((self.npts, 1))
         dCM_dRhub_fd = np.zeros((self.npts, 1))
+        dCMb_dRhub_fd = np.zeros((self.npts, 1))
         dCP_dRhub_fd = np.zeros((self.npts, 1))
 
         Rhub = float(self.Rhub)
@@ -728,17 +838,26 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dRhub_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dRhub_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dRhub_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dRhub_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dRhub_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dRhub_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dRhub_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dRhub_fd, dCT_dRhub, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dRhub_fd, dCY_dRhub, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dRhub_fd, dCZ_dRhub, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dRhub_fd, dCQ_dRhub, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dRhub_fd, dCM_dRhub, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dRhub_fd, dCMb_dRhub, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dRhub_fd, dCP_dRhub, rtol=5e-5, atol=1e-8)
 
     def test_dRtip1(self):
@@ -785,13 +904,19 @@ class TestGradients(unittest.TestCase):
     def test_dRtip2(self):
 
         dT_dRtip = self.dT["dRtip"]
+        dY_dRtip = self.dY["dRtip"]
+        dZ_dRtip = self.dZ["dRtip"]
         dQ_dRtip = self.dQ["dRtip"]
         dM_dRtip = self.dM["dRtip"]
+        dMb_dRtip = self.dMb["dRtip"]
         dP_dRtip = self.dP["dRtip"]
 
         dT_dRtip_fd = np.zeros((self.npts, 1))
+        dY_dRtip_fd = np.zeros((self.npts, 1))
+        dZ_dRtip_fd = np.zeros((self.npts, 1))
         dQ_dRtip_fd = np.zeros((self.npts, 1))
         dM_dRtip_fd = np.zeros((self.npts, 1))
+        dMb_dRtip_fd = np.zeros((self.npts, 1))
         dP_dRtip_fd = np.zeros((self.npts, 1))
 
         Rtip = float(self.Rtip)
@@ -820,29 +945,44 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dRtip_fd[:, 0] = (Td - self.T) / delta
+        dY_dRtip_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dRtip_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dRtip_fd[:, 0] = (Qd - self.Q) / delta
         dM_dRtip_fd[:, 0] = (Md - self.M) / delta
+        dMb_dRtip_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dRtip_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dRtip_fd, dT_dRtip, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dRtip_fd, dY_dRtip, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dRtip_fd, dZ_dRtip, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dRtip_fd, dQ_dRtip, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dRtip_fd, dM_dRtip, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dRtip_fd, dMb_dRtip, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dRtip_fd, dP_dRtip, rtol=5e-5, atol=1e-8)
 
     def test_dRtip3(self):
 
         dCT_dRtip = self.dCT["dRtip"]
+        dCY_dRtip = self.dCY["dRtip"]
+        dCZ_dRtip = self.dCZ["dRtip"]
         dCQ_dRtip = self.dCQ["dRtip"]
         dCM_dRtip = self.dCM["dRtip"]
+        dCMb_dRtip = self.dCMb["dRtip"]
         dCP_dRtip = self.dCP["dRtip"]
 
         dCT_dRtip_fd = np.zeros((self.npts, 1))
+        dCY_dRtip_fd = np.zeros((self.npts, 1))
+        dCZ_dRtip_fd = np.zeros((self.npts, 1))
         dCQ_dRtip_fd = np.zeros((self.npts, 1))
         dCM_dRtip_fd = np.zeros((self.npts, 1))
+        dCMb_dRtip_fd = np.zeros((self.npts, 1))
         dCP_dRtip_fd = np.zeros((self.npts, 1))
 
         Rtip = float(self.Rtip)
@@ -871,17 +1011,26 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dRtip_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dRtip_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dRtip_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dRtip_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dRtip_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dRtip_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dRtip_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dRtip_fd, dCT_dRtip, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dRtip_fd, dCY_dRtip, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dRtip_fd, dCZ_dRtip, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dRtip_fd, dCQ_dRtip, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dRtip_fd, dCM_dRtip, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dRtip_fd, dCMb_dRtip, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dRtip_fd, dCP_dRtip, rtol=5e-5, atol=1e-8)
 
     def test_dprecone1(self):
@@ -928,13 +1077,19 @@ class TestGradients(unittest.TestCase):
     def test_dprecone2(self):
 
         dT_dprecone = self.dT["dprecone"]
+        dY_dprecone = self.dY["dprecone"]
+        dZ_dprecone = self.dZ["dprecone"]
         dQ_dprecone = self.dQ["dprecone"]
         dM_dprecone = self.dM["dprecone"]
+        dMb_dprecone = self.dMb["dprecone"]
         dP_dprecone = self.dP["dprecone"]
 
         dT_dprecone_fd = np.zeros((self.npts, 1))
+        dY_dprecone_fd = np.zeros((self.npts, 1))
+        dZ_dprecone_fd = np.zeros((self.npts, 1))
         dQ_dprecone_fd = np.zeros((self.npts, 1))
         dM_dprecone_fd = np.zeros((self.npts, 1))
+        dMb_dprecone_fd = np.zeros((self.npts, 1))
         dP_dprecone_fd = np.zeros((self.npts, 1))
 
         precone = float(self.precone)
@@ -963,29 +1118,44 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dprecone_fd[:, 0] = (Td - self.T) / delta
+        dY_dprecone_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dprecone_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dprecone_fd[:, 0] = (Qd - self.Q) / delta
         dM_dprecone_fd[:, 0] = (Md - self.M) / delta
+        dMb_dprecone_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dprecone_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dprecone_fd, dT_dprecone, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dprecone_fd, dY_dprecone, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dprecone_fd, dZ_dprecone, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dprecone_fd, dQ_dprecone, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dprecone_fd, dM_dprecone, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dprecone_fd, dMb_dprecone, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dprecone_fd, dP_dprecone, rtol=5e-5, atol=1e-8)
 
     def test_dprecone3(self):
 
         dCT_dprecone = self.dCT["dprecone"]
+        dCY_dprecone = self.dCY["dprecone"]
+        dCZ_dprecone = self.dCZ["dprecone"]
         dCQ_dprecone = self.dCQ["dprecone"]
         dCM_dprecone = self.dCM["dprecone"]
+        dCMb_dprecone = self.dCMb["dprecone"]
         dCP_dprecone = self.dCP["dprecone"]
 
         dCT_dprecone_fd = np.zeros((self.npts, 1))
+        dCY_dprecone_fd = np.zeros((self.npts, 1))
+        dCZ_dprecone_fd = np.zeros((self.npts, 1))
         dCQ_dprecone_fd = np.zeros((self.npts, 1))
         dCM_dprecone_fd = np.zeros((self.npts, 1))
+        dCMb_dprecone_fd = np.zeros((self.npts, 1))
         dCP_dprecone_fd = np.zeros((self.npts, 1))
 
         precone = float(self.precone)
@@ -1014,17 +1184,26 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dprecone_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dprecone_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dprecone_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dprecone_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dprecone_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dprecone_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dprecone_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dprecone_fd, dCT_dprecone, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dprecone_fd, dCY_dprecone, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dprecone_fd, dCZ_dprecone, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dprecone_fd, dCQ_dprecone, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dprecone_fd, dCM_dprecone, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dprecone_fd, dCMb_dprecone, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dprecone_fd, dCP_dprecone, rtol=5e-5, atol=1e-8)
 
     def test_dtilt1(self):
@@ -1071,13 +1250,19 @@ class TestGradients(unittest.TestCase):
     def test_dtilt2(self):
 
         dT_dtilt = self.dT["dtilt"]
+        dY_dtilt = self.dY["dtilt"]
+        dZ_dtilt = self.dZ["dtilt"]
         dQ_dtilt = self.dQ["dtilt"]
         dM_dtilt = self.dM["dtilt"]
+        dMb_dtilt = self.dMb["dtilt"]
         dP_dtilt = self.dP["dtilt"]
 
         dT_dtilt_fd = np.zeros((self.npts, 1))
+        dY_dtilt_fd = np.zeros((self.npts, 1))
+        dZ_dtilt_fd = np.zeros((self.npts, 1))
         dQ_dtilt_fd = np.zeros((self.npts, 1))
         dM_dtilt_fd = np.zeros((self.npts, 1))
+        dMb_dtilt_fd = np.zeros((self.npts, 1))
         dP_dtilt_fd = np.zeros((self.npts, 1))
 
         tilt = float(self.tilt)
@@ -1106,29 +1291,44 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dtilt_fd[:, 0] = (Td - self.T) / delta
+        dY_dtilt_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dtilt_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dtilt_fd[:, 0] = (Qd - self.Q) / delta
         dM_dtilt_fd[:, 0] = (Md - self.M) / delta
+        dMb_dtilt_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dtilt_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dtilt_fd, dT_dtilt, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dtilt_fd, dY_dtilt, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dtilt_fd, dZ_dtilt, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dtilt_fd, dQ_dtilt, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dtilt_fd, dM_dtilt, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dtilt_fd, dMb_dtilt, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dtilt_fd, dP_dtilt, rtol=5e-5, atol=1e-8)
 
     def test_dtilt3(self):
 
         dCT_dtilt = self.dCT["dtilt"]
+        dCY_dtilt = self.dCY["dtilt"]
+        dCZ_dtilt = self.dCZ["dtilt"]
         dCQ_dtilt = self.dCQ["dtilt"]
         dCM_dtilt = self.dCM["dtilt"]
+        dCMb_dtilt = self.dCMb["dtilt"]
         dCP_dtilt = self.dCP["dtilt"]
 
         dCT_dtilt_fd = np.zeros((self.npts, 1))
+        dCY_dtilt_fd = np.zeros((self.npts, 1))
+        dCZ_dtilt_fd = np.zeros((self.npts, 1))
         dCQ_dtilt_fd = np.zeros((self.npts, 1))
         dCM_dtilt_fd = np.zeros((self.npts, 1))
+        dCMb_dtilt_fd = np.zeros((self.npts, 1))
         dCP_dtilt_fd = np.zeros((self.npts, 1))
 
         tilt = float(self.tilt)
@@ -1157,17 +1357,26 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dtilt_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dtilt_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dtilt_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dtilt_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dtilt_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dtilt_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dtilt_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dtilt_fd, dCT_dtilt, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dtilt_fd, dCY_dtilt, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dtilt_fd, dCZ_dtilt, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dtilt_fd, dCQ_dtilt, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dtilt_fd, dCM_dtilt, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dtilt_fd, dCMb_dtilt, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dtilt_fd, dCP_dtilt, rtol=5e-5, atol=1e-8)
 
     def test_dhubht1(self):
@@ -1214,13 +1423,19 @@ class TestGradients(unittest.TestCase):
     def test_dhubht2(self):
 
         dT_dhubht = self.dT["dhubHt"]
+        dY_dhubht = self.dY["dhubHt"]
+        dZ_dhubht = self.dZ["dhubHt"]
         dQ_dhubht = self.dQ["dhubHt"]
         dM_dhubht = self.dM["dhubHt"]
+        dMb_dhubht = self.dMb["dhubHt"]
         dP_dhubht = self.dP["dhubHt"]
 
         dT_dhubht_fd = np.zeros((self.npts, 1))
+        dY_dhubht_fd = np.zeros((self.npts, 1))
+        dZ_dhubht_fd = np.zeros((self.npts, 1))
         dQ_dhubht_fd = np.zeros((self.npts, 1))
         dM_dhubht_fd = np.zeros((self.npts, 1))
+        dMb_dhubht_fd = np.zeros((self.npts, 1))
         dP_dhubht_fd = np.zeros((self.npts, 1))
 
         hubht = float(self.hubHt)
@@ -1249,29 +1464,44 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dhubht_fd[:, 0] = (Td - self.T) / delta
+        dY_dhubht_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dhubht_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dhubht_fd[:, 0] = (Qd - self.Q) / delta
         dM_dhubht_fd[:, 0] = (Md - self.M) / delta
+        dMb_dhubht_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dhubht_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dhubht_fd, dT_dhubht, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dhubht_fd, dY_dhubht, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dhubht_fd, dZ_dhubht, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dhubht_fd, dQ_dhubht, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dhubht_fd, dM_dhubht, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dhubht_fd, dMb_dhubht, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dhubht_fd, dP_dhubht, rtol=5e-5, atol=1e-8)
 
     def test_dhubht3(self):
 
         dCT_dhubht = self.dCT["dhubHt"]
+        dCY_dhubht = self.dCY["dhubHt"]
+        dCZ_dhubht = self.dCZ["dhubHt"]
         dCQ_dhubht = self.dCQ["dhubHt"]
         dCM_dhubht = self.dCM["dhubHt"]
+        dCMb_dhubht = self.dCMb["dhubHt"]
         dCP_dhubht = self.dCP["dhubHt"]
 
         dCT_dhubht_fd = np.zeros((self.npts, 1))
+        dCY_dhubht_fd = np.zeros((self.npts, 1))
+        dCZ_dhubht_fd = np.zeros((self.npts, 1))
         dCQ_dhubht_fd = np.zeros((self.npts, 1))
         dCM_dhubht_fd = np.zeros((self.npts, 1))
+        dCMb_dhubht_fd = np.zeros((self.npts, 1))
         dCP_dhubht_fd = np.zeros((self.npts, 1))
 
         hubht = float(self.hubHt)
@@ -1300,17 +1530,26 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dhubht_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dhubht_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dhubht_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dhubht_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dhubht_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dhubht_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dhubht_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dhubht_fd, dCT_dhubht, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dhubht_fd, dCY_dhubht, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dhubht_fd, dCZ_dhubht, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dhubht_fd, dCQ_dhubht, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dhubht_fd, dCM_dhubht, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dhubht_fd, dCMb_dhubht, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dhubht_fd, dCP_dhubht, rtol=5e-5, atol=1e-8)
 
     def test_dyaw1(self):
@@ -1357,13 +1596,19 @@ class TestGradients(unittest.TestCase):
     def test_dyaw2(self):
 
         dT_dyaw = self.dT["dyaw"]
+        dY_dyaw = self.dY["dyaw"]
+        dZ_dyaw = self.dZ["dyaw"]
         dQ_dyaw = self.dQ["dyaw"]
         dM_dyaw = self.dM["dyaw"]
+        dMb_dyaw = self.dMb["dyaw"]
         dP_dyaw = self.dP["dyaw"]
 
         dT_dyaw_fd = np.zeros((self.npts, 1))
+        dY_dyaw_fd = np.zeros((self.npts, 1))
+        dZ_dyaw_fd = np.zeros((self.npts, 1))
         dQ_dyaw_fd = np.zeros((self.npts, 1))
         dM_dyaw_fd = np.zeros((self.npts, 1))
+        dMb_dyaw_fd = np.zeros((self.npts, 1))
         dP_dyaw_fd = np.zeros((self.npts, 1))
 
         yaw = float(self.yaw)
@@ -1392,29 +1637,44 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dyaw_fd[:, 0] = (Td - self.T) / delta
+        dY_dyaw_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dyaw_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dyaw_fd[:, 0] = (Qd - self.Q) / delta
         dM_dyaw_fd[:, 0] = (Md - self.M) / delta
+        dMb_dyaw_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dyaw_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dyaw_fd, dT_dyaw, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dyaw_fd, dY_dyaw, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dyaw_fd, dZ_dyaw, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dyaw_fd, dQ_dyaw, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dyaw_fd, dM_dyaw, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dyaw_fd, dMb_dyaw, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dyaw_fd, dP_dyaw, rtol=5e-5, atol=1e-8)
 
     def test_dyaw3(self):
 
         dCT_dyaw = self.dCT["dyaw"]
+        dCY_dyaw = self.dCY["dyaw"]
+        dCZ_dyaw = self.dCZ["dyaw"]
         dCQ_dyaw = self.dCQ["dyaw"]
         dCM_dyaw = self.dCM["dyaw"]
+        dCMb_dyaw = self.dCMb["dyaw"]
         dCP_dyaw = self.dCP["dyaw"]
 
         dCT_dyaw_fd = np.zeros((self.npts, 1))
+        dCY_dyaw_fd = np.zeros((self.npts, 1))
+        dCZ_dyaw_fd = np.zeros((self.npts, 1))
         dCQ_dyaw_fd = np.zeros((self.npts, 1))
         dCM_dyaw_fd = np.zeros((self.npts, 1))
+        dCMb_dyaw_fd = np.zeros((self.npts, 1))
         dCP_dyaw_fd = np.zeros((self.npts, 1))
 
         yaw = float(self.yaw)
@@ -1443,17 +1703,26 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dyaw_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dyaw_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dyaw_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dyaw_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dyaw_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dyaw_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dyaw_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dyaw_fd, dCT_dyaw, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dyaw_fd, dCY_dyaw, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dyaw_fd, dCZ_dyaw, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dyaw_fd, dCQ_dyaw, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dyaw_fd, dCM_dyaw, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dyaw_fd, dCMb_dyaw, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dyaw_fd, dCP_dyaw, rtol=5e-5, atol=1e-8)
 
     def test_dshear1(self):
@@ -1500,13 +1769,19 @@ class TestGradients(unittest.TestCase):
     def test_dshear2(self):
 
         dT_dshear = self.dT["dshear"]
+        dY_dshear = self.dY["dshear"]
+        dZ_dshear = self.dZ["dshear"]
         dQ_dshear = self.dQ["dshear"]
         dM_dshear = self.dM["dshear"]
+        dMb_dshear = self.dMb["dshear"]
         dP_dshear = self.dP["dshear"]
 
         dT_dshear_fd = np.zeros((self.npts, 1))
+        dY_dshear_fd = np.zeros((self.npts, 1))
+        dZ_dshear_fd = np.zeros((self.npts, 1))
         dQ_dshear_fd = np.zeros((self.npts, 1))
         dM_dshear_fd = np.zeros((self.npts, 1))
+        dMb_dshear_fd = np.zeros((self.npts, 1))
         dP_dshear_fd = np.zeros((self.npts, 1))
 
         shearExp = float(self.shearExp)
@@ -1535,29 +1810,44 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dshear_fd[:, 0] = (Td - self.T) / delta
+        dY_dshear_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dshear_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dshear_fd[:, 0] = (Qd - self.Q) / delta
         dM_dshear_fd[:, 0] = (Md - self.M) / delta
+        dMb_dshear_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dshear_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dshear_fd, dT_dshear, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dshear_fd, dY_dshear, rtol=5e-5) #, atol=1e-8)
+        np.testing.assert_allclose(dZ_dshear_fd, dZ_dshear, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dshear_fd, dQ_dshear, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dshear_fd, dM_dshear, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dshear_fd, dMb_dshear, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dshear_fd, dP_dshear, rtol=5e-5, atol=1e-8)
 
     def test_dshear3(self):
 
         dCT_dshear = self.dCT["dshear"]
+        dCY_dshear = self.dCY["dshear"]
+        dCZ_dshear = self.dCZ["dshear"]
         dCQ_dshear = self.dCQ["dshear"]
         dCM_dshear = self.dCM["dshear"]
+        dCMb_dshear = self.dCMb["dshear"]
         dCP_dshear = self.dCP["dshear"]
 
         dCT_dshear_fd = np.zeros((self.npts, 1))
+        dCY_dshear_fd = np.zeros((self.npts, 1))
+        dCZ_dshear_fd = np.zeros((self.npts, 1))
         dCQ_dshear_fd = np.zeros((self.npts, 1))
         dCM_dshear_fd = np.zeros((self.npts, 1))
+        dCMb_dshear_fd = np.zeros((self.npts, 1))
         dCP_dshear_fd = np.zeros((self.npts, 1))
 
         shearExp = float(self.shearExp)
@@ -1586,17 +1876,26 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dshear_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dshear_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dshear_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dshear_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dshear_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dshear_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dshear_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dshear_fd, dCT_dshear, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dshear_fd, dCY_dshear, rtol=2e-5, atol=5e-8)
+        np.testing.assert_allclose(dCZ_dshear_fd, dCZ_dshear, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dshear_fd, dCQ_dshear, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dshear_fd, dCM_dshear, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dshear_fd, dCMb_dshear, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dshear_fd, dCP_dshear, rtol=5e-5, atol=1e-8)
 
     def test_dazimuth1(self):
@@ -1646,13 +1945,19 @@ class TestGradients(unittest.TestCase):
     def test_dUinf2(self):
 
         dT_dUinf = self.dT["dUinf"]
+        dY_dUinf = self.dY["dUinf"]
+        dZ_dUinf = self.dZ["dUinf"]
         dQ_dUinf = self.dQ["dUinf"]
         dM_dUinf = self.dM["dUinf"]
+        dMb_dUinf = self.dMb["dUinf"]
         dP_dUinf = self.dP["dUinf"]
 
         dT_dUinf_fd = np.zeros((self.npts, self.npts))
+        dY_dUinf_fd = np.zeros((self.npts, self.npts))
+        dZ_dUinf_fd = np.zeros((self.npts, self.npts))
         dQ_dUinf_fd = np.zeros((self.npts, self.npts))
         dM_dUinf_fd = np.zeros((self.npts, self.npts))
+        dMb_dUinf_fd = np.zeros((self.npts, self.npts))
         dP_dUinf_fd = np.zeros((self.npts, self.npts))
 
         Uinf = float(self.Uinf)
@@ -1662,29 +1967,44 @@ class TestGradients(unittest.TestCase):
         outputs, _ = self.rotor.evaluate([Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dUinf_fd[:, 0] = (Td - self.T) / delta
+        dY_dUinf_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dUinf_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dUinf_fd[:, 0] = (Qd - self.Q) / delta
         dM_dUinf_fd[:, 0] = (Md - self.M) / delta
+        dMb_dUinf_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dUinf_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dUinf_fd, dT_dUinf, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dUinf_fd, dY_dUinf, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dUinf_fd, dZ_dUinf, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dUinf_fd, dQ_dUinf, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dUinf_fd, dM_dUinf, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dUinf_fd, dMb_dUinf, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dUinf_fd, dP_dUinf, rtol=5e-5, atol=1e-8)
 
     def test_dUinf3(self):
 
         dCT_dUinf = self.dCT["dUinf"]
+        dCY_dUinf = self.dCY["dUinf"]
+        dCZ_dUinf = self.dCZ["dUinf"]
         dCQ_dUinf = self.dCQ["dUinf"]
         dCM_dUinf = self.dCM["dUinf"]
+        dCMb_dUinf = self.dCMb["dUinf"]
         dCP_dUinf = self.dCP["dUinf"]
 
         dCT_dUinf_fd = np.zeros((self.npts, self.npts))
+        dCY_dUinf_fd = np.zeros((self.npts, self.npts))
+        dCZ_dUinf_fd = np.zeros((self.npts, self.npts))
         dCQ_dUinf_fd = np.zeros((self.npts, self.npts))
         dCM_dUinf_fd = np.zeros((self.npts, self.npts))
+        dCMb_dUinf_fd = np.zeros((self.npts, self.npts))
         dCP_dUinf_fd = np.zeros((self.npts, self.npts))
 
         Uinf = float(self.Uinf)
@@ -1694,17 +2014,26 @@ class TestGradients(unittest.TestCase):
         outputs, _ = self.rotor.evaluate([Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dUinf_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dUinf_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dUinf_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dUinf_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dUinf_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dUinf_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dUinf_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dUinf_fd, dCT_dUinf, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dUinf_fd, dCY_dUinf, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dUinf_fd, dCZ_dUinf, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dUinf_fd, dCQ_dUinf, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dUinf_fd, dCM_dUinf, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dUinf_fd, dCMb_dUinf, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dUinf_fd, dCP_dUinf, rtol=5e-5, atol=1e-8)
 
     def test_dOmega1(self):
@@ -1732,13 +2061,19 @@ class TestGradients(unittest.TestCase):
     def test_dOmega2(self):
 
         dT_dOmega = self.dT["dOmega"]
+        dY_dOmega = self.dY["dOmega"]
+        dZ_dOmega = self.dZ["dOmega"]
         dQ_dOmega = self.dQ["dOmega"]
         dM_dOmega = self.dM["dOmega"]
+        dMb_dOmega = self.dMb["dOmega"]
         dP_dOmega = self.dP["dOmega"]
 
         dT_dOmega_fd = np.zeros((self.npts, self.npts))
+        dY_dOmega_fd = np.zeros((self.npts, self.npts))
+        dZ_dOmega_fd = np.zeros((self.npts, self.npts))
         dQ_dOmega_fd = np.zeros((self.npts, self.npts))
         dM_dOmega_fd = np.zeros((self.npts, self.npts))
+        dMb_dOmega_fd = np.zeros((self.npts, self.npts))
         dP_dOmega_fd = np.zeros((self.npts, self.npts))
 
         Omega = float(self.Omega)
@@ -1748,29 +2083,44 @@ class TestGradients(unittest.TestCase):
         outputs, _ = self.rotor.evaluate([self.Uinf], [Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dOmega_fd[:, 0] = (Td - self.T) / delta
+        dY_dOmega_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dOmega_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dOmega_fd[:, 0] = (Qd - self.Q) / delta
         dM_dOmega_fd[:, 0] = (Md - self.M) / delta
+        dMb_dOmega_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dOmega_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dOmega_fd, dT_dOmega, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dOmega_fd, dY_dOmega, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dOmega_fd, dZ_dOmega, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dOmega_fd, dQ_dOmega, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dOmega_fd, dM_dOmega, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dOmega_fd, dMb_dOmega, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dOmega_fd, dP_dOmega, rtol=5e-5, atol=1e-8)
 
     def test_dOmega3(self):
 
         dCT_dOmega = self.dCT["dOmega"]
+        dCY_dOmega = self.dCY["dOmega"]
+        dCZ_dOmega = self.dCZ["dOmega"]
         dCQ_dOmega = self.dCQ["dOmega"]
         dCM_dOmega = self.dCM["dOmega"]
+        dCMb_dOmega = self.dCMb["dOmega"]
         dCP_dOmega = self.dCP["dOmega"]
 
         dCT_dOmega_fd = np.zeros((self.npts, self.npts))
+        dCY_dOmega_fd = np.zeros((self.npts, self.npts))
+        dCZ_dOmega_fd = np.zeros((self.npts, self.npts))
         dCQ_dOmega_fd = np.zeros((self.npts, self.npts))
         dCM_dOmega_fd = np.zeros((self.npts, self.npts))
+        dCMb_dOmega_fd = np.zeros((self.npts, self.npts))
         dCP_dOmega_fd = np.zeros((self.npts, self.npts))
 
         Omega = float(self.Omega)
@@ -1780,17 +2130,26 @@ class TestGradients(unittest.TestCase):
         outputs, _ = self.rotor.evaluate([self.Uinf], [Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dOmega_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dOmega_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dOmega_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dOmega_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dOmega_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dOmega_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dOmega_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dOmega_fd, dCT_dOmega, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dOmega_fd, dCY_dOmega, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dOmega_fd, dCZ_dOmega, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dOmega_fd, dCQ_dOmega, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dOmega_fd, dCM_dOmega, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dOmega_fd, dCMb_dOmega, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dOmega_fd, dCP_dOmega, rtol=5e-5, atol=1e-8)
 
     def test_dpitch1(self):
@@ -1818,13 +2177,19 @@ class TestGradients(unittest.TestCase):
     def test_dpitch2(self):
 
         dT_dpitch = self.dT["dpitch"]
+        dY_dpitch = self.dY["dpitch"]
+        dZ_dpitch = self.dZ["dpitch"]
         dQ_dpitch = self.dQ["dpitch"]
         dM_dpitch = self.dM["dpitch"]
+        dMb_dpitch = self.dMb["dpitch"]
         dP_dpitch = self.dP["dpitch"]
 
         dT_dpitch_fd = np.zeros((self.npts, 1))
+        dY_dpitch_fd = np.zeros((self.npts, 1))
+        dZ_dpitch_fd = np.zeros((self.npts, 1))
         dQ_dpitch_fd = np.zeros((self.npts, 1))
         dM_dpitch_fd = np.zeros((self.npts, 1))
+        dMb_dpitch_fd = np.zeros((self.npts, 1))
         dP_dpitch_fd = np.zeros((self.npts, 1))
 
         pitch = float(self.pitch)
@@ -1834,29 +2199,44 @@ class TestGradients(unittest.TestCase):
         outputs, _ = self.rotor.evaluate([self.Uinf], [self.Omega], [pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dpitch_fd[:, 0] = (Td - self.T) / delta
+        dY_dpitch_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dpitch_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dpitch_fd[:, 0] = (Qd - self.Q) / delta
         dM_dpitch_fd[:, 0] = (Md - self.M) / delta
+        dMb_dpitch_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dpitch_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dpitch_fd, dT_dpitch, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dpitch_fd, dY_dpitch, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dpitch_fd, dZ_dpitch, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dpitch_fd, dQ_dpitch, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dpitch_fd, dM_dpitch, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dpitch_fd, dMb_dpitch, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dpitch_fd, dP_dpitch, rtol=5e-5, atol=1e-8)
 
     def test_dpitch3(self):
 
         dCT_dpitch = self.dCT["dpitch"]
+        dCY_dpitch = self.dCY["dpitch"]
+        dCZ_dpitch = self.dCZ["dpitch"]
         dCQ_dpitch = self.dCQ["dpitch"]
         dCM_dpitch = self.dCM["dpitch"]
+        dCMb_dpitch = self.dCMb["dpitch"]
         dCP_dpitch = self.dCP["dpitch"]
 
         dCT_dpitch_fd = np.zeros((self.npts, 1))
+        dCY_dpitch_fd = np.zeros((self.npts, 1))
+        dCZ_dpitch_fd = np.zeros((self.npts, 1))
         dCQ_dpitch_fd = np.zeros((self.npts, 1))
         dCM_dpitch_fd = np.zeros((self.npts, 1))
+        dCMb_dpitch_fd = np.zeros((self.npts, 1))
         dCP_dpitch_fd = np.zeros((self.npts, 1))
 
         pitch = float(self.pitch)
@@ -1866,17 +2246,26 @@ class TestGradients(unittest.TestCase):
         outputs, _ = self.rotor.evaluate([self.Uinf], [self.Omega], [pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dpitch_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dpitch_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dpitch_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dpitch_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dpitch_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dpitch_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dpitch_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dpitch_fd, dCT_dpitch, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dpitch_fd, dCY_dpitch, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dpitch_fd, dCZ_dpitch, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dpitch_fd, dCQ_dpitch, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dpitch_fd, dCM_dpitch, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dpitch_fd, dCMb_dpitch, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dpitch_fd, dCP_dpitch, rtol=5e-5, atol=1e-8)
 
     def test_dprecurve1(self):
@@ -1982,21 +2371,33 @@ class TestGradients(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         P = outputs["P"]
         T = outputs["T"]
+        Y = outputs["Y"]
+        Z = outputs["Z"]
         Q = outputs["Q"]
         M = outputs["M"]
+        Mb = outputs["Mb"]
         dP = derivs["dP"]
         dT = derivs["dT"]
+        dY = derivs["dY"]
+        dZ = derivs["dZ"]
         dQ = derivs["dQ"]
         dM = derivs["dM"]
+        dMb = derivs["dMb"]
 
         dT_dprecurve = dT["dprecurve"]
+        dY_dprecurve = dY["dprecurve"]
+        dZ_dprecurve = dZ["dprecurve"]
         dQ_dprecurve = dQ["dprecurve"]
         dM_dprecurve = dM["dprecurve"]
+        dMb_dprecurve = dMb["dprecurve"]
         dP_dprecurve = dP["dprecurve"]
 
         dT_dprecurve_fd = np.zeros((self.npts, self.n))
+        dY_dprecurve_fd = np.zeros((self.npts, self.n))
+        dZ_dprecurve_fd = np.zeros((self.npts, self.n))
         dQ_dprecurve_fd = np.zeros((self.npts, self.n))
         dM_dprecurve_fd = np.zeros((self.npts, self.n))
+        dMb_dprecurve_fd = np.zeros((self.npts, self.n))
         dP_dprecurve_fd = np.zeros((self.npts, self.n))
         for i in range(self.n):
             pc = np.array(precurve)
@@ -2027,17 +2428,26 @@ class TestGradients(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
             Pd = outputs["P"]
             Td = outputs["T"]
+            Yd = outputs["Y"]
+            Zd = outputs["Z"]
             Qd = outputs["Q"]
             Md = outputs["M"]
+            Mbd = outputs["Mb"]
 
             dT_dprecurve_fd[:, i] = (Td - T) / delta
+            dY_dprecurve_fd[:, i] = (Yd - Y) / delta
+            dZ_dprecurve_fd[:, i] = (Zd - Z) / delta
             dQ_dprecurve_fd[:, i] = (Qd - Q) / delta
             dM_dprecurve_fd[:, i] = (Md - M) / delta
+            dMb_dprecurve_fd[:, i] = (Mbd - Mb) / delta
             dP_dprecurve_fd[:, i] = (Pd - P) / delta
 
         np.testing.assert_allclose(dT_dprecurve_fd, dT_dprecurve, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dY_dprecurve_fd, dY_dprecurve, rtol=3e-3, atol=1e-8)
+        np.testing.assert_allclose(dZ_dprecurve_fd, dZ_dprecurve, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dQ_dprecurve_fd, dQ_dprecurve, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dM_dprecurve_fd, dM_dprecurve, rtol=8e-4, atol=1e-8)
+        np.testing.assert_allclose(dMb_dprecurve_fd, dMb_dprecurve, rtol=8e-4, atol=1e-8)
         np.testing.assert_allclose(dP_dprecurve_fd, dP_dprecurve, rtol=3e-4, atol=1e-8)
 
     def test_dprecurve3(self):
@@ -2069,21 +2479,33 @@ class TestGradients(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CP = outputs["CP"]
         CT = outputs["CT"]
+        CY = outputs["CY"]
+        CZ = outputs["CZ"]
         CQ = outputs["CQ"]
         CM = outputs["CM"]
+        CMb = outputs["CMb"]
         dCP = derivs["dCP"]
         dCT = derivs["dCT"]
+        dCY = derivs["dCY"]
+        dCZ = derivs["dCZ"]
         dCQ = derivs["dCQ"]
         dCM = derivs["dCM"]
+        dCMb = derivs["dCMb"]
 
         dCT_dprecurve = dCT["dprecurve"]
+        dCY_dprecurve = dCY["dprecurve"]
+        dCZ_dprecurve = dCZ["dprecurve"]
         dCQ_dprecurve = dCQ["dprecurve"]
         dCM_dprecurve = dCM["dprecurve"]
+        dCMb_dprecurve = dCMb["dprecurve"]
         dCP_dprecurve = dCP["dprecurve"]
 
         dCT_dprecurve_fd = np.zeros((self.npts, self.n))
+        dCY_dprecurve_fd = np.zeros((self.npts, self.n))
+        dCZ_dprecurve_fd = np.zeros((self.npts, self.n))
         dCQ_dprecurve_fd = np.zeros((self.npts, self.n))
         dCM_dprecurve_fd = np.zeros((self.npts, self.n))
+        dCMb_dprecurve_fd = np.zeros((self.npts, self.n))
         dCP_dprecurve_fd = np.zeros((self.npts, self.n))
         for i in range(self.n):
             pc = np.array(precurve)
@@ -2114,17 +2536,26 @@ class TestGradients(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
             CPd = outputs["CP"]
             CTd = outputs["CT"]
+            CYd = outputs["CY"]
+            CZd = outputs["CZ"]
             CQd = outputs["CQ"]
             CMd = outputs["CM"]
+            CMbd = outputs["CMb"]
 
             dCT_dprecurve_fd[:, i] = (CTd - CT) / delta
+            dCY_dprecurve_fd[:, i] = (CYd - CY) / delta
+            dCZ_dprecurve_fd[:, i] = (CZd - CZ) / delta
             dCQ_dprecurve_fd[:, i] = (CQd - CQ) / delta
             dCM_dprecurve_fd[:, i] = (CMd - CM) / delta
+            dCMb_dprecurve_fd[:, i] = (CMbd - CMb) / delta
             dCP_dprecurve_fd[:, i] = (CPd - CP) / delta
 
         np.testing.assert_allclose(dCT_dprecurve_fd, dCT_dprecurve, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dCY_dprecurve_fd, dCY_dprecurve, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dprecurve_fd, dCZ_dprecurve, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCQ_dprecurve_fd, dCQ_dprecurve, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCM_dprecurve_fd, dCM_dprecurve, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dprecurve_fd, dCMb_dprecurve, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCP_dprecurve_fd, dCP_dprecurve, rtol=3e-4, atol=1e-8)
 
     def test_dpresweep1(self):
@@ -2230,21 +2661,33 @@ class TestGradients(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         P = outputs["P"]
         T = outputs["T"]
+        Y = outputs["Y"]
+        Z = outputs["Z"]
         Q = outputs["Q"]
         M = outputs["M"]
+        Mb = outputs["Mb"]
         dP = derivs["dP"]
         dT = derivs["dT"]
+        dY = derivs["dY"]
+        dZ = derivs["dZ"]
         dQ = derivs["dQ"]
         dM = derivs["dM"]
+        dMb = derivs["dMb"]
 
         dT_dpresweep = dT["dpresweep"]
+        dY_dpresweep = dY["dpresweep"]
+        dZ_dpresweep = dZ["dpresweep"]
         dQ_dpresweep = dQ["dpresweep"]
         dM_dpresweep = dM["dpresweep"]
+        dMb_dpresweep = dMb["dpresweep"]
         dP_dpresweep = dP["dpresweep"]
 
         dT_dpresweep_fd = np.zeros((self.npts, self.n))
+        dY_dpresweep_fd = np.zeros((self.npts, self.n))
+        dZ_dpresweep_fd = np.zeros((self.npts, self.n))
         dQ_dpresweep_fd = np.zeros((self.npts, self.n))
         dM_dpresweep_fd = np.zeros((self.npts, self.n))
+        dMb_dpresweep_fd = np.zeros((self.npts, self.n))
         dP_dpresweep_fd = np.zeros((self.npts, self.n))
         for i in range(self.n):
             ps = np.array(presweep)
@@ -2275,17 +2718,26 @@ class TestGradients(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
             Pd = outputs["P"]
             Td = outputs["T"]
+            Yd = outputs["Y"]
+            Zd = outputs["Z"]
             Qd = outputs["Q"]
             Md = outputs["M"]
+            Mbd = outputs["Mb"]
 
             dT_dpresweep_fd[:, i] = (Td - T) / delta
+            dY_dpresweep_fd[:, i] = (Yd - Y) / delta
+            dZ_dpresweep_fd[:, i] = (Zd - Z) / delta
             dQ_dpresweep_fd[:, i] = (Qd - Q) / delta
             dM_dpresweep_fd[:, i] = (Md - M) / delta
+            dMb_dpresweep_fd[:, i] = (Mbd - Mb) / delta
             dP_dpresweep_fd[:, i] = (Pd - P) / delta
 
         np.testing.assert_allclose(dT_dpresweep_fd, dT_dpresweep, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dY_dpresweep_fd, dY_dpresweep, rtol=2e-3, atol=1e-8)
+        np.testing.assert_allclose(dZ_dpresweep_fd, dZ_dpresweep, rtol=4e-3, atol=1e-8)
         np.testing.assert_allclose(dQ_dpresweep_fd, dQ_dpresweep, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dM_dpresweep_fd, dM_dpresweep, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dMb_dpresweep_fd, dMb_dpresweep, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dP_dpresweep_fd, dP_dpresweep, rtol=3e-4, atol=1e-8)
 
     def test_dpresweep3(self):
@@ -2317,21 +2769,33 @@ class TestGradients(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CP = outputs["CP"]
         CT = outputs["CT"]
+        CY = outputs["CY"]
+        CZ = outputs["CZ"]
         CQ = outputs["CQ"]
         CM = outputs["CM"]
+        CMb = outputs["CMb"]
         dCP = derivs["dCP"]
         dCT = derivs["dCT"]
+        dCY = derivs["dCY"]
+        dCZ = derivs["dCZ"]
         dCQ = derivs["dCQ"]
         dCM = derivs["dCM"]
+        dCMb = derivs["dCMb"]
 
         dCT_dpresweep = dCT["dpresweep"]
+        dCY_dpresweep = dCY["dpresweep"]
+        dCZ_dpresweep = dCZ["dpresweep"]
         dCQ_dpresweep = dCQ["dpresweep"]
         dCM_dpresweep = dCM["dpresweep"]
+        dCMb_dpresweep = dCMb["dpresweep"]
         dCP_dpresweep = dCP["dpresweep"]
 
         dCT_dpresweep_fd = np.zeros((self.npts, self.n))
+        dCY_dpresweep_fd = np.zeros((self.npts, self.n))
+        dCZ_dpresweep_fd = np.zeros((self.npts, self.n))
         dCQ_dpresweep_fd = np.zeros((self.npts, self.n))
         dCM_dpresweep_fd = np.zeros((self.npts, self.n))
+        dCMb_dpresweep_fd = np.zeros((self.npts, self.n))
         dCP_dpresweep_fd = np.zeros((self.npts, self.n))
         for i in range(self.n):
             ps = np.array(presweep)
@@ -2362,17 +2826,26 @@ class TestGradients(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
             CPd = outputs["CP"]
             CTd = outputs["CT"]
+            CYd = outputs["CY"]
+            CZd = outputs["CZ"]
             CQd = outputs["CQ"]
             CMd = outputs["CM"]
+            CMbd = outputs["CMb"]
 
             dCT_dpresweep_fd[:, i] = (CTd - CT) / delta
+            dCY_dpresweep_fd[:, i] = (CYd - CY) / delta
+            dCZ_dpresweep_fd[:, i] = (CZd - CZ) / delta
             dCQ_dpresweep_fd[:, i] = (CQd - CQ) / delta
             dCM_dpresweep_fd[:, i] = (CMd - CM) / delta
+            dCMb_dpresweep_fd[:, i] = (CMbd - CMb) / delta
             dCP_dpresweep_fd[:, i] = (CPd - CP) / delta
 
         np.testing.assert_allclose(dCT_dpresweep_fd, dCT_dpresweep, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dCY_dpresweep_fd, dCY_dpresweep, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dpresweep_fd, dCZ_dpresweep, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCQ_dpresweep_fd, dCQ_dpresweep, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCM_dpresweep_fd, dCM_dpresweep, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dpresweep_fd, dCMb_dpresweep, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCP_dpresweep_fd, dCP_dpresweep, rtol=3e-4, atol=1e-8)
 
     def test_dprecurveTip1(self):
@@ -2471,21 +2944,33 @@ class TestGradients(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         P = outputs["P"]
         T = outputs["T"]
+        Y = outputs["Y"]
+        Z = outputs["Z"]
         Q = outputs["Q"]
         M = outputs["M"]
+        Mb = outputs["Mb"]
         dP = derivs["dP"]
         dT = derivs["dT"]
+        dY = derivs["dY"]
+        dZ = derivs["dZ"]
         dQ = derivs["dQ"]
         dM = derivs["dM"]
+        dMb = derivs["dMb"]
 
         dT_dprecurveTip = dT["dprecurveTip"]
+        dY_dprecurveTip = dY["dprecurveTip"]
+        dZ_dprecurveTip = dZ["dprecurveTip"]
         dQ_dprecurveTip = dQ["dprecurveTip"]
         dM_dprecurveTip = dM["dprecurveTip"]
+        dMb_dprecurveTip = dMb["dprecurveTip"]
         dP_dprecurveTip = dP["dprecurveTip"]
 
         dT_dprecurveTip_fd = np.zeros((self.npts, 1))
+        dY_dprecurveTip_fd = np.zeros((self.npts, 1))
+        dZ_dprecurveTip_fd = np.zeros((self.npts, 1))
         dQ_dprecurveTip_fd = np.zeros((self.npts, 1))
         dM_dprecurveTip_fd = np.zeros((self.npts, 1))
+        dMb_dprecurveTip_fd = np.zeros((self.npts, 1))
         dP_dprecurveTip_fd = np.zeros((self.npts, 1))
 
         pct = float(precurveTip)
@@ -2516,17 +3001,26 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dprecurveTip_fd[:, 0] = (Td - T) / delta
+        dY_dprecurveTip_fd[:, 0] = (Yd - Y) / delta
+        dZ_dprecurveTip_fd[:, 0] = (Zd - Z) / delta
         dQ_dprecurveTip_fd[:, 0] = (Qd - Q) / delta
         dM_dprecurveTip_fd[:, 0] = (Md - M) / delta
+        dMb_dprecurveTip_fd[:, 0] = (Mbd - Mb) / delta
         dP_dprecurveTip_fd[:, 0] = (Pd - P) / delta
 
         np.testing.assert_allclose(dT_dprecurveTip_fd, dT_dprecurveTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dY_dprecurveTip_fd, dY_dprecurveTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dZ_dprecurveTip_fd, dZ_dprecurveTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dQ_dprecurveTip_fd, dQ_dprecurveTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dM_dprecurveTip_fd, dM_dprecurveTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dMb_dprecurveTip_fd, dMb_dprecurveTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dP_dprecurveTip_fd, dP_dprecurveTip, rtol=1e-4, atol=1e-8)
 
     def test_dprecurveTip3(self):
@@ -2558,21 +3052,33 @@ class TestGradients(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CP = outputs["CP"]
         CT = outputs["CT"]
+        CY = outputs["CY"]
+        CZ = outputs["CZ"]
         CQ = outputs["CQ"]
         CM = outputs["CM"]
+        CMb = outputs["CMb"]
         dCP = derivs["dCP"]
         dCT = derivs["dCT"]
+        dCY = derivs["dCY"]
+        dCZ = derivs["dCZ"]
         dCQ = derivs["dCQ"]
         dCM = derivs["dCM"]
+        dCMb = derivs["dCMb"]
 
         dCT_dprecurveTip = dCT["dprecurveTip"]
+        dCY_dprecurveTip = dCY["dprecurveTip"]
+        dCZ_dprecurveTip = dCZ["dprecurveTip"]
         dCQ_dprecurveTip = dCQ["dprecurveTip"]
         dCM_dprecurveTip = dCM["dprecurveTip"]
+        dCMb_dprecurveTip = dCMb["dprecurveTip"]
         dCP_dprecurveTip = dCP["dprecurveTip"]
 
         dCT_dprecurveTip_fd = np.zeros((self.npts, 1))
+        dCY_dprecurveTip_fd = np.zeros((self.npts, 1))
+        dCZ_dprecurveTip_fd = np.zeros((self.npts, 1))
         dCQ_dprecurveTip_fd = np.zeros((self.npts, 1))
         dCM_dprecurveTip_fd = np.zeros((self.npts, 1))
+        dCMb_dprecurveTip_fd = np.zeros((self.npts, 1))
         dCP_dprecurveTip_fd = np.zeros((self.npts, 1))
 
         pct = float(precurveTip)
@@ -2603,17 +3109,26 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dprecurveTip_fd[:, 0] = (CTd - CT) / delta
+        dCY_dprecurveTip_fd[:, 0] = (CYd - CY) / delta
+        dCZ_dprecurveTip_fd[:, 0] = (CZd - CZ) / delta
         dCQ_dprecurveTip_fd[:, 0] = (CQd - CQ) / delta
         dCM_dprecurveTip_fd[:, 0] = (CMd - CM) / delta
+        dCMb_dprecurveTip_fd[:, 0] = (CMbd - CMb) / delta
         dCP_dprecurveTip_fd[:, 0] = (CPd - CP) / delta
 
         np.testing.assert_allclose(dCT_dprecurveTip_fd, dCT_dprecurveTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dCY_dprecurveTip_fd, dCY_dprecurveTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dprecurveTip_fd, dCZ_dprecurveTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dCQ_dprecurveTip_fd, dCQ_dprecurveTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dCM_dprecurveTip_fd, dCM_dprecurveTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dprecurveTip_fd, dCMb_dprecurveTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dCP_dprecurveTip_fd, dCP_dprecurveTip, rtol=1e-4, atol=1e-8)
 
     def test_dpresweepTip1(self):
@@ -2712,21 +3227,33 @@ class TestGradients(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         P = outputs["P"]
         T = outputs["T"]
+        Y = outputs["Y"]
+        Z = outputs["Z"]
         Q = outputs["Q"]
         M = outputs["M"]
+        Mb = outputs["Mb"]
         dP = derivs["dP"]
         dT = derivs["dT"]
+        dY = derivs["dY"]
+        dZ = derivs["dZ"]
         dQ = derivs["dQ"]
         dM = derivs["dM"]
+        dMb = derivs["dMb"]
 
         dT_dpresweepTip = dT["dpresweepTip"]
+        dY_dpresweepTip = dY["dpresweepTip"]
+        dZ_dpresweepTip = dZ["dpresweepTip"]
         dQ_dpresweepTip = dQ["dpresweepTip"]
         dM_dpresweepTip = dM["dpresweepTip"]
+        dMb_dpresweepTip = dMb["dpresweepTip"]
         dP_dpresweepTip = dP["dpresweepTip"]
 
         dT_dpresweepTip_fd = np.zeros((self.npts, 1))
+        dY_dpresweepTip_fd = np.zeros((self.npts, 1))
+        dZ_dpresweepTip_fd = np.zeros((self.npts, 1))
         dQ_dpresweepTip_fd = np.zeros((self.npts, 1))
         dM_dpresweepTip_fd = np.zeros((self.npts, 1))
+        dMb_dpresweepTip_fd = np.zeros((self.npts, 1))
         dP_dpresweepTip_fd = np.zeros((self.npts, 1))
 
         pst = float(presweepTip)
@@ -2757,17 +3284,26 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dpresweepTip_fd[:, 0] = (Td - T) / delta
+        dY_dpresweepTip_fd[:, 0] = (Yd - Y) / delta
+        dZ_dpresweepTip_fd[:, 0] = (Zd - Z) / delta
         dQ_dpresweepTip_fd[:, 0] = (Qd - Q) / delta
         dM_dpresweepTip_fd[:, 0] = (Md - M) / delta
+        dMb_dpresweepTip_fd[:, 0] = (Mbd - Mb) / delta
         dP_dpresweepTip_fd[:, 0] = (Pd - P) / delta
 
         np.testing.assert_allclose(dT_dpresweepTip_fd, dT_dpresweepTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dY_dpresweepTip_fd, dY_dpresweepTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dZ_dpresweepTip_fd, dZ_dpresweepTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dQ_dpresweepTip_fd, dQ_dpresweepTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dM_dpresweepTip_fd, dM_dpresweepTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dMb_dpresweepTip_fd, dMb_dpresweepTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dP_dpresweepTip_fd, dP_dpresweepTip, rtol=1e-4, atol=1e-8)
 
     def test_dpresweepTip3(self):
@@ -2799,21 +3335,33 @@ class TestGradients(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CP = outputs["CP"]
         CT = outputs["CT"]
+        CY = outputs["CY"]
+        CZ = outputs["CZ"]
         CQ = outputs["CQ"]
         CM = outputs["CM"]
+        CMb = outputs["CMb"]
         dCP = derivs["dCP"]
         dCT = derivs["dCT"]
+        dCY = derivs["dCY"]
+        dCZ = derivs["dCZ"]
         dCQ = derivs["dCQ"]
         dCM = derivs["dCM"]
+        dCMb = derivs["dCMb"]
 
         dCT_dpresweepTip = dCT["dpresweepTip"]
+        dCY_dpresweepTip = dCY["dpresweepTip"]
+        dCZ_dpresweepTip = dCZ["dpresweepTip"]
         dCQ_dpresweepTip = dCQ["dpresweepTip"]
         dCM_dpresweepTip = dCM["dpresweepTip"]
+        dCMb_dpresweepTip = dCMb["dpresweepTip"]
         dCP_dpresweepTip = dCP["dpresweepTip"]
 
         dCT_dpresweepTip_fd = np.zeros((self.npts, 1))
+        dCY_dpresweepTip_fd = np.zeros((self.npts, 1))
+        dCZ_dpresweepTip_fd = np.zeros((self.npts, 1))
         dCQ_dpresweepTip_fd = np.zeros((self.npts, 1))
         dCM_dpresweepTip_fd = np.zeros((self.npts, 1))
+        dCMb_dpresweepTip_fd = np.zeros((self.npts, 1))
         dCP_dpresweepTip_fd = np.zeros((self.npts, 1))
 
         pst = float(presweepTip)
@@ -2844,17 +3392,26 @@ class TestGradients(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dpresweepTip_fd[:, 0] = (CTd - CT) / delta
+        dCY_dpresweepTip_fd[:, 0] = (CYd - CY) / delta
+        dCZ_dpresweepTip_fd[:, 0] = (CZd - CZ) / delta
         dCQ_dpresweepTip_fd[:, 0] = (CQd - CQ) / delta
         dCM_dpresweepTip_fd[:, 0] = (CMd - CM) / delta
+        dCMb_dpresweepTip_fd[:, 0] = (CMbd - CMb) / delta
         dCP_dpresweepTip_fd[:, 0] = (CPd - CP) / delta
 
         np.testing.assert_allclose(dCT_dpresweepTip_fd, dCT_dpresweepTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dCY_dpresweepTip_fd, dCY_dpresweepTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dpresweepTip_fd, dCZ_dpresweepTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dCQ_dpresweepTip_fd, dCQ_dpresweepTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dCM_dpresweepTip_fd, dCM_dpresweepTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dpresweepTip_fd, dCMb_dpresweepTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dCP_dpresweepTip_fd, dCP_dpresweepTip, rtol=1e-4, atol=1e-8)
 
 
@@ -3948,19 +4505,15 @@ class TestGradientsFreestreamArray(unittest.TestCase):
         self.Uinf = np.array([10.0, 11.0, 12.0])
         tsr = 7.55
         self.pitch = np.zeros(3)
-        self.Omega = self.Uinf * tsr / self.Rtip * 30.0 / pi  # convert to RPM
+        self.Omega = self.Uinf * tsr / self.Rtip * 30.0 / np.pi  # convert to RPM
 
-        outputs, derivs = self.rotor.evaluate(self.Uinf, self.Omega, self.pitch, coefficients=False)
-        self.P, self.T, self.Q = [outputs[k] for k in ("P", "T", "Q")]
-        self.P, self.T, self.M = [outputs[k] for k in ("P", "T", "M")]
-        self.dP, self.dT, self.dQ = [derivs[k] for k in ("dP", "dT", "dQ")]
-        self.dP, self.dT, self.dM = [derivs[k] for k in ("dP", "dT", "dM")]
+        outputs, derivs = self.rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
+        self.P, self.T, self.Y, self.Z, self.Q, self.M, self.Mb = [outputs[k] for k in ("P", "T", "Y", "Z", "Q", "M", "Mb")]
+        self.dP, self.dT, self.dY, self.dZ, self.dQ, self.dM, self.dMb = [derivs[k] for k in ("dP", "dT", "dY", "dZ", "dQ", "dM", "dMb")]
 
-        outputs, derivs = self.rotor.evaluate(self.Uinf, self.Omega, self.pitch, coefficients=True)
-        self.CP, self.CT, self.CQ = [outputs[k] for k in ("CP", "CT", "CQ")]
-        self.CP, self.CT, self.CM = [outputs[k] for k in ("CP", "CT", "CM")]
-        self.dCP, self.dCT, self.dCQ = [derivs[k] for k in ("dCP", "dCT", "dCQ")]
-        self.dCP, self.dCT, self.dCM = [derivs[k] for k in ("dCP", "dCT", "dCM")]
+        outputs, derivs = self.rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
+        self.CP, self.CT, self.CY, self.CZ, self.CQ, self.CM, self.CMb = [outputs[k] for k in ("CP", "CT", "CY", "CZ", "CQ", "CM", "CMb")]
+        self.dCP, self.dCT, self.dCY, self.dCZ, self.dCQ, self.dCM, self.dCMb = [derivs[k] for k in ("dCP", "dCT", "dCY", "dCZ", "dCQ", "dCM", "dCMb")]
 
         self.rotor.derivatives = False
         self.n = len(self.r)
@@ -3969,13 +4522,19 @@ class TestGradientsFreestreamArray(unittest.TestCase):
     def test_dUinf2(self):
 
         dT_dUinf = self.dT["dUinf"]
+        dY_dUinf = self.dY["dUinf"]
+        dZ_dUinf = self.dZ["dUinf"]
         dQ_dUinf = self.dQ["dUinf"]
         dM_dUinf = self.dM["dUinf"]
+        dMb_dUinf = self.dMb["dUinf"]
         dP_dUinf = self.dP["dUinf"]
 
         dT_dUinf_fd = np.zeros((self.npts, self.npts))
+        dY_dUinf_fd = np.zeros((self.npts, self.npts))
+        dZ_dUinf_fd = np.zeros((self.npts, self.npts))
         dQ_dUinf_fd = np.zeros((self.npts, self.npts))
         dM_dUinf_fd = np.zeros((self.npts, self.npts))
+        dMb_dUinf_fd = np.zeros((self.npts, self.npts))
         dP_dUinf_fd = np.zeros((self.npts, self.npts))
 
         for i in range(self.npts):
@@ -3986,29 +4545,44 @@ class TestGradientsFreestreamArray(unittest.TestCase):
             outputs, _ = self.rotor.evaluate(Uinf, self.Omega, self.pitch, coefficients=False)
             Pd = outputs["P"]
             Td = outputs["T"]
+            Yd = outputs["Y"]
+            Zd = outputs["Z"]
             Qd = outputs["Q"]
             Md = outputs["M"]
+            Mbd = outputs["Mb"]
 
             dT_dUinf_fd[:, i] = (Td - self.T) / delta
+            dY_dUinf_fd[:, i] = (Yd - self.Y) / delta
+            dZ_dUinf_fd[:, i] = (Zd - self.Z) / delta
             dQ_dUinf_fd[:, i] = (Qd - self.Q) / delta
             dM_dUinf_fd[:, i] = (Md - self.M) / delta
+            dMb_dUinf_fd[:, i] = (Mbd - self.Mb) / delta
             dP_dUinf_fd[:, i] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dUinf_fd, dT_dUinf, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dUinf_fd, dY_dUinf, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dUinf_fd, dZ_dUinf, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dUinf_fd, dQ_dUinf, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dUinf_fd, dM_dUinf, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dUinf_fd, dMb_dUinf, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dUinf_fd, dP_dUinf, rtol=5e-5, atol=1e-8)
 
     def test_dUinf3(self):
 
         dCT_dUinf = self.dCT["dUinf"]
+        dCY_dUinf = self.dCY["dUinf"]
+        dCZ_dUinf = self.dCZ["dUinf"]
         dCQ_dUinf = self.dCQ["dUinf"]
         dCM_dUinf = self.dCM["dUinf"]
+        dCMb_dUinf = self.dCMb["dUinf"]
         dCP_dUinf = self.dCP["dUinf"]
 
         dCT_dUinf_fd = np.zeros((self.npts, self.npts))
+        dCY_dUinf_fd = np.zeros((self.npts, self.npts))
+        dCZ_dUinf_fd = np.zeros((self.npts, self.npts))
         dCQ_dUinf_fd = np.zeros((self.npts, self.npts))
         dCM_dUinf_fd = np.zeros((self.npts, self.npts))
+        dCMb_dUinf_fd = np.zeros((self.npts, self.npts))
         dCP_dUinf_fd = np.zeros((self.npts, self.npts))
 
         for i in range(self.npts):
@@ -4019,29 +4593,44 @@ class TestGradientsFreestreamArray(unittest.TestCase):
             outputs, _ = self.rotor.evaluate(Uinf, self.Omega, self.pitch, coefficients=True)
             CPd = outputs["CP"]
             CTd = outputs["CT"]
+            CYd = outputs["CY"]
+            CZd = outputs["CZ"]
             CQd = outputs["CQ"]
             CMd = outputs["CM"]
+            CMbd = outputs["CMb"]
 
             dCT_dUinf_fd[:, i] = (CTd - self.CT) / delta
+            dCY_dUinf_fd[:, i] = (CYd - self.CY) / delta
+            dCZ_dUinf_fd[:, i] = (CZd - self.CZ) / delta
             dCQ_dUinf_fd[:, i] = (CQd - self.CQ) / delta
             dCM_dUinf_fd[:, i] = (CMd - self.CM) / delta
+            dCMb_dUinf_fd[:, i] = (CMbd - self.CMb) / delta
             dCP_dUinf_fd[:, i] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dUinf_fd, dCT_dUinf, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dUinf_fd, dCY_dUinf, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dUinf_fd, dCZ_dUinf, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dUinf_fd, dCQ_dUinf, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dUinf_fd, dCM_dUinf, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dUinf_fd, dCMb_dUinf, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dUinf_fd, dCP_dUinf, rtol=5e-5, atol=1e-8)
 
     def test_dOmega2(self):
 
         dT_dOmega = self.dT["dOmega"]
+        dY_dOmega = self.dY["dOmega"]
+        dZ_dOmega = self.dZ["dOmega"]
         dQ_dOmega = self.dQ["dOmega"]
         dM_dOmega = self.dM["dOmega"]
+        dMb_dOmega = self.dMb["dOmega"]
         dP_dOmega = self.dP["dOmega"]
 
         dT_dOmega_fd = np.zeros((self.npts, self.npts))
+        dY_dOmega_fd = np.zeros((self.npts, self.npts))
+        dZ_dOmega_fd = np.zeros((self.npts, self.npts))
         dQ_dOmega_fd = np.zeros((self.npts, self.npts))
         dM_dOmega_fd = np.zeros((self.npts, self.npts))
+        dMb_dOmega_fd = np.zeros((self.npts, self.npts))
         dP_dOmega_fd = np.zeros((self.npts, self.npts))
 
         for i in range(self.npts):
@@ -4052,29 +4641,44 @@ class TestGradientsFreestreamArray(unittest.TestCase):
             outputs, _ = self.rotor.evaluate(self.Uinf, Omega, self.pitch, coefficients=False)
             Pd = outputs["P"]
             Td = outputs["T"]
+            Yd = outputs["Y"]
+            Zd = outputs["Z"]
             Qd = outputs["Q"]
             Md = outputs["M"]
+            Mbd = outputs["Mb"]
 
             dT_dOmega_fd[:, i] = (Td - self.T) / delta
+            dY_dOmega_fd[:, i] = (Yd - self.Y) / delta
+            dZ_dOmega_fd[:, i] = (Zd - self.Z) / delta
             dQ_dOmega_fd[:, i] = (Qd - self.Q) / delta
             dM_dOmega_fd[:, i] = (Md - self.M) / delta
+            dMb_dOmega_fd[:, i] = (Mbd - self.Mb) / delta
             dP_dOmega_fd[:, i] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dOmega_fd, dT_dOmega, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dOmega_fd, dY_dOmega, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dOmega_fd, dZ_dOmega, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dOmega_fd, dQ_dOmega, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dOmega_fd, dM_dOmega, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dOmega_fd, dMb_dOmega, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dOmega_fd, dP_dOmega, rtol=5e-5, atol=1e-8)
 
     def test_dOmega3(self):
 
         dCT_dOmega = self.dCT["dOmega"]
+        dCY_dOmega = self.dCY["dOmega"]
+        dCZ_dOmega = self.dCZ["dOmega"]
         dCQ_dOmega = self.dCQ["dOmega"]
         dCM_dOmega = self.dCM["dOmega"]
+        dCMb_dOmega = self.dCMb["dOmega"]
         dCP_dOmega = self.dCP["dOmega"]
 
         dCT_dOmega_fd = np.zeros((self.npts, self.npts))
+        dCY_dOmega_fd = np.zeros((self.npts, self.npts))
+        dCZ_dOmega_fd = np.zeros((self.npts, self.npts))
         dCQ_dOmega_fd = np.zeros((self.npts, self.npts))
         dCM_dOmega_fd = np.zeros((self.npts, self.npts))
+        dCMb_dOmega_fd = np.zeros((self.npts, self.npts))
         dCP_dOmega_fd = np.zeros((self.npts, self.npts))
 
         for i in range(self.npts):
@@ -4085,29 +4689,44 @@ class TestGradientsFreestreamArray(unittest.TestCase):
             outputs, _ = self.rotor.evaluate(self.Uinf, Omega, self.pitch, coefficients=True)
             CPd = outputs["CP"]
             CTd = outputs["CT"]
+            CYd = outputs["CY"]
+            CZd = outputs["CZ"]
             CQd = outputs["CQ"]
             CMd = outputs["CM"]
+            CMbd = outputs["CMb"]
 
             dCT_dOmega_fd[:, i] = (CTd - self.CT) / delta
+            dCY_dOmega_fd[:, i] = (CYd - self.CY) / delta
+            dCZ_dOmega_fd[:, i] = (CZd - self.CZ) / delta
             dCQ_dOmega_fd[:, i] = (CQd - self.CQ) / delta
             dCM_dOmega_fd[:, i] = (CMd - self.CM) / delta
+            dCMb_dOmega_fd[:, i] = (CMbd - self.CMb) / delta
             dCP_dOmega_fd[:, i] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dOmega_fd, dCT_dOmega, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dOmega_fd, dCY_dOmega, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dOmega_fd, dCZ_dOmega, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dOmega_fd, dCQ_dOmega, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dOmega_fd, dCM_dOmega, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dOmega_fd, dCMb_dOmega, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dOmega_fd, dCP_dOmega, rtol=5e-5, atol=1e-8)
 
     def test_dpitch2(self):
 
         dT_dpitch = self.dT["dpitch"]
+        dY_dpitch = self.dY["dpitch"]
+        dZ_dpitch = self.dZ["dpitch"]
         dQ_dpitch = self.dQ["dpitch"]
         dM_dpitch = self.dM["dpitch"]
+        dMb_dpitch = self.dMb["dpitch"]
         dP_dpitch = self.dP["dpitch"]
 
         dT_dpitch_fd = np.zeros((self.npts, self.npts))
+        dY_dpitch_fd = np.zeros((self.npts, self.npts))
+        dZ_dpitch_fd = np.zeros((self.npts, self.npts))
         dQ_dpitch_fd = np.zeros((self.npts, self.npts))
         dM_dpitch_fd = np.zeros((self.npts, self.npts))
+        dMb_dpitch_fd = np.zeros((self.npts, self.npts))
         dP_dpitch_fd = np.zeros((self.npts, self.npts))
 
         for i in range(self.npts):
@@ -4118,29 +4737,44 @@ class TestGradientsFreestreamArray(unittest.TestCase):
             outputs, _ = self.rotor.evaluate(self.Uinf, self.Omega, pitch, coefficients=False)
             Pd = outputs["P"]
             Td = outputs["T"]
+            Yd = outputs["Y"]
+            Zd = outputs["Z"]
             Qd = outputs["Q"]
             Md = outputs["M"]
+            Mbd = outputs["Mb"]
 
             dT_dpitch_fd[:, i] = (Td - self.T) / delta
+            dY_dpitch_fd[:, i] = (Yd - self.Y) / delta
+            dZ_dpitch_fd[:, i] = (Zd - self.Z) / delta
             dQ_dpitch_fd[:, i] = (Qd - self.Q) / delta
             dM_dpitch_fd[:, i] = (Md - self.M) / delta
+            dMb_dpitch_fd[:, i] = (Mbd - self.Mb) / delta
             dP_dpitch_fd[:, i] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dpitch_fd, dT_dpitch, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dpitch_fd, dY_dpitch, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dpitch_fd, dZ_dpitch, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dpitch_fd, dQ_dpitch, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dpitch_fd, dM_dpitch, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dpitch_fd, dMb_dpitch, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dpitch_fd, dP_dpitch, rtol=5e-5, atol=1e-8)
 
     def test_dpitch3(self):
 
         dCT_dpitch = self.dCT["dpitch"]
+        dCY_dpitch = self.dCY["dpitch"]
+        dCZ_dpitch = self.dCZ["dpitch"]
         dCQ_dpitch = self.dCQ["dpitch"]
         dCM_dpitch = self.dCM["dpitch"]
+        dCMb_dpitch = self.dCMb["dpitch"]
         dCP_dpitch = self.dCP["dpitch"]
 
         dCT_dpitch_fd = np.zeros((self.npts, self.npts))
+        dCY_dpitch_fd = np.zeros((self.npts, self.npts))
+        dCZ_dpitch_fd = np.zeros((self.npts, self.npts))
         dCQ_dpitch_fd = np.zeros((self.npts, self.npts))
         dCM_dpitch_fd = np.zeros((self.npts, self.npts))
+        dCMb_dpitch_fd = np.zeros((self.npts, self.npts))
         dCP_dpitch_fd = np.zeros((self.npts, self.npts))
 
         for i in range(self.npts):
@@ -4151,17 +4785,26 @@ class TestGradientsFreestreamArray(unittest.TestCase):
             outputs, _ = self.rotor.evaluate(self.Uinf, self.Omega, pitch, coefficients=True)
             CPd = outputs["CP"]
             CTd = outputs["CT"]
+            CYd = outputs["CY"]
+            CZd = outputs["CZ"]
             CQd = outputs["CQ"]
             CMd = outputs["CM"]
+            CMbd = outputs["CMb"]
 
             dCT_dpitch_fd[:, i] = (CTd - self.CT) / delta
+            dCY_dpitch_fd[:, i] = (CYd - self.CY) / delta
+            dCZ_dpitch_fd[:, i] = (CZd - self.CZ) / delta
             dCQ_dpitch_fd[:, i] = (CQd - self.CQ) / delta
             dCM_dpitch_fd[:, i] = (CMd - self.CM) / delta
+            dCMb_dpitch_fd[:, i] = (CMbd - self.CMb) / delta
             dCP_dpitch_fd[:, i] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dpitch_fd, dCT_dpitch, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dpitch_fd, dCY_dpitch, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dpitch_fd, dCZ_dpitch, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dpitch_fd, dCQ_dpitch, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dpitch_fd, dCM_dpitch, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dpitch_fd, dCMb_dpitch, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dpitch_fd, dCP_dpitch, rtol=5e-5, atol=1e-8)
 
 
@@ -4296,7 +4939,7 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         self.Uinf = 10.0
         tsr = 7.55
         self.pitch = 0.0
-        self.Omega = self.Uinf * tsr / self.Rtip * 30.0 / pi  # convert to RPM
+        self.Omega = self.Uinf * tsr / self.Rtip * 30.0 / np.pi  # convert to RPM
         self.azimuth = 90
 
         loads, derivs = self.rotor.distributedAeroLoads(self.Uinf, self.Omega, self.pitch, self.azimuth)
@@ -4306,16 +4949,12 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         self.dTp = derivs["dTp"]
 
         outputs, derivs = self.rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
-        self.P, self.T, self.Q, self.M = [outputs[k] for k in ("P", "T", "Q", "M")]
-        self.P, self.T, self.M, self.M = [outputs[k] for k in ("P", "T", "M", "M")]
-        self.dP, self.dT, self.dQ = [derivs[k] for k in ("dP", "dT", "dQ")]
-        self.dP, self.dT, self.dM = [derivs[k] for k in ("dP", "dT", "dM")]
+        self.P, self.T, self.Y, self.Z, self.Q, self.M, self.Mb = [outputs[k] for k in ("P", "T", "Y", "Z", "Q", "M", "Mb")]
+        self.dP, self.dT, self.dY, self.dZ, self.dQ, self.dM, self.dMb = [derivs[k] for k in ("dP", "dT", "dY", "dZ", "dQ", "dM", "dMb")]
 
         outputs, derivs = self.rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
-        self.CP, self.CT, self.CQ, self.CM = [outputs[k] for k in ("CP", "CT", "CQ", "CM")]
-        self.CP, self.CT, self.CM, self.CM = [outputs[k] for k in ("CP", "CT", "CM", "CM")]
-        self.dCP, self.dCT, self.dCQ = [derivs[k] for k in ("dCP", "dCT", "dCQ")]
-        self.dCP, self.dCT, self.dCM = [derivs[k] for k in ("dCP", "dCT", "dCM")]
+        self.CP, self.CT, self.CY, self.CZ, self.CQ, self.CM, self.CMb = [outputs[k] for k in ("CP", "CT", "CY", "CZ", "CQ", "CM", "CMb")]
+        self.dCP, self.dCT, self.dCY, self.dCZ, self.dCQ, self.dCM, self.dCMb = [derivs[k] for k in ("dCP", "dCT", "dCY", "dCZ", "dCQ", "dCM", "dCMb")]
 
         self.rotor.derivatives = False
         self.n = len(self.r)
@@ -4365,12 +5004,18 @@ class TestGradients_RHub_Tip(unittest.TestCase):
     def test_dr2(self):
 
         dT_dr = self.dT["dr"]
+        dY_dr = self.dY["dr"]
+        dZ_dr = self.dZ["dr"]
         dQ_dr = self.dQ["dr"]
         dM_dr = self.dM["dr"]
+        dMb_dr = self.dMb["dr"]
         dP_dr = self.dP["dr"]
         dT_dr_fd = np.zeros((self.npts, self.n))
+        dY_dr_fd = np.zeros((self.npts, self.n))
+        dZ_dr_fd = np.zeros((self.npts, self.n))
         dQ_dr_fd = np.zeros((self.npts, self.n))
         dM_dr_fd = np.zeros((self.npts, self.n))
+        dMb_dr_fd = np.zeros((self.npts, self.n))
         dP_dr_fd = np.zeros((self.npts, self.n))
 
         for i in range(self.n):
@@ -4400,28 +5045,43 @@ class TestGradients_RHub_Tip(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
             Pd = outputs["P"]
             Td = outputs["T"]
+            Yd = outputs["Y"]
+            Zd = outputs["Z"]
             Qd = outputs["Q"]
             Md = outputs["M"]
+            Mbd = outputs["Mb"]
 
             dT_dr_fd[:, i] = (Td - self.T) / delta
+            dY_dr_fd[:, i] = (Yd - self.Y) / delta
+            dZ_dr_fd[:, i] = (Zd - self.Z) / delta
             dQ_dr_fd[:, i] = (Qd - self.Q) / delta
             dM_dr_fd[:, i] = (Md - self.M) / delta
+            dMb_dr_fd[:, i] = (Mbd - self.Mb) / delta
             dP_dr_fd[:, i] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dr_fd, dT_dr, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dr_fd, dY_dr, rtol=5e-4, atol=1e-8)
+        np.testing.assert_allclose(dZ_dr_fd, dZ_dr, rtol=5e-4, atol=1e-8)
         np.testing.assert_allclose(dQ_dr_fd, dQ_dr, rtol=1e-3)  # , atol=1e-8)
         np.testing.assert_allclose(dM_dr_fd, dM_dr, rtol=1e-3)  # , atol=1e-8)
+        np.testing.assert_allclose(dMb_dr_fd, dMb_dr, rtol=1e-3)  # , atol=1e-8)
         np.testing.assert_allclose(dP_dr_fd, dP_dr, rtol=1e-3)  # , atol=1e-8)
 
     def test_dr3(self):
 
         dCT_dr = self.dCT["dr"]
+        dCY_dr = self.dCY["dr"]
+        dCZ_dr = self.dCZ["dr"]
         dCQ_dr = self.dCQ["dr"]
         dCM_dr = self.dCM["dr"]
+        dCMb_dr = self.dCMb["dr"]
         dCP_dr = self.dCP["dr"]
         dCT_dr_fd = np.zeros((self.npts, self.n))
+        dCY_dr_fd = np.zeros((self.npts, self.n))
+        dCZ_dr_fd = np.zeros((self.npts, self.n))
         dCQ_dr_fd = np.zeros((self.npts, self.n))
         dCM_dr_fd = np.zeros((self.npts, self.n))
+        dCMb_dr_fd = np.zeros((self.npts, self.n))
         dCP_dr_fd = np.zeros((self.npts, self.n))
 
         for i in range(self.n):
@@ -4451,17 +5111,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
             CPd = outputs["CP"]
             CTd = outputs["CT"]
+            CYd = outputs["CY"]
+            CZd = outputs["CZ"]
             CQd = outputs["CQ"]
             CMd = outputs["CM"]
+            CMbd = outputs["CMb"]
 
             dCT_dr_fd[:, i] = (CTd - self.CT) / delta
+            dCY_dr_fd[:, i] = (CYd - self.CY) / delta
+            dCZ_dr_fd[:, i] = (CZd - self.CZ) / delta
             dCQ_dr_fd[:, i] = (CQd - self.CQ) / delta
             dCM_dr_fd[:, i] = (CMd - self.CM) / delta
+            dCMb_dr_fd[:, i] = (CMbd - self.CMb) / delta
             dCP_dr_fd[:, i] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dr_fd, dCT_dr, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dr_fd, dCY_dr, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dr_fd, dCZ_dr, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dr_fd, dCQ_dr, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCM_dr_fd, dCM_dr, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dr_fd, dCMb_dr, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCP_dr_fd, dCP_dr, rtol=3e-4, atol=1e-7)
 
     def test_dchord1(self):
@@ -4508,12 +5177,18 @@ class TestGradients_RHub_Tip(unittest.TestCase):
     def test_dchord2(self):
 
         dT_dchord = self.dT["dchord"]
+        dY_dchord = self.dY["dchord"]
+        dZ_dchord = self.dZ["dchord"]
         dQ_dchord = self.dQ["dchord"]
         dM_dchord = self.dM["dchord"]
+        dMb_dchord = self.dMb["dchord"]
         dP_dchord = self.dP["dchord"]
         dT_dchord_fd = np.zeros((self.npts, self.n))
+        dY_dchord_fd = np.zeros((self.npts, self.n))
+        dZ_dchord_fd = np.zeros((self.npts, self.n))
         dQ_dchord_fd = np.zeros((self.npts, self.n))
         dM_dchord_fd = np.zeros((self.npts, self.n))
+        dMb_dchord_fd = np.zeros((self.npts, self.n))
         dP_dchord_fd = np.zeros((self.npts, self.n))
 
         for i in range(self.n):
@@ -4543,28 +5218,43 @@ class TestGradients_RHub_Tip(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
             Pd = outputs["P"]
             Td = outputs["T"]
+            Yd = outputs["Y"]
+            Zd = outputs["Z"]
             Qd = outputs["Q"]
             Md = outputs["M"]
+            Mbd = outputs["Mb"]
 
             dT_dchord_fd[:, i] = (Td - self.T) / delta
+            dY_dchord_fd[:, i] = (Yd - self.Y) / delta
+            dZ_dchord_fd[:, i] = (Zd - self.Z) / delta
             dQ_dchord_fd[:, i] = (Qd - self.Q) / delta
             dM_dchord_fd[:, i] = (Md - self.M) / delta
+            dMb_dchord_fd[:, i] = (Mbd - self.Mb) / delta
             dP_dchord_fd[:, i] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dchord_fd, dT_dchord, rtol=5e-6, atol=1e-8)
+        np.testing.assert_allclose(dY_dchord_fd, dY_dchord, rtol=7e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dchord_fd, dZ_dchord, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dchord_fd, dQ_dchord, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dchord_fd, dM_dchord, rtol=7e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dchord_fd, dMb_dchord, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dchord_fd, dP_dchord, rtol=7e-5, atol=1e-8)
 
     def test_dchord3(self):
 
         dCT_dchord = self.dCT["dchord"]
+        dCY_dchord = self.dCY["dchord"]
+        dCZ_dchord = self.dCZ["dchord"]
         dCQ_dchord = self.dCQ["dchord"]
         dCM_dchord = self.dCM["dchord"]
+        dCMb_dchord = self.dCMb["dchord"]
         dCP_dchord = self.dCP["dchord"]
         dCT_dchord_fd = np.zeros((self.npts, self.n))
+        dCY_dchord_fd = np.zeros((self.npts, self.n))
+        dCZ_dchord_fd = np.zeros((self.npts, self.n))
         dCQ_dchord_fd = np.zeros((self.npts, self.n))
         dCM_dchord_fd = np.zeros((self.npts, self.n))
+        dCMb_dchord_fd = np.zeros((self.npts, self.n))
         dCP_dchord_fd = np.zeros((self.npts, self.n))
 
         for i in range(self.n):
@@ -4594,17 +5284,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
             CPd = outputs["CP"]
             CTd = outputs["CT"]
+            CYd = outputs["CY"]
+            CZd = outputs["CZ"]
             CQd = outputs["CQ"]
             CMd = outputs["CM"]
+            CMbd = outputs["CMb"]
 
             dCT_dchord_fd[:, i] = (CTd - self.CT) / delta
+            dCY_dchord_fd[:, i] = (CYd - self.CY) / delta
+            dCZ_dchord_fd[:, i] = (CZd - self.CZ) / delta
             dCQ_dchord_fd[:, i] = (CQd - self.CQ) / delta
             dCM_dchord_fd[:, i] = (CMd - self.CM) / delta
+            dCMb_dchord_fd[:, i] = (CMbd - self.CMb) / delta
             dCP_dchord_fd[:, i] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dchord_fd, dCT_dchord, rtol=5e-6, atol=1e-8)
+        np.testing.assert_allclose(dCY_dchord_fd, dCY_dchord, rtol=5e-6, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dchord_fd, dCZ_dchord, rtol=5e-6, atol=1e-8)
         np.testing.assert_allclose(dCQ_dchord_fd, dCQ_dchord, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dchord_fd, dCM_dchord, rtol=7e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dchord_fd, dCMb_dchord, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dchord_fd, dCP_dchord, rtol=7e-5, atol=1e-8)
 
     def test_dtheta1(self):
@@ -4651,12 +5350,18 @@ class TestGradients_RHub_Tip(unittest.TestCase):
     def test_dtheta2(self):
 
         dT_dtheta = self.dT["dtheta"]
+        dY_dtheta = self.dY["dtheta"]
+        dZ_dtheta = self.dZ["dtheta"]
         dQ_dtheta = self.dQ["dtheta"]
         dM_dtheta = self.dM["dtheta"]
+        dMb_dtheta = self.dMb["dtheta"]
         dP_dtheta = self.dP["dtheta"]
         dT_dtheta_fd = np.zeros((self.npts, self.n))
+        dY_dtheta_fd = np.zeros((self.npts, self.n))
+        dZ_dtheta_fd = np.zeros((self.npts, self.n))
         dQ_dtheta_fd = np.zeros((self.npts, self.n))
         dM_dtheta_fd = np.zeros((self.npts, self.n))
+        dMb_dtheta_fd = np.zeros((self.npts, self.n))
         dP_dtheta_fd = np.zeros((self.npts, self.n))
 
         for i in range(self.n):
@@ -4686,28 +5391,43 @@ class TestGradients_RHub_Tip(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
             Pd = outputs["P"]
             Td = outputs["T"]
+            Yd = outputs["Y"]
+            Zd = outputs["Z"]
             Qd = outputs["Q"]
             Md = outputs["M"]
+            Mbd = outputs["Mb"]
 
             dT_dtheta_fd[:, i] = (Td - self.T) / delta
+            dY_dtheta_fd[:, i] = (Yd - self.Y) / delta
+            dZ_dtheta_fd[:, i] = (Zd - self.Z) / delta
             dQ_dtheta_fd[:, i] = (Qd - self.Q) / delta
             dM_dtheta_fd[:, i] = (Md - self.M) / delta
+            dMb_dtheta_fd[:, i] = (Mbd - self.Mb) / delta
             dP_dtheta_fd[:, i] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dtheta_fd, dT_dtheta, rtol=7e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dtheta_fd, dY_dtheta, rtol=7e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dtheta_fd, dZ_dtheta, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dtheta_fd, dQ_dtheta, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dtheta_fd, dM_dtheta, rtol=7e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dtheta_fd, dMb_dtheta, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dtheta_fd, dP_dtheta, rtol=7e-5, atol=1e-8)
 
     def test_dtheta3(self):
 
         dCT_dtheta = self.dCT["dtheta"]
+        dCY_dtheta = self.dCY["dtheta"]
+        dCZ_dtheta = self.dCZ["dtheta"]
         dCQ_dtheta = self.dCQ["dtheta"]
         dCM_dtheta = self.dCM["dtheta"]
+        dCMb_dtheta = self.dCMb["dtheta"]
         dCP_dtheta = self.dCP["dtheta"]
         dCT_dtheta_fd = np.zeros((self.npts, self.n))
+        dCY_dtheta_fd = np.zeros((self.npts, self.n))
+        dCZ_dtheta_fd = np.zeros((self.npts, self.n))
         dCQ_dtheta_fd = np.zeros((self.npts, self.n))
         dCM_dtheta_fd = np.zeros((self.npts, self.n))
+        dCMb_dtheta_fd = np.zeros((self.npts, self.n))
         dCP_dtheta_fd = np.zeros((self.npts, self.n))
 
         for i in range(self.n):
@@ -4737,17 +5457,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
             CPd = outputs["CP"]
             CTd = outputs["CT"]
+            CYd = outputs["CY"]
+            CZd = outputs["CZ"]
             CQd = outputs["CQ"]
             CMd = outputs["CM"]
+            CMbd = outputs["CMb"]
 
             dCT_dtheta_fd[:, i] = (CTd - self.CT) / delta
+            dCY_dtheta_fd[:, i] = (CYd - self.CY) / delta
+            dCZ_dtheta_fd[:, i] = (CZd - self.CZ) / delta
             dCQ_dtheta_fd[:, i] = (CQd - self.CQ) / delta
             dCM_dtheta_fd[:, i] = (CMd - self.CM) / delta
+            dCMb_dtheta_fd[:, i] = (CMbd - self.CMb) / delta
             dCP_dtheta_fd[:, i] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dtheta_fd, dCT_dtheta, rtol=5e-6, atol=1e-8)
+        np.testing.assert_allclose(dCY_dtheta_fd, dCY_dtheta, rtol=5e-6, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dtheta_fd, dCZ_dtheta, rtol=5e-6, atol=1e-8)
         np.testing.assert_allclose(dCQ_dtheta_fd, dCQ_dtheta, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dtheta_fd, dCM_dtheta, rtol=7e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dtheta_fd, dCMb_dtheta, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dtheta_fd, dCP_dtheta, rtol=7e-5, atol=1e-8)
 
     def test_dRhub1(self):
@@ -4794,13 +5523,19 @@ class TestGradients_RHub_Tip(unittest.TestCase):
     def test_dRhub2(self):
 
         dT_dRhub = self.dT["dRhub"]
+        dY_dRhub = self.dY["dRhub"]
+        dZ_dRhub = self.dZ["dRhub"]
         dQ_dRhub = self.dQ["dRhub"]
         dM_dRhub = self.dM["dRhub"]
+        dMb_dRhub = self.dMb["dRhub"]
         dP_dRhub = self.dP["dRhub"]
 
         dT_dRhub_fd = np.zeros((self.npts, 1))
+        dY_dRhub_fd = np.zeros((self.npts, 1))
+        dZ_dRhub_fd = np.zeros((self.npts, 1))
         dQ_dRhub_fd = np.zeros((self.npts, 1))
         dM_dRhub_fd = np.zeros((self.npts, 1))
+        dMb_dRhub_fd = np.zeros((self.npts, 1))
         dP_dRhub_fd = np.zeros((self.npts, 1))
 
         Rhub = float(self.Rhub)
@@ -4829,29 +5564,44 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dRhub_fd[:, 0] = (Td - self.T) / delta
+        dY_dRhub_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dRhub_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dRhub_fd[:, 0] = (Qd - self.Q) / delta
         dM_dRhub_fd[:, 0] = (Md - self.M) / delta
+        dMb_dRhub_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dRhub_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dRhub_fd, dT_dRhub, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dRhub_fd, dY_dRhub, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dRhub_fd, dZ_dRhub, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dRhub_fd, dQ_dRhub, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dRhub_fd, dM_dRhub, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dRhub_fd, dMb_dRhub, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dRhub_fd, dP_dRhub, rtol=5e-5, atol=1e-8)
 
     def test_dRhub3(self):
 
         dCT_dRhub = self.dCT["dRhub"]
+        dCY_dRhub = self.dCY["dRhub"]
+        dCZ_dRhub = self.dCZ["dRhub"]
         dCQ_dRhub = self.dCQ["dRhub"]
         dCM_dRhub = self.dCM["dRhub"]
+        dCMb_dRhub = self.dCMb["dRhub"]
         dCP_dRhub = self.dCP["dRhub"]
 
         dCT_dRhub_fd = np.zeros((self.npts, 1))
+        dCY_dRhub_fd = np.zeros((self.npts, 1))
+        dCZ_dRhub_fd = np.zeros((self.npts, 1))
         dCQ_dRhub_fd = np.zeros((self.npts, 1))
         dCM_dRhub_fd = np.zeros((self.npts, 1))
+        dCMb_dRhub_fd = np.zeros((self.npts, 1))
         dCP_dRhub_fd = np.zeros((self.npts, 1))
 
         Rhub = float(self.Rhub)
@@ -4880,17 +5630,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dRhub_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dRhub_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dRhub_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dRhub_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dRhub_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dRhub_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dRhub_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dRhub_fd, dCT_dRhub, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dRhub_fd, dCY_dRhub, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dRhub_fd, dCZ_dRhub, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dRhub_fd, dCQ_dRhub, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dRhub_fd, dCM_dRhub, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dRhub_fd, dCMb_dRhub, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dRhub_fd, dCP_dRhub, rtol=5e-5, atol=1e-8)
 
     def test_dRtip1(self):
@@ -4937,13 +5696,19 @@ class TestGradients_RHub_Tip(unittest.TestCase):
     def test_dRtip2(self):
 
         dT_dRtip = self.dT["dRtip"]
+        dY_dRtip = self.dY["dRtip"]
+        dZ_dRtip = self.dZ["dRtip"]
         dQ_dRtip = self.dQ["dRtip"]
         dM_dRtip = self.dM["dRtip"]
+        dMb_dRtip = self.dMb["dRtip"]
         dP_dRtip = self.dP["dRtip"]
 
         dT_dRtip_fd = np.zeros((self.npts, 1))
+        dY_dRtip_fd = np.zeros((self.npts, 1))
+        dZ_dRtip_fd = np.zeros((self.npts, 1))
         dQ_dRtip_fd = np.zeros((self.npts, 1))
         dM_dRtip_fd = np.zeros((self.npts, 1))
+        dMb_dRtip_fd = np.zeros((self.npts, 1))
         dP_dRtip_fd = np.zeros((self.npts, 1))
 
         Rtip = float(self.Rtip)
@@ -4972,29 +5737,44 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dRtip_fd[:, 0] = (Td - self.T) / delta
+        dY_dRtip_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dRtip_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dRtip_fd[:, 0] = (Qd - self.Q) / delta
         dM_dRtip_fd[:, 0] = (Md - self.M) / delta
+        dMb_dRtip_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dRtip_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dRtip_fd, dT_dRtip, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dRtip_fd, dY_dRtip, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dRtip_fd, dZ_dRtip, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dRtip_fd, dQ_dRtip, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dRtip_fd, dM_dRtip, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dRtip_fd, dMb_dRtip, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dRtip_fd, dP_dRtip, rtol=5e-5, atol=1e-8)
 
     def test_dRtip3(self):
 
         dCT_dRtip = self.dCT["dRtip"]
+        dCY_dRtip = self.dCY["dRtip"]
+        dCZ_dRtip = self.dCZ["dRtip"]
         dCQ_dRtip = self.dCQ["dRtip"]
         dCM_dRtip = self.dCM["dRtip"]
+        dCMb_dRtip = self.dCMb["dRtip"]
         dCP_dRtip = self.dCP["dRtip"]
 
         dCT_dRtip_fd = np.zeros((self.npts, 1))
+        dCY_dRtip_fd = np.zeros((self.npts, 1))
+        dCZ_dRtip_fd = np.zeros((self.npts, 1))
         dCQ_dRtip_fd = np.zeros((self.npts, 1))
         dCM_dRtip_fd = np.zeros((self.npts, 1))
+        dCMb_dRtip_fd = np.zeros((self.npts, 1))
         dCP_dRtip_fd = np.zeros((self.npts, 1))
 
         Rtip = float(self.Rtip)
@@ -5023,17 +5803,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dRtip_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dRtip_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dRtip_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dRtip_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dRtip_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dRtip_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dRtip_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dRtip_fd, dCT_dRtip, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dRtip_fd, dCY_dRtip, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dRtip_fd, dCZ_dRtip, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dRtip_fd, dCQ_dRtip, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dRtip_fd, dCM_dRtip, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dRtip_fd, dCMb_dRtip, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dRtip_fd, dCP_dRtip, rtol=5e-5, atol=1e-8)
 
     def test_dprecone1(self):
@@ -5080,13 +5869,19 @@ class TestGradients_RHub_Tip(unittest.TestCase):
     def test_dprecone2(self):
 
         dT_dprecone = self.dT["dprecone"]
+        dY_dprecone = self.dY["dprecone"]
+        dZ_dprecone = self.dZ["dprecone"]
         dQ_dprecone = self.dQ["dprecone"]
         dM_dprecone = self.dM["dprecone"]
+        dMb_dprecone = self.dMb["dprecone"]
         dP_dprecone = self.dP["dprecone"]
 
         dT_dprecone_fd = np.zeros((self.npts, 1))
+        dY_dprecone_fd = np.zeros((self.npts, 1))
+        dZ_dprecone_fd = np.zeros((self.npts, 1))
         dQ_dprecone_fd = np.zeros((self.npts, 1))
         dM_dprecone_fd = np.zeros((self.npts, 1))
+        dMb_dprecone_fd = np.zeros((self.npts, 1))
         dP_dprecone_fd = np.zeros((self.npts, 1))
 
         precone = float(self.precone)
@@ -5115,29 +5910,44 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dprecone_fd[:, 0] = (Td - self.T) / delta
+        dY_dprecone_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dprecone_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dprecone_fd[:, 0] = (Qd - self.Q) / delta
         dM_dprecone_fd[:, 0] = (Md - self.M) / delta
+        dMb_dprecone_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dprecone_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dprecone_fd, dT_dprecone, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dprecone_fd, dY_dprecone, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dprecone_fd, dZ_dprecone, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dprecone_fd, dQ_dprecone, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dprecone_fd, dM_dprecone, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dprecone_fd, dMb_dprecone, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dprecone_fd, dP_dprecone, rtol=5e-5, atol=1e-8)
 
     def test_dprecone3(self):
 
         dCT_dprecone = self.dCT["dprecone"]
+        dCY_dprecone = self.dCY["dprecone"]
+        dCZ_dprecone = self.dCZ["dprecone"]
         dCQ_dprecone = self.dCQ["dprecone"]
         dCM_dprecone = self.dCM["dprecone"]
+        dCMb_dprecone = self.dCMb["dprecone"]
         dCP_dprecone = self.dCP["dprecone"]
 
         dCT_dprecone_fd = np.zeros((self.npts, 1))
+        dCY_dprecone_fd = np.zeros((self.npts, 1))
+        dCZ_dprecone_fd = np.zeros((self.npts, 1))
         dCQ_dprecone_fd = np.zeros((self.npts, 1))
         dCM_dprecone_fd = np.zeros((self.npts, 1))
+        dCMb_dprecone_fd = np.zeros((self.npts, 1))
         dCP_dprecone_fd = np.zeros((self.npts, 1))
 
         precone = float(self.precone)
@@ -5166,17 +5976,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dprecone_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dprecone_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dprecone_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dprecone_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dprecone_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dprecone_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dprecone_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dprecone_fd, dCT_dprecone, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dprecone_fd, dCY_dprecone, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dprecone_fd, dCZ_dprecone, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dprecone_fd, dCQ_dprecone, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dprecone_fd, dCM_dprecone, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dprecone_fd, dCMb_dprecone, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dprecone_fd, dCP_dprecone, rtol=5e-5, atol=1e-8)
 
     def test_dtilt1(self):
@@ -5223,13 +6042,19 @@ class TestGradients_RHub_Tip(unittest.TestCase):
     def test_dtilt2(self):
 
         dT_dtilt = self.dT["dtilt"]
+        dY_dtilt = self.dY["dtilt"]
+        dZ_dtilt = self.dZ["dtilt"]
         dQ_dtilt = self.dQ["dtilt"]
         dM_dtilt = self.dM["dtilt"]
+        dMb_dtilt = self.dMb["dtilt"]
         dP_dtilt = self.dP["dtilt"]
 
         dT_dtilt_fd = np.zeros((self.npts, 1))
+        dY_dtilt_fd = np.zeros((self.npts, 1))
+        dZ_dtilt_fd = np.zeros((self.npts, 1))
         dQ_dtilt_fd = np.zeros((self.npts, 1))
         dM_dtilt_fd = np.zeros((self.npts, 1))
+        dMb_dtilt_fd = np.zeros((self.npts, 1))
         dP_dtilt_fd = np.zeros((self.npts, 1))
 
         tilt = float(self.tilt)
@@ -5258,29 +6083,44 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dtilt_fd[:, 0] = (Td - self.T) / delta
+        dY_dtilt_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dtilt_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dtilt_fd[:, 0] = (Qd - self.Q) / delta
         dM_dtilt_fd[:, 0] = (Md - self.M) / delta
+        dMb_dtilt_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dtilt_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dtilt_fd, dT_dtilt, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dtilt_fd, dY_dtilt, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dtilt_fd, dZ_dtilt, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dtilt_fd, dQ_dtilt, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dtilt_fd, dM_dtilt, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dtilt_fd, dMb_dtilt, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dtilt_fd, dP_dtilt, rtol=5e-5, atol=1e-8)
 
     def test_dtilt3(self):
 
         dCT_dtilt = self.dCT["dtilt"]
+        dCY_dtilt = self.dCY["dtilt"]
+        dCZ_dtilt = self.dCZ["dtilt"]
         dCQ_dtilt = self.dCQ["dtilt"]
         dCM_dtilt = self.dCM["dtilt"]
+        dCMb_dtilt = self.dCMb["dtilt"]
         dCP_dtilt = self.dCP["dtilt"]
 
         dCT_dtilt_fd = np.zeros((self.npts, 1))
+        dCY_dtilt_fd = np.zeros((self.npts, 1))
+        dCZ_dtilt_fd = np.zeros((self.npts, 1))
         dCQ_dtilt_fd = np.zeros((self.npts, 1))
         dCM_dtilt_fd = np.zeros((self.npts, 1))
+        dCMb_dtilt_fd = np.zeros((self.npts, 1))
         dCP_dtilt_fd = np.zeros((self.npts, 1))
 
         tilt = float(self.tilt)
@@ -5309,17 +6149,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dtilt_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dtilt_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dtilt_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dtilt_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dtilt_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dtilt_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dtilt_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dtilt_fd, dCT_dtilt, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dtilt_fd, dCY_dtilt, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dtilt_fd, dCZ_dtilt, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dtilt_fd, dCQ_dtilt, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dtilt_fd, dCM_dtilt, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dtilt_fd, dCMb_dtilt, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dtilt_fd, dCP_dtilt, rtol=5e-5, atol=1e-8)
 
     def test_dhubht1(self):
@@ -5366,13 +6215,19 @@ class TestGradients_RHub_Tip(unittest.TestCase):
     def test_dhubht2(self):
 
         dT_dhubht = self.dT["dhubHt"]
+        dY_dhubht = self.dY["dhubHt"]
+        dZ_dhubht = self.dZ["dhubHt"]
         dQ_dhubht = self.dQ["dhubHt"]
         dM_dhubht = self.dM["dhubHt"]
+        dMb_dhubht = self.dMb["dhubHt"]
         dP_dhubht = self.dP["dhubHt"]
 
         dT_dhubht_fd = np.zeros((self.npts, 1))
+        dY_dhubht_fd = np.zeros((self.npts, 1))
+        dZ_dhubht_fd = np.zeros((self.npts, 1))
         dQ_dhubht_fd = np.zeros((self.npts, 1))
         dM_dhubht_fd = np.zeros((self.npts, 1))
+        dMb_dhubht_fd = np.zeros((self.npts, 1))
         dP_dhubht_fd = np.zeros((self.npts, 1))
 
         hubht = float(self.hubHt)
@@ -5401,29 +6256,44 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dhubht_fd[:, 0] = (Td - self.T) / delta
+        dY_dhubht_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dhubht_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dhubht_fd[:, 0] = (Qd - self.Q) / delta
         dM_dhubht_fd[:, 0] = (Md - self.M) / delta
+        dMb_dhubht_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dhubht_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dhubht_fd, dT_dhubht, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dhubht_fd, dY_dhubht, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dhubht_fd, dZ_dhubht, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dhubht_fd, dQ_dhubht, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dhubht_fd, dM_dhubht, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dhubht_fd, dMb_dhubht, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dhubht_fd, dP_dhubht, rtol=5e-5, atol=1e-8)
 
     def test_dhubht3(self):
 
         dCT_dhubht = self.dCT["dhubHt"]
+        dCY_dhubht = self.dCY["dhubHt"]
+        dCZ_dhubht = self.dCZ["dhubHt"]
         dCQ_dhubht = self.dCQ["dhubHt"]
         dCM_dhubht = self.dCM["dhubHt"]
+        dCMb_dhubht = self.dCMb["dhubHt"]
         dCP_dhubht = self.dCP["dhubHt"]
 
         dCT_dhubht_fd = np.zeros((self.npts, 1))
+        dCY_dhubht_fd = np.zeros((self.npts, 1))
+        dCZ_dhubht_fd = np.zeros((self.npts, 1))
         dCQ_dhubht_fd = np.zeros((self.npts, 1))
         dCM_dhubht_fd = np.zeros((self.npts, 1))
+        dCMb_dhubht_fd = np.zeros((self.npts, 1))
         dCP_dhubht_fd = np.zeros((self.npts, 1))
 
         hubht = float(self.hubHt)
@@ -5452,17 +6322,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dhubht_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dhubht_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dhubht_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dhubht_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dhubht_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dhubht_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dhubht_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dhubht_fd, dCT_dhubht, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dhubht_fd, dCY_dhubht, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dhubht_fd, dCZ_dhubht, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dhubht_fd, dCQ_dhubht, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dhubht_fd, dCM_dhubht, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dhubht_fd, dCMb_dhubht, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dhubht_fd, dCP_dhubht, rtol=5e-5, atol=1e-8)
 
     def test_dyaw1(self):
@@ -5509,13 +6388,19 @@ class TestGradients_RHub_Tip(unittest.TestCase):
     def test_dyaw2(self):
 
         dT_dyaw = self.dT["dyaw"]
+        dY_dyaw = self.dY["dyaw"]
+        dZ_dyaw = self.dZ["dyaw"]
         dQ_dyaw = self.dQ["dyaw"]
         dM_dyaw = self.dM["dyaw"]
+        dMb_dyaw = self.dMb["dyaw"]
         dP_dyaw = self.dP["dyaw"]
 
         dT_dyaw_fd = np.zeros((self.npts, 1))
+        dY_dyaw_fd = np.zeros((self.npts, 1))
+        dZ_dyaw_fd = np.zeros((self.npts, 1))
         dQ_dyaw_fd = np.zeros((self.npts, 1))
         dM_dyaw_fd = np.zeros((self.npts, 1))
+        dMb_dyaw_fd = np.zeros((self.npts, 1))
         dP_dyaw_fd = np.zeros((self.npts, 1))
 
         yaw = float(self.yaw)
@@ -5544,29 +6429,44 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dyaw_fd[:, 0] = (Td - self.T) / delta
+        dY_dyaw_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dyaw_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dyaw_fd[:, 0] = (Qd - self.Q) / delta
         dM_dyaw_fd[:, 0] = (Md - self.M) / delta
+        dMb_dyaw_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dyaw_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dyaw_fd, dT_dyaw, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dyaw_fd, dY_dyaw, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dyaw_fd, dZ_dyaw, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dyaw_fd, dQ_dyaw, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dyaw_fd, dM_dyaw, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dyaw_fd, dMb_dyaw, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dyaw_fd, dP_dyaw, rtol=5e-5, atol=1e-8)
 
     def test_dyaw3(self):
 
         dCT_dyaw = self.dCT["dyaw"]
+        dCY_dyaw = self.dCY["dyaw"]
+        dCZ_dyaw = self.dCZ["dyaw"]
         dCQ_dyaw = self.dCQ["dyaw"]
         dCM_dyaw = self.dCM["dyaw"]
+        dCMb_dyaw = self.dCMb["dyaw"]
         dCP_dyaw = self.dCP["dyaw"]
 
         dCT_dyaw_fd = np.zeros((self.npts, 1))
+        dCY_dyaw_fd = np.zeros((self.npts, 1))
+        dCZ_dyaw_fd = np.zeros((self.npts, 1))
         dCQ_dyaw_fd = np.zeros((self.npts, 1))
         dCM_dyaw_fd = np.zeros((self.npts, 1))
+        dCMb_dyaw_fd = np.zeros((self.npts, 1))
         dCP_dyaw_fd = np.zeros((self.npts, 1))
 
         yaw = float(self.yaw)
@@ -5595,17 +6495,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dyaw_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dyaw_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dyaw_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dyaw_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dyaw_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dyaw_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dyaw_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dyaw_fd, dCT_dyaw, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dyaw_fd, dCY_dyaw, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dyaw_fd, dCZ_dyaw, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dyaw_fd, dCQ_dyaw, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dyaw_fd, dCM_dyaw, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dyaw_fd, dCMb_dyaw, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dyaw_fd, dCP_dyaw, rtol=5e-5, atol=1e-8)
 
     def test_dshear1(self):
@@ -5652,13 +6561,19 @@ class TestGradients_RHub_Tip(unittest.TestCase):
     def test_dshear2(self):
 
         dT_dshear = self.dT["dshear"]
+        dY_dshear = self.dY["dshear"]
+        dZ_dshear = self.dZ["dshear"]
         dQ_dshear = self.dQ["dshear"]
         dM_dshear = self.dM["dshear"]
+        dMb_dshear = self.dMb["dshear"]
         dP_dshear = self.dP["dshear"]
 
         dT_dshear_fd = np.zeros((self.npts, 1))
+        dY_dshear_fd = np.zeros((self.npts, 1))
+        dZ_dshear_fd = np.zeros((self.npts, 1))
         dQ_dshear_fd = np.zeros((self.npts, 1))
         dM_dshear_fd = np.zeros((self.npts, 1))
+        dMb_dshear_fd = np.zeros((self.npts, 1))
         dP_dshear_fd = np.zeros((self.npts, 1))
 
         shearExp = float(self.shearExp)
@@ -5687,29 +6602,44 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dshear_fd[:, 0] = (Td - self.T) / delta
+        dY_dshear_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dshear_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dshear_fd[:, 0] = (Qd - self.Q) / delta
         dM_dshear_fd[:, 0] = (Md - self.M) / delta
+        dMb_dshear_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dshear_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dshear_fd, dT_dshear, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dshear_fd, dY_dshear, rtol=2e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dshear_fd, dZ_dshear, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dshear_fd, dQ_dshear, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dshear_fd, dM_dshear, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dshear_fd, dMb_dshear, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dshear_fd, dP_dshear, rtol=5e-5, atol=1e-8)
 
     def test_dshear3(self):
 
         dCT_dshear = self.dCT["dshear"]
+        dCY_dshear = self.dCY["dshear"]
+        dCZ_dshear = self.dCZ["dshear"]
         dCQ_dshear = self.dCQ["dshear"]
         dCM_dshear = self.dCM["dshear"]
+        dCMb_dshear = self.dCMb["dshear"]
         dCP_dshear = self.dCP["dshear"]
 
         dCT_dshear_fd = np.zeros((self.npts, 1))
+        dCY_dshear_fd = np.zeros((self.npts, 1))
+        dCZ_dshear_fd = np.zeros((self.npts, 1))
         dCQ_dshear_fd = np.zeros((self.npts, 1))
         dCM_dshear_fd = np.zeros((self.npts, 1))
+        dCMb_dshear_fd = np.zeros((self.npts, 1))
         dCP_dshear_fd = np.zeros((self.npts, 1))
 
         shearExp = float(self.shearExp)
@@ -5738,17 +6668,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dshear_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dshear_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dshear_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dshear_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dshear_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dshear_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dshear_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dshear_fd, dCT_dshear, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dshear_fd, dCY_dshear, rtol=2e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dshear_fd, dCZ_dshear, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dshear_fd, dCQ_dshear, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dshear_fd, dCM_dshear, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dshear_fd, dCMb_dshear, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dshear_fd, dCP_dshear, rtol=5e-5, atol=1e-8)
 
     def test_dazimuth1(self):
@@ -5798,13 +6737,19 @@ class TestGradients_RHub_Tip(unittest.TestCase):
     def test_dUinf2(self):
 
         dT_dUinf = self.dT["dUinf"]
+        dY_dUinf = self.dY["dUinf"]
+        dZ_dUinf = self.dZ["dUinf"]
         dQ_dUinf = self.dQ["dUinf"]
         dM_dUinf = self.dM["dUinf"]
+        dMb_dUinf = self.dMb["dUinf"]
         dP_dUinf = self.dP["dUinf"]
 
         dT_dUinf_fd = np.zeros((self.npts, self.npts))
+        dY_dUinf_fd = np.zeros((self.npts, self.npts))
+        dZ_dUinf_fd = np.zeros((self.npts, self.npts))
         dQ_dUinf_fd = np.zeros((self.npts, self.npts))
         dM_dUinf_fd = np.zeros((self.npts, self.npts))
+        dMb_dUinf_fd = np.zeros((self.npts, self.npts))
         dP_dUinf_fd = np.zeros((self.npts, self.npts))
 
         Uinf = float(self.Uinf)
@@ -5814,29 +6759,44 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = self.rotor.evaluate([Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dUinf_fd[:, 0] = (Td - self.T) / delta
+        dY_dUinf_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dUinf_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dUinf_fd[:, 0] = (Qd - self.Q) / delta
         dM_dUinf_fd[:, 0] = (Md - self.M) / delta
+        dMb_dUinf_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dUinf_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dUinf_fd, dT_dUinf, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dUinf_fd, dY_dUinf, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dUinf_fd, dZ_dUinf, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dUinf_fd, dQ_dUinf, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dUinf_fd, dM_dUinf, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dUinf_fd, dMb_dUinf, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dUinf_fd, dP_dUinf, rtol=5e-5, atol=1e-8)
 
     def test_dUinf3(self):
 
         dCT_dUinf = self.dCT["dUinf"]
+        dCY_dUinf = self.dCY["dUinf"]
+        dCZ_dUinf = self.dCZ["dUinf"]
         dCQ_dUinf = self.dCQ["dUinf"]
         dCM_dUinf = self.dCM["dUinf"]
+        dCMb_dUinf = self.dCMb["dUinf"]
         dCP_dUinf = self.dCP["dUinf"]
 
         dCT_dUinf_fd = np.zeros((self.npts, self.npts))
+        dCY_dUinf_fd = np.zeros((self.npts, self.npts))
+        dCZ_dUinf_fd = np.zeros((self.npts, self.npts))
         dCQ_dUinf_fd = np.zeros((self.npts, self.npts))
         dCM_dUinf_fd = np.zeros((self.npts, self.npts))
+        dCMb_dUinf_fd = np.zeros((self.npts, self.npts))
         dCP_dUinf_fd = np.zeros((self.npts, self.npts))
 
         Uinf = float(self.Uinf)
@@ -5846,17 +6806,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = self.rotor.evaluate([Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dUinf_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dUinf_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dUinf_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dUinf_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dUinf_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dUinf_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dUinf_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dUinf_fd, dCT_dUinf, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dUinf_fd, dCY_dUinf, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dUinf_fd, dCZ_dUinf, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dUinf_fd, dCQ_dUinf, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dUinf_fd, dCM_dUinf, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dUinf_fd, dCMb_dUinf, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dUinf_fd, dCP_dUinf, rtol=5e-5, atol=1e-8)
 
     def test_dOmega1(self):
@@ -5884,13 +6853,19 @@ class TestGradients_RHub_Tip(unittest.TestCase):
     def test_dOmega2(self):
 
         dT_dOmega = self.dT["dOmega"]
+        dY_dOmega = self.dY["dOmega"]
+        dZ_dOmega = self.dZ["dOmega"]
         dQ_dOmega = self.dQ["dOmega"]
         dM_dOmega = self.dM["dOmega"]
+        dMb_dOmega = self.dMb["dOmega"]
         dP_dOmega = self.dP["dOmega"]
 
         dT_dOmega_fd = np.zeros((self.npts, self.npts))
+        dY_dOmega_fd = np.zeros((self.npts, self.npts))
+        dZ_dOmega_fd = np.zeros((self.npts, self.npts))
         dQ_dOmega_fd = np.zeros((self.npts, self.npts))
         dM_dOmega_fd = np.zeros((self.npts, self.npts))
+        dMb_dOmega_fd = np.zeros((self.npts, self.npts))
         dP_dOmega_fd = np.zeros((self.npts, self.npts))
 
         Omega = float(self.Omega)
@@ -5900,29 +6875,44 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = self.rotor.evaluate([self.Uinf], [Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dOmega_fd[:, 0] = (Td - self.T) / delta
+        dY_dOmega_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dOmega_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dOmega_fd[:, 0] = (Qd - self.Q) / delta
         dM_dOmega_fd[:, 0] = (Md - self.M) / delta
+        dMb_dOmega_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dOmega_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dOmega_fd, dT_dOmega, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dOmega_fd, dY_dOmega, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dOmega_fd, dZ_dOmega, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dOmega_fd, dQ_dOmega, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dOmega_fd, dM_dOmega, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dOmega_fd, dMb_dOmega, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dOmega_fd, dP_dOmega, rtol=5e-5, atol=1e-8)
 
     def test_dOmega3(self):
 
         dCT_dOmega = self.dCT["dOmega"]
+        dCY_dOmega = self.dCY["dOmega"]
+        dCZ_dOmega = self.dCZ["dOmega"]
         dCQ_dOmega = self.dCQ["dOmega"]
         dCM_dOmega = self.dCM["dOmega"]
+        dCMb_dOmega = self.dCMb["dOmega"]
         dCP_dOmega = self.dCP["dOmega"]
 
         dCT_dOmega_fd = np.zeros((self.npts, self.npts))
+        dCY_dOmega_fd = np.zeros((self.npts, self.npts))
+        dCZ_dOmega_fd = np.zeros((self.npts, self.npts))
         dCQ_dOmega_fd = np.zeros((self.npts, self.npts))
         dCM_dOmega_fd = np.zeros((self.npts, self.npts))
+        dCMb_dOmega_fd = np.zeros((self.npts, self.npts))
         dCP_dOmega_fd = np.zeros((self.npts, self.npts))
 
         Omega = float(self.Omega)
@@ -5932,17 +6922,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = self.rotor.evaluate([self.Uinf], [Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dOmega_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dOmega_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dOmega_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dOmega_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dOmega_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dOmega_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dOmega_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dOmega_fd, dCT_dOmega, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dOmega_fd, dCY_dOmega, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dOmega_fd, dCZ_dOmega, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dOmega_fd, dCQ_dOmega, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dOmega_fd, dCM_dOmega, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dOmega_fd, dCMb_dOmega, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dOmega_fd, dCP_dOmega, rtol=5e-5, atol=1e-8)
 
     def test_dpitch1(self):
@@ -5970,13 +6969,19 @@ class TestGradients_RHub_Tip(unittest.TestCase):
     def test_dpitch2(self):
 
         dT_dpitch = self.dT["dpitch"]
+        dY_dpitch = self.dY["dpitch"]
+        dZ_dpitch = self.dZ["dpitch"]
         dQ_dpitch = self.dQ["dpitch"]
         dM_dpitch = self.dM["dpitch"]
+        dMb_dpitch = self.dMb["dpitch"]
         dP_dpitch = self.dP["dpitch"]
 
         dT_dpitch_fd = np.zeros((self.npts, 1))
+        dY_dpitch_fd = np.zeros((self.npts, 1))
+        dZ_dpitch_fd = np.zeros((self.npts, 1))
         dQ_dpitch_fd = np.zeros((self.npts, 1))
         dM_dpitch_fd = np.zeros((self.npts, 1))
+        dMb_dpitch_fd = np.zeros((self.npts, 1))
         dP_dpitch_fd = np.zeros((self.npts, 1))
 
         pitch = float(self.pitch)
@@ -5986,29 +6991,44 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = self.rotor.evaluate([self.Uinf], [self.Omega], [pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dpitch_fd[:, 0] = (Td - self.T) / delta
+        dY_dpitch_fd[:, 0] = (Yd - self.Y) / delta
+        dZ_dpitch_fd[:, 0] = (Zd - self.Z) / delta
         dQ_dpitch_fd[:, 0] = (Qd - self.Q) / delta
         dM_dpitch_fd[:, 0] = (Md - self.M) / delta
+        dMb_dpitch_fd[:, 0] = (Mbd - self.Mb) / delta
         dP_dpitch_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dpitch_fd, dT_dpitch, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dpitch_fd, dY_dpitch, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dZ_dpitch_fd, dZ_dpitch, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dpitch_fd, dQ_dpitch, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dM_dpitch_fd, dM_dpitch, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dMb_dpitch_fd, dMb_dpitch, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dpitch_fd, dP_dpitch, rtol=5e-5, atol=1e-8)
 
     def test_dpitch3(self):
 
         dCT_dpitch = self.dCT["dpitch"]
+        dCY_dpitch = self.dCY["dpitch"]
+        dCZ_dpitch = self.dCZ["dpitch"]
         dCQ_dpitch = self.dCQ["dpitch"]
         dCM_dpitch = self.dCM["dpitch"]
+        dCMb_dpitch = self.dCMb["dpitch"]
         dCP_dpitch = self.dCP["dpitch"]
 
         dCT_dpitch_fd = np.zeros((self.npts, 1))
+        dCY_dpitch_fd = np.zeros((self.npts, 1))
+        dCZ_dpitch_fd = np.zeros((self.npts, 1))
         dCQ_dpitch_fd = np.zeros((self.npts, 1))
         dCM_dpitch_fd = np.zeros((self.npts, 1))
+        dCMb_dpitch_fd = np.zeros((self.npts, 1))
         dCP_dpitch_fd = np.zeros((self.npts, 1))
 
         pitch = float(self.pitch)
@@ -6018,17 +7038,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = self.rotor.evaluate([self.Uinf], [self.Omega], [pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dpitch_fd[:, 0] = (CTd - self.CT) / delta
+        dCY_dpitch_fd[:, 0] = (CYd - self.CY) / delta
+        dCZ_dpitch_fd[:, 0] = (CZd - self.CZ) / delta
         dCQ_dpitch_fd[:, 0] = (CQd - self.CQ) / delta
         dCM_dpitch_fd[:, 0] = (CMd - self.CM) / delta
+        dCMb_dpitch_fd[:, 0] = (CMbd - self.CMb) / delta
         dCP_dpitch_fd[:, 0] = (CPd - self.CP) / delta
 
         np.testing.assert_allclose(dCT_dpitch_fd, dCT_dpitch, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCY_dpitch_fd, dCY_dpitch, rtol=1e-5, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dpitch_fd, dCZ_dpitch, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dCQ_dpitch_fd, dCQ_dpitch, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCM_dpitch_fd, dCM_dpitch, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dpitch_fd, dCMb_dpitch, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dCP_dpitch_fd, dCP_dpitch, rtol=5e-5, atol=1e-8)
 
     def test_dprecurve1(self):
@@ -6136,21 +7165,33 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         P = outputs["P"]
         T = outputs["T"]
+        Y = outputs["Y"]
+        Z = outputs["Z"]
         Q = outputs["Q"]
         M = outputs["M"]
+        Mb = outputs["Mb"]
         dP = derivs["dP"]
         dT = derivs["dT"]
+        dY = derivs["dY"]
+        dZ = derivs["dZ"]
         dQ = derivs["dQ"]
         dM = derivs["dM"]
+        dMb = derivs["dMb"]
 
         dT_dprecurve = dT["dprecurve"]
+        dY_dprecurve = dY["dprecurve"]
+        dZ_dprecurve = dZ["dprecurve"]
         dQ_dprecurve = dQ["dprecurve"]
         dM_dprecurve = dM["dprecurve"]
+        dMb_dprecurve = dMb["dprecurve"]
         dP_dprecurve = dP["dprecurve"]
 
         dT_dprecurve_fd = np.zeros((self.npts, self.n))
+        dY_dprecurve_fd = np.zeros((self.npts, self.n))
+        dZ_dprecurve_fd = np.zeros((self.npts, self.n))
         dQ_dprecurve_fd = np.zeros((self.npts, self.n))
         dM_dprecurve_fd = np.zeros((self.npts, self.n))
+        dMb_dprecurve_fd = np.zeros((self.npts, self.n))
         dP_dprecurve_fd = np.zeros((self.npts, self.n))
         for i in range(self.n):
             pc = np.array(precurve)
@@ -6181,17 +7222,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
             Pd = outputs["P"]
             Td = outputs["T"]
+            Yd = outputs["Y"]
+            Zd = outputs["Z"]
             Qd = outputs["Q"]
             Md = outputs["M"]
+            Mbd = outputs["Mb"]
 
             dT_dprecurve_fd[:, i] = (Td - T) / delta
+            dY_dprecurve_fd[:, i] = (Yd - Y) / delta
+            dZ_dprecurve_fd[:, i] = (Zd - Z) / delta
             dQ_dprecurve_fd[:, i] = (Qd - Q) / delta
             dM_dprecurve_fd[:, i] = (Md - M) / delta
+            dMb_dprecurve_fd[:, i] = (Mbd - Mb) / delta
             dP_dprecurve_fd[:, i] = (Pd - P) / delta
 
         np.testing.assert_allclose(dT_dprecurve_fd, dT_dprecurve, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dY_dprecurve_fd, dY_dprecurve, rtol=3e-3, atol=1e-8)
+        np.testing.assert_allclose(dZ_dprecurve_fd, dZ_dprecurve, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dQ_dprecurve_fd, dQ_dprecurve, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dM_dprecurve_fd, dM_dprecurve, rtol=8e-4, atol=1e-8)
+        np.testing.assert_allclose(dMb_dprecurve_fd, dMb_dprecurve, rtol=8e-4, atol=1e-8)
         np.testing.assert_allclose(dP_dprecurve_fd, dP_dprecurve, rtol=3e-4, atol=1e-8)
 
     def test_dprecurve3(self):
@@ -6224,21 +7274,33 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CP = outputs["CP"]
         CT = outputs["CT"]
+        CY = outputs["CY"]
+        CZ = outputs["CZ"]
         CQ = outputs["CQ"]
         CM = outputs["CM"]
+        CMb = outputs["CMb"]
         dCP = derivs["dCP"]
         dCT = derivs["dCT"]
+        dCY = derivs["dCY"]
+        dCZ = derivs["dCZ"]
         dCQ = derivs["dCQ"]
         dCM = derivs["dCM"]
+        dCMb = derivs["dCMb"]
 
         dCT_dprecurve = dCT["dprecurve"]
+        dCY_dprecurve = dCY["dprecurve"]
+        dCZ_dprecurve = dCZ["dprecurve"]
         dCQ_dprecurve = dCQ["dprecurve"]
         dCM_dprecurve = dCM["dprecurve"]
+        dCMb_dprecurve = dCMb["dprecurve"]
         dCP_dprecurve = dCP["dprecurve"]
 
         dCT_dprecurve_fd = np.zeros((self.npts, self.n))
+        dCY_dprecurve_fd = np.zeros((self.npts, self.n))
+        dCZ_dprecurve_fd = np.zeros((self.npts, self.n))
         dCQ_dprecurve_fd = np.zeros((self.npts, self.n))
         dCM_dprecurve_fd = np.zeros((self.npts, self.n))
+        dCMb_dprecurve_fd = np.zeros((self.npts, self.n))
         dCP_dprecurve_fd = np.zeros((self.npts, self.n))
         for i in range(self.n):
             pc = np.array(precurve)
@@ -6269,17 +7331,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
             CPd = outputs["CP"]
             CTd = outputs["CT"]
+            CYd = outputs["CY"]
+            CZd = outputs["CZ"]
             CQd = outputs["CQ"]
             CMd = outputs["CM"]
+            CMbd = outputs["CMb"]
 
             dCT_dprecurve_fd[:, i] = (CTd - CT) / delta
+            dCY_dprecurve_fd[:, i] = (CYd - CY) / delta
+            dCZ_dprecurve_fd[:, i] = (CZd - CZ) / delta
             dCQ_dprecurve_fd[:, i] = (CQd - CQ) / delta
             dCM_dprecurve_fd[:, i] = (CMd - CM) / delta
+            dCMb_dprecurve_fd[:, i] = (CMbd - CMb) / delta
             dCP_dprecurve_fd[:, i] = (CPd - CP) / delta
 
         np.testing.assert_allclose(dCT_dprecurve_fd, dCT_dprecurve, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dCY_dprecurve_fd, dCY_dprecurve, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dprecurve_fd, dCZ_dprecurve, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCQ_dprecurve_fd, dCQ_dprecurve, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCM_dprecurve_fd, dCM_dprecurve, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dprecurve_fd, dCMb_dprecurve, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCP_dprecurve_fd, dCP_dprecurve, rtol=3e-4, atol=1e-8)
 
     def test_dpresweep1(self):
@@ -6387,21 +7458,33 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         P = outputs["P"]
         T = outputs["T"]
+        Y = outputs["Y"]
+        Z = outputs["Z"]
         Q = outputs["Q"]
         M = outputs["M"]
+        Mb = outputs["Mb"]
         dP = derivs["dP"]
         dT = derivs["dT"]
+        dY = derivs["dY"]
+        dZ = derivs["dZ"]
         dQ = derivs["dQ"]
         dM = derivs["dM"]
+        dMb = derivs["dMb"]
 
         dT_dpresweep = dT["dpresweep"]
+        dY_dpresweep = dY["dpresweep"]
+        dZ_dpresweep = dZ["dpresweep"]
         dQ_dpresweep = dQ["dpresweep"]
         dM_dpresweep = dM["dpresweep"]
+        dMb_dpresweep = dMb["dpresweep"]
         dP_dpresweep = dP["dpresweep"]
 
         dT_dpresweep_fd = np.zeros((self.npts, self.n))
+        dY_dpresweep_fd = np.zeros((self.npts, self.n))
+        dZ_dpresweep_fd = np.zeros((self.npts, self.n))
         dQ_dpresweep_fd = np.zeros((self.npts, self.n))
         dM_dpresweep_fd = np.zeros((self.npts, self.n))
+        dMb_dpresweep_fd = np.zeros((self.npts, self.n))
         dP_dpresweep_fd = np.zeros((self.npts, self.n))
         for i in range(self.n):
             ps = np.array(presweep)
@@ -6432,17 +7515,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
             Pd = outputs["P"]
             Td = outputs["T"]
+            Yd = outputs["Y"]
+            Zd = outputs["Z"]
             Qd = outputs["Q"]
             Md = outputs["M"]
+            Mbd = outputs["Mb"]
 
             dT_dpresweep_fd[:, i] = (Td - T) / delta
+            dY_dpresweep_fd[:, i] = (Yd - Y) / delta
+            dZ_dpresweep_fd[:, i] = (Zd - Z) / delta
             dQ_dpresweep_fd[:, i] = (Qd - Q) / delta
             dM_dpresweep_fd[:, i] = (Md - M) / delta
+            dMb_dpresweep_fd[:, i] = (Mbd - Mb) / delta
             dP_dpresweep_fd[:, i] = (Pd - P) / delta
 
         np.testing.assert_allclose(dT_dpresweep_fd, dT_dpresweep, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dY_dpresweep_fd, dY_dpresweep, rtol=4e-3, atol=1e-8)
+        np.testing.assert_allclose(dZ_dpresweep_fd, dZ_dpresweep, rtol=4e-3, atol=1e-8)
         np.testing.assert_allclose(dQ_dpresweep_fd, dQ_dpresweep, rtol=3e-4, atol=1e-8)
-        np.testing.assert_allclose(dM_dpresweep_fd, dM_dpresweep, rtol=4e-4, atol=1e-8)
+        np.testing.assert_allclose(dM_dpresweep_fd, dM_dpresweep, rtol=6e-4, atol=1e-8)
+        np.testing.assert_allclose(dMb_dpresweep_fd, dMb_dpresweep, rtol=4e-4, atol=1e-8)
         np.testing.assert_allclose(dP_dpresweep_fd, dP_dpresweep, rtol=3e-4, atol=1e-8)
 
     def test_dpresweep3(self):
@@ -6475,21 +7567,33 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CP = outputs["CP"]
         CT = outputs["CT"]
+        CY = outputs["CY"]
+        CZ = outputs["CZ"]
         CQ = outputs["CQ"]
         CM = outputs["CM"]
+        CMb = outputs["CMb"]
         dCP = derivs["dCP"]
         dCT = derivs["dCT"]
+        dCY = derivs["dCY"]
+        dCZ = derivs["dCZ"]
         dCQ = derivs["dCQ"]
         dCM = derivs["dCM"]
+        dCMb = derivs["dCMb"]
 
         dCT_dpresweep = dCT["dpresweep"]
+        dCY_dpresweep = dCY["dpresweep"]
+        dCZ_dpresweep = dCZ["dpresweep"]
         dCQ_dpresweep = dCQ["dpresweep"]
         dCM_dpresweep = dCM["dpresweep"]
+        dCMb_dpresweep = dCMb["dpresweep"]
         dCP_dpresweep = dCP["dpresweep"]
 
         dCT_dpresweep_fd = np.zeros((self.npts, self.n))
+        dCY_dpresweep_fd = np.zeros((self.npts, self.n))
+        dCZ_dpresweep_fd = np.zeros((self.npts, self.n))
         dCQ_dpresweep_fd = np.zeros((self.npts, self.n))
         dCM_dpresweep_fd = np.zeros((self.npts, self.n))
+        dCMb_dpresweep_fd = np.zeros((self.npts, self.n))
         dCP_dpresweep_fd = np.zeros((self.npts, self.n))
         for i in range(self.n):
             ps = np.array(presweep)
@@ -6520,17 +7624,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
             outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
             CPd = outputs["CP"]
             CTd = outputs["CT"]
+            CYd = outputs["CY"]
+            CZd = outputs["CZ"]
             CQd = outputs["CQ"]
             CMd = outputs["CM"]
+            CMbd = outputs["CMb"]
 
             dCT_dpresweep_fd[:, i] = (CTd - CT) / delta
+            dCY_dpresweep_fd[:, i] = (CYd - CY) / delta
+            dCZ_dpresweep_fd[:, i] = (CZd - CZ) / delta
             dCQ_dpresweep_fd[:, i] = (CQd - CQ) / delta
             dCM_dpresweep_fd[:, i] = (CMd - CM) / delta
+            dCMb_dpresweep_fd[:, i] = (CMbd - CMb) / delta
             dCP_dpresweep_fd[:, i] = (CPd - CP) / delta
 
         np.testing.assert_allclose(dCT_dpresweep_fd, dCT_dpresweep, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dCY_dpresweep_fd, dCY_dpresweep, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dpresweep_fd, dCZ_dpresweep, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCQ_dpresweep_fd, dCQ_dpresweep, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCM_dpresweep_fd, dCM_dpresweep, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dpresweep_fd, dCMb_dpresweep, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dCP_dpresweep_fd, dCP_dpresweep, rtol=3e-4, atol=1e-8)
 
     def test_dprecurveTip1(self):
@@ -6629,21 +7742,33 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         P = outputs["P"]
         T = outputs["T"]
+        Y = outputs["Y"]
+        Z = outputs["Z"]
         Q = outputs["Q"]
         M = outputs["M"]
+        Mb = outputs["Mb"]
         dP = derivs["dP"]
         dT = derivs["dT"]
+        dY = derivs["dY"]
+        dZ = derivs["dZ"]
         dQ = derivs["dQ"]
         dM = derivs["dM"]
+        dMb = derivs["dMb"]
 
         dT_dprecurveTip = dT["dprecurveTip"]
+        dY_dprecurveTip = dY["dprecurveTip"]
+        dZ_dprecurveTip = dZ["dprecurveTip"]
         dQ_dprecurveTip = dQ["dprecurveTip"]
         dM_dprecurveTip = dM["dprecurveTip"]
+        dMb_dprecurveTip = dMb["dprecurveTip"]
         dP_dprecurveTip = dP["dprecurveTip"]
 
         dT_dprecurveTip_fd = np.zeros((self.npts, 1))
+        dY_dprecurveTip_fd = np.zeros((self.npts, 1))
+        dZ_dprecurveTip_fd = np.zeros((self.npts, 1))
         dQ_dprecurveTip_fd = np.zeros((self.npts, 1))
         dM_dprecurveTip_fd = np.zeros((self.npts, 1))
+        dMb_dprecurveTip_fd = np.zeros((self.npts, 1))
         dP_dprecurveTip_fd = np.zeros((self.npts, 1))
 
         pct = float(precurveTip)
@@ -6674,16 +7799,25 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dprecurveTip_fd[:, 0] = (Td - T) / delta
+        dY_dprecurveTip_fd[:, 0] = (Yd - Y) / delta
+        dZ_dprecurveTip_fd[:, 0] = (Zd - Z) / delta
         dQ_dprecurveTip_fd[:, 0] = (Qd - Q) / delta
         dM_dprecurveTip_fd[:, 0] = (Md - M) / delta
+        dMb_dprecurveTip_fd[:, 0] = (Mbd - Mb) / delta
         dP_dprecurveTip_fd[:, 0] = (Pd - P) / delta
         np.testing.assert_allclose(dT_dprecurveTip_fd, dT_dprecurveTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dY_dprecurveTip_fd, dY_dprecurveTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dZ_dprecurveTip_fd, dZ_dprecurveTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dQ_dprecurveTip_fd, dQ_dprecurveTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dM_dprecurveTip_fd, dM_dprecurveTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dMb_dprecurveTip_fd, dMb_dprecurveTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dP_dprecurveTip_fd, dP_dprecurveTip, rtol=1e-4, atol=1e-8)
 
     def test_dprecurveTip3(self):
@@ -6715,21 +7849,33 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CP = outputs["CP"]
         CT = outputs["CT"]
+        CY = outputs["CY"]
+        CZ = outputs["CZ"]
         CQ = outputs["CQ"]
         CM = outputs["CM"]
+        CMb = outputs["CMb"]
         dCP = derivs["dCP"]
         dCT = derivs["dCT"]
+        dCY = derivs["dCY"]
+        dCZ = derivs["dCZ"]
         dCQ = derivs["dCQ"]
         dCM = derivs["dCM"]
+        dCMb = derivs["dCMb"]
 
         dCT_dprecurveTip = dCT["dprecurveTip"]
+        dCY_dprecurveTip = dCY["dprecurveTip"]
+        dCZ_dprecurveTip = dCZ["dprecurveTip"]
         dCQ_dprecurveTip = dCQ["dprecurveTip"]
         dCM_dprecurveTip = dCM["dprecurveTip"]
+        dCMb_dprecurveTip = dCMb["dprecurveTip"]
         dCP_dprecurveTip = dCP["dprecurveTip"]
 
         dCT_dprecurveTip_fd = np.zeros((self.npts, 1))
+        dCY_dprecurveTip_fd = np.zeros((self.npts, 1))
+        dCZ_dprecurveTip_fd = np.zeros((self.npts, 1))
         dCQ_dprecurveTip_fd = np.zeros((self.npts, 1))
         dCM_dprecurveTip_fd = np.zeros((self.npts, 1))
+        dCMb_dprecurveTip_fd = np.zeros((self.npts, 1))
         dCP_dprecurveTip_fd = np.zeros((self.npts, 1))
 
         pct = float(precurveTip)
@@ -6760,17 +7906,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dprecurveTip_fd[:, 0] = (CTd - CT) / delta
+        dCY_dprecurveTip_fd[:, 0] = (CYd - CY) / delta
+        dCZ_dprecurveTip_fd[:, 0] = (CZd - CZ) / delta
         dCQ_dprecurveTip_fd[:, 0] = (CQd - CQ) / delta
         dCM_dprecurveTip_fd[:, 0] = (CMd - CM) / delta
+        dCMb_dprecurveTip_fd[:, 0] = (CMbd - CMb) / delta
         dCP_dprecurveTip_fd[:, 0] = (CPd - CP) / delta
 
         np.testing.assert_allclose(dCT_dprecurveTip_fd, dCT_dprecurveTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dCY_dprecurveTip_fd, dCY_dprecurveTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dprecurveTip_fd, dCZ_dprecurveTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dCQ_dprecurveTip_fd, dCQ_dprecurveTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dCM_dprecurveTip_fd, dCM_dprecurveTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dprecurveTip_fd, dCMb_dprecurveTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dCP_dprecurveTip_fd, dCP_dprecurveTip, rtol=1e-4, atol=1e-8)
 
     def test_dpresweepTip1(self):
@@ -6869,21 +8024,33 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         P = outputs["P"]
         T = outputs["T"]
+        Y = outputs["Y"]
+        Z = outputs["Z"]
         Q = outputs["Q"]
         M = outputs["M"]
+        Mb = outputs["Mb"]
         dP = derivs["dP"]
         dT = derivs["dT"]
+        dY = derivs["dY"]
+        dZ = derivs["dZ"]
         dQ = derivs["dQ"]
         dM = derivs["dM"]
+        dMb = derivs["dMb"]
 
         dT_dpresweepTip = dT["dpresweepTip"]
+        dY_dpresweepTip = dY["dpresweepTip"]
+        dZ_dpresweepTip = dZ["dpresweepTip"]
         dQ_dpresweepTip = dQ["dpresweepTip"]
         dM_dpresweepTip = dM["dpresweepTip"]
+        dMb_dpresweepTip = dMb["dpresweepTip"]
         dP_dpresweepTip = dP["dpresweepTip"]
 
         dT_dpresweepTip_fd = np.zeros((self.npts, 1))
+        dY_dpresweepTip_fd = np.zeros((self.npts, 1))
+        dZ_dpresweepTip_fd = np.zeros((self.npts, 1))
         dQ_dpresweepTip_fd = np.zeros((self.npts, 1))
         dM_dpresweepTip_fd = np.zeros((self.npts, 1))
+        dMb_dpresweepTip_fd = np.zeros((self.npts, 1))
         dP_dpresweepTip_fd = np.zeros((self.npts, 1))
 
         pst = float(presweepTip)
@@ -6914,17 +8081,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=False)
         Pd = outputs["P"]
         Td = outputs["T"]
+        Yd = outputs["Y"]
+        Zd = outputs["Z"]
         Qd = outputs["Q"]
         Md = outputs["M"]
+        Mbd = outputs["Mb"]
 
         dT_dpresweepTip_fd[:, 0] = (Td - T) / delta
+        dY_dpresweepTip_fd[:, 0] = (Yd - Y) / delta
+        dZ_dpresweepTip_fd[:, 0] = (Zd - Z) / delta
         dQ_dpresweepTip_fd[:, 0] = (Qd - Q) / delta
         dM_dpresweepTip_fd[:, 0] = (Md - M) / delta
+        dMb_dpresweepTip_fd[:, 0] = (Mbd - Mb) / delta
         dP_dpresweepTip_fd[:, 0] = (Pd - P) / delta
 
         np.testing.assert_allclose(dT_dpresweepTip_fd, dT_dpresweepTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dY_dpresweepTip_fd, dY_dpresweepTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dZ_dpresweepTip_fd, dZ_dpresweepTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dQ_dpresweepTip_fd, dQ_dpresweepTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dM_dpresweepTip_fd, dM_dpresweepTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dMb_dpresweepTip_fd, dMb_dpresweepTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dP_dpresweepTip_fd, dP_dpresweepTip, rtol=1e-4, atol=1e-8)
 
     def test_dpresweepTip3(self):
@@ -6956,21 +8132,33 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, derivs = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CP = outputs["CP"]
         CT = outputs["CT"]
+        CY = outputs["CY"]
+        CZ = outputs["CZ"]
         CQ = outputs["CQ"]
         CM = outputs["CM"]
+        CMb = outputs["CMb"]
         dCP = derivs["dCP"]
         dCT = derivs["dCT"]
+        dCY = derivs["dCY"]
+        dCZ = derivs["dCZ"]
         dCQ = derivs["dCQ"]
         dCM = derivs["dCM"]
+        dCMb = derivs["dCMb"]
 
         dCT_dpresweepTip = dCT["dpresweepTip"]
+        dCY_dpresweepTip = dCY["dpresweepTip"]
+        dCZ_dpresweepTip = dCZ["dpresweepTip"]
         dCQ_dpresweepTip = dCQ["dpresweepTip"]
         dCM_dpresweepTip = dCM["dpresweepTip"]
+        dCMb_dpresweepTip = dCMb["dpresweepTip"]
         dCP_dpresweepTip = dCP["dpresweepTip"]
 
         dCT_dpresweepTip_fd = np.zeros((self.npts, 1))
+        dCY_dpresweepTip_fd = np.zeros((self.npts, 1))
+        dCZ_dpresweepTip_fd = np.zeros((self.npts, 1))
         dCQ_dpresweepTip_fd = np.zeros((self.npts, 1))
         dCM_dpresweepTip_fd = np.zeros((self.npts, 1))
+        dCMb_dpresweepTip_fd = np.zeros((self.npts, 1))
         dCP_dpresweepTip_fd = np.zeros((self.npts, 1))
 
         pst = float(presweepTip)
@@ -7001,17 +8189,26 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         outputs, _ = rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
         CPd = outputs["CP"]
         CTd = outputs["CT"]
+        CYd = outputs["CY"]
+        CZd = outputs["CZ"]
         CQd = outputs["CQ"]
         CMd = outputs["CM"]
+        CMbd = outputs["CMb"]
 
         dCT_dpresweepTip_fd[:, 0] = (CTd - CT) / delta
+        dCY_dpresweepTip_fd[:, 0] = (CYd - CY) / delta
+        dCZ_dpresweepTip_fd[:, 0] = (CZd - CZ) / delta
         dCQ_dpresweepTip_fd[:, 0] = (CQd - CQ) / delta
         dCM_dpresweepTip_fd[:, 0] = (CMd - CM) / delta
+        dCMb_dpresweepTip_fd[:, 0] = (CMbd - CMb) / delta
         dCP_dpresweepTip_fd[:, 0] = (CPd - CP) / delta
 
         np.testing.assert_allclose(dCT_dpresweepTip_fd, dCT_dpresweepTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dCY_dpresweepTip_fd, dCY_dpresweepTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dCZ_dpresweepTip_fd, dCZ_dpresweepTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dCQ_dpresweepTip_fd, dCQ_dpresweepTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dCM_dpresweepTip_fd, dCM_dpresweepTip, rtol=1e-4, atol=1e-8)
+        np.testing.assert_allclose(dCMb_dpresweepTip_fd, dCMb_dpresweepTip, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dCP_dpresweepTip_fd, dCP_dpresweepTip, rtol=1e-4, atol=1e-8)
 
 

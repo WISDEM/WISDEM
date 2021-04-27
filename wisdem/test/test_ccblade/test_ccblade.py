@@ -270,7 +270,7 @@ class TestNREL5MW(unittest.TestCase):
         Tref -= m_rotor * g * math.sin(tilt)  # remove weight of rotor that is included in reported results
 
         outputs, derivs = self.rotor.evaluate(Uinf, Omega, pitch)
-        P, T, Q, M = [outputs[key] for key in ("P", "T", "Q", "M")]
+        P, T, Q = [outputs[key] for key in ("P", "T", "Q")]
 
         # import matplotlib.pyplot as plt
         # plt.plot(Uinf, P/1e6)

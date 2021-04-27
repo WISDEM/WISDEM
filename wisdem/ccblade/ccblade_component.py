@@ -679,7 +679,7 @@ class CCBladeTwist(ExplicitComponent):
         Omega = inputs["Uhub"] * inputs["tsr"] / inputs["Rtip"] * 30.0 / np.pi
 
         myout, derivs = get_cp_cm.evaluate([inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=True)
-        _, _, _, _, CP, CT, CQ, CM = [myout[key] for key in ["P", "T", "Q", "M", "CP", "CT", "CQ", "CM"]]
+        CP, CT, CY, CZ, CQ, CM, CMb = [myout[key] for key in ["CP", "CT", "CY", "CZ", "CQ", "CM", "CMb"]]
 
         # if self.options['opt_options']['design_variables']['blade']['aero_shape']['twist']['flag']:
         get_cp_cm.induction = False
@@ -691,7 +691,7 @@ class CCBladeTwist(ExplicitComponent):
         # Return twist angle
         outputs["theta"] = twist
         outputs["CP"] = CP[0]
-        outputs["CM"] = CM[0]
+        outputs["CM"] = CMb[0]
         outputs["a"] = loads["a"]
         outputs["ap"] = loads["ap"]
         outputs["alpha"] = loads["alpha"]
@@ -962,10 +962,10 @@ class AeroHubLoads(ExplicitComponent):
             Tp = loads["Tp"]
 
             # Integrate blade loads along span
-            Tsub, Qsub, Msub, Vsub, Ssub = _bem.thrusttorque(Np, Tp, *args)
+            Tsub, Ysub, Zsub, Qsub, Msub = _bem.thrusttorque(Np, Tp, *args)
 
             # Rotate forces and moments from azimuth c.s. to hub c.s. 
-            myF = DirectionVector.fromArray([Tsub, Ssub, Vsub]).azimuthToHub(
+            myF = DirectionVector.fromArray([Tsub, Ysub, Zsub]).azimuthToHub(
                 azimuth_blades[i_blade]
             )
             myM = DirectionVector.fromArray([Qsub, Msub, 0.]).azimuthToHub(
@@ -979,6 +979,7 @@ class AeroHubLoads(ExplicitComponent):
         outputs["Fxyz_hub_aero"] = np.sum(F_blade_hub_cs, axis=0)
         outputs["Mxyz_hub_aero"] = np.sum(M_blade_hub_cs, axis=0)
 
+    '''
     def compute_partials(self, inputs, J, discrete_inputs):
         r = inputs["r"]
         chord = inputs["chord"]
@@ -1070,7 +1071,8 @@ class AeroHubLoads(ExplicitComponent):
             dTp = derivs["dTp"]
             
             # We need more outputs, Tapenade on _bem.thrusttorque needed
-            dT_ds_sub, dQ_ds_sub, dM_ds_sub, dT_dv_sub, dQ_dv_sub, dM_dv_sub = self.__thrustTorqueDeriv(
+            (dT_ds_sub, dY_ds_sub, dZ_ds_sub, dQ_ds_sub, dM_ds_sub,
+             dT_dv_sub, dY_dv_sub, dZ_dv_sub, dQ_dv_sub, dM_dv_sub) = self.__thrustTorqueDeriv(
                 Np, Tp, self._dNp_dX, self._dTp_dX, self._dNp_dprecurve, self._dTp_dprecurve, *args
             )
 
@@ -1088,6 +1090,7 @@ class AeroHubLoads(ExplicitComponent):
         # # Vector sum of the contributions from the three blades
         # outputs["Fxyz_hub_aero"] = np.sum(F_blade_hub_cs, axis=0)
         # outputs["Mxyz_hub_aero"] = np.sum(M_blade_hub_cs, axis=0)
+    '''
 
 
 
@@ -1150,13 +1153,19 @@ class CCBladeEvaluate(ExplicitComponent):
         # outputs
         self.add_output("P", val=0.0, units="W")
         self.add_output("T", val=0.0, units="N")
+        self.add_output("Y", val=0.0, units="N")
+        self.add_output("Z", val=0.0, units="N")
         self.add_output("Q", val=0.0, units="N/m")
         self.add_output("M", val=0.0, units="N/m")
+        self.add_output("Mb", val=0.0, units="N/m")
 
         self.add_output("CP", val=0.0)
         self.add_output("CT", val=0.0)
+        self.add_output("CY", val=0.0)
+        self.add_output("CZ", val=0.0)
         self.add_output("CQ", val=0.0)
         self.add_output("CM", val=0.0)
+        self.add_output("CMb", val=0.0)
 
         self.declare_partials("*", "*")
         self.declare_partials("*", "airfoils*", dependent=False)
@@ -1228,14 +1237,20 @@ class CCBladeEvaluate(ExplicitComponent):
         loads, _ = ccblade.evaluate(V_load, Omega_load, pitch_load)
         outputs["P"] = loads["P"]
         outputs["T"] = loads["T"]
+        outputs["Y"] = loads["Y"]
+        outputs["Z"] = loads["Z"]
         outputs["Q"] = loads["Q"]
         outputs["M"] = loads["M"]
+        outputs["Mb"] = loads["Mb"]
 
         loads, _ = ccblade.evaluate(V_load, Omega_load, pitch_load, coefficients=True)
         outputs["CP"] = loads["CP"]
         outputs["CT"] = loads["CT"]
+        outputs["CY"] = loads["CY"]
+        outputs["CZ"] = loads["CZ"]
         outputs["CQ"] = loads["CQ"]
         outputs["CM"] = loads["CM"]
+        outputs["CMb"] = loads["CMb"]
 
     def compute_partials(self, inputs, J, discrete_inputs):
         r = inputs["r"]
@@ -1337,6 +1352,40 @@ class CCBladeEvaluate(ExplicitComponent):
         J["T", "precurve"] = dT["dprecurve"]
         J["T", "precurveTip"] = dT["dprecurveTip"]
 
+        dY = derivs["dY"]
+        J["Y", "r"] = dY["dr"]
+        J["Y", "chord"] = dY["dchord"]
+        J["Y", "theta"] = dY["dtheta"]
+        J["Y", "Rhub"] = np.squeeze(dY["dRhub"])
+        J["Y", "Rtip"] = np.squeeze(dY["dRtip"])
+        J["Y", "hub_height"] = np.squeeze(dY["dhubHt"])
+        J["Y", "precone"] = np.squeeze(dY["dprecone"])
+        J["Y", "tilt"] = np.squeeze(dY["dtilt"])
+        J["Y", "yaw"] = np.squeeze(dY["dyaw"])
+        J["Y", "shearExp"] = np.squeeze(dY["dshear"])
+        J["Y", "V_load"] = np.squeeze(dY["dUinf"])
+        J["Y", "Omega_load"] = np.squeeze(dY["dOmega"])
+        J["Y", "pitch_load"] = np.squeeze(dY["dpitch"])
+        J["Y", "precurve"] = dY["dprecurve"]
+        J["Y", "precurveTip"] = dY["dprecurveTip"]
+
+        dZ = derivs["dZ"]
+        J["Z", "r"] = dZ["dr"]
+        J["Z", "chord"] = dZ["dchord"]
+        J["Z", "theta"] = dZ["dtheta"]
+        J["Z", "Rhub"] = np.squeeze(dZ["dRhub"])
+        J["Z", "Rtip"] = np.squeeze(dZ["dRtip"])
+        J["Z", "hub_height"] = np.squeeze(dZ["dhubHt"])
+        J["Z", "precone"] = np.squeeze(dZ["dprecone"])
+        J["Z", "tilt"] = np.squeeze(dZ["dtilt"])
+        J["Z", "yaw"] = np.squeeze(dZ["dyaw"])
+        J["Z", "shearExp"] = np.squeeze(dZ["dshear"])
+        J["Z", "V_load"] = np.squeeze(dZ["dUinf"])
+        J["Z", "Omega_load"] = np.squeeze(dZ["dOmega"])
+        J["Z", "pitch_load"] = np.squeeze(dZ["dpitch"])
+        J["Z", "precurve"] = dZ["dprecurve"]
+        J["Z", "precurveTip"] = dZ["dprecurveTip"]
+
         dQ = derivs["dQ"]
         J["Q", "r"] = dQ["dr"]
         J["Q", "chord"] = dQ["dchord"]
@@ -1370,6 +1419,23 @@ class CCBladeEvaluate(ExplicitComponent):
         J["M", "pitch_load"] = np.squeeze(dM["dpitch"])
         J["M", "precurve"] = dM["dprecurve"]
         J["M", "precurveTip"] = dM["dprecurveTip"]
+
+        dMb = derivs["dMb"]
+        J["Mb", "r"] = dMb["dr"]
+        J["Mb", "chord"] = dMb["dchord"]
+        J["Mb", "theta"] = dMb["dtheta"]
+        J["Mb", "Rhub"] = np.squeeze(dMb["dRhub"])
+        J["Mb", "Rtip"] = np.squeeze(dMb["dRtip"])
+        J["Mb", "hub_height"] = np.squeeze(dMb["dhubHt"])
+        J["Mb", "precone"] = np.squeeze(dMb["dprecone"])
+        J["Mb", "tilt"] = np.squeeze(dMb["dtilt"])
+        J["Mb", "yaw"] = np.squeeze(dMb["dyaw"])
+        J["Mb", "shearExp"] = np.squeeze(dMb["dshear"])
+        J["Mb", "V_load"] = np.squeeze(dMb["dUinf"])
+        J["Mb", "Omega_load"] = np.squeeze(dMb["dOmega"])
+        J["Mb", "pitch_load"] = np.squeeze(dMb["dpitch"])
+        J["Mb", "precurve"] = dMb["dprecurve"]
+        J["Mb", "precurveTip"] = dMb["dprecurveTip"]
 
         loads, derivs = ccblade.evaluate(V_load, Omega_load, pitch_load, coefficients=True)
 
@@ -1407,6 +1473,40 @@ class CCBladeEvaluate(ExplicitComponent):
         J["CT", "precurve"] = dCT["dprecurve"]
         J["CT", "precurveTip"] = dCT["dprecurveTip"]
 
+        dCY = derivs["dCY"]
+        J["CY", "r"] = dCY["dr"]
+        J["CY", "chord"] = dCY["dchord"]
+        J["CY", "theta"] = dCY["dtheta"]
+        J["CY", "Rhub"] = np.squeeze(dCY["dRhub"])
+        J["CY", "Rtip"] = np.squeeze(dCY["dRtip"])
+        J["CY", "hub_height"] = np.squeeze(dCY["dhubHt"])
+        J["CY", "precone"] = np.squeeze(dCY["dprecone"])
+        J["CY", "tilt"] = np.squeeze(dCY["dtilt"])
+        J["CY", "yaw"] = np.squeeze(dCY["dyaw"])
+        J["CY", "shearExp"] = np.squeeze(dCY["dshear"])
+        J["CY", "V_load"] = np.squeeze(dCY["dUinf"])
+        J["CY", "Omega_load"] = np.squeeze(dCY["dOmega"])
+        J["CY", "pitch_load"] = np.squeeze(dCY["dpitch"])
+        J["CY", "precurve"] = dCY["dprecurve"]
+        J["CY", "precurveTip"] = dCY["dprecurveTip"]
+
+        dCZ = derivs["dCZ"]
+        J["CZ", "r"] = dCZ["dr"]
+        J["CZ", "chord"] = dCZ["dchord"]
+        J["CZ", "theta"] = dCZ["dtheta"]
+        J["CZ", "Rhub"] = np.squeeze(dCZ["dRhub"])
+        J["CZ", "Rtip"] = np.squeeze(dCZ["dRtip"])
+        J["CZ", "hub_height"] = np.squeeze(dCZ["dhubHt"])
+        J["CZ", "precone"] = np.squeeze(dCZ["dprecone"])
+        J["CZ", "tilt"] = np.squeeze(dCZ["dtilt"])
+        J["CZ", "yaw"] = np.squeeze(dCZ["dyaw"])
+        J["CZ", "shearExp"] = np.squeeze(dCZ["dshear"])
+        J["CZ", "V_load"] = np.squeeze(dCZ["dUinf"])
+        J["CZ", "Omega_load"] = np.squeeze(dCZ["dOmega"])
+        J["CZ", "pitch_load"] = np.squeeze(dCZ["dpitch"])
+        J["CZ", "precurve"] = dCZ["dprecurve"]
+        J["CZ", "precurveTip"] = dCZ["dprecurveTip"]
+
         dCQ = derivs["dCQ"]
         J["CQ", "r"] = dCQ["dr"]
         J["CQ", "chord"] = dCQ["dchord"]
@@ -1440,3 +1540,20 @@ class CCBladeEvaluate(ExplicitComponent):
         J["CM", "pitch_load"] = np.squeeze(dCM["dpitch"])
         J["CM", "precurve"] = dCM["dprecurve"]
         J["CM", "precurveTip"] = dCM["dprecurveTip"]
+
+        dCMb = derivs["dCMb"]
+        J["CMb", "r"] = dCMb["dr"]
+        J["CMb", "chord"] = dCMb["dchord"]
+        J["CMb", "theta"] = dCMb["dtheta"]
+        J["CMb", "Rhub"] = np.squeeze(dCMb["dRhub"])
+        J["CMb", "Rtip"] = np.squeeze(dCMb["dRtip"])
+        J["CMb", "hub_height"] = np.squeeze(dCMb["dhubHt"])
+        J["CMb", "precone"] = np.squeeze(dCMb["dprecone"])
+        J["CMb", "tilt"] = np.squeeze(dCMb["dtilt"])
+        J["CMb", "yaw"] = np.squeeze(dCMb["dyaw"])
+        J["CMb", "shearExp"] = np.squeeze(dCMb["dshear"])
+        J["CMb", "V_load"] = np.squeeze(dCMb["dUinf"])
+        J["CMb", "Omega_load"] = np.squeeze(dCMb["dOmega"])
+        J["CMb", "pitch_load"] = np.squeeze(dCMb["dpitch"])
+        J["CMb", "precurve"] = dCMb["dprecurve"]
+        J["CMb", "precurveTip"] = dCMb["dprecurveTip"]
