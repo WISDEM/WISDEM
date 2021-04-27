@@ -29,7 +29,6 @@ import wisdem.ccblade._bem as _bem
 from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
 from wisdem.airfoilprep import Airfoil
-from wisdem.commonse.csystem import DirectionVector
 
 # ------------------
 #  Airfoil Class
