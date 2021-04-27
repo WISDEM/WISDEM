@@ -1256,13 +1256,13 @@ class CCBlade(object):
             dM_dv = np.zeros((npts, 5, nr))
             dMb_dv = np.zeros((npts, 5, nr))
 
-        azimuth_angles = np.linspace(0.0, 360.0, nsec+1)[:-1]
+        azimuth_angles = np.linspace(0.0, 2*np.pi, nsec+1)[:-1]
         for i in range(npts):  # iterate across conditions
 
             for azimuth in azimuth_angles:  # integrate across azimuth
 
                 # contribution from this azimuthal location
-                loads, derivs = self.distributedAeroLoads(Uinf[i], Omega[i], pitch[i], azimuth)
+                loads, derivs = self.distributedAeroLoads(Uinf[i], Omega[i], pitch[i], np.rad2deg(azimuth))
                 Np, Tp = (loads["Np"], loads["Tp"])
 
                 Tsub, Ysub, Zsub, Qsub, Msub = _bem.thrusttorque(Np, Tp, *args)
