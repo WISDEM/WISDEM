@@ -890,7 +890,7 @@ class AeroHubLoads(ExplicitComponent):
         rho = inputs["rho"]
         mu = inputs["mu"]
         shearExp = inputs["shearExp"]
-        nSector = 1
+        nSector = 6
         tiploss = discrete_inputs["tiploss"]
         hubloss = discrete_inputs["hubloss"]
         wakerotation = discrete_inputs["wakerotation"]
@@ -937,161 +937,11 @@ class AeroHubLoads(ExplicitComponent):
             derivatives=False,
         )
 
-        azimuth_blades = np.linspace(0, 360, B + 1)
-
-        # distributed loads
-        args = (
-                r,
-                precurve,
-                presweep,
-                np.deg2rad(precone),
-                Rhub,
-                Rtip,
-                precurveTip,
-                presweepTip,
-            )
-            
-        F_blade_hub_cs = np.zeros((B,3))
-        M_blade_hub_cs = np.zeros((B,3))
-        
-        for i_blade in range(B):
-
-            # Get normal and tangential loads along the blade
-            loads, _ = ccblade.distributedAeroLoads(V_load, Omega_load, pitch_load, azimuth_blades[i_blade])
-            Np = loads["Np"]
-            Tp = loads["Tp"]
-
-            # Integrate blade loads along span
-            Tsub, Ysub, Zsub, Qsub, Msub = _bem.thrusttorque(Np, Tp, *args)
-
-            # Rotate forces and moments from azimuth c.s. to hub c.s. 
-            myF = DirectionVector.fromArray([Tsub, Ysub, Zsub]).azimuthToHub(
-                azimuth_blades[i_blade]
-            )
-            myM = DirectionVector.fromArray([Qsub, Msub, 0.]).azimuthToHub(
-                azimuth_blades[i_blade]
-            )
-
-            F_blade_hub_cs[i_blade,:] = np.array([myF.x, myF.y, myF.z])
-            M_blade_hub_cs[i_blade,:] = np.array([myM.x, myM.y, myM.z])
+        loads, _ = ccblade.evaluate(V_load, Omega_load, pitch_load)
 
         # Vector sum of the contributions from the three blades
-        outputs["Fxyz_hub_aero"] = np.sum(F_blade_hub_cs, axis=0)
-        outputs["Mxyz_hub_aero"] = np.sum(M_blade_hub_cs, axis=0)
-
-    '''
-    def compute_partials(self, inputs, J, discrete_inputs):
-        r = inputs["r"]
-        chord = inputs["chord"]
-        theta = inputs["theta"]
-        Rhub = inputs["Rhub"]
-        Rtip = inputs["Rtip"]
-        hub_height = inputs["hub_height"]
-        precone = inputs["precone"]
-        tilt = inputs["tilt"]
-        yaw = inputs["yaw"]
-        precurve = inputs["precurve"]
-        presweep = inputs["presweep"]
-        precurveTip = inputs["precurveTip"]
-        presweepTip = inputs["presweepTip"]
-        B = discrete_inputs["nBlades"]
-        rho = inputs["rho"]
-        mu = inputs["mu"]
-        shearExp = inputs["shearExp"]
-        nSector = 1
-        tiploss = discrete_inputs["tiploss"]
-        hubloss = discrete_inputs["hubloss"]
-        wakerotation = discrete_inputs["wakerotation"]
-        usecd = discrete_inputs["usecd"]
-        V_load = inputs["V_load"]
-        Omega_load = inputs["Omega_load"]
-        pitch_load = inputs["pitch_load"]
-
-        if len(precurve) == 0:
-            precurve = np.zeros_like(r)
-
-        af = [None] * self.n_span
-        for i in range(self.n_span):
-            af[i] = CCAirfoil(
-                inputs["airfoils_aoa"],
-                inputs["airfoils_Re"],
-                inputs["airfoils_cl"][i, :, :, 0],
-                inputs["airfoils_cd"][i, :, :, 0],
-                inputs["airfoils_cm"][i, :, :, 0],
-            )
-
-        ccblade = CCBlade(
-            r,
-            chord,
-            theta,
-            af,
-            Rhub,
-            Rtip,
-            B,
-            rho,
-            mu,
-            precone,
-            tilt,
-            yaw,
-            shearExp,
-            hub_height,
-            nSector,
-            precurve,
-            precurveTip,
-            tiploss=tiploss,
-            hubloss=hubloss,
-            wakerotation=wakerotation,
-            usecd=usecd,
-            derivatives=False,
-        )
-
-        azimuth_blades = np.linspace(0, 360, B + 1)
-
-        # distributed loads
-        args = (
-                r,
-                precurve,
-                presweep,
-                np.deg2rad(precone),
-                Rhub,
-                Rtip,
-                precurveTip,
-                presweepTip,
-            )
-            
-        F_blade_hub_cs = np.zeros((B,3))
-        M_blade_hub_cs = np.zeros((B,3))
-        
-        for i_blade in range(B):
-
-            # Get normal and tangential loads along the blade
-            _, derivs = ccblade.distributedAeroLoads(V_load, Omega_load, pitch_load, azimuth_blades[i_blade])
-            
-            dNp = derivs["dNp"]
-            dTp = derivs["dTp"]
-            
-            # We need more outputs, Tapenade on _bem.thrusttorque needed
-            (dT_ds_sub, dY_ds_sub, dZ_ds_sub, dQ_ds_sub, dM_ds_sub,
-             dT_dv_sub, dY_dv_sub, dZ_dv_sub, dQ_dv_sub, dM_dv_sub) = self.__thrustTorqueDeriv(
-                Np, Tp, self._dNp_dX, self._dTp_dX, self._dNp_dprecurve, self._dTp_dprecurve, *args
-            )
-
-        #     # Rotate forces and moments from azimuth c.s. to hub c.s. 
-        #     myF = DirectionVector.fromArray([Tsub, Ssub, Vsub]).azimuthToHub(
-        #         azimuth_blades[i_blade]
-        #     )
-        #     myM = DirectionVector.fromArray([Qsub, Msub, 0.]).azimuthToHub(
-        #         azimuth_blades[i_blade]
-        #     )
-
-        #     F_blade_hub_cs[i_blade,:] = np.array([myF.x, myF.y, myF.z])
-        #     M_blade_hub_cs[i_blade,:] = np.array([myM.x, myM.y, myM.z])
-
-        # # Vector sum of the contributions from the three blades
-        # outputs["Fxyz_hub_aero"] = np.sum(F_blade_hub_cs, axis=0)
-        # outputs["Mxyz_hub_aero"] = np.sum(M_blade_hub_cs, axis=0)
-    '''
-
+        outputs["Fxyz_hub_aero"] = np.array([loads["T"][0], loads["Y"][0], loads["Z"][0]])
+        outputs["Mxyz_hub_aero"] = np.array([loads["Q"][0], loads["My"][0], loads["Mz"][0]])
 
 
 class CCBladeEvaluate(ExplicitComponent):
