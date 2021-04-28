@@ -262,8 +262,10 @@ class Test(unittest.TestCase):
         prob.set_val("precone", 0.1, units="deg")
         prob.set_val("tilt", 0.2, units="deg")
         prob.set_val("yaw", 0.2, units="deg")
-        prob.set_val("precurve", np.ones(n_span), units="m")
+        prob.set_val("precurve", np.linspace(0.0, 0.9, n_span), units="m")
         prob.set_val("precurveTip", 0.1, units="m")
+        prob.set_val("presweep", np.linspace(0.0, 0.4, n_span), units="m")
+        prob.set_val("presweepTip", 0.5, units="m")
 
         prob.set_val("rho", 1.225, units="kg/m**3")
         prob.set_val("mu", 1.81206e-5, units="kg/(m*s)")
@@ -288,7 +290,7 @@ class Test(unittest.TestCase):
                 if "airfoil" not in input_name and "rho" not in input_name and "mu" not in input_name:
                     new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
 
-        assert_check_partials(new_check, rtol=5e-5, atol=10.)
+        assert_check_partials(new_check, rtol=5e-4, atol=50.)
 
 
 def suite():
