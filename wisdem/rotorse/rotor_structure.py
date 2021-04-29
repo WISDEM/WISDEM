@@ -6,7 +6,7 @@ from openmdao.api import Group, ExplicitComponent
 from wisdem.rotorse import RPM2RS, RS2RPM
 from wisdem.commonse import gravity
 from wisdem.commonse.csystem import DirectionVector
-from wisdem.ccblade.ccblade_component import AeroHubLoads, CCBladeLoads
+from wisdem.ccblade.ccblade_component import CCBladeEvaluate, CCBladeLoads
 
 
 class BladeCurvature(ExplicitComponent):
@@ -1162,7 +1162,7 @@ class RotorStructure(Group):
         self.add_subsystem("frame", RunFrame3DD(modeling_options=modeling_options), promotes=promoteListFrame3DD)
         self.add_subsystem("tip_pos", TipDeflection(), promotes=["tilt", "pitch_load"])
         self.add_subsystem(
-            "aero_hub_loads", AeroHubLoads(modeling_options=modeling_options), promotes=promoteListAeroLoads
+            "aero_hub_loads", CCBladeEvaluate(modeling_options=modeling_options), promotes=promoteListAeroLoads + ["presweep","presweepTip"]
         )
         self.add_subsystem(
             "constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options), promotes=["s"]

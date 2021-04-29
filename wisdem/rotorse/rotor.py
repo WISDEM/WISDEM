@@ -101,7 +101,7 @@ class RotorSE(om.Group):
         self.add_subsystem(
             "rs",
             RotorStructure(modeling_options=modeling_options, opt_options=opt_options, freq_run=False),
-            promotes=promoteGeom + promoteCC + ["s", "precurveTip"],
+            promotes=promoteGeom + promoteCC + ["s", "precurveTip", "presweepTip"],
         )
 
         # Connection from ra to rs for the rated conditions
