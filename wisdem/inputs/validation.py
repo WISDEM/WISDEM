@@ -19,7 +19,7 @@ fschema_opt = os.path.join(os.path.dirname(os.path.realpath(__file__)), "analysi
 
 # ---------------------
 def load_yaml(fname_input):
-    with open(fname_input, "r") as f:
+    with open(fname_input, "r", encoding="utf-8") as f:
         input_yaml = ry.load(f, Loader=ry.Loader)
     return input_yaml
 
@@ -32,7 +32,7 @@ def write_yaml(instance, foutput):
     yaml.width = float("inf")
     yaml.indent(mapping=4, sequence=6, offset=3)
     yaml.allow_unicode = False
-    with open(foutput, "w") as f:
+    with open(foutput, "w", encoding="utf-8") as f:
         yaml.dump(instance, f)
 
 
