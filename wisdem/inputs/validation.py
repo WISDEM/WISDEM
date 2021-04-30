@@ -31,6 +31,7 @@ def write_yaml(instance, foutput):
     yaml.default_flow_style = None
     yaml.width = float("inf")
     yaml.indent(mapping=4, sequence=6, offset=3)
+    yaml.allow_unicode = False
     with open(foutput, "w") as f:
         yaml.dump(instance, f)
 
