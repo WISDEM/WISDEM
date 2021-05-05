@@ -145,6 +145,7 @@ class TotalLoads(ExplicitComponent):
 class RunFrame3DD(ExplicitComponent):
     def initialize(self):
         self.options.declare("modeling_options")
+        self.options.declare("pbeam", default=False)  # Recover old pbeam c.s. and accuracy
 
     def setup(self):
         rotorse_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
@@ -388,10 +389,14 @@ class RunFrame3DD(ExplicitComponent):
         rho = rhoA / A
         J = rhoJ / rho
         G = GJ / J
-
-        # Will further rotate to principle axes
-        Ix = EI11 / E
-        Iy = EI22 / E
+        if self.options["pbeam"]:
+            # Use airfoil c.s.
+            Ix = EIyy / E
+            Iy = EIxx / E
+        else:
+            # Will further rotate to principle axes
+            Ix = EI11 / E
+            Iy = EI22 / E
 
         # Have to convert nodal values to find average at center of element
         Abar, _ = util.nodal2sectional(A)
@@ -403,8 +408,12 @@ class RunFrame3DD(ExplicitComponent):
         Iybar, _ = util.nodal2sectional(Iy)
 
         # Angle of element principal axes relative to global coordinate system
-        # Global c.s. is blade, local element c.s. is airfoil (twist + principle rotation)
-        roll, _ = util.nodal2sectional(theta + alpha)
+        if self.options["pbeam"]:
+            # Work in airfoil c.s. for both global and local c.s.
+            roll = np.zeros(n - 1)
+        else:
+            # Global c.s. is blade, local element c.s. is airfoil (twist + principle rotation)
+            roll, _ = util.nodal2sectional(theta + alpha)
 
         Asx = Asy = 1e-6 * np.ones(elem.shape)  # Unused when shear=False
         elements = pyframe3dd.ElementData(elem, N1, N2, Abar, Asx, Asy, Jbar, Ixbar, Iybar, Ebar, Gbar, roll, rhobar)
@@ -412,7 +421,7 @@ class RunFrame3DD(ExplicitComponent):
 
         # ------ options ------------
         shear = False  # If not false, have to compute Asx or Asy
-        geom = True  # Must be true for spin-stiffening
+        geom = not self.options["pbeam"]  # Must be true for spin-stiffening
         dx = -1  # Don't need stress changes within element for now
         options = pyframe3dd.Options(shear, geom, dx)
         # -----------------------------------
@@ -434,13 +443,14 @@ class RunFrame3DD(ExplicitComponent):
         gx = gy = gz = 0.0
         load = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
-        # Have to further move the loads into principle directions
-        P = DirectionVector(Px_af, Py_af, Pz_af).bladeToAirfoil(alpha)
-        P1 = P.x
-        P2 = P.y
-        P3 = P.z
+        if not self.options["pbeam"]:
+            # Have to further move the loads into principle directions
+            P = DirectionVector(Px_af, Py_af, Pz_af).bladeToAirfoil(alpha)
+            Px_af = P.x
+            Py_af = P.y
+            Pz_af = P.z
 
-        Px, Py, Pz = P3, P2, P1  # switch to frame3dd local c.s.
+        Px, Py, Pz = Pz_af, Py_af, Px_af  # switch to local c.s.
         xx1 = xy1 = xz1 = np.zeros(n - 1)
         xx2 = xy2 = xz2 = L - 1e-6  # subtract small number b.c. of precision
         wx1 = Px[:-1]
@@ -502,6 +512,7 @@ class RunFrame3DD(ExplicitComponent):
 class ComputeStrains(ExplicitComponent):
     def initialize(self):
         self.options.declare("modeling_options")
+        self.options.declare("pbeam", default=False)  # Recover old pbeam c.s. and accuracy
 
     def setup(self):
         rotorse_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
@@ -622,8 +633,8 @@ class ComputeStrains(ExplicitComponent):
         yu_strain_te = inputs["yu_strain_te"]
         yl_strain_te = inputs["yl_strain_te"]
         F3 = inputs['F3']
-        M1 = inputs['M1']
-        M2 = inputs['M2']
+        M1in = inputs['M1']
+        M2in = inputs['M2']
         alpha = inputs['alpha']
         # np.savez('nrel5mw_test2.npz',EA=EA,EI11=EI11,EI22=EI22,xu_strain_spar=xu_strain_spar,xl_strain_spar=xl_strain_spar,yu_strain_spar=yu_strain_spar,yl_strain_spar=yl_strain_spar,xu_strain_te=xu_strain_te,xl_strain_te=xl_strain_te,yu_strain_te=yu_strain_te,yl_strain_te=yl_strain_te, F3=F3, M1=M1, M2=M2, alpha=alpha)
 
@@ -639,6 +650,12 @@ class ComputeStrains(ExplicitComponent):
             # use profile c.s. to use Hansen's notation
             xuu, yuu = yu, xu
             xll, yll = yl, xl
+
+            # convert to principal axes, unless already there
+            if self.options["pbeam"]:
+                M1, M2 = rotate(M2in, M1in)
+            else:
+                M1, M2 = M1in, M2in
 
             # compute strain
             x, y = rotate(xuu, yuu)
