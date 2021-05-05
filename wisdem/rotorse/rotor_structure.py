@@ -491,6 +491,8 @@ class RunFrame3DD(ExplicitComponent):
         outputs["dx"] = -displacements.dx[iCase, :]
         outputs["dy"] = displacements.dy[iCase, :]
         outputs["dz"] = -displacements.dz[iCase, :]
+        outputs["EI11"] = EI11
+        outputs["EI22"] = EI22
         outputs["M1"] = M1
         outputs["M2"] = M2
         outputs["F3"] = F3
@@ -519,7 +521,7 @@ class ComputeStrains(ExplicitComponent):
             units="N*m**2",
             desc="stiffness w.r.t principal axis 2",
         )
-        self.add_output(
+        self.add_input(
             "alpha",
             val=np.zeros(n_span),
             units="deg",
@@ -639,10 +641,10 @@ class ComputeStrains(ExplicitComponent):
 
             # compute strain
             x, y = rotate(xuu, yuu)
-            strainU = M1 / EI11 * y - M2 / EI22 * x - Fz / EA
+            strainU = M1 / EI11 * y - M2 / EI22 * x - F3 / EA
 
             x, y = rotate(xll, yll)
-            strainL = M1 / EI11 * y - M2 / EI22 * x - Fz / EA
+            strainL = M1 / EI11 * y - M2 / EI22 * x - F3 / EA
 
             return strainU, strainL
 
@@ -1282,8 +1284,8 @@ class RotorStructure(Group):
         self.connect("frame.M1", "strains.M1")
         self.connect("frame.M2", "strains.M2")
         self.connect("frame.F3", "strains.F3")
-        self.connect("frame.E11", "strains.E11")
-        self.connect("frame.E22", "strains.E22")
+        self.connect("frame.EI11", "strains.EI11")
+        self.connect("frame.EI22", "strains.EI22")
 
         # Blade distributed deflections to tip deflection
         self.connect("frame.dx", "tip_pos.dx_tip", src_indices=[-1])
