@@ -412,7 +412,7 @@ class RunFrame3DD(ExplicitComponent):
 
         # ------ options ------------
         shear = False  # If not false, have to compute Asx or Asy
-        geom = False  # Must be true for spin-stiffening
+        geom = True  # Must be true for spin-stiffening
         dx = -1  # Don't need stress changes within element for now
         options = pyframe3dd.Options(shear, geom, dx)
         # -----------------------------------
