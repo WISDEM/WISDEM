@@ -2,10 +2,10 @@ import yaml
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-
 from wisdem.moorpy.body import Body
 from wisdem.moorpy.line import Line
 from wisdem.moorpy.point import Point
+
 # import wisdem.moorpy.MoorSolve as msolve
 from wisdem.moorpy.helpers import SolveError, getH, dsolve2, printVec, rotatePosition, rotationMatrix, set_axes_equal
 from wisdem.moorpy.lineType import LineType
