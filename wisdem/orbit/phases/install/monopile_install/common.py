@@ -94,7 +94,7 @@ def upend_monopile(vessel, length, **kwargs):
     crane_rate = vessel.crane.crane_rate(**kwargs)
     upend_time = length / crane_rate
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Upend Monopile",
         upend_time,
         constraints=vessel.operational_limits,
@@ -125,7 +125,7 @@ def lower_monopile(vessel, **kwargs):
     height = (depth + 10) / rate  # Assumed 10m deck height added to site depth
     lower_time = height / rate
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Lower Monopile",
         lower_time,
         constraints=vessel.operational_limits,
@@ -159,7 +159,7 @@ def drive_monopile(vessel, **kwargs):
 
     drive_time = mono_embed_len / mono_drive_rate
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Drive Monopile",
         drive_time,
         constraints=vessel.operational_limits,
@@ -182,7 +182,7 @@ def lower_transition_piece(vessel, **kwargs):
     vessel.task representing time to "Lower Transition Piece".
     """
 
-    yield vessel.task("Lower TP", 1, constraints=vessel.operational_limits, **kwargs)
+    yield vessel.task_wrapper("Lower TP", 1, constraints=vessel.operational_limits, **kwargs)
 
 
 @process
@@ -205,7 +205,7 @@ def bolt_transition_piece(vessel, **kwargs):
     key = "tp_bolt_time"
     bolt_time = kwargs.get(key, pt[key])
 
-    yield vessel.task("Bolt TP", bolt_time, constraints=vessel.operational_limits, **kwargs)
+    yield vessel.task_wrapper("Bolt TP", bolt_time, constraints=vessel.operational_limits, **kwargs)
 
 
 @process
@@ -226,7 +226,7 @@ def pump_transition_piece_grout(vessel, **kwargs):
     key = "grout_pump_time"
     pump_time = kwargs.get(key, pt[key])
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Pump TP Grout",
         pump_time,
         constraints=vessel.operational_limits,
@@ -252,7 +252,7 @@ def cure_transition_piece_grout(vessel, **kwargs):
     key = "grout_cure_time"
     cure_time = kwargs.get(key, pt[key])
 
-    yield vessel.task("Cure TP Grout", cure_time, constraints=vessel.transit_limits, **kwargs)
+    yield vessel.task_wrapper("Cure TP Grout", cure_time, constraints=vessel.transit_limits, **kwargs)
 
 
 @process
@@ -276,7 +276,7 @@ def install_monopile(vessel, monopile, **kwargs):
     reequip_time = vessel.crane.reequip(**kwargs)
 
     yield lower_monopile(vessel, **kwargs)
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Crane Reequip",
         reequip_time,
         constraints=vessel.transit_limits,
@@ -320,7 +320,7 @@ def install_transition_piece(vessel, tp, **kwargs):
     connection = kwargs.get("tp_connection_type", "bolted")
     reequip_time = vessel.crane.reequip(**kwargs)
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Crane Reequip",
         reequip_time,
         constraints=vessel.transit_limits,

@@ -45,7 +45,7 @@ def load_cable_on_vessel(vessel, cable, constraints={}, **kwargs):
     load_time = kwargs.get(key, pt[key])
 
     vessel.cable_storage.load_cable(cable)
-    yield vessel.task("Load Cable", load_time, constraints=constraints, **kwargs)
+    yield vessel.task_wrapper("Load Cable", load_time, constraints=constraints, **kwargs)
 
 
 @process
@@ -84,7 +84,7 @@ def prep_cable(vessel, **kwargs):
     key = "cable_prep_time"
     prep_time = kwargs.get(key, pt[key])
 
-    yield vessel.task("Prepare Cable", prep_time, constraints=vessel.transit_limits, **kwargs)
+    yield vessel.task_wrapper("Prepare Cable", prep_time, constraints=vessel.transit_limits, **kwargs)
 
 
 @process
@@ -101,7 +101,7 @@ def lower_cable(vessel, **kwargs):
     key = "cable_lower_time"
     lower_time = kwargs.get(key, pt[key])
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Lower Cable",
         lower_time,
         constraints=vessel.operational_limits,
@@ -124,7 +124,7 @@ def pull_in_cable(vessel, **kwargs):
     key = "cable_pull_in_time"
     pull_in_time = kwargs.get(key, pt[key])
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Pull In Cable",
         pull_in_time,
         constraints=vessel.operational_limits,
@@ -146,7 +146,7 @@ def terminate_cable(vessel, **kwargs):
     key = "cable_termination_time"
     termination_time = kwargs.get(key, pt[key])
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Terminate Cable",
         termination_time,
         constraints=vessel.operational_limits,
@@ -175,7 +175,7 @@ def lay_bury_cable(vessel, distance, **kwargs):
     lay_bury_speed = kwargs.get(key, pt[key])
     lay_bury_time = distance / lay_bury_speed
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Lay/Bury Cable",
         lay_bury_time,
         constraints=vessel.operational_limits,
@@ -205,7 +205,7 @@ def lay_cable(vessel, distance, **kwargs):
     lay_speed = kwargs.get(key, pt[key])
     lay_time = distance / lay_speed
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Lay Cable",
         lay_time,
         constraints=vessel.operational_limits,
@@ -235,7 +235,7 @@ def bury_cable(vessel, distance, **kwargs):
     bury_speed = kwargs.get(key, pt[key])
     bury_time = distance / bury_speed
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Bury Cable",
         bury_time,
         constraints=vessel.operational_limits,
@@ -260,7 +260,7 @@ def splice_cable(vessel, **kwargs):
     key = "cable_splice_time"
     splice_time = kwargs.get(key, pt[key])
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Splice Cable",
         splice_time,
         constraints=vessel.operational_limits,
@@ -285,7 +285,7 @@ def raise_cable(vessel, **kwargs):
     key = "cable_raise_time"
     raise_time = kwargs.get(key, pt[key])
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Raise Cable",
         raise_time,
         constraints=vessel.operational_limits,
@@ -329,7 +329,7 @@ def tow_plow(vessel, distance, **kwargs):
     plow_speed = kwargs.get(key, pt[key])
     plow_time = distance / plow_speed
 
-    yield vessel.task("Tow Plow", plow_time, constraints=vessel.operational_limits, **kwargs)
+    yield vessel.task_wrapper("Tow Plow", plow_time, constraints=vessel.operational_limits, **kwargs)
 
 
 @process
@@ -352,7 +352,7 @@ def pull_winch(vessel, distance, **kwargs):
     winch_speed = kwargs.get(key, pt[key])
     winch_time = distance / winch_speed
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Pull Winch",
         winch_time,
         constraints=vessel.operational_limits,
@@ -381,7 +381,7 @@ def dig_trench(vessel, distance, **kwargs):
     trench_dig_speed = kwargs.get(key, pt[key])
     trench_dig_time = distance / trench_dig_speed
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Dig Trench",
         trench_dig_time,
         constraints=vessel.operational_limits,
