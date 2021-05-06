@@ -13,7 +13,7 @@ dependencies:
   - matplotlib
   - nlopt
   - numpy
-  - openmdao=3.8
+  - openmdao
   - openpyxl
   - pandas
   - pip
