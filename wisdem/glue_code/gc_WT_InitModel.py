@@ -1,4 +1,5 @@
 import numpy as np
+
 import wisdem.commonse.utilities as util
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 
