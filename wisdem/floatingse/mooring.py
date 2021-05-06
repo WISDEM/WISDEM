@@ -1,84 +1,9 @@
 import numpy as np
 import openmdao.api as om
-import wisdem.moorpy.MoorPy as mp
+import wisdem.moorpy as mp
 
 NLINES_MAX = 15
-NPTS_PLOT = 21
-
-
-def set_properties(Dmooring, lineTypeIn):
-    """
-    THIS IS NOT USED BUT REMAINS FOR REFERENCE
-    Sets mooring line properties: Minimum Breaking Load, Mass per Length,
-    Axial Stiffness, Cross-Sectional Area, Cost-per-Length.
-
-    INPUTS:
-    ----------
-    inputs   : dictionary of input parameters
-
-    OUTPUTS  : Parameters are class variables and are set internally
-
-    References:
-    https://daim.idi.ntnu.no/masteroppgaver/015/15116/masteroppgave.pdf
-    http://offshoremechanics.asmedigitalcollection.asme.org/article.aspx?articleid=2543338
-    https://www.orcina.com/SoftwareProducts/OrcaFlex/Documentation/Help/Content/html/
-    Chain.htm
-    Chain,AxialandBendingStiffness.htm
-    Chain,MechanicalProperties.htm
-    RopeWire.htm
-    RopeWire,MinimumBreakingLoads.htm
-    RopeWire,Massperunitlength.htm
-    RopeWire,AxialandBendingStiffness.htm
-    """
-
-    # Unpack variables
-    lineType = lineTypeIn.upper()
-
-    # Set parameters based on regressions for different mooring line type
-    Dmooring2 = Dmooring ** 2
-
-    # TODO: Costs per unit length are not synced with new input sources
-    if lineType == "CHAIN":
-        min_break_load = 2.74e7 * Dmooring2 * (44.0 - 80.0 * Dmooring)
-        # Use a linear fit to the other fit becuase it is poorly conditioned for optimization
-        # min_break_load      = 1e3*np.maximum(1.0, -5445.2957034820683+176972.68498888266*Dmooring)
-        wet_mass_per_length = 19.9e3 * Dmooring2  # From Orca, 7983.34117 OC3 definiton doc
-        axial_stiffness = 8.54e10 * Dmooring2  # From Orca, 4.74374e10 OC3 definiton doc,
-        area = 2.0 * 0.25 * np.pi * Dmooring2
-        cost_per_length = 3.415e4 * Dmooring2  # 0.58*1e-3*min_break_load/gravity - 87.6
-
-    elif lineType == "NYLON":
-        min_break_load = 139357e3 * Dmooring2
-        wet_mass_per_length = 0.6476e3 * Dmooring2
-        axial_stiffness = 1.18e8 * Dmooring2
-        area = 0.25 * np.pi * Dmooring2
-        cost_per_length = 3.415e4 * Dmooring2  # 0.42059603*1e-3*min_break_load/gravity + 109.5
-
-    elif lineType == "POLYESTER":
-        min_break_load = 170466e3 * Dmooring2
-        wet_mass_per_length = 0.7978e3 * Dmooring2
-        axial_stiffness = 1.09e9 * Dmooring2
-        area = 0.25 * np.pi * Dmooring2
-        cost_per_length = 3.415e4 * Dmooring2  # 0.42059603*1e-3*min_break_load/gravity + 109.5
-
-    elif lineType == "FIBER":  # Wire rope with fiber rope
-        min_break_load = 584175e3 * Dmooring2
-        wet_mass_per_length = 3.6109e3 * Dmooring2
-        axial_stiffness = 3.67e10 * Dmooring2
-        area = 0.455 * 0.25 * np.pi * Dmooring2
-        cost_per_length = 2.0 * 6.32e4 * Dmooring2  # 0.53676471*1e-3*min_break_load/gravity
-
-    elif lineType == "IWRC":  # Wire rope with steel core
-        min_break_load = 633358e3 * Dmooring2
-        wet_mass_per_length = 3.9897e3 * Dmooring2
-        axial_stiffness = 4.04e10 * Dmooring2
-        area = 0.455 * 0.25 * np.pi * Dmooring2
-        cost_per_length = 6.32e4 * Dmooring2  # 0.33*1e-3*min_break_load/gravity + 139.5
-
-    else:
-        raise ValueError("Available line types are: chain nylon polyester fiber iwrc")
-
-    return min_break_load, wet_mass_per_length, axial_stiffness, area, cost_per_length
+NPTS_PLOT = 101
 
 
 class Mooring(om.ExplicitComponent):
@@ -278,25 +203,25 @@ class Mooring(om.ExplicitComponent):
         # Create a MoorPy system
         ms = mp.System()
         ms.parseYAML(config)
-        ms.BodyList[0].type = -1  # need to make sure it's set to a coupled type
+        ms.bodyList[0].type = -1  # need to make sure it's set to a coupled type
         ms.initialize()
 
         # Get the stiffness matrix at neutral position
-        ms.BodyList[0].setPosition(np.zeros(6))
+        ms.bodyList[0].setPosition(np.zeros(6))
         ms.solveEquilibrium3()
         outputs["mooring_stiffness"] = ms.getCoupledStiffness(lines_only=True)
 
         # Get the vertical load in the neutral position
         F_neut = np.zeros((n_attach, 3))
         for k in range(n_attach):
-            if np.abs(ms.PointList[k].r[-1] + fairlead_depth) < 0.1:
-                F_neut[k, :] = ms.PointList[k].getForces(lines_only=True)
+            if np.abs(ms.pointList[k].r[-1] + fairlead_depth) < 0.1:
+                F_neut[k, :] = ms.pointList[k].getForces(lines_only=True)
         outputs["mooring_neutral_load"] = F_neut
 
         # Plotting data
         plotMat = np.zeros((n_lines, NPTS_PLOT, 3))
         for k in range(n_lines):
-            Xs, Ys, Zs = ms.LineList[k].GetLineCoords(0.0)
+            Xs, Ys, Zs = ms.lineList[k].getLineCoords(0.0)
             plotMat[k, :, 0] = Xs
             plotMat[k, :, 1] = Ys
             plotMat[k, :, 2] = Zs
@@ -335,7 +260,7 @@ class Mooring(om.ExplicitComponent):
             fbody = ms.mooringEq([surge, sway, 0, 0, 0, 0], DOFtype="coupled")
             Frestore[ia] = np.dot(fbody[:2], idir)
             for k in range(n_lines):
-                f = ms.LineList[0].getEndForce(endB=0)
+                f = ms.lineList[0].getEndForce(endB=0)
                 Fa[k] = np.sqrt(np.sum(f ** 2))
 
             Tmax[ia] = np.abs(Fa).max()
