@@ -5,11 +5,12 @@ __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
+from math import ceil
 from collections import Counter, namedtuple
 
 import numpy as np
 from marmot import Agent, le, process
-from marmot._exceptions import AgentNotRegistered
+from marmot._exceptions import StateExhausted, WindowNotFound, AgentNotRegistered
 from wisdem.orbit.core.components import (
     Crane,
     JackingSys,
@@ -26,7 +27,7 @@ Trip = namedtuple("Trip", "cargo_mass deck_space items")
 class Vessel(Agent):
     """Base Vessel Class"""
 
-    def __init__(self, name, config):
+    def __init__(self, name, config, avail=1):
         """
         Creates an instance of Vessel.
 
@@ -39,6 +40,7 @@ class Vessel(Agent):
         super().__init__(name)
         self.config = config
         self.extract_vessel_dayrate()
+        self.avail = avail
 
     def submit_action_log(self, action, duration, **kwargs):
         """
@@ -74,6 +76,12 @@ class Vessel(Agent):
             }
 
             self.env._submit_log(payload, level="ACTION")
+
+    @process
+    def task_wrapper(self, name, duration, constraints={}, suspendable=False, **kwargs):
+
+        duration /= self.avail
+        yield self.task(name, duration, constraints, suspendable, **kwargs)
 
     def extract_vessel_dayrate(self):
         """
@@ -281,7 +289,7 @@ class Vessel(Agent):
 
         action, time = item.release(**kwargs)
         if time > 0:
-            yield self.task(
+            yield self.task_wrapper(
                 action,
                 time,
                 constraints=self.transit_limits,
@@ -305,7 +313,7 @@ class Vessel(Agent):
         """
 
         time = self.transit_time(distance)
-        yield self.task(
+        yield self.task_wrapper(
             "Transit",
             time,
             constraints=self.transit_limits,
