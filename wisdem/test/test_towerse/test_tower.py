@@ -474,22 +474,22 @@ class TestTowerSE(unittest.TestCase):
         )
         prob.run_model()
 
-        myFz = copy.copy(prob["post.Fz"])
+        myFz = copy.copy(prob["tower.tower_Fz"])
 
         prob["rna_mass"] = 1e4
         prob.run_model()
         myFz[3:] -= 1e4 * g
-        npt.assert_almost_equal(prob["post.Fz"], myFz)
+        npt.assert_almost_equal(prob["tower.tower_Fz"], myFz)
 
         prob["transition_piece_mass"] = 1e2
         prob.run_model()
         myFz[3:6] -= 1e2 * g
-        npt.assert_almost_equal(prob["post.Fz"], myFz)
+        npt.assert_almost_equal(prob["tower.tower_Fz"], myFz)
 
         prob["gravity_foundation_mass"] = 1e3
         prob.run_model()
         # myFz[0] -= 1e3*g
-        npt.assert_almost_equal(prob["post.Fz"], myFz)
+        npt.assert_almost_equal(prob["tower.tower_Fz"], myFz)
 
     def test15MWmode_shapes(self):
         # --- geometry ----
@@ -771,25 +771,27 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob["constr_taper"], [0.8225, 0.78419453])
         npt.assert_almost_equal(prob["wind1.Uref"], [11.73732])
         npt.assert_almost_equal(prob["tower1.f1"], [0.33214436], 5)
-        npt.assert_almost_equal(prob["post1.top_deflection"], [0.6988131])
+        npt.assert_almost_equal(prob["tower1.top_deflection"], [0.6988131])
         npt.assert_almost_equal(
-            prob["post1.stress"], [0.3844339, 0.3436128, 0.2856628, 0.2421312, 0.1121663, 0.0623614]
+            prob["post1.constr_stress"], [0.3844339, 0.3436128, 0.2856628, 0.2421312, 0.1121663, 0.0623614]
         )
         npt.assert_almost_equal(
-            prob["post1.global_buckling"], [0.5170422, 0.4829785, 0.4351583, 0.4221748, 0.3168518, 0.2755187]
+            prob["post1.constr_global_buckling"], [0.5170422, 0.4829785, 0.4351583, 0.4221748, 0.3168518, 0.2755187]
         )
         npt.assert_almost_equal(
-            prob["post1.shell_buckling"], [0.2371124, 0.1861889, 0.1282914, 0.1073705, 0.0295743, 0.0130323]
+            prob["post1.constr_shell_buckling"], [0.2371124, 0.1861889, 0.1282914, 0.1073705, 0.0295743, 0.0130323]
         )
         npt.assert_almost_equal(prob["wind2.Uref"], [70.0])
         npt.assert_almost_equal(prob["tower2.f1"], [0.33218936], 5)
-        npt.assert_almost_equal(prob["post2.top_deflection"], [0.6440434])
-        npt.assert_almost_equal(prob["post2.stress"], [0.3728837, 0.3137352, 0.2421504, 0.18487, 0.0662662, 0.0471034])
+        npt.assert_almost_equal(prob["tower2.top_deflection"], [0.6440434])
         npt.assert_almost_equal(
-            prob["post2.global_buckling"], [0.5064959, 0.4570302, 0.3978452, 0.373074, 0.276448, 0.2668201]
+            prob["post2.constr_stress"], [0.3728837, 0.3137352, 0.2421504, 0.18487, 0.0662662, 0.0471034]
         )
         npt.assert_almost_equal(
-            prob["post2.shell_buckling"], [0.2258567, 0.1599288, 0.0970113, 0.0700506, 0.0156922, 0.0100741]
+            prob["post2.constr_global_buckling"], [0.5064959, 0.4570302, 0.3978452, 0.373074, 0.276448, 0.2668201]
+        )
+        npt.assert_almost_equal(
+            prob["post2.constr_shell_buckling"], [0.2258567, 0.1599288, 0.0970113, 0.0700506, 0.0156922, 0.0100741]
         )
         npt.assert_almost_equal(prob["tower1.base_F"][0], 1300347.476206353, 2)  # 1.29980269e06, 2)
         npt.assert_array_less(np.abs(prob["tower1.base_F"][1]), 1e2, 2)
@@ -815,25 +817,27 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob["constr_taper"], [0.8225, 0.78419453])
         npt.assert_almost_equal(prob["wind1.Uref"], [11.73732])
         npt.assert_almost_equal(prob["tower1.f1"], [0.33214436], 5)
-        npt.assert_almost_equal(prob["post1.top_deflection"], [0.6988131])
+        npt.assert_almost_equal(prob["tower1.top_deflection"], [0.6988131])
         npt.assert_almost_equal(
-            prob["post1.stress"], [0.3844339, 0.3436128, 0.2856628, 0.2421312, 0.1121663, 0.0623614]
+            prob["post1.constr_stress"], [0.3844339, 0.3436128, 0.2856628, 0.2421312, 0.1121663, 0.0623614]
         )
         npt.assert_almost_equal(
-            prob["post1.global_buckling"], [0.6274373, 0.5691916, 0.4884754, 0.454831, 0.2769742, 0.2022617]
+            prob["post1.constr_global_buckling"], [0.6274373, 0.5691916, 0.4884754, 0.454831, 0.2769742, 0.2022617]
         )
         npt.assert_almost_equal(
-            prob["post1.shell_buckling"], [0.0357574, 0.0318343, 0.0281723, 0.0347622, 0.0310088, 0.0276982]
+            prob["post1.constr_shell_buckling"], [0.0357574, 0.0318343, 0.0281723, 0.0347622, 0.0310088, 0.0276982]
         )
         npt.assert_almost_equal(prob["wind2.Uref"], [70.0])
         npt.assert_almost_equal(prob["tower2.f1"], [0.33218936], 5)
-        npt.assert_almost_equal(prob["post2.top_deflection"], [0.6440434])
-        npt.assert_almost_equal(prob["post2.stress"], [0.3728837, 0.3137352, 0.2421504, 0.18487, 0.0662662, 0.0471034])
+        npt.assert_almost_equal(prob["tower2.top_deflection"], [0.6440434])
         npt.assert_almost_equal(
-            prob["post2.global_buckling"], [0.616188, 0.532396, 0.4323648, 0.378272, 0.2126512, 0.1896404]
+            prob["post2.constr_stress"], [0.3728837, 0.3137352, 0.2421504, 0.18487, 0.0662662, 0.0471034]
         )
         npt.assert_almost_equal(
-            prob["post2.shell_buckling"], [0.0393843, 0.0397039, 0.0368479, 0.0463734, 0.0428983, 0.0394461]
+            prob["post2.constr_global_buckling"], [0.616188, 0.532396, 0.4323648, 0.378272, 0.2126512, 0.1896404]
+        )
+        npt.assert_almost_equal(
+            prob["post2.constr_shell_buckling"], [0.0393843, 0.0397039, 0.0368479, 0.0463734, 0.0428983, 0.0394461]
         )
         npt.assert_almost_equal(prob["tower1.base_F"][0], 1300347.476206353, 2)  # 1.29980269e06, 2)
         npt.assert_array_less(np.abs(prob["tower1.base_F"][1]), 1e2, 2)

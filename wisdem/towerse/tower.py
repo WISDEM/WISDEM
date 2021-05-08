@@ -244,7 +244,7 @@ class TowerSE(om.Group):
             self.add_subsystem(
                 "tower" + lc,
                 ts.CylinderFrame3DD(
-                    npts=nFull,
+                    nFull=nFull,
                     nK=4 if monopile and not mod_opt["gravity_foundation"] else 1,
                     nMass=3,
                     nPL=1,
@@ -265,6 +265,12 @@ class TowerSE(om.Group):
                     "G_full",
                     "sigma_y_full",
                     "suctionpile_depth",
+                    "Az",
+                    "Asx",
+                    "Asy",
+                    "Ixx",
+                    "Iyy",
+                    "Jz",
                 ],
             )
 
@@ -306,22 +312,15 @@ class TowerSE(om.Group):
                 self.connect("soil.z_k", "pre" + lc + ".z_soil")
                 self.connect("soil.k", "pre" + lc + ".k_soil")
 
-            self.connect("tower" + lc + ".freqs", "post" + lc + ".freqs")
-            self.connect("tower" + lc + ".x_mode_freqs", "post" + lc + ".x_mode_freqs")
-            self.connect("tower" + lc + ".y_mode_freqs", "post" + lc + ".y_mode_freqs")
-            self.connect("tower" + lc + ".z_mode_freqs", "post" + lc + ".z_mode_freqs")
-            self.connect("tower" + lc + ".x_mode_shapes", "post" + lc + ".x_mode_shapes")
-            self.connect("tower" + lc + ".y_mode_shapes", "post" + lc + ".y_mode_shapes")
-            self.connect("tower" + lc + ".z_mode_shapes", "post" + lc + ".z_mode_shapes")
-            self.connect("tower" + lc + ".Fz_out", "post" + lc + ".Fz")
-            self.connect("tower" + lc + ".Mxx_out", "post" + lc + ".Mxx")
-            self.connect("tower" + lc + ".Myy_out", "post" + lc + ".Myy")
-            self.connect("tower" + lc + ".axial_stress", "post" + lc + ".axial_stress")
-            self.connect("tower" + lc + ".shear_stress", "post" + lc + ".shear_stress")
-            self.connect("tower" + lc + ".hoop_stress", "post" + lc + ".hoop_stress")
-            self.connect("tower" + lc + ".cylinder_deflection", "post" + lc + ".tower_deflection_in")
-
             self.connect("wind" + lc + ".Px", "tower" + lc + ".Px")
             self.connect("wind" + lc + ".Py", "tower" + lc + ".Py")
             self.connect("wind" + lc + ".Pz", "tower" + lc + ".Pz")
-            self.connect("wind" + lc + ".qdyn", "tower" + lc + ".qdyn")
+
+            self.connect("wind" + lc + ".qdyn", "post" + lc + ".qdyn")
+
+            self.connect("tower" + lc + ".tower_Fz", "post" + lc + ".tower_Fz")
+            self.connect("tower" + lc + ".tower_Vx", "post" + lc + ".tower_Vx")
+            self.connect("tower" + lc + ".tower_Vy", "post" + lc + ".tower_Vy")
+            self.connect("tower" + lc + ".tower_Mxx", "post" + lc + ".tower_Mxx")
+            self.connect("tower" + lc + ".tower_Myy", "post" + lc + ".tower_Myy")
+            self.connect("tower" + lc + ".tower_Mzz", "post" + lc + ".tower_Mzz")

@@ -71,6 +71,8 @@ class DiscretizationYAML(om.ExplicitComponent):
         cylinder diameter at corresponding locations
     tower_wall_thickness : numpy array[n_height-1], [m]
         shell thickness at corresponding locations
+    suctionpile_depth : float, [m]
+        Depth of monopile below sea floor
     outfitting_factor : numpy array[n_height-1]
         Multiplier that accounts for secondary structure mass inside of cylinder
     E : numpy array[n_height-1], [Pa]
