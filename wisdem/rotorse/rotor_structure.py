@@ -308,7 +308,7 @@ class RunFrame3DD(ExplicitComponent):
         self.add_output(
             "F3",
             val=np.zeros(n_span),
-            units="N*m/m",
+            units="N/m",
             desc="edgewise bending moment along blade span",
         )
 
@@ -553,7 +553,7 @@ class ComputeStrains(ExplicitComponent):
         self.add_input(
             "F3",
             val=np.zeros(n_span),
-            units="N*m/m",
+            units="N/m",
             desc="edgewise bending moment along blade span",
         )
         self.add_input(
