@@ -32,6 +32,7 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = 1
         self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 0
         self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 0
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 3
         self.modeling_options["WISDEM"]["TowerSE"]["wind"] = "PowerWind"
         self.modeling_options["WISDEM"]["TowerSE"]["nLC"] = 1
 
@@ -156,6 +157,7 @@ class TestTowerSE(unittest.TestCase):
     def testProblemFixedPile(self):
         self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 3
         self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 1
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 5
         self.modeling_options["WISDEM"]["TowerSE"]["soil_springs"] = True
         self.modeling_options["WISDEM"]["TowerSE"]["gravity_foundation"] = False
         self.modeling_options["flags"]["monopile"] = True
@@ -285,6 +287,7 @@ class TestTowerSE(unittest.TestCase):
     def testProblemFixedPile_GBF(self):
         self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 3
         self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 1
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 5
         self.modeling_options["WISDEM"]["TowerSE"]["soil_springs"] = False
         self.modeling_options["WISDEM"]["TowerSE"]["gravity_foundation"] = True
         self.modeling_options["flags"]["monopile"] = True
@@ -406,6 +409,7 @@ class TestTowerSE(unittest.TestCase):
     def testAddedMassForces(self):
         self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 3
         self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 1
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 5
         self.modeling_options["WISDEM"]["TowerSE"]["soil_springs"] = False
         self.modeling_options["WISDEM"]["TowerSE"]["gravity_foundation"] = False
         self.modeling_options["flags"]["monopile"] = True
@@ -546,6 +550,7 @@ class TestTowerSE(unittest.TestCase):
         )
 
         self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = len(d_param)
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = len(d_param)
 
         prob = om.Problem()
         prob.model = tow.TowerSE(modeling_options=self.modeling_options)
@@ -680,6 +685,7 @@ class TestTowerSE(unittest.TestCase):
 
         self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = len(d_param)
         self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = 1
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = len(d_param)
         self.modeling_options["WISDEM"]["TowerSE"]["nLC"] = 2
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_f"] = 1.35
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_m"] = 1.3

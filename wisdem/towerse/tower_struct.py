@@ -719,12 +719,11 @@ class TowerPostFrame(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare("n_height")
         self.options.declare("modeling_options")
         # self.options.declare('nDEL')
 
     def setup(self):
-        n_height = self.options["n_height"]
+        n_height = self.options["modeling_options"]["n_height"]
         nFull = get_nfull(n_height)
 
         # effective geometry -- used for handbook methods to estimate hoop stress, buckling, fatigue

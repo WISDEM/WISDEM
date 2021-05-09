@@ -29,6 +29,7 @@ class TestStruct(unittest.TestCase):
         self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = 1
         self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 0
         self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 0
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 3
         self.modeling_options["WISDEM"]["TowerSE"]["wind"] = "PowerWind"
         self.modeling_options["WISDEM"]["TowerSE"]["nLC"] = 1
 

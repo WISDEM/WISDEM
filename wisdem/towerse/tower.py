@@ -25,15 +25,12 @@ class TowerLeanSE(om.Group):
 
     def setup(self):
         mod_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
-        monopile = self.options["modeling_options"]["flags"]["monopile"]
 
         n_height_tow = mod_opt["n_height_tower"]
         n_layers_tow = mod_opt["n_layers_tower"]
-        n_height_mon = 0 if not monopile else mod_opt["n_height_monopile"]
-        n_layers_mon = 0 if not monopile else mod_opt["n_layers_monopile"]
-        n_height = (
-            n_height_tow if n_height_mon == 0 else n_height_tow + n_height_mon - 1
-        )  # Should have one overlapping point
+        n_height_mon = mod_opt["n_height_monopile"]
+        n_layers_mon = mod_opt["n_layers_monopile"]
+        n_height = mod_opt["n_height"]
         nFull = get_nfull(n_height)
 
         self.set_input_defaults("gravity_foundation_mass", 0.0, units="kg")
@@ -169,11 +166,7 @@ class TowerSE(om.Group):
         nLC = mod_opt["nLC"]  # not yet supported
         wind = mod_opt["wind"]  # not yet supported
         frame3dd_opt = mod_opt["frame3dd"]
-        n_height_tow = mod_opt["n_height_tower"]
-        n_height_mon = 0 if not monopile else mod_opt["n_height_monopile"]
-        n_height = (
-            n_height_tow if n_height_mon == 0 else n_height_tow + n_height_mon - 1
-        )  # Should have one overlapping point
+        n_height = mod_opt["n_height"]
         nFull = get_nfull(n_height)
         self.set_input_defaults("E", np.zeros(n_height - 1), units="N/m**2")
         self.set_input_defaults("G", np.zeros(n_height - 1), units="N/m**2")
@@ -254,7 +247,7 @@ class TowerSE(om.Group):
             )
             self.add_subsystem(
                 "post" + lc,
-                ts.TowerPostFrame(n_height=n_height, modeling_options=mod_opt),
+                ts.TowerPostFrame(modeling_options=mod_opt),
                 promotes=[
                     "life",
                     "z_full",
