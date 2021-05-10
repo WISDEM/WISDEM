@@ -309,7 +309,7 @@ class RunFrame3DD(ExplicitComponent):
             "F3",
             val=np.zeros(n_span),
             units="N",
-            desc="edgewise bending moment along blade span",
+            desc="axial resultant along blade span",
         )
 
     def compute(self, inputs, outputs):
@@ -554,7 +554,7 @@ class ComputeStrains(ExplicitComponent):
             "F3",
             val=np.zeros(n_span),
             units="N",
-            desc="edgewise bending moment along blade span",
+            desc="axial resultant along blade span",
         )
         self.add_input(
             "xu_strain_spar",
