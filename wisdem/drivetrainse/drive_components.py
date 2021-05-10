@@ -929,7 +929,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
             I_i = inputs[c + "_I"]
             I_cm_list[ic, :] = I_i if I_i.size == 6 else np.r_[I_i, np.zeros(3)]
 
-        outputs["above_yaw_mass"] = m_nac.copy()
+        outputs["above_yaw_mass"] = copy.copy(m_nac)
         outputs["above_yaw_cm"] = R = cm_nac.copy()
         outputs["above_yaw_I"] = I_nac.copy()
         parallel_axis = m_nac * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
