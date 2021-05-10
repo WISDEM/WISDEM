@@ -621,6 +621,8 @@ class Blade(om.Group):
         self.connect("outer_shape_bem.pitch_axis", ["interp_airfoils.pitch_axis", "compute_coord_xy_dim.pitch_axis"])
         self.connect("opt_var.af_position", "interp_airfoils.af_position")
 
+        # TODO : Compute Reynolds here
+
         if rotorse_options["inn_af"]:
             self.add_subsystem(
                 "run_inn_af",
@@ -1225,6 +1227,16 @@ class INN_Airfoils(om.ExplicitComponent):
             val=np.zeros((n_span, n_xy, 2)),
             desc="3D array of the x and y airfoil coordinates of the n_af airfoils.",
         )
+        self.add_output(
+            "cl_interp",
+            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
+            desc="4D array with the lift coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+        )
+        self.add_output(
+            "cd_interp",
+            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
+            desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+        )
 
     def compute(self, inputs, outputs):
 
@@ -1260,13 +1272,15 @@ class INN_Airfoils(om.ExplicitComponent):
         # Some of these will be overwritten by the INN.
         outputs["coord_xy_interp"] = inputs["coord_xy_interp_yaml"]
 
+        outputs["cl_interp"] = inputs["cl_interp_yaml"]
+        outputs["cd_interp"] = inputs["cd_interp_yaml"]
+
         for i in range(r_thick_index_start, r_thick_index_end):
             Re = 9000000.0
             inn = INN()
             try:
                 print("CD", c_d[i])
-                # cst, alpha = inn.inverse_design(c_d[i], L_D[i], stall_margin, r_thick[i], Re,
-                cst, alpha = inn.inverse_design(0.015, L_D[i], stall_margin, r_thick[i], Re, N=1, process_samples=True)
+                cst, alpha = inn.inverse_design(c_d[i], L_D[i], stall_margin, r_thick[i], Re, N=1, process_samples=True)
             except:
                 raise Exception("The INN for airfoil design failed in the inverse mode")
             alpha = np.arange(-4, 20, 0.25)
@@ -1299,7 +1313,7 @@ class INN_Airfoils(om.ExplicitComponent):
                 outputs["coord_xy_interp"][i, :, :] = af_points
 
             inn_polar = Polar(Re, alpha, cl[0, :], cd[0, :], np.zeros_like(cl[0, :]))
-            polar3d = inn_polar.correction3D(inputs["s"][i], inputs["chord"][i] / 103.0, inputs["rated_TSR"])
+            polar3d = inn_polar.correction3D(inputs["s"][i], inputs["chord"][i] / 121.1, inputs["rated_TSR"])
             cdmax = 1.5
             polar = polar3d.extrapolate(cdmax)  # Extrapolate polars for alpha between -180 deg and 180 deg
 
@@ -1307,43 +1321,75 @@ class INN_Airfoils(om.ExplicitComponent):
             cd_interp = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cd)
             cm_interp = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cm)
 
-            # f, ax = plt.subplots(4, 1, figsize=(5.3, 10))
+            for j in range(self.n_Re):
+                outputs["cl_interp"][i, :, j, 0] = cl_interp
+                outputs["cd_interp"][i, :, j, 0] = cd_interp
+
+            # TODO : JPJ: this was my attempt at querying the INN with the yaml xy coords.
+            # It's not working right now, will need to revisit, I might not be using the right methods
+
+            # from INN_interface.cst import AirfoilShape as AirfoilShape_cst
+            # from INN_interface.cst import CSTAirfoil
+            # yaml_airfoil = AirfoilShape_cst(xco=inputs["coord_xy_interp_yaml"][i, :, 0], yco=inputs["coord_xy_interp_yaml"][i, :, 1])
+            # cst_new = CSTAirfoil(yaml_airfoil)
+            # cst = np.atleast_2d(cst_new.cst)
+            # print(cst)
             #
-            # ax[0].plot(inputs["aoa"] * 180. / np.pi, cl_interp, label="INN")
-            # ax[0].plot(inputs["aoa"] * 180. / np.pi, inputs["cl_interp_yaml"][i,:,0,0], label="yaml")
-            # ax[0].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            # ax[0].legend()
-            # ax[0].set_ylabel("CL (-)", fontweight="bold")
-            # ax[0].set_title("Span Location {:2.2%}".format(inputs["s"][i]), fontweight="bold")
-            # ax[0].set_xlim(left=-4, right=20)
+            # cd_new, cl_new = inn.generate_polars(cst, Re, alpha=alpha)
             #
-            # ax[1].semilogy(inputs["aoa"] * 180. / np.pi, cd_interp, label="INN")
-            # ax[1].semilogy(inputs["aoa"] * 180. / np.pi, inputs["cd_interp_yaml"][i,:,0,0], label="yaml")
-            # ax[1].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            # ax[1].set_ylabel("CD (-)", fontweight="bold")
-            # ax[1].set_xlim(left=-4, right=20)
+            # inn_polar = Polar(Re, alpha, cl_new[0, :], cd_new[0, :], np.zeros_like(cl_new[0, :]))
+            # polar3d = inn_polar.correction3D(inputs["s"][i], inputs["chord"][i] / 121.1, inputs["rated_TSR"])
+            # cdmax = 1.5
+            # polar = polar3d.extrapolate(cdmax)  # Extrapolate polars for alpha between -180 deg and 180 deg
             #
-            # ax[2].plot(inputs["aoa"] * 180. / np.pi, cl_interp/cd_interp, label="INN")
-            # ax[2].plot(inputs["aoa"] * 180. / np.pi, inputs["cl_interp_yaml"][i,:,0,0]/inputs["cd_interp_yaml"][i,:,0,0], label="yaml")
-            # ax[2].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            # ax[2].set_ylabel("CL/CD (-)", fontweight="bold")
-            # ax[2].set_xlabel("Angles of Attack (deg)", fontweight="bold")
-            # ax[2].set_xlim(left=-4, right=20)
-            # ax[2].set_ylim(top=200, bottom=-50)
-            #
-            # yaml_xy = inputs['coord_xy_interp_yaml'][i]
-            # cst_xy = af_points
-            #
-            # ax[3].plot(cst_xy[:, 0], cst_xy[:, 1], label="INN")
-            # ax[3].plot(yaml_xy[:, 0], yaml_xy[:, 1], label="yaml")
-            # ax[3].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            # ax[3].set_ylabel("y-coord", fontweight="bold")
-            # ax[3].set_xlabel("x-coord", fontweight="bold")
-            # ax[3].set_xlim(left=0., right=1.)
-            # ax[3].set_ylim(top=0.2, bottom=-0.2)
-            #
-            # plt.show()
-            # plt.close()
+            # cl_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cl)
+            # cd_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cd)
+            # cm_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cm)
+
+            f, ax = plt.subplots(4, 1, figsize=(5.3, 10))
+
+            ax[0].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp, label="INN")
+            ax[0].plot(inputs["aoa"] * 180.0 / np.pi, inputs["cl_interp_yaml"][i, :, 0, 0], label="yaml")
+            # ax[0].plot(inputs["aoa"] * 180. / np.pi, cl_interp_new, label="yaml")
+            ax[0].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            ax[0].legend()
+            ax[0].set_ylabel("CL (-)", fontweight="bold")
+            ax[0].set_title("Span Location {:2.2%}".format(inputs["s"][i]), fontweight="bold")
+            ax[0].set_xlim(left=-4, right=20)
+
+            ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, cd_interp, label="INN")
+            ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, inputs["cd_interp_yaml"][i, :, 0, 0], label="yaml")
+            # ax[1].semilogy(inputs["aoa"] * 180. / np.pi, cd_interp_new, label="yaml")
+            ax[1].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            ax[1].set_ylabel("CD (-)", fontweight="bold")
+            ax[1].set_xlim(left=-4, right=20)
+
+            ax[2].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp / cd_interp, label="INN")
+            ax[2].plot(
+                inputs["aoa"] * 180.0 / np.pi,
+                inputs["cl_interp_yaml"][i, :, 0, 0] / inputs["cd_interp_yaml"][i, :, 0, 0],
+                label="yaml",
+            )
+            # ax[2].plot(inputs["aoa"] * 180. / np.pi, cl_interp_new / cd_interp_new, label="yaml")
+            ax[2].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            ax[2].set_ylabel("CL/CD (-)", fontweight="bold")
+            ax[2].set_xlabel("Angles of Attack (deg)", fontweight="bold")
+            ax[2].set_xlim(left=-4, right=20)
+            ax[2].set_ylim(top=200, bottom=-50)
+
+            yaml_xy = inputs["coord_xy_interp_yaml"][i]
+            cst_xy = af_points
+
+            ax[3].plot(cst_xy[:, 0], cst_xy[:, 1], label="INN")
+            ax[3].plot(yaml_xy[:, 0], yaml_xy[:, 1], label="yaml")
+            ax[3].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            ax[3].set_ylabel("y-coord", fontweight="bold")
+            ax[3].set_xlabel("x-coord", fontweight="bold")
+            ax[3].set_xlim(left=0.0, right=1.0)
+            ax[3].set_ylim(top=0.2, bottom=-0.2)
+
+            plt.show()
+            plt.close()
 
 
 class Blade_Lofted_Shape(om.ExplicitComponent):

@@ -1,5 +1,6 @@
 import numpy as np
 import openmdao.api as om
+
 from wisdem.rotorse.rotor import RotorSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.floatingse.floating import FloatingSE
@@ -75,8 +76,14 @@ class WT_RNTA(om.Group):
             self.connect("blade.interp_airfoils.r_thick_interp", "rotorse.ccblade.rthick")
             self.connect("airfoils.aoa", "rotorse.airfoils_aoa")
             self.connect("airfoils.Re", "rotorse.airfoils_Re")
-            self.connect("blade.interp_airfoils.cl_interp", "rotorse.airfoils_cl")
-            self.connect("blade.interp_airfoils.cd_interp", "rotorse.airfoils_cd")
+
+            if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
+                self.connect("blade.run_inn_af.cl_interp", "rotorse.airfoils_cl")
+                self.connect("blade.run_inn_af.cd_interp", "rotorse.airfoils_cd")
+            else:
+                self.connect("blade.interp_airfoils.cl_interp", "rotorse.airfoils_cl")
+                self.connect("blade.interp_airfoils.cd_interp", "rotorse.airfoils_cd")
+
             self.connect("blade.interp_airfoils.cm_interp", "rotorse.airfoils_cm")
             self.connect("assembly.hub_height", "rotorse.hub_height")
             self.connect("hub.cone", "rotorse.precone")
