@@ -296,20 +296,20 @@ class RunFrame3DD(ExplicitComponent):
         self.add_output(
             "M1",
             val=np.zeros(n_span),
-            units="N*m/m",
+            units="N*m",
             desc="distribution along blade span of bending moment w.r.t principal axis 1",
         )
         self.add_output(
             "M2",
             val=np.zeros(n_span),
-            units="N*m/m",
+            units="N*m",
             desc="distribution along blade span of bending moment w.r.t principal axis 2",
         )
         self.add_output(
             "F3",
             val=np.zeros(n_span),
-            units="N/m",
-            desc="edgewise bending moment along blade span",
+            units="N",
+            desc="axial resultant along blade span",
         )
 
     def compute(self, inputs, outputs):
@@ -541,20 +541,20 @@ class ComputeStrains(ExplicitComponent):
         self.add_input(
             "M1",
             val=np.zeros(n_span),
-            units="N*m/m",
+            units="N*m",
             desc="distribution along blade span of bending moment w.r.t principal axis 1",
         )
         self.add_input(
             "M2",
             val=np.zeros(n_span),
-            units="N*m/m",
+            units="N*m",
             desc="distribution along blade span of bending moment w.r.t principal axis 2",
         )
         self.add_input(
             "F3",
             val=np.zeros(n_span),
-            units="N/m",
-            desc="edgewise bending moment along blade span",
+            units="N",
+            desc="axial resultant along blade span",
         )
         self.add_input(
             "xu_strain_spar",
