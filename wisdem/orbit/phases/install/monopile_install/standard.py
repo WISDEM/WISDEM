@@ -156,7 +156,7 @@ class MonopileInstallation(InstallPhase):
         wtiv_specs = self.config.get("wtiv", None)
         name = wtiv_specs.get("name", "WTIV")
 
-        wtiv = Vessel(name, wtiv_specs)
+        wtiv = self.initialize_vessel(name, wtiv_specs)
         self.env.register(wtiv)
 
         wtiv.initialize()
@@ -177,7 +177,7 @@ class MonopileInstallation(InstallPhase):
             # TODO: Add in option for named feeders.
             name = "Feeder {}".format(n)
 
-            feeder = Vessel(name, feeder_specs)
+            feeder = self.initialize_vessel(name, feeder_specs)
             self.env.register(feeder)
 
             feeder.initialize()

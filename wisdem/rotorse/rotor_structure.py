@@ -6,7 +6,7 @@ from openmdao.api import Group, ExplicitComponent
 from wisdem.rotorse import RPM2RS, RS2RPM
 from wisdem.commonse import gravity
 from wisdem.commonse.csystem import DirectionVector
-from wisdem.ccblade.ccblade_component import CCBladeEvaluate, CCBladeLoads
+from wisdem.ccblade.ccblade_component import CCBladeLoads, CCBladeEvaluate
 
 
 class BladeCurvature(ExplicitComponent):
@@ -187,47 +187,6 @@ class RunFrame3DD(ExplicitComponent):
             desc="distributed load (force per unit length) in airfoil z-direction",
         )
 
-        self.add_input(
-            "xu_strain_spar",
-            val=np.zeros(n_span),
-            desc="x-position of midpoint of spar cap on upper surface for strain calculation",
-        )
-        self.add_input(
-            "xl_strain_spar",
-            val=np.zeros(n_span),
-            desc="x-position of midpoint of spar cap on lower surface for strain calculation",
-        )
-        self.add_input(
-            "yu_strain_spar",
-            val=np.zeros(n_span),
-            desc="y-position of midpoint of spar cap on upper surface for strain calculation",
-        )
-        self.add_input(
-            "yl_strain_spar",
-            val=np.zeros(n_span),
-            desc="y-position of midpoint of spar cap on lower surface for strain calculation",
-        )
-        self.add_input(
-            "xu_strain_te",
-            val=np.zeros(n_span),
-            desc="x-position of midpoint of trailing-edge panel on upper surface for strain calculation",
-        )
-        self.add_input(
-            "xl_strain_te",
-            val=np.zeros(n_span),
-            desc="x-position of midpoint of trailing-edge panel on lower surface for strain calculation",
-        )
-        self.add_input(
-            "yu_strain_te",
-            val=np.zeros(n_span),
-            desc="y-position of midpoint of trailing-edge panel on upper surface for strain calculation",
-        )
-        self.add_input(
-            "yl_strain_te",
-            val=np.zeros(n_span),
-            desc="y-position of midpoint of trailing-edge panel on lower surface for strain calculation",
-        )
-
         self.add_input("r", val=np.zeros(n_span), units="m", desc="locations of properties along beam")
         self.add_input("A", val=np.zeros(n_span), units="m**2", desc="airfoil cross section material area")
         self.add_input("EA", val=np.zeros(n_span), units="N", desc="axial stiffness")
@@ -317,24 +276,40 @@ class RunFrame3DD(ExplicitComponent):
             "dz", val=np.zeros(n_span), units="m", desc="deflection of blade section in airfoil z-direction"
         )
         self.add_output(
-            "strainU_spar",
+            "EI11",
             val=np.zeros(n_span),
-            desc="strain in spar cap on upper surface at location xu,yu_strain with loads P_strain",
+            units="N*m**2",
+            desc="stiffness w.r.t principal axis 1",
         )
         self.add_output(
-            "strainL_spar",
+            "EI22",
             val=np.zeros(n_span),
-            desc="strain in spar cap on lower surface at location xl,yl_strain with loads P_strain",
+            units="N*m**2",
+            desc="stiffness w.r.t principal axis 2",
         )
         self.add_output(
-            "strainU_te",
+            "alpha",
             val=np.zeros(n_span),
-            desc="strain in trailing-edge panels on upper surface at location xu,yu_te with loads P_te",
+            units="deg",
+            desc="Angle between blade c.s. and principal axes",
         )
         self.add_output(
-            "strainL_te",
+            "M1",
             val=np.zeros(n_span),
-            desc="strain in trailing-edge panels on lower surface at location xl,yl_te with loads P_te",
+            units="N*m",
+            desc="distribution along blade span of bending moment w.r.t principal axis 1",
+        )
+        self.add_output(
+            "M2",
+            val=np.zeros(n_span),
+            units="N*m",
+            desc="distribution along blade span of bending moment w.r.t principal axis 2",
+        )
+        self.add_output(
+            "F3",
+            val=np.zeros(n_span),
+            units="N",
+            desc="axial resultant along blade span",
         )
 
     def compute(self, inputs, outputs):
@@ -358,15 +333,7 @@ class RunFrame3DD(ExplicitComponent):
         Px_af = inputs["Px_af"]
         Py_af = inputs["Py_af"]
         Pz_af = inputs["Pz_af"]
-        xu_strain_spar = inputs["xu_strain_spar"]
-        xl_strain_spar = inputs["xl_strain_spar"]
-        yu_strain_spar = inputs["yu_strain_spar"]
-        yl_strain_spar = inputs["yl_strain_spar"]
-        xu_strain_te = inputs["xu_strain_te"]
-        xl_strain_te = inputs["xl_strain_te"]
-        yu_strain_te = inputs["yu_strain_te"]
-        yl_strain_te = inputs["yl_strain_te"]
-        # np.savez('nrel5mw_test.npz',r=r,x_az=x_az,y_az=y_az,z_az=z_az,theta=theta,x_ec=x_ec,y_ec=y_ec,A=A,rhoA=rhoA,rhoJ=rhoJ,GJ=GJ,EA=EA,EIxx=EIxx,EIyy=EIyy,EIxy=EIxy,Px_af=Px_af,Py_af=Py_af,Pz_af=Pz_af,xu_strain_spar=xu_strain_spar,xl_strain_spar=xl_strain_spar,yu_strain_spar=yu_strain_spar,yl_strain_spar=yl_strain_spar,xu_strain_te=xu_strain_te,xl_strain_te=xl_strain_te,yu_strain_te=yu_strain_te,yl_strain_te=yl_strain_te)
+        # np.savez('nrel5mw_test.npz',r=r,x_az=x_az,y_az=y_az,z_az=z_az,theta=theta,x_ec=x_ec,y_ec=y_ec,A=A,rhoA=rhoA,rhoJ=rhoJ,GJ=GJ,EA=EA,EIxx=EIxx,EIyy=EIyy,EIxy=EIxy,Px_af=Px_af,Py_af=Py_af,Pz_af=Pz_af)
 
         # Determine principal C.S. (with swap of x, y for profile c.s.)
         # Can get to Hansen's c.s. from Precomp's c.s. by rotating around z -90 deg, then y by 180 (swap x-y)
@@ -385,13 +352,6 @@ class RunFrame3DD(ExplicitComponent):
         # get moments and positions in principal axes
         EI11 = EIxx_cs - EIxy_cs * np.tan(alpha)
         EI22 = EIyy_cs + EIxy_cs * np.tan(alpha)
-        ca = np.cos(alpha)
-        sa = np.sin(alpha)
-
-        def rotate(x, y):
-            x2 = x * ca + y * sa
-            y2 = -x * sa + y * ca
-            return x2, y2
 
         # Now store alpha for later use in degrees
         alpha = np.rad2deg(alpha)
@@ -521,38 +481,10 @@ class RunFrame3DD(ExplicitComponent):
         mshapes_x = mshapes_x[:n_freq2, :]
         mshapes_y = mshapes_y[:n_freq2, :]
 
-        # shear and bending, one per element (convert from local to global c.s.)
-        Fz = np.r_[-forces.Nx[iCase, 0], forces.Nx[iCase, 1::2]]
-        # Vy = np.r_[-forces.Vy[iCase, 0], forces.Vy[iCase, 1::2]]
-        # Vx = np.r_[-forces.Vz[iCase, 0], forces.Vz[iCase, 1::2]]
-
-        # Tz = np.r_[-forces.Txx[iCase, 0], forces.Txx[iCase, 1::2]]
-        My = np.r_[-forces.Myy[iCase, 0], forces.Myy[iCase, 1::2]]
-        Mx = np.r_[-forces.Mzz[iCase, 0], forces.Mzz[iCase, 1::2]]
-
-        def strain(xu, yu, xl, yl):
-            # use profile c.s. to use Hansen's notation
-            xuu, yuu = yu, xu
-            xll, yll = yl, xl
-
-            # convert to principal axes, unless already there
-            if self.options["pbeam"]:
-                M1, M2 = rotate(My, Mx)
-            else:
-                M1, M2 = My, Mx
-
-            # compute strain
-            x, y = rotate(xuu, yuu)
-            strainU = M1 / EI11 * y - M2 / EI22 * x - Fz / EA
-
-            x, y = rotate(xll, yll)
-            strainL = M1 / EI11 * y - M2 / EI22 * x - Fz / EA
-
-            return strainU, strainL
-
-        # ----- strain -----
-        strainU_spar, strainL_spar = strain(xu_strain_spar, yu_strain_spar, xl_strain_spar, yl_strain_spar)
-        strainU_te, strainL_te = strain(xu_strain_te, yu_strain_te, xl_strain_te, yl_strain_te)
+        # shear and bending w.r.t. principal axes
+        F3 = np.r_[-forces.Nx[iCase, 0], forces.Nx[iCase, 1::2]]
+        M1 = np.r_[-forces.Myy[iCase, 0], forces.Myy[iCase, 1::2]]
+        M2 = np.r_[-forces.Mzz[iCase, 0], forces.Mzz[iCase, 1::2]]
 
         # Store outputs
         outputs["root_F"] = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
@@ -569,6 +501,175 @@ class RunFrame3DD(ExplicitComponent):
         outputs["dx"] = -displacements.dx[iCase, :]
         outputs["dy"] = displacements.dy[iCase, :]
         outputs["dz"] = -displacements.dz[iCase, :]
+        outputs["EI11"] = EI11
+        outputs["EI22"] = EI22
+        outputs["M1"] = M1
+        outputs["M2"] = M2
+        outputs["F3"] = F3
+        outputs["alpha"] = alpha
+
+
+class ComputeStrains(ExplicitComponent):
+    def initialize(self):
+        self.options.declare("modeling_options")
+        self.options.declare("pbeam", default=False)  # Recover old pbeam c.s. and accuracy
+
+    def setup(self):
+        rotorse_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
+        self.n_span = n_span = rotorse_options["n_span"]
+
+        self.add_input("EA", val=np.zeros(n_span), units="N", desc="axial stiffness")
+
+        self.add_input(
+            "EI11",
+            val=np.zeros(n_span),
+            units="N*m**2",
+            desc="stiffness w.r.t principal axis 1",
+        )
+        self.add_input(
+            "EI22",
+            val=np.zeros(n_span),
+            units="N*m**2",
+            desc="stiffness w.r.t principal axis 2",
+        )
+        self.add_input(
+            "alpha",
+            val=np.zeros(n_span),
+            units="deg",
+            desc="Angle between blade c.s. and principal axes",
+        )
+        self.add_input(
+            "M1",
+            val=np.zeros(n_span),
+            units="N*m",
+            desc="distribution along blade span of bending moment w.r.t principal axis 1",
+        )
+        self.add_input(
+            "M2",
+            val=np.zeros(n_span),
+            units="N*m",
+            desc="distribution along blade span of bending moment w.r.t principal axis 2",
+        )
+        self.add_input(
+            "F3",
+            val=np.zeros(n_span),
+            units="N",
+            desc="axial resultant along blade span",
+        )
+        self.add_input(
+            "xu_strain_spar",
+            val=np.zeros(n_span),
+            desc="x-position of midpoint of spar cap on upper surface for strain calculation",
+        )
+        self.add_input(
+            "xl_strain_spar",
+            val=np.zeros(n_span),
+            desc="x-position of midpoint of spar cap on lower surface for strain calculation",
+        )
+        self.add_input(
+            "yu_strain_spar",
+            val=np.zeros(n_span),
+            desc="y-position of midpoint of spar cap on upper surface for strain calculation",
+        )
+        self.add_input(
+            "yl_strain_spar",
+            val=np.zeros(n_span),
+            desc="y-position of midpoint of spar cap on lower surface for strain calculation",
+        )
+        self.add_input(
+            "xu_strain_te",
+            val=np.zeros(n_span),
+            desc="x-position of midpoint of trailing-edge panel on upper surface for strain calculation",
+        )
+        self.add_input(
+            "xl_strain_te",
+            val=np.zeros(n_span),
+            desc="x-position of midpoint of trailing-edge panel on lower surface for strain calculation",
+        )
+        self.add_input(
+            "yu_strain_te",
+            val=np.zeros(n_span),
+            desc="y-position of midpoint of trailing-edge panel on upper surface for strain calculation",
+        )
+        self.add_input(
+            "yl_strain_te",
+            val=np.zeros(n_span),
+            desc="y-position of midpoint of trailing-edge panel on lower surface for strain calculation",
+        )
+
+        # outputs
+        self.add_output(
+            "strainU_spar",
+            val=np.zeros(n_span),
+            desc="strain in spar cap on upper surface at location xu,yu_strain with loads P_strain",
+        )
+        self.add_output(
+            "strainL_spar",
+            val=np.zeros(n_span),
+            desc="strain in spar cap on lower surface at location xl,yl_strain with loads P_strain",
+        )
+        self.add_output(
+            "strainU_te",
+            val=np.zeros(n_span),
+            desc="strain in trailing-edge panels on upper surface at location xu,yu_te with loads P_te",
+        )
+        self.add_output(
+            "strainL_te",
+            val=np.zeros(n_span),
+            desc="strain in trailing-edge panels on lower surface at location xl,yl_te with loads P_te",
+        )
+
+    def compute(self, inputs, outputs):
+
+        EA = inputs["EA"]
+        EI11 = inputs["EI11"]
+        EI22 = inputs["EI22"]
+        xu_strain_spar = inputs["xu_strain_spar"]
+        xl_strain_spar = inputs["xl_strain_spar"]
+        yu_strain_spar = inputs["yu_strain_spar"]
+        yl_strain_spar = inputs["yl_strain_spar"]
+        xu_strain_te = inputs["xu_strain_te"]
+        xl_strain_te = inputs["xl_strain_te"]
+        yu_strain_te = inputs["yu_strain_te"]
+        yl_strain_te = inputs["yl_strain_te"]
+        F3 = inputs["F3"]
+        M1in = inputs["M1"]
+        M2in = inputs["M2"]
+        alpha = inputs["alpha"]
+        # np.savez('nrel5mw_test2.npz',EA=EA,EI11=EI11,EI22=EI22,xu_strain_spar=xu_strain_spar,xl_strain_spar=xl_strain_spar,yu_strain_spar=yu_strain_spar,yl_strain_spar=yl_strain_spar,xu_strain_te=xu_strain_te,xl_strain_te=xl_strain_te,yu_strain_te=yu_strain_te,yl_strain_te=yl_strain_te, F3=F3, M1=M1, M2=M2, alpha=alpha)
+
+        ca = np.cos(np.deg2rad(alpha))
+        sa = np.sin(np.deg2rad(alpha))
+
+        def rotate(x, y):
+            x2 = x * ca + y * sa
+            y2 = -x * sa + y * ca
+            return x2, y2
+
+        def strain(xu, yu, xl, yl):
+            # use profile c.s. to use Hansen's notation
+            xuu, yuu = yu, xu
+            xll, yll = yl, xl
+
+            # convert to principal axes, unless already there
+            if self.options["pbeam"]:
+                M1, M2 = rotate(M2in, M1in)
+            else:
+                M1, M2 = M1in, M2in
+
+            # compute strain
+            x, y = rotate(xuu, yuu)
+            strainU = M1 / EI11 * y - M2 / EI22 * x - F3 / EA
+
+            x, y = rotate(xll, yll)
+            strainL = M1 / EI11 * y - M2 / EI22 * x - F3 / EA
+
+            return strainU, strainL
+
+        # ----- strains along the mid-line of the spar caps and at the center of the two trailing edge reinforcement thickness (not the trailing edge) -----
+        strainU_spar, strainL_spar = strain(xu_strain_spar, yu_strain_spar, xl_strain_spar, yl_strain_spar)
+        strainU_te, strainL_te = strain(xu_strain_te, yu_strain_te, xl_strain_te, yl_strain_te)
+
         outputs["strainU_spar"] = strainU_spar
         outputs["strainL_spar"] = strainL_spar
         outputs["strainU_te"] = strainU_te
@@ -1150,6 +1251,10 @@ class RotorStructure(Group):
             "rhoJ",
             "x_ec",
             "y_ec",
+        ]
+        self.add_subsystem("frame", RunFrame3DD(modeling_options=modeling_options), promotes=promoteListFrame3DD)
+        promoteListStrains = [
+            "EA",
             "xu_strain_spar",
             "xl_strain_spar",
             "yu_strain_spar",
@@ -1159,10 +1264,12 @@ class RotorStructure(Group):
             "yu_strain_te",
             "yl_strain_te",
         ]
-        self.add_subsystem("frame", RunFrame3DD(modeling_options=modeling_options), promotes=promoteListFrame3DD)
+        self.add_subsystem("strains", ComputeStrains(modeling_options=modeling_options), promotes=promoteListStrains)
         self.add_subsystem("tip_pos", TipDeflection(), promotes=["tilt", "pitch_load"])
         self.add_subsystem(
-            "aero_hub_loads", CCBladeEvaluate(modeling_options=modeling_options), promotes=promoteListAeroLoads + ["presweep","presweepTip"]
+            "aero_hub_loads",
+            CCBladeEvaluate(modeling_options=modeling_options),
+            promotes=promoteListAeroLoads + ["presweep", "presweepTip"],
         )
         self.add_subsystem(
             "constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options), promotes=["s"]
@@ -1187,10 +1294,18 @@ class RotorStructure(Group):
         # self.connect('aero_storm_50yr.loads_Py', 'tot_loads_storm_50yr.aeroloads_Py')
         # self.connect('aero_storm_50yr.loads_Pz', 'tot_loads_storm_50yr.aeroloads_Pz')
 
-        # Total loads to strains
+        # Total loads to bending moments
         self.connect("tot_loads_gust.Px_af", "frame.Px_af")
         self.connect("tot_loads_gust.Py_af", "frame.Py_af")
         self.connect("tot_loads_gust.Pz_af", "frame.Pz_af")
+
+        # Moments to strains
+        self.connect("frame.alpha", "strains.alpha")
+        self.connect("frame.M1", "strains.M1")
+        self.connect("frame.M2", "strains.M2")
+        self.connect("frame.F3", "strains.F3")
+        self.connect("frame.EI11", "strains.EI11")
+        self.connect("frame.EI22", "strains.EI22")
 
         # Blade distributed deflections to tip deflection
         self.connect("frame.dx", "tip_pos.dx_tip", src_indices=[-1])
@@ -1199,8 +1314,8 @@ class RotorStructure(Group):
         self.connect("3d_curv", "tip_pos.3d_curv_tip", src_indices=[-1])
 
         # Strains from frame3dd to constraint
-        self.connect("frame.strainU_spar", "constr.strainU_spar")
-        self.connect("frame.strainL_spar", "constr.strainL_spar")
+        self.connect("strains.strainU_spar", "constr.strainU_spar")
+        self.connect("strains.strainL_spar", "constr.strainL_spar")
         self.connect("frame.flap_mode_freqs", "constr.flap_mode_freqs")
         self.connect("frame.edge_mode_freqs", "constr.edge_mode_freqs")
 

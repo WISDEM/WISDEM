@@ -336,6 +336,74 @@ class ArraySystemDesign(CableSystem):
         self._create_wind_farm_layout()
         self._create_cable_section_lengths()
 
+    def save_layout(self, save_name, return_df=False):
+        """Outputs a csv of the substation and turbine positional and cable
+        related components.
+
+        Parameters
+        ----------
+        save_name : str
+            The name of the file without an extension to be saved to
+            <library_path>/cables/<save_name>.csv.
+        return_df : bool, optional
+            If true, returns layout_df, a pandas.DataFrame of the cabling
+            layout, by default False.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame with the layout data.
+        """
+        num_turbines = self.system.num_turbines
+        columns = [
+            "id",
+            "substation_id",
+            "name",
+            "latitude",
+            "longitude",
+            "string",
+            "order",
+            "cable_type",
+            "euclidean_distance",
+            "cable_length",
+        ]
+        layout_df = pd.DataFrame(
+            np.zeros((self.system.num_turbines + 1, len(columns))),
+            columns=columns,
+        )
+        layout_df.string = layout_df.string.astype(int)
+        layout_df.order = layout_df.order.astype(int)
+
+        strings = [("", "")]
+        strings.extend([(i, j) for i in range(self.num_full_strings) for j in range(self.num_turbines_full_string)])
+        try:
+            strings.extend(
+                [
+                    (i, j)
+                    for i in range(self.num_full_strings, self.num_strings)
+                    for j in range(self.num_turbines_partial_string)
+                ]
+            )
+        except AttributeError:
+            pass
+        layout_df[["string", "order"]] = strings
+
+        coords = np.array([[0, 0]] + list(zip(self.turbines_x.flatten(), self.turbines_y.flatten())))
+        coords = coords[: self.system.num_turbines + 1]
+        layout_df[["longitude", "latitude"]] = coords
+
+        layout_df["substation_id"] = "oss1"
+        layout_df["id"] = ["oss1"] + [f"t{i}" for i in range(layout_df.shape[0] - 1)]
+        layout_df["name"] = ["substation-1"] + [f"turbine-{i}" for i in range(num_turbines)]
+        layout_df.cable_type = [""] + self.sections_cables.flatten()[:num_turbines].tolist()
+        layout_df.euclidean_distance = [""] + self.sections_distance.flatten()[:num_turbines].tolist()
+        layout_df.cable_length = [""] + self.sections_cable_lengths.flatten()[:num_turbines].tolist()
+        data = [columns] + layout_df.values.tolist()
+        print(f"Saving custom array CSV to: <library_path>/cables/{save_name}.csv")
+        export_library_specs("cables", save_name, data, file_ext="csv")
+        if return_df:
+            return layout_df
+
     def _plot_oss(self, ax):
         """
         Adds the offshore substation(s) to the plot.
@@ -382,7 +450,7 @@ class ArraySystemDesign(CableSystem):
 
         return labels_set + ["Turbine"], ax
 
-    def plot_array_system(self, show=True, save_path_name=None):
+    def plot_array_system(self, show=True, save_path_name=None, return_fig=False):
         """
         Plot the array cabling system.
 
@@ -393,6 +461,20 @@ class ArraySystemDesign(CableSystem):
         save_path_name : str, default: None
             The <path_to_file>/<file_name> of where to save the created plot.
             If None then the plot will not be saved.
+        return_fig : bool, default: False
+            If true, the figure (`fig`) and axes (`ax`) objects will be
+            returned.
+
+        Returns
+        -------
+        fig : matplotlib.pyplot.figure
+            The matplotlib figure object. This will contain the overarching
+            figure settings, and can be manipulated to change dimensions,
+            resolotion, and etc.
+        ax : matplotlib.pyplot.axes
+            The matplotlib axes object. This will contain the actual plot
+            settings, and can be manipulated to add annotations, or other
+            elements.
         """
 
         fig, ax = plt.subplots(figsize=(10, 10))
@@ -473,6 +555,8 @@ class ArraySystemDesign(CableSystem):
             plt.savefig(save_path_name, bbox_inches="tight", dpi=360)
         if show:
             plt.show()
+        if return_fig:
+            return fig, ax
 
 
 class CustomArraySystemDesign(ArraySystemDesign):
@@ -693,7 +777,10 @@ class CustomArraySystemDesign(ArraySystemDesign):
         # Make sure no data is missing
         missing = set(self.COLUMNS).difference(self.location_data.columns)
         if missing:
-            raise ValueError(f"The following columns must be included in the location data: {missing}")
+            raise ValueError(
+                "The following columns must be included in the location ",
+                f"data: {missing}",
+            )
 
         self._format_windfarm_data()
 
@@ -713,8 +800,9 @@ class CustomArraySystemDesign(ArraySystemDesign):
         # Ensure the number of turbines matches what's expected
         if self.location_data.shape[0] != self.system.num_turbines:
             raise ValueError(
-                f"The provided number of turbines ({self.location_data.shape[0]}) ",
-                f"does not match the plant data ({self.system.num_turbines}).",
+                "The provided number of turbines ",
+                f"({self.location_data.shape[0]}) does not match the plant ",
+                f"data ({self.system.num_turbines}).",
             )
 
         n_coords = self.location_data.groupby(["turbine_latitude", "turbine_longitude"]).ngroups
@@ -744,8 +832,8 @@ class CustomArraySystemDesign(ArraySystemDesign):
             self.sections_bury_speeds = np.zeros((self.num_strings, self.num_turbines_full_string), dtype=float)
 
     def _compute_haversine_distance(self):
-        """Computes the haversine distance between two subsequent pairs in a string for
-        all strings.
+        """Computes the haversine distance between two subsequent pairs in a
+        string for all strings.
 
         Returns
         -------
@@ -775,9 +863,11 @@ class CustomArraySystemDesign(ArraySystemDesign):
             `windfarm_y`: y-coordinates with a corresponding OSS in the first
                 column. Shape: `n_strings` x (`num_turbines_full_string` + 1).
             `sections_cables_lenghts`: custom cable lengths provided as an
-                optional column in the `location_data`. Shape: `n_strings` x `num_turbines_full_string`.
+                optional column in the `location_data`.
+                Shape: `n_strings` x `num_turbines_full_string`.
             `sections_bury_speeds`: custom cable bury speeds provided as an
-                optional column in the `location_data`. Shape: `n_strings` x `num_turbines_full_string`.
+                optional column in the `location_data`.
+                Shape: `n_strings` x `num_turbines_full_string`.
         """
 
         self.location_data_x = np.zeros((self.num_strings, self.num_turbines_full_string + 1), dtype=float)

@@ -211,7 +211,7 @@ class GravityBasedInstallation(InstallPhase):
         """
 
         specs = self.config["support_vessel"]
-        vessel = Vessel("Multi-Purpose Support Vessel", specs)
+        vessel = self.initialize_vessel("Multi-Purpose Support Vessel", specs)
 
         self.env.register(vessel)
         vessel.initialize(mobilize=False)
@@ -335,19 +335,19 @@ def install_gravity_base_foundations(vessel, queue, distance, substructures, sta
                 vessel.mobilize()
                 yield vessel.transit(distance)
 
-            yield vessel.task(
+            yield vessel.task_wrapper(
                 "Position Substructure",
                 5,
                 constraints={"windspeed": le(15), "waveheight": le(2)},
             )
-            yield vessel.task(
+            yield vessel.task_wrapper(
                 "ROV Survey",
                 1,
                 constraints={"windspeed": le(25), "waveheight": le(3)},
             )
 
             # TODO: Model for ballast pump time
-            yield vessel.task(
+            yield vessel.task_wrapper(
                 "Pump Ballast",
                 12,
                 # suspendable=True,
@@ -355,7 +355,7 @@ def install_gravity_base_foundations(vessel, queue, distance, substructures, sta
             )
 
             # TODO: Model for GBF grout time
-            yield vessel.task(
+            yield vessel.task_wrapper(
                 "Grout GBF",
                 6,
                 suspendable=True,
