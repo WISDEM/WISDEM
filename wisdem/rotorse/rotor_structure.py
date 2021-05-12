@@ -6,7 +6,7 @@ from openmdao.api import Group, ExplicitComponent
 from wisdem.rotorse import RPM2RS, RS2RPM
 from wisdem.commonse import gravity
 from wisdem.commonse.csystem import DirectionVector
-from wisdem.ccblade.ccblade_component import CCBladeEvaluate, CCBladeLoads
+from wisdem.ccblade.ccblade_component import CCBladeLoads, CCBladeEvaluate
 
 
 class BladeCurvature(ExplicitComponent):
@@ -296,20 +296,20 @@ class RunFrame3DD(ExplicitComponent):
         self.add_output(
             "M1",
             val=np.zeros(n_span),
-            units="N*m/m",
+            units="N*m",
             desc="distribution along blade span of bending moment w.r.t principal axis 1",
         )
         self.add_output(
             "M2",
             val=np.zeros(n_span),
-            units="N*m/m",
+            units="N*m",
             desc="distribution along blade span of bending moment w.r.t principal axis 2",
         )
         self.add_output(
             "F3",
             val=np.zeros(n_span),
-            units="N/m",
-            desc="edgewise bending moment along blade span",
+            units="N",
+            desc="axial resultant along blade span",
         )
 
     def compute(self, inputs, outputs):
@@ -517,7 +517,7 @@ class ComputeStrains(ExplicitComponent):
     def setup(self):
         rotorse_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
         self.n_span = n_span = rotorse_options["n_span"]
-        
+
         self.add_input("EA", val=np.zeros(n_span), units="N", desc="axial stiffness")
 
         self.add_input(
@@ -541,20 +541,20 @@ class ComputeStrains(ExplicitComponent):
         self.add_input(
             "M1",
             val=np.zeros(n_span),
-            units="N*m/m",
+            units="N*m",
             desc="distribution along blade span of bending moment w.r.t principal axis 1",
         )
         self.add_input(
             "M2",
             val=np.zeros(n_span),
-            units="N*m/m",
+            units="N*m",
             desc="distribution along blade span of bending moment w.r.t principal axis 2",
         )
         self.add_input(
             "F3",
             val=np.zeros(n_span),
-            units="N/m",
-            desc="edgewise bending moment along blade span",
+            units="N",
+            desc="axial resultant along blade span",
         )
         self.add_input(
             "xu_strain_spar",
@@ -632,10 +632,10 @@ class ComputeStrains(ExplicitComponent):
         xl_strain_te = inputs["xl_strain_te"]
         yu_strain_te = inputs["yu_strain_te"]
         yl_strain_te = inputs["yl_strain_te"]
-        F3 = inputs['F3']
-        M1in = inputs['M1']
-        M2in = inputs['M2']
-        alpha = inputs['alpha']
+        F3 = inputs["F3"]
+        M1in = inputs["M1"]
+        M2in = inputs["M2"]
+        alpha = inputs["alpha"]
         # np.savez('nrel5mw_test2.npz',EA=EA,EI11=EI11,EI22=EI22,xu_strain_spar=xu_strain_spar,xl_strain_spar=xl_strain_spar,yu_strain_spar=yu_strain_spar,yl_strain_spar=yl_strain_spar,xu_strain_te=xu_strain_te,xl_strain_te=xl_strain_te,yu_strain_te=yu_strain_te,yl_strain_te=yl_strain_te, F3=F3, M1=M1, M2=M2, alpha=alpha)
 
         ca = np.cos(np.deg2rad(alpha))
@@ -1267,7 +1267,9 @@ class RotorStructure(Group):
         self.add_subsystem("strains", ComputeStrains(modeling_options=modeling_options), promotes=promoteListStrains)
         self.add_subsystem("tip_pos", TipDeflection(), promotes=["tilt", "pitch_load"])
         self.add_subsystem(
-            "aero_hub_loads", CCBladeEvaluate(modeling_options=modeling_options), promotes=promoteListAeroLoads + ["presweep","presweepTip"]
+            "aero_hub_loads",
+            CCBladeEvaluate(modeling_options=modeling_options),
+            promotes=promoteListAeroLoads + ["presweep", "presweepTip"],
         )
         self.add_subsystem(
             "constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options), promotes=["s"]

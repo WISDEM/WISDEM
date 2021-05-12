@@ -491,7 +491,7 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["floating"]:
                 self.connect("floatingse.tower_freqs", "tcons.tower_freq", src_indices=[0])
             else:
-                self.connect("towerse.tower.freqs", "tcons.tower_freq", src_indices=[0])
+                self.connect("towerse.tower.structural_frequencies", "tcons.tower_freq", src_indices=[0])
             self.connect("configuration.n_blades", "tcons.blade_number")
             self.connect("rotorse.rp.powercurve.rated_Omega", "tcons.rated_Omega")
 

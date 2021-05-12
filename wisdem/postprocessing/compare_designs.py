@@ -764,7 +764,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "Tower cost": ["towerse.tower_cost", "USD"],
         "Monopile mass": ["towerse.monopile_mass", "kg"],
         "Monopile cost": ["towerse.monopile_cost", "USD"],
-        "Tower-Monopile freqs": ["towerse.post.structural_frequencies", "Hz"],
+        "Tower-Monopile freqs": ["towerse.tower.structural_frequencies", "Hz"],
     }
 
     # Generally it's not necessary to change the code below here, unless you

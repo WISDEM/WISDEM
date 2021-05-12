@@ -769,6 +769,8 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         moments of inertia for the nacelle (including yaw) [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around the tower top
     above_yaw_I : numpy array[6], [kg*m**2]
         moments of inertia for the nacelle (excluding yaw) [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around its center of mass
+    above_yaw_I_TT : numpy array[6], [kg*m**2]
+        moments of inertia for the nacelle (excluding yaw) [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around the tower top
     """
 
     def initialize(self):
@@ -841,6 +843,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         self.add_output("nacelle_I", np.zeros(6), units="kg*m**2")
         self.add_output("nacelle_I_TT", np.zeros(6), units="kg*m**2")
         self.add_output("above_yaw_I", np.zeros(6), units="kg*m**2")
+        self.add_output("above_yaw_I_TT", np.zeros(6), units="kg*m**2")
 
         self._mass_table = None
 
@@ -895,10 +898,10 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
 
         # Now find total I about nacelle CofM
         I_nac = np.zeros(6)
-        m_list = np.zeros((len(components) + 2,))
-        cm_list = np.zeros((len(components) + 2, 3))
-        I_cm_list = np.zeros((len(components) + 2, 6))
-        I_TT_list = np.zeros((len(components) + 2, 6))
+        m_list = np.zeros((len(components) + 3,))
+        cm_list = np.zeros((len(components) + 3, 3))
+        I_cm_list = np.zeros((len(components) + 3, 6))
+        I_TT_list = np.zeros((len(components) + 3, 6))
         for ic, c in enumerate(components):
             m_i = inputs[c + "_mass"]
             cm_i = inputs["generator_cm"] if c.find("generator") >= 0 else inputs[c + "_cm"]
@@ -927,8 +930,10 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
             I_cm_list[ic, :] = I_i if I_i.size == 6 else np.r_[I_i, np.zeros(3)]
 
         outputs["above_yaw_mass"] = copy.copy(m_nac)
-        outputs["above_yaw_cm"] = copy.copy(cm_nac)
-        outputs["above_yaw_I"] = copy.copy(I_nac)
+        outputs["above_yaw_cm"] = R = cm_nac.copy()
+        outputs["above_yaw_I"] = I_nac.copy()
+        parallel_axis = m_nac * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        outputs["above_yaw_I_TT"] = util.unassembleI(util.assembleI(I_nac) + parallel_axis)
 
         m_nac += inputs["yaw_mass"]
         cm_nac = (outputs["above_yaw_mass"] * outputs["above_yaw_cm"] + inputs["yaw_cm"] * inputs["yaw_mass"]) / m_nac
@@ -961,6 +966,11 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         outputs["total_bedplate_mass"] = inputs["nose_mass"] + inputs["bedplate_mass"]
 
         # Wrap up nacelle mass table
+        components.append("Above_yaw")
+        m_list[-3] = outputs["above_yaw_mass"]
+        cm_list[-3, :] = outputs["above_yaw_cm"]
+        I_cm_list[-3, :] = outputs["above_yaw_I"]
+        I_TT_list[-3, :] = outputs["above_yaw_I_TT"]
         components.append("yaw")
         m_list[-2] = inputs["yaw_mass"]
         cm_list[-2, :] = inputs["yaw_cm"]

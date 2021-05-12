@@ -946,17 +946,17 @@ class PoseOptimization(object):
         if tower_constr["stress"]["flag"] or monopile_constr["stress"]["flag"]:
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
                 kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("towerse.post" + kstr + ".stress", upper=1.0)
+                wt_opt.model.add_constraint("towerse.post" + kstr + ".constr_stress", upper=1.0)
 
         if tower_constr["global_buckling"]["flag"] or monopile_constr["global_buckling"]["flag"]:
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
                 kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("towerse.post" + kstr + ".global_buckling", upper=1.0)
+                wt_opt.model.add_constraint("towerse.post" + kstr + ".constr_global_buckling", upper=1.0)
 
         if tower_constr["shell_buckling"]["flag"] or monopile_constr["shell_buckling"]["flag"]:
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
                 kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("towerse.post" + kstr + ".shell_buckling", upper=1.0)
+                wt_opt.model.add_constraint("towerse.post" + kstr + ".constr_shell_buckling", upper=1.0)
 
         if tower_constr["d_to_t"]["flag"] or monopile_constr["d_to_t"]["flag"]:
             wt_opt.model.add_constraint(
@@ -982,7 +982,7 @@ class PoseOptimization(object):
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
                 kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint(
-                    "towerse.post" + kstr + ".structural_frequencies",
+                    "towerse.tower" + kstr + ".structural_frequencies",
                     indices=[0],
                     lower=tower_constr["frequency_1"]["lower_bound"],
                     upper=tower_constr["frequency_1"]["upper_bound"],
@@ -1079,17 +1079,21 @@ class PoseOptimization(object):
             wt_opt["blade.opt_var.chord_opt"] = init_chord_opt
             if self.modeling["WISDEM"]["RotorSE"]["inn_af"]:
                 wt_opt["inn_af.s_opt_r_thick"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["t/c"]["n_opt"])
-                init_r_thick_opt = np.interp(wt_opt["inn_af.s_opt_r_thick"],
+                init_r_thick_opt = np.interp(
+                    wt_opt["inn_af.s_opt_r_thick"],
                     wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"])
+                    wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"],
+                )
                 wt_opt["inn_af.r_thick_opt"] = init_r_thick_opt
                 wt_opt["inn_af.s_opt_L_D"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["L/D"]["n_opt"])
-                init_L_D_opt = np.interp(wt_opt["inn_af.s_opt_L_D"],
+                init_L_D_opt = np.interp(
+                    wt_opt["inn_af.s_opt_L_D"],
                     wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"])
+                    wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
+                )
                 wt_opt["inn_af.L_D_opt"] = init_L_D_opt
 
-            if blade_opt["structure"]["spar_cap_ss"]['flag'] or blade_opt["structure"]["spar_cap_ss"]['flag']:
+            if blade_opt["structure"]["spar_cap_ss"]["flag"] or blade_opt["structure"]["spar_cap_ss"]["flag"]:
                 wt_opt["blade.opt_var.s_opt_spar_cap_ss"] = np.linspace(
                     0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"]
                 )
