@@ -92,7 +92,7 @@ class CylinderBuckling:
     @property
     def t(self):
         """Section thicknesses at midpoints (m)."""
-        if self._l.size - 1 == self._t.size:
+        if self._l.size == self._t.size:
             return self._t
         elif self._l.size + 1 == self._t.size:
             return 0.5 * (self._t[1:] + self._t[:-1])
