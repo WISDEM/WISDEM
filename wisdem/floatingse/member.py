@@ -1574,10 +1574,12 @@ class Global2MemberLoads(om.ExplicitComponent):
         self.add_input("Px_global", np.zeros(n_full), units="N/m")
         self.add_input("Py_global", np.zeros(n_full), units="N/m")
         self.add_input("Pz_global", np.zeros(n_full), units="N/m")
+        self.add_input("qdyn_global", np.zeros(n_full), units="Pa")
 
         self.add_output("Px", NULL * np.ones(MEMMAX), units="N/m")
         self.add_output("Py", NULL * np.ones(MEMMAX), units="N/m")
         self.add_output("Pz", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_output("qdyn", NULL * np.ones(MEMMAX), units="Pa")
 
     def compute(self, inputs, outputs):
         # Unpack variables
@@ -1590,6 +1592,7 @@ class Global2MemberLoads(om.ExplicitComponent):
         Px_g = np.interp(s_grid, s_full, inputs["Px_global"])
         Py_g = np.interp(s_grid, s_full, inputs["Py_global"])
         Pz_g = np.interp(s_grid, s_full, inputs["Pz_global"])
+        qdyn_g = np.interp(s_grid, s_full, inputs["Pz_global"])
 
         # Get rotation matrix that puts x along member axis
         unit_x = np.array([1.0, 0.0, 0.0])
@@ -1607,6 +1610,10 @@ class Global2MemberLoads(om.ExplicitComponent):
         outputs["Px"] = Px
         outputs["Py"] = Py
         outputs["Pz"] = Pz
+
+        qdyn = NULL * np.ones(MEMMAX)
+        qdyn[: (nnode - 1)], _ = util.nodal2sectional(qdyn_g)
+        outputs["qdyn"] = qdyn
 
 
 class Member(om.Group):
@@ -1657,7 +1664,6 @@ class Member(om.Group):
             "Hsig_wave",
             "Tsig_wave",
             "water_depth",
-            "qdyn",
             "yaw",
         ]
         self.add_subsystem("env", CylinderEnvironment(nPoints=n_full, water_flag=True), promotes=prom)
@@ -1670,3 +1676,4 @@ class Member(om.Group):
         self.connect("env.Px", "g2e.Px_global")
         self.connect("env.Py", "g2e.Py_global")
         self.connect("env.Pz", "g2e.Pz_global")
+        self.connect("env.qdyn", "g2e.qdyn_global")

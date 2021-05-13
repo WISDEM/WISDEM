@@ -101,6 +101,10 @@ class FloatingSE(om.Group):
             "Iwater",
             "added_mass",
             "waterline_centroid",
+            "Px",
+            "Py",
+            "Pz",
+            "qdyn",
         ]
         for k in range(n_member):
             for var in mem_vars:
