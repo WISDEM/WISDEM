@@ -1067,6 +1067,9 @@ properties:
                         description: Keep the mooring line length within the bounds for catenary hang or TLP tension
                         properties:
                             flag: *flag
+                    stress: *vonmises
+                    global_buckling: *globalb
+                    shell_buckling: *shellb
 
 
     merit_figure:
