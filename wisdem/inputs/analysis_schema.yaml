@@ -1,7 +1,7 @@
 $schema: "http://json-schema.org/draft-07/schema#"
 $id: WISDEM_optimization_options_schema_v00
 title: WISDEM wind turbine optimization options schema
-description: Scehma that describes the analysis and optimization options for WISDEM
+description: Schema that describes the analysis and optimization options for WISDEM
 type: object
 properties:
     general:
@@ -66,21 +66,29 @@ properties:
                                         type: integer
                                         default: 8
                                         minimum: 4
-                                        description: Number of equally-spaced control points of the spline parametrizing the twist distribution along blade span. By default, the first two points are locked to prevent the optimizer to try to optimize the twist of the blade root cylinder.
-                                    lower_bound:
-                                        type: array
-                                        description: Lowest number of radians that can be added (typically negative to explore smaller twist angles)
-                                        default: [-0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1]
-                                        items:
-                                            type: number
-                                            unit: rad
-                                    upper_bound:
-                                        type: array
-                                        description: Largest number of radians that can be added (typically postive to explore greater twist angles)
-                                        default: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
-                                        items:
-                                            type: number
-                                            unit: rad
+                                        description: Number of equally-spaced control points of the spline parametrizing the twist distribution along blade span.
+                                    max_decrease:
+                                        type: number
+                                        description: Maximum allowable decrease of twist at each DV location along blade span.
+                                        default: 0.1
+                                        unit: rad
+                                    max_increase:
+                                        type: number
+                                        description: Maximum allowable increase of twist at each DV location along blade span.
+                                        default: 0.1
+                                        unit: rad
+                                    index_start: &index_start
+                                        type: integer
+                                        default: 0
+                                        minimum: 0
+                                        unit: none
+                                        description: First index of the array of design variables/constraints that is optimized/constrained
+                                    index_end: &index_end
+                                        type: integer
+                                        default: 8
+                                        minimum: 0
+                                        unit: none
+                                        description: Last index of the array of design variables/constraints that is optimized/constrained
                             chord:
                                 type: object
                                 default: {}
@@ -91,17 +99,17 @@ properties:
                                         type: integer
                                         default: 8
                                         minimum: 4
-                                        description: Number of equally-spaced control points of the spline parametrizing the chord distribution along blade span. By default, the first two points close to blade root and the last point are locked. The first two points impact the diameter of the blade root cylinder, and the models implemented in WISDEM do not have the level of fidelity to appropriately size the blade root diameter. The last point controls the chord length at blade tip and due to the imperfect tip loss models of CCBlade, it is usually a good idea to taper the chord manually and do not let a numerical optimizer control it.
-                                    min_gain:  &mingain
+                                        description: Number of equally-spaced control points of the spline parametrizing the chord distribution along blade span.
+                                    max_decrease: &max_decrease
                                         type: number
+                                        description: Maximum nondimensional decrease at each optimization location
                                         default: 0.5
-                                        unit: none
-                                        description: Lower bound on scalar multiplier that will be applied to value at control points
-                                    max_gain: &maxgain
+                                    max_increase: &max_increase
                                         type: number
+                                        description: Maximum nondimensional increase at each optimization location
                                         default: 1.5
-                                        unit: none
-                                        description: Upper bound on scalar multiplier that will be applied to value at control points
+                                    index_start: *index_start
+                                    index_end: *index_end
                             af_positions:
                                 type: object
                                 default: {}
@@ -113,6 +121,36 @@ properties:
                                         default: 4
                                         minimum: 1
                                         description: Index of airfoil where the optimization can start shifting airfoil position. The airfoil at blade tip is always locked.
+                            t/c:
+                                type: object
+                                default: {}
+                                description: Blade relative thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span. This requires the INN for airfoil design
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the relative thickness distribution along blade span.
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
+                            L/D:
+                                type: object
+                                default: {}
+                                description: Lift to drag ratio as a design variable by scaling (multiplying) the initial value at spline control points along the span. This requires the INN for airfoil design
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the lift to drag ratio distribution along blade span.
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
                     structure:
                         type: object
                         default: {}
@@ -129,8 +167,10 @@ properties:
                                         default: 8
                                         minimum: 4
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
-                                    min_gain: *mingain
-                                    max_gain: *maxgain
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
                             spar_cap_ps:
                                 type: object
                                 description: Blade pressure-side spar cap thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
@@ -146,8 +186,10 @@ properties:
                                         default: 8
                                         minimum: 4
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
-                                    min_gain: *mingain
-                                    max_gain: *maxgain
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
                             te_ss:
                                 type: object
                                 default: {}
@@ -159,8 +201,10 @@ properties:
                                         default: 8
                                         minimum: 4
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
-                                    min_gain: *mingain
-                                    max_gain: *maxgain
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
                             te_ps:
                                 type: object
                                 description: Blade pressure-side trailing edge reinforcement thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
@@ -172,8 +216,10 @@ properties:
                                         default: 8
                                         minimum: 4
                                         description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
-                                    min_gain: *mingain
-                                    max_gain: *maxgain
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
             control:
                 type: object
                 default: {}
@@ -459,6 +505,181 @@ properties:
                                 description: Design variable bound
                             upper_bound: *sbound
             monopile: *towdv
+            floating:
+                type: object
+                description: Design variables associated with the floating platform
+                default: {}
+                properties:
+                    joints:
+                        type: object
+                        description: Design variables associated with the node/joint locations used in the floating platform
+                        default: {}
+                        properties:
+                            flag: *flag
+                            z_coordinate: &link_m
+                                type: array
+                                description: List of joints or members by name sets that should be adjusted. A single entry for an independent joint/member or a list of names for joints/members that are linked by symmetry
+                                default: []
+                                items:
+                                    type: object
+                                    properties:
+                                        names: &floatname
+                                            type: array
+                                            description: Joint or member names of those that are linked
+                                            items:
+                                                type: string
+                                        lower_bound:
+                                            type: number
+                                            unit: m
+                                            description: Design variable bound
+                                        upper_bound:
+                                            type: number
+                                            unit: m
+                                            description: Design variable bound
+                            r_coordinate: *link_m
+                    members:
+                        type: object
+                        description: Design variables associated with the members used in the floating platform
+                        default: {}
+                        properties:
+                            flag: *flag
+                            groups:
+                                type: array
+                                description: Sets of members that share the same design
+                                default: []
+                                items:
+                                    type: object
+                                    properties:
+                                        names: *floatname
+                                        diameter:
+                                            type: object
+                                            description: Diameter optimization of member group
+                                            properties:
+                                                lower_bound: *dbound
+                                                upper_bound: *dbound
+                                        thickness:
+                                            type: object
+                                            description: Thickness optimization of member group
+                                            properties:
+                                                lower_bound: *tbound
+                                                upper_bound: *tbound
+                                        ballast:
+                                            type: object
+                                            description: Ballast volume optimization of member group
+                                            properties:
+                                                lower_bound:
+                                                    type: number
+                                                    unit: m^3
+                                                    description: Design variable bound
+                                                    default: 0.0
+                                                    minimum: 0.0
+                                                upper_bound:
+                                                    type: number
+                                                    unit: m^3
+                                                    description: Design variable bound
+                                                    minimum: 0.0
+                                        axial_joints:
+                                            type: array
+                                            description: List of axial joint sets in this member group that are optimized as one
+                                            items:
+                                                type: object
+                                                properties:
+                                                    names: *floatname
+                                                    lower_bound:
+                                                        type: number
+                                                        description: Design variable bound
+                                                        default: 0.0
+                                                        minimum: 0.0
+                                                        maximum: 1.0
+                                                    upper_bound:
+                                                        type: number
+                                                        description: Design variable bound
+                                                        minimum: 0.0
+                                                        maximum: 1.0
+                                                        default: 1.0
+                                        stiffeners:
+                                            type: object
+                                            description: Stiffener optimization of member group
+                                            properties:
+                                                ring:
+                                                    type: object
+                                                    description: Ring stiffener optimization of member group
+                                                    properties:
+                                                        size:
+                                                            type: object
+                                                            description: Ring stiffener sizing multiplier on T-shape
+                                                            properties:
+                                                                min_gain:  &mingain
+                                                                    type: number
+                                                                    default: 0.5
+                                                                    unit: none
+                                                                    description: Lower bound on scalar multiplier that will be applied to value at control points
+                                                                max_gain: &maxgain
+                                                                    type: number
+                                                                    default: 1.5
+                                                                    unit: none
+                                                        spacing:
+                                                            type: object
+                                                            description: Ring stiffener spacing along member axis
+                                                            properties:
+                                                                lower_bound: &lboundm
+                                                                    type: number
+                                                                    unit: m
+                                                                    description: Design variable bound
+                                                                    default: 0.0
+                                                                    minimum: 0.0
+                                                                upper_bound: &uboundm
+                                                                    type: number
+                                                                    unit: m
+                                                                    description: Design variable bound
+                                                                    minimum: 0.0
+                                                longitudinal:
+                                                    type: object
+                                                    description: Longitudinal stiffener optimization of member group
+                                                    properties:
+                                                        size:
+                                                            type: object
+                                                            description: Longitudinal stiffener sizing multiplier on T-shape
+                                                            properties:
+                                                                min_gain: *mingain
+                                                                max_gain: *maxgain
+                                                        spacing:
+                                                            type: object
+                                                            description: Longitudinal stiffener spacing around member annulus
+                                                            properties:
+                                                                lower_bound:
+                                                                    type: number
+                                                                    unit: rad
+                                                                    description: Design variable bound
+                                                                    default: 0.0
+                                                                    minimum: 0.0
+                                                                    maximum: 1.5707963267948966 #180 deg
+                                                                upper_bound:
+                                                                    type: number
+                                                                    unit: rad
+                                                                    description: Design variable bound
+                                                                    minimum: 0.0
+                                                                    maximum: 1.5707963267948966 #180 deg
+            mooring:
+                type: object
+                description: Design variables associated with the mooring system
+                default: {}
+                properties:
+                    line_length:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *lboundm
+                            upper_bound: *uboundm
+                    line_diameter:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *lboundm
+                            upper_bound: *uboundm
+
     constraints:
         type: object
         default: {}
@@ -478,9 +699,11 @@ properties:
                             max: &maxstrain
                                 type: number
                                 description: Maximum allowable strain value
-                                default: 4000e-6
-                                minimum: 1e-8
-                                maximum: 1e-1
+                                default: 4000.e-6
+                                minimum: 1.e-8
+                                maximum: 1.e-1
+                            index_start: *index_start
+                            index_end: *index_end
                     strains_spar_cap_ps:
                         type: object
                         default: {}
@@ -488,6 +711,8 @@ properties:
                         properties:
                             flag: *flag
                             max: *maxstrain
+                            index_start: *index_start
+                            index_end: *index_end
                     tip_deflection:
                         type: object
                         default: {}
@@ -521,16 +746,28 @@ properties:
                                 unit: radians
                     chord:
                         type: object
-                        description: Enforcing max chord length limit at all points along blade span.
+                        description: Enforcing the maximum chord length limit at all points along blade span.
                         default: {}
                         properties:
                             flag: *flag
                             max:
                                 type: number
-                                default: 4.3
+                                default: 4.75
                                 minimum: 0.1
                                 maximum: 20.0
                                 unit: meter
+                    root_circle_diameter:
+                        type: object
+                        description: Enforcing the minimum blade root circle diameter.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max_ratio:
+                                type: number
+                                description: Maximum ratio between the recommended root circle diameter and the actual chord at blade root. The optimizer will make sure that the ratio stays below this value.
+                                default: 1.
+                                minimum: 0.01
+                                maximum: 10.0
                     frequency:
                         type: object
                         description: Frequency separation constraint between blade fundamental frequency and blade passing (3P) frequency at rated conditions using gamma_freq margin. Can be activated for blade flap and/or edge modes.
@@ -745,7 +982,6 @@ properties:
                         default: {}
                         description: Ensure that the mooring system has enough restoring force to keep the heel/pitch angle below this limit
                         properties:
-                            flag: *flag
                             upper_bound: &upang
                                 type: number
                                 default: 0.17453292519943295 # 10 deg
@@ -765,69 +1001,214 @@ properties:
                                 minimum: 0.01
                                 maximum: 1.0
                                 unit: none
-
+                    buoyancy:
+                        type: object
+                        default: {}
+                        description: Ensures that the platform displacement is sufficient to support the weight of the turbine system
+                        properties:
+                            flag: *flag
+                    fixed_ballast_capacity:
+                        type: object
+                        default: {}
+                        description: Ensures that there is sufficient volume to hold the specified fixed (permanent) ballast
+                        properties:
+                            flag: *flag
+                    variable_ballast_capacity:
+                        type: object
+                        default: {}
+                        description: Ensures that there is sufficient volume to hold the needed water (variable) ballast to achieve neutral buoyancy
+                        properties:
+                            flag: *flag
+                    metacentric_height:
+                        type: object
+                        default: {}
+                        description: Ensures hydrostatic stability with a positive metacentric height
+                        properties:
+                            flag: *flag
+                    freeboard_margin:
+                        type: object
+                        default: {}
+                        description: Ensures that the freeboard (top points of structure) of floating platform stays above the waterline at the survival heel offset
+                        properties:
+                            flag: *flag
+                    draft_margin:
+                        type: object
+                        default: {}
+                        description: Ensures that the draft (bottom points of structure) of floating platform stays beneath the waterline at the survival heel offset
+                        properties:
+                            flag: *flag
+                    fairlead_depth:
+                        type: object
+                        default: {}
+                        description: Ensures that the mooring line attachment depth (fairlead) is sufficiently beneath the water line that it is not exposed at the significant wave height
+                        properties:
+                            flag: *flag
+                    mooring_surge:
+                        type: object
+                        default: {}
+                        description: Ensures that the mooring lines have sufficient restoring force to overcome rotor thrust at the max surge offset
+                        properties:
+                            flag: *flag
+                    mooring_heel:
+                        type: object
+                        default: {}
+                        description: Ensures that the mooring lines have sufficient restoring force to overcome rotor thrust at the max heel offset
+                        properties:
+                            flag: *flag
                     mooring_tension:
                         type: object
                         default: {}
                         description: Keep the mooring line tension below its breaking point
                         properties:
                             flag: *flag
-
                     mooring_length:
                         type: object
                         default: {}
                         description: Keep the mooring line length within the bounds for catenary hang or TLP tension
                         properties:
                             flag: *flag
+                    stress: *vonmises
+                    global_buckling: *globalb
+                    shell_buckling: *shellb
 
 
     merit_figure:
         type: string
-        description: Objective function / merit figure for optimization.  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation
+        description: Objective function / merit figure for optimization (not checked via schema, but in python).  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation
         default: LCOE
-        enum: [LCOE, AEP, Cp, blade_mass, nacelle_mass, nacelle_cost, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass, structural_cost, blade_tip_deflection, My_std, flp1_std]
 
     driver:
         type: object
-        description: Specification of the optimization driver (optimization algorithm) parameters
         default: {}
         properties:
-            tol:
-                type: number
-                description: Convergence tolerance (relative)
-                default: 1e-6
-                minimum: 1e-12
-                maximum: 1.0
-                unit: none
-            max_iter:
-                type: integer
-                description: Max number of optimization iterations
-                default: 100
-                minimum: 0
-                maximum: 100000
-            max_function_calls:
-                type: integer
-                description: Max number of calls to objective function evaluation
-                default: 100000
-                minimum: 0
-                maximum: 100000000
-            solver:
-                type: string
-                description: Optimization driver.  Can be one of [SLSQP, CONMIN, COBYLA, SNOPT]
-                default: SLSQP
-                enum: [SLSQP, CONMIN, COBYLA, SNOPT]
-            step_size:
-                type: number
-                description: Maximum step size
-                default: 1e-3
-                minimum: 1e-10
-                maximum: 100.0
-            form:
-                type: string
-                description: Finite difference calculation mode
-                default: central
-                enum: [central, forward, complex]
-
+            optimization:
+                type: object
+                description: Specification of the optimization driver (optimization algorithm) parameters
+                default: {}
+                properties:
+                    flag: *flag
+                    tol:
+                        type: number
+                        description: Convergence tolerance (relative)
+                        default: 1e-6
+                        minimum: 1e-12
+                        maximum: 1.0
+                        unit: none
+                    max_iter:
+                        type: integer
+                        description: Max number of optimization iterations
+                        default: 100
+                        minimum: 0
+                        maximum: 100000
+                    max_major_iter:
+                        type: integer
+                        description: Max number of major optimization iterations of SNOPT
+                        default: 10
+                        minimum: 0
+                        maximum: 100000
+                    max_minor_iter:
+                        type: integer
+                        description: Max number of minor optimization iterations of SNOPT
+                        default: 100
+                        minimum: 0
+                        maximum: 100000
+                    max_function_calls:
+                        type: integer
+                        description: Max number of calls to objective function evaluation
+                        default: 100000
+                        minimum: 0
+                        maximum: 100000000
+                    solver:
+                        type: string
+                        description: Optimization driver.
+                        default: SLSQP
+                        enum: [SLSQP, CONMIN, COBYLA, SNOPT, Nelder-Mead, GA, GN_DIRECT, GN_DIRECT_L, GN_DIRECT_L_NOSCAL, GN_ORIG_DIRECT, GN_ORIG_DIRECT_L, GN_AGS, GN_ISRES, LN_COBYLA, LD_MMA, LD_CCSAQ, LD_SLSQP, NSGA2]
+                    step_size:
+                        type: number
+                        description: Maximum step size for finite difference approximation
+                        default: 1e-3
+                        minimum: 1e-10
+                        maximum: 100.0
+                    form:
+                        type: string
+                        description: Finite difference calculation mode
+                        default: central
+                        enum: [central, forward, complex]
+                    debug_print:
+                        type: boolean
+                        default: False
+                        description: Toggle driver debug printing
+            design_of_experiments:
+                type: object
+                description: Specification of the design of experiments driver parameters
+                default: {}
+                properties:
+                    flag: *flag
+                    run_parallel:
+                        type: boolean
+                        default: True
+                        description: Toggle parallel model runs
+                    generator:
+                        type: string
+                        description: Type of model input generator.
+                        default: Uniform
+                        enum: [Uniform, FullFact, PlackettBurman, BoxBehnken, LatinHypercube]
+                    num_samples:
+                        type: integer
+                        description: Number of samples to evaluate model at (Uniform and LatinHypercube only)
+                        default: 5
+                        minimum: 1
+                        maximum: 1000000
+                    seed:
+                        type: integer
+                        description: Random seed to use if design is randomized
+                        default: 2
+                        minimum: 1
+                        maximum: 1000000
+                    levels:
+                        type: integer
+                        description: Number of evenly spaced levels between each design variable lower and upper bound (FullFactorial only)
+                        default: 2
+                        minimum: 1
+                        maximum: 1000000
+                    criterion:
+                        type: string
+                        description: Descriptor of sampling method for LatinHypercube generator
+                        default: None
+                        enum: [None, center, c, maximin, m, centermaximin, cm, correelation, corr]
+                    iterations:
+                        type: integer
+                        description: Number of iterations in maximin and correlations algorithms (LatinHypercube only)
+                        default: 2
+                        minimum: 1
+                        maximum: 1000000
+            step_size_study:
+                type: object
+                description: Specification of the step size study parameters
+                default: {}
+                properties:
+                    flag: *flag
+                    step_sizes:
+                        type: array
+                        default: [1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5, 5e-6, 1e-6, 5e-7, 1e-7, 5e-8, 1e-8]
+                        description: List of step size values to use for the study
+                    form:
+                        type: string
+                        description: Finite difference calculation mode
+                        default: central
+                        enum: [central, forward, complex]
+                    of:
+                        type: array
+                        description: Functions of interest for which we'll compute total derivatives
+                        default: []
+                    wrt:
+                        type: array
+                        description: Design variables we'll perturb for the step size study
+                        default: []
+                    driver_scaling:
+                        type: boolean
+                        description: When True, return derivatives that are scaled according to either the adder and scaler or the ref and ref0 values that were specified when add_design_var, add_objective, and add_constraint were called on the model.
+                        default: False
     recorder:
         type: object
         default: {}

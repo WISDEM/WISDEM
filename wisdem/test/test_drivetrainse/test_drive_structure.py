@@ -371,6 +371,9 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_mb1"], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_mb2"][[0, 2]], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_torq"], 0.0, decimal=2)
+        self.assertAlmostEqual(
+            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3 ** 4 - 2.4 ** 4) / 32 / self.inputs["L_lss"], 4
+        )
 
         g = np.array([30e2, 40e2, 50e2])
         self.inputs["F_hub"] = g.reshape((3, 1))
@@ -403,6 +406,9 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_mb1"], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_mb2"][[0, 2]], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_torq"], 0.0, decimal=2)
+        self.assertAlmostEqual(
+            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3 ** 4 - 2.4 ** 4) / 32 / self.inputs["L_lss"], 4
+        )
 
         g = np.array([30e2, 40e2, 50e2])
         self.inputs["F_hub"] = g.reshape((3, 1))
@@ -435,6 +441,9 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_mb1"], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_mb2"][[0, 2]], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_torq"], 0.0, decimal=2)
+        self.assertAlmostEqual(
+            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3 ** 4 - 2.4 ** 4) / 32 / self.inputs["L_lss"], 4
+        )
 
         g = np.array([30e2, 40e2, 50e2])
         self.inputs["F_hub"] = g.reshape((3, 1))
@@ -468,6 +477,9 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_mb1"], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_mb2"][[0, 2]], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_torq"], 0.0, decimal=2)
+        self.assertAlmostEqual(
+            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3 ** 4 - 2.4 ** 4) / 32 / self.inputs["L_lss"], 4
+        )
 
         g = np.array([30e2, 40e2, 50e2])
         self.inputs["F_hub"] = g.reshape((3, 1))

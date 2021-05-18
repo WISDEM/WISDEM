@@ -82,6 +82,7 @@ properties:
                 minimum: 0
     components:
         type: object
+        default: {}
         optional:
             - blade
             - hub
@@ -144,6 +145,26 @@ properties:
                                         $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
                                         $ref: "#/definitions/distributed_data/grid_nd"
+                            t/c:
+                                type: object
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    values:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                            L/D:
+                                type: object
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    values:
+                                        $ref: "#/definitions/distributed_data/nd"
                             reference_axis:
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
                             # coordinates:
@@ -172,10 +193,29 @@ properties:
 
                     internal_structure_2d_fem:
                         type: object
+                        default: {}
                         required:
                             - reference_axis
                             - layers
                         properties:
+                            root:
+                                type: object
+                                default: {}
+                                properties:
+                                    d_f:
+                                        type: number
+                                        default: 0.03
+                                        minimum: 0.01
+                                        maximum: 0.2
+                                        unit: m
+                                        description: Diameter of the fastener, default is M30, so 0.03 meters
+                                    sigma_max:
+                                        type: number
+                                        default: 675.e+6
+                                        minimum: 1.e+5
+                                        maximum: 1.e+10
+                                        unit: Pa
+                                        description: Max stress on bolt
                             reference_axis:
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
                             webs:
@@ -270,6 +310,32 @@ properties:
                                             $ref: "#/definitions/distributed_data/rotation"
                                         offset_y_pa:
                                             $ref: "#/definitions/distributed_data/offset"
+                            joint:
+                                type: object
+                                default: {}
+                                description: This is a spanwise joint along the blade, usually adopted to ease transportation constraints. WISDEM currently supports a single joint.
+                                properties:
+                                    position:
+                                        type: number
+                                        description: Spanwise position of the segmentation joint.
+                                        unit: none
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 1.0
+                                    mass:
+                                        type: number
+                                        description: Mass of the joint.
+                                        unit: kg
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 1.e+6
+                                    cost:
+                                        type: number
+                                        description: Cost of the joint.
+                                        unit: USD
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 1.e+6
                     # cfd_geometry:
                         # type: object
                         # TODO
@@ -297,7 +363,7 @@ properties:
                                 description: Rotor precone angle, defined positive for both upwind and downwind rotors.
                                 unit: rad
                                 minimum: 0
-                                maximum: 0.2
+                                maximum: 0.4
                             drag_coefficient:
                                 type: number
                                 description: Equivalent drag coefficient to compute the aerodynamic forces generated on the hub.
@@ -422,6 +488,13 @@ properties:
                                 minimum: 0.8
                                 maximum: 1.
                                 default: 1.0
+                            damping_ratio:
+                                type: number
+                                description: Damping ratio for the drivetrain system
+                                unit: none
+                                minimum: 0.0
+                                maximum: 1.
+                                default: 0.005
                             lss_diameter:
                                 type: array
                                 description: Diameter of the low speed shaft at beginning (generator/gearbox) and end (hub) points
@@ -1371,7 +1444,7 @@ properties:
                                                 - spacing
                                             properties:
                                                 material: *material
-                                                flange_height: &stiff_fh
+                                                flange_thickness: &stiff_ft
                                                     type: number
                                                     unit: m
                                                     minimum: 0
@@ -1404,7 +1477,7 @@ properties:
                                                 - spacing
                                             properties:
                                                 material: *material
-                                                flange_height: *stiff_fh
+                                                flange_thickness: *stiff_ft
                                                 flange_width: *stiff_fw
                                                 web_height: *stiff_wh
                                                 web_thickness: *stiff_wt
@@ -1478,30 +1551,20 @@ properties:
                                                 minimum: 0.0
                                                 maximum: 1.0
                                                 description: Non-dimensional value along member axis
-                                hydrodynamic_approach: &hydro
-                                    # TODO: Move these to the modeling file?
-                                    description: How should this member be modeled?
-                                    type: string
-                                    default: strip
-                                    enum:
-                                        - strip
-                                        - potential
-                                        - both
                                 Ca: &ca
-                                    # TODO: Move these to the modeling file?
-                                    description: Added mass coefficient
+                                    description: User-defined added mass coefficient
                                     type: number
                                     default: 0.0
+                                    minimum: 0.0
                                 Cp: &cp
-                                    # TODO: Move these to the modeling file?
-                                    description: Pressure coefficient
+                                    description: User-defined pressure coefficient
                                     type: number
                                     default: 0.0
                                 Cd: &cd
-                                    # TODO: Move these to the modeling file?
-                                    description: Drag coefficient
+                                    description: User-defined drag coefficient
                                     type: number
                                     default: 0.0
+                                    minimum: 0.0
                     rigid_bodies:
                         type: array
                         descriptions: Additional point masses at joints with user-customized properties
@@ -1547,7 +1610,6 @@ properties:
                                         maxItems: 3
                                         minItems: 3
                                         minimum: 0
-                                hydrodynamic_approach: *hydro
                                 Ca: *ca
                                 Cp: *cp
                                 Cd: *cd
@@ -1582,7 +1644,7 @@ properties:
                             then:
                                 required:
                                     - anchor_type
-                                    - location
+                                    - joint
                             else:
                                 if:
                                     # If node_type == vessel, then we need to specify the fairlead_type
@@ -1607,7 +1669,7 @@ properties:
                                         - connection
                                         - vessel
                                 location:
-                                    type: array # I don't think we need to define x, y, and z explicitely
+                                    type: array
                                     description: – Coordinates x, y, and z of the connection (relative to inertial reference frame if Fixed or Connect, relative to platform reference frame if Vessel). In the case of Connect nodes, it is simply an initial guess for position before MoorDyn calculates the equilibrium initial position.
                                     items:
                                         type: number
@@ -1616,7 +1678,7 @@ properties:
                                         maxItems: 3
                                 joint:
                                     type: string
-                                    description: For fairlead attachments, reference a joint name from the "joints" section or an "axial_joint" on a member
+                                    description: For anchor positions and fairlead attachments, reference a joint name from the "joints" section or an "axial_joint" on a member
                                     default: none
                                 anchor_type:
                                     type: string

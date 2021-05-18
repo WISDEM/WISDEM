@@ -11,6 +11,8 @@ dependencies:
   - jsonschema
   - make
   - matplotlib
+  - mpi4py
+  - nlopt
   - numpy
   - openmdao
   - openpyxl
@@ -20,6 +22,7 @@ dependencies:
   - pytest
   - pytest-cov
   - python
+  - python-benedict
   - pyyaml
   - ruamel_yaml
   - scipy
@@ -34,4 +37,3 @@ dependencies:
 #  - libpython # [win]
 #  - compilers # [not win]
 #  - petsc4py # [not win]
-#  - mpi4py # [not win]

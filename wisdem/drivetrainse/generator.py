@@ -7,6 +7,7 @@ Structural design based on McDonald's thesis """
 
 import numpy as np
 import openmdao.api as om
+
 import wisdem.drivetrainse.generator_models as gm
 
 # ----------------------------------------------------------------------------------------------
@@ -531,4 +532,4 @@ class Generator(om.Group):
         self.add_subsystem("mofi", MofI(), promotes=["*"])
         self.add_subsystem("gen_cost", Cost(), promotes=["*"])
         self.add_subsystem("constr", Constraints(), promotes=["*"])
-        self.add_subsystem("eff", PowerElectronicsEff(), promotes=["*"])
+        self.add_subsystem("eff", PowerElectronicsEff(n_pc=n_pc), promotes=["*"])

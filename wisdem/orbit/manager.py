@@ -4,6 +4,7 @@ __maintainer__ = "Jake Nunemaker"
 __email__ = ["jake.nunemaker@nrel.gov"]
 
 
+import os
 import re
 import datetime as dt
 import collections.abc as collections
@@ -14,6 +15,7 @@ from itertools import product
 
 import numpy as np
 import pandas as pd
+import wisdem.orbit
 from wisdem.orbit.phases import DesignPhase, InstallPhase
 from wisdem.orbit.core.library import initialize_library, export_library_specs, extract_library_data
 from wisdem.orbit.phases.design import (
@@ -109,7 +111,7 @@ class ProjectManager:
         self.phase_times = {}
         self._output_logs = []
 
-    def run_project(self, **kwargs):
+    def run(self, **kwargs):
         """
         Main project run method.
 
@@ -154,6 +156,20 @@ class ProjectManager:
         return self._phases
 
     @property
+    def _capex_categories(self):
+        """Returns CapEx categories for phases in `self._install_phases`."""
+
+        out = {}
+        for p in self._install_phases:
+            try:
+                out[p.__name__] = p.capex_category
+
+            except AttributeError:
+                out[p.__name__] = "Misc."
+
+        return out
+
+    @property
     def project_params(self):
         """Returns defined project parameters, if found."""
 
@@ -187,7 +203,7 @@ class ProjectManager:
             config = cls.remove_keys(config, d.output_config)
 
         config["project_parameters"] = {
-            "turbine_capex": "$/kW (optional, default: 0.0)",
+            "turbine_capex": "$/kW (optional, default: 1300)",
             "ncf": "float (optional, default: 0.4)",
             "offtake_price": "$/MWh (optional, default: 80)",
             "project_lifetime": "yrs (optional, default: 25)",
@@ -206,6 +222,7 @@ class ProjectManager:
 
         config["design_phases"] = [*design_phases.keys()]
         config["install_phases"] = [*install_phases.keys()]
+        config["orbit_version"] = str(wisdem.orbit.__version__)
 
         return config
 
@@ -428,10 +445,11 @@ class ProjectManager:
         _class = self.get_phase_class(name)
         _config = self.create_config_for_phase(name)
         processes = _config.pop("processes", {})
+        kwargs = {**kwargs, **processes}
 
         if _catch:
             try:
-                phase = _class(_config, weather=weather, phase_name=name, **processes)
+                phase = _class(_config, weather=weather, phase_name=name, **kwargs)
                 phase.run()
 
             except Exception as e:
@@ -439,7 +457,7 @@ class ProjectManager:
                 return None, None
 
         else:
-            phase = _class(_config, weather=weather, phase_name=name, **processes)
+            phase = _class(_config, weather=weather, phase_name=name, **kwargs)
             phase.run()
 
         self._phases[name] = phase
@@ -585,7 +603,7 @@ class ProjectManager:
                 self._output_logs.extend(logs)
 
         # Run remaining phases
-        self.run_dependent_phases(variable, zero)
+        self.run_dependent_phases(variable, zero, **kwargs)
 
     def run_dependent_phases(self, _phases, zero, **kwargs):
         """
@@ -748,6 +766,50 @@ class ProjectManager:
 
         return self.weather.iloc[ceil(start) :].copy().to_records()
 
+    def outputs(self, include_logs=False, npv_detailed=False):
+        """Returns dict of all available outputs."""
+
+        out = {
+            # Times
+            "project_time": self.project_time,
+            "installation_time": self.installation_time,
+            # Costs
+            "capex_breakdown": self.capex_breakdown,
+            "capex_breakdown_per_kw": self.capex_breakdown_per_kw,
+            "turbine_capex": self.turbine_capex,
+            "turbine_capex_per_kw": self.turbine_capex_per_kw,
+            "installation_capex": self.installation_capex,
+            "installation_capex_per_kw": self.installation_capex_per_kw,
+            "system_capex": self.system_capex,
+            "system_capex_per_kw": self.system_capex_per_kw,
+            "overnight_capex": self.overnight_capex,
+            "overnight_capex_per_kw": self.overnight_capex_per_kw,
+            "soft_capex": self.soft_capex,
+            "soft_capex_per_kw": self.soft_capex_per_kw,
+            "bos_capex": self.bos_capex,
+            "bos_capex_per_kw": self.bos_capex_per_kw,
+            "project_capex": self.project_capex,
+            "project_capex_per_kw": self.project_capex_per_kw,
+            "total_capex": self.total_capex,
+            "total_capex_per_kw": self.total_capex_per_kw,
+            "npv": self.npv,
+        }
+
+        if include_logs:
+            out["logs"] = self.actions
+
+        if npv_detailed:
+            out = {
+                **out,
+                **{
+                    "cash_flow": self.cash_flow,
+                    "monthly_revenue": self.monthly_revenue,
+                    "monthly_expenses": self.monthly_expenses,
+                },
+            }
+
+        return out
+
     @property
     def capacity(self):
         """Returns project capacity in MW."""
@@ -785,7 +847,7 @@ class ProjectManager:
         return rating
 
     @property
-    def project_logs(self):
+    def logs(self):
         """Returns list of all logs in the project."""
 
         if not self._output_logs:
@@ -797,7 +859,7 @@ class ProjectManager:
     def project_time(self):
         """Returns total project time as the time of the last log."""
 
-        return self.project_actions[-1]["time"]
+        return self.actions[-1]["time"]
 
     @property
     def month_bins(self):
@@ -895,7 +957,7 @@ class ProjectManager:
         cash_flow = self.cash_flow
         _npv = [(cash_flow[i] / (1 + pr) ** (i)) for i in range(1, max(cash_flow.keys()) + 1)]
 
-        return self.overnight_capex - sum(_npv)
+        return (self.total_capex - self.installation_capex) - sum(_npv)
 
     @property
     def progress_logs(self):
@@ -907,7 +969,7 @@ class ProjectManager:
         """Returns filtered list of logs."""
 
         filtered = []
-        for l in self.project_logs:
+        for l in self.logs:
             try:
                 filtered.append(tuple(l[k] for k in keys))
 
@@ -932,10 +994,10 @@ class ProjectManager:
         return summary
 
     @property
-    def project_actions(self):
+    def actions(self):
         """Returns list of all actions in the project."""
 
-        actions = [l for l in self.project_logs if l["level"] == "ACTION"]
+        actions = [l for l in self.logs if l["level"] == "ACTION"]
         return sorted(actions, key=lambda l: l["time"])
 
     @staticmethod
@@ -1056,6 +1118,55 @@ class ProjectManager:
         return capex
 
     @property
+    def capex_breakdown(self):
+        """Returns CapEx breakdown by category."""
+
+        unique = np.unique([*self.system_costs.keys(), *self.installation_costs.keys()])
+        categories = {}
+
+        for phase in unique:
+            for base, cat in self._capex_categories.items():
+                if base in phase:
+                    categories[phase] = cat
+                    break
+
+        missing = [p for p in unique if p not in categories.keys()]
+        if missing:
+            print(f"Warning: CapEx category not found for {missing}. " f"Added to 'Misc.'")
+
+            for phase in missing:
+                categories[phase] = "Misc."
+
+        outputs = {}
+        for phase, cost in self.system_costs.items():
+            name = categories[phase]
+            if name in outputs.keys():
+                outputs[name] += cost
+
+            else:
+                outputs[name] = cost
+
+        for phase, cost in self.installation_costs.items():
+            name = categories[phase] + " Installation"
+            if name in outputs.keys():
+                outputs[name] += cost
+
+            else:
+                outputs[name] = cost
+
+        outputs["Turbine"] = self.turbine_capex
+        outputs["Soft"] = self.soft_capex
+        outputs["Project"] = self.project_capex
+
+        return outputs
+
+    @property
+    def capex_breakdown_per_kw(self):
+        """Returns CapEx per kW breakdown by category."""
+
+        return {k: v / (self.capacity * 1000) for k, v in self.capex_breakdown.items()}
+
+    @property
     def bos_capex(self):
         """Returns total balance of system CapEx."""
 
@@ -1075,22 +1186,19 @@ class ProjectManager:
 
     @property
     def turbine_capex(self):
-        """
-        Returns the total turbine CAPEX.
-        """
+        """Returns the total turbine CAPEX."""
 
-        _capex = self.project_params.get("turbine_capex", 0.0)
+        _capex = self.project_params.get("turbine_capex", 1300)
         try:
             num_turbines = self.config["plant"]["num_turbines"]
             rating = self.config["turbine"]["turbine_rating"]
 
         except KeyError:
-            print(
-                f"Turbine CAPEX not included in commissioning. Required "
+            raise KeyError(
+                f"Total turbine CAPEX can't be calculated. Required "
                 f"parameters 'plant.num_turbines' or 'turbine.turbine_rating' "
                 f"not found."
             )
-            return 0.0
 
         capex = _capex * num_turbines * rating * 1000
         return capex
@@ -1099,7 +1207,7 @@ class ProjectManager:
     def turbine_capex_per_kw(self):
         """Returns the turbine CapEx/kW."""
 
-        _capex = self.project_params.get("turbine_capex", None)
+        _capex = self.project_params.get("turbine_capex", 1300)
         return _capex
 
     @property
@@ -1198,6 +1306,35 @@ class ProjectManager:
         """
 
         export_library_specs("config", file_name, self.config)
+
+    def export_project_logs(self, filepath, level="ACTION"):
+        """
+        Exports the project logs to a .csv file.
+
+        Parameters
+        ----------
+        filepath : str
+            Filepath to save logs at.
+        level : str, optional
+            Log level to save.
+            Options: 'ACTION' | 'DEBUG'
+            Default: 'ACTION'
+        """
+
+        dirs = os.path.split(filepath)[0]
+        if dirs and not os.path.isdir(dirs):
+            os.makedirs(dirs)
+
+        if level == "ACTION":
+            out = pd.DataFrame(self.actions)
+
+        elif level == "DEBUG":
+            out = pd.DataFrame(self.logs)
+
+        else:
+            raise ValueError(f"Unrecognized level '{level}'." " Must be 'ACTION' or 'DEBUG'.")
+
+        out.to_csv(filepath, index=False)
 
 
 class ProjectProgress:

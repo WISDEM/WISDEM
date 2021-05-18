@@ -33,6 +33,7 @@ class ExportCableInstallation(InstallPhase):
     """Export Cable Installation Phase"""
 
     phase = "Export Cable Installation"
+    capex_category = "Export System"
 
     #:
     expected_config = {
@@ -195,7 +196,7 @@ class ExportCableInstallation(InstallPhase):
         vessel_specs = self.config.get("export_cable_install_vessel", None)
         name = vessel_specs.get("name", "Export Cable Installation Vessel")
 
-        vessel = Vessel(name, vessel_specs)
+        vessel = self.initialize_vessel(name, vessel_specs)
         self.env.register(vessel)
 
         vessel.initialize()
@@ -212,7 +213,7 @@ class ExportCableInstallation(InstallPhase):
 
         name = vessel_specs.get("name", "Export Cable Burial Vessel")
 
-        vessel = Vessel(name, vessel_specs)
+        vessel = self.initialize_vessel(name, vessel_specs)
         self.env.register(vessel)
 
         vessel.initialize()
@@ -228,7 +229,7 @@ class ExportCableInstallation(InstallPhase):
             return
         name = vessel_specs.get("name", "Export Cable Trench Vessel")
 
-        vessel = Vessel(name, vessel_specs)
+        vessel = self.initialize_vessel(name, vessel_specs)
         self.env.register(vessel)
 
         vessel.initialize()

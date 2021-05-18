@@ -267,8 +267,7 @@ class OrbitWisdem(om.ExplicitComponent):
                 "type": "Transition Piece",
                 "deck_space": float(inputs["transition_piece_deck_space"]),
                 "mass": float(inputs["transition_piece_mass"]),
-                # No double counting of cost with TowerSE
-                "unit_cost": 0.0,  # float(inputs["transition_piece_cost"]),
+                "unit_cost": float(inputs["transition_piece_cost"]),
             },
             # Electrical
             "array_system_design": {
@@ -301,6 +300,10 @@ class OrbitWisdem(om.ExplicitComponent):
             # Phases
             # Putting monopile or semisub here would override the inputs we assume to get from WISDEM
             "design_phases": [
+                #'MonopileDesign',
+                #'SemiSubmersibleDesign',
+                #'MooringSystemDesign',
+                #'ScourProtectionDesign',
                 "ArraySystemDesign",
                 "ExportSystemDesign",
                 "OffshoreSubstationDesign",
@@ -309,11 +312,6 @@ class OrbitWisdem(om.ExplicitComponent):
 
         # Unique design phases
         if floating:
-            config["design_phases"] += [
-                "MooringSystemDesign",
-                # "SparDesign",
-                # "SemiSubmersibleDesign",
-            ]
             config["install_phases"] = {
                 "ExportCableInstallation": 0,
                 "OffshoreSubstationInstallation": 0,
@@ -393,8 +391,7 @@ class OrbitWisdem(om.ExplicitComponent):
                 "diameter": float(inputs["monopile_diameter"]),
                 "deck_space": float(inputs["monopile_deck_space"]),
                 "mass": float(inputs["monopile_mass"]),
-                # No double counting of cost with TowerSE
-                "unit_cost": 0.0,  # float(inputs["monopile_cost"]),
+                "unit_cost": float(inputs["monopile_cost"]),
             }
 
             config["scour_protection_design"] = {
@@ -409,7 +406,7 @@ class OrbitWisdem(om.ExplicitComponent):
         config = self.compile_orbit_config_file(inputs, outputs, discrete_inputs, discrete_outputs)
 
         project = ProjectManager(config)
-        project.run_project()
+        project.run()
 
         outputs["bos_capex"] = project.bos_capex
         outputs["total_capex"] = project.total_capex

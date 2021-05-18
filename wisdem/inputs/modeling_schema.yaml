@@ -82,6 +82,14 @@ properties:
                         type: boolean
                         default: True
                         description: Flag to derive the regulation trajectory in region III in terms of pitch and TSR
+                    peak_thrust_shaving:
+                        type: boolean
+                        default: False
+                        description: If True, apply peak thrust shaving within RotorSE.
+                    thrust_shaving_coeff:
+                        type: number
+                        default: 1.0
+                        description: Scalar applied to the max torque within RotorSE for peak thrust shaving. Only used if `peak_thrust_shaving` is True.
                     spar_cap_ss:
                         type: string
                         default: 'none'
@@ -105,6 +113,57 @@ properties:
                         maximum: 5.0
                         default: 1.1
                         unit: none
+                    gust_std:
+                        type: number
+                        description: Number of standard deviations for strength of gust
+                        minimum: 0.0
+                        maximum: 5.0
+                        default: 3.0
+                        unit: none
+                    root_fastener_s_f:
+                        type: number
+                        default: 2.5
+                        minimum: 0.1
+                        maximum: 1.e+2
+                        description: Safety factor for the max stress of blade root fasteners
+                    hubloss:
+                        type: boolean
+                        default: True
+                        description: Include Prandtl hub loss model in CCBlade calls
+                    tiploss:
+                        type: boolean
+                        default: True
+                        description: Include Prandtl tip loss model in CCBlade calls
+                    wakerotation:
+                        type: boolean
+                        default: True
+                        description: Include effect of wake rotation (i.e., tangential induction factor is nonzero) in CCBlade calls
+                    usecd:
+                        type: boolean
+                        default: True
+                        description: Use drag coefficient in computing induction factors in CCBlade calls
+                    n_sector:
+                        type: integer
+                        default: 4
+                        minimum: 1
+                        maximum: 10
+                        description: Number of sectors to divide rotor face into in computing thrust and power.
+                    inn_af:
+                        type: boolean
+                        default: False
+                        description: Flag switching on and off the inverted neural network for airfoil design
+                    inn_af_max_t/c:
+                        type: number
+                        default: 0.4
+                        minimum: 0.
+                        maximum: 1.
+                        description: Maximum airfoil thickness supported by the INN for airfoil design
+                    inn_af_min_t/c:
+                        type: number
+                        default: 0.15
+                        minimum: 0.
+                        maximum: 1.
+                        description: Minimum airfoil thickness supported by the INN for airfoil design
             DriveSE:
                 type: object
                 default: {}
@@ -191,6 +250,11 @@ properties:
                         maximum: 5.0
                         default: 1.0
                         unit: none
+                    buckling_method:
+                        type: string
+                        enum: [Eurocode, Euro-code, eurocode, euro-code, DNVGL, dnvgl, DNV-GL, dnv-gl]
+                        description: Buckling utilization calculation method- Eurocode 1994 or DNVGL RP-C202
+                        default: dnvgl
                     buckling_length:
                         type: number
                         description: Buckling length factor in Eurocode safety check
@@ -247,6 +311,15 @@ properties:
                         description: Whether or not to run the floating design modules (FloatingSE)
                     frame3dd: *frame3dd
                     gamma_f: *gamma_f
+                    gamma_m: *gamma_m
+                    gamma_n: *gamma_n
+                    gamma_b: *gamma_b
+                    gamma_freq: *gamma_freq
+                    gamma_fatigue: *gamma_fatigue
+                    symmetric_moorings:
+                        type: boolean
+                        default: True
+                        description: Whether or not to assume a symmetric mooring system
 
             Loading:
                 type: object

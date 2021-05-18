@@ -15,6 +15,7 @@ WISDEM:
         gamma_n: 1.0     # Safety factor for ...
         gamma_b: 1.1     # Safety factor for ...
         gamma_fatigue: 1.755  # Safety factor for fatigue loads
+        buckling_method: dnvgl # Buckling code type [eurocode or dnvgl]
         buckling_length: 30    # Buckling parameter
         soil_springs: True
         gravity_foundation: False

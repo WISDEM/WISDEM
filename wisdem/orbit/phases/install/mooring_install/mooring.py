@@ -18,6 +18,7 @@ class MooringSystemInstallation(InstallPhase):
     """Module to model the installation of mooring systems at sea."""
 
     phase = "Mooring System Installation"
+    capex_category = "Mooring System"
 
     #:
     expected_config = {
@@ -86,7 +87,7 @@ class MooringSystemInstallation(InstallPhase):
         vessel_specs = self.config.get("mooring_install_vessel", None)
         name = vessel_specs.get("name", "Mooring System Installation Vessel")
 
-        vessel = Vessel(name, vessel_specs)
+        vessel = self.initialize_vessel(name, vessel_specs)
         self.env.register(vessel)
 
         vessel.initialize()
@@ -188,7 +189,7 @@ def perform_mooring_site_survey(vessel, **kwargs):
     key = "mooring_site_survey_time"
     survey_time = kwargs.get(key, pt[key])
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Perform Mooring Site Survey",
         survey_time,
         constraints=vessel.transit_limits,
@@ -229,7 +230,7 @@ def install_mooring_anchor(vessel, depth, _type, **kwargs):
         raise ValueError(f"Mooring System Anchor Type: {_type} not recognized.")
 
     install_time = fixed + 0.005 * depth
-    yield vessel.task(task, install_time, constraints=vessel.transit_limits, **kwargs)
+    yield vessel.task_wrapper(task, install_time, constraints=vessel.transit_limits, **kwargs)
 
 
 @process
@@ -251,7 +252,7 @@ def install_mooring_line(vessel, depth, **kwargs):
 
     install_time = 0.005 * depth
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Install Mooring Line",
         install_time,
         constraints=vessel.transit_limits,

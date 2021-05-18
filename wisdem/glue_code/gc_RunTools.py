@@ -1,5 +1,7 @@
 import os
+
 import matplotlib.pyplot as plt
+
 import openmdao.api as om
 from wisdem.commonse.mpi_tools import MPI
 
@@ -22,14 +24,27 @@ class Convergence_Trends_Opt(om.ExplicitComponent):
         else:
             rank = 0
         if os.path.exists(optimization_log) and rank == 0:
-
             cr = om.CaseReader(optimization_log)
-            cases = cr.list_cases()
+            cases = cr.get_cases()
             rec_data = {}
+            design_vars = {}
+            responses = {}
             iterations = []
-            for i, casei in enumerate(cases):
+            for i, it_data in enumerate(cases):
                 iterations.append(i)
-                it_data = cr.get_case(casei)
+
+                # Collect DVs and responses separately for DOE
+                for design_var in [it_data.get_design_vars()]:
+                    for dv in design_var:
+                        if i == 0:
+                            design_vars[dv] = []
+                        design_vars[dv].append(design_var[dv])
+
+                for response in [it_data.get_responses()]:
+                    for resp in response:
+                        if i == 0:
+                            responses[resp] = []
+                        responses[resp].append(response[resp])
 
                 # parameters = it_data.get_responses()
                 for parameters in [it_data.get_responses(), it_data.get_design_vars()]:
@@ -38,14 +53,30 @@ class Convergence_Trends_Opt(om.ExplicitComponent):
                             rec_data[param] = []
                         rec_data[param].append(parameters[param])
 
-            for param in rec_data.keys():
-                if param != "tower.layer_thickness" and param != "tower.diameter":
+            if self.options["opt_options"]["driver"]["optimization"]["flag"]:
+                for param in rec_data.keys():
+                    if param != "tower.layer_thickness" and param != "tower.diameter":
+                        fig, ax = plt.subplots(1, 1, figsize=(5.3, 4))
+                        ax.plot(iterations, rec_data[param])
+                        ax.set(xlabel="Number of Iterations", ylabel=param)
+                        fig_name = "Convergence_trend_" + param + ".png"
+                        fig.savefig(os.path.join(folder_output, fig_name))
+                        plt.close(fig)
+
+            elif self.options["opt_options"]["driver"]["design_of_experiments"]["flag"]:
+                for resp in responses:
                     fig, ax = plt.subplots(1, 1, figsize=(5.3, 4))
-                    ax.plot(iterations, rec_data[param])
-                    ax.set(xlabel="Number of Iterations", ylabel=param)
-                    fig_name = "Convergence_trend_" + param + ".png"
-                    fig.savefig(os.path.join(folder_output, fig_name))
-                    plt.close(fig)
+                    for dv in design_vars:
+                        try:
+                            ax.scatter(design_vars[dv], responses[resp])
+                            ax.set(xlabel=dv, ylabel=resp)
+                            fig_name = "Experiment_result_" + resp + ".png"
+                            fig.savefig(os.path.join(folder_output, fig_name))
+                            plt.close(fig)
+                        except ValueError:
+                            print(
+                                f"Warning: Design of experiments plot not printed for {dv} and {resp} as they are array values. Plot generation currently only works for scalar values."
+                            )
 
 
 class Outputs_2_Screen(om.ExplicitComponent):

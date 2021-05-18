@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 import openmdao.api as om
 import wisdem.commonse.frustum as frustum
@@ -15,11 +17,13 @@ NREFINE = 1
 
 
 class CrossSection(object):
-    def __init__(self, D=0.0, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, Izz=0.0, E=0.0, G=0.0, rho=0.0):
+    def __init__(
+        self, D=0.0, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, Izz=0.0, E=0.0, G=0.0, rho=0.0, sigy=0.0
+    ):
         self.D, self.t = D, t  # Needed for OpenFAST
         self.A, self.Asx, self.Asy = A, Asx, Asy
         self.Ixx, self.Iyy, self.Izz = Ixx, Iyy, Izz
-        self.E, self.G, self.rho = E, G, rho
+        self.E, self.G, self.rho, self.sigy = E, G, rho, sigy
 
 
 def get_nfull(npts, nref=NREFINE):
@@ -125,7 +129,6 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_input("s", val=np.zeros(n_height))
         self.add_input("joint1", val=np.zeros(3), units="m")
         self.add_input("joint2", val=np.zeros(3), units="m")
-        self.add_discrete_input("transition_flag", val=[False, False])
         self.add_discrete_input("layer_materials", val=n_layers * [""])
         self.add_discrete_input("ballast_materials", val=n_ballast * [""])
         self.add_input("layer_thickness", val=np.zeros((n_layers, n_height)), units="m")
@@ -151,7 +154,6 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_output("outfitting_factor", val=np.ones(n_height - 1))
         self.add_output("ballast_density", val=np.zeros(n_ballast), units="kg/m**3")
         self.add_output("ballast_unit_cost", val=np.zeros(n_ballast), units="USD/kg")
-        self.add_output("transition_node", NULL * np.ones(3), units="m")
 
         # Distributed Beam Properties (properties needed for ElastoDyn (OpenFAST) inputs or BModes inputs for verification purposes)
         self.add_output("z_param", np.zeros(n_height), units="m")
@@ -203,12 +205,6 @@ class DiscretizationYAML(om.ExplicitComponent):
         h_col = np.sqrt(np.sum(dxyz ** 2))
         lthick = inputs["layer_thickness"]
         lthick = 0.5 * (lthick[:, :-1] + lthick[:, 1:])
-        if discrete_inputs["transition_flag"][0]:
-            outputs["transition_node"] = xyz0
-        elif discrete_inputs["transition_flag"][1]:
-            outputs["transition_node"] = xyz1
-        else:
-            outputs["transition_node"] = NULL * np.ones(3)
 
         outputs["height"] = h_col
         outputs["section_height"] = np.diff(h_col * inputs["s"])
@@ -293,7 +289,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         itube = cs.Tube(D, outputs["wall_thickness"])
         Az, Ixx, Iyy, Jz = itube.Area, itube.Jxx, itube.Jyy, itube.J0
         outputs["z_param"] = z_param
-        outputs["sec_loc"] = (z - z[0]) / (z[-1] - z[0])
+        outputs["sec_loc"] = 0.0 if len(z) == 1 else (z - z[0]) / (z[-1] - z[0])
         outputs["mass_den"] = rho_param * Az
         outputs["foreaft_iner"] = rho_param * Ixx
         outputs["sideside_iner"] = rho_param * Iyy
@@ -548,15 +544,21 @@ class MemberComponent(om.ExplicitComponent):
         ratio between flange and stiffener spacing
     stiffener_radius_ratio : numpy array[n_full-1]
         ratio between stiffener height and radius
+    constr_flange_compactness : float
+        Standard check on ring stiffener flange geometry and material properties from API (<1)
+    constr_web_compactness : float
+        Standard check on ring stiffener web geometry and material properties from API (<1)
     ballast_cost : float, [USD]
         cost of permanent ballast
     ballast_mass : float, [kg]
         mass of permanent ballast
     ballast_z_cg : float, [m]
         z-coordinate or permanent ballast center of gravity
+    ballast_height : numpy array[n_ballast]
+        Non-dimensional s-coordinate height of each ballast section. Only non-zero here for permanent ballast.
     ballast_I_base : numpy array[6], [kg*m**2]
         Moments of inertia of permanent ballast relative to bottom point
-    variable_ballast_capacity : float, [m]
+    variable_ballast_capacity : float, [m**3]
         inner radius of column at potential ballast mass
     constr_ballast_capacity : numpy array[n_ballast]
         Used ballast volume relative to total capacity, must be <= 1.0
@@ -600,6 +602,8 @@ class MemberComponent(om.ExplicitComponent):
         Cross-sectional Young's modulus (of elasticity) of all member segments
     section_G : numpy array[npts-1], [Pa]
         Cross-sectional shear modulus all member segments
+    section_sigma_y : numpy array[npts-1], [Pa]
+        Cross-sectional yield stress of all member segments
 
     """
 
@@ -617,9 +621,6 @@ class MemberComponent(om.ExplicitComponent):
         n_bulk = opt["n_bulkheads"][idx]
         n_ball = opt["n_ballasts"][idx]
 
-        # Initialize dictionary that will keep our member nodes so we can convert to OpenFAST format
-        self.sections = SortedDict()
-
         # Inputs
         self.add_input("joint1", val=np.zeros(3), units="m")
         self.add_input("joint2", val=np.zeros(3), units="m")
@@ -631,6 +632,7 @@ class MemberComponent(om.ExplicitComponent):
         self.add_input("E_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_input("G_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_input("rho_full", val=np.zeros(n_full - 1), units="kg/m**3")
+        self.add_input("sigma_y_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_input("unit_cost_full", val=np.zeros(n_full - 1), units="USD/kg")
         self.add_input("outfitting_full", val=np.ones(n_full - 1))
         self.add_input("labor_cost_rate", 0.0, units="USD/min")
@@ -651,12 +653,15 @@ class MemberComponent(om.ExplicitComponent):
         self.add_input("axial_stiffener_web_thickness", 0.0, units="m")
         self.add_input("axial_stiffener_flange_width", 1e-6, units="m")
         self.add_input("axial_stiffener_flange_thickness", 0.0, units="m")
-        self.add_input("axial_stiffener_spacing", 1000.0, units="m")
+        self.add_input("axial_stiffener_spacing", 0.0, units="rad")
 
         self.add_input("ballast_grid", np.zeros((n_ball, 2)))
         self.add_input("ballast_density", np.zeros(n_ball), units="kg/m**3")
         self.add_input("ballast_volume", np.zeros(n_ball), units="m**3")
         self.add_input("ballast_unit_cost", np.zeros(n_ball), units="USD/kg")
+
+        self.add_input("s_ghost1", 0.0)
+        self.add_input("s_ghost2", 1.0)
 
         # Outputs
         self.add_output("shell_cost", val=0.0, units="USD")
@@ -675,13 +680,18 @@ class MemberComponent(om.ExplicitComponent):
         self.add_output("stiffener_I_base", np.zeros(6), units="kg*m**2")
         self.add_output("flange_spacing_ratio", 0.0)
         self.add_output("stiffener_radius_ratio", NULL * np.ones(MEMMAX))
+        self.add_output("constr_flange_compactness", 0.0)
+        self.add_output("constr_web_compactness", 0.0)
 
         self.add_output("ballast_cost", 0.0, units="USD")
         self.add_output("ballast_mass", 0.0, units="kg")
+        self.add_output("ballast_height", np.zeros(n_ball))
         self.add_output("ballast_z_cg", 0.0, units="m")
         self.add_output("ballast_I_base", np.zeros(6), units="kg*m**2")
-        self.add_output("variable_ballast_capacity", 0.0, units="m")
-        self.add_output("constr_ballast_capacity", np.zeros(n_ball), units="m")
+        self.add_output("variable_ballast_capacity", 0.0, units="m**3")
+        self.add_output("variable_ballast_Vpts", val=np.zeros(10), units="m**3")
+        self.add_output("variable_ballast_spts", val=np.zeros(10))
+        self.add_output("constr_ballast_capacity", np.zeros(n_ball))
 
         self.add_output("total_mass", 0.0, units="kg")
         self.add_output("total_cost", 0.0, units="USD")
@@ -705,6 +715,7 @@ class MemberComponent(om.ExplicitComponent):
         self.add_output("section_rho", NULL * np.ones(MEMMAX), units="kg/m**3")
         self.add_output("section_E", NULL * np.ones(MEMMAX), units="Pa")
         self.add_output("section_G", NULL * np.ones(MEMMAX), units="Pa")
+        self.add_output("section_sigma_y", NULL * np.ones(MEMMAX), units="Pa")
 
     def add_node(self, s_new):
         # Quit if node already exists
@@ -718,7 +729,7 @@ class MemberComponent(om.ExplicitComponent):
             raise ValueError("Cannot insert node before start of list")
 
         keys_orig = self.sections.keys()
-        self.sections[s_new] = self.sections[keys_orig[idx]]
+        self.sections[s_new] = copy.copy(self.sections[keys_orig[idx]])
 
     def insert_section(self, s0, s1, cross_section0):
 
@@ -743,6 +754,8 @@ class MemberComponent(om.ExplicitComponent):
         self.sections[s1] = None
 
     def compute(self, inputs, outputs):
+        # Initialize dictionary that will keep our member nodes so we can convert to OpenFAST format
+        self.sections = SortedDict()
 
         self.add_main_sections(inputs, outputs)
         self.add_bulkhead_sections(inputs, outputs)
@@ -756,38 +769,100 @@ class MemberComponent(om.ExplicitComponent):
         s_full = inputs["s_full"]
         t_full = inputs["t_full"]
         d_full = inputs["d_full"]
-        zz = inputs["z_full"]
-        Rb = 0.5 * d_full[:-1]
-        Rt = 0.5 * d_full[1:]
-        H = np.diff(zz)
         rho = inputs["rho_full"]
         Emat = inputs["E_full"]
         Gmat = inputs["G_full"]
+        sigymat = inputs["sigma_y_full"]
         coeff = inputs["outfitting_full"]
 
-        # Add sections for structural analysis
-        # TODO: Longitudinal stiffeners
+        t_web = inputs["axial_stiffener_web_thickness"]
+        t_flange = inputs["axial_stiffener_flange_thickness"]
+        h_web = inputs["axial_stiffener_web_height"]
+        w_flange = inputs["axial_stiffener_flange_width"]
+        th_stiffener = inputs["axial_stiffener_spacing"]
+
+        # Number of axial stiffeners
+        n_stiff = 0 if th_stiffener == 0.0 else 2 * np.pi / th_stiffener
+
+        # Outer and inner radius of web by section
         d_sec, _ = util.nodal2sectional(d_full)
+        R_wo = 0.5 * d_sec - t_full
+        R_wi = R_wo - h_web
+        R_w = 0.5 * (R_wo + R_wi)
+
+        # Outer and inner radius of flange by section
+        R_fo = R_wi
+        R_fi = R_fo - t_flange
+        R_f = 0.5 * (R_fo + R_fi)
+
+        A_web = h_web * t_web
+        A_flange = w_flange * t_flange
+        A_stiff = n_stiff * (A_web + A_flange)
+        Ix_stiff = 0.5 * n_stiff * (A_web * R_w ** 2 + A_flange * R_f ** 2)
+        Iz_stiff = 2 * Ix_stiff
+        t_eff = A_stiff / (2 * np.pi * R_w)
+
+        # Add sections for structural analysis
         for k in range(len(s_full) - 1):
             itube = cs.Tube(d_sec[k], t_full[k])
             iprop = CrossSection(
                 D=d_sec[k],
-                t=coeff[k] * t_full[k],
-                A=coeff[k] * itube.Area,
-                Ixx=coeff[k] * itube.Jxx,
-                Iyy=coeff[k] * itube.Jyy,
-                Izz=coeff[k] * itube.J0,
+                t=coeff[k] * t_full[k] + t_eff[k],
+                A=coeff[k] * itube.Area + A_stiff,
+                Ixx=coeff[k] * itube.Jxx + Ix_stiff[k],
+                Iyy=coeff[k] * itube.Jyy + Ix_stiff[k],
+                Izz=coeff[k] * itube.J0 + Iz_stiff[k],
                 Asx=itube.Asx,
                 Asy=itube.Asy,
                 rho=rho[k],
                 E=Emat[k],
                 G=Gmat[k],
+                sigy=sigymat[k],
             )
             self.add_section(s_full[k], s_full[k + 1], iprop)
 
+        # Adjust for ghost sections
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
+        if s_ghost1 > 0.0:
+            self.add_node(s_ghost1)
+            for s in self.sections:
+                if s >= s_ghost1:
+                    break
+                self.sections[s].rho = 1e-2
+                self.sections[s].E *= 1e2
+                self.sections[s].G *= 1e2
+        if s_ghost2 < 1.0:
+            self.add_node(s_ghost2)
+            for s in self.sections:
+                if s < s_ghost2 or s == 1.0:
+                    continue
+                self.sections[s].rho = 1e-2
+                self.sections[s].E *= 1e2
+                self.sections[s].G *= 1e2
+
+        # Shell mass properties with new interpolation in case ghost nodes were added
+        s_grid = np.array(list(self.sections.keys()))
+        s_section = 0.5 * (s_grid[:-1] + s_grid[1:])
+        R = np.interp(s_grid, s_full, 0.5 * d_full)
+        Rb = R[:-1]
+        Rt = R[1:]
+        zz = np.interp(s_grid, s_full, inputs["z_full"])
+        H = np.diff(zz)
+        t_full = util.sectionalInterp(s_section, s_full, inputs["t_full"])
+        rho = util.sectionalInterp(s_section, s_full, inputs["rho_full"])
+        rho[s_section < s_ghost1] = 0.0
+        rho[s_section > s_ghost2] = 0.0
+        coeff = util.sectionalInterp(s_section, s_full, coeff)
+        k_m = util.sectionalInterp(s_section, s_full, inputs["unit_cost_full"])
+        R_w = 0.5 * (Rb + Rt) - t_full - 0.5 * h_web
+        R_f = 0.5 * (Rb + Rt) - t_full - h_web - 0.5 * t_flange
+        Ix_stiff = 0.5 * n_stiff * (A_web * R_w ** 2 + A_flange * R_f ** 2)
+        Iz_stiff = 2 * Ix_stiff
+
         # Total mass of cylinder
         V_shell = frustum.frustumShellVol(Rb, Rt, t_full, H)
-        mass = coeff * rho * V_shell
+        mass = coeff * rho * (V_shell + A_stiff * H)
         outputs["shell_mass"] = mass.sum()
 
         # Center of mass
@@ -795,8 +870,8 @@ class MemberComponent(om.ExplicitComponent):
         outputs["shell_z_cg"] = np.dot(cm_section, mass) / mass.sum()
 
         # Moments of inertia
-        Izz_section = coeff * rho * frustum.frustumShellIzz(Rb, Rt, t_full, H)
-        Ixx_section = Iyy_section = coeff * rho * frustum.frustumShellIxx(Rb, Rt, t_full, H)
+        Izz_section = coeff * rho * (frustum.frustumShellIzz(Rb, Rt, t_full, H) + H * Iz_stiff)
+        Ixx_section = Iyy_section = coeff * rho * (frustum.frustumShellIxx(Rb, Rt, t_full, H) + H * Ix_stiff)
 
         # Sum up each cylinder section using parallel axis theorem
         I_base = np.zeros((3, 3))
@@ -815,7 +890,7 @@ class MemberComponent(om.ExplicitComponent):
         nsec = t_full.size
         mshell = rho * V_shell
         mshell_tot = np.sum(rho * V_shell)
-        k_m = inputs["unit_cost_full"]  # 1.1 # USD / kg carbon steel plate
+        # k_m = inputs["unit_cost_full"]  # 1.1 # USD / kg carbon steel plate
         k_f = inputs["labor_cost_rate"]  # 1.0 # USD / min labor
         k_p = inputs["painting_cost_rate"]  # USD / m^2 painting
         k_e = 0.064  # Industrial electricity rate $/kWh https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a
@@ -868,13 +943,19 @@ class MemberComponent(om.ExplicitComponent):
         rho = inputs["rho_full"]
         E = inputs["E_full"]
         G = inputs["G_full"]
+        sigy = inputs["sigma_y_full"]
         s_bulk = inputs["bulkhead_grid"]
         t_bulk = inputs["bulkhead_thickness"]
         coeff = inputs["outfitting_full"]
         L = inputs["height"]
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
         nbulk = s_bulk.size
         if nbulk == 0:
             return
+
+        # Make sure we are not working in ghost regions
+        s_bulk = np.unique(np.minimum(np.maximum(s_bulk, s_ghost1), s_ghost2))
 
         # Get z and R_id values of bulkhead locations
         z_bulk = np.interp(s_bulk, s_full, z_full)
@@ -882,6 +963,7 @@ class MemberComponent(om.ExplicitComponent):
         rho_bulk = util.sectionalInterp(s_bulk, s_full, rho)
         E_bulk = util.sectionalInterp(s_bulk, s_full, E)
         G_bulk = util.sectionalInterp(s_bulk, s_full, G)
+        sigy_bulk = util.sectionalInterp(s_bulk, s_full, sigy)
         coeff_bulk = util.sectionalInterp(s_bulk, s_full, coeff)
         R_od_bulk = np.interp(s_bulk, s_full, R_od)
         R_id_bulk = R_od_bulk - twall_bulk
@@ -889,12 +971,12 @@ class MemberComponent(om.ExplicitComponent):
         # Add bulkhead sections: assumes bulkhead and shell are made of same material!
         s0 = s_bulk - 0.5 * t_bulk / L
         s1 = s_bulk + 0.5 * t_bulk / L
-        if s0[0] < 0.0:
-            s0[0] = 0.0
-            s1[0] = t_bulk[0] / L
-        if s1[-1] > 1.0:
-            s0[-1] = 1 - t_bulk[-1] / L
-            s1[-1] = 1.0
+        if s0[0] < s_ghost1:
+            s0[0] = s_ghost1
+            s1[0] = s_ghost1 + t_bulk[0] / L
+        if s1[-1] > s_ghost2:
+            s0[-1] = s_ghost2 - t_bulk[-1] / L
+            s1[-1] = s_ghost2
         for k in range(nbulk):
             itube = cs.Tube(2 * R_od_bulk[k], R_od_bulk[k])  # thickness=radius for solid disk
             iprop = CrossSection(
@@ -909,6 +991,7 @@ class MemberComponent(om.ExplicitComponent):
                 rho=coeff_bulk[k] * rho_bulk[k],
                 E=E_bulk[k],
                 G=G_bulk[k],
+                sigy=sigy_bulk[k],
             )
             self.insert_section(s0[k], s1[k], iprop)
 
@@ -971,8 +1054,12 @@ class MemberComponent(om.ExplicitComponent):
         rho = inputs["rho_full"]
         E = inputs["E_full"]
         G = inputs["G_full"]
+        sigy = inputs["sigma_y_full"]
+        sigma_y = inputs["sigma_y_full"]
         coeff = inputs["outfitting_full"]
         s_bulk = inputs["bulkhead_grid"]
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
 
         t_web = inputs["ring_stiffener_web_thickness"]
         t_flange = inputs["ring_stiffener_flange_thickness"]
@@ -988,6 +1075,12 @@ class MemberComponent(om.ExplicitComponent):
 
         # Calculate stiffener spots along the member axis and deconflict with bulkheads
         s_stiff = (np.arange(1, n_stiff + 0.1) - 0.5) * (L_stiffener / L)
+
+        # Make sure we are not working in ghost regions
+        s_stiff = s_stiff[s_stiff > s_ghost1]
+        s_stiff = s_stiff[s_stiff < s_ghost2]
+        n_stiff = s_stiff.size
+
         tol = w_flange / L
         for k, s in enumerate(s_stiff):
             while np.any(np.abs(s_bulk - s) <= tol) and s > tol:
@@ -1009,6 +1102,7 @@ class MemberComponent(om.ExplicitComponent):
         rho_stiff = util.sectionalInterp(s_stiff, s_full, rho)
         E_stiff = util.sectionalInterp(s_stiff, s_full, E)
         G_stiff = util.sectionalInterp(s_stiff, s_full, G)
+        sigy_stiff = util.sectionalInterp(s_stiff, s_full, sigy)
         coeff_stiff = util.sectionalInterp(s_stiff, s_full, coeff)
         R_od_stiff = np.interp(s_stiff, s_full, R_od)
         R_id_stiff = R_od_stiff - twall_stiff
@@ -1017,6 +1111,10 @@ class MemberComponent(om.ExplicitComponent):
         outputs["flange_spacing_ratio"] = w_flange / (0.5 * L_stiffener)
         outputs["stiffener_radius_ratio"] = NULL * np.ones(MEMMAX)
         outputs["stiffener_radius_ratio"][:n_stiff] = (h_web + t_flange + twall_stiff) / R_od_stiff
+        # "compactness" check on stiffener geometry (must be >= 1)
+        fact = np.sqrt(E / sigma_y).min()
+        outputs["constr_flange_compactness"] = 0.375 * (t_flange / (0.5 * w_flange)) * fact
+        outputs["constr_web_compactness"] = 1.0 * (t_web / h_web) * fact
 
         # Outer and inner radius of web by section
         R_wo = R_id_stiff
@@ -1045,6 +1143,7 @@ class MemberComponent(om.ExplicitComponent):
                 rho=rho_stiff[k],
                 E=E_stiff[k],
                 G=G_stiff[k],
+                sigy=sigy_stiff[k],
             )
             self.insert_section(s0[k], s1[k], iprop)
 
@@ -1119,14 +1218,21 @@ class MemberComponent(om.ExplicitComponent):
         rho_ballast = inputs["ballast_density"]
         V_ballast = inputs["ballast_volume"]
         km_ballast = inputs["ballast_unit_cost"]
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
         n_ballast = len(V_ballast)
         if n_ballast == 0:
             return
+
+        # Move away from ghost regions
+        s_ballast += s_ghost1
+        s_ballast = np.minimum(s_ballast, s_ghost2)
 
         # Number of points for volume integration
         npts = 10
         m_ballast = rho_ballast * V_ballast
         I_ballast = np.zeros(6)
+        s_end = s_ballast[:, 0].copy()
         z_cg = np.zeros(n_ballast)
         V_avail = np.zeros(n_ballast)
         for k in range(n_ballast):
@@ -1149,6 +1255,7 @@ class MemberComponent(om.ExplicitComponent):
 
             # If permanent ballast, compute mass properties, but have to find where ballast extends to in cavity
             if V_ballast[k] > 0.0:
+                s_end[k] = np.interp(V_ballast[k], np.cumsum(np.r_[0, V_pts]), sinterp)
                 z_end = np.interp(V_ballast[k], np.cumsum(np.r_[0, V_pts]), zpts)
                 zpts = np.linspace(zpts[0], z_end, npts)
                 H = np.diff(zpts)
@@ -1171,13 +1278,15 @@ class MemberComponent(om.ExplicitComponent):
                 I_ballast += rho_ballast[k] * util.unassembleI(I_temp)
             else:
                 outputs["variable_ballast_capacity"] = V_avail[k]
+                outputs["variable_ballast_Vpts"] = np.cumsum(np.r_[0, V_pts])
+                outputs["variable_ballast_spts"] = sinterp
 
         # Save permanent ballast mass and variable height
-        # TODO: Add the mass to sectional density?
         outputs["ballast_mass"] = m_ballast.sum()
         outputs["ballast_I_base"] = I_ballast
         outputs["ballast_z_cg"] = np.dot(z_cg, m_ballast) / (m_ballast.sum() + eps)
         outputs["ballast_cost"] = np.dot(km_ballast, m_ballast)
+        outputs["ballast_height"] = s_end - s_ballast[:, 0]
         outputs["constr_ballast_capacity"] = V_ballast / V_avail
 
     def compute_mass_properties(self, inputs, outputs):
@@ -1266,6 +1375,7 @@ class MemberComponent(om.ExplicitComponent):
         outputs["section_Izz"] = NULL * np.ones(MEMMAX)
         outputs["section_E"] = NULL * np.ones(MEMMAX)
         outputs["section_G"] = NULL * np.ones(MEMMAX)
+        outputs["section_sigma_y"] = NULL * np.ones(MEMMAX)
 
         outputs["s_all"][:n_nodes] = s_grid
         outputs["nodes_xyz"][:n_nodes, :] = nodes
@@ -1285,6 +1395,7 @@ class MemberComponent(om.ExplicitComponent):
             outputs["section_Izz"][k] = self.sections[s].Izz
             outputs["section_E"][k] = self.sections[s].E
             outputs["section_G"][k] = self.sections[s].G
+            outputs["section_sigma_y"][k] = self.sections[s].sigy
 
 
 class MemberHydro(om.ExplicitComponent):
@@ -1301,9 +1412,9 @@ class MemberHydro(om.ExplicitComponent):
         z-coordinates of section nodes
     d_full : numpy array[n_full], [m]
         outer diameter at each section node bottom to top (length = nsection + 1)
-    s_all : numpy array[npts]
+    s_all : numpy array[MEMAX]
         Final non-dimensional points of all internal member nodes
-    nodes_xyz : numpy array[npts,3], [m]
+    nodes_xyz : numpy array[MEMAX,3], [m]
         Global dimensional coordinates (x-y-z) for all member nodes in s_all output
 
 
@@ -1323,16 +1434,16 @@ class MemberHydro(om.ExplicitComponent):
         Second moment of area of waterplace cross section
     added_mass : numpy array[6], [kg]
         hydrodynamic added mass matrix diagonal
+    waterline_centroid : numpy array[2], [m]
+        x-y center of waterplane crossing for this member
 
     """
 
     def initialize(self):
-        self.options.declare("n_height")
-        self.options.declare("n_refine", default=NREFINE)
+        self.options.declare("n_full")
 
     def setup(self):
-        n_height = self.options["n_height"]
-        n_full = get_nfull(n_height, nref=self.options["n_refine"])
+        n_full = self.options["n_full"]
 
         # Variables local to the class and not OpenMDAO
         self.ibox = None
@@ -1351,6 +1462,9 @@ class MemberHydro(om.ExplicitComponent):
         self.add_output("Awater", 0.0, units="m**2")
         self.add_output("Iwater", 0.0, units="m**4")
         self.add_output("added_mass", np.zeros(6), units="kg")
+        self.add_output("waterline_centroid", np.zeros(2), units="m")
+        self.add_output("z_dim", np.zeros(n_full), units="m")
+        self.add_output("d_eff", np.zeros(n_full), units="m")
 
     def compute(self, inputs, outputs):
         # Unpack variables
@@ -1364,6 +1478,11 @@ class MemberHydro(om.ExplicitComponent):
         xyz0 = xyz[0, :]
         dxyz = xyz[-1, :] - xyz[0, :]
 
+        # Dimensions away from vertical
+        tilt = np.arctan(dxyz[0] / (1e-8 + dxyz[2]))
+        outputs["z_dim"] = xyz0[2] + s_full * dxyz[2]
+        outputs["d_eff"] = inputs["d_full"] / np.cos(tilt)
+
         # Compute volume of each section and mass of displaced water by section
         # Find the radius at the waterline so that we can compute the submerged volume as a sum of frustum sections
         if xyz[:, 2].min() < 0.0 and xyz[:, 2].max() > 0.0:
@@ -1371,10 +1490,12 @@ class MemberHydro(om.ExplicitComponent):
             ind = np.where(xyz[:, 2] < 0.0)[0]
             s_under = np.r_[s_grid[ind], s_waterline]
             waterline = True
+            outputs["waterline_centroid"] = (xyz0 + s_waterline * dxyz)[:2]
         elif xyz[:, 2].max() < 0.0:
             s_under = s_grid
             waterline = False
             r_waterline = 0.0
+            outputs["waterline_centroid"] = np.zeros(2)
         else:
             return
         z_under = np.interp(s_under, s_full, z_full)
@@ -1411,15 +1532,103 @@ class MemberHydro(om.ExplicitComponent):
         m_a = np.zeros(6)
         m_a[:2] = rho_water * V_under_tot  # A11 surge, A22 sway
 
-        Lxy = np.sqrt((xyz[:, 0].max() - xyz[:, 0].min()) ** 2 + (xyz[:, 1].max() - xyz[:, 1].min()) ** 2)
+        # Lxy = np.sqrt((xyz[:, 0].max() - xyz[:, 0].min()) ** 2 + (xyz[:, 1].max() - xyz[:, 1].min()) ** 2)
         D = 2 * r_under.max()
-        Lxy = np.maximum(Lxy, D)
-        m_a[2] = (1.0 / 6.0) * rho_water * Lxy * D ** 2.0  # A33 heave
+        # Lxy = np.maximum(Lxy, D)
+        m_a[2] = (1.0 / 6.0) * rho_water * D ** 3.0  # A33 heave * Lxy *
         m_a[3:5] = (
             np.pi * rho_water * np.trapz((z_under - z_cb) ** 2.0 * r_under ** 2.0, z_under)
         )  # A44 roll, A55 pitch
         m_a[5] = 0.0  # A66 yaw
         outputs["added_mass"] = m_a
+
+
+class Global2MemberLoads(om.ExplicitComponent):
+    """
+    Converts the loading from the global c.s. to the member (element) c.s.
+
+    Parameters
+    ----------
+    s_full : numpy array[n_full], [m]
+        non-dimensional coordinates of section nodes
+    s_all : numpy array[MEMMAX]
+        Final non-dimensional points of all internal member nodes
+    nodes_xyz : numpy array[MEMMAX,3], [m]
+        Global dimensional coordinates (x-y-z) for all member nodes in s_all output
+    Px_global : numpy array[npts], [N/m]
+        x-Force density in global coordinates at member nodes
+    Py_global : numpy array[npts], [N/m]
+        y-Force density in global coordinates at member nodes
+    Pz_global : numpy array[npts], [N/m]
+        z-Force density in global coordinates at member nodes
+
+
+    Returns
+    -------
+    Px : numpy array[MEMMAX], [N/m]
+        x-Force density in element coordinates (x along axis) at member nodes
+    Py : numpy array[MEMMAX], [N/m]
+        y-Force density in element coordinates (x along axis) at member nodes
+    Pz : numpy array[MEMMAX], [N/m]
+        z-Force density in element coordinates (x along axis) at member nodes
+
+    """
+
+    def initialize(self):
+        self.options.declare("n_full")
+
+    def setup(self):
+        n_full = self.options["n_full"]
+
+        # Variables local to the class and not OpenMDAO
+        self.ibox = None
+
+        self.add_input("s_full", np.zeros(n_full), units="m")
+        self.add_input("s_all", NULL * np.ones(MEMMAX))
+        self.add_input("nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
+        self.add_input("Px_global", np.zeros(n_full), units="N/m")
+        self.add_input("Py_global", np.zeros(n_full), units="N/m")
+        self.add_input("Pz_global", np.zeros(n_full), units="N/m")
+        self.add_input("qdyn_global", np.zeros(n_full), units="Pa")
+
+        self.add_output("Px", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_output("Py", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_output("Pz", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_output("qdyn", NULL * np.ones(MEMMAX), units="Pa")
+
+    def compute(self, inputs, outputs):
+        # Unpack variables
+        s_full = inputs["s_full"]
+        nnode = np.where(inputs["s_all"] == NULL)[0][0]
+        s_grid = inputs["s_all"][:nnode]
+        xyz = inputs["nodes_xyz"][:nnode, :]
+
+        # Put global loads on denser grid
+        Px_g = np.interp(s_grid, s_full, inputs["Px_global"])
+        Py_g = np.interp(s_grid, s_full, inputs["Py_global"])
+        Pz_g = np.interp(s_grid, s_full, inputs["Pz_global"])
+        qdyn_g = np.interp(s_grid, s_full, inputs["qdyn_global"])
+
+        # Get rotation matrix that puts x along member axis
+        unit_x = np.array([1.0, 0.0, 0.0])
+        dxyz = xyz[-1, :] - xyz[0, :]
+        R = util.rotate_align_vectors(dxyz, unit_x)
+        P_local = R @ np.c_[Px_g, Py_g, Pz_g].T
+
+        # Store local loads
+        Px = NULL * np.ones(MEMMAX)
+        Py = NULL * np.ones(MEMMAX)
+        Pz = NULL * np.ones(MEMMAX)
+        Px[:nnode] = P_local[0, :]
+        Py[:nnode] = P_local[1, :]
+        Pz[:nnode] = P_local[2, :]
+        outputs["Px"] = Px
+        outputs["Py"] = Py
+        outputs["Pz"] = Pz
+
+        qdyn = NULL * np.ones(MEMMAX)
+        qdyn[: (nnode - 1)], _ = util.nodal2sectional(qdyn_g)
+        outputs["qdyn"] = qdyn
 
 
 class Member(om.Group):
@@ -1434,6 +1643,7 @@ class Member(om.Group):
 
         n_height = opt["n_height"][idx]
         n_refine = NREFINE if n_height > 2 else np.maximum(NREFINE, 2)
+        n_full = get_nfull(n_height, nref=n_refine)
 
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
         self.add_subsystem(
@@ -1450,10 +1660,8 @@ class Member(om.Group):
 
         self.add_subsystem("comp", MemberComponent(options=opt, idx=idx, n_refine=n_refine), promotes=["*"])
 
-        self.add_subsystem("hydro", MemberHydro(n_height=n_height, n_refine=n_refine), promotes=["*"])
+        self.add_subsystem("hydro", MemberHydro(n_full=n_full), promotes=["*"])
 
-        """
-        # TODO: Get actual z coordinates into CylinderEnvironment
         prom = [
             "Uref",
             "zref",
@@ -1464,21 +1672,25 @@ class Member(om.Group):
             "beta_wind",
             "rho_air",
             "mu_air",
-            "beta_water",
+            "beta_wave",
             "rho_water",
             "mu_water",
             "Uc",
             "Hsig_wave",
             "Tsig_wave",
-            "rho_water",
             "water_depth",
-            "Px",
-            "Py",
-            "Pz",
-            "qdyn",
             "yaw",
         ]
         self.add_subsystem("env", CylinderEnvironment(nPoints=n_full, water_flag=True), promotes=prom)
-        self.connect("z_full", "env.z")
-        self.connect("d_full", "env.d")
-        """
+        self.connect("z_dim", "env.z")
+        self.connect("d_eff", "env.d")
+
+        self.add_subsystem(
+            "g2e",
+            Global2MemberLoads(n_full=n_full),
+            promotes=["nodes_xyz", "s_all", "s_full", "Px", "Py", "Pz", "qdyn"],
+        )
+        self.connect("env.Px", "g2e.Px_global")
+        self.connect("env.Py", "g2e.Py_global")
+        self.connect("env.Pz", "g2e.Pz_global")
+        self.connect("env.qdyn", "g2e.qdyn_global")

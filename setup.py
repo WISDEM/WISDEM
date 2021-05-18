@@ -1,26 +1,13 @@
 #!/usr/bin/env python
 
 import os
-import sys
 import glob
-import platform
 
 from setuptools import find_packages
 
 from numpy.distutils.core import Extension, setup
 
 os.environ["NPY_DISTUTILS_APPEND_FLAGS"] = "1"
-
-# CFLAGS for pyMAP
-if platform.system() == "Windows":  # For Anaconda
-    pymapArgs = ["-O1", "-m64", "-fPIC", "-std=c99", "-DCMINPACK_NO_DLL"]
-elif sys.platform == "cygwin":
-    pymapArgs = ["-O1", "-m64", "-fPIC", "-std=c99"]
-elif platform.system() == "Darwin":
-    pymapArgs = ["-O1", "-m64", "-fno-omit-frame-pointer", "-fPIC"]  # , '-std=c99']
-else:
-    # pymapArgs = ['-O1', '-m64', '-fPIC', '-std=c99', '-D WITH_LAPACK']
-    pymapArgs = ["-O1", "-m64", "-fPIC", "-std=c99"]
 
 # All the extensions
 bemExt = Extension(
@@ -36,18 +23,11 @@ precompExt = Extension(
     sources=[os.path.join("wisdem", "rotorse", "PreCompPy.f90")],
     extra_compile_args=["-O2", "-fPIC"],
 )
-pymapExt = Extension(
-    "wisdem.pymap._libmap",
-    sources=glob.glob(os.path.join("wisdem", "pymap", "**", "*.c"), recursive=True)
-    + glob.glob(os.path.join("wisdem", "pymap", "**", "*.cc"), recursive=True),
-    extra_compile_args=pymapArgs,
-    include_dirs=[os.path.join("wisdem", "include", "lapack")],
-)
 
 # Top-level setup
 setup(
     name="WISDEM",
-    version="3.2.0",
+    version="3.3.0",
     description="Wind-Plant Integrated System Design & Engineering Model",
     long_description="""WISDEM is a Python package for conducting multidisciplinary analysis and
     optimization of wind turbines and plants.  It is built on top of NASA's OpenMDAO library.""",
@@ -56,13 +36,14 @@ setup(
     author_email="systems.engineering@nrel.gov",
     install_requires=[
         "jsonschema",
-        "marmot-agents",
+        "marmot-agents>=0.2.5",
         "numpy",
         "openmdao>=3.4",
         "openpyxl",
         "pandas",
         "pyside2",
         "pytest",
+        "python-benedict",
         "pyyaml",
         "scipy",
         "simpy",
@@ -73,7 +54,7 @@ setup(
     # package_dir      = {'': 'wisdem'},
     packages=find_packages(exclude=["docs", "tests", "ext"]),
     license="Apache License, Version 2.0",
-    ext_modules=[bemExt, pyframeExt, precompExt, pymapExt],
+    ext_modules=[bemExt, pyframeExt, precompExt],
     entry_points={
         "console_scripts": [
             "wisdem=wisdem.main:wisdem_cmd",

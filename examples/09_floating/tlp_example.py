@@ -73,7 +73,6 @@ prob["member0.layer_materials"] = ["steel"]
 prob["member0.ballast_materials"] = ["slurry", "seawater"]
 prob["member0.joint1"] = np.array([0.0, 0.0, 8.0 - h.sum()])
 prob["member0.joint2"] = np.array([0.0, 0.0, 8.0])  # Freeboard=10
-prob["member0.transition_flag"] = [False, True]
 prob["member0.bulkhead_thickness"] = 0.05 * np.ones(4)  # Locations of internal bulkheads
 prob["member0.bulkhead_grid"] = np.array([0.0, 0.25, 0.5, 1.0])
 prob["member0.ring_stiffener_web_height"] = 0.10
@@ -94,7 +93,6 @@ for k in range(1, 4):
     prob["member" + str(k) + ".ballast_materials"] = []
     prob["member" + str(k) + ".joint1"] = np.array([30.0 * np.cos(angs[k - 1]), 30.0 * np.sin(angs[k - 1]), -40.0])
     prob["member" + str(k) + ".joint2"] = np.array([0.0, 0.0, -40.0])  # Freeboard=10
-    prob["member" + str(k) + ".transition_flag"] = [False, False]
     prob["member" + str(k) + ".bulkhead_thickness"] = 0.05 * np.ones(2)  # Locations of internal bulkheads
     prob["member" + str(k) + ".bulkhead_grid"] = np.array([0.0, 1.0])
     prob["member" + str(k) + ".ring_stiffener_web_height"] = 0.10
@@ -121,30 +119,31 @@ prob["survival_heel"] = 10.0  # Max heel (pitching) angle [deg]
 prob["operational_heel"] = 5.0  # Max heel (pitching) angle [deg]
 
 # Set environment to that used in OC3 testing campaign
-# prob["rho_air"] = 1.226  # Density of air [kg/m^3]
-# prob["mu_air"] = 1.78e-5  # Viscosity of air [kg/m/s]
+prob["rho_air"] = 1.226  # Density of air [kg/m^3]
+prob["mu_air"] = 1.78e-5  # Viscosity of air [kg/m/s]
 prob["rho_water"] = 1025.0  # Density of water [kg/m^3]
-# prob["mu_water"] = 1.08e-3  # Viscosity of water [kg/m/s]
+prob["mu_water"] = 1.08e-3  # Viscosity of water [kg/m/s]
 prob["water_depth"] = 320.0  # Distance to sea floor [m]
-# prob["Hsig_wave"] = 10.8  # Significant wave height [m]
-# prob["Tsig_wave"] = 9.8  # Wave period [s]
-# prob["shearExp"] = 0.11  # Shear exponent in wind power law
-# prob["cm"] = 2.0  # Added mass coefficient
-# prob["Uc"] = 0.0  # Mean current speed
-# prob["yaw"] = 0.0  # Turbine yaw angle
-# prob["beta_wind"] = prob["beta_wave"] = 0.0
-# prob["cd_usr"] = -1.0  # Compute drag coefficient
-# prob["Uref"] = 11.0
-# prob["zref"] = 119.0
+prob["Hsig_wave"] = 10.8  # Significant wave height [m]
+prob["Tsig_wave"] = 9.8  # Wave period [s]
+prob["shearExp"] = 0.11  # Shear exponent in wind power law
+prob["cm"] = 2.0  # Added mass coefficient
+prob["Uc"] = 0.0  # Mean current speed
+prob["beta_wind"] = prob["beta_wave"] = 0.0
+prob["cd_usr"] = -1.0  # Compute drag coefficient
+prob["Uref"] = 11.0
+prob["zref"] = 119.0
 
 # Porperties of turbine tower
 nTower = prob.model.options["modeling_options"]["floating"]["tower"]["n_height"][0]
-prob["hub_height"] = 85.0
+prob["tower_height"] = 85.0 - prob["member0.joint2"][2]
 prob["tower.s"] = np.linspace(0.0, 1.0, nTower)
 prob["tower.outer_diameter_in"] = np.linspace(6.5, 3.87, nTower)
 prob["tower.layer_thickness"] = np.linspace(0.027, 0.019, nTower).reshape((1, nTower))
 prob["tower.layer_materials"] = ["steel"]
 prob["tower.outfitting_factor"] = 1.07
+
+prob["transition_node"] = prob["member0.joint2"]
 
 # Properties of rotor-nacelle-assembly (RNA)
 prob["rna_mass"] = 350e3

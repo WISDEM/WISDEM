@@ -99,9 +99,7 @@ Blade twist as a design variable by adding or subtracting radians from the initi
 
 :code:`n_opt` : Integer
     Number of equally-spaced control points of the spline
-    parametrizing the twist distribution along blade span. By default,
-    the first two points are locked to prevent the optimizer to try to
-    optimize the twist of the blade root cylinder.
+    parametrizing the twist distribution along blade span. 
 
     *Default* = 8
 
@@ -119,6 +117,18 @@ Blade twist as a design variable by adding or subtracting radians from the initi
 
     *Default* = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 
+:code:`index_start` : Integer
+    Integer setting the first DV of the :code:`n_opt` along span that is optimized.
+    It is recommended to set :code:`index_start` to 1 
+    to lock the first DV and prevent the optimizer to try to
+    optimize the twist of the blade root cylinder.
+
+    *Default* = 0
+
+:code:`index_end` : Integer
+    Integer setting the last DV of the :code:`n_opt` along span that is optimized.
+
+    *Default* = 8
 
 
 chord
@@ -134,32 +144,38 @@ Blade chord as a design variable by scaling (multiplying) the initial value at s
 
 :code:`n_opt` : Integer
     Number of equally-spaced control points of the spline
-    parametrizing the chord distribution along blade span. By default,
-    the first two points close to blade root and the last point are
-    locked. The first two points impact the diameter of the blade root
-    cylinder, and the models implemented in WISDEM do not have the
-    level of fidelity to appropriately size the blade root diameter.
+    parametrizing the chord distribution along blade span.
+
+    *Default* = 8
+
+    *Minimum* = 4
+
+:code:`max_decrease` : Float
+    Maximum nondimensional decrease of the blade chord at each optimization location
+
+    *Default* = 0.5
+
+:code:`max_increase` : Float
+    Maximum nondimensional increase of the blade chord at each optimization location
+
+    *Default* = 1.5
+
+:code:`index_start` : Integer
+    Integer setting the first DV of the :code:`n_opt` along span that is optimized.
+    Setting :code:`index_start` to 1 or 2 locks the blade root diameter.
+
+    *Default* = 0
+
+
+:code:`index_end` : Integer
+    Integer setting the last DV of the :code:`n_opt` along span that is optimized.
+    It is recommended to lock the last point close to blade tip, setting :code:`index_end` to :code:`n_opt` minus 1. 
     The last point controls the chord length at blade tip and due to
     the imperfect tip loss models of CCBlade, it is usually a good
     idea to taper the chord manually and do not let a numerical
     optimizer control it.
 
     *Default* = 8
-
-    *Minimum* = 4
-
-:code:`min_gain` : Float
-    Lower bound on scalar multiplier that will be applied to value at
-    control points
-
-    *Default* = 0.5
-
-:code:`max_gain` : Float
-    Upper bound on scalar multiplier that will be applied to value at
-    control points
-
-    *Default* = 1.5
-
 
 
 af_positions
@@ -206,27 +222,37 @@ Blade suction-side spar cap thickness as a design variable by scaling (multiplyi
 :code:`n_opt` : Integer
     Number of equally-spaced control points of the spline
     parametrizing the thickness of the spar cap on the suction side.
-    By default, the first point close to blade root and the last point
-    close to blade tip are locked. This is done to impose a pre-
-    defined taper to small thicknesses and mimic a blade
-    manufacturability constraint.
 
     *Default* = 8
 
     *Minimum* = 4
 
-:code:`min_gain` : Float
-    Lower bound on scalar multiplier that will be applied to value at
-    control points
+:code:`max_decrease` : Float
+    Maximum nondimensional decrease of the spar cap thickness on the suction-side at each optimization location
 
     *Default* = 0.5
 
-:code:`max_gain` : Float
-    Upper bound on scalar multiplier that will be applied to value at
-    control points
+:code:`max_increase` : Float
+    Maximum nondimensional increase of the spar cap thickness on the suction-side at each optimization location
 
     *Default* = 1.5
 
+:code:`index_start` : Integer
+    Integer setting the first DV of the :code:`n_opt` along span that is optimized.
+    It is recommended to set :code:`index_start` to 1 
+    to lock the first DV and impose a pre-
+    defined taper to small thicknesses and mimic a blade
+    manufacturability constraint.
+
+    *Default* = 0
+
+:code:`index_end` : Integer
+    Integer setting the last DV of the :code:`n_opt` along span that is optimized.
+    It is recommended to lock the last point close to blade tip, setting :code:`index_end` to :code:`n_opt` minus 1. 
+    This imposes a predefined taper to small thicknesses and mimic a blade
+    manufacturability constraint.
+
+    *Default* = 8
 
 
 spar_cap_ps
@@ -243,27 +269,37 @@ Blade pressure-side spar cap thickness as a design variable by scaling (multiply
 :code:`n_opt` : Integer
     Number of equally-spaced control points of the spline
     parametrizing the thickness of the spar cap on the pressure side.
-    By default, the first point close to blade root and the last point
-    close to blade tip are locked. This is done to impose a pre-
-    defined taper to small thicknesses and mimic a blade
-    manufacturability constraint.
 
     *Default* = 8
 
     *Minimum* = 4
 
-:code:`min_gain` : Float
-    Lower bound on scalar multiplier that will be applied to value at
-    control points
+:code:`max_decrease` : Float
+    Maximum nondimensional decrease of the spar cap thickness on the pressure-side at each optimization location
 
     *Default* = 0.5
 
-:code:`max_gain` : Float
-    Upper bound on scalar multiplier that will be applied to value at
-    control points
+:code:`max_increase` : Float
+    Maximum nondimensional increase of the spar cap thickness on the pressure-side at each optimization location
 
     *Default* = 1.5
 
+:code:`index_start` : Integer
+    Integer setting the first DV of the :code:`n_opt` along span that is optimized.
+    It is recommended to set :code:`index_start` to 1 
+    to lock the first DV and impose a pre-
+    defined taper to small thicknesses and mimic a blade
+    manufacturability constraint.
+
+    *Default* = 0
+
+:code:`index_end` : Integer
+    Integer setting the last DV of the :code:`n_opt` along span that is optimized.
+    It is recommended to lock the last point close to blade tip, setting :code:`index_end` to :code:`n_opt` minus 1. 
+    This imposes a predefined taper to small thicknesses and mimic a blade
+    manufacturability constraint.
+
+    *Default* = 8
 
 
 te_ss
@@ -1271,7 +1307,16 @@ Enforcing max chord length limit at all points along blade span.
     *Minimum* = 0.1    *Maximum* = 20.0
 
 
+root_circle_diameter
+========================================
 
+
+Enforcing the minimum blade root circle diameter.
+
+:code:`flag` : Boolean
+    Activates as a design variable or constraint
+
+    *Default* = False
 
 frequency
 ========================================

@@ -7,7 +7,6 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 
 from marmot import process
-
 from wisdem.orbit.core import Cargo
 from wisdem.orbit.core.defaults import process_times as pt
 
@@ -125,7 +124,7 @@ def lift_nacelle(vessel, **kwargs):
     crane_rate = vessel.crane.crane_rate(**kwargs)
     lift_time = hub_height / crane_rate
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Lift Nacelle",
         lift_time,
         constraints=vessel.operational_limits,
@@ -154,7 +153,7 @@ def attach_nacelle(vessel, **kwargs):
     key = "nacelle_attach_time"
     attach_time = kwargs.get(key, pt[key])
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Attach Nacelle",
         attach_time,
         constraints=vessel.operational_limits,
@@ -183,7 +182,7 @@ def lift_turbine_blade(vessel, **kwargs):
     crane_rate = vessel.crane.crane_rate(**kwargs)
     lift_time = hub_height / crane_rate
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Lift Blade",
         lift_time,
         constraints=vessel.operational_limits,
@@ -212,7 +211,7 @@ def attach_turbine_blade(vessel, **kwargs):
     key = "blade_attach_time"
     attach_time = kwargs.get(key, pt[key])
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Attach Blade",
         attach_time,
         constraints=vessel.operational_limits,
@@ -240,7 +239,7 @@ def lift_tower_section(vessel, height, **kwargs):
     crane_rate = vessel.crane.crane_rate(**kwargs)
     lift_time = height / crane_rate
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Lift Tower Section",
         lift_time,
         constraints=vessel.operational_limits,
@@ -269,7 +268,7 @@ def attach_tower_section(vessel, **kwargs):
     key = "tower_section_attach_time"
     attach_time = kwargs.get(key, pt[key])
 
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Attach Tower Section",
         attach_time,
         constraints=vessel.operational_limits,

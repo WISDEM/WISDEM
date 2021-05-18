@@ -35,6 +35,7 @@ class TurbineInstallation(InstallPhase):
     """
 
     phase = "Turbine Installation"
+    capex_category = "Turbine"
 
     #:
     expected_config = {
@@ -164,7 +165,7 @@ class TurbineInstallation(InstallPhase):
         wtiv_specs = self.config.get("wtiv", None)
         name = wtiv_specs.get("name", "WTIV")
 
-        wtiv = Vessel(name, wtiv_specs)
+        wtiv = self.initialize_vessel(name, wtiv_specs)
         self.env.register(wtiv)
 
         wtiv.initialize()
@@ -185,7 +186,7 @@ class TurbineInstallation(InstallPhase):
             # TODO: Add in option for named feeders.
             name = "Feeder {}".format(n)
 
-            feeder = Vessel(name, feeder_specs)
+            feeder = self.initialize_vessel(name, feeder_specs)
             self.env.register(feeder)
 
             feeder.initialize()
@@ -322,11 +323,11 @@ def solo_install_turbines(vessel, port, distance, turbines, tower_sections, num_
                 nacelle = yield vessel.get_item_from_storage("Nacelle", **kwargs)
 
                 # Install nacelle
-                yield vessel.task("Reequip", reequip_time, constraints=vessel.transit_limits)
+                yield vessel.task_wrapper("Reequip", reequip_time, constraints=vessel.transit_limits)
                 yield install_nacelle(vessel, nacelle, **kwargs)
 
                 # Install turbine blades
-                yield vessel.task("Reequip", reequip_time, constraints=vessel.transit_limits)
+                yield vessel.task_wrapper("Reequip", reequip_time, constraints=vessel.transit_limits)
                 for _ in range(num_blades):
                     blade = yield vessel.get_item_from_storage("Blade", **kwargs)
 
@@ -396,11 +397,11 @@ def install_turbine_components_from_queue(wtiv, queue, distance, turbines, tower
                 nacelle = yield wtiv.get_item_from_storage("Nacelle", vessel=queue.vessel, **kwargs)
 
                 # Install nacelle
-                yield wtiv.task("Reequip", reequip_time, constraints=wtiv.transit_limits)
+                yield wtiv.task_wrapper("Reequip", reequip_time, constraints=wtiv.transit_limits)
                 yield install_nacelle(wtiv, nacelle, **kwargs)
 
                 # Install turbine blades
-                yield wtiv.task("Reequip", reequip_time, constraints=wtiv.transit_limits)
+                yield wtiv.task_wrapper("Reequip", reequip_time, constraints=wtiv.transit_limits)
 
                 for i in range(num_blades):
                     release = True if i + 1 == num_blades else False

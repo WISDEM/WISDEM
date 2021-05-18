@@ -21,6 +21,7 @@ class MooredSubInstallation(InstallPhase):
     """
 
     phase = "Moored Substructure Installation"
+    capex_category = "Substructure"
 
     #:
     expected_config = {
@@ -79,6 +80,7 @@ class MooredSubInstallation(InstallPhase):
         self.distance = self.config["site"]["distance"]
         self.num_turbines = self.config["plant"]["num_turbines"]
 
+        self.initialize_port()
         self.initialize_substructure_production()
         self.initialize_turbine_assembly()
         self.initialize_queue()
@@ -208,7 +210,7 @@ class MooredSubInstallation(InstallPhase):
         """
 
         specs = self.config["support_vessel"]
-        vessel = Vessel("Multi-Purpose Support Vessel", specs)
+        vessel = self.initialize_vessel("Multi-Purpose Support Vessel", specs)
 
         self.env.register(vessel)
         vessel.initialize(mobilize=False)
@@ -344,23 +346,23 @@ def install_moored_substructures(vessel, queue, distance, substructures, station
                 vessel.mobilize()
                 yield vessel.transit(distance)
 
-            yield vessel.task(
+            yield vessel.task_wrapper(
                 "Position Substructure",
                 2,
                 constraints={"windspeed": le(15), "waveheight": le(2.5)},
             )
-            yield vessel.task(
+            yield vessel.task_wrapper(
                 "Ballast to Operational Draft",
                 6,
                 constraints={"windspeed": le(15), "waveheight": le(2.5)},
             )
-            yield vessel.task(
+            yield vessel.task_wrapper(
                 "Connect Mooring Lines",
                 22,
                 suspendable=True,
                 constraints={"windspeed": le(15), "waveheight": le(2.5)},
             )
-            yield vessel.task(
+            yield vessel.task_wrapper(
                 "Check Mooring Lines",
                 12,
                 suspendable=True,
