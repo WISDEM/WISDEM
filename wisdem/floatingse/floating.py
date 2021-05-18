@@ -84,6 +84,7 @@ class FloatingSE(om.Group):
             "section_rho",
             "section_E",
             "section_G",
+            "section_sigma_y",
             "idx_cb",
             "variable_ballast_capacity",
             "variable_ballast_Vpts",
@@ -101,6 +102,10 @@ class FloatingSE(om.Group):
             "Iwater",
             "added_mass",
             "waterline_centroid",
+            "Px",
+            "Py",
+            "Pz",
+            "qdyn",
         ]
         for k in range(n_member):
             for var in mem_vars:

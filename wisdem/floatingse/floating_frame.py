@@ -2,6 +2,8 @@ import numpy as np
 import openmdao.api as om
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
+import wisdem.commonse.utilization_dnvgl as util_dnvgl
+import wisdem.commonse.utilization_constraints as util_con
 from wisdem.commonse import NFREQ, gravity
 from wisdem.floatingse.member import NULL, MEMMAX, Member
 
@@ -12,7 +14,6 @@ EPS = 1e-6
 
 # TODO:
 # - Added mass, hydro stiffness for tower sim
-# - Stress or buckling?
 
 
 class PlatformFrame(om.ExplicitComponent):
@@ -37,6 +38,7 @@ class PlatformFrame(om.ExplicitComponent):
             self.add_input(f"member{k}:section_rho", NULL * np.ones(MEMMAX), units="kg/m**3")
             self.add_input(f"member{k}:section_E", NULL * np.ones(MEMMAX), units="Pa")
             self.add_input(f"member{k}:section_G", NULL * np.ones(MEMMAX), units="Pa")
+            self.add_input(f"member{k}:section_sigma_y", NULL * np.ones(MEMMAX), units="Pa")
             self.add_input(f"member{k}:idx_cb", 0)
             self.add_input(f"member{k}:buoyancy_force", 0.0, units="N")
             self.add_input(f"member{k}:displacement", 0.0, units="m**3")
@@ -54,6 +56,7 @@ class PlatformFrame(om.ExplicitComponent):
             self.add_input(f"member{k}:Px", np.zeros(MEMMAX), units="N/m")
             self.add_input(f"member{k}:Py", np.zeros(MEMMAX), units="N/m")
             self.add_input(f"member{k}:Pz", np.zeros(MEMMAX), units="N/m")
+            self.add_input(f"member{k}:qdyn", np.zeros(MEMMAX), units="Pa")
 
         self.add_output("platform_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
         self.add_output("platform_Fnode", NULL * np.ones((NNODES_MAX, 3)), units="N")
@@ -71,12 +74,14 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
         self.add_output("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_output("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_output("platform_elem_sigma_y", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_output("platform_elem_Px1", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_output("platform_elem_Px2", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_output("platform_elem_Py1", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_output("platform_elem_Py2", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_output("platform_elem_Pz1", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_output("platform_elem_Pz2", NULL * np.ones(NELEM_MAX), units="N/m")
+        self.add_output("platform_elem_qdyn", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_output("platform_displacement", 0.0, units="m**3")
         self.add_output("platform_center_of_buoyancy", np.zeros(3), units="m")
         self.add_output("platform_center_of_mass", np.zeros(3), units="m")
@@ -192,12 +197,14 @@ class PlatformFrame(om.ExplicitComponent):
         elem_rho = np.array([])
         elem_E = np.array([])
         elem_G = np.array([])
+        elem_sigy = np.array([])
         elem_Px1 = np.array([])
         elem_Px2 = np.array([])
         elem_Py1 = np.array([])
         elem_Py2 = np.array([])
         elem_Pz1 = np.array([])
         elem_Pz2 = np.array([])
+        elem_qdyn = np.array([])
 
         mass = 0.0
         m_ball = 0.0
@@ -225,6 +232,8 @@ class PlatformFrame(om.ExplicitComponent):
             elem_rho = np.append(elem_rho, inputs[f"member{k}:section_rho"][:n])
             elem_E = np.append(elem_E, inputs[f"member{k}:section_E"][:n])
             elem_G = np.append(elem_G, inputs[f"member{k}:section_G"][:n])
+            elem_sigy = np.append(elem_sigy, inputs[f"member{k}:section_sigma_y"][:n])
+            elem_qdyn = np.append(elem_qdyn, inputs[f"member{k}:qdyn"][:n])
 
             # The loads should come in with length n+1
             elem_Px1 = np.append(elem_Px1, inputs[f"member{k}:Px"][:n])
@@ -293,12 +302,14 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_elem_rho"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_E"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_G"] = NULL * np.ones(NELEM_MAX)
+        outputs["platform_elem_sigma_y"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_Px1"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_Px2"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_Py1"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_Py2"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_Pz1"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_Pz2"] = NULL * np.ones(NELEM_MAX)
+        outputs["platform_elem_qdyn"] = NULL * np.ones(NELEM_MAX)
 
         outputs["platform_elem_D"][:nelem] = elem_D
         outputs["platform_elem_t"][:nelem] = elem_t
@@ -311,12 +322,14 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_elem_rho"][:nelem] = elem_rho
         outputs["platform_elem_E"][:nelem] = elem_E
         outputs["platform_elem_G"][:nelem] = elem_G
+        outputs["platform_elem_sigma_y"][:nelem] = elem_sigy
         outputs["platform_elem_Px1"][:nelem] = elem_Px1
         outputs["platform_elem_Px2"][:nelem] = elem_Px2
         outputs["platform_elem_Py1"][:nelem] = elem_Py1
         outputs["platform_elem_Py2"][:nelem] = elem_Py2
         outputs["platform_elem_Pz1"][:nelem] = elem_Pz1
         outputs["platform_elem_Pz2"][:nelem] = elem_Pz2
+        outputs["platform_elem_qdyn"][:nelem] = elem_qdyn
 
         outputs["platform_mass"] = mass
         outputs["platform_ballast_mass"] = m_ball
@@ -370,12 +383,14 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
         self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("platform_elem_sigma_y", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_Px1", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_input("platform_elem_Px2", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_input("platform_elem_Py1", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_input("platform_elem_Py2", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_input("platform_elem_Pz1", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_input("platform_elem_Pz2", NULL * np.ones(NELEM_MAX), units="N/m")
+        self.add_input("platform_elem_qdyn", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_center_of_mass", np.zeros(3), units="m")
         self.add_input("platform_mass", 0.0, units="kg")
         self.add_input("platform_displacement", 0.0, units="m**3")
@@ -385,6 +400,7 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_input("tower_Rnode", NULL * np.ones(MEMMAX), units="m")
         self.add_output("tower_elem_n1", copy_shape="tower_elem_A")
         self.add_output("tower_elem_n2", copy_shape="tower_elem_A")
+        self.add_output("tower_elem_L", copy_shape="tower_elem_A", units="m")
         self.add_input("tower_elem_D", NULL * np.ones(MEMMAX), units="m")
         self.add_input("tower_elem_t", NULL * np.ones(MEMMAX), units="m")
         self.add_input("tower_elem_A", NULL * np.ones(MEMMAX), units="m**2")
@@ -396,6 +412,7 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_input("tower_elem_rho", NULL * np.ones(MEMMAX), units="kg/m**3")
         self.add_input("tower_elem_E", NULL * np.ones(MEMMAX), units="Pa")
         self.add_input("tower_elem_G", NULL * np.ones(MEMMAX), units="Pa")
+        self.add_input("tower_elem_sigma_y", NULL * np.ones(MEMMAX), units="Pa")
         self.add_input("tower_elem_Px", NULL * np.ones(MEMMAX), units="N/m")
         self.add_output("tower_elem_Px1", NULL * np.ones(MEMMAX), units="N/m")
         self.add_output("tower_elem_Px2", NULL * np.ones(MEMMAX), units="N/m")
@@ -405,6 +422,7 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_input("tower_elem_Pz", NULL * np.ones(MEMMAX), units="N/m")
         self.add_output("tower_elem_Pz1", NULL * np.ones(MEMMAX), units="N/m")
         self.add_output("tower_elem_Pz2", NULL * np.ones(MEMMAX), units="N/m")
+        self.add_input("tower_elem_qdyn", NULL * np.ones(MEMMAX), units="Pa")
         self.add_input("tower_center_of_mass", np.zeros(3), units="m")
         self.add_input("tower_mass", 0.0, units="kg")
 
@@ -427,6 +445,7 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_output("system_Rnode", NULL * np.ones(NNODES_MAX), units="m")
         self.add_output("system_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
         self.add_output("system_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_output("system_elem_L", NULL * np.ones(NELEM_MAX), units="m")
         self.add_output("system_elem_D", NULL * np.ones(NELEM_MAX), units="m")
         self.add_output("system_elem_t", NULL * np.ones(NELEM_MAX), units="m")
         self.add_output("system_elem_A", NULL * np.ones(NELEM_MAX), units="m**2")
@@ -438,12 +457,14 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_output("system_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
         self.add_output("system_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_output("system_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_output("system_elem_sigma_y", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_output("system_elem_Px1", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_output("system_elem_Px2", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_output("system_elem_Py1", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_output("system_elem_Py2", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_output("system_elem_Pz1", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_output("system_elem_Pz2", NULL * np.ones(NELEM_MAX), units="N/m")
+        self.add_output("system_elem_qdyn", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_output("system_structural_center_of_mass", np.zeros(3), units="m")
         self.add_output("system_structural_mass", 0.0, units="kg")
         self.add_output("system_center_of_mass", np.zeros(3), units="m")
@@ -471,14 +492,19 @@ class PlatformTowerFrame(om.ExplicitComponent):
         outputs["tower_Fnode"] = np.zeros(node_tower.shape)
         outputs["tower_elem_n1"] = NULL * np.ones(MEMMAX, dtype=np.int_)
         outputs["tower_elem_n2"] = NULL * np.ones(MEMMAX, dtype=np.int_)
+        outputs["tower_elem_L"] = NULL * np.ones(MEMMAX)
         tower_n1 = np.arange(nelem_tower, dtype=np.int_)
         tower_n2 = np.arange(nelem_tower, dtype=np.int_) + 1
-        outputs["tower_elem_n1"][:nelem_tower] = tower_n1.copy()
-        outputs["tower_elem_n2"][:nelem_tower] = tower_n2.copy()
+        outputs["tower_elem_n1"][:nelem_tower] = idx1 = tower_n1.copy()
+        outputs["tower_elem_n2"][:nelem_tower] = idx2 = tower_n2.copy()
         itrans_platform = util.closest_node(node_platform[:nnode_platform, :], inputs["transition_node"])
         tower_n1 += nnode_platform - 1
         tower_n2 += nnode_platform - 1
         tower_n1[0] = itrans_platform
+
+        outputs["tower_elem_L"][:nelem_tower] = np.sqrt(
+            np.sum((node_tower[idx2, :] - node_tower[idx1, :]) ** 2, axis=1)
+        )
 
         # Store all outputs
         outputs["system_nodes"] = NULL * np.ones((NNODES_MAX, 3))
@@ -486,8 +512,9 @@ class PlatformTowerFrame(om.ExplicitComponent):
         outputs["system_Rnode"] = NULL * np.ones(NNODES_MAX)
         outputs["system_elem_n1"] = NULL * np.ones(NELEM_MAX, dtype=np.int_)
         outputs["system_elem_n2"] = NULL * np.ones(NELEM_MAX, dtype=np.int_)
+        outputs["system_elem_L"] = NULL * np.ones(NELEM_MAX)
 
-        outputs["system_nodes"][:nnode_system, :] = np.vstack(
+        outputs["system_nodes"][:nnode_system, :] = sysnode = np.vstack(
             (node_platform[:nnode_platform, :], node_tower[1:nnode_tower, :])
         )
         outputs["system_Fnode"][:nnode_system, :] = np.vstack(
@@ -497,14 +524,18 @@ class PlatformTowerFrame(om.ExplicitComponent):
             inputs["platform_Rnode"][:nnode_platform], inputs["tower_Rnode"][1:nnode_tower]
         ]
 
-        outputs["system_elem_n1"][:nelem_system] = np.r_[
+        outputs["system_elem_n1"][:nelem_system] = idx1 = np.r_[
             inputs["platform_elem_n1"][:nelem_platform],
             tower_n1,
         ]
-        outputs["system_elem_n2"][:nelem_system] = np.r_[
+        outputs["system_elem_n2"][:nelem_system] = idx2 = np.r_[
             inputs["platform_elem_n2"][:nelem_platform],
             tower_n2,
         ]
+
+        outputs["system_elem_L"][:nelem_system] = np.sqrt(
+            np.sum((sysnode[np.int_(idx2), :] - sysnode[np.int_(idx1), :]) ** 2, axis=1)
+        )
 
         for var in [
             "elem_D",
@@ -518,6 +549,8 @@ class PlatformTowerFrame(om.ExplicitComponent):
             "elem_rho",
             "elem_E",
             "elem_G",
+            "elem_sigma_y",
+            "elem_qdyn",
         ]:
             outputs["system_" + var] = NULL * np.ones(NELEM_MAX)
             outputs["system_" + var][:nelem_system] = np.r_[
@@ -618,6 +651,7 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("tower_elem_n2", NULL * np.ones(MEMMAX))
         self.add_input("tower_elem_D", NULL * np.ones(MEMMAX), units="m")
         self.add_input("tower_elem_t", NULL * np.ones(MEMMAX), units="m")
+        self.add_input("tower_elem_L", NULL * np.ones(MEMMAX), units="m")
         self.add_input("tower_elem_A", NULL * np.ones(MEMMAX), units="m**2")
         self.add_input("tower_elem_Asx", NULL * np.ones(MEMMAX), units="m**2")
         self.add_input("tower_elem_Asy", NULL * np.ones(MEMMAX), units="m**2")
@@ -641,6 +675,7 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("system_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
         self.add_input("system_elem_D", NULL * np.ones(NELEM_MAX), units="m")
         self.add_input("system_elem_t", NULL * np.ones(NELEM_MAX), units="m")
+        self.add_input("system_elem_L", NULL * np.ones(NELEM_MAX), units="m")
         self.add_input("system_elem_A", NULL * np.ones(NELEM_MAX), units="m**2")
         self.add_input("system_elem_Asx", NULL * np.ones(NELEM_MAX), units="m**2")
         self.add_input("system_elem_Asy", NULL * np.ones(NELEM_MAX), units="m**2")
@@ -677,6 +712,24 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_output("tower_side_side_freqs", val=np.zeros(NFREQ2))
         self.add_output("tower_torsion_freqs", val=np.zeros(NFREQ2))
 
+        self.add_output("system_base_F", np.zeros(3), units="N")
+        self.add_output("system_base_M", np.zeros(3), units="N*m")
+        self.add_output("system_Fz", NULL * np.ones(NELEM_MAX), units="N")
+        self.add_output("system_Vx", NULL * np.ones(NELEM_MAX), units="N")
+        self.add_output("system_Vy", NULL * np.ones(NELEM_MAX), units="N")
+        self.add_output("system_Mxx", NULL * np.ones(NELEM_MAX), units="N*m")
+        self.add_output("system_Myy", NULL * np.ones(NELEM_MAX), units="N*m")
+        self.add_output("system_Mzz", NULL * np.ones(NELEM_MAX), units="N*m")
+
+        self.add_output("tower_base_F", np.zeros(3), units="N")
+        self.add_output("tower_base_M", np.zeros(3), units="N*m")
+        self.add_output("tower_Fz", NULL * np.ones(NELEM_MAX), units="N")
+        self.add_output("tower_Vx", NULL * np.ones(NELEM_MAX), units="N")
+        self.add_output("tower_Vy", NULL * np.ones(NELEM_MAX), units="N")
+        self.add_output("tower_Mxx", NULL * np.ones(NELEM_MAX), units="N*m")
+        self.add_output("tower_Myy", NULL * np.ones(NELEM_MAX), units="N*m")
+        self.add_output("tower_Mzz", NULL * np.ones(NELEM_MAX), units="N*m")
+
     def compute(self, inputs, outputs):
 
         # Unpack variables
@@ -692,30 +745,30 @@ class FrameAnalysis(om.ExplicitComponent):
 
         # Create frame3dd instance: nodes, elements, reactions, and options
         for frame in ["tower", "system"]:
-            nodes = inputs[frame + "_nodes"]
+            nodes = inputs[f"{frame}_nodes"]
             nnode = np.where(nodes[:, 0] == NULL)[0][0]
             nodes = nodes[:nnode, :]
-            rnode = np.zeros(nnode)  # inputs[frame + "_Rnode"][:nnode]
-            Fnode = inputs[frame + "_Fnode"][:nnode, :]
+            rnode = np.zeros(nnode)  # inputs[f"{frame}_Rnode"][:nnode]
+            Fnode = inputs[f"{frame}_Fnode"][:nnode, :]
             Mnode = np.zeros((nnode, 3))
             ihub = np.argmax(nodes[:, 2]) - 1
             itrans = util.closest_node(nodes, inputs["transition_node"])
 
-            N1 = np.int_(inputs[frame + "_elem_n1"])
+            N1 = np.int_(inputs[f"{frame}_elem_n1"])
             nelem = np.where(N1 == NULL)[0][0]
             N1 = N1[:nelem]
-            N2 = np.int_(inputs[frame + "_elem_n2"][:nelem])
-            A = inputs[frame + "_elem_A"][:nelem]
-            Asx = inputs[frame + "_elem_Asx"][:nelem]
-            Asy = inputs[frame + "_elem_Asy"][:nelem]
-            Ixx = inputs[frame + "_elem_Ixx"][:nelem]
-            Iyy = inputs[frame + "_elem_Iyy"][:nelem]
-            Izz = inputs[frame + "_elem_Izz"][:nelem]
-            rho = inputs[frame + "_elem_rho"][:nelem]
-            E = inputs[frame + "_elem_E"][:nelem]
-            G = inputs[frame + "_elem_G"][:nelem]
+            N2 = np.int_(inputs[f"{frame}_elem_n2"][:nelem])
+            A = inputs[f"{frame}_elem_A"][:nelem]
+            Asx = inputs[f"{frame}_elem_Asx"][:nelem]
+            Asy = inputs[f"{frame}_elem_Asy"][:nelem]
+            Ixx = inputs[f"{frame}_elem_Ixx"][:nelem]
+            Iyy = inputs[f"{frame}_elem_Iyy"][:nelem]
+            Izz = inputs[f"{frame}_elem_Izz"][:nelem]
+            rho = inputs[f"{frame}_elem_rho"][:nelem]
+            E = inputs[f"{frame}_elem_E"][:nelem]
+            G = inputs[f"{frame}_elem_G"][:nelem]
             roll = np.zeros(nelem)
-            L = np.sqrt(np.sum((nodes[N2, :] - nodes[N1, :]) ** 2, axis=1))
+            L = inputs[f"{frame}_elem_L"][:nelem]  # np.sqrt(np.sum((nodes[N2, :] - nodes[N1, :]) ** 2, axis=1))
 
             inodes = np.arange(nnode) + 1
             node_obj = pyframe3dd.NodeData(inodes, nodes[:, 0], nodes[:, 1], nodes[:, 2], rnode)
@@ -787,38 +840,168 @@ class FrameAnalysis(om.ExplicitComponent):
             # trapezoidally distributed loads
             xx1 = xy1 = xz1 = np.zeros(ielem.size)
             xx2 = xy2 = xz2 = L - 1e-6  # subtract small number b.c. of precision
-            wx1 = inputs[frame + "_elem_Px1"][:nelem]
-            wx2 = inputs[frame + "_elem_Px2"][:nelem]
-            wy1 = inputs[frame + "_elem_Py1"][:nelem]
-            wy2 = inputs[frame + "_elem_Py2"][:nelem]
-            wz1 = inputs[frame + "_elem_Pz1"][:nelem]
-            wz2 = inputs[frame + "_elem_Pz2"][:nelem]
+            wx1 = inputs[f"{frame}_elem_Px1"][:nelem]
+            wx2 = inputs[f"{frame}_elem_Px2"][:nelem]
+            wy1 = inputs[f"{frame}_elem_Py1"][:nelem]
+            wy2 = inputs[f"{frame}_elem_Py2"][:nelem]
+            wz1 = inputs[f"{frame}_elem_Pz1"][:nelem]
+            wz2 = inputs[f"{frame}_elem_Pz2"][:nelem]
             load_obj.changeTrapezoidalLoads(ielem, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
 
             # Add the load case and run
             myframe.addLoadCase(load_obj)
-            # myframe.write(frame + ".3dd")
+            # myframe.write(f"{frame}.3dd")
             displacements, forces, reactions, internalForces, mass, modal = myframe.run()
 
             # natural frequncies
             if frame == "tower" and frame3dd_opt["modal"]:
-                outputs[frame + "_freqs"] = modal.freq[:NFREQ]
+                outputs[f"{frame}_freqs"] = modal.freq[:NFREQ]
 
                 # Get all mode shapes in batch
                 NFREQ2 = int(NFREQ / 2)
                 freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
                     nodes[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
                 )
-                outputs[frame + "_fore_aft_freqs"] = freq_x[:NFREQ2]
-                outputs[frame + "_side_side_freqs"] = freq_y[:NFREQ2]
-                outputs[frame + "_torsion_freqs"] = freq_z[:NFREQ2]
-                outputs[frame + "_fore_aft_modes"] = mshapes_x[:NFREQ2, :]
-                outputs[frame + "_side_side_modes"] = mshapes_y[:NFREQ2, :]
-                outputs[frame + "_torsion_modes"] = mshapes_z[:NFREQ2, :]
+                outputs[f"{frame}_fore_aft_freqs"] = freq_x[:NFREQ2]
+                outputs[f"{frame}_side_side_freqs"] = freq_y[:NFREQ2]
+                outputs[f"{frame}_torsion_freqs"] = freq_z[:NFREQ2]
+                outputs[f"{frame}_fore_aft_modes"] = mshapes_x[:NFREQ2, :]
+                outputs[f"{frame}_side_side_modes"] = mshapes_y[:NFREQ2, :]
+                outputs[f"{frame}_torsion_modes"] = mshapes_z[:NFREQ2, :]
 
-            # Determine forces
-            F_sum = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
-            M_sum = -1.0 * np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
+            # Determine reaction forces
+            outputs[f"{frame}_base_F"] = -np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
+            outputs[f"{frame}_base_M"] = -np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
+
+            # Forces and moments along the structure
+            ic = 0  # case number
+            outputs[f"{frame}_Fz"] = NULL * np.ones(NELEM_MAX)
+            outputs[f"{frame}_Vx"] = NULL * np.ones(NELEM_MAX)
+            outputs[f"{frame}_Vy"] = NULL * np.ones(NELEM_MAX)
+            outputs[f"{frame}_Mxx"] = NULL * np.ones(NELEM_MAX)
+            outputs[f"{frame}_Myy"] = NULL * np.ones(NELEM_MAX)
+            outputs[f"{frame}_Mzz"] = NULL * np.ones(NELEM_MAX)
+
+            outputs[f"{frame}_Fz"][:nelem] = forces.Nx[ic, 1::2]
+            outputs[f"{frame}_Vx"][:nelem] = -forces.Vz[ic, 1::2]
+            outputs[f"{frame}_Vy"][:nelem] = forces.Vy[ic, 1::2]
+            outputs[f"{frame}_Mxx"][:nelem] = -forces.Mzz[ic, 1::2]
+            outputs[f"{frame}_Myy"][:nelem] = forces.Myy[ic, 1::2]
+            outputs[f"{frame}_Mzz"][:nelem] = forces.Txx[ic, 1::2]
+
+
+class FloatingPost(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("options")
+
+    def setup(self):
+
+        self.add_input("tower_elem_L", NULL * np.ones(MEMMAX), units="m")
+        self.add_input("tower_elem_D", NULL * np.ones(MEMMAX), units="m")
+        self.add_input("tower_elem_t", NULL * np.ones(MEMMAX), units="m")
+        self.add_input("tower_elem_A", NULL * np.ones(MEMMAX), units="m**2")
+        self.add_input("tower_elem_Asx", NULL * np.ones(MEMMAX), units="m**2")
+        self.add_input("tower_elem_Asy", NULL * np.ones(MEMMAX), units="m**2")
+        self.add_input("tower_elem_Ixx", NULL * np.ones(MEMMAX), units="kg*m**2")
+        self.add_input("tower_elem_Iyy", NULL * np.ones(MEMMAX), units="kg*m**2")
+        self.add_input("tower_elem_Izz", NULL * np.ones(MEMMAX), units="kg*m**2")
+        self.add_input("tower_elem_E", NULL * np.ones(MEMMAX), units="Pa")
+        self.add_input("tower_elem_G", NULL * np.ones(MEMMAX), units="Pa")
+        self.add_input("tower_elem_sigma_y", NULL * np.ones(MEMMAX), units="Pa")
+        self.add_input("tower_elem_qdyn", NULL * np.ones(MEMMAX), units="Pa")
+
+        self.add_input("system_elem_L", NULL * np.ones(NELEM_MAX), units="m")
+        self.add_input("system_elem_D", NULL * np.ones(NELEM_MAX), units="m")
+        self.add_input("system_elem_t", NULL * np.ones(NELEM_MAX), units="m")
+        self.add_input("system_elem_A", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_input("system_elem_Asx", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_input("system_elem_Asy", NULL * np.ones(NELEM_MAX), units="m**2")
+        self.add_input("system_elem_Ixx", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_input("system_elem_Iyy", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_input("system_elem_Izz", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_input("system_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("system_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("system_elem_sigma_y", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("system_elem_qdyn", NULL * np.ones(NELEM_MAX), units="Pa")
+
+        # Processed Frame3DD/OpenFAST outputs
+        self.add_input("system_Fz", NULL * np.ones(NELEM_MAX), units="N")
+        self.add_input("system_Vx", NULL * np.ones(NELEM_MAX), units="N")
+        self.add_input("system_Vy", NULL * np.ones(NELEM_MAX), units="N")
+        self.add_input("system_Mxx", NULL * np.ones(NELEM_MAX), units="N*m")
+        self.add_input("system_Myy", NULL * np.ones(NELEM_MAX), units="N*m")
+        self.add_input("system_Mzz", NULL * np.ones(NELEM_MAX), units="N*m")
+
+        self.add_input("tower_Fz", NULL * np.ones(NELEM_MAX), units="N")
+        self.add_input("tower_Vx", NULL * np.ones(NELEM_MAX), units="N")
+        self.add_input("tower_Vy", NULL * np.ones(NELEM_MAX), units="N")
+        self.add_input("tower_Mxx", NULL * np.ones(NELEM_MAX), units="N*m")
+        self.add_input("tower_Myy", NULL * np.ones(NELEM_MAX), units="N*m")
+        self.add_input("tower_Mzz", NULL * np.ones(NELEM_MAX), units="N*m")
+
+        self.add_output("constr_tower_stress", NULL * np.ones(NELEM_MAX))
+        self.add_output("constr_tower_shell_buckling", NULL * np.ones(NELEM_MAX))
+        self.add_output("constr_tower_global_buckling", NULL * np.ones(NELEM_MAX))
+
+        self.add_output("constr_system_stress", NULL * np.ones(NELEM_MAX))
+        self.add_output("constr_system_shell_buckling", NULL * np.ones(NELEM_MAX))
+        self.add_output("constr_system_global_buckling", NULL * np.ones(NELEM_MAX))
+
+    def compute(self, inputs, outputs):
+        # Loop over tower and system analysis
+        for frame in ["tower", "system"]:
+            # Unpack some variables
+            d = inputs[f"{frame}_elem_D"]
+            nelem = np.where(d == NULL)[0][0]
+            d = d[:nelem]
+            t = inputs[f"{frame}_elem_t"][:nelem]
+            h = inputs[f"{frame}_elem_L"][:nelem]
+            Az = inputs[f"{frame}_elem_A"][:nelem]
+            Asx = inputs[f"{frame}_elem_Asx"][:nelem]
+            Jz = inputs[f"{frame}_elem_Izz"][:nelem]
+            Iyy = inputs[f"{frame}_elem_Iyy"][:nelem]
+            sigy = inputs[f"{frame}_elem_sigma_y"][:nelem]
+            E = inputs[f"{frame}_elem_E"][:nelem]
+            G = inputs[f"{frame}_elem_G"][:nelem]
+            qdyn = inputs[f"{frame}_elem_qdyn"][:nelem]
+            r = 0.5 * d
+
+            gamma_f = self.options["options"]["gamma_f"]
+            gamma_m = self.options["options"]["gamma_m"]
+            gamma_n = self.options["options"]["gamma_n"]
+            gamma_b = self.options["options"]["gamma_b"]
+
+            # Get loads from Framee3dd/OpenFAST
+            Fz = inputs[f"{frame}_Fz"][:nelem]
+            Vx = inputs[f"{frame}_Vx"][:nelem]
+            Vy = inputs[f"{frame}_Vy"][:nelem]
+            Mxx = inputs[f"{frame}_Mxx"][:nelem]
+            Myy = inputs[f"{frame}_Myy"][:nelem]
+            Mzz = inputs[f"{frame}_Mzz"][:nelem]
+
+            M = np.sqrt(Mxx ** 2 + Myy ** 2)
+            V = np.sqrt(Vx ** 2 + Vy ** 2)
+
+            # Initialize outputs
+            outputs[f"constr_{frame}_stress"] = NULL * np.ones(NELEM_MAX)
+            outputs[f"constr_{frame}_shell_buckling"] = NULL * np.ones(NELEM_MAX)
+            outputs[f"constr_{frame}_global_buckling"] = NULL * np.ones(NELEM_MAX)
+
+            # See http://svn.code.sourceforge.net/p/frame3dd/code/trunk/doc/Frame3DD-manual.html#structuralmodeling
+            # print(Fz.shape, Az.shape, M.shape, r.shape, Iyy.shape)
+            axial_stress = Fz / Az + M * r / Iyy
+            shear_stress = np.abs(Mzz) / Jz * r + V / Asx
+            hoop_stress = util_con.hoopStress(d, t, qdyn)
+            outputs[f"constr_{frame}_stress"][:nelem] = util_con.vonMisesStressUtilization(
+                axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigy
+            )
+
+            # Use DNV-GL CP202 Method
+            check = util_dnvgl.CylinderBuckling(h, d, t, E=E, G=G, sigma_y=sigy, gamma=gamma_f * gamma_b)
+            results = check.run_buckling_checks(Fz, M, axial_stress, hoop_stress, shear_stress)
+
+            outputs[f"constr_{frame}_shell_buckling"][:nelem] = results["Shell"]
+            outputs[f"constr_{frame}_global_buckling"][:nelem] = results["Global"]
 
 
 class FloatingFrame(om.Group):
@@ -853,8 +1036,9 @@ class FloatingFrame(om.Group):
             ("Px", "tower_elem_Px"),
             ("Py", "tower_elem_Py"),
             ("Pz", "tower_elem_Pz"),
+            ("qdyn", "tower_elem_qdyn"),
         ]
-        for var in ["D", "t", "A", "Asx", "Asy", "rho", "Ixx", "Iyy", "Izz", "E", "G"]:
+        for var in ["D", "t", "A", "Asx", "Asy", "rho", "Ixx", "Iyy", "Izz", "E", "G", "sigma_y"]:
             prom += [("section_" + var, "tower_elem_" + var)]
 
         prom += [
@@ -881,3 +1065,4 @@ class FloatingFrame(om.Group):
         )
         self.add_subsystem("mux", PlatformTowerFrame(options=opt), promotes=["*"])
         self.add_subsystem("frame", FrameAnalysis(options=opt), promotes=["*"])
+        self.add_subsystem("post", FloatingPost(options=opt["WISDEM"]["FloatingSE"]), promotes=["*"])

@@ -152,13 +152,13 @@ properties:
                         type: boolean
                         default: False
                         description: Flag switching on and off the inverted neural network for airfoil design
-                    inn_af_max_t/c: 
+                    inn_af_max_t/c:
                         type: number
                         default: 0.4
                         minimum: 0.
                         maximum: 1.
                         description: Maximum airfoil thickness supported by the INN for airfoil design
-                    inn_af_min_t/c: 
+                    inn_af_min_t/c:
                         type: number
                         default: 0.15
                         minimum: 0.
@@ -311,6 +311,11 @@ properties:
                         description: Whether or not to run the floating design modules (FloatingSE)
                     frame3dd: *frame3dd
                     gamma_f: *gamma_f
+                    gamma_m: *gamma_m
+                    gamma_n: *gamma_n
+                    gamma_b: *gamma_b
+                    gamma_freq: *gamma_freq
+                    gamma_fatigue: *gamma_fatigue
                     symmetric_moorings:
                         type: boolean
                         default: True
