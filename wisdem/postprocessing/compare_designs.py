@@ -22,6 +22,7 @@ import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
+
 from wisdem.glue_code.runWISDEM import run_wisdem, load_wisdem
 
 this_dir = os.path.dirname(os.path.realpath(__file__))
@@ -738,7 +739,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
     # the second string is the units to print the value in,
     # and the optional third string is the multiplicative scalar on the value to be printed.
     values_to_print = {
-        "Rotor Diameter": ["assembly.rotor_diameter", "m"],
+        "Rotor Diameter": ["blade.high_level_blade_props.rotor_diameter", "m"],
         "TSR": ["control.rated_TSR", None],
         "AEP": ["rotorse.rp.AEP", "GW*h"],
         "LCOE": ["financese.lcoe", "USD/(MW*h)"],

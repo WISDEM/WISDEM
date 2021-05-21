@@ -177,6 +177,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("airfoils.cd", "blade.interp_airfoils.cd")
             self.connect("airfoils.cm", "blade.interp_airfoils.cm")
 
+            self.connect("hub.radius", "blade.high_level_blade_props.hub_radius")
+            self.connect("configuration.rotor_diameter_user", "blade.high_level_blade_props.rotor_diameter_user")
+
             if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
                 self.connect("airfoils.aoa", "blade.run_inn_af.aoa")
                 self.connect("inn_af.s_opt_r_thick", "blade.run_inn_af.s_opt_r_thick")
@@ -530,19 +533,14 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             costs_ivc.add_output("crane_cost", units="USD", val=12e3)
 
         # Assembly setup
-        self.add_subsystem("assembly", WT_Assembly(modeling_options=modeling_options))
-        self.connect("configuration.rotor_diameter_user", "assembly.rotor_diameter_user")
-        self.connect("configuration.hub_height_user", "assembly.hub_height_user")
-        if modeling_options["flags"]["blade"]:
-            self.connect("blade.outer_shape_bem.ref_axis", "assembly.blade_ref_axis_user")
-        if modeling_options["flags"]["hub"]:
-            self.connect("hub.radius", "assembly.hub_radius")
+        self.add_subsystem("high_level_tower_props", ComputeHighLevelTowerProperties(modeling_options=modeling_options))
+        self.connect("configuration.hub_height_user", "high_level_tower_props.hub_height_user")
         if modeling_options["flags"]["tower"]:
-            self.connect("tower.ref_axis", "assembly.tower_ref_axis_user")
+            self.connect("tower.ref_axis", "high_level_tower_props.tower_ref_axis_user")
             self.add_subsystem("tower_grid", Compute_Grid(n_height=n_height_tower))
-            self.connect("assembly.tower_ref_axis", "tower_grid.ref_axis")
+            self.connect("high_level_tower_props.tower_ref_axis", "tower_grid.ref_axis")
         if modeling_options["flags"]["nacelle"]:
-            self.connect("nacelle.distance_tt_hub", "assembly.distance_tt_hub")
+            self.connect("nacelle.distance_tt_hub", "high_level_tower_props.distance_tt_hub")
 
 
 class Blade(om.Group):
@@ -623,6 +621,9 @@ class Blade(om.Group):
 
         # TODO : Compute Reynolds here
 
+        self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options))
+        self.connect("outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
+
         if rotorse_options["inn_af"]:
             self.add_subsystem(
                 "run_inn_af",
@@ -658,7 +659,7 @@ class Blade(om.Group):
             self.connect("compute_coord_xy_dim.coord_xy_dim", "blade_lofted.coord_xy_dim")
             self.connect("pa.twist_param", "blade_lofted.twist")
             self.connect("outer_shape_bem.s", "blade_lofted.s")
-            self.connect("assembly.blade_ref_axis", "blade_lofted.ref_axis")
+            self.connect("high_level_blade_props.blade_ref_axis", "blade_lofted.ref_axis")
 
         # Import blade internal structure data and remap composites on the outer blade shape
         self.add_subsystem(
@@ -1279,8 +1280,8 @@ class INN_Airfoils(om.ExplicitComponent):
             Re = 9000000.0
             inn = INN()
             try:
-                print("CD", c_d[i])
-                cst, alpha = inn.inverse_design(c_d[i], L_D[i], stall_margin, r_thick[i], Re, N=1, process_samples=True)
+                # print("CD", c_d[i])
+                cst, alpha = inn.inverse_design(0.015, L_D[i], stall_margin, r_thick[i], Re, N=1, process_samples=True)
             except:
                 raise Exception("The INN for airfoil design failed in the inverse mode")
             alpha = np.arange(-4, 20, 0.25)
@@ -1346,50 +1347,50 @@ class INN_Airfoils(om.ExplicitComponent):
             # cd_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cd)
             # cm_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cm)
 
-            f, ax = plt.subplots(4, 1, figsize=(5.3, 10))
-
-            ax[0].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp, label="INN")
-            ax[0].plot(inputs["aoa"] * 180.0 / np.pi, inputs["cl_interp_yaml"][i, :, 0, 0], label="yaml")
-            # ax[0].plot(inputs["aoa"] * 180. / np.pi, cl_interp_new, label="yaml")
-            ax[0].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            ax[0].legend()
-            ax[0].set_ylabel("CL (-)", fontweight="bold")
-            ax[0].set_title("Span Location {:2.2%}".format(inputs["s"][i]), fontweight="bold")
-            ax[0].set_xlim(left=-4, right=20)
-
-            ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, cd_interp, label="INN")
-            ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, inputs["cd_interp_yaml"][i, :, 0, 0], label="yaml")
-            # ax[1].semilogy(inputs["aoa"] * 180. / np.pi, cd_interp_new, label="yaml")
-            ax[1].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            ax[1].set_ylabel("CD (-)", fontweight="bold")
-            ax[1].set_xlim(left=-4, right=20)
-
-            ax[2].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp / cd_interp, label="INN")
-            ax[2].plot(
-                inputs["aoa"] * 180.0 / np.pi,
-                inputs["cl_interp_yaml"][i, :, 0, 0] / inputs["cd_interp_yaml"][i, :, 0, 0],
-                label="yaml",
-            )
-            # ax[2].plot(inputs["aoa"] * 180. / np.pi, cl_interp_new / cd_interp_new, label="yaml")
-            ax[2].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            ax[2].set_ylabel("CL/CD (-)", fontweight="bold")
-            ax[2].set_xlabel("Angles of Attack (deg)", fontweight="bold")
-            ax[2].set_xlim(left=-4, right=20)
-            ax[2].set_ylim(top=200, bottom=-50)
-
-            yaml_xy = inputs["coord_xy_interp_yaml"][i]
-            cst_xy = af_points
-
-            ax[3].plot(cst_xy[:, 0], cst_xy[:, 1], label="INN")
-            ax[3].plot(yaml_xy[:, 0], yaml_xy[:, 1], label="yaml")
-            ax[3].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            ax[3].set_ylabel("y-coord", fontweight="bold")
-            ax[3].set_xlabel("x-coord", fontweight="bold")
-            ax[3].set_xlim(left=0.0, right=1.0)
-            ax[3].set_ylim(top=0.2, bottom=-0.2)
-
-            plt.show()
-            plt.close()
+            # f, ax = plt.subplots(4, 1, figsize=(5.3, 10))
+            #
+            # ax[0].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp, label="INN")
+            # ax[0].plot(inputs["aoa"] * 180.0 / np.pi, inputs["cl_interp_yaml"][i, :, 0, 0], label="yaml")
+            # # ax[0].plot(inputs["aoa"] * 180. / np.pi, cl_interp_new, label="yaml")
+            # ax[0].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            # ax[0].legend()
+            # ax[0].set_ylabel("CL (-)", fontweight="bold")
+            # ax[0].set_title("Span Location {:2.2%}".format(inputs["s"][i]), fontweight="bold")
+            # ax[0].set_xlim(left=-4, right=20)
+            #
+            # ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, cd_interp, label="INN")
+            # ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, inputs["cd_interp_yaml"][i, :, 0, 0], label="yaml")
+            # # ax[1].semilogy(inputs["aoa"] * 180. / np.pi, cd_interp_new, label="yaml")
+            # ax[1].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            # ax[1].set_ylabel("CD (-)", fontweight="bold")
+            # ax[1].set_xlim(left=-4, right=20)
+            #
+            # ax[2].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp / cd_interp, label="INN")
+            # ax[2].plot(
+            #     inputs["aoa"] * 180.0 / np.pi,
+            #     inputs["cl_interp_yaml"][i, :, 0, 0] / inputs["cd_interp_yaml"][i, :, 0, 0],
+            #     label="yaml",
+            # )
+            # # ax[2].plot(inputs["aoa"] * 180. / np.pi, cl_interp_new / cd_interp_new, label="yaml")
+            # ax[2].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            # ax[2].set_ylabel("CL/CD (-)", fontweight="bold")
+            # ax[2].set_xlabel("Angles of Attack (deg)", fontweight="bold")
+            # ax[2].set_xlim(left=-4, right=20)
+            # ax[2].set_ylim(top=200, bottom=-50)
+            #
+            # yaml_xy = inputs["coord_xy_interp_yaml"][i]
+            # cst_xy = af_points
+            #
+            # ax[3].plot(cst_xy[:, 0], cst_xy[:, 1], label="INN")
+            # ax[3].plot(yaml_xy[:, 0], yaml_xy[:, 1], label="yaml")
+            # ax[3].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            # ax[3].set_ylabel("y-coord", fontweight="bold")
+            # ax[3].set_xlabel("x-coord", fontweight="bold")
+            # ax[3].set_xlim(left=0.0, right=1.0)
+            # ax[3].set_ylim(top=0.2, bottom=-0.2)
+            #
+            # plt.show()
+            # plt.close()
 
 
 class Blade_Lofted_Shape(om.ExplicitComponent):
@@ -2869,22 +2870,15 @@ class Materials(om.Group):
         )
 
 
-class WT_Assembly(om.ExplicitComponent):
+class ComputeHighLevelBladeProperties(om.ExplicitComponent):
     # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
     def initialize(self):
-        self.options.declare("modeling_options")
+        self.options.declare("rotorse_options")
 
     def setup(self):
-        modeling_options = self.options["modeling_options"]
+        rotorse_options = self.options["rotorse_options"]
 
-        if modeling_options["flags"]["blade"]:
-            n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
-        else:
-            n_span = 0
-        if modeling_options["flags"]["tower"]:
-            n_height_tower = modeling_options["WISDEM"]["TowerSE"]["n_height_tower"]
-        else:
-            n_height_tower = 0
+        n_span = rotorse_options["n_span"]
 
         self.add_input(
             "blade_ref_axis_user",
@@ -2936,6 +2930,39 @@ class WT_Assembly(om.ExplicitComponent):
             desc="Scalar of the 3D blade length computed along its axis, scaled based on the user defined rotor diameter.",
         )
 
+    def compute(self, inputs, outputs):
+        outputs["blade_ref_axis"][:, 0] = inputs["blade_ref_axis_user"][:, 0]
+        outputs["blade_ref_axis"][:, 1] = inputs["blade_ref_axis_user"][:, 1]
+        # Scale z if the blade length provided by the user does not match the rotor diameter. D = (blade length + hub radius) * 2
+        if inputs["rotor_diameter_user"] != 0.0:
+            outputs["rotor_diameter"] = inputs["rotor_diameter_user"]
+            outputs["blade_ref_axis"][:, 2] = (
+                inputs["blade_ref_axis_user"][:, 2]
+                * inputs["rotor_diameter_user"]
+                / ((arc_length(inputs["blade_ref_axis_user"])[-1] + inputs["hub_radius"]) * 2.0)
+            )
+        # If the user does not provide a rotor diameter, this is computed from the hub diameter and the blade length
+        else:
+            outputs["rotor_diameter"] = (arc_length(inputs["blade_ref_axis_user"])[-1] + inputs["hub_radius"]) * 2.0
+            outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2]
+        outputs["r_blade"] = outputs["blade_ref_axis"][:, 2] + inputs["hub_radius"]
+        outputs["rotor_radius"] = outputs["r_blade"][-1]
+        outputs["blade_length"] = arc_length(outputs["blade_ref_axis"])[-1]
+
+
+class ComputeHighLevelTowerProperties(om.ExplicitComponent):
+    # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        modeling_options = self.options["modeling_options"]
+
+        if modeling_options["flags"]["tower"]:
+            n_height_tower = modeling_options["WISDEM"]["TowerSE"]["n_height_tower"]
+        else:
+            n_height_tower = 0
+
         self.add_input(
             "tower_ref_axis_user",
             val=np.zeros((n_height_tower, 3)),
@@ -2961,24 +2988,6 @@ class WT_Assembly(om.ExplicitComponent):
     def compute(self, inputs, outputs):
         modeling_options = self.options["modeling_options"]
 
-        if modeling_options["flags"]["blade"]:
-            outputs["blade_ref_axis"][:, 0] = inputs["blade_ref_axis_user"][:, 0]
-            outputs["blade_ref_axis"][:, 1] = inputs["blade_ref_axis_user"][:, 1]
-            # Scale z if the blade length provided by the user does not match the rotor diameter. D = (blade length + hub radius) * 2
-            if inputs["rotor_diameter_user"] != 0.0:
-                outputs["rotor_diameter"] = inputs["rotor_diameter_user"]
-                outputs["blade_ref_axis"][:, 2] = (
-                    inputs["blade_ref_axis_user"][:, 2]
-                    * inputs["rotor_diameter_user"]
-                    / ((arc_length(inputs["blade_ref_axis_user"])[-1] + inputs["hub_radius"]) * 2.0)
-                )
-            # If the user does not provide a rotor diameter, this is computed from the hub diameter and the blade length
-            else:
-                outputs["rotor_diameter"] = (arc_length(inputs["blade_ref_axis_user"])[-1] + inputs["hub_radius"]) * 2.0
-                outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2]
-            outputs["r_blade"] = outputs["blade_ref_axis"][:, 2] + inputs["hub_radius"]
-            outputs["rotor_radius"] = outputs["r_blade"][-1]
-            outputs["blade_length"] = arc_length(outputs["blade_ref_axis"])[-1]
         if modeling_options["flags"]["tower"]:
             if inputs["hub_height_user"] != 0.0:
                 outputs["hub_height"] = inputs["hub_height_user"]

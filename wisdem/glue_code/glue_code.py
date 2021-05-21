@@ -70,8 +70,8 @@ class WT_RNTA(om.Group):
             self.connect("blade.opt_var.s_opt_chord", "rotorse.ccblade.s_opt_chord")
             self.connect("blade.opt_var.s_opt_twist", "rotorse.ccblade.s_opt_twist")
             self.connect("blade.outer_shape_bem.s", "rotorse.s")
-            self.connect("assembly.r_blade", "rotorse.r")
-            self.connect("assembly.rotor_radius", "rotorse.Rtip")
+            self.connect("blade.high_level_blade_props.r_blade", "rotorse.r")
+            self.connect("blade.high_level_blade_props.rotor_radius", "rotorse.Rtip")
             self.connect("hub.radius", "rotorse.Rhub")
             self.connect("blade.interp_airfoils.r_thick_interp", "rotorse.ccblade.rthick")
             self.connect("airfoils.aoa", "rotorse.airfoils_aoa")
@@ -85,13 +85,21 @@ class WT_RNTA(om.Group):
                 self.connect("blade.interp_airfoils.cd_interp", "rotorse.airfoils_cd")
 
             self.connect("blade.interp_airfoils.cm_interp", "rotorse.airfoils_cm")
-            self.connect("assembly.hub_height", "rotorse.hub_height")
+            self.connect("high_level_tower_props.hub_height", "rotorse.hub_height")
             self.connect("hub.cone", "rotorse.precone")
             self.connect("nacelle.uptilt", "rotorse.tilt")
-            self.connect("assembly.blade_ref_axis", "rotorse.precurve", src_indices=[(i, 0) for i in np.arange(n_span)])
-            self.connect("assembly.blade_ref_axis", "rotorse.precurveTip", src_indices=[(-1, 0)])
-            self.connect("assembly.blade_ref_axis", "rotorse.presweep", src_indices=[(i, 1) for i in np.arange(n_span)])
-            self.connect("assembly.blade_ref_axis", "rotorse.presweepTip", src_indices=[(-1, 1)])
+            self.connect(
+                "blade.high_level_blade_props.blade_ref_axis",
+                "rotorse.precurve",
+                src_indices=[(i, 0) for i in np.arange(n_span)],
+            )
+            self.connect("blade.high_level_blade_props.blade_ref_axis", "rotorse.precurveTip", src_indices=[(-1, 0)])
+            self.connect(
+                "blade.high_level_blade_props.blade_ref_axis",
+                "rotorse.presweep",
+                src_indices=[(i, 1) for i in np.arange(n_span)],
+            )
+            self.connect("blade.high_level_blade_props.blade_ref_axis", "rotorse.presweepTip", src_indices=[(-1, 1)])
             if modeling_options["flags"]["control"]:
                 self.connect("control.rated_pitch", "rotorse.pitch")
             self.connect("control.rated_TSR", "rotorse.tsr")
@@ -136,7 +144,7 @@ class WT_RNTA(om.Group):
 
             # Conncetions to rail transport module
             if opt_options["constraints"]["blade"]["rail_transport"]["flag"]:
-                self.connect("assembly.blade_ref_axis", "rotorse.re.rail.blade_ref_axis")
+                self.connect("blade.high_level_blade_props.blade_ref_axis", "rotorse.re.rail.blade_ref_axis")
 
             # Connections from blade struct parametrization to rotor load anlysis
             self.connect("blade.opt_var.s_opt_spar_cap_ss", "rotorse.rs.constr.s_opt_spar_cap_ss")
@@ -182,7 +190,7 @@ class WT_RNTA(om.Group):
 
             self.connect("configuration.n_blades", "drivese.n_blades")
 
-            self.connect("assembly.rotor_diameter", "drivese.rotor_diameter")
+            self.connect("blade.high_level_blade_props.rotor_diameter", "drivese.rotor_diameter")
             self.connect("configuration.upwind", "drivese.upwind")
             self.connect("control.minOmega", "drivese.minimum_rpm")
             self.connect("rotorse.rp.powercurve.rated_Omega", "drivese.rated_rpm")
@@ -362,8 +370,8 @@ class WT_RNTA(om.Group):
                 self.connect("drivese.rna_mass", "towerse.rna_mass")
             if modeling_options["flags"]["blade"]:
                 self.connect("rotorse.rp.gust.V_gust", "towerse.wind.Uref")
-            self.connect("assembly.hub_height", "towerse.wind_reference_height")
-            self.connect("assembly.hub_height", "towerse.hub_height")
+            self.connect("high_level_tower_props.hub_height", "towerse.wind_reference_height")
+            self.connect("high_level_tower_props.hub_height", "towerse.hub_height")
             self.connect("env.rho_air", "towerse.rho_air")
             self.connect("env.mu_air", "towerse.mu_air")
             self.connect("env.shear_exp", "towerse.shearExp")
@@ -411,7 +419,7 @@ class WT_RNTA(om.Group):
             self.connect("env.rho_air", "floatingse.rho_air")
             self.connect("env.mu_air", "floatingse.mu_air")
             self.connect("env.shear_exp", "floatingse.shearExp")
-            self.connect("assembly.hub_height", "floatingse.zref")
+            self.connect("high_level_tower_props.hub_height", "floatingse.zref")
             if modeling_options["flags"]["blade"]:
                 self.connect("rotorse.rp.gust.V_gust", "floatingse.Uref")
             self.connect("materials.name", "floatingse.material_names")
@@ -488,12 +496,12 @@ class WT_RNTA(om.Group):
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
             self.connect("configuration.rotor_orientation", "tcons.rotor_orientation")
             self.connect("rotorse.rs.tip_pos.tip_deflection", "tcons.tip_deflection")
-            self.connect("assembly.rotor_radius", "tcons.Rtip")
-            self.connect("assembly.blade_ref_axis", "tcons.ref_axis_blade")
+            self.connect("blade.high_level_blade_props.rotor_radius", "tcons.Rtip")
+            self.connect("blade.high_level_blade_props.blade_ref_axis", "tcons.ref_axis_blade")
             self.connect("hub.cone", "tcons.precone")
             self.connect("nacelle.uptilt", "tcons.tilt")
             self.connect("nacelle.overhang", "tcons.overhang")
-            self.connect("assembly.tower_ref_axis", "tcons.ref_axis_tower")
+            self.connect("high_level_tower_props.tower_ref_axis", "tcons.ref_axis_tower")
             self.connect("tower.diameter", "tcons.d_full")
             if modeling_options["flags"]["floating"]:
                 self.connect("floatingse.tower_freqs", "tcons.tower_freq", src_indices=[0])
@@ -594,8 +602,8 @@ class WindPark(om.Group):
                 self.connect("env.water_depth", "orbit.site_depth")
                 self.connect("costs.turbine_number", "orbit.number_of_turbines")
                 self.connect("configuration.n_blades", "orbit.number_of_blades")
-                self.connect("assembly.hub_height", "orbit.hub_height")
-                self.connect("assembly.rotor_diameter", "orbit.turbine_rotor_diameter")
+                self.connect("high_level_tower_props.hub_height", "orbit.hub_height")
+                self.connect("blade.high_level_blade_props.rotor_diameter", "orbit.turbine_rotor_diameter")
                 self.connect("tower_grid.height", "orbit.tower_length")
                 if modeling_options["flags"]["monopile"]:
                     self.connect("towerse.tower_mass", "orbit.tower_mass")
@@ -635,11 +643,11 @@ class WindPark(om.Group):
                 self.connect("bos.design_install_plan_cost", "orbit.design_install_plan_cost")
             else:
                 # Inputs into LandBOSSE
-                self.connect("assembly.hub_height", "landbosse.hub_height_meters")
+                self.connect("high_level_tower_props.hub_height", "landbosse.hub_height_meters")
                 self.connect("costs.turbine_number", "landbosse.num_turbines")
                 self.connect("configuration.rated_power", "landbosse.turbine_rating_MW")
                 self.connect("env.shear_exp", "landbosse.wind_shear_exponent")
-                self.connect("assembly.rotor_diameter", "landbosse.rotor_diameter_m")
+                self.connect("blade.high_level_blade_props.rotor_diameter", "landbosse.rotor_diameter_m")
                 self.connect("configuration.n_blades", "landbosse.number_of_blades")
                 if modeling_options["flags"]["blade"]:
                     self.connect("rotorse.rp.powercurve.rated_T", "landbosse.rated_thrust_N")
