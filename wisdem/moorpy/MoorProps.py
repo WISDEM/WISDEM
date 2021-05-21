@@ -9,7 +9,7 @@ import numpy as np
 import wisdem.moorpy as mp
 
 
-def getLineProps(d, type="chain", stud="studless", source="Orcaflex-altered", name=""):
+def getLineProps(dmm, type="chain", stud="studless", source="Orcaflex-altered", name=""):
     """getLineProps version 3.2: Restructuring v3.1 to 'Orcaflex-original' and 'Orcaflex-altered'
 
     Motivation: The existing public, and NREL-internal references for mooring line component property
@@ -33,7 +33,7 @@ def getLineProps(d, type="chain", stud="studless", source="Orcaflex-altered", na
     """
 
     if source == "Orcaflex-original":
-        d = d / 1000  # orcaflex uses meters https://www.orcina.com/webhelp/OrcaFlex/
+        d = dmm / 1000  # orcaflex uses meters https://www.orcina.com/webhelp/OrcaFlex/
 
         if type == "chain":
             c = 1.96e4  # grade 2=1.37e4; grade 3=1.96e4; ORQ=2.11e4; R4=2.74e4
@@ -89,7 +89,7 @@ def getLineProps(d, type="chain", stud="studless", source="Orcaflex-altered", na
             raise ValueError("getLineProps error: Linetype not valid. Choose from given rope types or chain ")
 
     elif source == "Orcaflex-altered":
-        d = d / 1000  # orcaflex uses meters https://www.orcina.com/webhelp/OrcaFlex/
+        d = dmm / 1000  # orcaflex uses meters https://www.orcina.com/webhelp/OrcaFlex/
 
         if type == "chain":
             c = 2.74e4  # grade 2=1.37e4; grade 3=1.96e4; ORQ=2.11e4; R4=2.74e4
@@ -169,13 +169,13 @@ def getLineProps(d, type="chain", stud="studless", source="Orcaflex-altered", na
 
     # Set up a main identifier for the linetype. Useful for things like "chain_bot" or "chain_top"
     if name == "":
-        typestring = type + str(d)
+        typestring = f"{type}{dmm:.0f}"
     else:
         typestring = name
 
     notes = f"made with getLineProps - source: {source}"
 
-    return mp.LineType(typestring, d_vol, massden, EA, MBL=MBL, cost=cost, notes=notes, input_type=type, input_d=d)
+    return mp.LineType(typestring, d_vol, massden, EA, MBL=MBL, cost=cost, notes=notes, input_type=type, input_d=dmm)
 
 
 def getAnchorProps(fx, fz, type="drag-embedment", display=0):
