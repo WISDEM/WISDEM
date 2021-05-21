@@ -189,7 +189,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 self.connect("inn_af.L_D_opt", "blade.run_inn_af.L_D_opt")
                 self.connect("inn_af.c_d_opt", "blade.run_inn_af.c_d_opt")
                 self.connect("control.rated_TSR", "blade.run_inn_af.rated_TSR")
-                self.connect("configuration.rotor_diameter_user", "blade.run_inn_af.rotor_diameter")
                 self.connect("hub.radius", "blade.run_inn_af.hub_radius")
 
         # Nacelle inputs
@@ -639,6 +638,7 @@ class Blade(om.Group):
             self.connect("interp_airfoils.cd_interp", "run_inn_af.cd_interp_yaml")
             self.connect("interp_airfoils.cm_interp", "run_inn_af.cm_interp_yaml")
             self.connect("interp_airfoils.coord_xy_interp", "run_inn_af.coord_xy_interp_yaml")
+            self.connect("high_level_blade_props.rotor_diameter", "run_inn_af.rotor_diameter")
 
         self.add_subsystem(
             "compute_coord_xy_dim",
