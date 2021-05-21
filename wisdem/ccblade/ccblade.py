@@ -21,20 +21,19 @@ limitations under the License.
 """
 
 from __future__ import print_function
+
+import os
+import warnings
+import multiprocessing as mp
+from math import pi, cos, sin, isnan, radians
+
 import numpy as np
-from math import pi, radians, sin, cos, isnan
 from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
-import warnings
-import os
-import multiprocessing as mp
 
-# from wisdem.ccblade.Polar import Polar
-import multiprocessing as mp
-from wisdem.commonse.mpi_tools import MPI
-from wisdem.airfoilprep import Airfoil
 import wisdem.ccblade._bem as _bem
-
+from wisdem.airfoilprep import Airfoil
+from wisdem.commonse.mpi_tools import MPI
 
 # ------------------
 #  Airfoil Class
@@ -1233,7 +1232,7 @@ class CCBlade(object):
 
                 # contribution from this azimuthal location
                 loads, derivs = self.distributedAeroLoads(Uinf[i], Omega[i], pitch[i], azimuth)
-                Np, Tp = (loads["Np"], loads["Tp"])
+                Np, Tp, W = (loads["Np"], loads["Tp"], loads["W"])
 
                 if self.derivatives:
                     dNp = derivs["dNp"]
@@ -1325,6 +1324,7 @@ class CCBlade(object):
         outputs["T"] = T
         outputs["Q"] = Q
         outputs["M"] = M
+        outputs["W"] = W
         if self.derivatives:
             derivs["dP"] = dP
             derivs["dT"] = dT

@@ -1,7 +1,8 @@
 import numpy as np
-import wisdem.ccblade._bem as _bem
 from openmdao.api import ExplicitComponent
 from scipy.interpolate import PchipInterpolator
+
+import wisdem.ccblade._bem as _bem
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.csystem import DirectionVector
 
@@ -481,6 +482,9 @@ class CCBladeTwist(ExplicitComponent):
         )
         self.add_output("CP", val=0.0, desc="Rotor power coefficient")
         self.add_output("CM", val=0.0, desc="Blade flapwise moment coefficient")
+        self.add_output(
+            "local_airfoil_velocities", val=np.zeros(n_span), desc="Local relative velocities for the airfoils"
+        )
         self.add_output("a", val=np.zeros(n_span), desc="Axial induction  along blade span")
         self.add_output("ap", val=np.zeros(n_span), desc="Tangential induction along blade span")
         self.add_output("alpha", val=np.zeros(n_span), units="deg", desc="Angles of attack along blade span")
@@ -675,7 +679,7 @@ class CCBladeTwist(ExplicitComponent):
         Omega = inputs["Uhub"] * inputs["tsr"] / inputs["Rtip"] * 30.0 / np.pi
 
         myout, derivs = get_cp_cm.evaluate([inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=True)
-        _, _, _, _, CP, CT, CQ, CM = [myout[key] for key in ["P", "T", "Q", "M", "CP", "CT", "CQ", "CM"]]
+        _, _, _, _, CP, CT, CQ, CM, W = [myout[key] for key in ["P", "T", "Q", "M", "CP", "CT", "CQ", "CM", "W"]]
 
         # if self.options['opt_options']['design_variables']['blade']['aero_shape']['twist']['flag']:
         get_cp_cm.induction = False
@@ -688,6 +692,7 @@ class CCBladeTwist(ExplicitComponent):
         outputs["theta"] = twist
         outputs["CP"] = CP[0]
         outputs["CM"] = CM[0]
+        outputs["local_airfoil_velocities"] = W[0]
         outputs["a"] = loads["a"]
         outputs["ap"] = loads["ap"]
         outputs["alpha"] = loads["alpha"]

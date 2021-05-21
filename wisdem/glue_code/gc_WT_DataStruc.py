@@ -618,10 +618,34 @@ class Blade(om.Group):
         self.connect("outer_shape_bem.pitch_axis", ["interp_airfoils.pitch_axis", "compute_coord_xy_dim.pitch_axis"])
         self.connect("opt_var.af_position", "interp_airfoils.af_position")
 
-        # TODO : Compute Reynolds here
-
         self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options))
         self.connect("outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
+
+        class ComputeReynolds(om.ExplicitComponent):
+            def initialize(self):
+                self.options.declare("n_span")
+
+            def setup(self):
+                n_span = self.options["n_span"]
+
+                self.add_input("rho", val=0.0)
+                self.add_input("mu", val=0.0)
+                self.add_input("local_airfoil_velocities", val=np.zeros((n_span)))
+                self.add_input("chord", val=np.zeros((n_span)))
+                self.add_output("Re", val=np.zeros((n_span)))
+
+            def compute(self, inputs, outputs):
+                outputs["Re"] = np.nan_to_num(
+                    inputs["rho"] * inputs["local_airfoil_velocities"] * inputs["chord"] / inputs["mu"]
+                )
+                print("rho", inputs["rho"])
+                print("local_airfoil_velocities", inputs["local_airfoil_velocities"])
+                print("chord", inputs["chord"])
+                print("mu", inputs["mu"])
+                print("Re", outputs["Re"])
+
+        # TODO : Compute Reynolds here
+        self.add_subsystem("compute_reynolds", ComputeReynolds(n_span=rotorse_options["n_span"]))
 
         if rotorse_options["inn_af"]:
             self.add_subsystem(
@@ -639,6 +663,7 @@ class Blade(om.Group):
             self.connect("interp_airfoils.cm_interp", "run_inn_af.cm_interp_yaml")
             self.connect("interp_airfoils.coord_xy_interp", "run_inn_af.coord_xy_interp_yaml")
             self.connect("high_level_blade_props.rotor_diameter", "run_inn_af.rotor_diameter")
+            self.connect("compute_reynolds.Re", "run_inn_af.Re")
 
         self.add_subsystem(
             "compute_coord_xy_dim",
@@ -1207,6 +1232,7 @@ class INN_Airfoils(om.ExplicitComponent):
         self.add_input(
             "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
         )
+        self.add_input("Re", val=np.zeros(n_span), desc="Reynolds number at each blade airfoil location.")
         self.add_input("rated_TSR", val=0.0, desc="Constant tip speed ratio in region II.")
 
         self.add_input(
@@ -1277,7 +1303,10 @@ class INN_Airfoils(om.ExplicitComponent):
         outputs["cd_interp"] = inputs["cd_interp_yaml"]
 
         for i in range(r_thick_index_start, r_thick_index_end):
-            Re = 9000000.0
+            Re = inputs["Re"][i]
+            if Re < 100.0:
+                Re = 9.0e6
+            print(Re)
             inn = INN()
             try:
                 # print("CD", c_d[i])
