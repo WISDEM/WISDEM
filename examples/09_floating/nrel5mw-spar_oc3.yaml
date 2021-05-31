@@ -405,10 +405,7 @@ components:
         line_types:
             - name: main
               diameter: 0.09
-              mass_density: 77.7066
-              stiffness: 384.243e6
-              breaking_load: 1e8
-              cost: 100.0
+              type: chain
               transverse_added_mass: 1.0
               tangential_added_mass: 0.0
               transverse_drag: 1.6

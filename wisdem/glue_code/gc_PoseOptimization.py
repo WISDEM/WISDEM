@@ -1052,6 +1052,12 @@ class PoseOptimization(object):
         if float_constr["mooring_length"]["flag"]:
             wt_opt.model.add_constraint("floatingse.constr_mooring_length", upper=1.0)
 
+        if float_constr["anchor_vertical"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_anchor_vertical", lower=0.0)
+
+        if float_constr["anchor_lateral"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_anchor_lateral", lower=0.0)
+
         if float_constr["stress"]["flag"]:
             wt_opt.model.add_constraint("floatingse.constr_system_stress", upper=1.0)
 
