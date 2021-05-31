@@ -1751,6 +1751,7 @@ properties:
                                 - name
                                 - diameter
                                 - type
+                            optional:
                                 - damping
                                 - transverse_added_mass
                                 - tangential_added_mass

@@ -642,10 +642,7 @@ components:
 
         anchor_types:
             - name: drag_embedment
-              mass: 1e3
-              cost: 1e4
-              max_vertical_load: 0.0
-              max_lateral_load: 1e5
+              type: drag_embedment
 
 airfoils:
    -  aerodynamic_center: 0.275

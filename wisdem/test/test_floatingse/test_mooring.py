@@ -9,8 +9,6 @@ class TestMooring(unittest.TestCase):
     def setUp(self):
         self.inputs = {}
         self.outputs = {}
-        self.discrete_inputs = {}
-        self.discrete_outputs = {}
 
         myones = np.ones(1)
         self.inputs["fairlead"] = 10.0 * myones
@@ -20,14 +18,12 @@ class TestMooring(unittest.TestCase):
         self.inputs["anchor_cost"] = 10.0 * myones
         self.inputs["anchor_max_vertical_load"] = 1e10
         self.inputs["anchor_max_lateral_load"] = 1e10
-        self.discrete_inputs["anchor_type"] = "custom"  # "drag_embedment"
 
         self.inputs["rho_water"] = 1e3
         self.inputs["water_depth"] = 200.0  # 100.0
 
         self.inputs["line_length"] = 0.6 * (self.inputs["water_depth"] + self.inputs["anchor_radius"]) * myones
         self.inputs["line_diameter"] = 0.1 * myones
-        self.discrete_inputs["line_type"] = "custom"  # "chain"
         self.inputs["line_mass_density_coeff"] = 10.0 * myones
         self.inputs["line_stiffness_coeff"] = 2e6 * myones
         self.inputs["line_breaking_load_coeff"] = 30.0 * myones
@@ -39,19 +35,21 @@ class TestMooring(unittest.TestCase):
         opt = {}
         opt["n_attach"] = 3
         opt["n_anchors"] = 6
+        opt["line_anchor"] = ["custom"]  # ["drag_embedment"]
+        opt["line_material"] = ["custom"]  # ["chain"]
 
         self.mymap = mm.Mooring(options=opt, gamma=1.35)
 
     def testGeometry(self):
-        self.mymap.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        self.mymap.compute(self.inputs, self.outputs)
         npt.assert_equal(self.outputs["constr_mooring_length"], 0.6 * 450 / (0.95 * 440))
 
         self.inputs["line_length"] = 150.0
-        self.mymap.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        self.mymap.compute(self.inputs, self.outputs)
         npt.assert_equal(self.outputs["constr_mooring_length"], 150 / (200 - 10 - 1.35 * 11 * np.sin(np.deg2rad(10))))
 
     def testRunMap(self):
-        self.mymap.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        self.mymap.compute(self.inputs, self.outputs)
 
         npt.assert_almost_equal(self.outputs["mooring_neutral_load"].sum(axis=0)[:2], 0.0, decimal=2)
         self.assertEqual(self.outputs["mooring_neutral_load"].shape[0], 3)
@@ -76,9 +74,16 @@ class TestMooring(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["mooring_cost"], 6 * 270 * 0.4 + 6 * 10)
 
     def testRunMap_MoorProps(self):
-        self.discrete_inputs["line_type"] = "chain"
-        self.discrete_inputs["anchor_type"] = "drag_embedment"
-        self.mymap.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+
+        opt = {}
+        opt["n_attach"] = 3
+        opt["n_anchors"] = 6
+        opt["line_anchor"] = ["drag_embedment"]
+        opt["line_material"] = ["chain"]
+
+        mymap = mm.Mooring(options=opt, gamma=1.35)
+
+        mymap.compute(self.inputs, self.outputs)
         self.assertAlmostEqual(self.outputs["mooring_mass"], 6 * 270 * 199.0 + 6 * 0)
         self.assertAlmostEqual(self.outputs["mooring_cost"], 6 * 270 * 514.415)
 

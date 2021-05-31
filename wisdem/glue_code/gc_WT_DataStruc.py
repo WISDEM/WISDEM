@@ -2317,8 +2317,6 @@ class Mooring(om.Group):
 
         n_nodes = mooring_init_options["n_nodes"]
         n_lines = mooring_init_options["n_lines"]
-        n_line_types = mooring_init_options["n_line_types"]
-        n_anchor_types = mooring_init_options["n_anchor_types"]
 
         n_design = 1 if mooring_init_options["symmetric"] else n_lines
 
@@ -2334,9 +2332,6 @@ class Mooring(om.Group):
         ivc.add_discrete_output("nodes_joint_name", val=[""] * n_nodes)
         ivc.add_output("unstretched_length_in", val=np.zeros(n_design), units="m")
         ivc.add_discrete_output("line_id", val=[""] * n_lines)
-        # ivc.add_discrete_output("n_lines", val=n_lines)
-        ivc.add_discrete_output("line_type_names", val=[""] * n_line_types)
-        ivc.add_discrete_output("line_type_types", val=[""] * n_lines)
         ivc.add_output("line_diameter_in", val=np.zeros(n_design), units="m")
         ivc.add_output("line_mass_density_coeff", val=np.zeros(n_lines), units="kg/m**3")
         ivc.add_output("line_stiffness_coeff", val=np.zeros(n_lines), units="N/m**2")
@@ -2346,8 +2341,6 @@ class Mooring(om.Group):
         ivc.add_output("line_tangential_added_mass_coeff", val=np.zeros(n_lines), units="kg/m**3")
         ivc.add_output("line_transverse_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
         ivc.add_output("line_tangential_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
-        ivc.add_discrete_output("anchor_names", val=[""] * n_anchor_types)
-        ivc.add_discrete_output("anchor_types", val=[""] * n_lines)
         ivc.add_output("anchor_mass", val=np.zeros(n_lines), units="kg")
         ivc.add_output("anchor_cost", val=np.zeros(n_lines), units="USD")
         ivc.add_output("anchor_max_vertical_load", val=1e30 * np.ones(n_lines), units="N")
@@ -2365,9 +2358,6 @@ class MooringProperties(om.ExplicitComponent):
         mooring_init_options = self.options["mooring_init_options"]
         n_lines = mooring_init_options["n_lines"]
         n_design = 1 if mooring_init_options["symmetric"] else n_lines
-
-        self.add_discrete_input("line_type_types", val=[""] * n_lines)
-        self.add_discrete_input("anchor_types", val=[""] * n_lines)
 
         self.add_input("unstretched_length_in", val=np.zeros(n_design), units="m")
         self.add_input("line_diameter_in", val=np.zeros(n_design), units="m")
@@ -2391,14 +2381,15 @@ class MooringProperties(om.ExplicitComponent):
         self.add_output("line_transverse_drag", val=np.zeros(n_lines))
         self.add_output("line_tangential_drag", val=np.zeros(n_lines))
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
         n_lines = self.options["mooring_init_options"]["n_lines"]
+        line_mat = self.options["mooring_init_options"]["line_material"]
         outputs["line_diameter"] = d = inputs["line_diameter_in"] * np.ones(n_lines)
         outputs["unstretched_length"] = inputs["unstretched_length_in"] * np.ones(n_lines)
         d2 = d * d
 
         line_obj = None
-        if discrete_inputs["line_type_types"][0] == "custom":
+        if line_mat[0] == "custom":
             varlist = [
                 "line_mass_density",
                 "line_stiffness",
@@ -2412,10 +2403,10 @@ class MooringProperties(om.ExplicitComponent):
             for var in varlist:
                 outputs[var] = d2 * inputs[var + "_coeff"]
 
-        elif discrete_inputs["line_type_types"][0] == "chain_stud":
-            line_obj = mp.getLineProps(1e3 * d, type="chain", stud="stud")
-        elif discrete_inputs["line_type_types"][0] == "chain_stud":
-            line_obj = mp.getLineProps(1e3 * d, type=discrete_inputs["line_type_types"][0])
+        elif line_mat[0] == "chain_stud":
+            line_obj = mp.getLineProps(1e3 * d[0], type="chain", stud="stud")
+        else:
+            line_obj = mp.getLineProps(1e3 * d[0], type=line_mat[0])
 
         if not line_obj is None:
             outputs["line_mass_density"] = line_obj.mlin

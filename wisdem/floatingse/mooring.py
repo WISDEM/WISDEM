@@ -107,14 +107,12 @@ class Mooring(om.ExplicitComponent):
         self.add_input("fairlead", 0.0, units="m")
         self.add_input("line_length", 0.0, units="m")
         self.add_input("line_diameter", 0.0, units="m")
-        self.add_discrete_input("line_type", "chain")
 
         self.add_input("anchor_radius", 0.0, units="m")
         self.add_input("anchor_mass", 0.0, units="kg")
         self.add_input("anchor_cost", 0.0, units="USD")
         self.add_input("anchor_max_vertical_load", 1e30, units="N")
         self.add_input("anchor_max_lateral_load", 1e30, units="N")
-        self.add_discrete_input("anchor_type", "drag_embedment")
 
         self.add_input("line_mass_density_coeff", 0.0, units="kg/m**3")
         self.add_input("line_stiffness_coeff", 0.0, units="N/m**2")
@@ -142,15 +140,15 @@ class Mooring(om.ExplicitComponent):
         self.add_output("constr_anchor_vertical", np.zeros(n_lines))
         self.add_output("constr_anchor_lateral", np.zeros(n_lines))
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
 
         # Write MAP input file and analyze the system at every angle
-        self.evaluate_mooring(inputs, outputs, discrete_inputs, discrete_outputs)
+        self.evaluate_mooring(inputs, outputs)
 
         # Compute costs for the system
-        self.compute_cost(inputs, outputs, discrete_inputs, discrete_outputs)
+        self.compute_cost(inputs, outputs)
 
-    def evaluate_mooring(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def evaluate_mooring(self, inputs, outputs):
         # Unpack variables
         water_depth = float(inputs["water_depth"])
         fairlead_depth = float(inputs["fairlead"])
@@ -168,15 +166,16 @@ class Mooring(om.ExplicitComponent):
         ratio = int(n_anchors / n_attach)
 
         line_obj = None
-        if discrete_inputs["line_type"] == "custom":
+        line_mat = self.options["options"]["line_material"][0]
+        if line_mat == "custom":
             min_break_load = float(inputs["line_breaking_load_coeff"]) * d ** 2
             mass_den = float(inputs["line_mass_density_coeff"]) * d ** 2
             ea_stiff = float(inputs["line_stiffness_coeff"]) * d ** 2
             cost_rate = float(inputs["line_cost_rate_coeff"]) * d ** 2
-        elif discrete_inputs["line_type"] == "chain_stud":
-            line_obj = props.getLineProps(1e3 * d, type=discrete_inputs["line_type"], stud="stud")
+        elif line_mat == "chain_stud":
+            line_obj = props.getLineProps(1e3 * d, type="chain", stud="stud")
         else:
-            line_obj = props.getLineProps(1e3 * d, type=discrete_inputs["line_type"])
+            line_obj = props.getLineProps(1e3 * d, type=line_mat)
 
         if not line_obj is None:
             min_break_load = line_obj.MBL
@@ -319,31 +318,33 @@ class Mooring(om.ExplicitComponent):
         # Check the highest line tension in those offsets
         outputs["constr_axial_load"] = gamma * Tmax.max() / min_break_load
 
-    def compute_cost(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute_cost(self, inputs, outputs):
         # Unpack variables
         L_mooring = float(inputs["line_length"])
         d = float(inputs["line_diameter"])
         gamma = self.options["gamma"]
 
-        if discrete_inputs["anchor_type"] == "custom":
+        anchor_type = self.options["options"]["line_anchor"][0]
+        if anchor_type == "custom":
             anchor_rate = float(inputs["anchor_cost"])
             anchor_mass = float(inputs["anchor_mass"])
         else:
             # Do empirical sizing with MoorPy
             fx = (inputs["anchor_max_lateral_load"] - outputs["constr_anchor_lateral"].min()) / gamma
             fz = (inputs["anchor_max_vertical_load"] - outputs["constr_anchor_vertical"].min()) / gamma
-            anchor_rate, _, _ = props.getAnchorProps(fx, fz, type=discrete_inputs["anchor_type"].replace("_", "-"))
+            anchor_rate, _, _ = props.getAnchorProps(fx, fz, type=anchor_type.replace("_", "-"))
             anchor_mass = 0.0  # TODO
         n_anchors = n_lines = self.options["options"]["n_anchors"]
 
         line_obj = None
-        if discrete_inputs["line_type"] == "custom":
+        line_mat = self.options["options"]["line_material"][0]
+        if line_mat == "custom":
             mass_den = float(inputs["line_mass_density_coeff"]) * d ** 2
             cost_rate = float(inputs["line_cost_rate_coeff"]) * d ** 2
-        elif discrete_inputs["line_type"] == "chain_stud":
-            line_obj = props.getLineProps(1e3 * d, type=discrete_inputs["line_type"], stud="stud")
+        elif line_mat == "chain_stud":
+            line_obj = props.getLineProps(1e3 * d, type="chain", stud="stud")
         else:
-            line_obj = props.getLineProps(1e3 * d, type=discrete_inputs["line_type"])
+            line_obj = props.getLineProps(1e3 * d, type=line_mat)
 
         if not line_obj is None:
             mass_den = line_obj.mlin

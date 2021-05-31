@@ -354,7 +354,7 @@ class System:
                                     "Generic Fairlead/Vessel-type points aren't supported when bodies are defined."
                                 )
                             if len(self.bodyList) == 0:
-                                print("Adding a body to attach fairlead points to.")
+                                # print("Adding a body to attach fairlead points to.")
                                 self.bodyList.append(Body(self, 1, 0, np.zeros(6)))  # , m=m, v=v, rCG=rCG) )
 
                             rRel = np.array(entries[2:5], dtype=float)
@@ -502,7 +502,7 @@ class System:
                 if len(self.bodyList) > 1:
                     raise ValueError("Generic Fairlead/Vessel-type points aren't supported when bodies are defined.")
                 if len(self.bodyList) == 0:
-                    print("Adding a body to attach fairlead points to.")
+                    # print("Adding a body to attach fairlead points to.")
                     self.bodyList.append(Body(self, 1, 0, np.zeros(6)))  # , m=m, v=v, rCG=rCG) )
 
                 rRel = np.array(d["location"], dtype=float)
