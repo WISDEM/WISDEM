@@ -88,6 +88,7 @@ class TestOC3Mass(unittest.TestCase):
         # Mooring parameters
         prob["line_diameter"] = 0.09  # Diameter of mooring line/chain [m]
         prob["line_length"] = 300 + 902.2  # Unstretched mooring line length
+        prob["line_type"] = "custom"
         prob["line_mass_density_coeff"] = 19.9e3
         prob["line_stiffness_coeff"] = 8.54e10
         prob["line_breaking_load_coeff"] = 176972.7
@@ -96,6 +97,8 @@ class TestOC3Mass(unittest.TestCase):
         prob["fairlead"] = 70.0
         prob["anchor_radius"] = 853.87  # Distance from centerline to sea floor landing [m]
         prob["anchor_cost"] = 1e5
+        prob["anchor_mass"] = 0.0
+        prob["anchor_type"] = "custom"
 
         # Mooring constraints
         prob["max_surge_fraction"] = 0.1  # Max surge/sway offset [m]

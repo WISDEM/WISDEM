@@ -140,7 +140,7 @@ class Mooring(om.ExplicitComponent):
         self.add_output("constr_axial_load", 0.0)
         self.add_output("constr_mooring_length", 0.0)
         self.add_output("constr_anchor_vertical", np.zeros(n_lines))
-        self.add_output("constr_anchor_lateral", np.lateral(n_lines))
+        self.add_output("constr_anchor_lateral", np.zeros(n_lines))
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
