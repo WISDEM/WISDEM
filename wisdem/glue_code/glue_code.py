@@ -464,11 +464,16 @@ class WT_RNTA(om.Group):
 
             # Mooring connections
             self.connect("mooring.unstretched_length", "floatingse.line_length", src_indices=[0])
+            self.connect("mooring.line_type_types", "floatingse.line_type", src_indices=[0])
+            self.connect("mooring.anchor_types", "floatingse.anchor_type", src_indices=[0])
             for var in [
                 "fairlead",
                 "fairlead_radius",
                 "anchor_radius",
+                "anchor_mass",
                 "anchor_cost",
+                "anchor_max_vertical_load",
+                "anchor_max_lateral_load",
                 "line_diameter",
                 "line_mass_density_coeff",
                 "line_stiffness_coeff",

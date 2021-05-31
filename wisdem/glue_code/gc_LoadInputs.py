@@ -523,15 +523,23 @@ class WindTurbineOntologyPython(object):
                     fairlead_nodes.append(self.wt_init["components"]["mooring"]["nodes"][node2id]["joint"])
 
             self.modeling_options["mooring"]["line_type_name"] = [""] * n_line_types
+            self.modeling_options["mooring"]["line_type_type"] = [""] * n_line_types
             for i in range(n_line_types):
                 self.modeling_options["mooring"]["line_type_name"][i] = self.wt_init["components"]["mooring"][
                     "line_types"
                 ][i]["name"]
+                self.modeling_options["mooring"]["line_type_type"][i] = self.wt_init["components"]["mooring"][
+                    "line_types"
+                ][i]["type"]
             self.modeling_options["mooring"]["anchor_type_name"] = [""] * n_anchor_types
+            self.modeling_options["mooring"]["anchor_type_type"] = [""] * n_anchor_types
             for i in range(n_anchor_types):
                 self.modeling_options["mooring"]["anchor_type_name"][i] = self.wt_init["components"]["mooring"][
                     "anchor_types"
                 ][i]["name"]
+                self.modeling_options["mooring"]["anchor_type_type"][i] = self.wt_init["components"]["mooring"][
+                    "anchor_types"
+                ][i]["type"]
             self.modeling_options["mooring"]["n_attach"] = len(set(fairlead_nodes))
 
         # Assembly
