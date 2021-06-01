@@ -483,7 +483,10 @@ class CCBladeTwist(ExplicitComponent):
         self.add_output("CP", val=0.0, desc="Rotor power coefficient")
         self.add_output("CM", val=0.0, desc="Blade flapwise moment coefficient")
         self.add_output(
-            "local_airfoil_velocities", val=np.zeros(n_span), desc="Local relative velocities for the airfoils"
+            "local_airfoil_velocities",
+            val=np.zeros(n_span),
+            desc="Local relative velocities for the airfoils",
+            units="m/s",
         )
         self.add_output("a", val=np.zeros(n_span), desc="Axial induction  along blade span")
         self.add_output("ap", val=np.zeros(n_span), desc="Tangential induction along blade span")

@@ -628,21 +628,16 @@ class Blade(om.Group):
             def setup(self):
                 n_span = self.options["n_span"]
 
-                self.add_input("rho", val=0.0)
-                self.add_input("mu", val=0.0)
-                self.add_input("local_airfoil_velocities", val=np.zeros((n_span)))
-                self.add_input("chord", val=np.zeros((n_span)))
+                self.add_input("rho", val=0.0, units="kg/m**3")
+                self.add_input("mu", val=0.0, units="kg/m/s")
+                self.add_input("local_airfoil_velocities", val=np.zeros((n_span)), units="m/s")
+                self.add_input("chord", val=np.zeros((n_span)), units="m")
                 self.add_output("Re", val=np.zeros((n_span)))
 
             def compute(self, inputs, outputs):
                 outputs["Re"] = np.nan_to_num(
                     inputs["rho"] * inputs["local_airfoil_velocities"] * inputs["chord"] / inputs["mu"]
                 )
-                print("rho", inputs["rho"])
-                print("local_airfoil_velocities", inputs["local_airfoil_velocities"])
-                print("chord", inputs["chord"])
-                print("mu", inputs["mu"])
-                print("Re", outputs["Re"])
 
         # TODO : Compute Reynolds here
         self.add_subsystem("compute_reynolds", ComputeReynolds(n_span=rotorse_options["n_span"]))
@@ -1290,8 +1285,8 @@ class INN_Airfoils(om.ExplicitComponent):
         # Find indices for start and end of the optimization
         max_t_c = self.options["rotorse_options"]["inn_af_max_t/c"]
         min_t_c = self.options["rotorse_options"]["inn_af_min_t/c"]
-        r_thick_index_start = np.argmin(abs(r_thick - max_t_c))
-        r_thick_index_end = np.argmin(abs(r_thick - min_t_c))
+        indices = np.argwhere(np.logical_and(r_thick > min_t_c, r_thick < max_t_c))
+        indices = list(np.squeeze(indices))
 
         stall_margin = self.options["rotorse_options"]["stall_margin"]
 
@@ -1302,11 +1297,14 @@ class INN_Airfoils(om.ExplicitComponent):
         outputs["cl_interp"] = inputs["cl_interp_yaml"]
         outputs["cd_interp"] = inputs["cd_interp_yaml"]
 
-        for i in range(r_thick_index_start, r_thick_index_end):
+        print()
+        print("Performing INN analysis for these indices:")
+        print(indices)
+
+        for i in indices:
             Re = inputs["Re"][i]
             if Re < 100.0:
                 Re = 9.0e6
-            print(Re)
             inn = INN()
             try:
                 # print("CD", c_d[i])
@@ -1318,6 +1316,8 @@ class INN_Airfoils(om.ExplicitComponent):
                 cd, cl = inn.generate_polars(cst, Re, alpha=alpha)
             except:
                 raise Exception("The INN for airfoil design failed in the forward mode")
+
+            print(f"inverse design completed for index {i} with a thickness of {r_thick[i]}")
 
             for af_cst in cst:
                 x, y = utils.get_airfoil_shape(af_cst)
