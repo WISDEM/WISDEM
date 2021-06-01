@@ -692,7 +692,7 @@ class CCBladeTwist(ExplicitComponent):
         outputs["theta"] = twist
         outputs["CP"] = CP[0]
         outputs["CM"] = CM[0]
-        outputs["local_airfoil_velocities"] = W[0]
+        outputs["local_airfoil_velocities"] = np.nan_to_num(W)
         outputs["a"] = loads["a"]
         outputs["ap"] = loads["ap"]
         outputs["alpha"] = loads["alpha"]
