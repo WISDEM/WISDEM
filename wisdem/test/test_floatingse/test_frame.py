@@ -137,6 +137,7 @@ class TestPlatform(unittest.TestCase):
         self.inputs["mooring_neutral_load"][:, 1] = [0.0, 50, -50]
         self.inputs["mooring_neutral_load"][:, 2] = -1e3
         self.inputs["mooring_fairlead_joints"] = np.array([[0.0, 0.0, 0.0], [0.5, 1.0, 0.0], [1.0, 0.0, 0.0]])
+        self.inputs["mooring_stiffness"] = 5 * np.eye(6)
         self.inputs["transition_node"] = self.inputs["tower_nodes"][0, :]
         self.inputs["tower_top_node"] = self.inputs["tower_nodes"][2, :]
         self.inputs["rna_mass"] = 1e4
