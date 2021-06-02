@@ -8,14 +8,15 @@ Copyright (c) NREL. All rights reserved.
 """
 
 from __future__ import print_function
-import numpy as np
-import math
-from ctypes import POINTER, c_int, c_double, Structure, pointer
-from collections import namedtuple
+
 import os
+import math
+from sys import platform
+from ctypes import POINTER, Structure, c_int, pointer, c_double
+from collections import namedtuple
 from distutils.sysconfig import get_config_var
 
-from sys import platform
+import numpy as np
 
 libext = get_config_var("EXT_SUFFIX")
 if libext is None or libext == "":
@@ -388,16 +389,14 @@ class Frame(object):
             rigid = 1
         else:
             self.rnode = np.array(reactions.node).astype(np.int32)
-            self.rKx = np.array(reactions.Kx).astype(
-                np.float64
-            )  # convert rather than copy to allow old syntax of integers
+            # convert rather than copy to allow old syntax of integers
+            self.rKx = np.array(reactions.Kx).astype(np.float64)
             self.rKy = np.array(reactions.Ky).astype(np.float64)
             self.rKz = np.array(reactions.Kz).astype(np.float64)
             self.rKtx = np.array(reactions.Ktx).astype(np.float64)
             self.rKty = np.array(reactions.Kty).astype(np.float64)
             self.rKtz = np.array(reactions.Ktz).astype(np.float64)
             rigid = reactions.rigid
-
         # elements
         self.eelement = np.array(elements.element).astype(np.int32)
         self.eN1 = np.array(elements.N1).astype(np.int32)

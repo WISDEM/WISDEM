@@ -470,6 +470,7 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_output("system_center_of_mass", np.zeros(3), units="m")
         self.add_output("system_mass", 0.0, units="kg")
         self.add_output("variable_ballast_mass", 0.0, units="kg")
+        self.add_output("variable_center_of_mass", val=np.zeros(3), units="m")
         self.add_output("constr_variable_margin", val=0.0)
         self.add_output("member_variable_volume", val=np.zeros(n_member), units="m**3")
         self.add_output("member_variable_height", val=np.zeros(n_member))
@@ -619,6 +620,7 @@ class PlatformTowerFrame(om.ExplicitComponent):
             outputs["member_variable_height"][k] = s_end - spts[0]
 
         cg_variable = np.dot(V_variable_member, cg_variable_member) / V_variable
+        outputs["variable_center_of_mass"] = cg_variable
 
         # Now find total system mass
         outputs["system_mass"] = m_sys + m_variable
@@ -643,6 +645,9 @@ class FrameAnalysis(om.ExplicitComponent):
 
         self.add_input("platform_mass", 0.0, units="kg")
         self.add_input("platform_center_of_mass", np.zeros(3), units="m")
+        self.add_input("platform_added_mass", np.zeros(6), units="kg")
+        self.add_input("platform_center_of_buoyancy", np.zeros(3), units="m")
+        self.add_input("platform_displacement", 0.0, units="m**3")
 
         self.add_input("tower_nodes", NULL * np.ones((MEMMAX, 3)), units="m")
         self.add_input("tower_Fnode", NULL * np.ones((MEMMAX, 3)), units="N")
@@ -702,6 +707,9 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("rna_I", np.zeros(6), units="kg*m**2")
         self.add_input("mooring_neutral_load", np.zeros((n_attach, 3)), units="N")
         self.add_input("mooring_fairlead_joints", np.zeros((n_attach, 3)), units="m")
+        self.add_input("mooring_stiffness", np.zeros((6, 6)), units="N/m")
+        self.add_input("variable_ballast_mass", 0.0, units="kg")
+        self.add_input("variable_center_of_mass", val=np.zeros(3), units="m")
 
         NFREQ2 = int(NFREQ / 2)
         self.add_output("tower_freqs", val=np.zeros(NFREQ), units="Hz")
@@ -737,11 +745,16 @@ class FrameAnalysis(om.ExplicitComponent):
         n_attach = opt["mooring"]["n_attach"]
         m_rna = float(inputs["rna_mass"])
         cg_rna = inputs["rna_cg"]
+        cb = inputs["platform_center_of_buoyancy"]
+        V_total = inputs["platform_displacement"]
         I_rna = inputs["rna_I"]
         I_trans = inputs["transition_piece_I"]
+        m_variable = float(inputs["variable_ballast_mass"])
+        cg_variable = inputs["variable_center_of_mass"]
 
         fairlead_joints = inputs["mooring_fairlead_joints"]
         mooringF = inputs["mooring_neutral_load"]
+        mooringK = np.abs(np.diag(inputs["mooring_stiffness"]))
 
         # Create frame3dd instance: nodes, elements, reactions, and options
         for frame in ["tower", "system"]:
@@ -776,9 +789,20 @@ class FrameAnalysis(om.ExplicitComponent):
             ielem = np.arange(nelem) + 1
             elem_obj = pyframe3dd.ElementData(ielem, N1 + 1, N2 + 1, A, Asx, Asy, Izz, Ixx, Iyy, E, G, roll, rho)
 
-            # TODO: Hydro_K + Mooring_K for tower (system too?)
-            rid = np.array([itrans])  # np.array([np.argmin(nodes[:, 2])])
-            Rx = Ry = Rz = Rxx = Ryy = Rzz = np.array([RIGID])
+            # Use Mooring stiffness (TODO Hydro_K too)
+            if frame == "tower":
+                rid = np.array([itrans])  # np.array([np.argmin(nodes[:, 2])])
+            else:
+                ind = []
+                for k in range(n_attach):
+                    ind.append(util.closest_node(nodes, fairlead_joints[k, :]))
+                rid = np.array([ind])  # np.array([np.argmin(nodes[:, 2])])
+
+            Rx = Ry = Rz = Rxx = Ryy = Rzz = RIGID * np.ones(rid.size)
+            # Rx, Ry, Rz = [mooringK[0]], [mooringK[1]], [mooringK[2]]
+            # Only this solution works and there isn't much different with fully rigid
+            # Rx, Ry, Rz = [RIGID], [RIGID], [mooringK[2]]
+            # Rxx, Ryy, Rzz = [RIGID], [RIGID], [RIGID]
             react_obj = pyframe3dd.ReactionData(rid + 1, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=RIGID)
 
             frame3dd_opt = opt["WISDEM"]["FloatingSE"]["frame3dd"]
@@ -789,10 +813,11 @@ class FrameAnalysis(om.ExplicitComponent):
             # Added mass
             m_trans = float(inputs["transition_piece_mass"])
             if frame == "tower":
-                # TODO: Added mass and stiffness
-                m_trans += float(inputs["platform_mass"])
+                m_trans += float(inputs["platform_mass"]) + inputs["platform_added_mass"][0] + m_variable
                 cg_trans = inputs["transition_node"] - inputs["platform_center_of_mass"]
+                I_trans[:3] += inputs["platform_added_mass"][3:]
             else:
+                m_trans += m_variable
                 cg_trans = np.zeros(3)
             add_gravity = True
             mID = np.array([itrans, ihub], dtype=np.int_).flatten()
@@ -830,6 +855,11 @@ class FrameAnalysis(om.ExplicitComponent):
                 for k in range(n_attach):
                     ind = util.closest_node(nodes, fairlead_joints[k, :])
                     Fnode[ind, :] += mooringF[k, :]
+            else:
+                # Combine all buoyancy forces into one
+                ind = util.closest_node(nodes, cb)
+                Fnode[ind, -1] += V_total * 1025 * gravity
+
             Fnode[ihub, :] += inputs["rna_F"]
             Mnode[ihub, :] += inputs["rna_M"]
             nF = np.where(np.abs(Fnode).sum(axis=1) > 0.0)[0]
