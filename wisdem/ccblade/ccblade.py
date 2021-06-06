@@ -601,7 +601,7 @@ class CCBlade(object):
 
         # azimuthal discretization
         if self.tilt == 0.0 and self.yaw == 0.0 and self.shearExp == 0.0:
-            self.nSector = 1  # no more are necessary
+            self.nSector = max(1, nSector)  # only 1 is necessary unless tilt, yaw, or shearExp get changed
         else:
             self.nSector = max(4, nSector)  # at least 4 are necessary
 
