@@ -1133,6 +1133,7 @@ def assign_environment_values(wt_opt, environment, offshore):
     wt_opt["env.shear_exp"] = environment["shear_exp"]
     wt_opt["env.G_soil"] = environment["soil_shear_modulus"]
     wt_opt["env.nu_soil"] = environment["soil_poisson"]
+    wt_opt['rotorse.wt_class.V_mean_overwrite'] = environment['V_mean']
 
     return wt_opt
 
