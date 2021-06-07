@@ -3004,6 +3004,12 @@ properties:
                 minimum: 0
                 maximum: 0.6
                 default: 0.4
+            V_mean:
+                type: number
+                default: 0.
+                minimum: 0.
+                maximum: 2.e+1
+                description: Average inflow wind speed. If different than 0, this will overwrite the V mean of the IEC wind class
     bos:
         type: object
         default: {}

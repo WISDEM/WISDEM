@@ -21,7 +21,8 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     # Now all of the optional components
     if modeling_options["flags"]["environment"]:
         environment = wt_init["environment"]
-        wt_opt = assign_environment_values(wt_opt, environment, offshore)
+        blade_flag = modeling_options["flags"]["blade"]
+        wt_opt = assign_environment_values(wt_opt, environment, offshore, blade_flag)
     else:
         environment = {}
 
@@ -1118,7 +1119,7 @@ def assign_configuration_values(wt_opt, assembly, opt_options):
     return wt_opt
 
 
-def assign_environment_values(wt_opt, environment, offshore):
+def assign_environment_values(wt_opt, environment, offshore, blade_flag):
 
     wt_opt["env.rho_air"] = environment["air_density"]
     wt_opt["env.mu_air"] = environment["air_dyn_viscosity"]
@@ -1133,6 +1134,8 @@ def assign_environment_values(wt_opt, environment, offshore):
     wt_opt["env.shear_exp"] = environment["shear_exp"]
     wt_opt["env.G_soil"] = environment["soil_shear_modulus"]
     wt_opt["env.nu_soil"] = environment["soil_poisson"]
+    if blade_flag:
+        wt_opt['rotorse.wt_class.V_mean_overwrite'] = environment['V_mean']
 
     return wt_opt
 
