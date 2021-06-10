@@ -1,6 +1,6 @@
 # WISDEM&reg;
 
-[![Build Status](https://travis-ci.com/WISDEM/WISDEM.svg?branch=develop)](https://travis-ci.com/WISDEM/WISDEM)
+[![Actions Status](https://github.com/WISDEM/WISDEM/workflows/CI_WISDEM/badge.svg?branch=develop)](https://github.com/WISDEM/WISDEM/actions)
 [![Coverage Status](https://coveralls.io/repos/github/WISDEM/WISDEM/badge.svg?branch=develop)](https://coveralls.io/github/WISDEM/WISDEM?branch=develop)
 [![Documentation Status](https://readthedocs.org/projects/wisdem/badge/?version=master)](https://wisdem.readthedocs.io/en/master/?badge=master)
 
