@@ -1067,6 +1067,18 @@ properties:
                         description: Keep the mooring line length within the bounds for catenary hang or TLP tension
                         properties:
                             flag: *flag
+                    anchor_vertical:
+                        type: object
+                        default: {}
+                        description: Ensure that the maximum vertical force on the anchor does not exceed limit
+                        properties:
+                            flag: *flag
+                    anchor_lateral:
+                        type: object
+                        default: {}
+                        description: Ensure that the maximum lateral force on the anchor does not exceed limit
+                        properties:
+                            flag: *flag
                     stress: *vonmises
                     global_buckling: *globalb
                     shell_buckling: *shellb

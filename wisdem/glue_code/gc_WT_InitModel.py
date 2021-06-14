@@ -1042,10 +1042,11 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
                 d2 = mooring["line_types"][ii]["diameter"] ** 2
                 if jj < n_design:
                     wt_opt["mooring.line_diameter_in"][jj] = mooring["line_types"][ii]["diameter"]
-                wt_opt["mooring.line_mass_density_coeff"][jj] = mooring["line_types"][ii]["mass_density"] / d2
-                wt_opt["mooring.line_stiffness_coeff"][jj] = mooring["line_types"][ii]["stiffness"] / d2
-                wt_opt["mooring.line_breaking_load_coeff"][jj] = mooring["line_types"][ii]["breaking_load"] / d2
-                wt_opt["mooring.line_cost_rate_coeff"][jj] = mooring["line_types"][ii]["cost"] / d2
+                if mooring_init_options["line_material"][jj] == "custom":
+                    wt_opt["mooring.line_mass_density_coeff"][jj] = mooring["line_types"][ii]["mass_density"] / d2
+                    wt_opt["mooring.line_stiffness_coeff"][jj] = mooring["line_types"][ii]["stiffness"] / d2
+                    wt_opt["mooring.line_breaking_load_coeff"][jj] = mooring["line_types"][ii]["breaking_load"] / d2
+                    wt_opt["mooring.line_cost_rate_coeff"][jj] = mooring["line_types"][ii]["cost"] / d2
                 wt_opt["mooring.line_transverse_added_mass_coeff"][jj] = (
                     mooring["line_types"][ii]["transverse_added_mass"] / d2
                 )
@@ -1058,12 +1059,15 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
             if node1 == iname or node2 == iname and mooring["nodes"][ii]["node_type"] == "fixed":
                 for kk, kname in enumerate(anchor_names):
                     if kname == mooring["nodes"][ii]["anchor_type"]:
-                        wt_opt["mooring.anchor_mass"][jj] = mooring["anchor_types"][kk]["mass"]
-                        wt_opt["mooring.anchor_cost"][jj] = mooring["anchor_types"][kk]["cost"]
-                        wt_opt["mooring.anchor_max_vertical_load"][jj] = mooring["anchor_types"][kk][
-                            "max_vertical_load"
-                        ]
-                        wt_opt["mooring.anchor_max_lateral_load"][jj] = mooring["anchor_types"][kk]["max_lateral_load"]
+                        if mooring_init_options["line_anchor"][jj] == "custom":
+                            wt_opt["mooring.anchor_mass"][jj] = mooring["anchor_types"][kk]["mass"]
+                            wt_opt["mooring.anchor_cost"][jj] = mooring["anchor_types"][kk]["cost"]
+                            wt_opt["mooring.anchor_max_vertical_load"][jj] = mooring["anchor_types"][kk][
+                                "max_vertical_load"
+                            ]
+                            wt_opt["mooring.anchor_max_lateral_load"][jj] = mooring["anchor_types"][kk][
+                                "max_lateral_load"
+                            ]
 
     # Give warnings if we have different types or asymmetrical lines
     if (

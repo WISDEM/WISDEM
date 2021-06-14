@@ -1651,7 +1651,9 @@ class Member(om.Group):
         )
 
         self.add_subsystem(
-            "gc", GeometricConstraints(nPoints=n_height, diamFlag=True), promotes=["constr_taper", "constr_d_to_t"]
+            "gc",
+            GeometricConstraints(nPoints=n_height, diamFlag=True),
+            promotes=["constr_taper", "constr_d_to_t", "slope"],
         )
         self.connect("outer_diameter", "gc.d")
         self.connect("wall_thickness", "gc.t")

@@ -405,10 +405,7 @@ components:
         line_types:
             - name: main
               diameter: 0.09
-              mass_density: 77.7066
-              stiffness: 384.243e6
-              breaking_load: 1e8
-              cost: 100.0
+              type: chain
               transverse_added_mass: 1.0
               tangential_added_mass: 0.0
               transverse_drag: 1.6
@@ -416,10 +413,7 @@ components:
 
         anchor_types:
             - name: drag_embedment
-              mass: 1e3
-              cost: 1e4
-              max_vertical_load: 0.0
-              max_lateral_load: 1e5
+              type: drag_embedment
 
 airfoils:
    -  aerodynamic_center: 0.275
@@ -709,11 +703,14 @@ control:
         maxOmega: 1.26711
     pitch:
         PC_zeta: 0.7                      # Pitch controller desired damping ratio [-]
-        PC_omega: 0.5                     # Pitch controller desired natural frequency [rad/s]
-        ps_percent: 0.8                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
+        PC_omega: 0.35                     # Pitch controller desired natural frequency [rad/s]
+        ps_percent: 0.9                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
         max_pitch: 1.57                     # Maximum pitch angle [rad], {default = 90 degrees}
         max_pitch_rate: 0.1745
         min_pitch: 0                      # Minimum pitch angle [rad], {default = 0 degrees}
+        fl_feedback:
+            twr_freq: 100                     # Frequency of notch in floating feedback (F_NotchCornerFreq)
+            ptfm_freq: .2                     # Frequency of LPF in floating feedback (F_FlCornerFreq)
     torque:
         control_type: tsr_tracking
         tsr: 7.01754386
@@ -738,8 +735,8 @@ environment:
     water_density: 1025.0
     water_dyn_viscosity: 1.3351e-3
     water_depth: 320.0
-    significant_wave_height: 9.14
-    significant_wave_period: 13.6
+    significant_wave_height: 6.0
+    significant_wave_period: 10.0
     soil_shear_modulus: 140.e+6
     soil_poisson: 0.4
 

@@ -1,6 +1,7 @@
 import numpy as np
 import openmdao.api as om
 import wisdem.moorpy as mp
+import wisdem.moorpy.MoorProps as props
 
 NLINES_MAX = 15
 NPTS_PLOT = 101
@@ -25,12 +26,30 @@ class Mooring(om.ExplicitComponent):
         Depth below water for mooring line attachment
     line_length : float, [m]
         Unstretched total mooring line length
-    anchor_radius : float, [m]
-        radius from center of spar to mooring anchor point
     line_diameter : float, [m]
         diameter of mooring line
+    line_type : string
+        Type of mooring line: chain, chain_stud, nylon, polyester, polypropylene, fiber, wire, iwrc, or custom
+    line_mass_density_coeff: float, [kg/m/m^2]
+        Line mass density per unit length per diameter^2, if line type is custom
+    line_stiffness_coeff: float, [N/m^2]
+        Line stiffness (E*A) per diameter^2, if line type is custom
+    line_breaking_load_coeff: float, [N/m^2]
+        Line minimumum breaking load (MBL) per diameter^2, if line type is custom
+    line_cost_rate_coeff: float, [USD/m/m^2]
+        Line cost per unit length per diameter^2, if line type is custom
+    anchor_radius : float, [m]
+        radius from center of spar to mooring anchor point
     anchor_type : string
-        SUCTIONPILE or DRAGEMBEDMENT
+        Type of anchor for sizing: drag_embedment, suction, plate, micropile, sepla, or custom
+    anchor_mass : float, [USD]
+        mass for one anchor, if anchor type is custom
+    anchor_cost : float, [USD]
+        cost for one anchor, if anchor type is custom
+    anchor_max_vertical_load : float, [N]
+        Maximum tolerable vertical force on anchor, if anchor type is custom
+    anchor_max_lateral_load : float, [N]
+        Maximum tolerable lateral force on anchor, if anchor type is custom
     max_surge_fraction : float
         Maximum allowable surge offset as a fraction of water depth (0-1)
     operational_heel : float, [deg]
@@ -48,8 +67,6 @@ class Mooring(om.ExplicitComponent):
         total cost for anchor + legs + miscellaneous costs
     mooring_stiffness : numpy array[6, 6], [N/m]
         Linearized stiffness matrix of mooring system at neutral (no offset) conditions.
-    anchor_cost : float, [USD]
-        total cost for anchor
     mooring_neutral_load : numpy array[NLINES_MAX, 3], [N]
         mooring vertical load in all mooring lines
     max_offset_restoring_force : float, [N]
@@ -60,10 +77,14 @@ class Mooring(om.ExplicitComponent):
         forces for all mooring lines after max survival heel
     mooring_plot_matrix : numpy array[NLINES_MAX, NPTS_PLOT, 3], [m]
         data matrix for plotting
-    constr_axial_load : float, [m]
+    constr_axial_load : float
         range of damaged mooring
     constr_mooring_length : float
         mooring line length ratio to nodal distance
+    constr_anchor_vertical : numpy array[n_lines]
+        Maximum allowable vertical anchor force minus vertical line tension times safety factor (must be >= 0)
+    constr_anchor_lateral : numpy array[n_lines]
+        Maximum allowable lateral anchor force minus lateral line tension times safety factor (must be >= 0)
 
     """
 
@@ -86,8 +107,12 @@ class Mooring(om.ExplicitComponent):
         self.add_input("fairlead", 0.0, units="m")
         self.add_input("line_length", 0.0, units="m")
         self.add_input("line_diameter", 0.0, units="m")
+
         self.add_input("anchor_radius", 0.0, units="m")
+        self.add_input("anchor_mass", 0.0, units="kg")
         self.add_input("anchor_cost", 0.0, units="USD")
+        self.add_input("anchor_max_vertical_load", 1e30, units="N")
+        self.add_input("anchor_max_lateral_load", 1e30, units="N")
 
         self.add_input("line_mass_density_coeff", 0.0, units="kg/m**3")
         self.add_input("line_stiffness_coeff", 0.0, units="N/m**2")
@@ -95,8 +120,6 @@ class Mooring(om.ExplicitComponent):
         self.add_input("line_cost_rate_coeff", 0.0, units="USD/m**3")
 
         # User inputs (could be design variables)
-        # self.add_discrete_input("mooring_type", "CHAIN")
-        # self.add_discrete_input("anchor_type", "DRAGEMBEDMENT")
         self.add_input("max_surge_fraction", 0.1)
         self.add_input("operational_heel", 0.0, units="rad")
         self.add_input("survival_heel", 0.0, units="rad")
@@ -112,12 +135,12 @@ class Mooring(om.ExplicitComponent):
         self.add_output("mooring_plot_matrix", np.zeros((n_lines, NPTS_PLOT, 3)), units="m")
 
         # Constraints
-        self.add_output("constr_axial_load", 0.0, units="m")
+        self.add_output("constr_axial_load", 0.0)
         self.add_output("constr_mooring_length", 0.0)
+        self.add_output("constr_anchor_vertical", np.zeros(n_lines))
+        self.add_output("constr_anchor_lateral", np.zeros(n_lines))
 
     def compute(self, inputs, outputs):
-        # Set characteristics based on regressions / empirical data
-        # self.set_properties(inputs, discrete_inputs)
 
         # Write MAP input file and analyze the system at every angle
         self.evaluate_mooring(inputs, outputs)
@@ -133,16 +156,32 @@ class Mooring(om.ExplicitComponent):
         R_anchor = float(inputs["anchor_radius"])
         heel = float(inputs["operational_heel"])
         max_heel = float(inputs["survival_heel"])
-        d = inputs["line_diameter"]
+        d = float(inputs["line_diameter"])
         L_mooring = inputs["line_length"]
-        min_break_load = inputs["line_breaking_load_coeff"] * d ** 2
         gamma = self.options["gamma"]
         n_attach = self.options["options"]["n_attach"]
         n_lines = self.options["options"]["n_anchors"]
         offset = float(inputs["max_surge_fraction"]) * water_depth
         n_anchors = self.options["options"]["n_anchors"]
         ratio = int(n_anchors / n_attach)
-        gamma = self.options["gamma"]
+
+        line_obj = None
+        line_mat = self.options["options"]["line_material"][0]
+        if line_mat == "custom":
+            min_break_load = float(inputs["line_breaking_load_coeff"]) * d ** 2
+            mass_den = float(inputs["line_mass_density_coeff"]) * d ** 2
+            ea_stiff = float(inputs["line_stiffness_coeff"]) * d ** 2
+            cost_rate = float(inputs["line_cost_rate_coeff"]) * d ** 2
+        elif line_mat == "chain_stud":
+            line_obj = props.getLineProps(1e3 * d, type="chain", stud="stud")
+        else:
+            line_obj = props.getLineProps(1e3 * d, type=line_mat)
+
+        if not line_obj is None:
+            min_break_load = line_obj.MBL
+            mass_den = line_obj.mlin
+            ea_stiff = line_obj.EA
+            cost_rate = line_obj.cost
 
         # Geometric constraints on line length
         if L_mooring > (water_depth - fairlead_depth):
@@ -191,10 +230,10 @@ class Mooring(om.ExplicitComponent):
         config["line_types"] = [{}]
         config["line_types"][0]["name"] = "myline"
         config["line_types"][0]["diameter"] = d
-        config["line_types"][0]["mass_density"] = inputs["line_mass_density_coeff"] * d ** 2
-        config["line_types"][0]["stiffness"] = inputs["line_stiffness_coeff"] * d ** 2
-        config["line_types"][0]["breaking_load"] = inputs["line_breaking_load_coeff"] * d ** 2
-        config["line_types"][0]["cost"] = inputs["line_cost_rate_coeff"] * d ** 2
+        config["line_types"][0]["mass_density"] = mass_den
+        config["line_types"][0]["stiffness"] = ea_stiff
+        config["line_types"][0]["breaking_load"] = min_break_load
+        config["line_types"][0]["cost"] = cost_rate
         config["line_types"][0]["transverse_added_mass"] = 0.0
         config["line_types"][0]["tangential_added_mass"] = 0.0
         config["line_types"][0]["transverse_drag"] = 0.0
@@ -237,7 +276,15 @@ class Mooring(om.ExplicitComponent):
         F_maxheel = ms.mooringEq([0, 0, 0, 0, max_heel, 0], DOFtype="coupled")
         outputs["survival_heel_restoring_force"] = F_maxheel
 
-        # TODO: Vertical loads on anchors?
+        # Anchor load limits
+        F_anch = np.zeros((n_anchors, 3))
+        for k in range(n_anchors):
+            if np.abs(ms.pointList[k + n_attach].r[0] + water_depth) < 0.1:
+                F_anch[k, :] = ms.pointList[k].getForces()
+        outputs["constr_anchor_lateral"] = (
+            inputs["anchor_max_lateral_load"] - np.sqrt(np.sum(F_anch[:, :-1] ** 2, axis=1)) * gamma
+        )
+        outputs["constr_anchor_vertical"] = inputs["anchor_max_vertical_load"] - F_anch[:, -1] * gamma
 
         # Get angles by which to find the weakest line
         dangle = 5.0
@@ -274,27 +321,42 @@ class Mooring(om.ExplicitComponent):
     def compute_cost(self, inputs, outputs):
         # Unpack variables
         L_mooring = float(inputs["line_length"])
-        # anchorType = discrete_inputs["anchor_type"]
         d = float(inputs["line_diameter"])
-        cost_per_length = float(inputs["line_cost_rate_coeff"]) * d ** 2
-        # min_break_load = inputs['line_breaking_load_coeff'] * d**2
-        wet_mass_per_length = float(inputs["line_mass_density_coeff"]) * d ** 2
-        anchor_rate = float(inputs["anchor_cost"])
+        gamma = self.options["gamma"]
+
+        anchor_type = self.options["options"]["line_anchor"][0]
+        if anchor_type == "custom":
+            anchor_rate = float(inputs["anchor_cost"])
+            anchor_mass = float(inputs["anchor_mass"])
+        else:
+            # Do empirical sizing with MoorPy
+            fx = (inputs["anchor_max_lateral_load"] - outputs["constr_anchor_lateral"].min()) / gamma
+            fz = (inputs["anchor_max_vertical_load"] - outputs["constr_anchor_vertical"].min()) / gamma
+            anchor_rate, _, _ = props.getAnchorProps(fx, fz, type=anchor_type.replace("_", "-"))
+            anchor_mass = 0.0  # TODO
         n_anchors = n_lines = self.options["options"]["n_anchors"]
 
+        line_obj = None
+        line_mat = self.options["options"]["line_material"][0]
+        if line_mat == "custom":
+            mass_den = float(inputs["line_mass_density_coeff"]) * d ** 2
+            cost_rate = float(inputs["line_cost_rate_coeff"]) * d ** 2
+        elif line_mat == "chain_stud":
+            line_obj = props.getLineProps(1e3 * d, type="chain", stud="stud")
+        else:
+            line_obj = props.getLineProps(1e3 * d, type=line_mat)
+
+        if not line_obj is None:
+            mass_den = line_obj.mlin
+            cost_rate = line_obj.cost
+
         # Cost of anchors
-        # if anchorType.upper() == "DRAGEMBEDMENT":
-        #    anchor_rate = 1e-3 * min_break_load / gravity / 20 * 2000
-        # elif anchorType.upper() == "SUCTIONPILE":
-        #    anchor_rate = 150000.0 * np.sqrt(1e-3 * min_break_load / gravity / 1250.0)
-        # else:
-        #    raise ValueError("Anchor Type must be DRAGEMBEDMENT or SUCTIONPILE")
         anchor_total = anchor_rate * n_anchors
 
         # Cost of all of the mooring lines
-        legs_total = n_lines * cost_per_length * L_mooring
+        legs_total = n_lines * cost_rate * L_mooring
 
         # Total summations
         outputs["mooring_cost"] = legs_total + anchor_total
-        outputs["line_mass"] = wet_mass_per_length * L_mooring
-        outputs["mooring_mass"] = wet_mass_per_length * L_mooring * n_lines
+        outputs["line_mass"] = mass_den * L_mooring
+        outputs["mooring_mass"] = (outputs["line_mass"] + anchor_mass) * n_lines

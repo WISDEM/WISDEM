@@ -41,6 +41,8 @@ opt["WISDEM"]["FloatingSE"]["run_modal"] = True  # Not used
 opt["mooring"] = {}
 opt["mooring"]["n_attach"] = 3
 opt["mooring"]["n_anchors"] = 3
+opt["mooring"]["line_anchor"] = ["custom"] * 3
+opt["mooring"]["line_material"] = ["custom"] * 3
 opt["materials"] = {}
 opt["materials"]["n_mat"] = 2
 

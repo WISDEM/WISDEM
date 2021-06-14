@@ -42,6 +42,8 @@ class TestOC3Mass(unittest.TestCase):
         opt["mooring"] = {}
         opt["mooring"]["n_attach"] = 3
         opt["mooring"]["n_anchors"] = 3
+        opt["mooring"]["line_anchor"] = ["custom"] * 3
+        opt["mooring"]["line_material"] = ["custom"] * 3
 
         opt["materials"] = {}
         opt["materials"]["n_mat"] = 2
@@ -96,6 +98,7 @@ class TestOC3Mass(unittest.TestCase):
         prob["fairlead"] = 70.0
         prob["anchor_radius"] = 853.87  # Distance from centerline to sea floor landing [m]
         prob["anchor_cost"] = 1e5
+        prob["anchor_mass"] = 0.0
 
         # Mooring constraints
         prob["max_surge_fraction"] = 0.1  # Max surge/sway offset [m]
