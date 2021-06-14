@@ -409,13 +409,19 @@ class PoseOptimization(object):
             wt_opt.model.add_objective("tcons.tip_deflection_ratio")
 
         elif self.opt["merit_figure"] == "tower_mass":
-            wt_opt.model.add_objective("towerse.tower_mass", ref=1e6)
+            if not self.modeling["flags"]["floating"]:
+                wt_opt.model.add_objective("towerse.tower_mass", ref=1e6)
+            else:
+                wt_opt.model.add_objective("floatingse.tower_mass", ref=1e6)
 
         elif self.opt["merit_figure"] == "mononpile_mass":
             wt_opt.model.add_objective("towerse.mononpile_mass", ref=1e6)
 
         elif self.opt["merit_figure"] == "structural_mass":
-            wt_opt.model.add_objective("towerse.structural_mass", ref=1e6)
+            if not self.modeling["flags"]["floating"]:
+                wt_opt.model.add_objective("towerse.structural_mass", ref=1e6)
+            else:
+                wt_opt.model.add_objective("floatingse.system_structural_mass", ref=1e6)
 
         elif self.opt["merit_figure"] == "tower_cost":
             wt_opt.model.add_objective("tcc.tower_cost", ref=1e6)
@@ -943,33 +949,58 @@ class PoseOptimization(object):
                 upper=tower_constr["height_constraint"]["upper_bound"],
             )
 
-        if tower_constr["stress"]["flag"] or monopile_constr["stress"]["flag"]:
+        if (tower_constr["stress"]["flag"] or monopile_constr["stress"]["flag"]) and not self.modeling["flags"][
+            "floating"
+        ]:
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
                 kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".constr_stress", upper=1.0)
+        elif tower_constr["stress"]["flag"] and self.modeling["flags"]["floating"]:
+            wt_opt.model.add_constraint("floatingse.constr_tower_stress", upper=1.0)
 
-        if tower_constr["global_buckling"]["flag"] or monopile_constr["global_buckling"]["flag"]:
+        if (
+            tower_constr["global_buckling"]["flag"] or monopile_constr["global_buckling"]["flag"]
+        ) and not self.modeling["flags"]["floating"]:
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
                 kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".constr_global_buckling", upper=1.0)
+        elif tower_constr["global_buckling"]["flag"] and self.modeling["flags"]["floating"]:
+            wt_opt.model.add_constraint("floatingse.constr_tower_global_buckling", upper=1.0)
 
-        if tower_constr["shell_buckling"]["flag"] or monopile_constr["shell_buckling"]["flag"]:
+        if (tower_constr["shell_buckling"]["flag"] or monopile_constr["shell_buckling"]["flag"]) and not self.modeling[
+            "flags"
+        ]["floating"]:
             for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
                 kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".constr_shell_buckling", upper=1.0)
+        elif tower_constr["shell_buckling"]["flag"] and self.modeling["flags"]["floating"]:
+            wt_opt.model.add_constraint("floatingse.constr_tower_shell_buckling", upper=1.0)
 
         if tower_constr["d_to_t"]["flag"] or monopile_constr["d_to_t"]["flag"]:
-            wt_opt.model.add_constraint(
-                "towerse.constr_d_to_t",
-                lower=tower_constr["d_to_t"]["lower_bound"],
-                upper=tower_constr["d_to_t"]["upper_bound"],
-            )
+            if not self.modeling["flags"]["floating"]:
+                wt_opt.model.add_constraint(
+                    "towerse.constr_d_to_t",
+                    lower=tower_constr["d_to_t"]["lower_bound"],
+                    upper=tower_constr["d_to_t"]["upper_bound"],
+                )
+            else:
+                wt_opt.model.add_constraint(
+                    "floatingse.tower.constr_d_to_t",
+                    lower=tower_constr["d_to_t"]["lower_bound"],
+                    upper=tower_constr["d_to_t"]["upper_bound"],
+                )
 
         if tower_constr["taper"]["flag"] or monopile_constr["taper"]["flag"]:
-            wt_opt.model.add_constraint("towerse.constr_taper", lower=tower_constr["taper"]["lower_bound"])
+            if not self.modeling["flags"]["floating"]:
+                wt_opt.model.add_constraint("towerse.constr_taper", lower=tower_constr["taper"]["lower_bound"])
+            else:
+                wt_opt.model.add_constraint("floatingse.tower.constr_taper", lower=tower_constr["taper"]["lower_bound"])
 
         if tower_constr["slope"]["flag"] or monopile_constr["slope"]["flag"]:
-            wt_opt.model.add_constraint("towerse.slope", upper=1.0)
+            if not self.modeling["flags"]["floating"]:
+                wt_opt.model.add_constraint("towerse.slope", upper=1.0)
+            else:
+                wt_opt.model.add_constraint("floatingse.tower.slope", upper=1.0)
 
         if monopile_constr["pile_depth"]["flag"]:
             wt_opt.model.add_constraint("towerse.suctionpile_depth", lower=monopile_constr["pile_depth"]["lower_bound"])
@@ -979,10 +1010,18 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("tcons.constr_tower_f_NPmargin", upper=0.0)
 
         elif tower_constr["frequency_1"]["flag"] or monopile_constr["frequency_1"]["flag"]:
-            for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
+            if not self.modeling["flags"]["floating"]:
+                for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
+                    kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
+                    wt_opt.model.add_constraint(
+                        "towerse.tower" + kstr + ".structural_frequencies",
+                        indices=[0],
+                        lower=tower_constr["frequency_1"]["lower_bound"],
+                        upper=tower_constr["frequency_1"]["upper_bound"],
+                    )
+            else:
                 wt_opt.model.add_constraint(
-                    "towerse.tower" + kstr + ".structural_frequencies",
+                    "floatingse.tower_freqs",
                     indices=[0],
                     lower=tower_constr["frequency_1"]["lower_bound"],
                     upper=tower_constr["frequency_1"]["upper_bound"],
@@ -1039,6 +1078,21 @@ class PoseOptimization(object):
 
         if float_constr["mooring_length"]["flag"]:
             wt_opt.model.add_constraint("floatingse.constr_mooring_length", upper=1.0)
+
+        if float_constr["anchor_vertical"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_anchor_vertical", lower=0.0)
+
+        if float_constr["anchor_lateral"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_anchor_lateral", lower=0.0)
+
+        if float_constr["stress"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_system_stress", upper=1.0)
+
+        if float_constr["shell_buckling"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_system_shell_buckling", upper=1.0)
+
+        if float_constr["global_buckling"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_system_global_buckling", upper=1.0)
 
         return wt_opt
 

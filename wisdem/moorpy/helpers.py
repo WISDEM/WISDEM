@@ -35,6 +35,14 @@ class SolveError(Error):
         self.message = message
 
 
+# Generic MoorPy error
+class MoorPyError(Error):
+    """Derived error class for MoorPy. Contains an error message"""
+
+    def __init__(self, message):
+        self.message = str(message)
+
+
 def printMat(mat):
     """Prints a matrix to a format that is specified
 
@@ -393,9 +401,6 @@ def dsolve2(
         else:
             dX = step_func(X, args, Y, oths, Ytarget, err, tols, iter, maxIter)
 
-        # if display>2:
-        #    breakpoint()
-
         # Make sure we're not diverging by keeping things from reversing too much.
         # Track the previous step (dX_last) and if the current step reverses too much, stop it part way.
         # Stop it at a plane part way between the current X value and the previous X value (using golden ratio, why not).
@@ -427,7 +432,6 @@ def dsolve2(
                 )  # set the maximum permissible dx in each direction based an an acceleration limit
 
                 if dX_max == 0.0:  # avoid a divide-by-zero case (if dX[i] was zero to start with)
-                    breakpoint()
                     dX[i] = 0.0
                 else:
                     a_i = dX[i] / dX_max  # calculate ratio of desired dx to max dx
@@ -445,8 +449,6 @@ def dsolve2(
                             print(f"     now dX will be {dX}")
 
         dXlist[iter, :] = dX
-        if iter == 196:
-            breakpoint()
 
         # enforce bounds
         for i in range(N):
@@ -471,9 +473,6 @@ def dsolve2(
                     + str(dX)
                 )
                 print("Solution X is " + str(X))
-
-                # if abs(err) > 10:
-                #    breakpoint()
 
                 if display > 0:
                     print(

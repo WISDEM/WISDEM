@@ -84,6 +84,7 @@ class FloatingSE(om.Group):
             "section_rho",
             "section_E",
             "section_G",
+            "section_sigma_y",
             "idx_cb",
             "variable_ballast_capacity",
             "variable_ballast_Vpts",
@@ -101,12 +102,11 @@ class FloatingSE(om.Group):
             "Iwater",
             "added_mass",
             "waterline_centroid",
+            "Px",
+            "Py",
+            "Pz",
+            "qdyn",
         ]
         for k in range(n_member):
             for var in mem_vars:
                 self.connect(f"member{k}." + var, f"member{k}:" + var)
-
-        """
-        self.connect("max_offset_restoring_force", "mooring_surge_restoring_force")
-        self.connect("operational_heel_restoring_force", "mooring_pitch_restoring_force")
-        """

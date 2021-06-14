@@ -17,7 +17,7 @@ class CylinderBuckling:
 
     def __init__(
         self,
-        z,
+        l,
         d,
         t,
         ring_stiffeners=False,
@@ -59,7 +59,7 @@ class CylinderBuckling:
             Material factor.
         """
 
-        self.z = np.array(z)
+        self._l = np.array(l)
         self._d = np.array(d)
         self._t = np.array(t)
         self.E = E
@@ -76,9 +76,9 @@ class CylinderBuckling:
     @property
     def d(self):
         """Section diameters at midpoints (m)."""
-        if self._d.size == self.z.size:
+        if self._d.size == self._l.size + 1:
             return 0.5 * (self._d[1:] + self._d[:-1])
-        elif self._d.size == self.z.size - 1:
+        elif self._d.size == self._l.size:
             return self._d
         else:
             raise ValueError(f"Incompatible size for diameter. Expected: {self._t.size + 1} vs {self._d.size}")
@@ -92,9 +92,9 @@ class CylinderBuckling:
     @property
     def t(self):
         """Section thicknesses at midpoints (m)."""
-        if self.z.size == self._t.size + 1:
+        if self._l.size == self._t.size:
             return self._t
-        elif self.z.size == self._t.size:
+        elif self._l.size + 1 == self._t.size:
             return 0.5 * (self._t[1:] + self._t[:-1])
         else:
             raise ValueError(f"Incompatible size for thickness. Expected: {self._d.size - 1} vs {self._t.size}")
@@ -126,11 +126,7 @@ class CylinderBuckling:
     @property
     def l(self):
         """Section heights (m)."""
-
-        # if self._ring:
-        return np.diff(self.z)
-
-        # return np.repeat(max(self.L), len(self.L) - 1)
+        return self._l
 
     @property
     def v(self):
@@ -339,7 +335,7 @@ class CylinderBuckling:
 
         # Euler buckling strength
         k = 2.0  # Fixed-free
-        L = self.z[-1] - self.z[0] - self.mod_length
+        L = self._l.sum() - self.mod_length
 
         I = np.pi * self.r ** 3 * self.te
         fE = (np.pi ** 2 * self.E * I) / ((k * L) ** 2 * self.Ac)

@@ -1750,16 +1750,24 @@ properties:
                             required:
                                 - name
                                 - diameter
-                                - mass_density
-                                - stiffness
-                                - breaking_load
-                                - cost
-                                - transverse_added_mass # Optional? Ask MattH    <<< I'm not sure if these should be optional or required... will think/discuss more.
-                                - tangential_added_mass # Optional? Ask MattH
-                                - transverse_drag # Optional? Ask MattH
-                                - tangential_drag # Optional? Ask MattH
+                                - type
                             optional:
                                 - damping
+                                - transverse_added_mass
+                                - tangential_added_mass
+                                - transverse_drag
+                                - tangential_drag
+                            if:
+                                # If type == custom, then we need all of the details
+                                properties:
+                                    type:
+                                        const: custom
+                            then:
+                                required:
+                                    - mass_density
+                                    - stiffness
+                                    - breaking_load
+                                    - cost
                             properties:
                                 name:
                                     type: string
@@ -1769,6 +1777,10 @@ properties:
                                     units: meter
                                     description: the volume-equivalent diameter of the line – the diameter of a cylinder having the same displacement per unit length
                                     minimum: 0.0
+                                type:
+                                    type: string
+                                    enum: [chain, chain_stud, nylon, polyester, polypropylene, wire_fiber, fiber, wire, wire_wire, iwrc, Chain, Chain_Stud, Nylon, Polyester, Polypropylene, Wire, Wire_Fiber, Fiber, Wire, Wire_Wire, IWRC, CHAIN, CHAIN_STUD, NYLON, POLYESTER, POLYPROPYLENE, WIRE, WIRE_FIBER, FIBER, WIRE, WIRE_WIRE, custom, Custom, CUSTOM]
+                                    description: Type of material for property lookup
                                 mass_density:
                                     type: number
                                     unit: kilogram/meter
@@ -1793,22 +1805,27 @@ properties:
                                     type: number
                                     unit: Newton * second
                                     description: internal damping (BA)
+                                    default: 0.0
                                 transverse_added_mass:
                                     type: number
                                     description: transverse added mass coefficient (with respect to line displacement)
                                     minimum: 0.0
+                                    default: 0.0
                                 tangential_added_mass:
                                     type: number
                                     description: tangential added mass coefficient (with respect to line displacement)
                                     minimum: 0.0
+                                    default: 0.0
                                 transverse_drag:
                                     type: number
                                     description: transverse drag coefficient (with respect to frontal area, d*l)
                                     minimum: 0.0
+                                    default: 0.0
                                 tangential_drag:
                                     type: number
                                     description: tangential drag coefficient (with respect to surface area, π*d*l)
                                     minimum: 0.0
+                                    default: 0.0
                     anchor_types:
                         type: array
                         description: List of anchor properties used in the system
@@ -1816,14 +1833,26 @@ properties:
                             type: object
                             required:
                                 - name
-                                - mass
-                                - cost
-                                - max_lateral_load
-                                - max_vertical_load
+                                - type
+                            if:
+                                # If type == custom, then we need all of the details
+                                properties:
+                                    type:
+                                        const: custom
+                            then:
+                                required:
+                                    - mass
+                                    - cost
+                                    - max_lateral_load
+                                    - max_vertical_load
                             properties:
                                 name:
                                     type: string
                                     description: Name of anchor to be referenced by anchor_id in Nodes section
+                                type:
+                                    type: string
+                                    enum: [drag_embedment, suction, plate, micropile, sepla, Drag_Embedment, Suction, Plate, Micropile, Sepla, DRAG_EMBEDMENT, SUCTION, PLATE, MICROPILE, SEPLA, custom, Custom, CUSTOM]
+                                    description: Type of anchor for property lookup
                                 mass:
                                     type: number
                                     unit: kilogram
@@ -2403,15 +2432,22 @@ properties:
                     fl_feedback:
                         type: object
                         description: Platform velocity feedback using nacelle IMU
-                        required:
-                            - gain
-                        optional:
-                            - filter
+                        default: {}
                         properties:
                             gain:
                                 type: number
                                 description: Platform velocity feedback gain used by the ROSCO controller (https://github.com/NREL/ROSCO)
                                 unit: seconds
+                            twr_freq:
+                                type: number
+                                description: Tower natural frequency / frequency of notch filter in fl_feedback ROSCO control module
+                                unit: rad/s
+                                default: 100.
+                            ptfm_freq:
+                                type: number
+                                description: Platform natural frequency / frequency of LPF in fl_feedback ROSCO control module
+                                unit: rad/s
+                                default: 0.2
                             filter:
                                 $ref: "#/definitions/filter"
                                 description: Nacelle IMU filter, used to remove tower natural frequency.  Usually a LPF or Notch Filter
@@ -3004,6 +3040,12 @@ properties:
                 minimum: 0
                 maximum: 0.6
                 default: 0.4
+            V_mean:
+                type: number
+                default: 0.
+                minimum: 0.
+                maximum: 2.e+1
+                description: Average inflow wind speed. If different than 0, this will overwrite the V mean of the IEC wind class
     bos:
         type: object
         default: {}
