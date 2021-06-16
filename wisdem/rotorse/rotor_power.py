@@ -401,7 +401,8 @@ class ComputePowerCurve(ExplicitComponent):
         Omega_max = min([inputs["control_maxTS"] / R_tip, inputs["omega_max"] * np.pi / 30.0])
 
         # Apply maximum and minimum rotor speed limits
-        Omega = np.maximum(np.minimum(Omega_tsr, Omega_max), inputs["omega_min"] * np.pi / 30.0)
+        Omega_min = inputs["omega_min"] * np.pi / 30.0
+        Omega = np.maximum(np.minimum(Omega_tsr, Omega_max), Omega_min)
         Omega_rpm = Omega * 30.0 / np.pi
 
         # Create table lookup of total drivetrain efficiency, where rpm is first column and second column is gearbox*generator
@@ -637,7 +638,8 @@ class ComputePowerCurve(ExplicitComponent):
             if (
                 ((Omega[i] == Omega_tsr[i]) and not self.peak_thrust_shaving)
                 or ((Omega[i] == Omega_tsr[i]) and self.peak_thrust_shaving and (T[i] <= max_T))
-                or (found_rated and (i == i_rated) or (self.fix_pitch_regI12 == True))
+                or ((Omega[i] == Omega_min) and self.fix_pitch_regI12)
+                or (found_rated and (i == i_rated))
             ):
                 continue
 
