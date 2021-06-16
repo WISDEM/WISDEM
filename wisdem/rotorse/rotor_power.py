@@ -631,52 +631,52 @@ class ComputePowerCurve(ExplicitComponent):
             return 1e-5 * (max_T - float(myout["T"]))
 
         # Maximize power until rated
-        if self.fix_pitch_regI12 == False:
-            for i in range(i_3):
-                # No need to optimize if already doing well
-                if (
-                    ((Omega[i] == Omega_tsr[i]) and not self.peak_thrust_shaving)
-                    or ((Omega[i] == Omega_tsr[i]) and self.peak_thrust_shaving and (T[i] <= max_T))
-                    or (found_rated and (i == i_rated))
-                ):
-                    continue
+        for i in range(i_3):
+            # No need to optimize if already doing well or if flag
+            # fix_pitch_regI12, which locks pitch in region I 1/2, is on
+            if (
+                ((Omega[i] == Omega_tsr[i]) and not self.peak_thrust_shaving)
+                or ((Omega[i] == Omega_tsr[i]) and self.peak_thrust_shaving and (T[i] <= max_T))
+                or (found_rated and (i == i_rated) or (self.fix_pitch_regI12 == True))
+            ):
+                continue
 
-                # Find pitch value that gives highest power rating
-                pitch0 = pitch[i] if i == 0 else pitch[i - 1]
-                bnds = [pitch0 - 10.0, pitch0 + 10.0]
-                if self.peak_thrust_shaving and found_rated:
-                    # Have to constrain thrust
-                    const = {}
-                    const["type"] = "ineq"
-                    const["fun"] = lambda x: constr_Tmax(x, Uhub[i], Omega_rpm[i])
-                    params = minimize(
-                        lambda x: maximizePower(x, Uhub[i], Omega_rpm[i]),
-                        pitch0,
-                        method="slsqp",  # "cobyla",
-                        bounds=[bnds],
-                        constraints=const,
-                        tol=TOL,
-                        options={"maxiter": 20},  #'catol':0.01*max_T},
-                    )
-                    pitch[i] = params.x[0]
-                else:
-                    # Only adjust pitch
-                    pitch[i] = minimize_scalar(
-                        lambda x: maximizePower(x, Uhub[i], Omega_rpm[i]),
-                        bounds=bnds,
-                        method="bounded",
-                        options={"disp": False, "xatol": TOL, "maxiter": 40},
-                    )["x"]
+            # Find pitch value that gives highest power rating
+            pitch0 = pitch[i] if i == 0 else pitch[i - 1]
+            bnds = [pitch0 - 10.0, pitch0 + 10.0]
+            if self.peak_thrust_shaving and found_rated:
+                # Have to constrain thrust
+                const = {}
+                const["type"] = "ineq"
+                const["fun"] = lambda x: constr_Tmax(x, Uhub[i], Omega_rpm[i])
+                params = minimize(
+                    lambda x: maximizePower(x, Uhub[i], Omega_rpm[i]),
+                    pitch0,
+                    method="slsqp",  # "cobyla",
+                    bounds=[bnds],
+                    constraints=const,
+                    tol=TOL,
+                    options={"maxiter": 20},  #'catol':0.01*max_T},
+                )
+                pitch[i] = params.x[0]
+            else:
+                # Only adjust pitch
+                pitch[i] = minimize_scalar(
+                    lambda x: maximizePower(x, Uhub[i], Omega_rpm[i]),
+                    bounds=bnds,
+                    method="bounded",
+                    options={"disp": False, "xatol": TOL, "maxiter": 40},
+                )["x"]
 
-                # Find associated power
-                myout, _ = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
-                P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [
-                    myout[key] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
-                ]
-                # P[i], eff[i] = compute_P_and_eff(P_aero[i], P_rated, Omega_rpm[i], driveType, driveEta)
-                eff[i] = np.interp(Omega_rpm[i], lss_rpm, driveEta)
-                P[i] = P_aero[i] * eff[i]
-                Cp[i] = Cp_aero[i] * eff[i]
+            # Find associated power
+            myout, _ = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
+            P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [
+                myout[key] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
+            ]
+            # P[i], eff[i] = compute_P_and_eff(P_aero[i], P_rated, Omega_rpm[i], driveType, driveEta)
+            eff[i] = np.interp(Omega_rpm[i], lss_rpm, driveEta)
+            P[i] = P_aero[i] * eff[i]
+            Cp[i] = Cp_aero[i] * eff[i]
 
         ## REGION III ##
         # JPJ: this part can be converted into a BalanceComp with a solver.
