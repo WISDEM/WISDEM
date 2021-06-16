@@ -1129,7 +1129,7 @@ environment:
     water_dyn_viscosity: 1.3351e-3
     soil_shear_modulus: 140e6
     soil_poisson: 0.4
-    water_depth: 30.0
+    water_depth: 200.0
     significant_wave_height: 4.52
     significant_wave_period: 9.45
 
