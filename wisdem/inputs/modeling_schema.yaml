@@ -90,6 +90,10 @@ properties:
                         type: number
                         default: 1.0
                         description: Scalar applied to the max torque within RotorSE for peak thrust shaving. Only used if `peak_thrust_shaving` is True.
+                    fix_pitch_regI12:
+                        type: boolean
+                        default: False
+                        description: If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.
                     spar_cap_ss:
                         type: string
                         default: 'none'

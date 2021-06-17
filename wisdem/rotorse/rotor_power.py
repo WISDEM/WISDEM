@@ -152,6 +152,7 @@ class ComputePowerCurve(ExplicitComponent):
         self.n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
         self.n_pc_spline = modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]
         self.peak_thrust_shaving = modeling_options["WISDEM"]["RotorSE"]["peak_thrust_shaving"]
+        self.fix_pitch_regI12 = modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"]
         if self.peak_thrust_shaving:
             self.thrust_shaving_coeff = modeling_options["WISDEM"]["RotorSE"]["thrust_shaving_coeff"]
 
@@ -400,7 +401,8 @@ class ComputePowerCurve(ExplicitComponent):
         Omega_max = min([inputs["control_maxTS"] / R_tip, inputs["omega_max"] * np.pi / 30.0])
 
         # Apply maximum and minimum rotor speed limits
-        Omega = np.maximum(np.minimum(Omega_tsr, Omega_max), inputs["omega_min"] * np.pi / 30.0)
+        Omega_min = inputs["omega_min"] * np.pi / 30.0
+        Omega = np.maximum(np.minimum(Omega_tsr, Omega_max), Omega_min)
         Omega_rpm = Omega * 30.0 / np.pi
 
         # Create table lookup of total drivetrain efficiency, where rpm is first column and second column is gearbox*generator
@@ -631,10 +633,12 @@ class ComputePowerCurve(ExplicitComponent):
 
         # Maximize power until rated
         for i in range(i_3):
-            # No need to optimize if already doing well
+            # No need to optimize if already doing well or if flag
+            # fix_pitch_regI12, which locks pitch in region I 1/2, is on
             if (
                 ((Omega[i] == Omega_tsr[i]) and not self.peak_thrust_shaving)
                 or ((Omega[i] == Omega_tsr[i]) and self.peak_thrust_shaving and (T[i] <= max_T))
+                or ((Omega[i] == Omega_min) and self.fix_pitch_regI12)
                 or (found_rated and (i == i_rated))
             ):
                 continue
