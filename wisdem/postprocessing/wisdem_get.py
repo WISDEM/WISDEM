@@ -65,6 +65,13 @@ def get_tower_mass(prob):
         return prob["towerse.tower_mass"]
 
 
+def get_tower_cost(prob):
+    if is_floating(prob):
+        return prob["floatingse.tower_cost"]
+    else:
+        return prob["towerse.tower_cost"]
+
+
 def get_structural_mass(prob):
     if is_floating(prob):
         return prob["floatingse.tower.structural_mass"]
@@ -77,3 +84,14 @@ def get_tower_freqs(prob):
         return prob["floatingse.tower_freqs"]
     else:
         return prob["towerse.tower.structural_frequencies"]
+
+
+def get_tower_cm(prob):
+    if is_floating(prob):
+        return prob["floatingse.tower_center_of_mass"]
+    else:
+        return prob["towerse.tower_center_of_mass"]
+
+
+def get_tower_cg(prob):
+    return get_tower_cm(prob)

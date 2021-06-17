@@ -762,10 +762,13 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "Nacelle mass": ["drivese.nacelle_mass", "kg"],
         "RNA mass": ["drivese.rna_mass", "kg"],
         "Tower mass": ["towerse.tower_mass", "kg"],
+        "Floating Tower mass": ["floatingse.tower_mass", "kg"],
         "Tower cost": ["towerse.tower_cost", "USD"],
+        "Floating Tower cost": ["floatingse.tower_cost", "USD"],
         "Monopile mass": ["towerse.monopile_mass", "kg"],
         "Monopile cost": ["towerse.monopile_cost", "USD"],
         "Tower-Monopile freqs": ["towerse.tower.structural_frequencies", "Hz"],
+        "Floating Tower freqs": ["floatingse.tower_freqs", "Hz"],
     }
 
     # Generally it's not necessary to change the code below here, unless you
