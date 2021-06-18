@@ -32,6 +32,7 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6]):
         #    p6[:, k], _ = curve_fit(mode_fit, xn, y[:, k])
         normval = np.maximum(np.abs(p6).sum(axis=0), 1e-6)
         p6 /= normval[np.newaxis, :]
+        p6 /= np.sum(p6, axis=0)
     else:
         p6 = p6[2:]
         # p6, _ = curve_fit(mode_fit, xn, y)
