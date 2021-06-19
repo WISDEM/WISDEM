@@ -11,8 +11,8 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
     froot = os.path.splitext(fname)[0]
 
     # Get all OpenMDAO inputs and outputs into a dictionary
-    var_dict = prob.model.list_inputs(values=True, prom_name=True, units=True, desc=True, out_stream=None)
-    out_dict = prob.model.list_outputs(values=True, prom_name=True, units=True, desc=True, out_stream=None)
+    var_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, out_stream=None)
+    out_dict = prob.model.list_outputs(prom_name=True, units=True, desc=True, out_stream=None)
     var_dict.extend(out_dict)
 
     # Pickle the full archive so that we can load it back in if we need
