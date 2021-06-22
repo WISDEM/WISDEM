@@ -939,6 +939,11 @@ class PoseOptimization(object):
         if self.opt["constraints"]["blade"]["match_L_D"]["flag_D"]:
             wt_opt.model.add_constraint("rotorse.ccblade.D_n_opt", lower=target_D - eps_L, upper=target_D + eps_L)
 
+        if self.opt["constraints"]["blade"]["AEP"]["flag"]:
+            wt_opt.model.add_constraint(
+                "rotorse.rp.AEP", lower=self.opt["constraints"]["blade"]["AEP"]["min"], ref=-1.0e6
+            )
+
         # Tower and monopile contraints
         tower_constr = self.opt["constraints"]["tower"]
         monopile_constr = self.opt["constraints"]["monopile"]

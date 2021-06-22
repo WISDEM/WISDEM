@@ -806,6 +806,17 @@ properties:
                             flag_L: *flag
                             flag_D: *flag
                             filename: *filepath
+                    AEP:
+                        type: object
+                        description: Set a minimum bound on AEP in kWh when optimizing the blade and rotor parameters
+                        default: {}
+                        properties:
+                            flag: *flag
+                            min:
+                                type: number
+                                units: kWh
+                                default: 1.0
+                                minimum: 1.0
             tower: &towcon
                 type: object
                 default: {}
