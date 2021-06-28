@@ -524,11 +524,11 @@ class WindTurbineOntologyPython(object):
                 if self.modeling_options["mooring"]["node_type"][node2id] == "vessel":
                     fairlead_nodes.append(self.wt_init["components"]["mooring"]["nodes"][node2id]["joint"])
                 # Store the anchor type names to start
-                if self.modeling_options["mooring"]["node_type"][node1id] == "fixed":
+                if "fix" in self.modeling_options["mooring"]["node_type"][node1id]:
                     self.modeling_options["mooring"]["line_anchor"][i] = self.modeling_options["mooring"][
                         "anchor_type"
                     ][node1id]
-                if self.modeling_options["mooring"]["node_type"][node2id] == "fixed":
+                if "fix" in self.modeling_options["mooring"]["node_type"][node2id]:
                     self.modeling_options["mooring"]["line_anchor"][i] = self.modeling_options["mooring"][
                         "anchor_type"
                     ][node2id]
