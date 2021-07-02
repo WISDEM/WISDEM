@@ -1,9 +1,10 @@
 import copy
 
 import numpy as np
+from scipy.interpolate import PchipInterpolator, interp1d
+
 import openmdao.api as om
 import wisdem.moorpy.MoorProps as mp
-from scipy.interpolate import PchipInterpolator, interp1d
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.rotorse.geometry_tools.geometry import remap2grid, trailing_edge_smoothing

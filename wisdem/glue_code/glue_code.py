@@ -1,4 +1,5 @@
 import numpy as np
+
 import openmdao.api as om
 from wisdem.rotorse.rotor import RotorSE
 from wisdem.towerse.tower import TowerSE
@@ -553,6 +554,50 @@ class WT_RNTA(om.Group):
         self.connect("costs.tower_mass_cost_coeff", "tcc.tower_mass_cost_coeff")
         self.connect("costs.controls_machine_rating_cost_coeff", "tcc.controls_machine_rating_cost_coeff")
         self.connect("costs.crane_cost", "tcc.crane_cost")
+
+        # Final component for inverse design objective
+        if opt_options["inverse_design"]:
+            self.add_subsystem("inverse_design", InverseDesign(opt_options=opt_options))
+
+            for key in opt_options["inverse_design"]:
+                item = opt_options["inverse_design"][key]
+                name = item["name"]
+                short_name = name.split(".")[-1]
+                self.connect(name, f"inverse_design.{short_name}")
+
+
+class InverseDesign(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("opt_options")
+
+    def setup(self):
+        opt_options = self.options["opt_options"]
+
+        for key in opt_options["inverse_design"]:
+            item = opt_options["inverse_design"][key]
+            short_name = item["name"].split(".")[-1]
+
+            self.add_input(
+                short_name,
+                val=0.0,
+            )
+        self.add_output(
+            "objective",
+            val=0.0,
+        )
+
+    def compute(self, inputs, outputs):
+        opt_options = self.options["opt_options"]
+
+        total = 0.0
+        for key in opt_options["inverse_design"]:
+            item = opt_options["inverse_design"][key]
+            short_name = item["name"].split(".")[-1]
+            ref_value = item["ref_value"]
+            total += ((inputs[short_name] - ref_value) / ref_value) ** 2
+
+        rms_total = np.sqrt(total)
+        outputs["objective"] = rms_total
 
 
 class WindPark(om.Group):

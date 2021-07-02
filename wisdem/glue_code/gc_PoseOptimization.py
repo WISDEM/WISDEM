@@ -1,8 +1,9 @@
 import os
 
 import numpy as np
-import openmdao.api as om
 from scipy.interpolate import PchipInterpolator
+
+import openmdao.api as om
 
 
 class PoseOptimization(object):
@@ -452,6 +453,10 @@ class PoseOptimization(object):
                 wt_opt.model.add_objective("rotorse.rp.powercurve.Cp_regII", ref=-1.0)
             else:
                 wt_opt.model.add_objective("rotorse.ccblade.CP", ref=-1.0)
+
+        elif self.opt["merit_figure"] == "inverse_design":
+            wt_opt.model.add_objective("inverse_design.objective")
+
         else:
             raise ValueError("The merit figure " + self.opt["merit_figure"] + " is unknown or not supported.")
 
