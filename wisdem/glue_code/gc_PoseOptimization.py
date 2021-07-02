@@ -415,8 +415,8 @@ class PoseOptimization(object):
             else:
                 wt_opt.model.add_objective("floatingse.tower_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "mononpile_mass":
-            wt_opt.model.add_objective("towerse.mononpile_mass", ref=1e6)
+        elif self.opt["merit_figure"] == "monopile_mass":
+            wt_opt.model.add_objective("towerse.monopile_mass", ref=1e6)
 
         elif self.opt["merit_figure"] == "structural_mass":
             if not self.modeling["flags"]["floating"]:

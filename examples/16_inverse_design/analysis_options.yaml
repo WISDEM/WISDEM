@@ -21,18 +21,27 @@ design_variables:
                       lower_bound: 1.0
                       upper_bound: 1e4
 
+    mooring:
+        line_length:
+            flag: True
+            lower_bound: 100.0
+            upper_bound: 1000.0
+
 merit_figure: inverse_design
 
 inverse_design:
     val0:
         name: floatingse.platform_mass
         ref_value: 6.e6
+    val1:
+        name: floatingse.mooring_mass
+        ref_value: 4.5e5
 
 driver:
     optimization:
         flag: True         # Flag to enable optimization
+        max_major_iter: 100
         tol: 1.e-2          # Optimality tolerance
-        max_iter: 100         # Maximum number of iterations (SLSQP)
         solver: SNOPT       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
-        step_size: 1.e-3    # Step size for finite differencing
-        form: central       # Finite differencing mode, either forward or central
+        step_size: 1.e-6    # Step size for finite differencing
+        form: forward       # Finite differencing mode, either forward or central

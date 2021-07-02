@@ -595,9 +595,11 @@ class InverseDesign(om.ExplicitComponent):
             short_name = item["name"].split(".")[-1]
             ref_value = item["ref_value"]
             total += ((inputs[short_name] - ref_value) / ref_value) ** 2
+            print(short_name, inputs[short_name])
 
         rms_total = np.sqrt(total)
         outputs["objective"] = rms_total
+        print(rms_total)
 
 
 class WindPark(om.Group):
