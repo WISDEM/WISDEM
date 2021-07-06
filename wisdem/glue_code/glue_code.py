@@ -564,7 +564,7 @@ class WT_RNTA(om.Group):
                 name = item["name"]
                 idx = item["idx"]
                 short_name = name.split(".")[-1] + f"_{idx}"
-                self.connect(name, f"inverse_design.{short_name}")
+                self.connect(name, f"inverse_design.{short_name}", src_indices=[idx])
 
 
 class InverseDesign(om.ExplicitComponent):
@@ -596,11 +596,9 @@ class InverseDesign(om.ExplicitComponent):
             short_name = item["name"].split(".")[-1] + f"_{item['idx']}"
             ref_value = item["ref_value"]
             total += ((inputs[short_name] - ref_value) / ref_value) ** 2
-            print(short_name, inputs[short_name])
 
         rms_total = np.sqrt(total)
         outputs["objective"] = rms_total
-        print(rms_total)
 
 
 class WindPark(om.Group):

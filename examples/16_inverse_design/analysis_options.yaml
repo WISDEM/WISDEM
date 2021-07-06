@@ -41,8 +41,7 @@ inverse_design:
 driver:
     optimization:
         flag: True         # Flag to enable optimization
-        max_major_iter: 100
         tol: 1.e-2          # Optimality tolerance
-        solver: SNOPT       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         step_size: 1.e-6    # Step size for finite differencing
         form: forward       # Finite differencing mode, either forward or central
