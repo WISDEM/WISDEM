@@ -33,15 +33,18 @@ inverse_design:
     val0:
         name: floatingse.platform_mass
         ref_value: 6.e6
-        idx: 0
     val1:
         name: floatingse.mooring_mass
         ref_value: 4.5e5
+    val2:
+        name: floatingse.system_structural_center_of_mass
+        ref_value: -60.
+        idx: 2
 
 driver:
     optimization:
         flag: True         # Flag to enable optimization
-        tol: 1.e-2          # Optimality tolerance
+        tol: 1.e-4          # Optimality tolerance
         solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         step_size: 1.e-6    # Step size for finite differencing
         form: forward       # Finite differencing mode, either forward or central
