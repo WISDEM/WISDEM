@@ -33,6 +33,7 @@ inverse_design:
     val0:
         name: floatingse.platform_mass
         ref_value: 6.e6
+        idx: 0
     val1:
         name: floatingse.mooring_mass
         ref_value: 4.5e5

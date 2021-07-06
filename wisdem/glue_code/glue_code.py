@@ -562,7 +562,8 @@ class WT_RNTA(om.Group):
             for key in opt_options["inverse_design"]:
                 item = opt_options["inverse_design"][key]
                 name = item["name"]
-                short_name = name.split(".")[-1]
+                idx = item["idx"]
+                short_name = name.split(".")[-1] + f"_{idx}"
                 self.connect(name, f"inverse_design.{short_name}")
 
 
@@ -575,7 +576,7 @@ class InverseDesign(om.ExplicitComponent):
 
         for key in opt_options["inverse_design"]:
             item = opt_options["inverse_design"][key]
-            short_name = item["name"].split(".")[-1]
+            short_name = item["name"].split(".")[-1] + f"_{item['idx']}"
 
             self.add_input(
                 short_name,
@@ -592,7 +593,7 @@ class InverseDesign(om.ExplicitComponent):
         total = 0.0
         for key in opt_options["inverse_design"]:
             item = opt_options["inverse_design"][key]
-            short_name = item["name"].split(".")[-1]
+            short_name = item["name"].split(".")[-1] + f"_{item['idx']}"
             ref_value = item["ref_value"]
             total += ((inputs[short_name] - ref_value) / ref_value) ** 2
             print(short_name, inputs[short_name])

@@ -1105,10 +1105,19 @@ properties:
         default: {}
         additionalProperties:
             type: object
-            # required: value
-            # properties:
-            #     value:
-            #         type: number
+            required:
+              - name
+              - ref_value
+            optional:
+              - idx
+            properties:
+                name:
+                    type: string
+                ref_value:
+                    type: number
+                idx:
+                    type: integer
+                    default: 0
 
 
     driver:
