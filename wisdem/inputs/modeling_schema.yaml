@@ -297,6 +297,10 @@ properties:
                         type: boolean
                         default: False
                         description: Model the monopile base as a gravity-based foundation with no pile embedment
+                    n_refine:
+                        type: integer
+                        default: 3
+                        description: Number of sampling points along tower
             BOS:
                 type: object
                 default: {}

@@ -34,7 +34,7 @@ class TowerLeanSE(om.Group):
             n_height = mod_opt["n_height"]
         else:
             n_height = mod_opt["n_height"] = n_height_tow if n_height_mon == 0 else n_height_tow + n_height_mon - 1
-        nFull = get_nfull(n_height)
+        nFull = get_nfull(n_height, nref=mod_opt["n_refine"])
 
         self.set_input_defaults("gravity_foundation_mass", 0.0, units="kg")
         self.set_input_defaults("transition_piece_mass", 0.0, units="kg")
@@ -80,7 +80,7 @@ class TowerLeanSE(om.Group):
         self.add_subsystem(
             "props", CylindricalShellProperties(nFull=nFull), promotes=["Az", "Asx", "Asy", "Ixx", "Iyy", "Jz"]
         )
-        self.add_subsystem("tgeometry", tp.TowerDiscretization(n_height=n_height), promotes=["*"])
+        self.add_subsystem("tgeometry", tp.TowerDiscretization(n_height=n_height, n_refine=mod_opt["n_refine"]), promotes=["*"])
 
         self.add_subsystem(
             "cm",
@@ -89,7 +89,8 @@ class TowerLeanSE(om.Group):
         )
         self.add_subsystem(
             "tm",
-            tp.TowerMass(n_height=n_height),
+            tp.TowerMass(n_height=n_height,
+                         n_refine=mod_opt["n_refine"]),
             promotes=[
                 "z_full",
                 "d_full",
@@ -175,7 +176,7 @@ class TowerSE(om.Group):
             n_height_tow = mod_opt["n_height_tower"]
             n_height_mon = mod_opt["n_height_monopile"]
             n_height = mod_opt["n_height"] = n_height_tow if n_height_mon == 0 else n_height_tow + n_height_mon - 1
-        nFull = get_nfull(n_height)
+        nFull = get_nfull(n_height, nref=mod_opt["n_refine"])
         self.set_input_defaults("E", np.zeros(n_height - 1), units="N/m**2")
         self.set_input_defaults("G", np.zeros(n_height - 1), units="N/m**2")
         if monopile and mod_opt["soil_springs"]:
@@ -228,6 +229,7 @@ class TowerSE(om.Group):
                     monopile=monopile,
                     soil_springs=mod_opt["soil_springs"],
                     gravity_foundation=mod_opt["gravity_foundation"],
+                    n_refine=mod_opt["n_refine"]
                 ),
                 promotes=[
                     "transition_piece_mass",

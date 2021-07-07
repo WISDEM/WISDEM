@@ -446,10 +446,13 @@ class TowerDiscretization(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("n_height")
+        self.options.declare("n_refine")
+        self.options.declare("modeling_options")
 
     def setup(self):
         n_height = self.options["n_height"]
-        nFull = get_nfull(n_height)
+        n_refine = self.options["n_refine"]
+        nFull = get_nfull(n_height, nref=n_refine)
 
         self.add_input("hub_height", val=0.0, units="m")
         self.add_input("z_param", np.zeros(n_height), units="m")
@@ -748,10 +751,12 @@ class TowerMass(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("n_height")
+        self.options.declare("n_refine")
 
     def setup(self):
         n_height = self.options["n_height"]
-        nFull = get_nfull(n_height)
+        n_refine = self.options["n_refine"]
+        nFull = get_nfull(n_height, nref=n_refine)
 
         self.add_input("cylinder_mass", val=np.zeros(nFull - 1), units="kg")
         self.add_input("cylinder_cost", val=0.0, units="USD")
