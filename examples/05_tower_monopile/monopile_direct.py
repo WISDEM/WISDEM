@@ -41,6 +41,7 @@ modeling_options["WISDEM"] = {}
 modeling_options["WISDEM"]["TowerSE"] = {}
 modeling_options["WISDEM"]["TowerSE"]["buckling_length"] = 30.0
 modeling_options["WISDEM"]["TowerSE"]["buckling_method"] = "dnvgl"
+modeling_options["WISDEM"]["TowerSE"]["n_refine"] = 3
 modeling_options["flags"]["monopile"] = True
 
 # Monopile foundation
