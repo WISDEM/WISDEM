@@ -102,10 +102,12 @@ class TowerPreFrame(om.ExplicitComponent):
         self.options.declare("monopile", default=False)
         self.options.declare("soil_springs", default=False)
         self.options.declare("gravity_foundation", default=False)
+        self.options.declare("n_refine")
 
     def setup(self):
         n_height = self.options["n_height"]
-        nFull = get_nfull(n_height)
+        n_refine = self.options["n_refine"]
+        nFull = get_nfull(n_height, nref=n_refine)
 
         self.add_input("z_full", np.zeros(nFull), units="m")
 
@@ -191,7 +193,8 @@ class TowerPreFrame(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         n_height = self.options["n_height"]
-        nFull = get_nfull(n_height)
+        n_refine = self.options["n_refine"]
+        nFull = get_nfull(n_height, nref=n_refine)
         z = inputs["z_full"]
 
         # Prepare RNA, transition piece, and gravity foundation (if any applicable) for "extra node mass"
@@ -723,7 +726,8 @@ class TowerPostFrame(om.ExplicitComponent):
 
     def setup(self):
         n_height = self.options["modeling_options"]["n_height"]
-        nFull = get_nfull(n_height)
+        n_refine = self.options["modeling_options"]["n_refine"]
+        nFull = get_nfull(n_height, nref=n_refine)
 
         # effective geometry -- used for handbook methods to estimate hoop stress, buckling, fatigue
         self.add_input("z_full", np.zeros(nFull), units="m")
