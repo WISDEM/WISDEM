@@ -5,7 +5,7 @@ import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.utilization_dnvgl as util_dnvgl
 import wisdem.commonse.utilization_eurocode as util_euro
 import wisdem.commonse.utilization_constraints as util_con
-from wisdem.towerse import NFREQ, RIGID, NPTS_SOIL, gravity, get_nfull
+from wisdem.towerse import NFREQ, RIGID, NREFINE, NPTS_SOIL, gravity, get_nfull
 from wisdem.commonse.utilization_eurocode import hoopStressEurocode
 
 
@@ -102,7 +102,7 @@ class TowerPreFrame(om.ExplicitComponent):
         self.options.declare("monopile", default=False)
         self.options.declare("soil_springs", default=False)
         self.options.declare("gravity_foundation", default=False)
-        self.options.declare("n_refine")
+        self.options.declare("n_refine", default=NREFINE)
 
     def setup(self):
         n_height = self.options["n_height"]

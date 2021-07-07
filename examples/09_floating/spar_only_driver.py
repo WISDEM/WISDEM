@@ -23,4 +23,4 @@ if rank == 0:
     print("Run time: %f" % (time.time() - tt))
     sys.stdout.flush()
 
-wt_opt.model.list_outputs(values=True, units=True)
+wt_opt.model.list_outputs(units=True)
