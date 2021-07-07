@@ -177,10 +177,10 @@ properties:
                                 default: {}
                                 properties:
                                     flag: *flag
-                                    equal_to_suction:
+                                    equal_to_suction: &equalss
                                         type: boolean
                                         default: true
-                                        description: If the pressure side spar cap should be equal to the suction side spar cap
+                                        description: If the pressure side spar cap should be equal to the suction side layer
                                     n_opt:
                                         type: integer
                                         default: 8
@@ -211,6 +211,7 @@ properties:
                                 default: {}
                                 properties:
                                     flag: *flag
+                                    equal_to_suction: *equalss
                                     n_opt:
                                         type: integer
                                         default: 8
@@ -708,6 +709,24 @@ properties:
                         type: object
                         default: {}
                         description: Enforce a maximum allowable strain in the pressure-side spar caps
+                        properties:
+                            flag: *flag
+                            max: *maxstrain
+                            index_start: *index_start
+                            index_end: *index_end
+                    strains_te_ss:
+                        type: object
+                        default: {}
+                        description: Enforce a maximum allowable strain in the suction-side trailing edge reinforcements
+                        properties:
+                            flag: *flag
+                            max: *maxstrain
+                            index_start: *index_start
+                            index_end: *index_end
+                    strains_te_ps:
+                        type: object
+                        default: {}
+                        description: Enforce a maximum allowable strain in the pressure-side trailing edge reinforcements
                         properties:
                             flag: *flag
                             max: *maxstrain
