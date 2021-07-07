@@ -1012,7 +1012,7 @@ class TestGroup(unittest.TestCase):
         prob["Uc"] = 0.0
 
         prob.run_model()
-        out_list = prob.model.list_outputs(values=True, prom_name=True, units=False, out_stream=None)
+        out_list = prob.model.list_outputs(prom_name=True, units=False, out_stream=None)
         for k in out_list:
             if np.all(k[1]["value"] == 0.0) or np.all(k[1]["value"] == NULL):
                 name = k[1]["prom_name"]
