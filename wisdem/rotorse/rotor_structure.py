@@ -769,17 +769,17 @@ class DesignConstraints(ExplicitComponent):
         )
         self.add_input(
             "s_opt_spar_cap_ps",
-            val=np.zeros(n_opt_spar_cap_ss),
+            val=np.zeros(n_opt_spar_cap_ps),
             desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap pressure side",
         )
         self.add_input(
             "s_opt_te_ss",
-            val=np.zeros(n_opt_spar_cap_ss),
+            val=np.zeros(n_opt_te_ss),
             desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade trailing edge suction side",
         )
         self.add_input(
             "s_opt_te_ps",
-            val=np.zeros(n_opt_spar_cap_ss),
+            val=np.zeros(n_opt_te_ps),
             desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade trailing edge pressure side",
         )
 
