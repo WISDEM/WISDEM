@@ -505,6 +505,34 @@ properties:
                                 unit: m
                                 description: Design variable bound
                             upper_bound: *sbound
+                    E:
+                        type: object
+                        default: {}
+                        description: Isotropic Young's modulus
+                        properties:
+                            flag: *flag
+                            lower_bound: &ebound
+                                type: number
+                                minimum: 1.
+                                maximum: 1.e12
+                                default: 200.e+009
+                                unit: Pa
+                                description: Design variable bound
+                            upper_bound: *ebound
+                    rho:
+                        type: object
+                        default: {}
+                        description: Material density of the tower
+                        properties:
+                            flag: *flag
+                            lower_bound: &rbound
+                                type: number
+                                minimum: 1.
+                                maximum: 1.e5
+                                default: 7800
+                                unit: kg/m**3
+                                description: Design variable bound
+                            upper_bound: *rbound
             monopile: *towdv
             floating:
                 type: object
@@ -674,6 +702,20 @@ properties:
                             lower_bound: *lboundm
                             upper_bound: *uboundm
                     line_diameter:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *lboundm
+                            upper_bound: *uboundm
+                    line_mass_density_coeff:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *lboundm
+                            upper_bound: *uboundm
+                    line_stiffness_coeff:
                         type: object
                         default: {}
                         properties:
@@ -1261,3 +1303,7 @@ properties:
                 type: string
                 description: OpenMDAO recorder output SQL database file
                 default: log_opt.sql
+            just_dvs:
+                type: boolean
+                description: If true, only record design variables.
+                default: False

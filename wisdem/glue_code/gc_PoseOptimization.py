@@ -1,12 +1,14 @@
 import os
 
+from scipy.interpolate import PchipInterpolator
+
 import numpy as np
 import openmdao.api as om
-from scipy.interpolate import PchipInterpolator
 
 
 class PoseOptimization(object):
-    def __init__(self, modeling_options, analysis_options):
+    def __init__(self, wt_init, modeling_options, analysis_options):
+        self.wt_init = wt_init
         self.modeling = modeling_options
         self.opt = analysis_options
 
@@ -375,7 +377,7 @@ class PoseOptimization(object):
             doe_options = self.opt["driver"]["design_of_experiments"]
             if doe_options["generator"].lower() == "uniform":
                 generator = om.UniformGenerator(
-                    num_samples=doe_options["num_samples"],
+                    num_samples=int(doe_options["num_samples"]),
                     seed=doe_options["seed"],
                 )
             elif doe_options["generator"].lower() == "fullfact":
@@ -386,7 +388,7 @@ class PoseOptimization(object):
                 generator = om.BoxBehnkenGenerator()
             elif doe_options["generator"].lower() == "latinhypercube":
                 generator = om.LatinHypercubeGenerator(
-                    samples=doe_options["num_samples"],
+                    samples=int(doe_options["num_samples"]),
                     criterion=doe_options["criterion"],
                     seed=doe_options["seed"],
                 )
@@ -702,6 +704,33 @@ class PoseOptimization(object):
                 ref=1e-2,
             )
 
+        if tower_opt["E"]["flag"]:
+            ivc = wt_opt.model.add_subsystem("E_ivc", om.IndepVarComp(), promotes=[])
+            ivc.add_output("E_user", val=10.0, units="Pa")
+            wt_opt.model.add_design_var(
+                "E_ivc.E_user",
+                lower=tower_opt["E"]["lower_bound"],
+                upper=tower_opt["E"]["upper_bound"],
+                ref=1e9,
+            )
+            wt_opt.model.connect("E_ivc.E_user", "towerse_post.E_user")
+
+            if self.modeling["flags"]["floating"]:
+                wt_opt.model.connect("E_ivc.E_user", "floatingse.tower.E_user")
+
+        for idx, material in enumerate(wt_init["materials"]):
+            if material["name"] == "steel":
+                tower_material_index = idx
+
+        if tower_opt["rho"]["flag"]:
+            wt_opt.model.add_design_var(
+                "materials.rho",
+                lower=tower_opt["rho"]["lower_bound"],
+                upper=tower_opt["rho"]["upper_bound"],
+                ref=1e3,
+                indices=[tower_material_index],
+            )
+
         # -- Control --
         if control_opt["tsr"]["flag"]:
             wt_opt.model.add_design_var(
@@ -876,6 +905,20 @@ class PoseOptimization(object):
                 lower=mooring_opt["line_diameter"]["lower_bound"],
                 upper=mooring_opt["line_diameter"]["upper_bound"],
                 ref=1e-1,
+            )
+
+        if mooring_opt["line_mass_density_coeff"]["flag"]:
+            wt_opt.model.add_design_var(
+                "mooring.line_mass_density_coeff",
+                lower=mooring_opt["line_mass_density_coeff"]["lower_bound"],
+                upper=mooring_opt["line_mass_density_coeff"]["upper_bound"],
+            )
+
+        if mooring_opt["line_stiffness_coeff"]["flag"]:
+            wt_opt.model.add_design_var(
+                "mooring.line_stiffness_coeff",
+                lower=mooring_opt["line_stiffness_coeff"]["lower_bound"],
+                upper=mooring_opt["line_stiffness_coeff"]["upper_bound"],
             )
 
         return wt_opt
