@@ -30,6 +30,7 @@ class TestInputs(unittest.TestCase):
         discrete_inputs["layer_materials"] = ["steel"]
         discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
         inputs["E_mat"] = 1e9 * np.ones((2, 3))
+        inputs["E_user"] = 0.0
         inputs["G_mat"] = 1e8 * np.ones((2, 3))
         inputs["sigma_y_mat"] = np.array([1e7, 1e7])
         inputs["rho_mat"] = np.array([1e4, 1e5])
@@ -89,6 +90,7 @@ class TestInputs(unittest.TestCase):
         discrete_inputs["layer_materials"] = ["steel", "other"]
         discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
         inputs["E_mat"] = 1e9 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
+        inputs["E_user"] = 0.0
         inputs["G_mat"] = 1e8 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
         inputs["sigma_y_mat"] = np.array([1e7, 1e7, 2e7])
         inputs["rho_mat"] = np.array([1e4, 1e5, 2e4])

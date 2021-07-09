@@ -1,5 +1,7 @@
 import copy
 
+from sortedcontainers import SortedDict
+
 import numpy as np
 import openmdao.api as om
 import wisdem.commonse.frustum as frustum
@@ -7,7 +9,6 @@ import wisdem.commonse.utilities as util
 import wisdem.commonse.manufacturing as manufacture
 import wisdem.commonse.cross_sections as cs
 from wisdem.commonse import eps, gravity
-from sortedcontainers import SortedDict
 from wisdem.commonse.wind_wave_drag import CylinderEnvironment
 from wisdem.commonse.utilization_constraints import GeometricConstraints
 
@@ -71,6 +72,9 @@ class DiscretizationYAML(om.ExplicitComponent):
     E_mat : numpy array[n_mat, 3], [Pa]
         2D array of the Youngs moduli of the materials. Each row represents a material,
         the three members represent E11, E22 and E33.
+    E_user : float, [Pa]
+        Override value for the Youngs modulus of the materials.
+        Used for DOE linearization studies within WEIS.
     G_mat : numpy array[n_mat, 3], [Pa]
         2D array of the shear moduli of the materials. Each row represents a material,
         the three members represent G12, G13 and G23.
@@ -135,6 +139,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_input("outer_diameter_in", np.zeros(n_height), units="m")
         self.add_discrete_input("material_names", val=n_mat * [""])
         self.add_input("E_mat", val=np.zeros([n_mat, 3]), units="Pa")
+        self.add_input("E_user", val=0.0, units="Pa")
         self.add_input("G_mat", val=np.zeros([n_mat, 3]), units="Pa")
         self.add_input("sigma_y_mat", val=np.zeros(n_mat), units="Pa")
         self.add_input("rho_mat", val=np.zeros(n_mat), units="kg/m**3")
@@ -255,7 +260,10 @@ class DiscretizationYAML(om.ExplicitComponent):
             cost_param += imass * cost[imat]
 
             # Store the value associated with this thickness
-            E_param[k, :] = E[imat]
+            if inputs["E_user"] > 1.0:
+                E_param[k, :] = inputs["E_user"]
+            else:
+                E_param[k, :] = E[imat]
             G_param[k, :] = G[imat]
             sigy_param[k, :] = sigy[imat]
 
