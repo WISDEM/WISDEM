@@ -719,16 +719,15 @@ class DesignConstraints(ExplicitComponent):
 
     def setup(self):
         rotorse_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
-        self.n_span = n_span = rotorse_options["n_span"]
-        self.n_freq = n_freq = rotorse_options["n_freq"]
+        n_span = rotorse_options["n_span"]
+        n_freq = rotorse_options["n_freq"]
         n_freq2 = int(n_freq / 2)
-        self.opt_options = opt_options = self.options["opt_options"]
-        self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options["design_variables"]["blade"]["structure"][
-            "spar_cap_ss"
-        ]["n_opt"]
-        self.n_opt_spar_cap_ps = n_opt_spar_cap_ps = opt_options["design_variables"]["blade"]["structure"][
-            "spar_cap_ps"
-        ]["n_opt"]
+        opt_options = self.options["opt_options"]
+        n_opt_spar_cap_ss = opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]
+        n_opt_spar_cap_ps = opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]
+        n_opt_te_ss = opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]
+        n_opt_te_ps = opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]
+
         # Inputs strains
         self.add_input(
             "strainU_spar",
@@ -740,11 +739,23 @@ class DesignConstraints(ExplicitComponent):
             val=np.zeros(n_span),
             desc="strain in spar cap on lower surface at location xl,yl_strain with loads P_strain",
         )
+        self.add_input(
+            "strainU_te",
+            val=np.zeros(n_span),
+            desc="strain in trailing edge on upper surface at location xu,yu_strain with loads P_strain",
+        )
+        self.add_input(
+            "strainL_te",
+            val=np.zeros(n_span),
+            desc="strain in trailing edge on lower surface at location xl,yl_strain with loads P_strain",
+        )
 
-        self.add_input("min_strainU_spar", val=0.0, desc="minimum strain in spar cap suction side")
-        self.add_input("max_strainU_spar", val=0.0, desc="minimum strain in spar cap pressure side")
-        self.add_input("min_strainL_spar", val=0.0, desc="maximum strain in spar cap suction side")
-        self.add_input("max_strainL_spar", val=0.0, desc="maximum strain in spar cap pressure side")
+        # self.add_input("min_strainU_spar", val=0.0, desc="minimum strain in spar cap suction side")
+        # self.add_input("min_strainL_spar", val=0.0, desc="minimum strain in spar cap pressure side")
+        self.add_input("max_strainU_spar", val=1.0, desc="maximum strain in spar cap suction side")
+        self.add_input("max_strainL_spar", val=1.0, desc="maximum strain in spar cap pressure side")
+        self.add_input("max_strainU_te", val=1.0, desc="maximum strain in spar cap suction side")
+        self.add_input("max_strainL_te", val=1.0, desc="maximum strain in spar cap pressure side")
 
         self.add_input(
             "s",
@@ -758,8 +769,18 @@ class DesignConstraints(ExplicitComponent):
         )
         self.add_input(
             "s_opt_spar_cap_ps",
-            val=np.zeros(n_opt_spar_cap_ss),
-            desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side",
+            val=np.zeros(n_opt_spar_cap_ps),
+            desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap pressure side",
+        )
+        self.add_input(
+            "s_opt_te_ss",
+            val=np.zeros(n_opt_te_ss),
+            desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade trailing edge suction side",
+        )
+        self.add_input(
+            "s_opt_te_ps",
+            val=np.zeros(n_opt_te_ps),
+            desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade trailing edge pressure side",
         )
 
         # Input frequencies
@@ -781,16 +802,26 @@ class DesignConstraints(ExplicitComponent):
 
         # Outputs
         # self.add_output('constr_min_strainU_spar',     val=np.zeros(n_opt_spar_cap_ss), desc='constraint for minimum strain in spar cap suction side')
+        # self.add_output('constr_min_strainL_spar',     val=np.zeros(n_opt_spar_cap_ps), desc='constraint for minimum strain in spar cap pressure side')
         self.add_output(
             "constr_max_strainU_spar",
             val=np.zeros(n_opt_spar_cap_ss),
             desc="constraint for maximum strain in spar cap suction side",
         )
-        # self.add_output('constr_min_strainL_spar',     val=np.zeros(n_opt_spar_cap_ps), desc='constraint for minimum strain in spar cap pressure side')
         self.add_output(
             "constr_max_strainL_spar",
             val=np.zeros(n_opt_spar_cap_ps),
             desc="constraint for maximum strain in spar cap pressure side",
+        )
+        self.add_output(
+            "constr_max_strainU_te",
+            val=np.zeros(n_opt_te_ss),
+            desc="constraint for maximum strain in trailing edge suction side",
+        )
+        self.add_output(
+            "constr_max_strainL_te",
+            val=np.zeros(n_opt_te_ps),
+            desc="constraint for maximum strain in trailing edge pressure side",
         )
         self.add_output(
             "constr_flap_f_margin",
@@ -809,24 +840,25 @@ class DesignConstraints(ExplicitComponent):
         s = inputs["s"]
         s_opt_spar_cap_ss = inputs["s_opt_spar_cap_ss"]
         s_opt_spar_cap_ps = inputs["s_opt_spar_cap_ps"]
+        s_opt_te_ss = inputs["s_opt_te_ss"]
+        s_opt_te_ps = inputs["s_opt_te_ps"]
 
         strainU_spar = inputs["strainU_spar"]
         strainL_spar = inputs["strainL_spar"]
-        # min_strainU_spar = inputs['min_strainU_spar']
-        if inputs["max_strainU_spar"] == np.zeros_like(inputs["max_strainU_spar"]):
-            max_strainU_spar = np.ones_like(inputs["max_strainU_spar"])
-        else:
-            max_strainU_spar = inputs["max_strainU_spar"]
-        # min_strainL_spar = inputs['min_strainL_spar']
-        if inputs["max_strainL_spar"] == np.zeros_like(inputs["max_strainL_spar"]):
-            max_strainL_spar = np.ones_like(inputs["max_strainL_spar"])
-        else:
-            max_strainL_spar = inputs["max_strainL_spar"]
+        strainU_te = inputs["strainU_te"]
+        strainL_te = inputs["strainL_te"]
+
+        max_strainU_spar = inputs["max_strainU_spar"]
+        max_strainL_spar = inputs["max_strainL_spar"]
+        max_strainU_te = inputs["max_strainU_te"]
+        max_strainL_te = inputs["max_strainL_te"]
 
         # outputs['constr_min_strainU_spar'] = abs(np.interp(s_opt_spar_cap_ss, s, strainU_spar)) / abs(min_strainU_spar)
-        outputs["constr_max_strainU_spar"] = abs(np.interp(s_opt_spar_cap_ss, s, strainU_spar)) / max_strainU_spar
         # outputs['constr_min_strainL_spar'] = abs(np.interp(s_opt_spar_cap_ps, s, strainL_spar)) / abs(min_strainL_spar)
+        outputs["constr_max_strainU_spar"] = abs(np.interp(s_opt_spar_cap_ss, s, strainU_spar)) / max_strainU_spar
         outputs["constr_max_strainL_spar"] = abs(np.interp(s_opt_spar_cap_ps, s, strainL_spar)) / max_strainL_spar
+        outputs["constr_max_strainU_te"] = abs(np.interp(s_opt_te_ss, s, strainU_te)) / max_strainU_te
+        outputs["constr_max_strainL_te"] = abs(np.interp(s_opt_te_ps, s, strainL_te)) / max_strainL_te
 
         # Constraints on blade frequencies
         threeP = discrete_inputs["blade_number"] * inputs["rated_Omega"] / 60.0
@@ -1316,6 +1348,8 @@ class RotorStructure(Group):
         # Strains from frame3dd to constraint
         self.connect("strains.strainU_spar", "constr.strainU_spar")
         self.connect("strains.strainL_spar", "constr.strainL_spar")
+        self.connect("strains.strainU_te", "constr.strainU_te")
+        self.connect("strains.strainL_te", "constr.strainL_te")
         self.connect("frame.flap_mode_freqs", "constr.flap_mode_freqs")
         self.connect("frame.edge_mode_freqs", "constr.edge_mode_freqs")
 

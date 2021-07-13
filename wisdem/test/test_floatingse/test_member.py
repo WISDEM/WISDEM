@@ -30,6 +30,7 @@ class TestInputs(unittest.TestCase):
         discrete_inputs["layer_materials"] = ["steel"]
         discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
         inputs["E_mat"] = 1e9 * np.ones((2, 3))
+        inputs["E_user"] = 0.0
         inputs["G_mat"] = 1e8 * np.ones((2, 3))
         inputs["sigma_y_mat"] = np.array([1e7, 1e7])
         inputs["rho_mat"] = np.array([1e4, 1e5])
@@ -89,6 +90,7 @@ class TestInputs(unittest.TestCase):
         discrete_inputs["layer_materials"] = ["steel", "other"]
         discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
         inputs["E_mat"] = 1e9 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
+        inputs["E_user"] = 0.0
         inputs["G_mat"] = 1e8 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
         inputs["sigma_y_mat"] = np.array([1e7, 1e7, 2e7])
         inputs["rho_mat"] = np.array([1e4, 1e5, 2e4])
@@ -1012,7 +1014,7 @@ class TestGroup(unittest.TestCase):
         prob["Uc"] = 0.0
 
         prob.run_model()
-        out_list = prob.model.list_outputs(values=True, prom_name=True, units=False, out_stream=None)
+        out_list = prob.model.list_outputs(prom_name=True, units=False, out_stream=None)
         for k in out_list:
             if np.all(k[1]["value"] == 0.0) or np.all(k[1]["value"] == NULL):
                 name = k[1]["prom_name"]

@@ -98,16 +98,28 @@ components:
                   offset_y_pa:
                     grid: [0., 1.]
                     values: [0., 0.]
-                - name: TE_reinforcement
+                - name: TE_reinforcement_PS
                   material: glassUD
-                  midpoint_nd_arc:
+                  side: pressure
+                  end_nd_arc:
                     fixed: TE
                   thickness:
                     grid: [0.024390244, 0.089430894, 0.366666667, 0.731707317, 1.]
                     values: [0.00047, 0.00705, 0.00705, 0.00047, 0.]
                   width:
                     grid: [0.024390243902439025, 0.731707317, 1.]
-                    values: [0.9, 0.9, 0.1]
+                    values: [0.45, 0.45, 0.05]
+                - name: TE_reinforcement_SS
+                  material: glassUD
+                  side: suction
+                  start_nd_arc:
+                    fixed: TE
+                  thickness:
+                    grid: [0.024390244, 0.089430894, 0.366666667, 0.731707317, 1.]
+                    values: [0.00047, 0.00705, 0.00705, 0.00047, 0.]
+                  width:
+                    grid: [0.024390243902439025, 0.731707317, 1.]
+                    values: [0.45, 0.45, 0.05]
                 - name: TE_foam_PS
                   material: FOAM
                   thickness:
@@ -116,14 +128,14 @@ components:
                   start_nd_arc:
                     fixed: Spar_Cap_PS
                   end_nd_arc:
-                    fixed: TE_reinforcement
+                    fixed: TE_reinforcement_PS
                 - name: TE_foam_SS
                   material: FOAM
                   thickness:
                     grid: [0.024390244, 0.089430894, 0.111110569, 0.366666667, 0.4, 0.633333333, 0.666666667, 0.933333333]
                     values: [0.020, 0.020, 0.090, 0.090, 0.060, 0.060, 0.020, 0.020]
                   start_nd_arc:
-                    fixed: TE_reinforcement
+                    fixed: TE_reinforcement_SS
                   end_nd_arc:
                     fixed: Spar_Cap_SS
                 - name: LE_foam_PS

@@ -156,7 +156,7 @@ prob["rna_M"] = np.array([3963732.762, 896380.8464, -346781.682])
 
 # Use FD and run optimization
 prob.run_model()
-prob.model.list_outputs(values=True, units=True)
+prob.model.list_outputs(units=True)
 
 # Visualize with mayavi, which can be difficult to install
 if plot_flag:

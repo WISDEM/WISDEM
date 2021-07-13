@@ -297,6 +297,10 @@ properties:
                         type: boolean
                         default: False
                         description: Model the monopile base as a gravity-based foundation with no pile embedment
+                    n_refine:
+                        type: integer
+                        default: 3
+                        description: Number of Frame3DD element refinements for every specified section along tower/member
             BOS:
                 type: object
                 default: {}
@@ -313,6 +317,10 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run the floating design modules (FloatingSE)
+                    n_refine:
+                        type: integer
+                        default: 1
+                        description: Number of Frame3DD element refinements for every specified section along tower/member
                     frame3dd: *frame3dd
                     gamma_f: *gamma_f
                     gamma_m: *gamma_m
