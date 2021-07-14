@@ -1,8 +1,8 @@
 import copy
 
+import numpy as np
 from sortedcontainers import SortedDict
 
-import numpy as np
 import openmdao.api as om
 import wisdem.commonse.frustum as frustum
 import wisdem.commonse.utilities as util
@@ -655,7 +655,7 @@ class MemberComponent(om.ExplicitComponent):
         self.add_input("ring_stiffener_web_thickness", 0.0, units="m")
         self.add_input("ring_stiffener_flange_width", 1e-6, units="m")
         self.add_input("ring_stiffener_flange_thickness", 0.0, units="m")
-        self.add_input("ring_stiffener_spacing", 1.0)
+        self.add_input("ring_stiffener_spacing", 0.0)
 
         self.add_input("axial_stiffener_web_height", 0.0, units="m")
         self.add_input("axial_stiffener_web_thickness", 0.0, units="m")
@@ -1074,7 +1074,6 @@ class MemberComponent(om.ExplicitComponent):
         h_web = inputs["ring_stiffener_web_height"]
         w_flange = inputs["ring_stiffener_flange_width"]
         L_stiffener = inputs["ring_stiffener_spacing"]
-
 
         n_stiff = 0 if L_stiffener == 0.0 else int(np.floor(1 / L_stiffener))
         if n_stiff == 0:
