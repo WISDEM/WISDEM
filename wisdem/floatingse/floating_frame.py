@@ -82,6 +82,7 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_elem_Pz1", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_output("platform_elem_Pz2", NULL * np.ones(NELEM_MAX), units="N/m")
         self.add_output("platform_elem_qdyn", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_discrete_output("platform_elem_memid", [-1] * NELEM_MAX)
         self.add_output("platform_displacement", 0.0, units="m**3")
         self.add_output("platform_center_of_buoyancy", np.zeros(3), units="m")
         self.add_output("platform_center_of_mass", np.zeros(3), units="m")
@@ -99,13 +100,13 @@ class PlatformFrame(om.ExplicitComponent):
         self.node_mem2glob = {}
         # self.node_glob2mem = {}
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # This shouldn't change during an optimization, so save some time?
         if len(self.node_mem2glob) == 0:
             self.set_connectivity(inputs, outputs)
 
         self.set_node_props(inputs, outputs)
-        self.set_element_props(inputs, outputs)
+        self.set_element_props(inputs, outputs, discrete_inputs, discrete_outputs)
 
     def set_connectivity(self, inputs, outputs):
         # Load in number of members
@@ -180,7 +181,7 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_Fnode"] = NULL * np.ones((NNODES_MAX, 3))
         outputs["platform_Fnode"][:nnode, :] = Fnode
 
-    def set_element_props(self, inputs, outputs):
+    def set_element_props(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Load in number of members
         opt = self.options["options"]
         n_member = opt["floating"]["members"]["n_members"]
@@ -205,6 +206,7 @@ class PlatformFrame(om.ExplicitComponent):
         elem_Pz1 = np.array([])
         elem_Pz2 = np.array([])
         elem_qdyn = np.array([])
+        elem_memid = np.array([], dtype=np.int_)
 
         mass = 0.0
         m_ball = 0.0
@@ -234,6 +236,7 @@ class PlatformFrame(om.ExplicitComponent):
             elem_G = np.append(elem_G, inputs[f"member{k}:section_G"][:n])
             elem_sigy = np.append(elem_sigy, inputs[f"member{k}:section_sigma_y"][:n])
             elem_qdyn = np.append(elem_qdyn, inputs[f"member{k}:qdyn"][:n])
+            elem_memid = np.append(elem_memid, k * np.ones(n, dtype=np.int_))
 
             # The loads should come in with length n+1
             elem_Px1 = np.append(elem_Px1, inputs[f"member{k}:Px"][:n])
@@ -330,6 +333,7 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_elem_Pz1"][:nelem] = elem_Pz1
         outputs["platform_elem_Pz2"][:nelem] = elem_Pz2
         outputs["platform_elem_qdyn"][:nelem] = elem_qdyn
+        discrete_outputs["platform_elem_memid"] = elem_memid
 
         outputs["platform_mass"] = mass
         outputs["platform_ballast_mass"] = m_ball

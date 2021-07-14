@@ -1,7 +1,5 @@
 import copy
 
-from sortedcontainers import SortedDict
-
 import numpy as np
 import openmdao.api as om
 import wisdem.commonse.frustum as frustum
@@ -9,6 +7,7 @@ import wisdem.commonse.utilities as util
 import wisdem.commonse.manufacturing as manufacture
 import wisdem.commonse.cross_sections as cs
 from wisdem.commonse import eps, gravity
+from sortedcontainers import SortedDict
 from wisdem.commonse.wind_wave_drag import CylinderEnvironment
 from wisdem.commonse.utilization_constraints import GeometricConstraints
 
@@ -72,9 +71,6 @@ class DiscretizationYAML(om.ExplicitComponent):
     E_mat : numpy array[n_mat, 3], [Pa]
         2D array of the Youngs moduli of the materials. Each row represents a material,
         the three members represent E11, E22 and E33.
-    E_user : float, [Pa]
-        Override value for the Youngs modulus of the materials.
-        Used for DOE linearization studies within WEIS.
     G_mat : numpy array[n_mat, 3], [Pa]
         2D array of the shear moduli of the materials. Each row represents a material,
         the three members represent G12, G13 and G23.
@@ -264,6 +260,7 @@ class DiscretizationYAML(om.ExplicitComponent):
                 E_param[k, :] = inputs["E_user"]
             else:
                 E_param[k, :] = E[imat]
+
             G_param[k, :] = G[imat]
             sigy_param[k, :] = sigy[imat]
 
@@ -837,7 +834,15 @@ class MemberComponent(om.ExplicitComponent):
             for s in self.sections:
                 if s >= s_ghost1:
                     break
+                self.sections[s].D = 1e-2
+                self.sections[s].t = 1e-3
+                self.sections[s].A = 1e-2
+                self.sections[s].Asx = 1e-2
+                self.sections[s].Asy = 1e-2
                 self.sections[s].rho = 1e-2
+                self.sections[s].Ixx = 1e-2
+                self.sections[s].Iyy = 1e-2
+                self.sections[s].Izz = 1e-2
                 self.sections[s].E *= 1e2
                 self.sections[s].G *= 1e2
         if s_ghost2 < 1.0:
@@ -845,7 +850,15 @@ class MemberComponent(om.ExplicitComponent):
             for s in self.sections:
                 if s < s_ghost2 or s == 1.0:
                     continue
+                self.sections[s].D = 1e-2
+                self.sections[s].t = 1e-3
+                self.sections[s].A = 1e-2
+                self.sections[s].Asx = 1e-2
+                self.sections[s].Asy = 1e-2
                 self.sections[s].rho = 1e-2
+                self.sections[s].Ixx = 1e-2
+                self.sections[s].Iyy = 1e-2
+                self.sections[s].Izz = 1e-2
                 self.sections[s].E *= 1e2
                 self.sections[s].G *= 1e2
 
