@@ -1117,7 +1117,7 @@ class MemberComponent(om.ExplicitComponent):
         R_id_stiff = R_od_stiff - twall_stiff
 
         # Create some constraints for reasonable stiffener designs for an optimizer
-        outputs["flange_spacing_ratio"] = w_flange / (0.5 * L_stiffener)
+        outputs["flange_spacing_ratio"] = w_flange / (0.5 * L_stiffener * L)
         outputs["stiffener_radius_ratio"] = NULL * np.ones(MEMMAX)
         outputs["stiffener_radius_ratio"][:n_stiff] = (h_web + t_flange + twall_stiff) / R_od_stiff
         # "compactness" check on stiffener geometry (must be >= 1)
