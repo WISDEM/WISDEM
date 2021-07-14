@@ -634,7 +634,7 @@ properties:
                                                     type: object
                                                     description: Ring stiffener optimization of member group
                                                     properties:
-                                                        size:
+                                                        size: # currently not implemented as a DV in gc_PoseOptimization.py
                                                             type: object
                                                             description: Ring stiffener sizing multiplier on T-shape
                                                             properties:
@@ -651,22 +651,22 @@ properties:
                                                             type: object
                                                             description: Ring stiffener spacing along member axis
                                                             properties:
-                                                                lower_bound: &lboundm
+                                                                lower_bound:
                                                                     type: number
-                                                                    unit: m
+                                                                    unit: none 
                                                                     description: Design variable bound
                                                                     default: 0.0
                                                                     minimum: 0.0
-                                                                upper_bound: &uboundm
+                                                                upper_bound:
                                                                     type: number
-                                                                    unit: m
+                                                                    unit: none
                                                                     description: Design variable bound
                                                                     minimum: 0.0
                                                 longitudinal:
                                                     type: object
                                                     description: Longitudinal stiffener optimization of member group
                                                     properties:
-                                                        size:
+                                                        size: # currently not implemented as a DV in gc_PoseOptimization.py
                                                             type: object
                                                             description: Longitudinal stiffener sizing multiplier on T-shape
                                                             properties:
@@ -682,13 +682,13 @@ properties:
                                                                     description: Design variable bound
                                                                     default: 0.0
                                                                     minimum: 0.0
-                                                                    maximum: 1.5707963267948966 #180 deg
+                                                                    maximum: 3.141592653589793 #180 deg 
                                                                 upper_bound:
                                                                     type: number
                                                                     unit: rad
                                                                     description: Design variable bound
                                                                     minimum: 0.0
-                                                                    maximum: 1.5707963267948966 #180 deg
+                                                                    maximum: 3.141592653589793 #180 deg 
             mooring:
                 type: object
                 description: Design variables associated with the mooring system
@@ -699,8 +699,17 @@ properties:
                         default: {}
                         properties:
                             flag: *flag
-                            lower_bound: *lboundm
-                            upper_bound: *uboundm
+                            lower_bound: &lboundm
+                                type: number
+                                unit: m 
+                                description: Design variable bound
+                                default: 0.0
+                                minimum: 0.0
+                            upper_bound: &uboundm
+                                type: number
+                                unit: m
+                                description: Design variable bound
+                                minimum: 0.0
                     line_diameter:
                         type: object
                         default: {}

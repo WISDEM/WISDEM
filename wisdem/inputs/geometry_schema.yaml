@@ -1437,7 +1437,7 @@ properties:
                                             type: object
                                             required:
                                                 - material
-                                                - flange_height
+                                                - flange_thickness
                                                 - flange_width
                                                 - web_height
                                                 - web_thickness
@@ -1470,7 +1470,7 @@ properties:
                                             type: object
                                             required:
                                                 - material
-                                                - flange_height
+                                                - flange_thickness
                                                 - flange_width
                                                 - web_height
                                                 - web_thickness
