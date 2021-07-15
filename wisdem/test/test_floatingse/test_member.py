@@ -206,7 +206,7 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["ring_stiffener_flange_thickness"] = 0.3
         self.inputs["ring_stiffener_web_height"] = 0.5
         self.inputs["ring_stiffener_flange_width"] = 1.0
-        self.inputs["ring_stiffener_spacing"] = 20.0
+        self.inputs["ring_stiffener_spacing"] = 0.2 # non-dimensional ring stiffener spacing
 
         self.inputs["axial_stiffener_web_thickness"] = 0.0
         self.inputs["axial_stiffener_flange_thickness"] = 0.0
@@ -980,7 +980,7 @@ class TestGroup(unittest.TestCase):
         prob["ring_stiffener_flange_thickness"] = 0.3
         prob["ring_stiffener_web_height"] = 0.5
         prob["ring_stiffener_flange_width"] = 1.0
-        prob["ring_stiffener_spacing"] = 20.0
+        prob["ring_stiffener_spacing"] = 0.2 # non-dimensional ring stiffener spacing
 
         prob["axial_stiffener_web_thickness"] = 0.2
         prob["axial_stiffener_flange_thickness"] = 0.3
