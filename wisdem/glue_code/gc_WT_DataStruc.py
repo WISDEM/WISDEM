@@ -601,6 +601,24 @@ class Blade(om.Group):
             units="m",
             val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
         )
+        opt_var.add_output(
+            "s_opt_te_ss",
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]),
+        )
+        opt_var.add_output(
+            "s_opt_te_ps",
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]),
+        )
+        opt_var.add_output(
+            "te_ss_opt",
+            units="m",
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]),
+        )
+        opt_var.add_output(
+            "te_ps_opt",
+            units="m",
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]),
+        )
         self.add_subsystem("opt_var", opt_var)
 
         # Import outer shape BEM
@@ -675,6 +693,12 @@ class Blade(om.Group):
         self.connect("opt_var.s_opt_spar_cap_ss", "ps.s_opt_spar_cap_ss")
         self.connect("opt_var.spar_cap_ps_opt", "ps.spar_cap_ps_opt")
         self.connect("opt_var.s_opt_spar_cap_ps", "ps.s_opt_spar_cap_ps")
+
+        self.connect("opt_var.te_ss_opt", "ps.te_ss_opt")
+        self.connect("opt_var.s_opt_te_ss", "ps.s_opt_te_ss")
+        self.connect("opt_var.te_ps_opt", "ps.te_ps_opt")
+        self.connect("opt_var.s_opt_te_ps", "ps.s_opt_te_ps")
+
         self.connect("outer_shape_bem.s", "ps.s")
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
         self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
@@ -2138,7 +2162,7 @@ class Floating(om.Group):
             ivc.add_output("ring_stiffener_web_thickness", 0.0, units="m")
             ivc.add_output("ring_stiffener_flange_width", 0.0, units="m")
             ivc.add_output("ring_stiffener_flange_thickness", 0.0, units="m")
-            ivc.add_output("ring_stiffener_spacing", 0.0, units="m")
+            ivc.add_output("ring_stiffener_spacing", 0.0)
             ivc.add_output("axial_stiffener_web_height", 0.0, units="m")
             ivc.add_output("axial_stiffener_web_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_flange_width", 0.0, units="m")

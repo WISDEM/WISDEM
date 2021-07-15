@@ -6,7 +6,6 @@ More info at https://nlopt.readthedocs.io/
 
 
 import numpy as np
-
 import openmdao
 import openmdao.utils.coloring as coloring_mod
 from openmdao.core.driver import Driver, RecordingDebugging
@@ -415,6 +414,7 @@ class NLoptDriver(Driver):
             Value of the objective function evaluated at the new design point.
         """
         model = self._problem().model
+        f_new = 1e10
 
         try:
 

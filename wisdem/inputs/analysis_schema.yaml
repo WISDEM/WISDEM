@@ -177,10 +177,10 @@ properties:
                                 default: {}
                                 properties:
                                     flag: *flag
-                                    equal_to_suction:
+                                    equal_to_suction: &equalss
                                         type: boolean
                                         default: true
-                                        description: If the pressure side spar cap should be equal to the suction side spar cap
+                                        description: If the pressure side spar cap should be equal to the suction side layer
                                     n_opt:
                                         type: integer
                                         default: 8
@@ -211,6 +211,7 @@ properties:
                                 default: {}
                                 properties:
                                     flag: *flag
+                                    equal_to_suction: *equalss
                                     n_opt:
                                         type: integer
                                         default: 8
@@ -504,6 +505,34 @@ properties:
                                 unit: m
                                 description: Design variable bound
                             upper_bound: *sbound
+                    E:
+                        type: object
+                        default: {}
+                        description: Isotropic Young's modulus
+                        properties:
+                            flag: *flag
+                            lower_bound: &ebound
+                                type: number
+                                minimum: 1.
+                                maximum: 1.e12
+                                default: 200.e+009
+                                unit: Pa
+                                description: Design variable bound
+                            upper_bound: *ebound
+                    rho:
+                        type: object
+                        default: {}
+                        description: Material density of the tower
+                        properties:
+                            flag: *flag
+                            lower_bound: &rbound
+                                type: number
+                                minimum: 1.
+                                maximum: 1.e5
+                                default: 7800
+                                unit: kg/m**3
+                                description: Design variable bound
+                            upper_bound: *rbound
             monopile: *towdv
             floating:
                 type: object
@@ -605,7 +634,7 @@ properties:
                                                     type: object
                                                     description: Ring stiffener optimization of member group
                                                     properties:
-                                                        size:
+                                                        size: # currently not implemented as a DV in gc_PoseOptimization.py
                                                             type: object
                                                             description: Ring stiffener sizing multiplier on T-shape
                                                             properties:
@@ -622,22 +651,22 @@ properties:
                                                             type: object
                                                             description: Ring stiffener spacing along member axis
                                                             properties:
-                                                                lower_bound: &lboundm
+                                                                lower_bound:
                                                                     type: number
-                                                                    unit: m
+                                                                    unit: none
                                                                     description: Design variable bound
                                                                     default: 0.0
                                                                     minimum: 0.0
-                                                                upper_bound: &uboundm
+                                                                upper_bound:
                                                                     type: number
-                                                                    unit: m
+                                                                    unit: none
                                                                     description: Design variable bound
                                                                     minimum: 0.0
                                                 longitudinal:
                                                     type: object
                                                     description: Longitudinal stiffener optimization of member group
                                                     properties:
-                                                        size:
+                                                        size: # currently not implemented as a DV in gc_PoseOptimization.py
                                                             type: object
                                                             description: Longitudinal stiffener sizing multiplier on T-shape
                                                             properties:
@@ -653,13 +682,13 @@ properties:
                                                                     description: Design variable bound
                                                                     default: 0.0
                                                                     minimum: 0.0
-                                                                    maximum: 1.5707963267948966 #180 deg
+                                                                    maximum: 3.141592653589793 #180 deg
                                                                 upper_bound:
                                                                     type: number
                                                                     unit: rad
                                                                     description: Design variable bound
                                                                     minimum: 0.0
-                                                                    maximum: 1.5707963267948966 #180 deg
+                                                                    maximum: 3.141592653589793 #180 deg
             mooring:
                 type: object
                 description: Design variables associated with the mooring system
@@ -670,9 +699,32 @@ properties:
                         default: {}
                         properties:
                             flag: *flag
+                            lower_bound: &lboundm
+                                type: number
+                                unit: m
+                                description: Design variable bound
+                                default: 0.0
+                                minimum: 0.0
+                            upper_bound: &uboundm
+                                type: number
+                                unit: m
+                                description: Design variable bound
+                                minimum: 0.0
+                    line_diameter:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
                             lower_bound: *lboundm
                             upper_bound: *uboundm
-                    line_diameter:
+                    line_mass_density_coeff:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *lboundm
+                            upper_bound: *uboundm
+                    line_stiffness_coeff:
                         type: object
                         default: {}
                         properties:
@@ -708,6 +760,24 @@ properties:
                         type: object
                         default: {}
                         description: Enforce a maximum allowable strain in the pressure-side spar caps
+                        properties:
+                            flag: *flag
+                            max: *maxstrain
+                            index_start: *index_start
+                            index_end: *index_end
+                    strains_te_ss:
+                        type: object
+                        default: {}
+                        description: Enforce a maximum allowable strain in the suction-side trailing edge reinforcements
+                        properties:
+                            flag: *flag
+                            max: *maxstrain
+                            index_start: *index_start
+                            index_end: *index_end
+                    strains_te_ps:
+                        type: object
+                        default: {}
+                        description: Enforce a maximum allowable strain in the pressure-side trailing edge reinforcements
                         properties:
                             flag: *flag
                             max: *maxstrain
@@ -1262,3 +1332,7 @@ properties:
                 type: string
                 description: OpenMDAO recorder output SQL database file
                 default: log_opt.sql
+            just_dvs:
+                type: boolean
+                description: If true, only record design variables.
+                default: False

@@ -30,6 +30,7 @@ class TestStruct(unittest.TestCase):
         self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 0
         self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 0
         self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 3
+        self.modeling_options["WISDEM"]["TowerSE"]["n_refine"] = 3
         self.modeling_options["WISDEM"]["TowerSE"]["wind"] = "PowerWind"
         self.modeling_options["WISDEM"]["TowerSE"]["nLC"] = 1
 
@@ -89,7 +90,7 @@ class TestStruct(unittest.TestCase):
         self.inputs["G"] = 1e8 * np.ones(2)
         self.inputs["sigma_y"] = 1e8 * np.ones(2)
 
-        myobj = tow.TowerPreFrame(n_height=3, monopile=False)
+        myobj = tow.TowerPreFrame(n_height=3, n_refine=3, monopile=False)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs["kidx"], np.array([0]))
@@ -146,7 +147,7 @@ class TestStruct(unittest.TestCase):
         self.inputs["k_soil"] = (20.0 + np.arange(6))[np.newaxis, :] * np.ones((2, 6))
         self.inputs["z_soil"] = np.r_[-30.0, 0.0]
 
-        myobj = tow.TowerPreFrame(n_height=5, monopile=True, soil_springs=False)
+        myobj = tow.TowerPreFrame(n_height=5, n_refine=3, monopile=True, soil_springs=False)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs["kidx"], np.arange(4))
@@ -203,7 +204,7 @@ class TestStruct(unittest.TestCase):
         self.inputs["k_soil"] = (20.0 + np.arange(6))[np.newaxis, :] * np.ones((2, 6))
         self.inputs["z_soil"] = np.r_[-30.0, 0.0]
 
-        myobj = tow.TowerPreFrame(n_height=5, monopile=True, soil_springs=True)
+        myobj = tow.TowerPreFrame(n_height=5, n_refine=3, monopile=True, soil_springs=True)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs["kidx"], np.arange(4))
@@ -261,7 +262,7 @@ class TestStruct(unittest.TestCase):
         self.inputs["k_soil"] = (20.0 + np.arange(6))[np.newaxis, :] * np.ones((2, 6))
         self.inputs["z_soil"] = np.r_[-30.0, 0.0]
 
-        myobj = tow.TowerPreFrame(n_height=5, monopile=True, gravity_foundation=True)
+        myobj = tow.TowerPreFrame(n_height=5, n_refine=3, monopile=True, gravity_foundation=True)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs["kidx"], np.array([0]))
