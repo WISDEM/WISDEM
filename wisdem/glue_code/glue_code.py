@@ -578,9 +578,15 @@ class InverseDesign(om.ExplicitComponent):
             item = opt_options["inverse_design"][key]
             short_name = item["name"].split(".")[-1] + f"_{item['idx']}"
 
+            if "units" in item:
+                units = item["units"]
+            else:
+                units = None
+
             self.add_input(
                 short_name,
                 val=0.0,
+                units=units,
             )
         self.add_output(
             "objective",
