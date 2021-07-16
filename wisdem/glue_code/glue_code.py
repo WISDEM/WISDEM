@@ -570,16 +570,33 @@ class WT_RNTA(om.Group):
 
 
 class InverseDesign(om.ExplicitComponent):
+    """
+    Component that takes in an arbitrary set of user-defined inputs and computes
+    the root-mean-square (RMS) difference between the values in the model and
+    a set of reference values.
+
+    This is useful for inverse design problems where we are trying to design a
+    wind turbine system that has a certain set of properties. Specifically, we
+    might be trying to match performance values from a report by allowing the
+    optimizer to select the design variable values that most closely produce a
+    system that has those properties.
+
+    """
+
     def initialize(self):
         self.options.declare("opt_options")
 
     def setup(self):
         opt_options = self.options["opt_options"]
 
+        # Loop through all of the keys in the inverse_design definition
         for key in opt_options["inverse_design"]:
             item = opt_options["inverse_design"][key]
+
+            # Grab the short name for each parameter to match
             short_name = item["name"].split(".")[-1] + f"_{item['idx']}"
 
+            # Only apply units if they're provided by the user
             if "units" in item:
                 units = item["units"]
             else:
@@ -590,6 +607,8 @@ class InverseDesign(om.ExplicitComponent):
                 val=0.0,
                 units=units,
             )
+
+        # Create a singular output called objective
         self.add_output(
             "objective",
             val=0.0,
@@ -599,12 +618,20 @@ class InverseDesign(om.ExplicitComponent):
         opt_options = self.options["opt_options"]
 
         total = 0.0
+        # Loop through each key
         for key in opt_options["inverse_design"]:
             item = opt_options["inverse_design"][key]
             short_name = item["name"].split(".")[-1] + f"_{item['idx']}"
+
+            # Grab the reference value provided by the user
             ref_value = item["ref_value"]
+
+            # Compute the mean square difference between the parameter
+            # value outputted from the model and the reference value. Sum this
+            # to `total` to get the total across all parameters
             total += ((inputs[short_name] - ref_value) / ref_value) ** 2
 
+        # Take the square root of the total
         rms_total = np.sqrt(total)
         outputs["objective"] = rms_total
 
