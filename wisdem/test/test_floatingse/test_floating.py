@@ -85,7 +85,7 @@ class TestOC3Mass(unittest.TestCase):
         prob["member0.ring_stiffener_web_thickness"] = 0.04
         prob["member0.ring_stiffener_flange_width"] = 0.10
         prob["member0.ring_stiffener_flange_thickness"] = 0.02
-        prob["member0.ring_stiffener_spacing"] = 2.15
+        prob["member0.ring_stiffener_spacing"] = 0.016538462 # non-dimensional ring stiffener spacing
 
         # Mooring parameters
         prob["line_diameter"] = 0.09  # Diameter of mooring line/chain [m]

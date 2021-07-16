@@ -2161,7 +2161,7 @@ class Floating(om.Group):
             ivc.add_output("ring_stiffener_web_thickness", 0.0, units="m")
             ivc.add_output("ring_stiffener_flange_width", 0.0, units="m")
             ivc.add_output("ring_stiffener_flange_thickness", 0.0, units="m")
-            ivc.add_output("ring_stiffener_spacing", 0.0, units="m")
+            ivc.add_output("ring_stiffener_spacing", 0.0)
             ivc.add_output("axial_stiffener_web_height", 0.0, units="m")
             ivc.add_output("axial_stiffener_web_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_flange_width", 0.0, units="m")

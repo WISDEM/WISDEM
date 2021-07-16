@@ -90,7 +90,7 @@ class DiscretizationYAML(om.ExplicitComponent):
     Returns
     -------
     height : float, [m]
-        Scalar of the member height computed along the z axis.
+        Scalar of the member height computed along the local z axis.
     section_height : numpy array[n_height-1], [m]
         parameterized section heights along cylinder
     outer_diameter : numpy array[n_height], [m]
@@ -498,8 +498,8 @@ class MemberComponent(om.ExplicitComponent):
         height of stiffener flange (top of T)
     ring_stiffener_flange_thickness : float, [m]
         thickness of stiffener flange (top of T)
-    ring_stiffener_spacing : float, [m]
-        Axial distance from one ring stiffener to another
+    ring_stiffener_spacing : float
+        non-dimensional distance from one ring stiffener to another
     axial_stiffener_web_height : float, [m]
         height of stiffener web (base of T)
     axial_stiffener_web_thickness : float, [m]
@@ -652,7 +652,7 @@ class MemberComponent(om.ExplicitComponent):
         self.add_input("ring_stiffener_web_thickness", 0.0, units="m")
         self.add_input("ring_stiffener_flange_width", 1e-6, units="m")
         self.add_input("ring_stiffener_flange_thickness", 0.0, units="m")
-        self.add_input("ring_stiffener_spacing", 1000.0, units="m")
+        self.add_input("ring_stiffener_spacing", 0.0)
 
         self.add_input("axial_stiffener_web_height", 0.0, units="m")
         self.add_input("axial_stiffener_web_thickness", 0.0, units="m")
@@ -1088,14 +1088,14 @@ class MemberComponent(om.ExplicitComponent):
         w_flange = inputs["ring_stiffener_flange_width"]
         L_stiffener = inputs["ring_stiffener_spacing"]
 
-        n_stiff = 0 if L_stiffener == 0.0 else int(np.floor(L / L_stiffener))
+        n_stiff = 0 if L_stiffener == 0.0 else int(np.floor(1 / L_stiffener))
         if n_stiff == 0:
             return
 
         web_frac = t_web / w_flange
 
         # Calculate stiffener spots along the member axis and deconflict with bulkheads
-        s_stiff = (np.arange(1, n_stiff + 0.1) - 0.5) * (L_stiffener / L)
+        s_stiff = (np.arange(1, n_stiff + 0.1) - 0.5) * (L_stiffener)
 
         # Make sure we are not working in ghost regions
         s_stiff = s_stiff[s_stiff > s_ghost1]
@@ -1129,7 +1129,7 @@ class MemberComponent(om.ExplicitComponent):
         R_id_stiff = R_od_stiff - twall_stiff
 
         # Create some constraints for reasonable stiffener designs for an optimizer
-        outputs["flange_spacing_ratio"] = w_flange / (0.5 * L_stiffener)
+        outputs["flange_spacing_ratio"] = w_flange / (0.5 * L_stiffener * L)
         outputs["stiffener_radius_ratio"] = NULL * np.ones(MEMMAX)
         outputs["stiffener_radius_ratio"][:n_stiff] = (h_web + t_flange + twall_stiff) / R_od_stiff
         # "compactness" check on stiffener geometry (must be >= 1)

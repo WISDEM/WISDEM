@@ -1437,7 +1437,7 @@ properties:
                                             type: object
                                             required:
                                                 - material
-                                                - flange_height
+                                                - flange_thickness
                                                 - flange_width
                                                 - web_height
                                                 - web_thickness
@@ -1461,16 +1461,16 @@ properties:
                                                     unit: m
                                                     minimum: 0
                                                 spacing:
-                                                    description: Spacing between stiffeners in non-dimensional grid coordinates. Value of 1.0 means no stiffeners
+                                                    description: Spacing between stiffeners in non-dimensional grid coordinates. Value of 0.0 means no stiffeners
                                                     unit: none
-                                                    minimum: 0.01
+                                                    minimum: 0.0
                                                     maximum: 1.0
-                                                    default: 1.0
+                                                    default: 0.0
                                         longitudinal_stiffeners:
                                             type: object
                                             required:
                                                 - material
-                                                - flange_height
+                                                - flange_thickness
                                                 - flange_width
                                                 - web_height
                                                 - web_thickness
@@ -1482,10 +1482,10 @@ properties:
                                                 web_height: *stiff_wh
                                                 web_thickness: *stiff_wt
                                                 spacing:
-                                                    description: Spacing between stiffeners in angle (radians). Value of 2*pi means no stiffeners
+                                                    description: Spacing between stiffeners in angle (radians). Value of 0.0 means no stiffeners
                                                     unit: radians
                                                     default: 1.5707963267948966 # 90 deg
-                                                    minimum: 0.08726646259971647 # 5 deg
+                                                    minimum: 0.0
                                                     maximum: 6.283185307179586 # 360 deg
                                         bulkhead:
                                             type: object

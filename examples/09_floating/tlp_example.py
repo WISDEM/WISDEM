@@ -81,7 +81,7 @@ prob["member0.ring_stiffener_web_height"] = 0.10
 prob["member0.ring_stiffener_web_thickness"] = 0.04
 prob["member0.ring_stiffener_flange_width"] = 0.10
 prob["member0.ring_stiffener_flange_thickness"] = 0.02
-prob["member0.ring_stiffener_spacing"] = 2.15
+prob["member0.ring_stiffener_spacing"] = 0.044791667 # non-dimensional ring stiffener spacing
 
 # Now do the legs
 angs = np.linspace(0, 2 * np.pi, 1 + opt["mooring"]["n_attach"])
@@ -101,7 +101,7 @@ for k in range(1, 4):
     prob["member" + str(k) + ".ring_stiffener_web_thickness"] = 0.04
     prob["member" + str(k) + ".ring_stiffener_flange_width"] = 0.10
     prob["member" + str(k) + ".ring_stiffener_flange_thickness"] = 0.02
-    prob["member" + str(k) + ".ring_stiffener_spacing"] = 2.0
+    prob["member" + str(k) + ".ring_stiffener_spacing"] = 0.06666667 # non-dimensional ring stiffener spacing
 
 # Mooring parameters: Nylon
 prob["line_diameter"] = 0.5  # Diameter of mooring line/chain [m]
