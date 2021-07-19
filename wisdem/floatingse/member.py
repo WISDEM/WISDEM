@@ -71,6 +71,8 @@ class DiscretizationYAML(om.ExplicitComponent):
     E_mat : numpy array[n_mat, 3], [Pa]
         2D array of the Youngs moduli of the materials. Each row represents a material,
         the three members represent E11, E22 and E33.
+    E_user : float, [Pa]
+        Override value for the Youngs modulus of the materials. Used for DOE linearization studies within WEIS.
     G_mat : numpy array[n_mat, 3], [Pa]
         2D array of the shear moduli of the materials. Each row represents a material,
         the three members represent G12, G13 and G23.
