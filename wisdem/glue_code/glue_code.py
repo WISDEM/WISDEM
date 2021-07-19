@@ -632,7 +632,7 @@ class InverseDesign(om.ExplicitComponent):
             # Compute the mean square difference between the parameter
             # value outputted from the model and the reference value. Sum this
             # to `total` to get the total across all parameters
-            total += ((inputs[short_name] - ref_value) / ref_value) ** 2
+            total += np.sum(((inputs[short_name] - ref_value) / (np.abs(ref_value) + 1.0)) ** 2)
 
         # Take the square root of the total
         rms_total = np.sqrt(total)

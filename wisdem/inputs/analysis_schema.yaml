@@ -1181,7 +1181,7 @@ properties:
               - indices
             properties:
                 ref_value:
-                    type: [number, enum]
+                    type: [number, array]
                 indices:
                     type: array
                     default: [0]

@@ -37,8 +37,8 @@ inverse_design:
         ref_value: 4.5e5
         units: kg
     floatingse.system_structural_center_of_mass:
-        ref_value: -60.
-        indices: [2]
+        ref_value: [0., -60.]
+        indices: [1, 2]
         units: m
 
 driver:
