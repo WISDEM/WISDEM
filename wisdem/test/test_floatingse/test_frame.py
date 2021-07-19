@@ -152,7 +152,7 @@ class TestPlatform(unittest.TestCase):
         myobj = frame.PlatformFrame(options=self.opt)
         myobj.node_mem2glob = {}
         myobj.node_glob2mem = {}
-        myobj.compute(self.inputs, self.outputs)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         # Check NULLs and implied number of nodes / elements
         npt.assert_equal(self.outputs["platform_nodes"][4:, :], NULL)
@@ -255,7 +255,7 @@ class TestPlatform(unittest.TestCase):
         myobj = frame.PlatformFrame(options=self.opt)
         myobj.node_mem2glob = {}
         myobj.node_glob2mem = {}
-        myobj.compute(self.inputs, self.outputs)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         for k in self.outputs:
             self.inputs[k] = self.outputs[k]
         for k in self.discrete_outputs:
@@ -349,7 +349,7 @@ class TestPlatform(unittest.TestCase):
         myobj = frame.PlatformFrame(options=self.opt)
         myobj.node_mem2glob = {}
         myobj.node_glob2mem = {}
-        myobj.compute(self.inputs, self.outputs)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         for k in self.outputs:
             self.inputs[k] = self.outputs[k]
         for k in self.discrete_outputs:

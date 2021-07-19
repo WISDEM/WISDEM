@@ -1,5 +1,6 @@
-import numpy as np
 from math import gamma
+
+import numpy as np
 import openmdao.api as om
 
 # ---------------------
@@ -76,6 +77,10 @@ class WeibullWithMeanCDF(CDFBase):
         J["F", "xbar"] = dxbar
 
 
+def RayleighCDF_func(x, xbar=10.0):
+    return 1.0 - np.exp(-np.pi / 4.0 * (x / xbar) ** 2)
+
+
 class RayleighCDF(CDFBase):
     def setup(self):
         super(RayleighCDF, self).setup()
@@ -88,7 +93,7 @@ class RayleighCDF(CDFBase):
 
     def compute(self, inputs, outputs):
 
-        outputs["F"] = 1.0 - np.exp(-np.pi / 4.0 * (inputs["x"] / inputs["xbar"]) ** 2)
+        outputs["F"] = RayleighCDF_func(inputs["x"], inputs["xbar"])
 
     def compute_partials(self, inputs, J):
 

@@ -318,6 +318,18 @@ components:
               location: [0.0, 0.0, 10.0]
               transition: True
 
+            - name: fairlead1
+              location: [5.2, 0.0, -70.0]
+              cylindrical: True
+
+            - name: fairlead2
+              location: [5.2, 2.0943951023931953, -70.0] # 120deg
+              cylindrical: True
+
+            - name: fairlead3
+              location: [5.2, 4.1887902047863905, -70.0] # 240deg
+              cylindrical: True
+
             - name: anchor1
               location: [853.87, 0.0, -320.0]
               cylindrical: True
@@ -360,8 +372,36 @@ components:
                       grid: [0.4, 1.0]
 
               axial_joints:
-                - name: fairlead
+                - name: fairlead_attach
                   grid: 0.38462 # Should be -70m
+
+            - name: fairlead_leg1
+              joint1: fairlead1
+              joint2: fairlead_attach
+              outer_shape: &fair_out
+                shape: circular
+                outer_diameter:
+                    grid: [0.0, 1.0]
+                    values: [1.0, 1.0]
+              internal_structure: &fair_in
+                layers:
+                    - name: fairlead_twall
+                      material: steel
+                      thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.1, 0.1]
+
+            - name: fairlead_leg2
+              joint1: fairlead2
+              joint2: fairlead_attach
+              outer_shape: *fair_out
+              internal_structure: *fair_in
+
+            - name: fairlead_leg3
+              joint1: fairlead3
+              joint2: fairlead_attach
+              outer_shape: *fair_out
+              internal_structure: *fair_in
 
     mooring:
         nodes:
@@ -382,17 +422,17 @@ components:
 
             - name: line1_vessel
               node_type: vessel
-              joint: fairlead
+              joint: fairlead1
               fairlead_type: rigid
 
             - name: line2_vessel
               node_type: vessel
-              joint: fairlead
+              joint: fairlead2
               fairlead_type: rigid
 
             - name: line3_vessel
               node_type: vessel
-              joint: fairlead
+              joint: fairlead3
               fairlead_type: rigid
 
         lines:

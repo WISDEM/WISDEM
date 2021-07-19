@@ -4,7 +4,6 @@
 import numpy as np
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 
-
 # 0 ------- node data ----------------
 inode = np.array([1, 2, 3, 4, 5])
 x = np.array([0.0, -1200, 1200, 1200, -1200])
@@ -262,5 +261,5 @@ for iM in range(nM):
 # 11 ------------------------------------
 
 # 12 ------------------------------------
-frame.write("pyramid_frame_B.3dd")
+# frame.write("pyramid_frame_B.3dd")
 # 12 ------------------------------------
