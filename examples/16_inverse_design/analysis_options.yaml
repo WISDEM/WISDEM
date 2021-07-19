@@ -30,18 +30,15 @@ design_variables:
 merit_figure: inverse_design
 
 inverse_design:
-    val0:
-        name: floatingse.platform_mass
+    floatingse.platform_mass:
         ref_value: 6.e6
         units: kg
-    val1:
-        name: floatingse.mooring_mass
+    floatingse.mooring_mass:
         ref_value: 4.5e5
         units: kg
-    val2:
-        name: floatingse.system_structural_center_of_mass
+    floatingse.system_structural_center_of_mass:
         ref_value: -60.
-        idx: 2
+        indices: [2]
         units: m
 
 driver:

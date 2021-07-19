@@ -1176,18 +1176,15 @@ properties:
         additionalProperties:
             type: object
             required:
-              - name
               - ref_value
             optional:
-              - idx
+              - indices
             properties:
-                name:
-                    type: string
                 ref_value:
-                    type: number
-                idx:
-                    type: integer
-                    default: 0
+                    type: [number, enum]
+                indices:
+                    type: array
+                    default: [0]
 
 
     driver:

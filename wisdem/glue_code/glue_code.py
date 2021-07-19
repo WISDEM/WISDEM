@@ -561,12 +561,10 @@ class WT_RNTA(om.Group):
         if opt_options["inverse_design"]:
             self.add_subsystem("inverse_design", InverseDesign(opt_options=opt_options))
 
-            for key in opt_options["inverse_design"]:
-                item = opt_options["inverse_design"][key]
-                name = item["name"]
-                idx = item["idx"]
-                short_name = name.split(".")[-1] + f"_{idx}"
-                self.connect(name, f"inverse_design.{short_name}", src_indices=[idx])
+            for name in opt_options["inverse_design"]:
+                indices = opt_options["inverse_design"][name]["indices"]
+                short_name = name.replace(".", "_")
+                self.connect(name, f"inverse_design.{short_name}", src_indices=indices)
 
 
 class InverseDesign(om.ExplicitComponent):
@@ -590,11 +588,13 @@ class InverseDesign(om.ExplicitComponent):
         opt_options = self.options["opt_options"]
 
         # Loop through all of the keys in the inverse_design definition
-        for key in opt_options["inverse_design"]:
-            item = opt_options["inverse_design"][key]
+        for name in opt_options["inverse_design"]:
+            item = opt_options["inverse_design"][name]
+
+            indices = item["indices"]
 
             # Grab the short name for each parameter to match
-            short_name = item["name"].split(".")[-1] + f"_{item['idx']}"
+            short_name = name.replace(".", "_")
 
             # Only apply units if they're provided by the user
             if "units" in item:
@@ -604,7 +604,7 @@ class InverseDesign(om.ExplicitComponent):
 
             self.add_input(
                 short_name,
-                val=0.0,
+                val=np.zeros(len(indices)),
                 units=units,
             )
 
@@ -618,10 +618,13 @@ class InverseDesign(om.ExplicitComponent):
         opt_options = self.options["opt_options"]
 
         total = 0.0
-        # Loop through each key
-        for key in opt_options["inverse_design"]:
-            item = opt_options["inverse_design"][key]
-            short_name = item["name"].split(".")[-1] + f"_{item['idx']}"
+        # Loop through all of the keys in the inverse_design definition
+        for name in opt_options["inverse_design"]:
+
+            item = opt_options["inverse_design"][name]
+
+            # Grab the short name for each parameter to match
+            short_name = name.replace(".", "_")
 
             # Grab the reference value provided by the user
             ref_value = item["ref_value"]
