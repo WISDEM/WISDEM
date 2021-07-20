@@ -1179,13 +1179,15 @@ properties:
               - ref_value
             optional:
               - indices
+              - units
             properties:
                 ref_value:
                     type: [number, array]
                 indices:
                     type: array
                     default: [0]
-
+                units:
+                    type: string
 
     driver:
         type: object
