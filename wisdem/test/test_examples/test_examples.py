@@ -49,6 +49,7 @@ all_scripts = [
     "13_design_of_experiments/doe_driver",
     "14_overridden_values/driver",
     "15_step_size_study/driver",
+    "16_inverse_design/inverse_spar_design",
 ]
 
 

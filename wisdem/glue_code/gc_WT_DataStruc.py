@@ -2128,6 +2128,8 @@ class Floating(om.Group):
         jivc = self.add_subsystem("joints", om.IndepVarComp(), promotes=["*"])
         jivc.add_output("location_in", val=np.zeros((n_joints, 3)), units="m")
         jivc.add_output("transition_node", val=np.zeros(3), units="m")
+        jivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
+        jivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
 
         # Additions for optimizing individual nodes or multiple nodes concurrently
         self.add_subsystem("nodedv", NodeDVs(options=floating_init_options["joints"]), promotes=["*"])
