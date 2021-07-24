@@ -682,6 +682,8 @@ class PlatformTowerFrame(om.ExplicitComponent):
 
             # Compute I aligned with member
             h_k = ds * np.sqrt(np.sum(vec_k ** 2))
+            if h_k == 0.0:
+                continue
             r_k = np.sqrt(V_variable_member[k] / h_k / np.pi)
             I_k = (
                 m_variable_member[k] * np.r_[(3 * r_k ** 2 + h_k ** 2) / 12.0 * np.ones(2), 0.5 * r_k ** 2, np.ones(3)]
