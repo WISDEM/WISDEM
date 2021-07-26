@@ -1,8 +1,9 @@
 import os
 
 import numpy as np
-import openmdao.api as om
 from scipy.interpolate import PchipInterpolator
+
+import openmdao.api as om
 
 
 class PoseOptimization(object):
