@@ -690,6 +690,8 @@ components:
               joint2: col3_lower_pontoon
               outer_shape: *pontlow_out
               internal_structure: *pontlow_int
+        transition_piece_mass: 100.e3
+        transition_piece_cost: 300.e3
     mooring:
         nodes:
             - name: line1_anchor

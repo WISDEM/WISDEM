@@ -653,7 +653,7 @@ properties:
                                                             properties:
                                                                 lower_bound:
                                                                     type: number
-                                                                    unit: none 
+                                                                    unit: none
                                                                     description: Design variable bound
                                                                     default: 0.0
                                                                     minimum: 0.0
@@ -682,13 +682,13 @@ properties:
                                                                     description: Design variable bound
                                                                     default: 0.0
                                                                     minimum: 0.0
-                                                                    maximum: 3.141592653589793 #180 deg 
+                                                                    maximum: 3.141592653589793 #180 deg
                                                                 upper_bound:
                                                                     type: number
                                                                     unit: rad
                                                                     description: Design variable bound
                                                                     minimum: 0.0
-                                                                    maximum: 3.141592653589793 #180 deg 
+                                                                    maximum: 3.141592653589793 #180 deg
             mooring:
                 type: object
                 description: Design variables associated with the mooring system
@@ -701,7 +701,7 @@ properties:
                             flag: *flag
                             lower_bound: &lboundm
                                 type: number
-                                unit: m 
+                                unit: m
                                 description: Design variable bound
                                 default: 0.0
                                 minimum: 0.0
@@ -1167,8 +1167,28 @@ properties:
 
     merit_figure:
         type: string
-        description: Objective function / merit figure for optimization (not checked via schema, but in python).  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation
+        description: Objective function / merit figure for optimization (not checked via schema, but in python).  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation, platform_mass- floating platform mass without ballast, inverse_design- custom inverse design used to match reference values of any arbitrary output
         default: LCOE
+
+    inverse_design:
+        type: object
+        description: For use with the inverse_design merit_figure. Specifies the reference output variable's 'prom_name' name and the desired value, accepts multiple variables. A normalized difference between the actual value and reference value is calculated for each variable. A Root Mean Square (RMS) is calculated with all variables and the optimizer minimizes the RMS. If the refernce output variable is an array, specify the element index number via "idx".
+        default: {}
+        additionalProperties:
+            type: object
+            required:
+              - ref_value
+            optional:
+              - indices
+              - units
+            properties:
+                ref_value:
+                    type: [number, array]
+                indices:
+                    type: array
+                    default: [0]
+                units:
+                    type: string
 
     driver:
         type: object

@@ -146,6 +146,7 @@ class TestPlatform(unittest.TestCase):
         self.inputs["rna_F"] = np.array([1e2, 1e1, 0.0])
         self.inputs["rna_M"] = np.array([2e1, 2e2, 0.0])
         self.inputs["transition_piece_mass"] = 1e3
+        self.inputs["transition_piece_cost"] = 3e3
         self.inputs["rho_water"] = 1e3
 
     def testTetrahedron(self):
@@ -222,16 +223,18 @@ class TestPlatform(unittest.TestCase):
 
         npt.assert_equal(self.outputs["platform_center_of_buoyancy"], centroid)
         npt.assert_equal(self.outputs["platform_centroid"], centroid)
-        npt.assert_equal(self.outputs["platform_center_of_mass"], centroid)
-        self.assertEqual(self.outputs["platform_mass"], 6e3)
+        cg = (6e3 * centroid + 1e3 * np.array([0.0, 0.0, 1.0])) / 7e3
+        npt.assert_equal(self.outputs["platform_hull_center_of_mass"], cg)
+        self.assertEqual(self.outputs["platform_mass"], 6e3 + 1e3)
         self.assertEqual(self.outputs["platform_ballast_mass"], 6e2)
-        self.assertEqual(self.outputs["platform_hull_mass"], 6e3 - 6e2)
-        self.assertEqual(self.outputs["platform_cost"], 6 * 2e3)
+        self.assertEqual(self.outputs["platform_hull_mass"], 6e3 + 1e3 - 6e2)
+        self.assertEqual(self.outputs["platform_cost"], 6 * 2e3 + 3e3)
         self.assertEqual(self.outputs["platform_Awater"], 30)
         self.assertEqual(self.outputs["platform_Iwater"], 6 * 15 + 5 * R.sum())
         npt.assert_equal(self.outputs["platform_added_mass"], 6 * np.arange(6))
         npt.assert_equal(self.outputs["platform_variable_capacity"], 10 + np.arange(6))
-        npt.assert_array_less(1e2, self.outputs["platform_I_total"])
+        npt.assert_equal(self.outputs["transition_piece_I"], 1e3 * 0.25 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
+        npt.assert_array_less(1e2, self.outputs["platform_I_hull"] - self.outputs["transition_piece_I"])
         # Should find a transition mode even though one wasn't set
         # npt.assert_equal(self.outputs["transition_node"], [0.0, 0.0, 1.0])
 
@@ -343,7 +346,7 @@ class TestPlatform(unittest.TestCase):
             )
             / self.outputs["system_mass"],
         )
-        npt.assert_equal(self.outputs["transition_piece_I"], 1e3 * 0.25 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
+        npt.assert_array_less(self.outputs["platform_I_hull"], self.outputs["platform_I_total"])
 
     def testRunFrame(self):
         myobj = frame.PlatformFrame(options=self.opt)

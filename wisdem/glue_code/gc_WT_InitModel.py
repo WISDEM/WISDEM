@@ -922,7 +922,8 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     else:
         itrans = modeling_options["floating"]["transition_joint"]
     wt_opt["floating.transition_node"] = wt_opt["floating.location_in"][itrans, :]
-
+    wt_opt["floating.transition_piece_mass"] = floating["transition_piece_mass"]
+    wt_opt["floating.transition_piece_cost"] = floating["transition_piece_cost"]
     # Make sure IVCs are initialized too
     for k, linked_node_dict in enumerate(modeling_options["floating"]["joints"]["design_variable_data"]):
         idx = linked_node_dict["indices"]
@@ -1139,7 +1140,7 @@ def assign_environment_values(wt_opt, environment, offshore, blade_flag):
     wt_opt["env.G_soil"] = environment["soil_shear_modulus"]
     wt_opt["env.nu_soil"] = environment["soil_poisson"]
     if blade_flag:
-        wt_opt['rotorse.wt_class.V_mean_overwrite'] = environment['V_mean']
+        wt_opt["rotorse.wt_class.V_mean_overwrite"] = environment["V_mean"]
 
     return wt_opt
 

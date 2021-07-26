@@ -1239,6 +1239,8 @@ properties:
                     - members
                 optional:
                     - rigid_bodies
+                    - transition_piece_mass
+                    - transition_piece_cost
                 properties:
                     joints:
                         type: array
@@ -1613,6 +1615,18 @@ properties:
                                 Ca: *ca
                                 Cp: *cp
                                 Cd: *cd
+                    transition_piece_mass:
+                        type: number
+                        description: Total mass of transition piece
+                        unit: kg
+                        minimum: 0.0
+                        default: 0.0
+                    transition_piece_cost:
+                        type: number
+                        description: Total cost of transition piece
+                        unit: USD
+                        minimum: 0.0
+                        default: 0.0
             mooring:
                 # Will insert mooring schema that we agreed to here or will keep as separate file
                 description: Ontology definition for mooring systems suitable for use with the WEIS co-design analysis tool
