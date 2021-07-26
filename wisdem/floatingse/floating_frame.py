@@ -294,7 +294,7 @@ class PlatformFrame(om.ExplicitComponent):
 
         # With CG known, loop back through to compute platform I
         unit_z = np.array([0.0, 0.0, 1.0])
-        I_total = np.zeros((3, 3))
+        I_hull = np.zeros((3, 3))
         for k in range(n_member):
             xyz_k = inputs[f"member{k}:nodes_xyz"]
             inodes = np.where(xyz_k[:, 0] == NULL)[0][0]
@@ -313,11 +313,11 @@ class PlatformFrame(om.ExplicitComponent):
             I_k_rot = T @ I_k @ T.T
 
             # Now do parallel axis theorem
-            I_total += np.array(I_k_rot) + imass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+            I_hull += np.array(I_k_rot) + imass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
 
         # Add in transition piece
         R = cg_plat - cg_trans
-        I_total += I_trans + m_trans * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        I_hull += I_trans + m_trans * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
 
         # Store outputs
         nelem = elem_A.size
@@ -369,7 +369,7 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_displacement"] = volume
         outputs["platform_hull_center_of_mass"] = cg_plat
         outputs["platform_center_of_buoyancy"] = cb_plat
-        outputs["platform_I_hull"] = util.unassembleI(I_total)
+        outputs["platform_I_hull"] = util.unassembleI(I_hull)
         outputs["platform_Awater"] = Awater
         outputs["platform_Iwater"] = Iwater
         outputs["platform_added_mass"] = m_added
