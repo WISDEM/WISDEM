@@ -136,7 +136,7 @@ class PlatformFrame(om.ExplicitComponent):
             nodes_temp = np.append(nodes_temp, inode_xyz, axis=0)
 
         # Reveal connectivity by using mapping to unique node positions
-        nodes, idx, inv = np.unique(nodes_temp.round(6), axis=0, return_index=True, return_inverse=True)
+        nodes, idx, inv = np.unique(nodes_temp.round(8), axis=0, return_index=True, return_inverse=True)
         nnode = nodes.shape[0]
         outputs["platform_nodes"] = NULL * np.ones((NNODES_MAX, 3))
         outputs["platform_nodes"][:nnode, :] = nodes
