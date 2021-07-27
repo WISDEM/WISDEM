@@ -940,7 +940,7 @@ class FrameAnalysis(om.ExplicitComponent):
 
             # trapezoidally distributed loads
             xx1 = xy1 = xz1 = np.zeros(ielem.size)
-            xx2 = xy2 = xz2 = L - 1e-6  # subtract small number b.c. of precision
+            xx2 = xy2 = xz2 = 0.99 * L  # multiply slightly less than unity b.c. of precision
             wx1 = inputs[f"{frame}_elem_Px1"][:nelem]
             wx2 = inputs[f"{frame}_elem_Px2"][:nelem]
             wy1 = inputs[f"{frame}_elem_Py1"][:nelem]
