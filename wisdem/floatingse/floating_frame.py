@@ -12,9 +12,6 @@ NELEM_MAX = 1000
 RIGID = 1e30
 EPS = 1e-6
 
-# TODO:
-# - Added mass, hydro stiffness for tower sim
-
 
 class PlatformFrame(om.ExplicitComponent):
     def initialize(self):
@@ -104,12 +101,11 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_variable_capacity", np.zeros(n_member), units="m**3")
 
         self.node_mem2glob = {}
-        # self.node_glob2mem = {}
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        # This shouldn't change during an optimization, so save some time?
-        if len(self.node_mem2glob) == 0:
-            self.set_connectivity(inputs, outputs)
+        # Seems like we have to run this each time as numbering can change during optimization
+        self.node_mem2glob = {}
+        self.set_connectivity(inputs, outputs)
 
         self.set_node_props(inputs, outputs)
         self.set_element_props(inputs, outputs, discrete_inputs, discrete_outputs)
@@ -956,6 +952,7 @@ class FrameAnalysis(om.ExplicitComponent):
             # Add the load case and run
             myframe.addLoadCase(load_obj)
             # myframe.write(f"{frame}.3dd")
+            # myframe.draw()
             displacements, forces, reactions, internalForces, mass, modal = myframe.run()
 
             # natural frequncies
