@@ -1,10 +1,9 @@
 import copy
 
 import numpy as np
-from scipy.interpolate import PchipInterpolator, interp1d
-
 import openmdao.api as om
 import wisdem.moorpy.MoorProps as mp
+from scipy.interpolate import PchipInterpolator, interp1d
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.rotorse.geometry_tools.geometry import remap2grid, trailing_edge_smoothing
@@ -2703,6 +2702,16 @@ class Materials(om.Group):
             val=np.zeros(n_mat),
             units="Pa",
             desc="Yield stress of the material (in the principle direction for composites).",
+        )
+        ivc.add_output(
+            "wohler_exp",
+            val=np.zeros(n_mat),
+            desc="Exponent of S-N Wohler fatigue curve in the form of S = A*N^-(1/m).",
+        )
+        ivc.add_output(
+            "wohler_intercept",
+            val=np.zeros(n_mat),
+            desc="Stress-intercept (A) of S-N Wohler fatigue curve in the form of S = A*N^-(1/m), taken as ultimate stress unless otherwise specified.",
         )
         ivc.add_output(
             "unit_cost", val=np.zeros(n_mat), units="USD/kg", desc="1D array of the unit costs of the materials."

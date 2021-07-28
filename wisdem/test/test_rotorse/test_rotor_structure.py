@@ -293,11 +293,17 @@ class TestRS(unittest.TestCase):
         inputs = {}
         outputs = {}
 
+        nrel5mw = np.load(ARCHIVE1)
+        for k in nrel5mw.files:
+            inputs[k.replace("_strain_", "_")] = nrel5mw[k]
+
         nrel5mw = np.load(ARCHIVE2)
         for k in nrel5mw.files:
-            inputs[k] = nrel5mw[k]
+            inputs[k.replace("_strain_", "_")] = nrel5mw[k]
 
         npts = len(inputs["EA"])
+        inputs["chord"] = np.ones(npts)
+
         options = {}
         options["WISDEM"] = {}
         options["WISDEM"]["RotorSE"] = {}

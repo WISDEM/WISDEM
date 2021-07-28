@@ -155,6 +155,8 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         self.add_output("M_mb1", val=np.zeros((3, n_dlcs)), units="N*m")
         self.add_output("M_mb2", val=np.zeros((3, n_dlcs)), units="N*m")
         self.add_output("M_torq", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_output("axial_load2stress", val=np.zeros(6), units="m**2")
+        self.add_output("shear_load2stress", val=np.zeros(6), units="m**2")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -368,6 +370,18 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
             )
         outputs["torq_deflection"] = rotor_gearbox_deflection.max()
         outputs["torq_rotation"] = rotor_gearbox_rotation.max()
+
+        # Load->stress conversion for fatigue
+        ax_load2stress = np.zeros(6)
+        ax_load2stress[0] = 1.0 / Ax[0]
+        ax_load2stress[4] = 1.0 / S[0]
+        ax_load2stress[5] = 1.0 / S[0]
+        sh_load2stress = np.zeros(6)
+        sh_load2stress[1] = 1.0 / As[0]
+        sh_load2stress[2] = 1.0 / As[0]
+        sh_load2stress[3] = 1.0 / C[0]
+        outputs["axial_load2stress"] = ax_load2stress
+        outputs["shear_load2stress"] = sh_load2stress
 
 
 class HSS_Frame(om.ExplicitComponent):

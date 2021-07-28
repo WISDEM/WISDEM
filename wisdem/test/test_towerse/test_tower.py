@@ -83,6 +83,9 @@ class TestTowerSE(unittest.TestCase):
         prob["G_mat"] = 1e8 * np.ones((1, 3))
         prob["rho_mat"] = 1e4
         prob["sigma_y_mat"] = 1e8
+        prob["sigma_ult_mat"] = 1e8 * np.ones((1, 3))
+        prob["wohler_exp_mat"] = 1e1
+        prob["wohler_A_mat"] = 1e1
 
         prob["yaw"] = 0.0
         prob["rna_mass"] = 2e5
@@ -192,6 +195,9 @@ class TestTowerSE(unittest.TestCase):
         prob["G_mat"] = 1e8 * np.ones((1, 3))
         prob["rho_mat"] = 1e4
         prob["sigma_y_mat"] = 1e8
+        prob["sigma_ult_mat"] = 1e8 * np.ones((1, 3))
+        prob["wohler_exp_mat"] = 1e1
+        prob["wohler_A_mat"] = 1e1
 
         prob["outfitting_factor"] = 1.0
         prob["yaw"] = 0.0
@@ -322,6 +328,9 @@ class TestTowerSE(unittest.TestCase):
         prob["G_mat"] = 1e8 * np.ones((1, 3))
         prob["rho_mat"] = 1e4
         prob["sigma_y_mat"] = 1e8
+        prob["sigma_ult_mat"] = 1e8 * np.ones((1, 3))
+        prob["wohler_exp_mat"] = 1e1
+        prob["wohler_A_mat"] = 1e1
 
         prob["outfitting_factor"] = 1.0
         prob["yaw"] = 0.0
@@ -444,6 +453,9 @@ class TestTowerSE(unittest.TestCase):
         prob["G_mat"] = 1e8 * np.ones((1, 3))
         prob["rho_mat"] = 1e4
         prob["sigma_y_mat"] = 1e8
+        prob["sigma_ult_mat"] = 1e8 * np.ones((1, 3))
+        prob["wohler_exp_mat"] = 1e1
+        prob["wohler_A_mat"] = 1e1
 
         prob["yaw"] = 0.0
         # prob["G_soil"] = 1e7
@@ -574,6 +586,9 @@ class TestTowerSE(unittest.TestCase):
         prob["G_mat"] = 79.3e9 * np.ones((1, 3))
         prob["rho_mat"] = 7850.0
         prob["sigma_y_mat"] = 345e6
+        prob["sigma_ult_mat"] = 500e6 * np.ones((1, 3))
+        prob["wohler_exp_mat"] = 4.0
+        prob["wohler_A_mat"] = 500e6
 
         prob["yaw"] = 0.0
         prob["transition_piece_mass"] = 0.0  # 100e3
@@ -626,6 +641,8 @@ class TestTowerSE(unittest.TestCase):
         G = 80.8e9
         rho = 8500.0
         sigma_y = 450.0e6
+        sigma_ult = wohler_A = 500e6
+        wohler_exp = 4.0
 
         # --- extra mass ----
         m = np.array([285598.8])
@@ -725,6 +742,9 @@ class TestTowerSE(unittest.TestCase):
             prob["G_mat"] = G * np.ones((1, 3))
             prob["rho_mat"] = rho
             prob["sigma_y_mat"] = sigma_y
+            prob["sigma_ult_mat"] = sigma_ult * np.ones((1, 3))
+            prob["wohler_exp_mat"] = wohler_exp
+            prob["wohler_A_mat"] = wohler_A
 
             # --- extra mass ----
             prob["rna_mass"] = m

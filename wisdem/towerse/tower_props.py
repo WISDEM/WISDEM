@@ -129,6 +129,9 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_input("E_mat", val=np.zeros([n_mat, 3]), units="Pa")
         self.add_input("G_mat", val=np.zeros([n_mat, 3]), units="Pa")
         self.add_input("sigma_y_mat", val=np.zeros(n_mat), units="Pa")
+        self.add_input("sigma_ult_mat", val=np.zeros([n_mat, 3]), units="Pa")
+        self.add_input("wohler_exp_mat", val=np.zeros(n_mat))
+        self.add_input("wohler_A_mat", val=np.zeros(n_mat))
         self.add_input("rho_mat", val=np.zeros(n_mat), units="kg/m**3")
         self.add_input("unit_cost_mat", val=np.zeros(n_mat), units="USD/kg")
 
@@ -141,6 +144,9 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_output("E", val=np.zeros(n_height - 1), units="Pa")
         self.add_output("G", val=np.zeros(n_height - 1), units="Pa")
         self.add_output("sigma_y", val=np.zeros(n_height - 1), units="Pa")
+        self.add_output("sigma_ult", val=np.zeros(n_height - 1), units="Pa")
+        self.add_output("wohler_exp", val=np.zeros(n_height - 1))
+        self.add_output("wohler_A", val=np.zeros(n_height - 1))
         self.add_output("rho", val=np.zeros(n_height - 1), units="kg/m**3")
         self.add_output("unit_cost", val=np.zeros(n_height - 1), units="USD/kg")
         self.add_output("z_start", 0.0, units="m")
@@ -258,6 +264,9 @@ class DiscretizationYAML(om.ExplicitComponent):
         E = np.mean(inputs["E_mat"], axis=1)
         G = np.mean(inputs["G_mat"], axis=1)
         sigy = inputs["sigma_y_mat"]
+        sigu = inputs["sigma_ult_mat"].min(axis=1)
+        m = inputs["wohler_exp_mat"]
+        A = inputs["wohler_A_mat"]
         rho = inputs["rho_mat"]
         cost = inputs["unit_cost_mat"]
         mat_names = discrete_inputs["material_names"]
@@ -266,6 +275,9 @@ class DiscretizationYAML(om.ExplicitComponent):
         E_param = np.zeros(twall.shape)
         G_param = np.zeros(twall.shape)
         sigy_param = np.zeros(twall.shape)
+        sigu_param = np.zeros(twall.shape)
+        m_param = np.zeros(twall.shape)
+        A_param = np.zeros(twall.shape)
         rho_param = np.zeros(n_height - 1)
         cost_param = np.zeros(n_height - 1)
 
@@ -289,6 +301,9 @@ class DiscretizationYAML(om.ExplicitComponent):
             E_param[k, :] = E[imat]
             G_param[k, :] = G[imat]
             sigy_param[k, :] = sigy[imat]
+            sigu_param[k, :] = sigu[imat]
+            m_param[k, :] = m[imat]
+            A_param[k, :] = A[imat]
 
         # Mass weighted cost (should really weight by radius too)
         cost_param /= rho_param
@@ -305,12 +320,18 @@ class DiscretizationYAML(om.ExplicitComponent):
         E_param = 0.5 * np.sum(vol_frac * E_param, axis=0) + 0.5 / np.sum(vol_frac / E_param, axis=0)
         G_param = 0.5 * np.sum(vol_frac * G_param, axis=0) + 0.5 / np.sum(vol_frac / G_param, axis=0)
         sigy_param = 0.5 * np.sum(vol_frac * sigy_param, axis=0) + 0.5 / np.sum(vol_frac / sigy_param, axis=0)
+        sigu_param = 0.5 * np.sum(vol_frac * sigu_param, axis=0) + 0.5 / np.sum(vol_frac / sigu_param, axis=0)
+        m_param = 0.5 * np.sum(vol_frac * m_param, axis=0) + 0.5 / np.sum(vol_frac / m_param, axis=0)
+        A_param = 0.5 * np.sum(vol_frac * A_param, axis=0) + 0.5 / np.sum(vol_frac / A_param, axis=0)
 
         # Store values
         outputs["E"] = E_param
         outputs["G"] = G_param
         outputs["rho"] = rho_param
         outputs["sigma_y"] = sigy_param
+        outputs["sigma_ult"] = sigu_param
+        outputs["wohler_exp"] = m_param
+        outputs["wohler_A"] = A_param
         outputs["unit_cost"] = cost_param
 
 

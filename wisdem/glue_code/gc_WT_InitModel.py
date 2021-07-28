@@ -924,6 +924,7 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     wt_opt["floating.transition_node"] = wt_opt["floating.location_in"][itrans, :]
     wt_opt["floating.transition_piece_mass"] = floating["transition_piece_mass"]
     wt_opt["floating.transition_piece_cost"] = floating["transition_piece_cost"]
+
     # Make sure IVCs are initialized too
     for k, linked_node_dict in enumerate(modeling_options["floating"]["joints"]["design_variable_data"]):
         idx = linked_node_dict["indices"]
@@ -1338,12 +1339,14 @@ def assign_material_values(wt_opt, modeling_options, materials):
     orth = np.zeros(n_mat)
     component_id = -np.ones(n_mat)
     rho = np.zeros(n_mat)
-    sigma_y = np.zeros(n_mat)
     E = np.zeros([n_mat, 3])
     G = np.zeros([n_mat, 3])
     nu = np.zeros([n_mat, 3])
     Xt = np.zeros([n_mat, 3])
     Xc = np.zeros([n_mat, 3])
+    sigma_y = np.zeros(n_mat)
+    m = np.ones(n_mat)
+    A = np.zeros(n_mat)
     rho_fiber = np.zeros(n_mat)
     rho_area_dry = np.zeros(n_mat)
     fvf = np.zeros(n_mat)
@@ -1403,6 +1406,12 @@ def assign_material_values(wt_opt, modeling_options, materials):
             waste[i] = materials[i]["waste"]
         if "Xy" in materials[i]:
             sigma_y[i] = materials[i]["Xy"]
+        if "m" in materials[i]:
+            m[i] = materials[i]["m"]
+        if "A" in materials[i]:
+            A[i] = materials[i]["A"]
+        if A[i] == 0.0:
+            A[i] = np.r_[Xt[i, :], Xc[i, :]].max()
 
     wt_opt["materials.name"] = name
     wt_opt["materials.orth"] = orth
@@ -1414,6 +1423,8 @@ def assign_material_values(wt_opt, modeling_options, materials):
     wt_opt["materials.Xt"] = Xt
     wt_opt["materials.Xc"] = Xc
     wt_opt["materials.nu"] = nu
+    wt_opt["materials.wohler_exp"] = m
+    wt_opt["materials.wohler_intercept"] = A
     wt_opt["materials.rho_fiber"] = rho_fiber
     wt_opt["materials.rho_area_dry"] = rho_area_dry
     wt_opt["materials.fvf_from_yaml"] = fvf

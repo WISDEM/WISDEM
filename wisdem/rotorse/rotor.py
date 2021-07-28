@@ -26,14 +26,14 @@ class RotorSE(om.Group):
             "rhoJ",
             "x_ec",
             "y_ec",
-            "xu_strain_spar",
-            "xl_strain_spar",
-            "yu_strain_spar",
-            "yl_strain_spar",
-            "xu_strain_te",
-            "xl_strain_te",
-            "yu_strain_te",
-            "yl_strain_te",
+            "xu_spar",
+            "xl_spar",
+            "yu_spar",
+            "yl_spar",
+            "xu_te",
+            "xl_te",
+            "yu_te",
+            "yl_te",
         ]
 
         promoteCC = [
