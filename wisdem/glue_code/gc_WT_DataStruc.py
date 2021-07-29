@@ -1,12 +1,25 @@
 import copy
 
 import numpy as np
+import matplotlib
 import openmdao.api as om
+import matplotlib.pyplot as plt
 from scipy.interpolate import PchipInterpolator, interp1d
 
+from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, remap2grid, trailing_edge_smoothing
+
+try:
+    from INN_interface.INN import INN
+    from INN_interface import utils
+    from INN_interface.cst import AirfoilShape as AirfoilShape_cst
+    from INN_interface.cst import CSTAirfoil
+except:
+    raise Exception("The INN framework for airfoil design is activated, but not installed correctly")
+
+matplotlib.use("TkAgg")
 
 
 class WindTurbineOntologyOpenMDAO(om.Group):
@@ -1261,18 +1274,6 @@ class INN_Airfoils(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-
-        try:
-            from INN_interface.INN import INN
-            from INN_interface import utils
-        except:
-            raise Exception("The INN framework for airfoil design is activated, but not installed correctly")
-        import matplotlib
-
-        matplotlib.use("TkAgg")
-        import matplotlib.pyplot as plt
-        from wisdem.ccblade.Polar import Polar
-
         # Interpolate t/c and L/D from opt grid to full grid
         spline = PchipInterpolator
         r_thick_spline = spline(inputs["s_opt_r_thick"], inputs["r_thick_opt"])
@@ -1306,6 +1307,7 @@ class INN_Airfoils(om.ExplicitComponent):
             if Re < 100.0:
                 Re = 9.0e6
             inn = INN()
+            print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re}")
             try:
                 # print("CD", c_d[i])
                 cst, alpha = inn.inverse_design(0.015, L_D[i], stall_margin, r_thick[i], Re, N=1, process_samples=True)
@@ -1357,88 +1359,86 @@ class INN_Airfoils(om.ExplicitComponent):
 
             # ======================
 
-            from INN_interface.cst import AirfoilShape as AirfoilShape_cst
-            from INN_interface.cst import CSTAirfoil
-
-            x, y = inputs["coord_xy_interp_yaml"][i, :, 0], inputs["coord_xy_interp_yaml"][i, :, 1]
-
-            points = np.column_stack((x, y))
-            # Check that airfoil points are declared from the TE suction side to TE pressure side
-            idx_le = np.argmin(points[:, 0])
-            if np.mean(points[:idx_le, 1]) > 0.0:
-                points = np.flip(points, axis=0)
-
-            # Remap points using class AirfoilShape
-            af = AirfoilShape(points=points)
-            af.redistribute(200, even=False, dLE=True)
-            s = af.s
-            af_points = af.points
-
-            yaml_airfoil = AirfoilShape_cst(xco=af_points[:, 0], yco=af_points[:, 1])
-            cst_new = CSTAirfoil(yaml_airfoil)
-            cst = np.concatenate((cst_new.cst, [yaml_airfoil.te_lower], [yaml_airfoil.te_upper]), axis=0)
-
-            cd_new, cl_new = inn.generate_polars(cst, Re, alpha=alpha)
-
-            inn_polar = Polar(Re, alpha, cl_new[0, :], cd_new[0, :], np.zeros_like(cl_new[0, :]))
-            polar3d = inn_polar.correction3D(
-                inputs["s"][i], inputs["chord"][i] / 121.1, inputs["rated_TSR"]
-            )  # 121.1 comes from the diameter or something
-            cdmax = 1.5
-            polar = polar3d.extrapolate(cdmax)  # Extrapolate polars for alpha between -180 deg and 180 deg
-
-            cl_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cl)
-            cd_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cd)
-            cm_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cm)
-
-            f, ax = plt.subplots(4, 1, figsize=(5.3, 10))
-
-            ax[0].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp, label="INN")
-            ax[0].plot(inputs["aoa"] * 180.0 / np.pi, inputs["cl_interp_yaml"][i, :, 0, 0], label="yaml")
-            # ax[0].plot(inputs["aoa"] * 180. / np.pi, cl_interp_new, label="yaml")
-            ax[0].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            ax[0].legend()
-            ax[0].set_ylabel("CL (-)", fontweight="bold")
-            ax[0].set_title("Span Location {:2.2%}".format(inputs["s"][i]), fontweight="bold")
-            ax[0].set_ylim(-1.0, 2.5)
-            ax[0].set_xlim(left=-4, right=20)
-
-            ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, cd_interp, label="INN")
-            ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, inputs["cd_interp_yaml"][i, :, 0, 0], label="yaml")
-            # ax[1].semilogy(inputs["aoa"] * 180. / np.pi, cd_interp_new, label="yaml")
-            ax[1].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            ax[1].set_ylabel("CD (-)", fontweight="bold")
-            ax[1].set_ylim(0.005, 0.2)
-            ax[1].set_xlim(left=-4, right=20)
-
-            ax[2].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp / cd_interp, label="INN")
-            ax[2].plot(
-                inputs["aoa"] * 180.0 / np.pi,
-                inputs["cl_interp_yaml"][i, :, 0, 0] / inputs["cd_interp_yaml"][i, :, 0, 0],
-                label="yaml",
-            )
-            # ax[2].plot(inputs["aoa"] * 180. / np.pi, cl_interp_new / cd_interp_new, label="yaml")
-            ax[2].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            ax[2].set_ylabel("CL/CD (-)", fontweight="bold")
-            ax[2].set_xlabel("Angles of Attack (deg)", fontweight="bold")
-            ax[2].set_xlim(left=-4, right=20)
-            ax[2].set_ylim(top=150, bottom=-40)
-
-            yaml_xy = inputs["coord_xy_interp_yaml"][i]
-            cst_xy = af_points
-
-            ax[3].plot(cst_xy[:, 0], cst_xy[:, 1], label="INN")
-            ax[3].plot(yaml_xy[:, 0], yaml_xy[:, 1], label="yaml")
-            ax[3].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            ax[3].set_ylabel("y-coord", fontweight="bold")
-            ax[3].set_xlabel("x-coord", fontweight="bold")
-            ax[3].set_xlim(left=0.0, right=1.0)
-            ax[3].set_ylim(top=0.2, bottom=-0.2)
-
-            plt.tight_layout()
-
-            plt.savefig(f"airfoil_comparison_{i}.png")
-            plt.close()
+            #
+            # x, y = inputs["coord_xy_interp_yaml"][i, :, 0], inputs["coord_xy_interp_yaml"][i, :, 1]
+            #
+            # points = np.column_stack((x, y))
+            # # Check that airfoil points are declared from the TE suction side to TE pressure side
+            # idx_le = np.argmin(points[:, 0])
+            # if np.mean(points[:idx_le, 1]) > 0.0:
+            #     points = np.flip(points, axis=0)
+            #
+            # # Remap points using class AirfoilShape
+            # af = AirfoilShape(points=points)
+            # af.redistribute(200, even=False, dLE=True)
+            # s = af.s
+            # af_points = af.points
+            #
+            # yaml_airfoil = AirfoilShape_cst(xco=af_points[:, 0], yco=af_points[:, 1])
+            # cst_new = CSTAirfoil(yaml_airfoil)
+            # cst = np.concatenate((cst_new.cst, [yaml_airfoil.te_lower], [yaml_airfoil.te_upper]), axis=0)
+            #
+            # cd_new, cl_new = inn.generate_polars(cst, Re, alpha=alpha)
+            #
+            # inn_polar = Polar(Re, alpha, cl_new[0, :], cd_new[0, :], np.zeros_like(cl_new[0, :]))
+            # polar3d = inn_polar.correction3D(
+            #     inputs["s"][i], inputs["chord"][i] / 121.1, inputs["rated_TSR"]
+            # )  # 121.1 comes from the diameter or something
+            # cdmax = 1.5
+            # polar = polar3d.extrapolate(cdmax)  # Extrapolate polars for alpha between -180 deg and 180 deg
+            #
+            # cl_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cl)
+            # cd_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cd)
+            # cm_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cm)
+            #
+            # f, ax = plt.subplots(4, 1, figsize=(5.3, 10))
+            #
+            # ax[0].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp, label="INN")
+            # ax[0].plot(inputs["aoa"] * 180.0 / np.pi, inputs["cl_interp_yaml"][i, :, 0, 0], label="yaml")
+            # # ax[0].plot(inputs["aoa"] * 180. / np.pi, cl_interp_new, label="yaml")
+            # ax[0].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            # ax[0].legend()
+            # ax[0].set_ylabel("CL (-)", fontweight="bold")
+            # ax[0].set_title("Span Location {:2.2%}".format(inputs["s"][i]), fontweight="bold")
+            # ax[0].set_ylim(-1.0, 2.5)
+            # ax[0].set_xlim(left=-4, right=20)
+            #
+            # ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, cd_interp, label="INN")
+            # ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, inputs["cd_interp_yaml"][i, :, 0, 0], label="yaml")
+            # # ax[1].semilogy(inputs["aoa"] * 180. / np.pi, cd_interp_new, label="yaml")
+            # ax[1].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            # ax[1].set_ylabel("CD (-)", fontweight="bold")
+            # ax[1].set_ylim(0.005, 0.2)
+            # ax[1].set_xlim(left=-4, right=20)
+            #
+            # ax[2].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp / cd_interp, label="INN")
+            # ax[2].plot(
+            #     inputs["aoa"] * 180.0 / np.pi,
+            #     inputs["cl_interp_yaml"][i, :, 0, 0] / inputs["cd_interp_yaml"][i, :, 0, 0],
+            #     label="yaml",
+            # )
+            # # ax[2].plot(inputs["aoa"] * 180. / np.pi, cl_interp_new / cd_interp_new, label="yaml")
+            # ax[2].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            # ax[2].set_ylabel("CL/CD (-)", fontweight="bold")
+            # ax[2].set_xlabel("Angles of Attack (deg)", fontweight="bold")
+            # ax[2].set_xlim(left=-4, right=20)
+            # ax[2].set_ylim(top=150, bottom=-40)
+            #
+            # yaml_xy = inputs["coord_xy_interp_yaml"][i]
+            # cst_xy = af_points
+            #
+            # ax[3].plot(cst_xy[:, 0], cst_xy[:, 1], label="INN")
+            # ax[3].plot(yaml_xy[:, 0], yaml_xy[:, 1], label="yaml")
+            # ax[3].grid(color=[0.8, 0.8, 0.8], linestyle="--")
+            # ax[3].set_ylabel("y-coord", fontweight="bold")
+            # ax[3].set_xlabel("x-coord", fontweight="bold")
+            # ax[3].set_xlim(left=0.0, right=1.0)
+            # ax[3].set_ylim(top=0.2, bottom=-0.2)
+            #
+            # plt.tight_layout()
+            #
+            # plt.savefig(f"airfoil_comparison_{i}.png")
+            # plt.close()
 
 
 class Blade_Lofted_Shape(om.ExplicitComponent):

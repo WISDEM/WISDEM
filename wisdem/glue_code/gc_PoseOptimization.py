@@ -559,6 +559,26 @@ class PoseOptimization(object):
                 ref=1.0e-2,
             )
 
+        L_D_options = blade_opt["aero_shape"]["L/D"]
+        if L_D_options["flag"]:
+            n_opt = L_D_options["n_opt"]
+            indices = range(L_D_options["index_start"], L_D_options["index_end"])
+            s_opt_L_D = np.linspace(0.0, 1.0, n_opt)
+            init_L_D_opt = np.interp(
+                s_opt_L_D,
+                wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
+            )
+            print(indices)
+            print(init_L_D_opt)
+            print(L_D_options)
+            wt_opt.model.add_design_var(
+                "inn_af.L_D_opt",
+                indices=indices,
+                lower=init_L_D_opt[indices] - L_D_options["max_decrease"],
+                upper=init_L_D_opt[indices] + L_D_options["max_increase"],
+            )
+
         # Only add the pressure side design variables if we do set
         # `equal_to_suction` as False in the optimization yaml.
         spar_cap_ps_options = blade_opt["structure"]["spar_cap_ps"]
@@ -1079,22 +1099,28 @@ class PoseOptimization(object):
             wt_opt["blade.opt_var.chord_opt"] = init_chord_opt
             if self.modeling["WISDEM"]["RotorSE"]["inn_af"]:
                 wt_opt["inn_af.s_opt_r_thick"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["t/c"]["n_opt"])
-                init_r_thick_opt = np.interp(wt_opt["inn_af.s_opt_r_thick"],
+                init_r_thick_opt = np.interp(
+                    wt_opt["inn_af.s_opt_r_thick"],
                     wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"])
+                    wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"],
+                )
                 wt_opt["inn_af.r_thick_opt"] = init_r_thick_opt
                 wt_opt["inn_af.s_opt_L_D"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["L/D"]["n_opt"])
-                init_L_D_opt = np.interp(wt_opt["inn_af.s_opt_L_D"],
+                init_L_D_opt = np.interp(
+                    wt_opt["inn_af.s_opt_L_D"],
                     wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"])
+                    wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
+                )
                 wt_opt["inn_af.L_D_opt"] = init_L_D_opt
                 wt_opt["inn_af.s_opt_c_d"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["c_d"]["n_opt"])
-                init_c_d_opt = np.interp(wt_opt["inn_af.s_opt_c_d"],
+                init_c_d_opt = np.interp(
+                    wt_opt["inn_af.s_opt_c_d"],
                     wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"])
+                    wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"],
+                )
                 wt_opt["inn_af.c_d_opt"] = init_c_d_opt
 
-            if blade_opt["structure"]["spar_cap_ss"]['flag'] or blade_opt["structure"]["spar_cap_ss"]['flag']:
+            if blade_opt["structure"]["spar_cap_ss"]["flag"] or blade_opt["structure"]["spar_cap_ss"]["flag"]:
                 wt_opt["blade.opt_var.s_opt_spar_cap_ss"] = np.linspace(
                     0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"]
                 )
