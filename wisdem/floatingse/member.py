@@ -77,8 +77,14 @@ class DiscretizationYAML(om.ExplicitComponent):
         2D array of the shear moduli of the materials. Each row represents a material,
         the three members represent G12, G13 and G23.
     sigma_y_mat : numpy array[n_mat], [Pa]
-        2D array of the yield strength of the materials. Each row represents a material,
+        yield strength of the materials.
+    sigma_ult_mat : numpy array[n_mat, 3], [Pa]
+        2D array of the ultimate strength of the materials. Each row represents a material,
         the three members represent Xt12, Xt13 and Xt23.
+    wohler_exp_mat : numpy array[n_mat], [Pa]
+        Exponent, m, in the S-N fatigue curve S = A*N^-(1/m)
+    wohler_A_mat : numpy array[n_mat], [Pa]
+        Coefficient, A, in the S-N fatigue curve S = A*N^-(1/m)
     rho_mat : numpy array[n_mat], [kg/m**3]
         1D array of the density of the materials. For composites, this is the density of
         the laminate.
@@ -105,6 +111,12 @@ class DiscretizationYAML(om.ExplicitComponent):
         Isotropic shear modulus of the materials along the member sections.
     sigma_y : numpy array[n_height-1], [Pa]
         Isotropic yield strength of the materials along the member sections.
+    sigma_ult : numpy array[n_height-1], [Pa]
+        Isotropic ultimate strength of the materials along the member sections.
+    wohler_exp : numpy array[n_height-1], [Pa]
+        Exponent, m, in the S-N fatigue curve S = A*N^-(1/m) of the materials along the member sections.
+    wohler_A : numpy array[n_height-1], [Pa]
+        Coefficient, A, in the S-N fatigue curve S = A*N^-(1/m) of the materials along the member sections.
     rho : numpy array[n_height-1], [kg/m**3]
         Density of the materials along the member sections.
     unit_cost : numpy array[n_height-1], [USD/kg]
@@ -632,6 +644,14 @@ class MemberComponent(om.ExplicitComponent):
         Cross-sectional shear modulus all member segments
     section_sigma_y : numpy array[npts-1], [Pa]
         Cross-sectional yield stress of all member segments
+    axial_base_load2stress : numpy array[6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and axial stress at member joint0
+    shear_base_load2stress : numpy array[6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and shear stress at member joint0
+    axial_end_load2stress : numpy array[6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and axial stress at member joint1
+    shear_end_load2stress : numpy array[6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and shear stress at member joint1
 
     """
 
@@ -745,6 +765,11 @@ class MemberComponent(om.ExplicitComponent):
         self.add_output("section_G", NULL * np.ones(MEMMAX), units="Pa")
         self.add_output("section_sigma_y", NULL * np.ones(MEMMAX), units="Pa")
 
+        self.add_output("axial_base_load2stress", val=np.zeros(6), units="m**2")
+        self.add_output("shear_base_load2stress", val=np.zeros(6), units="m**2")
+        self.add_output("axial_end_load2stress", val=np.zeros(6), units="m**2")
+        self.add_output("shear_end_load2stress", val=np.zeros(6), units="m**2")
+
     def add_node(self, s_new):
         # Quit if node already exists
         if s_new in self.sections:
@@ -848,6 +873,33 @@ class MemberComponent(om.ExplicitComponent):
                 sigy=sigymat[k],
             )
             self.add_section(s_full[k], s_full[k + 1], iprop)
+
+        # While the sections are simple, store cross section info
+        ax_base_load2stress = np.zeros(6)
+        sh_base_load2stress = np.zeros(6)
+        ax_end_load2stress = np.zeros(6)
+        sh_end_load2stress = np.zeros(6)
+        slist = self.sections.keys()
+        s = slist[0]
+        r_sec = 0.5 * self.sections[s].D
+        ax_base_load2stress[2] = 1.0 / self.sections[s].A
+        ax_base_load2stress[3] = r_sec / self.sections[s].Ixx
+        ax_base_load2stress[4] = r_sec / self.sections[s].Iyy
+        sh_base_load2stress[0] = r_sec / self.sections[s].Asx
+        sh_base_load2stress[1] = r_sec / self.sections[s].Asy
+        sh_base_load2stress[5] = 1.0 / self.sections[s].Izz
+        s = slist[-1]
+        r_sec = 0.5 * self.sections[s].D
+        ax_end_load2stress[2] = 1.0 / self.sections[s].A
+        ax_end_load2stress[3] = r_sec / self.sections[s].Ixx
+        ax_end_load2stress[4] = r_sec / self.sections[s].Iyy
+        sh_end_load2stress[0] = r_sec / self.sections[s].Asx
+        sh_end_load2stress[1] = r_sec / self.sections[s].Asy
+        sh_end_load2stress[5] = 1.0 / self.sections[s].Izz
+        outputs["axial_base_load2stress"] = ax_base_load2stress
+        outputs["shear_base_load2stress"] = sh_base_load2stress
+        outputs["axial_end_load2stress"] = ax_end_load2stress
+        outputs["shear_end_load2stress"] = sh_end_load2stress
 
         # Adjust for ghost sections
         s_ghost1 = float(inputs["s_ghost1"])

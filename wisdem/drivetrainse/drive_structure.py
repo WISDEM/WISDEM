@@ -106,6 +106,10 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         Moment vector applied to bearing 2 in hub c.s.
     M_torq : numpy array[3, n_dlcs], [N*m]
         Moment vector applied to generator rotor (direct) or gearbox (geared) in hub c.s.
+    axial_load2stress : numpy array[nFull-1,6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and axial stress
+    shear_load2stress : numpy array[nFull-1,6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and shear stress
 
     """
 

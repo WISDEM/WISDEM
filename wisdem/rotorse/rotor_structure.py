@@ -620,10 +620,30 @@ class ComputeStrains(ExplicitComponent):
             val=np.zeros(n_span),
             desc="strain in trailing-edge panels on lower surface at location xl,yl_te with loads P_te",
         )
-        self.add_output("axial_root_sparU_load2stress", val=np.zeros(6), units="m**2")
-        self.add_output("axial_root_sparL_load2stress", val=np.zeros(6), units="m**2")
-        self.add_output("axial_maxc_teU_load2stress", val=np.zeros(6), units="m**2")
-        self.add_output("axial_maxc_teL_load2stress", val=np.zeros(6), units="m**2")
+        self.add_output(
+            "axial_root_sparU_load2stress",
+            val=np.zeros(6),
+            units="m**2",
+            desc="Linear conversion factors between loads [Fx-z; Mx-z] and axial stress in the upper spar cap at blade root",
+        )
+        self.add_output(
+            "axial_root_sparL_load2stress",
+            val=np.zeros(6),
+            units="m**2",
+            desc="Linear conversion factors between loads [Fx-z; Mx-z] and axial stress in the lower spar cap at blade root",
+        )
+        self.add_output(
+            "axial_maxc_teU_load2stress",
+            val=np.zeros(6),
+            units="m**2",
+            desc="Linear conversion factors between loads [Fx-z; Mx-z] and axial stress in the upper trailing edge at blade max chord",
+        )
+        self.add_output(
+            "axial_maxc_teL_load2stress",
+            val=np.zeros(6),
+            units="m**2",
+            desc="Linear conversion factors between loads [Fx-z; Mx-z] and axial stress in the lower trailing edge at blade max chord",
+        )
 
     def compute(self, inputs, outputs):
 
@@ -696,7 +716,7 @@ class ComputeStrains(ExplicitComponent):
         Fz = np.zeros(M1_principle.shape)  # axial
         Mxx = np.ones(M1_principle.shape)  # edgewise
         Myy = np.zeros(M1_principle.shape)  # flapwise
-        M1p, M2p = rotate(-Myy, -Mxx)
+        M1p, M2p = rotate(Myy, Mxx)
         strainU_spar_p, strainL_spar_p = strain(xu_spar, yu_spar, xl_spar, yl_spar, M1in=M1p, M2in=M2p, F3in=Fz)
         strainU_te_p, strainL_te_p = strain(xu_te, yu_te, xl_te, yl_te, M1in=M1p, M2in=M2p, F3in=Fz)
         ax_sparU_load2stress[:, 3] = Espar * strainU_spar_p
@@ -707,7 +727,7 @@ class ComputeStrains(ExplicitComponent):
         # Unit load response for Myy
         Mxx = np.zeros(M1_principle.shape)  # edgewise
         Myy = np.ones(M1_principle.shape)  # flapwise
-        M1p, M2p = rotate(-Myy, -Mxx)
+        M1p, M2p = rotate(Myy, Mxx)
         strainU_spar_p, strainL_spar_p = strain(xu_spar, yu_spar, xl_spar, yl_spar, M1in=M1p, M2in=M2p, F3in=Fz)
         strainU_te_p, strainL_te_p = strain(xu_te, yu_te, xl_te, yl_te, M1in=M1p, M2in=M2p, F3in=Fz)
         ax_sparU_load2stress[:, 4] = Espar * strainU_spar_p
@@ -719,7 +739,7 @@ class ComputeStrains(ExplicitComponent):
         Fz = np.ones(M1_principle.shape)  # axial
         Mxx = np.zeros(M1_principle.shape)  # edgewise
         Myy = np.zeros(M1_principle.shape)  # flapwise
-        M1p, M2p = rotate(-Myy, -Mxx)
+        M1p, M2p = rotate(Myy, Mxx)
         strainU_spar_p, strainL_spar_p = strain(xu_spar, yu_spar, xl_spar, yl_spar, M1in=M1p, M2in=M2p, F3in=Fz)
         strainU_te_p, strainL_te_p = strain(xu_te, yu_te, xl_te, yl_te, M1in=M1p, M2in=M2p, F3in=Fz)
         ax_sparU_load2stress[:, 2] = Espar * strainU_spar_p

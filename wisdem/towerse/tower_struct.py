@@ -717,6 +717,10 @@ class TowerPostFrame(om.ExplicitComponent):
         Total force on tower+rna
     turbine_M : numpy array[3], [N*m]
         Total x-moment on tower+rna measured at base
+    axial_load2stress : numpy array[nFull-1,6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and axial stress
+    shear_load2stress : numpy array[nFull-1,6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and shear stress
 
     """
 
