@@ -888,7 +888,7 @@ class MemberComponent(om.ExplicitComponent):
         sh_base_load2stress[0] = r_sec / self.sections[s].Asx
         sh_base_load2stress[1] = r_sec / self.sections[s].Asy
         sh_base_load2stress[5] = 1.0 / self.sections[s].Izz
-        s = slist[-1]
+        s = slist[-2]
         r_sec = 0.5 * self.sections[s].D
         ax_end_load2stress[2] = 1.0 / self.sections[s].A
         ax_end_load2stress[3] = r_sec / self.sections[s].Ixx
