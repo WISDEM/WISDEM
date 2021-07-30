@@ -445,6 +445,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         )
         conf_ivc.add_discrete_output("n_blades", val=3, desc="Number of blades of the rotor.")
         conf_ivc.add_output("rated_power", val=0.0, units="W", desc="Electrical rated power of the generator.")
+        conf_ivc.add_output("lifetime", val=25.0, units="yr", desc="Turbine design lifetime.")
 
         conf_ivc.add_output(
             "rotor_diameter_user",

@@ -37,15 +37,18 @@ properties:
             - rotor_diameter
             - hub_height
             - rated_power
+            - lifetime
         properties:
             turbine_class:
                 type: string
                 default: I
                 description: IEC wind class of the wind turbine. The options are "I", "II", "III", and 'IV'
+                enum: [I, II, III, IV, i, ii, iii, iv, 1, 2, 3, 4]
             turbulence_class:
                 type: string
                 default: B
                 description: IEC turbulence class of the wind turbine. The options are "A", "B", and "C"
+                enum: [A, B, C, D, a, b, c, d]
             drivetrain:
                 type: string
                 default: geared
@@ -54,6 +57,7 @@ properties:
                 type: string
                 default: Upwind
                 description: Orientation of the horizontal-axis rotor. The options are "Upwind" and "Downwind"
+                enum: [Upwind, upwind, UPWIND, downwind, Downwind, DOWNWIND]
             number_of_blades:
                 type: integer
                 default: 3
@@ -80,6 +84,12 @@ properties:
                 description: Nameplate power of the turbine, i.e. the rated electrical output of the generator.
                 unit: W
                 minimum: 0
+            lifetime:
+                type: number
+                description: Turbine design lifetime in years.
+                unit: years
+                minimum: 0
+                default: 25.0
     components:
         type: object
         default: {}

@@ -1103,15 +1103,25 @@ def assign_control_values(wt_opt, modeling_options, control):
 
 def assign_configuration_values(wt_opt, assembly, opt_options):
 
-    wt_opt["configuration.ws_class"] = assembly["turbine_class"]
-    wt_opt["configuration.turb_class"] = assembly["turbulence_class"]
-    wt_opt["configuration.gearbox_type"] = assembly["drivetrain"]
+    class_val = assembly["turbine_class"].upper()
+    if class_val in [1, "1"]:
+        class_val = "I"
+    elif class_val in [2, "2"]:
+        class_val = "II"
+    elif class_val in [3, "3"]:
+        class_val = "III"
+    elif class_val in [4, "4"]:
+        class_val = "IV"
+    wt_opt["configuration.ws_class"] = class_val
+    wt_opt["configuration.turb_class"] = assembly["turbulence_class"].upper()
+    wt_opt["configuration.gearbox_type"] = assembly["drivetrain"].lower()
     wt_opt["configuration.rotor_orientation"] = assembly["rotor_orientation"].lower()
     wt_opt["configuration.upwind"] = wt_opt["configuration.rotor_orientation"] == "upwind"
     wt_opt["configuration.n_blades"] = int(assembly["number_of_blades"])
     wt_opt["configuration.rotor_diameter_user"] = assembly["rotor_diameter"]
     wt_opt["configuration.hub_height_user"] = assembly["hub_height"]
     wt_opt["configuration.rated_power"] = assembly["rated_power"]
+    wt_opt["configuration.lifetime"] = assembly["lifetime"]
 
     # Checks for errors
     if int(assembly["number_of_blades"]) - assembly["number_of_blades"] != 0:
