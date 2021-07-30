@@ -106,9 +106,9 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         Moment vector applied to bearing 2 in hub c.s.
     M_torq : numpy array[3, n_dlcs], [N*m]
         Moment vector applied to generator rotor (direct) or gearbox (geared) in hub c.s.
-    axial_load2stress : numpy array[nFull-1,6], [m**2]
+    lss_axial_load2stress : numpy array[nFull-1,6], [m**2]
         Linear conversion factors between loads [Fx-z; Mx-z] and axial stress
-    shear_load2stress : numpy array[nFull-1,6], [m**2]
+    lss_shear_load2stress : numpy array[nFull-1,6], [m**2]
         Linear conversion factors between loads [Fx-z; Mx-z] and shear stress
 
     """
@@ -159,8 +159,8 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         self.add_output("M_mb1", val=np.zeros((3, n_dlcs)), units="N*m")
         self.add_output("M_mb2", val=np.zeros((3, n_dlcs)), units="N*m")
         self.add_output("M_torq", val=np.zeros((3, n_dlcs)), units="N*m")
-        self.add_output("axial_load2stress", val=np.zeros(6), units="m**2")
-        self.add_output("shear_load2stress", val=np.zeros(6), units="m**2")
+        self.add_output("lss_axial_load2stress", val=np.zeros(6), units="m**2")
+        self.add_output("lss_shear_load2stress", val=np.zeros(6), units="m**2")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -384,8 +384,8 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         sh_load2stress[1] = 1.0 / As[0]
         sh_load2stress[2] = 1.0 / As[0]
         sh_load2stress[3] = 1.0 / C[0]
-        outputs["axial_load2stress"] = ax_load2stress
-        outputs["shear_load2stress"] = sh_load2stress
+        outputs["lss_axial_load2stress"] = ax_load2stress
+        outputs["lss_shear_load2stress"] = sh_load2stress
 
 
 class HSS_Frame(om.ExplicitComponent):

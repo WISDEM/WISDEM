@@ -425,6 +425,8 @@ class TowerDiscretization(om.ExplicitComponent):
         parameterized locations along tower, linear lofting between
     z_full : numpy array[nFull], [m]
         parameterized locations along tower, linear lofting between
+    tower_outer_diameter : numpy array[n_height], [m]
+        cylinder diameter at corresponding locations
     rho : numpy array[n_height-1], [kg/m**3]
         Density of the materials along the tower sections.
     unit_cost : numpy array[n_height-1], [USD/kg]
@@ -462,6 +464,10 @@ class TowerDiscretization(om.ExplicitComponent):
         Isotropic shear modulus of the materials along the tower sections.
     sigma_y_full : numpy array[nFull-1], [Pa]
         Isotropic yield strength of the materials along the tower sections.
+    axial_load2stress : numpy array[nFull-1,6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and axial stress
+    shear_load2stress : numpy array[nFull-1,6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and shear stress
 
     """
 
@@ -478,6 +484,7 @@ class TowerDiscretization(om.ExplicitComponent):
         self.add_input("hub_height", val=0.0, units="m")
         self.add_input("z_param", np.zeros(n_height), units="m")
         self.add_input("z_full", val=np.zeros(nFull), units="m")
+        self.add_input("tower_outer_diameter", val=np.zeros(n_height), units="m")
         self.add_input("rho", val=np.zeros(n_height - 1), units="kg/m**3")
         self.add_input("unit_cost", val=np.zeros(n_height - 1), units="USD/kg")
         self.add_input("outfitting_factor", val=np.zeros(n_height - 1))
@@ -486,6 +493,8 @@ class TowerDiscretization(om.ExplicitComponent):
         self.add_input("sigma_y", val=np.zeros(n_height - 1), units="Pa")
 
         self.add_input("Az", np.zeros(nFull - 1), units="m**2")
+        self.add_input("Asx", np.zeros(nFull - 1), units="m**2")
+        self.add_input("Asy", np.zeros(nFull - 1), units="m**2")
         self.add_input("Jz", np.zeros(nFull - 1), units="m**4")
         self.add_input("Ixx", np.zeros(nFull - 1), units="m**4")
         self.add_input("Iyy", np.zeros(nFull - 1), units="m**4")
@@ -532,6 +541,8 @@ class TowerDiscretization(om.ExplicitComponent):
         self.add_output("cg_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional center of mass")
         self.add_output("sc_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional shear center")
         self.add_output("tc_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional tension center")
+        self.add_output("axial_load2stress", val=np.zeros((n_height - 1, 6)), units="m**2")
+        self.add_output("shear_load2stress", val=np.zeros((n_height - 1, 6)), units="m**2")
 
         self.declare_partials("height_constraint", ["hub_height", "z_param"], method="fd")
         self.declare_partials("outfitting_full", ["outfitting_factor"], method="fd")
@@ -557,6 +568,8 @@ class TowerDiscretization(om.ExplicitComponent):
         E = inputs["E"]
         G = inputs["G"]
         Az = util.sectionalInterp(z, z_full, inputs["Az"])
+        Asx = util.sectionalInterp(z, z_full, inputs["Asx"])
+        Asy = util.sectionalInterp(z, z_full, inputs["Asy"])
         Ixx = util.sectionalInterp(z, z_full, inputs["Ixx"])
         Iyy = util.sectionalInterp(z, z_full, inputs["Iyy"])
         Jz = util.sectionalInterp(z, z_full, inputs["Jz"])
@@ -568,6 +581,19 @@ class TowerDiscretization(om.ExplicitComponent):
         outputs["sideside_stff"] = E * Iyy
         outputs["tor_stff"] = G * Jz
         outputs["axial_stff"] = E * Az
+
+        d_sec, _ = util.nodal2sectional(inputs["tower_outer_diameter"])
+        r_sec = 0.5 * d_sec
+        ax_load2stress = np.zeros((d_sec.size, 6))
+        ax_load2stress[:, 2] = 1 / Az
+        ax_load2stress[:, 3] = r_sec / Ixx
+        ax_load2stress[:, 4] = r_sec / Iyy
+        sh_load2stress = np.zeros((d_sec.size, 6))
+        sh_load2stress[:, 0] = r_sec / Asx
+        sh_load2stress[:, 1] = r_sec / Asy
+        sh_load2stress[:, 5] = 1 / Jz
+        outputs["axial_load2stress"] = ax_load2stress
+        outputs["shear_load2stress"] = sh_load2stress
 
 
 class CylinderMass(om.ExplicitComponent):

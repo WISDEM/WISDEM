@@ -123,6 +123,10 @@ class DiscretizationYAML(om.ExplicitComponent):
         Unit costs of the materials along the member sections.
     outfitting_factor : numpy array[n_height-1]
         Additional outfitting multiplier in each section
+    axial_load2stress : numpy array[n_height-1, 6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and axial stress
+    shear_load2stress : numpy array[n_height-1, 6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and shear stress
 
     """
 
@@ -211,6 +215,9 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_output("cg_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional center of mass")
         self.add_output("sc_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional shear center")
         self.add_output("tc_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional tension center")
+
+        self.add_output("axial_load2stress", val=np.zeros([n_height - 1, 6]), units="m**2")
+        self.add_output("shear_load2stress", val=np.zeros([n_height - 1, 6]), units="m**2")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack dimensions
@@ -337,6 +344,19 @@ class DiscretizationYAML(om.ExplicitComponent):
         outputs["sideside_stff"] = E_param * Iyy
         outputs["tor_stff"] = G_param * Jz
         outputs["axial_stff"] = E_param * Az
+
+        # While the sections are simple, store cross section info for fatigue
+        ax_load2stress = np.zeros([n_height - 1, 6])
+        sh_load2stress = np.zeros([n_height - 1, 6])
+        r_sec = 0.5 * D
+        ax_load2stress[:, 2] = 1.0 / itube.Area
+        ax_load2stress[:, 3] = r_sec / itube.Jxx
+        ax_load2stress[:, 4] = r_sec / itube.Jyy
+        sh_load2stress[:, 0] = r_sec / itube.Asx
+        sh_load2stress[:, 1] = r_sec / itube.Asy
+        sh_load2stress[:, 5] = 1.0 / itube.J0
+        outputs["axial_load2stress"] = ax_load2stress
+        outputs["shear_load2stress"] = sh_load2stress
 
         # Loop over materials and associate it with its thickness
         rho_ballast = np.zeros(n_ballast)
@@ -644,14 +664,6 @@ class MemberComponent(om.ExplicitComponent):
         Cross-sectional shear modulus all member segments
     section_sigma_y : numpy array[npts-1], [Pa]
         Cross-sectional yield stress of all member segments
-    axial_base_load2stress : numpy array[6], [m**2]
-        Linear conversion factors between loads [Fx-z; Mx-z] and axial stress at member joint0
-    shear_base_load2stress : numpy array[6], [m**2]
-        Linear conversion factors between loads [Fx-z; Mx-z] and shear stress at member joint0
-    axial_end_load2stress : numpy array[6], [m**2]
-        Linear conversion factors between loads [Fx-z; Mx-z] and axial stress at member joint1
-    shear_end_load2stress : numpy array[6], [m**2]
-        Linear conversion factors between loads [Fx-z; Mx-z] and shear stress at member joint1
 
     """
 
@@ -765,11 +777,6 @@ class MemberComponent(om.ExplicitComponent):
         self.add_output("section_G", NULL * np.ones(MEMMAX), units="Pa")
         self.add_output("section_sigma_y", NULL * np.ones(MEMMAX), units="Pa")
 
-        self.add_output("axial_base_load2stress", val=np.zeros(6), units="m**2")
-        self.add_output("shear_base_load2stress", val=np.zeros(6), units="m**2")
-        self.add_output("axial_end_load2stress", val=np.zeros(6), units="m**2")
-        self.add_output("shear_end_load2stress", val=np.zeros(6), units="m**2")
-
     def add_node(self, s_new):
         # Quit if node already exists
         if s_new in self.sections:
@@ -873,33 +880,6 @@ class MemberComponent(om.ExplicitComponent):
                 sigy=sigymat[k],
             )
             self.add_section(s_full[k], s_full[k + 1], iprop)
-
-        # While the sections are simple, store cross section info
-        ax_base_load2stress = np.zeros(6)
-        sh_base_load2stress = np.zeros(6)
-        ax_end_load2stress = np.zeros(6)
-        sh_end_load2stress = np.zeros(6)
-        slist = self.sections.keys()
-        s = slist[0]
-        r_sec = 0.5 * self.sections[s].D
-        ax_base_load2stress[2] = 1.0 / self.sections[s].A
-        ax_base_load2stress[3] = r_sec / self.sections[s].Ixx
-        ax_base_load2stress[4] = r_sec / self.sections[s].Iyy
-        sh_base_load2stress[0] = r_sec / self.sections[s].Asx
-        sh_base_load2stress[1] = r_sec / self.sections[s].Asy
-        sh_base_load2stress[5] = 1.0 / self.sections[s].Izz
-        s = slist[-2]
-        r_sec = 0.5 * self.sections[s].D
-        ax_end_load2stress[2] = 1.0 / self.sections[s].A
-        ax_end_load2stress[3] = r_sec / self.sections[s].Ixx
-        ax_end_load2stress[4] = r_sec / self.sections[s].Iyy
-        sh_end_load2stress[0] = r_sec / self.sections[s].Asx
-        sh_end_load2stress[1] = r_sec / self.sections[s].Asy
-        sh_end_load2stress[5] = 1.0 / self.sections[s].Izz
-        outputs["axial_base_load2stress"] = ax_base_load2stress
-        outputs["shear_base_load2stress"] = sh_base_load2stress
-        outputs["axial_end_load2stress"] = ax_end_load2stress
-        outputs["shear_end_load2stress"] = sh_end_load2stress
 
         # Adjust for ghost sections
         s_ghost1 = float(inputs["s_ghost1"])
