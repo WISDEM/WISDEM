@@ -501,6 +501,7 @@ class TestProps(unittest.TestCase):
         self.inputs["hub_height"] = 100.0
         self.inputs["z_param"] = np.array([0.0, 40.0, 80.0])
         self.inputs["z_full"] = np.linspace(0.0, 80.0, 7)
+        self.inputs["tower_outer_diameter"] = 10 * np.ones(3)
         self.inputs["rho"] = 1e3 * np.ones(2)
         self.inputs["outfitting_factor"] = 1.1 * np.ones(2)
         self.inputs["unit_cost"] = 5.0 * np.ones(2)
@@ -510,6 +511,8 @@ class TestProps(unittest.TestCase):
         self.inputs["sigma_ult"] = 8.0 * np.ones(2)
         self.inputs["wohler_exp"] = 1e1 * np.ones(2)
         self.inputs["wohler_A"] = 1e1 * np.ones(2)
+        self.inputs["Asx"] = 8.0 * np.ones(6)
+        self.inputs["Asy"] = 8.0 * np.ones(6)
         self.inputs["Az"] = 9.0 * np.ones(6)
         self.inputs["Jz"] = 10.0 * np.ones(6)
         self.inputs["Ixx"] = 11.0 * np.ones(6)
@@ -538,6 +541,15 @@ class TestProps(unittest.TestCase):
         # npt.assert_equal(self.outputs["cg_offst"], np.zeros(nout))
         # npt.assert_equal(self.outputs["sc_offst"], np.zeros(nout))
         # npt.assert_equal(self.outputs["tc_offst"], np.zeros(nout))
+
+        r = 0.5 * 10.0
+        npt.assert_almost_equal(self.outputs["axial_load2stress"][:, 2], 1.0 / 9.0)
+        npt.assert_equal(self.outputs["axial_load2stress"][:, :2], 0.0)
+        npt.assert_equal(self.outputs["axial_load2stress"][:, 5], 0.0)
+        npt.assert_almost_equal(self.outputs["axial_load2stress"][:, 3:4], r / 11.0)
+        npt.assert_almost_equal(self.outputs["shear_load2stress"][:, :2], r / 8.0)
+        npt.assert_almost_equal(self.outputs["shear_load2stress"][:, 2:4], 0.0)
+        npt.assert_almost_equal(self.outputs["shear_load2stress"][:, 5], 1.0 / 10.0)
 
     def testTowerMass(self):
 

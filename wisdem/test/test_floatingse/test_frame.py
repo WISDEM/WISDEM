@@ -414,6 +414,9 @@ class TestGroup(unittest.TestCase):
         prob["E_mat"] = 200e9 * np.ones((2, 3))  # Young's modulus [N/m^2]
         prob["G_mat"] = 79.3e9 * np.ones((2, 3))  # Shear modulus [N/m^2]
         prob["sigma_y_mat"] = 3.45e8 * np.ones(2)  # Elastic yield stress [N/m^2]
+        prob["sigma_ult_mat"] = 5e8 * np.ones((2, 3))
+        prob["wohler_exp_mat"] = 4.0 * np.ones(2)
+        prob["wohler_A_mat"] = 7.5e8 * np.ones(2)
         prob["unit_cost_mat"] = np.array([2.0, 1.0])
         prob["material_names"] = ["steel", "slurry"]
 
