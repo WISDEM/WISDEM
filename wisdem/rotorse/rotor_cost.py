@@ -353,13 +353,13 @@ class blade_bom(object):
         unit_mass_core_shell_hp = np.zeros(npts)
 
         width_sc_start_lp = 0.0
-        sc_start_section_lp = 0.0
+        sc_start_section_lp = 0
         width_sc_end_lp = 0.0
-        sc_end_section_lp = 0.0
+        sc_end_section_lp = 0
         width_sc_start_hp = 0.0
-        sc_start_section_hp = 0.0
+        sc_start_section_hp = 0
         width_sc_end_hp = 0.0
-        sc_end_section_hp = 0.0
+        sc_end_section_hp = 0
 
         # Distinction between root preform and outer sheel skin
         root_preform_end = np.argmin(abs(self.r - self.blade_specs["root_preform_length"]))

@@ -152,8 +152,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         )
 
         # Hub inputs
-        if modeling_options["flags"]["hub"]:
-            self.add_subsystem("hub", Hub())
+        if modeling_options["flags"]["hub"] or modeling_options["flags"]["blade"]:
+            self.add_subsystem("hub", Hub(flags=modeling_options["flags"]))
 
         # Control inputs
         if modeling_options["flags"]["control"]:
@@ -205,7 +205,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 self.connect("hub.radius", "blade.run_inn_af.hub_radius")
 
         # Nacelle inputs
-        if modeling_options["flags"]["nacelle"]:
+        if modeling_options["flags"]["nacelle"] or modeling_options["flags"]["blade"]:
             nacelle_ivc = om.IndepVarComp()
             # Common direct and geared
             nacelle_ivc.add_output(
@@ -218,99 +218,116 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 "overhang", val=0.0, units="m", desc="Horizontal distance from tower top edge to hub flange"
             )
             nacelle_ivc.add_output(
-                "distance_hub2mb", val=0.0, units="m", desc="Distance from hub flange to first main bearing along shaft"
-            )
-            nacelle_ivc.add_output(
-                "distance_mb2mb", val=0.0, units="m", desc="Distance from first to second main bearing along shaft"
-            )
-            nacelle_ivc.add_output("L_generator", val=0.0, units="m", desc="Generator length along shaft")
-            nacelle_ivc.add_output("lss_diameter", val=np.zeros(2), units="m", desc="Diameter of low speed shaft")
-            nacelle_ivc.add_output(
-                "lss_wall_thickness", val=np.zeros(2), units="m", desc="Thickness of low speed shaft"
-            )
-            nacelle_ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
-            nacelle_ivc.add_output(
                 "gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive"
             )
-            nacelle_ivc.add_output("damping_ratio", val=0.0, desc="Damping ratio for the drivetrain system")
-            nacelle_ivc.add_output(
-                "brake_mass_user",
-                val=0.0,
-                units="kg",
-                desc="Override regular regression-based calculation of brake mass with this value",
-            )
-            nacelle_ivc.add_output(
-                "hvac_mass_coeff",
-                val=0.025,
-                units="kg/kW/m",
-                desc="Regression-based scaling coefficient on machine rating to get HVAC system mass",
-            )
-            nacelle_ivc.add_output(
-                "converter_mass_user",
-                val=0.0,
-                units="kg",
-                desc="Override regular regression-based calculation of converter mass with this value",
-            )
-            nacelle_ivc.add_output(
-                "transformer_mass_user",
-                val=0.0,
-                units="kg",
-                desc="Override regular regression-based calculation of transformer mass with this value",
-            )
-            nacelle_ivc.add_discrete_output("mb1Type", val="CARB", desc="Type of main bearing: CARB / CRB / SRB / TRB")
-            nacelle_ivc.add_discrete_output("mb2Type", val="SRB", desc="Type of main bearing: CARB / CRB / SRB / TRB")
-            nacelle_ivc.add_discrete_output(
-                "uptower", val=True, desc="If power electronics are located uptower (True) or at tower base (False)"
-            )
-            nacelle_ivc.add_discrete_output(
-                "lss_material", val="steel", desc="Material name identifier for the low speed shaft"
-            )
-            nacelle_ivc.add_discrete_output(
-                "hss_material", val="steel", desc="Material name identifier for the high speed shaft"
-            )
-            nacelle_ivc.add_discrete_output(
-                "bedplate_material", val="steel", desc="Material name identifier for the bedplate"
-            )
+            nacelle_ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
+            if modeling_options["flags"]["nacelle"]:
+                nacelle_ivc.add_output(
+                    "distance_hub2mb",
+                    val=0.0,
+                    units="m",
+                    desc="Distance from hub flange to first main bearing along shaft",
+                )
+                nacelle_ivc.add_output(
+                    "distance_mb2mb", val=0.0, units="m", desc="Distance from first to second main bearing along shaft"
+                )
+                nacelle_ivc.add_output("L_generator", val=0.0, units="m", desc="Generator length along shaft")
+                nacelle_ivc.add_output("lss_diameter", val=np.zeros(2), units="m", desc="Diameter of low speed shaft")
+                nacelle_ivc.add_output(
+                    "lss_wall_thickness", val=np.zeros(2), units="m", desc="Thickness of low speed shaft"
+                )
+                nacelle_ivc.add_output("damping_ratio", val=0.0, desc="Damping ratio for the drivetrain system")
+                nacelle_ivc.add_output(
+                    "brake_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override regular regression-based calculation of brake mass with this value",
+                )
+                nacelle_ivc.add_output(
+                    "hvac_mass_coeff",
+                    val=0.025,
+                    units="kg/kW/m",
+                    desc="Regression-based scaling coefficient on machine rating to get HVAC system mass",
+                )
+                nacelle_ivc.add_output(
+                    "converter_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override regular regression-based calculation of converter mass with this value",
+                )
+                nacelle_ivc.add_output(
+                    "transformer_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override regular regression-based calculation of transformer mass with this value",
+                )
+                nacelle_ivc.add_discrete_output(
+                    "mb1Type", val="CARB", desc="Type of main bearing: CARB / CRB / SRB / TRB"
+                )
+                nacelle_ivc.add_discrete_output(
+                    "mb2Type", val="SRB", desc="Type of main bearing: CARB / CRB / SRB / TRB"
+                )
+                nacelle_ivc.add_discrete_output(
+                    "uptower", val=True, desc="If power electronics are located uptower (True) or at tower base (False)"
+                )
+                nacelle_ivc.add_discrete_output(
+                    "lss_material", val="steel", desc="Material name identifier for the low speed shaft"
+                )
+                nacelle_ivc.add_discrete_output(
+                    "hss_material", val="steel", desc="Material name identifier for the high speed shaft"
+                )
+                nacelle_ivc.add_discrete_output(
+                    "bedplate_material", val="steel", desc="Material name identifier for the bedplate"
+                )
 
-            if modeling_options["WISDEM"]["DriveSE"]["direct"]:
-                # Direct only
-                nacelle_ivc.add_output(
-                    "nose_diameter", val=np.zeros(2), units="m", desc="Diameter of nose (also called turret or spindle)"
-                )
-                nacelle_ivc.add_output(
-                    "nose_wall_thickness",
-                    val=np.zeros(2),
-                    units="m",
-                    desc="Thickness of nose (also called turret or spindle)",
-                )
-                nacelle_ivc.add_output(
-                    "bedplate_wall_thickness",
-                    val=np.zeros(4),
-                    units="m",
-                    desc="Thickness of hollow elliptical bedplate",
-                )
-            else:
-                # Geared only
-                nacelle_ivc.add_output("hss_length", val=0.0, units="m", desc="Length of high speed shaft")
-                nacelle_ivc.add_output("hss_diameter", val=np.zeros(2), units="m", desc="Diameter of high speed shaft")
-                nacelle_ivc.add_output(
-                    "hss_wall_thickness", val=np.zeros(2), units="m", desc="Wall thickness of high speed shaft"
-                )
-                nacelle_ivc.add_output("bedplate_flange_width", val=0.0, units="m", desc="Bedplate I-beam flange width")
-                nacelle_ivc.add_output(
-                    "bedplate_flange_thickness", val=0.0, units="m", desc="Bedplate I-beam flange thickness"
-                )
-                nacelle_ivc.add_output(
-                    "bedplate_web_thickness", val=0.0, units="m", desc="Bedplate I-beam web thickness"
-                )
-                nacelle_ivc.add_discrete_output(
-                    "gear_configuration",
-                    val="eep",
-                    desc="3-letter string of Es or Ps to denote epicyclic or parallel gear configuration",
-                )
-                nacelle_ivc.add_discrete_output(
-                    "planet_numbers", val=[3, 3, 0], desc="Number of planets for epicyclic stages (use 0 for parallel)"
-                )
+                if modeling_options["WISDEM"]["DriveSE"]["direct"]:
+                    # Direct only
+                    nacelle_ivc.add_output(
+                        "nose_diameter",
+                        val=np.zeros(2),
+                        units="m",
+                        desc="Diameter of nose (also called turret or spindle)",
+                    )
+                    nacelle_ivc.add_output(
+                        "nose_wall_thickness",
+                        val=np.zeros(2),
+                        units="m",
+                        desc="Thickness of nose (also called turret or spindle)",
+                    )
+                    nacelle_ivc.add_output(
+                        "bedplate_wall_thickness",
+                        val=np.zeros(4),
+                        units="m",
+                        desc="Thickness of hollow elliptical bedplate",
+                    )
+                else:
+                    # Geared only
+                    nacelle_ivc.add_output("hss_length", val=0.0, units="m", desc="Length of high speed shaft")
+                    nacelle_ivc.add_output(
+                        "hss_diameter", val=np.zeros(2), units="m", desc="Diameter of high speed shaft"
+                    )
+                    nacelle_ivc.add_output(
+                        "hss_wall_thickness", val=np.zeros(2), units="m", desc="Wall thickness of high speed shaft"
+                    )
+                    nacelle_ivc.add_output(
+                        "bedplate_flange_width", val=0.0, units="m", desc="Bedplate I-beam flange width"
+                    )
+                    nacelle_ivc.add_output(
+                        "bedplate_flange_thickness", val=0.0, units="m", desc="Bedplate I-beam flange thickness"
+                    )
+                    nacelle_ivc.add_output(
+                        "bedplate_web_thickness", val=0.0, units="m", desc="Bedplate I-beam web thickness"
+                    )
+                    nacelle_ivc.add_discrete_output(
+                        "gear_configuration",
+                        val="eep",
+                        desc="3-letter string of Es or Ps to denote epicyclic or parallel gear configuration",
+                    )
+                    nacelle_ivc.add_discrete_output(
+                        "planet_numbers",
+                        val=[3, 3, 0],
+                        desc="Number of planets for epicyclic stages (use 0 for parallel)",
+                    )
 
             # Mulit-body properties
             # GB: I understand these will need to be in there for OpenFAST, but if running DrivetrainSE & OpenFAST this might cause problems?
@@ -603,6 +620,24 @@ class Blade(om.Group):
             units="m",
             val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
         )
+        opt_var.add_output(
+            "s_opt_te_ss",
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]),
+        )
+        opt_var.add_output(
+            "s_opt_te_ps",
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]),
+        )
+        opt_var.add_output(
+            "te_ss_opt",
+            units="m",
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]),
+        )
+        opt_var.add_output(
+            "te_ps_opt",
+            units="m",
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]),
+        )
         self.add_subsystem("opt_var", opt_var)
 
         # Import outer shape BEM
@@ -715,6 +750,12 @@ class Blade(om.Group):
         self.connect("opt_var.s_opt_spar_cap_ss", "ps.s_opt_spar_cap_ss")
         self.connect("opt_var.spar_cap_ps_opt", "ps.spar_cap_ps_opt")
         self.connect("opt_var.s_opt_spar_cap_ps", "ps.s_opt_spar_cap_ps")
+
+        self.connect("opt_var.te_ss_opt", "ps.te_ss_opt")
+        self.connect("opt_var.s_opt_te_ss", "ps.s_opt_te_ss")
+        self.connect("opt_var.te_ps_opt", "ps.te_ps_opt")
+        self.connect("opt_var.s_opt_te_ps", "ps.s_opt_te_ps")
+
         self.connect("outer_shape_bem.s", "ps.s")
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
         self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
@@ -2136,6 +2177,9 @@ def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.0):
 
 class Hub(om.Group):
     # Openmdao group with the hub data coming from the input yaml file.
+    def initialize(self):
+        self.options.declare("flags")
+
     def setup(self):
         ivc = self.add_subsystem("hub_indep_vars", om.IndepVarComp(), promotes=["*"])
 
@@ -2147,19 +2191,20 @@ class Hub(om.Group):
         )
         # ivc.add_output('drag_coeff',   val=0.0,                desc='Drag coefficient to estimate the aerodynamic forces generated by the hub.') # GB: this doesn't connect to anything
         ivc.add_output("diameter", val=0.0, units="m")
-        ivc.add_output("flange_t2shell_t", val=0.0)
-        ivc.add_output("flange_OD2hub_D", val=0.0)
-        ivc.add_output("flange_ID2flange_OD", val=0.0)
-        ivc.add_output("hub_stress_concentration", val=0.0)
-        ivc.add_discrete_output("n_front_brackets", val=0)
-        ivc.add_discrete_output("n_rear_brackets", val=0)
-        ivc.add_output("clearance_hub_spinner", val=0.0, units="m")
-        ivc.add_output("spin_hole_incr", val=0.0)
-        ivc.add_output("pitch_system_scaling_factor", val=0.54)
-        ivc.add_output("spinner_gust_ws", val=70.0, units="m/s")
-        ivc.add_output("hub_in2out_circ", val=1.2)
-        ivc.add_discrete_output("hub_material", val="steel")
-        ivc.add_discrete_output("spinner_material", val="carbon")
+        if self.options["flags"]["hub"]:
+            ivc.add_output("flange_t2shell_t", val=0.0)
+            ivc.add_output("flange_OD2hub_D", val=0.0)
+            ivc.add_output("flange_ID2flange_OD", val=0.0)
+            ivc.add_output("hub_stress_concentration", val=0.0)
+            ivc.add_discrete_output("n_front_brackets", val=0)
+            ivc.add_discrete_output("n_rear_brackets", val=0)
+            ivc.add_output("clearance_hub_spinner", val=0.0, units="m")
+            ivc.add_output("spin_hole_incr", val=0.0)
+            ivc.add_output("pitch_system_scaling_factor", val=0.54)
+            ivc.add_output("spinner_gust_ws", val=70.0, units="m/s")
+            ivc.add_output("hub_in2out_circ", val=1.2)
+            ivc.add_discrete_output("hub_material", val="steel")
+            ivc.add_discrete_output("spinner_material", val="carbon")
 
         exec_comp = om.ExecComp(
             "radius = 0.5 * diameter",
@@ -2301,6 +2346,8 @@ class Floating(om.Group):
         jivc = self.add_subsystem("joints", om.IndepVarComp(), promotes=["*"])
         jivc.add_output("location_in", val=np.zeros((n_joints, 3)), units="m")
         jivc.add_output("transition_node", val=np.zeros(3), units="m")
+        jivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
+        jivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
 
         # Additions for optimizing individual nodes or multiple nodes concurrently
         self.add_subsystem("nodedv", NodeDVs(options=floating_init_options["joints"]), promotes=["*"])
@@ -2334,7 +2381,7 @@ class Floating(om.Group):
             ivc.add_output("ring_stiffener_web_thickness", 0.0, units="m")
             ivc.add_output("ring_stiffener_flange_width", 0.0, units="m")
             ivc.add_output("ring_stiffener_flange_thickness", 0.0, units="m")
-            ivc.add_output("ring_stiffener_spacing", 0.0, units="m")
+            ivc.add_output("ring_stiffener_spacing", 0.0)
             ivc.add_output("axial_stiffener_web_height", 0.0, units="m")
             ivc.add_output("axial_stiffener_web_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_flange_width", 0.0, units="m")
@@ -2514,8 +2561,6 @@ class Mooring(om.Group):
 
         n_nodes = mooring_init_options["n_nodes"]
         n_lines = mooring_init_options["n_lines"]
-        n_line_types = mooring_init_options["n_line_types"]
-        # n_anchor_types = mooring_init_options["n_anchor_types"]
 
         n_design = 1 if mooring_init_options["symmetric"] else n_lines
 
@@ -2531,8 +2576,6 @@ class Mooring(om.Group):
         ivc.add_discrete_output("nodes_joint_name", val=[""] * n_nodes)
         ivc.add_output("unstretched_length_in", val=np.zeros(n_design), units="m")
         ivc.add_discrete_output("line_id", val=[""] * n_lines)
-        # ivc.add_discrete_output("n_lines", val=n_lines)
-        ivc.add_discrete_output("line_type_names", val=[""] * n_line_types)  ## For MoorDyn
         ivc.add_output("line_diameter_in", val=np.zeros(n_design), units="m")
         ivc.add_output("line_mass_density_coeff", val=np.zeros(n_lines), units="kg/m**3")
         ivc.add_output("line_stiffness_coeff", val=np.zeros(n_lines), units="N/m**2")
@@ -2542,11 +2585,10 @@ class Mooring(om.Group):
         ivc.add_output("line_tangential_added_mass_coeff", val=np.zeros(n_lines), units="kg/m**3")
         ivc.add_output("line_transverse_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
         ivc.add_output("line_tangential_drag_coeff", val=np.zeros(n_lines), units="N/m**2")
-        # ivc.add_discrete_output("anchor_names", val=[""] * n_anchor_types)
         ivc.add_output("anchor_mass", val=np.zeros(n_lines), units="kg")
         ivc.add_output("anchor_cost", val=np.zeros(n_lines), units="USD")
-        ivc.add_output("anchor_max_vertical_load", val=np.zeros(n_lines), units="N")
-        ivc.add_output("anchor_max_lateral_load", val=np.zeros(n_lines), units="N")
+        ivc.add_output("anchor_max_vertical_load", val=1e30 * np.ones(n_lines), units="N")
+        ivc.add_output("anchor_max_lateral_load", val=1e30 * np.ones(n_lines), units="N")
 
         self.add_subsystem("moorprop", MooringProperties(mooring_init_options=mooring_init_options), promotes=["*"])
         self.add_subsystem("moorjoint", MooringJoints(options=self.options["options"]), promotes=["*"])
@@ -2585,22 +2627,44 @@ class MooringProperties(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         n_lines = self.options["mooring_init_options"]["n_lines"]
+        line_mat = self.options["mooring_init_options"]["line_material"]
         outputs["line_diameter"] = d = inputs["line_diameter_in"] * np.ones(n_lines)
         outputs["unstretched_length"] = inputs["unstretched_length_in"] * np.ones(n_lines)
-
         d2 = d * d
-        varlist = [
-            "line_mass_density",
-            "line_stiffness",
-            "line_breaking_load",
-            "line_cost_rate",
-            "line_transverse_added_mass",
-            "line_tangential_added_mass",
-            "line_transverse_drag",
-            "line_tangential_drag",
-        ]
-        for var in varlist:
-            outputs[var] = d2 * inputs[var + "_coeff"]
+
+        line_obj = None
+        if line_mat[0] == "custom":
+            varlist = [
+                "line_mass_density",
+                "line_stiffness",
+                "line_breaking_load",
+                "line_cost_rate",
+                "line_transverse_added_mass",
+                "line_tangential_added_mass",
+                "line_transverse_drag",
+                "line_tangential_drag",
+            ]
+            for var in varlist:
+                outputs[var] = d2 * inputs[var + "_coeff"]
+
+        elif line_mat[0] == "chain_stud":
+            line_obj = mp.getLineProps(1e3 * d[0], type="chain", stud="stud")
+        else:
+            line_obj = mp.getLineProps(1e3 * d[0], type=line_mat[0])
+
+        if not line_obj is None:
+            outputs["line_mass_density"] = line_obj.mlin
+            outputs["line_stiffness"] = line_obj.EA
+            outputs["line_breaking_load"] = line_obj.MBL
+            outputs["line_cost_rate"] = line_obj.cost
+            varlist = [
+                "line_transverse_added_mass",
+                "line_tangential_added_mass",
+                "line_transverse_drag",
+                "line_tangential_drag",
+            ]
+            for var in varlist:
+                outputs[var] = d2 * inputs[var + "_coeff"]
 
 
 class MooringJoints(om.ExplicitComponent):

@@ -26,6 +26,11 @@ class TestPlatform(unittest.TestCase):
         self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = True
         self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["tol"] = 1e-8
         self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["modal"] = False
+        self.opt["WISDEM"]["FloatingSE"]["gamma_f"] = 1.35  # Safety factor on loads
+        self.opt["WISDEM"]["FloatingSE"]["gamma_m"] = 1.3  # Safety factor on materials
+        self.opt["WISDEM"]["FloatingSE"]["gamma_n"] = 1.0  # Safety factor on consequence of failure
+        self.opt["WISDEM"]["FloatingSE"]["gamma_b"] = 1.1  # Safety factor on buckling
+        self.opt["WISDEM"]["FloatingSE"]["gamma_fatigue"] = 1.755  # Not used
         self.opt["mooring"] = {}
         self.opt["mooring"]["n_attach"] = 3
 
@@ -35,10 +40,27 @@ class TestPlatform(unittest.TestCase):
             self.inputs[f"member{k}:nodes_xyz"] = NULL * np.ones((MEMMAX, 3))
             self.inputs[f"member{k}:nodes_r"] = NULL * np.ones(MEMMAX)
 
-        for var in ["D", "t", "A", "Asx", "Asy", "Ixx", "Iyy", "Izz", "rho", "E", "G", "Px", "Py", "Pz"]:
+        for var in [
+            "D",
+            "t",
+            "A",
+            "Asx",
+            "Asy",
+            "Ixx",
+            "Iyy",
+            "Izz",
+            "rho",
+            "E",
+            "G",
+            "sigma_y",
+            "Px",
+            "Py",
+            "Pz",
+            "qdyn",
+        ]:
             self.inputs["tower_elem_" + var] = NULL * np.ones(MEMMAX)
             for k in range(n_member):
-                if var[0] == "P":
+                if var in ["Px", "Py", "Pz", "qdyn"]:
                     self.inputs[f"member{k}:{var}"] = NULL * np.ones(MEMMAX)
                 else:
                     self.inputs[f"member{k}:section_{var}"] = NULL * np.ones(MEMMAX)
@@ -63,6 +85,7 @@ class TestPlatform(unittest.TestCase):
             self.inputs[f"member{k}:section_rho"][:1] = 1e3 / (0.5 * k * np.ones(1) + 1) / L
             self.inputs[f"member{k}:section_E"][:1] = 3 * k * np.ones(1) + 1
             self.inputs[f"member{k}:section_G"][:1] = 4 * k * np.ones(1) + 1
+            self.inputs[f"member{k}:section_sigma_y"][:1] = 5 * k * np.ones(1) + 1
             self.inputs[f"member{k}:idx_cb"] = 0
             self.inputs[f"member{k}:buoyancy_force"] = 1e2
             self.inputs[f"member{k}:displacement"] = 1e1
@@ -82,6 +105,7 @@ class TestPlatform(unittest.TestCase):
             self.inputs[f"member{k}:Px"][:2] = 1.0
             self.inputs[f"member{k}:Py"][:2] = 2.0
             self.inputs[f"member{k}:Pz"][:2] = 3.0
+            self.inputs[f"member{k}:qdyn"][:2] = 4.0
 
         myones = np.ones(2)
         self.inputs["tower_nodes"][:3, :] = np.array([[0.0, 0.0, 1.0], [0.0, 0.0, 51.0], [0.0, 0.0, 101.0]])
@@ -100,9 +124,11 @@ class TestPlatform(unittest.TestCase):
         self.inputs["tower_elem_rho"][:2] = 5e3 / 4 / 100 * myones
         self.inputs["tower_elem_E"][:2] = 30.0 * myones
         self.inputs["tower_elem_G"][:2] = 40.0 * myones
+        self.inputs["tower_elem_sigma_y"][:2] = 50.0 * myones
         self.inputs["tower_elem_Px"][:3] = 1.0
         self.inputs["tower_elem_Py"][:3] = 2.0
         self.inputs["tower_elem_Pz"][:3] = 3.0
+        self.inputs["tower_elem_qdyn"][:3] = 4.0
         self.inputs["tower_center_of_mass"] = self.inputs["tower_nodes"][:3, :].mean(axis=0)
         self.inputs["tower_mass"] = 5e3
 
@@ -111,6 +137,7 @@ class TestPlatform(unittest.TestCase):
         self.inputs["mooring_neutral_load"][:, 1] = [0.0, 50, -50]
         self.inputs["mooring_neutral_load"][:, 2] = -1e3
         self.inputs["mooring_fairlead_joints"] = np.array([[0.0, 0.0, 0.0], [0.5, 1.0, 0.0], [1.0, 0.0, 0.0]])
+        self.inputs["mooring_stiffness"] = 5 * np.eye(6)
         self.inputs["transition_node"] = self.inputs["tower_nodes"][0, :]
         self.inputs["tower_top_node"] = self.inputs["tower_nodes"][2, :]
         self.inputs["rna_mass"] = 1e4
@@ -119,13 +146,14 @@ class TestPlatform(unittest.TestCase):
         self.inputs["rna_F"] = np.array([1e2, 1e1, 0.0])
         self.inputs["rna_M"] = np.array([2e1, 2e2, 0.0])
         self.inputs["transition_piece_mass"] = 1e3
+        self.inputs["transition_piece_cost"] = 3e3
         self.inputs["rho_water"] = 1e3
 
     def testTetrahedron(self):
         myobj = frame.PlatformFrame(options=self.opt)
         myobj.node_mem2glob = {}
         myobj.node_glob2mem = {}
-        myobj.compute(self.inputs, self.outputs)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         # Check NULLs and implied number of nodes / elements
         npt.assert_equal(self.outputs["platform_nodes"][4:, :], NULL)
@@ -144,12 +172,14 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["platform_elem_rho"][6:], NULL)
         npt.assert_equal(self.outputs["platform_elem_E"][6:], NULL)
         npt.assert_equal(self.outputs["platform_elem_G"][6:], NULL)
+        npt.assert_equal(self.outputs["platform_elem_sigma_y"][6:], NULL)
         npt.assert_equal(self.outputs["platform_elem_Px1"][6:], NULL)
         npt.assert_equal(self.outputs["platform_elem_Py1"][6:], NULL)
         npt.assert_equal(self.outputs["platform_elem_Pz1"][6:], NULL)
         npt.assert_equal(self.outputs["platform_elem_Px2"][6:], NULL)
         npt.assert_equal(self.outputs["platform_elem_Py2"][6:], NULL)
         npt.assert_equal(self.outputs["platform_elem_Pz2"][6:], NULL)
+        npt.assert_equal(self.outputs["platform_elem_qdyn"][6:], NULL)
 
         npt.assert_equal(
             self.outputs["platform_nodes"][:4, :],
@@ -173,12 +203,14 @@ class TestPlatform(unittest.TestCase):
         # npt.assert_equal(self.outputs["platform_elem_rho"][:6], 3 * np.arange(6)+1)
         npt.assert_equal(self.outputs["platform_elem_E"][:6], 3 * np.arange(6) + 1)
         npt.assert_equal(self.outputs["platform_elem_G"][:6], 4 * np.arange(6) + 1)
+        npt.assert_equal(self.outputs["platform_elem_sigma_y"][:6], 5 * np.arange(6) + 1)
         npt.assert_equal(self.outputs["platform_elem_Px1"][:6], 1.0)
         npt.assert_equal(self.outputs["platform_elem_Py1"][:6], 2.0)
         npt.assert_equal(self.outputs["platform_elem_Pz1"][:6], 3.0)
         npt.assert_equal(self.outputs["platform_elem_Px2"][:6], 1.0)
         npt.assert_equal(self.outputs["platform_elem_Py2"][:6], 2.0)
         npt.assert_equal(self.outputs["platform_elem_Pz2"][:6], 3.0)
+        npt.assert_equal(self.outputs["platform_elem_qdyn"][:6], 4.0)
         self.assertEqual(self.outputs["platform_displacement"], 6e1)
         centroid = np.array([0.375, 0.25, 0.25])
         R = np.zeros(6)
@@ -191,16 +223,18 @@ class TestPlatform(unittest.TestCase):
 
         npt.assert_equal(self.outputs["platform_center_of_buoyancy"], centroid)
         npt.assert_equal(self.outputs["platform_centroid"], centroid)
-        npt.assert_equal(self.outputs["platform_center_of_mass"], centroid)
-        self.assertEqual(self.outputs["platform_mass"], 6e3)
+        cg = (6e3 * centroid + 1e3 * np.array([0.0, 0.0, 1.0])) / 7e3
+        npt.assert_equal(self.outputs["platform_hull_center_of_mass"], cg)
+        self.assertEqual(self.outputs["platform_mass"], 6e3 + 1e3)
         self.assertEqual(self.outputs["platform_ballast_mass"], 6e2)
-        self.assertEqual(self.outputs["platform_hull_mass"], 6e3 - 6e2)
-        self.assertEqual(self.outputs["platform_cost"], 6 * 2e3)
+        self.assertEqual(self.outputs["platform_hull_mass"], 6e3 + 1e3 - 6e2)
+        self.assertEqual(self.outputs["platform_cost"], 6 * 2e3 + 3e3)
         self.assertEqual(self.outputs["platform_Awater"], 30)
         self.assertEqual(self.outputs["platform_Iwater"], 6 * 15 + 5 * R.sum())
         npt.assert_equal(self.outputs["platform_added_mass"], 6 * np.arange(6))
         npt.assert_equal(self.outputs["platform_variable_capacity"], 10 + np.arange(6))
-        npt.assert_array_less(1e2, self.outputs["platform_I_total"])
+        npt.assert_equal(self.outputs["transition_piece_I"], 1e3 * 0.25 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
+        npt.assert_array_less(1e2, self.outputs["platform_I_hull"] - self.outputs["transition_piece_I"])
         # Should find a transition mode even though one wasn't set
         # npt.assert_equal(self.outputs["transition_node"], [0.0, 0.0, 1.0])
 
@@ -224,7 +258,7 @@ class TestPlatform(unittest.TestCase):
         myobj = frame.PlatformFrame(options=self.opt)
         myobj.node_mem2glob = {}
         myobj.node_glob2mem = {}
-        myobj.compute(self.inputs, self.outputs)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         for k in self.outputs:
             self.inputs[k] = self.outputs[k]
         for k in self.discrete_outputs:
@@ -266,6 +300,7 @@ class TestPlatform(unittest.TestCase):
         # npt.assert_equal(self.outputs["system_elem_rho"][:8], np.r_[3 * np.arange(6)+1, 20, 20])
         npt.assert_equal(self.outputs["system_elem_E"][:8], np.r_[3 * np.arange(6) + 1, 30, 30])
         npt.assert_equal(self.outputs["system_elem_G"][:8], np.r_[4 * np.arange(6) + 1, 40, 40])
+        npt.assert_equal(self.outputs["system_elem_sigma_y"][:8], np.r_[5 * np.arange(6) + 1, 50, 50])
         self.assertEqual(self.outputs["system_structural_mass"], 6e3 + 5e3 + 1e4 + 1e3)
         npt.assert_equal(self.outputs["system_elem_Px1"][:8], 1.0)
         npt.assert_equal(self.outputs["system_elem_Px2"][:8], 1.0)
@@ -273,6 +308,7 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["system_elem_Py2"][:8], 2.0)
         npt.assert_equal(self.outputs["system_elem_Pz1"][:8], 3.0)
         npt.assert_equal(self.outputs["system_elem_Pz2"][:8], 3.0)
+        npt.assert_equal(self.outputs["system_elem_qdyn"][:8], 4.0)
         npt.assert_equal(
             self.outputs["system_structural_center_of_mass"],
             (
@@ -310,13 +346,13 @@ class TestPlatform(unittest.TestCase):
             )
             / self.outputs["system_mass"],
         )
-        npt.assert_equal(self.outputs["transition_piece_I"], 1e3 * 0.25 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
+        npt.assert_array_less(self.outputs["platform_I_hull"], self.outputs["platform_I_total"])
 
     def testRunFrame(self):
         myobj = frame.PlatformFrame(options=self.opt)
         myobj.node_mem2glob = {}
         myobj.node_glob2mem = {}
-        myobj.compute(self.inputs, self.outputs)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         for k in self.outputs:
             self.inputs[k] = self.outputs[k]
         for k in self.discrete_outputs:
@@ -405,6 +441,7 @@ class TestGroup(unittest.TestCase):
             prob[f"member{k}:section_rho"][:1] = 1e3 / (0.5 * k * np.ones(1) + 1) / L
             prob[f"member{k}:section_E"][:1] = 3 * k * np.ones(1) + 1
             prob[f"member{k}:section_G"][:1] = 4 * k * np.ones(1) + 1
+            prob[f"member{k}:section_sigma_y"][:1] = 5 * k * np.ones(1) + 1
             prob[f"member{k}:idx_cb"] = 0
             prob[f"member{k}:buoyancy_force"] = 1e2
             prob[f"member{k}:displacement"] = 1e1

@@ -230,6 +230,11 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = len(
                 self.wt_init["components"]["tower"]["internal_structure_2d_fem"]["layers"]
             )
+            self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = self.modeling_options["WISDEM"]["TowerSE"][
+                "n_height_tower"
+            ]
+            self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 0
+            self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 0
 
         # Monopile
         if self.modeling_options["flags"]["monopile"]:
@@ -238,6 +243,9 @@ class WindTurbineOntologyPython(object):
             )
             self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = len(
                 self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["layers"]
+            )
+            self.modeling_options["WISDEM"]["TowerSE"]["n_height"] += (
+                self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] - 1
             )
 
         # Floating platform
@@ -492,6 +500,8 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["mooring"]["node1"] = [""] * n_lines
             self.modeling_options["mooring"]["node2"] = [""] * n_lines
             self.modeling_options["mooring"]["line_type"] = [""] * n_lines
+            self.modeling_options["mooring"]["line_material"] = [""] * n_lines
+            self.modeling_options["mooring"]["line_anchor"] = [""] * n_lines
             fairlead_nodes = []
             for i in range(n_lines):
                 self.modeling_options["mooring"]["node1"][i] = self.wt_init["components"]["mooring"]["lines"][i][
@@ -514,17 +524,50 @@ class WindTurbineOntologyPython(object):
                     fairlead_nodes.append(self.wt_init["components"]["mooring"]["nodes"][node1id]["joint"])
                 if self.modeling_options["mooring"]["node_type"][node2id] == "vessel":
                     fairlead_nodes.append(self.wt_init["components"]["mooring"]["nodes"][node2id]["joint"])
+                # Store the anchor type names to start
+                if "fix" in self.modeling_options["mooring"]["node_type"][node1id]:
+                    self.modeling_options["mooring"]["line_anchor"][i] = self.modeling_options["mooring"][
+                        "anchor_type"
+                    ][node1id]
+                if "fix" in self.modeling_options["mooring"]["node_type"][node2id]:
+                    self.modeling_options["mooring"]["line_anchor"][i] = self.modeling_options["mooring"][
+                        "anchor_type"
+                    ][node2id]
 
             self.modeling_options["mooring"]["line_type_name"] = [""] * n_line_types
+            self.modeling_options["mooring"]["line_type_type"] = [""] * n_line_types
             for i in range(n_line_types):
                 self.modeling_options["mooring"]["line_type_name"][i] = self.wt_init["components"]["mooring"][
                     "line_types"
                 ][i]["name"]
+                self.modeling_options["mooring"]["line_type_type"][i] = self.wt_init["components"]["mooring"][
+                    "line_types"
+                ][i]["type"].lower()
+                for j in range(n_lines):
+                    if (
+                        self.modeling_options["mooring"]["line_type"][j]
+                        == self.modeling_options["mooring"]["line_type_name"][i]
+                    ):
+                        self.modeling_options["mooring"]["line_material"][j] = self.modeling_options["mooring"][
+                            "line_type_type"
+                        ][i]
             self.modeling_options["mooring"]["anchor_type_name"] = [""] * n_anchor_types
+            self.modeling_options["mooring"]["anchor_type_type"] = [""] * n_anchor_types
             for i in range(n_anchor_types):
                 self.modeling_options["mooring"]["anchor_type_name"][i] = self.wt_init["components"]["mooring"][
                     "anchor_types"
                 ][i]["name"]
+                self.modeling_options["mooring"]["anchor_type_type"][i] = self.wt_init["components"]["mooring"][
+                    "anchor_types"
+                ][i]["type"].lower()
+                for j in range(n_lines):
+                    if (
+                        self.modeling_options["mooring"]["line_anchor"][j]
+                        == self.modeling_options["mooring"]["anchor_type_name"][i]
+                    ):
+                        self.modeling_options["mooring"]["line_anchor"][j] = self.modeling_options["mooring"][
+                            "anchor_type_type"
+                        ][i]
             self.modeling_options["mooring"]["n_attach"] = len(set(fairlead_nodes))
 
         # Assembly

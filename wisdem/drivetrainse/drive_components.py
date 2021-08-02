@@ -281,13 +281,12 @@ class GeneratorSimple(om.ExplicitComponent):
 
         self.add_output("R_generator", val=0.0, units="m")
         self.add_output("generator_mass", val=0.0, units="kg")
-        self.add_output("stator_mass", val=0.0, units="kg")
         self.add_output("generator_rotor_mass", val=0.0, units="kg")
         self.add_output("generator_stator_mass", val=0.0, units="kg")
-        self.add_output("generator_efficiency", val=np.zeros(n_pc))
         self.add_output("generator_rotor_I", val=np.zeros(3), units="kg*m**2")
         self.add_output("generator_stator_I", val=np.zeros(3), units="kg*m**2")
         self.add_output("generator_I", val=np.zeros(3), units="kg*m**2")
+        self.add_output("generator_efficiency", val=np.zeros(n_pc))
 
     def compute(self, inputs, outputs):
 
@@ -770,6 +769,8 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         moments of inertia for the nacelle (including yaw) [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around the tower top
     above_yaw_I : numpy array[6], [kg*m**2]
         moments of inertia for the nacelle (excluding yaw) [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around its center of mass
+    above_yaw_I_TT : numpy array[6], [kg*m**2]
+        moments of inertia for the nacelle (excluding yaw) [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around the tower top
     """
 
     def initialize(self):
@@ -795,8 +796,12 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         self.add_input("brake_cm", 0.0, units="m")
         self.add_input("brake_I", np.zeros(3), units="kg*m**2")
         self.add_input("generator_mass", 0.0, units="kg")
+        self.add_input("generator_rotor_mass", val=0.0, units="kg")
+        self.add_input("generator_stator_mass", val=0.0, units="kg")
         self.add_input("generator_cm", 0.0, units="m")
         self.add_input("generator_I", np.zeros(3), units="kg*m**2")
+        self.add_input("generator_rotor_I", val=np.zeros(3), units="kg*m**2")
+        self.add_input("generator_stator_I", val=np.zeros(3), units="kg*m**2")
         self.add_input("nose_mass", val=0.0, units="kg")
         self.add_input("nose_cm", val=0.0, units="m")
         self.add_input("nose_I", val=np.zeros(3), units="kg*m**2")
@@ -838,6 +843,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         self.add_output("nacelle_I", np.zeros(6), units="kg*m**2")
         self.add_output("nacelle_I_TT", np.zeros(6), units="kg*m**2")
         self.add_output("above_yaw_I", np.zeros(6), units="kg*m**2")
+        self.add_output("above_yaw_I_TT", np.zeros(6), units="kg*m**2")
 
         self._mass_table = None
 
@@ -853,6 +859,8 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
             "hss",
             "brake",
             "gearbox",
+            "generator_rotor",
+            "generator_stator",
             "generator",
             "hvac",
             "nose",
@@ -873,6 +881,8 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         outputs["shaft_start"] = shaft0
 
         for k in components:
+            if k in ["generator_rotor", "generator_stator"]:
+                continue
             m_i = inputs[k + "_mass"]
             cm_i = inputs[k + "_cm"]
 
@@ -888,13 +898,13 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
 
         # Now find total I about nacelle CofM
         I_nac = np.zeros(6)
-        m_list = np.zeros((len(components) + 2,))
-        cm_list = np.zeros((len(components) + 2, 3))
-        I_cm_list = np.zeros((len(components) + 2, 6))
-        I_TT_list = np.zeros((len(components) + 2, 6))
+        m_list = np.zeros((len(components) + 3,))
+        cm_list = np.zeros((len(components) + 3, 3))
+        I_cm_list = np.zeros((len(components) + 3, 6))
+        I_TT_list = np.zeros((len(components) + 3, 6))
         for ic, c in enumerate(components):
             m_i = inputs[c + "_mass"]
-            cm_i = inputs[c + "_cm"]
+            cm_i = inputs["generator_cm"] if c.find("generator") >= 0 else inputs[c + "_cm"]
             I_i = inputs[c + "_I"]
 
             # Rotate MofI if in hub c.s.
@@ -905,9 +915,10 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
                 I_i = np.r_[I_i, np.zeros(3)]
 
             r = cm_i - cm_nac
-            I_add = util.assembleI(I_i) + m_i * (np.dot(r, r) * np.eye(3) - np.outer(r, r))
-            I_add = util.unassembleI(I_add)
-            I_nac += I_add
+            if not c in ["generator_rotor", "generator_stator"]:
+                I_add = util.assembleI(I_i) + m_i * (np.dot(r, r) * np.eye(3) - np.outer(r, r))
+                I_add = util.unassembleI(I_add)
+                I_nac += I_add
 
             # Record mass, cm, and I for output table
             m_list[ic] = m_i
@@ -919,8 +930,10 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
             I_cm_list[ic, :] = I_i if I_i.size == 6 else np.r_[I_i, np.zeros(3)]
 
         outputs["above_yaw_mass"] = copy.copy(m_nac)
-        outputs["above_yaw_cm"] = copy.copy(cm_nac)
-        outputs["above_yaw_I"] = copy.copy(I_nac)
+        outputs["above_yaw_cm"] = R = cm_nac.copy()
+        outputs["above_yaw_I"] = I_nac.copy()
+        parallel_axis = m_nac * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        outputs["above_yaw_I_TT"] = util.unassembleI(util.assembleI(I_nac) + parallel_axis)
 
         m_nac += inputs["yaw_mass"]
         cm_nac = (outputs["above_yaw_mass"] * outputs["above_yaw_cm"] + inputs["yaw_cm"] * inputs["yaw_mass"]) / m_nac
@@ -953,6 +966,11 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         outputs["total_bedplate_mass"] = inputs["nose_mass"] + inputs["bedplate_mass"]
 
         # Wrap up nacelle mass table
+        components.append("Above_yaw")
+        m_list[-3] = outputs["above_yaw_mass"]
+        cm_list[-3, :] = outputs["above_yaw_cm"]
+        I_cm_list[-3, :] = outputs["above_yaw_I"]
+        I_TT_list[-3, :] = outputs["above_yaw_I_TT"]
         components.append("yaw")
         m_list[-2] = inputs["yaw_mass"]
         cm_list[-2, :] = inputs["yaw_cm"]

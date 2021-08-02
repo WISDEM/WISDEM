@@ -1,6 +1,6 @@
 # WISDEM&reg;
 
-[![Build Status](https://travis-ci.com/WISDEM/WISDEM.svg?branch=develop)](https://travis-ci.com/WISDEM/WISDEM)
+[![Actions Status](https://github.com/WISDEM/WISDEM/workflows/CI_WISDEM/badge.svg?branch=develop)](https://github.com/WISDEM/WISDEM/actions)
 [![Coverage Status](https://coveralls.io/repos/github/WISDEM/WISDEM/badge.svg?branch=develop)](https://coveralls.io/github/WISDEM/WISDEM?branch=develop)
 [![Documentation Status](https://readthedocs.org/projects/wisdem/badge/?version=master)](https://wisdem.readthedocs.io/en/master/?badge=master)
 
@@ -32,7 +32,7 @@ The core modules draw upon some utility packages, which are typically compiled c
 * _Airfoil Preppy_ is a tool to handle airfoil polar data
 * _CCBlade_ is the BEM module of WISDEM
 * _pyFrame3DD_ brings libraries to handle various coordinate transformations
-* _pyMAP_ provides a python interface to MAP++, a quasi-static mooring line model
+* _MoorPy_ is a quasi-static mooring line model
 * [_pyOptSparse_](https://github.com/mdolab/pyoptsparse) provides some additional optimization algorithms to OpenMDAO
 
 
@@ -50,11 +50,11 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 2.  In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer* mode.  This is done by first installing WISDEM as a conda package to easily satisfy all dependencies, but then removing the WISDEM conda package and reinstalling from the Github source code.  Note the differences between Windows and Mac/Linux build systems:
 
-        conda install -y wisdem git jupyter
+        conda install -y wisdem git
         conda remove --force wisdem
         conda install compilers                   # (Mac / Linux only)
         conda install m2w64-toolchain libpython   # (Windows only)
-        pip install simpy marmot-agents
+        pip install simpy marmot-agents nlopt
         git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
         python setup.py develop

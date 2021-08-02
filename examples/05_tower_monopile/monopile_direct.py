@@ -40,6 +40,8 @@ modeling_options["materials"] = {}
 modeling_options["WISDEM"] = {}
 modeling_options["WISDEM"]["TowerSE"] = {}
 modeling_options["WISDEM"]["TowerSE"]["buckling_length"] = 30.0
+modeling_options["WISDEM"]["TowerSE"]["buckling_method"] = "dnvgl"
+modeling_options["WISDEM"]["TowerSE"]["n_refine"] = 3
 modeling_options["flags"]["monopile"] = True
 
 # Monopile foundation
@@ -92,12 +94,12 @@ if opt_flag:
     prob.model.add_design_var("tower_layer_thickness", lower=4e-3, upper=2e-1)
 
     # Add constraints on the tower design
-    prob.model.add_constraint("post1.stress", upper=1.0)
-    prob.model.add_constraint("post1.global_buckling", upper=1.0)
-    prob.model.add_constraint("post1.shell_buckling", upper=1.0)
-    prob.model.add_constraint("post2.stress", upper=1.0)
-    prob.model.add_constraint("post2.global_buckling", upper=1.0)
-    prob.model.add_constraint("post2.shell_buckling", upper=1.0)
+    prob.model.add_constraint("post1.constr_stress", upper=1.0)
+    prob.model.add_constraint("post1.constr_global_buckling", upper=1.0)
+    prob.model.add_constraint("post1.constr_shell_buckling", upper=1.0)
+    prob.model.add_constraint("post2.constr_stress", upper=1.0)
+    prob.model.add_constraint("post2.constr_global_buckling", upper=1.0)
+    prob.model.add_constraint("post2.constr_shell_buckling", upper=1.0)
     prob.model.add_constraint("constr_d_to_t", lower=120.0, upper=500.0)
     prob.model.add_constraint("constr_taper", lower=0.2)
     prob.model.add_constraint("slope", upper=1.0)
@@ -207,7 +209,8 @@ if opt_flag:
     prob.run_driver()
 else:
     prob.run_model()
-save_data("monopile_example", prob)
+os.makedirs("outputs", exist_ok=True)
+save_data(os.path.join("outputs", "monopile_example"), prob)
 # ---
 
 
@@ -221,38 +224,37 @@ print("cg (m) =", prob["tower_center_of_mass"])
 print("d:t constraint =", prob["constr_d_to_t"])
 print("taper ratio constraint =", prob["constr_taper"])
 print("\nwind: ", prob["wind1.Uref"])
-print("freq (Hz) =", prob["post1.structural_frequencies"])
-print("Fore-aft mode shapes =", prob["post1.fore_aft_modes"])
-print("Side-side mode shapes =", prob["post1.side_side_modes"])
-print("top_deflection1 (m) =", prob["post1.top_deflection"])
+print("freq (Hz) =", prob["tower1.structural_frequencies"])
+print("Fore-aft mode shapes =", prob["tower1.fore_aft_modes"])
+print("Side-side mode shapes =", prob["tower1.side_side_modes"])
+print("top_deflection1 (m) =", prob["tower1.top_deflection"])
 print("Tower base forces1 (N) =", prob["tower1.base_F"])
 print("Tower base moments1 (Nm) =", prob["tower1.base_M"])
-print("stress1 =", prob["post1.stress"])
-print("GL buckling =", prob["post1.global_buckling"])
-print("Shell buckling =", prob["post1.shell_buckling"])
+print("stress1 =", prob["post1.constr_stress"])
+print("GL buckling =", prob["post1.constr_global_buckling"])
+print("Shell buckling =", prob["post1.constr_shell_buckling"])
 print("\nwind: ", prob["wind2.Uref"])
-print("freq (Hz) =", prob["post2.structural_frequencies"])
-print("Fore-aft mode shapes =", prob["post2.fore_aft_modes"])
-print("Side-side mode shapes =", prob["post2.side_side_modes"])
-print("top_deflection2 (m) =", prob["post2.top_deflection"])
+print("freq (Hz) =", prob["tower2.structural_frequencies"])
+print("Fore-aft mode shapes =", prob["tower2.fore_aft_modes"])
+print("Side-side mode shapes =", prob["tower2.side_side_modes"])
+print("top_deflection2 (m) =", prob["tower2.top_deflection"])
 print("Tower base forces2 (N) =", prob["tower2.base_F"])
 print("Tower base moments2 (Nm) =", prob["tower2.base_M"])
-print("stress2 =", prob["post2.stress"])
-print("GL buckling =", prob["post2.global_buckling"])
-print("Shell buckling =", prob["post2.shell_buckling"])
-# ---
+print("stress2 =", prob["post2.constr_stress"])
+print("GL buckling =", prob["post2.constr_global_buckling"])
+print("Shell buckling =", prob["post2.constr_shell_buckling"])
 
 if plot_flag:
     import matplotlib.pyplot as plt
 
     # Old line plot
-    stress1 = np.copy(prob["post1.stress"])
-    shellBuckle1 = np.copy(prob["post1.shell_buckling"])
-    globalBuckle1 = np.copy(prob["post1.global_buckling"])
+    stress1 = np.copy(prob["post1.constr_stress"])
+    shellBuckle1 = np.copy(prob["post1.constr_shell_buckling"])
+    globalBuckle1 = np.copy(prob["post1.constr_global_buckling"])
 
-    stress2 = prob["post2.stress"]
-    shellBuckle2 = prob["post2.shell_buckling"]
-    globalBuckle2 = prob["post2.global_buckling"]
+    stress2 = prob["post2.constr_stress"]
+    shellBuckle2 = prob["post2.constr_shell_buckling"]
+    globalBuckle2 = prob["post2.constr_global_buckling"]
 
     plt.figure(figsize=(5.0, 3.5))
     plt.subplot2grid((3, 3), (0, 0), colspan=2, rowspan=3)

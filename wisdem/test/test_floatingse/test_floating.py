@@ -42,6 +42,8 @@ class TestOC3Mass(unittest.TestCase):
         opt["mooring"] = {}
         opt["mooring"]["n_attach"] = 3
         opt["mooring"]["n_anchors"] = 3
+        opt["mooring"]["line_anchor"] = ["custom"] * 3
+        opt["mooring"]["line_material"] = ["custom"] * 3
 
         opt["materials"] = {}
         opt["materials"]["n_mat"] = 2
@@ -83,7 +85,7 @@ class TestOC3Mass(unittest.TestCase):
         prob["member0.ring_stiffener_web_thickness"] = 0.04
         prob["member0.ring_stiffener_flange_width"] = 0.10
         prob["member0.ring_stiffener_flange_thickness"] = 0.02
-        prob["member0.ring_stiffener_spacing"] = 2.15
+        prob["member0.ring_stiffener_spacing"] = 0.016538462 # non-dimensional ring stiffener spacing
 
         # Mooring parameters
         prob["line_diameter"] = 0.09  # Diameter of mooring line/chain [m]
@@ -96,11 +98,12 @@ class TestOC3Mass(unittest.TestCase):
         prob["fairlead"] = 70.0
         prob["anchor_radius"] = 853.87  # Distance from centerline to sea floor landing [m]
         prob["anchor_cost"] = 1e5
+        prob["anchor_mass"] = 0.0
 
         # Mooring constraints
         prob["max_surge_fraction"] = 0.1  # Max surge/sway offset [m]
-        prob["survival_heel"] = 10.0  # Max heel (pitching) angle [deg]
-        prob["operational_heel"] = 5.0  # Max heel (pitching) angle [deg]
+        prob["survival_heel"] = np.deg2rad(10.0)  # Max heel (pitching) angle [deg->rad]
+        prob["operational_heel"] = np.deg2rad(5.0)  # Max heel (pitching) angle [deg->rad]
 
         # Set environment to that used in OC3 testing campaign
         prob["rho_air"] = 1.226  # Density of air [kg/m^3]

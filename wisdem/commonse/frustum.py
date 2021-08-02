@@ -34,7 +34,7 @@ def frustum(Db, Dt, H):
     return vol, cm
 
 
-def frustumVol(rb, rt, h, diamFlag=False):
+def frustumVol(rb_0, rt_0, h, diamFlag=False):
     """This function returns a frustum's volume with radii or diameter inputs.
 
     INPUTS:
@@ -51,12 +51,13 @@ def frustumVol(rb, rt, h, diamFlag=False):
     """
     if diamFlag:
         # Convert diameters to radii
-        rb *= 0.5
-        rt *= 0.5
+        rb, rt = 0.5 * rb_0, 0.5 * rt_0
+    else:
+        rb, rt = rb_0, rt_0
     return np.pi * (h / 3.0) * (rb * rb + rt * rt + rb * rt)
 
 
-def frustumCG(rb, rt, h, diamFlag=False):
+def frustumCG(rb_0, rt_0, h, diamFlag=False):
     """This function returns a frustum's center of mass/gravity (centroid) with radii or diameter inputs.
     NOTE: This is for a SOLID frustum, not a shell
 
@@ -74,12 +75,13 @@ def frustumCG(rb, rt, h, diamFlag=False):
     """
     if diamFlag:
         # Convert diameters to radii
-        rb *= 0.5
-        rt *= 0.5
+        rb, rt = 0.5 * rb_0, 0.5 * rt_0
+    else:
+        rb, rt = rb_0, rt_0
     return 0.25 * h * (rb ** 2 + 2.0 * rb * rt + 3.0 * rt ** 2) / (rb ** 2 + rb * rt + rt ** 2)
 
 
-def frustumIzz(rb, rt, h, diamFlag=False):
+def frustumIzz(rb_0, rt_0, h, diamFlag=False):
     """This function returns a frustum's mass-moment of inertia (divided by density) about the
     central (axial) z-axis with radii or diameter inputs.
     NOTE: This is for a SOLID frustum, not a shell
@@ -98,15 +100,16 @@ def frustumIzz(rb, rt, h, diamFlag=False):
     """
     if diamFlag:
         # Convert diameters to radii
-        rb *= 0.5
-        rt *= 0.5
+        rb, rt = 0.5 * rb_0, 0.5 * rt_0
+    else:
+        rb, rt = rb_0, rt_0
     # Integrate 2*pi*r*r^2 dr dz from r=0 to r(z), z=0 to h
     # Also equals 0.3*Vol * (rt**5.0 - rb**5.0) / (rt**3.0 - rb**3.0)
     # Also equals (0.1*np.pi*h * (rt**5.0 - rb**5.0) / (rt - rb) )
     return 0.1 * np.pi * h * (rt ** 4.0 + rb * rt ** 3 + rb ** 2 * rt ** 2 + rb ** 3 * rt + rb ** 4.0)
 
 
-def frustumIxx(rb, rt, h, diamFlag=False):
+def frustumIxx(rb_0, rt_0, h, diamFlag=False):
     """This function returns a frustum's mass-moment of inertia (divided by density) about the
     transverse x/y-axis passing through the center of mass with radii or diameter inputs.
     NOTE: This is for a SOLID frustum, not a shell
@@ -125,10 +128,11 @@ def frustumIxx(rb, rt, h, diamFlag=False):
     """
     if diamFlag:
         # Convert diameters to radii
-        rb *= 0.5
-        rt *= 0.5
+        rb, rt = 0.5 * rb_0, 0.5 * rt_0
+    else:
+        rb, rt = rb_0, rt_0
     # Integrate pi*r(z)^4/4 + pi*r(z)^2*(z-z_cg)^2 dz from z=0 to h
-    A = 0.5 * frustumIzz(rb, rt, h)
+    A = 0.5 * frustumIzz(rb_0, rt_0, h)
     B = (
         np.pi
         * h ** 3
@@ -141,7 +145,7 @@ def frustumIxx(rb, rt, h, diamFlag=False):
     return A + B
 
 
-def frustumShellVol(rb, rt, t, h, diamFlag=False):
+def frustumShellVol(rb_0, rt_0, t, h, diamFlag=False):
     """This function returns a frustum shell's volume (for computing mass with density) with radii or diameter inputs.
     NOTE: This is for a frustum SHELL, not a solid
 
@@ -160,8 +164,9 @@ def frustumShellVol(rb, rt, t, h, diamFlag=False):
     """
     if diamFlag:
         # Convert diameters to radii
-        rb *= 0.5
-        rt *= 0.5
+        rb, rt = 0.5 * rb_0, 0.5 * rt_0
+    else:
+        rb, rt = rb_0, rt_0
     # Integrate 2*pi*r*dr*dz from r=ri(z) to ro(z), z=0 to h
     rb_o = rb
     rb_i = rb - t
@@ -171,7 +176,7 @@ def frustumShellVol(rb, rt, t, h, diamFlag=False):
     return frustumVol(rb_o, rt_o, h) - frustumVol(rb_i, rt_i, h)
 
 
-def frustumShellCG(rb, rt, t, h, diamFlag=False):
+def frustumShellCG(rb_0, rt_0, t, h, diamFlag=False):
     """This function returns a frustum's center of mass/gravity (centroid) with radii or diameter inputs.
     NOTE: This is for a frustum SHELL, not a solid
 
@@ -190,8 +195,9 @@ def frustumShellCG(rb, rt, t, h, diamFlag=False):
     """
     if diamFlag:
         # Convert diameters to radii
-        rb *= 0.5
-        rt *= 0.5
+        rb, rt = 0.5 * rb_0, 0.5 * rt_0
+    else:
+        rb, rt = rb_0, rt_0
     # Integrate 2*pi*r*z*dr*dz/V from r=ri(z) to ro(z), z=0 to h
     rb_o = rb
     rb_i = rb - t
@@ -202,7 +208,7 @@ def frustumShellCG(rb, rt, t, h, diamFlag=False):
     return h * A / 4.0 / B
 
 
-def frustumShellIzz(rb, rt, t, h, diamFlag=False):
+def frustumShellIzz(rb_0, rt_0, t, h, diamFlag=False):
     """This function returns a frustum's mass-moment of inertia (divided by density) about the
     central (axial) z-axis with radii or diameter inputs.
     NOTE: This is for a frustum SHELL, not a solid
@@ -222,8 +228,9 @@ def frustumShellIzz(rb, rt, t, h, diamFlag=False):
     """
     if diamFlag:
         # Convert diameters to radii
-        rb *= 0.5
-        rt *= 0.5
+        rb, rt = 0.5 * rb_0, 0.5 * rt_0
+    else:
+        rb, rt = rb_0, rt_0
     # Integrate 2*pi*r*dr*dz from r=ri(z) to ro(z), z=0 to h
     rb_o = rb
     rb_i = rb - t
@@ -232,7 +239,7 @@ def frustumShellIzz(rb, rt, t, h, diamFlag=False):
     return frustumIzz(rb_o, rt_o, h) - frustumIzz(rb_i, rt_i, h)
 
 
-def frustumShellIxx(rb, rt, t, h, diamFlag=False):
+def frustumShellIxx(rb_0, rt_0, t, h, diamFlag=False):
     """This function returns a frustum's mass-moment of inertia (divided by density) about the
     transverse x/y-axis passing through the center of mass with radii or diameter inputs.
     NOTE: This is for a frustum SHELL, not a solid
@@ -252,8 +259,9 @@ def frustumShellIxx(rb, rt, t, h, diamFlag=False):
     """
     if diamFlag:
         # Convert diameters to radii
-        rb *= 0.5
-        rt *= 0.5
+        rb, rt = 0.5 * rb_0, 0.5 * rt_0
+    else:
+        rb, rt = rb_0, rt_0
     # Integrate 2*pi*r*dr*dz from r=ri(z) to ro(z), z=0 to h
     rb_o = rb
     rb_i = rb - t

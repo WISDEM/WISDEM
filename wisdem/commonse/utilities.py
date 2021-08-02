@@ -30,12 +30,14 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6]):
         # p6 = np.zeros((5, y.shape[1]))
         # for k in range(y.shape[1]):
         #    p6[:, k], _ = curve_fit(mode_fit, xn, y[:, k])
-        normval = np.maximum(p6.sum(axis=0), 1e-6)
+        # The normalization shouldn't be less than 1e-5 otherwise OpenFAST has trouble in single prec
+        normval = np.maximum(np.sum(p6, axis=0), 1e-5)
         p6 /= normval[np.newaxis, :]
     else:
         p6 = p6[2:]
-        # p6, _ = curve_fit(mode_fit, xn, y)
-        p6 /= p6.sum()
+        # The normalization shouldn't be less than 1e-5 otherwise OpenFAST has trouble in single prec
+        normval = np.maximum(p6.sum(), 1e-5)
+        p6 /= normval
 
     return p6
 
@@ -254,11 +256,15 @@ def linspace_with_deriv(start, stop, num):
     return y, dy_dstart, dy_dstop
 
 
-def sectionalInterp(xi, x, y):
+def sectional_interp(xi, x, y):
     epsilon = 1e-11
     xx = np.c_[x[:-1], x[1:] - epsilon].flatten()
     yy = np.c_[y, y].flatten()
     return np.interp(xi, xx, yy)
+
+
+def sectionalInterp(xi, x, y):
+    return sectional_interp(xi, x, y)
 
 
 def interp_with_deriv(x, xp, yp):

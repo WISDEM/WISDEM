@@ -94,6 +94,10 @@ properties:
                         type: number
                         default: 1.0
                         description: Scalar applied to the max torque within RotorSE for peak thrust shaving. Only used if `peak_thrust_shaving` is True.
+                    fix_pitch_regI12:
+                        type: boolean
+                        default: False
+                        description: If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.
                     spar_cap_ss:
                         type: string
                         default: 'none'
@@ -260,6 +264,11 @@ properties:
                         maximum: 5.0
                         default: 1.0
                         unit: none
+                    buckling_method:
+                        type: string
+                        enum: [Eurocode, Euro-code, eurocode, euro-code, DNVGL, dnvgl, DNV-GL, dnv-gl]
+                        description: Buckling utilization calculation method- Eurocode 1994 or DNVGL RP-C202
+                        default: dnvgl
                     buckling_length:
                         type: number
                         description: Buckling length factor in Eurocode safety check
@@ -298,6 +307,10 @@ properties:
                         type: boolean
                         default: False
                         description: Model the monopile base as a gravity-based foundation with no pile embedment
+                    n_refine:
+                        type: integer
+                        default: 3
+                        description: Number of Frame3DD element refinements for every specified section along tower/member
             BOS:
                 type: object
                 default: {}
@@ -314,8 +327,17 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run the floating design modules (FloatingSE)
+                    n_refine:
+                        type: integer
+                        default: 1
+                        description: Number of Frame3DD element refinements for every specified section along tower/member
                     frame3dd: *frame3dd
                     gamma_f: *gamma_f
+                    gamma_m: *gamma_m
+                    gamma_n: *gamma_n
+                    gamma_b: *gamma_b
+                    gamma_freq: *gamma_freq
+                    gamma_fatigue: *gamma_fatigue
                     symmetric_moorings:
                         type: boolean
                         default: True

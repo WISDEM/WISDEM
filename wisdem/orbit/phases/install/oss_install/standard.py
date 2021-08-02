@@ -23,6 +23,7 @@ class OffshoreSubstationInstallation(InstallPhase):
     """
 
     phase = "Offshore Substation Installation"
+    capex_category = "Offshore Substation"
 
     #:
     expected_config = {
@@ -138,7 +139,7 @@ class OffshoreSubstationInstallation(InstallPhase):
         oss_vessel_specs = self.config.get("oss_install_vessel", None)
         name = oss_vessel_specs.get("name", "Heavy Lift Vessel")
 
-        oss_vessel = Vessel(name, oss_vessel_specs)
+        oss_vessel = self.initialize_vessel(name, oss_vessel_specs)
         self.env.register(oss_vessel)
 
         oss_vessel.initialize()
@@ -159,7 +160,7 @@ class OffshoreSubstationInstallation(InstallPhase):
             # TODO: Add in option for named feeders.
             name = "Feeder {}".format(n)
 
-            feeder = Vessel(name, feeder_specs)
+            feeder = self.initialize_vessel(name, feeder_specs)
             self.env.register(feeder)
 
             feeder.initialize()

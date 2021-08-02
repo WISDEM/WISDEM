@@ -30,6 +30,7 @@ class TestInputs(unittest.TestCase):
         discrete_inputs["layer_materials"] = ["steel"]
         discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
         inputs["E_mat"] = 1e9 * np.ones((2, 3))
+        inputs["E_user"] = 0.0
         inputs["G_mat"] = 1e8 * np.ones((2, 3))
         inputs["sigma_y_mat"] = np.array([1e7, 1e7])
         inputs["rho_mat"] = np.array([1e4, 1e5])
@@ -89,6 +90,7 @@ class TestInputs(unittest.TestCase):
         discrete_inputs["layer_materials"] = ["steel", "other"]
         discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
         inputs["E_mat"] = 1e9 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
+        inputs["E_user"] = 0.0
         inputs["G_mat"] = 1e8 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
         inputs["sigma_y_mat"] = np.array([1e7, 1e7, 2e7])
         inputs["rho_mat"] = np.array([1e4, 1e5, 2e4])
@@ -204,7 +206,7 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["ring_stiffener_flange_thickness"] = 0.3
         self.inputs["ring_stiffener_web_height"] = 0.5
         self.inputs["ring_stiffener_flange_width"] = 1.0
-        self.inputs["ring_stiffener_spacing"] = 20.0
+        self.inputs["ring_stiffener_spacing"] = 0.2  # non-dimensional ring stiffener spacing
 
         self.inputs["axial_stiffener_web_thickness"] = 0.0
         self.inputs["axial_stiffener_flange_thickness"] = 0.0
@@ -285,6 +287,7 @@ class TestMemberComponent(unittest.TestCase):
                 self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
                 self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
                 self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
+                self.assertAlmostEqual(self.mem.sections[k].sigy, 2e5)
 
     def testMainSectionsWithAxial(self):
 
@@ -326,6 +329,7 @@ class TestMemberComponent(unittest.TestCase):
                 self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
                 self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
                 self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
+                self.assertAlmostEqual(self.mem.sections[k].sigy, 2e5)
 
     def testMainSectionsWithGhost(self):
         self.inputs["s_ghost1"] = 0.0
@@ -345,20 +349,28 @@ class TestMemberComponent(unittest.TestCase):
             if k == 1.0:
                 self.assertEqual(self.mem.sections[k], None)
             else:
-                self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
-                self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
-                self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
-                self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 if k < 0.9:
+                    self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
+                    self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
+                    self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
+                    self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
                     self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
                     self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
+                    self.assertAlmostEqual(self.mem.sections[k].sigy, 2e5)
                 else:
+                    self.assertAlmostEqual(self.mem.sections[k].D, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].t, 0.001)
+                    self.assertAlmostEqual(self.mem.sections[k].A, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].Izz, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].Ixx, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].Iyy, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].E, 1e8)
                     self.assertAlmostEqual(self.mem.sections[k].G, 1e7)
+                    self.assertAlmostEqual(self.mem.sections[k].sigy, 2e5)
 
     def testBulk(self):
         self.mem.add_main_sections(self.inputs, self.outputs)
@@ -393,6 +405,7 @@ class TestMemberComponent(unittest.TestCase):
             self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
             self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
             self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
+            self.assertAlmostEqual(self.mem.sections[k].sigy, 2e5)
 
         nbulk = len(bgrid)
         R_i = 0.5 * 10 - 0.05
@@ -433,25 +446,33 @@ class TestMemberComponent(unittest.TestCase):
                 self.assertAlmostEqual(self.mem.sections[k].Iyy, np.pi * (10.0 ** 4 - 0 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * np.pi * (10.0 ** 4 - 0 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].rho, 1.1 * 1e3)
+                self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
             elif k == 1.0:
                 self.assertEqual(self.mem.sections[k], None)
                 continue
             else:
-                self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
-                self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
                 if k < 0.9:
+                    self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
+                    self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
+                    self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
                     self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
                     self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
+                    self.assertAlmostEqual(self.mem.sections[k].sigy, 2e5)
                 else:
+                    self.assertAlmostEqual(self.mem.sections[k].A, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].Ixx, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].Iyy, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].Izz, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].t, 0.001)
+                    self.assertAlmostEqual(self.mem.sections[k].D, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].E, 1e8)
                     self.assertAlmostEqual(self.mem.sections[k].G, 1e7)
-
-            self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
+                    self.assertAlmostEqual(self.mem.sections[k].sigy, 2e5)
 
         nbulk = len(bgrid)
         R_i = 0.5 * 10 - 0.05
@@ -541,6 +562,7 @@ class TestMemberComponent(unittest.TestCase):
             self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
             self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
             self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
+            self.assertAlmostEqual(self.mem.sections[k].sigy, 2e5)
 
     def testStiffWithGhost(self):
         self.inputs["s_ghost1"] = 0.0
@@ -600,25 +622,33 @@ class TestMemberComponent(unittest.TestCase):
                 self.assertGreater(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 self.assertGreater(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].t, 5 - np.sqrt(25 - a / np.pi))
+                self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
             elif k == 1.0:
                 self.assertEqual(self.mem.sections[k], None)
                 continue
             else:
-                self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
-                self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
                 if k < 0.9:
+                    self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
+                    self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
                     self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
                     self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
+                    self.assertAlmostEqual(self.mem.sections[k].sigy, 2e5)
+                    self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
                 else:
+                    self.assertAlmostEqual(self.mem.sections[k].A, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].Ixx, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].Iyy, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].Izz, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].t, 0.001)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].E, 1e8)
                     self.assertAlmostEqual(self.mem.sections[k].G, 1e7)
-
-            self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
+                    self.assertAlmostEqual(self.mem.sections[k].sigy, 2e5)
+                    self.assertAlmostEqual(self.mem.sections[k].D, 0.01)
 
     def testBallast(self):
         self.mem.add_main_sections(self.inputs, self.outputs)
@@ -744,7 +774,7 @@ class TestMemberComponent(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["nodes_xyz"][:nout, 2], -30 + s_all[:nout] * 45)
 
         nelem = nout - 1
-        for var in ["D", "t", "A", "Ixx", "Iyy", "Izz", "rho", "G", "E"]:
+        for var in ["D", "t", "A", "Ixx", "Iyy", "Izz", "rho", "G", "E", "sigma_y"]:
             npt.assert_almost_equal(self.outputs["section_" + var][nelem:], NULL)
         npt.assert_almost_equal(self.outputs["section_D"][:nelem], 10.0)
         npt.assert_almost_equal(self.outputs["section_t"][:nelem], 1.1 * 0.05)
@@ -754,6 +784,7 @@ class TestMemberComponent(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["section_rho"][:nelem], 1e3)
         npt.assert_almost_equal(self.outputs["section_E"][:nelem], 1e6)
         npt.assert_almost_equal(self.outputs["section_G"][:nelem], 1e5)
+        npt.assert_almost_equal(self.outputs["section_sigma_y"][:nelem], 2e5)
 
     def testCompute(self):
         self.mem.compute(self.inputs, self.outputs)
@@ -900,16 +931,21 @@ class TestGlobal2Member(unittest.TestCase):
         Px = NULL * np.ones(member.MEMMAX)
         Py = NULL * np.ones(member.MEMMAX)
         Pz = NULL * np.ones(member.MEMMAX)
+        qdyn = NULL * np.ones(member.MEMMAX)
         inputs["Px_global"] = np.zeros(npts)
         inputs["Py_global"] = np.zeros(npts)
         inputs["Pz_global"] = np.ones(npts)
+        inputs["qdyn_global"] = 2 * np.ones(npts)
         Px[: (2 * npts)] = 1.0
         Py[: (2 * npts)] = 0.0
         Pz[: (2 * npts)] = 0.0
+        temp = 2 * np.ones(2 * npts)
+        qdyn[: (2 * npts - 1)] = 0.5 * (temp[:-1] + temp[1:])
         myobj.compute(inputs, outputs)
         npt.assert_almost_equal(outputs["Px"], Px)
         npt.assert_almost_equal(outputs["Py"], Py)
         npt.assert_almost_equal(outputs["Pz"], Pz)
+        npt.assert_almost_equal(outputs["qdyn"], qdyn)
 
         inputs["Px_global"] = np.ones(npts)
         inputs["Py_global"] = np.zeros(npts)
@@ -921,6 +957,7 @@ class TestGlobal2Member(unittest.TestCase):
         npt.assert_almost_equal(outputs["Px"], Px)
         npt.assert_almost_equal(outputs["Py"], Py)
         npt.assert_almost_equal(outputs["Pz"], Pz)
+        npt.assert_almost_equal(outputs["qdyn"], qdyn)
 
 
 class TestGroup(unittest.TestCase):
@@ -961,7 +998,7 @@ class TestGroup(unittest.TestCase):
         prob["ring_stiffener_flange_thickness"] = 0.3
         prob["ring_stiffener_web_height"] = 0.5
         prob["ring_stiffener_flange_width"] = 1.0
-        prob["ring_stiffener_spacing"] = 20.0
+        prob["ring_stiffener_spacing"] = 0.2  # non-dimensional ring stiffener spacing
 
         prob["axial_stiffener_web_thickness"] = 0.2
         prob["axial_stiffener_flange_thickness"] = 0.3
@@ -995,9 +1032,9 @@ class TestGroup(unittest.TestCase):
         prob["Uc"] = 0.0
 
         prob.run_model()
-        out_list = prob.model.list_outputs(values=True, prom_name=True, units=False, out_stream=None)
+        out_list = prob.model.list_outputs(prom_name=True, units=False, out_stream=None)
         for k in out_list:
-            if np.all(k[1]["value"] == 0.0) or np.all(k[1]["value"] == NULL):
+            if np.all(k[1]["val"] == 0.0) or np.all(k[1]["val"] == NULL):
                 name = k[1]["prom_name"]
                 if (
                     name.find("Py") > 0

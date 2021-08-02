@@ -22,7 +22,8 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     # Now all of the optional components
     if modeling_options["flags"]["environment"]:
         environment = wt_init["environment"]
-        wt_opt = assign_environment_values(wt_opt, environment, offshore)
+        blade_flag = modeling_options["flags"]["blade"]
+        wt_opt = assign_environment_values(wt_opt, environment, offshore, blade_flag)
     else:
         environment = {}
 
@@ -44,15 +45,15 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     else:
         control = {}
 
-    if modeling_options["flags"]["hub"]:
+    if modeling_options["flags"]["hub"] or modeling_options["flags"]["blade"]:
         hub = wt_init["components"]["hub"]
-        wt_opt = assign_hub_values(wt_opt, hub)
+        wt_opt = assign_hub_values(wt_opt, hub, modeling_options["flags"])
     else:
         hub = {}
 
-    if modeling_options["flags"]["nacelle"]:
+    if modeling_options["flags"]["nacelle"] or modeling_options["flags"]["blade"]:
         nacelle = wt_init["components"]["nacelle"]
-        wt_opt = assign_nacelle_values(wt_opt, modeling_options, nacelle)
+        wt_opt = assign_nacelle_values(wt_opt, modeling_options, nacelle, modeling_options["flags"])
 
         if modeling_options["flags"]["generator"]:
             wt_opt = assign_generator_values(wt_opt, modeling_options, nacelle)
@@ -587,90 +588,92 @@ def assign_te_flaps_values(wt_opt, modeling_options, blade):
     return wt_opt
 
 
-def assign_hub_values(wt_opt, hub):
+def assign_hub_values(wt_opt, hub, flags):
 
     wt_opt["hub.diameter"] = hub["diameter"]
     wt_opt["hub.cone"] = hub["cone_angle"]
     # wt_opt['hub.drag_coeff']                  = hub['drag_coefficient'] # GB: This doesn't connect to anything
-    wt_opt["hub.flange_t2shell_t"] = hub["flange_t2shell_t"]
-    wt_opt["hub.flange_OD2hub_D"] = hub["flange_OD2hub_D"]
-    wt_opt["hub.flange_ID2flange_OD"] = hub["flange_ID2OD"]
-    wt_opt["hub.hub_in2out_circ"] = hub["hub_blade_spacing_margin"]
-    wt_opt["hub.hub_stress_concentration"] = hub["hub_stress_concentration"]
-    wt_opt["hub.n_front_brackets"] = hub["n_front_brackets"]
-    wt_opt["hub.n_rear_brackets"] = hub["n_rear_brackets"]
-    wt_opt["hub.clearance_hub_spinner"] = hub["clearance_hub_spinner"]
-    wt_opt["hub.spin_hole_incr"] = hub["spin_hole_incr"]
-    wt_opt["hub.pitch_system_scaling_factor"] = hub["pitch_system_scaling_factor"]
-    wt_opt["hub.spinner_gust_ws"] = hub["spinner_gust_ws"]
-    wt_opt["hub.hub_material"] = hub["hub_material"]
-    wt_opt["hub.spinner_material"] = hub["spinner_material"]
+    if flags["hub"]:
+        wt_opt["hub.flange_t2shell_t"] = hub["flange_t2shell_t"]
+        wt_opt["hub.flange_OD2hub_D"] = hub["flange_OD2hub_D"]
+        wt_opt["hub.flange_ID2flange_OD"] = hub["flange_ID2OD"]
+        wt_opt["hub.hub_in2out_circ"] = hub["hub_blade_spacing_margin"]
+        wt_opt["hub.hub_stress_concentration"] = hub["hub_stress_concentration"]
+        wt_opt["hub.n_front_brackets"] = hub["n_front_brackets"]
+        wt_opt["hub.n_rear_brackets"] = hub["n_rear_brackets"]
+        wt_opt["hub.clearance_hub_spinner"] = hub["clearance_hub_spinner"]
+        wt_opt["hub.spin_hole_incr"] = hub["spin_hole_incr"]
+        wt_opt["hub.pitch_system_scaling_factor"] = hub["pitch_system_scaling_factor"]
+        wt_opt["hub.spinner_gust_ws"] = hub["spinner_gust_ws"]
+        wt_opt["hub.hub_material"] = hub["hub_material"]
+        wt_opt["hub.spinner_material"] = hub["spinner_material"]
 
     return wt_opt
 
 
-def assign_nacelle_values(wt_opt, modeling_options, nacelle):
+def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
     # Common direct and geared
     wt_opt["nacelle.uptilt"] = nacelle["drivetrain"]["uptilt"]
     wt_opt["nacelle.distance_tt_hub"] = nacelle["drivetrain"]["distance_tt_hub"]
     wt_opt["nacelle.overhang"] = nacelle["drivetrain"]["overhang"]
-    wt_opt["nacelle.distance_hub2mb"] = nacelle["drivetrain"]["distance_hub_mb"]
-    wt_opt["nacelle.distance_mb2mb"] = nacelle["drivetrain"]["distance_mb_mb"]
-    wt_opt["nacelle.L_generator"] = nacelle["drivetrain"]["generator_length"]
     wt_opt["nacelle.gear_ratio"] = nacelle["drivetrain"]["gear_ratio"]
     wt_opt["nacelle.gearbox_efficiency"] = nacelle["drivetrain"]["gearbox_efficiency"]
-    wt_opt["nacelle.damping_ratio"] = nacelle["drivetrain"]["damping_ratio"]
-    wt_opt["nacelle.mb1Type"] = nacelle["drivetrain"]["mb1Type"]
-    wt_opt["nacelle.mb2Type"] = nacelle["drivetrain"]["mb2Type"]
-    wt_opt["nacelle.uptower"] = nacelle["drivetrain"]["uptower"]
-    wt_opt["nacelle.lss_material"] = nacelle["drivetrain"]["lss_material"]
-    wt_opt["nacelle.bedplate_material"] = nacelle["drivetrain"]["bedplate_material"]
-    wt_opt["nacelle.brake_mass_user"] = nacelle["drivetrain"]["brake_mass_user"]
-    wt_opt["nacelle.hvac_mass_coeff"] = nacelle["drivetrain"]["hvac_mass_coefficient"]
-    wt_opt["nacelle.converter_mass_user"] = nacelle["drivetrain"]["converter_mass_user"]
-    wt_opt["nacelle.transformer_mass_user"] = nacelle["drivetrain"]["transformer_mass_user"]
+    if flags["nacelle"]:
+        wt_opt["nacelle.distance_hub2mb"] = nacelle["drivetrain"]["distance_hub_mb"]
+        wt_opt["nacelle.distance_mb2mb"] = nacelle["drivetrain"]["distance_mb_mb"]
+        wt_opt["nacelle.L_generator"] = nacelle["drivetrain"]["generator_length"]
+        wt_opt["nacelle.damping_ratio"] = nacelle["drivetrain"]["damping_ratio"]
+        wt_opt["nacelle.mb1Type"] = nacelle["drivetrain"]["mb1Type"]
+        wt_opt["nacelle.mb2Type"] = nacelle["drivetrain"]["mb2Type"]
+        wt_opt["nacelle.uptower"] = nacelle["drivetrain"]["uptower"]
+        wt_opt["nacelle.lss_material"] = nacelle["drivetrain"]["lss_material"]
+        wt_opt["nacelle.bedplate_material"] = nacelle["drivetrain"]["bedplate_material"]
+        wt_opt["nacelle.brake_mass_user"] = nacelle["drivetrain"]["brake_mass_user"]
+        wt_opt["nacelle.hvac_mass_coeff"] = nacelle["drivetrain"]["hvac_mass_coefficient"]
+        wt_opt["nacelle.converter_mass_user"] = nacelle["drivetrain"]["converter_mass_user"]
+        wt_opt["nacelle.transformer_mass_user"] = nacelle["drivetrain"]["transformer_mass_user"]
 
-    wt_opt["nacelle.lss_wall_thickness"] = nacelle["drivetrain"]["lss_wall_thickness"]
-    wt_opt["nacelle.lss_diameter"] = nacelle["drivetrain"]["lss_diameter"]
+        wt_opt["nacelle.lss_wall_thickness"] = nacelle["drivetrain"]["lss_wall_thickness"]
+        wt_opt["nacelle.lss_diameter"] = nacelle["drivetrain"]["lss_diameter"]
 
-    if modeling_options["WISDEM"]["DriveSE"]["direct"]:
-        # Direct only
-        wt_opt["nacelle.nose_wall_thickness"] = nacelle["drivetrain"]["nose_wall_thickness"]
-        wt_opt["nacelle.nose_diameter"] = nacelle["drivetrain"]["nose_diameter"]
+        if modeling_options["WISDEM"]["DriveSE"]["direct"]:
+            # Direct only
+            wt_opt["nacelle.nose_wall_thickness"] = nacelle["drivetrain"]["nose_wall_thickness"]
+            wt_opt["nacelle.nose_diameter"] = nacelle["drivetrain"]["nose_diameter"]
 
-        s_bedplate = np.linspace(0.0, 1.0, len(wt_opt["nacelle.bedplate_wall_thickness"]))
-        s_bed_thick_in = nacelle["drivetrain"]["bedplate_wall_thickness"]["grid"]
-        v_bed_thick_in = nacelle["drivetrain"]["bedplate_wall_thickness"]["values"]
-        wt_opt["nacelle.bedplate_wall_thickness"] = np.interp(s_bedplate, s_bed_thick_in, v_bed_thick_in)
-    else:
-        # Geared only
-        wt_opt["nacelle.hss_wall_thickness"] = nacelle["drivetrain"]["hss_wall_thickness"]
-        wt_opt["nacelle.hss_diameter"] = nacelle["drivetrain"]["hss_diameter"]
-
-        wt_opt["nacelle.hss_length"] = nacelle["drivetrain"]["hss_length"]
-        wt_opt["nacelle.bedplate_flange_width"] = nacelle["drivetrain"]["bedplate_flange_width"]
-        wt_opt["nacelle.bedplate_flange_thickness"] = nacelle["drivetrain"]["bedplate_flange_thickness"]
-        wt_opt["nacelle.bedplate_web_thickness"] = nacelle["drivetrain"]["bedplate_web_thickness"]
-        wt_opt["nacelle.gear_configuration"] = nacelle["drivetrain"]["gear_configuration"].lower()
-        wt_opt["nacelle.planet_numbers"] = nacelle["drivetrain"]["planet_numbers"]
-        wt_opt["nacelle.hss_material"] = nacelle["drivetrain"]["hss_material"]
-
-    if not modeling_options["flags"]["generator"]:
-        wt_opt["generator.generator_radius_user"] = nacelle["drivetrain"]["generator_radius_user"]
-        wt_opt["generator.generator_mass_user"] = nacelle["drivetrain"]["generator_mass_user"]
-
-        eff_user = np.c_[
-            nacelle["drivetrain"]["generator_rpm_efficiency_user"]["grid"],
-            nacelle["drivetrain"]["generator_rpm_efficiency_user"]["values"],
-        ]
-        n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
-        if np.any(eff_user):
-            newrpm = np.linspace(eff_user[:, 0].min(), eff_user[:, 0].max(), n_pc)
-            neweff = np.interp(newrpm, eff_user[:, 0], eff_user[:, 1])
-            myeff = np.c_[newrpm, neweff]
+            s_bedplate = np.linspace(0.0, 1.0, len(wt_opt["nacelle.bedplate_wall_thickness"]))
+            s_bed_thick_in = nacelle["drivetrain"]["bedplate_wall_thickness"]["grid"]
+            v_bed_thick_in = nacelle["drivetrain"]["bedplate_wall_thickness"]["values"]
+            wt_opt["nacelle.bedplate_wall_thickness"] = np.interp(s_bedplate, s_bed_thick_in, v_bed_thick_in)
         else:
-            myeff = np.zeros((n_pc, 2))
-        wt_opt["generator.generator_efficiency_user"] = myeff
+            # Geared only
+            wt_opt["nacelle.hss_wall_thickness"] = nacelle["drivetrain"]["hss_wall_thickness"]
+            wt_opt["nacelle.hss_diameter"] = nacelle["drivetrain"]["hss_diameter"]
+
+            wt_opt["nacelle.hss_length"] = nacelle["drivetrain"]["hss_length"]
+            wt_opt["nacelle.bedplate_flange_width"] = nacelle["drivetrain"]["bedplate_flange_width"]
+            wt_opt["nacelle.bedplate_flange_thickness"] = nacelle["drivetrain"]["bedplate_flange_thickness"]
+            wt_opt["nacelle.bedplate_web_thickness"] = nacelle["drivetrain"]["bedplate_web_thickness"]
+            wt_opt["nacelle.gear_configuration"] = nacelle["drivetrain"]["gear_configuration"].lower()
+            wt_opt["nacelle.planet_numbers"] = nacelle["drivetrain"]["planet_numbers"]
+            wt_opt["nacelle.hss_material"] = nacelle["drivetrain"]["hss_material"]
+
+        if not modeling_options["flags"]["generator"]:
+            wt_opt["generator.generator_radius_user"] = nacelle["drivetrain"]["generator_radius_user"]
+            wt_opt["generator.generator_mass_user"] = nacelle["drivetrain"]["generator_mass_user"]
+
+            eff_user = np.c_[
+                nacelle["drivetrain"]["generator_rpm_efficiency_user"]["grid"],
+                nacelle["drivetrain"]["generator_rpm_efficiency_user"]["values"],
+            ]
+            n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
+            if np.any(eff_user):
+                newrpm = np.linspace(eff_user[:, 0].min(), eff_user[:, 0].max(), n_pc)
+                neweff = np.interp(newrpm, eff_user[:, 0], eff_user[:, 1])
+                myeff = np.c_[newrpm, neweff]
+            else:
+                myeff = np.zeros((n_pc, 2))
+            wt_opt["generator.generator_efficiency_user"] = myeff
 
     return wt_opt
 
@@ -920,7 +923,8 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     else:
         itrans = modeling_options["floating"]["transition_joint"]
     wt_opt["floating.transition_node"] = wt_opt["floating.location_in"][itrans, :]
-
+    wt_opt["floating.transition_piece_mass"] = floating["transition_piece_mass"]
+    wt_opt["floating.transition_piece_cost"] = floating["transition_piece_cost"]
     # Make sure IVCs are initialized too
     for k, linked_node_dict in enumerate(modeling_options["floating"]["joints"]["design_variable_data"]):
         idx = linked_node_dict["indices"]
@@ -1040,10 +1044,11 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
                 d2 = mooring["line_types"][ii]["diameter"] ** 2
                 if jj < n_design:
                     wt_opt["mooring.line_diameter_in"][jj] = mooring["line_types"][ii]["diameter"]
-                wt_opt["mooring.line_mass_density_coeff"][jj] = mooring["line_types"][ii]["mass_density"] / d2
-                wt_opt["mooring.line_stiffness_coeff"][jj] = mooring["line_types"][ii]["stiffness"] / d2
-                wt_opt["mooring.line_breaking_load_coeff"][jj] = mooring["line_types"][ii]["breaking_load"] / d2
-                wt_opt["mooring.line_cost_rate_coeff"][jj] = mooring["line_types"][ii]["cost"] / d2
+                if mooring_init_options["line_material"][jj] == "custom":
+                    wt_opt["mooring.line_mass_density_coeff"][jj] = mooring["line_types"][ii]["mass_density"] / d2
+                    wt_opt["mooring.line_stiffness_coeff"][jj] = mooring["line_types"][ii]["stiffness"] / d2
+                    wt_opt["mooring.line_breaking_load_coeff"][jj] = mooring["line_types"][ii]["breaking_load"] / d2
+                    wt_opt["mooring.line_cost_rate_coeff"][jj] = mooring["line_types"][ii]["cost"] / d2
                 wt_opt["mooring.line_transverse_added_mass_coeff"][jj] = (
                     mooring["line_types"][ii]["transverse_added_mass"] / d2
                 )
@@ -1056,12 +1061,15 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
             if node1 == iname or node2 == iname and mooring["nodes"][ii]["node_type"] == "fixed":
                 for kk, kname in enumerate(anchor_names):
                     if kname == mooring["nodes"][ii]["anchor_type"]:
-                        wt_opt["mooring.anchor_mass"][jj] = mooring["anchor_types"][kk]["mass"]
-                        wt_opt["mooring.anchor_cost"][jj] = mooring["anchor_types"][kk]["cost"]
-                        wt_opt["mooring.anchor_max_vertical_load"][jj] = mooring["anchor_types"][kk][
-                            "max_vertical_load"
-                        ]
-                        wt_opt["mooring.anchor_max_lateral_load"][jj] = mooring["anchor_types"][kk]["max_lateral_load"]
+                        if mooring_init_options["line_anchor"][jj] == "custom":
+                            wt_opt["mooring.anchor_mass"][jj] = mooring["anchor_types"][kk]["mass"]
+                            wt_opt["mooring.anchor_cost"][jj] = mooring["anchor_types"][kk]["cost"]
+                            wt_opt["mooring.anchor_max_vertical_load"][jj] = mooring["anchor_types"][kk][
+                                "max_vertical_load"
+                            ]
+                            wt_opt["mooring.anchor_max_lateral_load"][jj] = mooring["anchor_types"][kk][
+                                "max_lateral_load"
+                            ]
 
     # Give warnings if we have different types or asymmetrical lines
     if (
@@ -1117,7 +1125,7 @@ def assign_configuration_values(wt_opt, assembly, opt_options):
     return wt_opt
 
 
-def assign_environment_values(wt_opt, environment, offshore):
+def assign_environment_values(wt_opt, environment, offshore, blade_flag):
 
     wt_opt["env.rho_air"] = environment["air_density"]
     wt_opt["env.mu_air"] = environment["air_dyn_viscosity"]
@@ -1132,6 +1140,8 @@ def assign_environment_values(wt_opt, environment, offshore):
     wt_opt["env.shear_exp"] = environment["shear_exp"]
     wt_opt["env.G_soil"] = environment["soil_shear_modulus"]
     wt_opt["env.nu_soil"] = environment["soil_poisson"]
+    if blade_flag:
+        wt_opt["rotorse.wt_class.V_mean_overwrite"] = environment["V_mean"]
 
     return wt_opt
 

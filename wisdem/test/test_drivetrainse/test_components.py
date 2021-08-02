@@ -322,6 +322,8 @@ class TestComponents(unittest.TestCase):
             "hss",
             "gearbox",
             "generator",
+            "generator_stator",
+            "generator_rotor",
             "hvac",
             "brake",
             "nose",
@@ -343,9 +345,9 @@ class TestComponents(unittest.TestCase):
 
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertEqual(outputs["other_mass"], 1e3 * 6)
-        self.assertEqual(outputs["nacelle_mass"], 1e3 * len(components))
+        self.assertEqual(outputs["nacelle_mass"], 1e3 * (len(components) - 2))  # gen stator / rotor duplication
         npt.assert_equal(outputs["nacelle_cm"], np.r_[-5.0, 0.0, 2.0])
-        npt.assert_equal(outputs["nacelle_I"], 1e3 * len(components) * np.r_[1.0, 2.0, 3.0, np.zeros(3)])
+        npt.assert_equal(outputs["nacelle_I"], 1e3 * (len(components) - 2) * np.r_[1.0, 2.0, 3.0, np.zeros(3)])
 
         discrete_inputs["upwind"] = False
         for k in cm3:
@@ -353,16 +355,16 @@ class TestComponents(unittest.TestCase):
         inputs["x_bedplate"] *= -1.0
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertEqual(outputs["other_mass"], 1e3 * 6)
-        self.assertEqual(outputs["nacelle_mass"], 1e3 * len(components))
+        self.assertEqual(outputs["nacelle_mass"], 1e3 * (len(components) - 2))
         npt.assert_equal(outputs["nacelle_cm"], np.r_[5.0, 0.0, 2.0])
-        npt.assert_equal(outputs["nacelle_I"], 1e3 * len(components) * np.r_[1.0, 2.0, 3.0, np.zeros(3)])
+        npt.assert_equal(outputs["nacelle_I"], 1e3 * (len(components) - 2) * np.r_[1.0, 2.0, 3.0, np.zeros(3)])
 
         discrete_inputs["uptower"] = False
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertEqual(outputs["other_mass"], 1e3 * 6)
-        self.assertEqual(outputs["nacelle_mass"], 1e3 * (len(components) - 2))
+        self.assertEqual(outputs["nacelle_mass"], 1e3 * (len(components) - 4))
         npt.assert_equal(outputs["nacelle_cm"], np.r_[5.0, 0.0, 2.0])
-        npt.assert_equal(outputs["nacelle_I"], 1e3 * (len(components) - 2) * np.r_[1.0, 2.0, 3.0, np.zeros(3)])
+        npt.assert_equal(outputs["nacelle_I"], 1e3 * (len(components) - 4) * np.r_[1.0, 2.0, 3.0, np.zeros(3)])
 
     def testNacelle_withTilt(self):
         inputs = {}
@@ -384,6 +386,8 @@ class TestComponents(unittest.TestCase):
             "hss",
             "gearbox",
             "generator",
+            "generator_stator",
+            "generator_rotor",
             "hvac",
             "brake",
             "nose",
@@ -405,7 +409,7 @@ class TestComponents(unittest.TestCase):
 
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertEqual(outputs["other_mass"], 1e3 * 6)
-        self.assertEqual(outputs["nacelle_mass"], 1e3 * len(components))
+        self.assertEqual(outputs["nacelle_mass"], 1e3 * (len(components) - 2))  # gen stator / rotor duplication
         npt.assert_almost_equal(outputs["nacelle_cm"], np.r_[-3.0 * np.cos(tr) - 2, 0.0, 2 + 3.0 * np.sin(tr)])
         # npt.assert_equal(outputs['nacelle_I'], 1e3*len(components)*np.r_[1.0, 2.0, 3.0, np.zeros(3)])
 
@@ -415,14 +419,14 @@ class TestComponents(unittest.TestCase):
         inputs["x_bedplate"] *= -1.0
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertEqual(outputs["other_mass"], 1e3 * 6)
-        self.assertEqual(outputs["nacelle_mass"], 1e3 * len(components))
+        self.assertEqual(outputs["nacelle_mass"], 1e3 * (len(components) - 2))
         npt.assert_almost_equal(outputs["nacelle_cm"], np.r_[3.0 * np.cos(tr) + 2, 0.0, 2 + 3.0 * np.sin(tr)])
         # npt.assert_equal(outputs['nacelle_I'], 1e3*len(components)*np.r_[1.0, 2.0, 3.0, np.zeros(3)])
 
         discrete_inputs["uptower"] = False
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         self.assertEqual(outputs["other_mass"], 1e3 * 6)
-        self.assertEqual(outputs["nacelle_mass"], 1e3 * (len(components) - 2))
+        self.assertEqual(outputs["nacelle_mass"], 1e3 * (len(components) - 4))
         npt.assert_almost_equal(outputs["nacelle_cm"], np.r_[3.0 * np.cos(tr) + 2, 0.0, 2 + 3.0 * np.sin(tr)])
 
     def testRNA(self):

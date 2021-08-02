@@ -99,16 +99,28 @@ components:
                   offset_y_pa:
                     grid: [0., 1.]
                     values: [0., 0.]
-                - name: TE_reinforcement
+                - name: TE_reinforcement_PS
                   material: glassUD
-                  midpoint_nd_arc:
+                  side: pressure
+                  end_nd_arc:
                     fixed: TE
                   thickness:
                     grid: [0.024390244, 0.089430894, 0.366666667, 0.731707317, 1.]
                     values: [0.00047, 0.00705, 0.00705, 0.00047, 0.]
                   width:
                     grid: [0.024390243902439025, 0.731707317, 1.]
-                    values: [0.9, 0.9, 0.1]
+                    values: [0.45, 0.45, 0.05]
+                - name: TE_reinforcement_SS
+                  material: glassUD
+                  side: suction
+                  start_nd_arc:
+                    fixed: TE
+                  thickness:
+                    grid: [0.024390244, 0.089430894, 0.366666667, 0.731707317, 1.]
+                    values: [0.00047, 0.00705, 0.00705, 0.00047, 0.]
+                  width:
+                    grid: [0.024390243902439025, 0.731707317, 1.]
+                    values: [0.45, 0.45, 0.05]
                 - name: TE_foam_PS
                   material: FOAM
                   thickness:
@@ -117,14 +129,14 @@ components:
                   start_nd_arc:
                     fixed: Spar_Cap_PS
                   end_nd_arc:
-                    fixed: TE_reinforcement
+                    fixed: TE_reinforcement_PS
                 - name: TE_foam_SS
                   material: FOAM
                   thickness:
                     grid: [0.024390244, 0.089430894, 0.111110569, 0.366666667, 0.4, 0.633333333, 0.666666667, 0.933333333]
                     values: [0.020, 0.020, 0.090, 0.090, 0.060, 0.060, 0.020, 0.020]
                   start_nd_arc:
-                    fixed: TE_reinforcement
+                    fixed: TE_reinforcement_SS
                   end_nd_arc:
                     fixed: Spar_Cap_SS
                 - name: LE_foam_PS
@@ -306,6 +318,18 @@ components:
               location: [0.0, 0.0, 10.0]
               transition: True
 
+            - name: fairlead1
+              location: [5.2, 0.0, -70.0]
+              cylindrical: True
+
+            - name: fairlead2
+              location: [5.2, 2.0943951023931953, -70.0] # 120deg
+              cylindrical: True
+
+            - name: fairlead3
+              location: [5.2, 4.1887902047863905, -70.0] # 240deg
+              cylindrical: True
+
             - name: anchor1
               location: [853.87, 0.0, -320.0]
               cylindrical: True
@@ -348,8 +372,36 @@ components:
                       grid: [0.4, 1.0]
 
               axial_joints:
-                - name: fairlead
+                - name: fairlead_attach
                   grid: 0.38462 # Should be -70m
+
+            - name: fairlead_leg1
+              joint1: fairlead1
+              joint2: fairlead_attach
+              outer_shape: &fair_out
+                shape: circular
+                outer_diameter:
+                    grid: [0.0, 1.0]
+                    values: [1.0, 1.0]
+              internal_structure: &fair_in
+                layers:
+                    - name: fairlead_twall
+                      material: steel
+                      thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.1, 0.1]
+
+            - name: fairlead_leg2
+              joint1: fairlead2
+              joint2: fairlead_attach
+              outer_shape: *fair_out
+              internal_structure: *fair_in
+
+            - name: fairlead_leg3
+              joint1: fairlead3
+              joint2: fairlead_attach
+              outer_shape: *fair_out
+              internal_structure: *fair_in
 
     mooring:
         nodes:
@@ -370,17 +422,17 @@ components:
 
             - name: line1_vessel
               node_type: vessel
-              joint: fairlead
+              joint: fairlead1
               fairlead_type: rigid
 
             - name: line2_vessel
               node_type: vessel
-              joint: fairlead
+              joint: fairlead2
               fairlead_type: rigid
 
             - name: line3_vessel
               node_type: vessel
-              joint: fairlead
+              joint: fairlead3
               fairlead_type: rigid
 
         lines:
@@ -405,10 +457,7 @@ components:
         line_types:
             - name: main
               diameter: 0.09
-              mass_density: 77.7066
-              stiffness: 384.243e6
-              breaking_load: 1e8
-              cost: 100.0
+              type: chain
               transverse_added_mass: 1.0
               tangential_added_mass: 0.0
               transverse_drag: 1.6
@@ -416,10 +465,7 @@ components:
 
         anchor_types:
             - name: drag_embedment
-              mass: 1e3
-              cost: 1e4
-              max_vertical_load: 0.0
-              max_lateral_load: 1e5
+              type: drag_embedment
 
 airfoils:
    -  aerodynamic_center: 0.275
@@ -709,11 +755,14 @@ control:
         maxOmega: 1.26711
     pitch:
         PC_zeta: 0.7                      # Pitch controller desired damping ratio [-]
-        PC_omega: 0.5                     # Pitch controller desired natural frequency [rad/s]
-        ps_percent: 0.8                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
+        PC_omega: 0.35                     # Pitch controller desired natural frequency [rad/s]
+        ps_percent: 0.9                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
         max_pitch: 1.57                     # Maximum pitch angle [rad], {default = 90 degrees}
         max_pitch_rate: 0.1745
         min_pitch: 0                      # Minimum pitch angle [rad], {default = 0 degrees}
+        fl_feedback:
+            twr_freq: 100                     # Frequency of notch in floating feedback (F_NotchCornerFreq)
+            ptfm_freq: .2                     # Frequency of LPF in floating feedback (F_FlCornerFreq)
     torque:
         control_type: tsr_tracking
         tsr: 7.01754386
@@ -738,8 +787,8 @@ environment:
     water_density: 1025.0
     water_dyn_viscosity: 1.3351e-3
     water_depth: 320.0
-    significant_wave_height: 9.14
-    significant_wave_period: 13.6
+    significant_wave_height: 6.0
+    significant_wave_period: 10.0
     soil_shear_modulus: 140.e+6
     soil_poisson: 0.4
 

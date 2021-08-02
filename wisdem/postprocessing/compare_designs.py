@@ -23,6 +23,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
+import wisdem.postprocessing.wisdem_get as getter
 from wisdem.glue_code.runWISDEM import run_wisdem, load_wisdem
 
 this_dir = os.path.dirname(os.path.realpath(__file__))
@@ -65,7 +66,7 @@ def create_all_plots(
             twist_opt = np.interp(
                 s_opt_twist,
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["ccblade.theta"],
+                yaml_data["rotorse.theta"],
             )
             axtw.plot(s_opt_twist, twist_opt * 180.0 / np.pi, "o", color=colors[idx], markersize=3)
 
@@ -118,14 +119,14 @@ def create_all_plots(
             chord_opt = np.interp(
                 s_opt_chord,
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["ccblade.chord"],
+                yaml_data["rotorse.chord"],
             )
             axc.plot(s_opt_chord, chord_opt, "o", color=colors[idx], markersize=3)
 
         chord_init = np.interp(
             s_opt_chord,
             list_of_sims[0]["blade.outer_shape_bem.s"],
-            yaml_data["ccblade.chord"],
+            yaml_data["rotorse.chord"],
         )
         axc.plot(
             s_opt_chord,
@@ -384,17 +385,17 @@ def create_all_plots(
     ax1 = ftow.add_subplot(121)
     for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
         ax1.plot(
-            yaml_data["towerse.tower_outer_diameter"],
-            yaml_data["towerse.z_param"],
+            getter.get_tower_diameter(yaml_data),
+            getter.get_zpts(yaml_data),
             "-",
             color=colors[idx],
             label=label,
         )
     vx = ax1.get_xlim()
-    zs = list_of_sims[0]["towerse.z_param"]
+    zs = getter.get_zpts(list_of_sims[0])
     if zs.min() < -5.0:
         water_depth = list_of_sims[0]["env.water_depth"]
-        h_trans = list_of_sims[0]["towerse.transition_piece_height"]
+        h_trans = getter.get_transition_height(list_of_sims[0])
         ax1.plot(vx, np.zeros(2), color="b", linestyle="--")
         ax1.plot(vx, -water_depth * np.ones(2), color=brown, linestyle="--")
         ax1.plot(vx, h_trans * np.ones(2), color="g", linestyle="--")
@@ -410,10 +411,10 @@ def create_all_plots(
 
     ax2 = ftow.add_subplot(122)
     for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
-        y = yaml_data.get_val("towerse.tower_wall_thickness", "mm")
+        y = 1e3 * getter.get_tower_thickness(yaml_data)
         ax2.step(
             np.r_[y, y[-1]],
-            yaml_data["towerse.z_param"],
+            getter.get_zpts(yaml_data),
             "-",
             color=colors[idx],
             label=label,
@@ -762,10 +763,13 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "Nacelle mass": ["drivese.nacelle_mass", "kg"],
         "RNA mass": ["drivese.rna_mass", "kg"],
         "Tower mass": ["towerse.tower_mass", "kg"],
+        "Floating Tower mass": ["floatingse.tower_mass", "kg"],
         "Tower cost": ["towerse.tower_cost", "USD"],
+        "Floating Tower cost": ["floatingse.tower_cost", "USD"],
         "Monopile mass": ["towerse.monopile_mass", "kg"],
         "Monopile cost": ["towerse.monopile_cost", "USD"],
-        "Tower-Monopile freqs": ["towerse.post.structural_frequencies", "Hz"],
+        "Tower-Monopile freqs": ["towerse.tower.structural_frequencies", "Hz"],
+        "Floating Tower freqs": ["floatingse.tower_freqs", "Hz"],
     }
 
     # Generally it's not necessary to change the code below here, unless you

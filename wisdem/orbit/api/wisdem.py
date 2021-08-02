@@ -209,9 +209,6 @@ class OrbitWisdem(om.ExplicitComponent):
         self.add_output("installation_time", 0.0, units="h", desc="Total balance of system installation time.")
         self.add_output("installation_capex", 0.0, units="USD", desc="Total balance of system installation cost.")
 
-        # Will hold the bigger orbit project datastructure
-        self.project = None
-
     def compile_orbit_config_file(self, inputs, outputs, discrete_inputs, discrete_outputs):
         """"""
 
@@ -270,8 +267,7 @@ class OrbitWisdem(om.ExplicitComponent):
                 "type": "Transition Piece",
                 "deck_space": float(inputs["transition_piece_deck_space"]),
                 "mass": float(inputs["transition_piece_mass"]),
-                # No double counting of cost with TowerSE
-                "unit_cost": 0.0,  # float(inputs["transition_piece_cost"]),
+                "unit_cost": float(inputs["transition_piece_cost"]),
             },
             # Electrical
             "array_system_design": {
@@ -304,6 +300,10 @@ class OrbitWisdem(om.ExplicitComponent):
             # Phases
             # Putting monopile or semisub here would override the inputs we assume to get from WISDEM
             "design_phases": [
+                #'MonopileDesign',
+                #'SemiSubmersibleDesign',
+                #'MooringSystemDesign',
+                #'ScourProtectionDesign',
                 "ArraySystemDesign",
                 "ExportSystemDesign",
                 "OffshoreSubstationDesign",
@@ -312,11 +312,6 @@ class OrbitWisdem(om.ExplicitComponent):
 
         # Unique design phases
         if floating:
-            config["design_phases"] += [
-                "MooringSystemDesign",
-                # "SparDesign",
-                # "SemiSubmersibleDesign",
-            ]
             config["install_phases"] = {
                 "ExportCableInstallation": 0,
                 "OffshoreSubstationInstallation": 0,
@@ -396,8 +391,7 @@ class OrbitWisdem(om.ExplicitComponent):
                 "diameter": float(inputs["monopile_diameter"]),
                 "deck_space": float(inputs["monopile_deck_space"]),
                 "mass": float(inputs["monopile_mass"]),
-                # No double counting of cost with TowerSE
-                "unit_cost": 0.0,  # float(inputs["monopile_cost"]),
+                "unit_cost": float(inputs["monopile_cost"]),
             }
 
             config["scour_protection_design"] = {
@@ -411,11 +405,11 @@ class OrbitWisdem(om.ExplicitComponent):
 
         config = self.compile_orbit_config_file(inputs, outputs, discrete_inputs, discrete_outputs)
 
-        self.project = ProjectManager(config)
-        self.project.run_project()
+        project = ProjectManager(config)
+        project.run()
 
-        outputs["bos_capex"] = self.project.bos_capex
-        outputs["total_capex"] = self.project.total_capex
-        outputs["total_capex_kW"] = self.project.total_capex_per_kw
-        outputs["installation_time"] = self.project.installation_time
-        outputs["installation_capex"] = self.project.installation_capex
+        outputs["bos_capex"] = project.bos_capex
+        outputs["total_capex"] = project.total_capex
+        outputs["total_capex_kW"] = project.total_capex_per_kw
+        outputs["installation_time"] = project.installation_time
+        outputs["installation_capex"] = project.installation_capex

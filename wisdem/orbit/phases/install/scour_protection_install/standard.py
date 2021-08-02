@@ -40,6 +40,7 @@ class ScourProtectionInstallation(InstallPhase):
     }
 
     phase = "Scour Protection Installation"
+    capex_category = "Scour Protection"
 
     def __init__(self, config, weather=None, **kwargs):
         """
@@ -115,7 +116,7 @@ class ScourProtectionInstallation(InstallPhase):
         spi_specs = self.config["spi_vessel"]
         name = spi_specs.get("name", "SPI Vessel")
 
-        spi_vessel = Vessel(name, spi_specs)
+        spi_vessel = self.initialize_vessel(name, spi_specs)
         self.env.register(spi_vessel)
 
         spi_vessel.initialize()
@@ -229,7 +230,7 @@ def load_material(vessel, mass, **kwargs):
     load_time = kwargs.get(key, pt[key])
 
     vessel.rock_storage.put(mass)
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Load SP Material",
         load_time,
         constraints=vessel.transit_limits,
@@ -257,7 +258,7 @@ def drop_material(vessel, mass, **kwargs):
     drop_time = kwargs.get(key, pt[key])
 
     _ = vessel.rock_storage.get(mass)
-    yield vessel.task(
+    yield vessel.task_wrapper(
         "Drop SP Material",
         drop_time,
         constraints=vessel.transit_limits,
