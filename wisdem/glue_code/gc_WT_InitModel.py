@@ -453,6 +453,31 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
             layer_web[i] = k
             definition_layer[i] = 10
 
+        # Fatigue params
+        if layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"]:
+            k = wt_opt["materials.name"].index(layer_mat[i])
+            wt_opt["blade.fatigue.sparU_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
+            wt_opt["blade.fatigue.sparU_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
+            wt_opt["blade.fatigue.sparU_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
+
+        elif layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"]:
+            k = wt_opt["materials.name"].index(layer_mat[i])
+            wt_opt["blade.fatigue.sparL_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
+            wt_opt["blade.fatigue.sparL_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
+            wt_opt["blade.fatigue.sparL_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
+
+        elif layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["te_ss"]:
+            k = wt_opt["materials.name"].index(layer_mat[i])
+            wt_opt["blade.fatigue.teU_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
+            wt_opt["blade.fatigue.teU_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
+            wt_opt["blade.fatigue.teU_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
+
+        elif layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["te_ps"]:
+            k = wt_opt["materials.name"].index(layer_mat[i])
+            wt_opt["blade.fatigue.teL_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
+            wt_opt["blade.fatigue.teL_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
+            wt_opt["blade.fatigue.teL_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
+
     # Assign the openmdao values
     wt_opt["blade.internal_structure_2d_fem.layer_side"] = layer_side
     wt_opt["blade.internal_structure_2d_fem.layer_thickness"] = thickness

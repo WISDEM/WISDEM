@@ -703,6 +703,22 @@ class Blade(om.Group):
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
         self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
 
+        # Fatigue specific parameters
+        fat_var = om.IndepVarComp()
+        fat_var.add_output("sparU_sigma_ult", val=1.0, units="Pa")
+        fat_var.add_output("sparU_wohlerA", val=1.0, units="Pa")
+        fat_var.add_output("sparU_wohlerexp", val=1.0)
+        fat_var.add_output("sparL_sigma_ult", val=1.0, units="Pa")
+        fat_var.add_output("sparL_wohlerA", val=1.0, units="Pa")
+        fat_var.add_output("sparL_wohlerexp", val=1.0)
+        fat_var.add_output("teU_sigma_ult", val=1.0, units="Pa")
+        fat_var.add_output("teU_wohlerA", val=1.0, units="Pa")
+        fat_var.add_output("teU_wohlerexp", val=1.0)
+        fat_var.add_output("teL_sigma_ult", val=1.0, units="Pa")
+        fat_var.add_output("teL_wohlerA", val=1.0, units="Pa")
+        fat_var.add_output("teL_wohlerexp", val=1.0)
+        self.add_subsystem("fatigue", fat_var)
+
 
 class Blade_Outer_Shape_BEM(om.Group):
     # Openmdao group with the blade outer shape data coming from the input yaml file.
