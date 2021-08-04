@@ -226,6 +226,6 @@ class ParametrizeBladeStruct(ExplicitComponent):
                 else:
                     opt_m_interp = np.interp(inputs["s"], inputs["s_opt_te_ss"], inputs["te_ss_opt"])
             else:
-                opt_m_interp = inputs["layer_thickness_original"][i, :]
+                opt_m_interp = outputs["layer_thickness_param"][i, :]
 
             outputs["layer_thickness_param"][i, :] = opt_m_interp
