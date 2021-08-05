@@ -547,9 +547,9 @@ class TestProps(unittest.TestCase):
         npt.assert_equal(self.outputs["axial_load2stress"][:, :2], 0.0)
         npt.assert_equal(self.outputs["axial_load2stress"][:, 5], 0.0)
         npt.assert_almost_equal(self.outputs["axial_load2stress"][:, 3:4], r / 11.0)
-        npt.assert_almost_equal(self.outputs["shear_load2stress"][:, :2], r / 8.0)
+        npt.assert_almost_equal(self.outputs["shear_load2stress"][:, :2], 1 / 8.0)
         npt.assert_almost_equal(self.outputs["shear_load2stress"][:, 2:4], 0.0)
-        npt.assert_almost_equal(self.outputs["shear_load2stress"][:, 5], 1.0 / 10.0)
+        npt.assert_almost_equal(self.outputs["shear_load2stress"][:, 5], r / 10.0)
 
     def testTowerMass(self):
 

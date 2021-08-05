@@ -585,13 +585,13 @@ class TowerDiscretization(om.ExplicitComponent):
         d_sec, _ = util.nodal2sectional(inputs["tower_outer_diameter"])
         r_sec = 0.5 * d_sec
         ax_load2stress = np.zeros((d_sec.size, 6))
-        ax_load2stress[:, 2] = 1 / Az
+        ax_load2stress[:, 2] = 1.0 / Az
         ax_load2stress[:, 3] = r_sec / Ixx
         ax_load2stress[:, 4] = r_sec / Iyy
         sh_load2stress = np.zeros((d_sec.size, 6))
-        sh_load2stress[:, 0] = r_sec / Asx
-        sh_load2stress[:, 1] = r_sec / Asy
-        sh_load2stress[:, 5] = 1 / Jz
+        sh_load2stress[:, 0] = 1.0 / Asx
+        sh_load2stress[:, 1] = 1.0 / Asy
+        sh_load2stress[:, 5] = r_sec / Jz
         outputs["axial_load2stress"] = ax_load2stress
         outputs["shear_load2stress"] = sh_load2stress
 
