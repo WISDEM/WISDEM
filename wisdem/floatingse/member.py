@@ -1582,8 +1582,10 @@ class MemberHydro(om.ExplicitComponent):
             return
 
         # Make sure we account for overlaps
-        s_under = s_under[s_under >= s_ghost1]
-        s_under = s_under[s_under <= s_ghost2]
+        if s_under[0] < s_ghost1:
+            s_under = np.unique(np.r_[s_ghost1, np.maximum(s_ghost1, s_under)])
+        if s_under[-1] > s_ghost2:
+            s_under = np.unique(np.r_[np.minimum(s_ghost2, s_under), s_ghost2])
 
         # Get geometry of valid sections
         z_under = np.interp(s_under, s_full, z_full)

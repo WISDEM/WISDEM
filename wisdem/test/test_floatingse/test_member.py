@@ -840,6 +840,8 @@ class TestHydro(unittest.TestCase):
             1 * np.ones(2 * npts), 2 * np.ones(2 * npts), np.linspace(0, 50.0, 2 * npts) - 75
         ]
         self.inputs["rho_water"] = 1e3
+        self.inputs["s_ghost1"] = 0.0
+        self.inputs["s_ghost2"] = 1.0
 
         self.hydro = member.MemberHydro(n_full=npts)
 
@@ -867,6 +869,11 @@ class TestHydro(unittest.TestCase):
         m_a[2] = 0.5 * (8.0 / 3.0) * rho_w * 125
         m_a[3:5] = np.pi * rho_w * 25.0 * ((-25 - cb_expect[-1]) ** 3.0 - (-75 - cb_expect[-1]) ** 3.0) / 3.0
         npt.assert_almost_equal(self.outputs["added_mass"], m_a, decimal=-5)
+
+        self.inputs["s_ghost1"] = 0.25
+        self.inputs["s_ghost2"] = 0.75
+        self.hydro.compute(self.inputs, self.outputs)
+        self.assertAlmostEqual(self.outputs["displacement"], 0.5 * V_expect)
 
     def testVerticalWaterplane(self):
         npts = self.inputs["s_full"].size
