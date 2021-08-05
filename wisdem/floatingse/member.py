@@ -493,6 +493,8 @@ class MemberDiscretization(om.ExplicitComponent):
         outputs["s_full"] = s_full
         outputs["z_full"] = s_full * inputs["height"]
 
+        # Account for intersections with ghost values
+
         # All other parameters
         outputs["d_full"] = np.interp(s_full, s_param, inputs["outer_diameter"])
         outputs["t_full"] = util.sectionalInterp(s_section, s_param, inputs["wall_thickness"])
@@ -1529,6 +1531,8 @@ class MemberHydro(om.ExplicitComponent):
         self.add_input("z_full", np.zeros(n_full), units="m")
         self.add_input("d_full", np.zeros(n_full), units="m")
         self.add_input("s_all", NULL * np.ones(MEMMAX))
+        self.add_input("s_ghost1", 0.0)
+        self.add_input("s_ghost2", 1.0)
         self.add_input("nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
 
         self.add_output("center_of_buoyancy", np.zeros(3), units="m")
@@ -1546,6 +1550,8 @@ class MemberHydro(om.ExplicitComponent):
         # Unpack variables
         nnode = np.where(inputs["s_all"] == NULL)[0][0]
         s_grid = inputs["s_all"][:nnode]
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
         xyz = inputs["nodes_xyz"][:nnode, :]
         s_full = inputs["s_full"]
         z_full = inputs["z_full"]
@@ -1574,6 +1580,12 @@ class MemberHydro(om.ExplicitComponent):
             outputs["waterline_centroid"] = np.zeros(2)
         else:
             return
+
+        # Make sure we account for overlaps
+        s_under = s_under[s_under >= s_ghost1]
+        s_under = s_under[s_under <= s_ghost2]
+
+        # Get geometry of valid sections
         z_under = np.interp(s_under, s_full, z_full)
         r_under = np.interp(s_under, s_full, R_od)
         if waterline:
