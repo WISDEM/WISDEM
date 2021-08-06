@@ -788,6 +788,7 @@ class TowerPostFrame(om.ExplicitComponent):
         h = np.diff(z)
         d_sec, _ = util.nodal2sectional(d)
         r_sec = 0.5 * d_sec
+        n_sec = r_sec.size
 
         L_suction = float(inputs["suctionpile_depth"])
         L_buckling = self.options["modeling_options"]["buckling_length"]
@@ -820,7 +821,9 @@ class TowerPostFrame(om.ExplicitComponent):
         # Geom properties
         Az = inputs["Az"]
         Asx = inputs["Asx"]
+        Asy = inputs["Asy"]
         Jz = inputs["Jz"]
+        Ixx = inputs["Ixx"]
         Iyy = inputs["Iyy"]
 
         # See http://svn.code.sourceforge.net/p/frame3dd/code/trunk/doc/Frame3DD-manual.html#structuralmodeling

@@ -1,5 +1,4 @@
 import numpy as np
-
 import openmdao.api as om
 from wisdem.rotorse.rotor import RotorSE
 from wisdem.towerse.tower import TowerSE
@@ -247,8 +246,10 @@ class WT_RNTA(om.Group):
             self.connect("materials.E", "drivese.E_mat")
             self.connect("materials.G", "drivese.G_mat")
             self.connect("materials.rho", "drivese.rho_mat")
-            self.connect("materials.sigma_y", "drivese.sigma_y_mat")
+            self.connect("materials.sigma_y", "drivese.Xy_mat")
             self.connect("materials.Xt", "drivese.Xt_mat")
+            self.connect("materials.wohler_exp", "drivese.wohler_exp_mat")
+            self.connect("materials.wohler_intercept", "drivese.wohler_A_mat")
             self.connect("materials.unit_cost", "drivese.unit_cost_mat")
 
             if modeling_options["flags"]["generator"]:
@@ -375,6 +376,9 @@ class WT_RNTA(om.Group):
             self.connect("materials.G", "towerse.G_mat")
             self.connect("materials.rho", "towerse.rho_mat")
             self.connect("materials.sigma_y", "towerse.sigma_y_mat")
+            self.connect("materials.Xt", "towerse.sigma_ult_mat")
+            self.connect("materials.wohler_exp", "towerse.wohler_exp_mat")
+            self.connect("materials.wohler_intercept", "towerse.wohler_A_mat")
             self.connect("materials.unit_cost", "towerse.unit_cost_mat")
             self.connect("costs.labor_rate", "towerse.labor_cost_rate")
             self.connect("costs.painting_rate", "towerse.painting_cost_rate")
@@ -415,6 +419,9 @@ class WT_RNTA(om.Group):
             self.connect("materials.G", "floatingse.G_mat")
             self.connect("materials.rho", "floatingse.rho_mat")
             self.connect("materials.sigma_y", "floatingse.sigma_y_mat")
+            self.connect("materials.Xt", "floatingse.sigma_ult_mat")
+            self.connect("materials.wohler_exp", "floatingse.wohler_exp_mat")
+            self.connect("materials.wohler_intercept", "floatingse.wohler_A_mat")
             self.connect("materials.unit_cost", "floatingse.unit_cost_mat")
             self.connect("costs.labor_rate", "floatingse.labor_cost_rate")
             self.connect("costs.painting_rate", "floatingse.painting_cost_rate")

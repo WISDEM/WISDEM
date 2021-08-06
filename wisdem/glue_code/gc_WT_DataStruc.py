@@ -1,10 +1,9 @@
 import copy
 
 import numpy as np
-from scipy.interpolate import PchipInterpolator, interp1d
-
 import openmdao.api as om
 import wisdem.moorpy.MoorProps as mp
+from scipy.interpolate import PchipInterpolator, interp1d
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.rotorse.geometry_tools.geometry import remap2grid, trailing_edge_smoothing
@@ -446,6 +445,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         )
         conf_ivc.add_discrete_output("n_blades", val=3, desc="Number of blades of the rotor.")
         conf_ivc.add_output("rated_power", val=0.0, units="W", desc="Electrical rated power of the generator.")
+        conf_ivc.add_output("lifetime", val=25.0, units="yr", desc="Turbine design lifetime.")
 
         conf_ivc.add_output(
             "rotor_diameter_user",
@@ -702,6 +702,22 @@ class Blade(om.Group):
         self.connect("outer_shape_bem.s", "ps.s")
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
         self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
+
+        # Fatigue specific parameters
+        fat_var = om.IndepVarComp()
+        fat_var.add_output("sparU_sigma_ult", val=1.0, units="Pa")
+        fat_var.add_output("sparU_wohlerA", val=1.0, units="Pa")
+        fat_var.add_output("sparU_wohlerexp", val=1.0)
+        fat_var.add_output("sparL_sigma_ult", val=1.0, units="Pa")
+        fat_var.add_output("sparL_wohlerA", val=1.0, units="Pa")
+        fat_var.add_output("sparL_wohlerexp", val=1.0)
+        fat_var.add_output("teU_sigma_ult", val=1.0, units="Pa")
+        fat_var.add_output("teU_wohlerA", val=1.0, units="Pa")
+        fat_var.add_output("teU_wohlerexp", val=1.0)
+        fat_var.add_output("teL_sigma_ult", val=1.0, units="Pa")
+        fat_var.add_output("teL_wohlerA", val=1.0, units="Pa")
+        fat_var.add_output("teL_wohlerexp", val=1.0)
+        self.add_subsystem("fatigue", fat_var)
 
 
 class Blade_Outer_Shape_BEM(om.Group):
@@ -2703,6 +2719,16 @@ class Materials(om.Group):
             val=np.zeros(n_mat),
             units="Pa",
             desc="Yield stress of the material (in the principle direction for composites).",
+        )
+        ivc.add_output(
+            "wohler_exp",
+            val=np.zeros(n_mat),
+            desc="Exponent of S-N Wohler fatigue curve in the form of S = A*N^-(1/m).",
+        )
+        ivc.add_output(
+            "wohler_intercept",
+            val=np.zeros(n_mat),
+            desc="Stress-intercept (A) of S-N Wohler fatigue curve in the form of S = A*N^-(1/m), taken as ultimate stress unless otherwise specified.",
         )
         ivc.add_output(
             "unit_cost", val=np.zeros(n_mat), units="USD/kg", desc="1D array of the unit costs of the materials."

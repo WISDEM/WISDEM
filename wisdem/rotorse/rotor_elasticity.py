@@ -241,42 +241,42 @@ class RunPreComp(ExplicitComponent):
         # self.add_output('eps_crit_spar',    val=np.zeros(n_span), desc='critical strain in spar from panel buckling calculation')
         # self.add_output('eps_crit_te',      val=np.zeros(n_span), desc='critical strain in trailing-edge panels from panel buckling calculation')
         self.add_output(
-            "xu_strain_spar",
+            "xu_spar",
             val=np.zeros(n_span),
             desc="x-position of midpoint of spar cap on upper surface for strain calculation",
         )
         self.add_output(
-            "xl_strain_spar",
+            "xl_spar",
             val=np.zeros(n_span),
             desc="x-position of midpoint of spar cap on lower surface for strain calculation",
         )
         self.add_output(
-            "yu_strain_spar",
+            "yu_spar",
             val=np.zeros(n_span),
             desc="y-position of midpoint of spar cap on upper surface for strain calculation",
         )
         self.add_output(
-            "yl_strain_spar",
+            "yl_spar",
             val=np.zeros(n_span),
             desc="y-position of midpoint of spar cap on lower surface for strain calculation",
         )
         self.add_output(
-            "xu_strain_te",
+            "xu_te",
             val=np.zeros(n_span),
             desc="x-position of midpoint of trailing-edge panel on upper surface for strain calculation",
         )
         self.add_output(
-            "xl_strain_te",
+            "xl_te",
             val=np.zeros(n_span),
             desc="x-position of midpoint of trailing-edge panel on lower surface for strain calculation",
         )
         self.add_output(
-            "yu_strain_te",
+            "yu_te",
             val=np.zeros(n_span),
             desc="y-position of midpoint of trailing-edge panel on upper surface for strain calculation",
         )
         self.add_output(
-            "yl_strain_te",
+            "yl_te",
             val=np.zeros(n_span),
             desc="y-position of midpoint of trailing-edge panel on lower surface for strain calculation",
         )
@@ -765,16 +765,16 @@ class RunPreComp(ExplicitComponent):
             else:
                 websCS[i] = CompositeSection([], [], [], [], [], [])
 
-        sector_idx_strain_spar_cap_ss = [
+        sector_idx_spar_cap_ss = [
             None if regs == None else regs[int(len(regs) / 2)] for regs in region_loc_ss[self.spar_cap_ss_var]
         ]
-        sector_idx_strain_spar_cap_ps = [
+        sector_idx_spar_cap_ps = [
             None if regs == None else regs[int(len(regs) / 2)] for regs in region_loc_ps[self.spar_cap_ps_var]
         ]
-        sector_idx_strain_te_ss = [
+        sector_idx_te_ss = [
             None if regs == None else regs[int(len(regs) / 2)] for regs in region_loc_ss[self.te_ss_var]
         ]
-        sector_idx_strain_te_ps = [
+        sector_idx_te_ps = [
             None if regs == None else regs[int(len(regs) / 2)] for regs in region_loc_ps[self.te_ps_var]
         ]
 
@@ -791,10 +791,10 @@ class RunPreComp(ExplicitComponent):
             upperCS,
             lowerCS,
             websCS,
-            sector_idx_strain_spar_cap_ps,
-            sector_idx_strain_spar_cap_ss,
-            sector_idx_strain_te_ps,
-            sector_idx_strain_te_ss,
+            sector_idx_spar_cap_ps,
+            sector_idx_spar_cap_ss,
+            sector_idx_te_ps,
+            sector_idx_te_ss,
         )
         (
             EIxx,
@@ -818,30 +818,28 @@ class RunPreComp(ExplicitComponent):
             y_cg,
         ) = beam.sectionProperties()
 
-        # outputs['eps_crit_spar'] = beam.panelBucklingStrain(sector_idx_strain_spar_cap_ss)
-        # outputs['eps_crit_te'] = beam.panelBucklingStrain(sector_idx_strain_te_ss)
+        # outputs['eps_crit_spar'] = beam.panelBucklingStrain(sector_idx_spar_cap_ss)
+        # outputs['eps_crit_te'] = beam.panelBucklingStrain(sector_idx_te_ss)
 
-        xu_strain_spar, xl_strain_spar, yu_strain_spar, yl_strain_spar = beam.criticalStrainLocations(
-            sector_idx_strain_spar_cap_ss, sector_idx_strain_spar_cap_ps
+        xu_spar, xl_spar, yu_spar, yl_spar = beam.criticalStrainLocations(
+            sector_idx_spar_cap_ss, sector_idx_spar_cap_ps
         )
-        xu_strain_te, xl_strain_te, yu_strain_te, yl_strain_te = beam.criticalStrainLocations(
-            sector_idx_strain_te_ss, sector_idx_strain_te_ps
-        )
+        xu_te, xl_te, yu_te, yl_te = beam.criticalStrainLocations(sector_idx_te_ss, sector_idx_te_ps)
 
         # Store what materials make up the composites for SC/TE
         for i in range(self.n_span):
             for j in range(self.n_mat):
-                if sector_idx_strain_spar_cap_ss[i]:
-                    if j in upperCS[i].mat_idx[sector_idx_strain_spar_cap_ss[i]]:
+                if sector_idx_spar_cap_ss[i]:
+                    if j in upperCS[i].mat_idx[sector_idx_spar_cap_ss[i]]:
                         outputs["sc_ss_mats"][i, j] = 1.0
-                if sector_idx_strain_spar_cap_ps[i]:
-                    if j in lowerCS[i].mat_idx[sector_idx_strain_spar_cap_ps[i]]:
+                if sector_idx_spar_cap_ps[i]:
+                    if j in lowerCS[i].mat_idx[sector_idx_spar_cap_ps[i]]:
                         outputs["sc_ps_mats"][i, j] = 1.0
-                if sector_idx_strain_te_ss[i]:
-                    if j in upperCS[i].mat_idx[sector_idx_strain_te_ss[i]]:
+                if sector_idx_te_ss[i]:
+                    if j in upperCS[i].mat_idx[sector_idx_te_ss[i]]:
                         outputs["te_ss_mats"][i, j] = 1.0
-                if sector_idx_strain_te_ps[i]:
-                    if j in lowerCS[i].mat_idx[sector_idx_strain_te_ps[i]]:
+                if sector_idx_te_ps[i]:
+                    if j in lowerCS[i].mat_idx[sector_idx_te_ps[i]]:
                         outputs["te_ps_mats"][i, j] = 1.0
 
         if inputs["joint_mass"] > 0.0:
@@ -877,14 +875,14 @@ class RunPreComp(ExplicitComponent):
         outputs["x_cg"] = x_cg
         outputs["y_cg"] = y_cg
 
-        outputs["xu_strain_spar"] = xu_strain_spar
-        outputs["xl_strain_spar"] = xl_strain_spar
-        outputs["yu_strain_spar"] = yu_strain_spar
-        outputs["yl_strain_spar"] = yl_strain_spar
-        outputs["xu_strain_te"] = xu_strain_te
-        outputs["xl_strain_te"] = xl_strain_te
-        outputs["yu_strain_te"] = yu_strain_te
-        outputs["yl_strain_te"] = yl_strain_te
+        outputs["xu_spar"] = xu_spar
+        outputs["xl_spar"] = xl_spar
+        outputs["yu_spar"] = yu_spar
+        outputs["yl_spar"] = yl_spar
+        outputs["xu_te"] = xu_te
+        outputs["xl_te"] = xl_te
+        outputs["yu_te"] = yu_te
+        outputs["yl_te"] = yl_te
 
         # Compute mass and inertia of blade and rotor
         blade_mass = np.trapz(rhoA, inputs["r"])
@@ -1025,14 +1023,14 @@ class RotorElasticity(Group):
                 "sc_ps_mats",
                 "te_ss_mats",
                 "te_ps_mats",
-                "xu_strain_spar",
-                "xl_strain_spar",
-                "yu_strain_spar",
-                "yl_strain_spar",
-                "xu_strain_te",
-                "xl_strain_te",
-                "yu_strain_te",
-                "yl_strain_te",
+                "xu_spar",
+                "xl_spar",
+                "yu_spar",
+                "yl_spar",
+                "xu_te",
+                "xl_te",
+                "yu_te",
+                "yl_te",
             ],
         )
         # Check rail transportabiliy

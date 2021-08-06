@@ -138,7 +138,9 @@ prob["E_mat"] = np.c_[200e9 * np.ones(3), 205e9 * np.ones(3), 118e9 * np.ones(3)
 prob["G_mat"] = np.c_[79.3e9 * np.ones(3), 80e9 * np.ones(3), 47.6e9 * np.ones(3), [3.27e9, 3.48e9, 3.5e9]].T
 prob["Xt_mat"] = np.c_[450e6 * np.ones(3), 814e6 * np.ones(3), 310e6 * np.ones(3), [6.092e8, 3.81e7, 1.529e7]].T
 prob["rho_mat"] = np.r_[7800.0, 7850.0, 7200.0, 1940.0]
-prob["sigma_y_mat"] = np.r_[345e6, 485e6, 265e6, 18.9e6]
+prob["Xy_mat"] = np.r_[345e6, 485e6, 265e6, 18.9e6]
+prob["wohler_exp_mat"] = 1e1 * np.ones(4)
+prob["wohler_A_mat"] = 1e1 * np.ones(4)
 prob["unit_cost_mat"] = np.r_[0.7, 0.9, 0.5, 1.9]
 prob["lss_material"] = prob["hss_material"] = "steel_drive"
 prob["bedplate_material"] = "steel"

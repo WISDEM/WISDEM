@@ -220,6 +220,70 @@ def create_all_plots(
     except KeyError:
         pass
 
+    # Trailing edge reinforcements
+    try:
+        fsc, axsc = plt.subplots(1, 1, figsize=(5.3, 4))
+
+        for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            n_layers = len(yaml_data["blade.internal_structure_2d_fem.layer_thickness"][:, 0])
+            for i in range(n_layers):
+                layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
+                if modeling_options["WISDEM"]["RotorSE"]["te_ss"] == layer_name:
+                    axsc.plot(
+                        yaml_data["blade.outer_shape_bem.s"],
+                        yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
+                        "-",
+                        color=colors[idx],
+                        label=label,
+                    )
+
+                    s_opt_sc = np.linspace(0.0, 1.0, 8)
+                    sc_opt = np.interp(
+                        s_opt_sc,
+                        yaml_data["blade.outer_shape_bem.s"],
+                        yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
+                    )
+                    axsc.plot(s_opt_sc, sc_opt, "o", color=colors[idx], markersize=3)
+
+        for i in range(n_layers):
+            layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
+            if modeling_options["WISDEM"]["RotorSE"]["te_ss"] == layer_name:
+                sc_init = np.interp(
+                    s_opt_sc,
+                    list_of_sims[0]["blade.outer_shape_bem.s"],
+                    list_of_sims[0]["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
+                )
+                axsc.plot(
+                    s_opt_sc,
+                    np.array(analysis_options["design_variables"]["blade"]["structure"]["te_ss"]["max_decrease"])
+                    * sc_init,
+                    ":o",
+                    color=colors[idx + 1],
+                    markersize=3,
+                    label="Bounds",
+                )
+                axsc.plot(
+                    s_opt_sc,
+                    np.array(analysis_options["design_variables"]["blade"]["structure"]["te_ss"]["max_increase"])
+                    * sc_init,
+                    ":o",
+                    color=colors[idx + 1],
+                    markersize=3,
+                )
+
+        if mult_flag:
+            axsc.legend(fontsize=font_size)
+        plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
+        plt.ylabel("TE Reinforcement Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
+        plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
+        plt.subplots_adjust(bottom=0.15, left=0.15)
+        fig_name = "te_opt" + extension
+        fsc.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+    except KeyError:
+        pass
+
     # Skins
     try:
         f, ax = plt.subplots(1, 1, figsize=(5.3, 4))
@@ -272,7 +336,39 @@ def create_all_plots(
         plt.yticks(fontsize=font_size)
         plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
         plt.subplots_adjust(bottom=0.15, left=0.2)
-        fig_name = "strains_opt" + extension
+        fig_name = "strains_sc_opt" + extension
+        feps.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+    except KeyError:
+        pass
+
+    # Strains trailing edge
+    try:
+        feps, axeps = plt.subplots(1, 1, figsize=(5.3, 4))
+        for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            axeps.plot(
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["rotorse.rs.frame.strainU_te"] * 1.0e6,
+                "-",
+                color=colors[idx],
+                label=label,
+            )
+            axeps.plot(
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["rotorse.rs.frame.strainL_te"] * 1.0e6,
+                "-",
+                color=colors[idx],
+            )
+
+        plt.ylim([-5e3, 5e3])
+        if mult_flag:
+            axeps.legend(fontsize=font_size)
+        plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
+        plt.ylabel("Trailing Edge Strains [mu eps]", fontsize=font_size + 2, fontweight="bold")
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
+        plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
+        plt.subplots_adjust(bottom=0.15, left=0.2)
+        fig_name = "strains_te_opt" + extension
         feps.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
     except KeyError:
         pass
@@ -820,7 +916,13 @@ def main():
         default=fname_analysis_options_default,
         help="Specify the analysis options yaml.",
     )
-    parser.add_argument("--labels", nargs="*", type=str, default=None, help="Specify the labels for the yaml files.")
+    parser.add_argument(
+        "--labels",
+        nargs="*",
+        type=str,
+        default=None,
+        help="Specify the labels for the yaml files (use spaces for separation, no brackets).",
+    )
 
     args = parser.parse_args()
     input_filenames = args.input_files
@@ -850,7 +952,10 @@ def main():
             # Run WISDEM for each yaml file to compare using the modeling and analysis options set above
             print(f"Running WISDEM for {input_filename}.")
             wt_opt, modeling_options, analysis_options = run_wisdem(
-                input_filename, fname_modeling_options, fname_analysis_options
+                input_filename,
+                fname_modeling_options,
+                fname_analysis_options,
+                run_only=True,
             )
 
         list_of_sims.append(wt_opt)

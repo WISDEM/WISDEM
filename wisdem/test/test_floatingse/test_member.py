@@ -33,6 +33,9 @@ class TestInputs(unittest.TestCase):
         inputs["E_user"] = 0.0
         inputs["G_mat"] = 1e8 * np.ones((2, 3))
         inputs["sigma_y_mat"] = np.array([1e7, 1e7])
+        inputs["sigma_ult_mat"] = 1e7 * np.ones((2, 3))
+        inputs["wohler_exp_mat"] = np.array([1e1, 1e1])
+        inputs["wohler_A_mat"] = np.array([1e1, 1e1])
         inputs["rho_mat"] = np.array([1e4, 1e5])
         inputs["rho_water"] = 1e3
         inputs["unit_cost_mat"] = np.array([1e1, 2e1])
@@ -53,6 +56,7 @@ class TestInputs(unittest.TestCase):
         npt.assert_equal(outputs["E"], 1e9 * myones)
         npt.assert_equal(outputs["G"], 1e8 * myones)
         npt.assert_equal(outputs["sigma_y"], 1e7 * myones)
+        npt.assert_equal(outputs["sigma_ult"], 1e7 * myones)
         npt.assert_equal(outputs["rho"], 1e4 * myones)
         npt.assert_equal(outputs["unit_cost"], 1e1 * myones)
         npt.assert_equal(outputs["outfitting_factor"], 1.05 * myones)
@@ -93,6 +97,9 @@ class TestInputs(unittest.TestCase):
         inputs["E_user"] = 0.0
         inputs["G_mat"] = 1e8 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
         inputs["sigma_y_mat"] = np.array([1e7, 1e7, 2e7])
+        inputs["sigma_ult_mat"] = 1e7 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
+        inputs["wohler_exp_mat"] = np.array([1e1, 1e1, 1e1])
+        inputs["wohler_A_mat"] = np.array([1e1, 1e1, 1e1])
         inputs["rho_mat"] = np.array([1e4, 1e5, 2e4])
         inputs["rho_water"] = 1e3
         inputs["unit_cost_mat"] = np.array([1e1, 2e1, 2e1])
@@ -119,6 +126,7 @@ class TestInputs(unittest.TestCase):
         npt.assert_almost_equal(outputs["E"], 1e9 * np.array([1, 1, xx2, 2]))
         npt.assert_almost_equal(outputs["G"], 1e8 * np.array([1, 1, xx2, 2]))
         npt.assert_almost_equal(outputs["sigma_y"], 1e7 * np.array([1, 1, xx2, 2]))
+        npt.assert_almost_equal(outputs["sigma_ult"], 1e7 * np.array([1, 1, xx2, 2]))
         npt.assert_almost_equal(outputs["rho"], 1e4 * np.array([1, 1, xx1, 2]))
         npt.assert_almost_equal(outputs["unit_cost"], 1e1 * np.array([1, 1, xx3, 2]))
         npt.assert_equal(outputs["outfitting_factor"], 1.05 * np.ones(4))
@@ -139,6 +147,7 @@ class TestFullDiscretization(unittest.TestCase):
         self.inputs["E"] = 2e9 * np.ones(4)
         self.inputs["G"] = 2e7 * np.ones(4)
         self.inputs["sigma_y"] = 3e9 * np.ones(4)
+        self.inputs["sigma_ult"] = 3e9 * np.ones(4)
         self.inputs["rho"] = 7850 * np.ones(4)
         self.inputs["outfitting_factor"] = 1.05 * np.ones(4)
         self.inputs["unit_cost"] = 7.0 * np.ones(4)
@@ -154,6 +163,7 @@ class TestFullDiscretization(unittest.TestCase):
         npt.assert_array_equal(self.outputs["G_full"], 2e7 * np.ones(8))
         npt.assert_array_equal(self.outputs["nu_full"], 49 * np.ones(8))
         npt.assert_array_equal(self.outputs["sigma_y_full"], 3e9 * np.ones(8))
+        # npt.assert_array_equal(self.outputs["sigma_ult_full"], 3e9 * np.ones(8))
         npt.assert_array_equal(self.outputs["rho_full"], 7850 * np.ones(8))
         npt.assert_array_equal(self.outputs["unit_cost_full"], 7 * np.ones(8))
         npt.assert_array_equal(self.outputs["outfitting_full"], 1.05 * np.ones(8))
@@ -174,6 +184,7 @@ class TestFullDiscretization(unittest.TestCase):
         npt.assert_array_equal(self.outputs["G_full"], 2e7 * np.ones(8))
         npt.assert_array_equal(self.outputs["nu_full"], 49 * np.ones(8))
         npt.assert_array_equal(self.outputs["sigma_y_full"], 3e9 * np.ones(8))
+        # npt.assert_array_equal(self.outputs["sigma_ult_full"], 3e9 * np.ones(8))
         npt.assert_array_equal(self.outputs["rho_full"], 7850 * np.ones(8))
         npt.assert_array_equal(self.outputs["unit_cost_full"], 7 * np.ones(8))
         npt.assert_array_equal(self.outputs["outfitting_full"], 1.05 * np.ones(8))
@@ -193,6 +204,7 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["E_full"] = 1e6 * secones
         self.inputs["G_full"] = 1e5 * secones
         self.inputs["sigma_y_full"] = 2e5 * secones
+        # self.inputs["sigma_ult_full"] = 2e5 * secones
         self.inputs["outfitting_full"] = 1.1 * secones
         self.inputs["unit_cost_full"] = 1.0 * secones
         self.inputs["painting_cost_rate"] = 10.0
@@ -785,6 +797,7 @@ class TestMemberComponent(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["section_E"][:nelem], 1e6)
         npt.assert_almost_equal(self.outputs["section_G"][:nelem], 1e5)
         npt.assert_almost_equal(self.outputs["section_sigma_y"][:nelem], 2e5)
+        # npt.assert_almost_equal(self.outputs["section_sigma_ult"][:nelem], 2e5)
 
     def testCompute(self):
         self.mem.compute(self.inputs, self.outputs)
@@ -827,6 +840,8 @@ class TestHydro(unittest.TestCase):
             1 * np.ones(2 * npts), 2 * np.ones(2 * npts), np.linspace(0, 50.0, 2 * npts) - 75
         ]
         self.inputs["rho_water"] = 1e3
+        self.inputs["s_ghost1"] = 0.0
+        self.inputs["s_ghost2"] = 1.0
 
         self.hydro = member.MemberHydro(n_full=npts)
 
@@ -854,6 +869,11 @@ class TestHydro(unittest.TestCase):
         m_a[2] = 0.5 * (8.0 / 3.0) * rho_w * 125
         m_a[3:5] = np.pi * rho_w * 25.0 * ((-25 - cb_expect[-1]) ** 3.0 - (-75 - cb_expect[-1]) ** 3.0) / 3.0
         npt.assert_almost_equal(self.outputs["added_mass"], m_a, decimal=-5)
+
+        self.inputs["s_ghost1"] = 0.25
+        self.inputs["s_ghost2"] = 0.75
+        self.hydro.compute(self.inputs, self.outputs)
+        self.assertAlmostEqual(self.outputs["displacement"], 0.5 * V_expect)
 
     def testVerticalWaterplane(self):
         npts = self.inputs["s_full"].size
@@ -983,6 +1003,9 @@ class TestGroup(unittest.TestCase):
         prob["E_mat"] = 1e9 * np.ones((2, 3))
         prob["G_mat"] = 1e8 * np.ones((2, 3))
         prob["sigma_y_mat"] = np.array([1e7, 1e7])
+        prob["sigma_ult_mat"] = 1e7 * np.ones((2, 3))
+        prob["wohler_exp_mat"] = np.array([1e1, 1e1])
+        prob["wohler_A_mat"] = np.array([1e1, 1e1])
         prob["rho_mat"] = np.array([1e4, 1e5])
         prob["rho_water"] = 1025.0
         prob["unit_cost_mat"] = np.array([1e1, 2e1])

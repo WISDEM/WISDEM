@@ -37,15 +37,18 @@ properties:
             - rotor_diameter
             - hub_height
             - rated_power
+            - lifetime
         properties:
             turbine_class:
                 type: string
                 default: I
                 description: IEC wind class of the wind turbine. The options are "I", "II", "III", and 'IV'
+                enum: [I, II, III, IV, i, ii, iii, iv, 1, 2, 3, 4]
             turbulence_class:
                 type: string
                 default: B
                 description: IEC turbulence class of the wind turbine. The options are "A", "B", and "C"
+                enum: [A, B, C, D, a, b, c, d]
             drivetrain:
                 type: string
                 default: geared
@@ -54,6 +57,7 @@ properties:
                 type: string
                 default: Upwind
                 description: Orientation of the horizontal-axis rotor. The options are "Upwind" and "Downwind"
+                enum: [Upwind, upwind, UPWIND, downwind, Downwind, DOWNWIND]
             number_of_blades:
                 type: integer
                 default: 3
@@ -80,6 +84,12 @@ properties:
                 description: Nameplate power of the turbine, i.e. the rated electrical output of the generator.
                 unit: W
                 minimum: 0
+            lifetime:
+                type: number
+                description: Turbine design lifetime in years.
+                unit: years
+                minimum: 0
+                default: 25.0
     components:
         type: object
         default: {}
@@ -1131,13 +1141,13 @@ properties:
                     - transition_piece_cost
                     - gravity_foundation_mass
                 properties:
-                    transition_piece_mass:
+                    transition_piece_mass: &m_tp
                         type: number
                         description: Total mass of transition piece
                         unit: kg
                         minimum: 0.0
                         default: 0.0
-                    transition_piece_cost:
+                    transition_piece_cost: &c_tp
                         type: number
                         description: Total cost of transition piece
                         unit: USD
@@ -1615,18 +1625,8 @@ properties:
                                 Ca: *ca
                                 Cp: *cp
                                 Cd: *cd
-                    transition_piece_mass:
-                        type: number
-                        description: Total mass of transition piece
-                        unit: kg
-                        minimum: 0.0
-                        default: 0.0
-                    transition_piece_cost:
-                        type: number
-                        description: Total cost of transition piece
-                        unit: USD
-                        minimum: 0.0
-                        default: 0.0
+                    transition_piece_mass: *m_tp
+                    transition_piece_cost: *c_tp
             mooring:
                 # Will insert mooring schema that we agreed to here or will keep as separate file
                 description: Ontology definition for mooring systems suitable for use with the WEIS co-design analysis tool
@@ -2195,6 +2195,7 @@ properties:
                         - type: number
                           unit: none
                           minimum: 0
+                          default: 0.0
                         - type: array
                           items:
                             type: number
@@ -2203,12 +2204,14 @@ properties:
                             maxItems: 3
                             uniqueItems: false
                             minimum: 0
+                            default: 0.0
                 m:
                     description: Fatigue S/N curve fitting parameter S=A*N^(-1/m)
                     oneOf:
                         - type: number
                           unit: none
                           minimum: 0
+                          default: 1.0
                         - type: array
                           items:
                             type: number
@@ -2218,11 +2221,13 @@ properties:
                             uniqueItems: false
                             minimum: 0
                             maximum: 1000
+                            default: 1.0
                 R:
                     description: Fatigue stress ratio
                     oneOf:
                         - type: number
                           unit: none
+                          default: -1.0
                         - type: array
                           items:
                             type: number
@@ -2232,6 +2237,7 @@ properties:
                             uniqueItems: false
                             minimum: -100
                             maximum: 100
+                            default: -1.0
     actuators:
         type: object
         required:
