@@ -2,11 +2,11 @@ name: IEA-10.0-198-RWT
 
 assembly:
     turbine_class: I
-    turbulence_class: B
+    turbulence_class: A
     drivetrain: direct_drive
     rotor_orientation: Upwind
     number_of_blades: 3
-    hub_height: 120.
+    hub_height: 119.
     rotor_diameter: 198.0
     rated_power: 10.e+6
 
