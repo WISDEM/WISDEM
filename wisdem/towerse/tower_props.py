@@ -567,6 +567,7 @@ class TowerDiscretization(om.ExplicitComponent):
         rho = inputs["rho"]
         E = inputs["E"]
         G = inputs["G"]
+        of = inputs["outfitting_factor"]
         Az = util.sectionalInterp(z, z_full, inputs["Az"])
         Asx = util.sectionalInterp(z, z_full, inputs["Asx"])
         Asy = util.sectionalInterp(z, z_full, inputs["Asy"])
@@ -574,13 +575,13 @@ class TowerDiscretization(om.ExplicitComponent):
         Iyy = util.sectionalInterp(z, z_full, inputs["Iyy"])
         Jz = util.sectionalInterp(z, z_full, inputs["Jz"])
         outputs["sec_loc"] = (z - z[0]) / (z[-1] - z[0])
-        outputs["mass_den"] = rho * Az
-        outputs["foreaft_iner"] = rho * Ixx
-        outputs["sideside_iner"] = rho * Iyy
-        outputs["foreaft_stff"] = E * Ixx
-        outputs["sideside_stff"] = E * Iyy
-        outputs["tor_stff"] = G * Jz
-        outputs["axial_stff"] = E * Az
+        outputs["mass_den"] = rho * Az * of
+        outputs["foreaft_iner"] = rho * Ixx * of
+        outputs["sideside_iner"] = rho * Iyy * of
+        outputs["foreaft_stff"] = E * Ixx * of
+        outputs["sideside_stff"] = E * Iyy * of
+        outputs["tor_stff"] = G * Jz * of
+        outputs["axial_stff"] = E * Az * of
 
         d_sec, _ = util.nodal2sectional(inputs["tower_outer_diameter"])
         r_sec = 0.5 * d_sec
