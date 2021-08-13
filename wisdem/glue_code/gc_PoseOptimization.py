@@ -397,6 +397,9 @@ class PoseOptimization(object):
             # Initialize driver
             wt_opt.driver = om.DOEDriver(generator)
 
+            if doe_options["debug_print"]:
+                wt_opt.driver.options["debug_print"] = ["desvars", "ln_cons", "nl_cons", "objs"]
+
             # options
             wt_opt.driver.options["run_parallel"] = doe_options["run_parallel"]
 
@@ -596,9 +599,10 @@ class PoseOptimization(object):
                 wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
                 wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
             )
-            print(indices)
             print(init_L_D_opt)
-            print(L_D_options)
+            print("lower", init_L_D_opt[indices] - L_D_options["max_decrease"])
+            print("upper", init_L_D_opt[indices] + L_D_options["max_increase"])
+
             wt_opt.model.add_design_var(
                 "inn_af.L_D_opt",
                 indices=indices,

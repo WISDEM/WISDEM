@@ -35,7 +35,7 @@ class WT_RNTA(om.Group):
             nlbgs.options["maxiter"] = modeling_options["General"]["solver_maxiter"]
             nlbgs.options["atol"] = 1e-2
             nlbgs.options["rtol"] = 1e-8
-            nlbgs.options["iprint"] = 0
+            nlbgs.options["iprint"] = 2
 
         # Analysis components
         self.add_subsystem(

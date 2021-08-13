@@ -680,7 +680,7 @@ class Blade(om.Group):
                 self.add_input("mu", val=0.0, units="kg/m/s")
                 self.add_input("local_airfoil_velocities", val=np.zeros((n_span)), units="m/s")
                 self.add_input("chord", val=np.zeros((n_span)), units="m")
-                self.add_output("Re", val=np.zeros((n_span)))
+                self.add_output("Re", val=np.zeros((n_span)), ref=1.0e6)
 
             def compute(self, inputs, outputs):
                 outputs["Re"] = np.nan_to_num(
@@ -1315,6 +1315,8 @@ class INN_Airfoils(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
+        print("inputted L/D")
+        print(inputs["L_D_opt"])
         # Interpolate t/c and L/D from opt grid to full grid
         spline = PchipInterpolator
         r_thick_spline = spline(inputs["s_opt_r_thick"], inputs["r_thick_opt"])
@@ -1344,21 +1346,31 @@ class INN_Airfoils(om.ExplicitComponent):
         print(indices)
 
         for i in indices:
-            Re = inputs["Re"][i]
-            if Re < 100.0:
-                Re = 9.0e6
-            inn = INN()
-            print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re}")
-            try:
-                # print("CD", c_d[i])
-                cst, alpha = inn.inverse_design(0.015, L_D[i], stall_margin, r_thick[i], Re, N=1, process_samples=True)
-            except:
-                raise Exception("The INN for airfoil design failed in the inverse mode")
-            alpha = np.arange(-4, 20, 0.25)
-            try:
-                cd, cl = inn.generate_polars(cst, Re, alpha=alpha)
-            except:
-                raise Exception("The INN for airfoil design failed in the forward mode")
+            for j in range(10):
+                Re = inputs["Re"][i]
+                if Re < 100.0:
+                    Re = 9.0e6
+                inn = INN()
+                print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re}")
+                try:
+                    # print("CD", c_d[i])
+                    cst, alpha = inn.inverse_design(
+                        0.015, L_D[i], stall_margin, r_thick[i], Re, N=1, process_samples=True
+                    )
+                except:
+                    raise Exception("The INN for airfoil design failed in the inverse mode")
+                alpha = np.arange(-4, 20, 0.25)
+                try:
+                    cd, cl = inn.generate_polars(cst, Re, alpha=alpha)
+                except:
+                    raise Exception("The INN for airfoil design failed in the forward mode")
+                print()
+                print(j)
+                print(np.linalg.norm(cst))
+                print(np.linalg.norm(alpha))
+                print(np.linalg.norm(cd))
+                print(np.linalg.norm(cl))
+                print()
 
             print(f"inverse design completed for index {i} with a thickness of {r_thick[i]}")
 
