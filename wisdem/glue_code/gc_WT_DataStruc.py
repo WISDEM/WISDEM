@@ -1346,31 +1346,23 @@ class INN_Airfoils(om.ExplicitComponent):
         print(indices)
 
         for i in indices:
-            for j in range(10):
-                Re = inputs["Re"][i]
-                if Re < 100.0:
-                    Re = 9.0e6
-                inn = INN()
-                print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re}")
-                try:
-                    # print("CD", c_d[i])
-                    cst, alpha = inn.inverse_design(
-                        0.015, L_D[i], stall_margin, r_thick[i], Re, N=1, process_samples=True
-                    )
-                except:
-                    raise Exception("The INN for airfoil design failed in the inverse mode")
-                alpha = np.arange(-4, 20, 0.25)
-                try:
-                    cd, cl = inn.generate_polars(cst, Re, alpha=alpha)
-                except:
-                    raise Exception("The INN for airfoil design failed in the forward mode")
-                print()
-                print(j)
-                print(np.linalg.norm(cst))
-                print(np.linalg.norm(alpha))
-                print(np.linalg.norm(cd))
-                print(np.linalg.norm(cl))
-                print()
+            Re = inputs["Re"][i]
+            if Re < 100.0:
+                Re = 9.0e6
+            inn = INN()
+            print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re}")
+            try:
+                # print("CD", c_d[i])
+                cst, alpha = inn.inverse_design(
+                    0.015, L_D[i], stall_margin, r_thick[i], Re, N=1, process_samples=True, z=314
+                )
+            except:
+                raise Exception("The INN for airfoil design failed in the inverse mode")
+            alpha = np.arange(-4, 20, 0.25)
+            try:
+                cd, cl = inn.generate_polars(cst, Re, alpha=alpha)
+            except:
+                raise Exception("The INN for airfoil design failed in the forward mode")
 
             print(f"inverse design completed for index {i} with a thickness of {r_thick[i]}")
 
