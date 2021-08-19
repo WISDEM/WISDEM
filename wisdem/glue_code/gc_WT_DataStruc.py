@@ -1345,11 +1345,11 @@ class INN_Airfoils(om.ExplicitComponent):
         print("Performing INN analysis for these indices:")
         print(indices)
 
+        inn = INN()
         for i in indices:
             Re = inputs["Re"][i]
             if Re < 100.0:
                 Re = 9.0e6
-            inn = INN()
             print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re}")
             try:
                 # print("CD", c_d[i])
