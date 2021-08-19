@@ -5,25 +5,25 @@ r_foot = 20.0
 r_head = 10.0
 n_legs = 4
 n_bays = 4  # n_x
-L = 50.0  # total height of the jacket
-q = 1.0  # ratio of bay heights, assumed to be constant
+L = 70.0  # total height of the jacket
+q = 0.8  # ratio of bay heights, assumed to be constant
 
-l_osg = 3.0
+l_osg = 5.0
 l_tp = 4.0
 
 d_l = 0.5  # leg diameter
-l_msl = 10.0
-x_mb = False  # if there's a mud brace
-gamma_b = 0.1
-gamma_t = 0.05
-beta_b = 0.1
-beta_t = 0.05
-tau_b = 0.1
-tau_t = 0.05
+l_msl = 20.0
+x_mb = True  # if there's a mud brace
+gamma_b = 12.0
+gamma_t = 18.0
+beta_b = 0.5
+beta_t = 0.8
+tau_b = 0.3
+tau_t = 0.6
 
-E = 2.7e11
-G = 2.0e9
-rho = 7600.0
+E = 2.1e11
+G = 8.077e10
+rho = 7850.0
 
 # Do calculations to get the rough topology
 xi = r_head / r_foot  # must be <= 1.
@@ -46,7 +46,6 @@ l_mi = l_i * r_i[:-1] / (r_i[:-1] + r_i[1:])
 
 gamma_i = (gamma_t - gamma_b) * (l_osg + np.cumsum(l_i) + l_mi) / (L - l_i[-1] + l_mi[-1] - l_tp) + gamma_b
 gamma_i = np.hstack((gamma_b, gamma_i))
-print(gamma_i)
 
 length = L - l_i[-1] - l_osg - l_tp
 beta_i = (beta_t - beta_b) / length * np.cumsum(l_i) + beta_b
@@ -55,7 +54,7 @@ tau_i = (tau_t - tau_b) / length * np.cumsum(l_i) + tau_b
 
 leg_thicknesses = t_l = d_l / (2 * gamma_i)
 brace_diameters = d_b = beta_i * d_l
-brace_thicknesses = t_b = tau_i * t_l
+brace_thicknesses = t_b = tau_i * t_l[:-1]
 
 
 # Take in member properties, like diameters and thicknesses
