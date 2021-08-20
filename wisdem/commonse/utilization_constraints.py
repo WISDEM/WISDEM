@@ -8,7 +8,7 @@ Copyright (c) NREL. All rights reserved.
 
 import numpy as np
 import openmdao.api as om
-from wisdem.commonse.utilities import CubicSplineSegment, nodal2sectional, sectional2nodal
+from wisdem.commonse.utilities import CubicSplineSegment, nodal2sectional
 
 # -------------------------------------------------------------------------------
 # Name:        UtilizationSupplement.py

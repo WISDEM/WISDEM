@@ -97,7 +97,7 @@ class Tube(CrossSectionBase):
 
     @property
     def J0(self):  # polar moment of inertia w.r.t. z-z axis (torsional)
-        return 2.0 * self.Jxx
+        return 2.0 * self.Ixx
 
     @property
     def Asx(self):  # Shear Area for tubular cross-section
