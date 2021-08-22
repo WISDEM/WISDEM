@@ -149,7 +149,6 @@ prob["transition_node"] = prob["member0.joint2"]
 
 # Properties of rotor-nacelle-assembly (RNA)
 prob["rna_mass"] = 350e3
-prob["rna_I"] = 1e5 * np.array([1149.307, 220.354, 187.597, 0, 5.037, 0])
 prob["rna_cg"] = np.array([-1.132, 0, 0.509])
 prob["rna_F"] = np.array([1284744.196, 0, -112400.5527])
 prob["rna_M"] = np.array([3963732.762, 896380.8464, -346781.682])
