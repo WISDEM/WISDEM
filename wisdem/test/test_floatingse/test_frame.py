@@ -142,7 +142,6 @@ class TestPlatform(unittest.TestCase):
         self.inputs["tower_top_node"] = self.inputs["tower_nodes"][2, :]
         self.inputs["rna_mass"] = 1e4
         self.inputs["rna_cg"] = np.ones(3)
-        self.inputs["rna_I"] = 1e4 * np.arange(6)
         self.inputs["rna_F"] = np.array([1e2, 1e1, 0.0])
         self.inputs["rna_M"] = np.array([2e1, 2e2, 0.0])
         self.inputs["transition_piece_mass"] = 1e3
@@ -491,7 +490,6 @@ class TestGroup(unittest.TestCase):
         prob["mooring_fairlead_joints"] = np.array([[0.0, 0.0, 0.0], [0.5, 1.0, 0.0], [1.0, 0.0, 0.0]])
         prob["rna_mass"] = 1e4
         prob["rna_cg"] = np.ones(3)
-        prob["rna_I"] = 1e4 * np.arange(6)
         prob["rna_F"] = np.array([1e2, 1e1, 0.0])
         prob["rna_M"] = np.array([2e1, 2e2, 0.0])
         prob["transition_piece_mass"] = 1e3
