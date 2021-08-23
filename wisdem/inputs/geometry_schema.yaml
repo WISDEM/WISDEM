@@ -175,6 +175,16 @@ properties:
                                         $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
                                         $ref: "#/definitions/distributed_data/nd"
+                            stall_margin:
+                                type: object
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    values:
+                                        $ref: "#/definitions/distributed_data/angle"
                             reference_axis:
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
                             # coordinates:

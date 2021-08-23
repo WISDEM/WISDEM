@@ -112,6 +112,14 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     "c_d_opt",
                     val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["c_d"]["n_opt"]),
                 )
+                inn_af.add_output(
+                    "s_opt_stall_margin", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["stall_margin"]["n_opt"])
+                )
+                inn_af.add_output(
+                    "stall_margin_opt",
+                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["stall_margin"]["n_opt"]),
+                    units='rad',
+                )
                 self.add_subsystem("inn_af", inn_af)
 
         # Wind turbine configuration inputs
@@ -198,9 +206,11 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 self.connect("inn_af.s_opt_r_thick", "blade.run_inn_af.s_opt_r_thick")
                 self.connect("inn_af.s_opt_L_D", "blade.run_inn_af.s_opt_L_D")
                 self.connect("inn_af.s_opt_c_d", "blade.run_inn_af.s_opt_c_d")
+                self.connect("inn_af.s_opt_stall_margin", "blade.run_inn_af.s_opt_stall_margin")
                 self.connect("inn_af.r_thick_opt", "blade.run_inn_af.r_thick_opt")
                 self.connect("inn_af.L_D_opt", "blade.run_inn_af.L_D_opt")
                 self.connect("inn_af.c_d_opt", "blade.run_inn_af.c_d_opt")
+                self.connect("inn_af.stall_margin_opt", "blade.run_inn_af.stall_margin_opt")
                 self.connect("control.rated_TSR", "blade.run_inn_af.rated_TSR")
                 self.connect("hub.radius", "blade.run_inn_af.hub_radius")
 
@@ -1278,6 +1288,12 @@ class INN_Airfoils(om.ExplicitComponent):
             "c_d_opt",
             val=np.ones(aero_shape_opt_options["c_d"]["n_opt"]),
         )
+        self.add_input("s_opt_stall_margin", val=np.ones(aero_shape_opt_options["stall_margin"]["n_opt"]))
+        self.add_input(
+            "stall_margin_opt",
+            val=np.ones(aero_shape_opt_options["stall_margin"]["n_opt"]),
+            units='rad',
+        )
         self.add_input(
             "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
         )
@@ -1325,14 +1341,14 @@ class INN_Airfoils(om.ExplicitComponent):
         L_D = L_D_spline(inputs["s"])
         c_d_spline = spline(inputs["s_opt_c_d"], inputs["c_d_opt"])
         c_d = c_d_spline(inputs["s"])
+        stall_margin_spline = spline(inputs["s_opt_stall_margin"], inputs["stall_margin_opt"])
+        stall_margin = stall_margin_spline(inputs["s"])
 
         # Find indices for start and end of the optimization
         max_t_c = self.options["rotorse_options"]["inn_af_max_t/c"]
         min_t_c = self.options["rotorse_options"]["inn_af_min_t/c"]
         indices = np.argwhere(np.logical_and(r_thick > min_t_c, r_thick < max_t_c))
         indices = list(np.squeeze(indices))
-
-        stall_margin = self.options["rotorse_options"]["stall_margin"]
 
         # Copy in all airfoil coordinates across the span as a starting point.
         # Some of these will be overwritten by the INN.
@@ -1354,7 +1370,7 @@ class INN_Airfoils(om.ExplicitComponent):
             try:
                 # print("CD", c_d[i])
                 cst, alpha = inn.inverse_design(
-                    0.015, L_D[i], stall_margin, r_thick[i], Re, N=1, process_samples=True, z=314
+                    c_d[i], L_D[i], np.rad2deg(stall_margin[i]), r_thick[i], Re, N=1, process_samples=True, z=314
                 )
             except:
                 raise Exception("The INN for airfoil design failed in the inverse mode")
