@@ -172,12 +172,6 @@ properties:
                         minimum: 0.
                         maximum: 1.
                         description: Minimum airfoil thickness supported by the INN for airfoil design
-                    stall_margin:
-                        type: number
-                        default: 5.
-                        minimum: 0.
-                        maximum: 25.
-                        description: Stall margin in degrees used by the INN for airfoil design
             DriveSE:
                 type: object
                 default: {}
