@@ -770,11 +770,8 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("transition_node", np.zeros(3), units="m")
         self.add_input("transition_piece_mass", 0.0, units="kg")
         self.add_input("transition_piece_I", np.zeros(6), units="kg*m**2")
-        self.add_input("rna_mass", 0.0, units="kg")
-        self.add_input("rna_cg", np.zeros(3), units="m")
         self.add_input("rna_F", np.zeros(3), units="N")
         self.add_input("rna_M", np.zeros(3), units="N*m")
-        self.add_input("rna_I", np.zeros(6), units="kg*m**2")
         self.add_input("mooring_neutral_load", np.zeros((n_attach, 3)), units="N")
         self.add_input("mooring_fairlead_joints", np.zeros((n_attach, 3)), units="m")
         self.add_input("mooring_stiffness", np.zeros((6, 6)), units="N/m")
@@ -813,11 +810,8 @@ class FrameAnalysis(om.ExplicitComponent):
         # Unpack variables
         opt = self.options["options"]
         n_attach = opt["mooring"]["n_attach"]
-        m_rna = float(inputs["rna_mass"])
-        cg_rna = inputs["rna_cg"]
         cb = inputs["platform_center_of_buoyancy"]
         V_total = inputs["platform_displacement"]
-        I_rna = inputs["rna_I"]
         I_trans = inputs["transition_piece_I"]
         m_variable = float(inputs["variable_ballast_mass"])
         cg_variable = inputs["variable_center_of_mass"]
@@ -891,10 +885,10 @@ class FrameAnalysis(om.ExplicitComponent):
                 m_trans += m_variable
                 cg_trans = np.zeros(3)
             add_gravity = True
-            mID = np.array([itrans, ihub], dtype=np.int_).flatten()
-            m_add = np.array([m_trans, m_rna]).flatten()
-            I_add = np.c_[I_trans, I_rna]
-            cg_add = np.c_[cg_trans, cg_rna]
+            mID = np.array([itrans], dtype=np.int_).flatten()
+            m_add = np.array([m_trans]).flatten()
+            I_add = np.c_[I_trans]
+            cg_add = np.c_[cg_trans]
             myframe.changeExtraNodeMass(
                 mID + 1,
                 m_add,

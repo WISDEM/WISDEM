@@ -135,7 +135,6 @@ class TestOC3Mass(unittest.TestCase):
 
         # Properties of rotor-nacelle-assembly (RNA)
         prob["rna_mass"] = 350e3  # Mass [kg]
-        prob["rna_I"] = 1e5 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
         prob["rna_cg"] = np.zeros(3)
         prob["rna_F"] = np.zeros(3)
         prob["rna_M"] = np.zeros(3)

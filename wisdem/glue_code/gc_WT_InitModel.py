@@ -862,7 +862,6 @@ def assign_tower_values(wt_opt, modeling_options, tower):
         elif modeling_options["flags"]["floating"]:
             wt_opt["floatingse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
             wt_opt["floatingse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
-            wt_opt["floatingse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
             wt_opt["floatingse.rna_F"] = modeling_options["WISDEM"]["Loading"]["loads"][0]["force"]
             wt_opt["floatingse.rna_M"] = modeling_options["WISDEM"]["Loading"]["loads"][0]["moment"]
             wt_opt["floatingse.Uref"] = modeling_options["WISDEM"]["Loading"]["loads"][0]["velocity"]
