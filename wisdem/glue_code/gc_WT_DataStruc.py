@@ -1,11 +1,11 @@
 import copy
 
-import numpy as np
 import matplotlib
 import openmdao.api as om
 import matplotlib.pyplot as plt
 from scipy.interpolate import PchipInterpolator, interp1d
 
+import numpy as np
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
@@ -1314,9 +1314,9 @@ class INN_Airfoils(om.ExplicitComponent):
             desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
         )
 
+        self.inn = INN()
+
     def compute(self, inputs, outputs):
-        print("inputted L/D")
-        print(inputs["L_D_opt"])
         # Interpolate t/c and L/D from opt grid to full grid
         spline = PchipInterpolator
         r_thick_spline = spline(inputs["s_opt_r_thick"], inputs["r_thick_opt"])
@@ -1345,22 +1345,20 @@ class INN_Airfoils(om.ExplicitComponent):
         print("Performing INN analysis for these indices:")
         print(indices)
 
-        inn = INN()
         for i in indices:
             Re = inputs["Re"][i]
             if Re < 100.0:
                 Re = 9.0e6
             print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re}")
             try:
-                # print("CD", c_d[i])
-                cst, alpha = inn.inverse_design(
-                    0.015, L_D[i], stall_margin, r_thick[i], Re, N=1, process_samples=True, z=314
+                cst, alpha = self.inn.inverse_design(
+                    c_d[i], L_D[i], stall_margin, r_thick[i], Re, N=1, process_samples=True, z=314
                 )
             except:
                 raise Exception("The INN for airfoil design failed in the inverse mode")
             alpha = np.arange(-4, 20, 0.25)
             try:
-                cd, cl = inn.generate_polars(cst, Re, alpha=alpha)
+                cd, cl = self.inn.generate_polars(cst, Re, alpha=alpha)
             except:
                 raise Exception("The INN for airfoil design failed in the forward mode")
 
