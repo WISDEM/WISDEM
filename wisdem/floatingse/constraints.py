@@ -27,10 +27,10 @@ class FloatingConstraints(om.ExplicitComponent):
         self.add_input("platform_displacement", 0.0, units="m**3")
         self.add_input("platform_center_of_buoyancy", np.zeros(3), units="m")
         self.add_input("system_center_of_mass", np.zeros(3), units="m")
-        self.add_input("tower_top_node", np.zeros(3), units="m")
+        self.add_input("transition_node", np.zeros(3), units="m")
 
-        self.add_input("rna_F", np.zeros(3), units="N")
-        self.add_input("rna_M", np.zeros(3), units="N*m")
+        self.add_input("turbine_F", np.zeros(3), units="N")
+        self.add_input("turbine_M", np.zeros(3), units="N*m")
         self.add_input("max_surge_restoring_force", 0.0, units="N")
         self.add_input("operational_heel_restoring_force", np.zeros(6), units="N")
         self.add_input("survival_heel_restoring_force", np.zeros(6), units="N")
@@ -117,12 +117,12 @@ class FloatingConstraints(om.ExplicitComponent):
         outputs["metacentric_height"] = buoyancy2metacentre_BM - (cg[2] - z_cb)
 
         # Mooring strength checks
-        F_rna = inputs["rna_F"]
-        M_rna = inputs["rna_M"]
+        F_turb = inputs["turbine_F"]
+        M_turb = inputs["turbine_M"]
         surge_restore = inputs["max_surge_restoring_force"]
-        outputs["constr_mooring_surge"] = surge_restore - F_rna[0]
+        outputs["constr_mooring_surge"] = surge_restore - F_turb[0]
         heel_restore = inputs["operational_heel_restoring_force"]
         # (fairlead is assumed negative, made positive above, would otherwise be cg-fairlead)
         M_heel_restore = R_fairlead * heel_restore[2] + (cg[2] + fairlead) * heel_restore[:2].sum() + heel_restore[4]
-        tt2cg = inputs["tower_top_node"][2] - cg[2]
-        outputs["constr_mooring_heel"] = M_heel_restore - F_rna[0] * tt2cg - M_rna[1]
+        trans2cg = inputs["transition_node"][2] - cg[2]
+        outputs["constr_mooring_heel"] = M_heel_restore - F_turb[0] * trans2cg - M_turb[1]

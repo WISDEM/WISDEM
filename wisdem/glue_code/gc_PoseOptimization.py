@@ -1,9 +1,8 @@
 import os
 
 import numpy as np
-from scipy.interpolate import PchipInterpolator
-
 import openmdao.api as om
+from scipy.interpolate import PchipInterpolator
 
 
 class PoseOptimization(object):
@@ -46,6 +45,7 @@ class PoseOptimization(object):
         blade_opt = self.opt["design_variables"]["blade"]
         tower_opt = self.opt["design_variables"]["tower"]
         mono_opt = self.opt["design_variables"]["monopile"]
+        jacket_opt = self.opt["design_variables"]["jacket"]
         hub_opt = self.opt["design_variables"]["hub"]
         drive_opt = self.opt["design_variables"]["drivetrain"]
         float_opt = self.opt["design_variables"]["floating"]
@@ -127,11 +127,18 @@ class PoseOptimization(object):
                 * self.modeling["WISDEM"]["TowerSE"]["n_layers_tower"]
             )
         if mono_opt["outer_diameter"]["flag"]:
-            n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height_monopile"]
+            n_DV += self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
         if mono_opt["layer_thickness"]["flag"]:
             n_DV += (
-                self.modeling["WISDEM"]["TowerSE"]["n_height_monopile"]
-                * self.modeling["WISDEM"]["TowerSE"]["n_layers_monopile"]
+                self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
+                * self.modeling["WISDEM"]["FixedBottomSE"]["n_layers"]
+            )
+        if jacket_opt["outer_diameter"]["flag"]:
+            n_DV += self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
+        if jacket_opt["layer_thickness"]["flag"]:
+            n_DV += (
+                self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
+                * self.modeling["WISDEM"]["FixedBottomSE"]["n_layers"]
             )
         if hub_opt["cone"]["flag"]:
             n_DV += 1
@@ -433,7 +440,10 @@ class PoseOptimization(object):
                 wt_opt.model.add_objective("floatingse.tower_mass", ref=1e6)
 
         elif self.opt["merit_figure"] == "monopile_mass":
-            wt_opt.model.add_objective("towerse.monopile_mass", ref=1e6)
+            wt_opt.model.add_objective("fixedbottomse.monopile_mass", ref=1e6)
+
+        elif self.opt["merit_figure"] == "jacket_mass":
+            wt_opt.model.add_objective("fixedbottomse.jacket_mass", ref=1e6)
 
         elif self.opt["merit_figure"] == "structural_mass":
             if not self.modeling["flags"]["floating"]:

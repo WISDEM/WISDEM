@@ -34,6 +34,8 @@ class PreDiscretization(om.ExplicitComponent):
         Global dimensional coordinates (x-y-z) for top node of member
     suctionpile_depth : float, [m]
         Depth of monopile below sea floor
+    bending_height : float, [m]
+        Length of monopile above mudline subject to bending
 
     """
 
@@ -41,15 +43,17 @@ class PreDiscretization(om.ExplicitComponent):
         self.add_input("monopile_height", val=0.0, units="m")
         self.add_input("tower_foundation_height", val=0.0, units="m")
         self.add_input("monopile_foundation_height", val=0.0, units="m")
+        self.add_input("water_depth", val=0.0, units="m")
 
         self.add_output("transition_piece_height", 0.0, units="m")
         self.add_output("z_start", 0.0, units="m")
         self.add_output("suctionpile_depth", 0.0, units="m")
+        self.add_output("bending_height", 0.0, units="m")
         self.add_output("s_const1", 0.0)
         self.add_output("joint1", val=np.zeros(3), units="m")
         self.add_output("joint2", val=np.zeros(3), units="m")
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
         # Unpack values
         h_mon = inputs["monopile_height"]
         fh_tow = inputs["tower_foundation_height"]
@@ -114,13 +118,10 @@ class MonopileMass(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare("n_height")
-        self.options.declare("n_refine")
+        self.options.declare("npts")
 
     def setup(self):
-        n_height = self.options["n_height"]
-        n_refine = self.options["n_refine"]
-        nFull = mem.get_nfull(n_height, nref=n_refine)
+        npts = self.options["npts"]
 
         self.add_input("cylinder_mass", val=0.0, units="kg")
         self.add_input("cylinder_cost", val=0.0, units="USD")
@@ -129,8 +130,8 @@ class MonopileMass(om.ExplicitComponent):
         self.add_input("transition_piece_mass", 0.0, units="kg")
         self.add_input("transition_piece_cost", 0.0, units="USD")
         self.add_input("gravity_foundation_mass", 0.0, units="kg")
-        self.add_input("z_full", val=np.zeros(nFull), units="m")
-        self.add_input("d_full", val=np.zeros(nFull), units="m")
+        self.add_input("z_full", val=np.zeros(npts), units="m")
+        self.add_input("d_full", val=np.zeros(npts), units="m")
         self.add_input("tower_mass", val=0.0, units="kg")
         self.add_input("tower_cost", val=0.0, units="USD")
 
@@ -158,6 +159,8 @@ class MonopileMass(om.ExplicitComponent):
         outputs["structural_mass"] = outputs["monopile_mass"] + inputs["tower_mass"]
         outputs["structural_cost"] = outputs["monopile_cost"] + inputs["tower_cost"]
 
+        outputs["monopile_z_cg"] = (m_cyl * inputs["cylinder_z_cg"] + m_trans * z[-1] + m_grav * z[0]) / m_mono
+
         # Mass properties for transition piece and gravity foundation
         r_trans = 0.5 * d[-1]
         r_grav = 0.5 * d[0]
@@ -166,9 +169,8 @@ class MonopileMass(om.ExplicitComponent):
         outputs["transition_piece_I"] = I_trans
         outputs["gravity_foundation_I"] = I_grav
 
-        outputs["monopile_z_cg"] = (m_cyl * inputs["cylinder_z_cg"] + m_trans * z[-1] + m_grav * z[0]) / m_mono
         I_mono = util.assembleI(inputs["cylinder_I_base"] + I_grav)
-        R = z[-1] - z[0]
+        R = np.array([0.0, 0.0, z[-1] - z[0]])
         I_mono += util.assembleI(I_trans) + m_trans * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
         outputs["monopile_I_base"] = util.unassembleI(I_mono)
 
@@ -191,16 +193,10 @@ class MonopileFrame(om.ExplicitComponent):
         shear modulus
     rho_full : numpy array[npts-1], [kg/m**3]
         material density
-    rna_mass : float, [kg]
-        added mass
-    rna_I : numpy array[6], [kg*m**2]
-        mass moment of inertia about some point p [xx yy zz xy xz yz]
-    rna_cg : numpy array[3], [m]
-        xyz-location of p relative to node
-    rna_F : numpy array[3], [N]
-        rna force
-    rna_M : numpy array[3], [N*m]
-        rna moment
+    turbine_F : numpy array[3], [N]
+        Total turbine force at tower base / transition piece
+    turbine_M : numpy array[3], [N*m]
+        Total turbine moment at tower base / transition piece
     Px : numpy array[n_full], [N/m]
         force per unit length in x-direction
     Py : numpy array[n_full], [N/m]
@@ -261,6 +257,7 @@ class MonopileFrame(om.ExplicitComponent):
 
     def setup(self):
         n_full = self.options["n_full"]
+        self.frame = None
 
         # Monopile handling
         self.add_input("z_soil", np.zeros(NPTS_SOIL), units="N/m")
@@ -273,18 +270,15 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_input("section_Asy", np.zeros(n_full - 1), units="m**2")
         self.add_input("section_Ixx", np.zeros(n_full - 1), units="kg*m**2")
         self.add_input("section_Iyy", np.zeros(n_full - 1), units="kg*m**2")
-        self.add_input("section_Izz", np.zeros(n_full - 1), units="kg*m**2")
+        self.add_input("section_J0", np.zeros(n_full - 1), units="kg*m**2")
         self.add_input("section_rho", np.zeros(n_full - 1), units="kg/m**3")
         self.add_input("section_E", np.zeros(n_full - 1), units="Pa")
         self.add_input("section_G", np.zeros(n_full - 1), units="Pa")
         self.add_output("section_L", np.zeros(n_full - 1), units="m")
 
         # point loads
-        self.add_input("transition_F", np.zeros(3), units="N")
-        self.add_input("transition_M", np.zeros(3), units="N*m")
-        self.add_input("turbine_mass", 0.0, units="kg")
-        self.add_input("turbine_base_I", np.zeros(6), units="kg*m**2")
-        self.add_input("turbine_cg", np.zeros(3), units="m")
+        self.add_input("turbine_F", np.zeros(3), units="N")
+        self.add_input("turbine_M", np.zeros(3), units="N*m")
         self.add_input("transition_piece_mass", 0.0, units="kg")
         self.add_input("transition_piece_I", np.zeros(6), units="kg*m**2")
         self.add_input("gravity_foundation_mass", 0.0, units="kg")
@@ -316,8 +310,8 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_output("monopile_Mxx", val=np.zeros(n_full - 1), units="N*m")
         self.add_output("monopile_Myy", val=np.zeros(n_full - 1), units="N*m")
         self.add_output("monopile_Mzz", val=np.zeros(n_full - 1), units="N*m")
-        self.add_output("base_F", val=np.zeros(3), units="N")
-        self.add_output("base_M", val=np.zeros(3), units="N*m")
+        self.add_output("mudline_F", val=np.zeros(3), units="N")
+        self.add_output("mudline_M", val=np.zeros(3), units="N*m")
 
     def compute(self, inputs, outputs):
 
@@ -392,7 +386,7 @@ class MonopileFrame(om.ExplicitComponent):
         E = inputs["section_E"]
         G = inputs["section_G"]
         rho = inputs["section_rho"]
-        outputs["section_L"] = L = np.sqrt(np.sum(np.diff(xyz, axiz=0) ** 2, axis=1))
+        outputs["section_L"] = L = np.sqrt(np.sum(np.diff(xyz, axis=0) ** 2, axis=1))
 
         elements = pyframe3dd.ElementData(element, N1, N2, Area, Asx, Asy, J0, Ixx, Iyy, E, G, roll, rho)
         # -----------------------------------
@@ -403,7 +397,7 @@ class MonopileFrame(om.ExplicitComponent):
         # -----------------------------------
 
         # initialize frame3dd object
-        cylinder = pyframe3dd.Frame(nodes, reactions, elements, options)
+        self.frame = pyframe3dd.Frame(nodes, reactions, elements, options)
 
         # ------ add extra mass ------------
         # Prepare transition piece, and gravity foundation (if any applicable) for "extra node mass"
@@ -418,7 +412,7 @@ class MonopileFrame(om.ExplicitComponent):
         mI = np.c_[I_trans, I_grav]
         mrho = np.zeros(2)
         add_gravity = True
-        cylinder.changeExtraNodeMass(
+        self.frame.changeExtraNodeMass(
             midx, m_add, mI[0, :], mI[1, :], mI[2, :], mI[3, :], mI[4, :], mI[5, :], mrho, mrho, mrho, add_gravity
         )
         # ------------------------------------
@@ -428,7 +422,7 @@ class MonopileFrame(om.ExplicitComponent):
         lump = 0
         shift = 0.0
         # Run twice the number of modes to ensure that we can ignore the torsional modes and still get the desired number of fore-aft, side-side modes
-        cylinder.enableDynamics(2 * NFREQ, Mmethod, lump, frame3dd_opt["tol"], shift)
+        self.frame.enableDynamics(2 * NFREQ, Mmethod, lump, frame3dd_opt["tol"], shift)
         # ----------------------------
 
         # ------ static load case 1 ------------
@@ -468,12 +462,12 @@ class MonopileFrame(om.ExplicitComponent):
 
         load.changeTrapezoidalLoads(EL, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
 
-        cylinder.addLoadCase(load)
+        self.frame.addLoadCase(load)
         # Debugging
-        # cylinder.write('monopile_debug.3dd')
+        # self.frame.write('monopile_debug.3dd')
         # -----------------------------------
         # run the analysis
-        displacements, forces, reactions, internalForces, mass, modal = cylinder.run()
+        displacements, forces, reactions, internalForces, mass, modal = self.frame.run()
         ic = 0
 
         # natural frequncies
@@ -501,8 +495,8 @@ class MonopileFrame(om.ExplicitComponent):
 
         # Record total forces and moments
         ibase = 2 * int(kidx.max())
-        outputs["monopile_F"] = -np.r_[-forces.Vz[ic, ibase], forces.Vy[ic, ibase], forces.Nx[ic, ibase]]
-        outputs["monopile_M"] = -np.r_[-forces.Mzz[ic, ibase], forces.Myy[ic, ibase], forces.Txx[ic, ibase]]
+        outputs["mudline_F"] = -np.r_[-forces.Vz[ic, ibase], forces.Vy[ic, ibase], forces.Nx[ic, ibase]]
+        outputs["mudline_M"] = -np.r_[-forces.Mzz[ic, ibase], forces.Myy[ic, ibase], forces.Txx[ic, ibase]]
 
         # Forces and moments along the structure
         outputs["monopile_Fz"] = forces.Nx[ic, 1::2]
@@ -598,7 +592,7 @@ class MonopileSE(om.Group):
 
         self.add_subsystem(
             "mono",
-            MonopileMass(),
+            MonopileMass(npts=n_full),
             promotes=[
                 "transition_piece_mass",
                 "transition_piece_cost",
@@ -655,9 +649,12 @@ class MonopileSE(om.Group):
                     "section_rho",
                     "section_E",
                     "section_G",
-                    "rna_mass",
-                    "rna_I",
-                    "rna_cg",
+                    "transition_piece_height",
+                    "transition_piece_mass",
+                    "transition_piece_I",
+                    "gravity_foundation_mass",
+                    "gravity_foundation_I",
+                    "suctionpile_depth",
                 ],
             )
 

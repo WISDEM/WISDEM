@@ -3,8 +3,8 @@ import unittest
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
-import wisdem.floatingse.member as member
 import wisdem.commonse.utilities as util
+import wisdem.commonse.cylinder_member as member
 from wisdem.commonse import gravity as g
 
 NULL = member.NULL
@@ -22,7 +22,7 @@ class TestInputs(unittest.TestCase):
         discrete_outputs = {}
 
         # Test land based, 1 material
-        inputs["s"] = np.linspace(0, 1, 5)
+        inputs["s_in"] = np.linspace(0, 1, 5)
         inputs["layer_thickness"] = 0.25 * np.ones((1, 5))
         inputs["joint1"] = np.zeros(3)
         inputs["joint2"] = np.r_[np.zeros(2), 1e2]
@@ -86,7 +86,7 @@ class TestInputs(unittest.TestCase):
         discrete_outputs = {}
 
         # Test land based, 2 materials
-        inputs["s"] = np.linspace(0, 1, 5)
+        inputs["s_in"] = np.linspace(0, 1, 5)
         inputs["layer_thickness"] = np.array([[0.2, 0.2, 0.2, 0.0, 0.0], [0.0, 0.0, 0.0, 0.1, 0.1]])
         inputs["joint1"] = np.zeros(3)
         inputs["joint2"] = np.r_[np.zeros(2), 1e2]
@@ -139,7 +139,7 @@ class TestFullDiscretization(unittest.TestCase):
         self.inputs = {}
         self.outputs = {}
 
-        self.inputs["s"] = np.array([0.0, 0.1, 0.3, 0.6, 1.0])
+        self.inputs["s_in"] = np.array([0.0, 0.1, 0.3, 0.6, 1.0])
         self.inputs["height"] = 1e1
         self.inputs["outer_diameter"] = 5.0 * np.ones(5)
         self.inputs["wall_thickness"] = 0.05 * np.ones(4)
@@ -242,7 +242,7 @@ class TestMemberComponent(unittest.TestCase):
         opt["n_ballasts"] = [3]
         opt["n_bulkheads"] = [nbulk]
         opt["n_axial_joints"] = [3]
-        self.mem = member.MemberComponent(options=opt, idx=0)
+        self.mem = member.MemberComplex(options=opt, idx=0)
         self.mem.sections = member.SortedDict()
 
     def testSortedDict(self):
@@ -991,7 +991,7 @@ class TestGroup(unittest.TestCase):
 
         prob = om.Problem()
 
-        prob.model.add_subsystem("col", member.Member(column_options=opt, idx=0, n_mat=2), promotes=["*"])
+        prob.model.add_subsystem("col", member.MemberComplex(column_options=opt, idx=0, n_mat=2), promotes=["*"])
 
         prob.setup()
         prob["s"] = np.linspace(0, 1, 5)

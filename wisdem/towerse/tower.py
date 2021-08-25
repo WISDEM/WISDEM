@@ -138,16 +138,10 @@ class TowerFrame(om.ExplicitComponent):
         shear modulus
     rho_full : numpy array[npts-1], [kg/m**3]
         material density
-    rna_mass : float, [kg]
-        added mass
-    rna_I : numpy array[6], [kg*m**2]
-        mass moment of inertia about some point p [xx yy zz xy xz yz]
-    rna_cg : numpy array[3], [m]
-        xyz-location of p relative to node
     rna_F : numpy array[3], [N]
-        rna force
+        rna force at tower top from drivetrain analysis
     rna_M : numpy array[3], [N*m]
-        rna moment
+        rna moment at tower top from drivetrain analysis
     Px : numpy array[n_full], [N/m]
         force per unit length in x-direction
     Py : numpy array[n_full], [N/m]
@@ -224,9 +218,6 @@ class TowerFrame(om.ExplicitComponent):
         # point loads
         self.add_input("rna_F", np.zeros(3), units="N")
         self.add_input("rna_M", np.zeros(3), units="N*m")
-        self.add_input("rna_mass", 0.0, units="kg")
-        self.add_input("rna_I", np.zeros(6), units="kg*m**2")
-        self.add_input("rna_cg", np.zeros(3), units="m")
 
         # combined wind-water distributed loads
         self.add_input("Px", val=np.zeros(n_full), units="N/m")
@@ -303,29 +294,6 @@ class TowerFrame(om.ExplicitComponent):
         # initialize frame3dd object
         self.frame = pyframe3dd.Frame(nodes, reactions, elements, options)
 
-        # ------ add extra mass ------------
-        # Note, need len()-1 because Frame3DD crashes if mass add at end
-        midx = np.array([n - 1], dtype=np.int_)
-        mI = inputs["rna_I"]
-        mrho = inputs["rna_cg"]
-
-        add_gravity = True
-        self.frame.changeExtraNodeMass(
-            midx,
-            inputs["rna_mass"],
-            np.array([mI[0]]).flatten(),
-            np.array([mI[1]]).flatten(),
-            np.array([mI[2]]).flatten(),
-            np.array([mI[3]]).flatten(),
-            np.array([mI[4]]).flatten(),
-            np.array([mI[5]]).flatten(),
-            np.array([mrho[0]]).flatten(),
-            np.array([mrho[1]]).flatten(),
-            np.array([mrho[2]]).flatten(),
-            add_gravity,
-        )
-        # ------------------------------------
-
         # ------- enable dynamic analysis ----------
         Mmethod = 1
         lump = 0
@@ -343,16 +311,16 @@ class TowerFrame(om.ExplicitComponent):
         load = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
         # Prepare point forces at RNA node
-        rna_F = inputs["rna_F"]
-        rna_M = inputs["rna_M"]
+        rna_F = inputs["rna_F"].flatten()
+        rna_M = inputs["rna_M"].flatten()
         load.changePointLoads(
-            midx,
-            np.array([rna_F[0]]).flatten(),
-            np.array([rna_F[1]]).flatten(),
-            np.array([rna_F[2]]).flatten(),
-            np.array([rna_M[0]]).flatten(),
-            np.array([rna_M[1]]).flatten(),
-            np.array([rna_M[2]]).flatten(),
+            np.array([n - 1], dtype=np.int_),  # -1 b/c crash if added at final node
+            np.array([rna_F[0]]),
+            np.array([rna_F[1]]),
+            np.array([rna_F[2]]),
+            np.array([rna_M[0]]),
+            np.array([rna_M[1]]),
+            np.array([rna_M[2]]),
         )
 
         # distributed loads
@@ -523,9 +491,6 @@ class TowerSE(om.Group):
                     "section_rho",
                     "section_E",
                     "section_G",
-                    "rna_mass",
-                    "rna_I",
-                    "rna_cg",
                 ],
             )
 
