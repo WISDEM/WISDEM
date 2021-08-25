@@ -696,7 +696,7 @@ class ComputePowerCurve(ExplicitComponent):
             if self.regulation_reg_III:
                 for i in range(i_3, self.n_pc):
                     pitch0 = pitch[i - 1]
-                    bnds = ([pitch0 - 5.0, pitch0 + 15.0],)
+                    bnds = ([pitch0, pitch0 + 15.0],)
                     try:
                         pitch[i] = brentq(
                             lambda x: rated_power_dist(x, Uhub[i], Omega_rpm[i]),
