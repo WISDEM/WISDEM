@@ -699,7 +699,7 @@ class WindTurbineOntologyPython(object):
                 "blade.outer_shape_bem.s"
             ].tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"] = wt_opt[
-                "blade.pa.twist_param"
+                "rotorse.theta"
             ].tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["pitch_axis"]["grid"] = wt_opt[
                 "blade.outer_shape_bem.s"

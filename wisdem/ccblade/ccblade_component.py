@@ -417,16 +417,22 @@ class CCBladeTwist(ExplicitComponent):
             desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade chord",
         )
         self.add_input(
-            "s_opt_twist",
+            "s_opt_theta",
             val=np.zeros(n_opt_twist),
             desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade twist",
         )
         self.add_input("chord", val=np.zeros(n_span), units="m", desc="chord length at each section")
         self.add_input(
-            "twist",
+            "theta_in",
             val=np.zeros(n_span),
             units="rad",
             desc="twist angle at each section (positive decreases angle of attack)",
+        )
+        self.add_input(
+            "aoa_op",
+            val=np.pi * np.ones(n_span),
+            desc="1D array with the operational angles of attack for the airfoils along blade span.",
+            units = "rad",
         )
         self.add_input("airfoils_aoa", val=np.zeros((n_aoa)), units="deg", desc="angle of attack grid for polars")
         self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="lift coefficients, spanwise")
@@ -564,14 +570,18 @@ class CCBladeTwist(ExplicitComponent):
 
             margin2stall = self.options["opt_options"]["constraints"]["blade"]["stall"]["margin"] * 180.0 / np.pi
             Re = np.array(Omega * inputs["r"] * inputs["chord"] * inputs["rho"] / inputs["mu"])
+            aoa_op = inputs["aoa_op"]
             for i in range(self.n_span):
-                af[i].eval_unsteady(
-                    inputs["airfoils_aoa"],
-                    inputs["airfoils_cl"][i, :, 0, 0],
-                    inputs["airfoils_cd"][i, :, 0, 0],
-                    inputs["airfoils_cm"][i, :, 0, 0],
-                )
-                alpha[i] = (af[i].unsteady["alpha1"] - margin2stall) / 180.0 * np.pi
+                if abs(aoa_op[i] - np.pi) < 1.e-4:
+                    af[i].eval_unsteady(
+                        inputs["airfoils_aoa"],
+                        inputs["airfoils_cl"][i, :, 0, 0],
+                        inputs["airfoils_cd"][i, :, 0, 0],
+                        inputs["airfoils_cm"][i, :, 0, 0],
+                    )
+                    alpha[i] = (af[i].unsteady["alpha1"] - margin2stall) / 180.0 * np.pi
+                else:
+                    alpha[i] = aoa_op[i]
                 cl[i], cd[i] = af[i].evaluate(alpha[i], Re[i])
             Eff = cl / cd
 
@@ -656,7 +666,7 @@ class CCBladeTwist(ExplicitComponent):
 
             twist = get_twist.theta
         else:
-            twist = inputs["twist"]
+            twist = inputs["theta_in"]
 
         get_cp_cm = CCBlade(
             inputs["r"],
@@ -713,8 +723,8 @@ class CCBladeTwist(ExplicitComponent):
         outputs["cl"] = loads["Cl"]
         outputs["cd"] = loads["Cd"]
         s = (inputs["r"] - inputs["r"][0]) / (inputs["r"][-1] - inputs["r"][0])
-        outputs["cl_n_opt"] = np.interp(inputs["s_opt_twist"], s, loads["Cl"])
-        outputs["cd_n_opt"] = np.interp(inputs["s_opt_twist"], s, loads["Cd"])
+        outputs["cl_n_opt"] = np.interp(inputs["s_opt_theta"], s, loads["Cl"])
+        outputs["cd_n_opt"] = np.interp(inputs["s_opt_theta"], s, loads["Cd"])
         # Forces in the blade coordinate system, pag 21 of https://www.nrel.gov/docs/fy13osti/58819.pdf
         outputs["Px_b"] = loads["Np"]
         outputs["Py_b"] = -loads["Tp"]
@@ -729,8 +739,8 @@ class CCBladeTwist(ExplicitComponent):
         F = P_b.bladeToAirfoil(twist * 180.0 / np.pi + loads["alpha"] + inputs["pitch"])
         outputs["LiftF"] = F.x
         outputs["DragF"] = F.y
-        outputs["L_n_opt"] = np.interp(inputs["s_opt_twist"], s, F.x)
-        outputs["D_n_opt"] = np.interp(inputs["s_opt_twist"], s, F.y)
+        outputs["L_n_opt"] = np.interp(inputs["s_opt_theta"], s, F.x)
+        outputs["D_n_opt"] = np.interp(inputs["s_opt_theta"], s, F.y)
         # print(CP[0])
 
 
