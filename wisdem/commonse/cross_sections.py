@@ -185,7 +185,7 @@ class IBeam(CrossSectionBase):
 
     @property
     def TorsConst(self):  # Torsion shear constant for tubular cross-section
-        return self.Jxx / (1.28 * self.tf)
+        return self.J0 / (1.28 * self.tf)
 
     @property
     def CG(self):

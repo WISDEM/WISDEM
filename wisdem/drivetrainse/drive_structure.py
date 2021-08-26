@@ -863,10 +863,10 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         S = np.r_[bedcyl.S, nosecyl.S]
         C = np.r_[bedcyl.C, nosecyl.C]
         J0 = np.r_[bedcyl.J0, nosecyl.J0]
-        Jx = np.r_[bedcyl.Jxx, nosecyl.Jxx]
+        Ixx = np.r_[bedcyl.Ixx, nosecyl.Ixx]
 
         elements = frame3dd.ElementData(
-            ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones
+            ielement, N1, N2, Ax, As, As, J0, Ixx, Ixx, E * myones, G * myones, roll, rho * myones
         )
         # -----------------------------------
 
@@ -1248,7 +1248,7 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         Asy = np.r_[myI.Asx * myones, myI.Asx * myones, As_plate, As_plate]
         Asz = np.r_[myI.Asy * myones, myI.Asy * myones, As_plate, As_plate]
         Sy = np.r_[myI.Sx * myones, myI.Sx * myones, S_plate, S_plate]
-        Sz = np.r_[myI.Sy * myones, myI.y * myones, S_plate, S_plate]
+        Sz = np.r_[myI.Sy * myones, myI.Sy * myones, S_plate, S_plate]
         C = np.r_[myI.C * myones, myI.C * myones, C_plate, C_plate]
         J0 = np.r_[myI.J0 * myones, myI.J0 * myones, I_plate, I_plate]
         Jy = np.r_[myI.Ixx * myones, myI.Ixx * myones, I_plate, I_plate]

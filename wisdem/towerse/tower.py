@@ -395,7 +395,7 @@ class TowerSE(om.Group):
     def setup(self):
         mod_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
         n_mat = self.options["modeling_options"]["materials"]["n_mat"]
-        nLC = mod_opt["nLC"]  # not yet supported
+        nLC = self.options["modeling_options"]["General"]["n_dlc"]
         wind = mod_opt["wind"]  # not yet supported
         frame3dd_opt = mod_opt["frame3dd"]
         if "n_height" in mod_opt:
@@ -449,7 +449,6 @@ class TowerSE(om.Group):
             ("s_in", "tower_s"),
             ("layer_materials", "tower_layer_materials"),
             ("layer_thickness", "tower_layer_thickness"),
-            ("height", "tower_height"),
             ("section_height", "tower_section_height"),
             ("outer_diameter_in", "tower_outer_diameter_in"),
             ("outer_diameter", "tower_outer_diameter"),
@@ -505,7 +504,7 @@ class TowerSE(om.Group):
                     "E_full",
                     "G_full",
                     "sigma_y_full",
-                    "bending_height",
+                    ("bending_height", "tower_height"),
                 ],
             )
 
@@ -520,5 +519,3 @@ class TowerSE(om.Group):
             self.connect(f"tower{lc}.tower_Mxx", f"post{lc}.cylinder_Mxx")
             self.connect(f"tower{lc}.tower_Myy", f"post{lc}.cylinder_Myy")
             self.connect(f"tower{lc}.tower_Mzz", f"post{lc}.cylinder_Mzz")
-
-        self.connect("tower_height", "bending_height")

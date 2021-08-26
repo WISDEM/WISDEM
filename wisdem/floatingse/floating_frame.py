@@ -487,7 +487,11 @@ class FloatingFrame(om.Group):
 
             self.add_subsystem(f"loadsys{lc}", PlatformLoads(options=opt))
 
-            self.add_subsystem(f"frame{lc}", FrameAnalysis(options=opt), promotes=plat_frame)
+            self.add_subsystem(
+                f"frame{lc}",
+                FrameAnalysis(options=opt),
+                promotes=plat_frame + [("turbine_F", "lc{lc}:turbine_F"), ("turbine_M", "lc{lc}:turbine_M")],
+            )
             self.add_subsystem(f"post{lc}", FloatingPost(options=opt["WISDEM"]["FloatingSE"]), promotes=plat_prom)
 
             for k in range(n_member):

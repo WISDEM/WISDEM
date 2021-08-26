@@ -519,7 +519,7 @@ class MonopileSE(om.Group):
     def setup(self):
         mod_opt = self.options["modeling_options"]["WISDEM"]["FixedBottomSE"]
         n_mat = self.options["modeling_options"]["materials"]["n_mat"]
-        nLC = mod_opt["nLC"]  # not yet supported
+        nLC = self.options["modeling_options"]["General"]["n_dlc"]
         wind = mod_opt["wind"]  # not yet supported
         frame3dd_opt = mod_opt["frame3dd"]
         if "n_height" in mod_opt:
@@ -553,6 +553,8 @@ class MonopileSE(om.Group):
             "G_full",
             "sigma_y_full",
             "outfitting_full",
+            "s_const1",
+            "s_const2",
             "joint1",
             "joint2",
             "outfitting_factor_in",
@@ -573,7 +575,6 @@ class MonopileSE(om.Group):
             ("s_in", "monopile_s"),
             ("layer_materials", "monopile_layer_materials"),
             ("layer_thickness", "monopile_layer_thickness"),
-            ("height", "monopile_height"),
             ("section_height", "monopile_section_height"),
             ("outer_diameter_in", "monopile_outer_diameter_in"),
             ("outer_diameter", "monopile_outer_diameter"),

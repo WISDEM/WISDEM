@@ -1,4 +1,4 @@
 # Inputs
 geometry_file: IEA-15-240-RWT.yaml
-modeling_file: modeling_options.yaml
+modeling_file: modeling_options_mono.yaml
 analysis_file: analysis_options.yaml
