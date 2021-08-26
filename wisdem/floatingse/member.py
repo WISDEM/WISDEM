@@ -348,13 +348,12 @@ class DiscretizationYAML(om.ExplicitComponent):
         # While the sections are simple, store cross section info for fatigue
         ax_load2stress = np.zeros([n_height - 1, 6])
         sh_load2stress = np.zeros([n_height - 1, 6])
-        r_sec = 0.5 * D
         ax_load2stress[:, 2] = 1.0 / itube.Area
-        ax_load2stress[:, 3] = r_sec / itube.Jxx
-        ax_load2stress[:, 4] = r_sec / itube.Jyy
-        sh_load2stress[:, 0] = r_sec / itube.Asx
-        sh_load2stress[:, 1] = r_sec / itube.Asy
-        sh_load2stress[:, 5] = 1.0 / itube.J0
+        ax_load2stress[:, 3] = 1.0 / itube.S
+        ax_load2stress[:, 4] = 1.0 / itube.S
+        sh_load2stress[:, 0] = 1.0 / itube.Asx
+        sh_load2stress[:, 1] = 1.0 / itube.Asy
+        sh_load2stress[:, 5] = 1.0 / itube.C
         outputs["axial_load2stress"] = ax_load2stress
         outputs["shear_load2stress"] = sh_load2stress
 
