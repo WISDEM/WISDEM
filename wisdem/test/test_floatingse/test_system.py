@@ -101,7 +101,7 @@ class TestPlatform(unittest.TestCase):
         self.inputs["mooring_neutral_load"][:, 2] = -1e3
         self.inputs["mooring_fairlead_joints"] = np.array([[0.0, 0.0, 0.0], [0.5, 1.0, 0.0], [1.0, 0.0, 0.0]])
         self.inputs["mooring_stiffness"] = 5 * np.eye(6)
-        self.inputs["transition_node"] = self.inputs["member0:nodes_xyz"][1, :]
+        self.inputs["transition_node"] = self.inputs["member5:nodes_xyz"][1, :]
         self.inputs["turbine_mass"] = 1e4
         self.inputs["turbine_center_of_mass"] = np.array([0, 0, 50])
         self.inputs["transition_piece_mass"] = 1e3
@@ -178,7 +178,7 @@ class TestPlatform(unittest.TestCase):
         self.assertEqual(self.outputs["platform_Iwater"], 6 * 15 + 5 * R.sum())
         npt.assert_equal(self.outputs["platform_added_mass"], 6 * np.arange(6))
         npt.assert_equal(self.outputs["platform_variable_capacity"], 10 + np.arange(6))
-        npt.assert_equal(self.outputs["transition_piece_I"], 1e3 * 0.4 ** 2 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
+        npt.assert_equal(self.outputs["transition_piece_I"], 1e3 * 0.5 ** 2 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
         npt.assert_array_less(1e2, self.outputs["platform_I_hull"] - self.outputs["transition_piece_I"])
 
     def testPlatformTurbineSystem(self):

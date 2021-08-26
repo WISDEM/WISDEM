@@ -52,9 +52,11 @@ class PlatformLoads(om.ExplicitComponent):
         # Append all member data
         for k in range(n_member):
             n = np.where(inputs[f"member{k}:qdyn"] == NULL)[0][0]
-            elem_qdyn = np.append(elem_qdyn, inputs[f"member{k}:qdyn"][:n])
+            mem_qdyn, _ = util.nodal2sectional(inputs[f"member{k}:qdyn"][:n])
+            elem_qdyn = np.append(elem_qdyn, mem_qdyn)
 
             # The loads should come in with length n+1
+            n -= 1
             elem_Px1 = np.append(elem_Px1, inputs[f"member{k}:Px"][:n])
             elem_Px2 = np.append(elem_Px2, inputs[f"member{k}:Px"][1 : (n + 1)])
             elem_Py1 = np.append(elem_Py1, inputs[f"member{k}:Py"][:n])
@@ -400,7 +402,7 @@ class FloatingFrame(om.Group):
 
     def setup(self):
         opt = self.options["modeling_options"]
-        nLC = opt["WISDEM"]["nLC"]
+        nLC = opt["WISDEM"]["n_dlc"]
         n_member = opt["floating"]["members"]["n_members"]
 
         mem_prom = [

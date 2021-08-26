@@ -501,7 +501,10 @@ class WT_RNTA(om.Group):
                 ]:
                     self.connect(f"floating.memgrp{idx}.{var}", f"floatingse.member{k}.{var}")
 
-                for var in ["joint1", "joint2", "s_ghost1", "s_ghost2"]:
+                for var in ["joint1", "joint2"]:
+                    self.connect(f"floating.member_{kname}:{var}", f"floatingse.member{k}:{var}")
+
+                for var in ["s_ghost1", "s_ghost2"]:
                     self.connect(f"floating.member_{kname}:{var}", f"floatingse.member{k}.{var}")
 
             # Mooring connections
@@ -520,7 +523,7 @@ class WT_RNTA(om.Group):
                 "line_breaking_load_coeff",
                 "line_cost_rate_coeff",
             ]:
-                self.connect("mooring." + var, "floatingse." + var, src_indices=[0])
+                self.connect(f"mooring.{var}", f"floatingse.{var}", src_indices=[0])
 
         # Connections to turbine constraints
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:

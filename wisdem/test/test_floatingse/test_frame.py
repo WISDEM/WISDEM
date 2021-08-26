@@ -1,16 +1,81 @@
 import unittest
 
 import numpy as np
-import openmdao.api as om
 import numpy.testing as npt
 import wisdem.floatingse.floating_frame as frame
 import wisdem.floatingse.floating_system as sys
-from wisdem.commonse import gravity as g
 from wisdem.floatingse.member import NULL, MEMMAX
 
 
-class TestPlatform(unittest.TestCase):
-    def setUp(self):
+class TestFrame(unittest.TestCase):
+    def testTetrahedron(self):
+        inputs = {}
+        outputs = {}
+
+        opt = {}
+        opt["floating"] = {}
+        opt["WISDEM"] = {}
+        opt["WISDEM"]["FloatingSE"] = {}
+        opt["floating"]["members"] = {}
+        opt["floating"]["members"]["n_members"] = n_member = 6
+        opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = True
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = True
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["tol"] = 1e-8
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["modal"] = False
+        opt["WISDEM"]["FloatingSE"]["gamma_f"] = 1.35  # Safety factor on loads
+        opt["WISDEM"]["FloatingSE"]["gamma_m"] = 1.3  # Safety factor on materials
+        opt["WISDEM"]["FloatingSE"]["gamma_n"] = 1.0  # Safety factor on consequence of failure
+        opt["WISDEM"]["FloatingSE"]["gamma_b"] = 1.1  # Safety factor on buckling
+        opt["WISDEM"]["FloatingSE"]["gamma_fatigue"] = 1.755  # Not used
+        opt["mooring"] = {}
+        opt["mooring"]["n_attach"] = 3
+
+        for k in range(n_member):
+            for var in ["Px", "Py", "Pz", "qdyn"]:
+                inputs[f"member{k}:{var}"] = NULL * np.ones(MEMMAX)
+
+            inputs[f"member{k}:Px"][:2] = 1.0
+            inputs[f"member{k}:Py"][:2] = 2.0
+            inputs[f"member{k}:Pz"][:2] = 3.0
+            inputs[f"member{k}:qdyn"][:2] = 4.0
+
+        myobj = frame.PlatformLoads(options=opt)
+        myobj.compute(inputs, outputs)
+
+        npt.assert_equal(outputs["platform_elem_Px1"][6:], NULL)
+        npt.assert_equal(outputs["platform_elem_Py1"][6:], NULL)
+        npt.assert_equal(outputs["platform_elem_Pz1"][6:], NULL)
+        npt.assert_equal(outputs["platform_elem_Px2"][6:], NULL)
+        npt.assert_equal(outputs["platform_elem_Py2"][6:], NULL)
+        npt.assert_equal(outputs["platform_elem_Pz2"][6:], NULL)
+        npt.assert_equal(outputs["platform_elem_qdyn"][6:], NULL)
+
+        npt.assert_equal(outputs["platform_elem_Px1"][:6], 1.0)
+        npt.assert_equal(outputs["platform_elem_Py1"][:6], 2.0)
+        npt.assert_equal(outputs["platform_elem_Pz1"][:6], 3.0)
+        npt.assert_equal(outputs["platform_elem_Px2"][:6], 1.0)
+        npt.assert_equal(outputs["platform_elem_Py2"][:6], 2.0)
+        npt.assert_equal(outputs["platform_elem_Pz2"][:6], 3.0)
+        npt.assert_equal(outputs["platform_elem_qdyn"][:6], 4.0)
+
+    def testMaxLoads(self):
+        inputs = {}
+        outputs = {}
+
+        inputs["lc1:turbine_F"] = np.array([2, 3, 4])
+        inputs["lc2:turbine_F"] = np.array([4, 2, 3])
+
+        inputs["lc1:turbine_M"] = np.array([2, 3, 1])
+        inputs["lc2:turbine_M"] = np.array([4, 2, 5])
+
+        myobj = frame.MaxTurbineLoads(nLC=2)
+        myobj.compute(inputs, outputs)
+
+        npt.assert_equal(outputs["max_F"], np.array([4, 3, 4]))
+        npt.assert_equal(outputs["max_M"], np.array([4, 3, 5]))
+
+    def testAnalysis(self):
         inputs = {}
         outputs = {}
         discrete_inputs = {}
@@ -138,6 +203,12 @@ class TestPlatform(unittest.TestCase):
             inputs[k] = outputs[k]
         for k in discrete_outputs:
             discrete_inputs[k] = discrete_outputs[k]
+        myobj = frame.PlatformLoads(options=opt)
+        myobj.compute(inputs, outputs)
+        for k in outputs:
+            inputs[k] = outputs[k]
+        for k in discrete_outputs:
+            discrete_inputs[k] = discrete_outputs[k]
         myobj = frame.FrameAnalysis(options=opt)
         myobj.compute(inputs, outputs)
         self.assertTrue(True)
@@ -145,8 +216,7 @@ class TestPlatform(unittest.TestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestPlatform))
-    suite.addTest(unittest.makeSuite(TestGroup))
+    suite.addTest(unittest.makeSuite(TestFrame))
     return suite
 
 

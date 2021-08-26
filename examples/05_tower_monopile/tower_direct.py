@@ -11,7 +11,7 @@ from wisdem.towerse.tower import TowerSE
 from wisdem.commonse.fileIO import save_data
 
 # Set analysis and optimization options and define geometry
-plot_flag = True
+plot_flag = False
 opt_flag = True
 
 n_control_points = 3

@@ -14,8 +14,8 @@ class TestOC3Mass(unittest.TestCase):
         opt = {}
         opt["floating"] = {}
         opt["General"] = {}
-        opt["General"]["n_lc"] = 1
         opt["WISDEM"] = {}
+        opt["WISDEM"]["n_dlc"] = 1
         opt["WISDEM"]["FloatingSE"] = {}
         opt["floating"]["members"] = {}
         opt["floating"]["members"]["n_members"] = 1
