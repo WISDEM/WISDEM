@@ -14,5 +14,6 @@ WISDEM:
         flag: True
     FixedBottomSE:
         flag: True
+        soil_springs: True
     BOS:
         flag: True

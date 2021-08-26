@@ -18,15 +18,15 @@ properties:
                 type: boolean
                 default: False
                 description: Prints additional outputs to screen (and to a file log in the future)
+    WISDEM:
+        type: object
+        default: {}
+        properties:
             n_dlc:
                 type: integer
                 default: 1
                 description: Number of load cases
                 minimum: 0
-    WISDEM:
-        type: object
-        default: {}
-        properties:
             RotorSE:
                 type: object
                 default: {}

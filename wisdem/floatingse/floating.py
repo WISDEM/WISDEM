@@ -45,7 +45,7 @@ class FloatingSE(om.Group):
         )
 
         # Do the load analysis over one or more load cases
-        self.add_subsystem("load", FloatingFrame(modeling_options=opt, nLC=opt["General"]["n_lc"]), promotes=["*"])
+        self.add_subsystem("load", FloatingFrame(modeling_options=opt), promotes=["*"])
 
         # Evaluate system constraints
         self.add_subsystem("cons", FloatingConstraints(modeling_options=opt), promotes=["*"])

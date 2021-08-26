@@ -397,11 +397,10 @@ class MaxTurbineLoads(om.ExplicitComponent):
 class FloatingFrame(om.Group):
     def initialize(self):
         self.options.declare("modeling_options")
-        self.options.declare("nLC")
 
     def setup(self):
         opt = self.options["modeling_options"]
-        nLC = self.options["nLC"]
+        nLC = opt["WISDEM"]["nLC"]
         n_member = opt["floating"]["members"]["n_members"]
 
         mem_prom = [
