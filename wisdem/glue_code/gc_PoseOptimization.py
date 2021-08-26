@@ -1353,6 +1353,15 @@ class PoseOptimization(object):
                     wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"],
                 )
                 wt_opt["inn_af.c_d_opt"] = init_c_d_opt
+                wt_opt["inn_af.s_opt_stall_margin"] = np.linspace(
+                    0.0, 1.0, blade_opt["aero_shape"]["stall_margin"]["n_opt"]
+                )
+                init_stall_margin_opt = np.interp(
+                    wt_opt["inn_af.s_opt_stall_margin"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"],
+                )
+                wt_opt["inn_af.stall_margin_opt"] = init_stall_margin_opt
 
                 wt_opt["inn_af.s_opt_stall_margin"] = np.linspace(
                     0.0, 1.0, blade_opt["aero_shape"]["stall_margin"]["n_opt"]

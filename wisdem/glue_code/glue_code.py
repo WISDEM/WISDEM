@@ -71,9 +71,9 @@ class WT_RNTA(om.Group):
 
             # Conncetions to ccblade
             self.connect("blade.pa.chord_param", "rotorse.chord")
-            self.connect("blade.pa.twist_param", "rotorse.ccblade.twist")
+            self.connect("blade.pa.twist_param", "rotorse.ccblade.theta_in")
             self.connect("blade.opt_var.s_opt_chord", "rotorse.ccblade.s_opt_chord")
-            self.connect("blade.opt_var.s_opt_twist", "rotorse.ccblade.s_opt_twist")
+            self.connect("blade.opt_var.s_opt_twist", "rotorse.ccblade.s_opt_theta")
             self.connect("blade.outer_shape_bem.s", "rotorse.s")
             self.connect("blade.high_level_blade_props.r_blade", "rotorse.r")
             self.connect("blade.high_level_blade_props.rotor_radius", "rotorse.Rtip")
@@ -85,6 +85,7 @@ class WT_RNTA(om.Group):
             if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
                 self.connect("blade.run_inn_af.cl_interp", "rotorse.airfoils_cl")
                 self.connect("blade.run_inn_af.cd_interp", "rotorse.airfoils_cd")
+                self.connect("blade.run_inn_af.aoa_inn", "rotorse.ccblade.aoa_op")
             else:
                 self.connect("blade.interp_airfoils.cl_interp", "rotorse.airfoils_cl")
                 self.connect("blade.interp_airfoils.cd_interp", "rotorse.airfoils_cd")

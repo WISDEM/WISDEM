@@ -119,6 +119,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 inn_af.add_output(
                     "stall_margin_opt",
                     val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["stall_margin"]["n_opt"]),
+                    units="rad",
                 )
                 self.add_subsystem("inn_af", inn_af)
 
@@ -1292,6 +1293,7 @@ class INN_Airfoils(om.ExplicitComponent):
         self.add_input(
             "stall_margin_opt",
             val=np.ones(aero_shape_opt_options["stall_margin"]["n_opt"]),
+            units="rad",
         )
         self.add_input(
             "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
@@ -1327,6 +1329,12 @@ class INN_Airfoils(om.ExplicitComponent):
             "cd_interp",
             val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
             desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+        )
+        self.add_output(
+            "aoa_inn",
+            val=np.pi * np.ones(n_span),
+            desc="1D array with the operational angles of attack prescribed by the INN for the airfoils along blade span.",
+            units="rad",
         )
 
         self.inn = INN()
@@ -1414,6 +1422,8 @@ class INN_Airfoils(om.ExplicitComponent):
             for j in range(self.n_Re):
                 outputs["cl_interp"][i, :, j, 0] = cl_interp
                 outputs["cd_interp"][i, :, j, 0] = cd_interp
+
+            outputs["aoa_inn"][i] = np.deg2rad(alpha_inn)
 
             # ======================
 
