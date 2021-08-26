@@ -63,6 +63,7 @@ class TestStruct(unittest.TestCase):
         self.modeling_options["materials"]["n_mat"] = 1
 
         self.modeling_options["WISDEM"] = {}
+        self.modeling_options["WISDEM"]["n_dlc"] = 1
         self.modeling_options["WISDEM"]["TowerSE"] = {}
         self.modeling_options["WISDEM"]["TowerSE"]["buckling_method"] = "eurocode"
         self.modeling_options["WISDEM"]["TowerSE"]["buckling_length"] = 30.0
@@ -70,7 +71,6 @@ class TestStruct(unittest.TestCase):
         self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 3
         self.modeling_options["WISDEM"]["TowerSE"]["n_refine"] = 3
         self.modeling_options["WISDEM"]["TowerSE"]["wind"] = "PowerWind"
-        self.modeling_options["WISDEM"]["TowerSE"]["nLC"] = 1
 
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_f"] = 1.0
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_m"] = 1.0
@@ -105,6 +105,7 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options["materials"]["n_mat"] = 1
 
         self.modeling_options["WISDEM"] = {}
+        self.modeling_options["WISDEM"]["n_dlc"] = 1
         self.modeling_options["WISDEM"]["TowerSE"] = {}
         self.modeling_options["WISDEM"]["TowerSE"]["buckling_method"] = "eurocode"
         self.modeling_options["WISDEM"]["TowerSE"]["buckling_length"] = 30.0
@@ -112,7 +113,6 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 3
         self.modeling_options["WISDEM"]["TowerSE"]["n_refine"] = 3
         self.modeling_options["WISDEM"]["TowerSE"]["wind"] = "PowerWind"
-        self.modeling_options["WISDEM"]["TowerSE"]["nLC"] = 1
 
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_f"] = 1.0
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_m"] = 1.0
@@ -430,7 +430,7 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = len(d_param)
         self.modeling_options["WISDEM"]["TowerSE"]["n_layers"] = 1
         self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = len(d_param)
-        self.modeling_options["WISDEM"]["TowerSE"]["nLC"] = 2
+        self.modeling_options["WISDEM"]["n_dlc"] = 2
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_f"] = 1.35
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_m"] = 1.3
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_n"] = 1.0

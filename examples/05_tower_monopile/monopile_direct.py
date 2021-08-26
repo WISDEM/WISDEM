@@ -6,7 +6,7 @@ import os
 import numpy as np
 import openmdao.api as om
 from wisdem.commonse.fileIO import save_data
-from wisdem.fixedse.monopile import MonopileSE
+from wisdem.fixed_bottomse.monopile import MonopileSE
 
 # Set analysis and optimization options and define geometry
 plot_flag = False
@@ -63,10 +63,8 @@ modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["shear"] = True
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["geom"] = True
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["tol"] = 1e-9
 
-modeling_options["WISDEM"]["FixedBottomSE"]["n_height_tower"] = n_control_points
-modeling_options["WISDEM"]["FixedBottomSE"]["n_layers_tower"] = 1
-modeling_options["WISDEM"]["FixedBottomSE"]["n_height_monopile"] = n_control_points
-modeling_options["WISDEM"]["FixedBottomSE"]["n_layers_monopile"] = 1
+modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = n_control_points
+modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"] = 1
 modeling_options["WISDEM"]["FixedBottomSE"]["wind"] = "PowerWind"
 # ---
 
@@ -90,9 +88,6 @@ if opt_flag:
     prob.model.add_design_var("monopile_outer_diameter_in", lower=3.87, upper=max_diam)
     prob.model.add_design_var("monopile_layer_thickness", lower=4e-3, upper=2e-1)
 
-    prob.model.add_design_var("tower_outer_diameter_in", lower=3.87, upper=max_diam)
-    prob.model.add_design_var("tower_layer_thickness", lower=4e-3, upper=2e-1)
-
     # Add constraints on the tower design
     prob.model.add_constraint("post1.constr_stress", upper=1.0)
     prob.model.add_constraint("post1.constr_global_buckling", upper=1.0)
@@ -104,8 +99,8 @@ if opt_flag:
     prob.model.add_constraint("constr_taper", lower=0.2)
     prob.model.add_constraint("slope", upper=1.0)
     prob.model.add_constraint("suctionpile_depth", lower=0.0)
-    prob.model.add_constraint("tower1.f1", lower=0.13, upper=0.40)
-    prob.model.add_constraint("tower2.f1", lower=0.13, upper=0.40)
+    prob.model.add_constraint("monopile1.f1", lower=0.13, upper=0.40)
+    prob.model.add_constraint("monopile2.f1", lower=0.13, upper=0.40)
     # ---
 
 # Set up the OpenMDAO problem
@@ -113,12 +108,12 @@ prob.setup()
 # ---
 
 # Set geometry and turbine values
-prob["hub_height"] = hubH
 prob["water_depth"] = water_depth
 
 prob["transition_piece_mass"] = 100e3
 
 prob["monopile_foundation_height"] = -55.0
+prob["tower_foundation_height"] = 10.0
 prob["monopile_height"] = h_paramM.sum()
 prob["monopile_s"] = np.cumsum(np.r_[0.0, h_paramM]) / h_paramM.sum()
 prob["monopile_outer_diameter_in"] = d_paramM
@@ -164,27 +159,15 @@ if modeling_options["WISDEM"]["FixedBottomSE"]["wind"] == "PowerWind":
 # two load cases.  TODO: use a case iterator
 
 # --- loading case 1: max Thrust ---
-prob["wind1.Uref"] = 11.73732
-Fx1 = 1284744.19620519
-Fy1 = 0.0
-Fz1 = -2914124.84400512
-Mxx1 = 3963732.76208099
-Myy1 = -2275104.79420872
-Mzz1 = -346781.68192839
-prob["monopile1.turbine_F"] = np.array([Fx1, Fy1, Fz1])
-prob["monopile1.turbine_M"] = np.array([Mxx1, Myy1, Mzz1])
+prob["env1.Uref"] = 11.73732
+prob["monopile1.turbine_F"] = [1.28474420e06, 0.0, -1.05294614e07]
+prob["monopile1.turbine_M"] = [4009825.86806202, 92078894.58132489, -346781.68192839]
 # ---------------
 
 # --- loading case 2: max Wind Speed ---
-prob["wind2.Uref"] = 70.0
-Fx2 = 930198.60063279
-Fy2 = 0.0
-Fz2 = -2883106.12368949
-Mxx2 = -1683669.22411597
-Myy2 = -2522475.34625363
-Mzz2 = 147301.97023764
-prob["monopile2.turbine_F"] = np.array([Fx2, Fy2, Fz2])
-prob["monopile2.turbine_M"] = np.array([Mxx2, Myy2, Mzz2])
+prob["env2.Uref"] = 70.0
+prob["monopile2.turbine_F"] = [9.30198601e05, 0.0, -1.13508479e07]
+prob["monopile2.turbine_M"] = [-1704977.30124085, 65817554.0892837, 147301.97023764]
 # ---------------
 
 # run the analysis or optimization
@@ -204,7 +187,7 @@ print("zs =", prob["z_full"])
 print("ds =", prob["d_full"])
 print("ts =", prob["t_full"])
 print("mass (kg) =", prob["monopile_mass"])
-print("cg (m) =", prob["monopile_center_of_mass"])
+print("cg (m) =", prob["monopile_z_cg"])
 print("d:t constraint =", prob["constr_d_to_t"])
 print("taper ratio constraint =", prob["constr_taper"])
 print("\nwind: ", prob["env1.Uref"])
