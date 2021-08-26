@@ -15,43 +15,48 @@ secones = np.ones((NPTS - 1,))
 
 
 class TestInputs(unittest.TestCase):
-    def testDiscYAML_1Material(self):
-        inputs = {}
-        outputs = {}
-        discrete_inputs = {}
-        discrete_outputs = {}
+    def setUp(self):
+        self.inputs = {}
+        self.outputs = {}
+        self.discrete_inputs = {}
+        self.discrete_outputs = {}
 
         # Test land based, 1 material
-        inputs["s_in"] = np.linspace(0, 1, 5)
-        inputs["layer_thickness"] = 0.25 * np.ones((1, 5))
-        inputs["joint1"] = np.zeros(3)
-        inputs["joint2"] = np.r_[np.zeros(2), 1e2]
-        inputs["outer_diameter_in"] = 8 * np.ones(5)
-        discrete_inputs["layer_materials"] = ["steel"]
-        discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
-        inputs["E_mat"] = 1e9 * np.ones((2, 3))
-        inputs["E_user"] = 0.0
-        inputs["G_mat"] = 1e8 * np.ones((2, 3))
-        inputs["sigma_y_mat"] = np.array([1e7, 1e7])
-        inputs["sigma_ult_mat"] = 1e7 * np.ones((2, 3))
-        inputs["wohler_exp_mat"] = np.array([1e1, 1e1])
-        inputs["wohler_A_mat"] = np.array([1e1, 1e1])
-        inputs["rho_mat"] = np.array([1e4, 1e5])
-        inputs["rho_water"] = 1e3
-        inputs["unit_cost_mat"] = np.array([1e1, 2e1])
-        inputs["outfitting_factor_in"] = 1.05
-        discrete_inputs["material_names"] = ["steel", "slurry"]
-        opt = {}
-        opt["n_height"] = [5]
-        opt["n_layers"] = [1]
-        opt["n_ballasts"] = [3]
-        myobj = member.DiscretizationYAML(options=opt, idx=0, n_mat=2)
-        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+        self.inputs["s_in"] = np.linspace(0, 1, 5)
+        self.inputs["layer_thickness"] = 0.25 * np.ones((1, 5))
+        self.inputs["s_const1"] = 0.0
+        self.inputs["s_const2"] = 0.0
+        self.inputs["joint1"] = np.zeros(3)
+        self.inputs["joint2"] = np.r_[np.zeros(2), 1e2]
+        self.inputs["outer_diameter_in"] = 8 * np.ones(5)
+        self.discrete_inputs["layer_materials"] = ["steel"]
+        self.discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
+        self.inputs["E_mat"] = 1e9 * np.ones((2, 3))
+        self.inputs["E_user"] = 0.0
+        self.inputs["G_mat"] = 1e8 * np.ones((2, 3))
+        self.inputs["sigma_y_mat"] = np.array([1e7, 1e7])
+        self.inputs["sigma_ult_mat"] = 1e7 * np.ones((2, 3))
+        self.inputs["wohler_exp_mat"] = np.array([1e1, 1e1])
+        self.inputs["wohler_A_mat"] = np.array([1e1, 1e1])
+        self.inputs["rho_mat"] = np.array([1e4, 1e5])
+        self.inputs["rho_water"] = 1e3
+        self.inputs["unit_cost_mat"] = np.array([1e1, 2e1])
+        self.inputs["outfitting_factor_in"] = 1.05
+        self.discrete_inputs["material_names"] = ["steel", "slurry"]
+        self.opt = {}
+        self.opt["n_height"] = [5]
+        self.opt["n_layers"] = [1]
+        self.opt["n_ballasts"] = [3]
+
+    def testDiscYAML_1Material(self):
+        outputs = {}
+        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=2)
+        myobj.compute(self.inputs, outputs, self.discrete_inputs, self.discrete_outputs)
 
         myones = np.ones(4)
         self.assertEqual(outputs["height"], 100.0)
         npt.assert_equal(outputs["section_height"], 25.0 * myones)
-        npt.assert_equal(outputs["outer_diameter"], inputs["outer_diameter_in"])
+        npt.assert_equal(outputs["outer_diameter"], self.inputs["outer_diameter_in"])
         npt.assert_equal(outputs["wall_thickness"], 0.25 * myones)
         npt.assert_equal(outputs["E"], 1e9 * myones)
         npt.assert_equal(outputs["G"], 1e8 * myones)
@@ -80,37 +85,23 @@ class TestInputs(unittest.TestCase):
         # npt.assert_equal(outputs["tc_offst"], np.zeros(nout))
 
     def testDiscYAML_2Materials(self):
-        inputs = {}
         outputs = {}
-        discrete_inputs = {}
-        discrete_outputs = {}
 
         # Test land based, 2 materials
-        inputs["s_in"] = np.linspace(0, 1, 5)
-        inputs["layer_thickness"] = np.array([[0.2, 0.2, 0.2, 0.0, 0.0], [0.0, 0.0, 0.0, 0.1, 0.1]])
-        inputs["joint1"] = np.zeros(3)
-        inputs["joint2"] = np.r_[np.zeros(2), 1e2]
-        inputs["outer_diameter_in"] = 8 * np.ones(5)
-        discrete_inputs["layer_materials"] = ["steel", "other"]
-        discrete_inputs["ballast_materials"] = ["slurry", "slurry", "seawater"]
-        inputs["E_mat"] = 1e9 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
-        inputs["E_user"] = 0.0
-        inputs["G_mat"] = 1e8 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
-        inputs["sigma_y_mat"] = np.array([1e7, 1e7, 2e7])
-        inputs["sigma_ult_mat"] = 1e7 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
-        inputs["wohler_exp_mat"] = np.array([1e1, 1e1, 1e1])
-        inputs["wohler_A_mat"] = np.array([1e1, 1e1, 1e1])
-        inputs["rho_mat"] = np.array([1e4, 1e5, 2e4])
-        inputs["rho_water"] = 1e3
-        inputs["unit_cost_mat"] = np.array([1e1, 2e1, 2e1])
-        inputs["outfitting_factor_in"] = 1.05
-        discrete_inputs["material_names"] = ["steel", "slurry", "other"]
-        opt = {}
-        opt["n_height"] = [5]
-        opt["n_layers"] = [2]
-        opt["n_ballasts"] = [3]
-        myobj = member.DiscretizationYAML(options=opt, idx=0, n_mat=3)
-        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+        self.inputs["layer_thickness"] = np.array([[0.2, 0.2, 0.2, 0.0, 0.0], [0.0, 0.0, 0.0, 0.1, 0.1]])
+        self.discrete_inputs["layer_materials"] = ["steel", "other"]
+        self.inputs["E_mat"] = 1e9 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
+        self.inputs["G_mat"] = 1e8 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
+        self.inputs["sigma_y_mat"] = np.array([1e7, 1e7, 2e7])
+        self.inputs["sigma_ult_mat"] = 1e7 * np.vstack((np.ones((2, 3)), 2 * np.ones((1, 3))))
+        self.inputs["wohler_exp_mat"] = np.array([1e1, 1e1, 1e1])
+        self.inputs["wohler_A_mat"] = np.array([1e1, 1e1, 1e1])
+        self.inputs["rho_mat"] = np.array([1e4, 1e5, 2e4])
+        self.inputs["unit_cost_mat"] = np.array([1e1, 2e1, 2e1])
+        self.discrete_inputs["material_names"] = ["steel", "slurry", "other"]
+        self.opt["n_layers"] = [2]
+        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=3)
+        myobj.compute(self.inputs, outputs, self.discrete_inputs, self.discrete_outputs)
 
         # Define mixtures
         v = np.r_[np.mean([0.2, 0]), np.mean([0.1, 0.0])]
@@ -121,7 +112,7 @@ class TestInputs(unittest.TestCase):
         xx3 = np.sum(x * x * vv) / xx1  # Mass-cost weighted
         self.assertEqual(outputs["height"], 100.0)
         npt.assert_equal(outputs["section_height"], 25.0 * np.ones(4))
-        npt.assert_equal(outputs["outer_diameter"], inputs["outer_diameter_in"])
+        npt.assert_equal(outputs["outer_diameter"], self.inputs["outer_diameter_in"])
         npt.assert_almost_equal(outputs["wall_thickness"], np.array([0.2, 0.2, v.sum(), 0.1]))
         npt.assert_almost_equal(outputs["E"], 1e9 * np.array([1, 1, xx2, 2]))
         npt.assert_almost_equal(outputs["G"], 1e8 * np.array([1, 1, xx2, 2]))
@@ -133,13 +124,20 @@ class TestInputs(unittest.TestCase):
         npt.assert_equal(outputs["ballast_density"], np.array([1e5, 1e5, 1e3]))
         npt.assert_equal(outputs["ballast_unit_cost"], np.array([2e1, 2e1, 0.0]))
 
+    def test_sconst(self):
+        outputs = {}
+        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=2)
+        myobj.compute(self.inputs, outputs, self.discrete_inputs, self.discrete_outputs)
+
+        npt.assert_equal(outputs["s"], np.array([0.0, 0.1, 0.25, 0.5, 0.75, 1.0]))
+
 
 class TestFullDiscretization(unittest.TestCase):
     def setUp(self):
         self.inputs = {}
         self.outputs = {}
 
-        self.inputs["s_in"] = np.array([0.0, 0.1, 0.3, 0.6, 1.0])
+        self.inputs["s"] = np.array([0.0, 0.1, 0.3, 0.6, 1.0])
         self.inputs["height"] = 1e1
         self.inputs["outer_diameter"] = 5.0 * np.ones(5)
         self.inputs["wall_thickness"] = 0.05 * np.ones(4)
@@ -151,6 +149,8 @@ class TestFullDiscretization(unittest.TestCase):
         self.inputs["rho"] = 7850 * np.ones(4)
         self.inputs["outfitting_factor"] = 1.05 * np.ones(4)
         self.inputs["unit_cost"] = 7.0 * np.ones(4)
+        self.inputs["joint1"] = np.zeros(3)
+        self.inputs["joint2"] = np.r_[np.zeros(2), 1e2]
 
         self.mydis = member.MemberDiscretization(n_height=5, n_refine=2)
 
@@ -295,7 +295,7 @@ class TestMemberComponent(unittest.TestCase):
                 self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
                 self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
                 self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
                 self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
@@ -336,7 +336,7 @@ class TestMemberComponent(unittest.TestCase):
                     self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2) + n_stiff * A_stiff
                 )
                 self.assertAlmostEqual(
-                    self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64 + Iz_stiff
+                    self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64 + Iz_stiff
                 )
                 self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
                 self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
@@ -365,7 +365,7 @@ class TestMemberComponent(unittest.TestCase):
                     self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
                     self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
                     self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
-                    self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                     self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                     self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
@@ -376,7 +376,7 @@ class TestMemberComponent(unittest.TestCase):
                     self.assertAlmostEqual(self.mem.sections[k].D, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].t, 0.001)
                     self.assertAlmostEqual(self.mem.sections[k].A, 0.01)
-                    self.assertAlmostEqual(self.mem.sections[k].Izz, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].J0, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].Ixx, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].Iyy, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 0.01)
@@ -401,7 +401,7 @@ class TestMemberComponent(unittest.TestCase):
                 self.assertAlmostEqual(self.mem.sections[k].A, np.pi * 0.25 * (10.0 ** 2 - 0 ** 2))
                 self.assertAlmostEqual(self.mem.sections[k].Ixx, np.pi * (10.0 ** 4 - 0 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].Iyy, np.pi * (10.0 ** 4 - 0 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * np.pi * (10.0 ** 4 - 0 ** 4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * np.pi * (10.0 ** 4 - 0 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].rho, 1.1 * 1e3)
             elif k == 1.0:
                 self.assertEqual(self.mem.sections[k], None)
@@ -410,7 +410,7 @@ class TestMemberComponent(unittest.TestCase):
                 self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
                 self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
                 self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
 
@@ -456,7 +456,7 @@ class TestMemberComponent(unittest.TestCase):
                 self.assertAlmostEqual(self.mem.sections[k].A, np.pi * 0.25 * (10.0 ** 2 - 0 ** 2))
                 self.assertAlmostEqual(self.mem.sections[k].Ixx, np.pi * (10.0 ** 4 - 0 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].Iyy, np.pi * (10.0 ** 4 - 0 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * np.pi * (10.0 ** 4 - 0 ** 4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * np.pi * (10.0 ** 4 - 0 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].rho, 1.1 * 1e3)
                 self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
             elif k == 1.0:
@@ -467,7 +467,7 @@ class TestMemberComponent(unittest.TestCase):
                     self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
                     self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                     self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                    self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                     self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
                     self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
@@ -478,7 +478,7 @@ class TestMemberComponent(unittest.TestCase):
                     self.assertAlmostEqual(self.mem.sections[k].A, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].Ixx, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].Iyy, 0.01)
-                    self.assertAlmostEqual(self.mem.sections[k].Izz, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].J0, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].t, 0.001)
                     self.assertAlmostEqual(self.mem.sections[k].D, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 0.01)
@@ -558,7 +558,7 @@ class TestMemberComponent(unittest.TestCase):
                 self.assertAlmostEqual(self.mem.sections[k].A, a)
                 self.assertGreater(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 self.assertGreater(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertGreater(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                self.assertGreater(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].t, 5 - np.sqrt(25 - a / np.pi))
             elif k == 1.0:
                 self.assertEqual(self.mem.sections[k], None)
@@ -567,7 +567,7 @@ class TestMemberComponent(unittest.TestCase):
                 self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
                 self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
 
             self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
@@ -632,7 +632,7 @@ class TestMemberComponent(unittest.TestCase):
                 self.assertAlmostEqual(self.mem.sections[k].A, a)
                 self.assertGreater(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 self.assertGreater(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertGreater(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                self.assertGreater(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].t, 5 - np.sqrt(25 - a / np.pi))
                 self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
             elif k == 1.0:
@@ -643,7 +643,7 @@ class TestMemberComponent(unittest.TestCase):
                     self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
                     self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                     self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                    self.assertAlmostEqual(self.mem.sections[k].Izz, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
                     self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
                     self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
@@ -654,7 +654,7 @@ class TestMemberComponent(unittest.TestCase):
                     self.assertAlmostEqual(self.mem.sections[k].A, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].Ixx, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].Iyy, 0.01)
-                    self.assertAlmostEqual(self.mem.sections[k].Izz, 0.01)
+                    self.assertAlmostEqual(self.mem.sections[k].J0, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].t, 0.001)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 0.01)
                     self.assertAlmostEqual(self.mem.sections[k].E, 1e8)
@@ -780,19 +780,19 @@ class TestMemberComponent(unittest.TestCase):
         npt.assert_almost_equal(s_all[:nout], np.sort(np.r_[s_full, 0.44, 0.55, 0.66]))
 
         npt.assert_almost_equal(self.outputs["center_of_mass"], np.array([22, 10, -12]))
-        npt.assert_almost_equal(self.outputs["nodes_xyz"][nout:, :], NULL)
-        npt.assert_almost_equal(self.outputs["nodes_xyz"][:nout, 0], 20 + s_all[:nout] * 5)
-        npt.assert_almost_equal(self.outputs["nodes_xyz"][:nout, 1], 10)
-        npt.assert_almost_equal(self.outputs["nodes_xyz"][:nout, 2], -30 + s_all[:nout] * 45)
+        npt.assert_almost_equal(self.outputs["nodes_xyz_all"][nout:, :], NULL)
+        npt.assert_almost_equal(self.outputs["nodes_xyz_all"][:nout, 0], 20 + s_all[:nout] * 5)
+        npt.assert_almost_equal(self.outputs["nodes_xyz_all"][:nout, 1], 10)
+        npt.assert_almost_equal(self.outputs["nodes_xyz_all"][:nout, 2], -30 + s_all[:nout] * 45)
 
         nelem = nout - 1
-        for var in ["D", "t", "A", "Ixx", "Iyy", "Izz", "rho", "G", "E", "sigma_y"]:
+        for var in ["D", "t", "A", "Ixx", "Iyy", "J0", "rho", "G", "E", "sigma_y"]:
             npt.assert_almost_equal(self.outputs["section_" + var][nelem:], NULL)
         npt.assert_almost_equal(self.outputs["section_D"][:nelem], 10.0)
         npt.assert_almost_equal(self.outputs["section_t"][:nelem], 1.1 * 0.05)
         npt.assert_almost_equal(self.outputs["section_Ixx"][:nelem], 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
         npt.assert_almost_equal(self.outputs["section_Iyy"][:nelem], 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-        npt.assert_almost_equal(self.outputs["section_Izz"][:nelem], 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+        npt.assert_almost_equal(self.outputs["section_J0"][:nelem], 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
         npt.assert_almost_equal(self.outputs["section_rho"][:nelem], 1e3)
         npt.assert_almost_equal(self.outputs["section_E"][:nelem], 1e6)
         npt.assert_almost_equal(self.outputs["section_G"][:nelem], 1e5)
@@ -833,15 +833,15 @@ class TestHydro(unittest.TestCase):
         self.inputs["s_full"] = np.linspace(0, 1.0, npts)
         self.inputs["z_full"] = np.linspace(0, 50.0, npts)
         self.inputs["d_full"] = 10.0 * np.ones(npts)
-        self.inputs["s_all"] = NULL * np.ones(member.MEMMAX)
-        self.inputs["s_all"][: 2 * npts] = np.linspace(0, 1.0, 2 * npts)
-        self.inputs["nodes_xyz"] = NULL * np.ones((member.MEMMAX, 3))
-        self.inputs["nodes_xyz"][: 2 * npts, :] = np.c_[
+        self.inputs["s_all"] = np.linspace(0, 1.0, 2 * npts)
+        self.inputs["nodes_xyz"] = np.c_[
             1 * np.ones(2 * npts), 2 * np.ones(2 * npts), np.linspace(0, 50.0, 2 * npts) - 75
         ]
         self.inputs["rho_water"] = 1e3
         self.inputs["s_ghost1"] = 0.0
         self.inputs["s_ghost2"] = 1.0
+        self.inputs["joint1"] = np.zeros(3)
+        self.inputs["joint2"] = np.r_[np.zeros(2), 1e2]
 
         self.hydro = member.MemberHydro(n_full=npts)
 
@@ -933,20 +933,18 @@ class TestHydro(unittest.TestCase):
 
 
 class TestGlobal2Member(unittest.TestCase):
-    def testAll(self):
+    def testMemax(self):
         n_height = 4
         npts = member.get_nfull(n_height)
-        myobj = member.Global2MemberLoads(n_full=npts)
+        myobj = member.Global2MemberLoads(n_full=npts, memax=True)
 
         inputs = {}
         outputs = {}
         inputs["s_full"] = np.linspace(0, 1.0, npts)
         inputs["s_all"] = NULL * np.ones(member.MEMMAX)
         inputs["s_all"][: 2 * npts] = np.linspace(0, 1.0, 2 * npts)
-        inputs["nodes_xyz"] = NULL * np.ones((member.MEMMAX, 3))
-        inputs["nodes_xyz"][: 2 * npts, :] = np.c_[
-            1 * np.zeros(2 * npts), 2 * np.zeros(2 * npts), np.linspace(0, 50.0, 2 * npts) - 75
-        ]
+        inputs["joint1"] = np.zeros(3)
+        inputs["joint2"] = np.r_[np.zeros(2), 1e2]
 
         Px = NULL * np.ones(member.MEMMAX)
         Py = NULL * np.ones(member.MEMMAX)
@@ -961,6 +959,45 @@ class TestGlobal2Member(unittest.TestCase):
         Pz[: (2 * npts)] = 0.0
         temp = 2 * np.ones(2 * npts)
         qdyn[: (2 * npts - 1)] = 0.5 * (temp[:-1] + temp[1:])
+        myobj.compute(inputs, outputs)
+        npt.assert_almost_equal(outputs["Px"], Px)
+        npt.assert_almost_equal(outputs["Py"], Py)
+        npt.assert_almost_equal(outputs["Pz"], Pz)
+        npt.assert_almost_equal(outputs["qdyn"], qdyn)
+
+        inputs["Px_global"] = np.ones(npts)
+        inputs["Py_global"] = np.zeros(npts)
+        inputs["Pz_global"] = np.zeros(npts)
+        Px[: (2 * npts)] = 0.0
+        Py[: (2 * npts)] = 0.0
+        Pz[: (2 * npts)] = -1.0
+        myobj.compute(inputs, outputs)
+        npt.assert_almost_equal(outputs["Px"], Px)
+        npt.assert_almost_equal(outputs["Py"], Py)
+        npt.assert_almost_equal(outputs["Pz"], Pz)
+        npt.assert_almost_equal(outputs["qdyn"], qdyn)
+
+    def testFull(self):
+        n_height = 4
+        npts = member.get_nfull(n_height)
+        myobj = member.Global2MemberLoads(n_full=npts, memax=True)
+
+        inputs = {}
+        outputs = {}
+        inputs["s_full"] = np.linspace(0, 1.0, npts)
+        inputs["s_all"] = np.linspace(0, 1.0, 2 * npts)
+        inputs["joint1"] = np.zeros(3)
+        inputs["joint2"] = np.r_[np.zeros(2), 1e2]
+
+        inputs["Px_global"] = np.zeros(npts)
+        inputs["Py_global"] = np.zeros(npts)
+        inputs["Pz_global"] = np.ones(npts)
+        inputs["qdyn_global"] = 2 * np.ones(npts)
+        Px = np.ones(2 * npts)
+        Py = np.zeros(2 * npts)
+        Pz = np.zeros(2 * npts)
+        temp = 2 * np.ones(2 * npts)
+        qdyn = 0.5 * (temp[:-1] + temp[1:])
         myobj.compute(inputs, outputs)
         npt.assert_almost_equal(outputs["Px"], Px)
         npt.assert_almost_equal(outputs["Py"], Py)

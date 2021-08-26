@@ -18,6 +18,11 @@ properties:
                 type: boolean
                 default: False
                 description: Prints additional outputs to screen (and to a file log in the future)
+            n_lc:
+                type: integer
+                default: 1
+                description: Number of load cases
+                minimum: 0
     WISDEM:
         type: object
         default: {}
@@ -221,10 +226,6 @@ properties:
                 default: {}
                 properties:
                     flag: *flag
-                    nLC: &nLC
-                        type: integer
-                        default: 1
-                        description: Number of load cases
                     wind: &wind
                         type: string
                         enum: [PowerWind, LogisticWind]
@@ -292,7 +293,6 @@ properties:
                 default: {}
                 properties:
                     flag: *flag
-                    nLC: *nLC
                     wind: *wind
                     gamma_f: *gamma_f
                     gamma_m: *gamma_m

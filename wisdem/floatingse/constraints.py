@@ -29,8 +29,8 @@ class FloatingConstraints(om.ExplicitComponent):
         self.add_input("system_center_of_mass", np.zeros(3), units="m")
         self.add_input("transition_node", np.zeros(3), units="m")
 
-        self.add_input("turbine_F", np.zeros(3), units="N")
-        self.add_input("turbine_M", np.zeros(3), units="N*m")
+        self.add_input("max_F", np.zeros(3), units="N")
+        self.add_input("max_M", np.zeros(3), units="N*m")
         self.add_input("max_surge_restoring_force", 0.0, units="N")
         self.add_input("operational_heel_restoring_force", np.zeros(6), units="N")
         self.add_input("survival_heel_restoring_force", np.zeros(6), units="N")
@@ -117,8 +117,8 @@ class FloatingConstraints(om.ExplicitComponent):
         outputs["metacentric_height"] = buoyancy2metacentre_BM - (cg[2] - z_cb)
 
         # Mooring strength checks
-        F_turb = inputs["turbine_F"]
-        M_turb = inputs["turbine_M"]
+        F_turb = inputs["max_F"]
+        M_turb = inputs["max_M"]
         surge_restore = inputs["max_surge_restoring_force"]
         outputs["constr_mooring_surge"] = surge_restore - F_turb[0]
         heel_restore = inputs["operational_heel_restoring_force"]

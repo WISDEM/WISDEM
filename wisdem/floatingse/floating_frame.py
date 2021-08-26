@@ -5,7 +5,7 @@ import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.utilization_dnvgl as util_dnvgl
 import wisdem.commonse.utilization_constraints as util_con
 from wisdem.commonse import NFREQ, gravity
-from wisdem.commonse.cylinder_member import NULL, MEMMAX, MemberLoads
+from wisdem.commonse.cylinder_member import NULL, MEMMAX, MemberLoads, get_nfull
 
 NNODES_MAX = 1000
 NELEM_MAX = 1000
@@ -51,7 +51,7 @@ class PlatformLoads(om.ExplicitComponent):
 
         # Append all member data
         for k in range(n_member):
-            n = np.where(inputs[f"member{k}:section_qdyn"] == NULL)[0][0]
+            n = np.where(inputs[f"member{k}:qdyn"] == NULL)[0][0]
             elem_qdyn = np.append(elem_qdyn, inputs[f"member{k}:qdyn"][:n])
 
             # The loads should come in with length n+1
@@ -106,7 +106,7 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("platform_elem_Asy", NULL * np.ones(NELEM_MAX), units="m**2")
         self.add_input("platform_elem_Ixx", NULL * np.ones(NELEM_MAX), units="kg*m**2")
         self.add_input("platform_elem_Iyy", NULL * np.ones(NELEM_MAX), units="kg*m**2")
-        self.add_input("platform_elem_Izz", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_input("platform_elem_J0", NULL * np.ones(NELEM_MAX), units="kg*m**2")
         self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
         self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
@@ -171,7 +171,7 @@ class FrameAnalysis(om.ExplicitComponent):
         Asy = inputs["platform_elem_Asy"][:nelem]
         Ixx = inputs["platform_elem_Ixx"][:nelem]
         Iyy = inputs["platform_elem_Iyy"][:nelem]
-        Izz = inputs["platform_elem_Izz"][:nelem]
+        J0 = inputs["platform_elem_J0"][:nelem]
         rho = inputs["platform_elem_rho"][:nelem]
         E = inputs["platform_elem_E"][:nelem]
         G = inputs["platform_elem_G"][:nelem]
@@ -182,7 +182,7 @@ class FrameAnalysis(om.ExplicitComponent):
         node_obj = pyframe3dd.NodeData(inodes, nodes[:, 0], nodes[:, 1], nodes[:, 2], rnode)
 
         ielem = np.arange(nelem) + 1
-        elem_obj = pyframe3dd.ElementData(ielem, N1 + 1, N2 + 1, A, Asx, Asy, Izz, Ixx, Iyy, E, G, roll, rho)
+        elem_obj = pyframe3dd.ElementData(ielem, N1 + 1, N2 + 1, A, Asx, Asy, J0, Ixx, Iyy, E, G, roll, rho)
 
         # Use Mooring stiffness (TODO Hydro_K too)
         ind = []
@@ -204,10 +204,11 @@ class FrameAnalysis(om.ExplicitComponent):
 
         # Added mass
         cg_add = m_variable * cg_variable / (m_trans + m_variable)
+        cg_add = cg_add.reshape((-1, 1))
         add_gravity = True
         mID = np.array([itrans], dtype=np.int_)
         m_add = np.array([m_trans + m_variable])
-        I_add = np.c_[I_trans]
+        I_add = I_trans.reshape((-1, 1))
         myframe.changeExtraNodeMass(
             mID + 1,
             m_add,
@@ -290,7 +291,7 @@ class FloatingPost(om.ExplicitComponent):
         self.add_input("platform_elem_Asy", NULL * np.ones(NELEM_MAX), units="m**2")
         self.add_input("platform_elem_Ixx", NULL * np.ones(NELEM_MAX), units="kg*m**2")
         self.add_input("platform_elem_Iyy", NULL * np.ones(NELEM_MAX), units="kg*m**2")
-        self.add_input("platform_elem_Izz", NULL * np.ones(NELEM_MAX), units="kg*m**2")
+        self.add_input("platform_elem_J0", NULL * np.ones(NELEM_MAX), units="kg*m**2")
         self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_sigma_y", NULL * np.ones(NELEM_MAX), units="Pa")
@@ -317,7 +318,7 @@ class FloatingPost(om.ExplicitComponent):
         h = inputs["platform_elem_L"][:nelem]
         Az = inputs["platform_elem_A"][:nelem]
         Asx = inputs["platform_elem_Asx"][:nelem]
-        Jz = inputs["platform_elem_Izz"][:nelem]
+        Jz = inputs["platform_elem_J0"][:nelem]
         Iyy = inputs["platform_elem_Iyy"][:nelem]
         sigy = inputs["platform_elem_sigma_y"][:nelem]
         E = inputs["platform_elem_E"][:nelem]
@@ -363,6 +364,36 @@ class FloatingPost(om.ExplicitComponent):
         outputs["constr_platform_global_buckling"][:nelem] = results["Global"]
 
 
+class MaxTurbineLoads(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("nLC")
+
+    def setup(self):
+        nLC = self.options["nLC"]
+        for iLC in range(nLC):
+            lc = "" if nLC == 1 else str(iLC + 1)
+
+            self.add_input(f"lc{lc}:turbine_F", np.zeros(3), units="N")
+            self.add_input(f"lc{lc}:turbine_M", np.zeros(3), units="N*m")
+
+        self.add_output("max_F", np.zeros(3), units="N")
+        self.add_output("max_M", np.zeros(3), units="N*m")
+
+    def compute(self, inputs, outputs):
+        Fmax = np.zeros(3)
+        Mmax = np.zeros(3)
+
+        nLC = self.options["nLC"]
+        for iLC in range(nLC):
+            lc = "" if nLC == 1 else str(iLC + 1)
+
+            Fmax = np.fmax(Fmax, inputs[f"lc{lc}:turbine_F"])
+            Mmax = np.fmax(Mmax, inputs[f"lc{lc}:turbine_M"])
+
+        outputs["max_F"] = Fmax
+        outputs["max_M"] = Mmax
+
+
 class FloatingFrame(om.Group):
     def initialize(self):
         self.options.declare("modeling_options")
@@ -374,22 +405,28 @@ class FloatingFrame(om.Group):
         n_member = opt["floating"]["members"]["n_members"]
 
         mem_prom = [
-            "Uref",
-            "zref",
+            "wind_reference_height",
             "z0",
             "shearExp",
             "cd_usr",
             "cm",
-            "beta_wind",
             "rho_air",
+            "rho_water",
             "mu_air",
-            "beta_wave",
             "mu_water",
+            "beta_wind",
+            "beta_wave",
             "Uc",
             "Hsig_wave",
             "Tsig_wave",
             "water_depth",
+            "yaw",
         ]
+
+        U_prom = []
+        for iLC in range(nLC):
+            lc = "" if nLC == 1 else str(iLC + 1)
+            U_prom.append(f"env{lc}.Uref")
 
         plat_prom = [
             "platform_elem_L",
@@ -400,14 +437,14 @@ class FloatingFrame(om.Group):
             "platform_elem_Asy",
             "platform_elem_Ixx",
             "platform_elem_Iyy",
-            "platform_elem_Izz",
-            "platform_elem_rho",
+            "platform_elem_J0",
             "platform_elem_E",
             "platform_elem_G",
             "platform_elem_sigma_y",
         ]
 
-        plat_frame = plat_prom + [
+        plat_frame = plat_prom[:-1] + [
+            "platform_elem_rho",
             "platform_mass",
             "platform_hull_center_of_mass",
             "platform_added_mass",
@@ -427,36 +464,39 @@ class FloatingFrame(om.Group):
         ]
 
         mem_vars = ["Px", "Py", "Pz", "qdyn"]
-        mem_vars12 = ["Px1", "Px2", "Py1", "Py2", "Pz1", "Pz2", "qdyn"]
+        mem_vars12 = ["Px1", "Px2", "Py1", "Py2", "Pz1", "Pz2"]
         plat_vars = ["platform_Fz", "platform_Vx", "platform_Vy", "platform_Mxx", "platform_Myy", "platform_Mzz"]
+
+        self.add_subsystem("maxturb", MaxTurbineLoads(nLC=nLC), promotes=["*"])
+
+        for k in range(n_member):
+            n_full = get_nfull(opt["floating"]["members"]["n_height"][k])
+            self.add_subsystem(
+                f"memload{k}",
+                MemberLoads(
+                    n_full=n_full,
+                    n_lc=nLC,
+                    hydro=True,
+                    memmax=True,
+                ),
+                promotes=mem_prom + U_prom + [("joint1", f"member{k}:joint1"), ("joint2", f"member{k}:joint2")],
+            )
 
         for iLC in range(nLC):
             lc = "" if nLC == 1 else str(iLC + 1)
 
-            for k in range(n_member):
-                self.add_subsystem(
-                    f"mem{k}-load{lc}",
-                    MemberLoads(
-                        column_options=opt["floating"]["members"],
-                        idx=k,
-                        n_mat=opt["materials"]["n_mat"],
-                        hydro=True,
-                        memmax=True,
-                    ),
-                    promotes=mem_prom,
-                )
-
             self.add_subsystem(f"loadsys{lc}", PlatformLoads(options=opt))
+
+            self.add_subsystem(f"frame{lc}", FrameAnalysis(options=opt), promotes=plat_frame)
+            self.add_subsystem(f"post{lc}", FloatingPost(options=opt["WISDEM"]["FloatingSE"]), promotes=plat_prom)
 
             for k in range(n_member):
                 for var in mem_vars:
-                    self.connect(f"mem{k}-load{lc}.{var}", f"loadsys{lc}.member{k}:{var}")
-
-            self.add_subsystem(f"frame{lc}", FrameAnalysis(options=opt), promotes=plat_prom)
-            self.add_subsystem(f"post{lc}", FloatingPost(options=opt["WISDEM"]["FloatingSE"]), promotes=plat_frame)
+                    self.connect(f"memload{k}.g2e{lc}.{var}", f"loadsys{lc}.member{k}:{var}")
 
             for var in mem_vars12:
                 self.connect(f"loadsys{lc}.platform_elem_{var}", f"frame{lc}.platform_elem_{var}")
+            self.connect(f"loadsys{lc}.platform_elem_qdyn", f"post{lc}.platform_elem_qdyn")
 
             for var in plat_vars:
                 self.connect(f"frame{lc}.{var}", f"post{lc}.{var}")

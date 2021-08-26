@@ -2281,10 +2281,10 @@ class MemberLoads(om.Group):
             "shearExp",
             "z0",
             "cd_usr",
-            "yaw",
             "beta_wind",
             "rho_air",
             "mu_air",
+            "yaw",
             ("z", "z_full"),
             ("d", "d_full"),
         ]

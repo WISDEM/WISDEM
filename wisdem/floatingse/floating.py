@@ -31,8 +31,10 @@ class FloatingSE(om.Group):
         for k in range(n_member):
             self.add_subsystem(
                 f"member{k}",
-                MemberDetailed(column_options=opt["floating"]["members"], idx=k, n_mat=opt["materials"]["n_mat"]),
-                promotes=mem_prom,
+                MemberDetailed(
+                    column_options=opt["floating"]["members"], idx=k, n_mat=opt["materials"]["n_mat"], memmax=True
+                ),
+                promotes=mem_prom + [("joint1", f"member{k}:joint1"), ("joint2", f"member{k}:joint2")],
             )
 
         # Combine all members and tower into single system
@@ -43,15 +45,13 @@ class FloatingSE(om.Group):
         )
 
         # Do the load analysis over one or more load cases
-        self.add_subsystem("load", FloatingFrame(modeling_options=opt), promotes=["*"])
+        self.add_subsystem("load", FloatingFrame(modeling_options=opt, nLC=opt["General"]["n_lc"]), promotes=["*"])
 
         # Evaluate system constraints
         self.add_subsystem("cons", FloatingConstraints(modeling_options=opt), promotes=["*"])
 
         # Connect all input variables from all models
         mem_vars = [
-            "nodes_xyz",
-            "nodes_r",
             "section_D",
             "section_t",
             "section_A",
@@ -59,7 +59,7 @@ class FloatingSE(om.Group):
             "section_Asy",
             "section_Ixx",
             "section_Iyy",
-            "section_Izz",
+            "section_J0",
             "section_rho",
             "section_E",
             "section_G",
@@ -82,6 +82,14 @@ class FloatingSE(om.Group):
             "added_mass",
             "waterline_centroid",
         ]
+        mem_load_vars = ["z_full", "d_full", "s_full", "s_all"]
+
         for k in range(n_member):
             for var in mem_vars:
                 self.connect(f"member{k}.{var}", f"member{k}:{var}")
+
+            self.connect(f"member{k}.nodes_xyz_all", f"member{k}:nodes_xyz")
+            self.connect(f"member{k}.nodes_r_all", f"member{k}:nodes_r")
+
+            for var in mem_load_vars:
+                self.connect(f"member{k}.{var}", f"memload{k}.{var}")
