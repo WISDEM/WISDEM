@@ -9,8 +9,13 @@ import numpy as np
 import openmdao
 import openmdao.utils.coloring as coloring_mod
 from openmdao.core.driver import Driver, RecordingDebugging
-from openmdao.utils.class_util import weak_method_wrapper
 from openmdao.utils.general_utils import simple_warning
+
+try:
+    from openmdao.utils.class_util import weak_method_wrapper as weak_method_wrapper
+except ImportError:
+    from openmdao.utils.class_util import WeakMethodWrapper as weak_method_wrapper
+
 
 try:
     import nlopt
