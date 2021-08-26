@@ -555,74 +555,7 @@ class CCBladeTwist(ExplicitComponent):
                     inputs["airfoils_cm"][i, :, :, 0],
                 )
 
-        if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
-            if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["flag"]:
-                raise Exception(
-                    "Twist cannot be simultaneously optimized and set to be defined inverting the BEM equations. Please check your analysis options yaml."
-                )
-            # Find cl and cd for max efficiency
-            cl = np.zeros(self.n_span)
-            cd = np.zeros(self.n_span)
-            alpha = np.zeros(self.n_span)
-            Eff = np.zeros(self.n_span)
-
-            Omega = inputs["tsr"] * inputs["Uhub"] / inputs["r"][-1]
-
-            margin2stall = self.options["opt_options"]["constraints"]["blade"]["stall"]["margin"] * 180.0 / np.pi
-            Re = np.array(Omega * inputs["r"] * inputs["chord"] * inputs["rho"] / inputs["mu"])
-            aoa_op = inputs["aoa_op"]
-            for i in range(self.n_span):
-                if abs(aoa_op[i] - np.pi) < 1.e-4:
-                    af[i].eval_unsteady(
-                        inputs["airfoils_aoa"],
-                        inputs["airfoils_cl"][i, :, 0, 0],
-                        inputs["airfoils_cd"][i, :, 0, 0],
-                        inputs["airfoils_cm"][i, :, 0, 0],
-                    )
-                    alpha[i] = (af[i].unsteady["alpha1"] - margin2stall) / 180.0 * np.pi
-                else:
-                    alpha[i] = aoa_op[i]
-                cl[i], cd[i] = af[i].evaluate(alpha[i], Re[i])
-            Eff = cl / cd
-
-            # overwrite aoa of high thickness airfoils at root
-            idx_min = [i for i, thk in enumerate(inputs["rthick"]) if thk < 95.0][0]
-            alpha[0:idx_min] = alpha[idx_min]
-
-            eta = inputs["r"] / inputs["r"][-1]
-            n_points = 30
-            r_interp_alpha = np.linspace(eta[0], eta[-1], n_points)
-            # r_interp_alpha   = np.array([prob['eta'][0],0.2,0.45, 0.6, prob['eta'][-1]])
-            alpha_control_p = np.interp(r_interp_alpha, eta, alpha)
-            alpha_spline = PchipInterpolator(r_interp_alpha, alpha_control_p)
-            alphafit = alpha_spline(eta)
-
-            # find cl/cd for smooth alpha
-            for i, (aoa, afi) in enumerate(zip(alphafit, af)):
-                cl[i], cd[i] = afi.evaluate(aoa, Re[i])
-                Eff[i] = cl[i] / cd[i]
-
-            # import matplotlib.pyplot as plt
-            # plt.figure()
-            # plt.plot(inputs['r'], alpha*180./np.pi, 'k')
-            # plt.plot(inputs['r'], alphafit*180./np.pi, 'r')
-            # plt.xlabel('blade fraction')
-            # plt.ylabel('aoa (deg)')
-            # plt.legend(loc='upper left')
-            # plt.figure()
-            # plt.plot(inputs['r'], cl, 'k')
-            # plt.plot(inputs['r'], cd, 'r')
-            # plt.xlabel('blade fraction')
-            # plt.ylabel('cl and cd (-)')
-            # plt.legend(loc='upper left')
-            # plt.figure()
-            # plt.plot(inputs['r'], Eff, 'k')
-            # plt.xlabel('blade fraction')
-            # plt.ylabel('Eff (-)')
-            # plt.legend(loc='upper left')
-            # plt.show()
-
-            get_twist = CCBlade(
+        ccblade = CCBlade(
                 inputs["r"],
                 inputs["chord"],
                 np.zeros_like(inputs["chord"]),
@@ -648,69 +581,111 @@ class CCBladeTwist(ExplicitComponent):
                 discrete_inputs["usecd"],
             )
 
-            get_twist.inverse_analysis = True
-            get_twist.alpha = alphafit
-            get_twist.cl = cl
-            get_twist.cd = cd
+        Omega = inputs["tsr"] * inputs["Uhub"] / inputs["r"][-1]*30./np.pi
 
-            # Compute omega given TSR
-            Omega = inputs["Uhub"] * inputs["tsr"] / inputs["Rtip"] * 30.0 / np.pi
+        if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
+            if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["flag"]:
+                raise Exception(
+                    "Twist cannot be simultaneously optimized and set to be defined inverting the BEM equations. Please check your analysis options yaml."
+                )
+            # Find cl and cd for max efficiency
+            cl = np.zeros(self.n_span)
+            cd = np.zeros(self.n_span)
+            alpha = np.zeros(self.n_span)
+            # Eff = np.zeros(self.n_span)
 
-            _, _ = get_twist.evaluate([inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=False)
+            margin2stall = self.options["opt_options"]["constraints"]["blade"]["stall"]["margin"] * 180.0 / np.pi
+            Re = np.array(Omega * inputs["r"] * inputs["chord"] * inputs["rho"] / inputs["mu"])
+            aoa_op = inputs["aoa_op"]
+            for i in range(self.n_span):
+                if abs(aoa_op[i] - np.pi) < 1.e-4:
+                    af[i].eval_unsteady(
+                        inputs["airfoils_aoa"],
+                        inputs["airfoils_cl"][i, :, 0, 0],
+                        inputs["airfoils_cd"][i, :, 0, 0],
+                        inputs["airfoils_cm"][i, :, 0, 0],
+                    )
+                    alpha[i] = (af[i].unsteady["alpha1"] - margin2stall) / 180.0 * np.pi
+                else:
+                    alpha[i] = aoa_op[i]
+                cl[i], cd[i] = af[i].evaluate(alpha[i], Re[i])
+            Eff = cl / cd
+
+            # overwrite aoa of high thickness airfoils at root
+            idx_min = [i for i, thk in enumerate(inputs["rthick"]) if thk < 95.0][0]
+            alpha[0:idx_min] = alpha[idx_min]
+
+            # eta = inputs["r"] / inputs["r"][-1]
+            # n_points = 30
+            # r_interp_alpha = np.linspace(eta[0], eta[-1], n_points)
+            # # r_interp_alpha   = np.array([prob['eta'][0],0.2,0.45, 0.6, prob['eta'][-1]])
+            # alpha_control_p = np.interp(r_interp_alpha, eta, alpha)
+            # alpha_spline = PchipInterpolator(r_interp_alpha, alpha_control_p)
+            # alphafit = alpha_spline(eta)
+
+            # # find cl/cd for smooth alpha
+            # for i, (aoa, afi) in enumerate(zip(alphafit, af)):
+            #     cl[i], cd[i] = afi.evaluate(aoa, Re[i])
+            #     Eff[i] = cl[i] / cd[i]
+
+            # import matplotlib.pyplot as plt
+            # plt.figure()
+            # plt.plot(inputs['r'], alpha*180./np.pi, 'k')
+            # plt.plot(inputs['r'], alphafit*180./np.pi, 'r')
+            # plt.xlabel('blade fraction')
+            # plt.ylabel('aoa (deg)')
+            # plt.legend(loc='upper left')
+            # plt.figure()
+            # plt.plot(inputs['r'], cl, 'k')
+            # plt.plot(inputs['r'], cd, 'r')
+            # plt.xlabel('blade fraction')
+            # plt.ylabel('cl and cd (-)')
+            # plt.legend(loc='upper left')
+            # plt.figure()
+            # plt.plot(inputs['r'], Eff, 'k')
+            # plt.xlabel('blade fraction')
+            # plt.ylabel('Eff (-)')
+            # plt.legend(loc='upper left')
+            # plt.show()
+
+            ccblade.inverse_analysis = True
+            ccblade.alpha = alpha
+            ccblade.cl = cl
+            ccblade.cd = cd
+
+            _, _ = ccblade.evaluate([inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=False)
 
             # Cap twist root region
-            for i in range(len(get_twist.theta)):
-                if get_twist.theta[-i - 1] > 20.0 / 180.0 * np.pi:
-                    get_twist.theta[0 : len(get_twist.theta) - i] = 20.0 / 180.0 * np.pi
+            for i in range(len(ccblade.theta)):
+                if ccblade.theta[-i - 1] > 20.0 / 180.0 * np.pi:
+                    ccblade.theta[0 : len(ccblade.theta) - i] = 20.0 / 180.0 * np.pi
                     break
 
-            twist = get_twist.theta
+            twist = ccblade.theta
         else:
             twist = inputs["theta_in"]
 
-        get_cp_cm = CCBlade(
-            inputs["r"],
-            inputs["chord"],
-            twist * 180.0 / np.pi,
-            af,
-            inputs["Rhub"],
-            inputs["Rtip"],
-            discrete_inputs["nBlades"],
-            inputs["rho"],
-            inputs["mu"],
-            inputs["precone"],
-            inputs["tilt"],
-            inputs["yaw"],
-            inputs["shearExp"],
-            inputs["hub_height"],
-            discrete_inputs["nSector"],
-            inputs["precurve"],
-            inputs["precurveTip"],
-            inputs["presweep"],
-            inputs["presweepTip"],
-            discrete_inputs["tiploss"],
-            discrete_inputs["hubloss"],
-            discrete_inputs["wakerotation"],
-            discrete_inputs["usecd"],
-        )
-        get_cp_cm.inverse_analysis = False
-        get_cp_cm.induction = True
-        # get_cp_cm.alpha            = alpha
-        # get_cp_cm.cl               = cl
-        # get_cp_cm.cd               = cd
+        ccblade.inverse_analysis = False
+        # ccblade.induction = False
+        loads, _ = ccblade.distributedAeroLoads(inputs["Uhub"][0], Omega[0], inputs["pitch"][0], 0.0)
 
-        # Compute omega given TSR
-        Omega = inputs["Uhub"] * inputs["tsr"] / inputs["Rtip"] * 30.0 / np.pi
-
-        myout, derivs = get_cp_cm.evaluate([inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=True)
+        myout, _ = ccblade.evaluate([inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=True)
         CP, CMb, W = [myout[key] for key in ["CP", "CMb", "W"]]
 
         # if self.options['opt_options']['design_variables']['blade']['aero_shape']['twist']['flag']:
-        get_cp_cm.induction = False
-        get_cp_cm.induction_inflow = True
-        loads, deriv = get_cp_cm.distributedAeroLoads(inputs["Uhub"][0], Omega[0], inputs["pitch"][0], 0.0)
+        # get_cp_cm.induction = False
         # get_cp_cm.induction_inflow = False
         # Np, Tp = get_cp_cm.distributedAeroLoads(inputs['Uhub'][0], Omega[0], inputs['pitch'][0], 0.0)
+
+        # import matplotlib.pyplot as plt
+        # plt.figure()
+        # plt.plot(inputs['r'], alpha*180./np.pi, '-')
+        # plt.plot(inputs['r'], loads["alpha"], ':')
+        # plt.xlabel('blade fraction')
+        # plt.ylabel('aoa (deg)')
+        # plt.legend()
+        # plt.show()
+        # exit()
 
         # Return twist angle
         outputs["theta"] = twist
