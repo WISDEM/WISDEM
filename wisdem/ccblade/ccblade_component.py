@@ -555,6 +555,7 @@ class CCBladeTwist(ExplicitComponent):
                     inputs["airfoils_cm"][i, :, :, 0],
                 )
 
+        # Create the CCBlade class instance
         ccblade = CCBlade(
                 inputs["r"],
                 inputs["chord"],
@@ -588,12 +589,10 @@ class CCBladeTwist(ExplicitComponent):
                 raise Exception(
                     "Twist cannot be simultaneously optimized and set to be defined inverting the BEM equations. Please check your analysis options yaml."
                 )
-            # Find cl and cd for max efficiency
+            # Find cl and cd along blade span. Mix inputs from the airfoil INN (if active) and the airfoil for max efficiency
             cl = np.zeros(self.n_span)
             cd = np.zeros(self.n_span)
             alpha = np.zeros(self.n_span)
-            # Eff = np.zeros(self.n_span)
-
             margin2stall = self.options["opt_options"]["constraints"]["blade"]["stall"]["margin"] * 180.0 / np.pi
             Re = np.array(Omega * inputs["r"] * inputs["chord"] * inputs["rho"] / inputs["mu"])
             aoa_op = inputs["aoa_op"]
@@ -609,73 +608,35 @@ class CCBladeTwist(ExplicitComponent):
                 else:
                     alpha[i] = aoa_op[i]
                 cl[i], cd[i] = af[i].evaluate(alpha[i], Re[i])
-            Eff = cl / cd
 
-            # overwrite aoa of high thickness airfoils at root
+            # Overwrite aoa of high thickness airfoils at blade root
             idx_min = [i for i, thk in enumerate(inputs["rthick"]) if thk < 95.0][0]
             alpha[0:idx_min] = alpha[idx_min]
 
-            # eta = inputs["r"] / inputs["r"][-1]
-            # n_points = 30
-            # r_interp_alpha = np.linspace(eta[0], eta[-1], n_points)
-            # # r_interp_alpha   = np.array([prob['eta'][0],0.2,0.45, 0.6, prob['eta'][-1]])
-            # alpha_control_p = np.interp(r_interp_alpha, eta, alpha)
-            # alpha_spline = PchipInterpolator(r_interp_alpha, alpha_control_p)
-            # alphafit = alpha_spline(eta)
-
-            # # find cl/cd for smooth alpha
-            # for i, (aoa, afi) in enumerate(zip(alphafit, af)):
-            #     cl[i], cd[i] = afi.evaluate(aoa, Re[i])
-            #     Eff[i] = cl[i] / cd[i]
-
-            # import matplotlib.pyplot as plt
-            # plt.figure()
-            # plt.plot(inputs['r'], alpha*180./np.pi, 'k')
-            # plt.plot(inputs['r'], alphafit*180./np.pi, 'r')
-            # plt.xlabel('blade fraction')
-            # plt.ylabel('aoa (deg)')
-            # plt.legend(loc='upper left')
-            # plt.figure()
-            # plt.plot(inputs['r'], cl, 'k')
-            # plt.plot(inputs['r'], cd, 'r')
-            # plt.xlabel('blade fraction')
-            # plt.ylabel('cl and cd (-)')
-            # plt.legend(loc='upper left')
-            # plt.figure()
-            # plt.plot(inputs['r'], Eff, 'k')
-            # plt.xlabel('blade fraction')
-            # plt.ylabel('Eff (-)')
-            # plt.legend(loc='upper left')
-            # plt.show()
-
+            # Call ccblade in inverse mode for desired alpha, cl, and cd along blade span
             ccblade.inverse_analysis = True
             ccblade.alpha = alpha
             ccblade.cl = cl
             ccblade.cd = cd
-
             _, _ = ccblade.evaluate([inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=False)
 
-            # Cap twist root region
+            # Cap twist root region to 20 degrees
             for i in range(len(ccblade.theta)):
                 if ccblade.theta[-i - 1] > 20.0 / 180.0 * np.pi:
                     ccblade.theta[0 : len(ccblade.theta) - i] = 20.0 / 180.0 * np.pi
                     break
-
-            twist = ccblade.theta
         else:
-            twist = inputs["theta_in"]
+            ccblade.theta = inputs["theta_in"]
 
+        # Turn off the inverse analysis
         ccblade.inverse_analysis = False
-        # ccblade.induction = False
+
+        # Call ccblade at azimuth 0 deg
         loads, _ = ccblade.distributedAeroLoads(inputs["Uhub"][0], Omega[0], inputs["pitch"][0], 0.0)
 
+        # Call ccblade evaluate (averaging across azimuth)
         myout, _ = ccblade.evaluate([inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=True)
         CP, CMb, W = [myout[key] for key in ["CP", "CMb", "W"]]
-
-        # if self.options['opt_options']['design_variables']['blade']['aero_shape']['twist']['flag']:
-        # get_cp_cm.induction = False
-        # get_cp_cm.induction_inflow = False
-        # Np, Tp = get_cp_cm.distributedAeroLoads(inputs['Uhub'][0], Omega[0], inputs['pitch'][0], 0.0)
 
         # import matplotlib.pyplot as plt
         # plt.figure()
@@ -688,7 +649,7 @@ class CCBladeTwist(ExplicitComponent):
         # exit()
 
         # Return twist angle
-        outputs["theta"] = twist
+        outputs["theta"] = ccblade.theta
         outputs["CP"] = CP[0]
         outputs["CM"] = CMb[0]
         outputs["local_airfoil_velocities"] = np.nan_to_num(W)
@@ -706,12 +667,12 @@ class CCBladeTwist(ExplicitComponent):
         outputs["Pz_b"] = 0 * loads["Np"]
         # Forces in the airfoil coordinate system, pag 21 of https://www.nrel.gov/docs/fy13osti/58819.pdf
         P_b = DirectionVector(loads["Np"], -loads["Tp"], 0)
-        P_af = P_b.bladeToAirfoil(twist * 180.0 / np.pi)
+        P_af = P_b.bladeToAirfoil(ccblade.theta * 180.0 / np.pi)
         outputs["Px_af"] = P_af.x
         outputs["Py_af"] = P_af.y
         outputs["Pz_af"] = P_af.z
         # Lift and drag forces
-        F = P_b.bladeToAirfoil(twist * 180.0 / np.pi + loads["alpha"] + inputs["pitch"])
+        F = P_b.bladeToAirfoil(ccblade.theta * 180.0 / np.pi + loads["alpha"] + inputs["pitch"])
         outputs["LiftF"] = F.x
         outputs["DragF"] = F.y
         outputs["L_n_opt"] = np.interp(inputs["s_opt_theta"], s, F.x)
