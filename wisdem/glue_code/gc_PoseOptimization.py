@@ -1,9 +1,8 @@
 import os
 
 import numpy as np
-from scipy.interpolate import PchipInterpolator
-
 import openmdao.api as om
+from scipy.interpolate import PchipInterpolator
 
 
 class PoseOptimization(object):
@@ -1314,28 +1313,19 @@ class PoseOptimization(object):
             )
             spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"]
             spar_cap_ps_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ps"]
-            layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
-            n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
-            ss_before_ps = False
-            for i in range(n_layers):
-                if layer_name[i] == spar_cap_ss_name:
-                    init_spar_cap_ss_opt = np.interp(
-                        wt_opt["blade.opt_var.s_opt_spar_cap_ss"],
-                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
-                            "grid"
-                        ],
-                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
-                            "values"
-                        ],
-                    )
-                    ss_before_ps = True
-                elif layer_name[i] == spar_cap_ps_name:
-                    if (
-                        self.opt["design_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
-                        == False
-                    ) or ss_before_ps == False:
-                        init_spar_cap_ps_opt = np.interp(
-                            wt_opt["blade.opt_var.s_opt_spar_cap_ps"],
+            if (
+                spar_cap_ss_name != "none"
+                and spar_cap_ps_name != "none"
+                and len(spar_cap_ss_name) > 0
+                and len(spar_cap_ps_name) > 0
+            ):
+                layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
+                n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
+                ss_before_ps = False
+                for i in range(n_layers):
+                    if layer_name[i] == spar_cap_ss_name:
+                        init_spar_cap_ss_opt = np.interp(
+                            wt_opt["blade.opt_var.s_opt_spar_cap_ss"],
                             wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                                 "grid"
                             ],
@@ -1343,40 +1333,42 @@ class PoseOptimization(object):
                                 "values"
                             ],
                         )
-                    else:
-                        init_spar_cap_ps_opt = init_spar_cap_ss_opt
-            if not ss_before_ps:
-                raise Exception(
-                    "Please set the spar cap names for suction and pressure sides among the RotorSE modeling options"
-                )
-            wt_opt["blade.opt_var.spar_cap_ss_opt"] = init_spar_cap_ss_opt
-            wt_opt["blade.opt_var.spar_cap_ps_opt"] = init_spar_cap_ps_opt
+                        ss_before_ps = True
+                    elif layer_name[i] == spar_cap_ps_name:
+                        if (
+                            self.opt["design_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
+                            == False
+                        ) or ss_before_ps == False:
+                            init_spar_cap_ps_opt = np.interp(
+                                wt_opt["blade.opt_var.s_opt_spar_cap_ps"],
+                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                    "grid"
+                                ],
+                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                    "values"
+                                ],
+                            )
+                        else:
+                            init_spar_cap_ps_opt = init_spar_cap_ss_opt
+                if not ss_before_ps:
+                    raise Exception(
+                        "Please set the spar cap names for suction and pressure sides among the RotorSE modeling options"
+                    )
+                wt_opt["blade.opt_var.spar_cap_ss_opt"] = init_spar_cap_ss_opt
+                wt_opt["blade.opt_var.spar_cap_ps_opt"] = init_spar_cap_ps_opt
 
             wt_opt["blade.opt_var.s_opt_te_ss"] = np.linspace(0.0, 1.0, blade_opt["structure"]["te_ss"]["n_opt"])
             wt_opt["blade.opt_var.s_opt_te_ps"] = np.linspace(0.0, 1.0, blade_opt["structure"]["te_ps"]["n_opt"])
             te_ss_name = self.modeling["WISDEM"]["RotorSE"]["te_ss"]
             te_ps_name = self.modeling["WISDEM"]["RotorSE"]["te_ps"]
-            layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
-            n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
-            ss_before_ps = False
-            for i in range(n_layers):
-                if layer_name[i] == te_ss_name:
-                    init_te_ss_opt = np.interp(
-                        wt_opt["blade.opt_var.s_opt_te_ss"],
-                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
-                            "grid"
-                        ],
-                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
-                            "values"
-                        ],
-                    )
-                    ss_before_ps = True
-                elif layer_name[i] == te_ps_name:
-                    if (
-                        self.opt["design_variables"]["blade"]["structure"]["te_ps"]["equal_to_suction"] == False
-                    ) or ss_before_ps == False:
-                        init_te_ps_opt = np.interp(
-                            wt_opt["blade.opt_var.s_opt_te_ps"],
+            if te_ss_name != "none" and te_ps_name != "none" and len(te_ss_name) > 0 and len(te_ps_name) > 0:
+                layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
+                n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
+                ss_before_ps = False
+                for i in range(n_layers):
+                    if layer_name[i] == te_ss_name:
+                        init_te_ss_opt = np.interp(
+                            wt_opt["blade.opt_var.s_opt_te_ss"],
                             wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                                 "grid"
                             ],
@@ -1384,14 +1376,28 @@ class PoseOptimization(object):
                                 "values"
                             ],
                         )
-                    else:
-                        init_te_ps_opt = init_te_ss_opt
-            if not ss_before_ps:
-                raise Exception(
-                    "Please set the trailing edge names for suction and pressure sides among the RotorSE modeling options"
-                )
-            wt_opt["blade.opt_var.te_ss_opt"] = init_te_ss_opt
-            wt_opt["blade.opt_var.te_ps_opt"] = init_te_ps_opt
+                        ss_before_ps = True
+                    elif layer_name[i] == te_ps_name:
+                        if (
+                            self.opt["design_variables"]["blade"]["structure"]["te_ps"]["equal_to_suction"] == False
+                        ) or ss_before_ps == False:
+                            init_te_ps_opt = np.interp(
+                                wt_opt["blade.opt_var.s_opt_te_ps"],
+                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                    "grid"
+                                ],
+                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                    "values"
+                                ],
+                            )
+                        else:
+                            init_te_ps_opt = init_te_ss_opt
+                if not ss_before_ps:
+                    raise Exception(
+                        "Please set the trailing edge names for suction and pressure sides among the RotorSE modeling options"
+                    )
+                wt_opt["blade.opt_var.te_ss_opt"] = init_te_ss_opt
+                wt_opt["blade.opt_var.te_ps_opt"] = init_te_ps_opt
 
             blade_constr = self.opt["constraints"]["blade"]
             wt_opt["rotorse.rs.constr.max_strainU_spar"] = blade_constr["strains_spar_cap_ss"]["max"]
