@@ -360,10 +360,8 @@ class WT_RNTA(om.Group):
         # Connections to TowerSE
         if modeling_options["flags"]["tower"]:
             if modeling_options["flags"]["nacelle"]:
-                for k in range(nLC):
-                    kstr = "" if nLC <= 1 else str(k + 1)
-                    self.connect("drivese.base_F", f"towerse.tower{kstr}.rna_F", src_indices=om.slicer[:, k])
-                    self.connect("drivese.base_M", f"towerse.tower{kstr}.rna_M", src_indices=om.slicer[:, k])
+                self.connect("drivese.base_F", "towerse.tower.rna_F")
+                self.connect("drivese.base_M", "towerse.tower.rna_M")
                 self.connect("drivese.rna_I_TT", "towerse.rna_I")
                 self.connect("drivese.rna_cm", "towerse.rna_cg")
                 self.connect("drivese.rna_mass", "towerse.rna_mass")
@@ -433,10 +431,8 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.tower_mass", "fixedse.tower_mass")
                 self.connect("towerse.tower_cost", "fixedse.tower_cost")
-                for k in range(nLC):
-                    kstr = "" if nLC <= 1 else str(k + 1)
-                    self.connect(f"towerse.tower{kstr}.turbine_F", f"fixedse.monopile{kstr}.turbine_F")
-                    self.connect(f"towerse.tower{kstr}.turbine_M", f"fixedse.monopile{kstr}.turbine_M")
+                self.connect("towerse.tower.turbine_F", "fixedse.monopile.turbine_F")
+                self.connect("towerse.tower.turbine_M", "fixedse.monopile.turbine_M")
 
         if modeling_options["flags"]["floating"]:
             self.connect("env.rho_water", "floatingse.rho_water")
@@ -467,10 +463,8 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.turbine_mass", "floatingse.turbine_mass")
                 self.connect("towerse.turbine_center_of_mass", "floatingse.turbine_center_of_mass")
-                for k in range(nLC):
-                    kstr = "" if nLC <= 1 else str(k + 1)
-                    self.connect(f"towerse.tower{kstr}.turbine_F", f"floatingse.lc{kstr}:turbine_F")
-                    self.connect(f"towerse.tower{kstr}.turbine_M", f"floatingse.lc{kstr}:turbine_M")
+                self.connect("towerse.tower.turbine_F", "floatingse.turbine_F")
+                self.connect("towerse.tower.turbine_M", "floatingse.turbine_M")
 
             # Individual member connections
             for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):

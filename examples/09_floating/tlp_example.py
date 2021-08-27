@@ -144,8 +144,8 @@ prob["transition_node"] = prob["member0.joint2"]
 
 # Properties of rotor-nacelle-assembly (RNA)
 prob["turbine_mass"] = 350e3
-prob["lc:turbine_F"] = np.array([1284744.196, 0, -112400.5527])
-prob["lc:turbine_M"] = np.array([3963732.762, 896380.8464, -346781.682])
+prob["turbine_F"] = np.array([1284744.196, 0, -112400.5527])
+prob["turbine_M"] = np.array([3963732.762, 896380.8464, -346781.682])
 
 # Use FD and run optimization
 prob.run_model()

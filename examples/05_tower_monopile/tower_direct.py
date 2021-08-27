@@ -74,17 +74,13 @@ if opt_flag:
     prob.model.add_design_var("tower_layer_thickness", lower=4e-3, upper=2e-1)
 
     # Add constraints on the tower design
-    prob.model.add_constraint("post1.constr_stress", upper=1.0)
-    prob.model.add_constraint("post1.constr_global_buckling", upper=1.0)
-    prob.model.add_constraint("post1.constr_shell_buckling", upper=1.0)
-    prob.model.add_constraint("post2.constr_stress", upper=1.0)
-    prob.model.add_constraint("post2.constr_global_buckling", upper=1.0)
-    prob.model.add_constraint("post2.constr_shell_buckling", upper=1.0)
+    prob.model.add_constraint("post.constr_stress", upper=1.0)
+    prob.model.add_constraint("post.constr_global_buckling", upper=1.0)
+    prob.model.add_constraint("post.constr_shell_buckling", upper=1.0)
     prob.model.add_constraint("constr_d_to_t", lower=80.0, upper=500.0)
     prob.model.add_constraint("constr_taper", lower=0.2)
     prob.model.add_constraint("slope", upper=1.0)
-    prob.model.add_constraint("tower1.f1", lower=0.13, upper=0.40)
-    prob.model.add_constraint("tower2.f1", lower=0.13, upper=0.40)
+    prob.model.add_constraint("tower.f1", lower=0.13, upper=0.40)
     # ---
 
 
@@ -149,8 +145,6 @@ Fz1 = -2914124.84400512
 Mxx1 = 3963732.76208099
 Myy1 = -2275104.79420872
 Mzz1 = -346781.68192839
-prob["tower1.rna_F"] = np.array([Fx1, Fy1, Fz1])
-prob["tower1.rna_M"] = np.array([Mxx1, Myy1, Mzz1])
 # ---------------
 
 # --- loading case 2: max Wind Speed ---
@@ -161,9 +155,9 @@ Fz2 = -2883106.12368949
 Mxx2 = -1683669.22411597
 Myy2 = -2522475.34625363
 Mzz2 = 147301.97023764
-prob["tower2.rna_F"] = np.array([Fx2, Fy2, Fz2])
-prob["tower2.rna_M"] = np.array([Mxx2, Myy2, Mzz2])
 # ---------------
+prob["tower.rna_F"] = np.c_[[Fx1, Fy1, Fz1], [Fx2, Fy2, Fz2]]
+prob["tower.rna_M"] = np.c_[[Mxx1, Myy1, Mzz1], [Mxx2, Myy2, Mzz2]]
 
 # run the analysis or optimization
 prob.model.approx_totals()
@@ -185,46 +179,31 @@ print("cg (m) =", prob["tower_center_of_mass"])
 print("d:t constraint =", prob["constr_d_to_t"])
 print("taper ratio constraint =", prob["constr_taper"])
 print("\nwind: ", prob["env1.Uref"])
-print("freq (Hz) =", prob["tower1.structural_frequencies"])
-print("Fore-aft mode shapes =", prob["tower1.fore_aft_modes"])
-print("Side-side mode shapes =", prob["tower1.side_side_modes"])
-print("top_deflection1 (m) =", prob["tower1.top_deflection"])
-print("Tower base forces1 (N) =", prob["tower1.turbine_F"])
-print("Tower base moments1 (Nm) =", prob["tower1.turbine_M"])
-print("stress1 =", prob["post1.constr_stress"])
-print("GL buckling =", prob["post1.constr_global_buckling"])
-print("Shell buckling =", prob["post1.constr_shell_buckling"])
-print("\nwind: ", prob["env2.Uref"])
-print("freq (Hz) =", prob["tower2.structural_frequencies"])
-print("Fore-aft mode shapes =", prob["tower2.fore_aft_modes"])
-print("Side-side mode shapes =", prob["tower2.side_side_modes"])
-print("top_deflection2 (m) =", prob["tower2.top_deflection"])
-print("Tower base forces2 (N) =", prob["tower2.turbine_F"])
-print("Tower base moments2 (Nm) =", prob["tower2.turbine_M"])
-print("stress2 =", prob["post2.constr_stress"])
-print("GL buckling =", prob["post2.constr_global_buckling"])
-print("Shell buckling =", prob["post2.constr_shell_buckling"])
+print("freq (Hz) =", prob["tower.structural_frequencies"])
+print("Fore-aft mode shapes =", prob["tower.fore_aft_modes"])
+print("Side-side mode shapes =", prob["tower.side_side_modes"])
+print("top_deflection (m) =", prob["tower.top_deflection"])
+print("Tower base forces (N) =", prob["tower.turbine_F"])
+print("Tower base moments (Nm) =", prob["tower.turbine_M"])
+print("stress1 =", prob["post.constr_stress"])
+print("GL buckling =", prob["post.constr_global_buckling"])
+print("Shell buckling =", prob["post.constr_shell_buckling"])
 
 if plot_flag:
     import matplotlib.pyplot as plt
 
-    # Old line plot
-    stress1 = np.copy(prob["post1.constr_stress"])
-    shellBuckle1 = np.copy(prob["post1.constr_shell_buckling"])
-    globalBuckle1 = np.copy(prob["post1.constr_global_buckling"])
-
-    stress2 = prob["post2.constr_stress"]
-    shellBuckle2 = prob["post2.constr_shell_buckling"]
-    globalBuckle2 = prob["post2.constr_global_buckling"]
+    stress = prob["post.constr_stress"]
+    shellBuckle = prob["post.constr_shell_buckling"]
+    globalBuckle = prob["post.constr_global_buckling"]
 
     plt.figure(figsize=(5.0, 3.5))
     plt.subplot2grid((3, 3), (0, 0), colspan=2, rowspan=3)
-    plt.plot(stress1, z, label="stress 1")
-    plt.plot(stress2, z, label="stress 2")
-    plt.plot(shellBuckle1, z, label="shell buckling 1")
-    plt.plot(shellBuckle2, z, label="shell buckling 2")
-    plt.plot(globalBuckle1, z, label="global buckling 1")
-    plt.plot(globalBuckle2, z, label="global buckling 2")
+    plt.plot(stress[:, 0], z, label="stress 1")
+    plt.plot(stress[:, 1], z, label="stress 2")
+    plt.plot(shellBuckle[:, 0], z, label="shell buckling 1")
+    plt.plot(shellBuckle[:, 1], z, label="shell buckling 2")
+    plt.plot(globalBuckle[:, 0], z, label="global buckling 1")
+    plt.plot(globalBuckle[:, 1], z, label="global buckling 2")
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc=2)
     plt.xlabel("utilization")
     plt.ylabel("height along tower (m)")

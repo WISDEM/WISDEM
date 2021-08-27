@@ -89,18 +89,14 @@ if opt_flag:
     prob.model.add_design_var("monopile_layer_thickness", lower=4e-3, upper=2e-1)
 
     # Add constraints on the tower design
-    prob.model.add_constraint("post1.constr_stress", upper=1.0)
-    prob.model.add_constraint("post1.constr_global_buckling", upper=1.0)
-    prob.model.add_constraint("post1.constr_shell_buckling", upper=1.0)
-    prob.model.add_constraint("post2.constr_stress", upper=1.0)
-    prob.model.add_constraint("post2.constr_global_buckling", upper=1.0)
-    prob.model.add_constraint("post2.constr_shell_buckling", upper=1.0)
+    prob.model.add_constraint("post.constr_stress", upper=1.0)
+    prob.model.add_constraint("post.constr_global_buckling", upper=1.0)
+    prob.model.add_constraint("post.constr_shell_buckling", upper=1.0)
     prob.model.add_constraint("constr_d_to_t", lower=80.0, upper=500.0)
     prob.model.add_constraint("constr_taper", lower=0.2)
     prob.model.add_constraint("slope", upper=1.0)
     prob.model.add_constraint("suctionpile_depth", lower=0.0)
-    prob.model.add_constraint("monopile1.f1", lower=0.13, upper=0.40)
-    prob.model.add_constraint("monopile2.f1", lower=0.13, upper=0.40)
+    prob.model.add_constraint("monopile.f1", lower=0.13, upper=0.40)
     # ---
 
 # Set up the OpenMDAO problem
@@ -160,14 +156,11 @@ if modeling_options["WISDEM"]["FixedBottomSE"]["wind"] == "PowerWind":
 
 # --- loading case 1: max Thrust ---
 prob["env1.Uref"] = 11.73732
-prob["monopile1.turbine_F"] = [1.28474420e06, 0.0, -1.05294614e07]
-prob["monopile1.turbine_M"] = [4009825.86806202, 92078894.58132489, -346781.68192839]
-# ---------------
-
-# --- loading case 2: max Wind Speed ---
 prob["env2.Uref"] = 70.0
-prob["monopile2.turbine_F"] = [9.30198601e05, 0.0, -1.13508479e07]
-prob["monopile2.turbine_M"] = [-1704977.30124085, 65817554.0892837, 147301.97023764]
+prob["monopile.turbine_F"] = np.c_[[1.28474420e06, 0.0, -1.05294614e07], [9.30198601e05, 0.0, -1.13508479e07]]
+prob["monopile.turbine_M"] = np.c_[
+    [4009825.86806202, 92078894.58132489, -346781.68192839], [-1704977.30124085, 65817554.0892837, 147301.97023764]
+]
 # ---------------
 
 # run the analysis or optimization
@@ -190,50 +183,35 @@ print("mass (kg) =", prob["monopile_mass"])
 print("cg (m) =", prob["monopile_z_cg"])
 print("d:t constraint =", prob["constr_d_to_t"])
 print("taper ratio constraint =", prob["constr_taper"])
-print("\nwind: ", prob["env1.Uref"])
-print("freq (Hz) =", prob["monopile1.structural_frequencies"])
-print("Fore-aft mode shapes =", prob["monopile1.fore_aft_modes"])
-print("Side-side mode shapes =", prob["monopile1.side_side_modes"])
-print("top_deflection1 (m) =", prob["monopile1.top_deflection"])
-print("Monopile base forces1 (N) =", prob["monopile1.mudline_F"])
-print("Monopile base moments1 (Nm) =", prob["monopile1.mudline_M"])
-print("stress1 =", prob["post1.constr_stress"])
-print("GL buckling =", prob["post1.constr_global_buckling"])
-print("Shell buckling =", prob["post1.constr_shell_buckling"])
-print("\nwind: ", prob["env2.Uref"])
-print("freq (Hz) =", prob["monopile2.structural_frequencies"])
-print("Fore-aft mode shapes =", prob["monopile2.fore_aft_modes"])
-print("Side-side mode shapes =", prob["monopile2.side_side_modes"])
-print("top_deflection2 (m) =", prob["monopile2.top_deflection"])
-print("Monopile base forces2 (N) =", prob["monopile2.mudline_F"])
-print("Monopile base moments2 (Nm) =", prob["monopile2.mudline_M"])
-print("stress2 =", prob["post2.constr_stress"])
-print("GL buckling =", prob["post2.constr_global_buckling"])
-print("Shell buckling =", prob["post2.constr_shell_buckling"])
+print("\nwind: ", prob["env1.Uref"], prob["env2.Uref"])
+print("freq (Hz) =", prob["monopile.structural_frequencies"])
+print("Fore-aft mode shapes =", prob["monopile.fore_aft_modes"])
+print("Side-side mode shapes =", prob["monopile.side_side_modes"])
+print("top_deflection1 (m) =", prob["monopile.top_deflection"])
+print("Monopile base forces1 (N) =", prob["monopile.mudline_F"])
+print("Monopile base moments1 (Nm) =", prob["monopile.mudline_M"])
+print("stress1 =", prob["post.constr_stress"])
+print("GL buckling =", prob["post.constr_global_buckling"])
+print("Shell buckling =", prob["post.constr_shell_buckling"])
 
 if plot_flag:
     import matplotlib.pyplot as plt
 
-    # Old line plot
-    stress1 = np.copy(prob["post1.constr_stress"])
-    shellBuckle1 = np.copy(prob["post1.constr_shell_buckling"])
-    globalBuckle1 = np.copy(prob["post1.constr_global_buckling"])
-
-    stress2 = prob["post2.constr_stress"]
-    shellBuckle2 = prob["post2.constr_shell_buckling"]
-    globalBuckle2 = prob["post2.constr_global_buckling"]
+    stress = prob["post.constr_stress"]
+    shellBuckle = prob["post.constr_shell_buckling"]
+    globalBuckle = prob["post.constr_global_buckling"]
 
     plt.figure(figsize=(5.0, 3.5))
     plt.subplot2grid((3, 3), (0, 0), colspan=2, rowspan=3)
-    plt.plot(stress1, z, label="stress 1")
-    plt.plot(stress2, z, label="stress 2")
-    plt.plot(shellBuckle1, z, label="shell buckling 1")
-    plt.plot(shellBuckle2, z, label="shell buckling 2")
-    plt.plot(globalBuckle1, z, label="global buckling 1")
-    plt.plot(globalBuckle2, z, label="global buckling 2")
+    plt.plot(stress[:, 0], z, label="stress 1")
+    plt.plot(stress[:, 1], z, label="stress 2")
+    plt.plot(shellBuckle[:, 0], z, label="shell buckling 1")
+    plt.plot(shellBuckle[:, 1], z, label="shell buckling 2")
+    plt.plot(globalBuckle[:, 0], z, label="global buckling 1")
+    plt.plot(globalBuckle[:, 1], z, label="global buckling 2")
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc=2)
     plt.xlabel("utilization")
-    plt.ylabel("height along monopile (m)")
+    plt.ylabel("height along tower (m)")
     plt.tight_layout()
     plt.show()
     # ---

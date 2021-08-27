@@ -19,25 +19,27 @@ class PlatformLoads(om.ExplicitComponent):
 
     def setup(self):
         opt = self.options["options"]
+        n_dlc = opt["WISDEM"]["n_dlc"]
         n_member = opt["floating"]["members"]["n_members"]
 
         for k in range(n_member):
-            self.add_input(f"member{k}:Px", np.zeros(MEMMAX), units="N/m")
-            self.add_input(f"member{k}:Py", np.zeros(MEMMAX), units="N/m")
-            self.add_input(f"member{k}:Pz", np.zeros(MEMMAX), units="N/m")
-            self.add_input(f"member{k}:qdyn", np.zeros(MEMMAX), units="Pa")
+            self.add_input(f"member{k}:Px", np.zeros((MEMMAX, n_dlc)), units="N/m")
+            self.add_input(f"member{k}:Py", np.zeros((MEMMAX, n_dlc)), units="N/m")
+            self.add_input(f"member{k}:Pz", np.zeros((MEMMAX, n_dlc)), units="N/m")
+            self.add_input(f"member{k}:qdyn", np.zeros((MEMMAX, n_dlc)), units="Pa")
 
-        self.add_output("platform_elem_Px1", NULL * np.ones(NELEM_MAX), units="N/m")
-        self.add_output("platform_elem_Px2", NULL * np.ones(NELEM_MAX), units="N/m")
-        self.add_output("platform_elem_Py1", NULL * np.ones(NELEM_MAX), units="N/m")
-        self.add_output("platform_elem_Py2", NULL * np.ones(NELEM_MAX), units="N/m")
-        self.add_output("platform_elem_Pz1", NULL * np.ones(NELEM_MAX), units="N/m")
-        self.add_output("platform_elem_Pz2", NULL * np.ones(NELEM_MAX), units="N/m")
-        self.add_output("platform_elem_qdyn", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_output("platform_elem_Px1", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
+        self.add_output("platform_elem_Px2", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
+        self.add_output("platform_elem_Py1", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
+        self.add_output("platform_elem_Py2", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
+        self.add_output("platform_elem_Pz1", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
+        self.add_output("platform_elem_Pz2", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
+        self.add_output("platform_elem_qdyn", NULL * np.ones((NELEM_MAX, n_dlc)), units="Pa")
 
     def compute(self, inputs, outputs):
         # Load in number of members
         opt = self.options["options"]
+        n_dlc = opt["WISDEM"]["n_dlc"]
         n_member = opt["floating"]["members"]["n_members"]
 
         # Initialize running lists across all members
@@ -51,36 +53,45 @@ class PlatformLoads(om.ExplicitComponent):
 
         # Append all member data
         for k in range(n_member):
-            n = np.where(inputs[f"member{k}:qdyn"] == NULL)[0][0]
-            mem_qdyn, _ = util.nodal2sectional(inputs[f"member{k}:qdyn"][:n])
-            elem_qdyn = np.append(elem_qdyn, mem_qdyn)
+            n = np.where(inputs[f"member{k}:qdyn"][:, 0] == NULL)[0][0]
+            mem_qdyn, _ = util.nodal2sectional(inputs[f"member{k}:qdyn"][:n, :])
 
             # The loads should come in with length n+1
             n -= 1
-            elem_Px1 = np.append(elem_Px1, inputs[f"member{k}:Px"][:n])
-            elem_Px2 = np.append(elem_Px2, inputs[f"member{k}:Px"][1 : (n + 1)])
-            elem_Py1 = np.append(elem_Py1, inputs[f"member{k}:Py"][:n])
-            elem_Py2 = np.append(elem_Py2, inputs[f"member{k}:Py"][1 : (n + 1)])
-            elem_Pz1 = np.append(elem_Pz1, inputs[f"member{k}:Pz"][:n])
-            elem_Pz2 = np.append(elem_Pz2, inputs[f"member{k}:Pz"][1 : (n + 1)])
+            if k == 0:
+                elem_Px1 = inputs[f"member{k}:Px"][:n, :]
+                elem_Px2 = inputs[f"member{k}:Px"][1 : (n + 1), :]
+                elem_Py1 = inputs[f"member{k}:Py"][:n, :]
+                elem_Py2 = inputs[f"member{k}:Py"][1 : (n + 1), :]
+                elem_Pz1 = inputs[f"member{k}:Pz"][:n, :]
+                elem_Pz2 = inputs[f"member{k}:Pz"][1 : (n + 1), :]
+                elem_qdyn = mem_qdyn
+            else:
+                elem_Px1 = np.vstack((elem_Px1, inputs[f"member{k}:Px"][:n, :]))
+                elem_Px2 = np.vstack((elem_Px2, inputs[f"member{k}:Px"][1 : (n + 1), :]))
+                elem_Py1 = np.vstack((elem_Py1, inputs[f"member{k}:Py"][:n, :]))
+                elem_Py2 = np.vstack((elem_Py2, inputs[f"member{k}:Py"][1 : (n + 1), :]))
+                elem_Pz1 = np.vstack((elem_Pz1, inputs[f"member{k}:Pz"][:n, :]))
+                elem_Pz2 = np.vstack((elem_Pz2, inputs[f"member{k}:Pz"][1 : (n + 1), :]))
+                elem_qdyn = np.vstack((elem_qdyn, mem_qdyn))
 
         # Store outputs
         nelem = elem_qdyn.size
-        outputs["platform_elem_Px1"] = NULL * np.ones(NELEM_MAX)
-        outputs["platform_elem_Px2"] = NULL * np.ones(NELEM_MAX)
-        outputs["platform_elem_Py1"] = NULL * np.ones(NELEM_MAX)
-        outputs["platform_elem_Py2"] = NULL * np.ones(NELEM_MAX)
-        outputs["platform_elem_Pz1"] = NULL * np.ones(NELEM_MAX)
-        outputs["platform_elem_Pz2"] = NULL * np.ones(NELEM_MAX)
-        outputs["platform_elem_qdyn"] = NULL * np.ones(NELEM_MAX)
+        outputs["platform_elem_Px1"] = NULL * np.ones((NELEM_MAX, n_dlc))
+        outputs["platform_elem_Px2"] = NULL * np.ones((NELEM_MAX, n_dlc))
+        outputs["platform_elem_Py1"] = NULL * np.ones((NELEM_MAX, n_dlc))
+        outputs["platform_elem_Py2"] = NULL * np.ones((NELEM_MAX, n_dlc))
+        outputs["platform_elem_Pz1"] = NULL * np.ones((NELEM_MAX, n_dlc))
+        outputs["platform_elem_Pz2"] = NULL * np.ones((NELEM_MAX, n_dlc))
+        outputs["platform_elem_qdyn"] = NULL * np.ones((NELEM_MAX, n_dlc))
 
-        outputs["platform_elem_Px1"][:nelem] = elem_Px1
-        outputs["platform_elem_Px2"][:nelem] = elem_Px2
-        outputs["platform_elem_Py1"][:nelem] = elem_Py1
-        outputs["platform_elem_Py2"][:nelem] = elem_Py2
-        outputs["platform_elem_Pz1"][:nelem] = elem_Pz1
-        outputs["platform_elem_Pz2"][:nelem] = elem_Pz2
-        outputs["platform_elem_qdyn"][:nelem] = elem_qdyn
+        outputs["platform_elem_Px1"][:nelem, :] = elem_Px1
+        outputs["platform_elem_Px2"][:nelem, :] = elem_Px2
+        outputs["platform_elem_Py1"][:nelem, :] = elem_Py1
+        outputs["platform_elem_Py2"][:nelem, :] = elem_Py2
+        outputs["platform_elem_Pz1"][:nelem, :] = elem_Pz1
+        outputs["platform_elem_Pz2"][:nelem, :] = elem_Pz2
+        outputs["platform_elem_qdyn"][:nelem, :] = elem_qdyn
 
 
 class FrameAnalysis(om.ExplicitComponent):
@@ -90,6 +101,7 @@ class FrameAnalysis(om.ExplicitComponent):
     def setup(self):
         opt = self.options["options"]
         n_attach = opt["mooring"]["n_attach"]
+        n_dlc = opt["WISDEM"]["n_dlc"]
 
         self.add_input("platform_mass", 0.0, units="kg")
         self.add_input("platform_hull_center_of_mass", np.zeros(3), units="m")
@@ -113,38 +125,40 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
 
-        self.add_input("platform_elem_Px1", NULL * np.ones(NELEM_MAX), units="N/m")
-        self.add_input("platform_elem_Px2", NULL * np.ones(NELEM_MAX), units="N/m")
-        self.add_input("platform_elem_Py1", NULL * np.ones(NELEM_MAX), units="N/m")
-        self.add_input("platform_elem_Py2", NULL * np.ones(NELEM_MAX), units="N/m")
-        self.add_input("platform_elem_Pz1", NULL * np.ones(NELEM_MAX), units="N/m")
-        self.add_input("platform_elem_Pz2", NULL * np.ones(NELEM_MAX), units="N/m")
+        self.add_input("platform_elem_Px1", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
+        self.add_input("platform_elem_Px2", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
+        self.add_input("platform_elem_Py1", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
+        self.add_input("platform_elem_Py2", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
+        self.add_input("platform_elem_Pz1", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
+        self.add_input("platform_elem_Pz2", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
 
         self.add_input("transition_node", np.zeros(3), units="m")
         self.add_input("transition_piece_mass", 0.0, units="kg")
         self.add_input("transition_piece_I", np.zeros(6), units="kg*m**2")
-        self.add_input("turbine_F", np.zeros(3), units="N")
-        self.add_input("turbine_M", np.zeros(3), units="N*m")
+        self.add_input("turbine_F", np.zeros((3, n_dlc)), units="N")
+        self.add_input("turbine_M", np.zeros((3, n_dlc)), units="N*m")
         self.add_input("mooring_neutral_load", np.zeros((n_attach, 3)), units="N")
         self.add_input("mooring_fairlead_joints", np.zeros((n_attach, 3)), units="m")
         self.add_input("mooring_stiffness", np.zeros((6, 6)), units="N/m")
         self.add_input("variable_ballast_mass", 0.0, units="kg")
         self.add_input("variable_center_of_mass", val=np.zeros(3), units="m")
 
-        self.add_output("platform_base_F", np.zeros(3), units="N")
-        self.add_output("platform_base_M", np.zeros(3), units="N*m")
-        self.add_output("platform_Fz", NULL * np.ones(NELEM_MAX), units="N")
-        self.add_output("platform_Vx", NULL * np.ones(NELEM_MAX), units="N")
-        self.add_output("platform_Vy", NULL * np.ones(NELEM_MAX), units="N")
-        self.add_output("platform_Mxx", NULL * np.ones(NELEM_MAX), units="N*m")
-        self.add_output("platform_Myy", NULL * np.ones(NELEM_MAX), units="N*m")
-        self.add_output("platform_Mzz", NULL * np.ones(NELEM_MAX), units="N*m")
+        self.add_output("platform_base_F", np.zeros((3, n_dlc)), units="N")
+        self.add_output("platform_base_M", np.zeros((3, n_dlc)), units="N*m")
+        self.add_output("platform_Fz", NULL * np.ones((NELEM_MAX, n_dlc)), units="N")
+        self.add_output("platform_Vx", NULL * np.ones((NELEM_MAX, n_dlc)), units="N")
+        self.add_output("platform_Vy", NULL * np.ones((NELEM_MAX, n_dlc)), units="N")
+        self.add_output("platform_Mxx", NULL * np.ones((NELEM_MAX, n_dlc)), units="N*m")
+        self.add_output("platform_Myy", NULL * np.ones((NELEM_MAX, n_dlc)), units="N*m")
+        self.add_output("platform_Mzz", NULL * np.ones((NELEM_MAX, n_dlc)), units="N*m")
 
     def compute(self, inputs, outputs):
 
         # Unpack variables
         opt = self.options["options"]
         n_attach = opt["mooring"]["n_attach"]
+        n_dlc = opt["WISDEM"]["n_dlc"]
+
         m_trans = float(inputs["transition_piece_mass"])
         I_trans = inputs["transition_piece_I"]
         m_variable = float(inputs["variable_ballast_mass"])
@@ -159,8 +173,6 @@ class FrameAnalysis(om.ExplicitComponent):
         nnode = np.where(nodes[:, 0] == NULL)[0][0]
         nodes = nodes[:nnode, :]
         rnode = np.zeros(nnode)  # inputs["platform_Rnode"][:nnode]
-        Fnode = inputs["platform_Fnode"][:nnode, :]
-        Mnode = np.zeros((nnode, 3))
         ihub = np.argmax(nodes[:, 2]) - 1
         itrans = util.closest_node(nodes, inputs["transition_node"])
 
@@ -227,64 +239,74 @@ class FrameAnalysis(om.ExplicitComponent):
         )
 
         # Initialize loading with gravity, mooring line forces, and buoyancy (already in nodal forces)
-        gx = gy = 0.0
-        gz = -gravity
-        load_obj = pyframe3dd.StaticLoadCase(gx, gy, gz)
-
+        Mnode = np.zeros((nnode, 3))
+        Fnode = inputs["platform_Fnode"][:nnode, :]
         for k in range(n_attach):
             ind = util.closest_node(nodes, fairlead_joints[k, :])
             Fnode[ind, :] += mooringF[k, :]
 
-        Fnode[ihub, :] += inputs["turbine_F"]
-        Mnode[ihub, :] += inputs["turbine_M"]
-        nF = np.where(np.abs(Fnode).sum(axis=1) > 0.0)[0]
-        load_obj.changePointLoads(
-            nF + 1, Fnode[nF, 0], Fnode[nF, 1], Fnode[nF, 2], Mnode[nF, 0], Mnode[nF, 1], Mnode[nF, 2]
-        )
+        gx = gy = 0.0
+        gz = -gravity
+        for k in range(n_dlc):
+            load_obj = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
-        # trapezoidally distributed loads
-        xx1 = xy1 = xz1 = np.zeros(ielem.size)
-        xx2 = xy2 = xz2 = 0.99 * L  # multiply slightly less than unity b.c. of precision
-        wx1 = inputs["platform_elem_Px1"][:nelem]
-        wx2 = inputs["platform_elem_Px2"][:nelem]
-        wy1 = inputs["platform_elem_Py1"][:nelem]
-        wy2 = inputs["platform_elem_Py2"][:nelem]
-        wz1 = inputs["platform_elem_Pz1"][:nelem]
-        wz2 = inputs["platform_elem_Pz2"][:nelem]
-        load_obj.changeTrapezoidalLoads(ielem, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
+            Fnode2 = Fnode.copy()
+            Fnode2[ihub, :] += inputs["turbine_F"][:, k]
+            Mnode[ihub, :] = inputs["turbine_M"][:, k]
+            nF = np.where(np.abs(Fnode2).sum(axis=1) > 0.0)[0]
+            load_obj.changePointLoads(
+                nF + 1, Fnode2[nF, 0], Fnode2[nF, 1], Fnode2[nF, 2], Mnode[nF, 0], Mnode[nF, 1], Mnode[nF, 2]
+            )
 
-        # Add the load case and run
-        myframe.addLoadCase(load_obj)
+            # trapezoidally distributed loads
+            xx1 = xy1 = xz1 = np.zeros(ielem.size)
+            xx2 = xy2 = xz2 = 0.99 * L  # multiply slightly less than unity b.c. of precision
+            wx1 = inputs["platform_elem_Px1"][:nelem, k]
+            wx2 = inputs["platform_elem_Px2"][:nelem, k]
+            wy1 = inputs["platform_elem_Py1"][:nelem, k]
+            wy2 = inputs["platform_elem_Py2"][:nelem, k]
+            wz1 = inputs["platform_elem_Pz1"][:nelem, k]
+            wz2 = inputs["platform_elem_Pz2"][:nelem, k]
+            load_obj.changeTrapezoidalLoads(ielem, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
+
+            # Add the load case and run
+            myframe.addLoadCase(load_obj)
         # myframe.write("system.3dd")
         # myframe.draw()
         displacements, forces, reactions, internalForces, mass, modal = myframe.run()
 
         # Determine reaction forces
-        outputs["platform_base_F"] = -np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
-        outputs["platform_base_M"] = -np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
+        outputs["platform_base_F"] = -np.c_[
+            reactions.Fx.sum(axis=1), reactions.Fy.sum(axis=1), reactions.Fz.sum(axis=1)
+        ].T
+        outputs["platform_base_M"] = -np.c_[
+            reactions.Mxx.sum(axis=1), reactions.Myy.sum(axis=1), reactions.Mzz.sum(axis=1)
+        ].T
 
         # Forces and moments along the structure
-        ic = 0  # case number
-        outputs["platform_Fz"] = NULL * np.ones(NELEM_MAX)
-        outputs["platform_Vx"] = NULL * np.ones(NELEM_MAX)
-        outputs["platform_Vy"] = NULL * np.ones(NELEM_MAX)
-        outputs["platform_Mxx"] = NULL * np.ones(NELEM_MAX)
-        outputs["platform_Myy"] = NULL * np.ones(NELEM_MAX)
-        outputs["platform_Mzz"] = NULL * np.ones(NELEM_MAX)
-
-        outputs["platform_Fz"][:nelem] = forces.Nx[ic, 1::2]
-        outputs["platform_Vx"][:nelem] = -forces.Vz[ic, 1::2]
-        outputs["platform_Vy"][:nelem] = forces.Vy[ic, 1::2]
-        outputs["platform_Mxx"][:nelem] = -forces.Mzz[ic, 1::2]
-        outputs["platform_Myy"][:nelem] = forces.Myy[ic, 1::2]
-        outputs["platform_Mzz"][:nelem] = forces.Txx[ic, 1::2]
+        outputs["platform_Fz"] = NULL * np.ones((NELEM_MAX, n_dlc))
+        outputs["platform_Vx"] = NULL * np.ones((NELEM_MAX, n_dlc))
+        outputs["platform_Vy"] = NULL * np.ones((NELEM_MAX, n_dlc))
+        outputs["platform_Mxx"] = NULL * np.ones((NELEM_MAX, n_dlc))
+        outputs["platform_Myy"] = NULL * np.ones((NELEM_MAX, n_dlc))
+        outputs["platform_Mzz"] = NULL * np.ones((NELEM_MAX, n_dlc))
+        for k in range(n_dlc):
+            outputs["platform_Fz"][:nelem, k] = forces.Nx[k, 1::2]
+            outputs["platform_Vx"][:nelem, k] = -forces.Vz[k, 1::2]
+            outputs["platform_Vy"][:nelem, k] = forces.Vy[k, 1::2]
+            outputs["platform_Mxx"][:nelem, k] = -forces.Mzz[k, 1::2]
+            outputs["platform_Myy"][:nelem, k] = forces.Myy[k, 1::2]
+            outputs["platform_Mzz"][:nelem, k] = forces.Txx[k, 1::2]
 
 
 class FloatingPost(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("options")
+        self.options.declare("n_dlc")
 
     def setup(self):
+        n_dlc = self.options["n_dlc"]
+
         self.add_input("platform_elem_L", NULL * np.ones(NELEM_MAX), units="m")
         self.add_input("platform_elem_D", NULL * np.ones(NELEM_MAX), units="m")
         self.add_input("platform_elem_t", NULL * np.ones(NELEM_MAX), units="m")
@@ -297,22 +319,29 @@ class FloatingPost(om.ExplicitComponent):
         self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_sigma_y", NULL * np.ones(NELEM_MAX), units="Pa")
-        self.add_input("platform_elem_qdyn", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("platform_elem_qdyn", NULL * np.ones((NELEM_MAX, n_dlc)), units="Pa")
 
         # Processed Frame3DD/OpenFAST outputs
-        self.add_input("platform_Fz", NULL * np.ones(NELEM_MAX), units="N")
-        self.add_input("platform_Vx", NULL * np.ones(NELEM_MAX), units="N")
-        self.add_input("platform_Vy", NULL * np.ones(NELEM_MAX), units="N")
-        self.add_input("platform_Mxx", NULL * np.ones(NELEM_MAX), units="N*m")
-        self.add_input("platform_Myy", NULL * np.ones(NELEM_MAX), units="N*m")
-        self.add_input("platform_Mzz", NULL * np.ones(NELEM_MAX), units="N*m")
+        self.add_input("platform_Fz", NULL * np.ones((NELEM_MAX, n_dlc)), units="N")
+        self.add_input("platform_Vx", NULL * np.ones((NELEM_MAX, n_dlc)), units="N")
+        self.add_input("platform_Vy", NULL * np.ones((NELEM_MAX, n_dlc)), units="N")
+        self.add_input("platform_Mxx", NULL * np.ones((NELEM_MAX, n_dlc)), units="N*m")
+        self.add_input("platform_Myy", NULL * np.ones((NELEM_MAX, n_dlc)), units="N*m")
+        self.add_input("platform_Mzz", NULL * np.ones((NELEM_MAX, n_dlc)), units="N*m")
 
-        self.add_output("constr_platform_stress", NULL * np.ones(NELEM_MAX))
-        self.add_output("constr_platform_shell_buckling", NULL * np.ones(NELEM_MAX))
-        self.add_output("constr_platform_global_buckling", NULL * np.ones(NELEM_MAX))
+        self.add_output("constr_platform_stress", NULL * np.ones((NELEM_MAX, n_dlc)))
+        self.add_output("constr_platform_shell_buckling", NULL * np.ones((NELEM_MAX, n_dlc)))
+        self.add_output("constr_platform_global_buckling", NULL * np.ones((NELEM_MAX, n_dlc)))
 
     def compute(self, inputs, outputs):
         # Unpack some variables
+        opt = self.options["options"]
+        n_dlc = self.options["n_dlc"]
+        gamma_f = opt["gamma_f"]
+        gamma_m = opt["gamma_m"]
+        gamma_n = opt["gamma_n"]
+        gamma_b = opt["gamma_b"]
+
         d = inputs["platform_elem_D"]
         nelem = np.where(d == NULL)[0][0]
         d = d[:nelem]
@@ -325,75 +354,43 @@ class FloatingPost(om.ExplicitComponent):
         sigy = inputs["platform_elem_sigma_y"][:nelem]
         E = inputs["platform_elem_E"][:nelem]
         G = inputs["platform_elem_G"][:nelem]
-        qdyn = inputs["platform_elem_qdyn"][:nelem]
+        qdyn = inputs["platform_elem_qdyn"][:nelem, :]
         r = 0.5 * d
 
-        gamma_f = self.options["options"]["gamma_f"]
-        gamma_m = self.options["options"]["gamma_m"]
-        gamma_n = self.options["options"]["gamma_n"]
-        gamma_b = self.options["options"]["gamma_b"]
-
         # Get loads from Framee3dd/OpenFAST
-        Fz = inputs["platform_Fz"][:nelem]
-        Vx = inputs["platform_Vx"][:nelem]
-        Vy = inputs["platform_Vy"][:nelem]
-        Mxx = inputs["platform_Mxx"][:nelem]
-        Myy = inputs["platform_Myy"][:nelem]
-        Mzz = inputs["platform_Mzz"][:nelem]
+        Fz = inputs["platform_Fz"][:nelem, :]
+        Vx = inputs["platform_Vx"][:nelem, :]
+        Vy = inputs["platform_Vy"][:nelem, :]
+        Mxx = inputs["platform_Mxx"][:nelem, :]
+        Myy = inputs["platform_Myy"][:nelem, :]
+        Mzz = inputs["platform_Mzz"][:nelem, :]
 
         M = np.sqrt(Mxx ** 2 + Myy ** 2)
         V = np.sqrt(Vx ** 2 + Vy ** 2)
 
         # Initialize outputs
-        outputs["constr_platform_stress"] = NULL * np.ones(NELEM_MAX)
-        outputs["constr_platform_shell_buckling"] = NULL * np.ones(NELEM_MAX)
-        outputs["constr_platform_global_buckling"] = NULL * np.ones(NELEM_MAX)
+        outputs["constr_platform_stress"] = NULL * np.ones((NELEM_MAX, n_dlc))
+        outputs["constr_platform_shell_buckling"] = NULL * np.ones((NELEM_MAX, n_dlc))
+        outputs["constr_platform_global_buckling"] = NULL * np.ones((NELEM_MAX, n_dlc))
 
         # See http://svn.code.sourceforge.net/p/frame3dd/code/trunk/doc/Frame3DD-manual.html#structuralmodeling
         # print(Fz.shape, Az.shape, M.shape, r.shape, Iyy.shape)
-        axial_stress = Fz / Az + M * r / Iyy
-        shear_stress = np.abs(Mzz) / Jz * r + V / Asx
-        hoop_stress = util_con.hoopStress(d, t, qdyn)
-        outputs["constr_platform_stress"][:nelem] = util_con.vonMisesStressUtilization(
-            axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigy
+        axial_stress = Fz / Az[:, np.newaxis] + M * (r / Iyy)[:, np.newaxis]
+        shear_stress = np.abs(Mzz) / (Jz * r)[:, np.newaxis] + V / Asx[:, np.newaxis]
+        hoop_stress = -qdyn * ((r - 0.5 * t) / t)[:, np.newaxis]  # util_con.hoopStress(d, t, qdyn)
+        outputs["constr_platform_stress"][:nelem, :] = util_con.vonMisesStressUtilization(
+            axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigy.reshape((-1, 1))
         )
 
         # Use DNV-GL CP202 Method
         check = util_dnvgl.CylinderBuckling(h, d, t, E=E, G=G, sigma_y=sigy, gamma=gamma_f * gamma_b)
-        results = check.run_buckling_checks(Fz, M, axial_stress, hoop_stress, shear_stress)
+        for k in range(n_dlc):
+            results = check.run_buckling_checks(
+                Fz[k, :], M[k, :], axial_stress[k, :], hoop_stress[k, :], shear_stress[k, :]
+            )
 
-        outputs["constr_platform_shell_buckling"][:nelem] = results["Shell"]
-        outputs["constr_platform_global_buckling"][:nelem] = results["Global"]
-
-
-class MaxTurbineLoads(om.ExplicitComponent):
-    def initialize(self):
-        self.options.declare("nLC")
-
-    def setup(self):
-        nLC = self.options["nLC"]
-        for iLC in range(nLC):
-            lc = "" if nLC == 1 else str(iLC + 1)
-
-            self.add_input(f"lc{lc}:turbine_F", np.zeros(3), units="N")
-            self.add_input(f"lc{lc}:turbine_M", np.zeros(3), units="N*m")
-
-        self.add_output("max_F", np.zeros(3), units="N")
-        self.add_output("max_M", np.zeros(3), units="N*m")
-
-    def compute(self, inputs, outputs):
-        Fmax = np.zeros(3)
-        Mmax = np.zeros(3)
-
-        nLC = self.options["nLC"]
-        for iLC in range(nLC):
-            lc = "" if nLC == 1 else str(iLC + 1)
-
-            Fmax = np.fmax(Fmax, inputs[f"lc{lc}:turbine_F"])
-            Mmax = np.fmax(Mmax, inputs[f"lc{lc}:turbine_M"])
-
-        outputs["max_F"] = Fmax
-        outputs["max_M"] = Mmax
+            outputs["constr_platform_shell_buckling"][:nelem, k] = results["Shell"]
+            outputs["constr_platform_global_buckling"][:nelem, k] = results["Global"]
 
 
 class FloatingFrame(om.Group):
@@ -404,6 +401,8 @@ class FloatingFrame(om.Group):
         opt = self.options["modeling_options"]
         nLC = opt["WISDEM"]["n_dlc"]
         n_member = opt["floating"]["members"]["n_members"]
+
+        mem_vars = ["Px", "Py", "Pz", "qdyn"]
 
         mem_prom = [
             "wind_reference_height",
@@ -429,47 +428,6 @@ class FloatingFrame(om.Group):
             lc = "" if nLC == 1 else str(iLC + 1)
             U_prom.append(f"env{lc}.Uref")
 
-        plat_prom = [
-            "platform_elem_L",
-            "platform_elem_D",
-            "platform_elem_t",
-            "platform_elem_A",
-            "platform_elem_Asx",
-            "platform_elem_Asy",
-            "platform_elem_Ixx",
-            "platform_elem_Iyy",
-            "platform_elem_J0",
-            "platform_elem_E",
-            "platform_elem_G",
-            "platform_elem_sigma_y",
-        ]
-
-        plat_frame = plat_prom[:-1] + [
-            "platform_elem_rho",
-            "platform_mass",
-            "platform_hull_center_of_mass",
-            "platform_added_mass",
-            "platform_nodes",
-            "platform_Fnode",
-            "platform_Rnode",
-            "platform_elem_n1",
-            "platform_elem_n2",
-            "transition_node",
-            "transition_piece_mass",
-            "transition_piece_I",
-            "mooring_neutral_load",
-            "mooring_fairlead_joints",
-            "mooring_stiffness",
-            "variable_ballast_mass",
-            "variable_center_of_mass",
-        ]
-
-        mem_vars = ["Px", "Py", "Pz", "qdyn"]
-        mem_vars12 = ["Px1", "Px2", "Py1", "Py2", "Pz1", "Pz2"]
-        plat_vars = ["platform_Fz", "platform_Vx", "platform_Vy", "platform_Mxx", "platform_Myy", "platform_Mzz"]
-
-        self.add_subsystem("maxturb", MaxTurbineLoads(nLC=nLC), promotes=["*"])
-
         for k in range(n_member):
             n_full = get_nfull(opt["floating"]["members"]["n_height"][k])
             self.add_subsystem(
@@ -483,25 +441,12 @@ class FloatingFrame(om.Group):
                 promotes=mem_prom + U_prom + [("joint1", f"member{k}:joint1"), ("joint2", f"member{k}:joint2")],
             )
 
-        for iLC in range(nLC):
-            lc = "" if nLC == 1 else str(iLC + 1)
+        self.add_subsystem("loadsys", PlatformLoads(options=opt), promotes=["*"])
 
-            self.add_subsystem(f"loadsys{lc}", PlatformLoads(options=opt))
+        self.add_subsystem("frame", FrameAnalysis(options=opt), promotes=["*"])
 
-            self.add_subsystem(
-                f"frame{lc}",
-                FrameAnalysis(options=opt),
-                promotes=plat_frame + [("turbine_F", "lc{lc}:turbine_F"), ("turbine_M", "lc{lc}:turbine_M")],
-            )
-            self.add_subsystem(f"post{lc}", FloatingPost(options=opt["WISDEM"]["FloatingSE"]), promotes=plat_prom)
+        self.add_subsystem("post", FloatingPost(options=opt["WISDEM"]["FloatingSE"], n_dlc=nLC), promotes=["*"])
 
-            for k in range(n_member):
-                for var in mem_vars:
-                    self.connect(f"memload{k}.g2e{lc}.{var}", f"loadsys{lc}.member{k}:{var}")
-
-            for var in mem_vars12:
-                self.connect(f"loadsys{lc}.platform_elem_{var}", f"frame{lc}.platform_elem_{var}")
-            self.connect(f"loadsys{lc}.platform_elem_qdyn", f"post{lc}.platform_elem_qdyn")
-
-            for var in plat_vars:
-                self.connect(f"frame{lc}.{var}", f"post{lc}.{var}")
+        for k in range(n_member):
+            for var in mem_vars:
+                self.connect(f"memload{k}.{var}", f"member{k}:{var}")

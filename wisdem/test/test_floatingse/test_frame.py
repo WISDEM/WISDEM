@@ -15,6 +15,7 @@ class TestFrame(unittest.TestCase):
         opt = {}
         opt["floating"] = {}
         opt["WISDEM"] = {}
+        opt["WISDEM"]["n_dlc"] = 1
         opt["WISDEM"]["FloatingSE"] = {}
         opt["floating"]["members"] = {}
         opt["floating"]["members"]["n_members"] = n_member = 6
@@ -33,47 +34,31 @@ class TestFrame(unittest.TestCase):
 
         for k in range(n_member):
             for var in ["Px", "Py", "Pz", "qdyn"]:
-                inputs[f"member{k}:{var}"] = NULL * np.ones(MEMMAX)
+                inputs[f"member{k}:{var}"] = NULL * np.ones((MEMMAX, 1))
 
-            inputs[f"member{k}:Px"][:2] = 1.0
-            inputs[f"member{k}:Py"][:2] = 2.0
-            inputs[f"member{k}:Pz"][:2] = 3.0
-            inputs[f"member{k}:qdyn"][:2] = 4.0
+            inputs[f"member{k}:Px"][:2, :] = 1.0
+            inputs[f"member{k}:Py"][:2, :] = 2.0
+            inputs[f"member{k}:Pz"][:2, :] = 3.0
+            inputs[f"member{k}:qdyn"][:2, :] = 4.0
 
         myobj = frame.PlatformLoads(options=opt)
         myobj.compute(inputs, outputs)
 
-        npt.assert_equal(outputs["platform_elem_Px1"][6:], NULL)
-        npt.assert_equal(outputs["platform_elem_Py1"][6:], NULL)
-        npt.assert_equal(outputs["platform_elem_Pz1"][6:], NULL)
-        npt.assert_equal(outputs["platform_elem_Px2"][6:], NULL)
-        npt.assert_equal(outputs["platform_elem_Py2"][6:], NULL)
-        npt.assert_equal(outputs["platform_elem_Pz2"][6:], NULL)
-        npt.assert_equal(outputs["platform_elem_qdyn"][6:], NULL)
+        npt.assert_equal(outputs["platform_elem_Px1"][6:, :], NULL)
+        npt.assert_equal(outputs["platform_elem_Py1"][6:, :], NULL)
+        npt.assert_equal(outputs["platform_elem_Pz1"][6:, :], NULL)
+        npt.assert_equal(outputs["platform_elem_Px2"][6:, :], NULL)
+        npt.assert_equal(outputs["platform_elem_Py2"][6:, :], NULL)
+        npt.assert_equal(outputs["platform_elem_Pz2"][6:, :], NULL)
+        npt.assert_equal(outputs["platform_elem_qdyn"][6:, :], NULL)
 
-        npt.assert_equal(outputs["platform_elem_Px1"][:6], 1.0)
-        npt.assert_equal(outputs["platform_elem_Py1"][:6], 2.0)
-        npt.assert_equal(outputs["platform_elem_Pz1"][:6], 3.0)
-        npt.assert_equal(outputs["platform_elem_Px2"][:6], 1.0)
-        npt.assert_equal(outputs["platform_elem_Py2"][:6], 2.0)
-        npt.assert_equal(outputs["platform_elem_Pz2"][:6], 3.0)
-        npt.assert_equal(outputs["platform_elem_qdyn"][:6], 4.0)
-
-    def testMaxLoads(self):
-        inputs = {}
-        outputs = {}
-
-        inputs["lc1:turbine_F"] = np.array([2, 3, 4])
-        inputs["lc2:turbine_F"] = np.array([4, 2, 3])
-
-        inputs["lc1:turbine_M"] = np.array([2, 3, 1])
-        inputs["lc2:turbine_M"] = np.array([4, 2, 5])
-
-        myobj = frame.MaxTurbineLoads(nLC=2)
-        myobj.compute(inputs, outputs)
-
-        npt.assert_equal(outputs["max_F"], np.array([4, 3, 4]))
-        npt.assert_equal(outputs["max_M"], np.array([4, 3, 5]))
+        npt.assert_equal(outputs["platform_elem_Px1"][:6, :], 1.0)
+        npt.assert_equal(outputs["platform_elem_Py1"][:6, :], 2.0)
+        npt.assert_equal(outputs["platform_elem_Pz1"][:6, :], 3.0)
+        npt.assert_equal(outputs["platform_elem_Px2"][:6, :], 1.0)
+        npt.assert_equal(outputs["platform_elem_Py2"][:6, :], 2.0)
+        npt.assert_equal(outputs["platform_elem_Pz2"][:6, :], 3.0)
+        npt.assert_equal(outputs["platform_elem_qdyn"][:6, :], 4.0)
 
     def testAnalysis(self):
         inputs = {}
@@ -84,6 +69,7 @@ class TestFrame(unittest.TestCase):
         opt = {}
         opt["floating"] = {}
         opt["WISDEM"] = {}
+        opt["WISDEM"]["n_dlc"] = 1
         opt["WISDEM"]["FloatingSE"] = {}
         opt["floating"]["members"] = {}
         opt["floating"]["members"]["n_members"] = n_member = 6
@@ -127,7 +113,7 @@ class TestFrame(unittest.TestCase):
             inputs["tower_elem_" + var] = NULL * np.ones(MEMMAX)
             for k in range(n_member):
                 if var in ["Px", "Py", "Pz", "qdyn"]:
-                    inputs[f"member{k}:{var}"] = NULL * np.ones(MEMMAX)
+                    inputs[f"member{k}:{var}"] = NULL * np.ones((MEMMAX, 1))
                 else:
                     inputs[f"member{k}:section_{var}"] = NULL * np.ones(MEMMAX)
 
@@ -168,10 +154,10 @@ class TestFrame(unittest.TestCase):
             inputs[f"member{k}:variable_ballast_spts"] = np.linspace(0, 0.5, 10)
             inputs[f"member{k}:variable_ballast_Vpts"] = np.arange(10)
             inputs[f"member{k}:waterline_centroid"] = inputs[f"member{k}:nodes_xyz"][:2, :2].mean(axis=0)
-            inputs[f"member{k}:Px"][:2] = 1.0
-            inputs[f"member{k}:Py"][:2] = 2.0
-            inputs[f"member{k}:Pz"][:2] = 3.0
-            inputs[f"member{k}:qdyn"][:2] = 4.0
+            inputs[f"member{k}:Px"][:2, :] = 1.0
+            inputs[f"member{k}:Py"][:2, :] = 2.0
+            inputs[f"member{k}:Pz"][:2, :] = 3.0
+            inputs[f"member{k}:qdyn"][:2, :] = 4.0
 
         inputs["mooring_neutral_load"] = np.zeros((3, 3))
         inputs["mooring_neutral_load"][:, 0] = [200, -100.0, -100]
@@ -186,8 +172,8 @@ class TestFrame(unittest.TestCase):
         inputs["transition_piece_cost"] = 3e3
         inputs["rho_water"] = 1e3
 
-        inputs["turbine_F"] = 1e3 * np.ones(3)
-        inputs["turbine_M"] = 1e4 * np.ones(3)
+        inputs["turbine_F"] = 1e3 * np.ones((3, 1))
+        inputs["turbine_M"] = 1e4 * np.ones((3, 1))
 
         myobj = sys.PlatformFrame(options=opt)
         myobj.node_mem2glob = {}

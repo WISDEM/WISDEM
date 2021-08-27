@@ -126,8 +126,8 @@ class TestOC3Mass(unittest.TestCase):
         # Properties of turbine
         prob["turbine_mass"] = 0.0
         prob["turbine_center_of_mass"] = np.zeros(3)
-        prob["lc:turbine_F"] = np.zeros(3)
-        prob["lc:turbine_M"] = np.zeros(3)
+        prob["turbine_F"] = np.zeros(3)
+        prob["turbine_M"] = np.zeros(3)
 
         prob.run_model()
 

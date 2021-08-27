@@ -1994,6 +1994,72 @@ class Global2MemberLoads(om.ExplicitComponent):
         outputs["qdyn"] = qdyn
 
 
+class LoadMux(om.ExplicitComponent):
+    """
+    Muxes (concatenates) multiple loading cases into one
+
+    Parameters
+    ----------
+    lc0:Px : numpy array[MEMMAX], [N/m]
+        x-Force density in element coordinates (x along axis) at member nodes
+    lc0:Py : numpy array[MEMMAX], [N/m]
+        y-Force density in element coordinates (x along axis) at member nodes
+    lc0:Pz : numpy array[MEMMAX], [N/m]
+        z-Force density in element coordinates (x along axis) at member nodes
+
+
+    Returns
+    -------
+    Px : numpy array[MEMMAX], [N/m]
+        x-Force density in element coordinates (x along axis) at member nodes
+    Py : numpy array[MEMMAX], [N/m]
+        y-Force density in element coordinates (x along axis) at member nodes
+    Pz : numpy array[MEMMAX], [N/m]
+        z-Force density in element coordinates (x along axis) at member nodes
+
+    """
+
+    def initialize(self):
+        self.options.declare("n_dlc")
+        self.options.declare("n_full")
+        self.options.declare("memmax", default=False)
+
+    def setup(self):
+        n_dlc = self.options["n_dlc"]
+        n_full = self.options["n_full"]
+        initval = NULL * np.ones(MEMMAX) if self.options["memmax"] else np.zeros(n_full)
+        outval = np.tile(initval, (n_dlc, 1)).T
+
+        for k in range(n_dlc):
+            lc = "" if n_dlc == 1 else str(k + 1)
+            self.add_input(f"lc{lc}:Px", initval, units="N/m")
+            self.add_input(f"lc{lc}:Py", initval, units="N/m")
+            self.add_input(f"lc{lc}:Pz", initval, units="N/m")
+            self.add_input(f"lc{lc}:qdyn", initval, units="Pa")
+
+        self.add_output("Px", outval, units="N/m")
+        self.add_output("Py", outval, units="N/m")
+        self.add_output("Pz", outval, units="N/m")
+        self.add_output("qdyn", outval, units="Pa")
+
+    def compute(self, inputs, outputs):
+        n_dlc = self.options["n_dlc"]
+
+        Px, Py, Pz, qdyn = [], [], [], []
+        for k in range(n_dlc):
+            lc = "" if n_dlc == 1 else str(k + 1)
+
+            Px = np.append(Px, inputs[f"lc{lc}:Px"])
+            Py = np.append(Py, inputs[f"lc{lc}:Py"])
+            Pz = np.append(Pz, inputs[f"lc{lc}:Pz"])
+            qdyn = np.append(qdyn, inputs[f"lc{lc}:qdyn"])
+
+        outputs["Px"] = Px.reshape((n_dlc, -1)).T
+        outputs["Py"] = Py.reshape((n_dlc, -1)).T
+        outputs["Pz"] = Pz.reshape((n_dlc, -1)).T
+        outputs["qdyn"] = qdyn.reshape((n_dlc, -1)).T
+
+
 class CylinderPostFrame(om.ExplicitComponent):
     """
     Postprocess results from Frame3DD.
@@ -2056,12 +2122,13 @@ class CylinderPostFrame(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("modeling_options")
-        # self.options.declare('nDEL')
+        self.options.declare("n_dlc")
 
     def setup(self):
         n_height = self.options["modeling_options"]["n_height"]
         n_refine = self.options["modeling_options"]["n_refine"]
         n_full = get_nfull(n_height, nref=n_refine)
+        n_dlc = self.options["n_dlc"]
 
         # effective geometry -- used for handbook methods to estimate hoop stress, buckling, fatigue
         self.add_input("z_full", np.zeros(n_full), units="m")
@@ -2076,33 +2143,34 @@ class CylinderPostFrame(om.ExplicitComponent):
         self.add_input("sigma_y_full", np.zeros(n_full - 1), units="Pa")
 
         # Processed Frame3DD/OpenFAST outputs
-        self.add_input("cylinder_Fz", val=np.zeros(n_full - 1), units="N")
-        self.add_input("cylinder_Vx", val=np.zeros(n_full - 1), units="N")
-        self.add_input("cylinder_Vy", val=np.zeros(n_full - 1), units="N")
-        self.add_input("cylinder_Mxx", val=np.zeros(n_full - 1), units="N*m")
-        self.add_input("cylinder_Myy", val=np.zeros(n_full - 1), units="N*m")
-        self.add_input("cylinder_Mzz", val=np.zeros(n_full - 1), units="N*m")
-        self.add_input("qdyn", val=np.zeros(n_full), units="Pa")
+        self.add_input("cylinder_Fz", val=np.zeros((n_full - 1, n_dlc)), units="N")
+        self.add_input("cylinder_Vx", val=np.zeros((n_full - 1, n_dlc)), units="N")
+        self.add_input("cylinder_Vy", val=np.zeros((n_full - 1, n_dlc)), units="N")
+        self.add_input("cylinder_Mxx", val=np.zeros((n_full - 1, n_dlc)), units="N*m")
+        self.add_input("cylinder_Myy", val=np.zeros((n_full - 1, n_dlc)), units="N*m")
+        self.add_input("cylinder_Mzz", val=np.zeros((n_full - 1, n_dlc)), units="N*m")
+        self.add_input("qdyn", val=np.zeros((n_full, n_dlc)), units="Pa")
 
         # Load analysis
-        self.add_output("axial_stress", val=np.zeros(n_full - 1), units="Pa")
-        self.add_output("shear_stress", val=np.zeros(n_full - 1), units="Pa")
-        self.add_output("hoop_stress", val=np.zeros(n_full - 1), units="Pa")
+        self.add_output("axial_stress", val=np.zeros((n_full - 1, n_dlc)), units="Pa")
+        self.add_output("shear_stress", val=np.zeros((n_full - 1, n_dlc)), units="Pa")
+        self.add_output("hoop_stress", val=np.zeros((n_full - 1, n_dlc)), units="Pa")
 
-        self.add_output("hoop_stress_euro", val=np.zeros(n_full - 1), units="Pa")
-        self.add_output("constr_stress", np.zeros(n_full - 1))
-        self.add_output("constr_shell_buckling", np.zeros(n_full - 1))
-        self.add_output("constr_global_buckling", np.zeros(n_full - 1))
+        self.add_output("hoop_stress_euro", val=np.zeros((n_full - 1, n_dlc)), units="Pa")
+        self.add_output("constr_stress", np.zeros((n_full - 1, n_dlc)))
+        self.add_output("constr_shell_buckling", np.zeros((n_full - 1, n_dlc)))
+        self.add_output("constr_global_buckling", np.zeros((n_full - 1, n_dlc)))
 
     def compute(self, inputs, outputs):
         # Unpack some variables
-        sigma_y = inputs["sigma_y_full"]
-        E = inputs["E_full"]
-        G = inputs["G_full"]
-        z = inputs["z_full"]
-        t = inputs["t_full"]
-        d = inputs["d_full"]
-        h = np.diff(z)
+        n_dlc = self.options["n_dlc"]
+        sigma_y = np.tile(inputs["sigma_y_full"], (n_dlc, 1)).T
+        E = np.tile(inputs["E_full"], (n_dlc, 1)).T
+        G = np.tile(inputs["G_full"], (n_dlc, 1)).T
+        z = np.tile(inputs["z_full"], (n_dlc, 1)).T
+        t = np.tile(inputs["t_full"], (n_dlc, 1)).T
+        d = np.tile(inputs["d_full"], (n_dlc, 1)).T
+        h = np.diff(z, axis=0)
         d_sec, _ = util.nodal2sectional(d)
         r_sec = 0.5 * d_sec
         itube = cs.Tube(d_sec, t)
@@ -2150,15 +2218,27 @@ class CylinderPostFrame(om.ExplicitComponent):
             axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigma_y
         )
 
+        shell_buckling = np.zeros(axial_stress.shape)
+        global_buckling = np.zeros(axial_stress.shape)
         if self.options["modeling_options"]["buckling_method"].lower().find("euro") >= 0:
             # Use Euro-code method
             L_buckling = L_buckling * np.ones(axial_stress.shape)
             hoop_euro = util_euro.hoopStressEurocode(d_sec, t, L_buckling, hoop_stress)
             outputs["hoop_stress_euro"] = hoop_euro
 
-            shell_buckling = util_euro.shellBucklingEurocode(
-                d, t, axial_stress, hoop_euro, shear_stress, L_buckling, E, sigma_y, gamma_f, gamma_b
-            )
+            for k in range(n_dlc):
+                shell_buckling[:, k] = util_euro.shellBucklingEurocode(
+                    d[:, k],
+                    t[:, k],
+                    axial_stress[:, k],
+                    hoop_euro[:, k],
+                    shear_stress[:, k],
+                    L_buckling[:, k],
+                    E[:, k],
+                    sigma_y[:, k],
+                    gamma_f,
+                    gamma_b,
+                )
 
             h_cyl = inputs["bending_height"]
             global_buckling = util_euro.bucklingGL(d_sec, t, Fz, M, h_cyl, E, sigma_y, gamma_f, gamma_b)
@@ -2166,17 +2246,21 @@ class CylinderPostFrame(om.ExplicitComponent):
         else:
             # Use DNV-GL CP202 Method
             check = util_dnvgl.CylinderBuckling(
-                h,
-                d,
-                t,
-                E=E,
-                G=G,
-                sigma_y=sigma_y,
+                h[:, 0],
+                d[:, 0],
+                t[:, 0],
+                E=E[:, 0],
+                G=G[:, 0],
+                sigma_y=sigma_y[:, 0],
                 gamma=gamma_f * gamma_b,
             )
-            results = check.run_buckling_checks(Fz, M, axial_stress, hoop_stress, shear_stress)
-            shell_buckling = results["Shell"]
-            global_buckling = results["Global"]
+
+            for k in range(n_dlc):
+                results = check.run_buckling_checks(
+                    Fz[:, k], M[:, k], axial_stress[:, k], hoop_stress[:, k], shear_stress[:, k]
+                )
+                shell_buckling[:, k] = results["Shell"]
+                global_buckling[:, k] = results["Global"]
 
         outputs["constr_shell_buckling"] = shell_buckling
         outputs["constr_global_buckling"] = global_buckling
@@ -2275,6 +2359,7 @@ class MemberLoads(om.Group):
         n_full = self.options["n_full"]
         nLC = self.options["n_lc"]
         hydro = self.options["hydro"]
+        memmax = self.options["memmax"]
 
         prom = [
             ("zref", "wind_reference_height"),
@@ -2313,10 +2398,21 @@ class MemberLoads(om.Group):
 
             self.add_subsystem(
                 f"g2e{lc}",
-                Global2MemberLoads(n_full=n_full, memmax=self.options["memmax"]),
+                Global2MemberLoads(n_full=n_full, memmax=memmax),
                 promotes=["joint1", "joint2", "s_full", "s_all"],
             )
             self.connect(f"env{lc}.Px", f"g2e{lc}.Px_global")
             self.connect(f"env{lc}.Py", f"g2e{lc}.Py_global")
             self.connect(f"env{lc}.Pz", f"g2e{lc}.Pz_global")
             self.connect(f"env{lc}.qdyn", f"g2e{lc}.qdyn_global")
+
+        self.add_subsystem(
+            "mux", LoadMux(n_full=n_full, memmax=memmax, n_dlc=nLC), promotes=["*"]
+        )  # Px, Py, Pz, qdyn"])
+        for iLC in range(nLC):
+            lc = "" if nLC == 1 else str(iLC + 1)
+
+            self.connect(f"g2e{lc}.Px", f"lc{lc}:Px")
+            self.connect(f"g2e{lc}.Py", f"lc{lc}:Py")
+            self.connect(f"g2e{lc}.Pz", f"lc{lc}:Pz")
+            self.connect(f"g2e{lc}.qdyn", f"lc{lc}:qdyn")

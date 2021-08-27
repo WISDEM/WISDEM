@@ -856,11 +856,16 @@ def assign_tower_values(wt_opt, modeling_options, tower):
             wt_opt["towerse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
             wt_opt["towerse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
             wt_opt["towerse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
-            for k in range(modeling_options["WISDEM"]["n_dlc"]):
-                kstr = "" if modeling_options["WISDEM"]["n_dlc"] <= 1 else str(k + 1)
-                wt_opt[f"towerse.tower{kstr}.rna_F"] = modeling_options["WISDEM"]["Loading"]["loads"][k]["force"]
-                wt_opt[f"towerse.tower{kstr}.rna_M"] = modeling_options["WISDEM"]["Loading"]["loads"][k]["moment"]
+            F = []
+            M = []
+            n_dlc = modeling_options["WISDEM"]["n_dlc"]
+            for k in range(n_dlc):
+                kstr = "" if n_dlc <= 1 else str(k + 1)
                 wt_opt[f"towerse.env{kstr}.Uref"] = modeling_options["WISDEM"]["Loading"]["loads"][k]["velocity"]
+                F = np.append(F, modeling_options["WISDEM"]["Loading"]["loads"][k]["force"])
+                M = np.append(M, modeling_options["WISDEM"]["Loading"]["loads"][k]["moment"])
+            wt_opt["towerse.tower.rna_F"] = F.reshape((n_dlc, 3)).T
+            wt_opt["towerse.tower.rna_M"] = M.reshape((n_dlc, 3)).T
 
     return wt_opt
 

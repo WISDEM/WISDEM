@@ -38,8 +38,8 @@ class TestConstraints(unittest.TestCase):
         inputs["platform_center_of_buoyancy"] = np.ones(3)
         inputs["system_center_of_mass"] = np.array([0.0, 0.0, 5.0])
         inputs["transition_node"] = np.array([0.0, 0.0, 10.0])
-        inputs["max_F"] = np.array([1e2, 1e1, 0.0])
-        inputs["max_M"] = np.array([2e1, 2e2, 0.0])
+        inputs["turbine_F"] = np.array([1e2, 1e1, 0.0]).reshape((-1, 1))
+        inputs["turbine_M"] = np.array([2e1, 2e2, 0.0]).reshape((-1, 1))
         inputs["max_surge_restoring_force"] = 1e5
         inputs["operational_heel_restoring_force"] = 2e5 * np.ones(6)
         inputs["survival_heel_restoring_force"] = 3e5 * np.ones(6)

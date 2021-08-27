@@ -953,8 +953,6 @@ class PoseOptimization(object):
         return wt_opt
 
     def set_constraints(self, wt_opt):
-        nLC = self.modeling["WISDEM"]["n_dlc"]
-
         blade_opt = self.opt["design_variables"]["blade"]
 
         # Set non-linear blade constraints
@@ -1135,19 +1133,13 @@ class PoseOptimization(object):
             )
 
         if tower_constr["stress"]["flag"]:
-            for k in range(nLC):
-                kstr = "" if nLC <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("towerse.post" + kstr + ".constr_stress", upper=1.0)
+            wt_opt.model.add_constraint("towerse.post.constr_stress", upper=1.0)
 
         if tower_constr["global_buckling"]["flag"]:
-            for k in range(nLC):
-                kstr = "" if nLC <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("towerse.post" + kstr + ".constr_global_buckling", upper=1.0)
+            wt_opt.model.add_constraint("towerse.post.constr_global_buckling", upper=1.0)
 
         if tower_constr["shell_buckling"]["flag"]:
-            for k in range(nLC):
-                kstr = "" if nLC <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("towerse.post" + kstr + ".constr_shell_buckling", upper=1.0)
+            wt_opt.model.add_constraint("towerse.post.constr_shell_buckling", upper=1.0)
 
         if tower_constr["d_to_t"]["flag"]:
             wt_opt.model.add_constraint(
@@ -1167,32 +1159,24 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("tcons.constr_tower_f_NPmargin", upper=0.0)
 
         elif tower_constr["frequency_1"]["flag"]:
-            for k in range(nLC):
-                kstr = "" if nLC <= 1 else str(k + 1)
-                wt_opt.model.add_constraint(
-                    "towerse.tower" + kstr + ".structural_frequencies",
-                    indices=[0],
-                    lower=tower_constr["frequency_1"]["lower_bound"],
-                    upper=tower_constr["frequency_1"]["upper_bound"],
-                )
+            wt_opt.model.add_constraint(
+                "towerse.tower.structural_frequencies",
+                indices=[0],
+                lower=tower_constr["frequency_1"]["lower_bound"],
+                upper=tower_constr["frequency_1"]["upper_bound"],
+            )
 
         # Monopile constraints
         monopile_constr = self.opt["constraints"]["monopile"]
 
         if monopile_constr["stress"]["flag"]:
-            for k in range(nLC):
-                kstr = "" if nLC <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("fixedse.post" + kstr + ".constr_stress", upper=1.0)
+            wt_opt.model.add_constraint("fixedse.post.constr_stress", upper=1.0)
 
         if monopile_constr["global_buckling"]["flag"]:
-            for k in range(nLC):
-                kstr = "" if nLC <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("fixedse.post" + kstr + ".constr_global_buckling", upper=1.0)
+            wt_opt.model.add_constraint("fixedse.post.constr_global_buckling", upper=1.0)
 
         if monopile_constr["shell_buckling"]["flag"]:
-            for k in range(nLC):
-                kstr = "" if nLC <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("fixedse.post" + kstr + ".constr_shell_buckling", upper=1.0)
+            wt_opt.model.add_constraint("fixedse.post.constr_shell_buckling", upper=1.0)
 
         if monopile_constr["d_to_t"]["flag"]:
             wt_opt.model.add_constraint(
@@ -1208,14 +1192,12 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("fixedse.slope", upper=1.0)
 
         elif monopile_constr["frequency_1"]["flag"]:
-            for k in range(nLC):
-                kstr = "" if nLC <= 1 else str(k + 1)
-                wt_opt.model.add_constraint(
-                    "fixedse.monopile" + kstr + ".structural_frequencies",
-                    indices=[0],
-                    lower=monopile_constr["frequency_1"]["lower_bound"],
-                    upper=monopile_constr["frequency_1"]["upper_bound"],
-                )
+            wt_opt.model.add_constraint(
+                "fixedse.monopile.structural_frequencies",
+                indices=[0],
+                lower=monopile_constr["frequency_1"]["lower_bound"],
+                upper=monopile_constr["frequency_1"]["upper_bound"],
+            )
 
         if monopile_constr["pile_depth"]["flag"]:
             wt_opt.model.add_constraint("fixedse.suctionpile_depth", lower=monopile_constr["pile_depth"]["lower_bound"])
@@ -1224,19 +1206,13 @@ class PoseOptimization(object):
         jacket_constr = self.opt["constraints"]["jacket"]
 
         if jacket_constr["stress"]["flag"]:
-            for k in range(nLC):
-                kstr = "" if nLC <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("fixedse.post" + kstr + ".constr_stress", upper=1.0)
+            wt_opt.model.add_constraint("fixedse.post.constr_stress", upper=1.0)
 
         if jacket_constr["global_buckling"]["flag"]:
-            for k in range(nLC):
-                kstr = "" if nLC <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("fixedse.post" + kstr + ".constr_global_buckling", upper=1.0)
+            wt_opt.model.add_constraint("fixedse.post.constr_global_buckling", upper=1.0)
 
         if jacket_constr["shell_buckling"]["flag"]:
-            for k in range(nLC):
-                kstr = "" if nLC <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("fixedse.post" + kstr + ".constr_shell_buckling", upper=1.0)
+            wt_opt.model.add_constraint("fixedse.post.constr_shell_buckling", upper=1.0)
 
         if jacket_constr["d_to_t"]["flag"]:
             wt_opt.model.add_constraint(
@@ -1249,14 +1225,12 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("fixedse.constr_taper", lower=jacket_constr["taper"]["lower_bound"])
 
         elif jacket_constr["frequency_1"]["flag"]:
-            for k in range(nLC):
-                kstr = "" if nLC <= 1 else str(k + 1)
-                wt_opt.model.add_constraint(
-                    "fixedse.jacket" + kstr + ".structural_frequencies",
-                    indices=[0],
-                    lower=jacket_constr["frequency_1"]["lower_bound"],
-                    upper=jacket_constr["frequency_1"]["upper_bound"],
-                )
+            wt_opt.model.add_constraint(
+                "fixedse.jacket.structural_frequencies",
+                indices=[0],
+                lower=jacket_constr["frequency_1"]["lower_bound"],
+                upper=jacket_constr["frequency_1"]["upper_bound"],
+            )
 
         # Hub and drivetrain constraints
         hub_constr = self.opt["constraints"]["hub"]

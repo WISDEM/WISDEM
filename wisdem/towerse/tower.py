@@ -196,10 +196,12 @@ class TowerFrame(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("n_full")
+        self.options.declare("nLC")
         self.options.declare("frame3dd_opt")
 
     def setup(self):
         n_full = self.options["n_full"]
+        nLC = self.options["nLC"]
         self.frame = None
 
         # cross-sectional data along cylinder.
@@ -216,13 +218,13 @@ class TowerFrame(om.ExplicitComponent):
         self.add_output("section_L", np.zeros(n_full - 1), units="m")
 
         # point loads
-        self.add_input("rna_F", np.zeros(3), units="N")
-        self.add_input("rna_M", np.zeros(3), units="N*m")
+        self.add_input("rna_F", np.zeros((3, nLC)), units="N")
+        self.add_input("rna_M", np.zeros((3, nLC)), units="N*m")
 
         # combined wind-water distributed loads
-        self.add_input("Px", val=np.zeros(n_full), units="N/m")
-        self.add_input("Py", val=np.zeros(n_full), units="N/m")
-        self.add_input("Pz", val=np.zeros(n_full), units="N/m")
+        self.add_input("Px", val=np.zeros((n_full, nLC)), units="N/m")
+        self.add_input("Py", val=np.zeros((n_full, nLC)), units="N/m")
+        self.add_input("Pz", val=np.zeros((n_full, nLC)), units="N/m")
 
         # Frequencies
         NFREQ2 = int(NFREQ / 2)
@@ -235,20 +237,21 @@ class TowerFrame(om.ExplicitComponent):
         self.add_output("fore_aft_freqs", np.zeros(NFREQ2), units="Hz")
         self.add_output("side_side_freqs", np.zeros(NFREQ2), units="Hz")
         self.add_output("torsion_freqs", np.zeros(NFREQ2), units="Hz")
-        self.add_output("tower_deflection", np.zeros(n_full), units="m")
-        self.add_output("top_deflection", 0.0, units="m")
-        self.add_output("tower_Fz", val=np.zeros(n_full - 1), units="N")
-        self.add_output("tower_Vx", val=np.zeros(n_full - 1), units="N")
-        self.add_output("tower_Vy", val=np.zeros(n_full - 1), units="N")
-        self.add_output("tower_Mxx", val=np.zeros(n_full - 1), units="N*m")
-        self.add_output("tower_Myy", val=np.zeros(n_full - 1), units="N*m")
-        self.add_output("tower_Mzz", val=np.zeros(n_full - 1), units="N*m")
-        self.add_output("turbine_F", val=np.zeros(3), units="N")
-        self.add_output("turbine_M", val=np.zeros(3), units="N*m")
+        self.add_output("tower_deflection", np.zeros((n_full, nLC)), units="m")
+        self.add_output("top_deflection", np.zeros(nLC), units="m")
+        self.add_output("tower_Fz", val=np.zeros((n_full - 1, nLC)), units="N")
+        self.add_output("tower_Vx", val=np.zeros((n_full - 1, nLC)), units="N")
+        self.add_output("tower_Vy", val=np.zeros((n_full - 1, nLC)), units="N")
+        self.add_output("tower_Mxx", val=np.zeros((n_full - 1, nLC)), units="N*m")
+        self.add_output("tower_Myy", val=np.zeros((n_full - 1, nLC)), units="N*m")
+        self.add_output("tower_Mzz", val=np.zeros((n_full - 1, nLC)), units="N*m")
+        self.add_output("turbine_F", val=np.zeros((3, nLC)), units="N")
+        self.add_output("turbine_M", val=np.zeros((3, nLC)), units="N*m")
 
     def compute(self, inputs, outputs):
 
         frame3dd_opt = self.options["frame3dd_opt"]
+        nLC = self.options["nLC"]
 
         # ------- node data ----------------
         xyz = inputs["nodes_xyz"]
@@ -308,44 +311,45 @@ class TowerFrame(om.ExplicitComponent):
         gy = 0.0
         gz = -gravity
 
-        load = pyframe3dd.StaticLoadCase(gx, gy, gz)
+        for k in range(nLC):
+            load = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
-        # Prepare point forces at RNA node
-        rna_F = inputs["rna_F"].flatten()
-        rna_M = inputs["rna_M"].flatten()
-        load.changePointLoads(
-            np.array([n - 1], dtype=np.int_),  # -1 b/c crash if added at final node
-            np.array([rna_F[0]]),
-            np.array([rna_F[1]]),
-            np.array([rna_F[2]]),
-            np.array([rna_M[0]]),
-            np.array([rna_M[1]]),
-            np.array([rna_M[2]]),
-        )
+            # Prepare point forces at RNA node
+            rna_F = inputs["rna_F"][:, k]
+            rna_M = inputs["rna_M"][:, k]
+            load.changePointLoads(
+                np.array([n - 1], dtype=np.int_),  # -1 b/c crash if added at final node
+                np.array([rna_F[0]]),
+                np.array([rna_F[1]]),
+                np.array([rna_F[2]]),
+                np.array([rna_M[0]]),
+                np.array([rna_M[1]]),
+                np.array([rna_M[2]]),
+            )
 
-        # distributed loads
-        Px, Py, Pz = inputs["Pz"], inputs["Py"], -inputs["Px"]  # switch to local c.s.
+            # distributed loads
+            Px, Py, Pz = inputs["Pz"][:, k], inputs["Py"][:, k], -inputs["Px"][:, k]  # switch to local c.s.
 
-        # trapezoidally distributed loads
-        EL = np.arange(1, n)
-        xx1 = xy1 = xz1 = np.zeros(n - 1)
-        xx2 = xy2 = xz2 = 0.99 * L  # subtract small number b.c. of precision
-        wx1 = Px[:-1]
-        wx2 = Px[1:]
-        wy1 = Py[:-1]
-        wy2 = Py[1:]
-        wz1 = Pz[:-1]
-        wz2 = Pz[1:]
+            # trapezoidally distributed loads
+            EL = np.arange(1, n)
+            xx1 = xy1 = xz1 = np.zeros(n - 1)
+            xx2 = xy2 = xz2 = 0.99 * L  # subtract small number b.c. of precision
+            wx1 = Px[:-1]
+            wx2 = Px[1:]
+            wy1 = Py[:-1]
+            wy2 = Py[1:]
+            wz1 = Pz[:-1]
+            wz2 = Pz[1:]
 
-        load.changeTrapezoidalLoads(EL, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
+            load.changeTrapezoidalLoads(EL, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
 
-        self.frame.addLoadCase(load)
+            self.frame.addLoadCase(load)
+
         # Debugging
         # self.frame.write('tower_debug.3dd')
         # -----------------------------------
         # run the analysis
         displacements, forces, reactions, internalForces, mass, modal = self.frame.run()
-        ic = 0
 
         # natural frequncies
         outputs["f1"] = modal.freq[0]
@@ -365,22 +369,33 @@ class TowerFrame(om.ExplicitComponent):
         outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
 
         # deflections due to loading (from cylinder top and wind/wave loads)
-        outputs["tower_deflection"] = np.sqrt(
-            displacements.dx[ic, :] ** 2 + displacements.dy[ic, :] ** 2
-        )  # in yaw-aligned direction
-        outputs["top_deflection"] = outputs["tower_deflection"][-1]
+        outputs["tower_deflection"] = np.sqrt(displacements.dx ** 2 + displacements.dy ** 2).T
+        outputs["top_deflection"] = outputs["tower_deflection"][-1, :]
 
         # Record total forces and moments at base
-        outputs["turbine_F"] = -1.0 * np.array([reactions.Fx[ic, 0], reactions.Fy[ic, 0], reactions.Fz[ic, 0]])
-        outputs["turbine_M"] = -1.0 * np.array([reactions.Mxx[ic, 0], reactions.Myy[ic, 0], reactions.Mzz[ic, 0]])
+        outputs["turbine_F"] = -np.c_[reactions.Fx[:, 0], reactions.Fy[:, 0], reactions.Fz[:, 0]].T
+        outputs["turbine_M"] = -np.c_[reactions.Mxx[:, 0], reactions.Myy[:, 0], reactions.Mzz[:, 0]].T
 
-        # Forces and moments along the structure
-        outputs["tower_Fz"] = forces.Nx[ic, 1::2]
-        outputs["tower_Vx"] = -forces.Vz[ic, 1::2]
-        outputs["tower_Vy"] = forces.Vy[ic, 1::2]
-        outputs["tower_Mxx"] = -forces.Mzz[ic, 1::2]
-        outputs["tower_Myy"] = forces.Myy[ic, 1::2]
-        outputs["tower_Mzz"] = forces.Txx[ic, 1::2]
+        Fz = np.zeros((len(forces.Nx[0, 1::2]), nLC))
+        Vx = np.zeros(Fz.shape)
+        Vy = np.zeros(Fz.shape)
+        Mxx = np.zeros(Fz.shape)
+        Myy = np.zeros(Fz.shape)
+        Mzz = np.zeros(Fz.shape)
+        for ic in range(nLC):
+            # Forces and moments along the structure
+            Fz[:, ic] = forces.Nx[ic, 1::2]
+            Vx[:, ic] = -forces.Vz[ic, 1::2]
+            Vy[:, ic] = forces.Vy[ic, 1::2]
+            Mxx[:, ic] = -forces.Mzz[ic, 1::2]
+            Myy[:, ic] = forces.Myy[ic, 1::2]
+            Mzz[:, ic] = forces.Txx[ic, 1::2]
+        outputs["tower_Fz"] = Fz
+        outputs["tower_Vx"] = Vx
+        outputs["tower_Vy"] = Vy
+        outputs["tower_Mxx"] = Mxx
+        outputs["tower_Myy"] = Myy
+        outputs["tower_Mzz"] = Mzz
 
 
 class TowerSE(om.Group):
@@ -474,49 +489,45 @@ class TowerSE(om.Group):
 
         self.add_subsystem("loads", mem.MemberLoads(n_full=n_full, n_lc=nLC, wind=wind, hydro=False), promotes=["*"])
 
-        for iLC in range(nLC):
-            lc = "" if nLC == 1 else str(iLC + 1)
+        self.add_subsystem(
+            "tower",
+            TowerFrame(n_full=n_full, frame3dd_opt=frame3dd_opt, nLC=nLC),
+            promotes=[
+                "nodes_xyz",
+                "section_A",
+                "section_Asx",
+                "section_Asy",
+                "section_Ixx",
+                "section_Iyy",
+                "section_J0",
+                "section_rho",
+                "section_E",
+                "section_G",
+                "Px",
+                "Py",
+                "Pz",
+            ],
+        )
 
-            self.add_subsystem(
-                f"tower{lc}",
-                TowerFrame(n_full=n_full, frame3dd_opt=frame3dd_opt),
-                promotes=[
-                    "nodes_xyz",
-                    "section_A",
-                    "section_Asx",
-                    "section_Asy",
-                    "section_Ixx",
-                    "section_Iyy",
-                    "section_J0",
-                    "section_rho",
-                    "section_E",
-                    "section_G",
-                ],
-            )
+        self.add_subsystem(
+            "post",
+            mem.CylinderPostFrame(modeling_options=mod_opt, n_dlc=nLC),
+            promotes=[
+                "z_full",
+                "d_full",
+                "t_full",
+                "rho_full",
+                "E_full",
+                "G_full",
+                "sigma_y_full",
+                "qdyn",
+                ("bending_height", "tower_height"),
+            ],
+        )
 
-            self.add_subsystem(
-                f"post{lc}",
-                mem.CylinderPostFrame(modeling_options=mod_opt),
-                promotes=[
-                    "z_full",
-                    "d_full",
-                    "t_full",
-                    "rho_full",
-                    "E_full",
-                    "G_full",
-                    "sigma_y_full",
-                    ("bending_height", "tower_height"),
-                ],
-            )
-
-            self.connect(f"g2e{lc}.Px", f"tower{lc}.Px")
-            self.connect(f"g2e{lc}.Py", f"tower{lc}.Py")
-            self.connect(f"g2e{lc}.Pz", f"tower{lc}.Pz")
-            self.connect(f"g2e{lc}.qdyn", f"post{lc}.qdyn")
-
-            self.connect(f"tower{lc}.tower_Fz", f"post{lc}.cylinder_Fz")
-            self.connect(f"tower{lc}.tower_Vx", f"post{lc}.cylinder_Vx")
-            self.connect(f"tower{lc}.tower_Vy", f"post{lc}.cylinder_Vy")
-            self.connect(f"tower{lc}.tower_Mxx", f"post{lc}.cylinder_Mxx")
-            self.connect(f"tower{lc}.tower_Myy", f"post{lc}.cylinder_Myy")
-            self.connect(f"tower{lc}.tower_Mzz", f"post{lc}.cylinder_Mzz")
+        self.connect("tower.tower_Fz", "post.cylinder_Fz")
+        self.connect("tower.tower_Vx", "post.cylinder_Vx")
+        self.connect("tower.tower_Vy", "post.cylinder_Vy")
+        self.connect("tower.tower_Mxx", "post.cylinder_Mxx")
+        self.connect("tower.tower_Myy", "post.cylinder_Myy")
+        self.connect("tower.tower_Mzz", "post.cylinder_Mzz")

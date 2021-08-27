@@ -251,12 +251,14 @@ class MonopileFrame(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("n_full")
+        self.options.declare("nLC")
         self.options.declare("frame3dd_opt")
         self.options.declare("soil_springs", default=False)
         self.options.declare("gravity_foundation", default=False)
 
     def setup(self):
         n_full = self.options["n_full"]
+        nLC = self.options["nLC"]
         self.frame = None
 
         # Monopile handling
@@ -277,8 +279,8 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_output("section_L", np.zeros(n_full - 1), units="m")
 
         # point loads
-        self.add_input("turbine_F", np.zeros(3), units="N")
-        self.add_input("turbine_M", np.zeros(3), units="N*m")
+        self.add_input("turbine_F", np.zeros((3, nLC)), units="N")
+        self.add_input("turbine_M", np.zeros((3, nLC)), units="N*m")
         self.add_input("transition_piece_mass", 0.0, units="kg")
         self.add_input("transition_piece_I", np.zeros(6), units="kg*m**2")
         self.add_input("gravity_foundation_mass", 0.0, units="kg")
@@ -287,9 +289,9 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_input("suctionpile_depth", 0.0, units="m")
 
         # combined wind-water distributed loads
-        self.add_input("Px", val=np.zeros(n_full), units="N/m")
-        self.add_input("Py", val=np.zeros(n_full), units="N/m")
-        self.add_input("Pz", val=np.zeros(n_full), units="N/m")
+        self.add_input("Px", val=np.zeros((n_full, nLC)), units="N/m")
+        self.add_input("Py", val=np.zeros((n_full, nLC)), units="N/m")
+        self.add_input("Pz", val=np.zeros((n_full, nLC)), units="N/m")
 
         # Frequencies
         NFREQ2 = int(NFREQ / 2)
@@ -302,20 +304,21 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_output("fore_aft_freqs", np.zeros(NFREQ2), units="Hz")
         self.add_output("side_side_freqs", np.zeros(NFREQ2), units="Hz")
         self.add_output("torsion_freqs", np.zeros(NFREQ2), units="Hz")
-        self.add_output("monopile_deflection", np.zeros(n_full), units="m")
-        self.add_output("top_deflection", 0.0, units="m")
-        self.add_output("monopile_Fz", val=np.zeros(n_full - 1), units="N")
-        self.add_output("monopile_Vx", val=np.zeros(n_full - 1), units="N")
-        self.add_output("monopile_Vy", val=np.zeros(n_full - 1), units="N")
-        self.add_output("monopile_Mxx", val=np.zeros(n_full - 1), units="N*m")
-        self.add_output("monopile_Myy", val=np.zeros(n_full - 1), units="N*m")
-        self.add_output("monopile_Mzz", val=np.zeros(n_full - 1), units="N*m")
-        self.add_output("mudline_F", val=np.zeros(3), units="N")
-        self.add_output("mudline_M", val=np.zeros(3), units="N*m")
+        self.add_output("monopile_deflection", np.zeros((n_full, nLC)), units="m")
+        self.add_output("top_deflection", np.zeros(nLC), units="m")
+        self.add_output("monopile_Fz", val=np.zeros((n_full - 1, nLC)), units="N")
+        self.add_output("monopile_Vx", val=np.zeros((n_full - 1, nLC)), units="N")
+        self.add_output("monopile_Vy", val=np.zeros((n_full - 1, nLC)), units="N")
+        self.add_output("monopile_Mxx", val=np.zeros((n_full - 1, nLC)), units="N*m")
+        self.add_output("monopile_Myy", val=np.zeros((n_full - 1, nLC)), units="N*m")
+        self.add_output("monopile_Mzz", val=np.zeros((n_full - 1, nLC)), units="N*m")
+        self.add_output("mudline_F", val=np.zeros((3, nLC)), units="N")
+        self.add_output("mudline_M", val=np.zeros((3, nLC)), units="N*m")
 
     def compute(self, inputs, outputs):
 
         frame3dd_opt = self.options["frame3dd_opt"]
+        nLC = self.options["nLC"]
 
         # ------- node data ----------------
         xyz = inputs["nodes_xyz"]
@@ -431,44 +434,44 @@ class MonopileFrame(om.ExplicitComponent):
         gy = 0.0
         gz = -gravity
 
-        load = pyframe3dd.StaticLoadCase(gx, gy, gz)
+        for k in range(nLC):
+            load = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
-        # Prepare point forces at transition node
-        turb_F = inputs["turbine_F"]
-        turb_M = inputs["turbine_M"]
-        load.changePointLoads(
-            np.array([n - 1], dtype=np.int_),  # -1 b/c same reason as above
-            np.array([turb_F[0]]).flatten(),
-            np.array([turb_F[1]]).flatten(),
-            np.array([turb_F[2]]).flatten(),
-            np.array([turb_M[0]]).flatten(),
-            np.array([turb_M[1]]).flatten(),
-            np.array([turb_M[2]]).flatten(),
-        )
+            # Prepare point forces at transition node
+            turb_F = inputs["turbine_F"][:, k]
+            turb_M = inputs["turbine_M"][:, k]
+            load.changePointLoads(
+                np.array([n - 1], dtype=np.int_),  # -1 b/c same reason as above
+                np.array([turb_F[0]]).flatten(),
+                np.array([turb_F[1]]).flatten(),
+                np.array([turb_F[2]]).flatten(),
+                np.array([turb_M[0]]).flatten(),
+                np.array([turb_M[1]]).flatten(),
+                np.array([turb_M[2]]).flatten(),
+            )
 
-        # distributed loads
-        Px, Py, Pz = inputs["Pz"], inputs["Py"], -inputs["Px"]  # switch to local c.s.
+            # distributed loads
+            Px, Py, Pz = inputs["Pz"][:, k], inputs["Py"][:, k], -inputs["Px"][:, k]  # switch to local c.s.
 
-        # trapezoidally distributed loads
-        EL = np.arange(1, n)
-        xx1 = xy1 = xz1 = np.zeros(n - 1)
-        xx2 = xy2 = xz2 = 0.99 * L  # subtract small number b.c. of precision
-        wx1 = Px[:-1]
-        wx2 = Px[1:]
-        wy1 = Py[:-1]
-        wy2 = Py[1:]
-        wz1 = Pz[:-1]
-        wz2 = Pz[1:]
+            # trapezoidally distributed loads
+            EL = np.arange(1, n)
+            xx1 = xy1 = xz1 = np.zeros(n - 1)
+            xx2 = xy2 = xz2 = 0.99 * L  # subtract small number b.c. of precision
+            wx1 = Px[:-1]
+            wx2 = Px[1:]
+            wy1 = Py[:-1]
+            wy2 = Py[1:]
+            wz1 = Pz[:-1]
+            wz2 = Pz[1:]
 
-        load.changeTrapezoidalLoads(EL, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
+            load.changeTrapezoidalLoads(EL, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
 
-        self.frame.addLoadCase(load)
+            self.frame.addLoadCase(load)
         # Debugging
         # self.frame.write('monopile_debug.3dd')
         # -----------------------------------
         # run the analysis
         displacements, forces, reactions, internalForces, mass, modal = self.frame.run()
-        ic = 0
 
         # natural frequncies
         outputs["f1"] = modal.freq[0]
@@ -488,23 +491,34 @@ class MonopileFrame(om.ExplicitComponent):
         outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
 
         # deflections due to loading (from cylinder top and wind/wave loads)
-        outputs["monopile_deflection"] = np.sqrt(
-            displacements.dx[ic, :] ** 2 + displacements.dy[ic, :] ** 2
-        )  # in yaw-aligned direction
-        outputs["top_deflection"] = outputs["monopile_deflection"][-1]
+        outputs["monopile_deflection"] = np.sqrt(displacements.dx ** 2 + displacements.dy ** 2).T
+        outputs["top_deflection"] = outputs["monopile_deflection"][-1, :]
 
         # Record total forces and moments
         ibase = 2 * int(kidx.max())
-        outputs["mudline_F"] = -np.r_[-forces.Vz[ic, ibase], forces.Vy[ic, ibase], forces.Nx[ic, ibase]]
-        outputs["mudline_M"] = -np.r_[-forces.Mzz[ic, ibase], forces.Myy[ic, ibase], forces.Txx[ic, ibase]]
+        outputs["mudline_F"] = -np.c_[-forces.Vz[:, ibase], forces.Vy[:, ibase], forces.Nx[:, ibase]].T
+        outputs["mudline_M"] = -np.c_[-forces.Mzz[:, ibase], forces.Myy[:, ibase], forces.Txx[:, ibase]].T
 
-        # Forces and moments along the structure
-        outputs["monopile_Fz"] = forces.Nx[ic, 1::2]
-        outputs["monopile_Vx"] = -forces.Vz[ic, 1::2]
-        outputs["monopile_Vy"] = forces.Vy[ic, 1::2]
-        outputs["monopile_Mxx"] = -forces.Mzz[ic, 1::2]
-        outputs["monopile_Myy"] = forces.Myy[ic, 1::2]
-        outputs["monopile_Mzz"] = forces.Txx[ic, 1::2]
+        Fz = np.zeros((len(forces.Nx[0, 1::2]), nLC))
+        Vx = np.zeros(Fz.shape)
+        Vy = np.zeros(Fz.shape)
+        Mxx = np.zeros(Fz.shape)
+        Myy = np.zeros(Fz.shape)
+        Mzz = np.zeros(Fz.shape)
+        for ic in range(nLC):
+            # Forces and moments along the structure
+            Fz[:, ic] = forces.Nx[ic, 1::2]
+            Vx[:, ic] = -forces.Vz[ic, 1::2]
+            Vy[:, ic] = forces.Vy[ic, 1::2]
+            Mxx[:, ic] = -forces.Mzz[ic, 1::2]
+            Myy[:, ic] = forces.Myy[ic, 1::2]
+            Mzz[:, ic] = forces.Txx[ic, 1::2]
+        outputs["monopile_Fz"] = Fz
+        outputs["monopile_Vx"] = Vx
+        outputs["monopile_Vy"] = Vy
+        outputs["monopile_Mxx"] = Mxx
+        outputs["monopile_Myy"] = Myy
+        outputs["monopile_Mzz"] = Mzz
 
 
 class MonopileSE(om.Group):
@@ -629,63 +643,61 @@ class MonopileSE(om.Group):
 
         self.add_subsystem("loads", mem.MemberLoads(n_full=n_full, n_lc=nLC, wind=wind, hydro=True), promotes=["*"])
 
-        for iLC in range(nLC):
-            lc = "" if nLC == 1 else str(iLC + 1)
+        self.add_subsystem(
+            "monopile",
+            MonopileFrame(
+                n_full=n_full,
+                frame3dd_opt=frame3dd_opt,
+                soil_springs=mod_opt["soil_springs"],
+                gravity_foundation=mod_opt["gravity_foundation"],
+                nLC=nLC,
+            ),
+            promotes=[
+                "nodes_xyz",
+                "section_A",
+                "section_Asx",
+                "section_Asy",
+                "section_Ixx",
+                "section_Iyy",
+                "section_J0",
+                "section_rho",
+                "section_E",
+                "section_G",
+                "transition_piece_height",
+                "transition_piece_mass",
+                "transition_piece_I",
+                "gravity_foundation_mass",
+                "gravity_foundation_I",
+                "suctionpile_depth",
+                "Px",
+                "Py",
+                "Pz",
+            ],
+        )
 
-            self.add_subsystem(
-                f"monopile{lc}",
-                MonopileFrame(
-                    n_full=n_full,
-                    frame3dd_opt=frame3dd_opt,
-                    soil_springs=mod_opt["soil_springs"],
-                    gravity_foundation=mod_opt["gravity_foundation"],
-                ),
-                promotes=[
-                    "nodes_xyz",
-                    "section_A",
-                    "section_Asx",
-                    "section_Asy",
-                    "section_Ixx",
-                    "section_Iyy",
-                    "section_J0",
-                    "section_rho",
-                    "section_E",
-                    "section_G",
-                    "transition_piece_height",
-                    "transition_piece_mass",
-                    "transition_piece_I",
-                    "gravity_foundation_mass",
-                    "gravity_foundation_I",
-                    "suctionpile_depth",
-                ],
-            )
+        self.add_subsystem(
+            "post",
+            mem.CylinderPostFrame(modeling_options=mod_opt, n_dlc=nLC),
+            promotes=[
+                "z_full",
+                "d_full",
+                "t_full",
+                "rho_full",
+                "E_full",
+                "G_full",
+                "sigma_y_full",
+                "bending_height",
+                "qdyn",
+            ],
+        )
 
-            self.add_subsystem(
-                f"post{lc}",
-                mem.CylinderPostFrame(modeling_options=mod_opt),
-                promotes=[
-                    "z_full",
-                    "d_full",
-                    "t_full",
-                    "rho_full",
-                    "E_full",
-                    "G_full",
-                    "sigma_y_full",
-                    "bending_height",
-                ],
-            )
+        if mod_opt["soil_springs"]:
+            self.connect("soil.z_k", "monopile.z_soil")
+            self.connect("soil.k", "monopile.k_soil")
 
-            if mod_opt["soil_springs"]:
-                self.connect("soil.z_k", f"monopile{lc}.z_soil")
-                self.connect("soil.k", f"monopile{lc}.k_soil")
-            self.connect(f"g2e{lc}.Px", f"monopile{lc}.Px")
-            self.connect(f"g2e{lc}.Py", f"monopile{lc}.Py")
-            self.connect(f"g2e{lc}.Pz", f"monopile{lc}.Pz")
-            self.connect(f"g2e{lc}.qdyn", f"post{lc}.qdyn")
-
-            self.connect(f"monopile{lc}.monopile_Fz", f"post{lc}.cylinder_Fz")
-            self.connect(f"monopile{lc}.monopile_Vx", f"post{lc}.cylinder_Vx")
-            self.connect(f"monopile{lc}.monopile_Vy", f"post{lc}.cylinder_Vy")
-            self.connect(f"monopile{lc}.monopile_Mxx", f"post{lc}.cylinder_Mxx")
-            self.connect(f"monopile{lc}.monopile_Myy", f"post{lc}.cylinder_Myy")
-            self.connect(f"monopile{lc}.monopile_Mzz", f"post{lc}.cylinder_Mzz")
+        self.connect("monopile.monopile_Fz", "post.cylinder_Fz")
+        self.connect("monopile.monopile_Vx", "post.cylinder_Vx")
+        self.connect("monopile.monopile_Vy", "post.cylinder_Vy")
+        self.connect("monopile.monopile_Mxx", "post.cylinder_Mxx")
+        self.connect("monopile.monopile_Myy", "post.cylinder_Myy")
+        self.connect("monopile.monopile_Mzz", "post.cylinder_Mzz")
