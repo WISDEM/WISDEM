@@ -1,11 +1,11 @@
 import copy
 
-import numpy as np
 import matplotlib
 import openmdao.api as om
 import matplotlib.pyplot as plt
 from scipy.interpolate import PchipInterpolator, interp1d
 
+import numpy as np
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
@@ -1374,7 +1374,7 @@ class INN_Airfoils(om.ExplicitComponent):
                 Re = 9.0e6
             print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re}")
             try:
-                cst, alpha = self.inn.inverse_design(
+                cst, alpha_inn = self.inn.inverse_design(
                     c_d[i], L_D[i], np.rad2deg(stall_margin[i]), r_thick[i], Re, N=1, process_samples=True, z=314
                 )
             except:
