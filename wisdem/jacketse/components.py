@@ -3,14 +3,16 @@ import openmdao.api as om
 import matplotlib.pyplot as plt
 
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
+import wisdem.commonse.cross_sections as cs
+from wisdem.commonse import NFREQ, gravity
 
 x_mb = True  # if there's a mud brace
 n_legs = 4
 n_bays = 4  # n_x
 
-E = 2.1e11
-G = 8.077e10
-rho = 7850.0
+E_input = 2.1e11
+G_input = 8.077e10
+rho_input = 7850.0
 
 RIGID = 1e30
 NREFINE = 3
@@ -190,15 +192,19 @@ class ComputeDiameterAndThicknesses(om.ExplicitComponent):
         self.add_input("beta_i", val=np.zeros((n_bays)))
         self.add_input("tau_i", val=np.zeros((n_bays)))
 
+        self.add_output("leg_thicknesses", val=np.zeros((n_bays + 1)))
+        self.add_output("brace_diameters", val=np.zeros((n_bays)))
+        self.add_output("brace_thicknesses", val=np.zeros((n_bays)))
+
     def compute(self, inputs, outputs):
         d_l = inputs["d_l"]
         gamma_i = inputs["gamma_i"]
         beta_i = inputs["beta_i"]
         tau_i = inputs["tau_i"]
 
-        leg_thicknesses = t_l = d_l / (2 * gamma_i)
-        brace_diameters = d_b = beta_i * d_l
-        brace_thicknesses = t_b = tau_i * t_l[:-1]
+        outputs["leg_thicknesses"] = t_l = d_l / (2 * gamma_i)
+        outputs["brace_diameters"] = d_b = beta_i * d_l
+        outputs["brace_thicknesses"] = t_b = tau_i * t_l[:-1]
 
 
 class ComputeFrame3DD(om.ExplicitComponent):
@@ -212,6 +218,10 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         self.add_input("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)))
         self.add_input("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)))
+        self.add_input("d_l", val=0.5)
+        self.add_input("leg_thicknesses", val=np.zeros((n_bays + 1)))
+        self.add_input("brace_diameters", val=np.zeros((n_bays)))
+        self.add_input("brace_thicknesses", val=np.zeros((n_bays)))
 
         self.add_output("N1")
         self.add_output("N2")
@@ -227,7 +237,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
         n = xyz.shape[0]
         node_indices = np.arange(1, n + 1)
         r = np.zeros(n)
-        # nodes = pyframe3dd.NodeData(node_indices, xyz[:, 0], xyz[:, 1], xyz[:, 2], r)
+        nodes = pyframe3dd.NodeData(node_indices, xyz[:, 0], xyz[:, 1], xyz[:, 2], r)
 
         rnode = np.array([0], dtype=np.int_) + 1  # 1-based indexing
         kx = ky = kz = ktx = kty = ktz = np.array([RIGID])
@@ -241,6 +251,12 @@ class ComputeFrame3DD(om.ExplicitComponent):
         N1 = []
         N2 = []
         L = []
+        Area = []
+        Asx = []
+        Asy = []
+        J0 = []
+        Ixx = []
+        Iyy = []
 
         # Naive for loops to make sure we get indexing right.
         # Can vectorize later as needed.
@@ -251,6 +267,13 @@ class ComputeFrame3DD(om.ExplicitComponent):
                 N1.append(leg_indices[idx, jdx])
                 N2.append(leg_indices[idx, jdx + 1])
                 L.append(np.linalg.norm(n2 - n1))
+                itube = cs.Tube(inputs["d_l"], inputs["leg_thicknesses"][jdx])
+                Area.append(itube.Area)
+                Asx.append(itube.Asx)
+                Asy.append(itube.Asy)
+                J0.append(itube.J0)
+                Ixx.append(itube.Ixx)
+                Iyy.append(itube.Iyy)
                 num_elements += 1
 
         for jdx in range(n_bays):
@@ -260,6 +283,13 @@ class ComputeFrame3DD(om.ExplicitComponent):
                 N1.append(bay_indices[idx, jdx])
                 N2.append(bay_indices[(idx + 1) % n_legs, (jdx + 1) % (n_bays + 1)])
                 L.append(np.linalg.norm(n2 - n1))
+                itube = cs.Tube(inputs["brace_diameters"][jdx], inputs["brace_thicknesses"][jdx])
+                Area.append(itube.Area)
+                Asx.append(itube.Asx)
+                Asy.append(itube.Asy)
+                J0.append(itube.J0)
+                Ixx.append(itube.Ixx)
+                Iyy.append(itube.Iyy)
                 num_elements += 1
 
                 n1 = bay_nodes[(idx + 1) % n_legs, jdx]
@@ -267,7 +297,31 @@ class ComputeFrame3DD(om.ExplicitComponent):
                 N1.append(bay_indices[(idx + 1) % n_legs, jdx])
                 N2.append(bay_indices[idx, (jdx + 1) % (n_bays + 1)])
                 L.append(np.linalg.norm(n2 - n1))
+                itube = cs.Tube(inputs["brace_diameters"][jdx], inputs["brace_thicknesses"][jdx])
+                Area.append(itube.Area)
+                Asx.append(itube.Asx)
+                Asy.append(itube.Asy)
+                J0.append(itube.J0)
+                Ixx.append(itube.Ixx)
+                Iyy.append(itube.Iyy)
                 num_elements += 1
+
+        E = [E_input] * num_elements
+        G = [G_input] * num_elements
+        rho = [rho_input] * num_elements
+
+        Area = np.squeeze(np.array(Area, dtype=np.float))
+        Asx = np.squeeze(np.array(Asx, dtype=np.float))
+        Asy = np.squeeze(np.array(Asy, dtype=np.float))
+        J0 = np.squeeze(np.array(J0, dtype=np.float))
+        Ixx = np.squeeze(np.array(Ixx, dtype=np.float))
+        Iyy = np.squeeze(np.array(Iyy, dtype=np.float))
+        E = np.squeeze(np.array(E, dtype=np.float))
+        G = np.squeeze(np.array(G, dtype=np.float))
+        rho = np.squeeze(np.array(rho, dtype=np.float))
+
+        element = np.arange(1, num_elements + 1)
+        roll = np.zeros(num_elements - 1)
 
         plot = False
         if plot:
@@ -282,21 +336,69 @@ class ComputeFrame3DD(om.ExplicitComponent):
                 plt.plot([xyz[n1][0], xyz[n2][0]], [xyz[n1][1], xyz[n2][1]], [xyz[n1][2], xyz[n2][2]])
 
             plt.show()
-        exit()
-
-        # Element properties
-        Area = inputs["section_A"]
-        Asx = inputs["section_Asx"]
-        Asy = inputs["section_Asy"]
-        J0 = inputs["section_J0"]
-        Ixx = inputs["section_Ixx"]
-        Iyy = inputs["section_Iyy"]
-        E = inputs["section_E"]
-        G = inputs["section_G"]
-        rho = inputs["section_rho"]
-        outputs["section_L"] = L = np.sqrt(np.sum(np.diff(xyz, axis=0) ** 2, axis=1))
 
         elements = pyframe3dd.ElementData(element, N1, N2, Area, Asx, Asy, J0, Ixx, Iyy, E, G, roll, rho)
+
+        # ------ options ------------
+        dx = -1.0
+        options = pyframe3dd.Options(1, 1, dx)  # TODO : replace with options
+        # -----------------------------------
+
+        # initialize frame3dd object
+        self.frame = pyframe3dd.Frame(nodes, reactions, elements, options)
+
+        # ------- enable dynamic analysis ----------
+        Mmethod = 1
+        lump = 0
+        shift = 0.0
+        # Run twice the number of modes to ensure that we can ignore the torsional modes and still get the desired number of fore-aft, side-side modes
+        self.frame.enableDynamics(2 * NFREQ, Mmethod, lump, 1e-4, shift)
+        # ----------------------------
+
+        # ------ static load case 1 ------------
+        # gravity in the X, Y, Z, directions (global)
+        gx = 0.0
+        gy = 0.0
+        gz = -gravity
+
+        load = pyframe3dd.StaticLoadCase(gx, gy, gz)
+
+        # # Prepare point forces at RNA node
+        # rna_F = inputs["rna_F"][:, k]
+        # rna_M = inputs["rna_M"][:, k]
+        # load.changePointLoads(
+        #     np.array([n - 1], dtype=np.int_),  # -1 b/c crash if added at final node
+        #     np.array([rna_F[0]]),
+        #     np.array([rna_F[1]]),
+        #     np.array([rna_F[2]]),
+        #     np.array([rna_M[0]]),
+        #     np.array([rna_M[1]]),
+        #     np.array([rna_M[2]]),
+        # )
+        #
+        # # distributed loads
+        # Px, Py, Pz = inputs["Pz"][:, k], inputs["Py"][:, k], -inputs["Px"][:, k]  # switch to local c.s.
+        #
+        # # trapezoidally distributed loads
+        # EL = np.arange(1, n)
+        # xx1 = xy1 = xz1 = np.zeros(n - 1)
+        # xx2 = xy2 = xz2 = 0.99 * L  # subtract small number b.c. of precision
+        # wx1 = Px[:-1]
+        # wx2 = Px[1:]
+        # wy1 = Py[:-1]
+        # wy2 = Py[1:]
+        # wz1 = Pz[:-1]
+        # wz2 = Pz[1:]
+        #
+        # load.changeTrapezoidalLoads(EL, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
+        #
+        self.frame.addLoadCase(load)
+
+        # Debugging
+        # self.frame.write('tower_debug.3dd')
+        # -----------------------------------
+        # run the analysis
+        displacements, forces, reactions, internalForces, mass, modal = self.frame.run()
 
 
 # Assemble the system together in an OpenMDAO Group
