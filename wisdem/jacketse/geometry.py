@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 r_foot = 10.0
 r_head = 6.0
 n_legs = 4
-n_bays = 4  # n_x
+n_bays = 10  # n_x
 L = 70.0  # total height of the jacket
 q = 0.8  # ratio of bay heights, assumed to be constant
 
@@ -51,6 +51,12 @@ gamma_i = np.hstack((gamma_b, gamma_i))
 length = L - l_i[-1] - l_osg - l_tp
 beta_i = (beta_t - beta_b) / length * np.cumsum(l_i) + beta_b
 tau_i = (tau_t - tau_b) / length * np.cumsum(l_i) + tau_b
+
+print(gamma_i.shape)
+print(beta_i.shape)
+print(tau_i.shape)
+print(lower_bay_heights.shape)
+print(lower_bay_radii.shape)
 
 
 leg_thicknesses = t_l = d_l / (2 * gamma_i)
