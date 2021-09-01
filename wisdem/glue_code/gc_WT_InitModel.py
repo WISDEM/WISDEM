@@ -6,10 +6,7 @@ from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
 
-    if modeling_options["flags"]["monopile"] or modeling_options["flags"]["floating_platform"]:
-        offshore = True
-    else:
-        offshore = False
+    offshore = modeling_options["flags"]["offshore"]
 
     # These are the required components
     assembly = wt_init["assembly"]
@@ -75,6 +72,12 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         wt_opt = assign_monopile_values(wt_opt, modeling_options, monopile)
     else:
         monopile = {}
+
+    if modeling_options["flags"]["jacket"]:
+        jacket = wt_init["components"]["jacket"]
+        wt_opt = assign_jacket_values(wt_opt, modeling_options, jacket)
+    else:
+        jacket = {}
 
     if modeling_options["flags"]["floating_platform"]:
         floating_platform = wt_init["components"]["floating_platform"]
@@ -849,31 +852,28 @@ def assign_tower_values(wt_opt, modeling_options, tower):
     wt_opt["tower.outfitting_factor"] = tower["internal_structure_2d_fem"]["outfitting_factor"]
 
     if "Loading" in modeling_options["WISDEM"]:
-        if modeling_options["flags"]["tower"] and not modeling_options["flags"]["floating"]:
+        if modeling_options["flags"]["tower"]:
             wt_opt["towerse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
             wt_opt["towerse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
             wt_opt["towerse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
-            for k in range(modeling_options["WISDEM"]["TowerSE"]["nLC"]):
-                kstr = "" if modeling_options["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
-                wt_opt["towerse.pre" + kstr + ".rna_F"] = modeling_options["WISDEM"]["Loading"]["loads"][k]["force"]
-                wt_opt["towerse.pre" + kstr + ".rna_M"] = modeling_options["WISDEM"]["Loading"]["loads"][k]["moment"]
-                wt_opt["towerse.wind" + kstr + ".Uref"] = modeling_options["WISDEM"]["Loading"]["loads"][k]["velocity"]
-
-        elif modeling_options["flags"]["floating"]:
-            wt_opt["floatingse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
-            wt_opt["floatingse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
-            wt_opt["floatingse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
-            wt_opt["floatingse.rna_F"] = modeling_options["WISDEM"]["Loading"]["loads"][0]["force"]
-            wt_opt["floatingse.rna_M"] = modeling_options["WISDEM"]["Loading"]["loads"][0]["moment"]
-            wt_opt["floatingse.Uref"] = modeling_options["WISDEM"]["Loading"]["loads"][0]["velocity"]
+            F = []
+            M = []
+            n_dlc = modeling_options["WISDEM"]["n_dlc"]
+            for k in range(n_dlc):
+                kstr = "" if n_dlc <= 1 else str(k + 1)
+                wt_opt[f"towerse.env{kstr}.Uref"] = modeling_options["WISDEM"]["Loading"]["loads"][k]["velocity"]
+                F = np.append(F, modeling_options["WISDEM"]["Loading"]["loads"][k]["force"])
+                M = np.append(M, modeling_options["WISDEM"]["Loading"]["loads"][k]["moment"])
+            wt_opt["towerse.tower.rna_F"] = F.reshape((n_dlc, 3)).T
+            wt_opt["towerse.tower.rna_M"] = M.reshape((n_dlc, 3)).T
 
     return wt_opt
 
 
 def assign_monopile_values(wt_opt, modeling_options, monopile):
     # Function to assign values to the openmdao component Monopile
-    n_height = modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"]  # Number of points along monopile height
-    n_layers = modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"]
+    n_height = modeling_options["WISDEM"]["FixedBottomSE"]["n_height"]  # Number of points along monopile height
+    n_layers = modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"]
 
     svec = np.unique(
         np.r_[
@@ -927,6 +927,67 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
     wt_opt["monopile.transition_piece_mass"] = monopile["transition_piece_mass"]
     wt_opt["monopile.transition_piece_cost"] = monopile["transition_piece_cost"]
     wt_opt["monopile.gravity_foundation_mass"] = monopile["gravity_foundation_mass"]
+
+    return wt_opt
+
+
+def assign_jacket_values(wt_opt, modeling_options, jacket):
+    # Function to assign values to the openmdao component Jacket
+    n_height = modeling_options["WISDEM"]["FixedBottomSE"]["n_height"]  # Number of points along jacket height
+    n_layers = modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"]
+
+    svec = np.unique(
+        np.r_[
+            jacket["outer_shape_bem"]["outer_diameter"]["grid"],
+            jacket["outer_shape_bem"]["reference_axis"]["x"]["grid"],
+            jacket["outer_shape_bem"]["reference_axis"]["y"]["grid"],
+            jacket["outer_shape_bem"]["reference_axis"]["z"]["grid"],
+        ]
+    )
+
+    wt_opt["jacket.s"] = svec
+    wt_opt["jacket.diameter"] = np.interp(
+        svec,
+        jacket["outer_shape_bem"]["outer_diameter"]["grid"],
+        jacket["outer_shape_bem"]["outer_diameter"]["values"],
+    )
+
+    wt_opt["jacket.ref_axis"][:, 0] = np.interp(
+        svec,
+        jacket["outer_shape_bem"]["reference_axis"]["x"]["grid"],
+        jacket["outer_shape_bem"]["reference_axis"]["x"]["values"],
+    )
+    wt_opt["jacket.ref_axis"][:, 1] = np.interp(
+        svec,
+        jacket["outer_shape_bem"]["reference_axis"]["y"]["grid"],
+        jacket["outer_shape_bem"]["reference_axis"]["y"]["values"],
+    )
+    wt_opt["jacket.ref_axis"][:, 2] = np.interp(
+        svec,
+        jacket["outer_shape_bem"]["reference_axis"]["z"]["grid"],
+        jacket["outer_shape_bem"]["reference_axis"]["z"]["values"],
+    )
+
+    layer_name = n_layers * [""]
+    layer_mat = n_layers * [""]
+    thickness = np.zeros((n_layers, n_height))
+    for i in range(n_layers):
+        layer_name[i] = jacket["internal_structure_2d_fem"]["layers"][i]["name"]
+        layer_mat[i] = jacket["internal_structure_2d_fem"]["layers"][i]["material"]
+        thickness[i] = np.interp(
+            svec,
+            jacket["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
+            jacket["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+        )
+
+    wt_opt["jacket.layer_name"] = layer_name
+    wt_opt["jacket.layer_mat"] = layer_mat
+    wt_opt["jacket.layer_thickness"] = thickness
+
+    wt_opt["jacket.outfitting_factor"] = jacket["internal_structure_2d_fem"]["outfitting_factor"]
+    wt_opt["jacket.transition_piece_mass"] = jacket["transition_piece_mass"]
+    wt_opt["jacket.transition_piece_cost"] = jacket["transition_piece_cost"]
+    wt_opt["jacket.gravity_foundation_mass"] = jacket["gravity_foundation_mass"]
 
     return wt_opt
 

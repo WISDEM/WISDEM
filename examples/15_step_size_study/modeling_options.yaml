@@ -2,13 +2,13 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
 WISDEM:
+    n_dlc: 2           # Number of design load cases
     RotorSE:
         flag: False
     DriveSE:
         flag: False
     TowerSE:             # Options of TowerSE module
         flag: True
-        nLC: 2           # Number of design load cases
         wind: PowerWind  # Wind used
         gamma_f: 1.35    # Safety factor for fatigue loads
         gamma_m: 1.3     # Safety factor for material properties

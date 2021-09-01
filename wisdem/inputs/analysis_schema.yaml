@@ -534,6 +534,7 @@ properties:
                                 description: Design variable bound
                             upper_bound: *rbound
             monopile: *towdv
+            jacket: *towdv
             floating:
                 type: object
                 description: Design variables associated with the floating platform
@@ -973,7 +974,7 @@ properties:
                                 maximum: 1.0
                                 unit: Hz
                             upper_bound: *fminmax
-            monopile:
+            monopile: &moncon
                 type: object
                 default: {}
                 description: Constraints associated with the monopile design
@@ -984,7 +985,6 @@ properties:
                     slope: *slope
                     d_to_t: *d_to_t
                     taper: *taper
-                    frequency: *towfreq
                     frequency_1: *towfreq1
                     pile_depth:
                         type: object
@@ -998,7 +998,7 @@ properties:
                                 maximum: 200.0
                                 default: 0.0
                                 unit: m
-
+            jacket: *moncon
             hub:
                 type: object
                 default: {}

@@ -138,11 +138,10 @@ class DrivetrainSE(om.Group):
 
     def initialize(self):
         self.options.declare("modeling_options")
-        self.options.declare("n_dlcs")
 
     def setup(self):
         opt = self.options["modeling_options"]["WISDEM"]["DriveSE"]
-        n_dlcs = self.options["n_dlcs"]
+        n_dlcs = self.options["modeling_options"]["WISDEM"]["n_dlc"]
         direct = opt["direct"]
         dogen = self.options["modeling_options"]["flags"]["generator"]
         n_pc = self.options["modeling_options"]["WISDEM"]["RotorSE"]["n_pc"]

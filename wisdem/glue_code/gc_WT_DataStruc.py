@@ -373,8 +373,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # Tower inputs
         if modeling_options["flags"]["tower"]:
             tower_init_options = modeling_options["WISDEM"]["TowerSE"]
-            n_height_tower = tower_init_options["n_height_tower"]
-            n_layers_tower = tower_init_options["n_layers_tower"]
+            n_height_tower = tower_init_options["n_height"]
+            n_layers_tower = tower_init_options["n_layers"]
             ivc = self.add_subsystem("tower", om.IndepVarComp())
             ivc.add_output(
                 "ref_axis",
@@ -415,8 +415,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Monopile inputs
         if modeling_options["flags"]["monopile"]:
-            self.add_subsystem("monopile", Monopile(towerse_options=modeling_options["WISDEM"]["TowerSE"]))
+            self.add_subsystem("monopile", Monopile(fixedbottomse_options=modeling_options["WISDEM"]["FixedBottomSE"]))
 
+        # Monopile inputs
+        if modeling_options["flags"]["jacket"]:
+            self.add_subsystem("jacket", Jacket(fixedbottomse_options=modeling_options["WISDEM"]["FixedBottomSE"]))
+
+        # Floating substructure inputs
         if modeling_options["flags"]["floating_platform"]:
             self.add_subsystem("floating", Floating(floating_init_options=modeling_options["floating"]))
             self.add_subsystem("mooring", Mooring(options=modeling_options))
@@ -489,7 +494,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             bos_ivc.add_output("decommissioning_pct", 0.15)
             bos_ivc.add_output("distance_to_substation", 50.0, units="km")
             bos_ivc.add_output("distance_to_interconnection", 5.0, units="km")
-            if modeling_options["flags"]["monopile"] == True or modeling_options["flags"]["floating_platform"] == True:
+            if modeling_options["flags"]["offshore"]:
                 bos_ivc.add_output("site_distance", 40.0, units="km")
                 bos_ivc.add_output("distance_to_landfall", 40.0, units="km")
                 bos_ivc.add_output("port_cost_per_month", 2e6, units="USD/mo")
@@ -2017,7 +2022,7 @@ class Hub(om.Group):
 
 class Compute_Grid(om.ExplicitComponent):
     """
-    Compute the non-dimensional grid or a tower or monopile.
+    Compute the non-dimensional grid for a tower or monopile/jacket.
 
     Using the dimensional `ref_axis` array, this component computes the
     non-dimensional grid, height (vertical distance) and length (curve distance)
@@ -2093,12 +2098,12 @@ class Compute_Grid(om.ExplicitComponent):
 
 class Monopile(om.Group):
     def initialize(self):
-        self.options.declare("towerse_options")
+        self.options.declare("fixedbottomse_options")
 
     def setup(self):
-        towerse_options = self.options["towerse_options"]
-        n_height = towerse_options["n_height_monopile"]
-        n_layers = towerse_options["n_layers_monopile"]
+        fixedbottomse_options = self.options["fixedbottomse_options"]
+        n_height = fixedbottomse_options["n_height"]
+        n_layers = fixedbottomse_options["n_layers"]
 
         ivc = self.add_subsystem("monopile_indep_vars", om.IndepVarComp(), promotes=["*"])
         ivc.add_output(
@@ -2131,6 +2136,49 @@ class Monopile(om.Group):
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
 
         self.add_subsystem("compute_monopile_grid", Compute_Grid(n_height=n_height), promotes=["*"])
+
+
+class Jacket(om.Group):
+    # FOR JOHN JASA: THIS IS A COPY-PASTE OF THE MONOPILE VERSION.  MIGHT NOT NEED ANYTHING DIFFERENT FOR JACKETS.  IF SO, CAN DELETE THIS CLASS
+    def initialize(self):
+        self.options.declare("fixedbottomse_options")
+
+    def setup(self):
+        fixedbottomse_options = self.options["fixedbottomse_options"]
+        n_height = fixedbottomse_options["n_height"]
+        n_layers = fixedbottomse_options["n_layers"]
+
+        ivc = self.add_subsystem("jacket_indep_vars", om.IndepVarComp(), promotes=["*"])
+        ivc.add_output(
+            "diameter",
+            val=np.zeros(n_height),
+            units="m",
+            desc="1D array of the outer diameter values defined along the tower axis.",
+        )
+        ivc.add_discrete_output(
+            "layer_name",
+            val=n_layers * [""],
+            desc="1D array of the names of the layers modeled in the tower structure.",
+        )
+        ivc.add_discrete_output(
+            "layer_mat",
+            val=n_layers * [""],
+            desc="1D array of the names of the materials of each layer modeled in the tower structure.",
+        )
+        ivc.add_output(
+            "layer_thickness",
+            val=np.zeros((n_layers, n_height)),
+            units="m",
+            desc="2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.",
+        )
+        ivc.add_output(
+            "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of tower"
+        )
+        ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
+        ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
+        ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
+
+        self.add_subsystem("compute_jacket_grid", Compute_Grid(n_height=n_height), promotes=["*"])
 
 
 class Floating(om.Group):
