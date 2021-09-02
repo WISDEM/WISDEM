@@ -239,12 +239,12 @@ class ComputeFrame3DD(om.ExplicitComponent):
         r = np.zeros(n)
         nodes = pyframe3dd.NodeData(node_indices, xyz[:, 0], xyz[:, 1], xyz[:, 2], r)
 
-        rnode = np.array([0], dtype=np.int_) + 1  # 1-based indexing
-        kx = ky = kz = ktx = kty = ktz = np.array([RIGID])
-        reactions = pyframe3dd.ReactionData(rnode, kx, ky, kz, ktx, kty, ktz, rigid=RIGID)
-
         leg_indices = node_indices[: leg_nodes.size // 3].reshape((n_legs, n_bays + 2))
         bay_indices = node_indices[leg_nodes.size // 3 :].reshape((n_legs, n_bays + 1))
+
+        rnode = np.array(leg_indices[:, 0], dtype=np.int_) + 1  # 1-based indexing
+        kx = ky = kz = ktx = kty = ktz = np.array([RIGID])
+        reactions = pyframe3dd.ReactionData(rnode, kx, ky, kz, ktx, kty, ktz, rigid=RIGID)
 
         # ------ frame element data ------------
         num_elements = 0
@@ -261,13 +261,14 @@ class ComputeFrame3DD(om.ExplicitComponent):
         # Naive for loops to make sure we get indexing right.
         # Can vectorize later as needed.
         for jdx in range(n_bays + 1):
+            itube = cs.Tube(inputs["d_l"], inputs["leg_thicknesses"][jdx])
+
             for idx in range(n_legs):
                 n1 = leg_nodes[idx, jdx]
                 n2 = leg_nodes[idx, jdx + 1]
                 N1.append(leg_indices[idx, jdx])
                 N2.append(leg_indices[idx, jdx + 1])
                 L.append(np.linalg.norm(n2 - n1))
-                itube = cs.Tube(inputs["d_l"], inputs["leg_thicknesses"][jdx])
                 Area.append(itube.Area)
                 Asx.append(itube.Asx)
                 Asy.append(itube.Asy)
@@ -277,13 +278,14 @@ class ComputeFrame3DD(om.ExplicitComponent):
                 num_elements += 1
 
         for jdx in range(n_bays):
+            itube = cs.Tube(inputs["brace_diameters"][jdx], inputs["brace_thicknesses"][jdx])
+
             for idx in range(n_legs):
                 n1 = bay_nodes[idx, jdx]
                 n2 = bay_nodes[(idx + 1) % n_legs, (jdx + 1) % (n_bays + 1)]
                 N1.append(bay_indices[idx, jdx])
                 N2.append(bay_indices[(idx + 1) % n_legs, (jdx + 1) % (n_bays + 1)])
                 L.append(np.linalg.norm(n2 - n1))
-                itube = cs.Tube(inputs["brace_diameters"][jdx], inputs["brace_thicknesses"][jdx])
                 Area.append(itube.Area)
                 Asx.append(itube.Asx)
                 Asy.append(itube.Asy)
@@ -297,7 +299,23 @@ class ComputeFrame3DD(om.ExplicitComponent):
                 N1.append(bay_indices[(idx + 1) % n_legs, jdx])
                 N2.append(bay_indices[idx, (jdx + 1) % (n_bays + 1)])
                 L.append(np.linalg.norm(n2 - n1))
-                itube = cs.Tube(inputs["brace_diameters"][jdx], inputs["brace_thicknesses"][jdx])
+                Area.append(itube.Area)
+                Asx.append(itube.Asx)
+                Asy.append(itube.Asy)
+                J0.append(itube.J0)
+                Ixx.append(itube.Ixx)
+                Iyy.append(itube.Iyy)
+                num_elements += 1
+
+        # Add mud brace if boolean True
+        if x_mb:
+            itube = cs.Tube(inputs["brace_diameters"][0], inputs["brace_thicknesses"][0])
+            for idx in range(n_legs):
+                n1 = bay_nodes[idx, 0]
+                n2 = bay_nodes[(idx + 1) % n_legs, 0]
+                N1.append(bay_indices[idx, 0])
+                N2.append(bay_indices[(idx + 1) % n_legs, 0])
+                L.append(np.linalg.norm(n2 - n1))
                 Area.append(itube.Area)
                 Asx.append(itube.Asx)
                 Asy.append(itube.Asy)
@@ -323,7 +341,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
         element = np.arange(1, num_elements + 1)
         roll = np.zeros(num_elements - 1)
 
-        plot = False
+        plot = True
         if plot:
             fig = plt.figure()
             ax = fig.add_subplot(projection="3d")
