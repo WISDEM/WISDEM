@@ -6,10 +6,6 @@ import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.cross_sections as cs
 from wisdem.commonse import NFREQ, gravity
 
-x_mb = True  # if there's a mud brace
-n_legs = 4
-n_bays = 4  # n_x
-
 E_input = 2.1e11
 G_input = 8.077e10
 rho_input = 7850.0
@@ -211,6 +207,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("n_legs", types=int)
         self.options.declare("n_bays", types=int)
+        self.options.declare("x_mb", types=bool)
 
     def setup(self):
         n_legs = self.options["n_legs"]
@@ -229,6 +226,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
     def compute(self, inputs, outputs):
         n_legs = self.options["n_legs"]
         n_bays = self.options["n_bays"]
+        x_mb = self.options["x_mb"]
 
         leg_nodes = inputs["leg_nodes"]
         bay_nodes = inputs["bay_nodes"]
@@ -247,99 +245,72 @@ class ComputeFrame3DD(om.ExplicitComponent):
         reactions = pyframe3dd.ReactionData(rnode, kx, ky, kz, ktx, kty, ktz, rigid=RIGID)
 
         # ------ frame element data ------------
-        num_elements = 0
-        N1 = []
-        N2 = []
-        L = []
-        Area = []
-        Asx = []
-        Asy = []
-        J0 = []
-        Ixx = []
-        Iyy = []
+
+        self.num_elements = 0
+        self.N1 = []
+        self.N2 = []
+        self.L = []
+        self.Area = []
+        self.Asx = []
+        self.Asy = []
+        self.J0 = []
+        self.Ixx = []
+        self.Iyy = []
+        self.vol = []
+
+        def add_element(nodes, indices, itube, idx1, idx2, idx3, idx4):
+            n1 = nodes[idx1, idx2]
+            n2 = nodes[idx3, idx4]
+            self.N1.append(indices[idx1, idx2])
+            self.N2.append(indices[idx3, idx4])
+            length = np.linalg.norm(n2 - n1)
+            self.L.append(length)
+            self.Area.append(itube.Area)
+            self.Asx.append(itube.Asx)
+            self.Asy.append(itube.Asy)
+            self.J0.append(itube.J0)
+            self.Ixx.append(itube.Ixx)
+            self.Iyy.append(itube.Iyy)
+            self.vol.append(itube.Area * length)
+            self.num_elements += 1
 
         # Naive for loops to make sure we get indexing right.
         # Can vectorize later as needed.
         for jdx in range(n_bays + 1):
             itube = cs.Tube(inputs["d_l"], inputs["leg_thicknesses"][jdx])
-
             for idx in range(n_legs):
-                n1 = leg_nodes[idx, jdx]
-                n2 = leg_nodes[idx, jdx + 1]
-                N1.append(leg_indices[idx, jdx])
-                N2.append(leg_indices[idx, jdx + 1])
-                L.append(np.linalg.norm(n2 - n1))
-                Area.append(itube.Area)
-                Asx.append(itube.Asx)
-                Asy.append(itube.Asy)
-                J0.append(itube.J0)
-                Ixx.append(itube.Ixx)
-                Iyy.append(itube.Iyy)
-                num_elements += 1
+                add_element(leg_nodes, leg_indices, itube, idx, jdx, idx, jdx + 1)
 
         for jdx in range(n_bays):
             itube = cs.Tube(inputs["brace_diameters"][jdx], inputs["brace_thicknesses"][jdx])
-
             for idx in range(n_legs):
-                n1 = bay_nodes[idx, jdx]
-                n2 = bay_nodes[(idx + 1) % n_legs, (jdx + 1) % (n_bays + 1)]
-                N1.append(bay_indices[idx, jdx])
-                N2.append(bay_indices[(idx + 1) % n_legs, (jdx + 1) % (n_bays + 1)])
-                L.append(np.linalg.norm(n2 - n1))
-                Area.append(itube.Area)
-                Asx.append(itube.Asx)
-                Asy.append(itube.Asy)
-                J0.append(itube.J0)
-                Ixx.append(itube.Ixx)
-                Iyy.append(itube.Iyy)
-                num_elements += 1
-
-                n1 = bay_nodes[(idx + 1) % n_legs, jdx]
-                n2 = bay_nodes[idx, (jdx + 1) % (n_bays + 1)]
-                N1.append(bay_indices[(idx + 1) % n_legs, jdx])
-                N2.append(bay_indices[idx, (jdx + 1) % (n_bays + 1)])
-                L.append(np.linalg.norm(n2 - n1))
-                Area.append(itube.Area)
-                Asx.append(itube.Asx)
-                Asy.append(itube.Asy)
-                J0.append(itube.J0)
-                Ixx.append(itube.Ixx)
-                Iyy.append(itube.Iyy)
-                num_elements += 1
+                add_element(bay_nodes, bay_indices, itube, idx, jdx, (idx + 1) % n_legs, (jdx + 1) % (n_bays + 1))
+                add_element(bay_nodes, bay_indices, itube, (idx + 1) % n_legs, jdx, idx, (jdx + 1) % (n_bays + 1))
 
         # Add mud brace if boolean True
         if x_mb:
             itube = cs.Tube(inputs["brace_diameters"][0], inputs["brace_thicknesses"][0])
             for idx in range(n_legs):
-                n1 = bay_nodes[idx, 0]
-                n2 = bay_nodes[(idx + 1) % n_legs, 0]
-                N1.append(bay_indices[idx, 0])
-                N2.append(bay_indices[(idx + 1) % n_legs, 0])
-                L.append(np.linalg.norm(n2 - n1))
-                Area.append(itube.Area)
-                Asx.append(itube.Asx)
-                Asy.append(itube.Asy)
-                J0.append(itube.J0)
-                Ixx.append(itube.Ixx)
-                Iyy.append(itube.Iyy)
-                num_elements += 1
+                add_element(bay_nodes, bay_indices, itube, idx, 0, (idx + 1) % n_legs, 0)
 
-        E = [E_input] * num_elements
-        G = [G_input] * num_elements
-        rho = [rho_input] * num_elements
+        E = [E_input] * self.num_elements
+        G = [G_input] * self.num_elements
+        rho = [rho_input] * self.num_elements
 
-        Area = np.squeeze(np.array(Area, dtype=np.float))
-        Asx = np.squeeze(np.array(Asx, dtype=np.float))
-        Asy = np.squeeze(np.array(Asy, dtype=np.float))
-        J0 = np.squeeze(np.array(J0, dtype=np.float))
-        Ixx = np.squeeze(np.array(Ixx, dtype=np.float))
-        Iyy = np.squeeze(np.array(Iyy, dtype=np.float))
+        Area = np.squeeze(np.array(self.Area, dtype=np.float))
+        Asx = np.squeeze(np.array(self.Asx, dtype=np.float))
+        Asy = np.squeeze(np.array(self.Asy, dtype=np.float))
+        J0 = np.squeeze(np.array(self.J0, dtype=np.float))
+        Ixx = np.squeeze(np.array(self.Ixx, dtype=np.float))
+        Iyy = np.squeeze(np.array(self.Iyy, dtype=np.float))
         E = np.squeeze(np.array(E, dtype=np.float))
         G = np.squeeze(np.array(G, dtype=np.float))
         rho = np.squeeze(np.array(rho, dtype=np.float))
+        N1 = self.N1
+        N2 = self.N2
 
-        element = np.arange(1, num_elements + 1)
-        roll = np.zeros(num_elements - 1)
+        element = np.arange(1, self.num_elements + 1)
+        roll = np.zeros(self.num_elements - 1)
 
         plot = True
         if plot:
@@ -422,14 +393,19 @@ class ComputeFrame3DD(om.ExplicitComponent):
 # Assemble the system together in an OpenMDAO Group
 class JacketSE(om.Group):
     def setup(self):
+        x_mb = True  # if there's a mud brace
+        n_legs = 4
+        n_bays = 4  # n_x
+
         self.add_subsystem("greek", GetGreekLetters(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
         self.add_subsystem("nodes", ComputeNodes(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
         self.add_subsystem("properties", ComputeDiameterAndThicknesses(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
-        self.add_subsystem("frame3dd", ComputeFrame3DD(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
+        self.add_subsystem("frame3dd", ComputeFrame3DD(n_legs=n_legs, n_bays=n_bays, x_mb=x_mb), promotes=["*"])
 
 
-prob = om.Problem(model=JacketSE())
+if __name__ == "__main__":
+    prob = om.Problem(model=JacketSE())
 
-prob.setup()
+    prob.setup()
 
-prob.run_model()
+    prob.run_model()
