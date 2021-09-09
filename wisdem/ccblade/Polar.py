@@ -118,7 +118,7 @@ class Polar(object):
         else:
             return self.cl * np.cos(self.alpha * np.pi / 180) + self.cd * np.sin(self.alpha * np.pi / 180)
 
-    def correction3D(self, r_over_R, chord_over_r, tsr, alpha_max_corr=30, alpha_linear_min=-5, alpha_linear_max=5):
+    def correction3D(self, r_over_R, chord_over_r, tsr, est_linear_region = True, alpha_max_corr=30, alpha_linear_min=-5, alpha_linear_max=5):
         """Applies 3-D corrections for rotating sections from the 2-D data.
 
         Parameters
@@ -148,6 +148,11 @@ class Polar(object):
 
 
         """
+        if est_linear_region:
+            alpha_linear_region, _, _, _ = self.linear_region()
+            alpha_linear_min = alpha_linear_region[0]
+            alpha_linear_max = alpha_linear_region[-1]
+            _, alpha_max_corr = self.cl_max()
 
         # rename and convert units for convenience
         alpha = np.radians(self.alpha)
@@ -173,9 +178,11 @@ class Polar(object):
         # correction factor
         fcl = 1.0 / m * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r ** expon) / (b + chord_over_r ** expon) - 1)
 
-        # not sure where this adjustment comes from (besides AirfoilPrep spreadsheet of course)
-        adj = ((np.pi / 2 - alpha) / (np.pi / 2 - alpha_max_corr)) ** 2
-        adj[alpha <= alpha_max_corr] = 1.0
+        # Apply (arbitrary!) smoothing function to smoothen the 3D corrections and zero them out above alpha_max_corr and below alpha_linear_min
+        delta_corr = 10
+        y1 = smooth_heaviside(alpha, rng=(alpha_max_corr, alpha_max_corr + np.deg2rad(90)))
+        y2 = smooth_heaviside(alpha, rng=(-np.deg2rad(-delta_corr) - np.deg2rad(90), -np.deg2rad(-delta_corr)))
+        adj = y2*(1.-y1)
 
         # Du-Selig correction for lift
         cl_linear = m * (alpha - alpha0)
@@ -632,11 +639,13 @@ class Polar(object):
 
         return _find_alpha0(self.alpha, self.cl, window)
 
-    def linear_region(self):
-        slope, alpha0 = self.cl_linear_slope()
-        alpha_linear_region = np.asarray(_find_TSE_region(self.alpha, self.cl, slope, alpha0, deviation=0.05))
-        cl_linear_region = (alpha_linear_region - alpha0) * slope
-        return alpha_linear_region, cl_linear_region, slope, alpha0
+    def linear_region(self, delta_alpha0 = 4):
+        alpha0 = self.alpha0()
+        cl_slope, _ = self.cl_linear_slope(window=[alpha0, alpha0+delta_alpha0])
+        alpha_linear_region = np.asarray(_find_TSE_region(self.alpha, self.cl, cl_slope, alpha0, deviation=0.05))
+        cl_linear_region = (alpha_linear_region - alpha0) * cl_slope
+
+        return alpha_linear_region, cl_linear_region, cl_slope, alpha0
 
     def cl_max(self, window=None):
         """ Finds cl_max , returns (Cl_max,alpha_max) """
@@ -703,9 +712,9 @@ class Polar(object):
             else:
                 # define a window around alpha0
                 if self._radians:
-                    window = alpha0 + np.radians(np.array([-5, +20]))
+                    window = alpha0 + np.radians(np.array([-2, +6]))
                 else:
-                    window = alpha0 + np.array([-5, +20])
+                    window = alpha0 + np.array([-2, +6])
 
         # Ensuring window is within our alpha values
         window = _alpha_window_in_bounds(self.alpha, window)
@@ -1272,6 +1281,61 @@ def _intersections(x1, y1, x2, y2):
     xy0 = xy0.T
     return xy0[:, 0], xy0[:, 1]
 
+def smooth_heaviside(x, k=1, rng=(-np.inf, np.inf), method='exp'):
+    """ 
+    Smooth approximation of Heaviside function where the step occurs between rng[0] and rng[1]:
+       if rng[0]<rng[1]: then  f(<rng[0])=0, f(>=rng[1])=1
+       if rng[0]>rng[1]: then  f(<rng[1])=1, f(>=rng[0])=0
+    exp: 
+       rng=(-inf,inf):  H(x)=[1 + exp(-2kx)            ]^-1
+       rng=(-1,1):      H(x)=[1 + exp(4kx/(x^2-1)      ]^-1
+       rng=(0,1):       H(x)=[1 + exp(k(2x-1)/(x(x-1)) ]^-1
+    INPUTS: 
+        x  : scalar or vector of real x values \in ]-infty; infty[ 
+        k  : float >=1, the higher k the "steeper" the heaviside function
+        rng: tuple of min and max value such that f(<=min)=0  and f(>=max)=1. 
+             Reversing the range makes the Heaviside function from 1 to 0 instead of 0 to 1
+        method: smooth approximation used (e.g. exp or tan)
+    NOTE: an epsilon is introduced in the denominator to avoid overflow of the exponentail
+    """
+    if k<1:
+        raise Exception('k needs to be >=1')
+    eps = 1e-2
+    mn,mx = rng
+    x     = np.asarray(x)
+    H     = np.zeros(x.shape)
+    if mn<mx:
+        H[x<=mn] = 0
+        H[x>=mx] = 1
+        b        = np.logical_and(x>mn, x<mx)
+    else:
+        H[x<=mx] = 1
+        H[x>=mn] = 0
+        b        = np.logical_and(x<mn, x>mx)
+    x=x[b]
+    if method=='exp':
+        if np.abs(mn)==np.inf and np.abs(mx)==np.inf:
+            # Infinite support
+            x[k*x>100 ]  = 100./k
+            x[k*x<-100] = -100./k
+            if mn<mx:
+                H[b] = 1 / ( 1+np.exp(-  k * x))
+            else:
+                H[b] = 1 / ( 1+np.exp(   k * x))
+        elif np.abs(mn)!=np.inf and np.abs(mx)!=np.inf:
+            n=4.
+            # Compact support
+            s= 2./(mx -mn) * (x-(mn+mx)/2.) # transform compact support into ]-1,1[ 
+            x = -n*s/(s**2-1.)             # then transform   ]-1,1[  into ]-inf,inf[
+            x[k*x>100 ]  = 100./k
+            x[k*x<-100] = -100./k
+            H[b] = 1./(1+np.exp(-k*x))
+        else:
+            raise NotImplementedError('Heaviside with only one bound infinite')
+    else:
+        # TODO tan approx
+        raise NotImplementedError()
+    return H
 
 if __name__ == "__main__":
     pass

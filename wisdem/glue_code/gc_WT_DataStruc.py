@@ -3000,7 +3000,7 @@ class Airfoil3DCorrection(om.ExplicitComponent):
         cd_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
         cm_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
         for i in range(self.n_span):
-            if inputs["s"][i]>0.2: # Only apply 3D correction to outer 80% to avoid numerical problems at blade root
+            if inputs["s"][i]>0.1: # Only apply 3D correction to outer 90% to avoid numerical problems at blade root
                 for j in range(self.n_Re):
                     for k in range(self.n_tab):
                         inn_polar = Polar(inputs["Re"][j], np.degrees(inputs["aoa"]), 
@@ -3044,6 +3044,7 @@ class Airfoil3DCorrection(om.ExplicitComponent):
                 # ax[3].set_xlabel("Angles of Attack (deg)", fontweight="bold")
                 # ax[3].set_xlim(left=-4, right=20)
                 # ax[3].set_ylim(top=200, bottom=-50)
+                # plt.savefig('/Users/pbortolo/work/3_projects/5_IEAtask37/3d_correction/' + str(i)+'.png')
                 # plt.show()
                 # plt.close()
             else:

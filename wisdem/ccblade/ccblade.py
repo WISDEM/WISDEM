@@ -83,7 +83,7 @@ class CCAirfoil(object):
 
         # a small amount of smoothing is used to prevent spurious multiple solutions
         self.cl_spline = RectBivariateSpline(alpha, Re, cl, kx=kx, ky=ky, s=0.1)
-        self.cd_spline = RectBivariateSpline(alpha, Re, cd, kx=kx, ky=ky, s=0.0001)
+        self.cd_spline = RectBivariateSpline(alpha, Re, cd, kx=kx, ky=ky, s=0.001)
         self.alpha = alpha
 
         if self.use_cm > 0:
