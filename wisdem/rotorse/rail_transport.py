@@ -3,7 +3,7 @@ import scipy.constants as spc
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 from openmdao.api import ExplicitComponent
-from scipy.optimize import brentq, minimize, minimize_scalar
+from scipy.optimize import minimize
 from wisdem.commonse.constants import gravity
 
 

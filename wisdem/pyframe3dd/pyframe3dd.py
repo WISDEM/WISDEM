@@ -1194,6 +1194,31 @@ class Frame(object):
         f.write("# End of input data file\n")
         f.close()
 
+    def draw(self):
+        # Visualization for debugging
+        import matplotlib.pyplot as plt
+
+        nnode = len(self.nx)
+        node_array = np.zeros((nnode, 3))
+        mynodes = {}
+        for k in range(nnode):
+            temp = np.r_[self.nx[k], self.ny[k], self.nz[k]]
+            mynodes[self.nnode[k]] = temp
+            node_array[k, :] = temp
+        myelem = []
+        for k in range(len(self.eN1)):
+            myelem.append((self.eN1[k], self.eN2[k]))
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        for e in myelem:
+            xs = np.array([mynodes[e[0]][0], mynodes[e[1]][0]])
+            ys = np.array([mynodes[e[0]][1], mynodes[e[1]][1]])
+            zs = np.array([mynodes[e[0]][2], mynodes[e[1]][2]])
+            ax.plot(xs, ys, zs, "b-")
+        ax.plot(node_array[:, 0], node_array[:, 1], node_array[:, 2], ".k", markersize=10)
+        plt.show()
+
 
 class StaticLoadCase(object):
     """docstring"""

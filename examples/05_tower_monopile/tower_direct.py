@@ -32,6 +32,7 @@ modeling_options["WISDEM"] = {}
 modeling_options["WISDEM"]["TowerSE"] = {}
 modeling_options["WISDEM"]["TowerSE"]["buckling_method"] = "eurocode"
 modeling_options["WISDEM"]["TowerSE"]["buckling_length"] = 30.0
+modeling_options["WISDEM"]["TowerSE"]["n_refine"] = 3
 modeling_options["flags"]["monopile"] = False
 
 # Monopile foundation only
@@ -111,6 +112,9 @@ prob["E_mat"] = 210e9 * np.ones((n_materials, 3))
 prob["G_mat"] = 80.8e9 * np.ones((n_materials, 3))
 prob["rho_mat"] = [8500.0]
 prob["sigma_y_mat"] = [450e6]
+prob["sigma_ult_mat"] = 600e6 * np.ones((n_materials, 3))
+prob["wohler_exp_mat"] = [10.0]
+prob["wohler_A_mat"] = [10.0]
 
 # extra mass from RNA
 prob["rna_mass"] = np.array([285598.8])

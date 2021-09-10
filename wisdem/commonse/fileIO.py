@@ -11,8 +11,8 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
     froot = os.path.splitext(fname)[0]
 
     # Get all OpenMDAO inputs and outputs into a dictionary
-    var_dict = prob.model.list_inputs(values=True, prom_name=True, units=True, desc=True, out_stream=None)
-    out_dict = prob.model.list_outputs(values=True, prom_name=True, units=True, desc=True, out_stream=None)
+    var_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, out_stream=None)
+    out_dict = prob.model.list_outputs(prom_name=True, units=True, desc=True, out_stream=None)
     var_dict.extend(out_dict)
 
     # Pickle the full archive so that we can load it back in if we need
@@ -30,7 +30,7 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
                 unit_str = "_" + unit_str
 
             iname = var_dict[k][1]["prom_name"] + unit_str
-            value = var_dict[k][1]["value"]
+            value = var_dict[k][1]["val"]
 
             if iname in array_dict:
                 continue
@@ -74,7 +74,7 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
 
             data["variables"].append(iname)
             data["units"].append(unit_str)
-            data["values"].append(var_dict[k][1]["value"])
+            data["values"].append(var_dict[k][1]["val"])
             data["description"].append(var_dict[k][1]["desc"])
         df = pd.DataFrame(data)
         df.to_excel(froot + ".xlsx", index=False)

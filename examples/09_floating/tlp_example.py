@@ -81,7 +81,7 @@ prob["member0.ring_stiffener_web_height"] = 0.10
 prob["member0.ring_stiffener_web_thickness"] = 0.04
 prob["member0.ring_stiffener_flange_width"] = 0.10
 prob["member0.ring_stiffener_flange_thickness"] = 0.02
-prob["member0.ring_stiffener_spacing"] = 2.15
+prob["member0.ring_stiffener_spacing"] = 0.044791667 # non-dimensional ring stiffener spacing
 
 # Now do the legs
 angs = np.linspace(0, 2 * np.pi, 1 + opt["mooring"]["n_attach"])
@@ -101,7 +101,7 @@ for k in range(1, 4):
     prob["member" + str(k) + ".ring_stiffener_web_thickness"] = 0.04
     prob["member" + str(k) + ".ring_stiffener_flange_width"] = 0.10
     prob["member" + str(k) + ".ring_stiffener_flange_thickness"] = 0.02
-    prob["member" + str(k) + ".ring_stiffener_spacing"] = 2.0
+    prob["member" + str(k) + ".ring_stiffener_spacing"] = 0.06666667 # non-dimensional ring stiffener spacing
 
 # Mooring parameters: Nylon
 prob["line_diameter"] = 0.5  # Diameter of mooring line/chain [m]
@@ -149,14 +149,13 @@ prob["transition_node"] = prob["member0.joint2"]
 
 # Properties of rotor-nacelle-assembly (RNA)
 prob["rna_mass"] = 350e3
-prob["rna_I"] = 1e5 * np.array([1149.307, 220.354, 187.597, 0, 5.037, 0])
 prob["rna_cg"] = np.array([-1.132, 0, 0.509])
 prob["rna_F"] = np.array([1284744.196, 0, -112400.5527])
 prob["rna_M"] = np.array([3963732.762, 896380.8464, -346781.682])
 
 # Use FD and run optimization
 prob.run_model()
-prob.model.list_outputs(values=True, units=True)
+prob.model.list_outputs(units=True)
 
 # Visualize with mayavi, which can be difficult to install
 if plot_flag:

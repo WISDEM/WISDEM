@@ -524,11 +524,11 @@ class WindTurbineOntologyPython(object):
                 if self.modeling_options["mooring"]["node_type"][node2id] == "vessel":
                     fairlead_nodes.append(self.wt_init["components"]["mooring"]["nodes"][node2id]["joint"])
                 # Store the anchor type names to start
-                if self.modeling_options["mooring"]["node_type"][node1id] == "fixed":
+                if "fix" in self.modeling_options["mooring"]["node_type"][node1id]:
                     self.modeling_options["mooring"]["line_anchor"][i] = self.modeling_options["mooring"][
                         "anchor_type"
                     ][node1id]
-                if self.modeling_options["mooring"]["node_type"][node2id] == "fixed":
+                if "fix" in self.modeling_options["mooring"]["node_type"][node2id]:
                     self.modeling_options["mooring"]["line_anchor"][i] = self.modeling_options["mooring"][
                         "anchor_type"
                     ][node2id]
@@ -627,6 +627,20 @@ class WindTurbineOntologyPython(object):
             ]
         elif blade_opt_options["structure"]["spar_cap_ps"]["n_opt"] < 4:
             raise ValueError("Cannot optimize spar cap pressure side with less than 4 control points along blade span")
+
+        if not blade_opt_options["structure"]["te_ss"]["flag"]:
+            blade_opt_options["structure"]["te_ss"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        elif blade_opt_options["structure"]["te_ss"]["n_opt"] < 4:
+            raise ValueError(
+                "Cannot optimize trailing edge suction side with less than 4 control points along blade span"
+            )
+
+        if not blade_opt_options["structure"]["te_ps"]["flag"]:
+            blade_opt_options["structure"]["te_ps"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        elif blade_opt_options["structure"]["te_ps"]["n_opt"] < 4:
+            raise ValueError(
+                "Cannot optimize trailing edge pressure side with less than 4 control points along blade span"
+            )
 
         # Handle linked joints and members in floating platform
         if self.modeling_options["flags"]["floating"]:

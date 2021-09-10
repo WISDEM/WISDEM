@@ -30,6 +30,7 @@ class TestStruct(unittest.TestCase):
         self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 0
         self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 0
         self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 3
+        self.modeling_options["WISDEM"]["TowerSE"]["n_refine"] = 3
         self.modeling_options["WISDEM"]["TowerSE"]["wind"] = "PowerWind"
         self.modeling_options["WISDEM"]["TowerSE"]["nLC"] = 1
 
@@ -71,25 +72,13 @@ class TestStruct(unittest.TestCase):
         self.inputs["gravity_foundation_I"] = np.zeros(6)
         self.inputs["gravity_foundation_mass"] = 0.0
         self.inputs["suctionpile_depth"] = 0.0
-        self.inputs["rna_F"] = 1e5 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
-        self.inputs["rna_M"] = 1e6 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
+        self.inputs["rna_F"] = 1e5 * np.arange(2,5)
+        self.inputs["rna_M"] = 1e6 * np.arange(2,5)
         self.inputs["E"] = 1e9 * np.ones(2)
         self.inputs["G"] = 1e8 * np.ones(2)
         self.inputs["sigma_y"] = 1e8 * np.ones(2)
 
-        myobj = tow.TowerPreFrame(n_height=3, monopile=False)
+        myobj = tow.TowerPreFrame(n_height=3, n_refine=3, monopile=False)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs["kidx"], np.array([0]))
@@ -100,17 +89,17 @@ class TestStruct(unittest.TestCase):
         npt.assert_equal(self.outputs["kty"], np.array([RIGID]))
         npt.assert_equal(self.outputs["ktz"], np.array([RIGID]))
 
-        npt.assert_equal(self.outputs["midx"], np.array([6, 0, 0]))
-        npt.assert_equal(self.outputs["m"], np.array([1e5, 0, 0]))
-        npt.assert_equal(self.outputs["mrhox"], np.array([-3.0, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mrhoy"], np.array([0.0, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mrhoz"], np.array([1.0, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mIxx"], np.array([1e5, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mIyy"], np.array([1e5, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mIzz"], np.array([2e5, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mIxy"], np.zeros(3))
-        npt.assert_equal(self.outputs["mIxz"], np.zeros(3))
-        npt.assert_equal(self.outputs["mIyz"], np.zeros(3))
+        npt.assert_equal(self.outputs["midx"], np.zeros(2))
+        npt.assert_equal(self.outputs["m"], np.zeros(2))
+        npt.assert_equal(self.outputs["mrhox"], np.zeros(2))
+        npt.assert_equal(self.outputs["mrhoy"], np.zeros(2))
+        npt.assert_equal(self.outputs["mrhoz"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIxx"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIyy"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIzz"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIxy"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIxz"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIyz"], np.zeros(2))
 
         npt.assert_equal(self.outputs["plidx"], np.array([6]))
         npt.assert_equal(self.outputs["Fx"], np.array([2e5]))
@@ -129,24 +118,12 @@ class TestStruct(unittest.TestCase):
         self.inputs["transition_piece_height"] = 10.0
         self.inputs["gravity_foundation_mass"] = 0.0  # 1e4
         self.inputs["suctionpile_depth"] = 30.0
-        self.inputs["rna_F"] = 1e5 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
-        self.inputs["rna_M"] = 1e6 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
+        self.inputs["rna_F"] = 1e5 * np.arange(2,5)
+        self.inputs["rna_M"] = 1e6 * np.arange(2,5)
         self.inputs["k_soil"] = (20.0 + np.arange(6))[np.newaxis, :] * np.ones((2, 6))
         self.inputs["z_soil"] = np.r_[-30.0, 0.0]
 
-        myobj = tow.TowerPreFrame(n_height=5, monopile=True, soil_springs=False)
+        myobj = tow.TowerPreFrame(n_height=5, n_refine=3, monopile=True, soil_springs=False)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs["kidx"], np.arange(4))
@@ -157,17 +134,17 @@ class TestStruct(unittest.TestCase):
         npt.assert_equal(self.outputs["kty"], RIGID)
         npt.assert_equal(self.outputs["ktz"], RIGID)
 
-        npt.assert_equal(self.outputs["midx"], np.array([12, 7, 0]))
-        npt.assert_equal(self.outputs["m"], np.array([1e5, 1e3, 0.0]))
-        npt.assert_equal(self.outputs["mrhox"], np.array([-3.0, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mrhoy"], np.array([0.0, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mrhoz"], np.array([1.0, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mIxx"], np.array([1e5, 1e3 * 9 * 0.5, 0]))
-        npt.assert_equal(self.outputs["mIyy"], np.array([1e5, 1e3 * 9 * 0.5, 0]))
-        npt.assert_equal(self.outputs["mIzz"], np.array([2e5, 1e3 * 9, 0]))
-        npt.assert_equal(self.outputs["mIxy"], np.zeros(3))
-        npt.assert_equal(self.outputs["mIxz"], np.zeros(3))
-        npt.assert_equal(self.outputs["mIyz"], np.zeros(3))
+        npt.assert_equal(self.outputs["midx"], np.array([7, 0]))
+        npt.assert_equal(self.outputs["m"], np.array([1e3, 0.0]))
+        npt.assert_equal(self.outputs["mrhox"], np.zeros(2))
+        npt.assert_equal(self.outputs["mrhoy"], np.zeros(2))
+        npt.assert_equal(self.outputs["mrhoz"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIxx"], np.array([1e3 * 9 * 0.5, 0]))
+        npt.assert_equal(self.outputs["mIyy"], np.array([1e3 * 9 * 0.5, 0]))
+        npt.assert_equal(self.outputs["mIzz"], np.array([1e3 * 9, 0]))
+        npt.assert_equal(self.outputs["mIxy"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIxz"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIyz"], np.zeros(2))
 
         npt.assert_equal(self.outputs["plidx"], np.array([12]))
         npt.assert_equal(self.outputs["Fx"], np.array([2e5]))
@@ -186,24 +163,12 @@ class TestStruct(unittest.TestCase):
         self.inputs["transition_piece_height"] = 10.0
         self.inputs["gravity_foundation_mass"] = 0.0  # 1e4
         self.inputs["suctionpile_depth"] = 30.0
-        self.inputs["rna_F"] = 1e5 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
-        self.inputs["rna_M"] = 1e6 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
+        self.inputs["rna_F"] = 1e5 * np.arange(2,5)
+        self.inputs["rna_M"] = 1e6 * np.arange(2,5)
         self.inputs["k_soil"] = (20.0 + np.arange(6))[np.newaxis, :] * np.ones((2, 6))
         self.inputs["z_soil"] = np.r_[-30.0, 0.0]
 
-        myobj = tow.TowerPreFrame(n_height=5, monopile=True, soil_springs=True)
+        myobj = tow.TowerPreFrame(n_height=5, n_refine=3, monopile=True, soil_springs=True)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs["kidx"], np.arange(4))
@@ -214,17 +179,17 @@ class TestStruct(unittest.TestCase):
         npt.assert_equal(self.outputs["kty"], 23.0)
         npt.assert_equal(self.outputs["ktz"], 25.0)
 
-        npt.assert_equal(self.outputs["midx"], np.array([12, 7, 0]))
-        npt.assert_equal(self.outputs["m"], np.array([1e5, 1e3, 0.0]))
-        npt.assert_equal(self.outputs["mrhox"], np.array([-3.0, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mrhoy"], np.array([0.0, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mrhoz"], np.array([1.0, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mIxx"], np.array([1e5, 1e3 * 9 * 0.5, 0]))
-        npt.assert_equal(self.outputs["mIyy"], np.array([1e5, 1e3 * 9 * 0.5, 0]))
-        npt.assert_equal(self.outputs["mIzz"], np.array([2e5, 1e3 * 9, 0]))
-        npt.assert_equal(self.outputs["mIxy"], np.zeros(3))
-        npt.assert_equal(self.outputs["mIxz"], np.zeros(3))
-        npt.assert_equal(self.outputs["mIyz"], np.zeros(3))
+        npt.assert_equal(self.outputs["midx"], np.array([7, 0]))
+        npt.assert_equal(self.outputs["m"], np.array([1e3, 0.0]))
+        npt.assert_equal(self.outputs["mrhox"], np.zeros(2))
+        npt.assert_equal(self.outputs["mrhoy"], np.zeros(2))
+        npt.assert_equal(self.outputs["mrhoz"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIxx"], np.array([1e3 * 9 * 0.5, 0]))
+        npt.assert_equal(self.outputs["mIyy"], np.array([1e3 * 9 * 0.5, 0]))
+        npt.assert_equal(self.outputs["mIzz"], np.array([1e3 * 9, 0]))
+        npt.assert_equal(self.outputs["mIxy"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIxz"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIyz"], np.zeros(2))
 
         npt.assert_equal(self.outputs["plidx"], np.array([12]))
         npt.assert_equal(self.outputs["Fx"], np.array([2e5]))
@@ -244,24 +209,12 @@ class TestStruct(unittest.TestCase):
         self.inputs["gravity_foundation_I"] = 0.5 * 1e4 * 9 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
         self.inputs["gravity_foundation_mass"] = 1e4
         self.inputs["suctionpile_depth"] = 0.0
-        self.inputs["rna_F"] = 1e5 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
-        self.inputs["rna_M"] = 1e6 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
+        self.inputs["rna_F"] = 1e5 * np.arange(2,5)
+        self.inputs["rna_M"] = 1e6 * np.arange(2,5)
         self.inputs["k_soil"] = (20.0 + np.arange(6))[np.newaxis, :] * np.ones((2, 6))
         self.inputs["z_soil"] = np.r_[-30.0, 0.0]
 
-        myobj = tow.TowerPreFrame(n_height=5, monopile=True, gravity_foundation=True)
+        myobj = tow.TowerPreFrame(n_height=5, n_refine=3, monopile=True, gravity_foundation=True)
         myobj.compute(self.inputs, self.outputs)
 
         npt.assert_equal(self.outputs["kidx"], np.array([0]))
@@ -272,17 +225,17 @@ class TestStruct(unittest.TestCase):
         npt.assert_equal(self.outputs["kty"], np.array([RIGID]))
         npt.assert_equal(self.outputs["ktz"], np.array([RIGID]))
 
-        npt.assert_equal(self.outputs["midx"], np.array([12, 7, 0]))
-        npt.assert_equal(self.outputs["m"], np.array([1e5, 1e3, 1e4]))
-        npt.assert_equal(self.outputs["mrhox"], np.array([-3.0, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mrhoy"], np.array([0.0, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mrhoz"], np.array([1.0, 0.0, 0.0]))
-        npt.assert_equal(self.outputs["mIxx"], np.array([1e5, 1e3 * 9 * 0.5, 1e4 * 9 * 0.25]))
-        npt.assert_equal(self.outputs["mIyy"], np.array([1e5, 1e3 * 9 * 0.5, 1e4 * 9 * 0.25]))
-        npt.assert_equal(self.outputs["mIzz"], np.array([2e5, 1e3 * 9, 1e4 * 9 * 0.5]))
-        npt.assert_equal(self.outputs["mIxy"], np.zeros(3))
-        npt.assert_equal(self.outputs["mIxz"], np.zeros(3))
-        npt.assert_equal(self.outputs["mIyz"], np.zeros(3))
+        npt.assert_equal(self.outputs["midx"], np.array([7, 0]))
+        npt.assert_equal(self.outputs["m"], np.array([1e3, 1e4]))
+        npt.assert_equal(self.outputs["mrhox"], np.zeros(2))
+        npt.assert_equal(self.outputs["mrhoy"], np.zeros(2))
+        npt.assert_equal(self.outputs["mrhoz"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIxx"], np.array([1e3 * 9 * 0.5, 1e4 * 9 * 0.25]))
+        npt.assert_equal(self.outputs["mIyy"], np.array([1e3 * 9 * 0.5, 1e4 * 9 * 0.25]))
+        npt.assert_equal(self.outputs["mIzz"], np.array([1e3 * 9, 1e4 * 9 * 0.5]))
+        npt.assert_equal(self.outputs["mIxy"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIxz"], np.zeros(2))
+        npt.assert_equal(self.outputs["mIyz"], np.zeros(2))
 
         npt.assert_equal(self.outputs["plidx"], np.array([12]))
         npt.assert_equal(self.outputs["Fx"], np.array([2e5]))

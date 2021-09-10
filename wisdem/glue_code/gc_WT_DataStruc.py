@@ -445,6 +445,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         )
         conf_ivc.add_discrete_output("n_blades", val=3, desc="Number of blades of the rotor.")
         conf_ivc.add_output("rated_power", val=0.0, units="W", desc="Electrical rated power of the generator.")
+        conf_ivc.add_output("lifetime", val=25.0, units="yr", desc="Turbine design lifetime.")
 
         conf_ivc.add_output(
             "rotor_diameter_user",
@@ -600,6 +601,24 @@ class Blade(om.Group):
             units="m",
             val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
         )
+        opt_var.add_output(
+            "s_opt_te_ss",
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]),
+        )
+        opt_var.add_output(
+            "s_opt_te_ps",
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]),
+        )
+        opt_var.add_output(
+            "te_ss_opt",
+            units="m",
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]),
+        )
+        opt_var.add_output(
+            "te_ps_opt",
+            units="m",
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]),
+        )
         self.add_subsystem("opt_var", opt_var)
 
         # Import outer shape BEM
@@ -674,9 +693,31 @@ class Blade(om.Group):
         self.connect("opt_var.s_opt_spar_cap_ss", "ps.s_opt_spar_cap_ss")
         self.connect("opt_var.spar_cap_ps_opt", "ps.spar_cap_ps_opt")
         self.connect("opt_var.s_opt_spar_cap_ps", "ps.s_opt_spar_cap_ps")
+
+        self.connect("opt_var.te_ss_opt", "ps.te_ss_opt")
+        self.connect("opt_var.s_opt_te_ss", "ps.s_opt_te_ss")
+        self.connect("opt_var.te_ps_opt", "ps.te_ps_opt")
+        self.connect("opt_var.s_opt_te_ps", "ps.s_opt_te_ps")
+
         self.connect("outer_shape_bem.s", "ps.s")
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
         self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
+
+        # Fatigue specific parameters
+        fat_var = om.IndepVarComp()
+        fat_var.add_output("sparU_sigma_ult", val=1.0, units="Pa")
+        fat_var.add_output("sparU_wohlerA", val=1.0, units="Pa")
+        fat_var.add_output("sparU_wohlerexp", val=1.0)
+        fat_var.add_output("sparL_sigma_ult", val=1.0, units="Pa")
+        fat_var.add_output("sparL_wohlerA", val=1.0, units="Pa")
+        fat_var.add_output("sparL_wohlerexp", val=1.0)
+        fat_var.add_output("teU_sigma_ult", val=1.0, units="Pa")
+        fat_var.add_output("teU_wohlerA", val=1.0, units="Pa")
+        fat_var.add_output("teU_wohlerexp", val=1.0)
+        fat_var.add_output("teL_sigma_ult", val=1.0, units="Pa")
+        fat_var.add_output("teL_wohlerA", val=1.0, units="Pa")
+        fat_var.add_output("teL_wohlerexp", val=1.0)
+        self.add_subsystem("fatigue", fat_var)
 
 
 class Blade_Outer_Shape_BEM(om.Group):
@@ -2104,6 +2145,8 @@ class Floating(om.Group):
         jivc = self.add_subsystem("joints", om.IndepVarComp(), promotes=["*"])
         jivc.add_output("location_in", val=np.zeros((n_joints, 3)), units="m")
         jivc.add_output("transition_node", val=np.zeros(3), units="m")
+        jivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
+        jivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
 
         # Additions for optimizing individual nodes or multiple nodes concurrently
         self.add_subsystem("nodedv", NodeDVs(options=floating_init_options["joints"]), promotes=["*"])
@@ -2137,7 +2180,7 @@ class Floating(om.Group):
             ivc.add_output("ring_stiffener_web_thickness", 0.0, units="m")
             ivc.add_output("ring_stiffener_flange_width", 0.0, units="m")
             ivc.add_output("ring_stiffener_flange_thickness", 0.0, units="m")
-            ivc.add_output("ring_stiffener_spacing", 0.0, units="m")
+            ivc.add_output("ring_stiffener_spacing", 0.0)
             ivc.add_output("axial_stiffener_web_height", 0.0, units="m")
             ivc.add_output("axial_stiffener_web_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_flange_width", 0.0, units="m")
@@ -2676,6 +2719,16 @@ class Materials(om.Group):
             val=np.zeros(n_mat),
             units="Pa",
             desc="Yield stress of the material (in the principle direction for composites).",
+        )
+        ivc.add_output(
+            "wohler_exp",
+            val=np.zeros(n_mat),
+            desc="Exponent of S-N Wohler fatigue curve in the form of S = A*N^-(1/m).",
+        )
+        ivc.add_output(
+            "wohler_intercept",
+            val=np.zeros(n_mat),
+            desc="Stress-intercept (A) of S-N Wohler fatigue curve in the form of S = A*N^-(1/m), taken as ultimate stress unless otherwise specified.",
         )
         ivc.add_output(
             "unit_cost", val=np.zeros(n_mat), units="USD/kg", desc="1D array of the unit costs of the materials."
