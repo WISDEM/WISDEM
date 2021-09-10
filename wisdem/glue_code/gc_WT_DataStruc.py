@@ -3006,15 +3006,19 @@ class Airfoil3DCorrection(om.ExplicitComponent):
                         inn_polar = Polar(inputs["Re"][j], np.degrees(inputs["aoa"]), 
                                             inputs["cl"][i, :, j, k], inputs["cd"][i, :, j, k],
                                             inputs["cm"][i, :, j, k])
-                        polar3d = inn_polar.correction3D(inputs["s"][i], inputs["chord"][i] /
+                        try:
+                            polar3d = inn_polar.correction3D(inputs["s"][i], inputs["chord"][i] /
                                     inputs["rotor_radius"], inputs["rated_TSR"])
-
-                        cl_corrected[i, :, j, k] = np.interp(np.degrees(inputs["aoa"]), 
-                                                        polar3d.alpha, polar3d.cl)
-                        cd_corrected[i, :, j, k]  = np.interp(np.degrees(inputs["aoa"]), 
-                                                        polar3d.alpha, polar3d.cd)
-                        cm_corrected[i, :, j, k]  = np.interp(np.degrees(inputs["aoa"]), 
-                                                        polar3d.alpha, polar3d.cm)
+                            cl_corrected[i, :, j, k] = np.interp(np.degrees(inputs["aoa"]), 
+                                                            polar3d.alpha, polar3d.cl)
+                            cd_corrected[i, :, j, k]  = np.interp(np.degrees(inputs["aoa"]), 
+                                                            polar3d.alpha, polar3d.cd)
+                            cm_corrected[i, :, j, k]  = np.interp(np.degrees(inputs["aoa"]), 
+                                                            polar3d.alpha, polar3d.cm)
+                        except:
+                            cl_corrected[i, :, :, :] = inputs["cl"][i, :, :, :]
+                            cd_corrected[i, :, :, :] = inputs["cd"][i, :, :, :]
+                            cm_corrected[i, :, :, :] = inputs["cm"][i, :, :, :]
                 # f, ax = plt.subplots(4, 1, figsize=(5.3, 8))
                 # ax[0].plot(inputs["aoa"] * 180.0 / np.pi, inputs["cl"][i, :, j, k], label="input")
                 # ax[0].plot(inputs["aoa"] * 180.0 / np.pi, cl_corrected[i, :, j, k], label="corrected")
