@@ -118,7 +118,7 @@ class Polar(object):
         else:
             return self.cl * np.cos(self.alpha * np.pi / 180) + self.cd * np.sin(self.alpha * np.pi / 180)
 
-    def correction3D(self, r_over_R, chord_over_r, tsr, est_linear_region = True, alpha_max_corr=30, alpha_linear_min=-5, alpha_linear_max=5):
+    def correction3D(self, r_over_R, chord_over_r, tsr, DuSelig = True, alpha_max_corr=None, alpha_linear_min=None, alpha_linear_max=None):
         """Applies 3-D corrections for rotating sections from the 2-D data.
 
         Parameters
@@ -129,6 +129,8 @@ class Polar(object):
             local chord length / local radial location
         tsr : float
             tip-speed ratio
+        DuSelig : flag, optional
+            flag switching bwteen Du-Selig and Snel corrections
         alpha_max_corr : float, optional (deg)
             maximum angle of attack to apply full correction
         alpha_linear_min : float, optional (deg)
@@ -148,11 +150,16 @@ class Polar(object):
 
 
         """
-        if est_linear_region:
-            alpha_linear_region, _, _, _ = self.linear_region()
+        if alpha_max_corr == None and alpha_linear_min == None and alpha_linear_max == None:
+            alpha_linear_region, _, cl_slope, alpha0 = self.linear_region()
             alpha_linear_min = alpha_linear_region[0]
             alpha_linear_max = alpha_linear_region[-1]
             _, alpha_max_corr = self.cl_max()
+            find_linear_region = False
+        elif alpha_max_corr * alpha_linear_min * alpha_linear_max == None:
+            raise Exception('Define all or none of the keyword arguments alpha_max_corr, alpha_linear_min, and alpha_linear_max')
+        else:
+            find_linear_region = True
 
         # rename and convert units for convenience
         alpha = np.radians(self.alpha)
@@ -169,23 +176,31 @@ class Polar(object):
         lam = tsr / (1 + tsr ** 2) ** 0.5  # modified tip speed ratio
         expon = d / lam / r_over_R
 
-        # find linear region
-        idx = np.logical_and(alpha >= alpha_linear_min, alpha <= alpha_linear_max)
-        p = np.polyfit(alpha[idx], cl_2d[idx], 1)
-        m = p[0]
-        alpha0 = -p[1] / m
+        # find linear region with numpy polyfit
+        if find_linear_region:
+            idx = np.logical_and(alpha >= alpha_linear_min, alpha <= alpha_linear_max)
+            p = np.polyfit(alpha[idx], cl_2d[idx], 1)
+            cl_slope = p[0]
+            alpha0 = -p[1] / cl_slope
+        else:
+            cl_slope = np.degrees(cl_slope)
+            alpha0 = np.radians(alpha0)
 
-        # correction factor
-        fcl = 1.0 / m * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r ** expon) / (b + chord_over_r ** expon) - 1)
+        if DuSelig:
+            # Du-Selig correction factor
+            fcl = 1.0 / cl_slope * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r ** expon) / (b + chord_over_r ** expon) - 1)
+        else:
+            # Snel correction
+            fcl = 3.*chord_over_r**2.
 
         # Apply (arbitrary!) smoothing function to smoothen the 3D corrections and zero them out above alpha_max_corr and below alpha_linear_min
         delta_corr = 10
-        y1 = smooth_heaviside(alpha, rng=(alpha_max_corr, alpha_max_corr + np.deg2rad(90)))
-        y2 = smooth_heaviside(alpha, rng=(-np.deg2rad(-delta_corr) - np.deg2rad(90), -np.deg2rad(-delta_corr)))
+        y1 = smooth_heaviside(alpha, rng=(alpha_max_corr, alpha_max_corr + np.deg2rad(delta_corr)))
+        y2 = smooth_heaviside(alpha, rng=(-np.deg2rad(-delta_corr) - np.deg2rad(delta_corr), -np.deg2rad(-delta_corr)))
         adj = y2*(1.-y1)
 
         # Du-Selig correction for lift
-        cl_linear = m * (alpha - alpha0)
+        cl_linear = cl_slope * (alpha - alpha0)
         cl_3d = cl_2d + fcl * (cl_linear - cl_2d) * adj
 
         # JPJ 7/20 :
@@ -639,9 +654,9 @@ class Polar(object):
 
         return _find_alpha0(self.alpha, self.cl, window)
 
-    def linear_region(self, delta_alpha0 = 4):
+    def linear_region(self, delta_alpha0 = 4, method_linear_fit = 'max'):
         alpha0 = self.alpha0()
-        cl_slope, _ = self.cl_linear_slope(window=[alpha0, alpha0+delta_alpha0])
+        cl_slope, _ = self.cl_linear_slope(window=[alpha0, alpha0+delta_alpha0], method=method_linear_fit)
         alpha_linear_region = np.asarray(_find_TSE_region(self.alpha, self.cl, cl_slope, alpha0, deviation=0.05))
         cl_linear_region = (alpha_linear_region - alpha0) * cl_slope
 
