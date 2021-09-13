@@ -212,6 +212,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
     def setup(self):
         n_legs = self.options["n_legs"]
         n_bays = self.options["n_bays"]
+        x_mb = self.options["x_mb"]
 
         self.add_input("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)))
         self.add_input("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)))
@@ -220,8 +221,22 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.add_input("brace_diameters", val=np.zeros((n_bays)))
         self.add_input("brace_thicknesses", val=np.zeros((n_bays)))
 
-        self.add_output("N1")
-        self.add_output("N2")
+        n_dlc = 1
+        self.add_input("turbine_F", np.zeros((3, n_dlc)), units="N")
+        self.add_input("turbine_M", np.zeros((3, n_dlc)), units="N*m")
+        self.add_input("transition_piece_mass", 0.0, units="kg")
+        self.add_input("transition_piece_I", np.zeros(6), units="kg*m**2")
+
+        n_elem = 2 * (n_legs * (n_bays + 1)) + 4 * (n_legs * n_bays) + int(x_mb) * n_legs
+
+        self.add_output("platform_base_F", np.zeros((3, n_dlc)), units="N")
+        self.add_output("platform_base_M", np.zeros((3, n_dlc)), units="N*m")
+        self.add_output("platform_Fz", np.zeros((n_elem, n_dlc)), units="N")
+        self.add_output("platform_Vx", np.zeros((n_elem, n_dlc)), units="N")
+        self.add_output("platform_Vy", np.zeros((n_elem, n_dlc)), units="N")
+        self.add_output("platform_Mxx", np.zeros((n_elem, n_dlc)), units="N*m")
+        self.add_output("platform_Myy", np.zeros((n_elem, n_dlc)), units="N*m")
+        self.add_output("platform_Mzz", np.zeros((n_elem, n_dlc)), units="N*m")
 
     def compute(self, inputs, outputs):
         n_legs = self.options["n_legs"]
@@ -316,13 +331,14 @@ class ComputeFrame3DD(om.ExplicitComponent):
                     (jdx + 1) % (n_bays + 1),
                 )
 
+                add_element(bay_nodes, bay_indices, x_nodes, x_indices, itube, (idx + 1) % n_legs, jdx, idx, jdx)
                 add_element(
-                    bay_nodes,
-                    bay_indices,
+                    x_nodes,
+                    x_indices,
                     bay_nodes,
                     bay_indices,
                     itube,
-                    (idx + 1) % n_legs,
+                    idx,
                     jdx,
                     idx,
                     (jdx + 1) % (n_bays + 1),
@@ -353,19 +369,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
         element = np.arange(1, self.num_elements + 1)
         roll = np.zeros(self.num_elements - 1)
 
-        plot = False
-        if plot:
-            fig = plt.figure()
-            ax = plt.gca()
-
-            ax.scatter(xyz[:, 1], xyz[:, 2])
-
-            for (n1, n2) in zip(N1, N2):
-                n1 -= 1
-                n2 -= 1
-                plt.plot([xyz[n1][1], xyz[n2][1]], [xyz[n1][2], xyz[n2][2]])
-
-            plt.show()
+        plot = True
 
         if plot:
             fig = plt.figure()
@@ -404,44 +408,50 @@ class ComputeFrame3DD(om.ExplicitComponent):
         gy = 0.0
         gz = -gravity
 
-        load = pyframe3dd.StaticLoadCase(gx, gy, gz)
+        n_dlc = 1
+        for k in range(n_dlc):
+            load_obj = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
-        # # Prepare point forces at RNA node
-        # rna_F = inputs["rna_F"][:, k]
-        # rna_M = inputs["rna_M"][:, k]
-        # load.changePointLoads(
-        #     np.array([n - 1], dtype=np.int_),  # -1 b/c crash if added at final node
-        #     np.array([rna_F[0]]),
-        #     np.array([rna_F[1]]),
-        #     np.array([rna_F[2]]),
-        #     np.array([rna_M[0]]),
-        #     np.array([rna_M[1]]),
-        #     np.array([rna_M[2]]),
-        # )
-        #
-        # # distributed loads
-        # Px, Py, Pz = inputs["Pz"][:, k], inputs["Py"][:, k], -inputs["Px"][:, k]  # switch to local c.s.
-        #
-        # # trapezoidally distributed loads
-        # EL = np.arange(1, n)
-        # xx1 = xy1 = xz1 = np.zeros(n - 1)
-        # xx2 = xy2 = xz2 = 0.99 * L  # subtract small number b.c. of precision
-        # wx1 = Px[:-1]
-        # wx2 = Px[1:]
-        # wy1 = Py[:-1]
-        # wy2 = Py[1:]
-        # wz1 = Pz[:-1]
-        # wz2 = Pz[1:]
-        #
-        # load.changeTrapezoidalLoads(EL, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
-        #
-        self.frame.addLoadCase(load)
+            # Fnode2 = Fnode.copy()
+            # Fnode2[ihub, :] += inputs["turbine_F"][:, k]
+            # Mnode[ihub, :] = inputs["turbine_M"][:, k]
+            # nF = np.where(np.abs(Fnode2).sum(axis=1) > 0.0)[0]
+            # load_obj.changePointLoads(
+            #     nF + 1, Fnode2[nF, 0], Fnode2[nF, 1], Fnode2[nF, 2], Mnode[nF, 0], Mnode[nF, 1], Mnode[nF, 2]
+            # )
 
-        # Debugging
-        # self.frame.write('tower_debug.3dd')
-        # -----------------------------------
-        # run the analysis
+            # # trapezoidally distributed loads
+            # xx1 = xy1 = xz1 = np.zeros(ielem.size)
+            # xx2 = xy2 = xz2 = 0.99 * L  # multiply slightly less than unity b.c. of precision
+            # wx1 = inputs["platform_elem_Px1"][:nelem, k]
+            # wx2 = inputs["platform_elem_Px2"][:nelem, k]
+            # wy1 = inputs["platform_elem_Py1"][:nelem, k]
+            # wy2 = inputs["platform_elem_Py2"][:nelem, k]
+            # wz1 = inputs["platform_elem_Pz1"][:nelem, k]
+            # wz2 = inputs["platform_elem_Pz2"][:nelem, k]
+            # load_obj.changeTrapezoidalLoads(ielem, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
+
+            # Add the load case and run
+            self.frame.addLoadCase(load_obj)
+        # self.frame.write("system.3dd")
+        # self.frame.draw()
         displacements, forces, reactions, internalForces, mass, modal = self.frame.run()
+
+        # Determine reaction forces
+        outputs["platform_base_F"] = -np.c_[
+            reactions.Fx.sum(axis=1), reactions.Fy.sum(axis=1), reactions.Fz.sum(axis=1)
+        ].T
+        outputs["platform_base_M"] = -np.c_[
+            reactions.Mxx.sum(axis=1), reactions.Myy.sum(axis=1), reactions.Mzz.sum(axis=1)
+        ].T
+
+        # Forces and moments along the structure
+        outputs["platform_Fz"] = forces.Nx[k, 1::2]
+        outputs["platform_Vx"] = -forces.Vz[k, 1::2]
+        outputs["platform_Vy"] = forces.Vy[k, 1::2]
+        outputs["platform_Mxx"] = -forces.Mzz[k, 1::2]
+        outputs["platform_Myy"] = forces.Myy[k, 1::2]
+        outputs["platform_Mzz"] = forces.Txx[k, 1::2]
 
 
 # Assemble the system together in an OpenMDAO Group
@@ -449,7 +459,7 @@ class JacketSE(om.Group):
     def setup(self):
         x_mb = True  # if there's a mud brace
         n_legs = 4
-        n_bays = 4  # n_x
+        n_bays = 4
 
         self.add_subsystem("greek", GetGreekLetters(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
         self.add_subsystem("nodes", ComputeNodes(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
