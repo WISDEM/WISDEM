@@ -297,7 +297,8 @@ class ComputeFrame3DD(om.ExplicitComponent):
         for jdx in range(n_bays + 1):
             itube = cs.Tube(inputs["d_l"], inputs["leg_thicknesses"][jdx])
             for idx in range(n_legs):
-                add_element(leg_nodes, leg_indices, leg_nodes, leg_indices, itube, idx, jdx, idx, jdx + 1)
+                add_element(leg_nodes, leg_indices, bay_nodes, bay_indices, itube, idx, jdx, idx, jdx)
+                add_element(bay_nodes, bay_indices, leg_nodes, leg_indices, itube, idx, jdx, idx, jdx + 1)
 
         for jdx in range(n_bays):
             itube = cs.Tube(inputs["brace_diameters"][jdx], inputs["brace_thicknesses"][jdx])
@@ -352,7 +353,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
         element = np.arange(1, self.num_elements + 1)
         roll = np.zeros(self.num_elements - 1)
 
-        plot = True
+        plot = False
         if plot:
             fig = plt.figure()
             ax = plt.gca()
