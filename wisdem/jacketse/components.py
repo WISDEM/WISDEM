@@ -240,8 +240,10 @@ class ComputeFrame3DD(om.ExplicitComponent):
         leg_indices = node_indices[: leg_nodes.size // 3].reshape((n_legs, n_bays + 2))
         bay_indices = node_indices[leg_nodes.size // 3 :].reshape((n_legs, n_bays + 1))
 
-        rnode = np.array(leg_indices[:, 0], dtype=np.int_) + 1  # 1-based indexing
-        kx = ky = kz = ktx = kty = ktz = np.array([RIGID])
+        rnode = np.array(leg_indices[:, 0], dtype=np.int_)
+        print(rnode)
+        kx = ky = kz = ktx = kty = ktz = np.array([RIGID] * len(rnode))
+        print(kx)
         reactions = pyframe3dd.ReactionData(rnode, kx, ky, kz, ktx, kty, ktz, rigid=RIGID)
 
         # ------ frame element data ------------
@@ -330,7 +332,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         # ------ options ------------
         dx = -1.0
-        options = pyframe3dd.Options(1, 1, dx)  # TODO : replace with options
+        options = pyframe3dd.Options(True, True, dx)  # TODO : replace with options
         # -----------------------------------
 
         # initialize frame3dd object
