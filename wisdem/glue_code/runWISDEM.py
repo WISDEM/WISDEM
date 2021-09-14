@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 
 import numpy as np
 import openmdao.api as om
@@ -52,8 +53,36 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         rank = 0
 
     folder_output = opt_options["general"]["folder_output"]
-    if rank == 0 and not os.path.isdir(folder_output):
-        os.makedirs(folder_output)
+
+    if rank == 0:
+        os.makedirs(folder_output, exist_ok=True)
+
+        # create logger
+        logger = logging.getLogger("wisdem/weis")
+        logger.setLevel(logging.INFO)
+
+        # create handlers
+        ht = logging.StreamHandler()
+        ht.setLevel(logging.WARNING)
+
+        flog = os.path.join(folder_output, opt_options["general"]["fname_output"] + ".log")
+        hf = logging.FileHandler(flog, mode="w")
+        hf.setLevel(logging.INFO)
+
+        # create formatters
+        formatter_t = logging.Formatter("%(module)s:%(funcName)s:%(lineno)d %(levelname)s:%(message)s")
+        formatter_f = logging.Formatter(
+            "P%(process)d %(asctime)s %(module)s:%(funcName)s:%(lineno)d %(levelname)s:%(message)s"
+        )
+
+        # add formatter to handlers
+        ht.setFormatter(formatter_t)
+        hf.setFormatter(formatter_f)
+
+        # add handlers to logger
+        logger.addHandler(ht)
+        logger.addHandler(hf)
+        logger.info("Started")
 
     if color_i == 0:  # the top layer of cores enters
         if MPI:
