@@ -183,9 +183,6 @@ class TowerSE(om.Group):
             self.set_input_defaults("G_soil", 0.0, units="N/m**2")
             self.set_input_defaults("nu_soil", 0.0)
         self.set_input_defaults("sigma_y", np.zeros(n_height - 1), units="N/m**2")
-        self.set_input_defaults("rna_mass", 0.0, units="kg")
-        self.set_input_defaults("rna_cg", np.zeros(3), units="m")
-        self.set_input_defaults("rna_I", np.zeros(6), units="kg*m**2")
         self.set_input_defaults("life", 0.0)
 
         # Load baseline discretization
@@ -239,9 +236,6 @@ class TowerSE(om.Group):
                     "gravity_foundation_I",
                     "z_full",
                     "suctionpile_depth",
-                    ("mass", "rna_mass"),
-                    ("mrho", "rna_cg"),
-                    ("mI", "rna_I"),
                 ],
             )
             self.add_subsystem(
@@ -249,7 +243,7 @@ class TowerSE(om.Group):
                 ts.CylinderFrame3DD(
                     nFull=nFull,
                     nK=4 if monopile and not mod_opt["gravity_foundation"] else 1,
-                    nMass=3,
+                    nMass=2,
                     nPL=1,
                     frame3dd_opt=frame3dd_opt,
                 ),

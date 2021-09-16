@@ -293,11 +293,17 @@ class TestRS(unittest.TestCase):
         inputs = {}
         outputs = {}
 
+        nrel5mw = np.load(ARCHIVE1)
+        for k in nrel5mw.files:
+            inputs[k.replace("_strain_", "_")] = nrel5mw[k]
+
         nrel5mw = np.load(ARCHIVE2)
         for k in nrel5mw.files:
-            inputs[k] = nrel5mw[k]
+            inputs[k.replace("_strain_", "_")] = nrel5mw[k]
 
         npts = len(inputs["EA"])
+        inputs["chord"] = np.ones(npts)
+
         options = {}
         options["WISDEM"] = {}
         options["WISDEM"]["RotorSE"] = {}
@@ -441,6 +447,41 @@ class TestRS(unittest.TestCase):
         npt.assert_almost_equal(outputs["strainL_spar"], strainL_spar, decimal=3)
         npt.assert_almost_equal(outputs["strainU_te"], strainU_te, decimal=3)
         npt.assert_almost_equal(outputs["strainL_te"], strainL_te, decimal=3)
+
+        x_spar = inputs["xu_spar"][0]
+        y_spar = inputs["yu_spar"][0]
+        A = inputs["A"][0]
+        E = inputs["EA"][0] / A
+        npt.assert_almost_equal(outputs["axial_root_sparU_load2stress"][:2], 0.0)
+        npt.assert_almost_equal(outputs["axial_root_sparU_load2stress"][5], 0.0)
+        npt.assert_almost_equal(outputs["axial_root_sparU_load2stress"][2], -1.0 / A, decimal=3)
+        npt.assert_almost_equal(outputs["axial_root_sparU_load2stress"][3], -E * y_spar / inputs["EI11"][0], decimal=3)
+        npt.assert_almost_equal(outputs["axial_root_sparU_load2stress"][4], E * x_spar / inputs["EI22"][0], decimal=3)
+        x_spar = inputs["xl_spar"][0]
+        y_spar = inputs["yl_spar"][0]
+        npt.assert_almost_equal(outputs["axial_root_sparL_load2stress"][:2], 0.0)
+        npt.assert_almost_equal(outputs["axial_root_sparL_load2stress"][5], 0.0)
+        npt.assert_almost_equal(outputs["axial_root_sparL_load2stress"][2], -1.0 / A, decimal=3)
+        npt.assert_almost_equal(outputs["axial_root_sparL_load2stress"][3], -E * y_spar / inputs["EI11"][0], decimal=3)
+        npt.assert_almost_equal(outputs["axial_root_sparL_load2stress"][4], E * x_spar / inputs["EI22"][0], decimal=3)
+
+        k = np.argmax(inputs["chord"])
+        x_te = inputs["xu_te"][k]
+        y_te = inputs["yu_te"][k]
+        A = inputs["A"][k]
+        E = inputs["EA"][k] / A
+        npt.assert_almost_equal(outputs["axial_maxc_teU_load2stress"][:2], 0.0)
+        npt.assert_almost_equal(outputs["axial_maxc_teU_load2stress"][5], 0.0)
+        npt.assert_almost_equal(outputs["axial_maxc_teU_load2stress"][2], -1.0 / A, decimal=3)
+        npt.assert_almost_equal(outputs["axial_maxc_teU_load2stress"][3], -E * y_te / inputs["EI11"][k], decimal=3)
+        npt.assert_almost_equal(outputs["axial_maxc_teU_load2stress"][4], E * x_te / inputs["EI22"][k], decimal=3)
+        x_te = inputs["xl_te"][k]
+        y_te = inputs["yl_te"][k]
+        npt.assert_almost_equal(outputs["axial_maxc_teL_load2stress"][:2], 0.0)
+        npt.assert_almost_equal(outputs["axial_maxc_teL_load2stress"][5], 0.0)
+        npt.assert_almost_equal(outputs["axial_maxc_teL_load2stress"][2], -1.0 / A, decimal=3)
+        npt.assert_almost_equal(outputs["axial_maxc_teL_load2stress"][3], -E * y_te / inputs["EI11"][k], decimal=3)
+        npt.assert_almost_equal(outputs["axial_maxc_teL_load2stress"][4], E * x_te / inputs["EI22"][k], decimal=3)
 
     def testConstraints(self):
         inputs = {}

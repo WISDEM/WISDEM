@@ -21,12 +21,6 @@ class TowerPreFrame(om.ExplicitComponent):
     ----------
     z_full : numpy array[nFull], [m]
         location along tower. start at bottom and go to top
-    mass : float, [kg]
-        added mass
-    mI : numpy array[6], [kg*m**2]
-        mass moment of inertia about some point p [xx yy zz xy xz yz]
-    mrho : numpy array[3], [m]
-        xyz-location of p relative to node
     suctionpile_depth : float, [m]
         Depth of monopile below sea floor
     transition_piece_mass : float, [kg]
@@ -112,9 +106,6 @@ class TowerPreFrame(om.ExplicitComponent):
         self.add_input("z_full", np.zeros(nFull), units="m")
 
         # extra mass
-        self.add_input("mass", 0.0, units="kg")
-        self.add_input("mI", np.zeros(6), units="kg*m**2")
-        self.add_input("mrho", np.zeros(3), units="m")
         self.add_input("transition_piece_mass", 0.0, units="kg")
         self.add_input("transition_piece_I", np.zeros(6), units="kg*m**2")
         self.add_input("gravity_foundation_I", np.zeros(6), units="kg*m**2")
@@ -141,7 +132,7 @@ class TowerPreFrame(om.ExplicitComponent):
         self.add_output("ktz", np.zeros(nK), units="N/m")
 
         # extra mass
-        nMass = 3
+        nMass = 2
         self.add_output("midx", np.zeros(nMass, dtype=np.int_))
         self.add_output("m", np.zeros(nMass), units="kg")
         self.add_output("mIxx", np.zeros(nMass), units="kg*m**2")
@@ -199,22 +190,20 @@ class TowerPreFrame(om.ExplicitComponent):
 
         # Prepare RNA, transition piece, and gravity foundation (if any applicable) for "extra node mass"
         itrans = util.find_nearest(z, inputs["transition_piece_height"])
-        mtrans = inputs["transition_piece_mass"]
-        Itrans = inputs["transition_piece_I"]
-        mgrav = inputs["gravity_foundation_mass"]
-        Igrav = inputs["gravity_foundation_I"]
+        mtrans = float(inputs["transition_piece_mass"])
+        Itrans = inputs["transition_piece_I"].flatten()
+        mgrav = float(inputs["gravity_foundation_mass"])
+        Igrav = inputs["gravity_foundation_I"].flatten()
         # Note, need len()-1 because Frame3DD crashes if mass add at end
-        outputs["midx"] = np.array([nFull - 1, itrans, 0], dtype=np.int_)
-        outputs["m"] = np.array([inputs["mass"], mtrans, mgrav]).flatten()
-        outputs["mIxx"] = np.array([inputs["mI"][0], Itrans[0], Igrav[0]]).flatten()
-        outputs["mIyy"] = np.array([inputs["mI"][1], Itrans[1], Igrav[1]]).flatten()
-        outputs["mIzz"] = np.array([inputs["mI"][2], Itrans[2], Igrav[2]]).flatten()
-        outputs["mIxy"] = np.array([inputs["mI"][3], Itrans[3], Igrav[3]]).flatten()
-        outputs["mIxz"] = np.array([inputs["mI"][4], Itrans[4], Igrav[4]]).flatten()
-        outputs["mIyz"] = np.array([inputs["mI"][5], Itrans[5], Igrav[5]]).flatten()
-        outputs["mrhox"] = np.array([inputs["mrho"][0], 0.0, 0.0]).flatten()
-        outputs["mrhoy"] = np.array([inputs["mrho"][1], 0.0, 0.0]).flatten()
-        outputs["mrhoz"] = np.array([inputs["mrho"][2], 0.0, 0.0]).flatten()
+        outputs["midx"] = np.array([itrans, 0], dtype=np.int_)
+        outputs["m"] = np.array([mtrans, mgrav])
+        outputs["mIxx"] = np.array([Itrans[0], Igrav[0]])
+        outputs["mIyy"] = np.array([Itrans[1], Igrav[1]])
+        outputs["mIzz"] = np.array([Itrans[2], Igrav[2]])
+        outputs["mIxy"] = np.array([Itrans[3], Igrav[3]])
+        outputs["mIxz"] = np.array([Itrans[4], Igrav[4]])
+        outputs["mIyz"] = np.array([Itrans[5], Igrav[5]])
+        outputs["mrhox"] = outputs["mrhoy"] = outputs["mrhoz"] = np.zeros(2)
 
         # Prepare point forces at RNA node
         outputs["plidx"] = np.array([nFull - 1], dtype=np.int_)  # -1 b/c same reason as above
@@ -788,6 +777,7 @@ class TowerPostFrame(om.ExplicitComponent):
         h = np.diff(z)
         d_sec, _ = util.nodal2sectional(d)
         r_sec = 0.5 * d_sec
+        n_sec = r_sec.size
 
         L_suction = float(inputs["suctionpile_depth"])
         L_buckling = self.options["modeling_options"]["buckling_length"]
@@ -820,7 +810,9 @@ class TowerPostFrame(om.ExplicitComponent):
         # Geom properties
         Az = inputs["Az"]
         Asx = inputs["Asx"]
+        Asy = inputs["Asy"]
         Jz = inputs["Jz"]
+        Ixx = inputs["Ixx"]
         Iyy = inputs["Iyy"]
 
         # See http://svn.code.sourceforge.net/p/frame3dd/code/trunk/doc/Frame3DD-manual.html#structuralmodeling

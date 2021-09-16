@@ -256,11 +256,15 @@ def linspace_with_deriv(start, stop, num):
     return y, dy_dstart, dy_dstop
 
 
-def sectionalInterp(xi, x, y):
+def sectional_interp(xi, x, y):
     epsilon = 1e-11
     xx = np.c_[x[:-1], x[1:] - epsilon].flatten()
     yy = np.c_[y, y].flatten()
     return np.interp(xi, xx, yy)
+
+
+def sectionalInterp(xi, x, y):
+    return sectional_interp(xi, x, y)
 
 
 def interp_with_deriv(x, xp, yp):

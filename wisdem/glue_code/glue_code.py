@@ -246,8 +246,10 @@ class WT_RNTA(om.Group):
             self.connect("materials.E", "drivese.E_mat")
             self.connect("materials.G", "drivese.G_mat")
             self.connect("materials.rho", "drivese.rho_mat")
-            self.connect("materials.sigma_y", "drivese.sigma_y_mat")
+            self.connect("materials.sigma_y", "drivese.Xy_mat")
             self.connect("materials.Xt", "drivese.Xt_mat")
+            self.connect("materials.wohler_exp", "drivese.wohler_exp_mat")
+            self.connect("materials.wohler_intercept", "drivese.wohler_A_mat")
             self.connect("materials.unit_cost", "drivese.unit_cost_mat")
 
             if modeling_options["flags"]["generator"]:
@@ -374,6 +376,9 @@ class WT_RNTA(om.Group):
             self.connect("materials.G", "towerse.G_mat")
             self.connect("materials.rho", "towerse.rho_mat")
             self.connect("materials.sigma_y", "towerse.sigma_y_mat")
+            self.connect("materials.Xt", "towerse.sigma_ult_mat")
+            self.connect("materials.wohler_exp", "towerse.wohler_exp_mat")
+            self.connect("materials.wohler_intercept", "towerse.wohler_A_mat")
             self.connect("materials.unit_cost", "towerse.unit_cost_mat")
             self.connect("costs.labor_rate", "towerse.labor_cost_rate")
             self.connect("costs.painting_rate", "towerse.painting_cost_rate")
@@ -414,6 +419,9 @@ class WT_RNTA(om.Group):
             self.connect("materials.G", "floatingse.G_mat")
             self.connect("materials.rho", "floatingse.rho_mat")
             self.connect("materials.sigma_y", "floatingse.sigma_y_mat")
+            self.connect("materials.Xt", "floatingse.sigma_ult_mat")
+            self.connect("materials.wohler_exp", "floatingse.wohler_exp_mat")
+            self.connect("materials.wohler_intercept", "floatingse.wohler_A_mat")
             self.connect("materials.unit_cost", "floatingse.unit_cost_mat")
             self.connect("costs.labor_rate", "floatingse.labor_cost_rate")
             self.connect("costs.painting_rate", "floatingse.painting_cost_rate")
@@ -423,12 +431,13 @@ class WT_RNTA(om.Group):
             self.connect("tower.outfitting_factor", "floatingse.tower.outfitting_factor_in")
             self.connect("tower.layer_mat", "floatingse.tower.layer_materials")
             self.connect("floating.transition_node", "floatingse.transition_node")
+            self.connect("floating.transition_piece_mass", "floatingse.transition_piece_mass")
+            self.connect("floating.transition_piece_cost", "floatingse.transition_piece_cost")
             if modeling_options["flags"]["tower"]:
                 self.connect("tower_grid.height", "floatingse.tower_height")
             if modeling_options["flags"]["nacelle"]:
                 self.connect("drivese.base_F", "floatingse.rna_F")
                 self.connect("drivese.base_M", "floatingse.rna_M")
-                self.connect("drivese.rna_I_TT", "floatingse.rna_I")
                 self.connect("drivese.rna_cm", "floatingse.rna_cg")
                 self.connect("drivese.rna_mass", "floatingse.rna_mass")
 
@@ -556,6 +565,87 @@ class WT_RNTA(om.Group):
         self.connect("costs.controls_machine_rating_cost_coeff", "tcc.controls_machine_rating_cost_coeff")
         self.connect("costs.crane_cost", "tcc.crane_cost")
 
+        # Final component for inverse design objective
+        if opt_options["inverse_design"]:
+            self.add_subsystem("inverse_design", InverseDesign(opt_options=opt_options))
+
+            for name in opt_options["inverse_design"]:
+                indices = opt_options["inverse_design"][name]["indices"]
+                short_name = name.replace(".", "_")
+                self.connect(name, f"inverse_design.{short_name}", src_indices=indices)
+
+
+class InverseDesign(om.ExplicitComponent):
+    """
+    Component that takes in an arbitrary set of user-defined inputs and computes
+    the root-mean-square (RMS) difference between the values in the model and
+    a set of reference values.
+
+    This is useful for inverse design problems where we are trying to design a
+    wind turbine system that has a certain set of properties. Specifically, we
+    might be trying to match performance values from a report by allowing the
+    optimizer to select the design variable values that most closely produce a
+    system that has those properties.
+
+    """
+
+    def initialize(self):
+        self.options.declare("opt_options")
+
+    def setup(self):
+        opt_options = self.options["opt_options"]
+
+        # Loop through all of the keys in the inverse_design definition
+        for name in opt_options["inverse_design"]:
+            item = opt_options["inverse_design"][name]
+
+            indices = item["indices"]
+
+            # Grab the short name for each parameter to match
+            short_name = name.replace(".", "_")
+
+            # Only apply units if they're provided by the user
+            if "units" in item:
+                units = item["units"]
+            else:
+                units = None
+
+            self.add_input(
+                short_name,
+                val=np.zeros(len(indices)),
+                units=units,
+            )
+
+        # Create a singular output called objective
+        self.add_output(
+            "objective",
+            val=0.0,
+        )
+
+    def compute(self, inputs, outputs):
+        opt_options = self.options["opt_options"]
+
+        total = 0.0
+        # Loop through all of the keys in the inverse_design definition
+        for name in opt_options["inverse_design"]:
+
+            item = opt_options["inverse_design"][name]
+
+            # Grab the short name for each parameter to match
+            short_name = name.replace(".", "_")
+
+            # Grab the reference value provided by the user
+            ref_value = item["ref_value"]
+
+            # Compute the mean square difference between the parameter
+            # value outputted from the model and the reference value. Sum this
+            # to `total` to get the total across all parameters
+            total += np.sum(((inputs[short_name] - ref_value) / (np.abs(ref_value) + 1.0)) ** 2)
+
+        # Take the square root of the total
+        rms_total = np.sqrt(total)
+        outputs["objective"] = rms_total
+
 
 class WindPark(om.Group):
     # Openmdao group to run the cost analysis of a wind park
@@ -581,8 +671,8 @@ class WindPark(om.Group):
                 "outputs_2_screen", Outputs_2_Screen(modeling_options=modeling_options, opt_options=opt_options)
             )
 
-        if opt_options["opt_flag"] and opt_options["recorder"]["flag"]:
-            self.add_subsystem("conv_plots", Convergence_Trends_Opt(opt_options=opt_options))
+        # if opt_options["opt_flag"] and opt_options["recorder"]["flag"]:
+        #     self.add_subsystem("conv_plots", Convergence_Trends_Opt(opt_options=opt_options))
 
         # BOS inputs
         if modeling_options["WISDEM"]["BOS"]["flag"]:
@@ -610,6 +700,9 @@ class WindPark(om.Group):
                     self.connect("mooring.line_diameter", "orbit.mooring_line_diameter", src_indices=[0])
                     self.connect("mooring.unstretched_length", "orbit.mooring_line_length", src_indices=[0])
                     self.connect("mooring.anchor_mass", "orbit.anchor_mass", src_indices=[0])
+                    self.connect("floating.transition_piece_mass", "orbit.transition_piece_mass")
+                    self.connect("floating.transition_piece_cost", "orbit.transition_piece_cost")
+                    self.connect("floatingse.platform_cost", "orbit.floating_substructure_cost")
                 self.connect("rotorse.re.precomp.blade_mass", "orbit.blade_mass")
                 self.connect("tcc.turbine_cost_kW", "orbit.turbine_capex")
                 if modeling_options["flags"]["nacelle"]:

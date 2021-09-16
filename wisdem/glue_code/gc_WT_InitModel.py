@@ -86,7 +86,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         bos = wt_init["bos"]
         wt_opt = assign_bos_values(wt_opt, bos, offshore)
     else:
-        costs = {}
+        bos = {}
 
     if modeling_options["flags"]["costs"]:
         costs = wt_init["costs"]
@@ -452,6 +452,31 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                     break
             layer_web[i] = k
             definition_layer[i] = 10
+
+        # Fatigue params
+        if layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"]:
+            k = wt_opt["materials.name"].index(layer_mat[i])
+            wt_opt["blade.fatigue.sparU_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
+            wt_opt["blade.fatigue.sparU_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
+            wt_opt["blade.fatigue.sparU_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
+
+        elif layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"]:
+            k = wt_opt["materials.name"].index(layer_mat[i])
+            wt_opt["blade.fatigue.sparL_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
+            wt_opt["blade.fatigue.sparL_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
+            wt_opt["blade.fatigue.sparL_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
+
+        elif layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["te_ss"]:
+            k = wt_opt["materials.name"].index(layer_mat[i])
+            wt_opt["blade.fatigue.teU_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
+            wt_opt["blade.fatigue.teU_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
+            wt_opt["blade.fatigue.teU_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
+
+        elif layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["te_ps"]:
+            k = wt_opt["materials.name"].index(layer_mat[i])
+            wt_opt["blade.fatigue.teL_wohlerA"] = wt_opt["materials.wohler_intercept"][k]
+            wt_opt["blade.fatigue.teL_wohlerexp"] = wt_opt["materials.wohler_exp"][k]
+            wt_opt["blade.fatigue.teL_sigma_ult"] = wt_opt["materials.Xt"][k, :].max()
 
     # Assign the openmdao values
     wt_opt["blade.internal_structure_2d_fem.layer_side"] = layer_side
@@ -837,7 +862,6 @@ def assign_tower_values(wt_opt, modeling_options, tower):
         elif modeling_options["flags"]["floating"]:
             wt_opt["floatingse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
             wt_opt["floatingse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
-            wt_opt["floatingse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
             wt_opt["floatingse.rna_F"] = modeling_options["WISDEM"]["Loading"]["loads"][0]["force"]
             wt_opt["floatingse.rna_M"] = modeling_options["WISDEM"]["Loading"]["loads"][0]["moment"]
             wt_opt["floatingse.Uref"] = modeling_options["WISDEM"]["Loading"]["loads"][0]["velocity"]
@@ -922,6 +946,8 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     else:
         itrans = modeling_options["floating"]["transition_joint"]
     wt_opt["floating.transition_node"] = wt_opt["floating.location_in"][itrans, :]
+    wt_opt["floating.transition_piece_mass"] = floating["transition_piece_mass"]
+    wt_opt["floating.transition_piece_cost"] = floating["transition_piece_cost"]
 
     # Make sure IVCs are initialized too
     for k, linked_node_dict in enumerate(modeling_options["floating"]["joints"]["design_variable_data"]):
@@ -1101,15 +1127,25 @@ def assign_control_values(wt_opt, modeling_options, control):
 
 def assign_configuration_values(wt_opt, assembly, opt_options):
 
-    wt_opt["configuration.ws_class"] = assembly["turbine_class"]
-    wt_opt["configuration.turb_class"] = assembly["turbulence_class"]
-    wt_opt["configuration.gearbox_type"] = assembly["drivetrain"]
+    class_val = assembly["turbine_class"].upper()
+    if class_val in [1, "1"]:
+        class_val = "I"
+    elif class_val in [2, "2"]:
+        class_val = "II"
+    elif class_val in [3, "3"]:
+        class_val = "III"
+    elif class_val in [4, "4"]:
+        class_val = "IV"
+    wt_opt["configuration.ws_class"] = class_val
+    wt_opt["configuration.turb_class"] = assembly["turbulence_class"].upper()
+    wt_opt["configuration.gearbox_type"] = assembly["drivetrain"].lower()
     wt_opt["configuration.rotor_orientation"] = assembly["rotor_orientation"].lower()
     wt_opt["configuration.upwind"] = wt_opt["configuration.rotor_orientation"] == "upwind"
     wt_opt["configuration.n_blades"] = int(assembly["number_of_blades"])
     wt_opt["configuration.rotor_diameter_user"] = assembly["rotor_diameter"]
     wt_opt["configuration.hub_height_user"] = assembly["hub_height"]
     wt_opt["configuration.rated_power"] = assembly["rated_power"]
+    wt_opt["configuration.lifetime"] = assembly["lifetime"]
 
     # Checks for errors
     if int(assembly["number_of_blades"]) - assembly["number_of_blades"] != 0:
@@ -1139,7 +1175,7 @@ def assign_environment_values(wt_opt, environment, offshore, blade_flag):
     wt_opt["env.G_soil"] = environment["soil_shear_modulus"]
     wt_opt["env.nu_soil"] = environment["soil_poisson"]
     if blade_flag:
-        wt_opt['rotorse.wt_class.V_mean_overwrite'] = environment['V_mean']
+        wt_opt["rotorse.wt_class.V_mean_overwrite"] = environment["V_mean"]
 
     return wt_opt
 
@@ -1337,12 +1373,14 @@ def assign_material_values(wt_opt, modeling_options, materials):
     orth = np.zeros(n_mat)
     component_id = -np.ones(n_mat)
     rho = np.zeros(n_mat)
-    sigma_y = np.zeros(n_mat)
     E = np.zeros([n_mat, 3])
     G = np.zeros([n_mat, 3])
     nu = np.zeros([n_mat, 3])
     Xt = np.zeros([n_mat, 3])
     Xc = np.zeros([n_mat, 3])
+    sigma_y = np.zeros(n_mat)
+    m = np.ones(n_mat)
+    A = np.zeros(n_mat)
     rho_fiber = np.zeros(n_mat)
     rho_area_dry = np.zeros(n_mat)
     fvf = np.zeros(n_mat)
@@ -1402,6 +1440,12 @@ def assign_material_values(wt_opt, modeling_options, materials):
             waste[i] = materials[i]["waste"]
         if "Xy" in materials[i]:
             sigma_y[i] = materials[i]["Xy"]
+        if "m" in materials[i]:
+            m[i] = materials[i]["m"]
+        if "A" in materials[i]:
+            A[i] = materials[i]["A"]
+        if A[i] == 0.0:
+            A[i] = np.r_[Xt[i, :], Xc[i, :]].max()
 
     wt_opt["materials.name"] = name
     wt_opt["materials.orth"] = orth
@@ -1413,6 +1457,8 @@ def assign_material_values(wt_opt, modeling_options, materials):
     wt_opt["materials.Xt"] = Xt
     wt_opt["materials.Xc"] = Xc
     wt_opt["materials.nu"] = nu
+    wt_opt["materials.wohler_exp"] = m
+    wt_opt["materials.wohler_intercept"] = A
     wt_opt["materials.rho_fiber"] = rho_fiber
     wt_opt["materials.rho_area_dry"] = rho_area_dry
     wt_opt["materials.fvf_from_yaml"] = fvf

@@ -473,7 +473,9 @@ class ComputePowerCurve(ExplicitComponent):
             if region2p5:
                 # Have to search over both pitch and speed
                 x0 = [0.0, U_rated]
-                bnds = [[0.0, 15.0], [Uhub[i - 3] + TOL, Uhub[i + 2] - TOL]]
+                imin = max(i - 3, 0)
+                imax = min(i + 2, self.n_pc)
+                bnds = [[0.0, 15.0], [Uhub[imin] + TOL, Uhub[imax] - TOL]]
                 const = {}
                 const["type"] = "eq"
                 const["fun"] = const_Urated

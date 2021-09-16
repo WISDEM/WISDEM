@@ -136,7 +136,7 @@ class FrameTestEXA(unittest.TestCase):
         disp = self.displacements
         iCase = 0
 
-        node = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], dtype=np.int)
+        node = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], dtype=np.int_)
         dx = np.array(
             [
                 0.0,
@@ -202,7 +202,7 @@ class FrameTestEXA(unittest.TestCase):
         disp = self.displacements
         iCase = 1
 
-        node = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], dtype=np.int)
+        node = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], dtype=np.int_)
         dx = np.array(
             [
                 0.0,
@@ -556,7 +556,7 @@ class FrameTestEXB(unittest.TestCase):
           5 1  1  1  1  1  1
         """
         )
-        out = np.loadtxt(string, dtype=np.int)
+        out = np.loadtxt(string, dtype=np.int_)
         rigid = 1
 
         reactions = ReactionData(out[:, 0], out[:, 1], out[:, 2], out[:, 3], out[:, 4], out[:, 5], out[:, 6], rigid)
