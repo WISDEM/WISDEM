@@ -8,6 +8,8 @@ from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.rotorse.geometry_tools.geometry import remap2grid, trailing_edge_smoothing
 from wisdem.ccblade.Polar import Polar
+import logging
+logger = logging.getLogger("wisdem/weis")
 
 class WindTurbineOntologyOpenMDAO(om.Group):
     # Openmdao group with all wind turbine data
@@ -2931,6 +2933,7 @@ class Airfoil3DCorrection(om.ExplicitComponent):
 
     def setup(self):
         rotorse_options = self.options["rotorse_options"]
+        self.af_correction = rotorse_options['3d_af_correction']
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_aoa = n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
         self.n_Re = n_Re = rotorse_options["n_Re"]  # Number of Reynolds, so far hard set at 1
@@ -3002,18 +3005,17 @@ class Airfoil3DCorrection(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-        import matplotlib.pyplot as plt
         cl_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
         cd_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
         cm_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
         for i in range(self.n_span):
-            if inputs["r_thick_interp"][i]<0.7: # Only apply 3D correction to airfoils thinner than 70% to avoid numerical problems at blade root
+            if inputs["r_thick_interp"][i]<0.7 and self.af_correction: # Only apply 3D correction to airfoils thinner than 70% to avoid numerical problems at blade root
+                logger.info('3D correction applied to airfoil polars for section '+ str(i))
                 for j in range(self.n_Re):
                     for k in range(self.n_tab):
                         inn_polar = Polar(inputs["Re"][j], np.degrees(inputs["aoa"]), 
                                             inputs["cl"][i, :, j, k], inputs["cd"][i, :, j, k],
                                             inputs["cm"][i, :, j, k])
-                        # try:
                         polar3d = inn_polar.correction3D(inputs["r_blade"][i] / inputs['rotor_radius'], inputs["chord"][i] / inputs["r_blade"][i], inputs["rated_TSR"])
                         cl_corrected[i, :, j, k] = np.interp(np.degrees(inputs["aoa"]), 
                                                         polar3d.alpha, polar3d.cl)
@@ -3021,48 +3023,10 @@ class Airfoil3DCorrection(om.ExplicitComponent):
                                                         polar3d.alpha, polar3d.cd)
                         cm_corrected[i, :, j, k]  = np.interp(np.degrees(inputs["aoa"]), 
                                                         polar3d.alpha, polar3d.cm)
-                        # except:
-                        #     cl_corrected[i, :, :, :] = inputs["cl"][i, :, :, :]
-                        #     cd_corrected[i, :, :, :] = inputs["cd"][i, :, :, :]
-                        #     cm_corrected[i, :, :, :] = inputs["cm"][i, :, :, :]
-                # f, ax = plt.subplots(4, 1, figsize=(5.3, 8))
-                # ax[0].plot(inputs["aoa"] * 180.0 / np.pi, inputs["cl"][i, :, j, k], label="input")
-                # ax[0].plot(inputs["aoa"] * 180.0 / np.pi, cl_corrected[i, :, j, k], label="corrected")
-                # ax[0].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-                # ax[0].legend()
-                # ax[0].set_ylabel("CL (-)", fontweight="bold")
-                # ax[0].set_title("Span Location {:2.1f} m".format(inputs["r_blade"][i]), fontweight="bold")
-                # ax[0].set_xlim(left=-4, right=20)
-                # ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, inputs["cd"][i, :, j, k], label="input")
-                # ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, cd_corrected[i, :, j, k], label="corrected")
-                # ax[1].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-                # ax[1].set_ylabel("CD (-)", fontweight="bold")
-                # ax[1].set_xlim(left=-4, right=20)
-                # ax[2].plot(inputs["aoa"] * 180.0 / np.pi, inputs["cm"][i, :, j, k], label="input")
-                # ax[2].plot(inputs["aoa"] * 180.0 / np.pi, cm_corrected[i, :, j, k], label="corrected")
-                # ax[2].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-                # ax[2].legend()
-                # ax[2].set_ylabel("CM (-)", fontweight="bold")
-                # ax[3].plot(inputs["aoa"] * 180.0 / np.pi, inputs["cl"][i, :, j, k] / inputs["cd"][i, :, j, k], label="input")
-                # ax[3].plot(
-                #     inputs["aoa"] * 180.0 / np.pi,
-                #     cl_corrected[i, :, j, k] / cd_corrected[i, :, j, k],
-                #     label="corrected",
-                # )
-                # ax[3].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-                # ax[3].set_ylabel("CL/CD (-)", fontweight="bold")
-                # ax[3].set_xlabel("Angles of Attack (deg)", fontweight="bold")
-                # ax[3].set_xlim(left=-4, right=20)
-                # ax[3].set_ylim(top=200, bottom=-50)
-                # plt.savefig('/Users/pbortolo/work/3_projects/5_IEAtask37/3d_correction/' + str(i)+'.png')
-                # plt.show()
-                # plt.close()
             else:
                 cl_corrected[i, :, :, :] = inputs["cl"][i, :, :, :]
                 cd_corrected[i, :, :, :] = inputs["cd"][i, :, :, :]
                 cm_corrected[i, :, :, :] = inputs["cm"][i, :, :, :]
-
-
         outputs["cl_corrected"] = cl_corrected
         outputs["cd_corrected"] = cd_corrected
         outputs["cm_corrected"] = cm_corrected

@@ -3,6 +3,8 @@ from __future__ import division, print_function
 import os
 
 import numpy as np
+import logging
+logger = logging.getLogger("wisdem/weis")
 
 
 """ This module contains:
@@ -970,18 +972,18 @@ def _find_alpha0(alpha, coeff, window):
     coeff = coeff[iwindow]
     alpha_zc, i_zc = _zero_crossings(x=alpha, y=coeff, direction="up")
 
-    #if len(alpha_zc) > 1:
-    #    raise Exception(
-    #        "Cannot find alpha0, {} zero crossings of Coeff in the range of alpha values: [{} {}] ".format(
-    #            len(alpha_zc), window[0], window[1]
-    #        )
-    #    )
-    #elif len(alpha_zc) == 0:
-    #    raise Exception(
-    #        "Cannot find alpha0, no zero crossing of Coeff in the range of alpha values: [{} {}] ".format(
-    #            window[0], window[1]
-    #        )
-    #    )
+    if len(alpha_zc) > 1:
+       logger.debug(
+           "Cannot find alpha0, {} zero crossings of Coeff in the range of alpha values: [{} {}] ".format(
+               len(alpha_zc), window[0], window[1]
+           )
+       )
+    elif len(alpha_zc) == 0:
+       logger.debug(
+           "Cannot find alpha0, no zero crossing of Coeff in the range of alpha values: [{} {}] ".format(
+               window[0], window[1]
+           )
+       )
 
     alpha0 = alpha_zc[0]
     return alpha0
