@@ -474,7 +474,7 @@ class ComputePowerCurve(ExplicitComponent):
                 # Have to search over both pitch and speed
                 x0 = [0.0, U_rated]
                 imin = max(i - 3, 0)
-                imax = min(i + 2, self.n_pc)
+                imax = min(i + 2, len(Uhub) - 1)
                 bnds = [[0.0, 15.0], [Uhub[imin] + TOL, Uhub[imax] - TOL]]
                 const = {}
                 const["type"] = "eq"
