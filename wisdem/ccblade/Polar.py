@@ -120,7 +120,8 @@ class Polar(object):
         else:
             return self.cl * np.cos(self.alpha * np.pi / 180) + self.cd * np.sin(self.alpha * np.pi / 180)
 
-    def correction3D(self, r_over_R, chord_over_r, tsr, DuSelig = True, alpha_max_corr=None, alpha_linear_min=None, alpha_linear_max=None):
+    def correction3D(self, r_over_R, chord_over_r, tsr, lift_method = 'DuSelig', drag_method='None', blending_method='linear_25_45', 
+                    max_cl_corr=0.25, alpha_max_corr=None, alpha_linear_min=None, alpha_linear_max=None):
         """Applies 3-D corrections for rotating sections from the 2-D data.
 
         Parameters
@@ -131,8 +132,14 @@ class Polar(object):
             local chord length / local radial location
         tsr : float
             tip-speed ratio
-        DuSelig : flag, optional
-            flag switching bwteen Du-Selig and Snel corrections
+        lift_method : string, optional
+            flag switching between Du-Selig and Snel corrections
+        drag_method : string, optional
+            flag switching between Eggers correction and None
+        blending_method: string:
+             blending method used to blend from 3D to 2D polar. default 'linear_25_45'
+        max_cl_corr: float, optional
+             maximum correction allowed, default is 0.25.
         alpha_max_corr : float, optional (deg)
             maximum angle of attack to apply full correction
         alpha_linear_min : float, optional (deg)
@@ -144,14 +151,8 @@ class Polar(object):
         -------
         polar : Polar
             A new Polar object corrected for 3-D effects
-
-        Notes
-        -----
-        The Du-Selig method :cite:`Du1998A-3-D-stall-del` is used to correct lift, and
-        the Eggers method :cite:`Eggers-Jr2003An-assessment-o` is used to correct drag.
-
-
         """
+    
         if alpha_max_corr == None and alpha_linear_min == None and alpha_linear_max == None:
             alpha_linear_region, _, cl_slope, alpha0 = self.linear_region()
             alpha_linear_min = alpha_linear_region[0]
@@ -188,33 +189,44 @@ class Polar(object):
             cl_slope = np.degrees(cl_slope)
             alpha0 = np.radians(alpha0)
 
-        if DuSelig:
+        if lift_method == 'DuSelig':
             # Du-Selig correction factor
             fcl = 1.0 / cl_slope * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r ** expon) / (b + chord_over_r ** expon) - 1)
-        else:
+        elif lift_method == 'Snel':
             # Snel correction
             fcl = 3.*chord_over_r**2.
+        else:
+            raise Exception('The keyword argument lift_method (3d correction for lift) can only be DuSelig or Snel.')
 
-        # Apply (arbitrary!) smoothing function to smoothen the 3D corrections and zero them out above alpha_max_corr and below alpha_linear_min
-        delta_corr = 10
-        y1 = smooth_heaviside(alpha, rng=(alpha_max_corr, alpha_max_corr + np.deg2rad(delta_corr)))
-        y2 = smooth_heaviside(alpha, rng=(-np.deg2rad(-delta_corr) - np.deg2rad(delta_corr), -np.deg2rad(-delta_corr)))
-        adj = y2*(1.-y1)
-
-        # Du-Selig correction for lift
+        # 3D correction for lift
         cl_linear = cl_slope * (alpha - alpha0)
-        cl_3d = cl_2d + fcl * (cl_linear - cl_2d) * adj
-
-        # JPJ 7/20 :
-        # This drag correction is what differs between airfoilprep's Polar and
-        # this class. If we use the Du-Selig correction for drag here,
-        # the `test_stall` results match exactly.
-        # I'm leaving it as-is so dac.py and other untested scripts are not affected.
+        cl_corr = fcl*(cl_linear-cl_2d)
+        # Bound correction +/- max_cl_corr
+        cl_corr = np.clip(cl_corr, -max_cl_corr, max_cl_corr)
+        # Blending
+        if blending_method=='linear_25_45':
+            # We adjust fully between +/- 25 deg, linearly to +/- 45
+            adj_alpha=np.radians([-180, -45, -25, 25, 45,180])
+            adj_value=np.array  ([0   ,   0,   1,  1,  0, 0 ])
+            adj = np.interp(alpha, adj_alpha, adj_value)
+        elif blending_method=='heaviside':
+             # Apply (arbitrary!) smoothing function to smoothen the 3D corrections and zero them out away from alpha_max_corr
+            delta_corr = 10
+            y1 = 1. - smooth_heaviside(alpha, k=1, rng=(alpha_max_corr, alpha_max_corr + np.deg2rad(delta_corr)))
+            y2 = smooth_heaviside(alpha, k=1, rng=(0., np.deg2rad(delta_corr)))
+            adj = y1*y2
+        else:
+            raise NotImplementedError('blending :',blending_method)
+        cl_3d = cl_2d + cl_corr*adj
 
         # Eggers 2003 correction for drag
-        delta_cl = cl_3d - cl_2d
-
-        delta_cd = delta_cl * (np.sin(alpha) - 0.12 * np.cos(alpha)) / (np.cos(alpha) + 0.12 * np.sin(alpha))
+        if drag_method == 'Eggers':
+            delta_cd = cl_corr * (np.sin(alpha) - 0.12 * np.cos(alpha)) / (np.cos(alpha) + 0.12 * np.sin(alpha)) * adj
+        elif drag_method == 'None':
+            delta_cd = 0.
+        else:
+            raise Exception('The keyword argument darg_method (3d correction for drag) can only be Eggers or None.')
+        
         cd_3d = cd_2d + delta_cd
 
         return type(self)(self.Re, np.degrees(alpha), cl_3d, cd_3d, self.cm)
