@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.cross_sections as cs
+import wisdem.commonse.utilization_dnvgl as util_dnvgl
+import wisdem.commonse.utilization_eurocode as util_euro
+import wisdem.commonse.utilization_constraints as util_con
 from wisdem.commonse import NFREQ, gravity
 
 E_input = 2.1e11
@@ -231,6 +234,20 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         n_elem = 2 * (n_legs * (n_bays + 1)) + 4 * (n_legs * n_bays) + int(x_mb) * n_legs + n_legs
 
+        self.add_output("jacket_elem_L", np.zeros(n_elem), units="m")
+        self.add_output("jacket_elem_D", np.zeros(n_elem), units="m")
+        self.add_output("jacket_elem_t", np.zeros(n_elem), units="m")
+        self.add_output("jacket_elem_A", np.zeros(n_elem), units="m**2")
+        self.add_output("jacket_elem_Asx", np.zeros(n_elem), units="m**2")
+        self.add_output("jacket_elem_Asy", np.zeros(n_elem), units="m**2")
+        self.add_output("jacket_elem_Ixx", np.zeros(n_elem), units="kg*m**2")
+        self.add_output("jacket_elem_Iyy", np.zeros(n_elem), units="kg*m**2")
+        self.add_output("jacket_elem_J0", np.zeros(n_elem), units="kg*m**2")
+        self.add_output("jacket_elem_E", np.zeros(n_elem), units="Pa")
+        self.add_output("jacket_elem_G", np.zeros(n_elem), units="Pa")
+        self.add_output("jacket_elem_sigma_y", np.zeros(n_elem), units="Pa")
+        self.add_output("jacket_elem_qdyn", np.zeros((n_elem, n_dlc)), units="Pa")
+
         self.add_output("jacket_base_F", np.zeros((3, n_dlc)), units="N")
         self.add_output("jacket_base_M", np.zeros((3, n_dlc)), units="N*m")
         self.add_output("jacket_Fz", np.zeros((n_elem, n_dlc)), units="N")
@@ -293,6 +310,8 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.N1 = []
         self.N2 = []
         self.L = []
+        self.D = []
+        self.t = []
         self.Area = []
         self.Asx = []
         self.Asy = []
@@ -308,6 +327,8 @@ class ComputeFrame3DD(om.ExplicitComponent):
             self.N2.append(n2_indices[idx3, idx4])
             length = np.linalg.norm(n2 - n1)
             self.L.append(length)
+            self.D.append(itube.D)
+            self.t.append(itube.t)
             self.Area.append(itube.Area)
             self.Asx.append(itube.Asx)
             self.Asy.append(itube.Asy)
@@ -375,6 +396,9 @@ class ComputeFrame3DD(om.ExplicitComponent):
         J0 = np.squeeze(np.array(self.J0, dtype=np.float))
         Ixx = np.squeeze(np.array(self.Ixx, dtype=np.float))
         Iyy = np.squeeze(np.array(self.Iyy, dtype=np.float))
+        L = np.squeeze(np.array(self.L, dtype=np.float))
+        D = np.squeeze(np.array(self.D, dtype=np.float))
+        t = np.squeeze(np.array(self.t, dtype=np.float))
         E = np.squeeze(np.array(E, dtype=np.float))
         G = np.squeeze(np.array(G, dtype=np.float))
         rho = np.squeeze(np.array(rho, dtype=np.float))
@@ -385,6 +409,20 @@ class ComputeFrame3DD(om.ExplicitComponent):
         E[-n_legs:] *= 1.0e2
         G[-n_legs:] *= 1.0e2
         rho[-n_legs:] = 1.0e-2
+
+        outputs["jacket_elem_L"] = L
+        outputs["jacket_elem_D"] = D
+        outputs["jacket_elem_t"] = t
+        outputs["jacket_elem_A"] = Area
+        outputs["jacket_elem_Asx"] = Asx
+        outputs["jacket_elem_Asy"] = Asy
+        outputs["jacket_elem_Ixx"] = Ixx
+        outputs["jacket_elem_Iyy"] = Iyy
+        outputs["jacket_elem_J0"] = J0
+        outputs["jacket_elem_E"] = E
+        outputs["jacket_elem_G"] = G
+        outputs["jacket_elem_sigma_y"] = 450.0e6  # hardcoded values for now
+        outputs["jacket_elem_qdyn"] = 1.0e5  # hardcoded values for now
 
         element = np.arange(1, self.num_elements + 1)
         roll = np.zeros(self.num_elements - 1)
@@ -496,23 +534,132 @@ class ComputeFrame3DD(om.ExplicitComponent):
         outputs["jacket_Mzz"] = forces.Txx[k, 1::2]
 
 
+class JacketPost(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("n_legs", types=int)
+        self.options.declare("n_bays", types=int)
+        self.options.declare("x_mb", types=bool)
+        self.options.declare("options")
+        self.options.declare("n_dlc")
+
+    def setup(self):
+        n_legs = self.options["n_legs"]
+        n_bays = self.options["n_bays"]
+        x_mb = self.options["x_mb"]
+        n_dlc = self.options["n_dlc"]
+
+        n_elem = 2 * (n_legs * (n_bays + 1)) + 4 * (n_legs * n_bays) + int(x_mb) * n_legs + n_legs
+
+        self.add_input("jacket_elem_L", np.zeros(n_elem), units="m")
+        self.add_input("jacket_elem_D", np.zeros(n_elem), units="m")
+        self.add_input("jacket_elem_t", np.zeros(n_elem), units="m")
+        self.add_input("jacket_elem_A", np.zeros(n_elem), units="m**2")
+        self.add_input("jacket_elem_Asx", np.zeros(n_elem), units="m**2")
+        self.add_input("jacket_elem_Asy", np.zeros(n_elem), units="m**2")
+        self.add_input("jacket_elem_Ixx", np.zeros(n_elem), units="kg*m**2")
+        self.add_input("jacket_elem_Iyy", np.zeros(n_elem), units="kg*m**2")
+        self.add_input("jacket_elem_J0", np.zeros(n_elem), units="kg*m**2")
+        self.add_input("jacket_elem_E", np.zeros(n_elem), units="Pa")
+        self.add_input("jacket_elem_G", np.zeros(n_elem), units="Pa")
+        self.add_input("jacket_elem_sigma_y", np.zeros(n_elem), units="Pa")
+        self.add_input("jacket_elem_qdyn", np.zeros((n_elem, n_dlc)), units="Pa")
+
+        # Processed Frame3DD/OpenFAST outputs
+        self.add_input("jacket_Fz", np.ones((n_elem, n_dlc)), units="N")
+        self.add_input("jacket_Vx", np.ones((n_elem, n_dlc)), units="N")
+        self.add_input("jacket_Vy", np.ones((n_elem, n_dlc)), units="N")
+        self.add_input("jacket_Mxx", np.ones((n_elem, n_dlc)), units="N*m")
+        self.add_input("jacket_Myy", np.ones((n_elem, n_dlc)), units="N*m")
+        self.add_input("jacket_Mzz", np.ones((n_elem, n_dlc)), units="N*m")
+
+        self.add_output("constr_jacket_stress", np.ones((n_elem, n_dlc)))
+        self.add_output("constr_jacket_shell_buckling", np.ones((n_elem, n_dlc)))
+        self.add_output("constr_jacket_global_buckling", np.ones((n_elem, n_dlc)))
+
+    def compute(self, inputs, outputs):
+        # Unpack some variables
+        opt = self.options["options"]
+        n_dlc = self.options["n_dlc"]
+        gamma_f = opt["gamma_f"]
+        gamma_m = opt["gamma_m"]
+        gamma_n = opt["gamma_n"]
+        gamma_b = opt["gamma_b"]
+
+        d = inputs["jacket_elem_D"]
+        t = inputs["jacket_elem_t"]
+        h = inputs["jacket_elem_L"]
+        Az = inputs["jacket_elem_A"]
+        Asx = inputs["jacket_elem_Asx"]
+        Jz = inputs["jacket_elem_J0"]
+        Iyy = inputs["jacket_elem_Iyy"]
+        sigy = inputs["jacket_elem_sigma_y"]
+        E = inputs["jacket_elem_E"]
+        G = inputs["jacket_elem_G"]
+        qdyn = inputs["jacket_elem_qdyn"]
+        r = 0.5 * d
+
+        # Get loads from Framee3dd/OpenFAST
+        Fz = inputs["jacket_Fz"]
+        Vx = inputs["jacket_Vx"]
+        Vy = inputs["jacket_Vy"]
+        Mxx = inputs["jacket_Mxx"]
+        Myy = inputs["jacket_Myy"]
+        Mzz = inputs["jacket_Mzz"]
+
+        M = np.sqrt(Mxx ** 2 + Myy ** 2)
+        V = np.sqrt(Vx ** 2 + Vy ** 2)
+
+        # See http://svn.code.sourceforge.net/p/frame3dd/code/trunk/doc/Frame3DD-manual.html#structuralmodeling
+        # print(Fz.shape, Az.shape, M.shape, r.shape, Iyy.shape)
+        axial_stress = Fz / Az[:, np.newaxis] + M * (r / Iyy)[:, np.newaxis]
+        shear_stress = np.abs(Mzz) / (Jz * r)[:, np.newaxis] + V / Asx[:, np.newaxis]
+        hoop_stress = -qdyn * ((r - 0.5 * t) / t)[:, np.newaxis]  # util_con.hoopStress(d, t, qdyn)
+        outputs["constr_jacket_stress"] = util_con.vonMisesStressUtilization(
+            axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigy.reshape((-1, 1))
+        )
+
+        # Use DNV-GL CP202 Method
+        check = util_dnvgl.CylinderBuckling(h, d, t, E=E, G=G, sigma_y=sigy, gamma=gamma_f * gamma_b)
+        for k in range(n_dlc):
+            results = check.run_buckling_checks(
+                Fz[k, :], M[k, :], axial_stress[k, :], hoop_stress[k, :], shear_stress[k, :]
+            )
+
+            outputs["constr_jacket_shell_buckling"][:, k] = results["Shell"]
+            outputs["constr_jacket_global_buckling"][:, k] = results["Global"]
+
+
 # Assemble the system together in an OpenMDAO Group
 class JacketSE(om.Group):
     def setup(self):
         x_mb = True  # if there's a mud brace
         n_legs = 3
         n_bays = 2
+        n_dlc = 1
+
+        modeling_options = {}
+        modeling_options["gamma_f"] = 1.35
+        modeling_options["gamma_m"] = 1.3
+        modeling_options["gamma_n"] = 1.0
+        modeling_options["gamma_b"] = 1.1
 
         self.add_subsystem("greek", GetGreekLetters(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
         self.add_subsystem("nodes", ComputeNodes(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
         self.add_subsystem("properties", ComputeDiameterAndThicknesses(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
         self.add_subsystem("frame3dd", ComputeFrame3DD(n_legs=n_legs, n_bays=n_bays, x_mb=x_mb), promotes=["*"])
+        self.add_subsystem(
+            "jacketpost",
+            JacketPost(n_legs=n_legs, n_bays=n_bays, x_mb=x_mb, options=modeling_options, n_dlc=n_dlc),
+            promotes=["*"],
+        )
 
 
 if __name__ == "__main__":
     prob = om.Problem(model=JacketSE())
 
     prob.setup()
+
+    prob["turbine_F"] = [1.0e6, 0.0, 0.0]
 
     prob.run_model()
 
