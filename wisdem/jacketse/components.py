@@ -211,11 +211,13 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.options.declare("n_legs", types=int)
         self.options.declare("n_bays", types=int)
         self.options.declare("x_mb", types=bool)
+        self.options.declare("n_dlc")
 
     def setup(self):
         n_legs = self.options["n_legs"]
         n_bays = self.options["n_bays"]
         x_mb = self.options["x_mb"]
+        n_dlc = self.options["n_dlc"]
 
         self.add_input("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)))
         self.add_input("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)))
@@ -224,7 +226,6 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.add_input("brace_diameters", val=np.zeros((n_bays)))
         self.add_input("brace_thicknesses", val=np.zeros((n_bays)))
 
-        n_dlc = 1
         self.add_input("turbine_F", np.zeros((3, n_dlc)), units="N")
         self.add_input("turbine_M", np.zeros((3, n_dlc)), units="N*m")
         self.add_input("transition_piece_mass", 0.0, units="kg")
@@ -261,6 +262,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
         n_legs = self.options["n_legs"]
         n_bays = self.options["n_bays"]
         x_mb = self.options["x_mb"]
+        n_dlc = self.options["n_dlc"]
 
         leg_nodes = inputs["leg_nodes"]
         bay_nodes = inputs["bay_nodes"]
@@ -422,7 +424,10 @@ class ComputeFrame3DD(om.ExplicitComponent):
         outputs["jacket_elem_E"] = E
         outputs["jacket_elem_G"] = G
         outputs["jacket_elem_sigma_y"] = 450.0e6  # hardcoded values for now
-        outputs["jacket_elem_qdyn"] = 1.0e5  # hardcoded values for now
+        outputs["jacket_elem_qdyn"] = 1.0e2  # hardcoded values for now
+
+        outputs["jacket_elem_sigma_y"][-n_legs:] *= 1e6
+        outputs["jacket_elem_qdyn"][-n_legs:] *= 1e4
 
         element = np.arange(1, self.num_elements + 1)
         roll = np.zeros(self.num_elements - 1)
@@ -483,7 +488,6 @@ class ComputeFrame3DD(om.ExplicitComponent):
         gy = 0.0
         gz = -gravity
 
-        n_dlc = 1
         for k in range(n_dlc):
             load_obj = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
@@ -646,7 +650,9 @@ class JacketSE(om.Group):
         self.add_subsystem("greek", GetGreekLetters(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
         self.add_subsystem("nodes", ComputeNodes(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
         self.add_subsystem("properties", ComputeDiameterAndThicknesses(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
-        self.add_subsystem("frame3dd", ComputeFrame3DD(n_legs=n_legs, n_bays=n_bays, x_mb=x_mb), promotes=["*"])
+        self.add_subsystem(
+            "frame3dd", ComputeFrame3DD(n_legs=n_legs, n_bays=n_bays, x_mb=x_mb, n_dlc=n_dlc), promotes=["*"]
+        )
         self.add_subsystem(
             "jacketpost",
             JacketPost(n_legs=n_legs, n_bays=n_bays, x_mb=x_mb, options=modeling_options, n_dlc=n_dlc),
@@ -659,7 +665,7 @@ if __name__ == "__main__":
 
     prob.setup()
 
-    prob["turbine_F"] = [1.0e6, 0.0, 0.0]
+    prob["turbine_F"] = [1.0e4, 0.0, 0.0]
 
     prob.run_model()
 
