@@ -152,6 +152,10 @@ properties:
                         minimum: 1
                         maximum: 10
                         description: Number of sectors to divide rotor face into in computing thrust and power.
+                    3d_af_correction:
+                        type: boolean
+                        default: True
+                        description: Flag switching on and off the 3d DU-Selig airfoil correction implemented in Polar.py
                     inn_af:
                         type: boolean
                         default: False

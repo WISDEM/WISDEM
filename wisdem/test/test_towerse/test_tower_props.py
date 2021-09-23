@@ -531,7 +531,8 @@ class TestProps(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["sec_loc"], np.linspace(0, 1, nout))
         # npt.assert_equal(self.outputs["str_tw"], np.zeros(nout))
         # npt.assert_equal(self.outputs["tw_iner"], np.zeros(nout))
-        npt.assert_equal(self.outputs["mass_den"], 1e3 * 9 * np.ones(nout))
+        of = self.inputs["outfitting_factor"]
+        npt.assert_equal(self.outputs["mass_den"], 1e3 * 9 * np.ones(nout) * of)
         npt.assert_equal(self.outputs["foreaft_iner"], 1e3 * 11 * np.ones(nout))
         npt.assert_equal(self.outputs["sideside_iner"], 1e3 * 11 * np.ones(nout))
         npt.assert_equal(self.outputs["foreaft_stff"], 6 * 11 * np.ones(nout))

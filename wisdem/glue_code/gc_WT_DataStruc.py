@@ -7,7 +7,9 @@ from scipy.interpolate import PchipInterpolator, interp1d
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.rotorse.geometry_tools.geometry import remap2grid, trailing_edge_smoothing
-
+from wisdem.ccblade.Polar import Polar
+import logging
+logger = logging.getLogger("wisdem/weis")
 
 class WindTurbineOntologyOpenMDAO(om.Group):
     # Openmdao group with all wind turbine data
@@ -543,6 +545,17 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         self.connect("configuration.hub_height_user", "assembly.hub_height_user")
         if modeling_options["flags"]["blade"]:
             self.connect("blade.outer_shape_bem.ref_axis", "assembly.blade_ref_axis_user")
+            self.add_subsystem("af_3d", Airfoil3DCorrection(rotorse_options=modeling_options["WISDEM"]["RotorSE"]))
+            self.connect("airfoils.aoa", "af_3d.aoa")
+            self.connect("airfoils.Re", "af_3d.Re")
+            self.connect("blade.interp_airfoils.cl_interp", "af_3d.cl")
+            self.connect("blade.interp_airfoils.cd_interp", "af_3d.cd")
+            self.connect("blade.interp_airfoils.cm_interp", "af_3d.cm")
+            self.connect("assembly.rotor_radius", "af_3d.rotor_radius")
+            self.connect("assembly.r_blade", "af_3d.r_blade")
+            self.connect("blade.interp_airfoils.r_thick_interp", "af_3d.r_thick_interp")
+            self.connect("blade.pa.chord_param", "af_3d.chord")
+            self.connect("control.rated_TSR", "af_3d.rated_TSR")
         if modeling_options["flags"]["hub"]:
             self.connect("hub.radius", "assembly.hub_radius")
         if modeling_options["flags"]["tower"]:
@@ -2912,3 +2925,108 @@ class WT_Assembly(om.ExplicitComponent):
             else:
                 outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]
+
+
+class Airfoil3DCorrection(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("rotorse_options")
+
+    def setup(self):
+        rotorse_options = self.options["rotorse_options"]
+        self.af_correction = rotorse_options['3d_af_correction']
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_aoa = n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
+        self.n_Re = n_Re = rotorse_options["n_Re"]  # Number of Reynolds, so far hard set at 1
+        self.n_tab = n_tab = rotorse_options[
+            "n_tab"
+        ]  # Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.add_input(
+            "aoa",
+            val=np.zeros(n_aoa),
+            units="rad",
+            desc="1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.",
+        )
+        self.add_input(
+                "Re",
+                val=np.zeros(n_Re),
+                desc="1D array of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.",
+            )
+        self.add_input(
+            "cl",
+            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
+            desc="4D array with the lift coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+        )
+        self.add_input(
+            "cd",
+            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
+            desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+        )
+        self.add_input(
+            "cm",
+            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
+            desc="4D array with the moment coefficients of the airfoils. Dimension 0 is along the blade span for n_span stations, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.",
+        )
+        self.add_input("rated_TSR", val=0.0, desc="Constant tip speed ratio in region II.")
+        self.add_input(
+            "r_blade",
+            val=np.zeros(n_span),
+            units="m",
+            desc="1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)",
+        )
+        self.add_input(
+            "rotor_radius",
+            val=0.0,
+            units="m",
+            desc="Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.",
+        )
+        self.add_input(
+            "r_thick_interp",
+            val=np.zeros(n_span),
+            desc="1D array of the relative thicknesses of the blade defined along span.",
+        )
+        self.add_input(
+            "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
+        )
+        # Outputs
+        self.add_output(
+            "cl_corrected",
+            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
+            desc="Lift coefficient corrected with CCBlade.Polar.",
+        )
+        self.add_output(
+            "cd_corrected",
+            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
+            desc="Drag coefficient corrected with CCBlade.Polar.",
+        )
+        self.add_output(
+            "cm_corrected",
+            val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
+            desc="Moment coefficient corrected with CCblade.Polar.",
+        )
+
+    def compute(self, inputs, outputs):
+        cl_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
+        cd_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
+        cm_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
+        for i in range(self.n_span):
+            if inputs["r_thick_interp"][i]<0.7 and self.af_correction: # Only apply 3D correction to airfoils thinner than 70% to avoid numerical problems at blade root
+                logger.info('3D correction applied to airfoil polars for section '+ str(i))
+                for j in range(self.n_Re):
+                    for k in range(self.n_tab):
+                        inn_polar = Polar(inputs["Re"][j], np.degrees(inputs["aoa"]), 
+                                            inputs["cl"][i, :, j, k], inputs["cd"][i, :, j, k],
+                                            inputs["cm"][i, :, j, k])
+                        polar3d = inn_polar.correction3D(inputs["r_blade"][i] / inputs['rotor_radius'], inputs["chord"][i] / inputs["r_blade"][i], inputs["rated_TSR"])
+                        cl_corrected[i, :, j, k] = np.interp(np.degrees(inputs["aoa"]), 
+                                                        polar3d.alpha, polar3d.cl)
+                        cd_corrected[i, :, j, k]  = np.interp(np.degrees(inputs["aoa"]), 
+                                                        polar3d.alpha, polar3d.cd)
+                        cm_corrected[i, :, j, k]  = np.interp(np.degrees(inputs["aoa"]), 
+                                                        polar3d.alpha, polar3d.cm)
+            else:
+                cl_corrected[i, :, :, :] = inputs["cl"][i, :, :, :]
+                cd_corrected[i, :, :, :] = inputs["cd"][i, :, :, :]
+                cm_corrected[i, :, :, :] = inputs["cm"][i, :, :, :]
+        outputs["cl_corrected"] = cl_corrected
+        outputs["cd_corrected"] = cd_corrected
+        outputs["cm_corrected"] = cm_corrected
