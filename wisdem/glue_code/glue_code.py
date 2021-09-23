@@ -84,6 +84,8 @@ class WT_RNTA(om.Group):
             self.connect("af_3d.cl_corrected", "rotorse.airfoils_cl")
             self.connect("af_3d.cd_corrected", "rotorse.airfoils_cd")
             self.connect("af_3d.cm_corrected", "rotorse.airfoils_cm")
+            if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
+                self.connect("blade.run_inn_af.aoa_inn", "rotorse.ccblade.aoa_op")
             self.connect("high_level_tower_props.hub_height", "rotorse.hub_height")
             self.connect("hub.cone", "rotorse.precone")
             self.connect("nacelle.uptilt", "rotorse.tilt")
