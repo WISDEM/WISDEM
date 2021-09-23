@@ -81,16 +81,9 @@ class WT_RNTA(om.Group):
             self.connect("blade.interp_airfoils.r_thick_interp", "rotorse.ccblade.rthick")
             self.connect("airfoils.aoa", "rotorse.airfoils_aoa")
             self.connect("airfoils.Re", "rotorse.airfoils_Re")
-
-            if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
-                self.connect("blade.run_inn_af.cl_interp", "rotorse.airfoils_cl")
-                self.connect("blade.run_inn_af.cd_interp", "rotorse.airfoils_cd")
-                self.connect("blade.run_inn_af.aoa_inn", "rotorse.ccblade.aoa_op")
-            else:
-                self.connect("blade.interp_airfoils.cl_interp", "rotorse.airfoils_cl")
-                self.connect("blade.interp_airfoils.cd_interp", "rotorse.airfoils_cd")
-
-            self.connect("blade.interp_airfoils.cm_interp", "rotorse.airfoils_cm")
+            self.connect("af_3d.cl_corrected", "rotorse.airfoils_cl")
+            self.connect("af_3d.cd_corrected", "rotorse.airfoils_cd")
+            self.connect("af_3d.cm_corrected", "rotorse.airfoils_cm")
             self.connect("high_level_tower_props.hub_height", "rotorse.hub_height")
             self.connect("hub.cone", "rotorse.precone")
             self.connect("nacelle.uptilt", "rotorse.tilt")
@@ -267,8 +260,10 @@ class WT_RNTA(om.Group):
             self.connect("materials.E", "drivese.E_mat")
             self.connect("materials.G", "drivese.G_mat")
             self.connect("materials.rho", "drivese.rho_mat")
-            self.connect("materials.sigma_y", "drivese.sigma_y_mat")
+            self.connect("materials.sigma_y", "drivese.Xy_mat")
             self.connect("materials.Xt", "drivese.Xt_mat")
+            self.connect("materials.wohler_exp", "drivese.wohler_exp_mat")
+            self.connect("materials.wohler_intercept", "drivese.wohler_A_mat")
             self.connect("materials.unit_cost", "drivese.unit_cost_mat")
 
             if modeling_options["flags"]["generator"]:
@@ -395,6 +390,9 @@ class WT_RNTA(om.Group):
             self.connect("materials.G", "towerse.G_mat")
             self.connect("materials.rho", "towerse.rho_mat")
             self.connect("materials.sigma_y", "towerse.sigma_y_mat")
+            self.connect("materials.Xt", "towerse.sigma_ult_mat")
+            self.connect("materials.wohler_exp", "towerse.wohler_exp_mat")
+            self.connect("materials.wohler_intercept", "towerse.wohler_A_mat")
             self.connect("materials.unit_cost", "towerse.unit_cost_mat")
             self.connect("costs.labor_rate", "towerse.labor_cost_rate")
             self.connect("costs.painting_rate", "towerse.painting_cost_rate")
@@ -435,6 +433,9 @@ class WT_RNTA(om.Group):
             self.connect("materials.G", "floatingse.G_mat")
             self.connect("materials.rho", "floatingse.rho_mat")
             self.connect("materials.sigma_y", "floatingse.sigma_y_mat")
+            self.connect("materials.Xt", "floatingse.sigma_ult_mat")
+            self.connect("materials.wohler_exp", "floatingse.wohler_exp_mat")
+            self.connect("materials.wohler_intercept", "floatingse.wohler_A_mat")
             self.connect("materials.unit_cost", "floatingse.unit_cost_mat")
             self.connect("costs.labor_rate", "floatingse.labor_cost_rate")
             self.connect("costs.painting_rate", "floatingse.painting_cost_rate")
@@ -451,7 +452,6 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["nacelle"]:
                 self.connect("drivese.base_F", "floatingse.rna_F")
                 self.connect("drivese.base_M", "floatingse.rna_M")
-                self.connect("drivese.rna_I_TT", "floatingse.rna_I")
                 self.connect("drivese.rna_cm", "floatingse.rna_cg")
                 self.connect("drivese.rna_mass", "floatingse.rna_mass")
 

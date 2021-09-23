@@ -142,7 +142,6 @@ class TestPlatform(unittest.TestCase):
         self.inputs["tower_top_node"] = self.inputs["tower_nodes"][2, :]
         self.inputs["rna_mass"] = 1e4
         self.inputs["rna_cg"] = np.ones(3)
-        self.inputs["rna_I"] = 1e4 * np.arange(6)
         self.inputs["rna_F"] = np.array([1e2, 1e1, 0.0])
         self.inputs["rna_M"] = np.array([2e1, 2e2, 0.0])
         self.inputs["transition_piece_mass"] = 1e3
@@ -414,6 +413,9 @@ class TestGroup(unittest.TestCase):
         prob["E_mat"] = 200e9 * np.ones((2, 3))  # Young's modulus [N/m^2]
         prob["G_mat"] = 79.3e9 * np.ones((2, 3))  # Shear modulus [N/m^2]
         prob["sigma_y_mat"] = 3.45e8 * np.ones(2)  # Elastic yield stress [N/m^2]
+        prob["sigma_ult_mat"] = 5e8 * np.ones((2, 3))
+        prob["wohler_exp_mat"] = 4.0 * np.ones(2)
+        prob["wohler_A_mat"] = 7.5e8 * np.ones(2)
         prob["unit_cost_mat"] = np.array([2.0, 1.0])
         prob["material_names"] = ["steel", "slurry"]
 
@@ -488,7 +490,6 @@ class TestGroup(unittest.TestCase):
         prob["mooring_fairlead_joints"] = np.array([[0.0, 0.0, 0.0], [0.5, 1.0, 0.0], [1.0, 0.0, 0.0]])
         prob["rna_mass"] = 1e4
         prob["rna_cg"] = np.ones(3)
-        prob["rna_I"] = 1e4 * np.arange(6)
         prob["rna_F"] = np.array([1e2, 1e1, 0.0])
         prob["rna_M"] = np.array([2e1, 2e2, 0.0])
         prob["transition_piece_mass"] = 1e3
