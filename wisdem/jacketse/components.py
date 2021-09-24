@@ -543,7 +543,7 @@ class JacketPost(om.ExplicitComponent):
         self.options.declare("n_legs", types=int)
         self.options.declare("n_bays", types=int)
         self.options.declare("x_mb", types=bool)
-        self.options.declare("options")
+        self.options.declare("modeling_options")
         self.options.declare("n_dlc")
 
     def setup(self):
@@ -582,7 +582,7 @@ class JacketPost(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         # Unpack some variables
-        opt = self.options["options"]
+        opt = self.options["modeling_options"]
         n_dlc = self.options["n_dlc"]
         gamma_f = opt["gamma_f"]
         gamma_m = opt["gamma_m"]
@@ -635,17 +635,19 @@ class JacketPost(om.ExplicitComponent):
 
 # Assemble the system together in an OpenMDAO Group
 class JacketSE(om.Group):
-    def setup(self):
-        x_mb = True  # if there's a mud brace
-        n_legs = 3
-        n_bays = 2
-        n_dlc = 1
+    def initialize(self):
+        self.options.declare("n_legs", types=int)
+        self.options.declare("n_bays", types=int)
+        self.options.declare("x_mb", types=bool)
+        self.options.declare("modeling_options")
+        self.options.declare("n_dlc")
 
-        modeling_options = {}
-        modeling_options["gamma_f"] = 1.35
-        modeling_options["gamma_m"] = 1.3
-        modeling_options["gamma_n"] = 1.0
-        modeling_options["gamma_b"] = 1.1
+    def setup(self):
+        x_mb = self.options["x_mb"]  # if there's a mud brace
+        n_legs = self.options["n_legs"]
+        n_bays = self.options["n_bays"]
+        n_dlc = self.options["n_dlc"]
+        modeling_options = self.options["modeling_options"]
 
         self.add_subsystem("greek", GetGreekLetters(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
         self.add_subsystem("nodes", ComputeNodes(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
@@ -655,13 +657,32 @@ class JacketSE(om.Group):
         )
         self.add_subsystem(
             "jacketpost",
-            JacketPost(n_legs=n_legs, n_bays=n_bays, x_mb=x_mb, options=modeling_options, n_dlc=n_dlc),
+            JacketPost(n_legs=n_legs, n_bays=n_bays, x_mb=x_mb, modeling_options=modeling_options, n_dlc=n_dlc),
             promotes=["*"],
         )
 
 
 if __name__ == "__main__":
-    prob = om.Problem(model=JacketSE())
+    modeling_options = {}
+    modeling_options["gamma_f"] = 1.35
+    modeling_options["gamma_m"] = 1.3
+    modeling_options["gamma_n"] = 1.0
+    modeling_options["gamma_b"] = 1.1
+
+    n_legs = 3
+    n_bays = 2
+    x_mb = True
+    n_dlc = 1
+
+    prob = om.Problem(
+        model=JacketSE(
+            n_legs=n_legs,
+            n_bays=n_bays,
+            x_mb=x_mb,
+            n_dlc=n_dlc,
+            modeling_options=modeling_options,
+        )
+    )
 
     prob.setup()
 
