@@ -1,4 +1,5 @@
 import copy
+import logging
 
 import numpy as np
 import matplotlib
@@ -6,21 +7,24 @@ import openmdao.api as om
 import matplotlib.pyplot as plt
 from scipy.interpolate import PchipInterpolator, interp1d
 
+import wisdem.moorpy.MoorProps as mp
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, remap2grid, trailing_edge_smoothing
+
 try:
     from INN_interface.INN import INN
     from INN_interface import utils
     from INN_interface.cst import AirfoilShape as AirfoilShape_cst
     from INN_interface.cst import CSTAirfoil
+
+    INN_loaded = True
 except:
-    raise Exception("The INN framework for airfoil design is activated, but not installed correctly")
+    INN_loaded = False
 matplotlib.use("TkAgg")
-import wisdem.moorpy.MoorProps as mp
-import logging
 logger = logging.getLogger("wisdem/weis")
+
 
 class WindTurbineOntologyOpenMDAO(om.Group):
     # Openmdao group with all wind turbine data
@@ -90,6 +94,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem("airfoils", airfoils)
 
             if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
+                if not INN_loaded:
+                    raise Exception("The INN framework for airfoil design is activated, but not installed correctly")
+
                 inn_af = om.IndepVarComp()
                 inn_af.add_output(
                     "s_opt_r_thick", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["t/c"]["n_opt"])
@@ -113,12 +120,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["c_d"]["n_opt"]),
                 )
                 inn_af.add_output(
-                    "s_opt_stall_margin", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["stall_margin"]["n_opt"])
+                    "s_opt_stall_margin",
+                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["stall_margin"]["n_opt"]),
                 )
                 inn_af.add_output(
                     "stall_margin_opt",
                     val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["stall_margin"]["n_opt"]),
-                    units='rad',
+                    units="rad",
                 )
                 self.add_subsystem("inn_af", inn_af)
 
@@ -1325,7 +1333,7 @@ class INN_Airfoils(om.ExplicitComponent):
         self.add_input(
             "stall_margin_opt",
             val=np.ones(aero_shape_opt_options["stall_margin"]["n_opt"]),
-            units='rad',
+            units="rad",
         )
         self.add_input(
             "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
@@ -1366,7 +1374,7 @@ class INN_Airfoils(om.ExplicitComponent):
             "aoa_inn",
             val=np.pi * np.ones(n_span),
             desc="1D array with the operational angles of attack prescribed by the INN for the airfoils along blade span.",
-            units = "rad",
+            units="rad",
         )
 
     def compute(self, inputs, outputs):
@@ -1492,7 +1500,7 @@ class INN_Airfoils(om.ExplicitComponent):
             # cm_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cm)
             #
             # f, ax = plt.subplots(4, 1, figsize=(5.3, 10))
-            
+
             # ax[0].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp, label="INN")
             # ax[0].plot(inputs["aoa"] * 180.0 / np.pi, inputs["cl_interp_yaml"][i, :, 0, 0], label="yaml")
             # # ax[0].plot(inputs["aoa"] * 180. / np.pi, cl_interp_new, label="yaml")
@@ -1502,7 +1510,7 @@ class INN_Airfoils(om.ExplicitComponent):
             # ax[0].set_title("Span Location {:2.2%}".format(inputs["s"][i]), fontweight="bold")
             # ax[0].set_ylim(-1.0, 2.5)
             # ax[0].set_xlim(left=-4, right=20)
-            
+
             # ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, cd_interp, label="INN")
             # ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, inputs["cd_interp_yaml"][i, :, 0, 0], label="yaml")
             # # ax[1].semilogy(inputs["aoa"] * 180. / np.pi, cd_interp_new, label="yaml")
@@ -1510,7 +1518,7 @@ class INN_Airfoils(om.ExplicitComponent):
             # ax[1].set_ylabel("CD (-)", fontweight="bold")
             # ax[1].set_ylim(0.005, 0.2)
             # ax[1].set_xlim(left=-4, right=20)
-            
+
             # ax[2].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp / cd_interp, label="INN")
             # ax[2].plot(
             #     inputs["aoa"] * 180.0 / np.pi,
@@ -1523,10 +1531,10 @@ class INN_Airfoils(om.ExplicitComponent):
             # ax[2].set_xlabel("Angles of Attack (deg)", fontweight="bold")
             # ax[2].set_xlim(left=-4, right=20)
             # ax[2].set_ylim(top=150, bottom=-40)
-            
+
             # yaml_xy = inputs["coord_xy_interp_yaml"][i]
             # cst_xy = af_points
-            
+
             # ax[3].plot(cst_xy[:, 0], cst_xy[:, 1], label="INN")
             # ax[3].plot(yaml_xy[:, 0], yaml_xy[:, 1], label="yaml")
             # ax[3].grid(color=[0.8, 0.8, 0.8], linestyle="--")
@@ -1534,9 +1542,9 @@ class INN_Airfoils(om.ExplicitComponent):
             # ax[3].set_xlabel("x-coord", fontweight="bold")
             # ax[3].set_xlim(left=0.0, right=1.0)
             # ax[3].set_ylim(top=0.2, bottom=-0.2)
-            
+
             # plt.tight_layout()
-            
+
             # plt.savefig(f"airfoil_comparison_{i}.png")
             # plt.close()
 
@@ -3188,7 +3196,7 @@ class Airfoil3DCorrection(om.ExplicitComponent):
 
     def setup(self):
         rotorse_options = self.options["rotorse_options"]
-        self.af_correction = rotorse_options['3d_af_correction']
+        self.af_correction = rotorse_options["3d_af_correction"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_aoa = n_aoa = rotorse_options["n_aoa"]  # Number of angle of attacks
         self.n_Re = n_Re = rotorse_options["n_Re"]  # Number of Reynolds, so far hard set at 1
@@ -3202,10 +3210,10 @@ class Airfoil3DCorrection(om.ExplicitComponent):
             desc="1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.",
         )
         self.add_input(
-                "Re",
-                val=np.zeros(n_Re),
-                desc="1D array of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.",
-            )
+            "Re",
+            val=np.zeros(n_Re),
+            desc="1D array of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.",
+        )
         self.add_input(
             "cl",
             val=np.zeros((n_span, n_aoa, n_Re, n_tab)),
@@ -3264,20 +3272,27 @@ class Airfoil3DCorrection(om.ExplicitComponent):
         cd_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
         cm_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
         for i in range(self.n_span):
-            if inputs["r_thick_interp"][i]<0.7 and self.af_correction: # Only apply 3D correction to airfoils thinner than 70% to avoid numerical problems at blade root
-                logger.info('3D correction applied to airfoil polars for section '+ str(i))
+            if (
+                inputs["r_thick_interp"][i] < 0.7 and self.af_correction
+            ):  # Only apply 3D correction to airfoils thinner than 70% to avoid numerical problems at blade root
+                logger.info("3D correction applied to airfoil polars for section " + str(i))
                 for j in range(self.n_Re):
                     for k in range(self.n_tab):
-                        inn_polar = Polar(inputs["Re"][j], np.degrees(inputs["aoa"]), 
-                                            inputs["cl"][i, :, j, k], inputs["cd"][i, :, j, k],
-                                            inputs["cm"][i, :, j, k])
-                        polar3d = inn_polar.correction3D(inputs["r_blade"][i] / inputs['rotor_radius'], inputs["chord"][i] / inputs["r_blade"][i], inputs["rated_TSR"])
-                        cl_corrected[i, :, j, k] = np.interp(np.degrees(inputs["aoa"]), 
-                                                        polar3d.alpha, polar3d.cl)
-                        cd_corrected[i, :, j, k]  = np.interp(np.degrees(inputs["aoa"]), 
-                                                        polar3d.alpha, polar3d.cd)
-                        cm_corrected[i, :, j, k]  = np.interp(np.degrees(inputs["aoa"]), 
-                                                        polar3d.alpha, polar3d.cm)
+                        inn_polar = Polar(
+                            inputs["Re"][j],
+                            np.degrees(inputs["aoa"]),
+                            inputs["cl"][i, :, j, k],
+                            inputs["cd"][i, :, j, k],
+                            inputs["cm"][i, :, j, k],
+                        )
+                        polar3d = inn_polar.correction3D(
+                            inputs["r_blade"][i] / inputs["rotor_radius"],
+                            inputs["chord"][i] / inputs["r_blade"][i],
+                            inputs["rated_TSR"],
+                        )
+                        cl_corrected[i, :, j, k] = np.interp(np.degrees(inputs["aoa"]), polar3d.alpha, polar3d.cl)
+                        cd_corrected[i, :, j, k] = np.interp(np.degrees(inputs["aoa"]), polar3d.alpha, polar3d.cd)
+                        cm_corrected[i, :, j, k] = np.interp(np.degrees(inputs["aoa"]), polar3d.alpha, polar3d.cm)
             else:
                 cl_corrected[i, :, :, :] = inputs["cl"][i, :, :, :]
                 cd_corrected[i, :, :, :] = inputs["cd"][i, :, :, :]
