@@ -447,9 +447,9 @@ class ComputeFrame3DD(om.ExplicitComponent):
         # initialize frame3dd object
         self.frame = pyframe3dd.Frame(nodes, reactions, elements, options)
 
-        if not self.under_approx:
-            self.frame.draw(savefig=True, fig_idx=self.idx)
-            self.idx += 1
+        # if not self.under_approx:
+        #     self.frame.draw(savefig=True, fig_idx=self.idx)
+        #     self.idx += 1
 
         # ------ add extra mass ------------
         # Prepare transition piece, and gravity foundation (if any applicable) for "extra node mass"
@@ -570,9 +570,13 @@ class JacketPost(om.ExplicitComponent):
         self.add_input("jacket_Myy", np.ones((n_elem, n_dlc)), units="N*m")
         self.add_input("jacket_Mzz", np.ones((n_elem, n_dlc)), units="N*m")
 
-        self.add_output("constr_jacket_stress", np.ones((n_elem, n_dlc)))
-        self.add_output("constr_jacket_shell_buckling", np.ones((n_elem, n_dlc)))
-        self.add_output("constr_jacket_global_buckling", np.ones((n_elem, n_dlc)))
+        # We don't care about the last n_leg members because they're connected
+        # to the ghost node to transmit loads and masses.
+        # Thus, the stress and buckling outputs are smaller dimensions
+        # than the full n_elem.
+        self.add_output("constr_jacket_stress", np.ones((n_elem - n_legs, n_dlc)))
+        self.add_output("constr_jacket_shell_buckling", np.ones((n_elem - n_legs, n_dlc)))
+        self.add_output("constr_jacket_global_buckling", np.ones((n_elem - n_legs, n_dlc)))
 
     def compute(self, inputs, outputs):
         # Unpack some variables
@@ -615,7 +619,7 @@ class JacketPost(om.ExplicitComponent):
         hoop_stress = -qdyn * ((r - 0.5 * t) / t)[:, np.newaxis]  # util_con.hoopStress(d, t, qdyn)
         outputs["constr_jacket_stress"] = util_con.vonMisesStressUtilization(
             axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigy.reshape((-1, 1))
-        )
+        )[:-n_legs]
 
         # Use DNV-GL CP202 Method
         check = util_dnvgl.CylinderBuckling(h, d, t, E=E, G=G, sigma_y=sigy, gamma=gamma_f * gamma_b)
@@ -624,12 +628,8 @@ class JacketPost(om.ExplicitComponent):
                 Fz[k, :], M[k, :], axial_stress[k, :], hoop_stress[k, :], shear_stress[k, :]
             )
 
-            outputs["constr_jacket_shell_buckling"][:, k] = results["Shell"]
-            outputs["constr_jacket_global_buckling"][:, k] = results["Global"]
-
-        outputs["constr_jacket_stress"][-n_legs:] = 0.0
-        outputs["constr_jacket_shell_buckling"][-n_legs:, :] = 0.0
-        outputs["constr_jacket_global_buckling"][-n_legs:, :] = 0.0
+            outputs["constr_jacket_shell_buckling"][:, k] = results["Shell"][:-n_legs]
+            outputs["constr_jacket_global_buckling"][:, k] = results["Global"][:-n_legs]
 
 
 # Assemble the system together in an OpenMDAO Group
@@ -685,7 +685,7 @@ if __name__ == "__main__":
 
     prob.setup()
 
-    prob["turbine_F"] = [1.0e4, 0.0, 0.0]
+    # prob["turbine_F"] = [1.0e4, 0.0, 0.0]
 
     prob.run_model()
 

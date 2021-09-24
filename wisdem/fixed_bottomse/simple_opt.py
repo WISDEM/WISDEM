@@ -38,7 +38,7 @@ prob.model.approx_totals()
 
 prob.setup()
 
-prob["turbine_F"] = [1.0e4, 0.0, 0.0]
+prob["turbine_F"] = [1.0e6, 0.0, 0.0]
 
 # run the optimization
 prob.run_driver()
