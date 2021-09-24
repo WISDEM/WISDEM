@@ -1,7 +1,7 @@
 import numpy as np
 import openmdao.api as om
 
-from wisdem.jacketse.components import JacketSE
+from wisdem.fixed_bottomse.jacket import JacketSE
 
 modeling_options = {}
 modeling_options["gamma_f"] = 1.35

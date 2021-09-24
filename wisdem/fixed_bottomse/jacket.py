@@ -434,25 +434,6 @@ class ComputeFrame3DD(om.ExplicitComponent):
         element = np.arange(1, self.num_elements + 1)
         roll = np.zeros(self.num_elements - 1)
 
-        if self.under_approx:
-            plot = False
-        else:
-            plot = True
-
-        if plot:
-            fig = plt.figure()
-            ax = fig.add_subplot(projection="3d")
-
-            ax.scatter(xyz[:, 0], xyz[:, 1], xyz[:, 2])
-
-            for (n1, n2) in zip(N1, N2):
-                n1 -= 1
-                n2 -= 1
-                plt.plot([xyz[n1][0], xyz[n2][0]], [xyz[n1][1], xyz[n2][1]], [xyz[n1][2], xyz[n2][2]])
-
-            plt.savefig(f"fig_{self.idx}.png")
-            self.idx += 1
-
         elements = pyframe3dd.ElementData(element, N1, N2, Area, Asx, Asy, J0, Ixx, Iyy, E, G, roll, rho)
 
         # ------ options ------------
@@ -462,6 +443,10 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         # initialize frame3dd object
         self.frame = pyframe3dd.Frame(nodes, reactions, elements, options)
+
+        if not self.under_approx:
+            self.frame.draw(savefig=True, fig_idx=self.idx)
+            self.idx += 1
 
         # ------ add extra mass ------------
         # Prepare transition piece, and gravity foundation (if any applicable) for "extra node mass"
