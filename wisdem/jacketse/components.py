@@ -258,6 +258,8 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.add_output("jacket_Myy", np.zeros((n_elem, n_dlc)), units="N*m")
         self.add_output("jacket_Mzz", np.zeros((n_elem, n_dlc)), units="N*m")
 
+        self.idx = 0
+
     def compute(self, inputs, outputs):
         n_legs = self.options["n_legs"]
         n_bays = self.options["n_bays"]
@@ -432,7 +434,10 @@ class ComputeFrame3DD(om.ExplicitComponent):
         element = np.arange(1, self.num_elements + 1)
         roll = np.zeros(self.num_elements - 1)
 
-        plot = False
+        if self.under_approx:
+            plot = False
+        else:
+            plot = True
 
         if plot:
             fig = plt.figure()
@@ -445,7 +450,8 @@ class ComputeFrame3DD(om.ExplicitComponent):
                 n2 -= 1
                 plt.plot([xyz[n1][0], xyz[n2][0]], [xyz[n1][1], xyz[n2][1]], [xyz[n1][2], xyz[n2][2]])
 
-            plt.show()
+            plt.savefig(f"fig_{self.idx}.png")
+            self.idx += 1
 
         elements = pyframe3dd.ElementData(element, N1, N2, Area, Asx, Asy, J0, Ixx, Iyy, E, G, roll, rho)
 
@@ -584,6 +590,7 @@ class JacketPost(om.ExplicitComponent):
         # Unpack some variables
         opt = self.options["modeling_options"]
         n_dlc = self.options["n_dlc"]
+        n_legs = self.options["n_legs"]
         gamma_f = opt["gamma_f"]
         gamma_m = opt["gamma_m"]
         gamma_n = opt["gamma_n"]
@@ -631,6 +638,10 @@ class JacketPost(om.ExplicitComponent):
 
             outputs["constr_jacket_shell_buckling"][:, k] = results["Shell"]
             outputs["constr_jacket_global_buckling"][:, k] = results["Global"]
+
+        outputs["constr_jacket_stress"][-n_legs:] = 0.0
+        outputs["constr_jacket_shell_buckling"][-n_legs:, :] = 0.0
+        outputs["constr_jacket_global_buckling"][-n_legs:, :] = 0.0
 
 
 # Assemble the system together in an OpenMDAO Group
