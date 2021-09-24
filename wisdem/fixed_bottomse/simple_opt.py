@@ -4,22 +4,19 @@ import openmdao.api as om
 from wisdem.fixed_bottomse.jacket import JacketSE
 
 modeling_options = {}
-modeling_options["gamma_f"] = 1.35
-modeling_options["gamma_m"] = 1.3
-modeling_options["gamma_n"] = 1.0
-modeling_options["gamma_b"] = 1.1
-
-n_legs = 3
-n_bays = 2
-x_mb = True
-n_dlc = 1
+modeling_options["WISDEM"] = {}
+modeling_options["WISDEM"]["n_dlc"] = 1
+modeling_options["WISDEM"]["FixedBottomSE"] = {}
+modeling_options["WISDEM"]["FixedBottomSE"]["mud_brace"] = True
+modeling_options["WISDEM"]["FixedBottomSE"]["n_legs"] = 3
+modeling_options["WISDEM"]["FixedBottomSE"]["n_bays"] = 2
+modeling_options["WISDEM"]["FixedBottomSE"]["gamma_f"] = 1.0
+modeling_options["WISDEM"]["FixedBottomSE"]["gamma_m"] = 1.0
+modeling_options["WISDEM"]["FixedBottomSE"]["gamma_n"] = 1.0
+modeling_options["WISDEM"]["FixedBottomSE"]["gamma_b"] = 1.0
 
 prob = om.Problem(
     model=JacketSE(
-        n_legs=n_legs,
-        n_bays=n_bays,
-        x_mb=x_mb,
-        n_dlc=n_dlc,
         modeling_options=modeling_options,
     )
 )

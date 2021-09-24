@@ -19,12 +19,13 @@ NREFINE = 3
 
 class GetGreekLetters(om.ExplicitComponent):
     def initialize(self):
-        self.options.declare("n_legs", types=int)
-        self.options.declare("n_bays", types=int)
+        self.options.declare("modeling_options")
 
     def setup(self):
-        n_legs = self.options["n_legs"]
-        n_bays = self.options["n_bays"]
+        mod_opt = self.options["modeling_options"]
+        n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
+        n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
+
         self.add_input("r_foot", val=10.0)
         self.add_input("r_head", val=6.0)
         self.add_input("L", val=70.0)
@@ -53,8 +54,10 @@ class GetGreekLetters(om.ExplicitComponent):
         self.add_output("l_mi", val=np.zeros((n_bays)))
 
     def compute(self, inputs, outputs):
-        n_legs = self.options["n_legs"]
-        n_bays = self.options["n_bays"]
+        mod_opt = self.options["modeling_options"]
+        n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
+        n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
+
         r_foot = inputs["r_foot"]
         r_head = inputs["r_head"]
         L = inputs["L"]
@@ -108,12 +111,12 @@ class GetGreekLetters(om.ExplicitComponent):
 
 class ComputeNodes(om.ExplicitComponent):
     def initialize(self):
-        self.options.declare("n_legs", types=int)
-        self.options.declare("n_bays", types=int)
+        self.options.declare("modeling_options")
 
     def setup(self):
-        n_legs = self.options["n_legs"]
-        n_bays = self.options["n_bays"]
+        mod_opt = self.options["modeling_options"]
+        n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
+        n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
 
         self.add_input("xi", val=0.0)
         self.add_input("nu", val=0.0)
@@ -134,8 +137,10 @@ class ComputeNodes(om.ExplicitComponent):
         self.add_output("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)))
 
     def compute(self, inputs, outputs):
-        n_legs = self.options["n_legs"]
-        n_bays = self.options["n_bays"]
+        mod_opt = self.options["modeling_options"]
+        n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
+        n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
+
         xi = inputs["xi"]
         nu = inputs["nu"]
         psi_s = inputs["psi_s"]
@@ -180,12 +185,13 @@ class ComputeNodes(om.ExplicitComponent):
 
 class ComputeDiameterAndThicknesses(om.ExplicitComponent):
     def initialize(self):
-        self.options.declare("n_legs", types=int)
-        self.options.declare("n_bays", types=int)
+        self.options.declare("modeling_options")
 
     def setup(self):
-        n_legs = self.options["n_legs"]
-        n_bays = self.options["n_bays"]
+        mod_opt = self.options["modeling_options"]
+        n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
+        n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
+
         self.add_input("d_l", val=0.5)
         self.add_input("gamma_i", val=np.zeros((n_bays + 1)))
         self.add_input("beta_i", val=np.zeros((n_bays)))
@@ -208,16 +214,14 @@ class ComputeDiameterAndThicknesses(om.ExplicitComponent):
 
 class ComputeFrame3DD(om.ExplicitComponent):
     def initialize(self):
-        self.options.declare("n_legs", types=int)
-        self.options.declare("n_bays", types=int)
-        self.options.declare("x_mb", types=bool)
-        self.options.declare("n_dlc")
+        self.options.declare("modeling_options")
 
     def setup(self):
-        n_legs = self.options["n_legs"]
-        n_bays = self.options["n_bays"]
-        x_mb = self.options["x_mb"]
-        n_dlc = self.options["n_dlc"]
+        mod_opt = self.options["modeling_options"]
+        n_dlc = mod_opt["WISDEM"]["n_dlc"]
+        n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
+        n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
+        x_mb = mod_opt["WISDEM"]["FixedBottomSE"]["mud_brace"]
 
         self.add_input("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)))
         self.add_input("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)))
@@ -262,10 +266,11 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.idx = 0
 
     def compute(self, inputs, outputs):
-        n_legs = self.options["n_legs"]
-        n_bays = self.options["n_bays"]
-        x_mb = self.options["x_mb"]
-        n_dlc = self.options["n_dlc"]
+        mod_opt = self.options["modeling_options"]
+        n_dlc = mod_opt["WISDEM"]["n_dlc"]
+        n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
+        n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
+        x_mb = mod_opt["WISDEM"]["FixedBottomSE"]["mud_brace"]
 
         leg_nodes = inputs["leg_nodes"]
         bay_nodes = inputs["bay_nodes"]
@@ -534,17 +539,14 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
 class JacketPost(om.ExplicitComponent):
     def initialize(self):
-        self.options.declare("n_legs", types=int)
-        self.options.declare("n_bays", types=int)
-        self.options.declare("x_mb", types=bool)
         self.options.declare("modeling_options")
-        self.options.declare("n_dlc")
 
     def setup(self):
-        n_legs = self.options["n_legs"]
-        n_bays = self.options["n_bays"]
-        x_mb = self.options["x_mb"]
-        n_dlc = self.options["n_dlc"]
+        mod_opt = self.options["modeling_options"]
+        n_dlc = mod_opt["WISDEM"]["n_dlc"]
+        n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
+        n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
+        x_mb = mod_opt["WISDEM"]["FixedBottomSE"]["mud_brace"]
 
         n_elem = 2 * (n_legs * (n_bays + 1)) + 4 * (n_legs * n_bays) + int(x_mb) * n_legs + n_legs
 
@@ -580,13 +582,13 @@ class JacketPost(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         # Unpack some variables
-        opt = self.options["modeling_options"]
-        n_dlc = self.options["n_dlc"]
-        n_legs = self.options["n_legs"]
-        gamma_f = opt["gamma_f"]
-        gamma_m = opt["gamma_m"]
-        gamma_n = opt["gamma_n"]
-        gamma_b = opt["gamma_b"]
+        mod_opt = self.options["modeling_options"]
+        n_dlc = mod_opt["WISDEM"]["n_dlc"]
+        n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
+        gamma_f = mod_opt["WISDEM"]["FixedBottomSE"]["gamma_f"]
+        gamma_m = mod_opt["WISDEM"]["FixedBottomSE"]["gamma_m"]
+        gamma_n = mod_opt["WISDEM"]["FixedBottomSE"]["gamma_n"]
+        gamma_b = mod_opt["WISDEM"]["FixedBottomSE"]["gamma_b"]
 
         d = inputs["jacket_elem_D"]
         t = inputs["jacket_elem_t"]
@@ -635,50 +637,39 @@ class JacketPost(om.ExplicitComponent):
 # Assemble the system together in an OpenMDAO Group
 class JacketSE(om.Group):
     def initialize(self):
-        self.options.declare("n_legs", types=int)
-        self.options.declare("n_bays", types=int)
-        self.options.declare("x_mb", types=bool)
         self.options.declare("modeling_options")
-        self.options.declare("n_dlc")
 
     def setup(self):
-        x_mb = self.options["x_mb"]  # if there's a mud brace
-        n_legs = self.options["n_legs"]
-        n_bays = self.options["n_bays"]
-        n_dlc = self.options["n_dlc"]
         modeling_options = self.options["modeling_options"]
 
-        self.add_subsystem("greek", GetGreekLetters(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
-        self.add_subsystem("nodes", ComputeNodes(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
-        self.add_subsystem("properties", ComputeDiameterAndThicknesses(n_legs=n_legs, n_bays=n_bays), promotes=["*"])
+        self.add_subsystem("greek", GetGreekLetters(modeling_options=modeling_options), promotes=["*"])
+        self.add_subsystem("nodes", ComputeNodes(modeling_options=modeling_options), promotes=["*"])
         self.add_subsystem(
-            "frame3dd", ComputeFrame3DD(n_legs=n_legs, n_bays=n_bays, x_mb=x_mb, n_dlc=n_dlc), promotes=["*"]
+            "properties", ComputeDiameterAndThicknesses(modeling_options=modeling_options), promotes=["*"]
         )
+        self.add_subsystem("frame3dd", ComputeFrame3DD(modeling_options=modeling_options), promotes=["*"])
         self.add_subsystem(
             "jacketpost",
-            JacketPost(n_legs=n_legs, n_bays=n_bays, x_mb=x_mb, modeling_options=modeling_options, n_dlc=n_dlc),
+            JacketPost(modeling_options=modeling_options),
             promotes=["*"],
         )
 
 
 if __name__ == "__main__":
     modeling_options = {}
-    modeling_options["gamma_f"] = 1.35
-    modeling_options["gamma_m"] = 1.3
-    modeling_options["gamma_n"] = 1.0
-    modeling_options["gamma_b"] = 1.1
-
-    n_legs = 3
-    n_bays = 2
-    x_mb = True
-    n_dlc = 1
+    modeling_options["WISDEM"] = {}
+    modeling_options["WISDEM"]["n_dlc"] = 1
+    modeling_options["WISDEM"]["FixedBottomSE"] = {}
+    modeling_options["WISDEM"]["FixedBottomSE"]["mud_brace"] = True
+    modeling_options["WISDEM"]["FixedBottomSE"]["n_legs"] = 3
+    modeling_options["WISDEM"]["FixedBottomSE"]["n_bays"] = 2
+    modeling_options["WISDEM"]["FixedBottomSE"]["gamma_f"] = 1.0
+    modeling_options["WISDEM"]["FixedBottomSE"]["gamma_m"] = 1.0
+    modeling_options["WISDEM"]["FixedBottomSE"]["gamma_n"] = 1.0
+    modeling_options["WISDEM"]["FixedBottomSE"]["gamma_b"] = 1.0
 
     prob = om.Problem(
         model=JacketSE(
-            n_legs=n_legs,
-            n_bays=n_bays,
-            x_mb=x_mb,
-            n_dlc=n_dlc,
             modeling_options=modeling_options,
         )
     )

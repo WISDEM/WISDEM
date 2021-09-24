@@ -292,6 +292,10 @@ properties:
                 type: object
                 default: {}
                 properties:
+                    type:
+                        type: string
+                        default: monopile
+                        description: Can be `monopile` or `jacket`.
                     flag: *flag
                     wind: *wind
                     gamma_f: *gamma_f
@@ -312,6 +316,19 @@ properties:
                         default: False
                         description: Model the monopile base as a gravity-based foundation with no pile embedment
                     n_refine: *nref
+                    n_legs:
+                        type: integer
+                        default: 4
+                        description: Number of legs for the jacket. Only used if `type`==`jacket`.
+                    n_bays:
+                        type: integer
+                        default: 3
+                        description: Number of bays for the jacket, or x-joints per tower leg pair. Only used if `type`==`jacket`.
+                    mud_brace:
+                        type: boolean
+                        default: True
+                        description: If true, add a mud brace at the bottom of each jacket leg. Only used if `type`==`jacket`.
+
             BOS:
                 type: object
                 default: {}
