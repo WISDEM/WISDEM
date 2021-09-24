@@ -248,6 +248,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.add_output("jacket_elem_G", np.zeros(n_elem), units="Pa")
         self.add_output("jacket_elem_sigma_y", np.zeros(n_elem), units="Pa")
         self.add_output("jacket_elem_qdyn", np.zeros((n_elem, n_dlc)), units="Pa")
+        self.add_output("jacket_mass", 0.0, units="kg")
 
         self.add_output("jacket_base_F", np.zeros((3, n_dlc)), units="N")
         self.add_output("jacket_base_M", np.zeros((3, n_dlc)), units="N*m")
@@ -408,6 +409,8 @@ class ComputeFrame3DD(om.ExplicitComponent):
         rho = np.squeeze(np.array(rho, dtype=np.float))
         N1 = self.N1
         N2 = self.N2
+
+        outputs["jacket_mass"] = np.sum(Area[:-n_legs] * rho[:-n_legs] * L[:-n_legs])
 
         # Modify last n_legs elements to make them rigid due to the ghost node
         E[-n_legs:] *= 1.0e2
