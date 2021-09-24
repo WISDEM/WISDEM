@@ -1,11 +1,11 @@
 import copy
 
-import numpy as np
 import matplotlib
 import openmdao.api as om
 import matplotlib.pyplot as plt
 from scipy.interpolate import PchipInterpolator, interp1d
 
+import numpy as np
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
@@ -113,12 +113,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["c_d"]["n_opt"]),
                 )
                 inn_af.add_output(
-                    "s_opt_stall_margin", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["stall_margin"]["n_opt"])
+                    "s_opt_stall_margin",
+                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["stall_margin"]["n_opt"]),
                 )
                 inn_af.add_output(
                     "stall_margin_opt",
                     val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["stall_margin"]["n_opt"]),
-                    units='rad',
+                    units="rad",
                 )
                 self.add_subsystem("inn_af", inn_af)
 
@@ -1292,7 +1293,7 @@ class INN_Airfoils(om.ExplicitComponent):
         self.add_input(
             "stall_margin_opt",
             val=np.ones(aero_shape_opt_options["stall_margin"]["n_opt"]),
-            units='rad',
+            units="rad",
         )
         self.add_input(
             "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
@@ -1333,12 +1334,12 @@ class INN_Airfoils(om.ExplicitComponent):
             "aoa_inn",
             val=np.pi * np.ones(n_span),
             desc="1D array with the operational angles of attack prescribed by the INN for the airfoils along blade span.",
-            units = "rad",
+            units="rad",
         )
 
+        self.inn = INN()
+
     def compute(self, inputs, outputs):
-        print("inputted L/D")
-        print(inputs["L_D_opt"])
         # Interpolate t/c and L/D from opt grid to full grid
         spline = PchipInterpolator
         r_thick_spline = spline(inputs["s_opt_r_thick"], inputs["r_thick_opt"])
@@ -1367,22 +1368,20 @@ class INN_Airfoils(om.ExplicitComponent):
         print("Performing INN analysis for these indices:")
         print(indices)
 
-        inn = INN()
         for i in indices:
             Re = inputs["Re"][i]
             if Re < 100.0:
                 Re = 9.0e6
             print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re}")
             try:
-                # print("CD", c_d[i])
-                cst, alpha_inn = inn.inverse_design(
+                cst, alpha_inn = self.inn.inverse_design(
                     c_d[i], L_D[i], np.rad2deg(stall_margin[i]), r_thick[i], Re, N=1, process_samples=True, z=314
                 )
             except:
                 raise Exception("The INN for airfoil design failed in the inverse mode")
             alpha = np.arange(-4, 20, 0.25)
             try:
-                cd, cl = inn.generate_polars(cst, Re, alpha=alpha)
+                cd, cl = self.inn.generate_polars(cst, Re, alpha=alpha)
             except:
                 raise Exception("The INN for airfoil design failed in the forward mode")
 
@@ -1428,7 +1427,6 @@ class INN_Airfoils(om.ExplicitComponent):
 
             # ======================
 
-            #
             # x, y = inputs["coord_xy_interp_yaml"][i, :, 0], inputs["coord_xy_interp_yaml"][i, :, 1]
             #
             # points = np.column_stack((x, y))
@@ -1447,7 +1445,7 @@ class INN_Airfoils(om.ExplicitComponent):
             # cst_new = CSTAirfoil(yaml_airfoil)
             # cst = np.concatenate((cst_new.cst, [yaml_airfoil.te_lower], [yaml_airfoil.te_upper]), axis=0)
             #
-            # cd_new, cl_new = inn.generate_polars(cst, Re, alpha=alpha)
+            # cd_new, cl_new = self.inn.generate_polars(cst, Re, alpha=alpha)
             #
             # inn_polar = Polar(Re, alpha, cl_new[0, :], cd_new[0, :], np.zeros_like(cl_new[0, :]))
             # polar3d = inn_polar.correction3D(
@@ -1494,7 +1492,7 @@ class INN_Airfoils(om.ExplicitComponent):
             # ax[2].set_ylim(top=150, bottom=-40)
             #
             # yaml_xy = inputs["coord_xy_interp_yaml"][i]
-            # cst_xy = af_points
+            # cst_xy = outputs["coord_xy_interp"][i, :, :]
             #
             # ax[3].plot(cst_xy[:, 0], cst_xy[:, 1], label="INN")
             # ax[3].plot(yaml_xy[:, 0], yaml_xy[:, 1], label="yaml")
