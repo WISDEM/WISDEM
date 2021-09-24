@@ -22,7 +22,7 @@ try:
     INN_loaded = True
 except:
     INN_loaded = False
-matplotlib.use("TkAgg")
+# matplotlib.use("TkAgg")
 logger = logging.getLogger("wisdem/weis")
 
 
@@ -1619,21 +1619,21 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
             header="\t point number [-]\t\t\t\t x [m] \t\t\t\t\t y [m]  \t\t\t\t z [m] \t\t\t\t The coordinate system follows the BeamDyn one.",
         )
 
-        import matplotlib.pyplot as plt
-
-        for i in range(self.n_span):
-            plt.plot(outputs["coord_xy_dim_twisted"][i, :, 0], outputs["coord_xy_dim_twisted"][i, :, 1], "k")
-            plt.axis("equal")
-            plt.title(i)
-            plt.show()
-
-        import matplotlib.pyplot as plt
-        from mpl_toolkits.mplot3d import Axes3D
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection="3d")
-        ax.plot(outputs["3D_shape"][:, 1], outputs["3D_shape"][:, 2], outputs["3D_shape"][:, 3])
-        plt.show()
+        # import matplotlib.pyplot as plt
+        #
+        # for i in range(self.n_span):
+        #     plt.plot(outputs["coord_xy_dim_twisted"][i, :, 0], outputs["coord_xy_dim_twisted"][i, :, 1], "k")
+        #     plt.axis("equal")
+        #     plt.title(i)
+        #     plt.show()
+        #
+        # import matplotlib.pyplot as plt
+        # from mpl_toolkits.mplot3d import Axes3D
+        #
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111, projection="3d")
+        # ax.plot(outputs["3D_shape"][:, 1], outputs["3D_shape"][:, 2], outputs["3D_shape"][:, 3])
+        # plt.show()
 
 
 class Blade_Internal_Structure_2D_FEM(om.Group):
