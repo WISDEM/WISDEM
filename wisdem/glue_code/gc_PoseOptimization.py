@@ -599,30 +599,15 @@ class PoseOptimization(object):
                 wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
                 wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
             )
+            print(init_L_D_opt)
+            print("lower", init_L_D_opt[indices] - L_D_options["max_decrease"])
+            print("upper", init_L_D_opt[indices] + L_D_options["max_increase"])
 
             wt_opt.model.add_design_var(
                 "inn_af.L_D_opt",
                 indices=indices,
                 lower=init_L_D_opt[indices] - L_D_options["max_decrease"],
                 upper=init_L_D_opt[indices] + L_D_options["max_increase"],
-            )
-
-        c_d_options = blade_opt["aero_shape"]["c_d"]
-        if c_d_options["flag"]:
-            n_opt = c_d_options["n_opt"]
-            indices = range(c_d_options["index_start"], c_d_options["index_end"])
-            s_opt_c_d = np.linspace(0.0, 1.0, n_opt)
-            init_c_d_opt = np.interp(
-                s_opt_c_d,
-                wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"],
-            )
-
-            wt_opt.model.add_design_var(
-                "inn_af.c_d_opt",
-                indices=indices,
-                lower=init_c_d_opt[indices] - c_d_options["max_decrease"],
-                upper=init_c_d_opt[indices] + c_d_options["max_increase"],
             )
 
         # Only add the pressure side design variables if we do set
@@ -1328,7 +1313,6 @@ class PoseOptimization(object):
                 wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"],
             )
             wt_opt["blade.opt_var.chord_opt"] = init_chord_opt
-
             if self.modeling["WISDEM"]["RotorSE"]["inn_af"]:
                 wt_opt["inn_af.s_opt_r_thick"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["t/c"]["n_opt"])
                 init_r_thick_opt = np.interp(
@@ -1337,7 +1321,6 @@ class PoseOptimization(object):
                     wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"],
                 )
                 wt_opt["inn_af.r_thick_opt"] = init_r_thick_opt
-
                 wt_opt["inn_af.s_opt_L_D"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["L/D"]["n_opt"])
                 init_L_D_opt = np.interp(
                     wt_opt["inn_af.s_opt_L_D"],
@@ -1345,7 +1328,6 @@ class PoseOptimization(object):
                     wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
                 )
                 wt_opt["inn_af.L_D_opt"] = init_L_D_opt
-
                 wt_opt["inn_af.s_opt_c_d"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["c_d"]["n_opt"])
                 init_c_d_opt = np.interp(
                     wt_opt["inn_af.s_opt_c_d"],
@@ -1363,25 +1345,20 @@ class PoseOptimization(object):
                 )
                 wt_opt["inn_af.stall_margin_opt"] = init_stall_margin_opt
 
-                wt_opt["inn_af.s_opt_stall_margin"] = np.linspace(
-                    0.0, 1.0, blade_opt["aero_shape"]["stall_margin"]["n_opt"]
-                )
-                init_stall_margin_opt = np.interp(
-                    wt_opt["inn_af.s_opt_stall_margin"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"],
-                )
-                wt_opt["inn_af.stall_margin_opt"] = init_stall_margin_opt
-
-            if blade_opt["structure"]["spar_cap_ss"]["flag"] or blade_opt["structure"]["spar_cap_ps"]["flag"]:
-                wt_opt["blade.opt_var.s_opt_spar_cap_ss"] = np.linspace(
-                    0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"]
-                )
-                wt_opt["blade.opt_var.s_opt_spar_cap_ps"] = np.linspace(
-                    0.0, 1.0, blade_opt["structure"]["spar_cap_ps"]["n_opt"]
-                )
-                spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"]
-                spar_cap_ps_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ps"]
+            wt_opt["blade.opt_var.s_opt_spar_cap_ss"] = np.linspace(
+                0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"]
+            )
+            wt_opt["blade.opt_var.s_opt_spar_cap_ps"] = np.linspace(
+                0.0, 1.0, blade_opt["structure"]["spar_cap_ps"]["n_opt"]
+            )
+            spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"]
+            spar_cap_ps_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ps"]
+            if (
+                spar_cap_ss_name != "none"
+                and spar_cap_ps_name != "none"
+                and len(spar_cap_ss_name) > 0
+                and len(spar_cap_ps_name) > 0
+            ):
                 layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
                 n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
                 ss_before_ps = False
@@ -1420,11 +1397,11 @@ class PoseOptimization(object):
                 wt_opt["blade.opt_var.spar_cap_ss_opt"] = init_spar_cap_ss_opt
                 wt_opt["blade.opt_var.spar_cap_ps_opt"] = init_spar_cap_ps_opt
 
-            if blade_opt["structure"]["te_ss"]["flag"] or blade_opt["structure"]["te_ps"]["flag"]:
-                wt_opt["blade.opt_var.s_opt_te_ss"] = np.linspace(0.0, 1.0, blade_opt["structure"]["te_ss"]["n_opt"])
-                wt_opt["blade.opt_var.s_opt_te_ps"] = np.linspace(0.0, 1.0, blade_opt["structure"]["te_ps"]["n_opt"])
-                te_ss_name = self.modeling["WISDEM"]["RotorSE"]["te_ss"]
-                te_ps_name = self.modeling["WISDEM"]["RotorSE"]["te_ps"]
+            wt_opt["blade.opt_var.s_opt_te_ss"] = np.linspace(0.0, 1.0, blade_opt["structure"]["te_ss"]["n_opt"])
+            wt_opt["blade.opt_var.s_opt_te_ps"] = np.linspace(0.0, 1.0, blade_opt["structure"]["te_ps"]["n_opt"])
+            te_ss_name = self.modeling["WISDEM"]["RotorSE"]["te_ss"]
+            te_ps_name = self.modeling["WISDEM"]["RotorSE"]["te_ps"]
+            if te_ss_name != "none" and te_ps_name != "none" and len(te_ss_name) > 0 and len(te_ps_name) > 0:
                 layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
                 n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
                 ss_before_ps = False

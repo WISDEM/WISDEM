@@ -226,6 +226,25 @@ class ParametrizeBladeStruct(ExplicitComponent):
                 else:
                     opt_m_interp = np.interp(inputs["s"], inputs["s_opt_te_ss"], inputs["te_ss_opt"])
             else:
-                opt_m_interp = inputs["layer_thickness_original"][i, :]
+                opt_m_interp = outputs["layer_thickness_param"][i, :]
 
             outputs["layer_thickness_param"][i, :] = opt_m_interp
+
+
+class ComputeReynolds(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("n_span")
+
+    def setup(self):
+        n_span = self.options["n_span"]
+
+        self.add_input("rho", val=0.0, units="kg/m**3")
+        self.add_input("mu", val=0.0, units="kg/m/s")
+        self.add_input("local_airfoil_velocities", val=np.zeros((n_span)), units="m/s")
+        self.add_input("chord", val=np.zeros((n_span)), units="m")
+        self.add_output("Re", val=np.zeros((n_span)), ref=1.0e6)
+
+    def compute(self, inputs, outputs):
+        outputs["Re"] = np.nan_to_num(
+            inputs["rho"] * inputs["local_airfoil_velocities"] * inputs["chord"] / inputs["mu"]
+        )

@@ -57,6 +57,9 @@ class TestOC3Mass(unittest.TestCase):
         prob["E_mat"] = 200e9 * np.ones((2, 3))  # Young's modulus [N/m^2]
         prob["G_mat"] = 79.3e9 * np.ones((2, 3))  # Shear modulus [N/m^2]
         prob["sigma_y_mat"] = 3.45e8 * np.ones(2)  # Elastic yield stress [N/m^2]
+        prob["sigma_ult_mat"] = 5e8 * np.ones((2, 3))
+        prob["wohler_exp_mat"] = 4.0 * np.ones(2)
+        prob["wohler_A_mat"] = 7.5e8 * np.ones(2)
         prob["unit_cost_mat"] = np.array([2.0, 1.0])
         prob["material_names"] = ["steel", "slurry"]
 
@@ -85,7 +88,7 @@ class TestOC3Mass(unittest.TestCase):
         prob["member0.ring_stiffener_web_thickness"] = 0.04
         prob["member0.ring_stiffener_flange_width"] = 0.10
         prob["member0.ring_stiffener_flange_thickness"] = 0.02
-        prob["member0.ring_stiffener_spacing"] = 0.016538462 # non-dimensional ring stiffener spacing
+        prob["member0.ring_stiffener_spacing"] = 0.016538462  # non-dimensional ring stiffener spacing
 
         # Mooring parameters
         prob["line_diameter"] = 0.09  # Diameter of mooring line/chain [m]
@@ -132,7 +135,6 @@ class TestOC3Mass(unittest.TestCase):
 
         # Properties of rotor-nacelle-assembly (RNA)
         prob["rna_mass"] = 350e3  # Mass [kg]
-        prob["rna_I"] = 1e5 * np.array([1.0, 1.0, 1.0, 0.0, 0.0, 0.0])
         prob["rna_cg"] = np.zeros(3)
         prob["rna_F"] = np.zeros(3)
         prob["rna_M"] = np.zeros(3)

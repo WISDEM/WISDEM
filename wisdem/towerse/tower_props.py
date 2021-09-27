@@ -129,6 +129,9 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_input("E_mat", val=np.zeros([n_mat, 3]), units="Pa")
         self.add_input("G_mat", val=np.zeros([n_mat, 3]), units="Pa")
         self.add_input("sigma_y_mat", val=np.zeros(n_mat), units="Pa")
+        self.add_input("sigma_ult_mat", val=np.zeros([n_mat, 3]), units="Pa")
+        self.add_input("wohler_exp_mat", val=np.zeros(n_mat))
+        self.add_input("wohler_A_mat", val=np.zeros(n_mat))
         self.add_input("rho_mat", val=np.zeros(n_mat), units="kg/m**3")
         self.add_input("unit_cost_mat", val=np.zeros(n_mat), units="USD/kg")
 
@@ -141,6 +144,9 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_output("E", val=np.zeros(n_height - 1), units="Pa")
         self.add_output("G", val=np.zeros(n_height - 1), units="Pa")
         self.add_output("sigma_y", val=np.zeros(n_height - 1), units="Pa")
+        self.add_output("sigma_ult", val=np.zeros(n_height - 1), units="Pa")
+        self.add_output("wohler_exp", val=np.zeros(n_height - 1))
+        self.add_output("wohler_A", val=np.zeros(n_height - 1))
         self.add_output("rho", val=np.zeros(n_height - 1), units="kg/m**3")
         self.add_output("unit_cost", val=np.zeros(n_height - 1), units="USD/kg")
         self.add_output("z_start", 0.0, units="m")
@@ -258,6 +264,9 @@ class DiscretizationYAML(om.ExplicitComponent):
         E = np.mean(inputs["E_mat"], axis=1)
         G = np.mean(inputs["G_mat"], axis=1)
         sigy = inputs["sigma_y_mat"]
+        sigu = inputs["sigma_ult_mat"].min(axis=1)
+        m = inputs["wohler_exp_mat"]
+        A = inputs["wohler_A_mat"]
         rho = inputs["rho_mat"]
         cost = inputs["unit_cost_mat"]
         mat_names = discrete_inputs["material_names"]
@@ -266,6 +275,9 @@ class DiscretizationYAML(om.ExplicitComponent):
         E_param = np.zeros(twall.shape)
         G_param = np.zeros(twall.shape)
         sigy_param = np.zeros(twall.shape)
+        sigu_param = np.zeros(twall.shape)
+        m_param = np.zeros(twall.shape)
+        A_param = np.zeros(twall.shape)
         rho_param = np.zeros(n_height - 1)
         cost_param = np.zeros(n_height - 1)
 
@@ -289,6 +301,9 @@ class DiscretizationYAML(om.ExplicitComponent):
             E_param[k, :] = E[imat]
             G_param[k, :] = G[imat]
             sigy_param[k, :] = sigy[imat]
+            sigu_param[k, :] = sigu[imat]
+            m_param[k, :] = m[imat]
+            A_param[k, :] = A[imat]
 
         # Mass weighted cost (should really weight by radius too)
         cost_param /= rho_param
@@ -305,12 +320,18 @@ class DiscretizationYAML(om.ExplicitComponent):
         E_param = 0.5 * np.sum(vol_frac * E_param, axis=0) + 0.5 / np.sum(vol_frac / E_param, axis=0)
         G_param = 0.5 * np.sum(vol_frac * G_param, axis=0) + 0.5 / np.sum(vol_frac / G_param, axis=0)
         sigy_param = 0.5 * np.sum(vol_frac * sigy_param, axis=0) + 0.5 / np.sum(vol_frac / sigy_param, axis=0)
+        sigu_param = 0.5 * np.sum(vol_frac * sigu_param, axis=0) + 0.5 / np.sum(vol_frac / sigu_param, axis=0)
+        m_param = 0.5 * np.sum(vol_frac * m_param, axis=0) + 0.5 / np.sum(vol_frac / m_param, axis=0)
+        A_param = 0.5 * np.sum(vol_frac * A_param, axis=0) + 0.5 / np.sum(vol_frac / A_param, axis=0)
 
         # Store values
         outputs["E"] = E_param
         outputs["G"] = G_param
         outputs["rho"] = rho_param
         outputs["sigma_y"] = sigy_param
+        outputs["sigma_ult"] = sigu_param
+        outputs["wohler_exp"] = m_param
+        outputs["wohler_A"] = A_param
         outputs["unit_cost"] = cost_param
 
 
@@ -404,6 +425,8 @@ class TowerDiscretization(om.ExplicitComponent):
         parameterized locations along tower, linear lofting between
     z_full : numpy array[nFull], [m]
         parameterized locations along tower, linear lofting between
+    tower_outer_diameter : numpy array[n_height], [m]
+        cylinder diameter at corresponding locations
     rho : numpy array[n_height-1], [kg/m**3]
         Density of the materials along the tower sections.
     unit_cost : numpy array[n_height-1], [USD/kg]
@@ -441,6 +464,10 @@ class TowerDiscretization(om.ExplicitComponent):
         Isotropic shear modulus of the materials along the tower sections.
     sigma_y_full : numpy array[nFull-1], [Pa]
         Isotropic yield strength of the materials along the tower sections.
+    axial_load2stress : numpy array[nFull-1,6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and axial stress
+    shear_load2stress : numpy array[nFull-1,6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and shear stress
 
     """
 
@@ -457,6 +484,7 @@ class TowerDiscretization(om.ExplicitComponent):
         self.add_input("hub_height", val=0.0, units="m")
         self.add_input("z_param", np.zeros(n_height), units="m")
         self.add_input("z_full", val=np.zeros(nFull), units="m")
+        self.add_input("tower_outer_diameter", val=np.zeros(n_height), units="m")
         self.add_input("rho", val=np.zeros(n_height - 1), units="kg/m**3")
         self.add_input("unit_cost", val=np.zeros(n_height - 1), units="USD/kg")
         self.add_input("outfitting_factor", val=np.zeros(n_height - 1))
@@ -465,6 +493,8 @@ class TowerDiscretization(om.ExplicitComponent):
         self.add_input("sigma_y", val=np.zeros(n_height - 1), units="Pa")
 
         self.add_input("Az", np.zeros(nFull - 1), units="m**2")
+        self.add_input("Asx", np.zeros(nFull - 1), units="m**2")
+        self.add_input("Asy", np.zeros(nFull - 1), units="m**2")
         self.add_input("Jz", np.zeros(nFull - 1), units="m**4")
         self.add_input("Ixx", np.zeros(nFull - 1), units="m**4")
         self.add_input("Iyy", np.zeros(nFull - 1), units="m**4")
@@ -511,6 +541,8 @@ class TowerDiscretization(om.ExplicitComponent):
         self.add_output("cg_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional center of mass")
         self.add_output("sc_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional shear center")
         self.add_output("tc_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional tension center")
+        self.add_output("axial_load2stress", val=np.zeros((n_height - 1, 6)), units="m**2")
+        self.add_output("shear_load2stress", val=np.zeros((n_height - 1, 6)), units="m**2")
 
         self.declare_partials("height_constraint", ["hub_height", "z_param"], method="fd")
         self.declare_partials("outfitting_full", ["outfitting_factor"], method="fd")
@@ -535,18 +567,34 @@ class TowerDiscretization(om.ExplicitComponent):
         rho = inputs["rho"]
         E = inputs["E"]
         G = inputs["G"]
+        of = inputs["outfitting_factor"]
         Az = util.sectionalInterp(z, z_full, inputs["Az"])
+        Asx = util.sectionalInterp(z, z_full, inputs["Asx"])
+        Asy = util.sectionalInterp(z, z_full, inputs["Asy"])
         Ixx = util.sectionalInterp(z, z_full, inputs["Ixx"])
         Iyy = util.sectionalInterp(z, z_full, inputs["Iyy"])
         Jz = util.sectionalInterp(z, z_full, inputs["Jz"])
         outputs["sec_loc"] = (z - z[0]) / (z[-1] - z[0])
-        outputs["mass_den"] = rho * Az
+        outputs["mass_den"] = rho * Az * of
         outputs["foreaft_iner"] = rho * Ixx
         outputs["sideside_iner"] = rho * Iyy
         outputs["foreaft_stff"] = E * Ixx
         outputs["sideside_stff"] = E * Iyy
         outputs["tor_stff"] = G * Jz
         outputs["axial_stff"] = E * Az
+
+        d_sec, _ = util.nodal2sectional(inputs["tower_outer_diameter"])
+        r_sec = 0.5 * d_sec
+        ax_load2stress = np.zeros((d_sec.size, 6))
+        ax_load2stress[:, 2] = 1.0 / Az
+        ax_load2stress[:, 3] = r_sec / Ixx
+        ax_load2stress[:, 4] = r_sec / Iyy
+        sh_load2stress = np.zeros((d_sec.size, 6))
+        sh_load2stress[:, 0] = 1.0 / Asx
+        sh_load2stress[:, 1] = 1.0 / Asy
+        sh_load2stress[:, 5] = r_sec / Jz
+        outputs["axial_load2stress"] = ax_load2stress
+        outputs["shear_load2stress"] = sh_load2stress
 
 
 class CylinderMass(om.ExplicitComponent):
@@ -878,7 +926,7 @@ class TurbineMass(om.ExplicitComponent):
         self.declare_partials("turbine_mass", ["monopile_mass", "rna_mass", "tower_mass"], val=1.0)
 
     def compute(self, inputs, outputs):
-        outputs["turbine_mass"] = inputs["rna_mass"] + inputs["tower_mass"] + inputs["monopile_mass"]
+        outputs["turbine_mass"] = inputs["rna_mass"] + inputs["tower_mass"]
 
         cg_rna = inputs["rna_cg"] + np.r_[0.0, 0.0, inputs["hub_height"]]
         cg_tower = np.r_[0.0, 0.0, inputs["tower_center_of_mass"]]
