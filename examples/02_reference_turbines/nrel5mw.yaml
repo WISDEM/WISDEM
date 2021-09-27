@@ -457,6 +457,7 @@ materials:
       nu: [0.28, 0.28, 0.28]
       Xt: [1060.0e+006, 66.3e+006, 26.6e+006]
       Xc: [826.0e+006, 196.0e+006, 197.0e+006]
+      m: 10
       unit_cost: 1.87
       waste: 0.05
       fiber_density: 2600.
@@ -470,6 +471,7 @@ materials:
       nu: [0.39, 0.39, 0.39]
       Xt: [54.5e+006, 54.5e+006, 26.6e+006]
       Xc: [74.1e+006, 74.1e+006, 197.0e+006]
+      m: 10
       unit_cost: 2.86
       waste: 0.15
       fiber_density: 2600.
@@ -484,6 +486,7 @@ materials:
       nu: [0.49, 0.49, 0.49]
       Xt: [54.47e+006, 54.47e+006, 26.6e+006]
       Xc: [74.1e+006, 74.1e+006, 197.0e+006]
+      m: 10
       unit_cost: 3.00
       waste: 0.15
       fiber_density: 2600.
@@ -506,6 +509,7 @@ materials:
       Xc: 450.e+006
       S: 0
       Xy: 345.e+6
+      m: 3
       unit_cost: 0.7
    -  name: steel_drive
       description: Steel of the drivetrain ASTM 4140 40Cr1Mo28
@@ -523,6 +527,7 @@ materials:
       Xc: 814.e+006
       S: 0
       Xy: 485.e+6
+      m: 3
       unit_cost: 0.9
    -  name: cast_iron
       description: TODO Steel of the drivetrain ASTM 4140 40Cr1Mo28
@@ -540,6 +545,7 @@ materials:
       Xc: 310.e+006
       S: 0
       Xy: 265.e+6
+      m: 3
       unit_cost: 0.5
    -  E: 98460000.0
       name: FOAM
@@ -561,6 +567,7 @@ materials:
       nu: [0.27, 0.27, 0.27]
       Xt: [2236.0e+006, 0.00, 0.00]
       Xc: [1528.0e+006, 0.00, 0.00]
+      m: 16.1
       unit_cost: 30.00
       waste: 0.05
       fiber_density: 1800.
