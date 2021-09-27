@@ -712,9 +712,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"] = wt_opt[
                 "blade.outer_shape_bem.s"
             ].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"] = wt_opt[
-                "rotorse.theta"
-            ].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"] = wt_opt["rotorse.theta"].tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["pitch_axis"]["grid"] = wt_opt[
                 "blade.outer_shape_bem.s"
             ].tolist()
@@ -743,7 +741,9 @@ class WindTurbineOntologyPython(object):
                 self.wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"] = wt_opt[
                     "blade.outer_shape_bem.s"
                 ].tolist()
-                stall_margin = np.deg2rad(wt_opt["rotorse.stall_check.stall_angle_along_span"]-wt_opt["rotorse.stall_check.aoa_along_span"])
+                stall_margin = np.deg2rad(
+                    wt_opt["rotorse.stall_check.stall_angle_along_span"] - wt_opt["rotorse.stall_check.aoa_along_span"]
+                )
                 self.wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"] = stall_margin.tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["x"]["grid"] = wt_opt[
                 "blade.outer_shape_bem.s"

@@ -10,7 +10,7 @@ from scipy.interpolate import PchipInterpolator, interp1d
 import wisdem.moorpy.MoorProps as mp
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
-from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
+from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, remap2grid, trailing_edge_smoothing
 
 try:
@@ -503,6 +503,44 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem("mooring", Mooring(options=modeling_options))
             self.connect("floating.joints_xyz", "mooring.joints_xyz")
 
+        # Wind turbine configuration inputs
+        conf_ivc = self.add_subsystem("configuration", om.IndepVarComp())
+        conf_ivc.add_discrete_output(
+            "ws_class",
+            val="",
+            desc="IEC wind turbine class. I - offshore, II coastal, III - land-based, IV - low wind speed site.",
+        )
+        conf_ivc.add_discrete_output(
+            "turb_class",
+            val="",
+            desc="IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).",
+        )
+        conf_ivc.add_discrete_output(
+            "gearbox_type", val="geared", desc="Gearbox configuration (geared, direct-drive, etc.)."
+        )
+        conf_ivc.add_discrete_output(
+            "rotor_orientation", val="upwind", desc="Rotor orientation, either upwind or downwind."
+        )
+        conf_ivc.add_discrete_output(
+            "upwind", val=True, desc="Convenient boolean for upwind (True) or downwind (False)."
+        )
+        conf_ivc.add_discrete_output("n_blades", val=3, desc="Number of blades of the rotor.")
+        conf_ivc.add_output("rated_power", val=0.0, units="W", desc="Electrical rated power of the generator.")
+        conf_ivc.add_output("lifetime", val=25.0, units="yr", desc="Turbine design lifetime.")
+
+        conf_ivc.add_output(
+            "rotor_diameter_user",
+            val=0.0,
+            units="m",
+            desc="Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.",
+        )
+        conf_ivc.add_output(
+            "hub_height_user",
+            val=0.0,
+            units="m",
+            desc="Height of the hub center over the ground (land-based) or the mean sea level (offshore) specified by the user.",
+        )
+
         # Environment inputs
         if modeling_options["flags"]["environment"]:
             env_ivc = self.add_subsystem("env", om.IndepVarComp())
@@ -703,24 +741,6 @@ class Blade(om.Group):
 
         self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options))
         self.connect("outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
-
-        class ComputeReynolds(om.ExplicitComponent):
-            def initialize(self):
-                self.options.declare("n_span")
-
-            def setup(self):
-                n_span = self.options["n_span"]
-
-                self.add_input("rho", val=0.0, units="kg/m**3")
-                self.add_input("mu", val=0.0, units="kg/m/s")
-                self.add_input("local_airfoil_velocities", val=np.zeros((n_span)), units="m/s")
-                self.add_input("chord", val=np.zeros((n_span)), units="m")
-                self.add_output("Re", val=np.zeros((n_span)), ref=1.0e6)
-
-            def compute(self, inputs, outputs):
-                outputs["Re"] = np.nan_to_num(
-                    inputs["rho"] * inputs["local_airfoil_velocities"] * inputs["chord"] / inputs["mu"]
-                )
 
         # TODO : Compute Reynolds here
         self.add_subsystem("compute_reynolds", ComputeReynolds(n_span=rotorse_options["n_span"]))
@@ -1377,9 +1397,9 @@ class INN_Airfoils(om.ExplicitComponent):
             units="rad",
         )
 
+        self.inn = INN()
+
     def compute(self, inputs, outputs):
-        print("inputted L/D")
-        print(inputs["L_D_opt"])
         # Interpolate t/c and L/D from opt grid to full grid
         spline = PchipInterpolator
         r_thick_spline = spline(inputs["s_opt_r_thick"], inputs["r_thick_opt"])
@@ -1408,22 +1428,20 @@ class INN_Airfoils(om.ExplicitComponent):
         print("Performing INN analysis for these indices:")
         print(indices)
 
-        inn = INN()
         for i in indices:
             Re = inputs["Re"][i]
             if Re < 100.0:
                 Re = 9.0e6
             print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re}")
             try:
-                # print("CD", c_d[i])
-                cst, alpha_inn = inn.inverse_design(
+                cst, alpha_inn = self.inn.inverse_design(
                     c_d[i], L_D[i], np.rad2deg(stall_margin[i]), r_thick[i], Re, N=1, process_samples=True, z=314
                 )
             except:
                 raise Exception("The INN for airfoil design failed in the inverse mode")
             alpha = np.arange(-4, 20, 0.25)
             try:
-                cd, cl = inn.generate_polars(cst, Re, alpha=alpha)
+                cd, cl = self.inn.generate_polars(cst, Re, alpha=alpha)
             except:
                 raise Exception("The INN for airfoil design failed in the forward mode")
 
@@ -1467,7 +1485,6 @@ class INN_Airfoils(om.ExplicitComponent):
 
             # ======================
 
-            #
             # x, y = inputs["coord_xy_interp_yaml"][i, :, 0], inputs["coord_xy_interp_yaml"][i, :, 1]
             #
             # points = np.column_stack((x, y))
@@ -1486,7 +1503,7 @@ class INN_Airfoils(om.ExplicitComponent):
             # cst_new = CSTAirfoil(yaml_airfoil)
             # cst = np.concatenate((cst_new.cst, [yaml_airfoil.te_lower], [yaml_airfoil.te_upper]), axis=0)
             #
-            # cd_new, cl_new = inn.generate_polars(cst, Re, alpha=alpha)
+            # cd_new, cl_new = self.inn.generate_polars(cst, Re, alpha=alpha)
             #
             # inn_polar = Polar(Re, alpha, cl_new[0, :], cd_new[0, :], np.zeros_like(cl_new[0, :]))
             # polar3d = inn_polar.correction3D(
@@ -1533,8 +1550,8 @@ class INN_Airfoils(om.ExplicitComponent):
             # ax[2].set_ylim(top=150, bottom=-40)
 
             # yaml_xy = inputs["coord_xy_interp_yaml"][i]
-            # cst_xy = af_points
-
+            # cst_xy = outputs["coord_xy_interp"][i, :, :]
+            #
             # ax[3].plot(cst_xy[:, 0], cst_xy[:, 1], label="INN")
             # ax[3].plot(yaml_xy[:, 0], yaml_xy[:, 1], label="yaml")
             # ax[3].grid(color=[0.8, 0.8, 0.8], linestyle="--")

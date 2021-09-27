@@ -151,8 +151,7 @@ def create_all_plots(
 
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             s_opt_sc = yaml_data["blade.opt_var.s_opt_spar_cap_ss"]
-            sc_opt = yaml_data["blade.opt_var.spar_cap_ss_opt"]*1e3
-            
+            sc_opt = yaml_data["blade.opt_var.spar_cap_ss_opt"] * 1e3
             n_layers = yaml_data["blade.ps.layer_thickness_param"].shape[0]
             ilayer = None
             if ilayer is None:
@@ -160,7 +159,6 @@ def create_all_plots(
                     layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
                     if modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"] == layer_name:
                         ilayer = i
-                        
             axsc.plot(
                 yaml_data["blade.outer_shape_bem.s"],
                 yaml_data["blade.ps.layer_thickness_param"][ilayer, :] * 1e3,
@@ -209,8 +207,7 @@ def create_all_plots(
 
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             s_opt_te = yaml_data["blade.opt_var.s_opt_te_ss"]
-            te_opt = yaml_data["blade.opt_var.te_ss_opt"]*1e3
-            
+            te_opt = yaml_data["blade.opt_var.te_ss_opt"] * 1e3
             n_layers = yaml_data["blade.ps.layer_thickness_param"].shape[0]
             ilayer = None
             if ilayer is None:
@@ -218,7 +215,6 @@ def create_all_plots(
                     layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
                     if modeling_options["WISDEM"]["RotorSE"]["te_ss"] == layer_name:
                         ilayer = i
-                        
             axte.plot(
                 yaml_data["blade.outer_shape_bem.s"],
                 yaml_data["blade.ps.layer_thickness_param"][ilayer, :] * 1e3,
