@@ -597,6 +597,7 @@ class CCBladeTwist(ExplicitComponent):
             Re = np.array(Omega * inputs["r"] * inputs["chord"] * inputs["rho"] / inputs["mu"])
             aoa_op = inputs["aoa_op"]
             for i in range(self.n_span):
+                # Use the required angle of attack if defined. If it isn't defined (==pi), then take the stall point minus the margin
                 if abs(aoa_op[i] - np.pi) < 1.e-4:
                     af[i].eval_unsteady(
                         inputs["airfoils_aoa"],

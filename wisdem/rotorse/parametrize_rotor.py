@@ -1,11 +1,11 @@
 import os
 
 import numpy as np
-from openmdao.api import Group, ExplicitComponent
+import openmdao.api as om
 from scipy.interpolate import PchipInterpolator
 
 
-class ParametrizeBladeAero(ExplicitComponent):
+class ParametrizeBladeAero(om.ExplicitComponent):
     # Openmdao component to parameterize distributed quantities for the outer shape of the wind turbine rotor blades
     def initialize(self):
         self.options.declare("rotorse_options")
@@ -92,7 +92,7 @@ class ParametrizeBladeAero(ExplicitComponent):
         outputs["max_chord_constr"] = chord_opt(inputs["s_opt_chord"]) / max_chord
 
 
-class ParametrizeBladeStruct(ExplicitComponent):
+class ParametrizeBladeStruct(om.ExplicitComponent):
     # Openmdao component to parameterize distributed quantities for the structural design of the wind turbine rotor blades
     def initialize(self):
         self.options.declare("rotorse_options")

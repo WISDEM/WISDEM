@@ -153,6 +153,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         )
         conf_ivc.add_discrete_output("n_blades", val=3, desc="Number of blades of the rotor.")
         conf_ivc.add_output("rated_power", val=0.0, units="W", desc="Electrical rated power of the generator.")
+        conf_ivc.add_output("lifetime", val=25.0, units="yr", desc="Turbine design lifetime.")
 
         conf_ivc.add_output(
             "rotor_diameter_user",
@@ -501,44 +502,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem("floating", Floating(floating_init_options=modeling_options["floating"]))
             self.add_subsystem("mooring", Mooring(options=modeling_options))
             self.connect("floating.joints_xyz", "mooring.joints_xyz")
-
-        # Wind turbine configuration inputs
-        conf_ivc = self.add_subsystem("configuration", om.IndepVarComp())
-        conf_ivc.add_discrete_output(
-            "ws_class",
-            val="",
-            desc="IEC wind turbine class. I - offshore, II coastal, III - land-based, IV - low wind speed site.",
-        )
-        conf_ivc.add_discrete_output(
-            "turb_class",
-            val="",
-            desc="IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).",
-        )
-        conf_ivc.add_discrete_output(
-            "gearbox_type", val="geared", desc="Gearbox configuration (geared, direct-drive, etc.)."
-        )
-        conf_ivc.add_discrete_output(
-            "rotor_orientation", val="upwind", desc="Rotor orientation, either upwind or downwind."
-        )
-        conf_ivc.add_discrete_output(
-            "upwind", val=True, desc="Convenient boolean for upwind (True) or downwind (False)."
-        )
-        conf_ivc.add_discrete_output("n_blades", val=3, desc="Number of blades of the rotor.")
-        conf_ivc.add_output("rated_power", val=0.0, units="W", desc="Electrical rated power of the generator.")
-        conf_ivc.add_output("lifetime", val=25.0, units="yr", desc="Turbine design lifetime.")
-
-        conf_ivc.add_output(
-            "rotor_diameter_user",
-            val=0.0,
-            units="m",
-            desc="Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.",
-        )
-        conf_ivc.add_output(
-            "hub_height_user",
-            val=0.0,
-            units="m",
-            desc="Height of the hub center over the ground (land-based) or the mean sea level (offshore) specified by the user.",
-        )
 
         # Environment inputs
         if modeling_options["flags"]["environment"]:
@@ -1470,13 +1433,11 @@ class INN_Airfoils(om.ExplicitComponent):
                 outputs["coord_xy_interp"][i, :, :] = af_points
 
             inn_polar = Polar(Re, alpha, cl[0, :], cd[0, :], np.zeros_like(cl[0, :]))
-            polar3d = inn_polar.correction3D(inputs["s"][i], inputs["chord"][i] / 121.1, inputs["rated_TSR"])
             cdmax = 1.5
-            polar = polar3d.extrapolate(cdmax)  # Extrapolate polars for alpha between -180 deg and 180 deg
+            polar = inn_polar.extrapolate(cdmax)  # Extrapolate polars for alpha between -180 deg and 180 deg
 
             cl_interp = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cl)
             cd_interp = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cd)
-            cm_interp = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cm)
 
             for j in range(self.n_Re):
                 outputs["cl_interp"][i, :, j, 0] = cl_interp
@@ -1518,7 +1479,7 @@ class INN_Airfoils(om.ExplicitComponent):
             # cm_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cm)
             #
             # f, ax = plt.subplots(4, 1, figsize=(5.3, 10))
-            #
+
             # ax[0].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp, label="INN")
             # ax[0].plot(inputs["aoa"] * 180.0 / np.pi, inputs["cl_interp_yaml"][i, :, 0, 0], label="yaml")
             # # ax[0].plot(inputs["aoa"] * 180. / np.pi, cl_interp_new, label="yaml")
@@ -1528,7 +1489,7 @@ class INN_Airfoils(om.ExplicitComponent):
             # ax[0].set_title("Span Location {:2.2%}".format(inputs["s"][i]), fontweight="bold")
             # ax[0].set_ylim(-1.0, 2.5)
             # ax[0].set_xlim(left=-4, right=20)
-            #
+
             # ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, cd_interp, label="INN")
             # ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, inputs["cd_interp_yaml"][i, :, 0, 0], label="yaml")
             # # ax[1].semilogy(inputs["aoa"] * 180. / np.pi, cd_interp_new, label="yaml")
@@ -1536,7 +1497,7 @@ class INN_Airfoils(om.ExplicitComponent):
             # ax[1].set_ylabel("CD (-)", fontweight="bold")
             # ax[1].set_ylim(0.005, 0.2)
             # ax[1].set_xlim(left=-4, right=20)
-            #
+
             # ax[2].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp / cd_interp, label="INN")
             # ax[2].plot(
             #     inputs["aoa"] * 180.0 / np.pi,
@@ -1549,7 +1510,7 @@ class INN_Airfoils(om.ExplicitComponent):
             # ax[2].set_xlabel("Angles of Attack (deg)", fontweight="bold")
             # ax[2].set_xlim(left=-4, right=20)
             # ax[2].set_ylim(top=150, bottom=-40)
-            #
+
             # yaml_xy = inputs["coord_xy_interp_yaml"][i]
             # cst_xy = outputs["coord_xy_interp"][i, :, :]
             #
@@ -1560,9 +1521,9 @@ class INN_Airfoils(om.ExplicitComponent):
             # ax[3].set_xlabel("x-coord", fontweight="bold")
             # ax[3].set_xlim(left=0.0, right=1.0)
             # ax[3].set_ylim(top=0.2, bottom=-0.2)
-            #
+
             # plt.tight_layout()
-            #
+
             # plt.savefig(f"airfoil_comparison_{i}.png")
             # plt.close()
 
@@ -1637,21 +1598,21 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
             header="\t point number [-]\t\t\t\t x [m] \t\t\t\t\t y [m]  \t\t\t\t z [m] \t\t\t\t The coordinate system follows the BeamDyn one.",
         )
 
-        import matplotlib.pyplot as plt
-
-        for i in range(self.n_span):
-            plt.plot(outputs["coord_xy_dim_twisted"][i, :, 0], outputs["coord_xy_dim_twisted"][i, :, 1], "k")
-            plt.axis("equal")
-            plt.title(i)
-            plt.show()
-
-        import matplotlib.pyplot as plt
-        from mpl_toolkits.mplot3d import Axes3D
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection="3d")
-        ax.plot(outputs["3D_shape"][:, 1], outputs["3D_shape"][:, 2], outputs["3D_shape"][:, 3])
-        plt.show()
+        # import matplotlib.pyplot as plt
+        #
+        # for i in range(self.n_span):
+        #     plt.plot(outputs["coord_xy_dim_twisted"][i, :, 0], outputs["coord_xy_dim_twisted"][i, :, 1], "k")
+        #     plt.axis("equal")
+        #     plt.title(i)
+        #     plt.show()
+        #
+        # import matplotlib.pyplot as plt
+        # from mpl_toolkits.mplot3d import Axes3D
+        #
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111, projection="3d")
+        # ax.plot(outputs["3D_shape"][:, 1], outputs["3D_shape"][:, 2], outputs["3D_shape"][:, 3])
+        # plt.show()
 
 
 class Blade_Internal_Structure_2D_FEM(om.Group):
@@ -3078,7 +3039,7 @@ class Materials(om.Group):
 
 
 class ComputeHighLevelBladeProperties(om.ExplicitComponent):
-    # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
+    # Openmdao component that computes rotor quantities, such as the rotor coordinate of the blade stations
     def initialize(self):
         self.options.declare("rotorse_options")
 
@@ -3158,7 +3119,7 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
 
 
 class ComputeHighLevelTowerProperties(om.ExplicitComponent):
-    # Openmdao component that computes assembly quantities, such as the rotor coordinate of the blade stations, the hub height, and the blade-tower clearance
+    # Openmdao component that computes tower quantities, such as the hub height, and the blade-tower clearance
     def initialize(self):
         self.options.declare("modeling_options")
 

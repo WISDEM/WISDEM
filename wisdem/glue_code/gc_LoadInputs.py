@@ -1286,7 +1286,8 @@ class WindTurbineOntologyPython(object):
             ].tolist()
 
         # Update rotor diameter and hub height
-        self.wt_init["assembly"]["rotor_diameter"] = float(wt_opt["blade.high_level_blade_props.rotor_diameter"])
+        if self.modeling_options["flags"]["blade"]:
+            self.wt_init["assembly"]["rotor_diameter"] = float(wt_opt["blade.high_level_blade_props.rotor_diameter"])
         self.wt_init["assembly"]["hub_height"] = float(wt_opt["high_level_tower_props.hub_height"])
 
         # Update controller

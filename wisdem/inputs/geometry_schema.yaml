@@ -2308,7 +2308,6 @@ properties:
                         unit: rad/s
                         minimum: 0
                         maximum: 0.2
-
             torque:
                 type: object
                 required:
