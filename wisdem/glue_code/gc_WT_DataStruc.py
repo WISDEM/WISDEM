@@ -503,44 +503,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem("mooring", Mooring(options=modeling_options))
             self.connect("floating.joints_xyz", "mooring.joints_xyz")
 
-        # Wind turbine configuration inputs
-        conf_ivc = self.add_subsystem("configuration", om.IndepVarComp())
-        conf_ivc.add_discrete_output(
-            "ws_class",
-            val="",
-            desc="IEC wind turbine class. I - offshore, II coastal, III - land-based, IV - low wind speed site.",
-        )
-        conf_ivc.add_discrete_output(
-            "turb_class",
-            val="",
-            desc="IEC wind turbine category. A - high turbulence intensity (land-based), B - mid turbulence, C - low turbulence (offshore).",
-        )
-        conf_ivc.add_discrete_output(
-            "gearbox_type", val="geared", desc="Gearbox configuration (geared, direct-drive, etc.)."
-        )
-        conf_ivc.add_discrete_output(
-            "rotor_orientation", val="upwind", desc="Rotor orientation, either upwind or downwind."
-        )
-        conf_ivc.add_discrete_output(
-            "upwind", val=True, desc="Convenient boolean for upwind (True) or downwind (False)."
-        )
-        conf_ivc.add_discrete_output("n_blades", val=3, desc="Number of blades of the rotor.")
-        conf_ivc.add_output("rated_power", val=0.0, units="W", desc="Electrical rated power of the generator.")
-        conf_ivc.add_output("lifetime", val=25.0, units="yr", desc="Turbine design lifetime.")
-
-        conf_ivc.add_output(
-            "rotor_diameter_user",
-            val=0.0,
-            units="m",
-            desc="Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.",
-        )
-        conf_ivc.add_output(
-            "hub_height_user",
-            val=0.0,
-            units="m",
-            desc="Height of the hub center over the ground (land-based) or the mean sea level (offshore) specified by the user.",
-        )
-
         # Environment inputs
         if modeling_options["flags"]["environment"]:
             env_ivc = self.add_subsystem("env", om.IndepVarComp())
