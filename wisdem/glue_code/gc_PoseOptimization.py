@@ -1398,19 +1398,19 @@ class PoseOptimization(object):
                     )
                 wt_opt["blade.opt_var.te_ss_opt"] = init_te_ss_opt
                 wt_opt["blade.opt_var.te_ps_opt"] = init_te_ps_opt
+            if self.modeling["WISDEM"]["RotorSE"]["flag"]:
+                blade_constr = self.opt["constraints"]["blade"]
+                wt_opt["rotorse.rs.constr.max_strainU_spar"] = blade_constr["strains_spar_cap_ss"]["max"]
+                wt_opt["rotorse.rs.constr.max_strainL_spar"] = blade_constr["strains_spar_cap_ps"]["max"]
+                if blade_constr["rail_transport"]["flag"]:
+                    wt_opt["rotorse.re.rail.max_strains"] = min(
+                        blade_constr["strains_spar_cap_ss"]["max"], blade_constr["strains_spar_cap_ps"]["max"]
+                    )
 
-            blade_constr = self.opt["constraints"]["blade"]
-            wt_opt["rotorse.rs.constr.max_strainU_spar"] = blade_constr["strains_spar_cap_ss"]["max"]
-            wt_opt["rotorse.rs.constr.max_strainL_spar"] = blade_constr["strains_spar_cap_ps"]["max"]
-            if blade_constr["rail_transport"]["flag"]:
-                wt_opt["rotorse.re.rail.max_strains"] = min(
-                    blade_constr["strains_spar_cap_ss"]["max"], blade_constr["strains_spar_cap_ps"]["max"]
-                )
-
-            wt_opt["rotorse.rs.constr.max_strainU_te"] = blade_constr["strains_te_ss"]["max"]
-            wt_opt["rotorse.rs.constr.max_strainL_te"] = blade_constr["strains_te_ps"]["max"]
-            wt_opt["rotorse.stall_check.stall_margin"] = blade_constr["stall"]["margin"] * 180.0 / np.pi
-            wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
+                wt_opt["rotorse.rs.constr.max_strainU_te"] = blade_constr["strains_te_ss"]["max"]
+                wt_opt["rotorse.rs.constr.max_strainL_te"] = blade_constr["strains_te_ps"]["max"]
+                wt_opt["rotorse.stall_check.stall_margin"] = blade_constr["stall"]["margin"] * 180.0 / np.pi
+                wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
 
         if self.modeling["flags"]["nacelle"] and self.modeling["WISDEM"]["DriveSE"]["direct"]:
             drive_constr = self.opt["constraints"]["drivetrain"]

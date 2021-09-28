@@ -3,8 +3,13 @@ import time
 
 import numpy as np
 import matplotlib.pyplot as plt
-from openmdao.api import ExplicitComponent
+import openmdao.api as om
 from scipy.optimize import brentq
+from wisdem.glue_code.gc_WT_DataStruc import Materials, Blade
+from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
+from wisdem.glue_code.gc_WT_InitModel import assign_material_values, assign_blade_values, assign_airfoil_values
+from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
+
 
 ### USING OLD NUMPY SRC FOR PMT-FUNCTION INSTEAD OF SWITCHING TO ANNOYING NUMPY-FINANCIAL
 _when_to_num = {"end": 0, "begin": 1, "e": 0, "b": 1, 0: 0, 1: 1, "beginning": 1, "start": 1, "finish": 0}
@@ -4509,22 +4514,22 @@ class blade_cost_model(object):
 
 
 # Class to initiate the blade cost model
-class RotorCost(ExplicitComponent):
+class RotorCost(om.ExplicitComponent):
     def initialize(self):
-        self.options.declare("wt_init_options")
+        self.options.declare("mod_options")
         self.options.declare("opt_options")
 
     def setup(self):
-        wt_init_options = self.options["wt_init_options"]
-        rotorse_options = wt_init_options["WISDEM"]["RotorSE"]
-        self.n_span = n_span = blade_init_options["n_span"]
+        mod_options = self.options["mod_options"]
+        rotorse_options = mod_options["WISDEM"]["RotorSE"]
+        self.n_span = n_span = rotorse_options ["n_span"]
         opt_options = self.options["opt_options"]
-        self.costs_verbosity = opt_options["costs_verbosity"]
+        self.costs_verbosity = mod_options["General"]["verbosity"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_webs = n_webs = rotorse_options["n_webs"]
         self.n_layers = n_layers = rotorse_options["n_layers"]
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
-        mat_init_options = self.options["wt_init_options"]["materials"]
+        mat_init_options = self.options["mod_options"]["materials"]
         self.n_mat = n_mat = mat_init_options["n_mat"]
 
         # Inputs - Outer blade shape
@@ -4651,3 +4656,81 @@ class RotorCost(ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         pass
+
+
+class StandaloneRotorCost(om.Group):
+    def initialize(self):
+        self.options.declare("modeling_options")
+        self.options.declare("opt_options")
+        
+    def setup(self):
+        modeling_options = self.options["modeling_options"]
+        opt_options = self.options["opt_options"]
+
+        # Material dictionary inputs
+        self.add_subsystem(
+            "materials",
+            Materials(mat_init_options=modeling_options["materials"], composites=modeling_options["flags"]["blade"]),
+        )
+
+        # Airfoil dictionary inputs
+        airfoils = om.IndepVarComp()
+        rotorse_options = modeling_options["WISDEM"]["RotorSE"]
+        n_af = rotorse_options["n_af"]  # Number of airfoils
+        n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
+        airfoils.add_discrete_output("name", val=n_af * [""], desc="1D array of names of airfoils.")
+        airfoils.add_output(
+            "r_thick", val=np.zeros(n_af), desc="1D array of the relative thicknesses of each airfoil."
+        )
+        # Airfoil coordinates
+        airfoils.add_output(
+            "coord_xy",
+            val=np.zeros((n_af, n_xy, 2)),
+            desc="3D array of the x and y airfoil coordinates of the n_af airfoils.",
+        )
+        self.add_subsystem("airfoils", airfoils)
+
+        self.add_subsystem(
+            "blade",
+            Blade(
+                rotorse_options=modeling_options["WISDEM"]["RotorSE"],
+                opt_options=opt_options,
+            ),
+        )
+        self.connect("airfoils.name", "blade.interp_airfoils.name")
+        self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick")
+        self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
+
+        self.add_subsystem(
+            "rc",
+            RotorCost(mod_options=modeling_options, opt_options=opt_options))
+
+def initialize_omdao_prob(wt_opt, modeling_options, wt_init):
+
+    materials = wt_init["materials"]
+    wt_opt = assign_material_values(wt_opt, modeling_options, materials)
+
+    blade = wt_init["components"]["blade"]
+    wt_opt = assign_blade_values(wt_opt, modeling_options, blade)
+
+    airfoils = wt_init["airfoils"]
+    wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=True)
+
+    return wt_opt
+
+if __name__ == "__main__":
+
+    wisdem_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))) 
+    example_dir =  os.path.join(wisdem_dir, "examples", "03_blade")  # get path example 03_blade
+    fname_wt_input = os.path.join(example_dir, "BAR0.yaml")
+    fname_modeling_options = os.path.join(example_dir, "modeling_options.yaml")
+    fname_opt_options = os.path.join(example_dir ,"analysis_options_no_opt.yaml")
+    wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
+    wt_init, modeling_options, opt_options = wt_initial.get_input_data()
+    modeling_options["WISDEM"]["RotorSE"]["flag"] = False
+    wt_opt = om.Problem(model=StandaloneRotorCost(modeling_options=modeling_options ,opt_options=opt_options))
+    wt_opt.setup(derivatives=False)
+    myopt = PoseOptimization(wt_init, modeling_options, opt_options)
+    wt_opt = myopt.set_initial(wt_opt, wt_init)
+    wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init)
+    wt_opt.run_model()
