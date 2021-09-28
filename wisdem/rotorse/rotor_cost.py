@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import openmdao.api as om
 from scipy.optimize import brentq
-from wisdem.glue_code.gc_WT_DataStruc import Materials, Blade
+from wisdem.glue_code.gc_WT_DataStruc import Materials, Blade, WT_Assembly
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from wisdem.glue_code.gc_WT_InitModel import assign_material_values, assign_blade_values, assign_airfoil_values
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
@@ -4514,7 +4514,7 @@ class blade_cost_model(object):
 
 
 # Class to initiate the blade cost model
-class RotorCost(om.ExplicitComponent):
+class RotorBOM(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("mod_options")
         self.options.declare("opt_options")
@@ -4523,8 +4523,6 @@ class RotorCost(om.ExplicitComponent):
         mod_options = self.options["mod_options"]
         rotorse_options = mod_options["WISDEM"]["RotorSE"]
         self.n_span = n_span = rotorse_options ["n_span"]
-        opt_options = self.options["opt_options"]
-        self.costs_verbosity = mod_options["General"]["verbosity"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_webs = n_webs = rotorse_options["n_webs"]
         self.n_layers = n_layers = rotorse_options["n_layers"]
@@ -4585,14 +4583,10 @@ class RotorCost(om.ExplicitComponent):
             desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
         self.add_input(
-            "layer_start_nd",
+            "layer_width",
             val=np.zeros((n_layers, n_span)),
-            desc="2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        )
-        self.add_input(
-            "layer_end_nd",
-            val=np.zeros((n_layers, n_span)),
-            desc="2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+            units="m",
+            desc="2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
 
         # Inputs - Materials
@@ -4666,7 +4660,10 @@ class RotorCost(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        pass
+
+        for i_lay in range(self.n_layers):
+            a = np.trapz(inputs["layer_thickness"][i_lay,:]*
+                inputs["layer_width"][i_lay,:], inputs["s"]*inputs["blade_length"])
 
 
 class StandaloneRotorCost(om.Group):
@@ -4712,16 +4709,20 @@ class StandaloneRotorCost(om.Group):
         self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick")
         self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
 
+        self.add_subsystem("assembly", WT_Assembly(modeling_options=modeling_options))
+        self.connect("blade.outer_shape_bem.ref_axis", "assembly.blade_ref_axis_user")
+
         self.add_subsystem(
             "rc",
-            RotorCost(mod_options=modeling_options, opt_options=opt_options))
+            RotorBOM(mod_options=modeling_options, opt_options=opt_options))
         
+        self.connect("assembly.blade_length", "rc.blade_length")
         self.connect("blade.outer_shape_bem.s", "rc.s")
         self.connect("blade.pa.chord_param", "rc.chord")
         self.connect("blade.outer_shape_bem.pitch_axis", "rc.pitch_axis")
         self.connect("blade.interp_airfoils.coord_xy_interp", "rc.coord_xy_interp")
-        self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rc.layer_start_nd")
-        self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rc.layer_end_nd")
+        self.connect("blade.internal_structure_2d_fem.layer_thickness", "rc.layer_thickness")
+        self.connect("blade.internal_structure_2d_fem.layer_width", "rc.layer_width")
         self.connect("blade.internal_structure_2d_fem.layer_web", "rc.layer_web")
         self.connect("blade.internal_structure_2d_fem.definition_layer", "rc.definition_layer")
         self.connect("blade.internal_structure_2d_fem.web_start_nd", "rc.web_start_nd")
