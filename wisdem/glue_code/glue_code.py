@@ -110,22 +110,22 @@ class WT_RNTA(om.Group):
             self.connect("blade.internal_structure_2d_fem.web_end_nd", "rotorse.re.precomp.web_end_nd")
             self.connect("blade.internal_structure_2d_fem.joint_position", "rotorse.re.precomp.joint_position")
             self.connect("blade.internal_structure_2d_fem.joint_mass", "rotorse.re.precomp.joint_mass")
-            self.connect("blade.internal_structure_2d_fem.joint_cost", "rotorse.re.precomp.joint_cost")
+            self.connect("blade.internal_structure_2d_fem.joint_cost", "rotorse.re.precomp.joint_cost")  # remove?
             self.connect("materials.name", "rotorse.re.precomp.mat_name")
             self.connect("materials.orth", "rotorse.re.precomp.orth")
             self.connect("materials.E", "rotorse.re.precomp.E")
             self.connect("materials.G", "rotorse.re.precomp.G")
             self.connect("materials.nu", "rotorse.re.precomp.nu")
             self.connect("materials.rho", "rotorse.re.precomp.rho")
-            self.connect("materials.component_id", "rotorse.re.precomp.component_id")
-            self.connect("materials.unit_cost", "rotorse.re.precomp.unit_cost")
-            self.connect("materials.waste", "rotorse.re.precomp.waste")
-            self.connect("materials.rho_fiber", "rotorse.re.precomp.rho_fiber")
-            self.connect("materials.rho_area_dry", "rotorse.re.precomp.rho_area_dry")
-            self.connect("materials.ply_t", "rotorse.re.precomp.ply_t")
-            self.connect("materials.fvf", "rotorse.re.precomp.fvf")
-            self.connect("materials.fwf", "rotorse.re.precomp.fwf")
-            self.connect("materials.roll_mass", "rotorse.re.precomp.roll_mass")
+            self.connect("materials.component_id", "rotorse.re.precomp.component_id") # remove?
+            self.connect("materials.unit_cost", "rotorse.re.precomp.unit_cost") # remove?
+            self.connect("materials.waste", "rotorse.re.precomp.waste") # remove?
+            self.connect("materials.rho_fiber", "rotorse.re.precomp.rho_fiber") # remove?
+            self.connect("materials.rho_area_dry", "rotorse.re.precomp.rho_area_dry") # remove?
+            self.connect("materials.ply_t", "rotorse.re.precomp.ply_t") # remove?
+            self.connect("materials.fvf", "rotorse.re.precomp.fvf") # remove?
+            self.connect("materials.fwf", "rotorse.re.precomp.fwf") # remove?
+            self.connect("materials.roll_mass", "rotorse.re.precomp.roll_mass") # remove?
 
             # Conncetions to rail transport module
             if opt_options["constraints"]["blade"]["rail_transport"]["flag"]:

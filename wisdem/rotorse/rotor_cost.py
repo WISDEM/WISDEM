@@ -4548,11 +4548,11 @@ class RotorCost(om.ExplicitComponent):
         )
 
         # Inputs - Inner blade structure
-        self.add_discrete_input(
-            "web_name",
-            val=n_webs * [""],
-            desc="1D array of the names of the shear webs defined in the blade structure.",
-        )
+        # self.add_discrete_input(
+        #     "web_name",
+        #     val=n_webs * [""],
+        #     desc="1D array of the names of the shear webs defined in the blade structure.",
+        # )
         self.add_input(
             "web_start_nd",
             val=np.zeros((n_webs, n_span)),
@@ -4563,20 +4563,20 @@ class RotorCost(om.ExplicitComponent):
             val=np.zeros((n_webs, n_span)),
             desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
         )
-        self.add_discrete_input(
+        self.add_input(
             "layer_web",
-            val=n_layers * [""],
-            desc="1D array of the names of the webs the layer is associated to. If the layer is on the outer profile this entry can simply stay empty.",
+            val=np.zeros(n_layers),
+            desc="1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to 0.",
         )
+        # self.add_discrete_input(
+        #     "layer_name",
+        #     val=n_layers * [""],
+        #     desc="1D array of the names of the layers modeled in the blade structure.",
+        # )
         self.add_discrete_input(
-            "layer_name",
-            val=n_layers * [""],
-            desc="1D array of the names of the layers modeled in the blade structure.",
-        )
-        self.add_discrete_input(
-            "layer_mat",
-            val=n_layers * [""],
-            desc="1D array of the names of the materials of each layer modeled in the blade structure.",
+            "definition_layer",
+            val=np.zeros(n_layers),
+            desc="1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer",
         )
         self.add_input(
             "layer_thickness",
@@ -4597,6 +4597,11 @@ class RotorCost(om.ExplicitComponent):
 
         # Inputs - Materials
         self.add_discrete_input("mat_name", val=n_mat * [""], desc="1D array of names of materials.")
+        self.add_discrete_input(
+            "orth",
+            val=np.zeros(n_mat),
+            desc="1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.",
+        )
         self.add_discrete_input(
             "component_id",
             val=np.zeros(n_mat),
@@ -4648,7 +4653,13 @@ class RotorCost(om.ExplicitComponent):
             units="kg",
             desc="1D array of the roll mass of the composite fabrics. Non-composite materials are kept at 0.",
         )
-
+        self.add_input(
+            "joint_position",
+            val=0.0,
+            desc="Spanwise position of the segmentation joint.",
+        )
+        self.add_input("joint_mass", val=0.0, desc="Mass of the joint.")
+        self.add_input("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
         # Outputs
         self.add_output("total_blade_cost", val=0.0, units="USD", desc="total blade cost")
         self.add_output("total_blade_mass", val=0.0, units="USD", desc="total blade cost")
@@ -4704,6 +4715,32 @@ class StandaloneRotorCost(om.Group):
         self.add_subsystem(
             "rc",
             RotorCost(mod_options=modeling_options, opt_options=opt_options))
+        
+        self.connect("blade.outer_shape_bem.s", "rc.s")
+        self.connect("blade.pa.chord_param", "rc.chord")
+        self.connect("blade.outer_shape_bem.pitch_axis", "rc.pitch_axis")
+        self.connect("blade.interp_airfoils.coord_xy_interp", "rc.coord_xy_interp")
+        self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rc.layer_start_nd")
+        self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rc.layer_end_nd")
+        self.connect("blade.internal_structure_2d_fem.layer_web", "rc.layer_web")
+        self.connect("blade.internal_structure_2d_fem.definition_layer", "rc.definition_layer")
+        self.connect("blade.internal_structure_2d_fem.web_start_nd", "rc.web_start_nd")
+        self.connect("blade.internal_structure_2d_fem.web_end_nd", "rc.web_end_nd")
+        self.connect("blade.internal_structure_2d_fem.joint_position", "rc.joint_position")
+        self.connect("blade.internal_structure_2d_fem.joint_mass", "rc.joint_mass")
+        self.connect("blade.internal_structure_2d_fem.joint_cost", "rc.joint_cost")
+        self.connect("materials.name", "rc.mat_name")
+        self.connect("materials.orth", "rc.orth")
+        self.connect("materials.rho", "rc.rho")
+        self.connect("materials.component_id", "rc.component_id")
+        self.connect("materials.unit_cost", "rc.unit_cost")
+        self.connect("materials.waste", "rc.waste")
+        self.connect("materials.rho_fiber", "rc.rho_fiber")
+        self.connect("materials.rho_area_dry", "rc.rho_area_dry")
+        self.connect("materials.ply_t", "rc.ply_t")
+        self.connect("materials.fvf", "rc.fvf")
+        self.connect("materials.fwf", "rc.fwf")
+        self.connect("materials.roll_mass", "rc.roll_mass")
 
 def initialize_omdao_prob(wt_opt, modeling_options, wt_init):
 
