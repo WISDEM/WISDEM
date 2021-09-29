@@ -4278,46 +4278,6 @@ class blade_cost_model(object):
         self.options["show_warnings"] = False
         self.options["discrete"] = False
 
-    def init_from_refBlade(self, refBlade):
-        # Code take from rotor_geometry.py (RotorSE). It computes layup properties, independent of which turbine it is
-        # Setup paths
-        strucpath = refBlade.getStructPath()
-        self.materials = Orthotropic2DMaterial.listFromPreCompFile(os.path.join(strucpath, "materials.inp"))
-
-        npts = refBlade.npts
-        self.upperCS = [0] * npts
-        self.lowerCS = [0] * npts
-        self.websCS = [0] * npts
-        self.profile = [0] * npts
-
-        for i in range(npts):
-            webLoc = []
-            istr = str(i) if refBlade.name == "3_35MW" or refBlade.name == "10MW" else str(i + 1)
-            self.upperCS[i], self.lowerCS[i], self.websCS[i] = CompositeSection.initFromPreCompLayupFile(
-                os.path.join(strucpath, "layup_" + istr + ".inp"), webLoc, self.materials, readLocW=True
-            )
-            self.profile[i] = Profile.initFromPreCompFile(os.path.join(strucpath, "shape_" + istr + ".inp"))
-
-        self.name = refBlade.name
-        self.bladeLength = refBlade.bladeLength
-        # self.eta         = refBlade.r
-        self.r = refBlade.r * refBlade.bladeLength
-        self.chord = refBlade.chord_ref
-        self.le_location = refBlade.le_location
-
-    def init_from_Ontology(self, refBlade):
-        self.materials = refBlade["precomp"]["materials"]
-        self.upperCS = refBlade["precomp"]["upperCS"]
-        self.lowerCS = refBlade["precomp"]["lowerCS"]
-        self.websCS = refBlade["precomp"]["websCS"]
-        self.profile = refBlade["precomp"]["profile"]
-
-        self.name = refBlade["config"]["name"]
-        self.bladeLength = refBlade["pf"]["r"][-1]
-        self.r = refBlade["pf"]["r"]
-        self.chord = refBlade["pf"]["chord"]
-        self.le_location = refBlade["pf"]["p_le"]
-
     def execute_blade_cost_model(self):
 
         # print([self.materials, type(self.materials), len(self.materials)])
@@ -4527,6 +4487,7 @@ class RotorBOM(om.ExplicitComponent):
         self.n_webs = n_webs = rotorse_options["n_webs"]
         self.n_layers = n_layers = rotorse_options["n_layers"]
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
+        self.layer_mat = rotorse_options["layer_mat"]
         mat_init_options = self.options["mod_options"]["materials"]
         self.n_mat = n_mat = mat_init_options["n_mat"]
 
@@ -4659,32 +4620,107 @@ class RotorBOM(om.ExplicitComponent):
         self.add_input("joint_mass", val=0.0, desc="Mass of the joint.")
         self.add_input("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
         # Outputs
+        self.add_output(
+            "sect_perimeter", 
+            val=np.zeros(n_span), 
+            units="m", 
+            desc="Perimeter of the section along the blade span",
+        )
+        self.add_output(
+            "layer_volume", 
+            val=np.zeros(n_layers), 
+            units="m**3", 
+            desc="Volumes of each layer used in the blade, ignoring the scrap factor",
+        )
+        self.add_output(
+            "mat_volume", 
+            val=np.zeros(n_mat), 
+            units="m**3", 
+            desc="Volumes of each material used in the blade, ignoring the scrap factor",
+        )
+        self.add_output(
+            "mat_mass", 
+            val=np.zeros(n_mat), 
+            units="kg", 
+            desc="Masses of each material used in the blade, ignoring the scrap factor",
+        )
+        self.add_output(
+            "mat_volume_scrap", 
+            val=np.zeros(n_mat), 
+            units="m**3", 
+            desc="Volumes of each material used in the blade, including the scrap factor",
+        )
+        self.add_output(
+            "mat_mass_scrap", 
+            val=np.zeros(n_mat), 
+            units="kg", 
+            desc="Masses of each material used in the blade, including the scrap factor",
+        )
         self.add_output("total_blade_cost", val=0.0, units="USD", desc="total blade cost")
         self.add_output("total_blade_mass", val=0.0, units="USD", desc="total blade cost")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        arc_L_i = np.zeros(self.n_span)
-        for i in range(self.n_span):
-            # Compute the arc length (arc_L_i) of the non dimensional airfoil coordinates
-            xy_coord_i = inputs["coord_xy_interp"][i, :, :]
-            xy_arc_i = arc_length(xy_coord_i)
-            arc_L_i[i] = xy_arc_i[-1]
 
+        # Inputs
         s = inputs["s"]
         chord = inputs["chord"]
         blade_length = inputs["blade_length"]
         s = inputs["s"]
         layer_start_nd = inputs["layer_start_nd"]
         layer_end_nd = inputs["layer_end_nd"]
+        web_start_nd = inputs["web_start_nd"]
+        web_end_nd = inputs["web_end_nd"]
         layer_thickness = inputs["layer_thickness"]
+        rho_mat = inputs['rho']
+        waste = inputs['waste']
         
-        # Compute
+        # Compute arc length along blade span
+        arc_L_i = np.zeros(self.n_span)
+        web_height = np.zeros((self.n_webs, self.n_span))
+        for i in range(self.n_span):
+            # Compute the arc length (arc_L_i) of the non dimensional airfoil coordinates
+            xy_coord_i = inputs["coord_xy_interp"][i, :, :]
+            xy_arc_i = arc_length(xy_coord_i)
+            arc_L_i[i] = xy_arc_i[-1]
+            xy_arc_i /= arc_L_i[i]
+            for j in range(self.n_webs):
+                id_start = np.argmin(abs(xy_arc_i - web_start_nd[j,i]))
+                id_end = np.argmin(abs(xy_arc_i - web_end_nd[j,i]))
+                web_height[j,i] = abs((xy_coord_i[id_end,1] - xy_coord_i[id_start,0]) * chord[i])
+
+
+
+        # Compute BOM
         layer_volume = np.zeros(self.n_layers)
+        mat_volume = np.zeros(self.n_mat)
         sect_perimeter = arc_L_i * chord
         for i_lay in range(self.n_layers):
-            width = arc_L_i * chord * (layer_end_nd[i_lay,:] - layer_start_nd[i_lay,:])
-            layer_volume[i_lay] = np.trapz(layer_thickness[i_lay,:]*width, s*blade_length)
+            if inputs["layer_web"][i_lay] == 0:
+                # Compute width layer
+                width = arc_L_i * chord * (layer_end_nd[i_lay,:] - layer_start_nd[i_lay,:])
+                # Compute volume of layer
+                layer_volume[i_lay] = np.trapz(layer_thickness[i_lay,:]*width, s*blade_length)
+            else:
+                layer_volume[i_lay] = np.trapz(layer_thickness[i_lay,:]*web_height[int(inputs["layer_web"][i_lay])-1,:], s*blade_length)
+            # Assign volume to corresponding material
+            mat_name = self.layer_mat[i_lay]
+            i_mat = discrete_inputs["mat_name"].index(mat_name)
+            mat_volume[i_mat] += layer_volume[i_lay]
+
+        mat_mass = mat_volume * rho_mat
+        mat_volume_scrap = mat_volume * (1. + waste)
+        mat_mass_scrap = mat_volume_scrap * rho_mat
+        
+        # Assign outputs
+        outputs['sect_perimeter'] = sect_perimeter
+        outputs['layer_volume'] = layer_volume
+        outputs['mat_volume'] = mat_volume
+        outputs['mat_mass'] = mat_mass
+        outputs['mat_volume_scrap'] = mat_volume_scrap
+        outputs['mat_mass_scrap'] = mat_mass_scrap
+
+        
 
 
 class StandaloneRotorCost(om.Group):
