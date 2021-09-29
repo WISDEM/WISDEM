@@ -9,7 +9,7 @@ from wisdem.glue_code.gc_WT_DataStruc import Materials, Blade, WT_Assembly
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from wisdem.glue_code.gc_WT_InitModel import assign_material_values, assign_blade_values, assign_airfoil_values
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
-
+from wisdem.commonse.utilities import arc_length
 
 ### USING OLD NUMPY SRC FOR PMT-FUNCTION INSTEAD OF SWITCHING TO ANNOYING NUMPY-FINANCIAL
 _when_to_num = {"end": 0, "begin": 1, "e": 0, "b": 1, 0: 0, 1: 1, "beginning": 1, "start": 1, "finish": 0}
@@ -4583,10 +4583,14 @@ class RotorBOM(om.ExplicitComponent):
             desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
         self.add_input(
-            "layer_width",
+            "layer_start_nd",
             val=np.zeros((n_layers, n_span)),
-            units="m",
-            desc="2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+            desc="2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        self.add_input(
+            "layer_end_nd",
+            val=np.zeros((n_layers, n_span)),
+            desc="2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
 
         # Inputs - Materials
@@ -4660,10 +4664,27 @@ class RotorBOM(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
+        arc_L_i = np.zeros(self.n_span)
+        for i in range(self.n_span):
+            # Compute the arc length (arc_L_i) of the non dimensional airfoil coordinates
+            xy_coord_i = inputs["coord_xy_interp"][i, :, :]
+            xy_arc_i = arc_length(xy_coord_i)
+            arc_L_i[i] = xy_arc_i[-1]
 
+        s = inputs["s"]
+        chord = inputs["chord"]
+        blade_length = inputs["blade_length"]
+        s = inputs["s"]
+        layer_start_nd = inputs["layer_start_nd"]
+        layer_end_nd = inputs["layer_end_nd"]
+        layer_thickness = inputs["layer_thickness"]
+        
+        # Compute
+        layer_volume = np.zeros(self.n_layers)
+        sect_perimeter = arc_L_i * chord
         for i_lay in range(self.n_layers):
-            a = np.trapz(inputs["layer_thickness"][i_lay,:]*
-                inputs["layer_width"][i_lay,:], inputs["s"]*inputs["blade_length"])
+            width = arc_L_i * chord * (layer_end_nd[i_lay,:] - layer_start_nd[i_lay,:])
+            layer_volume[i_lay] = np.trapz(layer_thickness[i_lay,:]*width, s*blade_length)
 
 
 class StandaloneRotorCost(om.Group):
@@ -4722,7 +4743,8 @@ class StandaloneRotorCost(om.Group):
         self.connect("blade.outer_shape_bem.pitch_axis", "rc.pitch_axis")
         self.connect("blade.interp_airfoils.coord_xy_interp", "rc.coord_xy_interp")
         self.connect("blade.internal_structure_2d_fem.layer_thickness", "rc.layer_thickness")
-        self.connect("blade.internal_structure_2d_fem.layer_width", "rc.layer_width")
+        self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rc.layer_start_nd")
+        self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rc.layer_end_nd")
         self.connect("blade.internal_structure_2d_fem.layer_web", "rc.layer_web")
         self.connect("blade.internal_structure_2d_fem.definition_layer", "rc.definition_layer")
         self.connect("blade.internal_structure_2d_fem.web_start_nd", "rc.web_start_nd")
@@ -4743,6 +4765,7 @@ class StandaloneRotorCost(om.Group):
         self.connect("materials.fwf", "rc.fwf")
         self.connect("materials.roll_mass", "rc.roll_mass")
 
+
 def initialize_omdao_prob(wt_opt, modeling_options, wt_init):
 
     materials = wt_init["materials"]
@@ -4755,6 +4778,7 @@ def initialize_omdao_prob(wt_opt, modeling_options, wt_init):
     wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=True)
 
     return wt_opt
+
 
 if __name__ == "__main__":
 
