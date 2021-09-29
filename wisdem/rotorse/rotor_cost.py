@@ -4565,7 +4565,7 @@ class RotorBOM(om.ExplicitComponent):
                 id_end = np.argmin(abs(xy_arc_i - web_end_nd[j,i]))
                 web_height[j,i] = abs((xy_coord_i[id_end,1] - xy_coord_i[id_start,0]) * chord[i])
 
-        # Compute BOM
+        # Compute materials from the yaml
         layer_volume = np.zeros(self.n_layers)
         mat_volume = np.zeros(self.n_mat)
         sect_perimeter = arc_L_i * chord
@@ -4613,6 +4613,24 @@ class RotorBOM(om.ExplicitComponent):
         bonding_lines_vol = length_bonding_lines * flange_thick * flange_width * (1. + flange_adhesive_squeezed)
         i_adhesive = discrete_inputs["mat_name"].index('adhesive')
         mat_cost[i_adhesive] += bonding_lines_vol * rho_mat[i_adhesive] * unit_cost[i_adhesive]
+
+
+        # Hub connection and lightning protection system
+        t_bolt_unit_cost = 25.0  # Cost of one t-bolt [$]
+        t_bolt_unit_mass = 2.5  # Mass of one t-bolt [kg]
+        t_bolt_spacing = 0.15  # Spacing of t-bolts [m]
+        barrel_nut_unit_cost = 12.0  # Cost of one barrel nut [$]
+        barrel_nut_unit_mass = 1.9  # Mass of one barrel nut [kg]
+        LPS_unit_mass = 1.00  # [kg/m] - Linear scaling based on the weight of 150 lbs for the 61.5 m NREL 5MW blade
+        LPS_unit_cost= 40.00  # [$/m]  - Linear scaling based on the cost of 2500$ for the 61.5 m NREL 5MW blade
+        n_bolts = np.pi * chord[0] / t_bolt_spacing
+        bolts_cost = n_bolts * t_bolt_unit_cost
+        nuts_cost = n_bolts * barrel_nut_unit_cost
+        mid_span_station = np.argmin(abs(s - 0.5))
+        LPS_mass = LPS_unit_mass * (blade_length + chord[mid_span_station])
+        LPS_cost = LPS_unit_cost * (blade_length + chord[mid_span_station])
+        tot_mass = LPS_mass + n_bolts * (t_bolt_unit_mass + barrel_nut_unit_mass)
+        total_metallic_parts_cost = (bolts_cost + nuts_cost + LPS_cost)
 
         # Assign outputs
         outputs["sect_perimeter"] = sect_perimeter
