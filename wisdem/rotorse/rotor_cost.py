@@ -4233,6 +4233,9 @@ class RotorBOM(om.ExplicitComponent):
         self.n_layers = n_layers = rotorse_options["n_layers"]
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
         self.layer_mat = rotorse_options["layer_mat"]
+        self.layer_name =rotorse_options["layer_name"]
+        self.spar_cap_ss = rotorse_options["spar_cap_ss"]
+        self.spar_cap_ps = rotorse_options["spar_cap_ps"]
         mat_init_options = self.options["mod_options"]["materials"]
         self.n_mat = n_mat = mat_init_options["n_mat"]
 
@@ -4410,10 +4413,10 @@ class RotorBOM(om.ExplicitComponent):
             units='USD/m',
             desc="Unit cost of the lightining protection system. Linear scaling based on the cost of 2500$ for the 61.5 m NREL 5MW blade",
         )
-        
-        
-        
-        
+        self.add_input("root_preform_length",
+            val=0.01,
+            desc="Percentage of blade length starting from blade root that is preformed and later inserted into the mold",
+        )
         self.add_input(
             "joint_position",
             val=0.0,
@@ -4469,6 +4472,12 @@ class RotorBOM(om.ExplicitComponent):
             units="USD", 
             desc="Cost of the metallic parts (bolts, nuts, lightining protection system), excluding the blade joint.",
         )
+        self.add_output(
+            "total_consumable_cost_w_waste", 
+            val=0.0, 
+            units="USD", 
+            desc="Cost of the consumables including the waste.",
+        )
 
         self.add_output("total_blade_cost", val=0.0, units="USD", desc="total blade cost")
         self.add_output("total_blade_mass", val=0.0, units="USD", desc="total blade cost")
@@ -4500,6 +4509,7 @@ class RotorBOM(om.ExplicitComponent):
         t_bolt_unit_cost = inputs["t_bolt_unit_cost"]
         barrel_nut_unit_cost = inputs["barrel_nut_unit_cost"]
         LPS_unit_cost = inputs["LPS_unit_cost"]
+        root_preform_length = inputs["root_preform_length"]
         
         # Compute arc length along blade span
         arc_L_i = np.zeros(self.n_span)
@@ -4533,10 +4543,12 @@ class RotorBOM(om.ExplicitComponent):
         layer_volume = np.zeros(self.n_layers)
         mat_volume = np.zeros(self.n_mat)
         sect_perimeter = arc_L_i * chord
-        sect_perimeter_SS = arc_L_SS_i * chord
-        sect_perimeter_PS = arc_L_PS_i * chord
+        sect_perimeter_ss = arc_L_SS_i * chord
+        sect_perimeter_ps = arc_L_PS_i * chord
         web_length = np.zeros(self.n_webs)
         web_indices = np.zeros((self.n_webs,2), dtype=int)
+        spar_cap_width_ss = np.zeros(self.n_span)
+        spar_cap_width_ps = np.zeros(self.n_span)
         for i_lay in range(self.n_layers):
             if layer_web[i_lay] == 0:
                 # Compute width layer
@@ -4555,6 +4567,12 @@ class RotorBOM(om.ExplicitComponent):
             mat_name = self.layer_mat[i_lay]
             i_mat = discrete_inputs["mat_name"].index(mat_name)
             mat_volume[i_mat] += layer_volume[i_lay]
+
+            if self.layer_name[i_lay] == self.spar_cap_ss:
+                imin, imax = np.nonzero(layer_thickness[i_lay,:])[0][[0,-1]]
+                spar_cap_width_ss[imin:imax] = width[imin:imax]
+            if self.layer_name[i_lay] == self.spar_cap_ps:
+                spar_cap_width_ps[imin:imax] = width[imin:imax]
 
         # Compute masses of laminateswith and without waste factor
         mat_mass = mat_volume * rho_mat
@@ -4599,14 +4617,38 @@ class RotorBOM(om.ExplicitComponent):
         for i_web in range(self.n_webs):
             web_area[i_web] = np.trapz(web_height[i_web,web_indices[i_web,0]:web_indices[i_web,1]], blade_length * s[web_indices[i_web,0]:web_indices[i_web,1]])
         web_area_w_flanges = np.sum(web_area) + self.n_webs * 2. * np.sum(web_length) * flange_width
-        ss_area = np.trapz(sect_perimeter_SS, blade_length * s)
-        ps_area = np.trapz(sect_perimeter_PS, blade_length * s)
+        ss_area = np.trapz(sect_perimeter_ss, blade_length * s)
+        ps_area = np.trapz(sect_perimeter_ps, blade_length * s)
         ss_area_w_flanges = ss_area + 2. * flange_width * blade_length
         ps_area_w_flanges = ps_area + 2. * flange_width * blade_length
+        spar_cap_ss_area = np.trapz(spar_cap_width_ss, blade_length * s)
+        spar_cap_ps_area = np.trapz(spar_cap_width_ps, blade_length * s)
+        sect_perimeter_ss_interp = np.interp(root_preform_length,s,sect_perimeter_ss)
+        ss_area_root = np.trapz([sect_perimeter_ss[0], sect_perimeter_ss_interp], [0, blade_length * root_preform_length])
+        sect_perimeter_ps_interp = np.interp(root_preform_length,s,sect_perimeter_ps)
+        ps_area_root = np.trapz([sect_perimeter_ps[0], sect_perimeter_ps_interp], [0, blade_length * root_preform_length])
         bom.blade_specs["area_webs_w_flanges"] = web_area_w_flanges
+        bom.blade_specs["area_lpskin_wo_flanges"] = ss_area
+        bom.blade_specs["area_hpskin_wo_flanges"] = ps_area
         bom.blade_specs["area_lpskin_w_flanges"] = ss_area_w_flanges
         bom.blade_specs["area_hpskin_w_flanges"] = ps_area_w_flanges
-        # consumables = bom.compute_consumables()
+        bom.blade_specs["area_sc_lp"] = spar_cap_ss_area
+        bom.blade_specs["area_sc_hp"] = spar_cap_ps_area
+        bom.blade_specs["area_lp_root"] = ss_area_root
+        bom.blade_specs["area_hp_root"] = ps_area_root
+        bom.blade_specs["TE_length"] = blade_length
+        bom.blade_specs["LE_length"] = blade_length
+        bom.blade_specs["length_webs"] = web_length
+        bom.blade_specs["blade_length"] = blade_length
+        consumables = bom.compute_consumables()
+        name_consumables = consumables.keys()
+        total_consumable_cost_wo_waste = 0.0
+        total_consumable_cost_w_waste = 0.0
+        consumable_cost_w_waste = []
+        for name in name_consumables:
+            total_consumable_cost_wo_waste = total_consumable_cost_wo_waste + consumables[name]["total_cost_wo_waste"]
+            total_consumable_cost_w_waste = total_consumable_cost_w_waste + consumables[name]["total_cost_w_waste"]
+            consumable_cost_w_waste.append(consumables[name]["total_cost_w_waste"])
 
         # Assign outputs
         outputs["sect_perimeter"] = sect_perimeter
@@ -4617,7 +4659,7 @@ class RotorBOM(om.ExplicitComponent):
         outputs["mat_cost_scrap"] = mat_cost_scrap
         outputs["n_plies"] = n_plies
         outputs['total_metallic_parts_cost'] = total_metallic_parts_cost
-
+        outputs['total_consumable_cost_w_waste'] = total_consumable_cost_w_waste
 
 
 class StandaloneRotorCost(om.Group):
