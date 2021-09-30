@@ -25,13 +25,14 @@ prob = om.Problem(
 prob.driver = om.pyOptSparseDriver()
 prob.driver.options["optimizer"] = "SNOPT"
 
-prob.model.add_design_var("r_foot", lower=5.0, upper=20.0)
-prob.model.add_design_var("d_l", lower=0.5, upper=20.0)
-# prob.model.add_design_var("L", lower=50.0, upper=100.0)
+prob.model.add_design_var("r_foot", lower=2.0, upper=20.0)
+prob.model.add_design_var("r_head", lower=2.0, upper=10.0)
+prob.model.add_design_var("L", lower=50.0, upper=100.0)
+# prob.model.add_design_var("d_l", lower=0.5, upper=20.0)
 prob.model.add_constraint("constr_jacket_stress", upper=1.0)
 prob.model.add_objective("jacket_mass", index=0, ref=1.0e3)
 
-prob.model.approx_totals()
+prob.model.approx_totals(form="central")
 
 prob.setup()
 
