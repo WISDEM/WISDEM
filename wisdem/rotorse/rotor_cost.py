@@ -937,8 +937,6 @@ class blade_bom(object):
     def compute_consumables(self):
 
         # Consumables
-        if self.options["verbosity"]:
-            print("\n################################\nBOM - Consumables:")
         consumables = {}
         # # LE Erosion Tape
         # consumables["LE_tape"]                               = {}
@@ -966,11 +964,6 @@ class blade_bom(object):
         consumables["peel_ply"]["total_cost_w_waste"] = consumables["peel_ply"]["total_cost_wo_waste"] * (
             1 + consumables["peel_ply"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Peel ply cost %.2f $\t \t \t --- \t \t cost with waste %.2f $"
-                % (consumables["peel_ply"]["total_cost_wo_waste"], consumables["peel_ply"]["total_cost_w_waste"])
-            )
         # Non-Sanding Peel Ply
         consumables["ns_peel_ply"] = {}
         consumables["ns_peel_ply"]["unit_cost"] = 1.67  # [$/m2] 0.15 $/sqft
@@ -985,11 +978,7 @@ class blade_bom(object):
         consumables["ns_peel_ply"]["total_cost_w_waste"] = consumables["ns_peel_ply"]["total_cost_wo_waste"] * (
             1 + consumables["ns_peel_ply"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Non-sand peel ply cost %.2f $\t \t --- \t \t cost with waste %.2f $"
-                % (consumables["ns_peel_ply"]["total_cost_wo_waste"], consumables["ns_peel_ply"]["total_cost_w_waste"])
-            )
+
         # Chopped Strand
         consumables["chopped_strand"] = {}
         consumables["chopped_strand"]["unit_cost"] = 2.16  # [$/kg] 0.98 $/lbs
@@ -1003,14 +992,7 @@ class blade_bom(object):
         consumables["chopped_strand"]["total_cost_w_waste"] = consumables["chopped_strand"]["total_cost_wo_waste"] * (
             1 + consumables["chopped_strand"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Chopped strand cost %.2f $\t \t --- \t \t cost with waste %.2f $"
-                % (
-                    consumables["chopped_strand"]["total_cost_wo_waste"],
-                    consumables["chopped_strand"]["total_cost_w_waste"],
-                )
-            )
+
         # 3M77 Adhesive, Bulk
         consumables["adhesive_bulk"] = {}
         consumables["adhesive_bulk"]["unit_cost"] = 10566.9  # [$/m3] 40 $/ga
@@ -1032,14 +1014,6 @@ class blade_bom(object):
         consumables["adhesive_bulk"]["total_cost_w_waste"] = consumables["adhesive_bulk"]["total_cost_wo_waste"] * (
             1 + consumables["adhesive_bulk"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Adhesive, bulk cost %.2f $\t \t --- \t \t cost with waste %.2f $"
-                % (
-                    consumables["adhesive_bulk"]["total_cost_wo_waste"],
-                    consumables["adhesive_bulk"]["total_cost_w_waste"],
-                )
-            )
         # 3M77 Adhesive, Cans
         consumables["adhesive_cans"] = {}
         consumables["adhesive_cans"]["unit_cost"] = 6.65  # [$]
@@ -1060,14 +1034,7 @@ class blade_bom(object):
         consumables["adhesive_cans"]["total_cost_w_waste"] = consumables["adhesive_cans"]["total_cost_wo_waste"] * (
             1 + consumables["adhesive_cans"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Adhesive, cans cost %.2f $\t \t --- \t \t cost with waste %.2f $"
-                % (
-                    consumables["adhesive_cans"]["total_cost_wo_waste"],
-                    consumables["adhesive_cans"]["total_cost_w_waste"],
-                )
-            )
+
         # Mold Release
         consumables["release_agent"] = {}
         consumables["release_agent"]["unit_cost"] = 15691.82  # [$/m3] - 59.40 $/gal
@@ -1089,14 +1056,7 @@ class blade_bom(object):
         consumables["release_agent"]["total_cost_w_waste"] = consumables["release_agent"]["total_cost_wo_waste"] * (
             1 + consumables["release_agent"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Mold release agent cost %.2f $ \t --- \t \t cost with waste %.2f $"
-                % (
-                    consumables["release_agent"]["total_cost_wo_waste"],
-                    consumables["release_agent"]["total_cost_w_waste"],
-                )
-            )
+
         # Flow Medium
         consumables["flow_medium"] = {}
         consumables["flow_medium"]["unit_cost"] = 0.646  # [$/m2] 0.06 $/sqft
@@ -1119,11 +1079,7 @@ class blade_bom(object):
         consumables["flow_medium"]["total_cost_w_waste"] = consumables["flow_medium"]["total_cost_wo_waste"] * (
             1 + consumables["flow_medium"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Flow medium cost %.2f $\t \t --- \t \t cost with waste %.2f $"
-                % (consumables["flow_medium"]["total_cost_wo_waste"], consumables["flow_medium"]["total_cost_w_waste"])
-            )
+
         # tubing - 3/8"
         consumables["tubing3/8"] = {}
         consumables["tubing3/8"]["unit_cost"] = 0.23  # [$/m] 0.07 $/ft
@@ -1138,11 +1094,7 @@ class blade_bom(object):
         consumables["tubing3/8"]["total_cost_w_waste"] = consumables["tubing3/8"]["total_cost_wo_waste"] * (
             1 + consumables["tubing3/8"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                'Tubing 3/8" cost %.2f $\t \t --- \t \t cost with waste %.2f $'
-                % (consumables["tubing3/8"]["total_cost_wo_waste"], consumables["tubing3/8"]["total_cost_w_waste"])
-            )
+
         # tubing - 1/2"
         consumables["tubing1/2"] = {}
         consumables["tubing1/2"]["unit_cost"] = 0.23  # [$/m] 0.07 $/ft
@@ -1157,11 +1109,7 @@ class blade_bom(object):
         consumables["tubing1/2"]["total_cost_w_waste"] = consumables["tubing1/2"]["total_cost_wo_waste"] * (
             1 + consumables["tubing1/2"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Tubing 1/2 cost %.2f $\t \t --- \t \t cost with waste %.2f $"
-                % (consumables["tubing1/2"]["total_cost_wo_waste"], consumables["tubing1/2"]["total_cost_w_waste"])
-            )
+
         # tubing - 5/8"
         consumables["tubing5/8"] = {}
         consumables["tubing5/8"]["unit_cost"] = 0.49  # [$/m] 0.15 $/ft
@@ -1176,11 +1124,7 @@ class blade_bom(object):
         consumables["tubing5/8"]["total_cost_w_waste"] = consumables["tubing5/8"]["total_cost_wo_waste"] * (
             1 + consumables["tubing5/8"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Tubing 5/8 cost %.2f $\t \t --- \t \t cost with waste %.2f $"
-                % (consumables["tubing5/8"]["total_cost_wo_waste"], consumables["tubing5/8"]["total_cost_w_waste"])
-            )
+
         # tubing - 3/4"
         consumables["tubing3/4"] = {}
         consumables["tubing3/4"]["unit_cost"] = 0.62  # [$/m] 0.19 $/ft
@@ -1195,11 +1139,7 @@ class blade_bom(object):
         consumables["tubing3/4"]["total_cost_w_waste"] = consumables["tubing3/4"]["total_cost_wo_waste"] * (
             1 + consumables["tubing3/4"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Tubing 3/4 cost %.2f $\t \t --- \t \t cost with waste %.2f $"
-                % (consumables["tubing3/4"]["total_cost_wo_waste"], consumables["tubing3/4"]["total_cost_w_waste"])
-            )
+
         # tubing - 7/8"
         consumables["tubing7/8"] = {}
         consumables["tubing7/8"]["unit_cost"] = 0.49  # [$/m] 0.15 $/ft
@@ -1214,11 +1154,7 @@ class blade_bom(object):
         consumables["tubing7/8"]["total_cost_w_waste"] = consumables["tubing7/8"]["total_cost_wo_waste"] * (
             1 + consumables["tubing7/8"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Tubing 7/8 cost %.2f $\t \t --- \t \t cost with waste %.2f $"
-                % (consumables["tubing7/8"]["total_cost_wo_waste"], consumables["tubing7/8"]["total_cost_w_waste"])
-            )
+
         # Silicon flange tape
         consumables["tacky_tape"] = {}
         consumables["tacky_tape"]["unit_length"] = 3.5  # [m/roll]
@@ -1235,11 +1171,7 @@ class blade_bom(object):
         consumables["tacky_tape"]["total_cost_w_waste"] = consumables["tacky_tape"]["total_cost_wo_waste"] * (
             1 + consumables["tacky_tape"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Tacky tape cost %.2f $\t \t --- \t \t cost with waste %.2f $"
-                % (consumables["tacky_tape"]["total_cost_wo_waste"], consumables["tacky_tape"]["total_cost_w_waste"])
-            )
+
         # 2" masking tape
         consumables["masking_tape"] = {}
         consumables["masking_tape"]["unit_cost"] = 5.50  # [$/roll]
@@ -1254,14 +1186,7 @@ class blade_bom(object):
         consumables["masking_tape"]["total_cost_w_waste"] = consumables["masking_tape"]["total_cost_wo_waste"] * (
             1 + consumables["masking_tape"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Masking tape cost %.2f $\t \t --- \t \t cost with waste %.2f $"
-                % (
-                    consumables["masking_tape"]["total_cost_wo_waste"],
-                    consumables["masking_tape"]["total_cost_w_waste"],
-                )
-            )
+
         # Chop Fiber
         consumables["chop_fiber"] = {}
         consumables["chop_fiber"]["unit_cost"] = 6.19  # [$/kg] 2.81 $/lbs
@@ -1275,11 +1200,7 @@ class blade_bom(object):
         consumables["chop_fiber"]["total_cost_w_waste"] = consumables["chop_fiber"]["total_cost_wo_waste"] * (
             1 + consumables["chop_fiber"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Chopped fiber cost %.2f $\t \t --- \t \t cost with waste %.2f $"
-                % (consumables["chop_fiber"]["total_cost_wo_waste"], consumables["chop_fiber"]["total_cost_w_waste"])
-            )
+
         # White Lightning
         consumables["white_lightning"] = {}
         consumables["white_lightning"]["unit_cost"] = 3006.278  # [$/m3] - 11.38 $/gal
@@ -1293,14 +1214,7 @@ class blade_bom(object):
         consumables["white_lightning"]["total_cost_w_waste"] = consumables["white_lightning"]["total_cost_wo_waste"] * (
             1 + consumables["white_lightning"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "White lightning cost %.2f $ \t \t --- \t \t cost with waste %.2f $"
-                % (
-                    consumables["white_lightning"]["total_cost_wo_waste"],
-                    consumables["white_lightning"]["total_cost_w_waste"],
-                )
-            )
+
         # Hardener
         consumables["hardener"] = {}
         consumables["hardener"]["unit_cost"] = 1.65  # [$/tube]
@@ -1315,11 +1229,7 @@ class blade_bom(object):
         consumables["hardener"]["total_cost_w_waste"] = consumables["hardener"]["total_cost_wo_waste"] * (
             1 + consumables["hardener"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Hardener tubes %.2f $\t \t \t --- \t \t cost with waste %.2f $"
-                % (consumables["hardener"]["total_cost_wo_waste"], consumables["hardener"]["total_cost_w_waste"])
-            )
+
         # Putty
         consumables["putty"] = {}
         consumables["putty"]["unit_cost"] = 6.00  # [$/kg]
@@ -1333,11 +1243,7 @@ class blade_bom(object):
         consumables["putty"]["total_cost_w_waste"] = consumables["putty"]["total_cost_wo_waste"] * (
             1 + consumables["putty"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Putty cost %.2f $\t \t \t --- \t \t cost with waste %.2f $"
-                % (consumables["putty"]["total_cost_wo_waste"], consumables["putty"]["total_cost_w_waste"])
-            )
+
         # Putty Catalyst
         consumables["catalyst"] = {}
         consumables["catalyst"]["unit_cost"] = 7.89  # [$/kg]  3.58 $/lbs
@@ -1351,11 +1257,7 @@ class blade_bom(object):
         consumables["catalyst"]["total_cost_w_waste"] = consumables["catalyst"]["total_cost_wo_waste"] * (
             1 + consumables["catalyst"]["waste"] / 100
         )
-        if self.options["verbosity"]:
-            print(
-                "Catalyst cost %.2f $\t \t \t --- \t \t cost with waste %.2f $"
-                % (consumables["catalyst"]["total_cost_wo_waste"], consumables["catalyst"]["total_cost_w_waste"])
-            )
+
 
         return consumables
 
@@ -4472,6 +4374,46 @@ class RotorBOM(om.ExplicitComponent):
             units="m",
             desc="Average width of adhesive lines",
         )        
+        
+        self.add_input("t_bolt_unit_cost",
+            val=25.0,
+            units="USD",
+            desc="Cost of one t-bolt",
+        )
+        self.add_input("t_bolt_unit_mass",
+            val=2.5,
+            units="kg",
+            desc="Mass of one t-bolt",
+        )
+        self.add_input("t_bolt_spacing",
+            val=0.15,
+            units="m",
+            desc="Spacing of t-bolts along blade root circumference",
+        )
+        self.add_input("barrel_nut_unit_cost",
+            val=12.0,
+            units="USD",
+            desc="Cost of one barrel nut",
+        )
+        self.add_input("barrel_nut_unit_mass",
+            val= 1.9,
+            units='kg',
+            desc="Mass of one barrel nut",
+        )
+        self.add_input("LPS_unit_mass",
+            val= 1.00,
+            units='kg/m',
+            desc="Unit mass of the lightining protection system. Linear scaling based on the weight of 150 lbs for the 61.5 m NREL 5MW blade",
+        )
+        self.add_input("LPS_unit_cost",
+            val=40.00,
+            units='USD/m',
+            desc="Unit cost of the lightining protection system. Linear scaling based on the cost of 2500$ for the 61.5 m NREL 5MW blade",
+        )
+        
+        
+        
+        
         self.add_input(
             "joint_position",
             val=0.0,
@@ -4521,6 +4463,12 @@ class RotorBOM(om.ExplicitComponent):
             val=np.zeros(n_mat), 
             desc="Number of plies for the composite laimnates.",
         )
+        self.add_output(
+            "total_metallic_parts_cost", 
+            val=0.0, 
+            units="USD", 
+            desc="Cost of the metallic parts (bolts, nuts, lightining protection system), excluding the blade joint.",
+        )
 
         self.add_output("total_blade_cost", val=0.0, units="USD", desc="total blade cost")
         self.add_output("total_blade_mass", val=0.0, units="USD", desc="total blade cost")
@@ -4548,9 +4496,15 @@ class RotorBOM(om.ExplicitComponent):
         flange_adhesive_squeezed = inputs["flange_adhesive_squeezed"]
         flange_thick = inputs["flange_thick"]
         flange_width = inputs["flange_width"]
+        t_bolt_spacing = inputs["t_bolt_spacing"]
+        t_bolt_unit_cost = inputs["t_bolt_unit_cost"]
+        barrel_nut_unit_cost = inputs["barrel_nut_unit_cost"]
+        LPS_unit_cost = inputs["LPS_unit_cost"]
         
         # Compute arc length along blade span
         arc_L_i = np.zeros(self.n_span)
+        arc_L_SS_i = np.zeros(self.n_span)
+        arc_L_PS_i = np.zeros(self.n_span)
         web_height = np.zeros((self.n_webs, self.n_span))
 
         for i in range(self.n_span):
@@ -4558,18 +4512,31 @@ class RotorBOM(om.ExplicitComponent):
             xy_coord_i = inputs["coord_xy_interp"][i, :, :]
             xy_arc_i = arc_length(xy_coord_i)
             arc_L_i[i] = xy_arc_i[-1]
-            xy_arc_i /= arc_L_i[i]
+            xy_arc_nd_i = xy_arc_i / arc_L_i[i]
+            # Get the half perimeters
+            idx_le = np.argmin(xy_coord_i[:, 0])
+            if np.mean(xy_coord_i[:idx_le,1])<0:
+                arc_L_SS_i[i] = xy_arc_i[idx_le]
+                arc_L_PS_i[i] = xy_arc_i[-1] - xy_arc_i[idx_le]
+            else:
+                arc_L_PS_i[i] = xy_arc_i[idx_le]
+                arc_L_SS_i[i] = xy_arc_i[-1] - xy_arc_i[idx_le]
+
             # Compute height the webs along span
             for j in range(self.n_webs):
-                id_start = np.argmin(abs(xy_arc_i - web_start_nd[j,i]))
-                id_end = np.argmin(abs(xy_arc_i - web_end_nd[j,i]))
+                id_start = np.argmin(abs(xy_arc_nd_i - web_start_nd[j,i]))
+                id_end = np.argmin(abs(xy_arc_nd_i - web_end_nd[j,i]))
                 web_height[j,i] = abs((xy_coord_i[id_end,1] - xy_coord_i[id_start,0]) * chord[i])
+            
 
         # Compute materials from the yaml
         layer_volume = np.zeros(self.n_layers)
         mat_volume = np.zeros(self.n_mat)
         sect_perimeter = arc_L_i * chord
+        sect_perimeter_SS = arc_L_SS_i * chord
+        sect_perimeter_PS = arc_L_PS_i * chord
         web_length = np.zeros(self.n_webs)
+        web_indices = np.zeros((self.n_webs,2), dtype=int)
         for i_lay in range(self.n_layers):
             if layer_web[i_lay] == 0:
                 # Compute width layer
@@ -4582,6 +4549,7 @@ class RotorBOM(om.ExplicitComponent):
                 if web_length[int(layer_web[i_lay])-1] == 0:
                     imin, imax = np.nonzero(layer_thickness[i_lay,:])[0][[0,-1]]
                     web_length[int(layer_web[i_lay])-1] = (s[imax]-s[imin]) * blade_length
+                    web_indices[int(layer_web[i_lay])-1, :] = [imin,imax]
 
             # Assign volume to corresponding material
             mat_name = self.layer_mat[i_lay]
@@ -4616,21 +4584,29 @@ class RotorBOM(om.ExplicitComponent):
 
 
         # Hub connection and lightning protection system
-        t_bolt_unit_cost = 25.0  # Cost of one t-bolt [$]
-        t_bolt_unit_mass = 2.5  # Mass of one t-bolt [kg]
-        t_bolt_spacing = 0.15  # Spacing of t-bolts [m]
-        barrel_nut_unit_cost = 12.0  # Cost of one barrel nut [$]
-        barrel_nut_unit_mass = 1.9  # Mass of one barrel nut [kg]
-        LPS_unit_mass = 1.00  # [kg/m] - Linear scaling based on the weight of 150 lbs for the 61.5 m NREL 5MW blade
-        LPS_unit_cost= 40.00  # [$/m]  - Linear scaling based on the cost of 2500$ for the 61.5 m NREL 5MW blade
         n_bolts = np.pi * chord[0] / t_bolt_spacing
         bolts_cost = n_bolts * t_bolt_unit_cost
         nuts_cost = n_bolts * barrel_nut_unit_cost
         mid_span_station = np.argmin(abs(s - 0.5))
-        LPS_mass = LPS_unit_mass * (blade_length + chord[mid_span_station])
+        # LPS_mass = LPS_unit_mass * (blade_length + chord[mid_span_station])
         LPS_cost = LPS_unit_cost * (blade_length + chord[mid_span_station])
-        tot_mass = LPS_mass + n_bolts * (t_bolt_unit_mass + barrel_nut_unit_mass)
+        # tot_metallic_mass = LPS_mass + n_bolts * (t_bolt_unit_mass + barrel_nut_unit_mass)
         total_metallic_parts_cost = (bolts_cost + nuts_cost + LPS_cost)
+
+        # Consumables
+        bom = blade_bom()
+        web_area = np.zeros(self.n_webs)
+        for i_web in range(self.n_webs):
+            web_area[i_web] = np.trapz(web_height[i_web,web_indices[i_web,0]:web_indices[i_web,1]], blade_length * s[web_indices[i_web,0]:web_indices[i_web,1]])
+        web_area_w_flanges = np.sum(web_area) + self.n_webs * 2. * np.sum(web_length) * flange_width
+        ss_area = np.trapz(sect_perimeter_SS, blade_length * s)
+        ps_area = np.trapz(sect_perimeter_PS, blade_length * s)
+        ss_area_w_flanges = ss_area + 2. * flange_width * blade_length
+        ps_area_w_flanges = ps_area + 2. * flange_width * blade_length
+        bom.blade_specs["area_webs_w_flanges"] = web_area_w_flanges
+        bom.blade_specs["area_lpskin_w_flanges"] = ss_area_w_flanges
+        bom.blade_specs["area_hpskin_w_flanges"] = ps_area_w_flanges
+        # consumables = bom.compute_consumables()
 
         # Assign outputs
         outputs["sect_perimeter"] = sect_perimeter
@@ -4640,6 +4616,7 @@ class RotorBOM(om.ExplicitComponent):
         outputs["mat_cost"] = mat_cost
         outputs["mat_cost_scrap"] = mat_cost_scrap
         outputs["n_plies"] = n_plies
+        outputs['total_metallic_parts_cost'] = total_metallic_parts_cost
 
 
 
