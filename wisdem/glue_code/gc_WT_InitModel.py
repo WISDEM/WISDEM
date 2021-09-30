@@ -89,7 +89,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         bos = wt_init["bos"]
         wt_opt = assign_bos_values(wt_opt, bos, offshore)
     else:
-        costs = {}
+        bos = {}
 
     if modeling_options["flags"]["costs"]:
         costs = wt_init["costs"]
