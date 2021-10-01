@@ -528,13 +528,14 @@ class ComputeFrame3DD(om.ExplicitComponent):
             reactions.Mxx.sum(axis=1), reactions.Myy.sum(axis=1), reactions.Mzz.sum(axis=1)
         ].T
 
-        # Forces and moments along the structure
-        outputs["jacket_Fz"] = forces.Nx[k, 1::2]
-        outputs["jacket_Vx"] = -forces.Vz[k, 1::2]
-        outputs["jacket_Vy"] = forces.Vy[k, 1::2]
-        outputs["jacket_Mxx"] = -forces.Mzz[k, 1::2]
-        outputs["jacket_Myy"] = forces.Myy[k, 1::2]
-        outputs["jacket_Mzz"] = forces.Txx[k, 1::2]
+        for ic in range(n_dlc):
+            # Forces and moments along the structure
+            outputs["jacket_Fz"][:, ic] = forces.Nx[ic, 1::2]
+            outputs["jacket_Vx"][:, ic] = -forces.Vz[ic, 1::2]
+            outputs["jacket_Vy"][:, ic] = forces.Vy[ic, 1::2]
+            outputs["jacket_Mxx"][:, ic] = -forces.Mzz[ic, 1::2]
+            outputs["jacket_Myy"][:, ic] = forces.Myy[ic, 1::2]
+            outputs["jacket_Mzz"][:, ic] = forces.Txx[ic, 1::2]
 
 
 class JacketPost(om.ExplicitComponent):
@@ -576,9 +577,9 @@ class JacketPost(om.ExplicitComponent):
         # to the ghost node to transmit loads and masses.
         # Thus, the stress and buckling outputs are smaller dimensions
         # than the full n_elem.
-        self.add_output("constr_jacket_stress", np.ones((n_elem - n_legs, n_dlc)))
-        self.add_output("constr_jacket_shell_buckling", np.ones((n_elem - n_legs, n_dlc)))
-        self.add_output("constr_jacket_global_buckling", np.ones((n_elem - n_legs, n_dlc)))
+        self.add_output("constr_stress", np.ones((n_elem - n_legs, n_dlc)))
+        self.add_output("constr_shell_buckling", np.ones((n_elem - n_legs, n_dlc)))
+        self.add_output("constr_global_buckling", np.ones((n_elem - n_legs, n_dlc)))
 
     def compute(self, inputs, outputs):
         # Unpack some variables
@@ -619,7 +620,7 @@ class JacketPost(om.ExplicitComponent):
         axial_stress = Fz / Az[:, np.newaxis] + M * (r / Iyy)[:, np.newaxis]
         shear_stress = np.abs(Mzz) / (Jz * r)[:, np.newaxis] + V / Asx[:, np.newaxis]
         hoop_stress = -qdyn * ((r - 0.5 * t) / t)[:, np.newaxis]  # util_con.hoopStress(d, t, qdyn)
-        outputs["constr_jacket_stress"] = util_con.vonMisesStressUtilization(
+        outputs["constr_stress"] = util_con.vonMisesStressUtilization(
             axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigy.reshape((-1, 1))
         )[:-n_legs]
 
@@ -627,11 +628,11 @@ class JacketPost(om.ExplicitComponent):
         check = util_dnvgl.CylinderBuckling(h, d, t, E=E, G=G, sigma_y=sigy, gamma=gamma_f * gamma_b)
         for k in range(n_dlc):
             results = check.run_buckling_checks(
-                Fz[k, :], M[k, :], axial_stress[k, :], hoop_stress[k, :], shear_stress[k, :]
+                Fz[:, k], M[:, k], axial_stress[:, k], hoop_stress[:, k], shear_stress[:, k]
             )
 
-            outputs["constr_jacket_shell_buckling"][:, k] = results["Shell"][:-n_legs]
-            outputs["constr_jacket_global_buckling"][:, k] = results["Global"][:-n_legs]
+            outputs["constr_shell_buckling"][:, k] = results["Shell"][:-n_legs]
+            outputs["constr_global_buckling"][:, k] = results["Global"][:-n_legs]
 
 
 # Assemble the system together in an OpenMDAO Group
@@ -649,7 +650,7 @@ class JacketSE(om.Group):
         )
         self.add_subsystem("frame3dd", ComputeFrame3DD(modeling_options=modeling_options), promotes=["*"])
         self.add_subsystem(
-            "jacketpost",
+            "post",
             JacketPost(modeling_options=modeling_options),
             promotes=["*"],
         )

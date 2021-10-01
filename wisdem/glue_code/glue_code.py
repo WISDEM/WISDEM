@@ -1,8 +1,10 @@
 import numpy as np
 import openmdao.api as om
+
 from wisdem.rotorse.rotor import RotorSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.floatingse.floating import FloatingSE
+from wisdem.fixed_bottomse.jacket import JacketSE
 from wisdem.glue_code.gc_RunTools import Outputs_2_Screen, Convergence_Trends_Opt
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
 from wisdem.fixed_bottomse.monopile import MonopileSE
@@ -58,7 +60,7 @@ class WT_RNTA(om.Group):
             self.add_subsystem("fixedse", MonopileSE(modeling_options=modeling_options))
 
         elif modeling_options["flags"]["jacket"]:
-            self.add_subsystem("fixedse", MonopileSE(modeling_options=modeling_options))
+            self.add_subsystem("fixedse", JacketSE(modeling_options=modeling_options))
 
         elif modeling_options["flags"]["floating"]:
             self.add_subsystem("floatingse", FloatingSE(modeling_options=modeling_options))

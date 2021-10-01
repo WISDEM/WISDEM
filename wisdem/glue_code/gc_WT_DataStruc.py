@@ -2,8 +2,9 @@ import copy
 
 import numpy as np
 import openmdao.api as om
-import wisdem.moorpy.MoorProps as mp
 from scipy.interpolate import PchipInterpolator, interp1d
+
+import wisdem.moorpy.MoorProps as mp
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
 from wisdem.rotorse.geometry_tools.geometry import remap2grid, trailing_edge_smoothing
@@ -2139,46 +2140,31 @@ class Monopile(om.Group):
 
 
 class Jacket(om.Group):
-    # FOR JOHN JASA: THIS IS A COPY-PASTE OF THE MONOPILE VERSION.  MIGHT NOT NEED ANYTHING DIFFERENT FOR JACKETS.  IF SO, CAN DELETE THIS CLASS
     def initialize(self):
         self.options.declare("fixedbottomse_options")
 
     def setup(self):
         fixedbottomse_options = self.options["fixedbottomse_options"]
-        n_height = fixedbottomse_options["n_height"]
-        n_layers = fixedbottomse_options["n_layers"]
 
         ivc = self.add_subsystem("jacket_indep_vars", om.IndepVarComp(), promotes=["*"])
         ivc.add_output(
-            "diameter",
-            val=np.zeros(n_height),
+            "r_foot",
+            val=0.0,
             units="m",
-            desc="1D array of the outer diameter values defined along the tower axis.",
-        )
-        ivc.add_discrete_output(
-            "layer_name",
-            val=n_layers * [""],
-            desc="1D array of the names of the layers modeled in the tower structure.",
-        )
-        ivc.add_discrete_output(
-            "layer_mat",
-            val=n_layers * [""],
-            desc="1D array of the names of the materials of each layer modeled in the tower structure.",
+            desc="Effective radius of the jacket structure at the foot.",
         )
         ivc.add_output(
-            "layer_thickness",
-            val=np.zeros((n_layers, n_height)),
+            "r_head",
+            val=0.0,
             units="m",
-            desc="2D array of the thickness of the layers of the tower structure. The first dimension represents each layer, the second dimension represents each piecewise-constant entry of the tower sections.",
+            desc="Effective radius of the jacket structure at the head.",
         )
         ivc.add_output(
-            "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of tower"
+            "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of jacket"
         )
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
-
-        self.add_subsystem("compute_jacket_grid", Compute_Grid(n_height=n_height), promotes=["*"])
 
 
 class Floating(om.Group):

@@ -1,0 +1,51 @@
+# Generic modeling options file to run standard WISDEM case
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+WISDEM:
+    n_dlc: 2           # Number of design load cases
+    RotorSE:
+        flag: False
+    DriveSE:
+        flag: False
+    TowerSE:
+        flag: True
+        wind: PowerWind  # Wind used
+        gamma_f: 1.35    # Safety factor for fatigue loads
+        gamma_m: 1.3     # Safety factor for material properties
+        gamma_n: 1.0     # Safety factor for ...
+        gamma_b: 1.1     # Safety factor for ...
+        gamma_fatigue: 1.755  # Safety factor for fatigue loads
+        buckling_method: dnvgl # Buckling code type [eurocode or dnvgl]
+        buckling_length: 15    # Buckling parameter
+        frame3dd:
+            shear: True
+            geom: True
+            tol: 1e-9
+    FixedBottomSE:             # Options of TowerSE module
+        flag: True
+        wind: PowerWind  # Wind used
+        gamma_f: 1.35    # Safety factor for fatigue loads
+        gamma_m: 1.3     # Safety factor for material properties
+        gamma_n: 1.0     # Safety factor for ...
+        gamma_b: 1.1     # Safety factor for ...
+        gamma_fatigue: 1.755  # Safety factor for fatigue loads
+        buckling_method: dnvgl # Buckling code type [eurocode or dnvgl]
+        buckling_length: 15    # Buckling parameter
+        frame3dd:
+            shear: True
+            geom: True
+            tol: 1e-9
+    BOS:
+        flag: False
+
+    Loading:
+        mass: 285598.8
+        center_of_mass: [-1.13197635, 0.0, 0.50875268]
+        moment_of_inertia: [1.14930678e08, 2.20354030e07, 1.87597425e07, 0.0, 5.03710467e05, 0.0]
+        loads:
+            - force: [1284744.19620519, 0.0, -2914124.84400512]
+              moment: [3963732.76208099, -2275104.79420872, -346781.68192839]
+              velocity: 11.73732
+            - force: [930198.60063279, 0.0, -2883106.12368949]
+              moment: [-1683669.22411597, -2522475.34625363, 147301.97023764]
+              velocity: 70.0
