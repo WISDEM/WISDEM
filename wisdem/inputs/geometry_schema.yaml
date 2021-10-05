@@ -1246,6 +1246,18 @@ properties:
                 required:
                     - n_bays
                     - n_legs
+                    - r_foot
+                    - r_head
+                    - L
+                    - q
+                    - l_osg
+                    - l_tp
+                    - gamma_b
+                    - gamma_t
+                    - beta_b
+                    - beta_t
+                    - tau_b
+                    - tau_t
                 optional:
                     - transition_piece_mass
                     - transition_piece_cost
@@ -1257,11 +1269,51 @@ properties:
                     n_bays:
                         type: integer
                         description: Number of bays (x-joints) in the vertical direction for jackets.
-                        default: 3
                     n_legs:
                         type: integer
                         description: Number of legs for jacket.
-                        default: 4
+                    r_foot:
+                        type: number
+                        description: Radius of foot (bottom) of jacket, in meters.
+                    r_head:
+                        type: number
+                        description: Radius of head (top) of jacket, in meters.
+                    L:
+                        type: number
+                        description: Overall jacket length, meters.
+                    q:
+                        type: number
+                        description: Ratio of two consecutive bay heights.
+                    l_osg:
+                        type: number
+                        description: Lowest leg segment height, meters.
+                    l_tp:
+                        type: number
+                        description: Transition piece segment height, meters.
+                    gamma_b:
+                        type: number
+                        description: Leg radius-to-thickness ratio (bottom).
+                    gamma_t:
+                        type: number
+                        description: Leg radius-to-thickness ratio (top).
+                    beta_b:
+                        type: number
+                        description: Brace-to-leg diameter ratio (bottom).
+                    beta_t:
+                        type: number
+                        description: Brace-to-leg diameter ratio (top).
+                    tau_b:
+                        type: number
+                        description: Brace-to-leg thickness ratio (bottom).
+                    tau_t:
+                        type: number
+                        description: Brace-to-leg thickness ratio (top).
+                    x_mb:
+                        type: boolean
+                        description: Mud brace included if true.
+                    d_l:
+                        type: number
+                        description: Leg diameter, meters. Constant throughout each leg.
             floating_platform:
                 description: Ontology definition for floating platforms (substructures) suitable for use with the WEIS co-design analysis tool
                 type: object

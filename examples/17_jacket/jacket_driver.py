@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
 
+import numpy as np
+
 from wisdem import run_wisdem
 
 ## File management
@@ -11,9 +13,9 @@ fname_analysis_options = mydir + os.sep + "analysis_options_jacket.yaml"
 
 wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
-# print results from the analysis or optimization
+# print results from the analysis
 print()
-print("mass (kg) =", wt_opt["fixedse.jacket_mass"])
-print("stress1 =", wt_opt["fixedse.constr_stress"])
-print("GL buckling =", wt_opt["fixedse.constr_global_buckling"])
-print("Shell buckling =", wt_opt["fixedse.constr_shell_buckling"])
+print("Mass (kg) =", np.max(wt_opt.get_val("fixedse.jacket_mass", units="kg")))
+print("Stress =", np.max(wt_opt.get_val("fixedse.constr_stress")))
+print("Global buckling =", np.max(wt_opt.get_val("fixedse.constr_global_buckling")))
+print("Shell buckling =", np.max(wt_opt.get_val("fixedse.constr_shell_buckling")))

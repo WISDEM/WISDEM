@@ -42,8 +42,21 @@ components:
     jacket:
         transition_piece_mass: 100e3
         transition_piece_cost: 100e3
-        n_bays: 4
+        n_bays: 2
         n_legs: 4
+        r_foot: 10.
+        r_head: 6.
+        L: 70.
+        q: 0.9
+        l_osg: 5.0
+        l_tp: 4.0
+        gamma_b: 6.0
+        gamma_t: 8.0
+        beta_b: 0.9
+        beta_t: 0.8
+        tau_b: 0.6
+        tau_t: 0.5
+        d_l: 1.5
 materials:
    -  name: steel
       description: Steel of the tower and monopile, ASTM A572 Grade 50

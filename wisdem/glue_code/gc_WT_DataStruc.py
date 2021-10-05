@@ -418,7 +418,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         if modeling_options["flags"]["monopile"]:
             self.add_subsystem("monopile", Monopile(fixedbottomse_options=modeling_options["WISDEM"]["FixedBottomSE"]))
 
-        # Monopile inputs
+        # Jacket inputs
         if modeling_options["flags"]["jacket"]:
             self.add_subsystem("jacket", Jacket(fixedbottomse_options=modeling_options["WISDEM"]["FixedBottomSE"]))
 
@@ -2151,13 +2151,79 @@ class Jacket(om.Group):
             "r_foot",
             val=0.0,
             units="m",
-            desc="Effective radius of the jacket structure at the foot.",
+            desc="Radius of foot (bottom) of jacket, in meters.",
         )
         ivc.add_output(
             "r_head",
             val=0.0,
             units="m",
-            desc="Effective radius of the jacket structure at the head.",
+            desc="Radius of head (top) of jacket, in meters.",
+        )
+        ivc.add_output(
+            "L",
+            val=0.0,
+            units="m",
+            desc="Overall jacket length, meters.",
+        )
+        ivc.add_output(
+            "q",
+            val=0.0,
+            units="m",
+            desc="Ratio of two consecutive bay heights.",
+        )
+        ivc.add_output(
+            "l_osg",
+            val=0.0,
+            units="m",
+            desc="Lowest leg segment height, meters.",
+        )
+        ivc.add_output(
+            "l_tp",
+            val=0.0,
+            units="m",
+            desc="Transition piece segment height, meters.",
+        )
+        ivc.add_output(
+            "gamma_b",
+            val=0.0,
+            units="m",
+            desc="Leg radius-to-thickness ratio (bottom).",
+        )
+        ivc.add_output(
+            "gamma_t",
+            val=0.0,
+            units="m",
+            desc="Leg radius-to-thickness ratio (top).",
+        )
+        ivc.add_output(
+            "beta_b",
+            val=0.0,
+            units="m",
+            desc="Brace-to-leg diameter ratio (bottom).",
+        )
+        ivc.add_output(
+            "beta_t",
+            val=0.0,
+            units="m",
+            desc="Brace-to-leg diameter ratio (top).",
+        )
+        ivc.add_output(
+            "tau_b",
+            val=0.0,
+            units="m",
+            desc="Brace-to-leg thickness ratio (bottom).",
+        )
+        ivc.add_output(
+            "tau_t",
+            val=0.0,
+            units="m",
+            desc="Brace-to-leg thickness ratio (top).",
+        )
+        ivc.add_output(
+            "d_l",
+            val=0.0,
+            units="m",
+            desc="Leg diameter, meters. Constant throughout each leg.",
         )
         ivc.add_output(
             "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of jacket"

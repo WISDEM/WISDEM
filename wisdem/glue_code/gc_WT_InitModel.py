@@ -937,6 +937,19 @@ def assign_jacket_values(wt_opt, modeling_options, jacket):
     wt_opt["jacket.transition_piece_mass"] = jacket["transition_piece_mass"]
     wt_opt["jacket.transition_piece_cost"] = jacket["transition_piece_cost"]
     wt_opt["jacket.gravity_foundation_mass"] = jacket["gravity_foundation_mass"]
+    wt_opt["jacket.r_foot"] = jacket["r_foot"]
+    wt_opt["jacket.r_head"] = jacket["r_head"]
+    wt_opt["jacket.L"] = jacket["L"]
+    wt_opt["jacket.q"] = jacket["q"]
+    wt_opt["jacket.l_osg"] = jacket["l_osg"]
+    wt_opt["jacket.l_tp"] = jacket["l_tp"]
+    wt_opt["jacket.gamma_b"] = jacket["gamma_b"]
+    wt_opt["jacket.gamma_t"] = jacket["gamma_t"]
+    wt_opt["jacket.beta_b"] = jacket["beta_b"]
+    wt_opt["jacket.beta_t"] = jacket["beta_t"]
+    wt_opt["jacket.tau_b"] = jacket["tau_b"]
+    wt_opt["jacket.tau_t"] = jacket["tau_t"]
+    wt_opt["jacket.d_l"] = jacket["d_l"]
 
     return wt_opt
 

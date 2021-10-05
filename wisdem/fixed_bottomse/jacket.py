@@ -14,7 +14,6 @@ G_input = 8.077e10
 rho_input = 7850.0
 
 RIGID = 1e30
-NREFINE = 3
 
 
 class GetGreekLetters(om.ExplicitComponent):
@@ -29,16 +28,16 @@ class GetGreekLetters(om.ExplicitComponent):
         self.add_input("r_foot", val=10.0)
         self.add_input("r_head", val=6.0)
         self.add_input("L", val=70.0)
-        self.add_input("q", val=0.8)
+        self.add_input("q", val=0.9)
         self.add_input("l_osg", val=5.0)
         self.add_input("l_tp", val=4.0)
 
-        self.add_input("gamma_b", val=12.0)
-        self.add_input("gamma_t", val=18.0)
-        self.add_input("beta_b", val=0.5)
+        self.add_input("gamma_b", val=6.0)
+        self.add_input("gamma_t", val=8.0)
+        self.add_input("beta_b", val=0.9)
         self.add_input("beta_t", val=0.8)
-        self.add_input("tau_b", val=0.3)
-        self.add_input("tau_t", val=0.6)
+        self.add_input("tau_b", val=0.6)
+        self.add_input("tau_t", val=0.5)
 
         self.add_output("gamma_i", val=np.zeros((n_bays + 1)))
         self.add_output("beta_i", val=np.zeros((n_bays)))
@@ -192,7 +191,7 @@ class ComputeDiameterAndThicknesses(om.ExplicitComponent):
         n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
         n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
 
-        self.add_input("d_l", val=0.5)
+        self.add_input("d_l", val=1.4)
         self.add_input("gamma_i", val=np.zeros((n_bays + 1)))
         self.add_input("beta_i", val=np.zeros((n_bays)))
         self.add_input("tau_i", val=np.zeros((n_bays)))
@@ -225,7 +224,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         self.add_input("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)))
         self.add_input("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)))
-        self.add_input("d_l", val=0.5)
+        self.add_input("d_l", val=1.4)
         self.add_input("leg_thicknesses", val=np.zeros((n_bays + 1)))
         self.add_input("brace_diameters", val=np.zeros((n_bays)))
         self.add_input("brace_thicknesses", val=np.zeros((n_bays)))
@@ -293,7 +292,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
         # Add ghost node for transition piece
         ghost_nodes = np.mean(leg_nodes[:, -1, :], axis=0)
         ghost_nodes[2] += 2.0  # add two meters in the z-direction
-        ghost_nodes = np.atleast_2d(ghost_nodes)
+        ghost_nodes = ghost_nodes.reshape(1, 1, 3)
 
         xyz = np.vstack(
             (leg_nodes.reshape(-1, 3), bay_nodes.reshape(-1, 3), x_nodes.reshape(-1, 3), ghost_nodes.reshape(-1, 3))
@@ -516,6 +515,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
             # Add the load case and run
             self.frame.addLoadCase(load_obj)
+
         # self.frame.write("system.3dd")
         # self.frame.draw()
         displacements, forces, reactions, internalForces, mass, modal = self.frame.run()
@@ -633,6 +633,23 @@ class JacketPost(om.ExplicitComponent):
 
             outputs["constr_shell_buckling"][:, k] = results["Shell"][:-n_legs]
             outputs["constr_global_buckling"][:, k] = results["Global"][:-n_legs]
+        #
+        # print()
+        #
+        # print('h', h)
+        # print('d', d)
+        # print('t', t)
+        # print('E', E)
+        # print('G', G)
+        # print('sigy', sigy)
+        # print('gamma', gamma_f * gamma_b)
+        # print('Fz', Fz)
+        # print('M', M)
+        # print('axial_stress', axial_stress)
+        # print('hoop_stress', hoop_stress)
+        # print('shear_stress', shear_stress)
+        #
+        # print(outputs["constr_global_buckling"])
 
 
 # Assemble the system together in an OpenMDAO Group
