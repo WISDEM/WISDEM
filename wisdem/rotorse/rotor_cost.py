@@ -1654,10 +1654,7 @@ class blade_labor_ct(object):
     def execute_blade_labor_ct(self):
 
         # Run all manufacturing steps to estimate labor and cycle time
-        if self.options["verbosity"]:
-            verbosity = 1
-        else:
-            verbosity = 0
+        verbosity = 0
 
         n_operations = 20 + self.n_webs
         labor = np.zeros(n_operations)  # [hr]
@@ -1735,8 +1732,7 @@ class blade_labor_ct(object):
             team_size = 100.0
             # print("WARNING: the blade cost model is used beyond its applicability range. No team can limit the main mold cycle time to 24 hours. 100 workers are assumed at the low-pressure mold, but this is incorrect.")
 
-        if self.options["discrete"]:
-            team_size = round(team_size)
+
         labor[5 + self.n_webs], skin_mold_gating_ct[5 + self.n_webs] = labor_ct_lp_skin(team_size)
 
         # HP skin infusion
@@ -1765,8 +1761,6 @@ class blade_labor_ct(object):
             team_size = 100.0
             # print("WARNING: the blade cost model is used beyond its applicability range. No team can limit the main mold cycle time to 24 hours. 100 workers are assumed at the high-pressure mold, but this is incorrect.")
 
-        if self.options["discrete"]:
-            team_size = round(team_size)
         labor[6 + self.n_webs], non_gating_ct[6 + self.n_webs] = labor_ct_hp_skin(team_size)
 
         # Assembly
@@ -1794,8 +1788,7 @@ class blade_labor_ct(object):
         except:
             team_size = 100.0
             # print("WARNING: the blade cost model is used beyond its applicability range. No team can limit the assembly cycle time to 24 hours. 100 workers are assumed at the assembly line, but this is incorrect.")
-        if self.options["discrete"]:
-            team_size = round(team_size)
+
         labor[7 + self.n_webs], skin_mold_gating_ct[7 + self.n_webs] = labor_ct_assembly(team_size)
 
         operation[9 + self.n_webs] = "Trim"
@@ -1878,82 +1871,6 @@ class blade_labor_ct(object):
         total_labor = sum(labor)
         total_skin_mold_gating_ct = sum(skin_mold_gating_ct)
         total_non_gating_ct = sum(non_gating_ct)
-
-        if self.options["tex_table"]:
-            tex_table_file = open("tex_tables.txt", "a")
-            tex_table_file.write("\n\n\n\\begin{table}[htpb]\n")
-            tex_table_file.write("\\caption{Labor and CT of the %s blade.}\n" % self.name)
-            tex_table_file.write("\\label{table:%s_5}\n" % self.name)
-            tex_table_file.write("\\centering\n")
-            tex_table_file.write("\\begin{tabular}{l c c c}\n")
-            tex_table_file.write("\\toprule\n")
-            tex_table_file.write("Operation & Labor [hr] & Skin Mold Gating CT [hr] & Non-Gating CT [hr]\\\\ \n")
-            tex_table_file.write("\\midrule\n")
-            for i_operation in range(len(operation)):
-                tex_table_file.write(
-                    "%s & %.2f & %.2f & %.2f \\\\ \n"
-                    % (
-                        operation[i_operation],
-                        labor[i_operation],
-                        skin_mold_gating_ct[i_operation],
-                        non_gating_ct[i_operation],
-                    )
-                )
-            tex_table_file.write(
-                "\\textbf{Total} & \\textbf{%.2f} & \\textbf{%.2f} & \\textbf{%.2f} \\\\ \n"
-                % (total_labor, total_skin_mold_gating_ct, total_non_gating_ct)
-            )
-            tex_table_file.write("\\bottomrule\n")
-            tex_table_file.write("\\end{tabular}\n")
-            tex_table_file.write("\\end{table}\n")
-            tex_table_file.close()
-
-        if self.options["generate_plots"]:
-            if "dir_out" in self.options.keys():
-                dir_out = os.path.abspath(self.options["dir_out"])
-            else:
-                dir_out = os.path.abspath("Plots")
-            if not os.path.exists(dir_out):
-                os.makedirs(dir_out)
-
-            # Plotting
-            fig1, ax1 = plt.subplots()
-            (
-                patches,
-                texts,
-            ) = ax1.pie(labor, explode=np.zeros(len(labor)), labels=operation, shadow=True, startangle=0)
-            ax1.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
-            for i in range(len(texts)):
-                texts[i].set_fontsize(8)
-            fig1.savefig(os.path.join(dir_out, "Labor_" + self.name + ".png"))
-
-            fig2, ax2 = plt.subplots()
-            patches, texts, autotexts = ax2.pie(
-                [
-                    skin_mold_gating_ct[5 + self.n_webs],
-                    skin_mold_gating_ct[7 + self.n_webs],
-                    skin_mold_gating_ct[8 + self.n_webs],
-                ],
-                explode=np.zeros(3),
-                labels=[operation[5 + self.n_webs], operation[7 + self.n_webs], operation[8 + self.n_webs]],
-                autopct="%1.1f%%",
-                shadow=True,
-                startangle=0,
-                textprops={"fontsize": 10},
-            )
-            ax2.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
-            for i in range(len(texts)):
-                texts[i].set_fontsize(10)
-            fig2.savefig(os.path.join(dir_out, "Skin_mold_gating_ct_" + self.name + ".png"))
-
-            fig3, ax3 = plt.subplots()
-            (patches, texts,) = ax3.pie(
-                non_gating_ct, explode=np.zeros(len(non_gating_ct)), labels=operation, shadow=True, startangle=0
-            )
-            ax3.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
-            for i in range(len(texts)):
-                texts[i].set_fontsize(8)
-            fig3.savefig(os.path.join(dir_out, "Non_gating_ct_" + self.name + ".png"))
 
         return operation, labor, skin_mold_gating_ct, non_gating_ct
 
@@ -3477,9 +3394,7 @@ def compute_total_labor_ct(data_struct, name, verbose, no_contribution2ct=[]):
 
 
 class virtual_factory(object):
-    def __init__(self, blade_specs, operation, gating_ct, non_gating_ct, options):
-
-        self.options = options
+    def __init__(self, blade_specs, operation, gating_ct, non_gating_ct):
 
         # Blade inputs
         self.n_webs = blade_specs["n_webs"]
@@ -3516,64 +3431,35 @@ class virtual_factory(object):
             self.cum_rejr[-i_op - 1] = 1.0 - (1.0 - (self.rejr / 100)) * (1.0 - self.cum_rejr[-i_op])
 
         # Calculate the number of sets of lp and hp skin molds needed
-        if self.options["discrete"]:
-            self.n_set_molds_skins = np.ceil(
-                self.n_blades * sum(gating_ct) / (1 - self.cum_rejr[5 + self.n_webs]) / (self.hours * self.days)
-            )  # [-] Number of skin mold sets (low and high pressure)
-        else:
-            self.n_set_molds_skins = (
-                self.n_blades * sum(gating_ct) / (1 - self.cum_rejr[5 + self.n_webs]) / (self.hours * self.days)
-            )  # [-] Number of skin mold sets (low and high pressure)
+        self.n_set_molds_skins = (
+            self.n_blades * sum(gating_ct) / (1 - self.cum_rejr[5 + self.n_webs]) / (self.hours * self.days)
+        )  # [-] Number of skin mold sets (low and high pressure)
 
         # Number of parallel processes
         self.parallel_proc = np.ones(len(operation))  # [-]
 
-        if self.options["discrete"]:
-            for i_op in range(0, len(operation)):
-                self.parallel_proc[i_op] = np.ceil(
-                    self.n_set_molds_skins * non_gating_ct[i_op] / sum(gating_ct) / (1 - self.cum_rejr[i_op])
-                )
-            n_molds_root = 2 * self.n_set_molds_skins * non_gating_ct[1] / sum(gating_ct) / (1 - self.cum_rejr[1])
-            if n_molds_root < 1:
-                self.parallel_proc[2] = 0
-            else:
-                self.parallel_proc[1] = np.ceil(
-                    self.n_set_molds_skins * non_gating_ct[1] / sum(gating_ct) / (1 - self.cum_rejr[1])
-                )
-                self.parallel_proc[2] = np.ceil(
-                    self.n_set_molds_skins * non_gating_ct[2] / sum(gating_ct) / (1 - self.cum_rejr[2])
-                )
-            for i_web in range(self.n_webs):
-                self.parallel_proc[3 + i_web] = np.ceil(
-                    2
-                    * self.n_set_molds_skins
-                    * non_gating_ct[3 + i_web]
-                    / sum(gating_ct)
-                    / (1 - self.cum_rejr[3 + i_web])
-                )
+        for i_op in range(0, len(operation)):
+            self.parallel_proc[i_op] = (
+                self.n_set_molds_skins * non_gating_ct[i_op] / sum(gating_ct) / (1 - self.cum_rejr[i_op])
+            )
+        n_molds_root = 2 * self.n_set_molds_skins * non_gating_ct[1] / sum(gating_ct) / (1 - self.cum_rejr[1])
+        if n_molds_root < 1:
+            self.parallel_proc[2] = 0
         else:
-            for i_op in range(0, len(operation)):
-                self.parallel_proc[i_op] = (
-                    self.n_set_molds_skins * non_gating_ct[i_op] / sum(gating_ct) / (1 - self.cum_rejr[i_op])
-                )
-            n_molds_root = 2 * self.n_set_molds_skins * non_gating_ct[1] / sum(gating_ct) / (1 - self.cum_rejr[1])
-            if n_molds_root < 1:
-                self.parallel_proc[2] = 0
-            else:
-                self.parallel_proc[1] = (
-                    self.n_set_molds_skins * non_gating_ct[1] / sum(gating_ct) / (1 - self.cum_rejr[1])
-                )
-                self.parallel_proc[2] = (
-                    self.n_set_molds_skins * non_gating_ct[2] / sum(gating_ct) / (1 - self.cum_rejr[2])
-                )
-            for i_web in range(self.n_webs):
-                self.parallel_proc[3 + i_web] = (
-                    2
-                    * self.n_set_molds_skins
-                    * non_gating_ct[3 + i_web]
-                    / sum(gating_ct)
-                    / (1 - self.cum_rejr[3 + i_web])
-                )
+            self.parallel_proc[1] = (
+                self.n_set_molds_skins * non_gating_ct[1] / sum(gating_ct) / (1 - self.cum_rejr[1])
+            )
+            self.parallel_proc[2] = (
+                self.n_set_molds_skins * non_gating_ct[2] / sum(gating_ct) / (1 - self.cum_rejr[2])
+            )
+        for i_web in range(self.n_webs):
+            self.parallel_proc[3 + i_web] = (
+                2
+                * self.n_set_molds_skins
+                * non_gating_ct[3 + i_web]
+                / sum(gating_ct)
+                / (1 - self.cum_rejr[3 + i_web])
+            )
 
         self.parallel_proc[5 + self.n_webs] = self.n_set_molds_skins
         self.parallel_proc[6 + self.n_webs] = self.n_set_molds_skins
@@ -4312,7 +4198,7 @@ class RotorBOM(om.ExplicitComponent):
         self.add_discrete_input(
             "component_id",
             val=np.zeros(n_mat),
-            desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.",
+            desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE/LE reinf.",
         )
         self.add_input(
             "rho",
@@ -4497,9 +4383,10 @@ class RotorBOM(om.ExplicitComponent):
         web_end_nd = inputs["web_end_nd"]
         layer_thickness = inputs["layer_thickness"]
         orth = discrete_inputs["orth"]
+        component_id = discrete_inputs['component_id']
         rho_mat = inputs["rho"]
         waste = inputs["waste"]
-        layer_web = inputs["layer_web"]
+        layer_web = np.array(inputs["layer_web"], dtype=int)
         ply_t = inputs["ply_t"]
         fwf = inputs["fwf"]
         unit_cost = inputs["unit_cost"]
@@ -4552,13 +4439,33 @@ class RotorBOM(om.ExplicitComponent):
         sect_perimeter_ss = arc_L_SS_i * chord
         sect_perimeter_ps = arc_L_PS_i * chord
         web_length = np.zeros(self.n_webs)
+        volumeskin2lay_webs = np.zeros(self.n_webs)
+        fabric2lay_webs = np.zeros(self.n_webs)
         web_indices = np.zeros((self.n_webs,2), dtype=int)
         spar_cap_width_ss = np.zeros(self.n_span)
         spar_cap_width_ps = np.zeros(self.n_span)
+        spar_cap_length_ss = 0.
+        spar_cap_length_ps = 0.
+        width_sc_start_ss = 0.
+        width_sc_end_ss = 0.
+        width_sc_start_ps = 0.
+        width_sc_end_ps = 0.
+        fabric2lay_sc_ss = 0.
+        volume2lay_sc_ss = 0.
+        fabric2lay_sc_ps = 0.
+        volume2lay_sc_ps = 0.
+        fabric2lay_shell_ss = 0.
+        fabric2lay_shell_ps = 0.
         n_plies_root_ss = 0.
         n_plies_root_ps = 0.
         volume_root_preform_ss = 0.
         volume_root_preform_ps = 0.
+        areacore2lay_shell_ss = 0.
+        areacore2lay_shell_ps = 0.
+        fabric2lay_te_reinf_ss = 0.
+        fabric2lay_te_reinf_ps = 0.
+        fabric2lay_le_reinf_ss = 0.
+        fabric2lay_le_reinf_ps = 0.
         for i_lay in range(self.n_layers):
 
             if layer_start_nd[i_lay,0] < xy_arc_nd_LE[0] and layer_end_nd[i_lay,0] > xy_arc_nd_LE[0]:
@@ -4601,12 +4508,6 @@ class RotorBOM(om.ExplicitComponent):
             i_mat = discrete_inputs["mat_name"].index(mat_name)
             mat_volume[i_mat] += layer_volume[i_lay]
 
-            if self.layer_name[i_lay] == self.spar_cap_ss:
-                imin, imax = np.nonzero(layer_thickness[i_lay,:])[0][[0,-1]]
-                spar_cap_width_ss[imin:imax] = width[imin:imax]
-            if self.layer_name[i_lay] == self.spar_cap_ps:
-                spar_cap_width_ps[imin:imax] = width[imin:imax]
-
             # Root plies
             if orth[i_mat] and layer_thickness[i_lay,0]>0.:
                 if SS:
@@ -4621,6 +4522,51 @@ class RotorBOM(om.ExplicitComponent):
                 volume_root_preform_ss += np.trapz([layer_volume_span_ss[i_lay,0], layer_volume_span_interp_ss], [0, blade_length * root_preform_length])
                 volume_root_preform_ps += np.trapz([layer_volume_span_ps[i_lay,0], layer_volume_span_interp_ps], [0, blade_length * root_preform_length])
 
+            # Fabric shear webs
+            if layer_web[i_lay] != 0 and orth[i_mat]:
+                volumeskin2lay_webs[layer_web[i_lay]-1] += np.trapz(layer_volume_span_webs[i_lay,:], s*blade_length)
+                fabric2lay_webs[layer_web[i_lay]-1] += np.trapz(layer_volume_span_webs[i_lay,:], s*blade_length) / ply_t[i_mat]
+
+            # Spar caps
+            elif self.layer_name[i_lay] == self.spar_cap_ss:
+                imin, imax = np.nonzero(layer_thickness[i_lay,:])[0][[0,-1]]
+                spar_cap_width_ss[imin:imax] = width[imin:imax]
+                spar_cap_length_ss = (s[imax]-s[imin]) * blade_length
+                width_sc_start_ss = width[imin]
+                width_sc_end_ss = width[imax]
+                volume2lay_sc_ss = np.trapz(layer_volume_span_ss[i_lay,:], s*blade_length)
+                fabric2lay_sc_ss = volume2lay_sc_ss / ply_t[i_mat]
+            elif self.layer_name[i_lay] == self.spar_cap_ps:
+                spar_cap_width_ps[imin:imax] = width[imin:imax]
+                spar_cap_length_ps = (s[imax]-s[imin]) * blade_length
+                width_sc_start_ps = width[imin]
+                width_sc_end_ps = width[imax]
+                volume2lay_sc_ps = np.trapz(layer_volume_span_ss[i_lay,:], s*blade_length)
+                fabric2lay_sc_ps = volume2lay_sc_ps / ply_t[i_mat]
+
+            # Shell skins
+            elif component_id[i_mat] == 2:
+                fabric2lay_shell_ss += np.trapz(layer_volume_span_ss[i_lay,:], s*blade_length) / ply_t[i_mat]
+                fabric2lay_shell_ps += np.trapz(layer_volume_span_ps[i_lay,:], s*blade_length) / ply_t[i_mat]
+
+            # Shell core
+            elif component_id[i_mat] == 1:
+                imin, imax = np.nonzero(layer_thickness[i_lay,:])[0][[0,-1]]
+                areacore2lay_shell_ss += np.trapz(width_ss[imin:imax], s[imin:imax]*blade_length)
+                areacore2lay_shell_ps += np.trapz(width_ps[imin:imax], s[imin:imax]*blade_length)
+
+            # TE/LE reinforcement
+            elif component_id[i_mat] != 0:
+                imin, imax = np.nonzero(layer_thickness[i_lay,:])[0][[0,-1]]
+                if np.mean(layer_start_nd[i_lay,:]) > 0. and np.mean(layer_end_nd[i_lay,:]) > 0.:
+                    fabric2lay_le_reinf_ss += np.trapz(layer_thickness[i_lay,imin:imax], s[imin:imax]*blade_length) / ply_t[i_mat]
+                    fabric2lay_le_reinf_ps += np.trapz(layer_thickness[i_lay,imin:imax], s[imin:imax]*blade_length) / ply_t[i_mat]
+                else:
+                    fabric2lay_te_reinf_ss += np.trapz(layer_thickness[i_lay,imin:imax], s[imin:imax]*blade_length) / ply_t[i_mat]
+                    fabric2lay_te_reinf_ps += np.trapz(layer_thickness[i_lay,imin:imax], s[imin:imax]*blade_length) / ply_t[i_mat]
+
+            else:
+                print("Layer not accounted for in the labor and cycle time model")
 
 
                         
@@ -4664,7 +4610,7 @@ class RotorBOM(om.ExplicitComponent):
         web_area = np.zeros(self.n_webs)
         for i_web in range(self.n_webs):
             web_area[i_web] = np.trapz(web_height[i_web,web_indices[i_web,0]:web_indices[i_web,1]], blade_length * s[web_indices[i_web,0]:web_indices[i_web,1]])
-        web_area_w_flanges = np.sum(web_area) + self.n_webs * 2. * np.sum(web_length) * flange_width
+        web_area_w_flanges = web_area + 2. * web_length * flange_width
         ss_area = np.trapz(sect_perimeter_ss, blade_length * s)
         ps_area = np.trapz(sect_perimeter_ps, blade_length * s)
         ss_area_w_flanges = ss_area + 2. * flange_width * blade_length
@@ -4720,6 +4666,33 @@ class RotorBOM(om.ExplicitComponent):
         blade_specs["height_webs_end"] = web_height_end
         blade_specs["area_webs_w_core"] = web_area
         blade_specs["area_webs_w_flanges"] = web_area_w_flanges
+        blade_specs["fabric2lay_webs"] = fabric2lay_webs
+        blade_specs["volumeskin2lay_webs"] = volumeskin2lay_webs
+        blade_specs["length_sc_lp"] = spar_cap_length_ss
+        blade_specs["length_sc_hp"] = spar_cap_length_ps
+        blade_specs["width_sc_start_lp"] = width_sc_start_ss
+        blade_specs["width_sc_end_lp"] = width_sc_end_ss
+        blade_specs["width_sc_start_hp"] = width_sc_start_ps
+        blade_specs["width_sc_end_hp"] = width_sc_end_ps
+        blade_specs["fabric2lay_sc_lp"] = fabric2lay_sc_ss
+        blade_specs["fabric2lay_sc_hp"] = fabric2lay_sc_ps
+        blade_specs["volume2lay_sc_lp"] = volume2lay_sc_ss
+        blade_specs["volume2lay_sc_hp"] = volume2lay_sc_ps
+        blade_specs["area_lpskin_wo_flanges"] = ss_area
+        blade_specs["area_hpskin_wo_flanges"] = ps_area
+        blade_specs["area_lpskin_w_flanges"] = ss_area_w_flanges
+        blade_specs["area_hpskin_w_flanges"] = ps_area_w_flanges
+        blade_specs["fabric2lay_shell_lp"] = fabric2lay_shell_ss
+        blade_specs["fabric2lay_shell_hp"] = fabric2lay_shell_ps
+        blade_specs["areacore2lay_shell_lp"] = areacore2lay_shell_ss
+        blade_specs["areacore2lay_shell_hp"] = areacore2lay_shell_ps
+        blade_specs["fabric2lay_te_reinf_lp"] = fabric2lay_te_reinf_ss
+        blade_specs["fabric2lay_te_reinf_hp"] = fabric2lay_te_reinf_ps
+        blade_specs["fabric2lay_le_reinf_lp"] = fabric2lay_le_reinf_ss
+        blade_specs["fabric2lay_le_reinf_hp"] = fabric2lay_le_reinf_ps
+        blade_specs["skin_perimeter_wo_root"] = 2. * blade_length * (1. - root_preform_length)
+        blade_specs["skin_perimeter_w_root"] = 2. * blade_length
+        metallic_parts["n_bolts"]  = n_bolts
 
         
             
@@ -4736,7 +4709,8 @@ class RotorBOM(om.ExplicitComponent):
         total_non_gating_ct = sum(non_gating_ct)
 
         # Virtual factory
-        vf = virtual_factory(self.bom.blade_specs, operation, skin_mold_gating_ct, non_gating_ct, self.options)
+        blade_specs["max_chord"] = np.max(chord)
+        vf = virtual_factory(blade_specs, operation, skin_mold_gating_ct, non_gating_ct)
         vf.options = self.options
         self.total_cost_labor, self.total_labor_overhead = vf.execute_direct_labor_cost(operation, labor_hours)
         self.total_cost_utility = vf.execute_utility_cost(operation, skin_mold_gating_ct + non_gating_ct)

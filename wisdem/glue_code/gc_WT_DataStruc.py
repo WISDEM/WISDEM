@@ -2545,7 +2545,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
         self.add_discrete_input(
             "component_id",
             val=-np.ones(n_mat),
-            desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.",
+            desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE/LE reinf.",
         )
         self.add_input(
             "rho_fiber",
