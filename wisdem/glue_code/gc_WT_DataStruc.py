@@ -2168,7 +2168,6 @@ class Jacket(om.Group):
         ivc.add_output(
             "q",
             val=0.0,
-            units="m",
             desc="Ratio of two consecutive bay heights.",
         )
         ivc.add_output(
@@ -2186,37 +2185,31 @@ class Jacket(om.Group):
         ivc.add_output(
             "gamma_b",
             val=0.0,
-            units="m",
             desc="Leg radius-to-thickness ratio (bottom).",
         )
         ivc.add_output(
             "gamma_t",
             val=0.0,
-            units="m",
             desc="Leg radius-to-thickness ratio (top).",
         )
         ivc.add_output(
             "beta_b",
             val=0.0,
-            units="m",
             desc="Brace-to-leg diameter ratio (bottom).",
         )
         ivc.add_output(
             "beta_t",
             val=0.0,
-            units="m",
             desc="Brace-to-leg diameter ratio (top).",
         )
         ivc.add_output(
             "tau_b",
             val=0.0,
-            units="m",
             desc="Brace-to-leg thickness ratio (bottom).",
         )
         ivc.add_output(
             "tau_t",
             val=0.0,
-            units="m",
             desc="Brace-to-leg thickness ratio (top).",
         )
         ivc.add_output(

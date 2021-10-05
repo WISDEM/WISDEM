@@ -25,12 +25,12 @@ class GetGreekLetters(om.ExplicitComponent):
         n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
         n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
 
-        self.add_input("r_foot", val=10.0)
-        self.add_input("r_head", val=6.0)
-        self.add_input("L", val=70.0)
+        self.add_input("r_foot", val=10.0, units="m")
+        self.add_input("r_head", val=6.0, units="m")
+        self.add_input("L", val=70.0, units="m")
         self.add_input("q", val=0.9)
-        self.add_input("l_osg", val=5.0)
-        self.add_input("l_tp", val=4.0)
+        self.add_input("l_osg", val=5.0, units="m")
+        self.add_input("l_tp", val=4.0, units="m")
 
         self.add_input("gamma_b", val=6.0)
         self.add_input("gamma_t", val=8.0)
@@ -48,9 +48,9 @@ class GetGreekLetters(om.ExplicitComponent):
         self.add_output("psi_s", val=0.0)
         self.add_output("psi_p", val=0.0)
 
-        self.add_output("lower_bay_heights", val=np.zeros((n_bays + 1)))
-        self.add_output("lower_bay_radii", val=np.zeros((n_bays + 1)))
-        self.add_output("l_mi", val=np.zeros((n_bays)))
+        self.add_output("lower_bay_heights", val=np.zeros((n_bays + 1)), units="m")
+        self.add_output("lower_bay_radii", val=np.zeros((n_bays + 1)), units="m")
+        self.add_output("l_mi", val=np.zeros((n_bays)), units="m")
 
     def compute(self, inputs, outputs):
         mod_opt = self.options["modeling_options"]
@@ -124,16 +124,16 @@ class ComputeNodes(om.ExplicitComponent):
         self.add_input("gamma_i", val=np.zeros((n_bays + 1)))
         self.add_input("beta_i", val=np.zeros((n_bays)))
         self.add_input("tau_i", val=np.zeros((n_bays)))
-        self.add_input("lower_bay_heights", val=np.zeros((n_bays + 1)))
-        self.add_input("lower_bay_radii", val=np.zeros((n_bays + 1)))
-        self.add_input("l_mi", val=np.zeros((n_bays)))
-        self.add_input("l_osg", val=5.0)
-        self.add_input("L", val=70.0)
-        self.add_input("r_foot", val=10.0)
-        self.add_input("r_head", val=6.0)
+        self.add_input("lower_bay_heights", val=np.zeros((n_bays + 1)), units="m")
+        self.add_input("lower_bay_radii", val=np.zeros((n_bays + 1)), units="m")
+        self.add_input("l_mi", val=np.zeros((n_bays)), units="m")
+        self.add_input("l_osg", val=5.0, units="m")
+        self.add_input("L", val=70.0, units="m")
+        self.add_input("r_foot", val=10.0, units="m")
+        self.add_input("r_head", val=6.0, units="m")
 
-        self.add_output("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)))
-        self.add_output("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)))
+        self.add_output("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)), units="m")
+        self.add_output("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)), units="m")
 
     def compute(self, inputs, outputs):
         mod_opt = self.options["modeling_options"]
@@ -191,14 +191,14 @@ class ComputeDiameterAndThicknesses(om.ExplicitComponent):
         n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
         n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
 
-        self.add_input("d_l", val=1.4)
+        self.add_input("d_l", val=1.4, units="m")
         self.add_input("gamma_i", val=np.zeros((n_bays + 1)))
         self.add_input("beta_i", val=np.zeros((n_bays)))
         self.add_input("tau_i", val=np.zeros((n_bays)))
 
-        self.add_output("leg_thicknesses", val=np.zeros((n_bays + 1)))
-        self.add_output("brace_diameters", val=np.zeros((n_bays)))
-        self.add_output("brace_thicknesses", val=np.zeros((n_bays)))
+        self.add_output("leg_thicknesses", val=np.zeros((n_bays + 1)), units="m")
+        self.add_output("brace_diameters", val=np.zeros((n_bays)), units="m")
+        self.add_output("brace_thicknesses", val=np.zeros((n_bays)), units="m")
 
     def compute(self, inputs, outputs):
         d_l = inputs["d_l"]
@@ -222,12 +222,12 @@ class ComputeFrame3DD(om.ExplicitComponent):
         n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
         x_mb = mod_opt["WISDEM"]["FixedBottomSE"]["mud_brace"]
 
-        self.add_input("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)))
-        self.add_input("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)))
-        self.add_input("d_l", val=1.4)
-        self.add_input("leg_thicknesses", val=np.zeros((n_bays + 1)))
-        self.add_input("brace_diameters", val=np.zeros((n_bays)))
-        self.add_input("brace_thicknesses", val=np.zeros((n_bays)))
+        self.add_input("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)), units="m")
+        self.add_input("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)), units="m")
+        self.add_input("d_l", val=1.4, units="m")
+        self.add_input("leg_thicknesses", val=np.zeros((n_bays + 1)), units="m")
+        self.add_input("brace_diameters", val=np.zeros((n_bays)), units="m")
+        self.add_input("brace_thicknesses", val=np.zeros((n_bays)), units="m")
 
         self.add_input("turbine_F", np.zeros((3, n_dlc)), units="N")
         self.add_input("turbine_M", np.zeros((3, n_dlc)), units="N*m")
@@ -284,7 +284,9 @@ class ComputeFrame3DD(om.ExplicitComponent):
                 n3 = bay_nodes[(idx + 1) % n_legs, jdx]
                 n4 = bay_nodes[idx, (jdx + 1) % (n_bays + 1)]
 
-                alpha = (n4 - n2) / ((n1 - n2) - (n3 - n4))
+                # Filter out division by 0 warnings
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    alpha = (n4 - n2) / ((n1 - n2) - (n3 - n4))
                 alpha = alpha[0]
                 new_node = n4 + alpha * (n3 - n4)
                 x_nodes[idx, jdx, :] = new_node
@@ -417,8 +419,8 @@ class ComputeFrame3DD(om.ExplicitComponent):
         outputs["jacket_mass"] = np.sum(Area[:-n_legs] * rho[:-n_legs] * L[:-n_legs])
 
         # Modify last n_legs elements to make them rigid due to the ghost node
-        E[-n_legs:] *= 1.0e2
-        G[-n_legs:] *= 1.0e2
+        E[-n_legs:] *= 1.0e6
+        G[-n_legs:] *= 1.0e6
         rho[-n_legs:] = 1.0e-2
 
         outputs["jacket_elem_L"] = L
@@ -491,6 +493,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
             # Prepare point forces at transition node
             turb_F = inputs["turbine_F"][:, k]
+            print(turb_F)
             turb_M = inputs["turbine_M"][:, k]
             load_obj.changePointLoads(
                 np.array([n - 1], dtype=np.int_),  # -1 b/c same reason as above

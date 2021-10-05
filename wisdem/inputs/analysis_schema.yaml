@@ -534,7 +534,39 @@ properties:
                                 description: Design variable bound
                             upper_bound: *rbound
             monopile: *towdv
-            jacket: *towdv
+            jacket:
+                type: object
+                description: Design variables associated with the jacket
+                default: {}
+                properties:
+                    r_foot:
+                        type: object
+                        description: Adjust the radius of the jacket foot.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &rfootbound
+                                type: number
+                                minimum: 0.1
+                                maximum: 100.0
+                                default: 5.0
+                                unit: m
+                                description: Design variable bound
+                            upper_bound: *rfootbound
+                    r_head:
+                        type: object
+                        description: Adjust the radius of the jacket head.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &rheadbound
+                                type: number
+                                minimum: 0.1
+                                maximum: 100.0
+                                default: 5.0
+                                unit: m
+                                description: Design variable bound
+                            upper_bound: *rheadbound
             floating:
                 type: object
                 description: Design variables associated with the floating platform

@@ -57,6 +57,7 @@ components:
         tau_b: 0.6
         tau_t: 0.5
         d_l: 1.5
+        x_mb: False
 materials:
    -  name: steel
       description: Steel of the tower and monopile, ASTM A572 Grade 50

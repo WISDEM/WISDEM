@@ -434,10 +434,10 @@ class PoseOptimization(object):
             wt_opt.model.add_objective("towerse.tower_mass", ref=1e6)
 
         elif self.opt["merit_figure"] == "monopile_mass":
-            wt_opt.model.add_objective("fixedbottomse.monopile_mass", ref=1e6)
+            wt_opt.model.add_objective("fixedse.monopile_mass", ref=1e6)
 
         elif self.opt["merit_figure"] == "jacket_mass":
-            wt_opt.model.add_objective("fixedbottomse.jacket_mass", ref=1e6)
+            wt_opt.model.add_objective("fixedse.jacket_mass", ref=1e6)
 
         elif self.opt["merit_figure"] == "structural_mass":
             if not self.modeling["flags"]["floating"]:
@@ -742,23 +742,21 @@ class PoseOptimization(object):
             )
 
         # -- Jacket --
-        if jacket_opt["outer_diameter"]["flag"]:
-            pass
-            # wt_opt.model.add_design_var(
-            #    "jacket.diameter",
-            #    lower=jacket_opt["outer_diameter"]["lower_bound"],
-            #    upper=jacket_opt["outer_diameter"]["upper_bound"],
-            #    ref=5.0,
-            # )
+        if jacket_opt["r_foot"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.r_foot",
+                lower=jacket_opt["r_foot"]["lower_bound"],
+                upper=jacket_opt["r_foot"]["upper_bound"],
+                ref=5.0,
+            )
 
-        if jacket_opt["layer_thickness"]["flag"]:
-            pass
-            # wt_opt.model.add_design_var(
-            #    "jacket.layer_thickness",
-            #    lower=jacket_opt["layer_thickness"]["lower_bound"],
-            #    upper=jacket_opt["layer_thickness"]["upper_bound"],
-            #    ref=1e-2,
-            # )
+        if jacket_opt["r_head"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.r_head",
+                lower=jacket_opt["r_head"]["lower_bound"],
+                upper=jacket_opt["r_head"]["upper_bound"],
+                ref=5.0,
+            )
 
         # -- Control --
         if control_opt["tsr"]["flag"]:

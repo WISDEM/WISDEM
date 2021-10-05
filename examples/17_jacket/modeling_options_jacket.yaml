@@ -2,7 +2,7 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
 WISDEM:
-    n_dlc: 2           # Number of design load cases
+    n_dlc: 1           # Number of design load cases
     RotorSE:
         flag: False
     DriveSE:
@@ -43,9 +43,9 @@ WISDEM:
         center_of_mass: [-1.13197635, 0.0, 0.50875268]
         moment_of_inertia: [1.14930678e08, 2.20354030e07, 1.87597425e07, 0.0, 5.03710467e05, 0.0]
         loads:
-            - force: [1284744.19620519, 0.0, -2914124.84400512]
+            - force: [1284744., 0.0, -2914124.]
               moment: [3963732.76208099, -2275104.79420872, -346781.68192839]
               velocity: 11.73732
-            - force: [930198.60063279, 0.0, -2883106.12368949]
-              moment: [-1683669.22411597, -2522475.34625363, 147301.97023764]
-              velocity: 70.0
+            # - force: [930198.60063279, 0.0, -2883106.12368949]
+            #   moment: [-1683669.22411597, -2522475.34625363, 147301.97023764]
+            #   velocity: 70.0

@@ -436,6 +436,41 @@ class WT_RNTA(om.Group):
                 self.connect("towerse.tower.turbine_F", "fixedse.monopile.turbine_F")
                 self.connect("towerse.tower.turbine_M", "fixedse.monopile.turbine_M")
 
+        if modeling_options["flags"]["jacket"]:
+            # if modeling_options["flags"]["blade"]:
+            #     self.connect("rotorse.rp.gust.V_gust", "fixedse.env.Uref")
+            # self.connect("assembly.hub_height", "fixedse.wind_reference_height")
+            # self.connect("env.rho_air", "fixedse.rho_air")
+            # self.connect("env.mu_air", "fixedse.mu_air")
+            # self.connect("env.shear_exp", "fixedse.shearExp")
+            # self.connect("tower_grid.foundation_height", "fixedse.tower_foundation_height")
+            # self.connect("env.water_depth", "fixedse.water_depth")
+            # self.connect("env.rho_water", "fixedse.rho_water")
+            # self.connect("env.mu_water", "fixedse.mu_water")
+            # if modeling_options["WISDEM"]["FixedBottomSE"]["soil_springs"]:
+            #     self.connect("env.G_soil", "fixedse.G_soil")
+            #     self.connect("env.nu_soil", "fixedse.nu_soil")
+            # self.connect("env.Hsig_wave", "fixedse.Hsig_wave")
+            # self.connect("env.Tsig_wave", "fixedse.Tsig_wave")
+            self.connect("jacket.r_foot", "fixedse.r_foot")
+            self.connect("jacket.r_head", "fixedse.r_head")
+            self.connect("jacket.L", "fixedse.L")
+            self.connect("jacket.q", "fixedse.q")
+            self.connect("jacket.l_osg", "fixedse.l_osg")
+            self.connect("jacket.l_tp", "fixedse.l_tp")
+            self.connect("jacket.gamma_b", "fixedse.gamma_b")
+            self.connect("jacket.gamma_t", "fixedse.gamma_t")
+            self.connect("jacket.beta_b", "fixedse.beta_b")
+            self.connect("jacket.beta_t", "fixedse.beta_t")
+            self.connect("jacket.tau_b", "fixedse.tau_b")
+            self.connect("jacket.tau_t", "fixedse.tau_t")
+            self.connect("jacket.d_l", "fixedse.d_l")
+            if modeling_options["flags"]["tower"]:
+                # self.connect("towerse.tower_mass", "fixedse.tower_mass")
+                # self.connect("towerse.tower_cost", "fixedse.tower_cost")
+                self.connect("towerse.tower.turbine_F", "fixedse.turbine_F")
+                self.connect("towerse.tower.turbine_M", "fixedse.turbine_M")
+
         if modeling_options["flags"]["floating"]:
             self.connect("env.rho_water", "floatingse.rho_water")
             self.connect("env.water_depth", "floatingse.water_depth")
