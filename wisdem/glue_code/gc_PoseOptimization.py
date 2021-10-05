@@ -599,9 +599,6 @@ class PoseOptimization(object):
                 wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
                 wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
             )
-            print(init_L_D_opt)
-            print("lower", init_L_D_opt[indices] - L_D_options["max_decrease"])
-            print("upper", init_L_D_opt[indices] + L_D_options["max_increase"])
 
             wt_opt.model.add_design_var(
                 "inn_af.L_D_opt",
@@ -1292,6 +1289,9 @@ class PoseOptimization(object):
             wt_opt.driver.recording_options["record_constraints"] = True
             wt_opt.driver.recording_options["record_desvars"] = True
             wt_opt.driver.recording_options["record_objectives"] = True
+
+            if self.opt["recorder"]["includes"]:
+                wt_opt.driver.recording_options["includes"] = self.opt["recorder"]["includes"]
 
         return wt_opt
 

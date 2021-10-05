@@ -1367,3 +1367,7 @@ properties:
                 type: boolean
                 description: If true, only record design variables.
                 default: False
+            includes:
+                type: array
+                description: List of variables to include in recorder
+                default: []

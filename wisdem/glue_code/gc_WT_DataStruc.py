@@ -1394,9 +1394,9 @@ class INN_Airfoils(om.ExplicitComponent):
             Re = inputs["Re"][i]
             if Re < 100.0:
                 Re = 9.0e6
-            print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re}")
+            print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re} with Cd {c_d[i]}")
             try:
-                cst, alpha_inn = self.inn.inverse_design(
+                cst, alpha_inn, z = self.inn.inverse_design(
                     c_d[i], L_D[i], np.rad2deg(stall_margin[i]), r_thick[i], Re, N=1, process_samples=True, z=314
                 )
             except:
