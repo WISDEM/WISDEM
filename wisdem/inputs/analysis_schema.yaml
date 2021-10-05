@@ -567,6 +567,20 @@ properties:
                                 unit: m
                                 description: Design variable bound
                             upper_bound: *rheadbound
+                    d_l:
+                        type: object
+                        description: Adjust the diameter of the jacket legs.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &d_lbound
+                                type: number
+                                minimum: 0.1
+                                maximum: 10.0
+                                default: 1.5
+                                unit: m
+                                description: Design variable bound
+                            upper_bound: *d_lbound
             floating:
                 type: object
                 description: Design variables associated with the floating platform

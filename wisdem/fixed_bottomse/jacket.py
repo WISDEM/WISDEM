@@ -493,7 +493,6 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
             # Prepare point forces at transition node
             turb_F = inputs["turbine_F"][:, k]
-            print(turb_F)
             turb_M = inputs["turbine_M"][:, k]
             load_obj.changePointLoads(
                 np.array([n - 1], dtype=np.int_),  # -1 b/c same reason as above

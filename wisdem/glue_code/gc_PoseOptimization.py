@@ -758,6 +758,13 @@ class PoseOptimization(object):
                 ref=5.0,
             )
 
+        if jacket_opt["d_l"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.d_l",
+                lower=jacket_opt["d_l"]["lower_bound"],
+                upper=jacket_opt["d_l"]["upper_bound"],
+            )
+
         # -- Control --
         if control_opt["tsr"]["flag"]:
             wt_opt.model.add_design_var(
@@ -1204,23 +1211,13 @@ class PoseOptimization(object):
         jacket_constr = self.opt["constraints"]["jacket"]
 
         if jacket_constr["stress"]["flag"]:
-            wt_opt.model.add_constraint("fixedse.post.constr_stress", upper=1.0)
+            wt_opt.model.add_constraint("fixedse.constr_stress", upper=1.0)
 
         if jacket_constr["global_buckling"]["flag"]:
-            wt_opt.model.add_constraint("fixedse.post.constr_global_buckling", upper=1.0)
+            wt_opt.model.add_constraint("fixedse.constr_global_buckling", upper=1.0)
 
         if jacket_constr["shell_buckling"]["flag"]:
-            wt_opt.model.add_constraint("fixedse.post.constr_shell_buckling", upper=1.0)
-
-        if jacket_constr["d_to_t"]["flag"]:
-            wt_opt.model.add_constraint(
-                "fixedse.constr_d_to_t",
-                lower=jacket_constr["d_to_t"]["lower_bound"],
-                upper=jacket_constr["d_to_t"]["upper_bound"],
-            )
-
-        if jacket_constr["taper"]["flag"]:
-            wt_opt.model.add_constraint("fixedse.constr_taper", lower=jacket_constr["taper"]["lower_bound"])
+            wt_opt.model.add_constraint("fixedse.constr_shell_buckling", upper=1.0)
 
         elif jacket_constr["frequency_1"]["flag"]:
             wt_opt.model.add_constraint(
