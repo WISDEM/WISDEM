@@ -91,9 +91,9 @@ def get_structural_cost(prob):
 
 def get_tower_freqs(prob):
     if is_monopile(prob):
-        return np.r_[prob["fixedse.post.structural_frequencies"], prob["towerse.post.structural_frequencies"]]
+        return np.r_[prob["fixedse.monopile.structural_frequencies"], prob["towerse.tower.structural_frequencies"]]
     else:
-        return prob["towerse.post.structural_frequencies"]
+        return prob["towerse.tower.structural_frequencies"]
 
 
 def get_tower_cm(prob):
