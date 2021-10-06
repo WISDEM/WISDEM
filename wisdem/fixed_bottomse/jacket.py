@@ -1,3 +1,11 @@
+"""
+This Jacket analysis and design module largely follows the work presented in:
+"A systematic approach to offshore wind turbine jacket predesign and optimization:
+geometry, cost, and surrogate structural code check models"
+by Jan Häfele, Rick R. Damiani, Ryan N. King, Cristian G. Gebhardt, and Raimund Rolfes
+Accessible via: https://wes.copernicus.org/articles/3/553/2018/
+"""
+
 import numpy as np
 import openmdao.api as om
 import matplotlib.pyplot as plt
@@ -5,18 +13,17 @@ import matplotlib.pyplot as plt
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.cross_sections as cs
 import wisdem.commonse.utilization_dnvgl as util_dnvgl
-import wisdem.commonse.utilization_eurocode as util_euro
 import wisdem.commonse.utilization_constraints as util_con
-from wisdem.commonse import NFREQ, gravity
-
-E_input = 2.1e11
-G_input = 8.077e10
-rho_input = 7850.0
-
-RIGID = 1e30
+from wisdem.commonse import NFREQ, RIGID, gravity
 
 
 class GetGreekLetters(om.ExplicitComponent):
+    """
+    This component computes the intermediate values needed to use the jacket
+    parameterization outlined in the Häfele paper. Specifically, this follows
+    section 2.1: Topology.
+    """
+
     def initialize(self):
         self.options.declare("modeling_options")
 
@@ -79,7 +86,6 @@ class GetGreekLetters(om.ExplicitComponent):
 
         tmp = q ** np.arange(n_bays)
         bay_heights = l_i = (L - l_osg - l_tp) / (np.sum(tmp) / tmp)
-        # TODO : add test to verify np.sum(bay_heights == L)
 
         lower_bay_heights = np.hstack((0.0, bay_heights))
         lower_bay_radii = r_i = r_foot - np.tan(psi_s) * (l_osg + np.cumsum(lower_bay_heights))
@@ -109,6 +115,13 @@ class GetGreekLetters(om.ExplicitComponent):
 
 
 class ComputeNodes(om.ExplicitComponent):
+    """
+    This component computes the xyz locations of each of the bay and leg nodes
+    within the jacket structure. Going from the parameterization outlined in the
+    Häfele paper to nodal information requires the intermediary values computed
+    in the previous component as well as some dimensioned properties of the jacket.
+    """
+
     def initialize(self):
         self.options.declare("modeling_options")
 
@@ -183,6 +196,11 @@ class ComputeNodes(om.ExplicitComponent):
 
 
 class ComputeDiameterAndThicknesses(om.ExplicitComponent):
+    """
+    This component computes the diameters and thicknesses of the legs and braces
+    following section 2.2 of the Häfele paper.
+    """
+
     def initialize(self):
         self.options.declare("modeling_options")
 
@@ -212,6 +230,16 @@ class ComputeDiameterAndThicknesses(om.ExplicitComponent):
 
 
 class ComputeFrame3DD(om.ExplicitComponent):
+    """
+    Now that we have modal information of the jacket structure, we construct the
+    Frame3DD problem to solve for the structural properties of the jacket under
+    the designated loading conditions.
+
+    This is a lengthy process that requires creating a singular nodal array,
+    member information for each brace and leg segment, and bringing in the
+    loading from the tower.
+    """
+
     def initialize(self):
         self.options.declare("modeling_options")
 
@@ -565,6 +593,11 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
 
 class JacketPost(om.ExplicitComponent):
+    """
+    This component computes the stress and buckling utilization values
+    for the jacket structure based on the loading computed by Frame3DD.
+    """
+
     def initialize(self):
         self.options.declare("modeling_options")
 
@@ -659,27 +692,15 @@ class JacketPost(om.ExplicitComponent):
 
             outputs["constr_shell_buckling"][:, k] = results["Shell"][:-n_legs]
             outputs["constr_global_buckling"][:, k] = results["Global"][:-n_legs]
-        #
-        # print()
-        #
-        # print('h', h)
-        # print('d', d)
-        # print('t', t)
-        # print('E', E)
-        # print('G', G)
-        # print('sigy', sigy)
-        # print('gamma', gamma_f * gamma_b)
-        # print('Fz', Fz)
-        # print('M', M)
-        # print('axial_stress', axial_stress)
-        # print('hoop_stress', hoop_stress)
-        # print('shear_stress', shear_stress)
-        #
-        # print(outputs["constr_global_buckling"])
 
 
 # Assemble the system together in an OpenMDAO Group
 class JacketSE(om.Group):
+    """
+    Group to contain all subsystems needed for jacket analysis and design.
+    Can be used as a standalone or within the larger WISDEM stack.
+    """
+
     def initialize(self):
         self.options.declare("modeling_options")
 
