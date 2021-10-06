@@ -697,31 +697,3 @@ class JacketSE(om.Group):
             JacketPost(modeling_options=modeling_options),
             promotes=["*"],
         )
-
-
-if __name__ == "__main__":
-    modeling_options = {}
-    modeling_options["WISDEM"] = {}
-    modeling_options["WISDEM"]["n_dlc"] = 1
-    modeling_options["WISDEM"]["FixedBottomSE"] = {}
-    modeling_options["WISDEM"]["FixedBottomSE"]["mud_brace"] = True
-    modeling_options["WISDEM"]["FixedBottomSE"]["n_legs"] = 3
-    modeling_options["WISDEM"]["FixedBottomSE"]["n_bays"] = 2
-    modeling_options["WISDEM"]["FixedBottomSE"]["gamma_f"] = 1.0
-    modeling_options["WISDEM"]["FixedBottomSE"]["gamma_m"] = 1.0
-    modeling_options["WISDEM"]["FixedBottomSE"]["gamma_n"] = 1.0
-    modeling_options["WISDEM"]["FixedBottomSE"]["gamma_b"] = 1.0
-
-    prob = om.Problem(
-        model=JacketSE(
-            modeling_options=modeling_options,
-        )
-    )
-
-    prob.setup()
-
-    # prob["turbine_F"] = [1.0e4, 0.0, 0.0]
-
-    prob.run_model()
-
-    prob.model.list_outputs(val=True, print_arrays=True)
