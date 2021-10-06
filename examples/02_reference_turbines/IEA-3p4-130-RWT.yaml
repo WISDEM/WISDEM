@@ -659,10 +659,7 @@ control:
         Vin: 3.0
         Vout: 25.0
         maxTS: 80.
-        rated_power: 3.37e+6
     pitch:
-        PC_zeta: 1.0
-        PC_omega: 0.2
         ps_percent: 0.8
         max_pitch: 1.57
         max_pitch_rate: 0.12217304763960307 # 7 deg/s
@@ -670,17 +667,9 @@ control:
     torque:
         control_type: tsr_tracking
         tsr: 8.01754386
-        VS_zeta: 1.0
-        VS_omega: 0.2
         max_torque_rate: 1500000.
         VS_minspd: 0.0
         VS_maxspd: 2.00000
-    setpoint_smooth:
-        ss_vsgain: 1
-        ss_pcgain: .001
-    shutdown:
-        limit_type: gen_speed
-        limit_value: 2.0
 environment:
     air_density: 1.225
     air_dyn_viscosity: 1.81e-5

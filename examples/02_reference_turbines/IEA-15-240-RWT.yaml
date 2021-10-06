@@ -857,26 +857,15 @@ control:
         Vout: 25.0
         maxTS: 95.
     pitch:
-        PC_zeta: 1.0
-        PC_omega: 0.2
-        ps_percent: 0.8
         max_pitch: 1.57
         max_pitch_rate: 0.03490658503988659
         min_pitch: 0.
     torque:
         control_type: tsr_tracking
         tsr: 9.0
-        VS_zeta: 1.0
-        VS_omega: 0.2
         max_torque_rate: 1500000.
         VS_minspd: 0.5235987755982988
         VS_maxspd: 0.7916813487046278
-    setpoint_smooth:
-        ss_vsgain: 1
-        ss_pcgain: .001
-    shutdown:
-        limit_type: gen_speed
-        limit_value: 2.0
 
 environment:
     air_density: 1.225

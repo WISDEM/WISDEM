@@ -5,6 +5,8 @@ Nikhar J. Abbas, Pietro Bortolotti
 January 2020
 """
 
+import logging
+
 import numpy as np
 from openmdao.api import Group, ExplicitComponent
 from scipy.optimize import brentq, minimize, minimize_scalar
@@ -14,6 +16,7 @@ from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.utilities import smooth_abs, smooth_min, linspace_with_deriv
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
 
+logger = logging.getLogger("wisdem/weis")
 TOL = 1e-3
 
 
@@ -473,7 +476,9 @@ class ComputePowerCurve(ExplicitComponent):
             if region2p5:
                 # Have to search over both pitch and speed
                 x0 = [0.0, U_rated]
-                bnds = [[0.0, 15.0], [Uhub[i - 3] + TOL, Uhub[i + 2] - TOL]]
+                imin = max(i - 3, 0)
+                imax = min(i + 2, len(Uhub) - 1)
+                bnds = [[0.0, 15.0], [Uhub[imin] + TOL, Uhub[imax] - TOL]]
                 const = {}
                 const["type"] = "eq"
                 const["fun"] = const_Urated
@@ -696,7 +701,7 @@ class ComputePowerCurve(ExplicitComponent):
             if self.regulation_reg_III:
                 for i in range(i_3, self.n_pc):
                     pitch0 = pitch[i - 1]
-                    bnds = ([pitch0 - 5.0, pitch0 + 15.0],)
+                    bnds = ([pitch0, pitch0 + 15.0],)
                     try:
                         pitch[i] = brentq(
                             lambda x: rated_power_dist(x, Uhub[i], Omega_rpm[i]),
@@ -903,8 +908,6 @@ class NoStallConstraint(ExplicitComponent):
 
     def compute(self, inputs, outputs):
 
-        verbosity = True
-
         i_min = np.argmin(abs(inputs["min_s"] - inputs["s"]))
 
         for i in range(self.n_span):
@@ -923,9 +926,9 @@ class NoStallConstraint(ExplicitComponent):
                 "stall_angle_along_span"
             ][i]
 
-            # if verbosity == True:
-            #     if outputs['no_stall_constraint'][i] > 1:
-            #         print('Blade is violating the minimum margin to stall at span location %.2f %%' % (inputs['s'][i]*100.))
+            logger.debug(
+                "Blade is violating the minimum margin to stall at span location %.2f %%" % (inputs["s"][i] * 100.0)
+            )
 
 
 class AEP(ExplicitComponent):
