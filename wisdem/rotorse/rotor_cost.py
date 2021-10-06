@@ -4094,7 +4094,7 @@ class blade_cost_model(object):
 
 
 # Class to initiate the blade cost model
-class RotorBOM(om.ExplicitComponent):
+class RotorCost(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("mod_options")
         self.options.declare("opt_options")
@@ -4913,7 +4913,7 @@ class StandaloneRotorCost(om.Group):
 
         self.add_subsystem(
             "rc",
-            RotorBOM(mod_options=modeling_options, opt_options=opt_options))
+            RotorCost(mod_options=modeling_options, opt_options=opt_options))
         
         self.connect("assembly.blade_length", "rc.blade_length")
         self.connect("blade.outer_shape_bem.s", "rc.s")
