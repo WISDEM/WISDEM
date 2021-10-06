@@ -939,7 +939,7 @@ def assign_jacket_values(wt_opt, modeling_options, jacket):
     wt_opt["jacket.gravity_foundation_mass"] = jacket["gravity_foundation_mass"]
     wt_opt["jacket.r_foot"] = jacket["r_foot"]
     wt_opt["jacket.r_head"] = jacket["r_head"]
-    wt_opt["jacket.L"] = jacket["L"]
+    wt_opt["jacket.height"] = jacket["height"]
     wt_opt["jacket.q"] = jacket["q"]
     wt_opt["jacket.l_osg"] = jacket["l_osg"]
     wt_opt["jacket.l_tp"] = jacket["l_tp"]

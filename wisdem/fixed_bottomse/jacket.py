@@ -27,7 +27,7 @@ class GetGreekLetters(om.ExplicitComponent):
 
         self.add_input("r_foot", val=10.0, units="m")
         self.add_input("r_head", val=6.0, units="m")
-        self.add_input("L", val=70.0, units="m")
+        self.add_input("height", val=70.0, units="m")
         self.add_input("q", val=0.9)
         self.add_input("l_osg", val=5.0, units="m")
         self.add_input("l_tp", val=4.0, units="m")
@@ -59,7 +59,7 @@ class GetGreekLetters(om.ExplicitComponent):
 
         r_foot = inputs["r_foot"]
         r_head = inputs["r_head"]
-        L = inputs["L"]
+        L = inputs["height"]
         q = inputs["q"]
         l_osg = inputs["l_osg"]
         l_tp = inputs["l_tp"]
@@ -128,7 +128,7 @@ class ComputeNodes(om.ExplicitComponent):
         self.add_input("lower_bay_radii", val=np.zeros((n_bays + 1)), units="m")
         self.add_input("l_mi", val=np.zeros((n_bays)), units="m")
         self.add_input("l_osg", val=5.0, units="m")
-        self.add_input("L", val=70.0, units="m")
+        self.add_input("height", val=70.0, units="m")
         self.add_input("r_foot", val=10.0, units="m")
         self.add_input("r_head", val=6.0, units="m")
 
@@ -151,7 +151,7 @@ class ComputeNodes(om.ExplicitComponent):
         lower_bay_radii = inputs["lower_bay_radii"]
         l_mi = inputs["l_mi"]
         l_osg = inputs["l_osg"]
-        L = inputs["L"]
+        L = inputs["height"]
         r_foot = inputs["r_foot"]
         r_head = inputs["r_head"]
 
@@ -242,6 +242,8 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.add_input("transition_piece_I", np.zeros(6), units="kg*m**2")
         self.add_input("gravity_foundation_mass", 0.0, units="kg")
         self.add_input("gravity_foundation_I", np.zeros(6), units="kg*m**2")
+        self.add_input("tower_mass", val=0.0, units="kg")
+        self.add_input("tower_cost", val=0.0, units="USD")
 
         n_elem = 2 * (n_legs * (n_bays + 1)) + 4 * (n_legs * n_bays) + int(x_mb) * n_legs + n_legs
 
@@ -259,6 +261,9 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.add_output("jacket_elem_sigma_y", np.zeros(n_elem), units="Pa")
         self.add_output("jacket_elem_qdyn", np.zeros((n_elem, n_dlc)), units="Pa")
         self.add_output("jacket_mass", 0.0, units="kg")
+        self.add_output("jacket_cost", 0.0, units="USD")
+        self.add_output("structural_mass", val=0.0, units="kg")
+        self.add_output("structural_cost", val=0.0, units="USD")
 
         self.add_output("jacket_base_F", np.zeros((3, n_dlc)), units="N")
         self.add_output("jacket_base_M", np.zeros((3, n_dlc)), units="N*m")
@@ -427,6 +432,10 @@ class ComputeFrame3DD(om.ExplicitComponent):
         N2 = self.N2
 
         outputs["jacket_mass"] = np.sum(Area[:-n_legs] * rho[:-n_legs] * L[:-n_legs])
+        outputs["structural_mass"] = outputs["jacket_mass"] + inputs["tower_mass"]
+        outputs["structural_cost"] = (
+            outputs["jacket_cost"] + inputs["tower_cost"]
+        )  # TODO : actually compute the jacket cost
 
         # Modify last n_legs elements to make them rigid due to the ghost node
         E[-n_legs:] *= 1.0e6
@@ -467,9 +476,10 @@ class ComputeFrame3DD(om.ExplicitComponent):
         # initialize frame3dd object
         self.frame = pyframe3dd.Frame(nodes, reactions, elements, options)
 
-        # if not self.under_approx:
-        #     self.frame.draw(savefig=True, fig_idx=self.idx)
-        #     self.idx += 1
+        if mod_opt["WISDEM"]["FixedBottomSE"]["save_truss_figures"]:
+            if not self.under_approx:
+                self.frame.draw(savefig=True, fig_idx=self.idx)
+                self.idx += 1
 
         # ------ add extra mass ------------
         # Prepare transition piece, and gravity foundation (if any applicable) for "extra node mass"

@@ -2160,10 +2160,10 @@ class Jacket(om.Group):
             desc="Radius of head (top) of jacket, in meters.",
         )
         ivc.add_output(
-            "L",
+            "height",
             val=0.0,
             units="m",
-            desc="Overall jacket length, meters.",
+            desc="Overall jacket height, meters.",
         )
         ivc.add_output(
             "q",

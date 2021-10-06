@@ -328,7 +328,10 @@ properties:
                         type: boolean
                         default: True
                         description: If true, add a mud brace at the bottom of each jacket leg. Only used if `type`==`jacket`.
-
+                    save_truss_figures:
+                        type: boolean
+                        default: False
+                        description: If true, save .pngs of the jacket truss during analysis or optimization. Jacket only.
             BOS:
                 type: object
                 default: {}

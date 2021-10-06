@@ -1248,7 +1248,7 @@ properties:
                     - n_legs
                     - r_foot
                     - r_head
-                    - L
+                    - height
                     - q
                     - l_osg
                     - l_tp
@@ -1283,7 +1283,7 @@ properties:
                     r_head:
                         type: number
                         description: Radius of head (top) of jacket, in meters.
-                    L:
+                    height:
                         type: number
                         description: Overall jacket length, meters.
                     q:
