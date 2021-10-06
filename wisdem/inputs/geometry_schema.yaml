@@ -1285,7 +1285,7 @@ properties:
                         description: Radius of head (top) of jacket, in meters.
                     height:
                         type: number
-                        description: Overall jacket length, meters.
+                        description: Overall jacket height, meters.
                     q:
                         type: number
                         description: Ratio of two consecutive bay heights.

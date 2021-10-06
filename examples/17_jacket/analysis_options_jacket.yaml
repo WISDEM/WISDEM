@@ -12,6 +12,26 @@ design_variables:
             flag: True
             lower_bound: 0.5
             upper_bound: 5.
+        beta_b:
+            flag: True
+            lower_bound: 0.5
+            upper_bound: 0.9
+        beta_t:
+            flag: True
+            lower_bound: 0.4
+            upper_bound: 0.9
+        gamma_b:
+            flag: True
+            lower_bound: 4.
+            upper_bound: 5.
+        gamma_t:
+            flag: True
+            lower_bound: 6.
+            upper_bound: 20.
+        q:
+            flag: True
+            lower_bound: 0.8
+            upper_bound: 0.9
 
 merit_figure: jacket_mass
 
@@ -19,34 +39,18 @@ constraints:
     jacket:
         stress:
             flag: True
-#         global_buckling:
-#             flag: True
-#         shell_buckling:
-#             flag: True
-#         d_to_t:
-#             flag: True
-#             lower_bound: 120.0
-#             upper_bound: 2000.0
-#         taper:
-#             flag: True
-#             lower_bound: 0.2
-#         slope:
-#             flag: True
-#         frequency_1:
-#             flag: True
-#             lower_bound: 0.13
-#             upper_bound: 0.40
-#         pile_depth:
-#             flag: True
-#             lower_bound: 0.0
+        global_buckling:
+            flag: False
+        shell_buckling:
+            flag: True
 
 driver:
     optimization:
         flag: True            # Flag to enable optimization
         tol: 1.e-3            # Optimality tolerance
-        max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
-        max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
-        max_iter: 100         # Maximum number of iterations (SLSQP)
+        max_major_iter: 100    # Maximum number of major design iterations (SNOPT)
+        max_minor_iter: 1000   # Maximum number of minor design iterations (SNOPT)
+        max_iter: 1000         # Maximum number of iterations (SLSQP)
         solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         step_size: 1.e-6      # Step size for finite differencing
         form: forward         # Finite differencing mode, either forward or central

@@ -765,6 +765,76 @@ class PoseOptimization(object):
                 upper=jacket_opt["d_l"]["upper_bound"],
             )
 
+        if jacket_opt["height"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.height",
+                lower=jacket_opt["height"]["lower_bound"],
+                upper=jacket_opt["height"]["upper_bound"],
+            )
+
+        if jacket_opt["q"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.q",
+                lower=jacket_opt["q"]["lower_bound"],
+                upper=jacket_opt["q"]["upper_bound"],
+            )
+
+        if jacket_opt["l_osg"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.l_osg",
+                lower=jacket_opt["l_osg"]["lower_bound"],
+                upper=jacket_opt["l_osg"]["upper_bound"],
+            )
+
+        if jacket_opt["l_tp"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.l_tp",
+                lower=jacket_opt["l_tp"]["lower_bound"],
+                upper=jacket_opt["l_tp"]["upper_bound"],
+            )
+
+        if jacket_opt["gamma_b"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.gamma_b",
+                lower=jacket_opt["gamma_b"]["lower_bound"],
+                upper=jacket_opt["gamma_b"]["upper_bound"],
+            )
+
+        if jacket_opt["gamma_t"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.gamma_t",
+                lower=jacket_opt["gamma_t"]["lower_bound"],
+                upper=jacket_opt["gamma_t"]["upper_bound"],
+            )
+
+        if jacket_opt["beta_b"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.beta_b",
+                lower=jacket_opt["beta_b"]["lower_bound"],
+                upper=jacket_opt["beta_b"]["upper_bound"],
+            )
+
+        if jacket_opt["beta_t"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.beta_t",
+                lower=jacket_opt["beta_t"]["lower_bound"],
+                upper=jacket_opt["beta_t"]["upper_bound"],
+            )
+
+        if jacket_opt["tau_b"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.tau_b",
+                lower=jacket_opt["tau_b"]["lower_bound"],
+                upper=jacket_opt["tau_b"]["upper_bound"],
+            )
+
+        if jacket_opt["tau_t"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.tau_t",
+                lower=jacket_opt["tau_t"]["lower_bound"],
+                upper=jacket_opt["tau_t"]["upper_bound"],
+            )
+
         # -- Control --
         if control_opt["tsr"]["flag"]:
             wt_opt.model.add_design_var(

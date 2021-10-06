@@ -474,8 +474,8 @@ class ComputeFrame3DD(om.ExplicitComponent):
         )  # TODO : actually compute the jacket cost
 
         # Modify last n_legs elements to make them rigid due to the ghost node
-        E[-n_legs:] *= 1.0e6
-        G[-n_legs:] *= 1.0e6
+        E[-n_legs:] *= 1.0e8
+        G[-n_legs:] *= 1.0e8
         rho[-n_legs:] = 1.0e-2
 
         outputs["jacket_elem_L"] = L
