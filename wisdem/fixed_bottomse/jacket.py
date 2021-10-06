@@ -221,6 +221,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
         n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
         n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
         x_mb = mod_opt["WISDEM"]["FixedBottomSE"]["mud_brace"]
+        n_mat = mod_opt["materials"]["n_mat"]
 
         self.add_input("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)), units="m")
         self.add_input("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)), units="m")
@@ -228,6 +229,12 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.add_input("leg_thicknesses", val=np.zeros((n_bays + 1)), units="m")
         self.add_input("brace_diameters", val=np.zeros((n_bays)), units="m")
         self.add_input("brace_thicknesses", val=np.zeros((n_bays)), units="m")
+
+        self.add_discrete_input("material_names", val=n_mat * [""])
+        self.add_input("E_mat", val=np.zeros([n_mat, 3]), units="Pa")
+        self.add_input("G_mat", val=np.zeros([n_mat, 3]), units="Pa")
+        self.add_input("rho_mat", val=np.zeros(n_mat), units="kg/m**3")
+        self.add_input("sigma_y_mat", val=np.zeros(n_mat), units="Pa")
 
         self.add_input("turbine_F", np.zeros((3, n_dlc)), units="N")
         self.add_input("turbine_M", np.zeros((3, n_dlc)), units="N*m")
@@ -264,12 +271,13 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         self.idx = 0
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         mod_opt = self.options["modeling_options"]
         n_dlc = mod_opt["WISDEM"]["n_dlc"]
         n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
         n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
         x_mb = mod_opt["WISDEM"]["FixedBottomSE"]["mud_brace"]
+        material_name = mod_opt["WISDEM"]["FixedBottomSE"]["material"]
 
         leg_nodes = inputs["leg_nodes"]
         bay_nodes = inputs["bay_nodes"]
@@ -397,9 +405,11 @@ class ComputeFrame3DD(om.ExplicitComponent):
         for idx in range(n_legs):
             add_element(leg_nodes, leg_indices, ghost_nodes, ghost_indices, itube, idx, -1, 0, 0)
 
-        E = [E_input] * self.num_elements
-        G = [G_input] * self.num_elements
-        rho = [rho_input] * self.num_elements
+        imat = discrete_inputs["material_names"].index(material_name)
+
+        E = [np.mean(inputs["E_mat"][imat])] * self.num_elements
+        G = [np.mean(inputs["G_mat"][imat])] * self.num_elements
+        rho = [inputs["rho_mat"][imat]] * self.num_elements
 
         Area = np.squeeze(np.array(self.Area, dtype=np.float))
         Asx = np.squeeze(np.array(self.Asx, dtype=np.float))
@@ -434,7 +444,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
         outputs["jacket_elem_J0"] = J0
         outputs["jacket_elem_E"] = E
         outputs["jacket_elem_G"] = G
-        outputs["jacket_elem_sigma_y"] = 450.0e6  # hardcoded values for now
+        outputs["jacket_elem_sigma_y"] = inputs["sigma_y_mat"][imat]
         outputs["jacket_elem_qdyn"] = 1.0e2  # hardcoded values for now
 
         outputs["jacket_elem_sigma_y"][-n_legs:] *= 1e6
@@ -447,7 +457,11 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         # ------ options ------------
         dx = -1.0
-        options = pyframe3dd.Options(True, True, dx)  # TODO : replace with options
+        options = pyframe3dd.Options(
+            mod_opt["WISDEM"]["FixedBottomSE"]["frame3dd"]["shear"],
+            mod_opt["WISDEM"]["FixedBottomSE"]["frame3dd"]["geom"],
+            dx,
+        )
         # -----------------------------------
 
         # initialize frame3dd object

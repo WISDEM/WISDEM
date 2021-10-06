@@ -40,6 +40,7 @@ components:
                     values: [0.027, 0.0222, 0.019]
 
     jacket:
+        material: steel
         transition_piece_mass: 100e3
         transition_piece_cost: 100e3
         n_bays: 2

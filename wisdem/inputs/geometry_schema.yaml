@@ -1259,6 +1259,7 @@ properties:
                     - tau_b
                     - tau_t
                 optional:
+                    - material
                     - transition_piece_mass
                     - transition_piece_cost
                     - gravity_foundation_mass
@@ -1266,6 +1267,10 @@ properties:
                     transition_piece_mass: *m_tp
                     transition_piece_cost: *c_tp
                     gravity_foundation_mass: *g_fm
+                    material:
+                        type: string
+                        description: Material of jacket members
+                        default: steel
                     n_bays:
                         type: integer
                         description: Number of bays (x-joints) in the vertical direction for jackets.
