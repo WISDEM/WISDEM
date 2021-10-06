@@ -4,9 +4,7 @@ import numpy as np
 from openmdao.api import Group, ExplicitComponent
 from scipy.interpolate import PchipInterpolator
 from wisdem.rotorse.precomp import PreComp, Profile, CompositeSection, Orthotropic2DMaterial
-from wisdem.commonse.csystem import DirectionVector
 from wisdem.commonse.utilities import rotate, arc_length
-from wisdem.rotorse.rotor_cost import blade_cost_model
 from wisdem.rotorse.rail_transport import RailTransport
 
 

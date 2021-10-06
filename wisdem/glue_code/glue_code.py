@@ -154,7 +154,6 @@ class WT_RNTA(om.Group):
             self.connect("assembly.blade_length", "rotorse.rc.blade_length")
             self.connect("blade.outer_shape_bem.s", "rotorse.rc.s")
             self.connect("blade.pa.chord_param", "rotorse.rc.chord")
-            self.connect("blade.outer_shape_bem.pitch_axis", "rotorse.rc.pitch_axis")
             self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.rc.coord_xy_interp")
             self.connect("blade.internal_structure_2d_fem.layer_thickness", "rotorse.rc.layer_thickness")
             self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.rc.layer_start_nd")
@@ -173,9 +172,7 @@ class WT_RNTA(om.Group):
             self.connect("materials.unit_cost", "rotorse.rc.unit_cost")
             self.connect("materials.waste", "rotorse.rc.waste")
             self.connect("materials.rho_fiber", "rotorse.rc.rho_fiber")
-            self.connect("materials.rho_area_dry", "rotorse.rc.rho_area_dry")
             self.connect("materials.ply_t", "rotorse.rc.ply_t")
-            self.connect("materials.fvf", "rotorse.rc.fvf")
             self.connect("materials.fwf", "rotorse.rc.fwf")
             self.connect("materials.roll_mass", "rotorse.rc.roll_mass")
 

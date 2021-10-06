@@ -799,31 +799,29 @@ class material_cutting_process(object):
         self.clean_up["labor"] = []
         self.clean_up["ct"] = []
 
-        mat_names = self.materials.keys()
+        mat_names = self.materials["mat_name"]
 
-        for name in mat_names:
-            try:
-                _ = self.materials[name]["cut@station"]
-            except:
-                continue
+        self.materials["n_rolls"] = np.zeros(len(mat_names))
 
-            if self.materials[name]["cut@station"] == "Y":
+        for i_mat in range(len(mat_names)):
+
+            if self.materials["orth"][i_mat] == 1 and self.materials["component_id"][i_mat] > 1 and self.materials["component_id"][i_mat] < 3:
                 # Number of rolls
-                self.materials[name]["n_rolls"] = (
-                    self.materials[name]["total_mass_w_waste"] / self.materials[name]["roll_mass"]
+                self.materials["n_rolls"][i_mat] = (
+                    self.materials["total_mass_w_waste"][i_mat] / self.materials["roll_mass"][i_mat]
                 )
                 # Loading and Machine Prep
                 self.load_roll["labor_per_mat"].append(
-                    self.load_roll["unit_time"] * self.materials[name]["n_rolls"] * self.load_roll["n_pers"]
+                    self.load_roll["unit_time"] * self.materials["n_rolls"][i_mat] * self.load_roll["n_pers"]
                 )
-                self.load_roll["ct_per_mat"].append(self.load_roll["unit_time"] * self.materials[name]["n_rolls"])
+                self.load_roll["ct_per_mat"].append(self.load_roll["unit_time"] * self.materials["n_rolls"][i_mat])
                 # Cutting
                 cutting_labor = (
-                    self.materials[name]["total_ply_area_w_waste"]
+                    self.materials["total_ply_area_w_waste"][i_mat]
                     / self.cutting["machine_rate"]
                     * self.cutting["n_pers"]
                 )
-                cutting_ct = self.materials[name]["total_ply_area_w_waste"] / self.cutting["machine_rate"]
+                cutting_ct = self.materials["total_ply_area_w_waste"][i_mat] / self.cutting["machine_rate"]
                 self.cutting["labor_per_mat"].append(cutting_labor)
                 self.cutting["ct_per_mat"].append(cutting_ct)
                 # Kitting
@@ -831,7 +829,7 @@ class material_cutting_process(object):
                 self.kitting["ct_per_mat"].append(0)
                 # Clean-up
                 cleaning_labor = (
-                    self.materials[name]["total_ply_area_w_waste"] - self.materials[name]["total_ply_area_wo_waste"]
+                    self.materials["total_ply_area_w_waste"][i_mat] - self.materials["total_ply_area_wo_waste"][i_mat]
                 ) / self.clean_up["clean_rate"]
                 self.clean_up["labor_per_mat"].append(cleaning_labor)
                 self.clean_up["ct_per_mat"].append(cleaning_labor / self.clean_up["n_pers"])
@@ -858,9 +856,6 @@ class material_cutting_process(object):
         # Clean-up
         self.clean_up["labor"] = sum(self.clean_up["labor_per_mat"])
         self.clean_up["ct"] = sum(self.clean_up["ct_per_mat"])
-
-        # Remove materials from self
-        del self.materials
 
 
 class material_cutting_labor(material_cutting_process):
@@ -2801,201 +2796,6 @@ def compute_maintenance_cost(self, operation, investment_eq, investment_to, inve
     return cost_per_blade, cost_per_year
 
 
-class blade_cost_model(object):
-    def __init__(self, verbosity=False):
-
-        self.options = {}
-        self.options["verbosity"] = verbosity
-        self.options["tex_table"] = False
-        self.options["generate_plots"] = False
-        self.options["show_plots"] = False
-        self.options["show_warnings"] = False
-        self.options["discrete"] = False
-
-    def execute_blade_cost_model(self):
-
-        if self.options["verbosity"] == True:
-            print("\n \n#####################################################\n")
-            print("Blade Cost Model")
-            print("National Renewable Energy Lab - Golden, CO")
-            print("Bortolotti P, Dykes K, Murray R, Berry D")
-            print("12th October 2018")
-            print("\n#####################################################\n\n")
-            print("BLADE OF THE TURBINE " + self.name)
-            print("\n\n#####################################################")
-
-        t_init = time.time()
-
-        # Bill of Materials
-        self.bom = blade_bom()
-        self.bom.options = self.options
-        self.bom.name = self.name
-        self.bom.bladeLength = self.bladeLength
-        # self.bom.eta                                                        = self.eta
-        self.bom.r = self.r
-        self.bom.chord = self.chord
-        self.bom.le_location = self.le_location
-        self.bom.materials = self.materials
-        self.bom.mat_options = self.mat_options
-        self.bom.upperCS = self.upperCS
-        self.bom.lowerCS = self.lowerCS
-        self.bom.websCS = self.websCS
-        self.bom.profile = self.profile
-
-        self.bom.extract_specs()
-        matrix, bonding = self.bom.compute_matrix_bonding()
-        metallic_parts = self.bom.compute_metallic_parts()
-        consumables = self.bom.compute_consumables()
-        self.total_blade_mat_cost_w_waste, self.blade_mass = self.bom.compute_bom(
-            matrix, bonding, metallic_parts, consumables
-        )
-
-        # Labor and cycle time
-        labor_ct = blade_labor_ct(self.bom.blade_specs, self.bom.mat_dictionary, metallic_parts)
-        labor_ct.options = self.options
-        labor_ct.name = self.name
-        operation, labor_hours, skin_mold_gating_ct, non_gating_ct = labor_ct.execute_blade_labor_ct()
-        total_labor_hours = sum(labor_hours)
-        total_skin_mold_gating_ct = sum(skin_mold_gating_ct)
-        total_non_gating_ct = sum(non_gating_ct)
-
-        # Virtual factory
-        vf = virtual_factory(self.bom.blade_specs, operation, skin_mold_gating_ct, non_gating_ct, self.options)
-        vf.options = self.options
-        self.total_cost_labor, self.total_labor_overhead = vf.execute_direct_labor_cost(operation, labor_hours)
-        self.total_cost_utility = vf.execute_utility_cost(operation, skin_mold_gating_ct + non_gating_ct)
-        self.blade_variable_cost = self.total_blade_mat_cost_w_waste + self.total_cost_labor + self.total_cost_utility
-        (
-            self.total_cost_equipment,
-            self.total_cost_tooling,
-            self.total_cost_building,
-            self.total_maintenance_cost,
-            self.cost_capital,
-        ) = vf.execute_fixed_cost(
-            operation, skin_mold_gating_ct + non_gating_ct, self.blade_variable_cost + self.total_labor_overhead
-        )
-        self.blade_fixed_cost = (
-            self.total_cost_equipment
-            + self.total_cost_tooling
-            + self.total_cost_building
-            + self.total_maintenance_cost
-            + self.total_labor_overhead
-            + self.cost_capital
-        )
-
-        # Total
-        self.total_blade_cost = self.blade_variable_cost + self.blade_fixed_cost
-
-        if self.options["tex_table"] == True:
-            tex_table_file = open("tex_tables.txt", "a")
-            tex_table_file.write(
-                "\n\n%s & %.2f & %.2f & %.2f & %.2f & %.2f \\\\ \n"
-                % (
-                    self.name,
-                    self.bladeLength,
-                    self.total_blade_mat_cost_w_waste,
-                    total_labor_hours,
-                    total_skin_mold_gating_ct,
-                    total_non_gating_ct,
-                )
-            )
-            tex_table_file.close()
-
-        if self.options["verbosity"] == True:
-            print("\n#################################")
-            print("TOTAL LABOR AND CYCLE TIME:")
-            print("Labor: %.2f hr" % (total_labor_hours))
-            print("Skin Mold Gating Cycle Time: %.2f hr" % (total_skin_mold_gating_ct))
-            print("Non-Gating Cycle Time: %.2f hr" % (total_non_gating_ct))
-            print("################################")
-
-            print("\n################################")
-            print("TOTAL BLADE COSTS")
-            print("Material cost        %.2f $" % (self.total_blade_mat_cost_w_waste))
-            print("Labor cost:          %.2f $" % (self.total_cost_labor))
-            print("Overhead labor cost: %.2f $" % (self.total_labor_overhead))
-            print("Utility cost:        %.2f $" % (self.total_cost_utility))
-            print("Equipment cost:      %.2f $" % (self.total_cost_equipment))
-            print("Tooling cost:        %.2f $" % (self.total_cost_tooling))
-            print("Building cost:       %.2f $" % (self.total_cost_building))
-            print("Maintenance cost:    %.2f $" % (self.total_maintenance_cost))
-            print("Cost of capital:     %.2f $" % (self.cost_capital))
-            print("################################")
-            print("Variable :           %.2f $" % (self.blade_variable_cost))
-            print("Fixed :              %.2f $" % (self.blade_fixed_cost))
-            print("################################")
-            print("TOTAL :              %.2f $" % (self.total_blade_cost))
-
-        if self.options["tex_table"] == True:
-            tex_table_file = open("tex_tables.txt", "a")
-            tex_table_file.write("\n\n\n\\begin{table}[htpb]\n")
-            tex_table_file.write("\\caption{Total costs of the %s blade.}\n" % self.name)
-            tex_table_file.write("\\label{table:%s_6}\n" % self.name)
-            tex_table_file.write("\\centering\n")
-            tex_table_file.write("\\begin{tabular}{l c}\n")
-            tex_table_file.write("\\toprule\n")
-            tex_table_file.write("       & Cost [\\$]\\\\ \n")
-            tex_table_file.write("\\midrule\n")
-            tex_table_file.write("Material cost       & %.2f \\\\ \n" % (self.total_blade_mat_cost_w_waste))
-            tex_table_file.write("Labor cost          & %.2f \\\\ \n" % (self.total_cost_labor))
-            tex_table_file.write("Overhead labor cost & %.2f \\\\ \n" % (self.total_labor_overhead))
-            tex_table_file.write("Utility cost        & %.2f \\\\ \n" % (self.total_cost_utility))
-            tex_table_file.write("Equipment cost      & %.2f \\\\ \n" % (self.total_cost_equipment))
-            tex_table_file.write("Tooling cost        & %.2f \\\\ \n" % (self.total_cost_tooling))
-            tex_table_file.write("Building cost       & %.2f \\\\ \n" % (self.total_cost_building))
-            tex_table_file.write("Maintenance cost    & %.2f \\\\ \n" % (self.total_maintenance_cost))
-            tex_table_file.write("Cost of capital     & %.2f \\\\ \n" % (self.cost_capital))
-            tex_table_file.write("\\midrule\n")
-            tex_table_file.write("Variable            & %.2f \\\\ \n" % (self.blade_variable_cost))
-            tex_table_file.write("Fixed               & %.2f \\\\ \n" % (self.blade_fixed_cost))
-            tex_table_file.write("\\midrule\n")
-            tex_table_file.write("\\textbf{Total}     & \\textbf{%.2f} \\\\ \n" % (self.total_blade_cost))
-            tex_table_file.write("\\bottomrule\n")
-            tex_table_file.write("\\end{tabular}\n")
-            tex_table_file.write("\\end{table}\n")
-            tex_table_file.close()
-
-        if self.options["generate_plots"] == True:
-            costs = [
-                self.total_blade_mat_cost_w_waste,
-                self.total_cost_labor,
-                self.total_labor_overhead,
-                self.total_cost_utility,
-                self.total_cost_equipment,
-                self.total_cost_tooling,
-                self.total_cost_building,
-                self.total_maintenance_cost,
-                self.cost_capital,
-            ]
-            name_costs = [
-                "Materials",
-                "Labor",
-                "Overhead",
-                "Utility",
-                "Equipment",
-                "Tooling",
-                "Building",
-                "Maintenance",
-                "Capital",
-            ]
-            fig1, ax1 = plt.subplots()
-            patches, texts = ax1.pie(costs, explode=np.zeros(len(costs)), labels=name_costs, shadow=True, startangle=90)
-            ax1.axis("equal")  # Equal aspect ratio ensures that pie is drawn as a circle.
-            for i in range(len(texts)):
-                texts[i].set_fontsize(10)
-            fig1.savefig("Plots/Total_" + self.name + ".png")
-            if self.options["show_plots"] == True:
-                plt.show()
-
-        if self.options["verbosity"] == True:
-            t_final = time.time()
-            print("\n################################")
-            print("Runtime %.2f seconds" % (t_final - t_init))
-            print("################################")
-
-        return self.total_blade_cost, self.blade_mass
-
-
 # OpenMDAO component to execute the blade cost model
 class RotorCost(om.ExplicitComponent):
     def initialize(self):
@@ -3022,22 +2822,10 @@ class RotorCost(om.ExplicitComponent):
         self.add_input("s", val=np.zeros(n_span), desc="blade nondimensional span location")
         self.add_input("chord", val=np.zeros(n_span), units="m", desc="Chord distribution")
         self.add_input(
-            "pitch_axis",
-            val=np.zeros(n_span),
-            desc="1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.",
-        )
-        self.add_input(
             "coord_xy_interp",
             val=np.zeros((n_span, n_xy, 2)),
             desc="3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations.",
         )
-
-        # Inputs - Inner blade structure
-        # self.add_discrete_input(
-        #     "web_name",
-        #     val=n_webs * [""],
-        #     desc="1D array of the names of the shear webs defined in the blade structure.",
-        # )
         self.add_input(
             "web_start_nd",
             val=np.zeros((n_webs, n_span)),
@@ -3053,11 +2841,6 @@ class RotorCost(om.ExplicitComponent):
             val=np.zeros(n_layers),
             desc="1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to 0.",
         )
-        # self.add_discrete_input(
-        #     "layer_name",
-        #     val=n_layers * [""],
-        #     desc="1D array of the names of the layers modeled in the blade structure.",
-        # )
         self.add_discrete_input(
             "definition_layer",
             val=np.zeros(n_layers),
@@ -3111,21 +2894,10 @@ class RotorCost(om.ExplicitComponent):
             desc="1D array of the density of the fibers of the materials.",
         )
         self.add_input(
-            "rho_area_dry",
-            val=np.zeros(n_mat),
-            units="kg/m**2",
-            desc="1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.",
-        )
-        self.add_input(
             "ply_t",
             val=np.zeros(n_mat),
             units="m",
             desc="1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.",
-        )
-        self.add_input(
-            "fvf",
-            val=np.zeros(n_mat),
-            desc="1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.",
         )
         self.add_input(
             "fwf",
@@ -3239,11 +3011,6 @@ class RotorCost(om.ExplicitComponent):
             units="USD", 
             desc="Same as mat_cost, now including the scrap factor.",
         )
-        # self.add_output(
-        #     "n_plies", 
-        #     val=np.zeros(n_mat), 
-        #     desc="Number of plies for the composite laimnates.",
-        # )
         self.add_output(
             "total_metallic_parts_cost", 
             val=0.0, 
@@ -3338,6 +3105,7 @@ class RotorCost(om.ExplicitComponent):
         waste = inputs["waste"]
         layer_web = np.array(inputs["layer_web"], dtype=int)
         ply_t = inputs["ply_t"]
+        roll_mass = inputs["roll_mass"]
         fwf = inputs["fwf"]
         unit_cost = inputs["unit_cost"]
         flange_adhesive_squeezed = inputs["flange_adhesive_squeezed"]
@@ -3566,6 +3334,7 @@ class RotorCost(om.ExplicitComponent):
 
         # Compute masses of laminateswith and without waste factor
         mat_mass = mat_volume * rho_mat
+        mat_mass_scrap = mat_volume * rho_mat * (1. + waste)
 
         # Compute costs
         dry_laminate_mass = mat_mass * fwf
@@ -3592,8 +3361,10 @@ class RotorCost(om.ExplicitComponent):
             i_adhesive = discrete_inputs["mat_name"].index('adhesive')
         except:
             i_adhesive = discrete_inputs["mat_name"].index('Adhesive')
-        mat_cost[i_adhesive] += bonding_lines_vol * rho_mat[i_adhesive] * unit_cost[i_adhesive]
-        mat_cost_scrap[i_adhesive] += bonding_lines_vol * rho_mat[i_adhesive] * unit_cost[i_adhesive]
+        mat_mass[i_adhesive] += bonding_lines_vol * rho_mat[i_adhesive]
+        mat_cost[i_adhesive] += mat_mass[i_adhesive] * unit_cost[i_adhesive]
+        mat_mass_scrap[i_adhesive] += bonding_lines_vol * rho_mat[i_adhesive]
+        mat_cost_scrap[i_adhesive] += mat_mass_scrap[i_adhesive] * unit_cost[i_adhesive]
 
 
         # Hub connection and lightning protection system
@@ -3653,6 +3424,14 @@ class RotorCost(om.ExplicitComponent):
         # Labor and cycle time
         blade_specs = {}
         mat_dictionary = {}
+        mat_dictionary["mat_name"] = discrete_inputs["mat_name"]
+        mat_dictionary["orth"] = orth
+        mat_dictionary["component_id"] = component_id
+        mat_dictionary["roll_mass"] = roll_mass
+        mat_dictionary["total_mass_w_waste"] = mat_mass_scrap
+        mat_dictionary["total_ply_area_w_waste"] = total_ply_area_w_waste
+        mat_dictionary["total_ply_area_wo_waste"] = total_ply_area_wo_waste
+
         metallic_parts = {}
         blade_specs["blade_length"] = blade_length
         blade_specs["root_preform_length"] = root_preform_length
@@ -3776,6 +3555,7 @@ class RotorCost(om.ExplicitComponent):
         outputs['blade_fixed_cost'] = blade_fixed_cost
         outputs['total_blade_cost'] = total_blade_cost
 
+
 class StandaloneRotorCost(om.Group):
     def initialize(self):
         self.options.declare("modeling_options")
@@ -3829,7 +3609,6 @@ class StandaloneRotorCost(om.Group):
         self.connect("assembly.blade_length", "rc.blade_length")
         self.connect("blade.outer_shape_bem.s", "rc.s")
         self.connect("blade.pa.chord_param", "rc.chord")
-        self.connect("blade.outer_shape_bem.pitch_axis", "rc.pitch_axis")
         self.connect("blade.interp_airfoils.coord_xy_interp", "rc.coord_xy_interp")
         self.connect("blade.internal_structure_2d_fem.layer_thickness", "rc.layer_thickness")
         self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rc.layer_start_nd")
@@ -3848,9 +3627,7 @@ class StandaloneRotorCost(om.Group):
         self.connect("materials.unit_cost", "rc.unit_cost")
         self.connect("materials.waste", "rc.waste")
         self.connect("materials.rho_fiber", "rc.rho_fiber")
-        self.connect("materials.rho_area_dry", "rc.rho_area_dry")
         self.connect("materials.ply_t", "rc.ply_t")
-        self.connect("materials.fvf", "rc.fvf")
         self.connect("materials.fwf", "rc.fwf")
         self.connect("materials.roll_mass", "rc.roll_mass")
 
