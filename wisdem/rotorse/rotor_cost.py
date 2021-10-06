@@ -3441,10 +3441,15 @@ class RotorCost(om.ExplicitComponent):
                 # Compute width layer
                 width = arc_L_i * chord * (layer_end_nd[i_lay,:] - layer_start_nd[i_lay,:])
                 # Compute width in the suction side
-                if SS:
+                width_ss = np.zeros_like(width)
+                width_ps = np.zeros_like(width)
+                if SS and PS:
                     width_ss = arc_L_i * chord * (xy_arc_nd_LE - layer_start_nd[i_lay,:])
-                if PS:
                     width_ps = arc_L_i * chord * (layer_end_nd[i_lay,:] - xy_arc_nd_LE)
+                elif SS and not PS:
+                    width_ss = width
+                else:
+                    width_ps = width
                 # Compute the volume per unit meter for each layer split per side
                 layer_volume_span_ss[i_lay,:] = layer_thickness[i_lay,:]*width_ss
                 layer_volume_span_ps[i_lay,:] = layer_thickness[i_lay,:]*width_ps
