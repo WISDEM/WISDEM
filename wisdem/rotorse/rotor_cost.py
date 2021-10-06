@@ -3424,7 +3424,7 @@ class RotorCost(om.ExplicitComponent):
         mass_shell_ss = 0.
         mass_shell_ps = 0.
         for i_lay in range(self.n_layers):
-
+            imin, imax = np.nonzero(layer_thickness[i_lay,:])[0][[0,-1]]
             if layer_start_nd[i_lay,0] < xy_arc_nd_LE[0] and layer_end_nd[i_lay,0] > xy_arc_nd_LE[0]:
                 SS=True
                 PS=True
@@ -3453,7 +3453,6 @@ class RotorCost(om.ExplicitComponent):
                 layer_volume_span_webs[i_lay,:] = layer_thickness[i_lay,:]*web_height[int(layer_web[i_lay])-1,:]
                 # Compute length of shear webs
                 if web_length[int(layer_web[i_lay])-1] == 0:
-                    imin, imax = np.nonzero(layer_thickness[i_lay,:])[0][[0,-1]]
                     web_length[int(layer_web[i_lay])-1] = (s[imax]-s[imin]) * blade_length
                     web_indices[int(layer_web[i_lay])-1, :] = [imin,imax]
             # Compute volume of layer
@@ -3497,7 +3496,6 @@ class RotorCost(om.ExplicitComponent):
 
             # Spar caps
             elif self.layer_name[i_lay] == self.spar_cap_ss:
-                imin, imax = np.nonzero(layer_thickness[i_lay,:])[0][[0,-1]]
                 spar_cap_width_ss[imin:imax] = width[imin:imax]
                 spar_cap_length_ss = (s[imax]-s[imin]) * blade_length
                 width_sc_start_ss = width[imin]
@@ -3527,7 +3525,6 @@ class RotorCost(om.ExplicitComponent):
 
             # Shell core
             elif component_id[i_mat] == 1:
-                imin, imax = np.nonzero(layer_thickness[i_lay,:])[0][[0,-1]]
                 areacore2lay_shell_ss += np.trapz(width_ss[imin:imax], s[imin:imax]*blade_length)
                 areacore2lay_shell_ps += np.trapz(width_ps[imin:imax], s[imin:imax]*blade_length)
                 volume2lay_coreshell_ss = np.trapz(layer_volume_span_ss[i_lay,imin:imax], s[imin:imax]*blade_length)
@@ -3538,7 +3535,6 @@ class RotorCost(om.ExplicitComponent):
 
             # TE/LE reinforcement
             elif component_id[i_mat] != 0:
-                imin, imax = np.nonzero(layer_thickness[i_lay,:])[0][[0,-1]]
                 length2lay_reinf = np.trapz(layer_thickness[i_lay,imin:imax], s[imin:imax]*blade_length)
                 volume2lay_reinf_ss = np.trapz(layer_volume_span_ss[i_lay,imin:imax], s[imin:imax]*blade_length)
                 volume2lay_reinf_ps = np.trapz(layer_volume_span_ps[i_lay,imin:imax], s[imin:imax]*blade_length)
@@ -3583,7 +3579,14 @@ class RotorCost(om.ExplicitComponent):
         # Estimate adhesive mass and costs      
         length_bonding_lines = 2. * blade_length + 2 * np.sum(web_length)
         bonding_lines_vol = length_bonding_lines * flange_thick * flange_width * (1. + flange_adhesive_squeezed)
-        i_adhesive = discrete_inputs["mat_name"].index('adhesive')
+        if "adhesive" not in discrete_inputs["mat_name"] and "Adhesive" not in discrete_inputs["mat_name"]:
+            raise Exception(
+                "Warning: a material named adhesive is not defined in the input yaml.  This is required for the blade cost model"
+            )
+        try:
+            i_adhesive = discrete_inputs["mat_name"].index('adhesive')
+        except:
+            i_adhesive = discrete_inputs["mat_name"].index('Adhesive')
         mat_cost[i_adhesive] += bonding_lines_vol * rho_mat[i_adhesive] * unit_cost[i_adhesive]
         mat_cost_scrap[i_adhesive] += bonding_lines_vol * rho_mat[i_adhesive] * unit_cost[i_adhesive]
 

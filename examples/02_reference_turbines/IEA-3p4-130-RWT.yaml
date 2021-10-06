@@ -623,8 +623,8 @@ materials:
       unit_cost: 13.
       component_id: 1
    -  name: adhesive
-      description: Adhesive from ...
-      source: Material coming from ...
+      description: Sample adhesive
+      source: https://www.nrel.gov/docs/fy19osti/73585.pdf
       orth: 0
       rho: 1100
       E: 4.56e+006
