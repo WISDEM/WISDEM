@@ -2864,8 +2864,8 @@ class WT_Assembly(om.ExplicitComponent):
             units="m",
             desc="2D array of the coordinates (x,y,z) of the blade reference axis scaled based on rotor diameter, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
         )
-        self.add_output("precurve", val=np.zeros(n_span), units="m", desc="Blade prebend at each section")
-        self.add_output("precurveTip", val=0.0, units="m", desc="Blade prebend at tip")
+        self.add_output("prebend", val=np.zeros(n_span), units="m", desc="Blade prebend at each section")
+        self.add_output("prebendTip", val=0.0, units="m", desc="Blade prebend at tip")
         self.add_output("presweep", val=np.zeros(n_span), units="m", desc="Blade presweep at each section")
         self.add_output("presweepTip", val=0.0, units="m", desc="Blade presweep at tip")
         self.add_output(
