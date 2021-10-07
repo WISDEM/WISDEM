@@ -2,9 +2,10 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
+
 import wisdem.commonse.utilities as util
 import wisdem.floatingse.constraints as cons
-from wisdem.floatingse.member import NULL, MEMMAX
+from wisdem.commonse.cylinder_member import NULL, MEMMAX
 
 
 class TestConstraints(unittest.TestCase):

@@ -3,9 +3,10 @@ import unittest
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
+
 import wisdem.floatingse.floating_system as sys
 from wisdem.commonse import gravity as g
-from wisdem.floatingse.member import NULL, MEMMAX
+from wisdem.commonse.cylinder_member import NULL, MEMMAX
 
 
 class TestPlatform(unittest.TestCase):
