@@ -1,8 +1,5 @@
 import os
-import time
-
 import numpy as np
-import matplotlib.pyplot as plt
 import openmdao.api as om
 from scipy.optimize import brentq
 from wisdem.glue_code.gc_WT_DataStruc import Materials, Blade, WT_Assembly
@@ -856,6 +853,9 @@ class material_cutting_process(object):
         # Clean-up
         self.clean_up["labor"] = sum(self.clean_up["labor_per_mat"])
         self.clean_up["ct"] = sum(self.clean_up["ct_per_mat"])
+
+        # Remove material data structure
+        del self.materials
 
 
 class material_cutting_labor(material_cutting_process):
@@ -2271,23 +2271,12 @@ def compute_total_labor_ct(data_struct, name, verbose, no_contribution2ct=[]):
     process = data_struct.__dict__.keys()
     labor_total_per_process = 0.0
     ct_total_per_process = 0.0
-    if verbose:
-        print("\n----------")
     for var in process:
         data = getattr(data_struct, var)
         labor_total_per_process += data["labor"]
-        if verbose:
-            print("Activity: " + var)
-            print("labor: {:8.2f} hr \t \t --- \t \t ct: {:8.2f} hr".format(float(data["labor"]), float(data["ct"])))
         if var not in no_contribution2ct:
             ct_total_per_process += data["ct"]
-    if verbose:
-        print("\n" + name + ":")
-        print(
-            "labor: {:8.2f} hr \t \t --- \t \t ct: {:8.2f} hr".format(
-                labor_total_per_process, float(ct_total_per_process)
-            )
-        )
+
     return labor_total_per_process, ct_total_per_process
 
 
@@ -3230,7 +3219,7 @@ class RotorCost(om.ExplicitComponent):
                     web_indices[int(layer_web[i_lay])-1, :] = [imin,imax]
             # Compute volume of layer
             layer_volume_span = layer_volume_span_ss[i_lay,:] + layer_volume_span_ps[i_lay,:] + layer_volume_span_webs[i_lay,:]
-            layer_volume[i_lay] = np.trapz(layer_volume_span, s*blade_length)
+            layer_volume[i_lay] = np.trapz(layer_volume_span, s*blade_length)           
 
             # Assign volume to corresponding material
             mat_name = self.layer_mat[i_lay]
@@ -3332,7 +3321,7 @@ class RotorCost(om.ExplicitComponent):
             # else:
             #     print("Layer not accounted for in the labor and cycle time model")
 
-        # Compute masses of laminateswith and without waste factor
+        # Compute masses of laminates with and without waste factor
         mat_mass = mat_volume * rho_mat
         mat_mass_scrap = mat_volume * rho_mat * (1. + waste)
 
@@ -3349,6 +3338,11 @@ class RotorCost(om.ExplicitComponent):
                 mat_cost[i_resin] += complementary_mass[i_mat] * unit_cost[i_resin]
 
         mat_cost_scrap = mat_cost * (1. + waste)
+
+        # Compute total fabric area, with and without scrap factor
+        mat_area = np.zeros_like(mat_volume)
+        mat_area[ply_t!=0.] = mat_volume[ply_t!=0.] / ply_t[ply_t!=0.]
+        mat_area_scrap = mat_area * (1. + waste)
 
         # Estimate adhesive mass and costs      
         length_bonding_lines = 2. * blade_length + 2 * np.sum(web_length)
@@ -3429,8 +3423,8 @@ class RotorCost(om.ExplicitComponent):
         mat_dictionary["component_id"] = component_id
         mat_dictionary["roll_mass"] = roll_mass
         mat_dictionary["total_mass_w_waste"] = mat_mass_scrap
-        mat_dictionary["total_ply_area_w_waste"] = total_ply_area_w_waste
-        mat_dictionary["total_ply_area_wo_waste"] = total_ply_area_wo_waste
+        mat_dictionary["total_ply_area_w_waste"] = mat_area
+        mat_dictionary["total_ply_area_wo_waste"] = mat_area_scrap
 
         metallic_parts = {}
         blade_specs["blade_length"] = blade_length
