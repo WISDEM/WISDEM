@@ -3000,6 +3000,21 @@ class RotorCost(om.ExplicitComponent):
             units="USD", 
             desc="Same as mat_cost, now including the scrap factor.",
         )
+        self.add_output("total_labor_hours",
+            val=0.0,
+            units="h",
+            desc="Total amount of labor hours per blade.",
+        )
+        self.add_output("total_skin_mold_gating_ct",
+            val=0.0,
+            units="h",
+            desc="Total amount of gating cycle time per blade. This is the cycle time required in the main mold that cannot be parallelized unless the number of molds is increased.",
+        )
+        self.add_output("total_non_gating_ct",
+            val=0.0,
+            units="h",
+            desc="Total amount of non-gating cycle time per blade. This cycle time can happen in parallel.",
+        )        
         self.add_output(
             "total_metallic_parts_cost", 
             val=0.0, 
@@ -3012,7 +3027,6 @@ class RotorCost(om.ExplicitComponent):
             units="USD", 
             desc="Cost of the consumables including the waste.",
         )
-
         self.add_output("total_blade_mat_cost_w_waste",
             val=0.,
             units="USD",
@@ -3523,9 +3537,8 @@ class RotorCost(om.ExplicitComponent):
             + cost_capital
         )
 
-        # Total
+        # Total blade cost
         total_blade_cost = blade_variable_cost + blade_fixed_cost
-
 
         # Assign outputs
         outputs["sect_perimeter"] = sect_perimeter
@@ -3537,6 +3550,11 @@ class RotorCost(om.ExplicitComponent):
         outputs['total_metallic_parts_cost'] = total_metallic_parts_cost
         outputs['total_consumable_cost_w_waste'] = total_consumable_cost_w_waste
         outputs['total_blade_mat_cost_w_waste'] = total_blade_mat_cost_w_waste
+        # Labor and cycle time
+        outputs["total_labor_hours"] = total_labor_hours
+        outputs["total_skin_mold_gating_ct"] = total_skin_mold_gating_ct
+        outputs["total_non_gating_ct"] = total_non_gating_ct
+        # Total costs 
         outputs['total_cost_labor'] = total_cost_labor
         outputs['total_cost_utility'] = total_cost_utility
         outputs['blade_variable_cost'] = blade_variable_cost
@@ -3549,7 +3567,7 @@ class RotorCost(om.ExplicitComponent):
         outputs['blade_fixed_cost'] = blade_fixed_cost
         outputs['total_blade_cost'] = total_blade_cost
 
-
+# OpenMDAO group to execute the blade cost model without the rest of WISDEM
 class StandaloneRotorCost(om.Group):
     def initialize(self):
         self.options.declare("modeling_options")
