@@ -51,9 +51,9 @@ The installation instructions below use the environment name, "wisdem-env," but 
 2.  In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer* mode.  This is done by first installing WISDEM as a conda package to easily satisfy all dependencies, but then removing the WISDEM conda package and reinstalling from the Github source code.  Note the differences between Windows and Mac/Linux build systems:
 
         conda install -y wisdem git
-        conda remove --force wisdem
-        conda install compilers                   # (Mac / Linux only)
-        conda install m2w64-toolchain libpython   # (Windows only)
+        conda remove -y --force wisdem
+        conda install -y compilers                   # (Mac / Linux only)
+        conda install -y m2w64-toolchain libpython   # (Windows only)
         pip install simpy marmot-agents nlopt
         git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
