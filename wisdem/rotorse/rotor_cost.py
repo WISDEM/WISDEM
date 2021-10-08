@@ -3208,12 +3208,12 @@ class RotorCost(om.ExplicitComponent):
             else:
                 raise Exception("Something is off with the blade cost model logic")            
 
+            width_ss = np.zeros(self.n_span)
+            width_ps = np.zeros(self.n_span)
             if layer_web[i_lay] == 0:
                 # Compute width layer
                 width = arc_L_i * chord * (layer_end_nd[i_lay,:] - layer_start_nd[i_lay,:])
                 # Compute width in the suction side
-                width_ss = np.zeros_like(width)
-                width_ps = np.zeros_like(width)
                 if SS and PS:
                     width_ss = arc_L_i * chord * (xy_arc_nd_LE - layer_start_nd[i_lay,:])
                     width_ps = arc_L_i * chord * (layer_end_nd[i_lay,:] - xy_arc_nd_LE)
@@ -3487,14 +3487,7 @@ class RotorCost(om.ExplicitComponent):
         blade_specs["skin_perimeter_w_root"] = 2. * blade_length
         metallic_parts["n_bolts"]  = n_bolts
 
-        
-            
-        # if np.mean(xy_coord_root[:idx_le,1])<0:
-        #     arc_L_SS_i[i] = xy_arc_i[idx_le]
-        #     arc_L_PS_i[i] = xy_arc_i[-1] - xy_arc_i[idx_le]
-        # else:
-        #     arc_L_PS_i[i] = xy_arc_i[idx_le]
-        #     arc_L_SS_i[i] = xy_arc_i[-1] - xy_arc_i[idx_le]
+
         labor_ct = blade_labor_ct(blade_specs, mat_dictionary, metallic_parts)
         operation, labor_hours, skin_mold_gating_ct, non_gating_ct = labor_ct.execute_blade_labor_ct()
         total_labor_hours = sum(labor_hours)
