@@ -27,11 +27,10 @@ class TestRegression(unittest.TestCase):
         wt_opt, modeling_options, opt_options = run_wisdem(
             fname_wt_input, fname_modeling_options, fname_analysis_options
         )
-        print(wt_opt["financese.lcoe"][0])
 
         self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 69911.65429172986, 1)
         self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 77.9964610969, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 90.12899703251978, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 90.1286937270, 1)
         self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.5240282692, 1)
 
 
