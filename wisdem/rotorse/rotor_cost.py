@@ -3194,23 +3194,24 @@ class RotorCost(om.ExplicitComponent):
         mass_root_preform_ps = 0.
         mass_shell_ss = 0.
         mass_shell_ps = 0.
+        tol_LE = 1.e-5
         for i_lay in range(self.n_layers):
             imin, imax = np.nonzero(layer_thickness[i_lay,:])[0][[0,-1]]
-            if layer_start_nd[i_lay,0] < xy_arc_nd_LE[0] and layer_end_nd[i_lay,0] > xy_arc_nd_LE[0]:
-                SS=True
-                PS=True
-            elif layer_start_nd[i_lay,0] > xy_arc_nd_LE[0]:
-                SS=False
-                PS=True
-            elif layer_end_nd[i_lay,0] < xy_arc_nd_LE[0]:
-                SS=True
-                PS=False
-            else:
-                raise Exception("Something is off with the blade cost model logic")            
-
             width_ss = np.zeros(self.n_span)
             width_ps = np.zeros(self.n_span)
             if layer_web[i_lay] == 0:
+                # Determine on which of the two molds the layer should go
+                if layer_start_nd[i_lay,imin] < xy_arc_nd_LE[imin] - tol_LE and layer_end_nd[i_lay,imin] > xy_arc_nd_LE[imin] + tol_LE:
+                    SS=True
+                    PS=True
+                elif layer_start_nd[i_lay,imin] > xy_arc_nd_LE[imin] + tol_LE:
+                    SS=False
+                    PS=True
+                else:
+                    SS=True
+                    PS=False
+
+
                 # Compute width layer
                 width = arc_L_i * chord * (layer_end_nd[i_lay,:] - layer_start_nd[i_lay,:])
                 # Compute width in the suction side
@@ -3225,6 +3226,8 @@ class RotorCost(om.ExplicitComponent):
                 layer_volume_span_ss[i_lay,:] = layer_thickness[i_lay,:]*width_ss
                 layer_volume_span_ps[i_lay,:] = layer_thickness[i_lay,:]*width_ps
             else:
+                SS=False
+                PS=False
                 # Compute the volume per unit meter for each layer
                 layer_volume_span_webs[i_lay,:] = layer_thickness[i_lay,:]*web_height[int(layer_web[i_lay])-1,:]
                 # Compute length of shear webs
