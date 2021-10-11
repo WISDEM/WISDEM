@@ -81,10 +81,10 @@ class WT_RNTA(om.Group):
             self.connect("assembly.hub_height", "rotorse.hub_height")
             self.connect("hub.cone", "rotorse.precone")
             self.connect("nacelle.uptilt", "rotorse.tilt")
-            self.connect("assembly.blade_ref_axis", "rotorse.precurve", src_indices=[(i, 0) for i in np.arange(n_span)])
-            self.connect("assembly.blade_ref_axis", "rotorse.precurveTip", src_indices=[(-1, 0)])
-            self.connect("assembly.blade_ref_axis", "rotorse.presweep", src_indices=[(i, 1) for i in np.arange(n_span)])
-            self.connect("assembly.blade_ref_axis", "rotorse.presweepTip", src_indices=[(-1, 1)])
+            self.connect("assembly.prebend", "rotorse.precurve")
+            self.connect("assembly.prebendTip", "rotorse.precurveTip")
+            self.connect("assembly.presweep", "rotorse.presweep")
+            self.connect("assembly.presweepTip", "rotorse.presweepTip")
             if modeling_options["flags"]["control"]:
                 self.connect("control.rated_pitch", "rotorse.pitch")
             self.connect("control.rated_TSR", "rotorse.tsr")
@@ -110,22 +110,12 @@ class WT_RNTA(om.Group):
             self.connect("blade.internal_structure_2d_fem.web_end_nd", "rotorse.re.precomp.web_end_nd")
             self.connect("blade.internal_structure_2d_fem.joint_position", "rotorse.re.precomp.joint_position")
             self.connect("blade.internal_structure_2d_fem.joint_mass", "rotorse.re.precomp.joint_mass")
-            self.connect("blade.internal_structure_2d_fem.joint_cost", "rotorse.re.precomp.joint_cost")
             self.connect("materials.name", "rotorse.re.precomp.mat_name")
             self.connect("materials.orth", "rotorse.re.precomp.orth")
             self.connect("materials.E", "rotorse.re.precomp.E")
             self.connect("materials.G", "rotorse.re.precomp.G")
             self.connect("materials.nu", "rotorse.re.precomp.nu")
             self.connect("materials.rho", "rotorse.re.precomp.rho")
-            self.connect("materials.component_id", "rotorse.re.precomp.component_id")
-            self.connect("materials.unit_cost", "rotorse.re.precomp.unit_cost")
-            self.connect("materials.waste", "rotorse.re.precomp.waste")
-            self.connect("materials.rho_fiber", "rotorse.re.precomp.rho_fiber")
-            self.connect("materials.rho_area_dry", "rotorse.re.precomp.rho_area_dry")
-            self.connect("materials.ply_t", "rotorse.re.precomp.ply_t")
-            self.connect("materials.fvf", "rotorse.re.precomp.fvf")
-            self.connect("materials.fwf", "rotorse.re.precomp.fwf")
-            self.connect("materials.roll_mass", "rotorse.re.precomp.roll_mass")
 
             # Conncetions to rail transport module
             if opt_options["constraints"]["blade"]["rail_transport"]["flag"]:
@@ -159,6 +149,32 @@ class WT_RNTA(om.Group):
             self.connect("blade.ps.layer_thickness_param", "rotorse.rs.brs.layer_thickness")
             self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.rs.brs.layer_start_nd")
             self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.rs.brs.layer_end_nd")
+
+            # Connections to RotorCost
+            self.connect("assembly.blade_length", "rotorse.rc.blade_length")
+            self.connect("blade.outer_shape_bem.s", "rotorse.rc.s")
+            self.connect("blade.pa.chord_param", "rotorse.rc.chord")
+            self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.rc.coord_xy_interp")
+            self.connect("blade.internal_structure_2d_fem.layer_thickness", "rotorse.rc.layer_thickness")
+            self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.rc.layer_start_nd")
+            self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.rc.layer_end_nd")
+            self.connect("blade.internal_structure_2d_fem.layer_web", "rotorse.rc.layer_web")
+            self.connect("blade.internal_structure_2d_fem.definition_layer", "rotorse.rc.definition_layer")
+            self.connect("blade.internal_structure_2d_fem.web_start_nd", "rotorse.rc.web_start_nd")
+            self.connect("blade.internal_structure_2d_fem.web_end_nd", "rotorse.rc.web_end_nd")
+            self.connect("blade.internal_structure_2d_fem.joint_position", "rotorse.rc.joint_position")
+            self.connect("blade.internal_structure_2d_fem.joint_mass", "rotorse.rc.joint_mass")
+            self.connect("blade.internal_structure_2d_fem.joint_cost", "rotorse.rc.joint_cost")
+            self.connect("materials.name", "rotorse.rc.mat_name")
+            self.connect("materials.orth", "rotorse.rc.orth")
+            self.connect("materials.rho", "rotorse.rc.rho")
+            self.connect("materials.component_id", "rotorse.rc.component_id")
+            self.connect("materials.unit_cost", "rotorse.rc.unit_cost")
+            self.connect("materials.waste", "rotorse.rc.waste")
+            self.connect("materials.rho_fiber", "rotorse.rc.rho_fiber")
+            self.connect("materials.ply_t", "rotorse.rc.ply_t")
+            self.connect("materials.fwf", "rotorse.rc.fwf")
+            self.connect("materials.roll_mass", "rotorse.rc.roll_mass")
 
         # Connections to DriveSE
         if modeling_options["flags"]["nacelle"]:
@@ -514,7 +530,7 @@ class WT_RNTA(om.Group):
         self.connect("configuration.rated_power", "tcc.machine_rating")
         if modeling_options["flags"]["blade"]:
             self.connect("rotorse.re.precomp.blade_mass", "tcc.blade_mass")
-            self.connect("rotorse.re.precomp.total_blade_cost", "tcc.blade_cost_external")
+            self.connect("rotorse.rc.total_blade_cost", "tcc.blade_cost_external")
 
         if modeling_options["flags"]["nacelle"]:
             self.connect("drivese.hub_mass", "tcc.hub_mass")
