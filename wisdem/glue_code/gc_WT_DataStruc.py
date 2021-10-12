@@ -2935,7 +2935,7 @@ class WT_Assembly(om.ExplicitComponent):
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]
 
         if modeling_options["flags"]["blade"] and outputs["rotor_diameter"] > 2.*outputs["hub_height"]:
-            raise Exception("The rotor diameter is larger than two times the hub height. Please check your input file.")
+            raise Exception("The rotor blade extends past the ground or water line. Please adjust hub height and/or rotor diameter.")
 
 
 class Airfoil3DCorrection(om.ExplicitComponent):
