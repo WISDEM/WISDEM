@@ -184,14 +184,14 @@ class RailTransport(ExplicitComponent):
         EIxx = inputs["EIxx"]  # edge (rotation about x)
         EIyy = inputs["EIyy"]  # flap (rotation about y)
         EIxy = inputs["EIxy"]
-        lateral_clearance = 0.5 * inputs["lateral_clearance"][0]
-        vertical_clearance = inputs["vertical_clearance"][0]
-        max_strains = inputs["max_strains"][0]
-        max_rot = inputs["max_root_rot_deg"][0]
-        max_LV = inputs["max_LV"][0]
-        mass_car_4axle = inputs["max_flatcar_weight_4axle"][0]
-        mass_car_8axle = inputs["max_flatcar_weight_8axle"][0]
-        flatcar_tc_length = inputs["flatcar_tc_length"][0]
+        lateral_clearance = 0.5 * float(inputs["lateral_clearance"])
+        vertical_clearance = float(inputs["vertical_clearance"])
+        max_strains = float(inputs["max_strains"])
+        max_rot = float(inputs["max_root_rot_deg"])
+        max_LV = float(inputs["max_LV"])
+        mass_car_4axle = float(inputs["max_flatcar_weight_4axle"])
+        mass_car_8axle = float(inputs["max_flatcar_weight_8axle"])
+        flatcar_tc_length = float(inputs["flatcar_tc_length_4axle"])
 
         # ------- Get turn radius geometry for horizontal and vertical curves
         # Horizontal turns- defined as a degree of arc assuming a 100ft "chord"

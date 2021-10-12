@@ -907,5 +907,5 @@ class RotorElasticity(Group):
             ],
         )
         # Check rail transportabiliy
-        if opt_options["constraints"]["blade"]["rail_transport"]["flag"]:
+        if modeling_options["WISDEM"]["RotorSE"]["rail_transport"] or opt_options["constraints"]["blade"]["rail_transport"]["flag"]:
             self.add_subsystem("rail", RailTransport(modeling_options=modeling_options), promotes=promote_list)
