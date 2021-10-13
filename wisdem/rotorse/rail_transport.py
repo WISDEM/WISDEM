@@ -61,7 +61,7 @@ class RailTransport(ExplicitComponent):
             "max_flatcar_weight_8axle", val=217724.16, units="kg", desc="Max mass of an 8-axle flatcar (480000 lbm)"
         )
         self.add_input("max_root_rot_deg", val=15.0, units="deg", desc="Max degree of angle at blade root")
-        self.add_input("flatcar_tc_length", val=20.12, units="m", desc="Flatcar truck center to truck center lenght")
+        self.add_input("flatcar_tc_length", val=20.12, units="m", desc="Flatcar truck center to truck center length")
 
         # Input - Outer blade geometry
         self.add_input(
@@ -166,6 +166,7 @@ class RailTransport(ExplicitComponent):
     def compute(self, inputs, outputs):
 
         PBEAM = False
+        _8axle = False
 
         # Unpack inputs
         x_ref = inputs["blade_ref_axis"][:, 0]  # from PS to SS
@@ -190,8 +191,10 @@ class RailTransport(ExplicitComponent):
         max_strains = float(inputs["max_strains"])
         max_rot = float(inputs["max_root_rot_deg"])
         max_LV = float(inputs["max_LV"])
-        mass_car_4axle = float(inputs["max_flatcar_weight_4axle"])
-        mass_car_8axle = float(inputs["max_flatcar_weight_8axle"])
+        if _8axle:
+            mass_car = float(inputs["max_flatcar_weight_8axle"])
+        else:
+            mass_car = float(inputs["max_flatcar_weight_4axle"])
         flatcar_tc_length = float(inputs["flatcar_tc_length"])
 
         # ------- Get turn radius geometry for horizontal and vertical curves
@@ -203,7 +206,6 @@ class RailTransport(ExplicitComponent):
 
         # Vertical curves on hills and sags defined directly by radius
         r_curveV = inputs["min_vertical_radius"][0]
-        arcsV = r / r_curveV
         # ----------
 
         # ---------- Put airfoil cross sections into principle axes
@@ -320,15 +322,6 @@ class RailTransport(ExplicitComponent):
             if profile_i_rot_precomp[-1, 0] != 1.0:
                 profile_i_rot_precomp = np.row_stack((profile_i_rot_precomp, profile_i_rot_precomp[0, :]))
 
-            # 'web' at trailing edge needed for flatback airfoils
-            if (
-                profile_i_rot_precomp[0, 1] != profile_i_rot_precomp[-1, 1]
-                and profile_i_rot_precomp[0, 0] == profile_i_rot_precomp[-1, 0]
-            ):
-                flatback = True
-            else:
-                flatback = False
-
             xnode = profile_i_rot_precomp[:, 0]
             xnode_pa = xnode - inputs["pitch_axis"][i]
             ynode = profile_i_rot_precomp[:, 1]
@@ -357,9 +350,6 @@ class RailTransport(ExplicitComponent):
 
         xle_cs, yle_cs = yle, xle
         xte_cs, yte_cs = yte, xte
-
-        le1, le2 = rotate(xle_cs, yle_cs)
-        te1, te2 = rotate(xte_cs, yte_cs)
         # ----------------
 
         # -------- Horizontal curve where we select blade support nodes on flat cars
@@ -440,12 +430,10 @@ class RailTransport(ExplicitComponent):
         # ax.legend()
         # plt.show()
 
+
         # Initialize Frame3dd objects
         blade1 = pyframe3dd.Frame(nodes1, reactions, elements, options)
         blade2 = pyframe3dd.Frame(nodes2, reactions, elements, options)
-
-        # Tolerance for envelop compliance checking
-        tol = 3e-1
 
         # Function that does the structural analysis to be called during optimization
         def run_hcurve(FrIn, optFlag=True, plot=False):
@@ -456,16 +444,17 @@ class RailTransport(ExplicitComponent):
 
             # Output containers
             RF_derailH = np.zeros(2)  # Derailment reaction force
-            r_check = np.zeros((self.n_span, 2))  # Envelope constraint
+            r_check_outer = np.zeros((self.n_span, 2))  # Envelope constraint
+            r_check_inner = np.zeros((self.n_span, 2))  # Envelope constraint
             strainPS = np.zeros((self.n_span, 2))
             strainSS = np.zeros((self.n_span, 2))
 
             # Look over bend to PS/SS cases
             for k in range(2):
                 if k == 0:
-                    blade, r_outer, angs = blade1, r_envelopeH_outer1, arcsH[1:]
+                    blade, r_outer, r_inner, angs = blade1, r_envelopeH_outer1, r_envelopeH_inner1, arcsH[1:]
                 else:
-                    blade, r_outer, angs = blade2, r_envelopeH_outer2, np.pi - arcsH[1:]
+                    blade, r_outer, r_inner, angs = blade2, r_envelopeH_outer2, r_envelopeH_inner2, np.pi - arcsH[1:]
 
                 # Load case: gravity + blade bending to conform to outer boundary
                 load = pyframe3dd.StaticLoadCase(gx, gy, gz)
@@ -480,15 +469,19 @@ class RailTransport(ExplicitComponent):
                 blade.addLoadCase(load)
 
                 # Run the case
-                displacements, forces, forces_rxn, internalForces, mass, modal = blade.run()
+                displacements, forces, forces_rxn, _, _, _ = blade.run()
 
                 # Check solved blade shape against envelope
-                r_check[:, k] = (
+                r_check_outer[:, k] = (
                     np.sqrt((blade.nx + displacements.dx[0, :]) ** 2 + (blade.nz + displacements.dz[0, :]) ** 2)
                     - r_outer
                 )
+                r_check_inner[:, k] = (
+                    r_inner - 
+                    np.sqrt((blade.nx + displacements.dx[0, :]) ** 2 + (blade.nz + displacements.dz[0, :]) ** 2)
+                )
 
-                if plot:
+                if plot and k==1:
                     # Deflected transport
                     fig, ax = plt.subplots(1, 1, figsize=(4,8))
                     ax.plot(x_rail_inner+2*lateral_clearance, y_rail_inner, "k:", label='Lateral clearance')
@@ -528,17 +521,19 @@ class RailTransport(ExplicitComponent):
 
             if optFlag:
                 # First constraint is compliance with outer boundary
-                cboundary = np.maximum(r_check, 0)
+                cboundary_outer = np.maximum(r_check_outer, 0)
+                cboundary_inner = np.maximum(r_check_inner, 0)
 
                 # Second constraint is reaction forces for derailment:
-                crxn = np.maximum(RF_derailH - (0.5 * mass_car_8axle * gravity) / max_LV, 0.0)
+                crxn = np.maximum(RF_derailH - (0.5 * mass_car * gravity) / max_LV, 0.0)
 
                 # Third constraint is keeping the strains reasonable
                 cstrainPS = np.maximum(np.abs(strainPS) - max_strains, 0.0)
                 cstrainSS = np.maximum(np.abs(strainSS) - max_strains, 0.0)
 
                 # Accumulate constraints
-                cons = np.array([np.sum(cboundary), np.sum(crxn), np.sum(cstrainPS), np.sum(cstrainSS)])
+                # cons = np.array([np.sum(cboundary_outer), np.sum(cboundary_inner), np.sum(crxn), np.sum(cstrainPS), np.sum(cstrainSS)])
+                cons = np.array([np.sum(cboundary_outer), np.sum(crxn), np.sum(cstrainPS), np.sum(cstrainSS)])
 
                 return -cons
             else:
@@ -562,13 +557,15 @@ class RailTransport(ExplicitComponent):
             options={"maxiter": 100},
         )
 
-        # if result.success:
+        print("Rail transport module convergence: ", result.success)
         # Evaluate optimized solution
-        RF_derailH, strainPS, strainSS = run_hcurve(result.x, optFlag=False, plot=False)
+        RF_derailH, strainPS, strainSS = run_hcurve(result.x, optFlag=False, plot=True)
 
         # Express derailing force as a constraint
-        outputs["constr_LV_4axle_horiz"] = RF_derailH / (0.5 * mass_car_4axle * gravity) / max_LV
-        outputs["constr_LV_8axle_horiz"] = RF_derailH / (0.5 * mass_car_8axle * gravity) / max_LV
+        if _8axle:
+            outputs["constr_LV_8axle_horiz"] = RF_derailH / (0.5 * mass_car * gravity) / max_LV
+        else:
+            outputs["constr_LV_4axle_horiz"] = RF_derailH / (0.5 * mass_car * gravity) / max_LV
 
         # Strain constraint outputs
         outputs["constr_strainPS"] = np.max(np.abs(strainPS) / max_strains, axis=1)
