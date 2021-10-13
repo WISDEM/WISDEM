@@ -3,9 +3,8 @@ import logging
 
 import numpy as np
 import openmdao.api as om
-from scipy.interpolate import PchipInterpolator, interp1d
-
 import wisdem.moorpy.MoorProps as mp
+from scipy.interpolate import PchipInterpolator, interp1d
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
@@ -2640,7 +2639,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
         self.add_discrete_input(
             "component_id",
             val=-np.ones(n_mat),
-            desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.",
+            desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE/LE reinf.",
         )
         self.add_input(
             "rho_fiber",
@@ -2959,6 +2958,10 @@ class WT_Assembly(om.ExplicitComponent):
             units="m",
             desc="2D array of the coordinates (x,y,z) of the blade reference axis scaled based on rotor diameter, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
         )
+        self.add_output("prebend", val=np.zeros(n_span), units="m", desc="Blade prebend at each section")
+        self.add_output("prebendTip", val=0.0, units="m", desc="Blade prebend at tip")
+        self.add_output("presweep", val=np.zeros(n_span), units="m", desc="Blade presweep at each section")
+        self.add_output("presweepTip", val=0.0, units="m", desc="Blade presweep at tip")
         self.add_output(
             "blade_length",
             val=0.0,
@@ -3009,6 +3012,10 @@ class WT_Assembly(om.ExplicitComponent):
             outputs["r_blade"] = outputs["blade_ref_axis"][:, 2] + inputs["hub_radius"]
             outputs["rotor_radius"] = outputs["r_blade"][-1]
             outputs["blade_length"] = arc_length(outputs["blade_ref_axis"])[-1]
+            outputs["prebend"] = outputs["blade_ref_axis"][:, 0]
+            outputs["prebendTip"] = outputs["blade_ref_axis"][-1, 0]
+            outputs["presweep"] = outputs["blade_ref_axis"][:, 1]
+            outputs["presweepTip"] = outputs["blade_ref_axis"][-1, 1]
         if modeling_options["flags"]["tower"]:
             if inputs["hub_height_user"] != 0.0:
                 outputs["hub_height"] = inputs["hub_height_user"]
@@ -3020,6 +3027,11 @@ class WT_Assembly(om.ExplicitComponent):
             else:
                 outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]
+
+        if modeling_options["flags"]["blade"] and outputs["rotor_diameter"] > 2.0 * outputs["hub_height"]:
+            raise Exception(
+                "The rotor blade extends past the ground or water line. Please adjust hub height and/or rotor diameter."
+            )
 
 
 class Airfoil3DCorrection(om.ExplicitComponent):

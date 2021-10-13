@@ -25,7 +25,7 @@ class TestRegression(unittest.TestCase):
 
         self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 16403.682326940743, 2)
         self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 23.8785992698, 2)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 51.6693793441, 2)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 51.5550696328, 2)
         self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 4.6449973294, 1)
         self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 87.7, 2)
 
@@ -34,10 +34,10 @@ class TestRegression(unittest.TestCase):
         fname_wt_input = test_dir + "IEA-15-240-RWT.yaml"
         wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
-        self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 73564.203030542, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 77.9923500907, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 82.6426316709, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.4701009225, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 69911.6542917299, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 78.0287135486, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 83.5124646409, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.5239505171, 1)
         self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 144.386, 3)
 
     def test3p4MW(self):
@@ -47,7 +47,7 @@ class TestRegression(unittest.TestCase):
 
         self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 14555.7435212969, 1)
         self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 13.6028951462, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 37.4885724725, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 37.3432866923, 1)
         self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 6.7168194585, 1)
         self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 108.0, 3)
 

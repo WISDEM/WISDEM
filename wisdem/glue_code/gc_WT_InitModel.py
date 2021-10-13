@@ -1,5 +1,4 @@
 import numpy as np
-
 import wisdem.commonse.utilities as util
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 
@@ -1265,7 +1264,7 @@ def assign_costs_values(wt_opt, costs):
     return wt_opt
 
 
-def assign_airfoil_values(wt_opt, modeling_options, airfoils):
+def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=False):
     # Function to assign values to the openmdao component Airfoils
 
     n_af = modeling_options["WISDEM"]["RotorSE"]["n_af"]
@@ -1374,14 +1373,15 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils):
         # plt.show()
 
     # Assign to openmdao structure
-    wt_opt["airfoils.aoa"] = aoa
     wt_opt["airfoils.name"] = name
-    wt_opt["airfoils.ac"] = ac
     wt_opt["airfoils.r_thick"] = r_thick
-    wt_opt["airfoils.Re"] = Re
-    wt_opt["airfoils.cl"] = cl
-    wt_opt["airfoils.cd"] = cd
-    wt_opt["airfoils.cm"] = cm
+    if coordinates_only == False:
+        wt_opt["airfoils.aoa"] = aoa
+        wt_opt["airfoils.ac"] = ac
+        wt_opt["airfoils.Re"] = Re
+        wt_opt["airfoils.cl"] = cl
+        wt_opt["airfoils.cd"] = cd
+        wt_opt["airfoils.cm"] = cm
 
     wt_opt["airfoils.coord_xy"] = coord_xy
 
