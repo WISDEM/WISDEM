@@ -1,8 +1,9 @@
 import numpy as np
 import openmdao.api as om
+
 import wisdem.commonse.utilities as util
 from wisdem.commonse import gravity
-from wisdem.floatingse.member import NULL, MEMMAX
+from wisdem.commonse.cylinder_member import NULL, MEMMAX
 
 NNODES_MAX = 1000
 NELEM_MAX = 1000

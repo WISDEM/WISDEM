@@ -1,4 +1,5 @@
 import numpy as np
+
 import wisdem.commonse.utilities as util
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 
@@ -933,61 +934,22 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
 
 def assign_jacket_values(wt_opt, modeling_options, jacket):
     # Function to assign values to the openmdao component Jacket
-    n_height = modeling_options["WISDEM"]["FixedBottomSE"]["n_height"]  # Number of points along jacket height
-    n_layers = modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"]
-
-    svec = np.unique(
-        np.r_[
-            jacket["outer_shape_bem"]["outer_diameter"]["grid"],
-            jacket["outer_shape_bem"]["reference_axis"]["x"]["grid"],
-            jacket["outer_shape_bem"]["reference_axis"]["y"]["grid"],
-            jacket["outer_shape_bem"]["reference_axis"]["z"]["grid"],
-        ]
-    )
-
-    wt_opt["jacket.s"] = svec
-    wt_opt["jacket.diameter"] = np.interp(
-        svec,
-        jacket["outer_shape_bem"]["outer_diameter"]["grid"],
-        jacket["outer_shape_bem"]["outer_diameter"]["values"],
-    )
-
-    wt_opt["jacket.ref_axis"][:, 0] = np.interp(
-        svec,
-        jacket["outer_shape_bem"]["reference_axis"]["x"]["grid"],
-        jacket["outer_shape_bem"]["reference_axis"]["x"]["values"],
-    )
-    wt_opt["jacket.ref_axis"][:, 1] = np.interp(
-        svec,
-        jacket["outer_shape_bem"]["reference_axis"]["y"]["grid"],
-        jacket["outer_shape_bem"]["reference_axis"]["y"]["values"],
-    )
-    wt_opt["jacket.ref_axis"][:, 2] = np.interp(
-        svec,
-        jacket["outer_shape_bem"]["reference_axis"]["z"]["grid"],
-        jacket["outer_shape_bem"]["reference_axis"]["z"]["values"],
-    )
-
-    layer_name = n_layers * [""]
-    layer_mat = n_layers * [""]
-    thickness = np.zeros((n_layers, n_height))
-    for i in range(n_layers):
-        layer_name[i] = jacket["internal_structure_2d_fem"]["layers"][i]["name"]
-        layer_mat[i] = jacket["internal_structure_2d_fem"]["layers"][i]["material"]
-        thickness[i] = np.interp(
-            svec,
-            jacket["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-            jacket["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
-        )
-
-    wt_opt["jacket.layer_name"] = layer_name
-    wt_opt["jacket.layer_mat"] = layer_mat
-    wt_opt["jacket.layer_thickness"] = thickness
-
-    wt_opt["jacket.outfitting_factor"] = jacket["internal_structure_2d_fem"]["outfitting_factor"]
     wt_opt["jacket.transition_piece_mass"] = jacket["transition_piece_mass"]
     wt_opt["jacket.transition_piece_cost"] = jacket["transition_piece_cost"]
     wt_opt["jacket.gravity_foundation_mass"] = jacket["gravity_foundation_mass"]
+    wt_opt["jacket.r_foot"] = jacket["r_foot"]
+    wt_opt["jacket.r_head"] = jacket["r_head"]
+    wt_opt["jacket.height"] = jacket["height"]
+    wt_opt["jacket.q"] = jacket["q"]
+    wt_opt["jacket.l_osg"] = jacket["l_osg"]
+    wt_opt["jacket.l_tp"] = jacket["l_tp"]
+    wt_opt["jacket.gamma_b"] = jacket["gamma_b"]
+    wt_opt["jacket.gamma_t"] = jacket["gamma_t"]
+    wt_opt["jacket.beta_b"] = jacket["beta_b"]
+    wt_opt["jacket.beta_t"] = jacket["beta_t"]
+    wt_opt["jacket.tau_b"] = jacket["tau_b"]
+    wt_opt["jacket.tau_t"] = jacket["tau_t"]
+    wt_opt["jacket.d_l"] = jacket["d_l"]
 
     return wt_opt
 

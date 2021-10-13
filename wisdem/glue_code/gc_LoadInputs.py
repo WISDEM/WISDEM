@@ -1,4 +1,5 @@
 import numpy as np
+
 import wisdem.inputs as sch
 
 
@@ -250,6 +251,15 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["WISDEM"]["FixedBottomSE"]["n_layers_monopile"] = self.modeling_options["WISDEM"][
                 "FixedBottomSE"
             ]["n_layers"]
+
+        # Jacket
+        if self.modeling_options["flags"]["jacket"]:
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_legs"] = self.wt_init["components"]["jacket"]["n_legs"]
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_bays"] = self.wt_init["components"]["jacket"]["n_bays"]
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["mud_brace"] = self.wt_init["components"]["jacket"]["x_mb"]
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["material"] = self.wt_init["components"]["jacket"][
+                "material"
+            ]
 
         # Floating platform
         self.modeling_options["floating"] = {}

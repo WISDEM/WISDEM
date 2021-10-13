@@ -1,8 +1,10 @@
 import numpy as np
 import openmdao.api as om
+
 from wisdem.rotorse.rotor import RotorSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.floatingse.floating import FloatingSE
+from wisdem.fixed_bottomse.jacket import JacketSE
 from wisdem.glue_code.gc_RunTools import Outputs_2_Screen, Convergence_Trends_Opt
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
 from wisdem.fixed_bottomse.monopile import MonopileSE
@@ -58,7 +60,7 @@ class WT_RNTA(om.Group):
             self.add_subsystem("fixedse", MonopileSE(modeling_options=modeling_options))
 
         elif modeling_options["flags"]["jacket"]:
-            self.add_subsystem("fixedse", MonopileSE(modeling_options=modeling_options))
+            self.add_subsystem("fixedse", JacketSE(modeling_options=modeling_options))
 
         elif modeling_options["flags"]["floating"]:
             self.add_subsystem("floatingse", FloatingSE(modeling_options=modeling_options))
@@ -89,10 +91,10 @@ class WT_RNTA(om.Group):
             self.connect("assembly.hub_height", "rotorse.hub_height")
             self.connect("hub.cone", "rotorse.precone")
             self.connect("nacelle.uptilt", "rotorse.tilt")
-            self.connect("assembly.blade_ref_axis", "rotorse.precurve", src_indices=[(i, 0) for i in np.arange(n_span)])
-            self.connect("assembly.blade_ref_axis", "rotorse.precurveTip", src_indices=[(-1, 0)])
-            self.connect("assembly.blade_ref_axis", "rotorse.presweep", src_indices=[(i, 1) for i in np.arange(n_span)])
-            self.connect("assembly.blade_ref_axis", "rotorse.presweepTip", src_indices=[(-1, 1)])
+            self.connect("assembly.blade_ref_axis", "rotorse.precurve", src_indices=om.slicer[:, 0])
+            self.connect("assembly.blade_ref_axis", "rotorse.precurveTip", src_indices=om.slicer[-1, 0])
+            self.connect("assembly.blade_ref_axis", "rotorse.presweep", src_indices=om.slicer[:, 1])
+            self.connect("assembly.blade_ref_axis", "rotorse.presweepTip", src_indices=om.slicer[-1, 1])
             if modeling_options["flags"]["control"]:
                 self.connect("control.rated_pitch", "rotorse.pitch")
             self.connect("control.rated_TSR", "rotorse.tsr")
@@ -433,6 +435,31 @@ class WT_RNTA(om.Group):
                 self.connect("towerse.tower_cost", "fixedse.tower_cost")
                 self.connect("towerse.tower.turbine_F", "fixedse.monopile.turbine_F")
                 self.connect("towerse.tower.turbine_M", "fixedse.monopile.turbine_M")
+
+        if modeling_options["flags"]["jacket"]:
+            self.connect("materials.sigma_y", "fixedse.sigma_y_mat")
+            self.connect("materials.E", "fixedse.E_mat")
+            self.connect("materials.G", "fixedse.G_mat")
+            self.connect("materials.rho", "fixedse.rho_mat")
+            self.connect("materials.name", "fixedse.material_names")
+            self.connect("jacket.r_foot", "fixedse.r_foot")
+            self.connect("jacket.r_head", "fixedse.r_head")
+            self.connect("jacket.height", "fixedse.height")
+            self.connect("jacket.q", "fixedse.q")
+            self.connect("jacket.l_osg", "fixedse.l_osg")
+            self.connect("jacket.l_tp", "fixedse.l_tp")
+            self.connect("jacket.gamma_b", "fixedse.gamma_b")
+            self.connect("jacket.gamma_t", "fixedse.gamma_t")
+            self.connect("jacket.beta_b", "fixedse.beta_b")
+            self.connect("jacket.beta_t", "fixedse.beta_t")
+            self.connect("jacket.tau_b", "fixedse.tau_b")
+            self.connect("jacket.tau_t", "fixedse.tau_t")
+            self.connect("jacket.d_l", "fixedse.d_l")
+            if modeling_options["flags"]["tower"]:
+                self.connect("towerse.tower_mass", "fixedse.tower_mass")
+                self.connect("towerse.tower_cost", "fixedse.tower_cost")
+                self.connect("towerse.tower.turbine_F", "fixedse.turbine_F")
+                self.connect("towerse.tower.turbine_M", "fixedse.turbine_M")
 
         if modeling_options["flags"]["floating"]:
             self.connect("env.rho_water", "floatingse.rho_water")

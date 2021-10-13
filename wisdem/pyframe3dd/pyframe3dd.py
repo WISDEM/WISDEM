@@ -1198,7 +1198,7 @@ class Frame(object):
         f.write("# End of input data file\n")
         f.close()
 
-    def draw(self):
+    def draw(self, savefig=False, fig_idx=0):
         # Visualization for debugging
         import matplotlib.pyplot as plt
 
@@ -1221,7 +1221,11 @@ class Frame(object):
             zs = np.array([mynodes[e[0]][2], mynodes[e[1]][2]])
             ax.plot(xs, ys, zs, "b-")
         ax.plot(node_array[:, 0], node_array[:, 1], node_array[:, 2], ".k", markersize=10)
-        plt.show()
+
+        if savefig:
+            plt.savefig(f"frame3dd_{fig_idx}.png")
+        else:
+            plt.show()
 
 
 class StaticLoadCase(object):

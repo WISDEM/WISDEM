@@ -2,9 +2,10 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
+
 import wisdem.floatingse.floating_frame as frame
 import wisdem.floatingse.floating_system as sys
-from wisdem.floatingse.member import NULL, MEMMAX
+from wisdem.commonse.cylinder_member import NULL, MEMMAX
 
 
 class TestFrame(unittest.TestCase):

@@ -534,7 +534,149 @@ properties:
                                 description: Design variable bound
                             upper_bound: *rbound
             monopile: *towdv
-            jacket: *towdv
+            jacket:
+                type: object
+                description: Design variables associated with the jacket
+                default: {}
+                properties:
+                    r_foot:
+                        type: object
+                        description: Adjust the radius of the jacket foot.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &rfootbound
+                                type: number
+                                minimum: 0.1
+                                maximum: 100.0
+                                default: 5.0
+                                unit: m
+                                description: Design variable bound
+                            upper_bound: *rfootbound
+                    r_head:
+                        type: object
+                        description: Adjust the radius of the jacket head.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &rheadbound
+                                type: number
+                                minimum: 0.1
+                                maximum: 100.0
+                                default: 5.0
+                                unit: m
+                                description: Design variable bound
+                            upper_bound: *rheadbound
+                    d_l:
+                        type: object
+                        description: Adjust the diameter of the jacket legs.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &d_lbound
+                                type: number
+                                minimum: 0.1
+                                maximum: 10.0
+                                default: 1.5
+                                unit: m
+                                description: Design variable bound
+                            upper_bound: *d_lbound
+                    height:
+                        type: object
+                        description: Overall jacket height, meters.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &h_bound
+                                type: number
+                                minimum: 0.1
+                                maximum: 1000.0
+                                default: 70
+                                unit: m
+                                description: Design variable bound
+                            upper_bound: *h_bound
+                    q:
+                        type: object
+                        description: Ratio of two consecutive bay heights.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &dimless_bound
+                                type: number
+                                minimum: 0.01
+                                maximum: 100.0
+                                default: 0.8
+                                description: Design variable bound
+                            upper_bound: *dimless_bound
+                    l_osg:
+                        type: object
+                        description: Lowest leg segment height, meters.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *dimless_bound
+                            upper_bound: *dimless_bound
+                    l_tp:
+                        type: object
+                        description: Transition piece segment height, meters.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *dimless_bound
+                            upper_bound: *dimless_bound
+                    gamma_b:
+                        type: object
+                        description: Leg radius-to-thickness ratio (bottom).
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &gam_bound
+                                type: number
+                                minimum: 0.01
+                                maximum: 100.0
+                                default: 4
+                                description: Design variable bound
+                            upper_bound: *gam_bound
+                    gamma_t:
+                        type: object
+                        description: Leg radius-to-thickness ratio (top).
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *gam_bound
+                            upper_bound: *gam_bound
+                    beta_b:
+                        type: object
+                        description: Brace-to-leg diameter ratio (bottom).
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *dimless_bound
+                            upper_bound: *dimless_bound
+                    beta_t:
+                        type: object
+                        description: Brace-to-leg diameter ratio (top).
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *dimless_bound
+                            upper_bound: *dimless_bound
+                    tau_b:
+                        type: object
+                        description: Brace-to-leg thickness ratio (bottom).
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *dimless_bound
+                            upper_bound: *dimless_bound
+                    tau_t:
+                        type: object
+                        description: Brace-to-leg thickness ratio (top).
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *dimless_bound
+                            upper_bound: *dimless_bound
             floating:
                 type: object
                 description: Design variables associated with the floating platform

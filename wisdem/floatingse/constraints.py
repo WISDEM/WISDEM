@@ -1,7 +1,8 @@
 import numpy as np
 import openmdao.api as om
+
 import wisdem.commonse.utilities as util
-from wisdem.floatingse.member import NULL, MEMMAX
+from wisdem.commonse.cylinder_member import NULL, MEMMAX
 
 
 class FloatingConstraints(om.ExplicitComponent):
