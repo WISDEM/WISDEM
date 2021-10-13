@@ -5,6 +5,7 @@ import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 from openmdao.api import ExplicitComponent
 from scipy.optimize import minimize
 from wisdem.commonse.constants import gravity
+import matplotlib.pyplot as plt
 
 
 # This isn't used, but keeping around the code for now
@@ -191,7 +192,7 @@ class RailTransport(ExplicitComponent):
         max_LV = float(inputs["max_LV"])
         mass_car_4axle = float(inputs["max_flatcar_weight_4axle"])
         mass_car_8axle = float(inputs["max_flatcar_weight_8axle"])
-        flatcar_tc_length = float(inputs["flatcar_tc_length_4axle"])
+        flatcar_tc_length = float(inputs["flatcar_tc_length"])
 
         # ------- Get turn radius geometry for horizontal and vertical curves
         # Horizontal turns- defined as a degree of arc assuming a 100ft "chord"
@@ -420,6 +421,25 @@ class RailTransport(ExplicitComponent):
         x_rot2, z_rot2 = util.rotate(-r_curveH, 0.0, -r_curveH + x_ref, z_ref, result.x[1])
         nodes2 = pyframe3dd.NodeData(inode, x_rot2, y_ref, z_rot2, rad)
 
+        x_rail_inner  = np.linspace(0., 2.*r_envelopeH.min(), 10000)
+        y_rail_inner  = np.sqrt(r_envelopeH.min()**2. - (x_rail_inner-r_envelopeH.min())**2.)
+        x_rail_outer  = np.linspace(0., 2.*r_envelopeH.max(), 10000)
+        y_rail_outer  = np.sqrt(r_envelopeH.max()**2. - (x_rail_outer-r_envelopeH.max())**2.)
+
+        # Undeflected transport
+        # fig, ax = plt.subplots(1, 1, figsize=(4,8))
+        # ax.plot(x_rail_inner+2*lateral_clearance, y_rail_inner, "k:", label='Lateral clearance')
+        # ax.plot(x_rail_outer, y_rail_outer, "k:")
+        # # ax.plot(x_rot1+x_rot1[0]+lateral_clearance, z_rot1, label='rot1')
+        # ax.plot(x_rot2-x_rot2[0]+lateral_clearance + yss, z_rot2, color="tab:red", label='Blade')
+        # ax.plot(x_rot2-x_rot2[0]+lateral_clearance - yps, z_rot2, color="tab:red")
+        # ax.set_xlim([0,50])
+        # # ax.axis('equal')
+        # plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+        # plt.subplots_adjust(bottom = 0.15, left = 0.15)
+        # ax.legend()
+        # plt.show()
+
         # Initialize Frame3dd objects
         blade1 = pyframe3dd.Frame(nodes1, reactions, elements, options)
         blade2 = pyframe3dd.Frame(nodes2, reactions, elements, options)
@@ -428,7 +448,7 @@ class RailTransport(ExplicitComponent):
         tol = 3e-1
 
         # Function that does the structural analysis to be called during optimization
-        def run_hcurve(FrIn, optFlag=True):
+        def run_hcurve(FrIn, optFlag=True, plot=False):
             Fr = FrIn.reshape((self.n_span - 1, 2))
 
             # Will only worry about radial loads
@@ -467,6 +487,23 @@ class RailTransport(ExplicitComponent):
                     np.sqrt((blade.nx + displacements.dx[0, :]) ** 2 + (blade.nz + displacements.dz[0, :]) ** 2)
                     - r_outer
                 )
+
+                if plot:
+                    # Deflected transport
+                    fig, ax = plt.subplots(1, 1, figsize=(4,8))
+                    ax.plot(x_rail_inner+2*lateral_clearance, y_rail_inner, "k:", label='Lateral clearance')
+                    ax.plot(x_rail_outer, y_rail_outer, "k:")
+                    # ax.plot(x_rot1+x_rot1[0]+lateral_clearance, z_rot1, label='rot1')
+                    ax.plot(blade.nx + displacements.dx[0, :] + yss - blade.nx[0] + lateral_clearance, blade.nz + displacements.dz[0, :], color="tab:red", label='Blade')
+                    ax.plot(blade.nx + displacements.dx[0, :] - yps - blade.nx[0] + lateral_clearance, blade.nz + displacements.dz[0, :], color="tab:red")
+                    ax.plot(blade.nx+ yss - blade.nx[0] + lateral_clearance, blade.nz, color="tab:blue", label='Undeflected blade')
+                    ax.plot(blade.nx- yps - blade.nx[0] + lateral_clearance, blade.nz, color="tab:blue")
+                    ax.set_xlim([0,50])
+                    # ax.axis('equal')
+                    plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+                    plt.subplots_adjust(bottom = 0.15, left = 0.15)
+                    ax.legend()
+                    plt.show()
 
                 # Derailing reaction force on root node
                 #  - Lateral force on wheels (multiply by 0.5 for 2 wheel sets)
@@ -527,7 +564,7 @@ class RailTransport(ExplicitComponent):
 
         # if result.success:
         # Evaluate optimized solution
-        RF_derailH, strainPS, strainSS = run_hcurve(result.x, optFlag=False)
+        RF_derailH, strainPS, strainSS = run_hcurve(result.x, optFlag=False, plot=False)
 
         # Express derailing force as a constraint
         outputs["constr_LV_4axle_horiz"] = RF_derailH / (0.5 * mass_car_4axle * gravity) / max_LV
