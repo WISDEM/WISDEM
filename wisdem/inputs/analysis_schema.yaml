@@ -1072,6 +1072,12 @@ properties:
                         description: Ensure that the diameter moving up the tower at any node is always equal or less than the diameter of the node preceding it
                         properties:
                             flag: *flag
+                    thickness_slope: &thick_slope
+                        type: object
+                        default: {}
+                        description: Ensure that the thickness moving up the tower at any node is always equal or less than the thickness of the section preceding it
+                        properties:
+                            flag: *flag
                     d_to_t: &d_to_t
                         type: object
                         description: Double-sided constraint to ensure target diameter to thickness ratio for manufacturing and structural objectives
@@ -1125,6 +1131,7 @@ properties:
                     global_buckling: *globalb
                     shell_buckling: *shellb
                     slope: *slope
+                    thickness_slope: *thick_slope
                     d_to_t: *d_to_t
                     taper: *taper
                     frequency_1: *towfreq1

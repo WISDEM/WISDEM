@@ -925,7 +925,6 @@ class Frame(object):
         )
 
         nantest = np.isnan(np.c_[fout.Nx, fout.Vy, fout.Vz, fout.Txx, fout.Myy, fout.Mzz])
-        print(np.any(nantest), exitCode)
         if (exitCode in [181, 182, 183]) and (not np.any(nantest)):
             pass
         elif exitCode != 0 or np.any(nantest):

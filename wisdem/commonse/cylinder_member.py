@@ -2286,10 +2286,13 @@ class MemberBase(om.Group):
             "yaml", DiscretizationYAML(options=opt, idx=idx, n_mat=self.options["n_mat"]), promotes=["*"]
         )
 
+        promlist = ["constr_taper", "constr_d_to_t", "slope"]
+        if n_height > 2:
+            promlist += ["thickness_slope"]
         self.add_subsystem(
             "gc",
             util_con.GeometricConstraints(nPoints=n_height, diamFlag=True),
-            promotes=["constr_taper", "constr_d_to_t", "slope"],
+            promotes=promlist,
         )
         self.connect("outer_diameter", "gc.d")
         self.connect("wall_thickness", "gc.t")

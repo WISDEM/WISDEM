@@ -595,9 +595,11 @@ class MonopileSE(om.Group):
             ("outer_diameter", "monopile_outer_diameter"),
             ("wall_thickness", "monopile_wall_thickness"),
         ]
+        if n_height > 2:
+            promlist + ["thickness_slope"]
 
         temp_opt = mod_opt.copy()
-        temp_opt["n_height"] = [mod_opt["n_height"]]
+        temp_opt["n_height"] = [n_height]
         temp_opt["n_layers"] = [mod_opt["n_layers"]]
         temp_opt["n_ballasts"] = [0]
         self.add_subsystem(
