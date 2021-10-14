@@ -7,7 +7,6 @@ from scipy.optimize import minimize
 from wisdem.commonse.constants import gravity
 import matplotlib.pyplot as plt
 
-
 # This isn't used, but keeping around the code for now
 def enforce_length(x, y, z, L0):
     r0 = np.sum(L0)
@@ -49,6 +48,8 @@ class RailTransport(ExplicitComponent):
         )
         self.add_input("lateral_clearance", val=6.7056, units="m", desc="Clearance profile horizontal (22 feet)")
         self.add_input("vertical_clearance", val=7.0104, units="m", desc="Clearance profile vertical (23 feet)")
+        #self.add_input("lateral_clearance", val=5.4864, units="m", desc="Clearance profile horizontal (18 feet)")
+        #self.add_input("vertical_clearance", val=6.096, units="m", desc="Clearance profile vertical (20 feet)")
         self.add_input(
             "deck_height", val=1.19, units="m", desc="Height of the deck of the flatcar from the rails (4 feet)"
         )
@@ -401,15 +402,7 @@ class RailTransport(ExplicitComponent):
 
         # Now rotate blade at optimized angle
 
-        # Node location starting points when curving towards SS
-        # (towards the LEFT with LE pointed down and standing at the root looking at tip)
-        x_rot1, z_rot1 = util.rotate(r_curveH, 0.0, r_curveH + x_ref, z_ref, result.x[0])
-        nodes1 = pyframe3dd.NodeData(inode, x_rot1, y_ref, z_rot1, rad)
 
-        # Node location starting points when curving towards PS
-        # (towards the RIGHT with LE pointed down and standing at the root looking at tip)
-        x_rot2, z_rot2 = util.rotate(-r_curveH, 0.0, -r_curveH + x_ref, z_ref, result.x[1])
-        nodes2 = pyframe3dd.NodeData(inode, x_rot2, y_ref, z_rot2, rad)
 
         x_rail_inner  = np.linspace(0., 2.*r_envelopeH.min(), 10000)
         y_rail_inner  = np.sqrt(r_envelopeH.min()**2. - (x_rail_inner-r_envelopeH.min())**2.)
@@ -431,13 +424,48 @@ class RailTransport(ExplicitComponent):
         # plt.show()
 
 
-        # Initialize Frame3dd objects
-        blade1 = pyframe3dd.Frame(nodes1, reactions, elements, options)
-        blade2 = pyframe3dd.Frame(nodes2, reactions, elements, options)
+        
+
+        def get_max_force_h(FrIn):
+            # Objective function to minimize the reaction force of the first flatcat, which holds blade root, during a lateral curve
+            Fr = FrIn[2:].reshape((self.n_span - 1, 2))
+            RF_flatcar_1 = np.zeros(2)
+            for k in range(2):
+                q_iter    = np.r_[0., Fr[:,k]]
+                V_iter    = np.zeros(self.n_span)
+                M_iter    = np.zeros(self.n_span)
+                for i in range(self.n_span):
+                    V_iter[i] = np.trapz(q_iter[i:],r[i:])
+                for i in range(self.n_span):
+                    M_iter[i] = np.trapz(V_iter[i:],r[i:])
+                
+                RF_flatcar_1[k] = 0.5 * V_iter[0] + M_iter[0] / flatcar_tc_length
+
+            return np.sum(abs(RF_flatcar_1)*1.e-5)
 
         # Function that does the structural analysis to be called during optimization
-        def run_hcurve(FrIn, optFlag=True, plot=False):
-            Fr = FrIn.reshape((self.n_span - 1, 2))
+        def run_hcurve(FrIn, optFlag=True, final=False):
+
+            angle = FrIn[0:2]
+            if final:
+                print("Flapwise rotations at blade root: ", angle)
+
+            # Node location starting points when curving towards SS
+            # (towards the LEFT with LE pointed down and standing at the root looking at tip)
+            x_rot1, z_rot1 = util.rotate(r_curveH, 0.0, r_curveH + x_ref, z_ref, angle[0])
+            nodes1 = pyframe3dd.NodeData(inode, x_rot1, y_ref, z_rot1, rad)
+
+            # Node location starting points when curving towards PS
+            # (towards the RIGHT with LE pointed down and standing at the root looking at tip)
+            x_rot2, z_rot2 = util.rotate(-r_curveH, 0.0, -r_curveH + x_ref, z_ref, angle[1])
+            nodes2 = pyframe3dd.NodeData(inode, x_rot2, y_ref, z_rot2, rad)
+
+            # Initialize Frame3dd objects
+            blade1 = pyframe3dd.Frame(nodes1, reactions, elements, options)
+            blade2 = pyframe3dd.Frame(nodes2, reactions, elements, options)
+
+
+            Fr = FrIn[2:].reshape((self.n_span - 1, 2))
 
             # Will only worry about radial loads
             Fy = Mx = My = Mz = np.zeros(self.n_span - 1)
@@ -472,6 +500,7 @@ class RailTransport(ExplicitComponent):
                 displacements, forces, forces_rxn, _, _, _ = blade.run()
 
                 # Check solved blade shape against envelope
+                
                 r_check_outer[:, k] = (
                     np.sqrt((blade.nx + displacements.dx[0, :]) ** 2 + (blade.nz + displacements.dz[0, :]) ** 2)
                     - r_outer
@@ -481,7 +510,9 @@ class RailTransport(ExplicitComponent):
                     np.sqrt((blade.nx + displacements.dx[0, :]) ** 2 + (blade.nz + displacements.dz[0, :]) ** 2)
                 )
 
-                if plot and k==1:
+                if final and k==1:
+                    print("Undeflected blade length: ", util.arc_length(np.vstack((blade.nx, blade.nz)).T)[-1])
+                    print("Deflected blade length: ", util.arc_length(np.vstack((blade.nx + displacements.dx[0, :], blade.nz + displacements.dz[0, :])).T)[-1])
                     # Deflected transport
                     fig, ax = plt.subplots(1, 1, figsize=(4,8))
                     ax.plot(x_rail_inner+2*lateral_clearance, y_rail_inner, "k:", label='Lateral clearance')
@@ -491,8 +522,8 @@ class RailTransport(ExplicitComponent):
                     ax.plot(blade.nx + displacements.dx[0, :] - yps - blade.nx[0] + lateral_clearance, blade.nz + displacements.dz[0, :], color="tab:red")
                     ax.plot(blade.nx+ yss - blade.nx[0] + lateral_clearance, blade.nz, color="tab:blue", label='Undeflected blade')
                     ax.plot(blade.nx- yps - blade.nx[0] + lateral_clearance, blade.nz, color="tab:blue")
-                    ax.set_xlim([0,50])
-                    # ax.axis('equal')
+                    #ax.set_xlim([0,50])
+                    ax.axis('equal')
                     plt.grid(color=[0.8,0.8,0.8], linestyle='--')
                     plt.subplots_adjust(bottom = 0.15, left = 0.15)
                     ax.legend()
@@ -532,8 +563,8 @@ class RailTransport(ExplicitComponent):
                 cstrainSS = np.maximum(np.abs(strainSS) - max_strains, 0.0)
 
                 # Accumulate constraints
-                # cons = np.array([np.sum(cboundary_outer), np.sum(cboundary_inner), np.sum(crxn), np.sum(cstrainPS), np.sum(cstrainSS)])
-                cons = np.array([np.sum(cboundary_outer), np.sum(crxn), np.sum(cstrainPS), np.sum(cstrainSS)])
+                cons = np.array([np.sum(cboundary_outer), np.sum(cboundary_inner), np.sum(crxn), np.sum(cstrainPS), np.sum(cstrainSS)])
+                # cons = np.array([np.sum(cboundary_outer), np.sum(crxn), np.sum(cstrainPS), np.sum(cstrainSS)])
 
                 return -cons
             else:
@@ -545,10 +576,13 @@ class RailTransport(ExplicitComponent):
         const["fun"] = run_hcurve
 
         npts = 2 * (self.n_span - 1)
-        bounds = [(0.0, 1e2)] * npts
-        x0 = 1e2 * np.ones(npts)
+        # bounds = [(-max_rot, max_rot)]
+        # bounds.append([(-1e2, 1e2)] * npts)
+        bounds = [(-1e2, 1e2)] * (npts + 2)
+        x0 = np.r_[result.x, 0. * np.ones(npts)]
         result = minimize(
-            lambda x: np.sum(np.abs(x)),
+            # lambda x: np.sum(np.abs(x)),
+            get_max_force_h,
             x0,
             method="slsqp",
             bounds=bounds,
@@ -559,7 +593,7 @@ class RailTransport(ExplicitComponent):
 
         print("Rail transport module convergence: ", result.success)
         # Evaluate optimized solution
-        RF_derailH, strainPS, strainSS = run_hcurve(result.x, optFlag=False, plot=True)
+        RF_derailH, strainPS, strainSS = run_hcurve(result.x, optFlag=False, final=True)
 
         # Express derailing force as a constraint
         if _8axle:
