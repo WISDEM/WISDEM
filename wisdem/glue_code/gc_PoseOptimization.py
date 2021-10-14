@@ -1,8 +1,9 @@
 import os
 
-import numpy as np
 import openmdao.api as om
 from scipy.interpolate import PchipInterpolator
+
+import numpy as np
 
 
 class PoseOptimization(object):
@@ -607,6 +608,42 @@ class PoseOptimization(object):
                 upper=init_L_D_opt[indices] + L_D_options["max_increase"],
             )
 
+        c_d_options = blade_opt["aero_shape"]["c_d"]
+        if c_d_options["flag"]:
+            n_opt = c_d_options["n_opt"]
+            indices = range(c_d_options["index_start"], c_d_options["index_end"])
+            s_opt_c_d = np.linspace(0.0, 1.0, n_opt)
+            init_c_d_opt = np.interp(
+                s_opt_c_d,
+                wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"],
+            )
+
+            wt_opt.model.add_design_var(
+                "inn_af.c_d_opt",
+                indices=indices,
+                lower=init_c_d_opt[indices] - c_d_options["max_decrease"],
+                upper=init_c_d_opt[indices] + c_d_options["max_increase"],
+            )
+
+            stall_options = blade_opt["aero_shape"]["stall_margin"]
+            if stall_options["flag"]:
+                n_opt = stall_options["n_opt"]
+                indices = range(stall_options["index_start"], stall_options["index_end"])
+                s_opt_c_d = np.linspace(0.0, 1.0, n_opt)
+                init_stall_opt = np.interp(
+                    s_opt_c_d,
+                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"],
+                )
+
+                wt_opt.model.add_design_var(
+                    "inn_af.stall_margin_opt",
+                    indices=indices,
+                    lower=init_stall_opt[indices] - stall_options["max_decrease"],
+                    upper=init_stall_opt[indices] + stall_options["max_increase"],
+                )
+
         # Only add the pressure side design variables if we do set
         # `equal_to_suction` as False in the optimization yaml.
         spar_cap_ps_options = blade_opt["structure"]["spar_cap_ps"]
@@ -1023,11 +1060,10 @@ class PoseOptimization(object):
                 )
 
         if blade_constr["stall"]["flag"]:
-            if blade_opt["aero_shape"]["twist"]["flag"]:
-                wt_opt.model.add_constraint("rotorse.stall_check.no_stall_constraint", upper=1.0)
-            else:
+            wt_opt.model.add_constraint("rotorse.stall_check.no_stall_constraint", upper=1.0)
+            if not blade_opt["aero_shape"]["twist"]["flag"]:
                 print(
-                    "WARNING: the margin to stall is set to be constrained, but twist is not an active design variable. The constraint is not enforced."
+                    "WARNING: the margin to stall is set to be constrained, but twist is not an active design variable."
                 )
 
         if blade_constr["tip_deflection"]["flag"]:
@@ -1335,6 +1371,7 @@ class PoseOptimization(object):
                     wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"],
                 )
                 wt_opt["inn_af.c_d_opt"] = init_c_d_opt
+
                 wt_opt["inn_af.s_opt_stall_margin"] = np.linspace(
                     0.0, 1.0, blade_opt["aero_shape"]["stall_margin"]["n_opt"]
                 )
@@ -1378,7 +1415,7 @@ class PoseOptimization(object):
                         if (
                             self.opt["design_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
                             == False
-                        ) or ss_before_ps == False:
+                        ) or (ss_before_ps == False):
                             init_spar_cap_ps_opt = np.interp(
                                 wt_opt["blade.opt_var.s_opt_spar_cap_ps"],
                                 wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][

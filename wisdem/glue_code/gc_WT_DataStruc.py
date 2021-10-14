@@ -1,12 +1,12 @@
 import copy
 import logging
 
-import numpy as np
 import matplotlib
 import openmdao.api as om
 import matplotlib.pyplot as plt
 from scipy.interpolate import PchipInterpolator, interp1d
 
+import numpy as np
 import wisdem.moorpy.MoorProps as mp
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
@@ -1386,15 +1386,15 @@ class INN_Airfoils(om.ExplicitComponent):
         outputs["cl_interp"] = inputs["cl_interp_yaml"]
         outputs["cd_interp"] = inputs["cd_interp_yaml"]
 
-        print()
-        print("Performing INN analysis for these indices:")
-        print(indices)
+        # print()
+        # print("Performing INN analysis for these indices:")
+        # print(indices)
 
         for i in indices:
             Re = inputs["Re"][i]
             if Re < 100.0:
                 Re = 9.0e6
-            print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re} with Cd {c_d[i]}")
+            # print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re} with Cd {c_d[i]}")
             try:
                 cst, alpha_inn, z = self.inn.inverse_design(
                     c_d[i], L_D[i], np.rad2deg(stall_margin[i]), r_thick[i], Re, N=1, process_samples=True, z=314
@@ -1407,7 +1407,7 @@ class INN_Airfoils(om.ExplicitComponent):
             except:
                 raise Exception("The INN for airfoil design failed in the forward mode")
 
-            print(f"inverse design completed for index {i} with a thickness of {r_thick[i]}")
+            # print(f"inverse design completed for index {i} with a thickness of {r_thick[i]}")
 
             for af_cst in cst:
                 x, y = utils.get_airfoil_shape(af_cst)
