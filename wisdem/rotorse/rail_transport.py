@@ -15,7 +15,9 @@ def enforce_length(x, y, z, L0):
     zn = z.copy()
     rn = util.arc_length(np.c_[xn, yn, zn])
 
-    while np.abs(rn[-1] - r0) > 1e-5:
+    counter=0
+    while np.abs(rn[-1] - r0) > 1e-2 and counter<100:
+        counter+=1
         L = np.diff(rn)
         xn[1:] = (L0 / L) * (xn[1:] - xn[:-1]) + xn[:-1]
         zn[1:] = (L0 / L) * (zn[1:] - zn[:-1]) + zn[:-1]
@@ -46,10 +48,10 @@ class RailTransport(ExplicitComponent):
             units="m",
             desc="Minimum radius of a vertical curvature (hill or sag) (2000 feet)",
         )
-        self.add_input("lateral_clearance", val=6.7056, units="m", desc="Clearance profile horizontal (22 feet)")
-        self.add_input("vertical_clearance", val=7.0104, units="m", desc="Clearance profile vertical (23 feet)")
-        #self.add_input("lateral_clearance", val=5.4864, units="m", desc="Clearance profile horizontal (18 feet)")
-        #self.add_input("vertical_clearance", val=6.096, units="m", desc="Clearance profile vertical (20 feet)")
+        # self.add_input("lateral_clearance", val=6.7056, units="m", desc="Clearance profile horizontal (22 feet)")
+        # self.add_input("vertical_clearance", val=7.0104, units="m", desc="Clearance profile vertical (23 feet)")
+        self.add_input("lateral_clearance", val=5.4864, units="m", desc="Clearance profile horizontal (18 feet)")
+        self.add_input("vertical_clearance", val=6.096, units="m", desc="Clearance profile vertical (20 feet)")
         self.add_input(
             "deck_height", val=1.19, units="m", desc="Height of the deck of the flatcar from the rails (4 feet)"
         )
@@ -349,8 +351,6 @@ class RailTransport(ExplicitComponent):
         ps1, ps2 = rotate(xps_cs, yps_cs)
         ss1, ss2 = rotate(xss_cs, yss_cs)
 
-        xle_cs, yle_cs = yle, xle
-        xte_cs, yte_cs = yte, xte
         # ----------------
 
         # -------- Horizontal curve where we select blade support nodes on flat cars
@@ -391,7 +391,7 @@ class RailTransport(ExplicitComponent):
 
             return -cboundary
 
-        # Initiliaze scipy minimization to find the right angle- biggest deflection that keeps blade away from inner envelope
+        # Initiliaze scipy minimization to find the initial blade root flapwise angle - biggest deflection that keeps blade away from inner envelope
         const = {}
         const["type"] = "ineq"
         const["fun"] = rotate_blade
@@ -498,28 +498,33 @@ class RailTransport(ExplicitComponent):
 
                 # Run the case
                 displacements, forces, forces_rxn, _, _, _ = blade.run()
+                L0 = np.diff(util.arc_length(np.vstack((blade.nx, blade.nz)).T))
+                x = blade.nx + displacements.dx[0, :]
+                y = blade.ny + displacements.dy[0, :]
+                z = blade.nz + displacements.dz[0, :]
+                x_defl , z_defl = enforce_length(x, y, z, L0)
 
                 # Check solved blade shape against envelope
                 
                 r_check_outer[:, k] = (
-                    np.sqrt((blade.nx + displacements.dx[0, :]) ** 2 + (blade.nz + displacements.dz[0, :]) ** 2)
+                    np.sqrt(x_defl ** 2 + z_defl ** 2)
                     - r_outer
                 )
                 r_check_inner[:, k] = (
                     r_inner - 
-                    np.sqrt((blade.nx + displacements.dx[0, :]) ** 2 + (blade.nz + displacements.dz[0, :]) ** 2)
+                    np.sqrt(x_defl ** 2 + z_defl ** 2)
                 )
 
                 if final and k==1:
                     print("Undeflected blade length: ", util.arc_length(np.vstack((blade.nx, blade.nz)).T)[-1])
-                    print("Deflected blade length: ", util.arc_length(np.vstack((blade.nx + displacements.dx[0, :], blade.nz + displacements.dz[0, :])).T)[-1])
+                    print("Corrected blade length: ", util.arc_length(np.vstack((x_defl, z_defl)).T)[-1])
                     # Deflected transport
-                    fig, ax = plt.subplots(1, 1, figsize=(4,8))
+                    fig, ax = plt.subplots(1, 1, figsize=(4,6))
                     ax.plot(x_rail_inner+2*lateral_clearance, y_rail_inner, "k:", label='Lateral clearance')
                     ax.plot(x_rail_outer, y_rail_outer, "k:")
                     # ax.plot(x_rot1+x_rot1[0]+lateral_clearance, z_rot1, label='rot1')
-                    ax.plot(blade.nx + displacements.dx[0, :] + yss - blade.nx[0] + lateral_clearance, blade.nz + displacements.dz[0, :], color="tab:red", label='Blade')
-                    ax.plot(blade.nx + displacements.dx[0, :] - yps - blade.nx[0] + lateral_clearance, blade.nz + displacements.dz[0, :], color="tab:red")
+                    ax.plot(x_defl + yss - blade.nx[0] + lateral_clearance, z_defl, color="tab:red", label='Blade')
+                    ax.plot(x_defl - yps - blade.nx[0] + lateral_clearance, z_defl, color="tab:red")
                     ax.plot(blade.nx+ yss - blade.nx[0] + lateral_clearance, blade.nz, color="tab:blue", label='Undeflected blade')
                     ax.plot(blade.nx- yps - blade.nx[0] + lateral_clearance, blade.nz, color="tab:blue")
                     #ax.set_xlim([0,50])
@@ -576,13 +581,14 @@ class RailTransport(ExplicitComponent):
         const["fun"] = run_hcurve
 
         npts = 2 * (self.n_span - 1)
-        # bounds = [(-max_rot, max_rot)]
-        # bounds.append([(-1e2, 1e2)] * npts)
-        bounds = [(-1e2, 1e2)] * (npts + 2)
+        bounds = [(-max_rot, max_rot),(-max_rot, max_rot)]
+        for i in range(npts):
+            bounds.append((0, 1e2))
+        # bounds = [(-1e2, 1e2)] * (npts + 2)
         x0 = np.r_[result.x, 0. * np.ones(npts)]
         result = minimize(
-            # lambda x: np.sum(np.abs(x)),
-            get_max_force_h,
+            lambda x: np.sum(np.abs(x[2:])),
+            # get_max_force_h,
             x0,
             method="slsqp",
             bounds=bounds,
@@ -593,7 +599,7 @@ class RailTransport(ExplicitComponent):
 
         print("Rail transport module convergence: ", result.success)
         # Evaluate optimized solution
-        RF_derailH, strainPS, strainSS = run_hcurve(result.x, optFlag=False, final=True)
+        RF_derailH, strainPS, strainSS = run_hcurve(result.x, optFlag=False, final=False)
 
         # Express derailing force as a constraint
         if _8axle:
