@@ -1,12 +1,12 @@
 import copy
 import logging
 
+import numpy as np
 import matplotlib
 import openmdao.api as om
 import matplotlib.pyplot as plt
 from scipy.interpolate import PchipInterpolator, interp1d
 
-import numpy as np
 import wisdem.moorpy.MoorProps as mp
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
@@ -1396,30 +1396,36 @@ class INN_Airfoils(om.ExplicitComponent):
                 Re = 9.0e6
             # print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re} with Cd {c_d[i]}")
             try:
-                cst, alpha_inn, z = self.inn.inverse_design(
-                    c_d[i], L_D[i], np.rad2deg(stall_margin[i]), r_thick[i], Re, N=1, process_samples=True, z=314
+                all_coords, alpha_inn, y_inv, z_val = self.inn.inverse_design(
+                    c_d[i],
+                    L_D[i],
+                    np.rad2deg(stall_margin[i]),
+                    r_thick[i],
+                    Re,
+                    N=1,
+                    process_samples=True,
+                    z=314,
+                    return_z=True,
+                    data_format="XY",
                 )
             except:
                 raise Exception("The INN for airfoil design failed in the inverse mode")
             alpha = np.arange(-4, 20, 0.25)
             try:
-                cd, cl = self.inn.generate_polars(cst, Re, alpha=alpha)
+                cd, cl = self.inn.generate_polars(all_coords, Re, alpha=alpha)
             except:
                 raise Exception("The INN for airfoil design failed in the forward mode")
 
             # print(f"inverse design completed for index {i} with a thickness of {r_thick[i]}")
 
-            for af_cst in cst:
-                x, y = utils.get_airfoil_shape(af_cst)
-
-                points = np.column_stack((x, y))
+            for coords in all_coords:
                 # Check that airfoil points are declared from the TE suction side to TE pressure side
-                idx_le = np.argmin(points[:, 0])
-                if np.mean(points[:idx_le, 1]) > 0.0:
-                    points = np.flip(points, axis=0)
+                idx_le = np.argmin(coords[:, 0])
+                if np.mean(coords[:idx_le, 1]) > 0.0:
+                    coords = np.flip(coords, axis=0)
 
                 # Remap points using class AirfoilShape
-                af = AirfoilShape(points=points)
+                af = AirfoilShape(points=coords)
                 af.redistribute(self.n_xy, even=False, dLE=True)
                 s = af.s
                 af_points = af.points
