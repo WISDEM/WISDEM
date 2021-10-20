@@ -128,6 +128,10 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["stall_margin"]["n_opt"]),
                     units="rad",
                 )
+                inn_af.add_output(
+                    "z",
+                    val=np.zeros(opt_options["design_variables"]["blade"]["aero_shape"]["z"]["n_opt"]),
+                )
                 self.add_subsystem("inn_af", inn_af)
 
         # Wind turbine configuration inputs
@@ -220,6 +224,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 self.connect("inn_af.L_D_opt", "blade.run_inn_af.L_D_opt")
                 self.connect("inn_af.c_d_opt", "blade.run_inn_af.c_d_opt")
                 self.connect("inn_af.stall_margin_opt", "blade.run_inn_af.stall_margin_opt")
+                self.connect("inn_af.z", "blade.run_inn_af.z")
                 self.connect("control.rated_TSR", "blade.run_inn_af.rated_TSR")
                 self.connect("hub.radius", "blade.run_inn_af.hub_radius")
 
@@ -1335,6 +1340,11 @@ class INN_Airfoils(om.ExplicitComponent):
             units="m",
             desc="Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.",
         )
+        self.add_input(
+            "z",
+            val=np.ones(aero_shape_opt_options["z"]["n_opt"]),
+            desc="Design parameter for INN, z.",
+        )
 
         # Airfoil coordinates
         self.add_output(
@@ -1395,6 +1405,10 @@ class INN_Airfoils(om.ExplicitComponent):
             if Re < 100.0:
                 Re = 9.0e6
             # print(f"Querying INN at L/D {L_D[i]} and Reynolds {Re} with Cd {c_d[i]}")
+            if self.options["aero_shape_opt_options"]["z"]["flag"]:
+                z = inputs["z"]
+            else:
+                z = 314
             try:
                 all_coords, alpha_inn, y_inv, z_val = self.inn.inverse_design(
                     c_d[i],
@@ -1404,7 +1418,7 @@ class INN_Airfoils(om.ExplicitComponent):
                     Re,
                     N=1,
                     process_samples=True,
-                    z=314,
+                    z=z,
                     return_z=True,
                     data_format="XY",
                 )

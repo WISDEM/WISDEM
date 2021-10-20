@@ -1,9 +1,8 @@
 import os
 
+import numpy as np
 import openmdao.api as om
 from scipy.interpolate import PchipInterpolator
-
-import numpy as np
 
 
 class PoseOptimization(object):
@@ -626,23 +625,31 @@ class PoseOptimization(object):
                 upper=init_c_d_opt[indices] + c_d_options["max_increase"],
             )
 
-            stall_options = blade_opt["aero_shape"]["stall_margin"]
-            if stall_options["flag"]:
-                n_opt = stall_options["n_opt"]
-                indices = range(stall_options["index_start"], stall_options["index_end"])
-                s_opt_c_d = np.linspace(0.0, 1.0, n_opt)
-                init_stall_opt = np.interp(
-                    s_opt_c_d,
-                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"],
-                )
+        stall_options = blade_opt["aero_shape"]["stall_margin"]
+        if stall_options["flag"]:
+            n_opt = stall_options["n_opt"]
+            indices = range(stall_options["index_start"], stall_options["index_end"])
+            s_opt_c_d = np.linspace(0.0, 1.0, n_opt)
+            init_stall_opt = np.interp(
+                s_opt_c_d,
+                wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"],
+            )
 
-                wt_opt.model.add_design_var(
-                    "inn_af.stall_margin_opt",
-                    indices=indices,
-                    lower=init_stall_opt[indices] - stall_options["max_decrease"],
-                    upper=init_stall_opt[indices] + stall_options["max_increase"],
-                )
+            wt_opt.model.add_design_var(
+                "inn_af.stall_margin_opt",
+                indices=indices,
+                lower=init_stall_opt[indices] - stall_options["max_decrease"],
+                upper=init_stall_opt[indices] + stall_options["max_increase"],
+            )
+
+        z_options = blade_opt["aero_shape"]["z"]
+        if z_options["flag"]:
+            wt_opt.model.add_design_var(
+                "inn_af.z",
+                lower=z_options["lower_bound"],
+                upper=z_options["upper_bound"],
+            )
 
         # Only add the pressure side design variables if we do set
         # `equal_to_suction` as False in the optimization yaml.

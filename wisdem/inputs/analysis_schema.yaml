@@ -181,6 +181,26 @@ properties:
                                     max_increase: *max_increase
                                     index_start: *index_start
                                     index_end: *index_end
+                            z:
+                                type: object
+                                default: {}
+                                description: INN design parameter z
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 3
+                                        description: z design parameter count
+                                    lower_bound:
+                                        type: number
+                                        default: -1.0
+                                        minimum: -1.e30
+                                        maximum: 1.e30
+                                    upper_bound:
+                                        type: number
+                                        default: 1.0
+                                        minimum: -1.e30
+                                        maximum: 1.e30
                     structure:
                         type: object
                         default: {}
