@@ -1,9 +1,10 @@
 from __future__ import division, print_function
 
 import os
+import logging
 
 import numpy as np
-import logging
+
 logger = logging.getLogger("wisdem/weis")
 
 
@@ -120,8 +121,19 @@ class Polar(object):
         else:
             return self.cl * np.cos(self.alpha * np.pi / 180) + self.cd * np.sin(self.alpha * np.pi / 180)
 
-    def correction3D(self, r_over_R, chord_over_r, tsr, lift_method = 'DuSelig', drag_method='None', blending_method='linear_25_45', 
-                    max_cl_corr=0.25, alpha_max_corr=None, alpha_linear_min=None, alpha_linear_max=None):
+    def correction3D(
+        self,
+        r_over_R,
+        chord_over_r,
+        tsr,
+        lift_method="DuSelig",
+        drag_method="None",
+        blending_method="linear_25_45",
+        max_cl_corr=0.25,
+        alpha_max_corr=None,
+        alpha_linear_min=None,
+        alpha_linear_max=None,
+    ):
         """Applies 3-D corrections for rotating sections from the 2-D data.
 
         Parameters
@@ -152,7 +164,7 @@ class Polar(object):
         polar : Polar
             A new Polar object corrected for 3-D effects
         """
-    
+
         if alpha_max_corr == None and alpha_linear_min == None and alpha_linear_max == None:
             alpha_linear_region, _, cl_slope, alpha0 = self.linear_region()
             alpha_linear_min = alpha_linear_region[0]
@@ -160,7 +172,9 @@ class Polar(object):
             _, alpha_max_corr = self.cl_max()
             find_linear_region = False
         elif alpha_max_corr * alpha_linear_min * alpha_linear_max == None:
-            raise Exception('Define all or none of the keyword arguments alpha_max_corr, alpha_linear_min, and alpha_linear_max')
+            raise Exception(
+                "Define all or none of the keyword arguments alpha_max_corr, alpha_linear_min, and alpha_linear_max"
+            )
         else:
             find_linear_region = True
 
@@ -189,44 +203,48 @@ class Polar(object):
             cl_slope = np.degrees(cl_slope)
             alpha0 = np.radians(alpha0)
 
-        if lift_method == 'DuSelig':
+        if lift_method == "DuSelig":
             # Du-Selig correction factor
-            fcl = 1.0 / cl_slope * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r ** expon) / (b + chord_over_r ** expon) - 1)
-        elif lift_method == 'Snel':
+            fcl = (
+                1.0
+                / cl_slope
+                * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r ** expon) / (b + chord_over_r ** expon) - 1)
+            )
+        elif lift_method == "Snel":
             # Snel correction
-            fcl = 3.*chord_over_r**2.
+            fcl = 3.0 * chord_over_r ** 2.0
         else:
-            raise Exception('The keyword argument lift_method (3d correction for lift) can only be DuSelig or Snel.')
+            raise Exception("The keyword argument lift_method (3d correction for lift) can only be DuSelig or Snel.")
 
         # 3D correction for lift
         cl_linear = cl_slope * (alpha - alpha0)
-        cl_corr = fcl*(cl_linear-cl_2d)
+        cl_corr = fcl * (cl_linear - cl_2d)
         # Bound correction +/- max_cl_corr
         cl_corr = np.clip(cl_corr, -max_cl_corr, max_cl_corr)
         # Blending
-        if blending_method=='linear_25_45':
+        if blending_method == "linear_25_45":
             # We adjust fully between +/- 25 deg, linearly to +/- 45
-            adj_alpha=np.radians([-180, -45, -25, 25, 45,180])
-            adj_value=np.array  ([0   ,   0,   1,  1,  0, 0 ])
+            adj_alpha = np.radians([-180, -45, -25, 25, 45, 180])
+            adj_value = np.array([0, 0, 1, 1, 0, 0])
             adj = np.interp(alpha, adj_alpha, adj_value)
-        elif blending_method=='heaviside':
-             # Apply (arbitrary!) smoothing function to smoothen the 3D corrections and zero them out away from alpha_max_corr
+        elif blending_method == "heaviside":
+            # Apply (arbitrary!) smoothing function to smoothen the 3D corrections and zero them out away from alpha_max_corr
             delta_corr = 10
-            y1 = 1. - smooth_heaviside(alpha, k=1, rng=(alpha_max_corr, alpha_max_corr + np.deg2rad(delta_corr)))
-            y2 = smooth_heaviside(alpha, k=1, rng=(0., np.deg2rad(delta_corr)))
-            adj = y1*y2
+            y1 = 1.0 - smooth_heaviside(alpha, k=1, rng=(alpha_max_corr, alpha_max_corr + np.deg2rad(delta_corr)))
+            y2 = smooth_heaviside(alpha, k=1, rng=(0.0, np.deg2rad(delta_corr)))
+            adj = y1 * y2
         else:
-            raise NotImplementedError('blending :',blending_method)
-        cl_3d = cl_2d + cl_corr*adj
+            raise NotImplementedError("blending :", blending_method)
+        cl_3d = cl_2d + cl_corr * adj
 
         # Eggers 2003 correction for drag
-        if drag_method == 'Eggers':
+        if drag_method == "Eggers":
             delta_cd = cl_corr * (np.sin(alpha) - 0.12 * np.cos(alpha)) / (np.cos(alpha) + 0.12 * np.sin(alpha)) * adj
-        elif drag_method == 'None':
-            delta_cd = 0.
+        elif drag_method == "None":
+            delta_cd = 0.0
         else:
-            raise Exception('The keyword argument darg_method (3d correction for drag) can only be Eggers or None.')
-        
+            raise Exception("The keyword argument darg_method (3d correction for drag) can only be Eggers or None.")
+
         cd_3d = cd_2d + delta_cd
 
         return type(self)(self.Re, np.degrees(alpha), cl_3d, cd_3d, self.cm)
@@ -668,9 +686,9 @@ class Polar(object):
 
         return _find_alpha0(self.alpha, self.cl, window)
 
-    def linear_region(self, delta_alpha0 = 4, method_linear_fit = 'max'):
+    def linear_region(self, delta_alpha0=4, method_linear_fit="max"):
         alpha0 = self.alpha0()
-        cl_slope, _ = self.cl_linear_slope(window=[alpha0, alpha0+delta_alpha0], method=method_linear_fit)
+        cl_slope, _ = self.cl_linear_slope(window=[alpha0, alpha0 + delta_alpha0], method=method_linear_fit)
         alpha_linear_region = np.asarray(_find_TSE_region(self.alpha, self.cl, cl_slope, alpha0, deviation=0.05))
         cl_linear_region = (alpha_linear_region - alpha0) * cl_slope
 
@@ -774,7 +792,7 @@ class Polar(object):
             # Looking at slope around alpha 0 to see if we are too far off
             slope_FD, off_FD = _find_slope(self.alpha, self.cl, xi=alpha0, window=window, method="finitediff_1c")
             if abs(slope - slope_FD) / slope_FD * 100 > 50:
-                raise Exception(
+                print(
                     "Warning: More than 50% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.".format(
                         slope, slope_FD, window[0], window[-1]
                     )
@@ -985,17 +1003,17 @@ def _find_alpha0(alpha, coeff, window):
     alpha_zc, i_zc = _zero_crossings(x=alpha, y=coeff, direction="up")
 
     if len(alpha_zc) > 1:
-       logger.debug(
-           "Cannot find alpha0, {} zero crossings of Coeff in the range of alpha values: [{} {}] ".format(
-               len(alpha_zc), window[0], window[1]
-           )
-       )
+        logger.debug(
+            "Cannot find alpha0, {} zero crossings of Coeff in the range of alpha values: [{} {}] ".format(
+                len(alpha_zc), window[0], window[1]
+            )
+        )
     elif len(alpha_zc) == 0:
-       logger.debug(
-           "Cannot find alpha0, no zero crossing of Coeff in the range of alpha values: [{} {}] ".format(
-               window[0], window[1]
-           )
-       )
+        logger.debug(
+            "Cannot find alpha0, no zero crossing of Coeff in the range of alpha values: [{} {}] ".format(
+                window[0], window[1]
+            )
+        )
 
     alpha0 = alpha_zc[0]
     return alpha0
@@ -1310,61 +1328,63 @@ def _intersections(x1, y1, x2, y2):
     xy0 = xy0.T
     return xy0[:, 0], xy0[:, 1]
 
-def smooth_heaviside(x, k=1, rng=(-np.inf, np.inf), method='exp'):
-    """ 
+
+def smooth_heaviside(x, k=1, rng=(-np.inf, np.inf), method="exp"):
+    """
     Smooth approximation of Heaviside function where the step occurs between rng[0] and rng[1]:
        if rng[0]<rng[1]: then  f(<rng[0])=0, f(>=rng[1])=1
        if rng[0]>rng[1]: then  f(<rng[1])=1, f(>=rng[0])=0
-    exp: 
+    exp:
        rng=(-inf,inf):  H(x)=[1 + exp(-2kx)            ]^-1
        rng=(-1,1):      H(x)=[1 + exp(4kx/(x^2-1)      ]^-1
        rng=(0,1):       H(x)=[1 + exp(k(2x-1)/(x(x-1)) ]^-1
-    INPUTS: 
-        x  : scalar or vector of real x values \in ]-infty; infty[ 
+    INPUTS:
+        x  : scalar or vector of real x values \in ]-infty; infty[
         k  : float >=1, the higher k the "steeper" the heaviside function
-        rng: tuple of min and max value such that f(<=min)=0  and f(>=max)=1. 
+        rng: tuple of min and max value such that f(<=min)=0  and f(>=max)=1.
              Reversing the range makes the Heaviside function from 1 to 0 instead of 0 to 1
         method: smooth approximation used (e.g. exp or tan)
     NOTE: an epsilon is introduced in the denominator to avoid overflow of the exponentail
     """
-    if k<1:
-        raise Exception('k needs to be >=1')
+    if k < 1:
+        raise Exception("k needs to be >=1")
     eps = 1e-2
-    mn,mx = rng
-    x     = np.asarray(x)
-    H     = np.zeros(x.shape)
-    if mn<mx:
-        H[x<=mn] = 0
-        H[x>=mx] = 1
-        b        = np.logical_and(x>mn, x<mx)
+    mn, mx = rng
+    x = np.asarray(x)
+    H = np.zeros(x.shape)
+    if mn < mx:
+        H[x <= mn] = 0
+        H[x >= mx] = 1
+        b = np.logical_and(x > mn, x < mx)
     else:
-        H[x<=mx] = 1
-        H[x>=mn] = 0
-        b        = np.logical_and(x<mn, x>mx)
-    x=x[b]
-    if method=='exp':
-        if np.abs(mn)==np.inf and np.abs(mx)==np.inf:
+        H[x <= mx] = 1
+        H[x >= mn] = 0
+        b = np.logical_and(x < mn, x > mx)
+    x = x[b]
+    if method == "exp":
+        if np.abs(mn) == np.inf and np.abs(mx) == np.inf:
             # Infinite support
-            x[k*x>100 ]  = 100./k
-            x[k*x<-100] = -100./k
-            if mn<mx:
-                H[b] = 1 / ( 1+np.exp(-  k * x))
+            x[k * x > 100] = 100.0 / k
+            x[k * x < -100] = -100.0 / k
+            if mn < mx:
+                H[b] = 1 / (1 + np.exp(-k * x))
             else:
-                H[b] = 1 / ( 1+np.exp(   k * x))
-        elif np.abs(mn)!=np.inf and np.abs(mx)!=np.inf:
-            n=4.
+                H[b] = 1 / (1 + np.exp(k * x))
+        elif np.abs(mn) != np.inf and np.abs(mx) != np.inf:
+            n = 4.0
             # Compact support
-            s= 2./(mx -mn) * (x-(mn+mx)/2.) # transform compact support into ]-1,1[ 
-            x = -n*s/(s**2-1.)             # then transform   ]-1,1[  into ]-inf,inf[
-            x[k*x>100 ]  = 100./k
-            x[k*x<-100] = -100./k
-            H[b] = 1./(1+np.exp(-k*x))
+            s = 2.0 / (mx - mn) * (x - (mn + mx) / 2.0)  # transform compact support into ]-1,1[
+            x = -n * s / (s ** 2 - 1.0)  # then transform   ]-1,1[  into ]-inf,inf[
+            x[k * x > 100] = 100.0 / k
+            x[k * x < -100] = -100.0 / k
+            H[b] = 1.0 / (1 + np.exp(-k * x))
         else:
-            raise NotImplementedError('Heaviside with only one bound infinite')
+            raise NotImplementedError("Heaviside with only one bound infinite")
     else:
         # TODO tan approx
         raise NotImplementedError()
     return H
+
 
 if __name__ == "__main__":
     pass
