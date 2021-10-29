@@ -47,7 +47,7 @@ setup(
         "scipy",
         "simpy",
         "sortedcontainers",
-        "packaging<=21.0",
+        "pyparsing<3",
     ],
     python_requires=">=3.7",
     package_data={"": ["*.yaml", "*.xlsx"], "wisdem": ["*.txt"]},
