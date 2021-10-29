@@ -623,8 +623,8 @@ materials:
       unit_cost: 13.
       component_id: 1
    -  name: adhesive
-      description: Adhesive from ...
-      source: Material coming from ...
+      description: Sample adhesive
+      source: https://www.nrel.gov/docs/fy19osti/73585.pdf
       orth: 0
       rho: 1100
       E: 4.56e+006
@@ -634,6 +634,7 @@ materials:
       Xc: 0.4e+006
       S: 0.31e+006
       G: 1520000.0
+      unit_cost: 9.0
    -  name: resin
       description: epoxy
       E: 1.e+6
