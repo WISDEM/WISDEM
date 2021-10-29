@@ -589,6 +589,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         self.add_subsystem("high_level_tower_props", ComputeHighLevelTowerProperties(modeling_options=modeling_options))
         self.connect("configuration.hub_height_user", "high_level_tower_props.hub_height_user")
         if modeling_options["flags"]["blade"]:
+            self.connect("blade.high_level_blade_props.rotor_diameter", "high_level_tower_props.rotor_diameter")
             self.add_subsystem("af_3d", Airfoil3DCorrection(rotorse_options=modeling_options["WISDEM"]["RotorSE"]))
             self.connect("airfoils.aoa", "af_3d.aoa")
             self.connect("airfoils.Re", "af_3d.Re")
@@ -3123,28 +3124,27 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-        if modeling_options["flags"]["blade"]:
-            outputs["blade_ref_axis"][:, 0] = inputs["blade_ref_axis_user"][:, 0]
-            outputs["blade_ref_axis"][:, 1] = inputs["blade_ref_axis_user"][:, 1]
-            # Scale z if the blade length provided by the user does not match the rotor diameter. D = (blade length + hub radius) * 2
-            if inputs["rotor_diameter_user"] != 0.0:
-                outputs["rotor_diameter"] = inputs["rotor_diameter_user"]
-                outputs["blade_ref_axis"][:, 2] = (
-                    inputs["blade_ref_axis_user"][:, 2]
-                    * inputs["rotor_diameter_user"]
-                    / ((arc_length(inputs["blade_ref_axis_user"])[-1] + inputs["hub_radius"]) * 2.0)
-                )
-            # If the user does not provide a rotor diameter, this is computed from the hub diameter and the blade length
-            else:
-                outputs["rotor_diameter"] = (arc_length(inputs["blade_ref_axis_user"])[-1] + inputs["hub_radius"]) * 2.0
-                outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2]
-            outputs["r_blade"] = outputs["blade_ref_axis"][:, 2] + inputs["hub_radius"]
-            outputs["rotor_radius"] = outputs["r_blade"][-1]
-            outputs["blade_length"] = arc_length(outputs["blade_ref_axis"])[-1]
-            outputs["prebend"] = outputs["blade_ref_axis"][:, 0]
-            outputs["prebendTip"] = outputs["blade_ref_axis"][-1, 0]
-            outputs["presweep"] = outputs["blade_ref_axis"][:, 1]
-            outputs["presweepTip"] = outputs["blade_ref_axis"][-1, 1]
+        outputs["blade_ref_axis"][:, 0] = inputs["blade_ref_axis_user"][:, 0]
+        outputs["blade_ref_axis"][:, 1] = inputs["blade_ref_axis_user"][:, 1]
+        # Scale z if the blade length provided by the user does not match the rotor diameter. D = (blade length + hub radius) * 2
+        if inputs["rotor_diameter_user"] != 0.0:
+            outputs["rotor_diameter"] = inputs["rotor_diameter_user"]
+            outputs["blade_ref_axis"][:, 2] = (
+                inputs["blade_ref_axis_user"][:, 2]
+                * inputs["rotor_diameter_user"]
+                / ((arc_length(inputs["blade_ref_axis_user"])[-1] + inputs["hub_radius"]) * 2.0)
+            )
+        # If the user does not provide a rotor diameter, this is computed from the hub diameter and the blade length
+        else:
+            outputs["rotor_diameter"] = (arc_length(inputs["blade_ref_axis_user"])[-1] + inputs["hub_radius"]) * 2.0
+            outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2]
+        outputs["r_blade"] = outputs["blade_ref_axis"][:, 2] + inputs["hub_radius"]
+        outputs["rotor_radius"] = outputs["r_blade"][-1]
+        outputs["blade_length"] = arc_length(outputs["blade_ref_axis"])[-1]
+        outputs["prebend"] = outputs["blade_ref_axis"][:, 0]
+        outputs["prebendTip"] = outputs["blade_ref_axis"][-1, 0]
+        outputs["presweep"] = outputs["blade_ref_axis"][:, 1]
+        outputs["presweepTip"] = outputs["blade_ref_axis"][-1, 1]
 
 
 class ComputeHighLevelTowerProperties(om.ExplicitComponent):
@@ -3168,6 +3168,12 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
         )
         self.add_input("distance_tt_hub", val=0.0, units="m", desc="Vertical distance from tower top to hub center.")
         self.add_input("hub_height_user", val=0.0, units="m", desc="Height of the hub specified by the user.")
+        self.add_input(
+            "rotor_diameter",
+            val=0.0,
+            units="m",
+            desc="Diameter of the rotor used in WISDEM. It is defined as two times the blade length plus the hub diameter.",
+        )
 
         self.add_output(
             "tower_ref_axis",
@@ -3196,7 +3202,7 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
                 outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]
 
-        if modeling_options["flags"]["blade"] and outputs["rotor_diameter"] > 2.0 * outputs["hub_height"]:
+        if modeling_options["flags"]["blade"] and inputs["rotor_diameter"] > 2.0 * outputs["hub_height"]:
             raise Exception(
                 "The rotor blade extends past the ground or water line. Please adjust hub height and/or rotor diameter."
             )

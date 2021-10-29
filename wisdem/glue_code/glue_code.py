@@ -161,7 +161,7 @@ class WT_RNTA(om.Group):
             self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.rs.brs.layer_end_nd")
 
             # Connections to RotorCost
-            self.connect("assembly.blade_length", "rotorse.rc.blade_length")
+            self.connect("blade.high_level_blade_props.blade_length", "rotorse.rc.blade_length")
             self.connect("blade.outer_shape_bem.s", "rotorse.rc.s")
             self.connect("blade.pa.chord_param", "rotorse.rc.chord")
             self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.rc.coord_xy_interp")
