@@ -3680,8 +3680,6 @@ class StandaloneRotorCost(om.Group):
 
 def initialize_omdao_prob(wt_opt, modeling_options, wt_init):
 
-    wt_opt["high_level_blade_props.hub_height_user"] = wt_init["assembly"]["hub_height"]
-
     materials = wt_init["materials"]
     wt_opt = assign_material_values(wt_opt, modeling_options, materials)
 
