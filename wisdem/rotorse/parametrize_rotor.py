@@ -1,11 +1,11 @@
 import os
 
 import numpy as np
-from openmdao.api import Group, ExplicitComponent
+import openmdao.api as om
 from scipy.interpolate import PchipInterpolator
 
 
-class ParametrizeBladeAero(ExplicitComponent):
+class ParametrizeBladeAero(om.ExplicitComponent):
     # Openmdao component to parameterize distributed quantities for the outer shape of the wind turbine rotor blades
     def initialize(self):
         self.options.declare("rotorse_options")
@@ -92,7 +92,7 @@ class ParametrizeBladeAero(ExplicitComponent):
         outputs["max_chord_constr"] = chord_opt(inputs["s_opt_chord"]) / max_chord
 
 
-class ParametrizeBladeStruct(ExplicitComponent):
+class ParametrizeBladeStruct(om.ExplicitComponent):
     # Openmdao component to parameterize distributed quantities for the structural design of the wind turbine rotor blades
     def initialize(self):
         self.options.declare("rotorse_options")
@@ -229,3 +229,22 @@ class ParametrizeBladeStruct(ExplicitComponent):
                 opt_m_interp = outputs["layer_thickness_param"][i, :]
 
             outputs["layer_thickness_param"][i, :] = opt_m_interp
+
+
+class ComputeReynolds(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("n_span")
+
+    def setup(self):
+        n_span = self.options["n_span"]
+
+        self.add_input("rho", val=0.0, units="kg/m**3")
+        self.add_input("mu", val=0.0, units="kg/m/s")
+        self.add_input("local_airfoil_velocities", val=np.zeros((n_span)), units="m/s")
+        self.add_input("chord", val=np.zeros((n_span)), units="m")
+        self.add_output("Re", val=np.zeros((n_span)), ref=1.0e6)
+
+    def compute(self, inputs, outputs):
+        outputs["Re"] = np.nan_to_num(
+            inputs["rho"] * inputs["local_airfoil_velocities"] * inputs["chord"] / inputs["mu"]
+        )

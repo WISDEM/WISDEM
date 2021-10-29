@@ -7,10 +7,11 @@ January 2020
 
 import logging
 
-import numpy as np
 from openmdao.api import Group, ExplicitComponent
 from scipy.optimize import brentq, minimize, minimize_scalar
 from scipy.interpolate import PchipInterpolator
+
+import numpy as np
 from wisdem.ccblade.Polar import Polar
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.utilities import smooth_abs, smooth_min, linspace_with_deriv
@@ -925,6 +926,9 @@ class NoStallConstraint(ExplicitComponent):
             outputs["no_stall_constraint"][i] = (inputs["aoa_along_span"][i] + inputs["stall_margin"]) / outputs[
                 "stall_angle_along_span"
             ][i]
+
+            if outputs["stall_angle_along_span"][i] <= 1.0e-6:
+                outputs["no_stall_constraint"][i] = 0.0
 
             logger.debug(
                 "Blade is violating the minimum margin to stall at span location %.2f %%" % (inputs["s"][i] * 100.0)

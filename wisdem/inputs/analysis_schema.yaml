@@ -151,6 +151,56 @@ properties:
                                     max_increase: *max_increase
                                     index_start: *index_start
                                     index_end: *index_end
+                            c_d:
+                                type: object
+                                default: {}
+                                description: Drag coefficient at rated conditions as a design variable by scaling (multiplying) the initial value at spline control points along the span. This requires the INN for airfoil design
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the drag coefficient distribution along blade span.
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
+                            stall_margin:
+                                type: object
+                                default: {}
+                                description: Stall margin at rated conditions as a design variable by scaling (multiplying) the initial value at spline control points along the span. This requires the INN for airfoil design
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the stall margin distribution along blade span.
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
+                            z:
+                                type: object
+                                default: {}
+                                description: INN design parameter z
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 3
+                                        description: z design parameter count
+                                    lower_bound:
+                                        type: number
+                                        default: -1.0
+                                        minimum: -1.e30
+                                        maximum: 1.e30
+                                    upper_bound:
+                                        type: number
+                                        default: 1.0
+                                        minimum: -1.e30
+                                        maximum: 1.e30
                     structure:
                         type: object
                         default: {}
@@ -1247,7 +1297,7 @@ properties:
                         description: Finite difference calculation mode
                         default: central
                         enum: [central, forward, complex]
-                    debug_print:
+                    debug_print: &debug_print
                         type: boolean
                         default: False
                         description: Toggle driver debug printing
@@ -1295,6 +1345,7 @@ properties:
                         default: 2
                         minimum: 1
                         maximum: 1000000
+                    debug_print: *debug_print
             step_size_study:
                 type: object
                 description: Specification of the step size study parameters
@@ -1336,3 +1387,7 @@ properties:
                 type: boolean
                 description: If true, only record design variables.
                 default: False
+            includes:
+                type: array
+                description: List of variables to include in recorder
+                default: []

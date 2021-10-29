@@ -1,12 +1,14 @@
 import os
+
 import numpy as np
 import openmdao.api as om
 from scipy.optimize import brentq
-from wisdem.glue_code.gc_WT_DataStruc import Materials, Blade, WT_Assembly
-from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
-from wisdem.glue_code.gc_WT_InitModel import assign_material_values, assign_blade_values, assign_airfoil_values
-from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
+
 from wisdem.commonse.utilities import arc_length
+from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
+from wisdem.glue_code.gc_WT_DataStruc import Blade, Materials, ComputeHighLevelBladeProperties
+from wisdem.glue_code.gc_WT_InitModel import assign_blade_values, assign_airfoil_values, assign_material_values
+from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
 
 ### USING OLD NUMPY SRC FOR PMT-FUNCTION INSTEAD OF SWITCHING TO ANNOYING NUMPY-FINANCIAL
 _when_to_num = {"end": 0, "begin": 1, "e": 0, "b": 1, 0: 0, 1: 1, "beginning": 1, "start": 1, "finish": 0}
@@ -34,7 +36,6 @@ def pmt(rate, nper, pv, fv=0, when="end"):
 
 
 class blade_bom(object):
-
     def compute_consumables(self):
 
         # Consumables
@@ -632,7 +633,6 @@ class blade_labor_ct(object):
             team_size = 100.0
             # print("WARNING: the blade cost model is used beyond its applicability range. No team can limit the main mold cycle time to 24 hours. 100 workers are assumed at the low-pressure mold, but this is incorrect.")
 
-
         labor[5 + self.n_webs], skin_mold_gating_ct[5 + self.n_webs] = labor_ct_lp_skin(team_size)
 
         # HP skin infusion
@@ -802,7 +802,11 @@ class material_cutting_process(object):
 
         for i_mat in range(len(mat_names)):
 
-            if self.materials["orth"][i_mat] == 1 and self.materials["component_id"][i_mat] > 1 and self.materials["component_id"][i_mat] < 3:
+            if (
+                self.materials["orth"][i_mat] == 1
+                and self.materials["component_id"][i_mat] > 1
+                and self.materials["component_id"][i_mat] < 3
+            ):
                 # Number of rolls
                 self.materials["n_rolls"][i_mat] = (
                     self.materials["total_mass_w_waste"][i_mat] / self.materials["roll_mass"][i_mat]
@@ -2333,19 +2337,11 @@ class virtual_factory(object):
         if n_molds_root < 1:
             self.parallel_proc[2] = 0
         else:
-            self.parallel_proc[1] = (
-                self.n_set_molds_skins * non_gating_ct[1] / sum(gating_ct) / (1 - self.cum_rejr[1])
-            )
-            self.parallel_proc[2] = (
-                self.n_set_molds_skins * non_gating_ct[2] / sum(gating_ct) / (1 - self.cum_rejr[2])
-            )
+            self.parallel_proc[1] = self.n_set_molds_skins * non_gating_ct[1] / sum(gating_ct) / (1 - self.cum_rejr[1])
+            self.parallel_proc[2] = self.n_set_molds_skins * non_gating_ct[2] / sum(gating_ct) / (1 - self.cum_rejr[2])
         for i_web in range(self.n_webs):
             self.parallel_proc[3 + i_web] = (
-                2
-                * self.n_set_molds_skins
-                * non_gating_ct[3 + i_web]
-                / sum(gating_ct)
-                / (1 - self.cum_rejr[3 + i_web])
+                2 * self.n_set_molds_skins * non_gating_ct[3 + i_web] / sum(gating_ct) / (1 - self.cum_rejr[3 + i_web])
             )
 
         self.parallel_proc[5 + self.n_webs] = self.n_set_molds_skins
@@ -2637,7 +2633,6 @@ class virtual_factory(object):
         maintenance_cost_per_blade = np.zeros(len(operation))  # [$]
         maintenance_cost_per_year = np.zeros(len(operation))  # [$]
 
-
         for i_op in range(0, len(operation)):
             if verbosity:
                 print("\nBuilding:")
@@ -2794,13 +2789,13 @@ class RotorCost(om.ExplicitComponent):
     def setup(self):
         mod_options = self.options["mod_options"]
         rotorse_options = mod_options["WISDEM"]["RotorSE"]
-        self.n_span = n_span = rotorse_options ["n_span"]
+        self.n_span = n_span = rotorse_options["n_span"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_webs = n_webs = rotorse_options["n_webs"]
         self.n_layers = n_layers = rotorse_options["n_layers"]
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
         self.layer_mat = rotorse_options["layer_mat"]
-        self.layer_name =rotorse_options["layer_name"]
+        self.layer_name = rotorse_options["layer_name"]
         self.spar_cap_ss = rotorse_options["spar_cap_ss"]
         self.spar_cap_ps = rotorse_options["spar_cap_ps"]
         mat_init_options = self.options["mod_options"]["materials"]
@@ -2906,53 +2901,61 @@ class RotorCost(om.ExplicitComponent):
         )
         self.add_input(
             "flange_thick",
-            val = 0.008,
+            val=0.008,
             units="m",
             desc="Average thickness of adhesive",
         )
         self.add_input(
             "flange_width",
-            val = 0.05,
+            val=0.05,
             units="m",
             desc="Average width of adhesive lines",
-        )        
-        
-        self.add_input("t_bolt_unit_cost",
+        )
+
+        self.add_input(
+            "t_bolt_unit_cost",
             val=25.0,
             units="USD",
             desc="Cost of one t-bolt",
         )
-        self.add_input("t_bolt_unit_mass",
+        self.add_input(
+            "t_bolt_unit_mass",
             val=2.5,
             units="kg",
             desc="Mass of one t-bolt",
         )
-        self.add_input("t_bolt_spacing",
+        self.add_input(
+            "t_bolt_spacing",
             val=0.15,
             units="m",
             desc="Spacing of t-bolts along blade root circumference",
         )
-        self.add_input("barrel_nut_unit_cost",
+        self.add_input(
+            "barrel_nut_unit_cost",
             val=12.0,
             units="USD",
             desc="Cost of one barrel nut",
         )
-        self.add_input("barrel_nut_unit_mass",
-            val= 1.9,
-            units='kg',
+        self.add_input(
+            "barrel_nut_unit_mass",
+            val=1.9,
+            units="kg",
             desc="Mass of one barrel nut",
         )
-        self.add_input("LPS_unit_mass",
-            val= 1.00,
-            units='kg/m',
+        self.add_input(
+            "LPS_unit_mass",
+            val=1.00,
+            units="kg/m",
             desc="Unit mass of the lightining protection system. Linear scaling based on the weight of 150 lbs for the 61.5 m NREL 5MW blade",
         )
-        self.add_input("LPS_unit_cost",
+        self.add_input(
+            "LPS_unit_cost",
             val=40.00,
-            units='USD/m',
+            units="USD/m",
             desc="Unit cost of the lightining protection system. Linear scaling based on the cost of 2500$ for the 61.5 m NREL 5MW blade",
         )
-        self.add_input("root_preform_length",
+        self.add_input(
+            "root_preform_length",
             val=0.01,
             desc="Percentage of blade length starting from blade root that is preformed and later inserted into the mold",
         )
@@ -2965,131 +2968,145 @@ class RotorCost(om.ExplicitComponent):
         self.add_input("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
         # Outputs
         self.add_output(
-            "sect_perimeter", 
-            val=np.zeros(n_span), 
-            units="m", 
+            "sect_perimeter",
+            val=np.zeros(n_span),
+            units="m",
             desc="Perimeter of the section along the blade span",
         )
         self.add_output(
-            "layer_volume", 
-            val=np.zeros(n_layers), 
-            units="m**3", 
+            "layer_volume",
+            val=np.zeros(n_layers),
+            units="m**3",
             desc="Volumes of each layer used in the blade, ignoring the scrap factor",
         )
         self.add_output(
-            "mat_volume", 
-            val=np.zeros(n_mat), 
-            units="m**3", 
+            "mat_volume",
+            val=np.zeros(n_mat),
+            units="m**3",
             desc="Volumes of each material used in the blade, ignoring the scrap factor. For laminates, this is the wet volume",
         )
         self.add_output(
-            "mat_mass", 
-            val=np.zeros(n_mat), 
-            units="kg", 
+            "mat_mass",
+            val=np.zeros(n_mat),
+            units="kg",
             desc="Masses of each material used in the blade, ignoring the scrap factor. For laminates, this is the wet mass.",
         )
         self.add_output(
-            "mat_cost", 
-            val=np.zeros(n_mat), 
-            units="USD", 
+            "mat_cost",
+            val=np.zeros(n_mat),
+            units="USD",
             desc="Costs of each material used in the blade, ignoring the scrap factor. For laminates, this is the cost of the dry fabric.",
         )
         self.add_output(
-            "mat_cost_scrap", 
-            val=np.zeros(n_mat), 
-            units="USD", 
+            "mat_cost_scrap",
+            val=np.zeros(n_mat),
+            units="USD",
             desc="Same as mat_cost, now including the scrap factor.",
         )
-        self.add_output("total_labor_hours",
+        self.add_output(
+            "total_labor_hours",
             val=0.0,
             units="h",
             desc="Total amount of labor hours per blade.",
         )
-        self.add_output("total_skin_mold_gating_ct",
+        self.add_output(
+            "total_skin_mold_gating_ct",
             val=0.0,
             units="h",
             desc="Total amount of gating cycle time per blade. This is the cycle time required in the main mold that cannot be parallelized unless the number of molds is increased.",
         )
-        self.add_output("total_non_gating_ct",
+        self.add_output(
+            "total_non_gating_ct",
             val=0.0,
             units="h",
             desc="Total amount of non-gating cycle time per blade. This cycle time can happen in parallel.",
-        )        
+        )
         self.add_output(
-            "total_metallic_parts_cost", 
-            val=0.0, 
-            units="USD", 
+            "total_metallic_parts_cost",
+            val=0.0,
+            units="USD",
             desc="Cost of the metallic parts (bolts, nuts, lightining protection system), excluding the blade joint.",
         )
         self.add_output(
-            "total_consumable_cost_w_waste", 
-            val=0.0, 
-            units="USD", 
+            "total_consumable_cost_w_waste",
+            val=0.0,
+            units="USD",
             desc="Cost of the consumables including the waste.",
         )
-        self.add_output("total_blade_mat_cost_w_waste",
-            val=0.,
+        self.add_output(
+            "total_blade_mat_cost_w_waste",
+            val=0.0,
             units="USD",
             desc="Total blade material costs including the waste per blade.",
         )
-        self.add_output("total_cost_labor",
-            val=0.,
+        self.add_output(
+            "total_cost_labor",
+            val=0.0,
             units="USD",
             desc="Total labor costs per blade.",
         )
-        self.add_output("total_cost_utility",
-            val=0.,
+        self.add_output(
+            "total_cost_utility",
+            val=0.0,
             units="USD",
             desc="Total utility costs per blade.",
         )
-        self.add_output("blade_variable_cost",
-            val=0.,
+        self.add_output(
+            "blade_variable_cost",
+            val=0.0,
             units="USD",
             desc="Total blade variable costs per blade (material, labor, utility).",
         )
-        self.add_output("total_cost_equipment",
-            val=0.,
+        self.add_output(
+            "total_cost_equipment",
+            val=0.0,
             units="USD",
             desc="Total equipment cost per blade.",
         )
-        self.add_output("total_cost_tooling",
-            val=0.,
+        self.add_output(
+            "total_cost_tooling",
+            val=0.0,
             units="USD",
             desc="Total tooling cost per blade.",
         )
-        self.add_output("total_cost_building",
-            val=0.,
+        self.add_output(
+            "total_cost_building",
+            val=0.0,
             units="USD",
             desc="Total builting cost per blade.",
         )
-        self.add_output("total_maintenance_cost",
-            val=0.,
+        self.add_output(
+            "total_maintenance_cost",
+            val=0.0,
             units="USD",
             desc="Total maintenance cost per blade.",
         )
-        self.add_output("total_labor_overhead",
-            val=0.,
+        self.add_output(
+            "total_labor_overhead",
+            val=0.0,
             units="USD",
             desc="Total labor overhead cost per blade.",
         )
-        self.add_output("cost_capital",
-            val=0.,
+        self.add_output(
+            "cost_capital",
+            val=0.0,
             units="USD",
             desc="Cost of capital per blade.",
         )
-        self.add_output("blade_fixed_cost",
-            val=0.,
+        self.add_output(
+            "blade_fixed_cost",
+            val=0.0,
             units="USD",
             desc="Total blade fixed cost per blade (equipment, tooling, building, maintenance, labor, capital).",
         )
-        self.add_output("total_blade_cost",
-            val=0.,
+        self.add_output(
+            "total_blade_cost",
+            val=0.0,
             units="USD",
             desc="Total blade cost (variable and fixed)",
         )
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
 
         # Inputs
         s = inputs["s"]
@@ -3103,7 +3120,7 @@ class RotorCost(om.ExplicitComponent):
         web_end_nd = inputs["web_end_nd"]
         layer_thickness = inputs["layer_thickness"]
         orth = discrete_inputs["orth"]
-        component_id = discrete_inputs['component_id']
+        component_id = discrete_inputs["component_id"]
         rho_mat = inputs["rho"]
         waste = inputs["waste"]
         layer_web = np.array(inputs["layer_web"], dtype=int)
@@ -3119,7 +3136,7 @@ class RotorCost(om.ExplicitComponent):
         barrel_nut_unit_cost = inputs["barrel_nut_unit_cost"]
         LPS_unit_cost = inputs["LPS_unit_cost"]
         root_preform_length = inputs["root_preform_length"]
-        
+
         # Compute arc length along blade span
         arc_L_i = np.zeros(self.n_span)
         arc_L_SS_i = np.zeros(self.n_span)
@@ -3136,7 +3153,7 @@ class RotorCost(om.ExplicitComponent):
             # Get the half perimeters
             idx_le = np.argmin(xy_coord_i[:, 0])
             xy_arc_nd_LE[i] = xy_arc_nd_i[idx_le]
-            if np.mean(xy_coord_i[:idx_le,1])>0:
+            if np.mean(xy_coord_i[:idx_le, 1]) > 0:
                 arc_L_SS_i[i] = xy_arc_i[idx_le]
                 arc_L_PS_i[i] = xy_arc_i[-1] - xy_arc_i[idx_le]
             else:
@@ -3145,10 +3162,9 @@ class RotorCost(om.ExplicitComponent):
 
             # Compute height the webs along span
             for j in range(self.n_webs):
-                id_start = np.argmin(abs(xy_arc_nd_i - web_start_nd[j,i]))
-                id_end = np.argmin(abs(xy_arc_nd_i - web_end_nd[j,i]))
-                web_height[j,i] = abs((xy_coord_i[id_end,1] - xy_coord_i[id_start,0]) * chord[i])
-            
+                id_start = np.argmin(abs(xy_arc_nd_i - web_start_nd[j, i]))
+                id_end = np.argmin(abs(xy_arc_nd_i - web_end_nd[j, i]))
+                web_height[j, i] = abs((xy_coord_i[id_end, 1] - xy_coord_i[id_start, 0]) * chord[i])
 
         # Compute materials from the yaml
         layer_volume_span_ss = np.zeros((self.n_layers, self.n_span))
@@ -3163,80 +3179,84 @@ class RotorCost(om.ExplicitComponent):
         volumeskin2lay_webs = np.zeros(self.n_webs)
         fabric2lay_webs = np.zeros(self.n_webs)
         mass_webs = np.zeros(self.n_webs)
-        web_indices = np.zeros((self.n_webs,2), dtype=int)
+        web_indices = np.zeros((self.n_webs, 2), dtype=int)
         spar_cap_width_ss = np.zeros(self.n_span)
         spar_cap_width_ps = np.zeros(self.n_span)
-        spar_cap_length_ss = 0.
-        spar_cap_length_ps = 0.
-        width_sc_start_ss = 0.
-        width_sc_end_ss = 0.
-        width_sc_start_ps = 0.
-        width_sc_end_ps = 0.
-        fabric2lay_sc_ss = 0.
-        volume2lay_sc_ss = 0.
-        fabric2lay_sc_ps = 0.
-        volume2lay_sc_ps = 0.
-        mass_sc_ss = 0.
-        mass_sc_ps = 0.
-        fabric2lay_shell_ss = 0.
-        fabric2lay_shell_ps = 0.
-        n_plies_root_ss = 0.
-        n_plies_root_ps = 0.
-        volume_root_preform_ss = 0.
-        volume_root_preform_ps = 0.
-        areacore2lay_shell_ss = 0.
-        areacore2lay_shell_ps = 0.
-        fabric2lay_te_reinf_ss = 0.
-        fabric2lay_te_reinf_ps = 0.
-        fabric2lay_le_reinf_ss = 0.
-        fabric2lay_le_reinf_ps = 0.
-        mass_root_preform_ss = 0.
-        mass_root_preform_ps = 0.
-        mass_shell_ss = 0.
-        mass_shell_ps = 0.
-        tol_LE = 1.e-5
+        spar_cap_length_ss = 0.0
+        spar_cap_length_ps = 0.0
+        width_sc_start_ss = 0.0
+        width_sc_end_ss = 0.0
+        width_sc_start_ps = 0.0
+        width_sc_end_ps = 0.0
+        fabric2lay_sc_ss = 0.0
+        volume2lay_sc_ss = 0.0
+        fabric2lay_sc_ps = 0.0
+        volume2lay_sc_ps = 0.0
+        mass_sc_ss = 0.0
+        mass_sc_ps = 0.0
+        fabric2lay_shell_ss = 0.0
+        fabric2lay_shell_ps = 0.0
+        n_plies_root_ss = 0.0
+        n_plies_root_ps = 0.0
+        volume_root_preform_ss = 0.0
+        volume_root_preform_ps = 0.0
+        areacore2lay_shell_ss = 0.0
+        areacore2lay_shell_ps = 0.0
+        fabric2lay_te_reinf_ss = 0.0
+        fabric2lay_te_reinf_ps = 0.0
+        fabric2lay_le_reinf_ss = 0.0
+        fabric2lay_le_reinf_ps = 0.0
+        mass_root_preform_ss = 0.0
+        mass_root_preform_ps = 0.0
+        mass_shell_ss = 0.0
+        mass_shell_ps = 0.0
+        tol_LE = 1.0e-5
         for i_lay in range(self.n_layers):
-            imin, imax = np.nonzero(layer_thickness[i_lay,:])[0][[0,-1]]
+            imin, imax = np.nonzero(layer_thickness[i_lay, :])[0][[0, -1]]
             width_ss = np.zeros(self.n_span)
             width_ps = np.zeros(self.n_span)
             if layer_web[i_lay] == 0:
                 # Determine on which of the two molds the layer should go
-                if layer_start_nd[i_lay,imin] < xy_arc_nd_LE[imin] - tol_LE and layer_end_nd[i_lay,imin] > xy_arc_nd_LE[imin] + tol_LE:
-                    SS=True
-                    PS=True
-                elif layer_start_nd[i_lay,imin] > xy_arc_nd_LE[imin] + tol_LE:
-                    SS=False
-                    PS=True
+                if (
+                    layer_start_nd[i_lay, imin] < xy_arc_nd_LE[imin] - tol_LE
+                    and layer_end_nd[i_lay, imin] > xy_arc_nd_LE[imin] + tol_LE
+                ):
+                    SS = True
+                    PS = True
+                elif layer_start_nd[i_lay, imin] > xy_arc_nd_LE[imin] + tol_LE:
+                    SS = False
+                    PS = True
                 else:
-                    SS=True
-                    PS=False
-
+                    SS = True
+                    PS = False
 
                 # Compute width layer
-                width = arc_L_i * chord * (layer_end_nd[i_lay,:] - layer_start_nd[i_lay,:])
+                width = arc_L_i * chord * (layer_end_nd[i_lay, :] - layer_start_nd[i_lay, :])
                 # Compute width in the suction side
                 if SS and PS:
-                    width_ss = arc_L_i * chord * (xy_arc_nd_LE - layer_start_nd[i_lay,:])
-                    width_ps = arc_L_i * chord * (layer_end_nd[i_lay,:] - xy_arc_nd_LE)
+                    width_ss = arc_L_i * chord * (xy_arc_nd_LE - layer_start_nd[i_lay, :])
+                    width_ps = arc_L_i * chord * (layer_end_nd[i_lay, :] - xy_arc_nd_LE)
                 elif SS and not PS:
                     width_ss = width
                 else:
                     width_ps = width
                 # Compute the volume per unit meter for each layer split per side
-                layer_volume_span_ss[i_lay,:] = layer_thickness[i_lay,:]*width_ss
-                layer_volume_span_ps[i_lay,:] = layer_thickness[i_lay,:]*width_ps
+                layer_volume_span_ss[i_lay, :] = layer_thickness[i_lay, :] * width_ss
+                layer_volume_span_ps[i_lay, :] = layer_thickness[i_lay, :] * width_ps
             else:
-                SS=False
-                PS=False
+                SS = False
+                PS = False
                 # Compute the volume per unit meter for each layer
-                layer_volume_span_webs[i_lay,:] = layer_thickness[i_lay,:]*web_height[int(layer_web[i_lay])-1,:]
+                layer_volume_span_webs[i_lay, :] = layer_thickness[i_lay, :] * web_height[int(layer_web[i_lay]) - 1, :]
                 # Compute length of shear webs
-                if web_length[int(layer_web[i_lay])-1] == 0:
-                    web_length[int(layer_web[i_lay])-1] = (s[imax]-s[imin]) * blade_length
-                    web_indices[int(layer_web[i_lay])-1, :] = [imin,imax]
+                if web_length[int(layer_web[i_lay]) - 1] == 0:
+                    web_length[int(layer_web[i_lay]) - 1] = (s[imax] - s[imin]) * blade_length
+                    web_indices[int(layer_web[i_lay]) - 1, :] = [imin, imax]
             # Compute volume of layer
-            layer_volume_span = layer_volume_span_ss[i_lay,:] + layer_volume_span_ps[i_lay,:] + layer_volume_span_webs[i_lay,:]
-            layer_volume[i_lay] = np.trapz(layer_volume_span, s*blade_length)           
+            layer_volume_span = (
+                layer_volume_span_ss[i_lay, :] + layer_volume_span_ps[i_lay, :] + layer_volume_span_webs[i_lay, :]
+            )
+            layer_volume[i_lay] = np.trapz(layer_volume_span, s * blade_length)
 
             # Assign volume to corresponding material
             mat_name = self.layer_mat[i_lay]
@@ -3244,59 +3264,65 @@ class RotorCost(om.ExplicitComponent):
             mat_volume[i_mat] += layer_volume[i_lay]
 
             # Root plies
-            if orth[i_mat] and layer_thickness[i_lay,0]>0.:
+            if orth[i_mat] and layer_thickness[i_lay, 0] > 0.0:
                 if SS:
-                    n_plies_root_ss += layer_thickness[i_lay,0] / ply_t[i_mat]
+                    n_plies_root_ss += layer_thickness[i_lay, 0] / ply_t[i_mat]
                 if PS:
-                    n_plies_root_ps += layer_thickness[i_lay,0] / ply_t[i_mat]
-            
+                    n_plies_root_ps += layer_thickness[i_lay, 0] / ply_t[i_mat]
+
             # Root volume
             if orth[i_mat]:
-                layer_volume_span_interp_ss = np.interp(root_preform_length,s,layer_volume_span_ss[i_lay,:])
-                layer_volume_span_interp_ps = np.interp(root_preform_length,s,layer_volume_span_ps[i_lay,:])
-                add_volume_ss = np.trapz([layer_volume_span_ss[i_lay,0], layer_volume_span_interp_ss], [0, blade_length * root_preform_length])
-                add_volume_ps = np.trapz([layer_volume_span_ps[i_lay,0], layer_volume_span_interp_ps], [0, blade_length * root_preform_length])
+                layer_volume_span_interp_ss = np.interp(root_preform_length, s, layer_volume_span_ss[i_lay, :])
+                layer_volume_span_interp_ps = np.interp(root_preform_length, s, layer_volume_span_ps[i_lay, :])
+                add_volume_ss = np.trapz(
+                    [layer_volume_span_ss[i_lay, 0], layer_volume_span_interp_ss],
+                    [0, blade_length * root_preform_length],
+                )
+                add_volume_ps = np.trapz(
+                    [layer_volume_span_ps[i_lay, 0], layer_volume_span_interp_ps],
+                    [0, blade_length * root_preform_length],
+                )
                 volume_root_preform_ss += add_volume_ss
                 volume_root_preform_ps += add_volume_ps
                 mass_root_preform_ss += add_volume_ss * rho_mat[i_mat]
                 mass_root_preform_ps += add_volume_ps * rho_mat[i_mat]
-                width_ss_interp = np.interp(root_preform_length,s,width_ss)
-                width_ps_interp = np.interp(root_preform_length,s,width_ps)
+                width_ss_interp = np.interp(root_preform_length, s, width_ss)
+                width_ps_interp = np.interp(root_preform_length, s, width_ps)
                 area_root_ss = np.trapz([width_ss[0], width_ss_interp], [0, blade_length * root_preform_length])
                 area_root_ps = np.trapz([width_ps[0], width_ps_interp], [0, blade_length * root_preform_length])
 
             # Fabric shear webs
             if layer_web[i_lay] != 0:
-                add_volume = np.trapz(layer_volume_span_webs[i_lay,:], s*blade_length)
-                mass_webs[layer_web[i_lay]-1] += add_volume * rho_mat[i_mat]
+                add_volume = np.trapz(layer_volume_span_webs[i_lay, :], s * blade_length)
+                mass_webs[layer_web[i_lay] - 1] += add_volume * rho_mat[i_mat]
                 if orth[i_mat]:
-                    volumeskin2lay_webs[layer_web[i_lay]-1] += add_volume
-                    fabric2lay_webs[layer_web[i_lay]-1] += add_volume / ply_t[i_mat]
+                    volumeskin2lay_webs[layer_web[i_lay] - 1] += add_volume
+                    fabric2lay_webs[layer_web[i_lay] - 1] += add_volume / ply_t[i_mat]
 
             # Spar caps
             elif self.layer_name[i_lay] == self.spar_cap_ss:
                 spar_cap_width_ss[imin:imax] = width[imin:imax]
-                spar_cap_length_ss = (s[imax]-s[imin]) * blade_length
+                spar_cap_length_ss = (s[imax] - s[imin]) * blade_length
                 width_sc_start_ss = width[imin]
                 width_sc_end_ss = width[imax]
-                area_sc_ss = np.trapz(width[imin:imax], s[imin:imax]*blade_length)
-                volume2lay_sc_ss = np.trapz(layer_volume_span_ss[i_lay,:], s*blade_length)
+                area_sc_ss = np.trapz(width[imin:imax], s[imin:imax] * blade_length)
+                volume2lay_sc_ss = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
                 fabric2lay_sc_ss = volume2lay_sc_ss / ply_t[i_mat]
                 mass_sc_ss = volume2lay_sc_ss * rho_mat[i_mat]
             elif self.layer_name[i_lay] == self.spar_cap_ps:
                 spar_cap_width_ps[imin:imax] = width[imin:imax]
-                spar_cap_length_ps = (s[imax]-s[imin]) * blade_length
+                spar_cap_length_ps = (s[imax] - s[imin]) * blade_length
                 width_sc_start_ps = width[imin]
                 width_sc_end_ps = width[imax]
-                area_sc_ps = np.trapz(width[imin:imax], s[imin:imax]*blade_length)
-                volume2lay_sc_ps = np.trapz(layer_volume_span_ss[i_lay,:], s*blade_length)
+                area_sc_ps = np.trapz(width[imin:imax], s[imin:imax] * blade_length)
+                volume2lay_sc_ps = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
                 fabric2lay_sc_ps = volume2lay_sc_ps / ply_t[i_mat]
                 mass_sc_ps = volume2lay_sc_ps * rho_mat[i_mat]
 
             # Shell skins
             elif component_id[i_mat] == 2:
-                volume2lay_shell_ss = np.trapz(layer_volume_span_ss[i_lay,:], s*blade_length)
-                volume2lay_shell_ps = np.trapz(layer_volume_span_ps[i_lay,:], s*blade_length)
+                volume2lay_shell_ss = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
+                volume2lay_shell_ps = np.trapz(layer_volume_span_ps[i_lay, :], s * blade_length)
                 fabric2lay_shell_ss += volume2lay_shell_ss / ply_t[i_mat]
                 fabric2lay_shell_ps += volume2lay_shell_ps / ply_t[i_mat]
                 mass_shell_ss += volume2lay_shell_ss * rho_mat[i_mat]
@@ -3304,25 +3330,24 @@ class RotorCost(om.ExplicitComponent):
 
             # Shell core
             elif component_id[i_mat] == 1:
-                areacore2lay_shell_ss += np.trapz(width_ss[imin:imax], s[imin:imax]*blade_length)
-                areacore2lay_shell_ps += np.trapz(width_ps[imin:imax], s[imin:imax]*blade_length)
-                volume2lay_coreshell_ss = np.trapz(layer_volume_span_ss[i_lay,imin:imax], s[imin:imax]*blade_length)
-                volume2lay_coreshell_ps = np.trapz(layer_volume_span_ps[i_lay,imin:imax], s[imin:imax]*blade_length)
+                areacore2lay_shell_ss += np.trapz(width_ss[imin:imax], s[imin:imax] * blade_length)
+                areacore2lay_shell_ps += np.trapz(width_ps[imin:imax], s[imin:imax] * blade_length)
+                volume2lay_coreshell_ss = np.trapz(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
+                volume2lay_coreshell_ps = np.trapz(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
                 mass_shell_ss += volume2lay_coreshell_ss * rho_mat[i_mat]
                 mass_shell_ps += volume2lay_coreshell_ps * rho_mat[i_mat]
-                
 
             # TE/LE reinforcement
             elif component_id[i_mat] != 0:
-                length2lay_reinf = np.trapz(layer_thickness[i_lay,imin:imax], s[imin:imax]*blade_length)
-                volume2lay_reinf_ss = np.trapz(layer_volume_span_ss[i_lay,imin:imax], s[imin:imax]*blade_length)
-                volume2lay_reinf_ps = np.trapz(layer_volume_span_ps[i_lay,imin:imax], s[imin:imax]*blade_length)
-                if np.mean(layer_start_nd[i_lay,:]) > 0. and np.mean(layer_end_nd[i_lay,:]) > 0.:
-                    LE=True
-                    TE=False
+                length2lay_reinf = np.trapz(layer_thickness[i_lay, imin:imax], s[imin:imax] * blade_length)
+                volume2lay_reinf_ss = np.trapz(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
+                volume2lay_reinf_ps = np.trapz(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
+                if np.mean(layer_start_nd[i_lay, :]) > 0.0 and np.mean(layer_end_nd[i_lay, :]) > 0.0:
+                    LE = True
+                    TE = False
                 else:
-                    LE=False
-                    TE=True
+                    LE = False
+                    TE = True
                 if SS:
                     mass_shell_ss += volume2lay_reinf_ss * rho_mat[i_mat]
                     if LE:
@@ -3340,13 +3365,13 @@ class RotorCost(om.ExplicitComponent):
 
         # Compute masses of laminates with and without waste factor
         mat_mass = mat_volume * rho_mat
-        mat_mass_scrap = mat_volume * rho_mat * (1. + waste)
+        mat_mass_scrap = mat_volume * rho_mat * (1.0 + waste)
 
         # Compute costs
         dry_laminate_mass = mat_mass * fwf
-        complementary_mass = mat_mass * (1. - fwf)
+        complementary_mass = mat_mass * (1.0 - fwf)
         mat_cost = np.zeros(self.n_mat)
-        i_resin = discrete_inputs["mat_name"].index('resin')
+        i_resin = discrete_inputs["mat_name"].index("resin")
         for i_mat in range(self.n_mat):
             if fwf[i_mat] == 0:
                 mat_cost[i_mat] += complementary_mass[i_mat] * unit_cost[i_mat]
@@ -3354,29 +3379,28 @@ class RotorCost(om.ExplicitComponent):
                 mat_cost[i_mat] = dry_laminate_mass[i_mat] * unit_cost[i_mat]
                 mat_cost[i_resin] += complementary_mass[i_mat] * unit_cost[i_resin]
 
-        mat_cost_scrap = mat_cost * (1. + waste)
+        mat_cost_scrap = mat_cost * (1.0 + waste)
 
         # Compute total fabric area, with and without scrap factor
         mat_area = np.zeros_like(mat_volume)
-        mat_area[ply_t!=0.] = mat_volume[ply_t!=0.] / ply_t[ply_t!=0.]
-        mat_area_scrap = mat_area * (1. + waste)
+        mat_area[ply_t != 0.0] = mat_volume[ply_t != 0.0] / ply_t[ply_t != 0.0]
+        mat_area_scrap = mat_area * (1.0 + waste)
 
-        # Estimate adhesive mass and costs      
-        length_bonding_lines = 2. * blade_length + 2 * np.sum(web_length)
-        bonding_lines_vol = length_bonding_lines * flange_thick * flange_width * (1. + flange_adhesive_squeezed)
+        # Estimate adhesive mass and costs
+        length_bonding_lines = 2.0 * blade_length + 2 * np.sum(web_length)
+        bonding_lines_vol = length_bonding_lines * flange_thick * flange_width * (1.0 + flange_adhesive_squeezed)
         if "adhesive" not in discrete_inputs["mat_name"] and "Adhesive" not in discrete_inputs["mat_name"]:
             raise Exception(
                 "Warning: a material named adhesive is not defined in the input yaml.  This is required for the blade cost model"
             )
         try:
-            i_adhesive = discrete_inputs["mat_name"].index('adhesive')
+            i_adhesive = discrete_inputs["mat_name"].index("adhesive")
         except:
-            i_adhesive = discrete_inputs["mat_name"].index('Adhesive')
+            i_adhesive = discrete_inputs["mat_name"].index("Adhesive")
         mat_mass[i_adhesive] += bonding_lines_vol * rho_mat[i_adhesive]
         mat_cost[i_adhesive] += mat_mass[i_adhesive] * unit_cost[i_adhesive]
         mat_mass_scrap[i_adhesive] += bonding_lines_vol * rho_mat[i_adhesive]
         mat_cost_scrap[i_adhesive] += mat_mass_scrap[i_adhesive] * unit_cost[i_adhesive]
-
 
         # Hub connection and lightning protection system
         n_bolts = np.pi * chord[0] / t_bolt_spacing
@@ -3386,24 +3410,31 @@ class RotorCost(om.ExplicitComponent):
         # LPS_mass = LPS_unit_mass * (blade_length + chord[mid_span_station])
         LPS_cost = LPS_unit_cost * (blade_length + chord[mid_span_station])
         # tot_metallic_mass = LPS_mass + n_bolts * (t_bolt_unit_mass + barrel_nut_unit_mass)
-        total_metallic_parts_cost = (bolts_cost + nuts_cost + LPS_cost)
+        total_metallic_parts_cost = bolts_cost + nuts_cost + LPS_cost
 
         # Consumables
         bom = blade_bom()
         web_area = np.zeros(self.n_webs)
         for i_web in range(self.n_webs):
-            web_area[i_web] = np.trapz(web_height[i_web,web_indices[i_web,0]:web_indices[i_web,1]], blade_length * s[web_indices[i_web,0]:web_indices[i_web,1]])
-        web_area_w_flanges = web_area + 2. * web_length * flange_width
+            web_area[i_web] = np.trapz(
+                web_height[i_web, web_indices[i_web, 0] : web_indices[i_web, 1]],
+                blade_length * s[web_indices[i_web, 0] : web_indices[i_web, 1]],
+            )
+        web_area_w_flanges = web_area + 2.0 * web_length * flange_width
         ss_area = np.trapz(sect_perimeter_ss, blade_length * s)
         ps_area = np.trapz(sect_perimeter_ps, blade_length * s)
-        ss_area_w_flanges = ss_area + 2. * flange_width * blade_length
-        ps_area_w_flanges = ps_area + 2. * flange_width * blade_length
+        ss_area_w_flanges = ss_area + 2.0 * flange_width * blade_length
+        ps_area_w_flanges = ps_area + 2.0 * flange_width * blade_length
         spar_cap_ss_area = np.trapz(spar_cap_width_ss, blade_length * s)
         spar_cap_ps_area = np.trapz(spar_cap_width_ps, blade_length * s)
-        sect_perimeter_ss_interp = np.interp(root_preform_length,s,sect_perimeter_ss)
-        ss_area_root = np.trapz([sect_perimeter_ss[0], sect_perimeter_ss_interp], [0, blade_length * root_preform_length])
-        sect_perimeter_ps_interp = np.interp(root_preform_length,s,sect_perimeter_ps)
-        ps_area_root = np.trapz([sect_perimeter_ps[0], sect_perimeter_ps_interp], [0, blade_length * root_preform_length])
+        sect_perimeter_ss_interp = np.interp(root_preform_length, s, sect_perimeter_ss)
+        ss_area_root = np.trapz(
+            [sect_perimeter_ss[0], sect_perimeter_ss_interp], [0, blade_length * root_preform_length]
+        )
+        sect_perimeter_ps_interp = np.interp(root_preform_length, s, sect_perimeter_ps)
+        ps_area_root = np.trapz(
+            [sect_perimeter_ps[0], sect_perimeter_ps_interp], [0, blade_length * root_preform_length]
+        )
         bom.blade_specs = {}
         bom.blade_specs["area_webs_w_flanges"] = web_area_w_flanges
         bom.blade_specs["area_lpskin_wo_flanges"] = ss_area
@@ -3428,9 +3459,9 @@ class RotorCost(om.ExplicitComponent):
             total_consumable_cost_w_waste = total_consumable_cost_w_waste + consumables[name]["total_cost_w_waste"]
             consumable_cost_w_waste.append(consumables[name]["total_cost_w_waste"])
 
-
-        total_blade_mat_cost_w_waste = np.sum(mat_cost_scrap) + total_metallic_parts_cost + total_consumable_cost_w_waste
-
+        total_blade_mat_cost_w_waste = (
+            np.sum(mat_cost_scrap) + total_metallic_parts_cost + total_consumable_cost_w_waste
+        )
 
         # Labor and cycle time
         blade_specs = {}
@@ -3456,8 +3487,8 @@ class RotorCost(om.ExplicitComponent):
         web_height_start = np.zeros(self.n_webs)
         web_height_end = np.zeros(self.n_webs)
         for i in range(self.n_webs):
-            web_height_start[i] = web_height[i,web_indices[i,0]]
-            web_height_end[i] = web_height[i,web_indices[i,1]]
+            web_height_start[i] = web_height[i, web_indices[i, 0]]
+            web_height_end[i] = web_height[i, web_indices[i, 1]]
         blade_specs["height_webs_start"] = web_height_start
         blade_specs["height_webs_end"] = web_height_end
         blade_specs["area_webs_w_core"] = web_area
@@ -3486,10 +3517,9 @@ class RotorCost(om.ExplicitComponent):
         blade_specs["fabric2lay_te_reinf_hp"] = fabric2lay_te_reinf_ps
         blade_specs["fabric2lay_le_reinf_lp"] = fabric2lay_le_reinf_ss
         blade_specs["fabric2lay_le_reinf_hp"] = fabric2lay_le_reinf_ps
-        blade_specs["skin_perimeter_wo_root"] = 2. * blade_length * (1. - root_preform_length)
-        blade_specs["skin_perimeter_w_root"] = 2. * blade_length
-        metallic_parts["n_bolts"]  = n_bolts
-
+        blade_specs["skin_perimeter_wo_root"] = 2.0 * blade_length * (1.0 - root_preform_length)
+        blade_specs["skin_perimeter_w_root"] = 2.0 * blade_length
+        metallic_parts["n_bolts"] = n_bolts
 
         labor_ct = blade_labor_ct(blade_specs, mat_dictionary, metallic_parts)
         operation, labor_hours, skin_mold_gating_ct, non_gating_ct = labor_ct.execute_blade_labor_ct()
@@ -3506,7 +3536,15 @@ class RotorCost(om.ExplicitComponent):
         blade_specs["mass_sc_hp"] = mass_sc_ps
         blade_specs["mass_shell_lp"] = mass_shell_ss
         blade_specs["mass_shell_hp"] = mass_shell_ps
-        blade_specs["blade_mass"] = mass_root_preform_ss + mass_root_preform_ps + np.sum(mass_webs) + mass_sc_ss + mass_sc_ps + mass_shell_ss + mass_shell_ps
+        blade_specs["blade_mass"] = (
+            mass_root_preform_ss
+            + mass_root_preform_ps
+            + np.sum(mass_webs)
+            + mass_sc_ss
+            + mass_sc_ps
+            + mass_shell_ss
+            + mass_shell_ps
+        )
         blade_specs["area_lp_root"] = area_root_ss
         blade_specs["area_hp_root"] = area_root_ps
         blade_specs["area_sc_lp"] = area_sc_ss
@@ -3543,32 +3581,33 @@ class RotorCost(om.ExplicitComponent):
         outputs["mat_mass"] = mat_mass
         outputs["mat_cost"] = mat_cost
         outputs["mat_cost_scrap"] = mat_cost_scrap
-        outputs['total_metallic_parts_cost'] = total_metallic_parts_cost
-        outputs['total_consumable_cost_w_waste'] = total_consumable_cost_w_waste
-        outputs['total_blade_mat_cost_w_waste'] = total_blade_mat_cost_w_waste
+        outputs["total_metallic_parts_cost"] = total_metallic_parts_cost
+        outputs["total_consumable_cost_w_waste"] = total_consumable_cost_w_waste
+        outputs["total_blade_mat_cost_w_waste"] = total_blade_mat_cost_w_waste
         # Labor and cycle time
         outputs["total_labor_hours"] = total_labor_hours
         outputs["total_skin_mold_gating_ct"] = total_skin_mold_gating_ct
         outputs["total_non_gating_ct"] = total_non_gating_ct
-        # Total costs 
-        outputs['total_cost_labor'] = total_cost_labor
-        outputs['total_cost_utility'] = total_cost_utility
-        outputs['blade_variable_cost'] = blade_variable_cost
-        outputs['total_cost_equipment'] = total_cost_equipment
-        outputs['total_cost_tooling'] = total_cost_tooling
-        outputs['total_cost_building'] = total_cost_building
-        outputs['total_maintenance_cost'] = total_maintenance_cost
-        outputs['total_labor_overhead'] = total_labor_overhead
-        outputs['cost_capital'] = cost_capital
-        outputs['blade_fixed_cost'] = blade_fixed_cost
-        outputs['total_blade_cost'] = total_blade_cost
+        # Total costs
+        outputs["total_cost_labor"] = total_cost_labor
+        outputs["total_cost_utility"] = total_cost_utility
+        outputs["blade_variable_cost"] = blade_variable_cost
+        outputs["total_cost_equipment"] = total_cost_equipment
+        outputs["total_cost_tooling"] = total_cost_tooling
+        outputs["total_cost_building"] = total_cost_building
+        outputs["total_maintenance_cost"] = total_maintenance_cost
+        outputs["total_labor_overhead"] = total_labor_overhead
+        outputs["cost_capital"] = cost_capital
+        outputs["blade_fixed_cost"] = blade_fixed_cost
+        outputs["total_blade_cost"] = total_blade_cost
+
 
 # OpenMDAO group to execute the blade cost model without the rest of WISDEM
 class StandaloneRotorCost(om.Group):
     def initialize(self):
         self.options.declare("modeling_options")
         self.options.declare("opt_options")
-        
+
     def setup(self):
         modeling_options = self.options["modeling_options"]
         opt_options = self.options["opt_options"]
@@ -3585,9 +3624,7 @@ class StandaloneRotorCost(om.Group):
         n_af = rotorse_options["n_af"]  # Number of airfoils
         n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
         airfoils.add_discrete_output("name", val=n_af * [""], desc="1D array of names of airfoils.")
-        airfoils.add_output(
-            "r_thick", val=np.zeros(n_af), desc="1D array of the relative thicknesses of each airfoil."
-        )
+        airfoils.add_output("r_thick", val=np.zeros(n_af), desc="1D array of the relative thicknesses of each airfoil.")
         # Airfoil coordinates
         airfoils.add_output(
             "coord_xy",
@@ -3607,14 +3644,15 @@ class StandaloneRotorCost(om.Group):
         self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick")
         self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
 
-        self.add_subsystem("assembly", WT_Assembly(modeling_options=modeling_options))
-        self.connect("blade.outer_shape_bem.ref_axis", "assembly.blade_ref_axis_user")
-
         self.add_subsystem(
-            "rc",
-            RotorCost(mod_options=modeling_options, opt_options=opt_options))
-        
-        self.connect("assembly.blade_length", "rc.blade_length")
+            "high_level_blade_props",
+            ComputeHighLevelBladeProperties(rotorse_options=modeling_options["WISDEM"]["RotorSE"]),
+        )
+        self.connect("blade.outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
+
+        self.add_subsystem("rc", RotorCost(mod_options=modeling_options, opt_options=opt_options))
+
+        self.connect("high_level_blade_props.blade_length", "rc.blade_length")
         self.connect("blade.outer_shape_bem.s", "rc.s")
         self.connect("blade.pa.chord_param", "rc.chord")
         self.connect("blade.interp_airfoils.coord_xy_interp", "rc.coord_xy_interp")
@@ -3642,8 +3680,6 @@ class StandaloneRotorCost(om.Group):
 
 def initialize_omdao_prob(wt_opt, modeling_options, wt_init):
 
-    wt_opt["assembly.hub_height_user"] = wt_init["assembly"]['hub_height']
-
     materials = wt_init["materials"]
     wt_opt = assign_material_values(wt_opt, modeling_options, materials)
 
@@ -3658,15 +3694,15 @@ def initialize_omdao_prob(wt_opt, modeling_options, wt_init):
 
 if __name__ == "__main__":
 
-    wisdem_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))) 
-    example_dir =  os.path.join(wisdem_dir, "examples", "02_reference_turbines")  # get path example 03_blade
+    wisdem_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    example_dir = os.path.join(wisdem_dir, "examples", "02_reference_turbines")  # get path example 03_blade
     fname_wt_input = os.path.join(example_dir, "IEA-3p4-130-RWT.yaml")
     fname_modeling_options = os.path.join(example_dir, "modeling_options.yaml")
-    fname_opt_options = os.path.join(example_dir ,"analysis_options.yaml")
+    fname_opt_options = os.path.join(example_dir, "analysis_options.yaml")
     wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
     modeling_options["WISDEM"]["RotorSE"]["flag"] = False
-    wt_opt = om.Problem(model=StandaloneRotorCost(modeling_options=modeling_options ,opt_options=opt_options))
+    wt_opt = om.Problem(model=StandaloneRotorCost(modeling_options=modeling_options, opt_options=opt_options))
     wt_opt.setup(derivatives=False)
     myopt = PoseOptimization(wt_init, modeling_options, opt_options)
     wt_opt = myopt.set_initial(wt_opt, wt_init)
