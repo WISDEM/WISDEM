@@ -8,6 +8,8 @@ WISDEM:
         n_tsr_perf_surfaces: 15
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
     TowerSE:
         flag: True
     DriveSE:
@@ -37,9 +39,9 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         FlapDOF2: True
         EdgeDOF: True
         TeetDOF: False
-        DrTrDOF: False 
+        DrTrDOF: False
         GenDOF: True
-        YawDOF: False  
+        YawDOF: False
         TwFADOF1 : True
         TwFADOF2 : True
         TwSSDOF1 : True
@@ -59,7 +61,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
     ROSCO:
         flag: True
-    
+
 openfast:
     file_management:
         FAST_namingOut:    IEA15         # Name of the OpenFAST output files

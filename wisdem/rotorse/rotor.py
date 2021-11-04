@@ -3,6 +3,7 @@ from wisdem.rotorse.rotor_power import RotorPower, NoStallConstraint
 from wisdem.commonse.turbine_class import TurbineClass
 from wisdem.rotorse.rotor_structure import RotorStructure
 from wisdem.rotorse.rotor_elasticity import RotorElasticity
+from wisdem.rotorse.rotor_cost import RotorCost
 from wisdem.ccblade.ccblade_component import CCBladeTwist
 
 
@@ -26,14 +27,14 @@ class RotorSE(om.Group):
             "rhoJ",
             "x_ec",
             "y_ec",
-            "xu_strain_spar",
-            "xl_strain_spar",
-            "yu_strain_spar",
-            "yl_strain_spar",
-            "xu_strain_te",
-            "xl_strain_te",
-            "yu_strain_te",
-            "yl_strain_te",
+            "xu_spar",
+            "xl_spar",
+            "yu_spar",
+            "yl_spar",
+            "xu_te",
+            "xl_te",
+            "yu_te",
+            "yl_te",
         ]
 
         promoteCC = [
@@ -103,6 +104,10 @@ class RotorSE(om.Group):
             RotorStructure(modeling_options=modeling_options, opt_options=opt_options, freq_run=False),
             promotes=promoteGeom + promoteCC + ["s", "precurveTip", "presweepTip"],
         )
+
+        self.add_subsystem(
+            "rc",
+            RotorCost(mod_options=modeling_options, opt_options=opt_options))
 
         # Connection from ra to rs for the rated conditions
         self.connect("rp.gust.V_gust", ["rs.aero_gust.V_load", "rs.aero_hub_loads.V_load"])

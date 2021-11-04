@@ -22,6 +22,8 @@ import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
+
+import wisdem.postprocessing.wisdem_get as getter
 from wisdem.glue_code.runWISDEM import run_wisdem, load_wisdem
 
 this_dir = os.path.dirname(os.path.realpath(__file__))
@@ -53,26 +55,22 @@ def create_all_plots(
         ftw, axtw = plt.subplots(1, 1, figsize=(5.3, 4))
 
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            s_opt_twist = yaml_data["blade.opt_var.s_opt_twist"]
+            twist_opt = yaml_data["blade.opt_var.twist_opt"]
             axtw.plot(
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["blade.outer_shape_bem.twist"] * 180.0 / np.pi,
+                np.rad2deg(yaml_data["blade.pa.twist_param"]),
                 "-",
                 color=colors[idx],
                 label=label,
             )
-            s_opt_twist = np.linspace(0.0, 1.0, 8)
-            twist_opt = np.interp(
-                s_opt_twist,
-                yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["rotorse.theta"],
-            )
-            axtw.plot(s_opt_twist, twist_opt * 180.0 / np.pi, "o", color=colors[idx], markersize=3)
+            axtw.plot(s_opt_twist, np.rad2deg(twist_opt), "o", color=colors[idx], markersize=3)
 
+        s_opt_twist = list_of_sims[0]["blade.outer_shape_bem.s"]
+        twist_opt = list_of_sims[0]["blade.pa.twist_param"]
         axtw.plot(
             s_opt_twist,
-            (twist_opt - analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["max_decrease"])
-            * 180.0
-            / np.pi,
+            np.rad2deg(twist_opt - analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["max_decrease"]),
             ":o",
             color=colors[idx + 1],
             markersize=3,
@@ -80,13 +78,12 @@ def create_all_plots(
         )
         axtw.plot(
             s_opt_twist,
-            (twist_opt + analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["max_increase"])
-            * 180.0
-            / np.pi,
+            np.rad2deg(twist_opt + analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["max_increase"]),
             ":o",
             color=colors[idx + 1],
             markersize=3,
         )
+
         if mult_flag:
             axtw.legend(fontsize=font_size)
 
@@ -106,29 +103,22 @@ def create_all_plots(
         fc, axc = plt.subplots(1, 1, figsize=(5.3, 4))
 
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            s_opt_chord = yaml_data["blade.opt_var.s_opt_chord"]
+            chord_opt = yaml_data["blade.opt_var.chord_opt"]
             axc.plot(
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["blade.outer_shape_bem.chord"],
+                yaml_data["blade.pa.chord_param"],
                 "-",
                 color=colors[idx],
                 label=label,
             )
-            s_opt_chord = np.linspace(0.0, 1.0, 8)
-            chord_opt = np.interp(
-                s_opt_chord,
-                yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["rotorse.chord"],
-            )
             axc.plot(s_opt_chord, chord_opt, "o", color=colors[idx], markersize=3)
 
-        chord_init = np.interp(
-            s_opt_chord,
-            list_of_sims[0]["blade.outer_shape_bem.s"],
-            yaml_data["rotorse.chord"],
-        )
+        s_opt_chord = list_of_sims[0]["blade.outer_shape_bem.s"]
+        chord_opt = list_of_sims[0]["blade.pa.chord_param"]
         axc.plot(
             s_opt_chord,
-            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["max_decrease"]) * chord_init,
+            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["max_decrease"]) * chord_opt,
             ":o",
             color=colors[idx + 1],
             markersize=3,
@@ -136,7 +126,7 @@ def create_all_plots(
         )
         axc.plot(
             s_opt_chord,
-            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["max_increase"]) * chord_init,
+            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["max_increase"]) * chord_opt,
             ":o",
             color=colors[idx + 1],
             markersize=3,
@@ -160,51 +150,43 @@ def create_all_plots(
         fsc, axsc = plt.subplots(1, 1, figsize=(5.3, 4))
 
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
-            n_layers = len(yaml_data["blade.internal_structure_2d_fem.layer_thickness"][:, 0])
-            for i in range(n_layers):
-                layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
-                if modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"] == layer_name:
-                    axsc.plot(
-                        yaml_data["blade.outer_shape_bem.s"],
-                        yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
-                        "-",
-                        color=colors[idx],
-                        label=label,
-                    )
+            s_opt_sc = yaml_data["blade.opt_var.s_opt_spar_cap_ss"]
+            sc_opt = yaml_data["blade.opt_var.spar_cap_ss_opt"] * 1e3
+            n_layers = yaml_data["blade.ps.layer_thickness_param"].shape[0]
+            ilayer = None
+            if ilayer is None:
+                for i in range(n_layers):
+                    layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
+                    if modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"] == layer_name:
+                        ilayer = i
+            axsc.plot(
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["blade.ps.layer_thickness_param"][ilayer, :] * 1e3,
+                "-",
+                color=colors[idx],
+                label=label,
+            )
+            axsc.plot(s_opt_sc, sc_opt, "o", color=colors[idx], markersize=3)
 
-                    s_opt_sc = np.linspace(0.0, 1.0, 8)
-                    sc_opt = np.interp(
-                        s_opt_sc,
-                        yaml_data["blade.outer_shape_bem.s"],
-                        yaml_data["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
-                    )
-                    axsc.plot(s_opt_sc, sc_opt, "o", color=colors[idx], markersize=3)
-
-        for i in range(n_layers):
-            layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
-            if modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"] == layer_name:
-                sc_init = np.interp(
-                    s_opt_sc,
-                    list_of_sims[0]["blade.outer_shape_bem.s"],
-                    list_of_sims[0]["blade.internal_structure_2d_fem.layer_thickness"][i, :] * 1.0e3,
-                )
-                axsc.plot(
-                    s_opt_sc,
-                    np.array(analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["max_decrease"])
-                    * sc_init,
-                    ":o",
-                    color=colors[idx + 1],
-                    markersize=3,
-                    label="Bounds",
-                )
-                axsc.plot(
-                    s_opt_sc,
-                    np.array(analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["max_increase"])
-                    * sc_init,
-                    ":o",
-                    color=colors[idx + 1],
-                    markersize=3,
-                )
+        s_opt_sc = list_of_sims[0]["blade.outer_shape_bem.s"]
+        sc_opt = list_of_sims[0]["blade.ps.layer_thickness_param"][ilayer, :] * 1e3
+        axsc.plot(
+            s_opt_sc,
+            np.array(analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["max_decrease"])
+            * sc_opt,
+            ":o",
+            color=colors[idx + 1],
+            markersize=3,
+            label="Bounds",
+        )
+        axsc.plot(
+            s_opt_sc,
+            np.array(analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["max_increase"])
+            * sc_opt,
+            ":o",
+            color=colors[idx + 1],
+            markersize=3,
+        )
 
         if mult_flag:
             axsc.legend(fontsize=font_size)
@@ -219,13 +201,69 @@ def create_all_plots(
     except KeyError:
         pass
 
+    # Trailing edge reinforcements
+    try:
+        fte, axte = plt.subplots(1, 1, figsize=(5.3, 4))
+
+        for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            s_opt_te = yaml_data["blade.opt_var.s_opt_te_ss"]
+            te_opt = yaml_data["blade.opt_var.te_ss_opt"] * 1e3
+            n_layers = yaml_data["blade.ps.layer_thickness_param"].shape[0]
+            ilayer = None
+            if ilayer is None:
+                for i in range(n_layers):
+                    layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
+                    if modeling_options["WISDEM"]["RotorSE"]["te_ss"] == layer_name:
+                        ilayer = i
+            axte.plot(
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["blade.ps.layer_thickness_param"][ilayer, :] * 1e3,
+                "-",
+                color=colors[idx],
+                label=label,
+            )
+            axte.plot(s_opt_te, te_opt, "o", color=colors[idx], markersize=3)
+
+        s_opt_te = list_of_sims[0]["blade.outer_shape_bem.s"]
+        te_opt = list_of_sims[0]["blade.ps.layer_thickness_param"][ilayer, :] * 1e3
+        axte.plot(
+            s_opt_te,
+            np.array(analysis_options["design_variables"]["blade"]["structure"]["te_ss"]["max_decrease"])
+            * te_opt,
+            ":o",
+            color=colors[idx + 1],
+            markersize=3,
+            label="Bounds",
+        )
+        axte.plot(
+            s_opt_te,
+            np.array(analysis_options["design_variables"]["blade"]["structure"]["te_ss"]["max_increase"])
+            * te_opt,
+            ":o",
+            color=colors[idx + 1],
+            markersize=3,
+        )
+
+        if mult_flag:
+            axte.legend(fontsize=font_size)
+        plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
+        plt.ylabel("TE Reinforcement Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
+        plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
+        plt.subplots_adjust(bottom=0.15, left=0.15)
+        fig_name = "te_opt" + extension
+        fte.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+    except KeyError:
+        pass
+
     # Skins
     try:
         f, ax = plt.subplots(1, 1, figsize=(5.3, 4))
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             ax.plot(
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["blade.internal_structure_2d_fem.layer_thickness"][1, :] * 1.0e3,
+                yaml_data["blade.internal_structure_2d_fem.layer_thickness"][1, :] * 1e3,
                 "-",
                 color=colors[idx],
                 label=label,
@@ -271,8 +309,40 @@ def create_all_plots(
         plt.yticks(fontsize=font_size)
         plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
         plt.subplots_adjust(bottom=0.15, left=0.2)
-        fig_name = "strains_opt" + extension
+        fig_name = "strains_sc_opt" + extension
         feps.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+    except KeyError:
+        pass
+
+    # Strains trailing edge
+    try:
+        fete, axete = plt.subplots(1, 1, figsize=(5.3, 4))
+        for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
+            axete.plot(
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["rotorse.rs.frame.strainU_te"] * 1.0e6,
+                "-",
+                color=colors[idx],
+                label=label,
+            )
+            axete.plot(
+                yaml_data["blade.outer_shape_bem.s"],
+                yaml_data["rotorse.rs.frame.strainL_te"] * 1.0e6,
+                "-",
+                color=colors[idx],
+            )
+
+        plt.ylim([-5e3, 5e3])
+        if mult_flag:
+            axete.legend(fontsize=font_size)
+        plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
+        plt.ylabel("Trailing Edge Strains [mu eps]", fontsize=font_size + 2, fontweight="bold")
+        plt.xticks(fontsize=font_size)
+        plt.yticks(fontsize=font_size)
+        plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
+        plt.subplots_adjust(bottom=0.15, left=0.2)
+        fig_name = "strains_te_opt" + extension
+        fete.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
     except KeyError:
         pass
 
@@ -383,17 +453,17 @@ def create_all_plots(
     ax1 = ftow.add_subplot(121)
     for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
         ax1.plot(
-            yaml_data["towerse.tower_outer_diameter"],
-            yaml_data["towerse.z_param"],
+            getter.get_tower_diameter(yaml_data),
+            getter.get_zpts(yaml_data),
             "-",
             color=colors[idx],
             label=label,
         )
     vx = ax1.get_xlim()
-    zs = list_of_sims[0]["towerse.z_param"]
+    zs = getter.get_zpts(list_of_sims[0])
     if zs.min() < -5.0:
         water_depth = list_of_sims[0]["env.water_depth"]
-        h_trans = list_of_sims[0]["towerse.transition_piece_height"]
+        h_trans = getter.get_transition_height(list_of_sims[0])
         ax1.plot(vx, np.zeros(2), color="b", linestyle="--")
         ax1.plot(vx, -water_depth * np.ones(2), color=brown, linestyle="--")
         ax1.plot(vx, h_trans * np.ones(2), color="g", linestyle="--")
@@ -409,10 +479,10 @@ def create_all_plots(
 
     ax2 = ftow.add_subplot(122)
     for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
-        y = yaml_data.get_val("towerse.tower_wall_thickness", "mm")
+        y = 1e3 * getter.get_tower_thickness(yaml_data)
         ax2.step(
             np.r_[y, y[-1]],
-            yaml_data["towerse.z_param"],
+            getter.get_zpts(yaml_data),
             "-",
             color=colors[idx],
             label=label,
@@ -738,7 +808,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
     # the second string is the units to print the value in,
     # and the optional third string is the multiplicative scalar on the value to be printed.
     values_to_print = {
-        "Rotor Diameter": ["assembly.rotor_diameter", "m"],
+        "Rotor Diameter": ["blade.high_level_blade_props.rotor_diameter", "m"],
         "TSR": ["control.rated_TSR", None],
         "AEP": ["rotorse.rp.AEP", "GW*h"],
         "LCOE": ["financese.lcoe", "USD/(MW*h)"],
@@ -761,10 +831,13 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "Nacelle mass": ["drivese.nacelle_mass", "kg"],
         "RNA mass": ["drivese.rna_mass", "kg"],
         "Tower mass": ["towerse.tower_mass", "kg"],
+        "Floating Tower mass": ["floatingse.tower_mass", "kg"],
         "Tower cost": ["towerse.tower_cost", "USD"],
+        "Floating Tower cost": ["floatingse.tower_cost", "USD"],
         "Monopile mass": ["towerse.monopile_mass", "kg"],
         "Monopile cost": ["towerse.monopile_cost", "USD"],
         "Tower-Monopile freqs": ["towerse.tower.structural_frequencies", "Hz"],
+        "Floating Tower freqs": ["floatingse.tower_freqs", "Hz"],
     }
 
     # Generally it's not necessary to change the code below here, unless you
@@ -816,7 +889,13 @@ def main():
         default=fname_analysis_options_default,
         help="Specify the analysis options yaml.",
     )
-    parser.add_argument("--labels", nargs="*", type=str, default=None, help="Specify the labels for the yaml files.")
+    parser.add_argument(
+        "--labels",
+        nargs="*",
+        type=str,
+        default=None,
+        help="Specify the labels for the yaml files (use spaces for separation, no brackets).",
+    )
 
     args = parser.parse_args()
     input_filenames = args.input_files
@@ -846,7 +925,10 @@ def main():
             # Run WISDEM for each yaml file to compare using the modeling and analysis options set above
             print(f"Running WISDEM for {input_filename}.")
             wt_opt, modeling_options, analysis_options = run_wisdem(
-                input_filename, fname_modeling_options, fname_analysis_options
+                input_filename,
+                fname_modeling_options,
+                fname_analysis_options,
+                run_only=True,
             )
 
         list_of_sims.append(wt_opt)

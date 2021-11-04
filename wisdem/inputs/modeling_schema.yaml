@@ -18,6 +18,10 @@ properties:
                 type: boolean
                 default: False
                 description: Prints additional outputs to screen (and to a file log in the future)
+            solver_maxiter:
+                type: integer
+                default: 5
+                description: Number of iterations for the top-level coupling solver
     WISDEM:
         type: object
         default: {}
@@ -90,6 +94,10 @@ properties:
                         type: number
                         default: 1.0
                         description: Scalar applied to the max torque within RotorSE for peak thrust shaving. Only used if `peak_thrust_shaving` is True.
+                    fix_pitch_regI12:
+                        type: boolean
+                        default: False
+                        description: If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.
                     spar_cap_ss:
                         type: string
                         default: 'none'
@@ -148,6 +156,10 @@ properties:
                         minimum: 1
                         maximum: 10
                         description: Number of sectors to divide rotor face into in computing thrust and power.
+                    3d_af_correction:
+                        type: boolean
+                        default: True
+                        description: Flag switching on and off the 3d DU-Selig airfoil correction implemented in Polar.py
                     inn_af:
                         type: boolean
                         default: False
@@ -293,6 +305,10 @@ properties:
                         type: boolean
                         default: False
                         description: Model the monopile base as a gravity-based foundation with no pile embedment
+                    n_refine:
+                        type: integer
+                        default: 3
+                        description: Number of Frame3DD element refinements for every specified section along tower/member
             BOS:
                 type: object
                 default: {}
@@ -309,6 +325,10 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run the floating design modules (FloatingSE)
+                    n_refine:
+                        type: integer
+                        default: 1
+                        description: Number of Frame3DD element refinements for every specified section along tower/member
                     frame3dd: *frame3dd
                     gamma_f: *gamma_f
                     gamma_m: *gamma_m

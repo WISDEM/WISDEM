@@ -27,6 +27,9 @@ class FloatingSE(om.Group):
             "E_mat",
             "G_mat",
             "sigma_y_mat",
+            "sigma_ult_mat",
+            "wohler_exp_mat",
+            "wohler_A_mat",
             "rho_mat",
             "rho_water",
             "unit_cost_mat",
@@ -110,8 +113,3 @@ class FloatingSE(om.Group):
         for k in range(n_member):
             for var in mem_vars:
                 self.connect(f"member{k}." + var, f"member{k}:" + var)
-
-        """
-        self.connect("max_offset_restoring_force", "mooring_surge_restoring_force")
-        self.connect("operational_heel_restoring_force", "mooring_pitch_restoring_force")
-        """

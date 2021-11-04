@@ -5,15 +5,19 @@ Nikhar J. Abbas, Pietro Bortolotti
 January 2020
 """
 
-import numpy as np
+import logging
+
 from openmdao.api import Group, ExplicitComponent
 from scipy.optimize import brentq, minimize, minimize_scalar
 from scipy.interpolate import PchipInterpolator
+
+import numpy as np
 from wisdem.ccblade.Polar import Polar
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.utilities import smooth_abs, smooth_min, linspace_with_deriv
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
 
+logger = logging.getLogger("wisdem/weis")
 TOL = 1e-3
 
 
@@ -152,6 +156,7 @@ class ComputePowerCurve(ExplicitComponent):
         self.n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
         self.n_pc_spline = modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]
         self.peak_thrust_shaving = modeling_options["WISDEM"]["RotorSE"]["peak_thrust_shaving"]
+        self.fix_pitch_regI12 = modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"]
         if self.peak_thrust_shaving:
             self.thrust_shaving_coeff = modeling_options["WISDEM"]["RotorSE"]["thrust_shaving_coeff"]
 
@@ -400,7 +405,8 @@ class ComputePowerCurve(ExplicitComponent):
         Omega_max = min([inputs["control_maxTS"] / R_tip, inputs["omega_max"] * np.pi / 30.0])
 
         # Apply maximum and minimum rotor speed limits
-        Omega = np.maximum(np.minimum(Omega_tsr, Omega_max), inputs["omega_min"] * np.pi / 30.0)
+        Omega_min = inputs["omega_min"] * np.pi / 30.0
+        Omega = np.maximum(np.minimum(Omega_tsr, Omega_max), Omega_min)
         Omega_rpm = Omega * 30.0 / np.pi
 
         # Create table lookup of total drivetrain efficiency, where rpm is first column and second column is gearbox*generator
@@ -471,7 +477,9 @@ class ComputePowerCurve(ExplicitComponent):
             if region2p5:
                 # Have to search over both pitch and speed
                 x0 = [0.0, U_rated]
-                bnds = [[0.0, 15.0], [Uhub[i - 3] + TOL, Uhub[i + 2] - TOL]]
+                imin = max(i - 3, 0)
+                imax = min(i + 2, len(Uhub) - 1)
+                bnds = [[0.0, 15.0], [Uhub[imin] + TOL, Uhub[imax] - TOL]]
                 const = {}
                 const["type"] = "eq"
                 const["fun"] = const_Urated
@@ -631,10 +639,12 @@ class ComputePowerCurve(ExplicitComponent):
 
         # Maximize power until rated
         for i in range(i_3):
-            # No need to optimize if already doing well
+            # No need to optimize if already doing well or if flag
+            # fix_pitch_regI12, which locks pitch in region I 1/2, is on
             if (
                 ((Omega[i] == Omega_tsr[i]) and not self.peak_thrust_shaving)
                 or ((Omega[i] == Omega_tsr[i]) and self.peak_thrust_shaving and (T[i] <= max_T))
+                or ((Omega[i] == Omega_min) and self.fix_pitch_regI12)
                 or (found_rated and (i == i_rated))
             ):
                 continue
@@ -692,7 +702,7 @@ class ComputePowerCurve(ExplicitComponent):
             if self.regulation_reg_III:
                 for i in range(i_3, self.n_pc):
                     pitch0 = pitch[i - 1]
-                    bnds = ([pitch0 - 5.0, pitch0 + 15.0],)
+                    bnds = ([pitch0, pitch0 + 15.0],)
                     try:
                         pitch[i] = brentq(
                             lambda x: rated_power_dist(x, Uhub[i], Omega_rpm[i]),
@@ -899,8 +909,6 @@ class NoStallConstraint(ExplicitComponent):
 
     def compute(self, inputs, outputs):
 
-        verbosity = True
-
         i_min = np.argmin(abs(inputs["min_s"] - inputs["s"]))
 
         for i in range(self.n_span):
@@ -919,9 +927,12 @@ class NoStallConstraint(ExplicitComponent):
                 "stall_angle_along_span"
             ][i]
 
-            # if verbosity == True:
-            #     if outputs['no_stall_constraint'][i] > 1:
-            #         print('Blade is violating the minimum margin to stall at span location %.2f %%' % (inputs['s'][i]*100.))
+            if outputs["stall_angle_along_span"][i] <= 1.0e-6:
+                outputs["no_stall_constraint"][i] = 0.0
+
+            logger.debug(
+                "Blade is violating the minimum margin to stall at span location %.2f %%" % (inputs["s"][i] * 100.0)
+            )
 
 
 class AEP(ExplicitComponent):

@@ -48,10 +48,10 @@ class FloatingConstraints(om.ExplicitComponent):
         n_member = opt["floating"]["members"]["n_members"]
 
         # Unpack inputs
-        Hsig = inputs["Hsig_wave"]
-        fairlead = np.abs(inputs["fairlead"])
-        R_fairlead = inputs["fairlead_radius"]
-        max_heel = inputs["survival_heel"]
+        Hsig = float(inputs["Hsig_wave"])
+        fairlead = np.abs(float(inputs["fairlead"]))
+        R_fairlead = float(inputs["fairlead_radius"])
+        max_heel = float(inputs["survival_heel"])
         cg = inputs["system_center_of_mass"]
         gamma = 1.1
 
@@ -78,8 +78,8 @@ class FloatingConstraints(om.ExplicitComponent):
             # Coordinate transformation about CG and change in z-position
             xp1_h, zp1_h = util.rotate(0.0, 0.0, xp1, zp1, max_heel)
             xp2_h, zp2_h = util.rotate(0.0, 0.0, xp2, zp2, max_heel)
-            dz1 = np.abs(xyz1[2] / (zp1 - zp1_h))
-            dz2 = np.abs(xyz2[2] / (zp2 - zp2_h))
+            dz1 = np.abs((zp1 - zp1_h) / xyz1[2])
+            dz2 = np.abs((zp2 - zp2_h) / xyz2[2])
 
             # See if change in z-coordinate is bigger than freeboard or draft, should be <1
             if xyz1[2] > 0.0 and xyz1[2] > xyz2[2]:

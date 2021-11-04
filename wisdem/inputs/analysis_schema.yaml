@@ -151,6 +151,56 @@ properties:
                                     max_increase: *max_increase
                                     index_start: *index_start
                                     index_end: *index_end
+                            c_d:
+                                type: object
+                                default: {}
+                                description: Drag coefficient at rated conditions as a design variable by scaling (multiplying) the initial value at spline control points along the span. This requires the INN for airfoil design
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the drag coefficient distribution along blade span.
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
+                            stall_margin:
+                                type: object
+                                default: {}
+                                description: Stall margin at rated conditions as a design variable by scaling (multiplying) the initial value at spline control points along the span. This requires the INN for airfoil design
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the stall margin distribution along blade span.
+                                    max_decrease: *max_decrease
+                                    max_increase: *max_increase
+                                    index_start: *index_start
+                                    index_end: *index_end
+                            z:
+                                type: object
+                                default: {}
+                                description: INN design parameter z
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 3
+                                        description: z design parameter count
+                                    lower_bound:
+                                        type: number
+                                        default: -1.0
+                                        minimum: -1.e30
+                                        maximum: 1.e30
+                                    upper_bound:
+                                        type: number
+                                        default: 1.0
+                                        minimum: -1.e30
+                                        maximum: 1.e30
                     structure:
                         type: object
                         default: {}
@@ -177,10 +227,10 @@ properties:
                                 default: {}
                                 properties:
                                     flag: *flag
-                                    equal_to_suction:
+                                    equal_to_suction: &equalss
                                         type: boolean
                                         default: true
-                                        description: If the pressure side spar cap should be equal to the suction side spar cap
+                                        description: If the pressure side spar cap should be equal to the suction side layer
                                     n_opt:
                                         type: integer
                                         default: 8
@@ -211,6 +261,7 @@ properties:
                                 default: {}
                                 properties:
                                     flag: *flag
+                                    equal_to_suction: *equalss
                                     n_opt:
                                         type: integer
                                         default: 8
@@ -504,6 +555,34 @@ properties:
                                 unit: m
                                 description: Design variable bound
                             upper_bound: *sbound
+                    E:
+                        type: object
+                        default: {}
+                        description: Isotropic Young's modulus
+                        properties:
+                            flag: *flag
+                            lower_bound: &ebound
+                                type: number
+                                minimum: 1.
+                                maximum: 1.e12
+                                default: 200.e+009
+                                unit: Pa
+                                description: Design variable bound
+                            upper_bound: *ebound
+                    rho:
+                        type: object
+                        default: {}
+                        description: Material density of the tower
+                        properties:
+                            flag: *flag
+                            lower_bound: &rbound
+                                type: number
+                                minimum: 1.
+                                maximum: 1.e5
+                                default: 7800
+                                unit: kg/m**3
+                                description: Design variable bound
+                            upper_bound: *rbound
             monopile: *towdv
             floating:
                 type: object
@@ -605,7 +684,7 @@ properties:
                                                     type: object
                                                     description: Ring stiffener optimization of member group
                                                     properties:
-                                                        size:
+                                                        size: # currently not implemented as a DV in gc_PoseOptimization.py
                                                             type: object
                                                             description: Ring stiffener sizing multiplier on T-shape
                                                             properties:
@@ -622,22 +701,22 @@ properties:
                                                             type: object
                                                             description: Ring stiffener spacing along member axis
                                                             properties:
-                                                                lower_bound: &lboundm
+                                                                lower_bound:
                                                                     type: number
-                                                                    unit: m
+                                                                    unit: none
                                                                     description: Design variable bound
                                                                     default: 0.0
                                                                     minimum: 0.0
-                                                                upper_bound: &uboundm
+                                                                upper_bound:
                                                                     type: number
-                                                                    unit: m
+                                                                    unit: none
                                                                     description: Design variable bound
                                                                     minimum: 0.0
                                                 longitudinal:
                                                     type: object
                                                     description: Longitudinal stiffener optimization of member group
                                                     properties:
-                                                        size:
+                                                        size: # currently not implemented as a DV in gc_PoseOptimization.py
                                                             type: object
                                                             description: Longitudinal stiffener sizing multiplier on T-shape
                                                             properties:
@@ -653,13 +732,13 @@ properties:
                                                                     description: Design variable bound
                                                                     default: 0.0
                                                                     minimum: 0.0
-                                                                    maximum: 1.5707963267948966 #180 deg
+                                                                    maximum: 3.141592653589793 #180 deg
                                                                 upper_bound:
                                                                     type: number
                                                                     unit: rad
                                                                     description: Design variable bound
                                                                     minimum: 0.0
-                                                                    maximum: 1.5707963267948966 #180 deg
+                                                                    maximum: 3.141592653589793 #180 deg
             mooring:
                 type: object
                 description: Design variables associated with the mooring system
@@ -670,9 +749,32 @@ properties:
                         default: {}
                         properties:
                             flag: *flag
+                            lower_bound: &lboundm
+                                type: number
+                                unit: m
+                                description: Design variable bound
+                                default: 0.0
+                                minimum: 0.0
+                            upper_bound: &uboundm
+                                type: number
+                                unit: m
+                                description: Design variable bound
+                                minimum: 0.0
+                    line_diameter:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
                             lower_bound: *lboundm
                             upper_bound: *uboundm
-                    line_diameter:
+                    line_mass_density_coeff:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *lboundm
+                            upper_bound: *uboundm
+                    line_stiffness_coeff:
                         type: object
                         default: {}
                         properties:
@@ -708,6 +810,24 @@ properties:
                         type: object
                         default: {}
                         description: Enforce a maximum allowable strain in the pressure-side spar caps
+                        properties:
+                            flag: *flag
+                            max: *maxstrain
+                            index_start: *index_start
+                            index_end: *index_end
+                    strains_te_ss:
+                        type: object
+                        default: {}
+                        description: Enforce a maximum allowable strain in the suction-side trailing edge reinforcements
+                        properties:
+                            flag: *flag
+                            max: *maxstrain
+                            index_start: *index_start
+                            index_end: *index_end
+                    strains_te_ps:
+                        type: object
+                        default: {}
+                        description: Enforce a maximum allowable strain in the pressure-side trailing edge reinforcements
                         properties:
                             flag: *flag
                             max: *maxstrain
@@ -806,6 +926,17 @@ properties:
                             flag_L: *flag
                             flag_D: *flag
                             filename: *filepath
+                    AEP:
+                        type: object
+                        description: Set a minimum bound on AEP in kWh when optimizing the blade and rotor parameters
+                        default: {}
+                        properties:
+                            flag: *flag
+                            min:
+                                type: number
+                                units: kWh
+                                default: 1.0
+                                minimum: 1.0
             tower: &towcon
                 type: object
                 default: {}
@@ -1067,6 +1198,18 @@ properties:
                         description: Keep the mooring line length within the bounds for catenary hang or TLP tension
                         properties:
                             flag: *flag
+                    anchor_vertical:
+                        type: object
+                        default: {}
+                        description: Ensure that the maximum vertical force on the anchor does not exceed limit
+                        properties:
+                            flag: *flag
+                    anchor_lateral:
+                        type: object
+                        default: {}
+                        description: Ensure that the maximum lateral force on the anchor does not exceed limit
+                        properties:
+                            flag: *flag
                     stress: *vonmises
                     global_buckling: *globalb
                     shell_buckling: *shellb
@@ -1074,8 +1217,28 @@ properties:
 
     merit_figure:
         type: string
-        description: Objective function / merit figure for optimization (not checked via schema, but in python).  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation
+        description: Objective function / merit figure for optimization (not checked via schema, but in python).  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation, platform_mass- floating platform mass without ballast, inverse_design- custom inverse design used to match reference values of any arbitrary output
         default: LCOE
+
+    inverse_design:
+        type: object
+        description: For use with the inverse_design merit_figure. Specifies the reference output variable's 'prom_name' name and the desired value, accepts multiple variables. A normalized difference between the actual value and reference value is calculated for each variable. A Root Mean Square (RMS) is calculated with all variables and the optimizer minimizes the RMS. If the refernce output variable is an array, specify the element index number via "idx".
+        default: {}
+        additionalProperties:
+            type: object
+            required:
+              - ref_value
+            optional:
+              - indices
+              - units
+            properties:
+                ref_value:
+                    type: [number, array]
+                indices:
+                    type: array
+                    default: [0]
+                units:
+                    type: string
 
     driver:
         type: object
@@ -1134,7 +1297,7 @@ properties:
                         description: Finite difference calculation mode
                         default: central
                         enum: [central, forward, complex]
-                    debug_print:
+                    debug_print: &debug_print
                         type: boolean
                         default: False
                         description: Toggle driver debug printing
@@ -1182,6 +1345,7 @@ properties:
                         default: 2
                         minimum: 1
                         maximum: 1000000
+                    debug_print: *debug_print
             step_size_study:
                 type: object
                 description: Specification of the step size study parameters
@@ -1219,3 +1383,11 @@ properties:
                 type: string
                 description: OpenMDAO recorder output SQL database file
                 default: log_opt.sql
+            just_dvs:
+                type: boolean
+                description: If true, only record design variables.
+                default: False
+            includes:
+                type: array
+                description: List of variables to include in recorder
+                default: []

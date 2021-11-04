@@ -1,4 +1,5 @@
 import numpy as np
+
 import wisdem.inputs as sch
 
 
@@ -499,6 +500,8 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["mooring"]["node1"] = [""] * n_lines
             self.modeling_options["mooring"]["node2"] = [""] * n_lines
             self.modeling_options["mooring"]["line_type"] = [""] * n_lines
+            self.modeling_options["mooring"]["line_material"] = [""] * n_lines
+            self.modeling_options["mooring"]["line_anchor"] = [""] * n_lines
             fairlead_nodes = []
             for i in range(n_lines):
                 self.modeling_options["mooring"]["node1"][i] = self.wt_init["components"]["mooring"]["lines"][i][
@@ -521,17 +524,50 @@ class WindTurbineOntologyPython(object):
                     fairlead_nodes.append(self.wt_init["components"]["mooring"]["nodes"][node1id]["joint"])
                 if self.modeling_options["mooring"]["node_type"][node2id] == "vessel":
                     fairlead_nodes.append(self.wt_init["components"]["mooring"]["nodes"][node2id]["joint"])
+                # Store the anchor type names to start
+                if "fix" in self.modeling_options["mooring"]["node_type"][node1id]:
+                    self.modeling_options["mooring"]["line_anchor"][i] = self.modeling_options["mooring"][
+                        "anchor_type"
+                    ][node1id]
+                if "fix" in self.modeling_options["mooring"]["node_type"][node2id]:
+                    self.modeling_options["mooring"]["line_anchor"][i] = self.modeling_options["mooring"][
+                        "anchor_type"
+                    ][node2id]
 
             self.modeling_options["mooring"]["line_type_name"] = [""] * n_line_types
+            self.modeling_options["mooring"]["line_type_type"] = [""] * n_line_types
             for i in range(n_line_types):
                 self.modeling_options["mooring"]["line_type_name"][i] = self.wt_init["components"]["mooring"][
                     "line_types"
                 ][i]["name"]
+                self.modeling_options["mooring"]["line_type_type"][i] = self.wt_init["components"]["mooring"][
+                    "line_types"
+                ][i]["type"].lower()
+                for j in range(n_lines):
+                    if (
+                        self.modeling_options["mooring"]["line_type"][j]
+                        == self.modeling_options["mooring"]["line_type_name"][i]
+                    ):
+                        self.modeling_options["mooring"]["line_material"][j] = self.modeling_options["mooring"][
+                            "line_type_type"
+                        ][i]
             self.modeling_options["mooring"]["anchor_type_name"] = [""] * n_anchor_types
+            self.modeling_options["mooring"]["anchor_type_type"] = [""] * n_anchor_types
             for i in range(n_anchor_types):
                 self.modeling_options["mooring"]["anchor_type_name"][i] = self.wt_init["components"]["mooring"][
                     "anchor_types"
                 ][i]["name"]
+                self.modeling_options["mooring"]["anchor_type_type"][i] = self.wt_init["components"]["mooring"][
+                    "anchor_types"
+                ][i]["type"].lower()
+                for j in range(n_lines):
+                    if (
+                        self.modeling_options["mooring"]["line_anchor"][j]
+                        == self.modeling_options["mooring"]["anchor_type_name"][i]
+                    ):
+                        self.modeling_options["mooring"]["line_anchor"][j] = self.modeling_options["mooring"][
+                            "anchor_type_type"
+                        ][i]
             self.modeling_options["mooring"]["n_attach"] = len(set(fairlead_nodes))
 
         # Assembly
@@ -592,6 +628,20 @@ class WindTurbineOntologyPython(object):
             ]
         elif blade_opt_options["structure"]["spar_cap_ps"]["n_opt"] < 4:
             raise ValueError("Cannot optimize spar cap pressure side with less than 4 control points along blade span")
+
+        if not blade_opt_options["structure"]["te_ss"]["flag"]:
+            blade_opt_options["structure"]["te_ss"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        elif blade_opt_options["structure"]["te_ss"]["n_opt"] < 4:
+            raise ValueError(
+                "Cannot optimize trailing edge suction side with less than 4 control points along blade span"
+            )
+
+        if not blade_opt_options["structure"]["te_ps"]["flag"]:
+            blade_opt_options["structure"]["te_ps"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        elif blade_opt_options["structure"]["te_ps"]["n_opt"] < 4:
+            raise ValueError(
+                "Cannot optimize trailing edge pressure side with less than 4 control points along blade span"
+            )
 
         # Handle linked joints and members in floating platform
         if self.modeling_options["flags"]["floating"]:
@@ -662,9 +712,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"] = wt_opt[
                 "blade.outer_shape_bem.s"
             ].tolist()
-            self.wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"] = wt_opt[
-                "blade.pa.twist_param"
-            ].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"] = wt_opt["rotorse.theta"].tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["pitch_axis"]["grid"] = wt_opt[
                 "blade.outer_shape_bem.s"
             ].tolist()
@@ -682,8 +730,21 @@ class WindTurbineOntologyPython(object):
                     "blade.outer_shape_bem.s"
                 ].tolist()
                 self.wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"] = wt_opt[
-                    "rp.powercurve.L_D"
+                    "rotorse.rp.powercurve.L_D"
                 ].tolist()
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"] = wt_opt[
+                    "blade.outer_shape_bem.s"
+                ].tolist()
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"] = wt_opt[
+                    "rotorse.rp.powercurve.cd_regII"
+                ].tolist()
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"] = wt_opt[
+                    "blade.outer_shape_bem.s"
+                ].tolist()
+                stall_margin = np.deg2rad(
+                    wt_opt["rotorse.stall_check.stall_angle_along_span"] - wt_opt["rotorse.stall_check.aoa_along_span"]
+                )
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"] = stall_margin.tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["x"]["grid"] = wt_opt[
                 "blade.outer_shape_bem.s"
             ].tolist()
@@ -1225,8 +1286,9 @@ class WindTurbineOntologyPython(object):
             ].tolist()
 
         # Update rotor diameter and hub height
-        self.wt_init["assembly"]["rotor_diameter"] = float(wt_opt["assembly.rotor_diameter"])
-        self.wt_init["assembly"]["hub_height"] = float(wt_opt["assembly.hub_height"])
+        if self.modeling_options["flags"]["blade"]:
+            self.wt_init["assembly"]["rotor_diameter"] = float(wt_opt["blade.high_level_blade_props.rotor_diameter"])
+        self.wt_init["assembly"]["hub_height"] = float(wt_opt["high_level_tower_props.hub_height"])
 
         # Update controller
         if self.modeling_options["flags"]["control"]:

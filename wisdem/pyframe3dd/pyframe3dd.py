@@ -8,14 +8,15 @@ Copyright (c) NREL. All rights reserved.
 """
 
 from __future__ import print_function
-import numpy as np
-import math
-from ctypes import POINTER, c_int, c_double, Structure, pointer
-from collections import namedtuple
+
 import os
+import math
+from sys import platform
+from ctypes import POINTER, Structure, c_int, pointer, c_double
+from collections import namedtuple
 from distutils.sysconfig import get_config_var
 
-from sys import platform
+import numpy as np
 
 libext = get_config_var("EXT_SUFFIX")
 if libext is None or libext == "":
@@ -388,16 +389,14 @@ class Frame(object):
             rigid = 1
         else:
             self.rnode = np.array(reactions.node).astype(np.int32)
-            self.rKx = np.array(reactions.Kx).astype(
-                np.float64
-            )  # convert rather than copy to allow old syntax of integers
+            # convert rather than copy to allow old syntax of integers
+            self.rKx = np.array(reactions.Kx).astype(np.float64)
             self.rKy = np.array(reactions.Ky).astype(np.float64)
             self.rKz = np.array(reactions.Kz).astype(np.float64)
             self.rKtx = np.array(reactions.Ktx).astype(np.float64)
             self.rKty = np.array(reactions.Kty).astype(np.float64)
             self.rKtz = np.array(reactions.Ktz).astype(np.float64)
             rigid = reactions.rigid
-
         # elements
         self.eelement = np.array(elements.element).astype(np.int32)
         self.eN1 = np.array(elements.N1).astype(np.int32)
@@ -1194,6 +1193,31 @@ class Frame(object):
         f.write("\n")
         f.write("# End of input data file\n")
         f.close()
+
+    def draw(self):
+        # Visualization for debugging
+        import matplotlib.pyplot as plt
+
+        nnode = len(self.nx)
+        node_array = np.zeros((nnode, 3))
+        mynodes = {}
+        for k in range(nnode):
+            temp = np.r_[self.nx[k], self.ny[k], self.nz[k]]
+            mynodes[self.nnode[k]] = temp
+            node_array[k, :] = temp
+        myelem = []
+        for k in range(len(self.eN1)):
+            myelem.append((self.eN1[k], self.eN2[k]))
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        for e in myelem:
+            xs = np.array([mynodes[e[0]][0], mynodes[e[1]][0]])
+            ys = np.array([mynodes[e[0]][1], mynodes[e[1]][1]])
+            zs = np.array([mynodes[e[0]][2], mynodes[e[1]][2]])
+            ax.plot(xs, ys, zs, "b-")
+        ax.plot(node_array[:, 0], node_array[:, 1], node_array[:, 2], ".k", markersize=10)
+        plt.show()
 
 
 class StaticLoadCase(object):

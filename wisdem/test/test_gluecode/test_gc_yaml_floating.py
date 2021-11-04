@@ -13,27 +13,25 @@ test_dir = (
     + os.sep
     + "examples"
     + os.sep
-    + "02_reference_turbines"
+    + "09_floating"
     + os.sep
 )
 fname_analysis_options = test_dir + "analysis_options.yaml"
-this_dir = os.path.dirname(os.path.realpath(__file__))
-fname_modeling_options = this_dir + os.sep + "modified_modeling_options.yaml"
+fname_modeling_options = test_dir + "modeling_options.yaml"
 
 
 class TestRegression(unittest.TestCase):
     def test15MW(self):
         ## IEA 15MW
-        fname_wt_input = test_dir + "IEA-15-240-RWT.yaml"
-        wt_opt, _, _ = run_wisdem(
+        fname_wt_input = test_dir + "IEA-15-240-RWT_VolturnUS-S.yaml"
+        wt_opt, modeling_options, opt_options = run_wisdem(
             fname_wt_input, fname_modeling_options, fname_analysis_options
         )
 
-        self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 69911.6542917299, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 78.1538730538, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 83.3822649977, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.0565292544, 1)
-        self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 144.386, 3)
+        self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 69911.65429172986, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 77.9964610969, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 90.1286937270, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.5240282692, 1)
 
 
 def suite():

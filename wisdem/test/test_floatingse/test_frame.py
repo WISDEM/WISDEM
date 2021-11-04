@@ -137,21 +137,22 @@ class TestPlatform(unittest.TestCase):
         self.inputs["mooring_neutral_load"][:, 1] = [0.0, 50, -50]
         self.inputs["mooring_neutral_load"][:, 2] = -1e3
         self.inputs["mooring_fairlead_joints"] = np.array([[0.0, 0.0, 0.0], [0.5, 1.0, 0.0], [1.0, 0.0, 0.0]])
+        self.inputs["mooring_stiffness"] = 5 * np.eye(6)
         self.inputs["transition_node"] = self.inputs["tower_nodes"][0, :]
         self.inputs["tower_top_node"] = self.inputs["tower_nodes"][2, :]
         self.inputs["rna_mass"] = 1e4
         self.inputs["rna_cg"] = np.ones(3)
-        self.inputs["rna_I"] = 1e4 * np.arange(6)
         self.inputs["rna_F"] = np.array([1e2, 1e1, 0.0])
         self.inputs["rna_M"] = np.array([2e1, 2e2, 0.0])
         self.inputs["transition_piece_mass"] = 1e3
+        self.inputs["transition_piece_cost"] = 3e3
         self.inputs["rho_water"] = 1e3
 
     def testTetrahedron(self):
         myobj = frame.PlatformFrame(options=self.opt)
         myobj.node_mem2glob = {}
         myobj.node_glob2mem = {}
-        myobj.compute(self.inputs, self.outputs)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
 
         # Check NULLs and implied number of nodes / elements
         npt.assert_equal(self.outputs["platform_nodes"][4:, :], NULL)
@@ -221,16 +222,18 @@ class TestPlatform(unittest.TestCase):
 
         npt.assert_equal(self.outputs["platform_center_of_buoyancy"], centroid)
         npt.assert_equal(self.outputs["platform_centroid"], centroid)
-        npt.assert_equal(self.outputs["platform_center_of_mass"], centroid)
-        self.assertEqual(self.outputs["platform_mass"], 6e3)
+        cg = (6e3 * centroid + 1e3 * np.array([0.0, 0.0, 1.0])) / 7e3
+        npt.assert_equal(self.outputs["platform_hull_center_of_mass"], cg)
+        self.assertEqual(self.outputs["platform_mass"], 6e3 + 1e3)
         self.assertEqual(self.outputs["platform_ballast_mass"], 6e2)
-        self.assertEqual(self.outputs["platform_hull_mass"], 6e3 - 6e2)
-        self.assertEqual(self.outputs["platform_cost"], 6 * 2e3)
+        self.assertEqual(self.outputs["platform_hull_mass"], 6e3 + 1e3 - 6e2)
+        self.assertEqual(self.outputs["platform_cost"], 6 * 2e3 + 3e3)
         self.assertEqual(self.outputs["platform_Awater"], 30)
         self.assertEqual(self.outputs["platform_Iwater"], 6 * 15 + 5 * R.sum())
         npt.assert_equal(self.outputs["platform_added_mass"], 6 * np.arange(6))
         npt.assert_equal(self.outputs["platform_variable_capacity"], 10 + np.arange(6))
-        npt.assert_array_less(1e2, self.outputs["platform_I_total"])
+        npt.assert_equal(self.outputs["transition_piece_I"], 1e3 * 0.25 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
+        npt.assert_array_less(1e2, self.outputs["platform_I_hull"] - self.outputs["transition_piece_I"])
         # Should find a transition mode even though one wasn't set
         # npt.assert_equal(self.outputs["transition_node"], [0.0, 0.0, 1.0])
 
@@ -254,7 +257,7 @@ class TestPlatform(unittest.TestCase):
         myobj = frame.PlatformFrame(options=self.opt)
         myobj.node_mem2glob = {}
         myobj.node_glob2mem = {}
-        myobj.compute(self.inputs, self.outputs)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         for k in self.outputs:
             self.inputs[k] = self.outputs[k]
         for k in self.discrete_outputs:
@@ -342,13 +345,13 @@ class TestPlatform(unittest.TestCase):
             )
             / self.outputs["system_mass"],
         )
-        npt.assert_equal(self.outputs["transition_piece_I"], 1e3 * 0.25 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
+        npt.assert_array_less(self.outputs["platform_I_hull"], self.outputs["platform_I_total"])
 
     def testRunFrame(self):
         myobj = frame.PlatformFrame(options=self.opt)
         myobj.node_mem2glob = {}
         myobj.node_glob2mem = {}
-        myobj.compute(self.inputs, self.outputs)
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         for k in self.outputs:
             self.inputs[k] = self.outputs[k]
         for k in self.discrete_outputs:
@@ -410,6 +413,9 @@ class TestGroup(unittest.TestCase):
         prob["E_mat"] = 200e9 * np.ones((2, 3))  # Young's modulus [N/m^2]
         prob["G_mat"] = 79.3e9 * np.ones((2, 3))  # Shear modulus [N/m^2]
         prob["sigma_y_mat"] = 3.45e8 * np.ones(2)  # Elastic yield stress [N/m^2]
+        prob["sigma_ult_mat"] = 5e8 * np.ones((2, 3))
+        prob["wohler_exp_mat"] = 4.0 * np.ones(2)
+        prob["wohler_A_mat"] = 7.5e8 * np.ones(2)
         prob["unit_cost_mat"] = np.array([2.0, 1.0])
         prob["material_names"] = ["steel", "slurry"]
 
@@ -484,7 +490,6 @@ class TestGroup(unittest.TestCase):
         prob["mooring_fairlead_joints"] = np.array([[0.0, 0.0, 0.0], [0.5, 1.0, 0.0], [1.0, 0.0, 0.0]])
         prob["rna_mass"] = 1e4
         prob["rna_cg"] = np.ones(3)
-        prob["rna_I"] = 1e4 * np.arange(6)
         prob["rna_F"] = np.array([1e2, 1e1, 0.0])
         prob["rna_M"] = np.array([2e1, 2e2, 0.0])
         prob["transition_piece_mass"] = 1e3

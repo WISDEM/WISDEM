@@ -332,7 +332,7 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
 
         # check for errors ( WOULD SOME NOT ALREADY HAVE BEEN CAUGHT AND RAISED ALREADY?)
         if info["error"] == True:
-            breakpoint()
+            # breakpoint()
             # >>>> what about errors for which we can first plot the line profile?? <<<<
             raise CatenaryError("Error in catenary computations: " + info["message"])
 

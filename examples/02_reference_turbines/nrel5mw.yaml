@@ -98,16 +98,28 @@ components:
                   offset_y_pa:
                     grid: [0., 1.]
                     values: [0., 0.]
-                - name: TE_reinforcement
+                - name: TE_reinforcement_PS
                   material: glassUD
-                  midpoint_nd_arc:
+                  side: pressure
+                  end_nd_arc:
                     fixed: TE
                   thickness:
                     grid: [0.024390244, 0.089430894, 0.366666667, 0.731707317, 1.]
                     values: [0.00047, 0.00705, 0.00705, 0.00047, 0.]
                   width:
                     grid: [0.024390243902439025, 0.731707317, 1.]
-                    values: [0.9, 0.9, 0.1]
+                    values: [0.45, 0.45, 0.05]
+                - name: TE_reinforcement_SS
+                  material: glassUD
+                  side: suction
+                  start_nd_arc:
+                    fixed: TE
+                  thickness:
+                    grid: [0.024390244, 0.089430894, 0.366666667, 0.731707317, 1.]
+                    values: [0.00047, 0.00705, 0.00705, 0.00047, 0.]
+                  width:
+                    grid: [0.024390243902439025, 0.731707317, 1.]
+                    values: [0.45, 0.45, 0.05]
                 - name: TE_foam_PS
                   material: FOAM
                   thickness:
@@ -116,14 +128,14 @@ components:
                   start_nd_arc:
                     fixed: Spar_Cap_PS
                   end_nd_arc:
-                    fixed: TE_reinforcement
+                    fixed: TE_reinforcement_PS
                 - name: TE_foam_SS
                   material: FOAM
                   thickness:
                     grid: [0.024390244, 0.089430894, 0.111110569, 0.366666667, 0.4, 0.633333333, 0.666666667, 0.933333333]
                     values: [0.020, 0.020, 0.090, 0.090, 0.060, 0.060, 0.020, 0.020]
                   start_nd_arc:
-                    fixed: TE_reinforcement
+                    fixed: TE_reinforcement_SS
                   end_nd_arc:
                     fixed: Spar_Cap_SS
                 - name: LE_foam_PS
@@ -445,6 +457,7 @@ materials:
       nu: [0.28, 0.28, 0.28]
       Xt: [1060.0e+006, 66.3e+006, 26.6e+006]
       Xc: [826.0e+006, 196.0e+006, 197.0e+006]
+      m: 10
       unit_cost: 1.87
       waste: 0.05
       fiber_density: 2600.
@@ -458,6 +471,7 @@ materials:
       nu: [0.39, 0.39, 0.39]
       Xt: [54.5e+006, 54.5e+006, 26.6e+006]
       Xc: [74.1e+006, 74.1e+006, 197.0e+006]
+      m: 10
       unit_cost: 2.86
       waste: 0.15
       fiber_density: 2600.
@@ -472,6 +486,7 @@ materials:
       nu: [0.49, 0.49, 0.49]
       Xt: [54.47e+006, 54.47e+006, 26.6e+006]
       Xc: [74.1e+006, 74.1e+006, 197.0e+006]
+      m: 10
       unit_cost: 3.00
       waste: 0.15
       fiber_density: 2600.
@@ -494,6 +509,7 @@ materials:
       Xc: 450.e+006
       S: 0
       Xy: 345.e+6
+      m: 3
       unit_cost: 0.7
    -  name: steel_drive
       description: Steel of the drivetrain ASTM 4140 40Cr1Mo28
@@ -511,6 +527,7 @@ materials:
       Xc: 814.e+006
       S: 0
       Xy: 485.e+6
+      m: 3
       unit_cost: 0.9
    -  name: cast_iron
       description: TODO Steel of the drivetrain ASTM 4140 40Cr1Mo28
@@ -528,6 +545,7 @@ materials:
       Xc: 310.e+006
       S: 0
       Xy: 265.e+6
+      m: 3
       unit_cost: 0.5
    -  E: 98460000.0
       name: FOAM
@@ -549,6 +567,7 @@ materials:
       nu: [0.27, 0.27, 0.27]
       Xt: [2236.0e+006, 0.00, 0.00]
       Xc: [1528.0e+006, 0.00, 0.00]
+      m: 16.1
       unit_cost: 30.00
       waste: 0.05
       fiber_density: 1800.
@@ -563,6 +582,19 @@ materials:
       Xc: 65.36e+006
       orth: 0
       unit_cost: 3.63
+   -  name: adhesive
+      description: Sample adhesive
+      source: https://www.nrel.gov/docs/fy19osti/73585.pdf
+      orth: 0
+      rho: 1100
+      E: 4.56e+006
+      nu: 0.49
+      alpha: 0.0
+      Xt: 0.69e+006
+      Xc: 0.4e+006
+      S: 0.31e+006
+      G: 1520000.0
+      unit_cost: 9.0
 
 control:
     supervisory:
