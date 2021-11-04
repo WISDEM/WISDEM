@@ -4,6 +4,7 @@ import os
 import glob
 
 from setuptools import find_packages
+
 from numpy.distutils.core import Extension, setup
 
 os.environ["NPY_DISTUTILS_APPEND_FLAGS"] = "1"
@@ -26,7 +27,7 @@ precompExt = Extension(
 # Top-level setup
 setup(
     name="WISDEM",
-    version="3.3.0",
+    version="3.4.0",
     description="Wind-Plant Integrated System Design & Engineering Model",
     long_description="""WISDEM is a Python package for conducting multidisciplinary analysis and
     optimization of wind turbines and plants.  It is built on top of NASA's OpenMDAO library.""",
