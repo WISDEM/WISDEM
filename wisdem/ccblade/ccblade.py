@@ -25,9 +25,10 @@ import warnings
 import multiprocessing as mp
 
 import numpy as np
-import wisdem.ccblade._bem as _bem
 from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
+
+import wisdem.ccblade._bem as _bem
 from wisdem.airfoilprep import Airfoil
 
 # ------------------
@@ -1263,16 +1264,16 @@ class CCBlade(object):
             dMz_dv = np.zeros((npts, 5, nr))
             dMb_dv = np.zeros((npts, 5, nr))
 
-        azimuth_angles = np.linspace(0.0, 2*np.pi, nsec+1)[:-1]
+        azimuth_angles = np.linspace(0.0, 2 * np.pi, nsec + 1)[:-1]
         for i in range(npts):  # iterate across conditions
 
             for azimuth in azimuth_angles:  # integrate across azimuth
                 ca = np.cos(azimuth)
                 sa = np.sin(azimuth)
-                
+
                 # contribution from this azimuthal location
                 loads, derivs = self.distributedAeroLoads(Uinf[i], Omega[i], pitch[i], np.rad2deg(azimuth))
-                Np, Tp = (loads["Np"], loads["Tp"])
+                Np, Tp, W = (loads["Np"], loads["Tp"], loads["W"])
 
                 Tsub, Ysub, Zsub, Qsub, Msub = _bem.thrusttorque(Np, Tp, *args)
 
@@ -1286,11 +1287,21 @@ class CCBlade(object):
                 Mb[i] += Msub / nsec
 
                 if self.derivatives:
-                    #dNp = derivs["dNp"]
-                    #dTp = derivs["dTp"]
+                    # dNp = derivs["dNp"]
+                    # dTp = derivs["dTp"]
 
-                    (dT_ds_sub, dY_ds_sub, dZ_ds_sub, dQ_ds_sub, dM_ds_sub,
-                     dT_dv_sub, dY_dv_sub, dZ_dv_sub, dQ_dv_sub, dM_dv_sub) = self.__thrustTorqueDeriv(
+                    (
+                        dT_ds_sub,
+                        dY_ds_sub,
+                        dZ_ds_sub,
+                        dQ_ds_sub,
+                        dM_ds_sub,
+                        dT_dv_sub,
+                        dY_dv_sub,
+                        dZ_dv_sub,
+                        dQ_dv_sub,
+                        dM_dv_sub,
+                    ) = self.__thrustTorqueDeriv(
                         Np, Tp, self._dNp_dX, self._dTp_dX, self._dNp_dprecurve, self._dTp_dprecurve, *args
                     )
 
@@ -1301,7 +1312,7 @@ class CCBlade(object):
                     dMy_ds[i, :] += self.B * dM_ds_sub * ca / nsec
                     dMz_ds[i, :] += self.B * dM_ds_sub * sa / nsec
                     dMb_ds[i, :] += dM_ds_sub / nsec
-                    
+
                     dT_dv[i, :, :] += self.B * dT_dv_sub / nsec
                     dY_dv[i, :, :] += self.B * (dY_dv_sub * ca - dZ_dv_sub * sa) / nsec
                     dZ_dv[i, :, :] += self.B * (dZ_dv_sub * ca + dY_dv_sub * sa) / nsec
@@ -1323,9 +1334,25 @@ class CCBlade(object):
 
             # pack derivatives into dictionary
             dT, dY, dZ, dQ, dMy, dMz, dMb, dP = self.__thrustTorqueDictionary(
-                dT_ds, dY_ds, dZ_ds, dQ_ds, dMy_ds, dMz_ds, dMb_ds, dP_ds,
-                dT_dv, dY_dv, dZ_dv, dQ_dv, dMy_dv, dMz_dv, dMb_dv, dP_dv, npts)
-            
+                dT_ds,
+                dY_ds,
+                dZ_ds,
+                dQ_ds,
+                dMy_ds,
+                dMz_ds,
+                dMb_ds,
+                dP_ds,
+                dT_dv,
+                dY_dv,
+                dZ_dv,
+                dQ_dv,
+                dMy_dv,
+                dMz_dv,
+                dMb_dv,
+                dP_dv,
+                npts,
+            )
+
         # normalize if necessary
         if coefficients:
             q = 0.5 * self.rho * Uinf ** 2
@@ -1395,10 +1422,24 @@ class CCBlade(object):
 
                 # pack derivatives into dictionary
                 dCT, dCY, dCZ, dCQ, dCMy, dCMz, dCMb, dCP = self.__thrustTorqueDictionary(
-                    dCT_ds, dCY_ds, dCZ_ds, dCQ_ds, dCMy_ds, dCMz_ds, dCMb_ds, dCP_ds,
-                    dCT_dv, dCY_dv, dCZ_dv, dCQ_dv, dCMy_dv, dCMz_dv, dCMb_dv, dCP_dv, npts
+                    dCT_ds,
+                    dCY_ds,
+                    dCZ_ds,
+                    dCQ_ds,
+                    dCMy_ds,
+                    dCMz_ds,
+                    dCMb_ds,
+                    dCP_ds,
+                    dCT_dv,
+                    dCY_dv,
+                    dCZ_dv,
+                    dCQ_dv,
+                    dCMy_dv,
+                    dCMz_dv,
+                    dCMb_dv,
+                    dCP_dv,
+                    npts,
                 )
-
 
         outputs = {}
         derivs = {}
@@ -1411,6 +1452,7 @@ class CCBlade(object):
         outputs["My"] = My
         outputs["Mz"] = Mz
         outputs["Mb"] = Mb
+        outputs["W"] = W
         if self.derivatives:
             derivs["dP"] = dP
             derivs["dT"] = dT
@@ -1476,7 +1518,7 @@ class CCBlade(object):
         dZ_dNp = Npb[2, :]
         dQ_dNp = Npb[3, :]
         dM_dNp = Npb[4, :]
-        
+
         dT_dTp = Tpb[0, :]
         dY_dTp = Tpb[1, :]
         dZ_dTp = Tpb[2, :]
@@ -1644,7 +1686,7 @@ class CCBlade(object):
                 dZ_dpitch,
             ]
         )
-                
+
         dQ_ds = np.array(
             [
                 dQ_dprecone,
@@ -1661,7 +1703,7 @@ class CCBlade(object):
                 dQ_dpitch,
             ]
         )
-        
+
         dM_ds = np.array(
             [
                 dM_dprecone,
@@ -1688,8 +1730,26 @@ class CCBlade(object):
 
         return dT_ds, dY_ds, dZ_ds, dQ_ds, dM_ds, dT_dv, dY_dv, dZ_dv, dQ_dv, dM_dv
 
-    def __thrustTorqueDictionary(self, dT_ds, dY_ds, dZ_ds, dQ_ds, dMy_ds, dMz_ds, dMb_ds, dP_ds,
-                                 dT_dv, dY_dv, dZ_dv, dQ_dv, dMy_dv, dMz_dv, dMb_dv, dP_dv, npts):
+    def __thrustTorqueDictionary(
+        self,
+        dT_ds,
+        dY_ds,
+        dZ_ds,
+        dQ_ds,
+        dMy_ds,
+        dMz_ds,
+        dMb_ds,
+        dP_ds,
+        dT_dv,
+        dY_dv,
+        dZ_dv,
+        dQ_dv,
+        dMy_dv,
+        dMz_dv,
+        dMb_dv,
+        dP_dv,
+        npts,
+    ):
 
         # pack derivatives into dictionary
         dT = {}
@@ -1710,7 +1770,7 @@ class CCBlade(object):
         dMz["dprecone"] = dMz_ds[:, 0].reshape(npts, 1)
         dMb["dprecone"] = dMb_ds[:, 0].reshape(npts, 1)
         dP["dprecone"] = dP_ds[:, 0].reshape(npts, 1)
-        
+
         dT["dtilt"] = dT_ds[:, 1].reshape(npts, 1)
         dY["dtilt"] = dY_ds[:, 1].reshape(npts, 1)
         dZ["dtilt"] = dZ_ds[:, 1].reshape(npts, 1)
@@ -1719,7 +1779,7 @@ class CCBlade(object):
         dMz["dtilt"] = dMz_ds[:, 1].reshape(npts, 1)
         dMb["dtilt"] = dMb_ds[:, 1].reshape(npts, 1)
         dP["dtilt"] = dP_ds[:, 1].reshape(npts, 1)
-        
+
         dT["dhubHt"] = dT_ds[:, 2].reshape(npts, 1)
         dY["dhubHt"] = dY_ds[:, 2].reshape(npts, 1)
         dZ["dhubHt"] = dZ_ds[:, 2].reshape(npts, 1)
@@ -1728,7 +1788,7 @@ class CCBlade(object):
         dMz["dhubHt"] = dMz_ds[:, 2].reshape(npts, 1)
         dMb["dhubHt"] = dMb_ds[:, 2].reshape(npts, 1)
         dP["dhubHt"] = dP_ds[:, 2].reshape(npts, 1)
-        
+
         dT["dRhub"] = dT_ds[:, 3].reshape(npts, 1)
         dY["dRhub"] = dY_ds[:, 3].reshape(npts, 1)
         dZ["dRhub"] = dZ_ds[:, 3].reshape(npts, 1)
@@ -1737,7 +1797,7 @@ class CCBlade(object):
         dMz["dRhub"] = dMz_ds[:, 3].reshape(npts, 1)
         dMb["dRhub"] = dMb_ds[:, 3].reshape(npts, 1)
         dP["dRhub"] = dP_ds[:, 3].reshape(npts, 1)
-        
+
         dT["dRtip"] = dT_ds[:, 4].reshape(npts, 1)
         dY["dRtip"] = dY_ds[:, 4].reshape(npts, 1)
         dZ["dRtip"] = dZ_ds[:, 4].reshape(npts, 1)
@@ -1746,7 +1806,7 @@ class CCBlade(object):
         dMz["dRtip"] = dMz_ds[:, 4].reshape(npts, 1)
         dMb["dRtip"] = dMb_ds[:, 4].reshape(npts, 1)
         dP["dRtip"] = dP_ds[:, 4].reshape(npts, 1)
-        
+
         dT["dprecurveTip"] = dT_ds[:, 5].reshape(npts, 1)
         dY["dprecurveTip"] = dY_ds[:, 5].reshape(npts, 1)
         dZ["dprecurveTip"] = dZ_ds[:, 5].reshape(npts, 1)
@@ -1755,7 +1815,7 @@ class CCBlade(object):
         dMz["dprecurveTip"] = dMz_ds[:, 5].reshape(npts, 1)
         dMb["dprecurveTip"] = dMb_ds[:, 5].reshape(npts, 1)
         dP["dprecurveTip"] = dP_ds[:, 5].reshape(npts, 1)
-        
+
         dT["dpresweepTip"] = dT_ds[:, 6].reshape(npts, 1)
         dY["dpresweepTip"] = dY_ds[:, 6].reshape(npts, 1)
         dZ["dpresweepTip"] = dZ_ds[:, 6].reshape(npts, 1)
@@ -1764,7 +1824,7 @@ class CCBlade(object):
         dMz["dpresweepTip"] = dMz_ds[:, 6].reshape(npts, 1)
         dMb["dpresweepTip"] = dMb_ds[:, 6].reshape(npts, 1)
         dP["dpresweepTip"] = dP_ds[:, 6].reshape(npts, 1)
-        
+
         dT["dyaw"] = dT_ds[:, 7].reshape(npts, 1)
         dY["dyaw"] = dY_ds[:, 7].reshape(npts, 1)
         dZ["dyaw"] = dZ_ds[:, 7].reshape(npts, 1)
@@ -1773,7 +1833,7 @@ class CCBlade(object):
         dMz["dyaw"] = dMz_ds[:, 7].reshape(npts, 1)
         dMb["dyaw"] = dMb_ds[:, 7].reshape(npts, 1)
         dP["dyaw"] = dP_ds[:, 7].reshape(npts, 1)
-        
+
         dT["dshear"] = dT_ds[:, 8].reshape(npts, 1)
         dY["dshear"] = dY_ds[:, 8].reshape(npts, 1)
         dZ["dshear"] = dZ_ds[:, 8].reshape(npts, 1)
@@ -1792,7 +1852,7 @@ class CCBlade(object):
         dMz["dUinf"] = np.diag(dMz_ds[:, 9])
         dMb["dUinf"] = np.diag(dMb_ds[:, 9])
         dP["dUinf"] = np.diag(dP_ds[:, 9])
-        
+
         dT["dOmega"] = np.diag(dT_ds[:, 10])
         dY["dOmega"] = np.diag(dY_ds[:, 10])
         dZ["dOmega"] = np.diag(dZ_ds[:, 10])
@@ -1801,7 +1861,7 @@ class CCBlade(object):
         dMz["dOmega"] = np.diag(dMz_ds[:, 10])
         dMb["dOmega"] = np.diag(dMb_ds[:, 10])
         dP["dOmega"] = np.diag(dP_ds[:, 10])
-        
+
         dT["dpitch"] = np.diag(dT_ds[:, 11])
         dY["dpitch"] = np.diag(dY_ds[:, 11])
         dZ["dpitch"] = np.diag(dZ_ds[:, 11])
@@ -1820,7 +1880,7 @@ class CCBlade(object):
         dMz["dr"] = dMz_dv[:, 0, :]
         dMb["dr"] = dMb_dv[:, 0, :]
         dP["dr"] = dP_dv[:, 0, :]
-        
+
         dT["dchord"] = dT_dv[:, 1, :]
         dY["dchord"] = dY_dv[:, 1, :]
         dZ["dchord"] = dZ_dv[:, 1, :]
@@ -1829,7 +1889,7 @@ class CCBlade(object):
         dMz["dchord"] = dMz_dv[:, 1, :]
         dMb["dchord"] = dMb_dv[:, 1, :]
         dP["dchord"] = dP_dv[:, 1, :]
-        
+
         dT["dtheta"] = dT_dv[:, 2, :]
         dY["dtheta"] = dY_dv[:, 2, :]
         dZ["dtheta"] = dZ_dv[:, 2, :]
@@ -1838,7 +1898,7 @@ class CCBlade(object):
         dMz["dtheta"] = dMz_dv[:, 2, :]
         dMb["dtheta"] = dMb_dv[:, 2, :]
         dP["dtheta"] = dP_dv[:, 2, :]
-        
+
         dT["dprecurve"] = dT_dv[:, 3, :]
         dY["dprecurve"] = dY_dv[:, 3, :]
         dZ["dprecurve"] = dZ_dv[:, 3, :]
@@ -1847,7 +1907,7 @@ class CCBlade(object):
         dMz["dprecurve"] = dMz_dv[:, 3, :]
         dMb["dprecurve"] = dMb_dv[:, 3, :]
         dP["dprecurve"] = dP_dv[:, 3, :]
-        
+
         dT["dpresweep"] = dT_dv[:, 4, :]
         dY["dpresweep"] = dY_dv[:, 4, :]
         dZ["dpresweep"] = dZ_dv[:, 4, :]

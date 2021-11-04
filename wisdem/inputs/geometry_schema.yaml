@@ -175,6 +175,26 @@ properties:
                                         $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
                                         $ref: "#/definitions/distributed_data/nd"
+                            c_d:
+                                type: object
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    values:
+                                        $ref: "#/definitions/distributed_data/nd"
+                            stall_margin:
+                                type: object
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    values:
+                                        $ref: "#/definitions/distributed_data/angle"
                             reference_axis:
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
                             # coordinates:
@@ -2288,7 +2308,6 @@ properties:
                         unit: rad/s
                         minimum: 0
                         maximum: 0.2
-                    
             torque:
                 type: object
                 required:

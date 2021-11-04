@@ -18,6 +18,10 @@ properties:
                 type: boolean
                 default: False
                 description: Prints additional outputs to screen (and to a file log in the future)
+            solver_maxiter:
+                type: integer
+                default: 5
+                description: Number of iterations for the top-level coupling solver
     WISDEM:
         type: object
         default: {}

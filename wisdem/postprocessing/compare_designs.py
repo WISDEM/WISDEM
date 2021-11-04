@@ -22,6 +22,7 @@ import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
+
 import wisdem.postprocessing.wisdem_get as getter
 from wisdem.glue_code.runWISDEM import run_wisdem, load_wisdem
 
@@ -150,8 +151,7 @@ def create_all_plots(
 
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             s_opt_sc = yaml_data["blade.opt_var.s_opt_spar_cap_ss"]
-            sc_opt = yaml_data["blade.opt_var.spar_cap_ss_opt"]*1e3
-            
+            sc_opt = yaml_data["blade.opt_var.spar_cap_ss_opt"] * 1e3
             n_layers = yaml_data["blade.ps.layer_thickness_param"].shape[0]
             ilayer = None
             if ilayer is None:
@@ -159,7 +159,6 @@ def create_all_plots(
                     layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
                     if modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"] == layer_name:
                         ilayer = i
-                        
             axsc.plot(
                 yaml_data["blade.outer_shape_bem.s"],
                 yaml_data["blade.ps.layer_thickness_param"][ilayer, :] * 1e3,
@@ -208,8 +207,7 @@ def create_all_plots(
 
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             s_opt_te = yaml_data["blade.opt_var.s_opt_te_ss"]
-            te_opt = yaml_data["blade.opt_var.te_ss_opt"]*1e3
-            
+            te_opt = yaml_data["blade.opt_var.te_ss_opt"] * 1e3
             n_layers = yaml_data["blade.ps.layer_thickness_param"].shape[0]
             ilayer = None
             if ilayer is None:
@@ -217,7 +215,6 @@ def create_all_plots(
                     layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
                     if modeling_options["WISDEM"]["RotorSE"]["te_ss"] == layer_name:
                         ilayer = i
-                        
             axte.plot(
                 yaml_data["blade.outer_shape_bem.s"],
                 yaml_data["blade.ps.layer_thickness_param"][ilayer, :] * 1e3,
@@ -811,7 +808,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
     # the second string is the units to print the value in,
     # and the optional third string is the multiplicative scalar on the value to be printed.
     values_to_print = {
-        "Rotor Diameter": ["assembly.rotor_diameter", "m"],
+        "Rotor Diameter": ["blade.high_level_blade_props.rotor_diameter", "m"],
         "TSR": ["control.rated_TSR", None],
         "AEP": ["rotorse.rp.AEP", "GW*h"],
         "LCOE": ["financese.lcoe", "USD/(MW*h)"],
