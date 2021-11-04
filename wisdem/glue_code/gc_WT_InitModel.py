@@ -1,7 +1,8 @@
 import numpy as np
-
+import logging
 import wisdem.commonse.utilities as util
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
+logger = logging.getLogger("wisdem/weis")
 
 
 def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
@@ -1438,6 +1439,8 @@ def assign_material_values(wt_opt, modeling_options, materials):
             roll_mass[i] = materials[i]["roll_mass"]
         if "unit_cost" in materials[i]:
             unit_cost[i] = materials[i]["unit_cost"]
+            if unit_cost[i] == 0.:
+                logger.warning("The material " + name[i] + ' has zero unit cost associated to it.')
         if "waste" in materials[i]:
             waste[i] = materials[i]["waste"]
         if "Xy" in materials[i]:
