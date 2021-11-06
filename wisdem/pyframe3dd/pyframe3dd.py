@@ -710,7 +710,7 @@ class Frame(object):
                     dp(self.IPLxE[icase]),
                 )
 
-    def run(self):
+    def run(self, nanokay=False):
 
         nCases = len(self.loadCases)  # number of load cases
         nN = len(self.nodes.node)  # number of nodes
@@ -925,9 +925,11 @@ class Frame(object):
         )
 
         nantest = np.isnan(np.c_[fout.Nx, fout.Vy, fout.Vz, fout.Txx, fout.Myy, fout.Mzz])
-        if (exitCode in [181, 182, 183]) and (not np.any(nantest)):
+        if not nanokay and np.any(nantest):
+            raise RuntimeError("Frame3DD did not exit gracefully")
+        elif exitCode == 182 or exitCode == 183:
             pass
-        elif exitCode != 0 or np.any(nantest):
+        elif exitCode != 0:
             raise RuntimeError("Frame3DD did not exit gracefully")
 
         # put mass values back in since tuple is read only
