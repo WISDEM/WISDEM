@@ -299,6 +299,199 @@ class FrameAnalysis(om.ExplicitComponent):
             outputs["platform_Mzz"][:nelem, k] = forces.Txx[k, 1::2]
 
 
+class TowerModal(om.ExplicitComponent):
+    """
+    Run Frame3DD on the floating tower for frequencies and mode shapes only
+
+    Parameters
+    ----------
+    z_full : numpy array[npts], [m]
+        location along cylinder. start at bottom and go to top
+    d_full : numpy array[npts], [m]
+        effective cylinder diameter for section
+    t_full : numpy array[npts-1], [m]
+        effective shell thickness for section
+    E_full : numpy array[npts-1], [N/m**2]
+        modulus of elasticity
+    G_full : numpy array[npts-1], [N/m**2]
+        shear modulus
+    rho_full : numpy array[npts-1], [kg/m**3]
+        material density
+
+    Returns
+    -------
+    f1 : float, [Hz]
+        First natural frequency
+    f2 : float, [Hz]
+        Second natural frequency
+    structural_frequencies : numpy array[NFREQ], [Hz]
+        First and second natural frequency
+    fore_aft_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the tower fore-aft direction
+    side_side_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the tower side-side direction
+    torsion_freqs : numpy array[NFREQ2]
+        Frequencies associated with mode shapes in the tower torsion direction
+    fore_aft_modes : numpy array[NFREQ2, 5]
+        6-degree polynomial coefficients of mode shapes in the tower fore-aft direction
+        (without constant term)
+    side_side_modes : numpy array[NFREQ2, 5]
+        6-degree polynomial coefficients of mode shapes in the tower side-side direction
+        (without constant term)
+    torsion_modes : numpy array[NFREQ2, 5]
+        6-degree polynomial coefficients of mode shapes in the tower torsion direction
+        (without constant term)
+    """
+
+    def initialize(self):
+        self.options.declare("n_full")
+
+    def setup(self):
+        n_full = self.options["n_full"]
+
+        # cross-sectional data along cylinder.
+        self.add_input("tower_xyz", np.zeros((n_full, 3)), units="m")
+        self.add_input("tower_A", np.zeros(n_full - 1), units="m**2")
+        self.add_input("tower_Asx", np.zeros(n_full - 1), units="m**2")
+        self.add_input("tower_Asy", np.zeros(n_full - 1), units="m**2")
+        self.add_input("tower_Ixx", np.zeros(n_full - 1), units="kg*m**2")
+        self.add_input("tower_Iyy", np.zeros(n_full - 1), units="kg*m**2")
+        self.add_input("tower_J0", np.zeros(n_full - 1), units="kg*m**2")
+        self.add_input("tower_rho", np.zeros(n_full - 1), units="kg/m**3")
+        self.add_input("tower_E", np.zeros(n_full - 1), units="Pa")
+        self.add_input("tower_G", np.zeros(n_full - 1), units="Pa")
+        self.add_output("tower_L", np.zeros(n_full - 1), units="m")
+
+        self.add_input("platform_mass", 0.0, units="kg")
+        self.add_input("variable_ballast_mass", 0.0, units="kg")
+        self.add_input("platform_added_mass", np.zeros(6), units="kg")
+        self.add_input("platform_total_center_of_mass", np.zeros(3), units="m")
+        self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
+        self.add_input("mooring_stiffness", np.zeros((6, 6)), units="N/m")
+
+        # Frequencies
+        NFREQ2 = int(NFREQ / 2)
+        self.add_output("f1", val=0.0, units="Hz")
+        self.add_output("f2", val=0.0, units="Hz")
+        self.add_output("structural_frequencies", np.zeros(NFREQ), units="Hz")
+        self.add_output("fore_aft_modes", np.zeros((NFREQ2, 5)))
+        self.add_output("side_side_modes", np.zeros((NFREQ2, 5)))
+        self.add_output("torsion_modes", np.zeros((NFREQ2, 5)))
+        self.add_output("fore_aft_freqs", np.zeros(NFREQ2), units="Hz")
+        self.add_output("side_side_freqs", np.zeros(NFREQ2), units="Hz")
+        self.add_output("torsion_freqs", np.zeros(NFREQ2), units="Hz")
+
+    def compute(self, inputs, outputs):
+
+        # ------- node data ----------------
+        xyz = inputs["tower_xyz"]
+        n = xyz.shape[0]
+        node = np.arange(1, n + 1)
+        r = np.zeros(n)
+        nodes = pyframe3dd.NodeData(node, xyz[:, 0], xyz[:, 1], xyz[:, 2], r)
+        # -----------------------------------
+
+        # ------ reaction data ------------
+        # free-free (no reactions)
+        mooringK = np.abs(np.diag(inputs["mooring_stiffness"]))
+        rnode = np.array([], dtype=np.int_)
+        kx = ky = kz = ktx = kty = ktz = rnode
+        reactions = pyframe3dd.ReactionData(rnode, kx, ky, kz, ktx, kty, ktz, rigid=RIGID)
+        # -----------------------------------
+
+        # ------ frame element data ------------
+        element = np.arange(1, n)
+        N1 = np.arange(1, n)
+        N2 = np.arange(2, n + 1)
+        roll = np.zeros(n - 1)
+
+        # Element properties
+        Area = inputs["tower_A"]
+        Asx = inputs["tower_Asx"]
+        Asy = inputs["tower_Asy"]
+        J0 = inputs["tower_J0"]
+        Ixx = inputs["tower_Ixx"]
+        Iyy = inputs["tower_Iyy"]
+        E = inputs["tower_E"]
+        G = inputs["tower_G"]
+        rho = inputs["tower_rho"]
+
+        elements = pyframe3dd.ElementData(element, N1, N2, Area, Asx, Asy, J0, Ixx, Iyy, E, G, roll, rho)
+        # -----------------------------------
+
+        # ------ options ------------
+        dx = -1.0
+        shear = geom = False
+        options = pyframe3dd.Options(shear, geom, dx)
+        # -----------------------------------
+
+        # initialize frame3dd object
+        myframe = pyframe3dd.Frame(nodes, reactions, elements, options)
+
+        # Added mass
+        cg_add = inputs["platform_total_center_of_mass"].reshape((-1, 1))
+        add_gravity = True
+        mID = np.array([0], dtype=np.int_)
+        m_add = inputs["platform_mass"] + inputs["variable_ballast_mass"] + inputs["platform_added_mass"].max()
+        I_add = inputs["platform_I_total"].reshape((-1, 1))
+        myframe.changeExtraNodeMass(
+            mID + 1,
+            m_add,
+            I_add[0, :],
+            I_add[1, :],
+            I_add[2, :],
+            I_add[3, :],
+            I_add[4, :],
+            I_add[5, :],
+            cg_add[0, :],
+            cg_add[1, :],
+            cg_add[2, :],
+            add_gravity,
+        )
+
+        # ------- enable dynamic analysis ----------
+        Mmethod = 1
+        lump = 0
+        shift = -1e3
+        tol = 1e-7
+        # Run extra freqs because could get 6 rigid body modes at zero-freq
+        myframe.enableDynamics(3 * NFREQ, Mmethod, lump, tol, shift)
+        # ----------------------------
+
+        # ------ static load case 1 ------------
+        # gravity in the X, Y, Z, directions (global)
+        gx = 0.0
+        gy = 0.0
+        gz = -gravity
+        load = pyframe3dd.StaticLoadCase(gx, gy, gz)
+        myframe.addLoadCase(load)
+
+        # Debugging
+        # myframe.write('floating_tower_debug.3dd')
+        # -----------------------------------
+        # run the analysis
+        _, _, _, _, _, modal = myframe.run()
+        freq = modal.freq
+        freq = freq[freq > 1e-1]
+
+        # natural frequncies
+        outputs["f1"] = freq[0]
+        outputs["f2"] = freq[1]
+        outputs["structural_frequencies"] = freq[:NFREQ]
+
+        # Get all mode shapes in batch
+        NFREQ2 = int(NFREQ / 2)
+        freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
+            xyz[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
+        )
+        outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
+        outputs["side_side_freqs"] = freq_y[:NFREQ2]
+        outputs["torsion_freqs"] = freq_z[:NFREQ2]
+        outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
+        outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
+        outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
+
+
 class FloatingPost(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("options")
@@ -444,6 +637,11 @@ class FloatingFrame(om.Group):
         self.add_subsystem("loadsys", PlatformLoads(options=opt), promotes=["*"])
 
         self.add_subsystem("frame", FrameAnalysis(options=opt), promotes=["*"])
+
+        tow_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
+        n_height = tow_opt["n_height"]
+        n_full_tow = get_nfull(n_height, nref=tow_opt["n_refine"])
+        self.add_subsystem("tower", TowerModal(n_full=n_full_tow), promotes=["*"])
 
         self.add_subsystem("post", FloatingPost(options=opt["WISDEM"]["FloatingSE"], n_dlc=nLC), promotes=["*"])
 

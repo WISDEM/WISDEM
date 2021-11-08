@@ -1237,8 +1237,13 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("tcons.constr_tower_f_NPmargin", upper=0.0)
 
         elif tower_constr["frequency_1"]["flag"]:
+            varstr = (
+                "floatingse.structural_frequencies"
+                if self.modeling["flags"]["floating"]
+                else "towerse.tower.structural_frequencies"
+            )
             wt_opt.model.add_constraint(
-                "towerse.tower.structural_frequencies",
+                varstr,
                 indices=[0],
                 lower=tower_constr["frequency_1"]["lower_bound"],
                 upper=tower_constr["frequency_1"]["upper_bound"],

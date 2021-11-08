@@ -64,7 +64,7 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
     iy = 0
     iz = 0
     for m in range(nfreq):
-        if mpfs[m, :].max() < 1e-11:
+        if freqs[m] < 1e-1 or mpfs[m, :].max() < 1e-11:
             continue
         imode = np.argmax(mpfs[m, :])
         if imode == 0:

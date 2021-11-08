@@ -507,6 +507,9 @@ class WT_RNTA(om.Group):
                 self.connect("towerse.turbine_center_of_mass", "floatingse.turbine_center_of_mass")
                 self.connect("towerse.tower.turbine_F", "floatingse.turbine_F")
                 self.connect("towerse.tower.turbine_M", "floatingse.turbine_M")
+                self.connect("towerse.nodes_xyz", "floatingse.tower_xyz")
+                for var in ["A", "Asx", "Asy", "Ixx", "Iyy", "J0", "rho", "E", "G"]:
+                    self.connect(f"towerse.section_{var}", f"floatingse.tower_{var}")
 
             # Individual member connections
             for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
@@ -572,7 +575,10 @@ class WT_RNTA(om.Group):
             self.connect("nacelle.overhang", "tcons.overhang")
             self.connect("assembly.tower_ref_axis", "tcons.ref_axis_tower")
             self.connect("tower.diameter", "tcons.d_full")
-            self.connect("towerse.tower.structural_frequencies", "tcons.tower_freq", src_indices=[0])
+            if modeling_options["flags"]["floating"]:
+                self.connect("floatingse.structural_frequencies", "tcons.tower_freq", src_indices=[0])
+            else:
+                self.connect("towerse.tower.structural_frequencies", "tcons.tower_freq", src_indices=[0])
             self.connect("configuration.n_blades", "tcons.blade_number")
             self.connect("rotorse.rp.powercurve.rated_Omega", "tcons.rated_Omega")
 
