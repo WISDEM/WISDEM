@@ -4,7 +4,6 @@ import os
 import glob
 
 from setuptools import find_packages
-
 from numpy.distutils.core import Extension, setup
 
 os.environ["NPY_DISTUTILS_APPEND_FLAGS"] = "1"
@@ -48,6 +47,7 @@ setup(
         "scipy",
         "simpy",
         "sortedcontainers",
+        "pyparsing<3",
     ],
     python_requires=">=3.7",
     package_data={"": ["*.yaml", "*.xlsx"], "wisdem": ["*.txt"]},

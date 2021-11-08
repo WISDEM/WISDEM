@@ -4,6 +4,7 @@ import logging
 
 import numpy as np
 import openmdao.api as om
+
 from wisdem.commonse import fileIO
 from wisdem.commonse.mpi_tools import MPI
 from wisdem.glue_code.glue_code import WindPark
