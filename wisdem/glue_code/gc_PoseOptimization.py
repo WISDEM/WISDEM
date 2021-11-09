@@ -629,9 +629,9 @@ class PoseOptimization(object):
         if stall_options["flag"]:
             n_opt = stall_options["n_opt"]
             indices = range(stall_options["index_start"], stall_options["index_end"])
-            s_opt_c_d = np.linspace(0.0, 1.0, n_opt)
+            s_opt_stall = np.linspace(0.0, 1.0, n_opt)
             init_stall_opt = np.interp(
-                s_opt_c_d,
+                s_opt_stall,
                 wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
                 wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"],
             )
@@ -641,6 +641,24 @@ class PoseOptimization(object):
                 indices=indices,
                 lower=init_stall_opt[indices] - stall_options["max_decrease"],
                 upper=init_stall_opt[indices] + stall_options["max_increase"],
+            )
+
+        t_c_options = blade_opt["aero_shape"]["t/c"]
+        if t_c_options["flag"]:
+            n_opt = t_c_options["n_opt"]
+            indices = range(t_c_options["index_start"], t_c_options["index_end"])
+            s_opt_t_c = np.linspace(0.0, 1.0, n_opt)
+            init_t_c_opt = np.interp(
+                s_opt_t_c,
+                wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"],
+            )
+
+            wt_opt.model.add_design_var(
+                "inn_af.r_thick_opt",
+                indices=indices,
+                lower=init_t_c_opt[indices] - t_c_options["max_decrease"],
+                upper=init_t_c_opt[indices] + t_c_options["max_increase"],
             )
 
         z_options = blade_opt["aero_shape"]["z"]
