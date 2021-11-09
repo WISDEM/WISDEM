@@ -3221,12 +3221,12 @@ class RotorCost(om.ExplicitComponent):
             if layer_web[i_lay] == 0:
                 # Determine on which of the two molds the layer should go
                 if (
-                    layer_start_nd[i_lay, imin] < xy_arc_nd_LE[imin] - tol_LE
-                    and layer_end_nd[i_lay, imin] > xy_arc_nd_LE[imin] + tol_LE
+                    layer_start_nd[i_lay, imin] < xy_arc_nd_LE[imin] + tol_LE
+                    and layer_end_nd[i_lay, imin] > xy_arc_nd_LE[imin] - tol_LE
                 ):
                     SS = True
                     PS = True
-                elif (layer_start_nd[i_lay, imin] > xy_arc_nd_LE[imin] + tol_LE
+                elif (layer_start_nd[i_lay, imin] > xy_arc_nd_LE[imin] - tol_LE
                     and layer_end_nd[i_lay, imin] <= 1. + tol_LE
                     and layer_start_nd[i_lay, imin] < layer_end_nd[i_lay, imin]):
                     SS = False
@@ -3238,7 +3238,8 @@ class RotorCost(om.ExplicitComponent):
                 else:
                     SS = False
                     PS = False
-                    logger.warning("The layer " + self.layer_name[i_lay] + " cannot be assigned neither to suction nor to pressure. Please check your input geometry yaml.")
+                    logger.debug("The layer " + self.layer_name[i_lay] + " cannot be assigned " + 
+                    " neither to suction nor to pressure. Please check your input geometry yaml.")
 
                 # Compute width layer
                 width = arc_L_i * chord * (layer_end_nd[i_lay, :] - layer_start_nd[i_lay, :])

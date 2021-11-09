@@ -373,7 +373,9 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                             flag = True
                             break
                     if flag == False:
-                        raise ValueError("Error with layer " + internal_structure_2d_fem["layers"][i]["name"])
+                        raise ValueError("The start position of the layer " + internal_structure_2d_fem["layers"][i]["name"] + 
+                        " is linked to the layer " + internal_structure_2d_fem["layers"][i]["start_nd_arc"]["fixed"] + 
+                        " , but this layer does not exist in the yaml.")
             else:
                 layer_start_nd[i, :] = np.interp(
                     nd_span,
@@ -397,7 +399,9 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                                 flag = True
                                 break
                         if flag == False:
-                            raise ValueError("Error with layer " + internal_structure_2d_fem["layers"][i]["name"])
+                            raise ValueError("The end position of the layer " + internal_structure_2d_fem["layers"][i]["name"] + 
+                            " is linked to the layer " + internal_structure_2d_fem["layers"][i]["start_nd_arc"]["fixed"] + 
+                            " , but this layer does not exist in the yaml.")
             if "width" in internal_structure_2d_fem["layers"][i]:
                 definition_layer[i] = 7
                 layer_width[i, :] = np.interp(
