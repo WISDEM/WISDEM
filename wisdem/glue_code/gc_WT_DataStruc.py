@@ -2,9 +2,7 @@ import copy
 import logging
 
 import numpy as np
-import matplotlib
 import openmdao.api as om
-import matplotlib.pyplot as plt
 from scipy.interpolate import PchipInterpolator, interp1d
 
 import wisdem.moorpy.MoorProps as mp
@@ -22,7 +20,6 @@ try:
     INN_loaded = True
 except:
     INN_loaded = False
-# matplotlib.use("TkAgg")
 logger = logging.getLogger("wisdem/weis")
 
 
@@ -589,6 +586,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         self.add_subsystem("high_level_tower_props", ComputeHighLevelTowerProperties(modeling_options=modeling_options))
         self.connect("configuration.hub_height_user", "high_level_tower_props.hub_height_user")
         if modeling_options["flags"]["blade"]:
+            self.connect("blade.high_level_blade_props.rotor_diameter", "high_level_tower_props.rotor_diameter")
             self.add_subsystem("af_3d", Airfoil3DCorrection(rotorse_options=modeling_options["WISDEM"]["RotorSE"]))
             self.connect("airfoils.aoa", "af_3d.aoa")
             self.connect("airfoils.Re", "af_3d.Re")
@@ -1136,65 +1134,10 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         cm_spline = spline(r_thick_unique, cm_used[indices, :, :, :])
         cm_interp = np.flip(cm_spline(np.flip(outputs["r_thick_interp"])), axis=0)
 
-        # Plot interpolated polars
-        # for i in range(self.n_span):
-        # plt.plot(inputs['aoa'], cl_interp[i,:,0,0], 'b')
-        # plt.plot(inputs['aoa'], cd_interp[i,:,0,0], 'r')
-        # plt.plot(inputs['aoa'], cm_interp[i,:,0,0], 'k')
-        # plt.title(i)
-        # plt.show()
-
         outputs["coord_xy_interp"] = coord_xy_interp
         outputs["cl_interp"] = cl_interp
         outputs["cd_interp"] = cd_interp
         outputs["cm_interp"] = cm_interp
-
-        # # Plot interpolated coordinates
-        # import matplotlib.pyplot as plt
-        # for i in range(self.n_span):
-        #     plt.plot(coord_xy_interp[i,:,0], coord_xy_interp[i,:,1], 'k', label = 'coord_xy_interp')
-        #     plt.plot(coord_xy_dim[i,:,0], coord_xy_dim[i,:,1], 'b', label = 'coord_xy_dim')
-        #     plt.axis('equal')
-        #     plt.title(i)
-        #     plt.legend()
-        #     plt.show()
-
-        # # Smoothing
-        # import matplotlib.pyplot as plt
-        # # plt.plot(inputs['s'], inputs['chord'] * outputs['r_thick_interp'])
-        # # plt.show()
-
-        # # Absolute Thickness
-        # abs_thick_init  = outputs['r_thick_interp']*inputs['chord']
-        # s_interp_at     = np.array([0.0, 0.02,  0.1, 0.2, 0.8,  1.0 ])
-        # abs_thick_int1  = np.interp(s_interp_at, inputs['s'],abs_thick_init)
-        # f_interp2       = PchipInterpolator(s_interp_at,abs_thick_int1)
-        # abs_thick_int2  = f_interp2(inputs['s'])
-
-        # # # Relative thickness
-        # r_thick_interp   = abs_thick_int2 / inputs['chord']
-        # r_thick_airfoils = np.array([0.18, 0.211, 0.241, 0.301, 0.36 , 0.50, 1.00])
-        # s_interp_rt      = np.interp(r_thick_airfoils, np.flip(r_thick_interp),np.flip(inputs['s']))
-        # f_interp2        = PchipInterpolator(np.flip(s_interp_rt, axis=0),np.flip(r_thick_airfoils, axis=0))
-        # r_thick_int2     = f_interp2(inputs['s'])
-
-        # frt, axrt  = plt.subplots(1,1,figsize=(5.3, 4))
-        # axrt.plot(inputs['s'], outputs['r_thick_interp']*100., c='k', label='Initial')
-        # # axrt.plot(inputs['s'], r_thick_interp * 100., c='b', label='Interp')
-        # # axrt.plot(s_interp_rt, r_thick_airfoils * 100., 'og', label='Airfoils')
-        # # axrt.plot(inputs['s'], r_thick_int2 * 100., c='g', label='Reconstructed')
-        # axrt.set(xlabel='r/R' , ylabel='Relative Thickness (%)')
-        # axrt.legend()
-
-        # fat, axat  = plt.subplots(1,1,figsize=(5.3, 4))
-        # axat.plot(inputs['s'], abs_thick_init, c='k', label='Initial')
-        # # axat.plot(s_interp_at, abs_thick_int1, 'ko', label='Interp Points')
-        # # axat.plot(inputs['s'], abs_thick_int2, c='b', label='PCHIP')
-        # # axat.plot(inputs['s'], r_thick_int2 * inputs['chord'], c='g', label='Reconstructed')
-        # axat.set(xlabel='r/R' , ylabel='Absolute Thickness (m)')
-        # axat.legend()
-        # plt.show()
-        # print(np.flip(s_interp_rt))
 
 
 class Compute_Coord_XY_Dim(om.ExplicitComponent):
@@ -1465,88 +1408,6 @@ class INN_Airfoils(om.ExplicitComponent):
 
             outputs["aoa_inn"][i] = np.deg2rad(alpha_inn)
 
-            # ======================
-
-            # x, y = inputs["coord_xy_interp_yaml"][i, :, 0], inputs["coord_xy_interp_yaml"][i, :, 1]
-            #
-            # points = np.column_stack((x, y))
-            # # Check that airfoil points are declared from the TE suction side to TE pressure side
-            # idx_le = np.argmin(points[:, 0])
-            # if np.mean(points[:idx_le, 1]) > 0.0:
-            #     points = np.flip(points, axis=0)
-            #
-            # # Remap points using class AirfoilShape
-            # af = AirfoilShape(points=points)
-            # af.redistribute(200, even=False, dLE=True)
-            # s = af.s
-            # af_points = af.points
-            #
-            # yaml_airfoil = AirfoilShape_cst(xco=af_points[:, 0], yco=af_points[:, 1])
-            # cst_new = CSTAirfoil(yaml_airfoil)
-            # cst = np.concatenate((cst_new.cst, [yaml_airfoil.te_lower], [yaml_airfoil.te_upper]), axis=0)
-            #
-            # cd_new, cl_new = self.inn.generate_polars(cst, Re, alpha=alpha)
-            #
-            # inn_polar = Polar(Re, alpha, cl_new[0, :], cd_new[0, :], np.zeros_like(cl_new[0, :]))
-            # polar3d = inn_polar.correction3D(
-            #     inputs["s"][i], inputs["chord"][i] / 121.1, inputs["rated_TSR"]
-            # )  # 121.1 comes from the diameter or something
-            # cdmax = 1.5
-            # polar = polar3d.extrapolate(cdmax)  # Extrapolate polars for alpha between -180 deg and 180 deg
-            #
-            # cl_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cl)
-            # cd_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cd)
-            # cm_interp_new = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cm)
-            #
-            # f, ax = plt.subplots(4, 1, figsize=(5.3, 10))
-
-            # ax[0].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp, label="INN")
-            # ax[0].plot(inputs["aoa"] * 180.0 / np.pi, inputs["cl_interp_yaml"][i, :, 0, 0], label="yaml")
-            # # ax[0].plot(inputs["aoa"] * 180. / np.pi, cl_interp_new, label="yaml")
-            # ax[0].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            # ax[0].legend()
-            # ax[0].set_ylabel("CL (-)", fontweight="bold")
-            # ax[0].set_title("Span Location {:2.2%}".format(inputs["s"][i]), fontweight="bold")
-            # ax[0].set_ylim(-1.0, 2.5)
-            # ax[0].set_xlim(left=-4, right=20)
-
-            # ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, cd_interp, label="INN")
-            # ax[1].semilogy(inputs["aoa"] * 180.0 / np.pi, inputs["cd_interp_yaml"][i, :, 0, 0], label="yaml")
-            # # ax[1].semilogy(inputs["aoa"] * 180. / np.pi, cd_interp_new, label="yaml")
-            # ax[1].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            # ax[1].set_ylabel("CD (-)", fontweight="bold")
-            # ax[1].set_ylim(0.005, 0.2)
-            # ax[1].set_xlim(left=-4, right=20)
-
-            # ax[2].plot(inputs["aoa"] * 180.0 / np.pi, cl_interp / cd_interp, label="INN")
-            # ax[2].plot(
-            #     inputs["aoa"] * 180.0 / np.pi,
-            #     inputs["cl_interp_yaml"][i, :, 0, 0] / inputs["cd_interp_yaml"][i, :, 0, 0],
-            #     label="yaml",
-            # )
-            # # ax[2].plot(inputs["aoa"] * 180. / np.pi, cl_interp_new / cd_interp_new, label="yaml")
-            # ax[2].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            # ax[2].set_ylabel("CL/CD (-)", fontweight="bold")
-            # ax[2].set_xlabel("Angles of Attack (deg)", fontweight="bold")
-            # ax[2].set_xlim(left=-4, right=20)
-            # ax[2].set_ylim(top=150, bottom=-40)
-
-            # yaml_xy = inputs["coord_xy_interp_yaml"][i]
-            # cst_xy = outputs["coord_xy_interp"][i, :, :]
-            #
-            # ax[3].plot(cst_xy[:, 0], cst_xy[:, 1], label="INN")
-            # ax[3].plot(yaml_xy[:, 0], yaml_xy[:, 1], label="yaml")
-            # ax[3].grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            # ax[3].set_ylabel("y-coord", fontweight="bold")
-            # ax[3].set_xlabel("x-coord", fontweight="bold")
-            # ax[3].set_xlim(left=0.0, right=1.0)
-            # ax[3].set_ylim(top=0.2, bottom=-0.2)
-
-            # plt.tight_layout()
-
-            # plt.savefig(f"airfoil_comparison_{i}.png")
-            # plt.close()
-
 
 class Blade_Lofted_Shape(om.ExplicitComponent):
     # Openmdao component to generate the x, y, z coordinates of the points describing the blade outer shape.
@@ -1617,22 +1478,6 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
             outputs["3D_shape"],
             header="\t point number [-]\t\t\t\t x [m] \t\t\t\t\t y [m]  \t\t\t\t z [m] \t\t\t\t The coordinate system follows the BeamDyn one.",
         )
-
-        # import matplotlib.pyplot as plt
-        #
-        # for i in range(self.n_span):
-        #     plt.plot(outputs["coord_xy_dim_twisted"][i, :, 0], outputs["coord_xy_dim_twisted"][i, :, 1], "k")
-        #     plt.axis("equal")
-        #     plt.title(i)
-        #     plt.show()
-        #
-        # import matplotlib.pyplot as plt
-        # from mpl_toolkits.mplot3d import Axes3D
-        #
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111, projection="3d")
-        # ax.plot(outputs["3D_shape"][:, 1], outputs["3D_shape"][:, 2], outputs["3D_shape"][:, 3])
-        # plt.show()
 
 
 class Blade_Internal_Structure_2D_FEM(om.Group):
@@ -2799,7 +2644,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
         self.add_discrete_input(
             "component_id",
             val=-np.ones(n_mat),
-            desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.",
+            desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE/LE reinf.",
         )
         self.add_input(
             "rho_fiber",
@@ -3111,6 +2956,10 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             units="m",
             desc="2D array of the coordinates (x,y,z) of the blade reference axis scaled based on rotor diameter, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
         )
+        self.add_output("prebend", val=np.zeros(n_span), units="m", desc="Blade prebend at each section")
+        self.add_output("prebendTip", val=0.0, units="m", desc="Blade prebend at tip")
+        self.add_output("presweep", val=np.zeros(n_span), units="m", desc="Blade presweep at each section")
+        self.add_output("presweepTip", val=0.0, units="m", desc="Blade presweep at tip")
         self.add_output(
             "blade_length",
             val=0.0,
@@ -3136,6 +2985,10 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
         outputs["r_blade"] = outputs["blade_ref_axis"][:, 2] + inputs["hub_radius"]
         outputs["rotor_radius"] = outputs["r_blade"][-1]
         outputs["blade_length"] = arc_length(outputs["blade_ref_axis"])[-1]
+        outputs["prebend"] = outputs["blade_ref_axis"][:, 0]
+        outputs["prebendTip"] = outputs["blade_ref_axis"][-1, 0]
+        outputs["presweep"] = outputs["blade_ref_axis"][:, 1]
+        outputs["presweepTip"] = outputs["blade_ref_axis"][-1, 1]
 
 
 class ComputeHighLevelTowerProperties(om.ExplicitComponent):
@@ -3159,6 +3012,12 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
         )
         self.add_input("distance_tt_hub", val=0.0, units="m", desc="Vertical distance from tower top to hub center.")
         self.add_input("hub_height_user", val=0.0, units="m", desc="Height of the hub specified by the user.")
+        self.add_input(
+            "rotor_diameter",
+            val=0.0,
+            units="m",
+            desc="Diameter of the rotor used in WISDEM. It is defined as two times the blade length plus the hub diameter.",
+        )
 
         self.add_output(
             "tower_ref_axis",
@@ -3175,7 +3034,6 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         modeling_options = self.options["modeling_options"]
-
         if modeling_options["flags"]["tower"]:
             if inputs["hub_height_user"] != 0.0:
                 outputs["hub_height"] = inputs["hub_height_user"]
@@ -3187,6 +3045,11 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
             else:
                 outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]
+
+        if modeling_options["flags"]["blade"] and inputs["rotor_diameter"] > 2.0 * outputs["hub_height"]:
+            raise Exception(
+                "The rotor blade extends past the ground or water line. Please adjust hub height and/or rotor diameter."
+            )
 
 
 class Airfoil3DCorrection(om.ExplicitComponent):
