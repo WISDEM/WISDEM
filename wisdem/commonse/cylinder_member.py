@@ -1996,7 +1996,7 @@ class Global2MemberLoads(om.ExplicitComponent):
 
 class LoadMux(om.ExplicitComponent):
     """
-    Muxes (concatenates) multiple loading cases into one
+    Muxes (concatenates) multiple loading cases into one input array
 
     Parameters
     ----------

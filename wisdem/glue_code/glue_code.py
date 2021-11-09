@@ -420,7 +420,7 @@ class WT_RNTA(om.Group):
         if modeling_options["flags"]["monopile"]:
             if modeling_options["flags"]["blade"]:
                 self.connect("rotorse.rp.gust.V_gust", "fixedse.env.Uref")
-            self.connect("assembly.hub_height", "fixedse.wind_reference_height")
+            self.connect("high_level_tower_props.hub_height", "fixedse.wind_reference_height")
             self.connect("env.rho_air", "fixedse.rho_air")
             self.connect("env.mu_air", "fixedse.mu_air")
             self.connect("env.shear_exp", "fixedse.shearExp")
