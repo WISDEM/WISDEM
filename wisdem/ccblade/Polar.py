@@ -795,8 +795,8 @@ class Polar(object):
             # Looking at slope around alpha 0 to see if we are too far off
             slope_FD, off_FD = _find_slope(self.alpha, self.cl, xi=alpha0, window=window, method="finitediff_1c")
             if abs(slope - slope_FD) / slope_FD * 100 > 50:
-                print(
-                    "Warning: More than 50% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.".format(
+                logger.debug(
+                    "Warning Polar.py: More than 50% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search in the lift coefficient ([{} {}]) is likely wrong.".format(
                         slope, slope_FD, window[0], window[-1]
                     )
                 )
