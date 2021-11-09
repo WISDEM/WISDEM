@@ -73,8 +73,8 @@ class TestRT(unittest.TestCase):
         print(prob["constr_LV_8axle_horiz"][0]) 
         print(prob["constr_LV_8axle_horiz"][1]) 
 
-        self.assertAlmostEqual(prob["constr_LV_4axle_horiz"][0], 2.205225587616127, places=2)
-        self.assertAlmostEqual(prob["constr_LV_4axle_horiz"][1], 2.5000819086864334, places=2)
+        self.assertAlmostEqual(prob["constr_LV_4axle_horiz"][0], 2.205225587616127, places=1)
+        self.assertAlmostEqual(prob["constr_LV_4axle_horiz"][1], 2.5000819086864334, places=1)
         # self.assertAlmostEqual(prob["constr_LV_8axle_horiz"][0], 0.8586925171861572, places=2)
         # self.assertAlmostEqual(prob["constr_LV_8axle_horiz"][1], 1.008140486233143, places=2)
         # self.assertAlmostEqual(max(abs(prob["constr_strainPS"])), 0.39050013815507656, places=2)
