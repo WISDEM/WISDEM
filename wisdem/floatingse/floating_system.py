@@ -1,6 +1,5 @@
 import numpy as np
 import openmdao.api as om
-
 import wisdem.commonse.utilities as util
 from wisdem.commonse import gravity
 from wisdem.commonse.cylinder_member import NULL, MEMMAX
@@ -80,7 +79,6 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_centroid", np.zeros(3), units="m")
         self.add_output("platform_ballast_mass", 0.0, units="kg")
         self.add_output("platform_hull_mass", 0.0, units="kg")
-        self.add_output("platform_mass", 0.0, units="kg")
         self.add_output("platform_I_hull", np.zeros(6), units="kg*m**2")
         self.add_output("platform_cost", 0.0, units="USD")
         self.add_output("platform_Awater", 0.0, units="m**2")
@@ -318,7 +316,6 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_elem_sigma_y"][:nelem] = elem_sigy
         discrete_outputs["platform_elem_memid"] = elem_memid
 
-        outputs["platform_mass"] = mass
         outputs["platform_ballast_mass"] = m_ball
         outputs["platform_hull_mass"] = mass - m_ball
         outputs["platform_cost"] = cost
@@ -342,7 +339,8 @@ class PlatformTurbineSystem(om.ExplicitComponent):
         n_attach = opt["mooring"]["n_attach"]
 
         self.add_input("platform_hull_center_of_mass", np.zeros(3), units="m")
-        self.add_input("platform_mass", 0.0, units="kg")
+        self.add_input("platform_ballast_mass", 0.0, units="kg")
+        self.add_input("platform_hull_mass", 0.0, units="kg")
         self.add_input("platform_I_hull", np.zeros(6), units="kg*m**2")
         self.add_input("platform_displacement", 0.0, units="m**3")
 
@@ -368,13 +366,14 @@ class PlatformTurbineSystem(om.ExplicitComponent):
         self.add_output("constr_variable_margin", val=0.0)
         self.add_output("member_variable_volume", val=np.zeros(n_member), units="m**3")
         self.add_output("member_variable_height", val=np.zeros(n_member))
+        self.add_output("platform_mass", 0.0, units="kg")
         self.add_output("platform_total_center_of_mass", np.zeros(3), units="m")
         self.add_output("platform_I_total", np.zeros(6), units="kg*m**2")
 
     def compute(self, inputs, outputs):
 
         # Mass summaries
-        m_platform = inputs["platform_mass"]
+        m_platform = inputs["platform_hull_mass"] + inputs["platform_ballast_mass"]
         cg_platform = inputs["platform_hull_center_of_mass"]
         I_platform = util.assembleI(inputs["platform_I_hull"])
         m_turb = inputs["turbine_mass"]
@@ -424,6 +423,7 @@ class PlatformTurbineSystem(om.ExplicitComponent):
         outputs["variable_center_of_mass"] = cg_variable
 
         # Now find total system mass
+        outputs["platform_mass"] = m_platform + m_variable
         outputs["system_mass"] = m_sys + m_variable
         outputs["system_center_of_mass"] = (
             m_sys * outputs["system_structural_center_of_mass"] + m_variable * cg_variable
