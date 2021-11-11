@@ -517,6 +517,9 @@ class WT_RNTA(om.Group):
                 self.connect("towerse.tower.turbine_F", "floatingse.turbine_F")
                 self.connect("towerse.tower.turbine_M", "floatingse.turbine_M")
                 self.connect("towerse.nodes_xyz", "floatingse.tower_xyz")
+                self.connect("drivese.rna_I_TT", "floatingse.rna_I")
+                self.connect("drivese.rna_cm", "floatingse.rna_cg")
+                self.connect("drivese.rna_mass", "floatingse.rna_mass")
                 for var in ["A", "Asx", "Asy", "Ixx", "Iyy", "J0", "rho", "E", "G"]:
                     self.connect(f"towerse.section_{var}", f"floatingse.tower_{var}")
 

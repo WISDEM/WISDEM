@@ -362,8 +362,10 @@ class TowerModal(om.ExplicitComponent):
         self.add_input("tower_G", np.zeros(n_full - 1), units="Pa")
         self.add_output("tower_L", np.zeros(n_full - 1), units="m")
 
+        self.add_input("rna_mass", val=0.0, units="kg")
+        self.add_input("rna_I", np.zeros(6), units="kg*m**2")
+        self.add_input("rna_cg", np.zeros(3), units="m")
         self.add_input("platform_mass", 0.0, units="kg")
-        self.add_input("variable_ballast_mass", 0.0, units="kg")
         self.add_input("platform_added_mass", np.zeros(6), units="kg")
         self.add_input("platform_total_center_of_mass", np.zeros(3), units="m")
         self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
@@ -393,10 +395,14 @@ class TowerModal(om.ExplicitComponent):
 
         # ------ reaction data ------------
         # free-free (no reactions)
-        mooringK = np.abs(np.diag(inputs["mooring_stiffness"]))
-        rnode = np.array([], dtype=np.int_)
-        kx = ky = kz = ktx = kty = ktz = rnode
-        reactions = pyframe3dd.ReactionData(rnode, kx, ky, kz, ktx, kty, ktz, rigid=RIGID)
+        # rnode = np.array([], dtype=np.int_)
+        # kx = ky = kz = ktx = kty = ktz = rnode
+        # reactions = pyframe3dd.ReactionData(rnode, kx, ky, kz, ktx, kty, ktz, rigid=RIGID)
+        rnode = np.array([1], dtype=np.int_)
+        moorK = np.abs(np.diag(inputs["mooring_stiffness"]))
+        reactions = pyframe3dd.ReactionData(
+            rnode, [moorK[0]], [moorK[1]], [moorK[2]], [moorK[3]], [moorK[4]], [moorK[5]], rigid=RIGID
+        )
         # -----------------------------------
 
         # ------ frame element data ------------
@@ -429,13 +435,14 @@ class TowerModal(om.ExplicitComponent):
         myframe = pyframe3dd.Frame(nodes, reactions, elements, options)
 
         # Added mass
-        cg_add = inputs["platform_total_center_of_mass"].reshape((-1, 1))
+        cg_add = np.c_[inputs["platform_total_center_of_mass"], inputs["rna_cg"]]
         add_gravity = True
-        mID = np.array([0], dtype=np.int_)
-        m_add = inputs["platform_mass"] + inputs["variable_ballast_mass"] + inputs["platform_added_mass"].max()
-        I_add = inputs["platform_I_total"].reshape((-1, 1))
+        mID = np.array([1, n - 1], dtype=np.int_)
+        m_fact = inputs["platform_added_mass"].max() / inputs["platform_mass"]
+        m_add = np.r_[(1 + m_fact) * inputs["platform_mass"], inputs["rna_mass"]].flatten()
+        I_add = np.c_[(1 + m_fact) * inputs["platform_I_total"], inputs["rna_I"]]
         myframe.changeExtraNodeMass(
-            mID + 1,
+            mID,
             m_add,
             I_add[0, :],
             I_add[1, :],
@@ -452,8 +459,8 @@ class TowerModal(om.ExplicitComponent):
         # ------- enable dynamic analysis ----------
         Mmethod = 1
         lump = 0
-        shift = -1e3
-        tol = 1e-7
+        shift = -1e2
+        tol = 1e-6
         # Run extra freqs because could get 6 rigid body modes at zero-freq
         myframe.enableDynamics(3 * NFREQ, Mmethod, lump, tol, shift)
         # ----------------------------
@@ -470,26 +477,31 @@ class TowerModal(om.ExplicitComponent):
         # myframe.write('floating_tower_debug.3dd')
         # -----------------------------------
         # run the analysis
-        _, _, _, _, _, modal = myframe.run()
-        freq = modal.freq
-        freq = freq[freq > 1e-1]
+        try:
+            _, _, _, _, _, modal = myframe.run()
 
-        # natural frequncies
-        outputs["f1"] = freq[0]
-        outputs["f2"] = freq[1]
-        outputs["structural_frequencies"] = freq[:NFREQ]
+            # natural frequncies
+            freq = modal.freq
+            freq = freq[freq > 1e-1]
+            if len(freq) >= NFREQ:
+                outputs["f1"] = freq[0]
+                outputs["f2"] = freq[1]
+                outputs["structural_frequencies"] = freq[:NFREQ]
 
-        # Get all mode shapes in batch
-        NFREQ2 = int(NFREQ / 2)
-        freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
-            xyz[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
-        )
-        outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
-        outputs["side_side_freqs"] = freq_y[:NFREQ2]
-        outputs["torsion_freqs"] = freq_z[:NFREQ2]
-        outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
-        outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
-        outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
+                # Get all mode shapes in batch
+                NFREQ2 = int(NFREQ / 2)
+                freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
+                    xyz[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
+                )
+                print(np.c_[freq_x[:NFREQ2], freq_y[:NFREQ2], freq_z[:NFREQ2]])
+                outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
+                outputs["side_side_freqs"] = freq_y[:NFREQ2]
+                outputs["torsion_freqs"] = freq_z[:NFREQ2]
+                outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
+                outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
+                outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
+        except:
+            pass
 
 
 class FloatingPost(om.ExplicitComponent):
