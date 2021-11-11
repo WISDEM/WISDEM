@@ -5,7 +5,6 @@ import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 from openmdao.api import ExplicitComponent
 from scipy.optimize import minimize
 from wisdem.commonse.constants import gravity
-import matplotlib.pyplot as plt
 
 # This isn't used, but keeping around the code for now
 def enforce_length(x, y, z, L0):
@@ -410,6 +409,7 @@ class RailTransport(ExplicitComponent):
         y_rail_outer  = np.sqrt(r_envelopeH.max()**2. - (x_rail_outer-r_envelopeH.max())**2.)
 
         # Undeflected transport
+        # import matplotlib.pyplot as plt
         # fig, ax = plt.subplots(1, 1, figsize=(4,8))
         # ax.plot(x_rail_inner+2*lateral_clearance, y_rail_inner, "k:", label='Lateral clearance')
         # ax.plot(x_rail_outer, y_rail_outer, "k:")
@@ -515,24 +515,24 @@ class RailTransport(ExplicitComponent):
                     np.sqrt(x_defl ** 2 + z_defl ** 2)
                 )
 
-                if final and k==1:
-                    print("Undeflected blade length: ", util.arc_length(np.vstack((blade.nx, blade.nz)).T)[-1])
-                    print("Corrected blade length: ", util.arc_length(np.vstack((x_defl, z_defl)).T)[-1])
-                    # Deflected transport
-                    fig, ax = plt.subplots(1, 1, figsize=(4,6))
-                    ax.plot(x_rail_inner+2*lateral_clearance, y_rail_inner, "k:", label='Lateral clearance')
-                    ax.plot(x_rail_outer, y_rail_outer, "k:")
-                    # ax.plot(x_rot1+x_rot1[0]+lateral_clearance, z_rot1, label='rot1')
-                    ax.plot(x_defl + yss - blade.nx[0] + lateral_clearance, z_defl, color="tab:red", label='Blade')
-                    ax.plot(x_defl - yps - blade.nx[0] + lateral_clearance, z_defl, color="tab:red")
-                    ax.plot(blade.nx+ yss - blade.nx[0] + lateral_clearance, blade.nz, color="tab:blue", label='Undeflected blade')
-                    ax.plot(blade.nx- yps - blade.nx[0] + lateral_clearance, blade.nz, color="tab:blue")
-                    #ax.set_xlim([0,50])
-                    ax.axis('equal')
-                    plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-                    plt.subplots_adjust(bottom = 0.15, left = 0.15)
-                    ax.legend()
-                    plt.show()
+                # if final and k==1:
+                #     print("Undeflected blade length: ", util.arc_length(np.vstack((blade.nx, blade.nz)).T)[-1])
+                #     print("Corrected blade length: ", util.arc_length(np.vstack((x_defl, z_defl)).T)[-1])
+                #     # Deflected transport
+                #     fig, ax = plt.subplots(1, 1, figsize=(4,6))
+                #     ax.plot(x_rail_inner+2*lateral_clearance, y_rail_inner, "k:", label='Lateral clearance')
+                #     ax.plot(x_rail_outer, y_rail_outer, "k:")
+                #     # ax.plot(x_rot1+x_rot1[0]+lateral_clearance, z_rot1, label='rot1')
+                #     ax.plot(x_defl + yss - blade.nx[0] + lateral_clearance, z_defl, color="tab:red", label='Blade')
+                #     ax.plot(x_defl - yps - blade.nx[0] + lateral_clearance, z_defl, color="tab:red")
+                #     ax.plot(blade.nx+ yss - blade.nx[0] + lateral_clearance, blade.nz, color="tab:blue", label='Undeflected blade')
+                #     ax.plot(blade.nx- yps - blade.nx[0] + lateral_clearance, blade.nz, color="tab:blue")
+                #     #ax.set_xlim([0,50])
+                #     ax.axis('equal')
+                #     plt.grid(color=[0.8,0.8,0.8], linestyle='--')
+                #     plt.subplots_adjust(bottom = 0.15, left = 0.15)
+                #     ax.legend()
+                #     plt.show()
 
                 # Derailing reaction force on root node
                 #  - Lateral force on wheels (multiply by 0.5 for 2 wheel sets)
