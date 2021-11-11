@@ -434,9 +434,26 @@ class TowerModal(om.ExplicitComponent):
         # initialize frame3dd object
         myframe = pyframe3dd.Frame(nodes, reactions, elements, options)
 
+        # ------- enable dynamic analysis ----------
+        Mmethod = 1
+        lump = 0
+        shift = -1e2
+        tol = 1e-6
+        # Run extra freqs because could get 6 rigid body modes at zero-freq
+        myframe.enableDynamics(3 * NFREQ, Mmethod, lump, tol, shift)
+        # ----------------------------
+
+        # ------ static load case 1 ------------
+        # gravity in the X, Y, Z, directions (global)
+        gx = 0.0
+        gy = 0.0
+        gz = -gravity
+        load = pyframe3dd.StaticLoadCase(gx, gy, gz)
+        myframe.addLoadCase(load)
+
         # Added mass
         cg_add = np.c_[inputs["platform_total_center_of_mass"], inputs["rna_cg"]]
-        add_gravity = True
+        add_gravity = False
         mID = np.array([1, n - 1], dtype=np.int_)
         m_fact = inputs["platform_added_mass"].max() / inputs["platform_mass"]
         m_add = np.r_[(1 + m_fact) * inputs["platform_mass"], inputs["rna_mass"]].flatten()
@@ -455,23 +472,6 @@ class TowerModal(om.ExplicitComponent):
             cg_add[2, :],
             add_gravity,
         )
-
-        # ------- enable dynamic analysis ----------
-        Mmethod = 1
-        lump = 0
-        shift = -1e2
-        tol = 1e-6
-        # Run extra freqs because could get 6 rigid body modes at zero-freq
-        myframe.enableDynamics(3 * NFREQ, Mmethod, lump, tol, shift)
-        # ----------------------------
-
-        # ------ static load case 1 ------------
-        # gravity in the X, Y, Z, directions (global)
-        gx = 0.0
-        gy = 0.0
-        gz = -gravity
-        load = pyframe3dd.StaticLoadCase(gx, gy, gz)
-        myframe.addLoadCase(load)
 
         # Debugging
         # myframe.write('floating_tower_debug.3dd')

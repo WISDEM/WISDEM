@@ -138,6 +138,12 @@ class TowerFrame(om.ExplicitComponent):
         shear modulus
     rho_full : numpy array[npts-1], [kg/m**3]
         material density
+    rna_mass : float, [kg]
+        Total tower mass
+    rna_I : numpy array[6], [kg*m**2]
+        Mass moment of inertia of RNA about tower top [xx yy zz xy xz yz]
+    rna_cg : numpy array[3], [m]
+        xyz-location of RNA cg relative to tower top
     rna_F : numpy array[3], [N]
         rna force at tower top from drivetrain analysis
     rna_M : numpy array[3], [N*m]
@@ -217,6 +223,10 @@ class TowerFrame(om.ExplicitComponent):
         self.add_input("section_G", np.zeros(n_full - 1), units="Pa")
         self.add_output("section_L", np.zeros(n_full - 1), units="m")
 
+        # For modal analysis only
+        self.add_input("rna_mass", val=0.0, units="kg")
+        self.add_input("rna_I", np.zeros(6), units="kg*m**2")
+        self.add_input("rna_cg", np.zeros(3), units="m")
         # point loads
         self.add_input("rna_F", np.zeros((3, nLC)), units="N")
         self.add_input("rna_M", np.zeros((3, nLC)), units="N*m")
@@ -344,6 +354,27 @@ class TowerFrame(om.ExplicitComponent):
             load.changeTrapezoidalLoads(EL, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
 
             self.frame.addLoadCase(load)
+
+        # Add mass for modal analysis only (loads are captured in rna_F & rna_M)
+        mID = np.array([n - 1], dtype=np.int_)  # Cannot add at top node due to bug
+        m_add = inputs["rna_mass"]
+        cg_add = inputs["rna_cg"].reshape((-1, 1))
+        I_add = inputs["rna_I"].reshape((-1, 1))
+        add_gravity = False
+        self.frame.changeExtraNodeMass(
+            mID,
+            m_add,
+            I_add[0, :],
+            I_add[1, :],
+            I_add[2, :],
+            I_add[3, :],
+            I_add[4, :],
+            I_add[5, :],
+            cg_add[0, :],
+            cg_add[1, :],
+            cg_add[2, :],
+            add_gravity,
+        )
 
         # Debugging
         # self.frame.write('tower_debug.3dd')
@@ -508,6 +539,9 @@ class TowerSE(om.Group):
                 "Px",
                 "Py",
                 "Pz",
+                "rna_mass",
+                "rna_cg",
+                "rna_I",
             ],
         )
 

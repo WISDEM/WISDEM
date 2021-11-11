@@ -457,6 +457,9 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.tower_mass", "fixedse.tower_mass")
                 self.connect("towerse.tower_cost", "fixedse.tower_cost")
+                self.connect("towerse.turbine_mass", "fixedse.turbine_mass")
+                self.connect("towerse.turbine_center_of_mass", "fixedse.turbine_cg")
+                self.connect("towerse.turbine_I_base", "fixedse.turbine_I")
                 self.connect("towerse.tower.turbine_F", "fixedse.monopile.turbine_F")
                 self.connect("towerse.tower.turbine_M", "fixedse.monopile.turbine_M")
 
@@ -482,6 +485,9 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.tower_mass", "fixedse.tower_mass")
                 self.connect("towerse.tower_cost", "fixedse.tower_cost")
+                self.connect("towerse.turbine_mass", "fixedse.turbine_mass")
+                self.connect("towerse.turbine_center_of_mass", "fixedse.turbine_cg")
+                self.connect("towerse.turbine_I_base", "fixedse.turbine_I")
                 self.connect("towerse.tower.turbine_F", "fixedse.turbine_F")
                 self.connect("towerse.tower.turbine_M", "fixedse.turbine_M")
 
