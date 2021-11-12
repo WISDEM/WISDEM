@@ -176,6 +176,10 @@ properties:
                         minimum: 0.
                         maximum: 1.
                         description: Minimum airfoil thickness supported by the INN for airfoil design
+                    rail_transport:
+                        type: boolean
+                        default: False
+                        description: Flag switching on and off the rail transport module of RotorSE
             DriveSE:
                 type: object
                 default: {}

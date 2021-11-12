@@ -71,7 +71,8 @@ class DriveMaterials(om.ExplicitComponent):
         # Convert to isotropic material
         E = np.mean(inputs["E_mat"], axis=1)
         G = np.mean(inputs["G_mat"], axis=1)
-        Xt = inputs["Xt_mat"].min(axis=1)
+        # Take the minimum Xt in longitudinal and transversal diretion, neglect direction 3 (through the fibers)
+        Xt = inputs["Xt_mat"][:,[0,1]].min(axis=1)
         sigy = inputs["Xy_mat"]
         m = inputs["wohler_exp_mat"]
         A = inputs["wohler_A_mat"]
@@ -100,6 +101,8 @@ class DriveMaterials(om.ExplicitComponent):
 
         outputs["spinner_rho"] = rho[spin_imat]
         outputs["spinner_Xt"] = Xt[spin_imat]
+        if Xt[spin_imat] == 0.:
+            raise Exception("The tensile strength of the composite used in the rotor hub spinner is zero. Please check your input file.")
         outputs["spinner_mat_cost"] = cost[spin_imat]
 
         outputs["lss_E"] = E[lss_imat]
@@ -107,6 +110,8 @@ class DriveMaterials(om.ExplicitComponent):
         outputs["lss_rho"] = rho[lss_imat]
         outputs["lss_Xy"] = sigy[lss_imat]
         outputs["lss_Xt"] = Xt[lss_imat]
+        if Xt[lss_imat] == 0.:
+            raise Exception("The tensile strength of the material used in the low speed shaft is zero. Please check your input file.")
         outputs["lss_wohler_exp"] = m[lss_imat]
         outputs["lss_wohler_A"] = A[lss_imat]
         outputs["lss_cost"] = cost[lss_imat]
@@ -125,6 +130,8 @@ class DriveMaterials(om.ExplicitComponent):
             outputs["hss_rho"] = rho[hss_imat]
             outputs["hss_Xy"] = sigy[hss_imat]
             outputs["hss_Xt"] = Xt[hss_imat]
+            if Xt[hss_imat] == 0.:
+                raise Exception("The tensile strength of the material used in the high speed shaft is zero. Please check your input file.")
             outputs["hss_wohler_exp"] = m[hss_imat]
             outputs["hss_wohler_A"] = A[hss_imat]
             outputs["hss_cost"] = cost[hss_imat]
