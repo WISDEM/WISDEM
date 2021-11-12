@@ -130,13 +130,14 @@ class PoseOptimization(object):
                 self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
                 * self.modeling["WISDEM"]["FixedBottomSE"]["n_layers"]
             )
-        if jacket_opt["outer_diameter"]["flag"]:
-            n_DV += self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
-        if jacket_opt["layer_thickness"]["flag"]:
-            n_DV += (
-                self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
-                * self.modeling["WISDEM"]["FixedBottomSE"]["n_layers"]
-            )
+        # TODO: FIX THIS
+        # if jacket_opt["outer_diameter"]["flag"]:
+        #    n_DV += self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
+        # if jacket_opt["layer_thickness"]["flag"]:
+        #    n_DV += (
+        #        self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
+        #        * self.modeling["WISDEM"]["FixedBottomSE"]["n_layers"]
+        #    )
         if hub_opt["cone"]["flag"]:
             n_DV += 1
         if hub_opt["hub_diameter"]["flag"]:
