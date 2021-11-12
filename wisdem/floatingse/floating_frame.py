@@ -437,8 +437,8 @@ class TowerModal(om.ExplicitComponent):
         # ------- enable dynamic analysis ----------
         Mmethod = 1
         lump = 0
-        shift = -1e2
-        tol = 1e-6
+        shift = 1e1
+        tol = 1e-7
         # Run extra freqs because could get 6 rigid body modes at zero-freq
         myframe.enableDynamics(3 * NFREQ, Mmethod, lump, tol, shift)
         # ----------------------------
@@ -493,7 +493,7 @@ class TowerModal(om.ExplicitComponent):
                 freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
                     xyz[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
                 )
-                print(np.c_[freq_x[:NFREQ2], freq_y[:NFREQ2], freq_z[:NFREQ2]])
+
                 outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
                 outputs["side_side_freqs"] = freq_y[:NFREQ2]
                 outputs["torsion_freqs"] = freq_z[:NFREQ2]
