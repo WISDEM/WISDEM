@@ -24,12 +24,13 @@ jobs:
           auto-update-conda: true
           python-version: 3.8
           environment-file: environment.yml
+          activate-environment: "test"
 
       # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         #shell: pwsh # putting in a shell command makes for compile linking problems later
-        # (if you use the shell here, cannot use 'compiler' package, consistent with Linux install instructions)
+        # (if you use the shell here, cannot use 'compiler' package)
         run: |
           conda install -y petsc4py mpi4py compilers nlopt
 
