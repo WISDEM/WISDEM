@@ -9,6 +9,8 @@ from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from wisdem.glue_code.gc_WT_DataStruc import Blade, Materials, ComputeHighLevelBladeProperties
 from wisdem.glue_code.gc_WT_InitModel import assign_blade_values, assign_airfoil_values, assign_material_values
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
+import logging
+logger = logging.getLogger("wisdem/weis")
 
 ### USING OLD NUMPY SRC FOR PMT-FUNCTION INSTEAD OF SWITCHING TO ANNOYING NUMPY-FINANCIAL
 _when_to_num = {"end": 0, "begin": 1, "e": 0, "b": 1, 0: 0, 1: 1, "beginning": 1, "start": 1, "finish": 0}
@@ -3136,6 +3138,7 @@ class RotorCost(om.ExplicitComponent):
         barrel_nut_unit_cost = inputs["barrel_nut_unit_cost"]
         LPS_unit_cost = inputs["LPS_unit_cost"]
         root_preform_length = inputs["root_preform_length"]
+        joint_cost = inputs["joint_cost"]
 
         # Compute arc length along blade span
         arc_L_i = np.zeros(self.n_span)
@@ -3218,17 +3221,25 @@ class RotorCost(om.ExplicitComponent):
             if layer_web[i_lay] == 0:
                 # Determine on which of the two molds the layer should go
                 if (
-                    layer_start_nd[i_lay, imin] < xy_arc_nd_LE[imin] - tol_LE
-                    and layer_end_nd[i_lay, imin] > xy_arc_nd_LE[imin] + tol_LE
+                    layer_start_nd[i_lay, imin] < xy_arc_nd_LE[imin] + tol_LE
+                    and layer_end_nd[i_lay, imin] > xy_arc_nd_LE[imin] - tol_LE
                 ):
                     SS = True
                     PS = True
-                elif layer_start_nd[i_lay, imin] > xy_arc_nd_LE[imin] + tol_LE:
+                elif (layer_start_nd[i_lay, imin] > xy_arc_nd_LE[imin] - tol_LE
+                    and layer_end_nd[i_lay, imin] <= 1. + tol_LE
+                    and layer_start_nd[i_lay, imin] < layer_end_nd[i_lay, imin]):
                     SS = False
                     PS = True
-                else:
+                elif (layer_start_nd[i_lay, imin] < xy_arc_nd_LE[imin] + tol_LE
+                    and layer_end_nd[i_lay, imin] < xy_arc_nd_LE[imin] + tol_LE):
                     SS = True
                     PS = False
+                else:
+                    SS = False
+                    PS = False
+                    logger.debug("The layer " + self.layer_name[i_lay] + " cannot be assigned " + 
+                    " neither to suction nor to pressure. Please check your input geometry yaml.")
 
                 # Compute width layer
                 width = arc_L_i * chord * (layer_end_nd[i_lay, :] - layer_start_nd[i_lay, :])
@@ -3391,7 +3402,7 @@ class RotorCost(om.ExplicitComponent):
         bonding_lines_vol = length_bonding_lines * flange_thick * flange_width * (1.0 + flange_adhesive_squeezed)
         if "adhesive" not in discrete_inputs["mat_name"] and "Adhesive" not in discrete_inputs["mat_name"]:
             raise Exception(
-                "Warning: a material named adhesive is not defined in the input yaml.  This is required for the blade cost model"
+                "Warning: a material named adhesive (or Adhesive) is not defined in the input yaml.  This is required for the blade cost model"
             )
         try:
             i_adhesive = discrete_inputs["mat_name"].index("adhesive")
@@ -3460,7 +3471,7 @@ class RotorCost(om.ExplicitComponent):
             consumable_cost_w_waste.append(consumables[name]["total_cost_w_waste"])
 
         total_blade_mat_cost_w_waste = (
-            np.sum(mat_cost_scrap) + total_metallic_parts_cost + total_consumable_cost_w_waste
+            np.sum(mat_cost_scrap) + total_metallic_parts_cost + total_consumable_cost_w_waste + joint_cost
         )
 
         # Labor and cycle time
