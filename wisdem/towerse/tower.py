@@ -328,7 +328,7 @@ class TowerFrame(om.ExplicitComponent):
             rna_F = inputs["rna_F"][:, k]
             rna_M = inputs["rna_M"][:, k]
             load.changePointLoads(
-                np.array([n - 1], dtype=np.int_),  # -1 b/c crash if added at final node
+                np.array([n], dtype=np.int_),  # -1 b/c crash if added at final node
                 np.array([rna_F[0]]),
                 np.array([rna_F[1]]),
                 np.array([rna_F[2]]),
@@ -356,7 +356,7 @@ class TowerFrame(om.ExplicitComponent):
             self.frame.addLoadCase(load)
 
         # Add mass for modal analysis only (loads are captured in rna_F & rna_M)
-        mID = np.array([n - 1], dtype=np.int_)  # Cannot add at top node due to bug
+        mID = np.array([n], dtype=np.int_)  # Cannot add at top node due to bug
         m_add = inputs["rna_mass"]
         cg_add = inputs["rna_cg"].reshape((-1, 1))
         I_add = inputs["rna_I"].reshape((-1, 1))

@@ -428,7 +428,7 @@ class MonopileFrame(om.ExplicitComponent):
             turb_F = inputs["turbine_F"][:, k]
             turb_M = inputs["turbine_M"][:, k]
             load.changePointLoads(
-                np.array([n - 1], dtype=np.int_),  # -1 b/c same reason as above
+                np.array([n], dtype=np.int_),  # -1 b/c same reason as above
                 np.array([turb_F[0]]).flatten(),
                 np.array([turb_F[1]]).flatten(),
                 np.array([turb_F[2]]).flatten(),
@@ -463,7 +463,7 @@ class MonopileFrame(om.ExplicitComponent):
         m_grav = float(inputs["gravity_foundation_mass"])
         I_grav = inputs["gravity_foundation_I"].flatten()
         # Note, need len()-1 because Frame3DD crashes if mass add at end
-        midx = np.array([n - 2, 1], dtype=np.int_)
+        midx = np.array([n - 1, 1], dtype=np.int_)
         m_add = np.array([m_trans, m_grav])
         mI = np.c_[I_trans, I_grav]
         mrho = np.c_[np.zeros(3), np.zeros(3)]
@@ -485,7 +485,7 @@ class MonopileFrame(om.ExplicitComponent):
         m_add = [float(inputs["turbine_mass"])]
         mrho = inputs["turbine_cg"].reshape((-1, 1))
         mI = inputs["turbine_I"].reshape((-1, 1))
-        midx = np.array([n - 1], dtype=np.int_)
+        midx = np.array([n], dtype=np.int_)
         add_gravity = False
         self.frame.changeExtraNodeMass(
             midx,
