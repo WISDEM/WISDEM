@@ -191,7 +191,7 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(prob.model.tower.frame.rKty, np.array([RIGID]))
         npt.assert_equal(prob.model.tower.frame.rKtz, np.array([RIGID]))
 
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].NF, np.array([6]))
+        npt.assert_equal(prob.model.tower.frame.loadCases[0].NF, np.array([7]))
         npt.assert_equal(prob.model.tower.frame.loadCases[0].Fx, np.array([2e3]))
         npt.assert_equal(prob.model.tower.frame.loadCases[0].Fy, np.array([3e3]))
         npt.assert_equal(prob.model.tower.frame.loadCases[0].Fz, np.array([4e3]))
@@ -246,7 +246,7 @@ class TestTowerSE(unittest.TestCase):
 
         prob["tower.rna_F"][-1] += 1e4
         prob.run_model()
-        myFz[:-1] += 1e4
+        myFz += 1e4
         npt.assert_almost_equal(prob["tower.tower_Fz"], myFz)
 
     def test15MWmode_shapes(self):
@@ -510,27 +510,27 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob["constr_taper"], [0.8225, 0.78419453])
         npt.assert_almost_equal(prob["env1.Uref"], [11.73732])
         npt.assert_almost_equal(prob["env2.Uref"], [70.0])
-        npt.assert_almost_equal(prob["tower.f1"], [0.85117], 5)
-        npt.assert_almost_equal(prob["tower.top_deflection"], [0.4740059, 0.33442974])
+        npt.assert_almost_equal(prob["tower.f1"], [0.34560], 5)
+        npt.assert_almost_equal(prob["tower.top_deflection"], [0.66837, 0.4749321])
         npt.assert_almost_equal(
             prob["post.constr_stress"].T,
             [
-                [3.18203902e-01, 2.69810502e-01, 2.03473536e-01, 1.35219549e-01, 5.55887597e-02, 6.27197969e-05],
-                [0.21737175, 0.18330763, 0.13612334, 0.08497337, 0.03631976, 0.00082426],
+                [0.4049813, 0.3679485, 0.3149976, 0.2846112, 0.1624641, 0.0675307],
+                [0.2803884, 0.2545789, 0.217153, 0.1937528, 0.1053185, 0.0462051],
             ],
         )
         npt.assert_almost_equal(
             prob["post.constr_global_buckling"].T,
             [
-                [0.41628934, 0.36842766, 0.30395284, 0.24238129, 0.15331905, 0.10000001],
-                [0.34280986, 0.30629292, 0.25661148, 0.20867731, 0.14396577, 0.10000001],
+                [0.4886788, 0.4503055, 0.3971611, 0.3689947, 0.252642, 0.1473065],
+                [0.3953861, 0.3657697, 0.3243708, 0.3011636, 0.2097029, 0.1316665],
             ],
         )
         npt.assert_almost_equal(
             prob["post.constr_shell_buckling"].T,
             [
-                [1.69490551e-01, 1.21123705e-01, 7.03491513e-02, 4.13655502e-02, 1.19592710e-02, 2.84503733e-05],
-                [0.08594987, 0.06152453, 0.03542959, 0.02130395, 0.00867346, 0.00277966],
+                [0.2600685, 0.2103217, 0.1527136, 0.1415266, 0.0524728, 0.0142974],
+                [0.1347713, 0.1092965, 0.079095, 0.073742, 0.0270721, 0.0099099],
             ],
         )
         npt.assert_almost_equal(
@@ -538,11 +538,8 @@ class TestTowerSE(unittest.TestCase):
         )
         npt.assert_almost_equal(
             prob["tower.turbine_M"].T,
-            [
-                [4013579.86877297, 92223813.15839754, -346781.68192839],
-                [-1709590.48984551, 65996870.219968, 147301.97023764],
-            ],
-            2,
+            [[4.01664296e06, 1.11242143e08, -3.46781682e05], [-1.71083379e06, 7.98010157e07, 1.47301970e05]],
+            -2,
         )
 
         # Now regression on DNV-GL C202 methods
@@ -560,27 +557,27 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob["constr_taper"], [0.8225, 0.78419453])
         npt.assert_almost_equal(prob["env1.Uref"], [11.73732])
         npt.assert_almost_equal(prob["env2.Uref"], [70.0])
-        npt.assert_almost_equal(prob["tower.f1"], [0.85117], 5)
-        npt.assert_almost_equal(prob["tower.top_deflection"], [0.4740059, 0.33442974])
+        npt.assert_almost_equal(prob["tower.f1"], [0.34560], 5)
+        npt.assert_almost_equal(prob["tower.top_deflection"], [0.66837, 0.4749321])
         npt.assert_almost_equal(
             prob["post.constr_stress"].T,
             [
-                [3.18203902e-01, 2.69810502e-01, 2.03473536e-01, 1.35219549e-01, 5.55887597e-02, 6.27197969e-05],
-                [0.21737175, 0.18330763, 0.13612334, 0.08497337, 0.03631976, 0.00082426],
+                [0.4049813, 0.3679485, 0.3149976, 0.2846112, 0.1624641, 0.0675307],
+                [0.2803884, 0.2545789, 0.217153, 0.1937528, 0.1053185, 0.0462051],
             ],
         )
         npt.assert_almost_equal(
             prob["post.constr_global_buckling"].T,
             [
-                [5.80381446e-01, 4.88484639e-01, 3.66509843e-01, 2.47814382e-01, 8.44771322e-02, 0.0],
-                [4.38458976e-01, 3.67451954e-01, 2.73188174e-01, 1.79610386e-01, 6.41556503e-02, 0.0],
+                [0.5922989, 0.5317575, 0.4492056, 0.4047178, 0.2268246, 0.070537],
+                [0.446346, 0.3990504, 0.334617, 0.2975646, 0.1591067, 0.0474357],
             ],
         )
         npt.assert_almost_equal(
             prob["post.constr_shell_buckling"].T,
             [
-                [0.01918054, 0.01479216, 0.01058605, 0.00997997, 0.00556875, 0.000341],
-                [0.02686272, 0.02462939, 0.02014121, 0.02296995, 0.01752043, 0.01212849],
+                [0.0191805, 0.0147922, 0.010586, 0.00998, 0.0055687, 0.0014409],
+                [0.0268627, 0.0246294, 0.0201412, 0.0229699, 0.0175204, 0.0126214],
             ],
         )
         npt.assert_almost_equal(
@@ -588,11 +585,8 @@ class TestTowerSE(unittest.TestCase):
         )
         npt.assert_almost_equal(
             prob["tower.turbine_M"].T,
-            [
-                [4013579.86877297, 92223813.15839754, -346781.68192839],
-                [-1709590.48984551, 65996870.219968, 147301.97023764],
-            ],
-            2,
+            [[4.01664296e06, 1.11242143e08, -3.46781682e05], [-1.71083379e06, 7.98010157e07, 1.47301970e05]],
+            -2,
         )
 
 

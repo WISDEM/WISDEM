@@ -21,7 +21,7 @@ Note that any future occasion on which you wish to use WISDEM, you will only hav
 Install WISDEM
 ^^^^^^^^^^^^^^
 
-In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer* mode.  This is done by first installing WISDEM as a conda package to easily satisfy all dependencies, but then removing the WISDEM conda package and reinstalling from the Github source code.  Note the differences between Windows and Mac/Linux build systems.
+In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer* mode.  This is done by first installing WISDEM as a conda package to easily satisfy all dependencies, but then removing the WISDEM conda package and reinstalling from the Github source code.  Note the differences between Windows and Mac build systems.  For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
 
 .. code-block:: bash
 
@@ -29,7 +29,7 @@ In order to directly use the examples in the repository and peek at the code whe
     conda remove --force wisdem
     pip install simpy marmot-agents nlopt
 
-For Mac / Linux systems:
+For Mac systems:
 
 .. code-block:: bash
 
@@ -48,7 +48,7 @@ Finally, for all systems:
     git clone https://github.com/WISDEM/WISDEM.git
     cd WISDEM
     git checkout develop
-    python setup.py develop
+    pip install -e .
 
 Install pyOptSparse (`Optional`)
 """"""""""""""""""""""""""""""""
@@ -58,9 +58,7 @@ Install pyOptSparse (`Optional`)
 .. code-block:: bash
 
     git clone https://github.com/evan-gaertner/pyoptsparse.git
-    cd pyoptsparse
-    python setup.py install
-    cd ..
+    pip install -e pyoptsparse
 
 Run Unit Tests
 ^^^^^^^^^^^^^^

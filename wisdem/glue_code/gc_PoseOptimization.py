@@ -461,8 +461,8 @@ class PoseOptimization(object):
         elif self.opt["merit_figure"] == "nacelle_cost":
             wt_opt.model.add_objective("tcc.nacelle_cost", ref=1e6)
 
-        elif self.opt["merit_figure"] == "platform_mass":
-            wt_opt.model.add_objective("floatingse.platform_mass", ref=1e6)
+        elif self.opt["merit_figure"] == "platform_hull_mass":
+            wt_opt.model.add_objective("floatingse.platform_hull_mass", ref=1e6)
 
         elif self.opt["merit_figure"] == "platform_cost":
             wt_opt.model.add_objective("floatingse.platform_cost", ref=1e6)

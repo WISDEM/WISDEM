@@ -513,6 +513,7 @@ class Frame(object):
     def changeExtraNodeMass(self, node, mass, Ixx, Iyy, Izz, Ixy, Ixz, Iyz, rhox, rhoy, rhoz, addGravityLoad):
 
         self.ENMnode = np.array(node).astype(np.int32)
+        nnode = len(self.ENMnode)
         self.ENMmass = np.copy(mass)
         self.ENMIxx = np.copy(Ixx)
         self.ENMIyy = np.copy(Iyy)
@@ -523,7 +524,9 @@ class Frame(object):
         self.ENMrhox = np.copy(rhox)
         self.ENMrhoy = np.copy(rhoy)
         self.ENMrhoz = np.copy(rhoz)
-        self.addGravityLoadForExtraNodeMass = addGravityLoad
+        self.addGravityLoadForExtraNodeMass = (
+            [addGravityLoad] * nnode if isinstance(addGravityLoad, bool) else list(addGravityLoad)
+        )
 
         self.c_extraInertia = C_ExtraInertia(
             len(self.ENMnode),
@@ -543,8 +546,11 @@ class Frame(object):
     def changeExtraElementMass(self, element, mass, addGravityLoad):
 
         self.EEMelement = np.array(element).astype(np.int32)
+        nelem = len(self.EEMelement)
         self.EEMmass = np.copy(mass)
-        self.addGravityLoadForExtraElementMass = addGravityLoad
+        self.addGravityLoadForExtraElementMass = (
+            [addGravityLoad] * nelem if isinstance(addGravityLoad, bool) else list(addGravityLoad)
+        )
 
         self.c_extraMass = C_ExtraMass(len(self.EEMelement), ip(self.EEMelement), dp(self.EEMmass))
 
@@ -583,7 +589,7 @@ class Frame(object):
 
     def __addGravityToExtraMass(self):
 
-        if self.addGravityLoadForExtraNodeMass:
+        if np.any(self.addGravityLoadForExtraNodeMass):
 
             # need to save all in memory
             nLC = len(self.loadCases)
@@ -611,6 +617,8 @@ class Frame(object):
                 self.PLMz[icase] = np.copy(lc.Mzz)
 
                 for iextra in range(len(self.ENMnode)):
+                    if not self.addGravityLoadForExtraNodeMass[iextra]:
+                        continue
                     Nm = self.ENMnode[iextra]
                     mass = self.ENMmass[iextra]
                     x = self.ENMrhox[iextra]
@@ -650,7 +658,7 @@ class Frame(object):
                     dp(self.PLMz[icase]),
                 )
 
-        if self.addGravityLoadForExtraElementMass:
+        if np.any(self.addGravityLoadForExtraElementMass):
 
             L = self.eL
 
@@ -672,6 +680,8 @@ class Frame(object):
 
                 # iterate through additional mass
                 for iextra in range(len(self.EEMelement)):
+                    if not self.addGravityLoadForExtraElementMass[iextra]:
+                        continue
 
                     element = self.EEMelement[iextra]
                     mass = self.EEMmass[iextra]

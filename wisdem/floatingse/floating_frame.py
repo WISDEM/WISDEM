@@ -650,10 +650,11 @@ class FloatingFrame(om.Group):
 
         self.add_subsystem("frame", FrameAnalysis(options=opt), promotes=["*"])
 
-        tow_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
-        n_height = tow_opt["n_height"]
-        n_full_tow = get_nfull(n_height, nref=tow_opt["n_refine"])
-        self.add_subsystem("tower", TowerModal(n_full=n_full_tow), promotes=["*"])
+        if self.options["modeling_options"]["flags"]["tower"]:
+            tow_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
+            n_height = tow_opt["n_height"]
+            n_full_tow = get_nfull(n_height, nref=tow_opt["n_refine"])
+            self.add_subsystem("tower", TowerModal(n_full=n_full_tow), promotes=["*"])
 
         self.add_subsystem("post", FloatingPost(options=opt["WISDEM"]["FloatingSE"], n_dlc=nLC), promotes=["*"])
 
