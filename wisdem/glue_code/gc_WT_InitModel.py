@@ -1051,6 +1051,12 @@ def assign_floating_values(wt_opt, modeling_options, floating):
             for j in range(floating_init_options["members"]["n_axial_joints"][i]):
                 wt_opt[f"floating.memgrp{idx}.grid_axial_joints"][j] = floating["members"][i]["axial_joints"][j]["grid"]
 
+    if "Loading" in modeling_options["WISDEM"]:
+        if modeling_options["flags"]["tower"]:
+            wt_opt["floatingse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
+            wt_opt["floatingse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
+            wt_opt["floatingse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
+
     return wt_opt
 
 
