@@ -13,6 +13,9 @@ class TestOC3Mass(unittest.TestCase):
 
         opt = {}
         opt["floating"] = {}
+        opt["flags"] = {}
+        opt["flags"]["floating"] = True
+        opt["flags"]["tower"] = False
         opt["General"] = {}
         opt["WISDEM"] = {}
         opt["WISDEM"]["n_dlc"] = 1
