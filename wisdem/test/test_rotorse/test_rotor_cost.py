@@ -2,17 +2,17 @@ import os
 import unittest
 
 import openmdao.api as om
+from wisdem.rotorse.rotor_cost import StandaloneRotorCost, initialize_omdao_prob
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
-from wisdem.rotorse.rotor_cost import StandaloneRotorCost, initialize_omdao_prob
 
 wisdem_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-example_dir =  os.path.join(wisdem_dir, "examples", "02_reference_turbines")  # get path example 03_blade
-fname_opt_options = os.path.join(example_dir ,"analysis_options.yaml")
+example_dir = os.path.join(wisdem_dir, "examples", "02_reference_turbines")  # get path example 03_blade
+fname_opt_options = os.path.join(example_dir, "analysis_options.yaml")
 accuracy = 0
 
-class TestRC(unittest.TestCase):
 
+class TestRC(unittest.TestCase):
     def testRotorCostIEA3p4(self):
 
         fname_modeling_options = os.path.join(example_dir, "modeling_options.yaml")
@@ -20,7 +20,7 @@ class TestRC(unittest.TestCase):
         wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
         wt_init, modeling_options, opt_options = wt_initial.get_input_data()
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
-        wt_opt = om.Problem(model=StandaloneRotorCost(modeling_options=modeling_options ,opt_options=opt_options))
+        wt_opt = om.Problem(model=StandaloneRotorCost(modeling_options=modeling_options, opt_options=opt_options))
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
@@ -52,7 +52,7 @@ class TestRC(unittest.TestCase):
         wt_init, modeling_options, opt_options = wt_initial.get_input_data()
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
         modeling_options["WISDEM"]["DriveSE"]["direct"] = False
-        wt_opt = om.Problem(model=StandaloneRotorCost(modeling_options=modeling_options ,opt_options=opt_options))
+        wt_opt = om.Problem(model=StandaloneRotorCost(modeling_options=modeling_options, opt_options=opt_options))
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
@@ -84,29 +84,30 @@ class TestRC(unittest.TestCase):
         wt_init, modeling_options, opt_options = wt_initial.get_input_data()
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
         modeling_options["WISDEM"]["DriveSE"]["direct"] = False
-        wt_opt = om.Problem(model=StandaloneRotorCost(modeling_options=modeling_options ,opt_options=opt_options))
+        wt_opt = om.Problem(model=StandaloneRotorCost(modeling_options=modeling_options, opt_options=opt_options))
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
         wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init)
         wt_opt.run_model()
 
-        self.assertAlmostEqual(wt_opt["rc.total_labor_hours"][0], 3144.546512161421, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_labor_hours"][0], 3145.072189096041, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc.total_non_gating_ct"][0], 275.33521169175623, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc.total_metallic_parts_cost"][0], 8885.377394584766, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_consumable_cost_w_waste"][0], 15040.127644116868, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_blade_mat_cost_w_waste"][0], 360963.0848169348, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_cost_labor"][0], 106238.75799444572, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_cost_utility"][0], 3682.6931230180785, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.blade_variable_cost"][0], 470884.5359343986, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_cost_equipment"][0], 25446.017337652025, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_cost_tooling"][0], 32255.212178863818, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_cost_building"][0], 2370.92487015942, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_maintenance_cost"][0], 18184.350727870325, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_labor_overhead"][0], 31871.627398333716, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.cost_capital"][0], 35744.711245853185, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.blade_fixed_cost"][0], 145872.8437587325, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rc.total_blade_cost"][0], 616757.3796931311, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_consumable_cost_w_waste"][0], 15046.051961996029, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_blade_mat_cost_w_waste"][0], 372330.1181735587, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_cost_labor"][0], 106256.80891726053, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_cost_utility"][0], 3786.9785901227265, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.blade_variable_cost"][0], 482373.90568094194, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_cost_equipment"][0], 25537.757130096536, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_cost_tooling"][0], 32290.706286056855, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_cost_building"][0], 2371.9214744259534, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_maintenance_cost"][0], 18227.921627118856, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_labor_overhead"][0], 31877.042675178156, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.cost_capital"][0], 36001.15960953355, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.blade_fixed_cost"][0], 146306.5088024099, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc.total_blade_cost"][0], 628680.4144833519, places=accuracy)
+
 
 def suite():
     suite = unittest.TestSuite()
