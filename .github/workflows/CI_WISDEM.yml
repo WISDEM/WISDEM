@@ -41,14 +41,14 @@ jobs:
           conda install -y m2w64-toolchain libpython
 
       # Debugging session
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
 
       # Install WISDEM
       - name: Install WISDEM
         shell: pwsh
         run: |
-          pip install .
+          python setup.py develop
 
       # Run all tests
       - name: Run tests
