@@ -3127,7 +3127,7 @@ class RotorCost(om.ExplicitComponent):
         waste = inputs["waste"]
         layer_web = np.array(inputs["layer_web"], dtype=int)
         ply_t = inputs["ply_t"]
-        # When plt thickness is not defined or set to 0, set to high number to avoid inf laminate thickness later on
+        # When ply thickness is not defined or set to 0, set to high number to avoid inf laminate thickness later on
         ply_t[ply_t==0] = 1.e+6
         roll_mass = inputs["roll_mass"]
         fwf = inputs["fwf"]
