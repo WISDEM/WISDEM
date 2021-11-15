@@ -395,14 +395,14 @@ class TowerModal(om.ExplicitComponent):
 
         # ------ reaction data ------------
         # free-free (no reactions)
-        # rnode = np.array([], dtype=np.int_)
-        # kx = ky = kz = ktx = kty = ktz = rnode
-        # reactions = pyframe3dd.ReactionData(rnode, kx, ky, kz, ktx, kty, ktz, rigid=RIGID)
-        rnode = np.array([1], dtype=np.int_)
-        moorK = np.abs(np.diag(inputs["mooring_stiffness"]))
-        reactions = pyframe3dd.ReactionData(
-            rnode, [moorK[0]], [moorK[1]], [moorK[2]], [moorK[3]], [moorK[4]], [moorK[5]], rigid=RIGID
-        )
+        rnode = np.array([], dtype=np.int_)
+        kx = ky = kz = ktx = kty = ktz = rnode
+        reactions = pyframe3dd.ReactionData(rnode, kx, ky, kz, ktx, kty, ktz, rigid=RIGID)
+        # rnode = np.array([1], dtype=np.int_)
+        # moorK = np.abs(np.diag(inputs["mooring_stiffness"]))
+        # reactions = pyframe3dd.ReactionData(
+        #    rnode, [moorK[0]], [moorK[1]], [moorK[2]], [moorK[3]], [moorK[4]], [moorK[5]], rigid=RIGID
+        # )
         # -----------------------------------
 
         # ------ frame element data ------------

@@ -63,23 +63,23 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
     ix = 0
     iy = 0
     iz = 0
+    imode = np.argmax(mpfs, axis=1)
     for m in range(nfreq):
-        if freqs[m] < 1e-1 or mpfs[m, :].max() < 1e-11:
+        if np.isnan(freqs[m]) or freqs[m] < 1e-1 or mpfs[m, :].max() < 1e-11:
             continue
-        imode = np.argmax(mpfs[m, :])
-        if imode == 0:
+        if imode[m] == 0:
             if ix >= nfreq2:
                 continue
             mshapes_x[ix, :] = xpolys[m, :]
             freq_x[ix] = freqs[m]
             ix += 1
-        elif imode == 1:
+        elif imode[m] == 1:
             if iy >= nfreq2:
                 continue
             mshapes_y[iy, :] = ypolys[m, :]
             freq_y[iy] = freqs[m]
             iy += 1
-        elif imode == 2:
+        elif imode[m] == 2:
             if iz >= nfreq2:
                 continue
             mshapes_z[iz, :] = zpolys[m, :]
