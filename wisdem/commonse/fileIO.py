@@ -30,7 +30,7 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
                 unit_str = "_" + unit_str
 
             iname = var_dict[k][1]["prom_name"] + unit_str
-            value = var_dict[k][1]["value"]
+            value = var_dict[k][1]["val"]
 
             if iname in array_dict:
                 continue
@@ -74,7 +74,7 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
 
             data["variables"].append(iname)
             data["units"].append(unit_str)
-            data["values"].append(var_dict[k][1]["value"])
+            data["values"].append(var_dict[k][1]["val"])
             data["description"].append(var_dict[k][1]["desc"])
         df = pd.DataFrame(data)
         df.to_excel(froot + ".xlsx", index=False)
@@ -93,7 +93,7 @@ def load_data(fname, prob):
     for k in range(len(var_dict)):
         iname = var_dict[k][0]
         iname2 = var_dict[k][1]["prom_name"]
-        value = var_dict[k][1]["value"]
+        value = var_dict[k][1]["val"]
         prob.set_val(iname, value)
         prob.set_val(iname2, value)
 

@@ -237,7 +237,7 @@ class Point:
             self.sys.solveEquilibrium3(tol=tol)  # find equilibrium of mooring system given this Point's new position
             f_2 = self.getForces(lines_only=True)  # get the net 3DOF forces/moments from any attached lines
 
-            K[i, :] = -(f_2 - f) / dx  # get stiffness in this DOF via finite difference and add to matrix column
+            K[:, i] = -(f_2 - f) / dx  # get stiffness in this DOF via finite difference and add to matrix column
 
         # ----------------- restore the system back to previous positions ------------------
         self.setPosition(X1)  # set position to linearization point
@@ -269,7 +269,13 @@ class Point:
         # append the stiffness matrix of each line attached to the point
         for lineID, endB in zip(self.attached, self.attachedEndB):
             line = self.sys.lineList[lineID - 1]
-            K += line.getStiffnessMatrix()
+            # KA, KB = line.getStiffnessMatrix()
+
+            if endB == 1:  # assuming convention of end A is attached to the point, so if not,
+                # KA, KB = KB, KA            # swap matrices of ends A and B
+                K += line.KB
+            else:
+                K += line.KA
 
         # NOTE: can rotate the line's stiffness matrix in either Line.getStiffnessMatrix() or here in Point.getStiffnessA()
 
@@ -283,6 +289,10 @@ class Point:
             # if less than zTol above the seabed (could even be below the seabed), apply a stiffness (should bring wet weight to zero at seabed)
             if self.r[2] < self.zTol - self.sys.depth:
                 K[2, 2] += max(self.m - self.v * self.sys.rho, 0) * self.sys.g / self.zTol
+
+            # if on seabed, apply a large stiffness to help out system equilibrium solve (if it's transitioning off, keep it a small step to start with)
+            if self.r[2] == -self.sys.depth:
+                K[2, 2] += 1.0e12
 
         if xyz:  # if asked to output all DOFs, do it
             return K

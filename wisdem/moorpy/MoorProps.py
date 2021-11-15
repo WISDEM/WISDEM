@@ -45,7 +45,7 @@ def getLineProps(dmm, type="chain", stud="studless", source="Orcaflex-altered", 
             elif stud == "studlink" or stud == "stud":
                 massden = 21.9 * d ** 2 * 1000  # [kg/m]
                 EA = 1.010e8 * d ** 2 * 1000  # [N]
-                d_vol = 1.89 * d ** 2  # [m]
+                d_vol = 1.89 * d  # [m]
             else:
                 raise ValueError("getLineProps error: Choose either studless or stud chain type ")
 
@@ -103,7 +103,7 @@ def getLineProps(dmm, type="chain", stud="studless", source="Orcaflex-altered", 
             elif stud == "studlink" or stud == "stud":
                 massden = 21.9 * d ** 2 * 1000  # [kg/m]
                 EA = 1.010e8 * d ** 2 * 1000  # [N]
-                d_vol = 1.89 * d ** 2  # [m]
+                d_vol = 1.89 * d  # [m]
             else:
                 raise ValueError("getLineProps error: Choose either studless or stud chain type ")
 
