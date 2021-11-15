@@ -44,7 +44,7 @@ class BladeCost2015(om.ExplicitComponent):
         blade_mass_cost_coeff = inputs["blade_mass_cost_coeff"]
 
         # calculate component cost
-        if inputs["blade_cost_external"] < 1.0:
+        if inputs["blade_cost_external"] < 1.0 or np.isnan(inputs["blade_cost_external"]):
             outputs["blade_cost"] = blade_mass_cost_coeff * blade_mass
         else:
             outputs["blade_cost"] = inputs["blade_cost_external"]

@@ -3127,6 +3127,8 @@ class RotorCost(om.ExplicitComponent):
         waste = inputs["waste"]
         layer_web = np.array(inputs["layer_web"], dtype=int)
         ply_t = inputs["ply_t"]
+        # When ply thickness is not defined or set to 0, set to high number to avoid inf laminate thickness later on
+        ply_t[ply_t==0] = 1.e+6
         roll_mass = inputs["roll_mass"]
         fwf = inputs["fwf"]
         unit_cost = inputs["unit_cost"]
@@ -3349,7 +3351,7 @@ class RotorCost(om.ExplicitComponent):
                 mass_shell_ps += volume2lay_coreshell_ps * rho_mat[i_mat]
 
             # TE/LE reinforcement
-            elif component_id[i_mat] != 0:
+            elif component_id[i_mat] > 0:
                 length2lay_reinf = np.trapz(layer_thickness[i_lay, imin:imax], s[imin:imax] * blade_length)
                 volume2lay_reinf_ss = np.trapz(layer_volume_span_ss[i_lay, imin:imax], s[imin:imax] * blade_length)
                 volume2lay_reinf_ps = np.trapz(layer_volume_span_ps[i_lay, imin:imax], s[imin:imax] * blade_length)
