@@ -9,7 +9,7 @@ design_variables:
         inverse: False # Flag to determine twist from the user-defined desired margin to stall (defined in constraints)
         n_opt: 8     # Number of control points along blade span
         max_decrease: 0.08722222222222221 # Maximum decrease for the twist in [rad] at the n_opt locations
-        max_increase: 0.08722222222222221 # Maximum increase for the twist in [rad] at the n_opt locations      
+        max_increase: 0.08722222222222221 # Maximum increase for the twist in [rad] at the n_opt locations
       chord:
         flag: True     # Flag to optimize the chord
         n_opt: 8        # Number of control points along blade span
@@ -173,7 +173,7 @@ driver:
     run_parallel: False    # Flag to run using parallel processing
     generator: Uniform    # Type of input generator. (Uniform)
     num_samples: 5        # number of samples for (Uniform only)
-    
+
 recorder:
     flag: False              # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder

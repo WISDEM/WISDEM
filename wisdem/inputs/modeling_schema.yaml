@@ -26,14 +26,19 @@ properties:
         type: object
         default: {}
         properties:
+            n_dlc:
+                type: integer
+                default: 1
+                description: Number of load cases
+                minimum: 0
             RotorSE:
                 type: object
                 default: {}
                 properties:
-                    flag:
+                    flag: &flag
                         type: boolean
                         default: False
-                        description: Whether or not to run RotorSE and ServoSE
+                        description: Whether or not to run this module
                     n_aoa:
                         type: integer
                         default: 200
@@ -184,10 +189,7 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run RotorSE and ServoSE
+                    flag: *flag
                     model_generator:
                         type: boolean
                         default: False
@@ -235,15 +237,8 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run RotorSE and ServoSE
-                    nLC:
-                        type: integer
-                        default: 1
-                        description: Number of load cases
-                    wind:
+                    flag: *flag
+                    wind: &wind
                         type: string
                         enum: [PowerWind, LogisticWind]
                         default: PowerWind
@@ -266,12 +261,12 @@ properties:
                         maximum: 5.0
                         default: 1.0
                         unit: none
-                    buckling_method:
+                    buckling_method: &buck_meth
                         type: string
                         enum: [Eurocode, Euro-code, eurocode, euro-code, DNVGL, dnvgl, DNV-GL, dnv-gl]
                         description: Buckling utilization calculation method- Eurocode 1994 or DNVGL RP-C202
                         default: dnvgl
-                    buckling_length:
+                    buckling_length: &buck_L
                         type: number
                         description: Buckling length factor in Eurocode safety check
                         minimum: 1.0
@@ -301,6 +296,29 @@ properties:
                                 maximum: 1e-1
                                 default: 1e-9
                                 description: Convergence tolerance for modal eigenvalue solution
+                    n_refine: &nref
+                        type: integer
+                        default: 3
+                        description: Number of Frame3DD element refinements for every specified section along tower/member
+            FixedBottomSE:
+                type: object
+                default: {}
+                properties:
+                    type:
+                        type: string
+                        default: monopile
+                        description: Can be `monopile` or `jacket`.
+                    flag: *flag
+                    wind: *wind
+                    gamma_f: *gamma_f
+                    gamma_m: *gamma_m
+                    gamma_n: *gamma_n
+                    gamma_b: *gamma_b
+                    gamma_freq: *gamma_freq
+                    gamma_fatigue: *gamma_fatigue
+                    buckling_method: *buck_meth
+                    buckling_length: *buck_L
+                    frame3dd: *frame3dd
                     soil_springs:
                         type: boolean
                         default: False
@@ -309,26 +327,33 @@ properties:
                         type: boolean
                         default: False
                         description: Model the monopile base as a gravity-based foundation with no pile embedment
-                    n_refine:
+                    n_refine: *nref
+                    n_legs:
+                        type: integer
+                        default: 4
+                        description: Number of legs for the jacket. Only used if `type`==`jacket`.
+                    n_bays:
                         type: integer
                         default: 3
-                        description: Number of Frame3DD element refinements for every specified section along tower/member
+                        description: Number of bays for the jacket, or x-joints per tower leg pair. Only used if `type`==`jacket`.
+                    mud_brace:
+                        type: boolean
+                        default: True
+                        description: If true, add a mud brace at the bottom of each jacket leg. Only used if `type`==`jacket`.
+                    save_truss_figures:
+                        type: boolean
+                        default: False
+                        description: If true, save .pngs of the jacket truss during analysis or optimization. Jacket only.
             BOS:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run balance of station cost models (LandBOSSE or ORBIT)
+                    flag: *flag
             FloatingSE:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run the floating design modules (FloatingSE)
+                    flag: *flag
                     n_refine:
                         type: integer
                         default: 1

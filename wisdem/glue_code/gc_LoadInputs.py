@@ -1,17 +1,8 @@
 import numpy as np
-
 import wisdem.inputs as sch
 
 
 class WindTurbineOntologyPython(object):
-    # Pure python class to load the input yaml file and break into few sub-dictionaries, namely:
-    #   - modeling_options: dictionary with all the inputs that will be passed as options to the openmdao components, such as the length of the arrays
-    #   - blade: dictionary representing the entry blade in the yaml file
-    #   - tower: dictionary representing the entry tower in the yaml file
-    #   - nacelle: dictionary representing the entry nacelle in the yaml file
-    #   - materials: dictionary representing the entry materials in the yaml file
-    #   - airfoils: dictionary representing the entry airfoils in the yaml file
-
     def __init__(self, fname_input_wt, fname_input_modeling, fname_input_analysis):
 
         self.modeling_options = sch.load_modeling_yaml(fname_input_modeling)
@@ -32,12 +23,12 @@ class WindTurbineOntologyPython(object):
         self.modeling_options["flags"] = {}
 
         # Backwards compatibility
-        modules = ["RotorSE", "DriveSE", "GeneratorSE", "TowerSE", "FloatingSE", "Loading", "BOS"]
+        modules = ["RotorSE", "DriveSE", "GeneratorSE", "TowerSE", "FixedBottomSE", "FloatingSE", "Loading", "BOS"]
         for m in modules:
             if m in self.modeling_options:
                 self.modeling_options["WISDEM"][m].update(self.modeling_options[m])
 
-        for k in ["blade", "hub", "nacelle", "tower", "monopile", "floating_platform", "mooring", "RNA"]:
+        for k in ["blade", "hub", "nacelle", "tower", "monopile", "jacket", "floating_platform", "mooring", "RNA"]:
             self.modeling_options["flags"][k] = k in self.wt_init["components"]
 
         for k in ["assembly", "components", "airfoils", "materials", "control", "environment", "bos", "costs"]:
@@ -56,7 +47,9 @@ class WindTurbineOntologyPython(object):
         # Offshore flags
         self.modeling_options["flags"]["floating"] = self.modeling_options["flags"]["floating_platform"]
         self.modeling_options["flags"]["offshore"] = (
-            self.modeling_options["flags"]["floating"] or self.modeling_options["flags"]["monopile"]
+            self.modeling_options["flags"]["floating"]
+            or self.modeling_options["flags"]["monopile"]
+            or self.modeling_options["flags"]["jacket"]
         )
 
         # Put in some logic about what needs to be in there
@@ -69,6 +62,10 @@ class WindTurbineOntologyPython(object):
             flags["blade"] = self.modeling_options["WISDEM"]["RotorSE"]["flag"]
         if flags["tower"]:
             flags["tower"] = self.modeling_options["WISDEM"]["TowerSE"]["flag"]
+        if flags["monopile"]:
+            flags["monopile"] = self.modeling_options["WISDEM"]["FixedBottomSE"]["flag"]
+        if flags["jacket"]:
+            flags["jacket"] = self.modeling_options["WISDEM"]["FixedBottomSE"]["flag"]
         if flags["hub"]:
             flags["hub"] = self.modeling_options["WISDEM"]["DriveSE"]["flag"]
         if flags["nacelle"]:
@@ -90,21 +87,23 @@ class WindTurbineOntologyPython(object):
             raise ValueError("Tower analysis is requested but no environment input found")
         if flags["monopile"] and not flags["environment"]:
             raise ValueError("Monopile analysis is requested but no environment input found")
+        if flags["jacket"] and not flags["environment"]:
+            raise ValueError("Jacket analysis is requested but no environment input found")
         if flags["floating_platform"] and not flags["environment"]:
             raise ValueError("Floating analysis is requested but no environment input found")
         if flags["environment"] and not (
-            flags["blade"] or flags["tower"] or flags["monopile"] or flags["floating_platform"]
+            flags["blade"] or flags["tower"] or flags["monopile"] or flags["jacket"] or flags["floating_platform"]
         ):
             print("WARNING: Environment provided but no related component found found")
 
         # Floating/monopile
-        if flags["floating_platform"] and flags["monopile"]:
-            raise ValueError("Cannot have both floating and monopile components")
+        if flags["floating_platform"] and (flags["monopile"] or flags["jacket"]):
+            raise ValueError("Cannot have both floating and fixed-bottom components")
 
         # Water depth check
         if "water_depth" in self.wt_init["environment"]:
             if self.wt_init["environment"]["water_depth"] <= 0.0 and flags["offshore"]:
-                raise ValueError("Water depth must be > 0 to do monopile or floating analysis")
+                raise ValueError("Water depth must be > 0 to do fixed-bottom or floating analysis")
 
     def set_openmdao_vectors(self):
         # Class instance to determine all the parameters used to initialize the openmdao arrays, i.e. number of airfoils, number of angles of attack, number of blade spanwise stations, etc
@@ -224,29 +223,42 @@ class WindTurbineOntologyPython(object):
 
         # Tower
         if self.modeling_options["flags"]["tower"]:
-            self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = len(
+            self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = len(
                 self.wt_init["components"]["tower"]["outer_shape_bem"]["outer_diameter"]["grid"]
             )
-            self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = len(
+            self.modeling_options["WISDEM"]["TowerSE"]["n_layers"] = len(
                 self.wt_init["components"]["tower"]["internal_structure_2d_fem"]["layers"]
             )
-            self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = self.modeling_options["WISDEM"]["TowerSE"][
-                "n_height_tower"
+            self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = self.modeling_options["WISDEM"]["TowerSE"][
+                "n_height"
             ]
-            self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 0
-            self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 0
+            self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = self.modeling_options["WISDEM"]["TowerSE"][
+                "n_layers"
+            ]
 
         # Monopile
         if self.modeling_options["flags"]["monopile"]:
-            self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = len(
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = len(
                 self.wt_init["components"]["monopile"]["outer_shape_bem"]["outer_diameter"]["grid"]
             )
-            self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = len(
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"] = len(
                 self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["layers"]
             )
-            self.modeling_options["WISDEM"]["TowerSE"]["n_height"] += (
-                self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] - 1
-            )
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height_monopile"] = self.modeling_options["WISDEM"][
+                "FixedBottomSE"
+            ]["n_height"]
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_layers_monopile"] = self.modeling_options["WISDEM"][
+                "FixedBottomSE"
+            ]["n_layers"]
+
+        # Jacket
+        if self.modeling_options["flags"]["jacket"]:
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_legs"] = self.wt_init["components"]["jacket"]["n_legs"]
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_bays"] = self.wt_init["components"]["jacket"]["n_bays"]
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["mud_brace"] = self.wt_init["components"]["jacket"]["x_mb"]
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["material"] = self.wt_init["components"]["jacket"][
+                "material"
+            ]
 
         # Floating platform
         self.modeling_options["floating"] = {}
@@ -1176,7 +1188,7 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["outfitting_factor"] = float(
                 wt_opt["monopile.outfitting_factor"]
             )
-            for i in range(self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"]):
+            for i in range(self.modeling_options["WISDEM"]["FixedBottomSE"]["n_layers_monopile"]):
                 self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                     "grid"
                 ] = wt_opt["monopile.s"].tolist()

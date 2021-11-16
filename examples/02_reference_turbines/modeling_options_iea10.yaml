@@ -10,7 +10,10 @@ WISDEM:
         te_ps: DP02_DP00_uniax # Name in the yaml of the spar cap laminate on the suction side
     DriveSE:
         flag: True
-    TowerSE:             # Options of TowerSE module
+    TowerSE:
         flag: True
+    FixedBottomSE:
+        flag: True
+        soil_springs: True
     BOS:
         flag: True

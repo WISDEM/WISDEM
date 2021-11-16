@@ -255,7 +255,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         S = lsscyl.S
         C = lsscyl.C
         J0 = lsscyl.J0
-        Jx = lsscyl.Jxx
+        Jx = lsscyl.Ixx
 
         elements = frame3dd.ElementData(
             ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones
@@ -523,7 +523,7 @@ class HSS_Frame(om.ExplicitComponent):
         S = hsscyl.S
         C = hsscyl.C
         J0 = hsscyl.J0
-        Jx = hsscyl.Jxx
+        Jx = hsscyl.Ixx
 
         elements = frame3dd.ElementData(
             ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones
@@ -863,10 +863,10 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         S = np.r_[bedcyl.S, nosecyl.S]
         C = np.r_[bedcyl.C, nosecyl.C]
         J0 = np.r_[bedcyl.J0, nosecyl.J0]
-        Jx = np.r_[bedcyl.Jxx, nosecyl.Jxx]
+        Ixx = np.r_[bedcyl.Ixx, nosecyl.Ixx]
 
         elements = frame3dd.ElementData(
-            ielement, N1, N2, Ax, As, As, J0, Jx, Jx, E * myones, G * myones, roll, rho * myones
+            ielement, N1, N2, Ax, As, As, J0, Ixx, Ixx, E * myones, G * myones, roll, rho * myones
         )
         # -----------------------------------
 
@@ -1245,14 +1245,14 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         E_plate = G_plate = 1e16 * plate1s
 
         Ax = np.r_[myI.Area * myones, myI.Area * myones, A_plate, A_plate]
-        Asy = np.r_[myI.Asy * myones, myI.Asy * myones, As_plate, As_plate]
-        Asz = np.r_[myI.Asz * myones, myI.Asz * myones, As_plate, As_plate]
-        Sy = np.r_[myI.Syy * myones, myI.Syy * myones, S_plate, S_plate]
-        Sz = np.r_[myI.Szz * myones, myI.Szz * myones, S_plate, S_plate]
+        Asy = np.r_[myI.Asx * myones, myI.Asx * myones, As_plate, As_plate]
+        Asz = np.r_[myI.Asy * myones, myI.Asy * myones, As_plate, As_plate]
+        Sy = np.r_[myI.Sx * myones, myI.Sx * myones, S_plate, S_plate]
+        Sz = np.r_[myI.Sy * myones, myI.Sy * myones, S_plate, S_plate]
         C = np.r_[myI.C * myones, myI.C * myones, C_plate, C_plate]
-        J0 = np.r_[myI.Jxx * myones, myI.Jxx * myones, I_plate, I_plate]
-        Jy = np.r_[myI.Iyy * myones, myI.Iyy * myones, I_plate, I_plate]
-        Jz = np.r_[myI.Izz * myones, myI.Izz * myones, I_plate, I_plate]
+        J0 = np.r_[myI.J0 * myones, myI.J0 * myones, I_plate, I_plate]
+        Jy = np.r_[myI.Ixx * myones, myI.Ixx * myones, I_plate, I_plate]
+        Jz = np.r_[myI.Iyy * myones, myI.Iyy * myones, I_plate, I_plate]
         myE = np.r_[E * myones, E * myones, E_plate, E_plate]
         myG = np.r_[G * myones, G * myones, G_plate, G_plate]
         myrho = np.r_[rho * myones, rho * myones, rho_plate, rho_plate]

@@ -69,6 +69,7 @@ class TestGroup(unittest.TestCase):
 
         opt = {}
         opt["WISDEM"] = {}
+        opt["WISDEM"]["n_dlc"] = 1
         opt["WISDEM"]["DriveSE"] = {}
         opt["WISDEM"]["DriveSE"]["direct"] = True
         opt["WISDEM"]["DriveSE"]["hub"] = {}
@@ -87,7 +88,7 @@ class TestGroup(unittest.TestCase):
         opt["flags"]["generator"] = True
 
         prob = om.Problem()
-        prob.model = DrivetrainSE(modeling_options=opt, n_dlcs=1)
+        prob.model = DrivetrainSE(modeling_options=opt)
         prob.setup()
         prob = set_common(prob, opt)
 
@@ -172,6 +173,7 @@ class TestGroup(unittest.TestCase):
 
         opt = {}
         opt["WISDEM"] = {}
+        opt["WISDEM"]["n_dlc"] = 1
         opt["WISDEM"]["DriveSE"] = {}
         opt["WISDEM"]["DriveSE"]["direct"] = True
         opt["WISDEM"]["DriveSE"]["hub"] = {}
@@ -188,7 +190,7 @@ class TestGroup(unittest.TestCase):
         opt["flags"]["generator"] = False
 
         prob = om.Problem()
-        prob.model = DrivetrainSE(modeling_options=opt, n_dlcs=1)
+        prob.model = DrivetrainSE(modeling_options=opt)
         prob.setup()
         prob = set_common(prob, opt)
 
@@ -239,6 +241,7 @@ class TestGroup(unittest.TestCase):
 
         opt = {}
         opt["WISDEM"] = {}
+        opt["WISDEM"]["n_dlc"] = 1
         opt["WISDEM"]["DriveSE"] = {}
         opt["WISDEM"]["DriveSE"]["direct"] = False
         opt["WISDEM"]["DriveSE"]["hub"] = {}
@@ -257,7 +260,7 @@ class TestGroup(unittest.TestCase):
         opt["flags"]["generator"] = True
 
         prob = om.Problem()
-        prob.model = DrivetrainSE(modeling_options=opt, n_dlcs=1)
+        prob.model = DrivetrainSE(modeling_options=opt)
         prob.setup()
         prob = set_common(prob, opt)
 
@@ -366,6 +369,7 @@ class TestGroup(unittest.TestCase):
 
         opt = {}
         opt["WISDEM"] = {}
+        opt["WISDEM"]["n_dlc"] = 1
         opt["WISDEM"]["DriveSE"] = {}
         opt["WISDEM"]["DriveSE"]["direct"] = False
         opt["WISDEM"]["DriveSE"]["hub"] = {}
@@ -382,7 +386,7 @@ class TestGroup(unittest.TestCase):
         opt["materials"]["n_mat"] = 1
 
         prob = om.Problem()
-        prob.model = DrivetrainSE(modeling_options=opt, n_dlcs=1)
+        prob.model = DrivetrainSE(modeling_options=opt)
         prob.setup()
         prob = set_common(prob, opt)
 

@@ -3,9 +3,8 @@ import logging
 
 import numpy as np
 import openmdao.api as om
-from scipy.interpolate import PchipInterpolator, interp1d
-
 import wisdem.moorpy.MoorProps as mp
+from scipy.interpolate import PchipInterpolator, interp1d
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAero, ParametrizeBladeStruct
@@ -456,8 +455,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # Tower inputs
         if modeling_options["flags"]["tower"]:
             tower_init_options = modeling_options["WISDEM"]["TowerSE"]
-            n_height_tower = tower_init_options["n_height_tower"]
-            n_layers_tower = tower_init_options["n_layers_tower"]
+            n_height_tower = tower_init_options["n_height"]
+            n_layers_tower = tower_init_options["n_layers"]
             ivc = self.add_subsystem("tower", om.IndepVarComp())
             ivc.add_output(
                 "ref_axis",
@@ -498,8 +497,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Monopile inputs
         if modeling_options["flags"]["monopile"]:
-            self.add_subsystem("monopile", Monopile(towerse_options=modeling_options["WISDEM"]["TowerSE"]))
+            self.add_subsystem("monopile", Monopile(fixedbottomse_options=modeling_options["WISDEM"]["FixedBottomSE"]))
 
+        # Jacket inputs
+        if modeling_options["flags"]["jacket"]:
+            self.add_subsystem("jacket", Jacket(fixedbottomse_options=modeling_options["WISDEM"]["FixedBottomSE"]))
+
+        # Floating substructure inputs
         if modeling_options["flags"]["floating_platform"]:
             self.add_subsystem("floating", Floating(floating_init_options=modeling_options["floating"]))
             self.add_subsystem("mooring", Mooring(options=modeling_options))
@@ -534,7 +538,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             bos_ivc.add_output("decommissioning_pct", 0.15)
             bos_ivc.add_output("distance_to_substation", 50.0, units="km")
             bos_ivc.add_output("distance_to_interconnection", 5.0, units="km")
-            if modeling_options["flags"]["monopile"] == True or modeling_options["flags"]["floating_platform"] == True:
+            if modeling_options["flags"]["offshore"]:
                 bos_ivc.add_output("site_distance", 40.0, units="km")
                 bos_ivc.add_output("distance_to_landfall", 40.0, units="km")
                 bos_ivc.add_output("port_cost_per_month", 2e6, units="USD/mo")
@@ -2129,7 +2133,7 @@ class Hub(om.Group):
 
 class Compute_Grid(om.ExplicitComponent):
     """
-    Compute the non-dimensional grid or a tower or monopile.
+    Compute the non-dimensional grid for a tower or monopile/jacket.
 
     Using the dimensional `ref_axis` array, this component computes the
     non-dimensional grid, height (vertical distance) and length (curve distance)
@@ -2205,12 +2209,12 @@ class Compute_Grid(om.ExplicitComponent):
 
 class Monopile(om.Group):
     def initialize(self):
-        self.options.declare("towerse_options")
+        self.options.declare("fixedbottomse_options")
 
     def setup(self):
-        towerse_options = self.options["towerse_options"]
-        n_height = towerse_options["n_height_monopile"]
-        n_layers = towerse_options["n_layers_monopile"]
+        fixedbottomse_options = self.options["fixedbottomse_options"]
+        n_height = fixedbottomse_options["n_height"]
+        n_layers = fixedbottomse_options["n_layers"]
 
         ivc = self.add_subsystem("monopile_indep_vars", om.IndepVarComp(), promotes=["*"])
         ivc.add_output(
@@ -2243,6 +2247,93 @@ class Monopile(om.Group):
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
 
         self.add_subsystem("compute_monopile_grid", Compute_Grid(n_height=n_height), promotes=["*"])
+
+
+class Jacket(om.Group):
+    def initialize(self):
+        self.options.declare("fixedbottomse_options")
+
+    def setup(self):
+        fixedbottomse_options = self.options["fixedbottomse_options"]
+
+        ivc = self.add_subsystem("jacket_indep_vars", om.IndepVarComp(), promotes=["*"])
+        ivc.add_output(
+            "r_foot",
+            val=0.0,
+            units="m",
+            desc="Radius of foot (bottom) of jacket, in meters.",
+        )
+        ivc.add_output(
+            "r_head",
+            val=0.0,
+            units="m",
+            desc="Radius of head (top) of jacket, in meters.",
+        )
+        ivc.add_output(
+            "height",
+            val=0.0,
+            units="m",
+            desc="Overall jacket height, meters.",
+        )
+        ivc.add_output(
+            "q",
+            val=0.0,
+            desc="Ratio of two consecutive bay heights.",
+        )
+        ivc.add_output(
+            "l_osg",
+            val=0.0,
+            units="m",
+            desc="Lowest leg segment height, meters.",
+        )
+        ivc.add_output(
+            "l_tp",
+            val=0.0,
+            units="m",
+            desc="Transition piece segment height, meters.",
+        )
+        ivc.add_output(
+            "gamma_b",
+            val=0.0,
+            desc="Leg radius-to-thickness ratio (bottom).",
+        )
+        ivc.add_output(
+            "gamma_t",
+            val=0.0,
+            desc="Leg radius-to-thickness ratio (top).",
+        )
+        ivc.add_output(
+            "beta_b",
+            val=0.0,
+            desc="Brace-to-leg diameter ratio (bottom).",
+        )
+        ivc.add_output(
+            "beta_t",
+            val=0.0,
+            desc="Brace-to-leg diameter ratio (top).",
+        )
+        ivc.add_output(
+            "tau_b",
+            val=0.0,
+            desc="Brace-to-leg thickness ratio (bottom).",
+        )
+        ivc.add_output(
+            "tau_t",
+            val=0.0,
+            desc="Brace-to-leg thickness ratio (top).",
+        )
+        ivc.add_output(
+            "d_l",
+            val=0.0,
+            units="m",
+            desc="Leg diameter, meters. Constant throughout each leg.",
+        )
+        ivc.add_output(
+            "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of jacket"
+        )
+        ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
+        ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
+        ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
 
 
 class Floating(om.Group):
@@ -2621,8 +2712,15 @@ class MooringJoints(om.ExplicitComponent):
         ifair = np.where(np.abs(node_loc[:, 2] - z_fair) < tol)[0]
         ianch = np.where(np.abs(node_loc[:, 2] - z_anch) < tol)[0]
 
-        outputs["fairlead_nodes"] = node_loc[ifair, :]
-        outputs["anchor_nodes"] = node_loc[ianch, :]
+        node_fair = node_loc[ifair, :]
+        node_anch = node_loc[ianch, :]
+        ang_fair = np.arctan2(node_fair[:, 1], node_fair[:, 0])
+        ang_anch = np.arctan2(node_anch[:, 1], node_anch[:, 0])
+        node_fair = node_fair[np.argsort(ang_fair), :]
+        node_anch = node_anch[np.argsort(ang_anch), :]
+
+        outputs["fairlead_nodes"] = node_fair
+        outputs["anchor_nodes"] = node_anch
         outputs["fairlead"] = -z_fair  # Positive is defined below the waterline here
         outputs["fairlead_radius"] = np.sqrt(np.sum(node_loc[ifair, :2] ** 2, axis=1))
         outputs["anchor_radius"] = np.sqrt(np.sum(node_loc[ianch, :2] ** 2, axis=1))

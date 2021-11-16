@@ -30,14 +30,14 @@ design_variables:
 merit_figure: inverse_design
 
 inverse_design:
-    floatingse.platform_mass:
-        ref_value: 6.e6
+    floatingse.platform_hull_mass:
+        ref_value: 2.5e6
         units: kg
     floatingse.mooring_mass:
         ref_value: 4.5e5
         units: kg
     floatingse.system_structural_center_of_mass:
-        ref_value: [0., -60.]
+        ref_value: [0., -90.]
         indices: [1, 2]
         units: m
 

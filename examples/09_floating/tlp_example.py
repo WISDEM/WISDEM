@@ -11,9 +11,10 @@ opt_flag = False
 npts = 5
 
 opt = {}
+opt["flags"] = {}
+opt["flags"]["floating"] = opt["flags"]["offshore"] = opt["flags"]["tower"] = True
+opt["flags"]["tower"] = False
 opt["floating"] = {}
-opt["WISDEM"] = {}
-opt["WISDEM"]["FloatingSE"] = {}
 opt["floating"]["members"] = {}
 opt["floating"]["members"]["n_members"] = 4
 opt["floating"]["members"]["n_height"] = [npts, 3, 3, 3]
@@ -21,12 +22,13 @@ opt["floating"]["members"]["n_bulkheads"] = [4, 2, 2, 2]
 opt["floating"]["members"]["n_layers"] = [1, 1, 1, 1]
 opt["floating"]["members"]["n_ballasts"] = [2, 0, 0, 0]
 opt["floating"]["members"]["n_axial_joints"] = [0, 0, 0, 0]
-opt["floating"]["tower"] = {}
-opt["floating"]["tower"]["n_height"] = [npts]
-opt["floating"]["tower"]["n_bulkheads"] = [0]
-opt["floating"]["tower"]["n_layers"] = [1]
-opt["floating"]["tower"]["n_ballasts"] = [0]
-opt["floating"]["tower"]["n_axial_joints"] = [0]
+opt["WISDEM"] = {}
+opt["WISDEM"]["n_dlc"] = 1
+opt["WISDEM"]["TowerSE"] = {}
+opt["WISDEM"]["TowerSE"]["n_height"] = npts
+opt["WISDEM"]["TowerSE"]["n_layers"] = 1
+opt["WISDEM"]["TowerSE"]["n_refine"] = 1
+opt["WISDEM"]["FloatingSE"] = {}
 opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
 opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = True
 opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = True
@@ -55,6 +57,9 @@ prob["rho_mat"] = np.array([7850.0, 5000.0])  # Steel, ballast slurry [kg/m^3]
 prob["E_mat"] = 200e9 * np.ones((2, 3))  # Young's modulus [N/m^2]
 prob["G_mat"] = 79.3e9 * np.ones((2, 3))  # Shear modulus [N/m^2]
 prob["sigma_y_mat"] = 3.45e8 * np.ones(2)  # Elastic yield stress [N/m^2]
+prob["sigma_ult_mat"] = 5e8 * np.ones((2, 3))
+prob["wohler_exp_mat"] = 4.0 * np.ones(2)
+prob["wohler_A_mat"] = 7.5e8 * np.ones(2)
 prob["unit_cost_mat"] = np.array([2.0, 1.0])
 prob["material_names"] = ["steel", "slurry"]
 
@@ -68,7 +73,7 @@ prob["member0.outfitting_factor_in"] = 1.05  # Fraction of additional outfitting
 prob["member0.grid_axial_joints"] = []
 prob["member0.ballast_grid"] = np.array([[0, 0.25], [0, 0.5]])
 prob["member0.ballast_volume"] = [np.pi * 7 ** 2 * 5, 0.0]
-prob["member0.s"] = np.cumsum(np.r_[0, h]) / h.sum()
+prob["member0.s_in"] = np.cumsum(np.r_[0, h]) / h.sum()
 prob["member0.outer_diameter_in"] = 14 * np.ones(npts)
 prob["member0.layer_thickness"] = 0.05 * np.ones((1, npts))
 prob["member0.layer_materials"] = ["steel"]
@@ -81,14 +86,14 @@ prob["member0.ring_stiffener_web_height"] = 0.10
 prob["member0.ring_stiffener_web_thickness"] = 0.04
 prob["member0.ring_stiffener_flange_width"] = 0.10
 prob["member0.ring_stiffener_flange_thickness"] = 0.02
-prob["member0.ring_stiffener_spacing"] = 0.044791667 # non-dimensional ring stiffener spacing
+prob["member0.ring_stiffener_spacing"] = 0.044791667  # non-dimensional ring stiffener spacing
 
 # Now do the legs
 angs = np.linspace(0, 2 * np.pi, 1 + opt["mooring"]["n_attach"])
 for k in range(1, 4):
     prob["member" + str(k) + ".outfitting_factor_in"] = 1.05  # Fraction of additional outfitting mass for each column
     prob["member" + str(k) + ".grid_axial_joints"] = []
-    prob["member" + str(k) + ".s"] = np.array([0.0, 0.5, 1.0])
+    prob["member" + str(k) + ".s_in"] = np.array([0.0, 0.5, 1.0])
     prob["member" + str(k) + ".outer_diameter_in"] = 5 * np.ones(3)
     prob["member" + str(k) + ".layer_thickness"] = 0.05 * np.ones((1, 3))
     prob["member" + str(k) + ".layer_materials"] = ["steel"]
@@ -101,7 +106,7 @@ for k in range(1, 4):
     prob["member" + str(k) + ".ring_stiffener_web_thickness"] = 0.04
     prob["member" + str(k) + ".ring_stiffener_flange_width"] = 0.10
     prob["member" + str(k) + ".ring_stiffener_flange_thickness"] = 0.02
-    prob["member" + str(k) + ".ring_stiffener_spacing"] = 0.06666667 # non-dimensional ring stiffener spacing
+    prob["member" + str(k) + ".ring_stiffener_spacing"] = 0.06666667  # non-dimensional ring stiffener spacing
 
 # Mooring parameters: Nylon
 prob["line_diameter"] = 0.5  # Diameter of mooring line/chain [m]
@@ -133,25 +138,15 @@ prob["cm"] = 2.0  # Added mass coefficient
 prob["Uc"] = 0.0  # Mean current speed
 prob["beta_wind"] = prob["beta_wave"] = 0.0
 prob["cd_usr"] = -1.0  # Compute drag coefficient
-prob["Uref"] = 11.0
-prob["zref"] = 119.0
-
-# Porperties of turbine tower
-nTower = prob.model.options["modeling_options"]["floating"]["tower"]["n_height"][0]
-prob["tower_height"] = 85.0 - prob["member0.joint2"][2]
-prob["tower.s"] = np.linspace(0.0, 1.0, nTower)
-prob["tower.outer_diameter_in"] = np.linspace(6.5, 3.87, nTower)
-prob["tower.layer_thickness"] = np.linspace(0.027, 0.019, nTower).reshape((1, nTower))
-prob["tower.layer_materials"] = ["steel"]
-prob["tower.outfitting_factor"] = 1.07
+prob["env.Uref"] = 11.0
+prob["wind_reference_height"] = 119.0
 
 prob["transition_node"] = prob["member0.joint2"]
 
 # Properties of rotor-nacelle-assembly (RNA)
-prob["rna_mass"] = 350e3
-prob["rna_cg"] = np.array([-1.132, 0, 0.509])
-prob["rna_F"] = np.array([1284744.196, 0, -112400.5527])
-prob["rna_M"] = np.array([3963732.762, 896380.8464, -346781.682])
+prob["turbine_mass"] = 350e3
+prob["turbine_F"] = np.array([1284744.196, 0, -112400.5527])
+prob["turbine_M"] = np.array([3963732.762, 896380.8464, -346781.682])
 
 # Use FD and run optimization
 prob.run_model()
