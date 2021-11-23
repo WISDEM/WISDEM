@@ -56,7 +56,9 @@ The installation instructions below use the environment name, "wisdem-env," but 
         conda install -y m2w64-toolchain libpython   # (Windows only)
         pip install simpy marmot-agents nlopt
         git clone https://github.com/WISDEM/WISDEM.git
-        pip install -e WISDEM
+        cd WISDEM
+        git checkout develop                         # If you want to switch WISDEM branches
+        python setup.py develop
 
 
 3. OPTIONAL: Install pyOptSparse, a package that provides a handful of additional optimization solvers and has OpenMDAO support:
