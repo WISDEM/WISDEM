@@ -38,7 +38,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         max_cores = MPI.COMM_WORLD.Get_size()
 
         if max_cores > n_DV:
-            raise ValueError("ERROR: please reduce the number of cores, currently set to" +
+            raise ValueError("ERROR: please reduce the number of cores, currently set to " +
              str(max_cores) + ", to the number of design variables " + 
              str(n_DV) + " or the parallelization logic will not work")
 
