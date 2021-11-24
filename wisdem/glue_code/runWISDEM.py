@@ -37,8 +37,12 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         # Extract the number of cores available
         max_cores = MPI.COMM_WORLD.Get_size()
 
-        if max_cores / 2.0 != np.round(max_cores / 2.0):
-            raise ValueError("ERROR: the parallelization logic only works for an even number of cores available")
+        if max_cores > n_DV:
+            raise ValueError("ERROR: please reduce the number of cores, currently set to " +
+             str(max_cores) + ", to the number of finite differences " + str(n_DV) +
+             ", which is equal to the number of design variables DV for forward differencing" + 
+             " and DV times 2 for central differencing," + 
+              " or the parallelization logic will not work")
 
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD) evaluations based on the number of design variables (DV).
         n_FD = min([max_cores, n_DV])
