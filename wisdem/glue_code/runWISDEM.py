@@ -39,8 +39,9 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
 
         if max_cores > n_DV:
             raise ValueError("ERROR: please reduce the number of cores, currently set to " +
-             str(max_cores) + ", to the number of finite differences" + str(n_DV) +
-             ", which is equal to DV for forward differencing and DV x 2 for central differencing," + 
+             str(max_cores) + ", to the number of finite differences " + str(n_DV) +
+             ", which is equal to the number of design variables DV for forward differencing" + 
+             " and DV times 2 for central differencing," + 
               " or the parallelization logic will not work")
 
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD) evaluations based on the number of design variables (DV).
