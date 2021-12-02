@@ -40,23 +40,23 @@ def get_transition_height(prob):
 
 def get_tower_E(prob):
     if is_monopile(prob):
-        return np.r_[prob["fixedse.E"], prob["towerse.E"][1:]]
+        return np.r_[prob["fixedse.member.E"], prob["towerse.member.E"][1:]]
     else:
-        return prob["towerse.E"]
+        return prob["towerse.member.E"]
 
 
 def get_tower_G(prob):
     if is_monopile(prob):
-        return np.r_[prob["fixedse.G"], prob["towerse.G"][1:]]
+        return np.r_[prob["fixedse.member.G"], prob["towerse.member.G"][1:]]
     else:
-        return prob["towerse.G"]
+        return prob["towerse.member.G"]
 
 
 def get_tower_rho(prob):
     if is_monopile(prob):
-        return np.r_[prob["fixedse.rho"], prob["towerse.rho"][1:]]
+        return np.r_[prob["fixedse.member.rho"], prob["towerse.member.rho"][1:]]
     else:
-        return prob["towerse.rho"]
+        return prob["towerse.member.rho"]
 
 
 def get_tower_mass(prob):
