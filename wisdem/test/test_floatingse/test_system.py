@@ -103,7 +103,8 @@ class TestPlatform(unittest.TestCase):
         self.inputs["mooring_stiffness"] = 5 * np.eye(6)
         self.inputs["transition_node"] = self.inputs["member5:nodes_xyz"][1, :]
         self.inputs["turbine_mass"] = 1e4
-        self.inputs["turbine_center_of_mass"] = np.array([0, 0, 50])
+        self.inputs["turbine_cg"] = np.array([0, 0, 50])
+        self.inputs["turbine_I"] = 1e6 * np.ones(6)
         self.inputs["transition_piece_mass"] = 1e3
         self.inputs["transition_piece_cost"] = 3e3
         self.inputs["rho_water"] = 1e3

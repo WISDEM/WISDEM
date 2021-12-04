@@ -28,10 +28,10 @@ class TestRegression(unittest.TestCase):
             fname_wt_input, fname_modeling_options, fname_analysis_options
         )
 
-        self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 73564.20303054206, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 78.0287135486, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 90.3213895384, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.4700198009, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 68693.1923999787, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 78.0285032277, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 90.3038528159, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.5319886366, 1)
 
 
 def suite():
