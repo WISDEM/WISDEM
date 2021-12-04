@@ -111,10 +111,11 @@ class TurbineMass(om.ExplicitComponent):
 
         outputs["turbine_mass"] = m_turb = m_rna + m_tow
 
-        cg_rna = R = inputs["rna_cg"] + inputs["joint2"]
+        cg_rna = inputs["rna_cg"] + inputs["joint2"]
         cg_tower = np.r_[0.0, 0.0, inputs["tower_center_of_mass"]]
         outputs["turbine_center_of_mass"] = (m_rna * cg_rna + m_tow * cg_tower) / m_turb
 
+        R = inputs["joint2"]  # rna_I is already at tower top, so R goes to tower top, not rna_cg
         I_tower = util.assembleI(inputs["tower_I_base"])
         I_rna = util.assembleI(inputs["rna_I"]) + m_rna * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
         outputs["turbine_I_base"] = util.unassembleI(I_tower + I_rna)

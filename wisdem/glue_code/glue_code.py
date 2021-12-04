@@ -521,7 +521,8 @@ class WT_RNTA(om.Group):
             self.connect("floating.transition_piece_cost", "floatingse.transition_piece_cost")
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.turbine_mass", "floatingse.turbine_mass")
-                self.connect("towerse.turbine_center_of_mass", "floatingse.turbine_center_of_mass")
+                self.connect("towerse.turbine_center_of_mass", "floatingse.turbine_cg")
+                self.connect("towerse.turbine_I_base", "floatingse.turbine_I")
                 self.connect("towerse.tower.turbine_F", "floatingse.turbine_F")
                 self.connect("towerse.tower.turbine_M", "floatingse.turbine_M")
                 self.connect("towerse.nodes_xyz", "floatingse.tower_xyz")
