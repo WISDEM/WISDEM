@@ -142,6 +142,7 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("mooring_stiffness", np.zeros((6, 6)), units="N/m")
         self.add_input("variable_ballast_mass", 0.0, units="kg")
         self.add_input("variable_center_of_mass", val=np.zeros(3), units="m")
+        self.add_input("variable_I", np.zeros(6), units="kg*m**2")
 
         self.add_output("platform_base_F", np.zeros((3, n_dlc)), units="N")
         self.add_output("platform_base_M", np.zeros((3, n_dlc)), units="N*m")
@@ -163,6 +164,7 @@ class FrameAnalysis(om.ExplicitComponent):
         I_trans = inputs["transition_piece_I"]
         m_variable = float(inputs["variable_ballast_mass"])
         cg_variable = inputs["variable_center_of_mass"]
+        I_variable = inputs["variable_I"]
 
         fairlead_joints = inputs["mooring_fairlead_joints"]
         mooringF = inputs["mooring_neutral_load"]
@@ -173,8 +175,8 @@ class FrameAnalysis(om.ExplicitComponent):
         nnode = np.where(nodes[:, 0] == NULL)[0][0]
         nodes = nodes[:nnode, :]
         rnode = np.zeros(nnode)  # inputs["platform_Rnode"][:nnode]
-        ihub = np.argmax(nodes[:, 2]) - 1
         itrans = util.closest_node(nodes, inputs["transition_node"])
+        ivariable = util.closest_node(nodes, cg_variable)
 
         N1 = np.int_(inputs["platform_elem_n1"])
         nelem = np.where(N1 == NULL)[0][0]
@@ -202,7 +204,7 @@ class FrameAnalysis(om.ExplicitComponent):
         ind = []
         for k in range(n_attach):
             ind.append(util.closest_node(nodes, fairlead_joints[k, :]))
-        rid = np.array([ind])  # np.array([np.argmin(nodes[:, 2])])
+        rid = np.unique(np.array([ind]))  # np.array([np.argmin(nodes[:, 2])])
 
         Rx = Ry = Rz = Rxx = Ryy = Rzz = RIGID * np.ones(rid.size)
         # Rx, Ry, Rz = [mooringK[0]], [mooringK[1]], [mooringK[2]]
@@ -217,12 +219,11 @@ class FrameAnalysis(om.ExplicitComponent):
         myframe = pyframe3dd.Frame(node_obj, react_obj, elem_obj, opt_obj)
 
         # Added mass
-        cg_add = m_variable * cg_variable / (m_trans + m_variable)
-        cg_add = cg_add.reshape((-1, 1))
+        cg_add = np.zeros((3, 2))
         add_gravity = True
-        mID = np.array([itrans], dtype=np.int_)
-        m_add = np.array([m_trans + m_variable])
-        I_add = I_trans.reshape((-1, 1))
+        mID = np.array([itrans, ivariable], dtype=np.int_)
+        m_add = np.array([m_trans, m_variable])
+        I_add = np.c_[I_trans, I_variable]
         myframe.changeExtraNodeMass(
             mID + 1,
             m_add,
@@ -251,8 +252,8 @@ class FrameAnalysis(om.ExplicitComponent):
             load_obj = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
             Fnode2 = Fnode.copy()
-            Fnode2[ihub, :] += inputs["turbine_F"][:, k]
-            Mnode[ihub, :] = inputs["turbine_M"][:, k]
+            Fnode2[itrans, :] += inputs["turbine_F"][:, k]
+            Mnode[itrans, :] = inputs["turbine_M"][:, k]
             nF = np.where(np.abs(Fnode2).sum(axis=1) > 0.0)[0]
             load_obj.changePointLoads(
                 nF + 1, Fnode2[nF, 0], Fnode2[nF, 1], Fnode2[nF, 2], Mnode[nF, 0], Mnode[nF, 1], Mnode[nF, 2]
@@ -271,6 +272,7 @@ class FrameAnalysis(om.ExplicitComponent):
 
             # Add the load case and run
             myframe.addLoadCase(load_obj)
+
         # myframe.write("system.3dd")
         # myframe.draw()
         displacements, forces, reactions, internalForces, mass, modal = myframe.run()
@@ -634,7 +636,7 @@ class FloatingFrame(om.Group):
             U_prom.append(f"env{lc}.Uref")
 
         for k in range(n_member):
-            n_full = get_nfull(opt["floating"]["members"]["n_height"][k])
+            n_full = get_nfull(opt["floating"]["members"]["n_height"][k], nref=2)
             self.add_subsystem(
                 f"memload{k}",
                 MemberLoads(

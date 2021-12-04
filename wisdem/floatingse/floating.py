@@ -32,7 +32,11 @@ class FloatingSE(om.Group):
             self.add_subsystem(
                 f"member{k}",
                 MemberDetailed(
-                    column_options=opt["floating"]["members"], idx=k, n_mat=opt["materials"]["n_mat"], memmax=True
+                    column_options=opt["floating"]["members"],
+                    idx=k,
+                    n_mat=opt["materials"]["n_mat"],
+                    memmax=True,
+                    n_refine=2,
                 ),
                 promotes=mem_prom + [("joint1", f"member{k}:joint1"), ("joint2", f"member{k}:joint2")],
             )

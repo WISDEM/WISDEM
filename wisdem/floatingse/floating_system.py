@@ -363,6 +363,7 @@ class PlatformTurbineSystem(om.ExplicitComponent):
         self.add_output("system_mass", 0.0, units="kg")
         self.add_output("variable_ballast_mass", 0.0, units="kg")
         self.add_output("variable_center_of_mass", val=np.zeros(3), units="m")
+        self.add_output("variable_I", np.zeros(6), units="kg*m**2")
         self.add_output("constr_variable_margin", val=0.0)
         self.add_output("member_variable_volume", val=np.zeros(n_member), units="m**3")
         self.add_output("member_variable_height", val=np.zeros(n_member))
@@ -474,6 +475,7 @@ class PlatformTurbineSystem(om.ExplicitComponent):
         R = cg_plat_total - cg_variable
         I_total += I_variable + m_variable * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
         outputs["platform_I_total"] = util.unassembleI(I_total)
+        outputs["variable_I"] = util.unassembleI(I_variable)
 
 
 class FloatingSystem(om.Group):
