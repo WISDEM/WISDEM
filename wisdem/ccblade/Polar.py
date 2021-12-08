@@ -791,12 +791,12 @@ class Polar(object):
         if len(self.cl) > 10:
             # Looking at slope around alpha 0 to see if we are too far off
             slope_FD, off_FD = _find_slope(self.alpha, self.cl, xi=alpha0, window=window, method="finitediff_1c")
-            if abs(slope - slope_FD) / slope_FD * 100 > 50:
-                print(
-                    "Warning: More than 50% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.".format(
-                        slope, slope_FD, window[0], window[-1]
-                    )
-                )
+            # if abs(slope - slope_FD) / slope_FD * 100 > 50:
+            #     print(
+            #         "Warning: More than 50% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.".format(
+            #             slope, slope_FD, window[0], window[-1]
+            #         )
+            #     )
         #         print('slope ',slope,' Alpha range: {:.3f} {:.3f} - nLin {}  nMin {}  nMax {}'.format(alpha[iStart],alpha[iEnd],len(alpha[iStart:iEnd+1]),nMin,len(alpha)))
 
         return myret(slope, off)

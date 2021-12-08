@@ -1393,6 +1393,15 @@ class INN_Airfoils(om.ExplicitComponent):
                 c = max(af_points[:, 0]) - min(af_points[:, 0])
                 af_points[:, :] /= c
 
+                lower = af_points[:99, 1]
+                upper = af_points[101:, 1][::-1]
+                diff = upper - lower
+                diffo = np.min(diff)
+                if diffo < 0:
+                    idxs = np.where(diff < 0)[0]
+                    for idx in idxs:
+                        af_points[idx, 1] = upper[idx] - 1.0e-6
+
                 outputs["coord_xy_interp"][i, :, :] = af_points
 
             inn_polar = Polar(Re, alpha, cl[0, :], cd[0, :], np.zeros_like(cl[0, :]))

@@ -3,6 +3,7 @@ import copy
 import numpy as np
 from openmdao.api import Group, ExplicitComponent
 from scipy.interpolate import PchipInterpolator
+
 from wisdem.rotorse.precomp import PreComp, Profile, CompositeSection, Orthotropic2DMaterial
 from wisdem.commonse.utilities import rotate, arc_length
 from wisdem.rotorse.rail_transport import RailTransport
@@ -849,6 +850,7 @@ class RunPreComp(ExplicitComponent):
         outputs["blade_moment_of_inertia"] = blade_moment_of_inertia
         outputs["mass_all_blades"] = mass_all_blades
         outputs["I_all_blades"] = I_all_blades
+
 
 class RotorElasticity(Group):
     # OpenMDAO group to compute the blade elastic properties and natural frequencies
