@@ -344,11 +344,12 @@ class PlatformTurbineSystem(om.ExplicitComponent):
         self.add_input("platform_I_hull", np.zeros(6), units="kg*m**2")
         self.add_input("platform_displacement", 0.0, units="m**3")
 
-        self.add_input("turbine_center_of_mass", np.zeros(3), units="m")
         self.add_input("turbine_mass", 0.0, units="kg")
+        self.add_input("turbine_cg", np.zeros(3), units="m")
+        self.add_input("turbine_I", np.zeros(6), units="kg*m**2")
+        self.add_input("transition_node", np.zeros(3), units="m")
 
         self.add_input("rho_water", 0.0, units="kg/m**3")
-        self.add_input("transition_node", np.zeros(3), units="m")
         self.add_input("mooring_neutral_load", np.zeros((n_attach, 3)), units="N")
         self.add_input("platform_variable_capacity", np.zeros(n_member), units="m**3")
 
@@ -361,8 +362,10 @@ class PlatformTurbineSystem(om.ExplicitComponent):
         self.add_output("system_structural_mass", 0.0, units="kg")
         self.add_output("system_center_of_mass", np.zeros(3), units="m")
         self.add_output("system_mass", 0.0, units="kg")
+        self.add_output("system_I", np.zeros(6), units="kg*m**2")
         self.add_output("variable_ballast_mass", 0.0, units="kg")
         self.add_output("variable_center_of_mass", val=np.zeros(3), units="m")
+        self.add_output("variable_I", np.zeros(6), units="kg*m**2")
         self.add_output("constr_variable_margin", val=0.0)
         self.add_output("member_variable_volume", val=np.zeros(n_member), units="m**3")
         self.add_output("member_variable_height", val=np.zeros(n_member))
@@ -377,12 +380,12 @@ class PlatformTurbineSystem(om.ExplicitComponent):
         cg_platform = inputs["platform_hull_center_of_mass"]
         I_platform = util.assembleI(inputs["platform_I_hull"])
         m_turb = inputs["turbine_mass"]
+        cg_turb = inputs["turbine_cg"]
+        I_turb = util.assembleI(inputs["turbine_I"])
         m_sys = m_platform + m_turb
         outputs["system_structural_mass"] = m_sys
 
-        outputs["system_structural_center_of_mass"] = (
-            m_platform * cg_platform + m_turb * inputs["turbine_center_of_mass"]
-        ) / m_sys
+        outputs["system_structural_center_of_mass"] = (m_platform * cg_platform + m_turb * cg_turb) / m_sys
 
         # Balance out variable ballast
         mooringFz = inputs["mooring_neutral_load"][:, 2].sum()
@@ -424,8 +427,8 @@ class PlatformTurbineSystem(om.ExplicitComponent):
 
         # Now find total system mass
         outputs["platform_mass"] = m_platform + m_variable
-        outputs["system_mass"] = m_sys + m_variable
-        outputs["system_center_of_mass"] = (
+        outputs["system_mass"] = m_sys_total = m_sys + m_variable
+        outputs["system_center_of_mass"] = cg_sys_total = (
             m_sys * outputs["system_structural_center_of_mass"] + m_variable * cg_variable
         ) / (m_sys + m_variable)
 
@@ -474,6 +477,17 @@ class PlatformTurbineSystem(om.ExplicitComponent):
         R = cg_plat_total - cg_variable
         I_total += I_variable + m_variable * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
         outputs["platform_I_total"] = util.unassembleI(I_total)
+        outputs["variable_I"] = util.unassembleI(I_variable)
+
+        # Now full system moments of inertia
+        I_sys = np.zeros((3, 3))
+
+        R = cg_sys_total - cg_plat_total
+        I_sys += I_total + outputs["platform_mass"] * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+
+        R = cg_sys_total - inputs["transition_node"]  # turbine I is already at base, not at its cg
+        I_sys += I_turb + m_turb * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        outputs["system_I"] = util.unassembleI(I_sys)
 
 
 class FloatingSystem(om.Group):

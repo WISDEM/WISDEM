@@ -170,7 +170,8 @@ class TestFrame(unittest.TestCase):
         inputs["mooring_stiffness"] = 5 * np.eye(6)
         inputs["transition_node"] = inputs["member0:nodes_xyz"][1, :]
         inputs["turbine_mass"] = 1e4
-        inputs["turbine_center_of_mass"] = np.array([0, 0, 50])
+        inputs["turbine_cg"] = np.array([0, 0, 50])
+        inputs["turbine_I"] = 1e6 * np.ones(6)
         inputs["transition_piece_mass"] = 1e3
         inputs["transition_piece_cost"] = 3e3
         inputs["rho_water"] = 1e3

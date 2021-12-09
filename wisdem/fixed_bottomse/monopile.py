@@ -466,7 +466,7 @@ class MonopileFrame(om.ExplicitComponent):
         cg_turb = inputs["turbine_cg"].flatten()
         I_turb = inputs["turbine_I"].flatten()
         # Note, need len()-1 because Frame3DD crashes if mass add at end
-        midx = np.array([n, n - 1, 1], dtype=np.int_)
+        midx = np.array([n - 1, n - 2, 1], dtype=np.int_)
         m_add = np.array([m_turb, m_trans, m_grav])
         mI = np.c_[I_turb, I_trans, I_grav]
         mrho = np.c_[cg_turb, np.zeros(3), np.zeros(3)]
@@ -491,7 +491,7 @@ class MonopileFrame(om.ExplicitComponent):
         # self.frame.write('monopile_debug.3dd')
         # -----------------------------------
         # run the analysis
-        displacements, forces, reactions, internalForces, mass, modal = self.frame.run()
+        displacements, forces, rxns, internalForces, mass, modal = self.frame.run()
 
         # natural frequncies
         outputs["f1"] = modal.freq[0]

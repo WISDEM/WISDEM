@@ -204,7 +204,7 @@ class TestMonopileSE(unittest.TestCase):
         npt.assert_array_less(0.0, prob.model.monopile.frame.rKtz, RIGID)
         npt.assert_equal(prob.model.monopile.frame.rKz[1:], 0.0)
 
-        npt.assert_equal(prob.model.monopile.frame.ENMnode, np.array([7, 6, 1], dtype=np.int_))
+        npt.assert_equal(prob.model.monopile.frame.ENMnode, np.array([6, 5, 1], dtype=np.int_))
         npt.assert_equal(prob.model.monopile.frame.ENMmass, np.array([1e5, 1e2, 0]))
         npt.assert_equal(prob.model.monopile.frame.ENMrhox, np.r_[10.0, 0, 0])
         npt.assert_equal(prob.model.monopile.frame.ENMrhoy, np.r_[10.0, 0, 0])
@@ -296,7 +296,7 @@ class TestMonopileSE(unittest.TestCase):
         npt.assert_equal(prob.model.monopile.frame.rKty, np.array([RIGID]))
         npt.assert_equal(prob.model.monopile.frame.rKtz, np.array([RIGID]))
 
-        npt.assert_equal(prob.model.monopile.frame.ENMnode, np.array([7, 6, 1], dtype=np.int_))
+        npt.assert_equal(prob.model.monopile.frame.ENMnode, np.array([6, 5, 1], dtype=np.int_))
         npt.assert_equal(prob.model.monopile.frame.ENMmass, np.array([1e5, 1e2, 1e4]))
         npt.assert_equal(prob.model.monopile.frame.ENMrhox, np.r_[10.0, 0, 0])
         npt.assert_equal(prob.model.monopile.frame.ENMrhoy, np.r_[10.0, 0, 0])
@@ -375,7 +375,7 @@ class TestMonopileSE(unittest.TestCase):
 
         prob["transition_piece_mass"] = 1e2
         prob.run_model()
-        myFz[3:-1] -= 1e2 * g
+        myFz[3:-2] -= 1e2 * g
         npt.assert_almost_equal(prob["monopile.monopile_Fz"], myFz)
 
         prob["gravity_foundation_mass"] = 1e3
