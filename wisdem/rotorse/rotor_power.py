@@ -1047,7 +1047,7 @@ def eval_unsteady(alpha, cl, cd, cm):
     unsteady["alpha0"] = alpha0
     unsteady["alpha1"] = alpha1
     unsteady["alpha2"] = alpha2
-    unsteady["Cd0"] = cd0
+    unsteady["Cd0"] = 0.
     unsteady["Cm0"] = cm0
     unsteady["Cn1"] = cn1
     unsteady["Cn2"] = cn2
