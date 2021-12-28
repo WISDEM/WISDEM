@@ -6,11 +6,11 @@ design_variables:
     jacket:
         r_foot:
             flag: True
-            lower_bound: 4.
+            lower_bound: 8.
             upper_bound: 16.
         d_l:
             flag: True
-            lower_bound: 0.5
+            lower_bound: 0.9
             upper_bound: 5.
         beta_b:
             flag: True
@@ -47,7 +47,7 @@ constraints:
 driver:
     optimization:
         flag: True            # Flag to enable optimization
-        tol: 1.e-3            # Optimality tolerance
+        tol: 1.e-2            # Optimality tolerance
         max_major_iter: 100    # Maximum number of major design iterations (SNOPT)
         max_minor_iter: 1000   # Maximum number of minor design iterations (SNOPT)
         max_iter: 1000         # Maximum number of iterations (SLSQP)

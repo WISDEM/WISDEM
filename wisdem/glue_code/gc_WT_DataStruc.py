@@ -3,8 +3,9 @@ import logging
 
 import numpy as np
 import openmdao.api as om
-import wisdem.moorpy.MoorProps as mp
 from scipy.interpolate import PchipInterpolator, interp1d
+
+import wisdem.moorpy.MoorProps as mp
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAero, ParametrizeBladeStruct
@@ -1396,6 +1397,15 @@ class INN_Airfoils(om.ExplicitComponent):
                     af_points[:, 0] -= af_points[np.argmin(af_points[:, 0]), 0]
                 c = max(af_points[:, 0]) - min(af_points[:, 0])
                 af_points[:, :] /= c
+
+                lower = af_points[:99, 1]
+                upper = af_points[101:, 1][::-1]
+                diff = upper - lower
+                diffo = np.min(diff)
+                if diffo < 0:
+                    idxs = np.where(diff < 0)[0]
+                    for idx in idxs:
+                        af_points[idx, 1] = upper[idx] - 1.0e-6
 
                 outputs["coord_xy_interp"][i, :, :] = af_points
 

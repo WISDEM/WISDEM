@@ -1,4 +1,5 @@
 import numpy as np
+
 import wisdem.inputs as sch
 
 
@@ -614,7 +615,10 @@ class WindTurbineOntologyPython(object):
 
         # If not an optimization DV, then the number of points should be same as the discretization
         blade_opt_options = self.analysis_options["design_variables"]["blade"]
-        if not blade_opt_options["aero_shape"]["twist"]["flag"]:
+        if (
+            not blade_opt_options["aero_shape"]["twist"]["flag"]
+            and not blade_opt_options["aero_shape"]["twist"]["inverse"]
+        ):
             blade_opt_options["aero_shape"]["twist"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
         elif blade_opt_options["aero_shape"]["twist"]["n_opt"] < 4:
             raise ValueError("Cannot optimize twist with less than 4 control points along blade span")
