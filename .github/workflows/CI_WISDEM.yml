@@ -24,6 +24,7 @@ jobs:
           auto-update-conda: true
           python-version: 3.8
           environment-file: environment.yml
+          activate-environment: "test"
 
       # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific

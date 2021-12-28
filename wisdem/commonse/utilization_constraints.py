@@ -8,7 +8,7 @@ Copyright (c) NREL. All rights reserved.
 
 import numpy as np
 import openmdao.api as om
-from wisdem.commonse.utilities import CubicSplineSegment, nodal2sectional, sectional2nodal
+from wisdem.commonse.utilities import CubicSplineSegment, nodal2sectional
 
 # -------------------------------------------------------------------------------
 # Name:        UtilizationSupplement.py
@@ -62,6 +62,8 @@ class GeometricConstraints(om.ExplicitComponent):
         self.add_output("constr_d_to_t", np.zeros(nPoints - 1))
         self.add_output("constr_taper", np.zeros(nPoints - 1))
         self.add_output("slope", np.zeros(nPoints - 1))
+        if nPoints > 2:
+            self.add_output("thickness_slope", np.zeros(nPoints - 2))
 
         # Derivatives
         self.declare_partials("*", "*", method="fd", form="central", step=1e-6)
@@ -78,10 +80,13 @@ class GeometricConstraints(om.ExplicitComponent):
 
         dave, _ = nodal2sectional(d)
         d_ratio = d[1:] / d[:-1]
+        t_ratio = t[1:] / t[:-1]
 
         outputs["constr_d_to_t"] = dave / t
         outputs["constr_taper"] = np.minimum(d_ratio, 1.0 / d_ratio)
         outputs["slope"] = d_ratio
+        if self.options["nPoints"] > 2:
+            outputs["thickness_slope"] = t_ratio
 
     # def compute_partials(self, inputs, J):
 

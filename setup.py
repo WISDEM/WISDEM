@@ -27,7 +27,7 @@ precompExt = Extension(
 # Top-level setup
 setup(
     name="WISDEM",
-    version="3.3.0",
+    version="3.4.0",
     description="Wind-Plant Integrated System Design & Engineering Model",
     long_description="""WISDEM is a Python package for conducting multidisciplinary analysis and
     optimization of wind turbines and plants.  It is built on top of NASA's OpenMDAO library.""",
@@ -48,6 +48,7 @@ setup(
         "scipy",
         "simpy",
         "sortedcontainers",
+        "pyparsing<3",
     ],
     python_requires=">=3.7",
     package_data={"": ["*.yaml", "*.xlsx"], "wisdem": ["*.txt"]},

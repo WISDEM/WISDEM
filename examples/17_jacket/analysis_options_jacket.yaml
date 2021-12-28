@@ -1,0 +1,60 @@
+general:
+        folder_output: outputs
+        fname_output: refturb_output
+design_variables:
+
+    jacket:
+        r_foot:
+            flag: True
+            lower_bound: 4.
+            upper_bound: 16.
+        d_l:
+            flag: True
+            lower_bound: 0.5
+            upper_bound: 5.
+        beta_b:
+            flag: True
+            lower_bound: 0.5
+            upper_bound: 0.9
+        beta_t:
+            flag: True
+            lower_bound: 0.4
+            upper_bound: 0.9
+        gamma_b:
+            flag: True
+            lower_bound: 4.
+            upper_bound: 5.
+        gamma_t:
+            flag: True
+            lower_bound: 6.
+            upper_bound: 20.
+        q:
+            flag: True
+            lower_bound: 0.8
+            upper_bound: 0.9
+
+merit_figure: jacket_mass
+
+constraints:
+    jacket:
+        stress:
+            flag: True
+        global_buckling:
+            flag: False
+        shell_buckling:
+            flag: True
+
+driver:
+    optimization:
+        flag: True            # Flag to enable optimization
+        tol: 1.e-3            # Optimality tolerance
+        max_major_iter: 100    # Maximum number of major design iterations (SNOPT)
+        max_minor_iter: 1000   # Maximum number of minor design iterations (SNOPT)
+        max_iter: 1000         # Maximum number of iterations (SLSQP)
+        solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        step_size: 1.e-6      # Step size for finite differencing
+        form: forward         # Finite differencing mode, either forward or central
+
+recorder:
+    flag: False                            # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql    # Name of OpenMDAO recorder

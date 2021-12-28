@@ -1173,7 +1173,7 @@ properties:
                         unit: USD
                         minimum: 0.0
                         default: 0.0
-                    gravity_foundation_mass:
+                    gravity_foundation_mass: &g_fm
                         type: number
                         description: Total mass of gravity foundation addition onto monopile
                         unit: kg
@@ -1261,6 +1261,84 @@ properties:
                                                     $ref: "#/definitions/distributed_data/grid_nd"
                                                 values:
                                                     $ref: "#/definitions/distributed_data/length"
+            jacket:
+                type: object
+                required:
+                    - n_bays
+                    - n_legs
+                    - r_foot
+                    - r_head
+                    - height
+                    - q
+                    - l_osg
+                    - l_tp
+                    - gamma_b
+                    - gamma_t
+                    - beta_b
+                    - beta_t
+                    - tau_b
+                    - tau_t
+                optional:
+                    - material
+                    - transition_piece_mass
+                    - transition_piece_cost
+                    - gravity_foundation_mass
+                properties:
+                    transition_piece_mass: *m_tp
+                    transition_piece_cost: *c_tp
+                    gravity_foundation_mass: *g_fm
+                    material:
+                        type: string
+                        description: Material of jacket members
+                        default: steel
+                    n_bays:
+                        type: integer
+                        description: Number of bays (x-joints) in the vertical direction for jackets.
+                    n_legs:
+                        type: integer
+                        description: Number of legs for jacket.
+                    r_foot:
+                        type: number
+                        description: Radius of foot (bottom) of jacket, in meters.
+                    r_head:
+                        type: number
+                        description: Radius of head (top) of jacket, in meters.
+                    height:
+                        type: number
+                        description: Overall jacket height, meters.
+                    q:
+                        type: number
+                        description: Ratio of two consecutive bay heights.
+                    l_osg:
+                        type: number
+                        description: Lowest leg segment height, meters.
+                    l_tp:
+                        type: number
+                        description: Transition piece segment height, meters.
+                    gamma_b:
+                        type: number
+                        description: Leg radius-to-thickness ratio (bottom).
+                    gamma_t:
+                        type: number
+                        description: Leg radius-to-thickness ratio (top).
+                    beta_b:
+                        type: number
+                        description: Brace-to-leg diameter ratio (bottom).
+                    beta_t:
+                        type: number
+                        description: Brace-to-leg diameter ratio (top).
+                    tau_b:
+                        type: number
+                        description: Brace-to-leg thickness ratio (bottom).
+                    tau_t:
+                        type: number
+                        description: Brace-to-leg thickness ratio (top).
+                    x_mb:
+                        type: boolean
+                        description: Mud brace included if true.
+                    d_l:
+                        type: number
+                        description: Leg diameter, meters. Constant throughout each leg.
             floating_platform:
                 description: Ontology definition for floating platforms (substructures) suitable for use with the WEIS co-design analysis tool
                 type: object

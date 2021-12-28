@@ -48,24 +48,23 @@ The installation instructions below use the environment name, "wisdem-env," but 
         conda create -y --name wisdem-env python=3.8
         conda activate wisdem-env
 
-2.  In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer* mode.  This is done by first installing WISDEM as a conda package to easily satisfy all dependencies, but then removing the WISDEM conda package and reinstalling from the Github source code.  Note the differences between Windows and Mac/Linux build systems:
+2.  In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer* mode.  This is done by first installing WISDEM as a conda package to easily satisfy all dependencies, but then removing the WISDEM conda package and reinstalling from the Github source code.  Note the differences between Windows and Mac/Linux build systems. For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
 
         conda install -y wisdem git
         conda remove -y --force wisdem
-        conda install -y compilers                   # (Mac / Linux only)
+        conda install -y compilers                   # (Mac only)
         conda install -y m2w64-toolchain libpython   # (Windows only)
         pip install simpy marmot-agents nlopt
         git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
+        git checkout develop                         # If you want to switch WISDEM branches
         python setup.py develop
 
 
 3. OPTIONAL: Install pyOptSparse, a package that provides a handful of additional optimization solvers and has OpenMDAO support:
 
         git clone https://github.com/evan-gaertner/pyoptsparse.git
-        cd pyoptsparse
-        python setup.py install
-        cd ..
+        pip install -e pyoptsparse
 
 
 **NOTE:** To use WISDEM again after installation is complete, you will always need to activate the conda environment first with `conda activate wisdem-env`

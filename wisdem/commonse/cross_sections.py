@@ -1,81 +1,83 @@
 from __future__ import print_function
+
+import abc
+
 import numpy as np
-from wisdem.commonse.utilities import nodal2sectional
-import openmdao.api as om
 
 
-class CylindricalShellProperties(om.ExplicitComponent):
-    """
-    OpenMDAO wrapper for tube class to obtain cylindrical sheel properties.
+class CrossSectionBase(metaclass=abc.ABCMeta):
+    @property
+    @abc.abstractmethod
+    def Area(self):
+        pass
 
-    Parameters
-    ----------
-    d : numpy array[nFull], [m]
-        tower diameter at corresponding locations
-    t : numpy array[nFull-1], [m]
-        shell thickness at corresponding locations
+    @property
+    @abc.abstractmethod
+    def Ixx(self):  # 2nd area moment of inertia w.r.t. x-x axis
+        pass
 
-    Returns
-    -------
-    Az : numpy array[nFull-1], [m**2]
-        cross-sectional area
-    Asx : numpy array[nFull-1], [m**2]
-        x shear area
-    Asy : numpy array[nFull-1], [m**2]
-        y shear area
-    Jz : numpy array[nFull-1], [m**4]
-        polar moment of inertia
-    Ixx : numpy array[nFull-1], [m**4]
-        area moment of inertia about x-axis
-    Iyy : numpy array[nFull-1], [m**4]
-        area moment of inertia about y-axis
+    @property
+    @abc.abstractmethod
+    def Iyy(self):  # 2nd area moment of inertia w.r.t. z-z axis
+        pass
 
-    """
+    @property
+    @abc.abstractmethod
+    def J0(self):  # polar moment of inertia w.r.t. z-z axis (torsional)
+        pass
 
-    def initialize(self):
-        self.options.declare("nFull")
+    @property
+    @abc.abstractmethod
+    def Asx(self):  # Shear Area
+        pass
 
-    def setup(self):
-        nFull = self.options["nFull"]
+    @property
+    @abc.abstractmethod
+    def Asy(self):  # Shear Area
+        pass
 
-        self.add_input("d", np.zeros(nFull), units="m")
-        self.add_input("t", np.zeros(nFull - 1), units="m")
+    @property
+    @abc.abstractmethod
+    def BdgMxx(self):  # Bending modulus
+        pass
 
-        self.add_output("Az", np.zeros(nFull - 1), units="m**2")
-        self.add_output("Asx", np.zeros(nFull - 1), units="m**2")
-        self.add_output("Asy", np.zeros(nFull - 1), units="m**2")
-        self.add_output("Jz", np.zeros(nFull - 1), units="m**4")
-        self.add_output("Ixx", np.zeros(nFull - 1), units="m**4")
-        self.add_output("Iyy", np.zeros(nFull - 1), units="m**4")
+    @property
+    @abc.abstractmethod
+    def BdgMyy(self):  # Bending modulus
+        pass
 
-        # Derivatives
-        self.declare_partials("*", "*", method="fd", form="central", step=1e-6)
+    @property
+    @abc.abstractmethod
+    def TorsConst(self):  # Torsion shear constant
+        pass
 
-    def compute(self, inputs, outputs):
-        d, _ = nodal2sectional(inputs["d"])
-        tube = Tube(d, inputs["t"])
+    @property
+    def Sx(self):  # Bending modulus
+        return self.BdgMxx
 
-        outputs["Az"] = tube.Area
-        outputs["Asx"] = tube.Asx
-        outputs["Asy"] = tube.Asy
-        outputs["Jz"] = tube.J0
-        outputs["Ixx"] = tube.Jxx
-        outputs["Iyy"] = tube.Jyy
+    @property
+    def Sy(self):  # Bending modulus
+        return self.BdgMyy
+
+    @property
+    def C(self):  # Torsion shear constant
+        return self.TorsConst
 
 
-class Tube:
+class Tube(CrossSectionBase):
     """The Tube Class contains functions to calculate properties of tubular circular cross-sections
     for structural analyses."""
 
-    def __init__(self, D, t, Lgth=np.NaN, Kbuck=1.0):
+    def __init__(self, D, t, L=np.NaN, Kbuck=1.0):
         self.D = D
+        self.R = 0.5 * D
         self.t = t
-        self.L = Lgth * np.ones(np.size(D))  # this makes sure we exapnd Lght if D,t, arrays
-        self.Kbuck = Kbuck * np.ones(np.size(D))  # this makes sure we exapnd Kbuck if D,t, arrays
+        self.L = L * np.ones(np.size(D))
+        self.Kbuck = Kbuck * np.ones(np.size(D))
 
     @property
     def Area(self):  # Cross sectional area of tube
-        return (self.D ** 2 - (self.D - 2 * self.t) ** 2) * np.pi / 4
+        return (self.D ** 2 - (self.D - 2 * self.t) ** 2) * np.pi / 4.0
 
     @property
     def derivArea(self):
@@ -83,66 +85,63 @@ class Tube:
 
     @property
     def Amid(self):  # mid-thickness inscribed area of tube (thin wall torsion calculation)
-        return (self.D - self.t) ** 2 * np.pi / 4
+        return (self.D - self.t) ** 2 * np.pi / 4.0
 
     @property
-    def Jxx(self):  # 2nd area moment of inertia w.r.t. x-x axis (Jxx=Jyy for tube)
-        return (self.D ** 4 - (self.D - 2 * self.t) ** 4) * np.pi / 64
+    def Ixx(self):  # 2nd area moment of inertia w.r.t. x-x axis (Iyy=Ixx for tube)
+        return (self.D ** 4 - (self.D - 2 * self.t) ** 4) * np.pi / 64.0
 
     @property
-    def Jyy(self):  # 2nd area moment of inertia w.r.t. x-x axis (Jxx=Jyy for tube)
-        return self.Jxx
+    def Iyy(self):  # 2nd area moment of inertia w.r.t. z-z axis (Iyy=Ixx for tube)
+        return self.Ixx
 
     @property
     def J0(self):  # polar moment of inertia w.r.t. z-z axis (torsional)
-        return 2.0 * self.Jxx
-
-    @property
-    def Asy(self):  # Shear Area for tubular cross-section
-        Ri = self.D / 2 - self.t
-        Ro = self.D / 2
-        return self.Area / (1.124235 + 0.055610 * (Ri / Ro) + 1.097134 * (Ri / Ro) ** 2 - 0.630057 * (Ri / Ro) ** 3)
+        return 2.0 * self.Ixx
 
     @property
     def Asx(self):  # Shear Area for tubular cross-section
-        return self.Asy
+        Ri = self.D / 2 - self.t
+        Ro = self.R
+        return self.Area / (1.124235 + 0.055610 * (Ri / Ro) + 1.097134 * (Ri / Ro) ** 2 - 0.630057 * (Ri / Ro) ** 3)
+
+    @property
+    def Asy(self):  # Shear Area for tubular cross-section
+        return self.Asx
 
     @property
     def BdgMxx(self):  # Bending modulus for tubular cross-section
-        return self.Jxx / (self.D / 2)
+        return self.Ixx / self.R
 
     @property
     def BdgMyy(self):  # Bending modulus for tubular cross-section =BdgMxx
-        return self.Jyy / (self.D / 2)
+        return self.Iyy / self.R
 
     @property
     def TorsConst(self):  # Torsion shear constant for tubular cross-section
-        return self.J0 / (self.D / 2)
+        return self.J0 / self.R
 
     @property
     def S(self):  # Bending modulus for tubular cross-section
-        return self.BdgMxx
-
-    @property
-    def C(self):  # Torsion shear constant for tubular cross-section
-        return self.TorsConst
+        return self.Sx
 
     @property
     def Rgyr(self):  # Radius of Gyration for circular tube
-        return np.sqrt(self.Jxx / self.Area)
+        return np.sqrt(self.Ixx / self.Area)
 
     @property
     def Klr(self):  # Klr buckling parameter
         return self.Kbuck * self.L / self.Rgyr
 
 
-class IBeam:
-    def __init__(self, L_flange, t_flange, H_web, t_web):
+class IBeam(CrossSectionBase):
+    def __init__(self, L_flange, t_flange, H_web, t_web, L=np.nan):
         self.Lf = L_flange
         self.tf = t_flange
         self.Hw = H_web
         self.tw = t_web
         self.H = H_web + 2 * t_flange
+        self.L = L * np.ones(np.size(L_flange))
 
     @property
     def AreaFlange(self):  # Cross sectional area of tube
@@ -157,53 +156,158 @@ class IBeam:
         return self.AreaWeb + 2 * self.AreaFlange
 
     @property
-    def Iyy(self):  # 2nd area moment of inertia w.r.t. y-y axis running parallel to flange through CG
+    def Ixx(self):  # 2nd area moment of inertia w.r.t. x-x axis running parallel to flange through CG
         return (self.Lf * self.H ** 3 - (self.Lf - self.tw) * self.Hw ** 3) / 12.0
 
     @property
-    def Izz(self):  # 2nd area moment of inertia w.r.t. z-z running through center of web
+    def Iyy(self):  # 2nd area moment of inertia w.r.t. z-z running through center of web
         return (2 * self.tw * self.Lf ** 3 + self.Hw * self.tw ** 3) / 12.0
 
     @property
-    def Jxx(self):  # polar moment of inertia w.r.t. z-z axis (torsional)
+    def J0(self):  # polar moment of inertia w.r.t. z-z axis (torsional)
         return 2 * self.Lf * self.tf ** 3 + self.H * self.tw ** 3
 
     @property
-    def Asy(self):  # Shear Area for tubular cross-section
+    def Asx(self):  # Shear Area for tubular cross-section
         return 1.64 * self.Lf * self.tf
 
     @property
-    def Asz(self):  # Shear Area for tubular cross-section
+    def Asy(self):  # Shear Area for tubular cross-section
         return self.tw * self.H
 
     @property
-    def BdgMyy(self):  # Bending modulus for tubular cross-section
-        return 2 * self.Iyy / self.H
+    def BdgMxx(self):  # Bending modulus for tubular cross-section
+        return 2 * self.Ixx / self.H
 
     @property
-    def BdgMzz(self):  # Bending modulus for tubular cross-section =BdgMxx
-        return 2 * self.Izz / self.Lf
+    def BdgMyy(self):  # Bending modulus for tubular cross-section =BdgMxx
+        return 2 * self.Iyy / self.Lf
 
     @property
     def TorsConst(self):  # Torsion shear constant for tubular cross-section
-        return self.Jxx / (1.28 * self.tf)
+        return self.J0 / (1.28 * self.tf)
 
     @property
-    def Syy(self):  # Bending modulus for tubular cross-section
-        return self.BdgMyy
-
-    @property
-    def Szz(self):  # Bending modulus for tubular cross-section
-        return self.BdgMzz
-
-    @property
-    def C(self):  # Torsion shear constant for tubular cross-section
-        return self.TorsConst
-
-    @property
-    def Rgyr(self):  # Radius of Gyration for circular tube
-        return np.sqrt(self.Jxx / self.Area)
-
-    @property
-    def CG(self):  # Radius of Gyration for circular tube
+    def CG(self):
         return 0.5 * self.Hw + self.tf
+
+
+class Square(CrossSectionBase):
+    def __init__(self, a, t, L=np.nan):
+        self.a = a
+        self.t = t
+        self.L = L * np.ones(np.size(a))
+
+    @property
+    def Area(self):  # Cross sectional area of tube
+        return self.a ** 2 - (self.a - 2 * self.t) ** 2
+
+    @property
+    def Ixx(self):  # 2nd area moment of inertia w.r.t. x-x axis running parallel to flange through CG
+        return (self.a ** 4 - (self.a - 2 * self.t) ** 4) / 12.0
+
+    @property
+    def Iyy(self):  # 2nd area moment of inertia w.r.t. z-z running through center of web
+        return self.Ixx
+
+    @property
+    def J0(self):  # polar moment of inertia w.r.t. z-z axis (torsional)
+        return self.t * (self.a - 2 * self.t) ** 3
+
+    @property
+    def Asx(self):  # Shear Area for tubular cross-section
+        return self.Area / (2.39573 - 0.25009 * (self.t / self.a) - 7.89675 * (self.t / self.a) ** 2)
+
+    @property
+    def Asy(self):  # Shear Area for tubular cross-section
+        return self.Asx
+
+    @property
+    def BdgMxx(self):  # Bending modulus for tubular cross-section
+        return 2 * self.Ixx / self.a
+
+    @property
+    def BdgMyy(self):  # Bending modulus for tubular cross-section =BdgMxx
+        return self.BdgMxx
+
+    @property
+    def TorsConst(self):  # Torsion shear constant for tubular cross-section
+        return 2 * self.t * (self.a - self.t) ** 2
+
+    @property
+    def S(self):  # Bending modulus for tubular cross-section
+        return self.Sx
+
+
+class Rectangle(CrossSectionBase):
+    def __init__(self, a, b, t, L=np.nan):
+        self.a = a
+        self.b = b
+        self.t = t
+        self.L = L * np.ones(np.size(a))
+
+    @property
+    def Area(self):  # Cross sectional area of tube
+        return self.a * self.b - (self.a - 2 * self.t) * (self.b - 2 * self.t)
+
+    @property
+    def Ixx(self):  # 2nd area moment of inertia w.r.t. x-x axis running parallel to flange through CG
+        return (self.a * self.b ** 3 - (self.a - 2 * self.t) * (self.b - 2 * self.t) * 3) / 12.0
+
+    @property
+    def Iyy(self):  # 2nd area moment of inertia w.r.t. z-z running through center of web
+        return (self.b * self.a ** 3 - (self.b - 2 * self.t) * (self.a - 2 * self.t) * 3) / 12.0
+
+    @property
+    def J0(self):  # polar moment of inertia w.r.t. z-z axis (torsional)
+        return 2 * self.t * (self.a - self.t) ** 2 * (self.b - self.t) ** 2 / (self.a + self.b - 2 * self.t)
+
+    @property
+    def Asx(self):  # Shear Area for tubular cross-section
+        if self.a > self.b:
+            return self.Area / (
+                0.93498
+                - 1.28084 * (self.t / self.b)
+                + 1.36441 * (self.b / self.a)
+                + 0.00295 * (self.a / self.b) ** 2
+                + 0.25797 * (self.t * self.a / self.b ** 2)
+            )
+        else:
+            return self.Area / (
+                1.63544
+                - 8.34935 * (self.t / self.a)
+                + 0.60125 * (self.b / self.a)
+                + 0.41403 * (self.b / self.a) ** 2
+                + 4.95373 * (self.t * self.b / self.a ** 2)
+            )
+
+    @property
+    def Asy(self):  # Shear Area for tubular cross-section
+        if self.a > self.b:
+            return self.Area / (
+                1.63544
+                - 8.34935 * (self.t / self.b)
+                + 0.60125 * (self.a / self.b)
+                + 0.41403 * (self.a / self.b) ** 2
+                + 4.95373 * (self.t * self.a / self.b ** 2)
+            )
+        else:
+            return self.Area / (
+                0.93498
+                - 1.28084 * (self.t / self.a)
+                + 1.36441 * (self.a / self.b)
+                + 0.00295 * (self.b / self.a) ** 2
+                + 0.25797 * (self.t * self.b / self.a ** 2)
+            )
+
+    @property
+    def BdgMxx(self):  # Bending modulus for tubular cross-section
+        return 2 * self.Ixx / self.b
+
+    @property
+    def BdgMyy(self):  # Bending modulus for tubular cross-section =BdgMxx
+        return 2 * self.Iyy / self.a
+
+    @property
+    def TorsConst(self):  # Torsion shear constant for tubular cross-section
+        return 2 * self.t * (self.a - self.t) * (self.b - self.t)

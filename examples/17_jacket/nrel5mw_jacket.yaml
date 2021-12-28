@@ -1,0 +1,97 @@
+name: 5MW Tower only
+
+assembly:
+    turbine_class: I
+    turbulence_class: B
+    drivetrain: Geared
+    rotor_orientation: Upwind
+    number_of_blades: 3
+    hub_height: 90.
+    rotor_diameter: 126.
+    rated_power: 5.e+6
+
+components:
+    tower:
+        outer_shape_bem:
+            reference_axis: &ref_axis_tower
+                x:
+                    grid: [0.0, 1.0]
+                    values: [0.0, 0.0]
+                y:
+                    grid: [0.0, 1.0]
+                    values: [0.0, 0.0]
+                z:
+                    grid: &grid_tower [0., 0.5, 1.]
+                    values: [10., 43.8, 87.6]
+            outer_diameter:
+                grid: *grid_tower
+                values: [6., 4.935, 3.87]
+            drag_coefficient:
+                grid: [0.0, 1.0]
+                values: [1.0, 1.0]
+        internal_structure_2d_fem:
+            outfitting_factor: 1.07
+            reference_axis: *ref_axis_tower
+            layers:
+                - name: tower_wall
+                  material: steel
+                  thickness:
+                    grid: *grid_tower
+                    values: [0.027, 0.0222, 0.019]
+
+    jacket:
+        material: steel
+        transition_piece_mass: 100e3
+        transition_piece_cost: 100e3
+        n_bays: 4
+        n_legs: 3
+        r_foot: 6.
+        r_head: 3.
+        height: 50.
+        q: 0.9
+        l_osg: 5.0
+        l_tp: 4.0
+        gamma_b: 4.0
+        gamma_t: 6.0
+        beta_b: 0.9
+        beta_t: 0.8
+        tau_b: 0.8
+        tau_t: 0.6
+        d_l: 2.
+        x_mb: False
+materials:
+   -  name: steel
+      description: Steel of the jacket, ASTM A572 Grade 50
+      source: http://www.matweb.com/search/DataSheet.aspx?MatGUID=9ced5dc901c54bd1aef19403d0385d7f
+      orth: 0
+      rho: 7800
+      alpha: 0.0
+      E: 200.e+009
+      nu: 0.265
+      G: 79.3e+009
+      GIc: 0  #Place holder, currently not used
+      GIIc: 0  #Place holder, currently not used
+      alp0: 0  #Place holder, currently not used
+      Xt: 1.12e+9
+      Xc: 2.16e+9
+      S: 0
+      Xy: 345.e+6
+      unit_cost: 0.7
+
+environment:
+    air_density: 1.225
+    air_dyn_viscosity: 1.81e-5
+    weib_shape_parameter: 2.
+    air_speed_sound: 340.
+    shear_exp: 0.1
+    water_density: 1025.0
+    water_dyn_viscosity: 1.3351e-3
+    water_depth: 30.0
+    significant_wave_height: 4.52
+    significant_wave_period: 9.45
+    soil_shear_modulus: 140.e+6
+    soil_poisson: 0.4
+
+costs:
+    labor_rate: 58.8
+    painting_rate: 30.0

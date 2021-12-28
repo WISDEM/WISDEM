@@ -1,4 +1,4 @@
-.. module:: wisdem.ccblade
+.. module:: wisdem.ccblade.ccblade
 
 .. _ccblade_interfaces-label:
 

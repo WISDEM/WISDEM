@@ -63,23 +63,23 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
     ix = 0
     iy = 0
     iz = 0
+    imode = np.argmax(mpfs, axis=1)
     for m in range(nfreq):
-        if mpfs[m, :].max() < 1e-11:
+        if np.isnan(freqs[m]) or freqs[m] < 1e-1 or mpfs[m, :].max() < 1e-11:
             continue
-        imode = np.argmax(mpfs[m, :])
-        if imode == 0:
+        if imode[m] == 0:
             if ix >= nfreq2:
                 continue
             mshapes_x[ix, :] = xpolys[m, :]
             freq_x[ix] = freqs[m]
             ix += 1
-        elif imode == 1:
+        elif imode[m] == 1:
             if iy >= nfreq2:
                 continue
             mshapes_y[iy, :] = ypolys[m, :]
             freq_y[iy] = freqs[m]
             iy += 1
-        elif imode == 2:
+        elif imode[m] == 2:
             if iz >= nfreq2:
                 continue
             mshapes_z[iz, :] = zpolys[m, :]
@@ -563,7 +563,7 @@ def closest_node(nodemat, inode):
     return np.sqrt(np.sum((xyz - inode[np.newaxis, :]) ** 2, axis=1)).argmin()
 
 
-def nodal2sectional(x):
+def nodal2sectional(x, axis=0):
     """Averages nodal data to be length-1 vector of sectional data
 
     INPUTS:
@@ -574,9 +574,19 @@ def nodal2sectional(x):
     -------
     y   : float vector,  sectional data
     """
-    y = 0.5 * (x[:-1] + x[1:])
-    dy = np.c_[0.5 * np.eye(y.size), np.zeros(y.size)]
-    dy[np.arange(y.size), 1 + np.arange(y.size)] = 0.5
+    if x.ndim == 1:
+        y = 0.5 * (x[:-1] + x[1:])
+        dy = np.c_[0.5 * np.eye(y.size), np.zeros(y.size)]
+        dy[np.arange(y.size), 1 + np.arange(y.size)] = 0.5
+    elif x.ndim == 2 and axis == 0:
+        y = 0.5 * (x[:-1, :] + x[1:, :])
+        dy = None
+    elif x.ndim == 2 and axis == 1:
+        y = 0.5 * (x[:, :-1] + x[:, 1:])
+        dy = None
+    else:
+        raise ValueError("Only 2 dimensions supported")
+
     return y, dy
 
 

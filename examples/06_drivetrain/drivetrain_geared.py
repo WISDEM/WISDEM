@@ -11,6 +11,7 @@ opt_flag = False  # True
 # Set input options
 opt = {}
 opt["WISDEM"] = {}
+opt["WISDEM"]["n_dlc"] = 1
 opt["WISDEM"]["DriveSE"] = {}
 opt["WISDEM"]["DriveSE"]["direct"] = False
 opt["WISDEM"]["DriveSE"]["hub"] = {}
@@ -29,7 +30,7 @@ opt["flags"]["generator"] = False
 
 # Initialize OpenMDAO problem
 prob = om.Problem()
-prob.model = DrivetrainSE(modeling_options=opt, n_dlcs=1)
+prob.model = DrivetrainSE(modeling_options=opt)
 # ---
 
 # If performing optimization, set up the optimizer and problem formulation

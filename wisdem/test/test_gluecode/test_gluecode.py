@@ -21,9 +21,7 @@ class TestRegression(unittest.TestCase):
         ## NREL 5MW
         fname_wt_input = test_dir + "nrel5mw.yaml"
 
-        wt_opt, _, _ = run_wisdem(
-            fname_wt_input, fname_modeling_options, fname_analysis_options
-        )
+        wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
         self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 16403.682326940743, 2)
         self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 23.8785992698, 2)
@@ -34,22 +32,18 @@ class TestRegression(unittest.TestCase):
     def test15MW(self):
         ## IEA 15MW
         fname_wt_input = test_dir + "IEA-15-240-RWT.yaml"
-        wt_opt, _, _ = run_wisdem(
-            fname_wt_input, fname_modeling_options, fname_analysis_options
-        )
+        wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
-        self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 69911.6542917299, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 78.0287135486, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 83.5124646409, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.5239505171, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 68693.1923999787, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 77.9970561572, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 80.5866549026, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.5320783086, 1)
         self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 144.386, 3)
 
     def test3p4MW(self):
         ## IEA 3.4MW
         fname_wt_input = test_dir + "IEA-3p4-130-RWT.yaml"
-        wt_opt, _, _ = run_wisdem(
-            fname_wt_input, fname_modeling_options, fname_analysis_options
-        )
+        wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
         self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 14555.7435212969, 1)
         self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 13.6028951462, 1)

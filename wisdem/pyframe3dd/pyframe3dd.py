@@ -368,49 +368,34 @@ class Frame(object):
         """docstring"""
 
         self.nodes = nodes
-        self.reactions = reactions
         self.elements = elements
         self.options = options
 
         # convert to C int size (not longs) and copy to prevent releasing (b/c address space is shared by c)
 
         # nodes
-        self.nnode = np.array(nodes.node).astype(np.int32)
-        self.nx = np.copy(nodes.x)
-        self.ny = np.copy(nodes.y)
-        self.nz = np.copy(nodes.z)
-        self.nr = np.copy(nodes.r)
+        self.nnode = np.array(nodes.node).astype(np.int32).flatten()
+        self.nx = np.copy(nodes.x).flatten()
+        self.ny = np.copy(nodes.y).flatten()
+        self.nz = np.copy(nodes.z).flatten()
+        self.nr = np.copy(nodes.r).flatten()
 
-        # reactions
+        self.set_reactions(reactions)
 
-        if len(reactions.node) == 0:
-            self.rnode = np.array([]).astype(np.int32)
-            self.rKx = self.rKy = self.rKz = self.rKtx = self.rKty = self.rKtz = np.array([]).astype(np.float64)
-            rigid = 1
-        else:
-            self.rnode = np.array(reactions.node).astype(np.int32)
-            # convert rather than copy to allow old syntax of integers
-            self.rKx = np.array(reactions.Kx).astype(np.float64)
-            self.rKy = np.array(reactions.Ky).astype(np.float64)
-            self.rKz = np.array(reactions.Kz).astype(np.float64)
-            self.rKtx = np.array(reactions.Ktx).astype(np.float64)
-            self.rKty = np.array(reactions.Kty).astype(np.float64)
-            self.rKtz = np.array(reactions.Ktz).astype(np.float64)
-            rigid = reactions.rigid
         # elements
-        self.eelement = np.array(elements.element).astype(np.int32)
-        self.eN1 = np.array(elements.N1).astype(np.int32)
-        self.eN2 = np.array(elements.N2).astype(np.int32)
-        self.eAx = np.copy(elements.Ax)
-        self.eAsy = np.copy(elements.Asy)
-        self.eAsz = np.copy(elements.Asz)
-        self.eJx = np.copy(elements.Jx)
-        self.eIy = np.copy(elements.Iy)
-        self.eIz = np.copy(elements.Iz)
-        self.eE = np.copy(elements.E)
-        self.eG = np.copy(elements.G)
-        self.eroll = np.copy(elements.roll)
-        self.edensity = np.copy(elements.density)
+        self.eelement = np.array(elements.element).astype(np.int32).flatten()
+        self.eN1 = np.array(elements.N1).astype(np.int32).flatten()
+        self.eN2 = np.array(elements.N2).astype(np.int32).flatten()
+        self.eAx = np.copy(elements.Ax).flatten()
+        self.eAsy = np.copy(elements.Asy).flatten()
+        self.eAsz = np.copy(elements.Asz).flatten()
+        self.eJx = np.copy(elements.Jx).flatten()
+        self.eIy = np.copy(elements.Iy).flatten()
+        self.eIz = np.copy(elements.Iz).flatten()
+        self.eE = np.copy(elements.E).flatten()
+        self.eG = np.copy(elements.G).flatten()
+        self.eroll = np.copy(elements.roll).flatten()
+        self.edensity = np.copy(elements.density).flatten()
 
         # Compute length of elements
         self.eL = np.sqrt(
@@ -421,18 +406,6 @@ class Frame(object):
 
         # create c objects
         self.c_nodes = C_Nodes(len(self.nnode), ip(self.nnode), dp(self.nx), dp(self.ny), dp(self.nz), dp(self.nr))
-
-        self.c_reactions = C_Reactions(
-            len(self.rnode),
-            ip(self.rnode),
-            dp(self.rKx),
-            dp(self.rKy),
-            dp(self.rKz),
-            dp(self.rKtx),
-            dp(self.rKty),
-            dp(self.rKtz),
-            rigid,
-        )
 
         self.c_elements = C_Elements(
             len(self.eelement),
@@ -501,6 +474,36 @@ class Frame(object):
 
         self._pyframe3dd.run.restype = c_int
 
+    def set_reactions(self, reactions):
+        # reactions
+        self.reactions = reactions
+        if len(reactions.node) == 0:
+            self.rnode = np.array([]).astype(np.int32)
+            self.rKx = self.rKy = self.rKz = self.rKtx = self.rKty = self.rKtz = np.array([]).astype(np.float64)
+            rigid = 1
+        else:
+            self.rnode = np.array(reactions.node).astype(np.int32).flatten()
+            # convert rather than copy to allow old syntax of integers
+            self.rKx = np.array(reactions.Kx).astype(np.float64).flatten()
+            self.rKy = np.array(reactions.Ky).astype(np.float64).flatten()
+            self.rKz = np.array(reactions.Kz).astype(np.float64).flatten()
+            self.rKtx = np.array(reactions.Ktx).astype(np.float64).flatten()
+            self.rKty = np.array(reactions.Kty).astype(np.float64).flatten()
+            self.rKtz = np.array(reactions.Ktz).astype(np.float64).flatten()
+            rigid = reactions.rigid
+
+        self.c_reactions = C_Reactions(
+            len(self.rnode),
+            ip(self.rnode),
+            dp(self.rKx),
+            dp(self.rKy),
+            dp(self.rKz),
+            dp(self.rKtx),
+            dp(self.rKty),
+            dp(self.rKtz),
+            rigid,
+        )
+
     def addLoadCase(self, loadCase):
         self.loadCases.append(loadCase)
 
@@ -509,18 +512,21 @@ class Frame(object):
 
     def changeExtraNodeMass(self, node, mass, Ixx, Iyy, Izz, Ixy, Ixz, Iyz, rhox, rhoy, rhoz, addGravityLoad):
 
-        self.ENMnode = np.array(node).astype(np.int32)
-        self.ENMmass = np.copy(mass)
-        self.ENMIxx = np.copy(Ixx)
-        self.ENMIyy = np.copy(Iyy)
-        self.ENMIzz = np.copy(Izz)
-        self.ENMIxy = np.copy(Ixy)
-        self.ENMIxz = np.copy(Ixz)
-        self.ENMIyz = np.copy(Iyz)
-        self.ENMrhox = np.copy(rhox)
-        self.ENMrhoy = np.copy(rhoy)
-        self.ENMrhoz = np.copy(rhoz)
-        self.addGravityLoadForExtraNodeMass = addGravityLoad
+        self.ENMnode = np.array(node).astype(np.int32).flatten()
+        nnode = len(self.ENMnode)
+        self.ENMmass = np.copy(mass).flatten()
+        self.ENMIxx = np.copy(Ixx).flatten()
+        self.ENMIyy = np.copy(Iyy).flatten()
+        self.ENMIzz = np.copy(Izz).flatten()
+        self.ENMIxy = np.copy(Ixy).flatten()
+        self.ENMIxz = np.copy(Ixz).flatten()
+        self.ENMIyz = np.copy(Iyz).flatten()
+        self.ENMrhox = np.copy(rhox).flatten()
+        self.ENMrhoy = np.copy(rhoy).flatten()
+        self.ENMrhoz = np.copy(rhoz).flatten()
+        self.addGravityLoadForExtraNodeMass = (
+            [addGravityLoad] * nnode if isinstance(addGravityLoad, bool) else list(addGravityLoad)
+        )
 
         self.c_extraInertia = C_ExtraInertia(
             len(self.ENMnode),
@@ -540,22 +546,25 @@ class Frame(object):
     def changeExtraElementMass(self, element, mass, addGravityLoad):
 
         self.EEMelement = np.array(element).astype(np.int32)
-        self.EEMmass = np.copy(mass)
-        self.addGravityLoadForExtraElementMass = addGravityLoad
+        nelem = len(self.EEMelement)
+        self.EEMmass = np.copy(mass).flatten()
+        self.addGravityLoadForExtraElementMass = (
+            [addGravityLoad] * nelem if isinstance(addGravityLoad, bool) else list(addGravityLoad)
+        )
 
         self.c_extraMass = C_ExtraMass(len(self.EEMelement), ip(self.EEMelement), dp(self.EEMmass))
 
     def changeCondensationData(self, Cmethod, N, cx, cy, cz, cxx, cyy, czz, m):
         # I don't think this is actually used in Frame3DD anyway
 
-        self.NC = np.array(N).astype(np.int32)
-        self.cx = np.copy(cx)
-        self.cy = np.copy(cy)
-        self.cz = np.copy(cz)
-        self.cxx = np.copy(cxx)
-        self.cyy = np.copy(cyy)
-        self.czz = np.copy(czz)
-        self.mC = np.array(m).astype(np.int32)
+        self.NC = np.array(N).astype(np.int32).flatten()
+        self.cx = np.copy(cx).flatten()
+        self.cy = np.copy(cy).flatten()
+        self.cz = np.copy(cz).flatten()
+        self.cxx = np.copy(cxx).flatten()
+        self.cyy = np.copy(cyy).flatten()
+        self.czz = np.copy(czz).flatten()
+        self.mC = np.array(m).astype(np.int32).flatten()
 
         self.c_condensation = C_Condensation(
             Cmethod,
@@ -580,7 +589,7 @@ class Frame(object):
 
     def __addGravityToExtraMass(self):
 
-        if self.addGravityLoadForExtraNodeMass:
+        if np.any(self.addGravityLoadForExtraNodeMass):
 
             # need to save all in memory
             nLC = len(self.loadCases)
@@ -608,6 +617,8 @@ class Frame(object):
                 self.PLMz[icase] = np.copy(lc.Mzz)
 
                 for iextra in range(len(self.ENMnode)):
+                    if not self.addGravityLoadForExtraNodeMass[iextra]:
+                        continue
                     Nm = self.ENMnode[iextra]
                     mass = self.ENMmass[iextra]
                     x = self.ENMrhox[iextra]
@@ -647,7 +658,7 @@ class Frame(object):
                     dp(self.PLMz[icase]),
                 )
 
-        if self.addGravityLoadForExtraElementMass:
+        if np.any(self.addGravityLoadForExtraElementMass):
 
             L = self.eL
 
@@ -669,6 +680,8 @@ class Frame(object):
 
                 # iterate through additional mass
                 for iextra in range(len(self.EEMelement)):
+                    if not self.addGravityLoadForExtraElementMass[iextra]:
+                        continue
 
                     element = self.EEMelement[iextra]
                     mass = self.EEMmass[iextra]
@@ -707,7 +720,7 @@ class Frame(object):
                     dp(self.IPLxE[icase]),
                 )
 
-    def run(self):
+    def run(self, nanokay=False):
 
         nCases = len(self.loadCases)  # number of load cases
         nN = len(self.nodes.node)  # number of nodes
@@ -922,9 +935,11 @@ class Frame(object):
         )
 
         nantest = np.isnan(np.c_[fout.Nx, fout.Vy, fout.Vz, fout.Txx, fout.Myy, fout.Mzz])
-        if (exitCode == 182 or exitCode == 183) and not np.any(nantest):
+        if not nanokay and np.any(nantest):
+            raise RuntimeError("Frame3DD did not exit gracefully")
+        elif exitCode == 182 or exitCode == 183:
             pass
-        elif exitCode != 0 or np.any(nantest):
+        elif exitCode != 0:
             raise RuntimeError("Frame3DD did not exit gracefully")
 
         # put mass values back in since tuple is read only
@@ -1194,7 +1209,7 @@ class Frame(object):
         f.write("# End of input data file\n")
         f.close()
 
-    def draw(self):
+    def draw(self, savefig=False, fig_idx=0):
         # Visualization for debugging
         import matplotlib.pyplot as plt
 
@@ -1217,7 +1232,11 @@ class Frame(object):
             zs = np.array([mynodes[e[0]][2], mynodes[e[1]][2]])
             ax.plot(xs, ys, zs, "b-")
         ax.plot(node_array[:, 0], node_array[:, 1], node_array[:, 2], ".k", markersize=10)
-        plt.show()
+
+        if savefig:
+            plt.savefig(f"frame3dd_{fig_idx}.png")
+        else:
+            plt.show()
 
 
 class StaticLoadCase(object):
