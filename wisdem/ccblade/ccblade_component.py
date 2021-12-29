@@ -432,7 +432,7 @@ class CCBladeTwist(ExplicitComponent):
             "aoa_op",
             val=np.pi * np.ones(n_span),
             desc="1D array with the operational angles of attack for the airfoils along blade span.",
-            units = "rad",
+            units="rad",
         )
         self.add_input("airfoils_aoa", val=np.zeros((n_aoa)), units="deg", desc="angle of attack grid for polars")
         self.add_input("airfoils_cl", val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc="lift coefficients, spanwise")
@@ -557,32 +557,32 @@ class CCBladeTwist(ExplicitComponent):
 
         # Create the CCBlade class instance
         ccblade = CCBlade(
-                inputs["r"],
-                inputs["chord"],
-                np.zeros_like(inputs["chord"]),
-                af,
-                inputs["Rhub"],
-                inputs["Rtip"],
-                discrete_inputs["nBlades"],
-                inputs["rho"],
-                inputs["mu"],
-                inputs["precone"],
-                inputs["tilt"],
-                inputs["yaw"],
-                inputs["shearExp"],
-                inputs["hub_height"],
-                discrete_inputs["nSector"],
-                inputs["precurve"],
-                inputs["precurveTip"],
-                inputs["presweep"],
-                inputs["presweepTip"],
-                discrete_inputs["tiploss"],
-                discrete_inputs["hubloss"],
-                discrete_inputs["wakerotation"],
-                discrete_inputs["usecd"],
-            )
+            inputs["r"],
+            inputs["chord"],
+            np.zeros_like(inputs["chord"]),
+            af,
+            inputs["Rhub"],
+            inputs["Rtip"],
+            discrete_inputs["nBlades"],
+            inputs["rho"],
+            inputs["mu"],
+            inputs["precone"],
+            inputs["tilt"],
+            inputs["yaw"],
+            inputs["shearExp"],
+            inputs["hub_height"],
+            discrete_inputs["nSector"],
+            inputs["precurve"],
+            inputs["precurveTip"],
+            inputs["presweep"],
+            inputs["presweepTip"],
+            discrete_inputs["tiploss"],
+            discrete_inputs["hubloss"],
+            discrete_inputs["wakerotation"],
+            discrete_inputs["usecd"],
+        )
 
-        Omega = inputs["tsr"] * inputs["Uhub"] / inputs["r"][-1]*30./np.pi
+        Omega = inputs["tsr"] * inputs["Uhub"] / inputs["r"][-1] * 30.0 / np.pi
 
         if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
             if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["flag"]:
@@ -598,7 +598,7 @@ class CCBladeTwist(ExplicitComponent):
             aoa_op = inputs["aoa_op"]
             for i in range(self.n_span):
                 # Use the required angle of attack if defined. If it isn't defined (==pi), then take the stall point minus the margin
-                if abs(aoa_op[i] - np.pi) < 1.e-4:
+                if abs(aoa_op[i] - np.pi) < 1.0e-4:
                     af[i].eval_unsteady(
                         inputs["airfoils_aoa"],
                         inputs["airfoils_cl"][i, :, 0, 0],
@@ -628,6 +628,22 @@ class CCBladeTwist(ExplicitComponent):
                     break
         else:
             ccblade.theta = inputs["theta_in"]
+
+        # Smooth out twist profile if we're doing inverse and inn_af design
+        if (
+            self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]
+            and self.options["modeling_options"]["WISDEM"]["RotorSE"]["inn_af"]
+        ):
+            n_opt = self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
+            training_theta = np.copy(ccblade.theta)
+            s = (inputs["r"] - inputs["r"][0]) / (inputs["r"][-1] - inputs["r"][0])
+
+            twist_spline = PchipInterpolator(s, training_theta)
+            theta_opt = twist_spline(inputs["s_opt_theta"])
+
+            twist_spline = PchipInterpolator(inputs["s_opt_theta"], theta_opt)
+            theta_full = twist_spline(s)
+            ccblade.theta = theta_full
 
         # Turn off the inverse analysis
         ccblade.inverse_analysis = False

@@ -5,8 +5,8 @@ import os
 
 import numpy as np
 import openmdao.api as om
-from wisdem.towerse.tower import TowerSE
 from wisdem.commonse.fileIO import save_data
+from wisdem.fixed_bottomse.monopile import MonopileSE
 
 # Set analysis and optimization options and define geometry
 plot_flag = False
@@ -37,42 +37,40 @@ max_diam = 8.0
 modeling_options = {}
 modeling_options["flags"] = {}
 modeling_options["materials"] = {}
+modeling_options["materials"]["n_mat"] = n_materials
 modeling_options["WISDEM"] = {}
-modeling_options["WISDEM"]["TowerSE"] = {}
-modeling_options["WISDEM"]["TowerSE"]["buckling_length"] = 30.0
-modeling_options["WISDEM"]["TowerSE"]["buckling_method"] = "dnvgl"
-modeling_options["WISDEM"]["TowerSE"]["n_refine"] = 3
+modeling_options["WISDEM"]["n_dlc"] = n_load_cases
+modeling_options["WISDEM"]["FixedBottomSE"] = {}
+modeling_options["WISDEM"]["FixedBottomSE"]["buckling_length"] = 30.0
+modeling_options["WISDEM"]["FixedBottomSE"]["buckling_method"] = "dnvgl"
+modeling_options["WISDEM"]["FixedBottomSE"]["n_refine"] = 3
 modeling_options["flags"]["monopile"] = True
 
 # Monopile foundation
-modeling_options["WISDEM"]["TowerSE"]["soil_springs"] = True
-modeling_options["WISDEM"]["TowerSE"]["gravity_foundation"] = False
+modeling_options["WISDEM"]["FixedBottomSE"]["soil_springs"] = True
+modeling_options["WISDEM"]["FixedBottomSE"]["gravity_foundation"] = False
 
 # safety factors
-modeling_options["WISDEM"]["TowerSE"]["gamma_f"] = 1.35
-modeling_options["WISDEM"]["TowerSE"]["gamma_m"] = 1.3
-modeling_options["WISDEM"]["TowerSE"]["gamma_n"] = 1.0
-modeling_options["WISDEM"]["TowerSE"]["gamma_b"] = 1.1
-modeling_options["WISDEM"]["TowerSE"]["gamma_fatigue"] = 1.35 * 1.3 * 1.0
+modeling_options["WISDEM"]["FixedBottomSE"]["gamma_f"] = 1.35
+modeling_options["WISDEM"]["FixedBottomSE"]["gamma_m"] = 1.3
+modeling_options["WISDEM"]["FixedBottomSE"]["gamma_n"] = 1.0
+modeling_options["WISDEM"]["FixedBottomSE"]["gamma_b"] = 1.1
+modeling_options["WISDEM"]["FixedBottomSE"]["gamma_fatigue"] = 1.35 * 1.3 * 1.0
 
 # Frame3DD options
-modeling_options["WISDEM"]["TowerSE"]["frame3dd"] = {}
-modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["shear"] = True
-modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["geom"] = True
-modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["tol"] = 1e-9
+modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"] = {}
+modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["shear"] = True
+modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["geom"] = True
+modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["tol"] = 1e-9
 
-modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = n_control_points
-modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = 1
-modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = n_control_points
-modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 1
-modeling_options["WISDEM"]["TowerSE"]["wind"] = "PowerWind"
-modeling_options["WISDEM"]["TowerSE"]["nLC"] = n_load_cases
-modeling_options["materials"]["n_mat"] = n_materials
+modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = n_control_points
+modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"] = 1
+modeling_options["WISDEM"]["FixedBottomSE"]["wind"] = "PowerWind"
 # ---
 
-# Instantiate OpenMDAO problem and create a model using the TowerSE group
+# Instantiate OpenMDAO problem and create a model using the FixedBottomSE group
 prob = om.Problem()
-prob.model = TowerSE(modeling_options=modeling_options)
+prob.model = MonopileSE(modeling_options=modeling_options)
 # ---
 
 # If performing optimization, set up the optimizer and problem formulation
@@ -83,29 +81,22 @@ if opt_flag:
 
     # Add objective
     # prob.model.add_objective('tower_mass', scaler=1e-6) # Only tower
-    # prob.model.add_objective('monopile_mass', scaler=1e-6) # Only monopile
-    prob.model.add_objective("structural_mass", scaler=1e-6)  # Both
+    # prob.model.add_objective("structural_mass", scaler=1e-6)  # Both
+    prob.model.add_objective("monopile_mass", scaler=1e-6)  # Only monopile
 
     # Add design variables, in this case the tower diameter and wall thicknesses
     prob.model.add_design_var("monopile_outer_diameter_in", lower=3.87, upper=max_diam)
     prob.model.add_design_var("monopile_layer_thickness", lower=4e-3, upper=2e-1)
 
-    prob.model.add_design_var("tower_outer_diameter_in", lower=3.87, upper=max_diam)
-    prob.model.add_design_var("tower_layer_thickness", lower=4e-3, upper=2e-1)
-
     # Add constraints on the tower design
-    prob.model.add_constraint("post1.constr_stress", upper=1.0)
-    prob.model.add_constraint("post1.constr_global_buckling", upper=1.0)
-    prob.model.add_constraint("post1.constr_shell_buckling", upper=1.0)
-    prob.model.add_constraint("post2.constr_stress", upper=1.0)
-    prob.model.add_constraint("post2.constr_global_buckling", upper=1.0)
-    prob.model.add_constraint("post2.constr_shell_buckling", upper=1.0)
-    prob.model.add_constraint("constr_d_to_t", lower=120.0, upper=500.0)
+    prob.model.add_constraint("post.constr_stress", upper=1.0)
+    prob.model.add_constraint("post.constr_global_buckling", upper=1.0)
+    prob.model.add_constraint("post.constr_shell_buckling", upper=1.0)
+    prob.model.add_constraint("constr_d_to_t", lower=80.0, upper=500.0)
     prob.model.add_constraint("constr_taper", lower=0.2)
     prob.model.add_constraint("slope", upper=1.0)
     prob.model.add_constraint("suctionpile_depth", lower=0.0)
-    prob.model.add_constraint("tower1.f1", lower=0.13, upper=0.40)
-    prob.model.add_constraint("tower2.f1", lower=0.13, upper=0.40)
+    prob.model.add_constraint("monopile.f1", lower=0.13, upper=0.40)
     # ---
 
 # Set up the OpenMDAO problem
@@ -113,24 +104,17 @@ prob.setup()
 # ---
 
 # Set geometry and turbine values
-prob["hub_height"] = hubH
 prob["water_depth"] = water_depth
-
-prob["tower_foundation_height"] = htrans
-prob["tower_height"] = h_paramT.sum()
-prob["tower_s"] = np.cumsum(np.r_[0.0, h_paramT]) / h_paramT.sum()
-prob["tower_outer_diameter_in"] = d_paramT
-prob["tower_layer_thickness"] = t_paramT.reshape((1, -1))
-prob["tower_outfitting_factor"] = 1.07
 
 prob["transition_piece_mass"] = 100e3
 
 prob["monopile_foundation_height"] = -55.0
+prob["tower_foundation_height"] = 10.0
 prob["monopile_height"] = h_paramM.sum()
 prob["monopile_s"] = np.cumsum(np.r_[0.0, h_paramM]) / h_paramM.sum()
 prob["monopile_outer_diameter_in"] = d_paramM
 prob["monopile_layer_thickness"] = t_paramM.reshape((1, -1))
-prob["monopile_outfitting_factor"] = 1.07
+prob["outfitting_factor_in"] = 1.07
 
 prob["yaw"] = 0.0
 
@@ -146,18 +130,6 @@ prob["sigma_y_mat"] = [450e6]
 prob["sigma_ult_mat"] = 600e6 * np.ones((n_materials, 3))
 prob["wohler_exp_mat"] = [10.0]
 prob["wohler_A_mat"] = [10.0]
-
-# extra mass from RNA
-prob["rna_mass"] = np.array([285598.8])
-mIxx = 1.14930678e08
-mIyy = 2.20354030e07
-mIzz = 1.87597425e07
-mIxy = 0.0
-mIxz = 5.03710467e05
-mIyz = 0.0
-prob["rna_I"] = np.array([mIxx, mIyy, mIzz, mIxy, mIxz, mIyz])
-prob["rna_cg"] = np.array([-1.13197635, 0.0, 0.50875268])
-# ---
 
 # cost rates
 prob["unit_cost_mat"] = [2.0]  # USD/kg
@@ -175,7 +147,7 @@ prob["mu_water"] = 1.3351e-3
 prob["beta_wind"] = 0.0
 prob["Hsig_wave"] = 4.52
 prob["Tsig_wave"] = 9.52
-if modeling_options["WISDEM"]["TowerSE"]["wind"] == "PowerWind":
+if modeling_options["WISDEM"]["FixedBottomSE"]["wind"] == "PowerWind":
     prob["shearExp"] = 0.1
 # ---
 
@@ -183,27 +155,12 @@ if modeling_options["WISDEM"]["TowerSE"]["wind"] == "PowerWind":
 # two load cases.  TODO: use a case iterator
 
 # --- loading case 1: max Thrust ---
-prob["wind1.Uref"] = 11.73732
-Fx1 = 1284744.19620519
-Fy1 = 0.0
-Fz1 = -2914124.84400512
-Mxx1 = 3963732.76208099
-Myy1 = -2275104.79420872
-Mzz1 = -346781.68192839
-prob["pre1.rna_F"] = np.array([Fx1, Fy1, Fz1])
-prob["pre1.rna_M"] = np.array([Mxx1, Myy1, Mzz1])
-# ---------------
-
-# --- loading case 2: max Wind Speed ---
-prob["wind2.Uref"] = 70.0
-Fx2 = 930198.60063279
-Fy2 = 0.0
-Fz2 = -2883106.12368949
-Mxx2 = -1683669.22411597
-Myy2 = -2522475.34625363
-Mzz2 = 147301.97023764
-prob["pre2.rna_F"] = np.array([Fx2, Fy2, Fz2])
-prob["pre2.rna_M"] = np.array([Mxx2, Myy2, Mzz2])
+prob["env1.Uref"] = 11.73732
+prob["env2.Uref"] = 70.0
+prob["monopile.turbine_F"] = np.c_[[1.28474420e06, 0.0, -1.05294614e07], [9.30198601e05, 0.0, -1.13508479e07]]
+prob["monopile.turbine_M"] = np.c_[
+    [4009825.86806202, 92078894.58132489, -346781.68192839], [-1704977.30124085, 65817554.0892837, 147301.97023764]
+]
 # ---------------
 
 # run the analysis or optimization
@@ -222,51 +179,36 @@ z = 0.5 * (prob["z_full"][:-1] + prob["z_full"][1:])
 print("zs =", prob["z_full"])
 print("ds =", prob["d_full"])
 print("ts =", prob["t_full"])
-print("mass (kg) =", prob["tower_mass"])
-print("cg (m) =", prob["tower_center_of_mass"])
+print("mass (kg) =", prob["monopile_mass"])
+print("cg (m) =", prob["monopile_z_cg"])
 print("d:t constraint =", prob["constr_d_to_t"])
 print("taper ratio constraint =", prob["constr_taper"])
-print("\nwind: ", prob["wind1.Uref"])
-print("freq (Hz) =", prob["tower1.structural_frequencies"])
-print("Fore-aft mode shapes =", prob["tower1.fore_aft_modes"])
-print("Side-side mode shapes =", prob["tower1.side_side_modes"])
-print("top_deflection1 (m) =", prob["tower1.top_deflection"])
-print("Tower base forces1 (N) =", prob["tower1.base_F"])
-print("Tower base moments1 (Nm) =", prob["tower1.base_M"])
-print("stress1 =", prob["post1.constr_stress"])
-print("GL buckling =", prob["post1.constr_global_buckling"])
-print("Shell buckling =", prob["post1.constr_shell_buckling"])
-print("\nwind: ", prob["wind2.Uref"])
-print("freq (Hz) =", prob["tower2.structural_frequencies"])
-print("Fore-aft mode shapes =", prob["tower2.fore_aft_modes"])
-print("Side-side mode shapes =", prob["tower2.side_side_modes"])
-print("top_deflection2 (m) =", prob["tower2.top_deflection"])
-print("Tower base forces2 (N) =", prob["tower2.base_F"])
-print("Tower base moments2 (Nm) =", prob["tower2.base_M"])
-print("stress2 =", prob["post2.constr_stress"])
-print("GL buckling =", prob["post2.constr_global_buckling"])
-print("Shell buckling =", prob["post2.constr_shell_buckling"])
+print("\nwind: ", prob["env1.Uref"], prob["env2.Uref"])
+print("freq (Hz) =", prob["monopile.structural_frequencies"])
+print("Fore-aft mode shapes =", prob["monopile.fore_aft_modes"])
+print("Side-side mode shapes =", prob["monopile.side_side_modes"])
+print("top_deflection1 (m) =", prob["monopile.top_deflection"])
+print("Monopile base forces1 (N) =", prob["monopile.mudline_F"])
+print("Monopile base moments1 (Nm) =", prob["monopile.mudline_M"])
+print("stress1 =", prob["post.constr_stress"])
+print("GL buckling =", prob["post.constr_global_buckling"])
+print("Shell buckling =", prob["post.constr_shell_buckling"])
 
 if plot_flag:
     import matplotlib.pyplot as plt
 
-    # Old line plot
-    stress1 = np.copy(prob["post1.constr_stress"])
-    shellBuckle1 = np.copy(prob["post1.constr_shell_buckling"])
-    globalBuckle1 = np.copy(prob["post1.constr_global_buckling"])
-
-    stress2 = prob["post2.constr_stress"]
-    shellBuckle2 = prob["post2.constr_shell_buckling"]
-    globalBuckle2 = prob["post2.constr_global_buckling"]
+    stress = prob["post.constr_stress"]
+    shellBuckle = prob["post.constr_shell_buckling"]
+    globalBuckle = prob["post.constr_global_buckling"]
 
     plt.figure(figsize=(5.0, 3.5))
     plt.subplot2grid((3, 3), (0, 0), colspan=2, rowspan=3)
-    plt.plot(stress1, z, label="stress 1")
-    plt.plot(stress2, z, label="stress 2")
-    plt.plot(shellBuckle1, z, label="shell buckling 1")
-    plt.plot(shellBuckle2, z, label="shell buckling 2")
-    plt.plot(globalBuckle1, z, label="global buckling 1")
-    plt.plot(globalBuckle2, z, label="global buckling 2")
+    plt.plot(stress[:, 0], z, label="stress 1")
+    plt.plot(stress[:, 1], z, label="stress 2")
+    plt.plot(shellBuckle[:, 0], z, label="shell buckling 1")
+    plt.plot(shellBuckle[:, 1], z, label="shell buckling 2")
+    plt.plot(globalBuckle[:, 0], z, label="global buckling 1")
+    plt.plot(globalBuckle[:, 1], z, label="global buckling 2")
     plt.legend(bbox_to_anchor=(1.05, 1.0), loc=2)
     plt.xlabel("utilization")
     plt.ylabel("height along tower (m)")

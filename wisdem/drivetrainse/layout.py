@@ -566,7 +566,7 @@ class GearedLayout(Layout):
         m_bedplate = myI.Area * L_bedplate * bedplate_rho
         cg_bedplate = np.r_[Cup * (L_overhang - 0.5 * L_bedplate), 0.0, myI.CG]  # from tower top
         I_bedplate = (
-            bedplate_rho * L_bedplate * np.r_[myI.Jxx, myI.Iyy, myI.Izz]
+            bedplate_rho * L_bedplate * np.r_[myI.J0, myI.Ixx, myI.Iyy]
             + m_bedplate * L_bedplate ** 2 / 12.0 * np.r_[0.0, 1.0, 1.0]
             + m_bedplate * yoff ** 2 * np.r_[1.0, 0.0, 1.0]
         )

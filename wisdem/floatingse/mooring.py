@@ -260,7 +260,7 @@ class Mooring(om.ExplicitComponent):
         # Plotting data
         plotMat = np.zeros((n_lines, NPTS_PLOT, 3))
         for k in range(n_lines):
-            Xs, Ys, Zs = ms.lineList[k].getLineCoords(0.0)
+            Xs, Ys, Zs, _ = ms.lineList[k].getLineCoords(0.0)
             plotMat[k, :, 0] = Xs
             plotMat[k, :, 1] = Ys
             plotMat[k, :, 2] = Zs

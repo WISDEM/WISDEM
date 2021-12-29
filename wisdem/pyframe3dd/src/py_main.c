@@ -591,7 +591,7 @@ ALLOW_DLL_CALL int run(Nodes* nodes, Reactions* reactions, Elements* elements,
 
     M   = dmatrix(1,DoF,1,DoF);
     f   = dvector(1,nM_calc);
-    V   = dmatrix(1,DoF,1,nM_calc);
+    V   = dmatrix(1,2*DoF,1,nM_calc);
 
     assemble_M ( M, DoF, nN, nE, xyz, rj, L, N1,N2,
 		 Ax, Jx,Iy,Iz, p, d, EMs, NMs, NMx, NMy, NMz,

@@ -472,16 +472,16 @@ contains
                 xu1 = xsec_node(is,1)
                 xu2 = xsec_node(is,nsects+1)
                 if (xu2 .gt. xnode_u(nodes_u)) then
-                    write(*,*) &
-                        ' ERROR** upper-surf last sector node out of bounds'
+                   write(*,*) &
+                        ' ERROR** upper-surf last sector node out of bounds', xu2, xnode_u(nodes_u)
                     stop
                 endif
             else
                 xl1 = xsec_node(is,1)
                 xl2 = xsec_node(is,nsects+1)
                 if (xl2 .gt. xnode_l(nodes_l)) then
-                    write(*,*) &
-                        ' ERROR** lower-surf last sector node out of bounds'
+                   write(*,*) &
+                        ' ERROR** lower-surf last sector node out of bounds', xl2, xnode_l(nodes_l)
                     stop
                 endif
             endif

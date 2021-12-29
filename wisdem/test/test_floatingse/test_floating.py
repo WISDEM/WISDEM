@@ -13,7 +13,12 @@ class TestOC3Mass(unittest.TestCase):
 
         opt = {}
         opt["floating"] = {}
+        opt["flags"] = {}
+        opt["flags"]["floating"] = True
+        opt["flags"]["tower"] = False
+        opt["General"] = {}
         opt["WISDEM"] = {}
+        opt["WISDEM"]["n_dlc"] = 1
         opt["WISDEM"]["FloatingSE"] = {}
         opt["floating"]["members"] = {}
         opt["floating"]["members"]["n_members"] = 1
@@ -22,12 +27,6 @@ class TestOC3Mass(unittest.TestCase):
         opt["floating"]["members"]["n_layers"] = [1]
         opt["floating"]["members"]["n_ballasts"] = [0]
         opt["floating"]["members"]["n_axial_joints"] = [1]
-        opt["floating"]["tower"] = {}
-        opt["floating"]["tower"]["n_height"] = [npts]
-        opt["floating"]["tower"]["n_bulkheads"] = [0]
-        opt["floating"]["tower"]["n_layers"] = [1]
-        opt["floating"]["tower"]["n_ballasts"] = [0]
-        opt["floating"]["tower"]["n_axial_joints"] = [0]
         opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = True
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = True
@@ -73,13 +72,13 @@ class TestOC3Mass(unittest.TestCase):
         prob["member0.grid_axial_joints"] = [0.384615]  # Fairlead at 70m
         # prob["member0.ballast_grid"] = np.empy((0,2))
         # prob["member0.ballast_volume"] = np.empty(0)
-        prob["member0.s"] = np.cumsum(np.r_[0, h]) / h.sum()
+        prob["member0.s_in"] = np.cumsum(np.r_[0, h]) / h.sum()
         prob["member0.outer_diameter_in"] = np.array([9.4, 9.4, 9.4, 6.5, 6.5])
         prob["member0.layer_thickness"] = 0.05 * np.ones((1, npts))
         prob["member0.layer_materials"] = ["steel"]
         prob["member0.ballast_materials"] = ["slurry", "seawater"]
-        prob["member0.joint1"] = np.array([0.0, 0.0, 10.0 - h.sum()])
-        prob["member0.joint2"] = np.array([0.0, 0.0, 10.0])  # Freeboard=10
+        prob["member0:joint1"] = np.array([0.0, 0.0, 10.0 - h.sum()])
+        prob["member0:joint2"] = np.array([0.0, 0.0, 10.0])  # Freeboard=10
         prob["member0.s_ghost1"] = 0.0
         prob["member0.s_ghost2"] = 1.0
         prob["member0.bulkhead_thickness"] = 0.05 * np.ones(4)  # Locations of internal bulkheads
@@ -89,6 +88,9 @@ class TestOC3Mass(unittest.TestCase):
         prob["member0.ring_stiffener_flange_width"] = 0.10
         prob["member0.ring_stiffener_flange_thickness"] = 0.02
         prob["member0.ring_stiffener_spacing"] = 0.016538462  # non-dimensional ring stiffener spacing
+        prob["transition_node"] = prob["member0:joint2"]
+        prob["transition_piece_mass"] = 0.0
+        prob["transition_piece_cost"] = 0.0
 
         # Mooring parameters
         prob["line_diameter"] = 0.09  # Diameter of mooring line/chain [m]
@@ -121,23 +123,15 @@ class TestOC3Mass(unittest.TestCase):
         prob["Uc"] = 0.0  # Mean current speed
         prob["beta_wind"] = prob["beta_wave"] = 0.0
         prob["cd_usr"] = -1.0  # Compute drag coefficient
-        prob["Uref"] = 10.0
-        prob["zref"] = 100.0
+        prob["env.Uref"] = 10.0
+        prob["wind_reference_height"] = 100.0
 
-        # Porperties of turbine tower
-        nTower = prob.model.options["modeling_options"]["floating"]["tower"]["n_height"][0]
-        prob["tower_height"] = 85.0 - prob["member0.joint2"][2]
-        prob["tower.s"] = np.linspace(0.0, 1.0, nTower)
-        prob["tower.outer_diameter_in"] = np.linspace(6.5, 3.87, nTower)
-        prob["tower.layer_thickness"] = np.linspace(0.027, 0.019, nTower).reshape((1, nTower))
-        prob["tower.layer_materials"] = ["steel"]
-        prob["tower.outfitting_factor"] = 1.07
-
-        # Properties of rotor-nacelle-assembly (RNA)
-        prob["rna_mass"] = 350e3  # Mass [kg]
-        prob["rna_cg"] = np.zeros(3)
-        prob["rna_F"] = np.zeros(3)
-        prob["rna_M"] = np.zeros(3)
+        # Properties of turbine
+        prob["turbine_mass"] = 0.0
+        prob["turbine_cg"] = np.zeros(3)
+        prob["turbine_I"] = np.zeros(6)
+        prob["turbine_F"] = np.zeros(3)
+        prob["turbine_M"] = np.zeros(3)
 
         prob.run_model()
 
