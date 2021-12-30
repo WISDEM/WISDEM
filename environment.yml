@@ -26,7 +26,7 @@ dependencies:
   - pyyaml
   - ruamel_yaml
   - scipy
-  - setuptools
+  - setuptools==58.4.0
   - sortedcontainers
   - swig
   - pip:
