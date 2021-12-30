@@ -43,6 +43,8 @@ class PreDiscretization(om.ExplicitComponent):
         self.add_input("monopile_height", val=0.0, units="m")
         self.add_input("tower_foundation_height", val=0.0, units="m")
         self.add_input("monopile_foundation_height", val=0.0, units="m")
+        self.add_input("tower_base_diameter", val=0.0, units="m")
+        self.add_input("monopile_top_diameter", val=0.0, units="m")
         self.add_input("water_depth", val=0.0, units="m")
 
         self.add_output("transition_piece_height", 0.0, units="m")
@@ -52,6 +54,7 @@ class PreDiscretization(om.ExplicitComponent):
         self.add_output("s_const1", 0.0)
         self.add_output("joint1", val=np.zeros(3), units="m")
         self.add_output("joint2", val=np.zeros(3), units="m")
+        self.add_output("constr_diam_consistency", val=0.0)
 
     def compute(self, inputs, outputs):
         # Unpack values
@@ -75,6 +78,7 @@ class PreDiscretization(om.ExplicitComponent):
         outputs["s_const1"] = pile / h_mon  # Ensure that we have only one segment for pile, a current limitation
         outputs["joint1"] = np.r_[0.0, 0.0, fh_tow - h_mon]
         outputs["joint2"] = np.r_[0.0, 0.0, fh_tow]
+        outputs["constr_diam_consistency"] = inputs["tower_base_diameter"] / inputs["monopile_top_diameter"]
 
 
 class MonopileMass(om.ExplicitComponent):

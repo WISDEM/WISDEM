@@ -1,6 +1,5 @@
 import numpy as np
 import openmdao.api as om
-
 from wisdem.rotorse.rotor import RotorSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.floatingse.floating import FloatingSE
@@ -443,6 +442,9 @@ class WT_RNTA(om.Group):
             self.connect("env.Hsig_wave", "fixedse.Hsig_wave")
             self.connect("env.Tsig_wave", "fixedse.Tsig_wave")
             self.connect("monopile.diameter", "fixedse.monopile_outer_diameter_in")
+            self.connect("monopile.diameter", "fixedse.monopile_top_diameter", src_indices=[-1])
+            if modeling_options["flags"]["tower"]:
+                self.connect("tower.diameter", "fixedse.tower_base_diameter", src_indices=[0])
             self.connect("monopile.foundation_height", "fixedse.monopile_foundation_height")
             self.connect("monopile.outfitting_factor", "fixedse.outfitting_factor_in")
             self.connect("monopile.height", "fixedse.monopile_height")

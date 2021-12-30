@@ -1374,6 +1374,9 @@ class PoseOptimization(object):
         if monopile_constr["pile_depth"]["flag"]:
             wt_opt.model.add_constraint("fixedse.suctionpile_depth", lower=monopile_constr["pile_depth"]["lower_bound"])
 
+        if monopile_constr["tower_diameter_coupling"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.constr_diam_consistency", upper=1.0)
+
         # Jacket constraints
         jacket_constr = self.opt["constraints"]["jacket"]
 
