@@ -19,6 +19,8 @@ class TestPreDiscretization(unittest.TestCase):
         inputs["monopile_height"] = 60.0
         inputs["monopile_foundation_height"] = -50.0
         inputs["tower_foundation_height"] = 10.0
+        inputs["tower_base_diameter"] = 10.0
+        inputs["monopile_top_diameter"] = 10.0
         inputs["water_depth"] = 30.0
 
         mydis = mon.PreDiscretization()
@@ -30,6 +32,7 @@ class TestPreDiscretization(unittest.TestCase):
         self.assertEqual(outputs["suctionpile_depth"], 20.0)
         self.assertEqual(outputs["s_const1"], 20.0 / 60.0)
         self.assertEqual(outputs["bending_height"], 40.0)
+        self.assertEqual(outputs["constr_diam_consistency"], 1.0)
 
     def testBadHeight(self):
         inputs = {}
@@ -37,6 +40,8 @@ class TestPreDiscretization(unittest.TestCase):
         inputs["monopile_height"] = 70.0
         inputs["monopile_foundation_height"] = -50.0
         inputs["tower_foundation_height"] = 10.0
+        inputs["tower_base_diameter"] = 5.0
+        inputs["monopile_top_diameter"] = 10.0
         inputs["water_depth"] = 30.0
 
         mydis = mon.PreDiscretization()
@@ -48,6 +53,7 @@ class TestPreDiscretization(unittest.TestCase):
         self.assertEqual(outputs["suctionpile_depth"], 30.0)
         self.assertEqual(outputs["s_const1"], 30.0 / 70.0)
         self.assertEqual(outputs["bending_height"], 40.0)
+        self.assertEqual(outputs["constr_diam_consistency"], 0.5)
 
 
 class TestMass(unittest.TestCase):
