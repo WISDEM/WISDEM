@@ -1,3 +1,6 @@
+[build-system]
+requires = ["setuptools", "wheel", "numpy"]
+
 [tool.black]
 line-length = 120
 target-version = ['py38']
