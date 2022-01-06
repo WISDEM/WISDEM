@@ -13,15 +13,17 @@ os.environ["NPY_DISTUTILS_APPEND_FLAGS"] = "1"
 bemExt = Extension(
     "wisdem.ccblade._bem",
     sources=[os.path.join("wisdem", "ccblade", "src", "bem.f90")],
-    extra_compile_args=["-O2", "-fPIC"],
+    extra_compile_args=["-O2", "-fPIC", "-std=c11"],
 )
 pyframeExt = Extension(
-    "wisdem.pyframe3dd._pyframe3dd", sources=glob.glob(os.path.join("wisdem", "pyframe3dd", "src", "*.c"))
+    "wisdem.pyframe3dd._pyframe3dd", 
+    sources=glob.glob(os.path.join("wisdem", "pyframe3dd", "src", "*.c")),
+    extra_compile_args=["-O2", "-fPIC", "-std=c11"],
 )
 precompExt = Extension(
     "wisdem.rotorse._precomp",
     sources=[os.path.join("wisdem", "rotorse", "PreCompPy.f90")],
-    extra_compile_args=["-O2", "-fPIC"],
+    extra_compile_args=["-O2", "-fPIC", "-std=c11"],
 )
 
 # Top-level setup
