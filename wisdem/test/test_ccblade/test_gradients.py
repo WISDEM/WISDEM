@@ -16,7 +16,6 @@ import unittest
 from os import path
 
 import numpy as np
-
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 
 
@@ -5485,7 +5484,7 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         np.testing.assert_allclose(dY_dchord_fd, dY_dchord, rtol=5e-3, atol=1e-8)
         np.testing.assert_allclose(dZ_dchord_fd, dZ_dchord, rtol=5e-3, atol=1e-8)
         np.testing.assert_allclose(dQ_dchord_fd, dQ_dchord, rtol=5e-3, atol=1e-8)
-        np.testing.assert_allclose(dMy_dchord_fd, dMy_dchord, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dMy_dchord_fd, dMy_dchord, rtol=5e-3, atol=1e-8)
         np.testing.assert_allclose(dMz_dchord_fd, dMz_dchord, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dMb_dchord_fd, dMb_dchord, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dchord_fd, dP_dchord, rtol=7e-5, atol=1e-8)
