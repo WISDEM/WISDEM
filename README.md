@@ -57,7 +57,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
         git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
         git checkout develop                         # If you want to switch WISDEM branches
-        pip install -e .
+        python setup.py develop
 
 
 3. OPTIONAL: Install pyOptSparse, a package that provides a handful of additional optimization solvers and has OpenMDAO support:
