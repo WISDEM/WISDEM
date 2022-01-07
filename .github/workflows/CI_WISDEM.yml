@@ -58,11 +58,11 @@ jobs:
           pip install -vv --no-deps -e .
 
       # Install WISDEM with pip
-      - name: Install WISDEM with pip for Windows
-        if: contains( matrix.os, 'windows')
-        shell: pwsh
-        run: |
-          pip install -vv --no-deps --global-option --compiler=unix .
+      #- name: Install WISDEM with pip for Windows
+      #  if: contains( matrix.os, 'windows')
+      #  shell: pwsh
+      #  run: |
+      #    pip install -vv --no-deps --global-option --compiler=unix .
 
       # Run all tests
       - name: Run tests
