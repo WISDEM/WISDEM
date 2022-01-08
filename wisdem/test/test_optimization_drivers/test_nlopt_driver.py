@@ -10,11 +10,10 @@ from openmdao.utils.assert_utils import assert_near_equal
 from openmdao.utils.general_utils import run_driver
 from openmdao.test_suite.components.sellar import SellarDerivatives, SellarDerivativesGrouped
 from openmdao.test_suite.groups.sin_fitter import SineFitter
+from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 from openmdao.test_suite.components.paraboloid import Paraboloid
 from openmdao.test_suite.components.simple_comps import NonSquareArrayComp
 from openmdao.test_suite.components.expl_comp_array import TestExplCompArrayDense
-
-from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
 try:
     import nlopt
@@ -1001,9 +1000,11 @@ class TestNLoptDriver(unittest.TestCase):
         with self.assertRaises(RuntimeError) as cm:
             totals = prob.check_totals(method="fd", out_stream=False)
 
-        expected_msg = "Problem: run_model must be called before total derivatives can be checked."
+        # expected_msg = "Problem: run_model must be called before total derivatives can be checked."
+        expected_msg = "run_model must be called before total derivatives can be checked."
 
-        self.assertEqual(expected_msg, str(cm.exception))
+        # self.assertEqual(expected_msg, str(cm.exception))
+        self.assertTrue(str(cm.exception).find(expected_msg) >= 0)
 
     def test_LN_COBYLA_linear_constraint(self):
         # Bug where NLoptDriver tried to compute and cache the constraint derivatives for the
