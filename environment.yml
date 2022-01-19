@@ -18,6 +18,7 @@ dependencies:
   - openpyxl
   - pandas
   - pip
+  - pyoptsparse
   - pyside2
   - pytest
   - pytest-cov
