@@ -18,7 +18,6 @@ dependencies:
   - openpyxl
   - pandas
   - pip
-  - pyoptsparse
   - pyside2
   - pytest
   - pytest-cov
@@ -38,3 +37,4 @@ dependencies:
 #  - libpython # [win]
 #  - compilers # [not win]
 #  - petsc4py # [not win]
+#  - pyoptsparse # [not win]

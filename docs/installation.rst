@@ -25,14 +25,20 @@ In order to directly use the examples in the repository and peek at the code whe
 
 .. code-block:: bash
 
-    conda install -y cython git jsonschema make matplotlib nlopt numpy openmdao openpyxl pandas pip pyside2 pyoptsparse pytest python-benedict pyyaml ruamel_yaml scipy setuptools simpy sortedcontainers swig
+    conda install -y cython git jsonschema make matplotlib nlopt numpy openmdao openpyxl pandas pip pyside2 pytest python-benedict pyyaml ruamel_yaml scipy setuptools simpy sortedcontainers swig
     pip install marmot-agents
+
+For Linux systems:
+
+.. code-block:: bash
+
+    conda install pyoptsparse
 
 For Mac systems:
 
 .. code-block:: bash
 
-    conda install compilers
+    conda install compilers pyoptsparse
 
 For Windows systems:
 
