@@ -72,6 +72,8 @@ constraints:
         pile_depth:
             flag: True
             lower_bound: 0.0
+        tower_diameter_coupling:
+            flag: True
 
 driver:
     optimization:

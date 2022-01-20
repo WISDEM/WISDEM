@@ -48,23 +48,17 @@ The installation instructions below use the environment name, "wisdem-env," but 
         conda create -y --name wisdem-env python=3.8
         conda activate wisdem-env
 
-2.  In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer* mode.  This is done by first installing WISDEM as a conda package to easily satisfy all dependencies, but then removing the WISDEM conda package and reinstalling from the Github source code.  Note the differences between Windows and Mac/Linux build systems. For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
+2.  In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer / editable* mode using the instructions here.  If you really just want to use WISDEM as a library and lean on the documentation, you can always do `conda install wisdem` and be done.  Note the differences between Windows and Mac/Linux build systems. For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
 
-        conda install -y wisdem git
-        conda remove -y --force wisdem
-        conda install -y compilers                   # (Mac only)
+        conda install -y cython git jsonschema make matplotlib nlopt numpy openmdao openpyxl pandas pip pyside2 pytest python-benedict pyyaml ruamel_yaml scipy setuptools simpy sortedcontainers swig
+        conda install -y pyoptsparse                 # (Linux only)
+        conda install -y compilers pyoptsparse       # (Mac only)
         conda install -y m2w64-toolchain libpython   # (Windows only)
-        pip install simpy marmot-agents nlopt
+        pip install marmot-agents
         git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
         git checkout develop                         # If you want to switch WISDEM branches
         python setup.py develop
-
-
-3. OPTIONAL: Install pyOptSparse, a package that provides a handful of additional optimization solvers and has OpenMDAO support:
-
-        git clone https://github.com/evan-gaertner/pyoptsparse.git
-        pip install -e pyoptsparse
 
 
 **NOTE:** To use WISDEM again after installation is complete, you will always need to activate the conda environment first with `conda activate wisdem-env`

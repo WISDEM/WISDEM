@@ -1197,6 +1197,12 @@ properties:
                                 maximum: 200.0
                                 default: 0.0
                                 unit: m
+                    tower_diameter_coupling:
+                        type: object
+                        description: Ensures that the top diameter of the monopile is the same or larger than the base diameter of the tower
+                        default: {}
+                        properties:
+                            flag: *flag
             jacket: *moncon
             hub:
                 type: object
