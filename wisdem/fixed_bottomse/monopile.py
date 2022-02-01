@@ -824,6 +824,16 @@ class MonopileSE(om.Group):
                 "rna_mass",
                 "rna_cg",
                 "rna_I",
+                "structural_frequencies",
+                "fore_aft_freqs",
+                "side_side_freqs",
+                "torsion_freqs",
+                "fore_aft_modes",
+                "side_side_modes",
+                "torsion_modes",
+                "tower_fore_aft_modes",
+                "tower_side_side_modes",
+                "tower_torsion_modes",
             ],
         )
 
