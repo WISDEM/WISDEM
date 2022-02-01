@@ -540,20 +540,20 @@ class MonopileFrame(om.ExplicitComponent):
         cg_turb = inputs["turbine_cg"].flatten()
         I_turb = inputs["turbine_I"].flatten()
 
-        m_rna = inputs["rna_mass"]
+        m_rna = float(inputs["rna_mass"])
         cg_rna = inputs["rna_cg"].flatten()
         I_rna = inputs["rna_I"].flatten()
 
         # Note, need len()-1 because Frame3DD crashes if mass add at end
         if tower_flag:
             midx = np.array([n, n_mono - 1, n_mono - 2, 1], dtype=np.int_)
-            m_add = np.array([m_rna, m_turb, m_trans, m_grav])
+            m_add = np.r_[m_rna, m_turb, m_trans, m_grav]
             mI = np.c_[I_rna, I_turb, I_trans, I_grav]
             mrho = np.c_[cg_rna, cg_turb, np.zeros(3), np.zeros(3)]
             add_gravity = [False, False, True, True]
         else:
             midx = np.array([n_mono - 1, n_mono - 2, 1], dtype=np.int_)
-            m_add = np.array([m_turb, m_trans, m_grav])
+            m_add = np.r_[m_turb, m_trans, m_grav]
             mI = np.c_[I_turb, I_trans, I_grav]
             mrho = np.c_[cg_turb, np.zeros(3), np.zeros(3)]
             add_gravity = [False, True, True]

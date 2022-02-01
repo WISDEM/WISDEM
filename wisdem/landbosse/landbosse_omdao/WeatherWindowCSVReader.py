@@ -2,7 +2,6 @@ from math import ceil
 
 import pandas as pd
 
-
 SEASON_WINTER = "winter"
 SEASON_SPRING = "spring"
 SEASON_SUMMER = "summer"
@@ -114,7 +113,7 @@ def read_weather_window(weather_data, local_timezone="America/Denver"):
     weather_data.drop(columns=["Date", "Date UTC"])
 
     # create time window for normal (8am to 6pm) versus long (24 hour) time window for operation
-    weather_data["Time window"] = weather_data["Hour"].between(8, 18, inclusive=True)
+    weather_data["Time window"] = weather_data["Hour"].between(8, 18, inclusive="both")
     boolean_dictionary = {True: "normal", False: "long"}
     weather_data["Time window"] = weather_data["Time window"].map(boolean_dictionary)
 
