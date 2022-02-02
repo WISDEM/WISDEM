@@ -1013,13 +1013,13 @@ class PoseOptimization(object):
 
                 if "diameter" in kgrp:
                     wt_opt.model.add_design_var(
-                        f"floating.memgrp{idx}.outer_diameter",
+                        f"floating.memgrp{idx}.outer_diameter_in",
                         lower=kgrp["diameter"]["lower_bound"],
                         upper=kgrp["diameter"]["upper_bound"],
                     )
                 if "thickness" in kgrp:
                     wt_opt.model.add_design_var(
-                        f"floating.memgrp{idx}.layer_thickness",
+                        f"floating.memgrp{idx}.layer_thickness_in",
                         lower=kgrp["thickness"]["lower_bound"],
                         upper=kgrp["thickness"]["upper_bound"],
                     )

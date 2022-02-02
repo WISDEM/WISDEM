@@ -1,5 +1,4 @@
 import numpy as np
-
 import wisdem.inputs as sch
 
 
@@ -303,6 +302,7 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["floating"]["members"]["joint2"] = [""] * n_members
             self.modeling_options["floating"]["members"]["outer_shape"] = [""] * n_members
             self.modeling_options["floating"]["members"]["n_height"] = np.zeros(n_members, dtype=int)
+            self.modeling_options["floating"]["members"]["n_geom"] = np.zeros(n_members, dtype=int)
             self.modeling_options["floating"]["members"]["n_layers"] = np.zeros(n_members, dtype=int)
             self.modeling_options["floating"]["members"]["n_ballasts"] = np.zeros(n_members, dtype=int)
             self.modeling_options["floating"]["members"]["n_bulkheads"] = np.zeros(n_members, dtype=int)
@@ -322,9 +322,13 @@ class WindTurbineOntologyPython(object):
                     "floating_platform"
                 ]["members"][i]["outer_shape"]["shape"]
 
+                # Master grid for all bulkheads, internal joints, ballasts, geometry changes, etc
                 grid = self.wt_init["components"]["floating_platform"]["members"][i]["outer_shape"]["outer_diameter"][
                     "grid"
                 ][:]
+
+                # Grid for just diameter / thickness design
+                geom_grid = grid[:]
 
                 n_layers = len(
                     self.wt_init["components"]["floating_platform"]["members"][i]["internal_structure"]["layers"]
@@ -401,6 +405,9 @@ class WindTurbineOntologyPython(object):
                     grid += self.wt_init["components"]["floating_platform"]["members"][i]["internal_structure"][
                         "layers"
                     ][j]["thickness"]["grid"]
+                    geom_grid += self.wt_init["components"]["floating_platform"]["members"][i]["internal_structure"][
+                        "layers"
+                    ][j]["thickness"]["grid"]
 
                 self.modeling_options["floating"]["members"][
                     "ballast_flag_member_" + self.modeling_options["floating"]["members"]["name"][i]
@@ -459,10 +466,15 @@ class WindTurbineOntologyPython(object):
                     self.modeling_options["floating"]["members"]["n_axial_joints"][i] = 0
 
                 final_grid = np.unique(grid)
+                final_geom_grid = np.unique(geom_grid)
                 self.modeling_options["floating"]["members"][
                     "grid_member_" + self.modeling_options["floating"]["members"]["name"][i]
                 ] = final_grid
+                self.modeling_options["floating"]["members"][
+                    "geom_member_" + self.modeling_options["floating"]["members"]["name"][i]
+                ] = final_geom_grid
                 self.modeling_options["floating"]["members"]["n_height"][i] = len(final_grid)
+                self.modeling_options["floating"]["members"]["n_geom"][i] = len(final_geom_grid)
 
             self.modeling_options["floating"]["members"]["ballast_types"] = set(ballast_types)
 
@@ -1220,18 +1232,18 @@ class WindTurbineOntologyPython(object):
                 idx = self.modeling_options["floating"]["members"]["name2idx"][name_member]
 
                 yaml_out["members"][i]["outer_shape"]["outer_diameter"]["grid"] = wt_opt[
-                    f"floating.memgrp{idx}.s"
+                    f"floating.memgrp{idx}.s_in"
                 ].tolist()
                 yaml_out["members"][i]["outer_shape"]["outer_diameter"]["values"] = wt_opt[
-                    f"floating.memgrp{idx}.outer_diameter"
+                    f"floating.memgrp{idx}.outer_diameter_in"
                 ].tolist()
 
                 istruct = yaml_out["members"][i]["internal_structure"]
 
                 n_layers = self.modeling_options["floating"]["members"]["n_layers"][i]
                 for j in range(n_layers):
-                    istruct["layers"][j]["thickness"]["grid"] = wt_opt[f"floating.memgrp{idx}.s"].tolist()
-                    istruct["layers"][j]["thickness"]["values"] = wt_opt[f"floating.memgrp{idx}.layer_thickness"][
+                    istruct["layers"][j]["thickness"]["grid"] = wt_opt[f"floating.memgrp{idx}.s_in"].tolist()
+                    istruct["layers"][j]["thickness"]["values"] = wt_opt[f"floating.memgrp{idx}.layer_thickness_in"][
                         j, :
                     ].tolist()
 
