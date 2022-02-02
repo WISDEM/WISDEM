@@ -1365,7 +1365,7 @@ class PoseOptimization(object):
 
         elif monopile_constr["frequency_1"]["flag"]:
             wt_opt.model.add_constraint(
-                "fixedse.monopile.structural_frequencies",
+                "fixedse.structural_frequencies",
                 indices=[0],
                 lower=monopile_constr["frequency_1"]["lower_bound"],
                 upper=monopile_constr["frequency_1"]["upper_bound"],
@@ -1391,7 +1391,7 @@ class PoseOptimization(object):
 
         elif jacket_constr["frequency_1"]["flag"]:
             wt_opt.model.add_constraint(
-                "fixedse.jacket.structural_frequencies",
+                "fixedse.structural_frequencies",
                 indices=[0],
                 lower=jacket_constr["frequency_1"]["lower_bound"],
                 upper=jacket_constr["frequency_1"]["upper_bound"],
