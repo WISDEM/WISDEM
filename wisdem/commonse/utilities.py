@@ -37,18 +37,18 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None):
     p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
 
     # Normalize for Elastodyn
+    # The normalization shouldn't be less than 1e-5 otherwise OpenFAST has trouble in single prec
     if y.ndim > 1:
         p6 = p6[2:, :]
-        # p6 = np.zeros((5, y.shape[1]))
-        # for k in range(y.shape[1]):
-        #    p6[:, k], _ = curve_fit(mode_fit, xn, y[:, k])
-        # The normalization shouldn't be less than 1e-5 otherwise OpenFAST has trouble in single prec
-        normval = np.maximum(np.sum(p6, axis=0), 1e-5)
+        tempsum = np.sum(p6, axis=0)
+        normval = np.maximum(np.abs(tempsum), 1e-5)
+        normval *= np.sign(tempsum)
         p6 /= normval[np.newaxis, :]
     else:
         p6 = p6[2:]
-        # The normalization shouldn't be less than 1e-5 otherwise OpenFAST has trouble in single prec
-        normval = np.maximum(p6.sum(), 1e-5)
+        tempsum = p6.sum()
+        normval = np.maximum(np.abs(tempsum), 1e-5)
+        normval *= np.sign(tempsum)
         p6 /= normval
 
     return p6
