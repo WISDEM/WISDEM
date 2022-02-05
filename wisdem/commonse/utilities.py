@@ -17,21 +17,24 @@ def mode_fit(x, c2, c3, c4, c5, c6):
     return c2 * x ** 2.0 + c3 * x ** 3.0 + c4 * x ** 4.0 + c5 * x ** 5.0 + c6 * x ** 6.0
 
 
-def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None):
-    # Normalize x input
+def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None, base_slope0=True):
     if idx0 is None:
-        xn = (x - x.min()) / (x.max() - x.min())
         idx0 = 0
-    else:
-        xn = (x - x[idx0]) / (x[-1] - x[idx0])
+
+    # Normalize x input
+    xn = (x - x[idx0]) / (x[-1] - x[idx0])
 
     # Remove 0th and 1st order modes for base slope match
     if y.ndim > 1:
-        dy = np.gradient(y, xn, axis=0, edge_order=2)
-        y = y - y[idx0, np.newaxis, :] - np.outer(xn, dy[idx0, :])
+        y = y - y[idx0, np.newaxis, :]
+        if not base_slope0:
+            dy = np.gradient(y, xn, axis=0, edge_order=2)
+            y = y - np.outer(xn, dy[idx0, :])
     else:
-        dy = np.gradient(y, xn, edge_order=2)
-        y = y - y[idx0] - dy[idx0] * xn
+        y = y - y[idx0]
+        if not base_slope0:
+            dy = np.gradient(y, xn, edge_order=2)
+            y = y - dy[idx0] * xn
 
     # Get coefficients to 2-6th order polynomial
     p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
@@ -54,7 +57,7 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None):
     return p6
 
 
-def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, expect_all=True, idx0=None):
+def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None, base_slope0=True, expect_all=True):
     # Number of frequencies and modes
     nfreq = len(freqs)
 
@@ -62,7 +65,7 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, expect_all
     mpfs = np.abs(np.c_[xmpf, ympf, zmpf])
     displacements = np.vstack((xdsp, ydsp, zdsp)).T
 
-    polys = get_modal_coefficients(r, displacements, idx0=idx0)
+    polys = get_modal_coefficients(r, displacements, idx0=idx0, base_slope0=base_slope0)
     xpolys = polys[:, :nfreq].T
     ypolys = polys[:, nfreq : (2 * nfreq)].T
     zpolys = polys[:, (2 * nfreq) :].T

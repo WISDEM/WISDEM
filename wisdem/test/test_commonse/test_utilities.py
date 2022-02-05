@@ -26,24 +26,32 @@ class TestAny(unittest.TestCase):
 
     def testModalCoefficients(self):
         # Test exact 6-deg polynomial, randomly generated
-        p = np.array(
+        p0 = np.array(
             [0.75174649, 0.06100484, 0.09602379, 0.14829988, 0.2883315, 0.24546124, 0.40763875]
         )  # np.random.random((7,))
+        p = p0.copy()
+        p[:2] = 0.0
         x = np.linspace(0, 1)
         y = np.polynomial.polynomial.polyval(x, p)
 
         pp = util.get_modal_coefficients(x, y)
+        npt.assert_almost_equal(p[2:] / p[2:].sum(), pp)
+
+        # Test without removing the 0th and 1st modes
+        p = p0.copy()
+        y = np.polynomial.polynomial.polyval(x, p)
+        pp = util.get_modal_coefficients(x, y, base_slope0=False)
         npt.assert_almost_equal(p[2:] / p[2:].sum(), pp, 2)
 
-        # NOW THAT WE ARE REMOVING 0th, 1st, TERMS, THIS NO LONGER APPLIES
         # Test more complex and ensure get the same answer as curve fit
-        # p = np.random.random((10,))
-        # y = np.polynomial.polynomial.polyval(x, p)
+        p = np.random.random((10,))
+        p[:2] = 0.0
+        y = np.polynomial.polynomial.polyval(x, p)
 
-        # pp = util.get_modal_coefficients(x, y)
-        # cc, _ = curve_fit(util.mode_fit, x, y)
-        # cc /= cc.sum()
-        # npt.assert_almost_equal(pp, cc, 4)
+        pp = util.get_modal_coefficients(x, y)
+        cc, _ = curve_fit(util.mode_fit, x, y)
+        cc /= cc.sum()
+        npt.assert_almost_equal(pp, cc, 4)
 
     def testModalFASTExample_norm(self):
         z = np.array(
@@ -154,7 +162,7 @@ class TestAny(unittest.TestCase):
             ]
         )
 
-        pp = util.get_modal_coefficients(z[i_tow:], xdsp[i_tow:])
+        pp = util.get_modal_coefficients(z[i_tow:], xdsp[i_tow:], base_slope0=False)
         sheet_pp = np.flipud([-1.3658, 3.1931, -2.7443, 1.3054, 0.6116])
 
         xx = np.linspace(0, 1)

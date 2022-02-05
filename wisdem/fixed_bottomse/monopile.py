@@ -381,7 +381,7 @@ class MonopileFrame(om.ExplicitComponent):
                 z_soil = inputs["z_soil"]
                 k_soil = inputs["k_soil"]
                 z_pile = z[z <= (z[0] + 1e-1 + np.abs(z_soil[0]))]
-                if z_pile.size != 4:
+                if z_pile.size != NREFINE + 1:
                     print(z)
                     print(z_soil)
                     print(z_pile)
@@ -587,7 +587,16 @@ class MonopileFrame(om.ExplicitComponent):
         # Get all mode shapes in batch
         NFREQ2 = int(NFREQ / 2)
         freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
-            z, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
+            z,
+            modal.freq,
+            modal.xdsp,
+            modal.ydsp,
+            modal.zdsp,
+            modal.xmpf,
+            modal.ympf,
+            modal.zmpf,
+            idx0=NREFINE,
+            base_slope0=False,
         )
         outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
         outputs["side_side_freqs"] = freq_y[:NFREQ2]
@@ -606,6 +615,7 @@ class MonopileFrame(om.ExplicitComponent):
                 modal.xmpf,
                 modal.ympf,
                 modal.zmpf,
+                base_slope0=False,
             )
             outputs["tower_fore_aft_modes"] = mshapes_x[:NFREQ2, :]
             outputs["tower_side_side_modes"] = mshapes_y[:NFREQ2, :]
