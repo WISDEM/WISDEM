@@ -17,9 +17,21 @@ def mode_fit(x, c2, c3, c4, c5, c6):
     return c2 * x ** 2.0 + c3 * x ** 3.0 + c4 * x ** 4.0 + c5 * x ** 5.0 + c6 * x ** 6.0
 
 
-def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6]):
+def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None):
     # Normalize x input
-    xn = (x - x.min()) / (x.max() - x.min())
+    if idx0 is None:
+        xn = (x - x.min()) / (x.max() - x.min())
+        idx0 = 0
+    else:
+        xn = (x - x[idx0]) / (x[-1] - x[idx0])
+
+    # Remove 0th and 1st order modes for base slope match
+    if y.ndim > 1:
+        dy = np.gradient(y, xn, axis=0, edge_order=2)
+        y = y - y[idx0, np.newaxis, :] - np.outer(xn, dy[idx0, :])
+    else:
+        dy = np.gradient(y, xn, edge_order=2)
+        y = y - y[idx0] - dy[idx0] * xn
 
     # Get coefficients to 2-6th order polynomial
     p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
@@ -42,50 +54,52 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6]):
     return p6
 
 
-def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
+def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, expect_all=True, idx0=None):
     # Number of frequencies and modes
     nfreq = len(freqs)
 
     # Get mode shapes in batch
     mpfs = np.abs(np.c_[xmpf, ympf, zmpf])
-    polys = get_modal_coefficients(r, np.vstack((xdsp, ydsp, zdsp)).T)
+    displacements = np.vstack((xdsp, ydsp, zdsp)).T
+
+    polys = get_modal_coefficients(r, displacements, idx0=idx0)
     xpolys = polys[:, :nfreq].T
     ypolys = polys[:, nfreq : (2 * nfreq)].T
     zpolys = polys[:, (2 * nfreq) :].T
 
     nfreq2 = int(nfreq / 2)
-    mshapes_x = np.zeros((nfreq2, 5))
-    mshapes_y = np.zeros((nfreq2, 5))
-    mshapes_z = np.zeros((nfreq2, 5))
-    freq_x = np.zeros(nfreq2)
-    freq_y = np.zeros(nfreq2)
-    freq_z = np.zeros(nfreq2)
+    mysize = nfreq2 if expect_all else nfreq
+    mshapes_x = np.zeros((mysize, 5))
+    mshapes_y = np.zeros((mysize, 5))
+    mshapes_z = np.zeros((mysize, 5))
+    freq_x = np.zeros(mysize)
+    freq_y = np.zeros(mysize)
+    freq_z = np.zeros(mysize)
     ix = 0
     iy = 0
     iz = 0
     imode = np.argmax(mpfs, axis=1)
     for m in range(nfreq):
-        if np.isnan(freqs[m]) or freqs[m] < 1e-1 or mpfs[m, :].max() < 1e-11:
+        if np.isnan(freqs[m]) or freqs[m] < 1e-1 or mpfs[m, :].max() < 1e-13:
             continue
         if imode[m] == 0:
-            if ix >= nfreq2:
+            if expect_all and ix >= nfreq2:
                 continue
             mshapes_x[ix, :] = xpolys[m, :]
             freq_x[ix] = freqs[m]
             ix += 1
         elif imode[m] == 1:
-            if iy >= nfreq2:
+            if expect_all and iy >= nfreq2:
                 continue
             mshapes_y[iy, :] = ypolys[m, :]
             freq_y[iy] = freqs[m]
             iy += 1
         elif imode[m] == 2:
-            if iz >= nfreq2:
+            if expect_all and iz >= nfreq2:
                 continue
             mshapes_z[iz, :] = zpolys[m, :]
             freq_z[iz] = freqs[m]
             iz += 1
-
     return freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z
 
 
