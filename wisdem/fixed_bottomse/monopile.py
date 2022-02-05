@@ -546,11 +546,11 @@ class MonopileFrame(om.ExplicitComponent):
 
         # Note, need len()-1 because Frame3DD crashes if mass add at end
         if tower_flag:
-            midx = np.array([n, n_mono - 1, n_mono - 2, 1], dtype=np.int_)
-            m_add = np.r_[m_rna, m_turb, m_trans, m_grav]
-            mI = np.c_[I_rna, I_turb, I_trans, I_grav]
-            mrho = np.c_[cg_rna, cg_turb, np.zeros(3), np.zeros(3)]
-            add_gravity = [False, False, True, True]
+            midx = np.array([n, n_mono, 1], dtype=np.int_)
+            m_add = np.r_[m_rna, m_trans, m_grav]
+            mI = np.c_[I_rna, I_trans, I_grav]
+            mrho = np.c_[cg_rna, np.zeros(3), np.zeros(3)]
+            add_gravity = [False, True, True]
         else:
             midx = np.array([n_mono - 1, n_mono - 2, 1], dtype=np.int_)
             m_add = np.r_[m_turb, m_trans, m_grav]
@@ -598,11 +598,11 @@ class MonopileFrame(om.ExplicitComponent):
 
         if tower_flag:
             freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
-                z[n_mono:],
+                z[-n_tow:],
                 modal.freq,
-                modal.xdsp[:, n_mono:],
-                modal.ydsp[:, n_mono:],
-                modal.zdsp[:, n_mono:],
+                modal.xdsp[:, -n_tow:],
+                modal.ydsp[:, -n_tow:],
+                modal.zdsp[:, -n_tow:],
                 modal.xmpf,
                 modal.ympf,
                 modal.zmpf,
