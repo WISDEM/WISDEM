@@ -70,6 +70,7 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
     ypolys = polys[:, nfreq : (2 * nfreq)].T
     zpolys = polys[:, (2 * nfreq) :].T
 
+    # Containers and counters for the mode shapes
     nfreq2 = int(nfreq / 2)
     mysize = nfreq2 if expect_all else nfreq
     mshapes_x = np.zeros((mysize, 5))
@@ -81,9 +82,13 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
     ix = 0
     iy = 0
     iz = 0
+
+    # Identify which mode is which and whether it is a valid mode
     imode = np.argmax(mpfs, axis=1)
+    mpfs_ratio = np.abs(mpfs.max(axis=1) / mpfs.min(axis=1))
+
     for m in range(nfreq):
-        if np.isnan(freqs[m]) or freqs[m] < 1e-1 or mpfs[m, :].max() < 1e-13:
+        if np.isnan(freqs[m]) or (freqs[m] < 1e-1) or (mpfs_ratio[m] < 1e3) or (mpfs[m, :].max() < 1e-13):
             continue
         if imode[m] == 0:
             if expect_all and ix >= nfreq2:
