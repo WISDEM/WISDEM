@@ -43,13 +43,13 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None, base_slope0=Tru
     # The normalization shouldn't be less than 1e-5 otherwise OpenFAST has trouble in single prec
     if y.ndim > 1:
         p6 = p6[2:, :]
-        tempsum = np.sum(p6, axis=0)
+        tempsum = np.sum(p6, axis=0) + 1e-16  # Avoid divide by 0
         normval = np.maximum(np.abs(tempsum), 1e-5)
         normval *= np.sign(tempsum)
         p6 /= normval[np.newaxis, :]
     else:
         p6 = p6[2:]
-        tempsum = p6.sum()
+        tempsum = p6.sum() + 1e-16  # Avoid divide by 0
         normval = np.maximum(np.abs(tempsum), 1e-5)
         normval *= np.sign(tempsum)
         p6 /= normval
@@ -64,7 +64,6 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
     # Get mode shapes in batch
     mpfs = np.abs(np.c_[xmpf, ympf, zmpf])
     displacements = np.vstack((xdsp, ydsp, zdsp)).T
-
     polys = get_modal_coefficients(r, displacements, idx0=idx0, base_slope0=base_slope0)
     xpolys = polys[:, :nfreq].T
     ypolys = polys[:, nfreq : (2 * nfreq)].T
@@ -85,7 +84,7 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
 
     # Identify which mode is which and whether it is a valid mode
     imode = np.argmax(mpfs, axis=1)
-    mpfs_ratio = np.abs(mpfs.max(axis=1) / mpfs.min(axis=1))
+    mpfs_ratio = np.abs(mpfs.max(axis=1) / (1e-16 + mpfs.min(axis=1)))  # Avoid divide by 0
 
     for m in range(nfreq):
         if np.isnan(freqs[m]) or (freqs[m] < 1e-1) or (mpfs_ratio[m] < 1e3) or (mpfs[m, :].max() < 1e-13):
