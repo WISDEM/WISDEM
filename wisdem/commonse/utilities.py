@@ -94,11 +94,6 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None,
 
         for m in range(nfreq):
             if np.isnan(freqs[m]) or (freqs[m] < 1e-1) or (mpfs[m, :].max() < 1e-13) or (mpfs_ratio[m] < 1e3): # 
-                print('---- ERROR IN get_xyz_mode_shapes ----')
-                print('m = {}'.format(m))
-                print('freqs: {}'.format(freqs))
-                print('mpfs_ratio: {}'.format(mpfs_ratio))
-                print('mpfs: {}'.format(mpfs))
                 continue
             if imode[m] == 0:
                 if expect_all and ix >= nfreq2:
