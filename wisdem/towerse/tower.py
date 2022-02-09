@@ -358,7 +358,7 @@ class TowerFrame(om.ExplicitComponent):
 
         # Add mass for modal analysis only (loads are captured in rna_F & rna_M)
         mID = np.array([n], dtype=np.int_)  # Cannot add at top node due to bug
-        m_add = inputs["rna_mass"]
+        m_add = float(inputs["rna_mass"])
         cg_add = inputs["rna_cg"].reshape((-1, 1))
         I_add = inputs["rna_I"].reshape((-1, 1))
         add_gravity = False

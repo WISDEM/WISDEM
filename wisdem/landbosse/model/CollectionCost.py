@@ -960,9 +960,9 @@ class ArraySystem(CostModule):
 
         # Combine all calculated cost items into the 'collection_cost' dataframe:
         collection_cost = pd.DataFrame([], columns=["Type of cost", "Cost USD", "Phase of construction"])
-        collection_cost = collection_cost.append(trenching_equipment_rental_cost_df)
-        collection_cost = collection_cost.append(trenching_labor_cost_df)
-        collection_cost = collection_cost.append(cable_cost_usd_per_LF_df)
+        collection_cost = pd.concat(
+            (collection_cost, trenching_equipment_rental_cost_df, trenching_labor_cost_df, cable_cost_usd_per_LF_df)
+        )
 
         # Calculate Mobilization Cost and add to collection_cost dataframe.
         # For utility scale plants, mobilization is assumed to be 5% of the sum of labor, equipment, and material costs.
@@ -983,7 +983,7 @@ class ArraySystem(CostModule):
             [["Mobilization", calculate_costs_output_dict["mob_cost"], "Collection"]],
             columns=["Type of cost", "Cost USD", "Phase of construction"],
         )
-        collection_cost = collection_cost.append(mobilization_cost)
+        collection_cost = pd.concat((collection_cost, mobilization_cost))
 
         calculate_costs_output_dict["total_collection_cost"] = collection_cost
 

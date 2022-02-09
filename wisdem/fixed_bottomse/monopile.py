@@ -255,6 +255,7 @@ class MonopileFrame(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("n_full")
+        self.options.declare("n_full_tow")
         self.options.declare("nLC")
         self.options.declare("frame3dd_opt")
         self.options.declare("soil_springs", default=False)
@@ -262,6 +263,8 @@ class MonopileFrame(om.ExplicitComponent):
 
     def setup(self):
         n_full = self.options["n_full"]
+        n_full_tow = self.options["n_full_tow"]
+        ntow_sec = max(n_full_tow - 1, 0)
         nLC = self.options["nLC"]
         self.frame = None
 
@@ -269,7 +272,7 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_input("z_soil", np.zeros(NPTS_SOIL), units="N/m")
         self.add_input("k_soil", np.zeros((NPTS_SOIL, 6)), units="N/m")
 
-        # cross-sectional data along cylinder.
+        # cross-sectional data along monopile
         self.add_input("nodes_xyz", np.zeros((n_full, 3)), units="m")
         self.add_input("section_A", np.zeros(n_full - 1), units="m**2")
         self.add_input("section_Asx", np.zeros(n_full - 1), units="m**2")
@@ -280,9 +283,27 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_input("section_rho", np.zeros(n_full - 1), units="kg/m**3")
         self.add_input("section_E", np.zeros(n_full - 1), units="Pa")
         self.add_input("section_G", np.zeros(n_full - 1), units="Pa")
-        self.add_output("section_L", np.zeros(n_full - 1), units="m")
+        self.add_output("section_L", np.zeros(n_full - 1 + ntow_sec), units="m")
+
+        # cross-sectional data along tower
+        self.add_input("tower_xyz", np.zeros((n_full_tow, 3)), units="m")
+        self.add_input("tower_A", np.zeros(ntow_sec), units="m**2")
+        self.add_input("tower_Asx", np.zeros(ntow_sec), units="m**2")
+        self.add_input("tower_Asy", np.zeros(ntow_sec), units="m**2")
+        self.add_input("tower_Ixx", np.zeros(ntow_sec), units="kg*m**2")
+        self.add_input("tower_Iyy", np.zeros(ntow_sec), units="kg*m**2")
+        self.add_input("tower_J0", np.zeros(ntow_sec), units="kg*m**2")
+        self.add_input("tower_rho", np.zeros(ntow_sec), units="kg/m**3")
+        self.add_input("tower_E", np.zeros(ntow_sec), units="Pa")
+        self.add_input("tower_G", np.zeros(ntow_sec), units="Pa")
+
+        self.add_input("rna_mass", val=0.0, units="kg")
+        self.add_input("rna_I", np.zeros(6), units="kg*m**2")
+        self.add_input("rna_cg", np.zeros(3), units="m")
 
         # point loads
+        self.add_input("rna_F", np.zeros((3, nLC)), units="N")
+        self.add_input("rna_M", np.zeros((3, nLC)), units="N*m")
         self.add_input("turbine_F", np.zeros((3, nLC)), units="N")
         self.add_input("turbine_M", np.zeros((3, nLC)), units="N*m")
         self.add_input("transition_piece_mass", 0.0, units="kg")
@@ -301,19 +322,27 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_input("Px", val=np.zeros((n_full, nLC)), units="N/m")
         self.add_input("Py", val=np.zeros((n_full, nLC)), units="N/m")
         self.add_input("Pz", val=np.zeros((n_full, nLC)), units="N/m")
+        self.add_input("tower_Px", val=np.zeros((n_full_tow, nLC)), units="N/m")
+        self.add_input("tower_Py", val=np.zeros((n_full_tow, nLC)), units="N/m")
+        self.add_input("tower_Pz", val=np.zeros((n_full_tow, nLC)), units="N/m")
 
         # Frequencies
         NFREQ2 = int(NFREQ / 2)
         self.add_output("f1", val=0.0, units="Hz")
         self.add_output("f2", val=0.0, units="Hz")
         self.add_output("structural_frequencies", np.zeros(NFREQ), units="Hz")
-        self.add_output("fore_aft_modes", np.zeros((NFREQ2, 5)))
-        self.add_output("side_side_modes", np.zeros((NFREQ2, 5)))
-        self.add_output("torsion_modes", np.zeros((NFREQ2, 5)))
         self.add_output("fore_aft_freqs", np.zeros(NFREQ2), units="Hz")
         self.add_output("side_side_freqs", np.zeros(NFREQ2), units="Hz")
         self.add_output("torsion_freqs", np.zeros(NFREQ2), units="Hz")
-        self.add_output("monopile_deflection", np.zeros((n_full, nLC)), units="m")
+
+        self.add_output("fore_aft_modes", np.zeros((NFREQ2, 5)))
+        self.add_output("side_side_modes", np.zeros((NFREQ2, 5)))
+        self.add_output("torsion_modes", np.zeros((NFREQ2, 5)))
+        self.add_output("tower_fore_aft_modes", np.zeros((NFREQ2, 5)))
+        self.add_output("tower_side_side_modes", np.zeros((NFREQ2, 5)))
+        self.add_output("tower_torsion_modes", np.zeros((NFREQ2, 5)))
+
+        self.add_output("monopile_deflection", np.zeros((n_full + ntow_sec, nLC)), units="m")
         self.add_output("top_deflection", np.zeros(nLC), units="m")
         self.add_output("monopile_Fz", val=np.zeros((n_full - 1, nLC)), units="N")
         self.add_output("monopile_Vx", val=np.zeros((n_full - 1, nLC)), units="N")
@@ -328,11 +357,19 @@ class MonopileFrame(om.ExplicitComponent):
 
         frame3dd_opt = self.options["frame3dd_opt"]
         nLC = self.options["nLC"]
+        tower_flag = self.options["n_full_tow"] > 0
 
         # ------- node data ----------------
-        xyz = inputs["nodes_xyz"]
-        z = xyz[:, 2]
+        if tower_flag:
+            xyz = np.vstack((inputs["nodes_xyz"][:-1, :], inputs["tower_xyz"]))
+            n_tow = inputs["tower_xyz"].shape[0]
+        else:
+            xyz = inputs["nodes_xyz"]
+            n_tow = 0
+
         n = xyz.shape[0]
+        n_mono = inputs["nodes_xyz"].shape[0]
+        z = xyz[:, 2]
         node = np.arange(1, n + 1)
         r = np.zeros(n)
         nodes = pyframe3dd.NodeData(node, xyz[:, 0], xyz[:, 1], z, r)
@@ -344,7 +381,7 @@ class MonopileFrame(om.ExplicitComponent):
                 z_soil = inputs["z_soil"]
                 k_soil = inputs["k_soil"]
                 z_pile = z[z <= (z[0] + 1e-1 + np.abs(z_soil[0]))]
-                if z_pile.size != 4:
+                if z_pile.size != NREFINE + 1:
                     print(z)
                     print(z_soil)
                     print(z_pile)
@@ -389,15 +426,27 @@ class MonopileFrame(om.ExplicitComponent):
         roll = np.zeros(n - 1)
 
         # Element properties
-        Area = inputs["section_A"]
-        Asx = inputs["section_Asx"]
-        Asy = inputs["section_Asy"]
-        J0 = inputs["section_J0"]
-        Ixx = inputs["section_Ixx"]
-        Iyy = inputs["section_Iyy"]
-        E = inputs["section_E"]
-        G = inputs["section_G"]
-        rho = inputs["section_rho"]
+        if tower_flag:
+            Area = np.r_[inputs["section_A"], inputs["tower_A"]]
+            Asx = np.r_[inputs["section_Asx"], inputs["tower_Asx"]]
+            Asy = np.r_[inputs["section_Asy"], inputs["tower_Asy"]]
+            J0 = np.r_[inputs["section_J0"], inputs["tower_J0"]]
+            Ixx = np.r_[inputs["section_Ixx"], inputs["tower_Ixx"]]
+            Iyy = np.r_[inputs["section_Iyy"], inputs["tower_Iyy"]]
+            E = np.r_[inputs["section_E"], inputs["tower_E"]]
+            G = np.r_[inputs["section_G"], inputs["tower_G"]]
+            rho = np.r_[inputs["section_rho"], inputs["tower_rho"]]
+        else:
+            Area = inputs["section_A"]
+            Asx = inputs["section_Asx"]
+            Asy = inputs["section_Asy"]
+            J0 = inputs["section_J0"]
+            Ixx = inputs["section_Ixx"]
+            Iyy = inputs["section_Iyy"]
+            E = inputs["section_E"]
+            G = inputs["section_G"]
+            rho = inputs["section_rho"]
+
         outputs["section_L"] = L = np.sqrt(np.sum(np.diff(xyz, axis=0) ** 2, axis=1))
 
         elements = pyframe3dd.ElementData(element, N1, N2, Area, Asx, Asy, J0, Ixx, Iyy, E, G, roll, rho)
@@ -428,25 +477,44 @@ class MonopileFrame(om.ExplicitComponent):
         for k in range(nLC):
             load = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
-            # Prepare point forces at transition node
-            turb_F = inputs["turbine_F"][:, k]
-            turb_M = inputs["turbine_M"][:, k]
-            load.changePointLoads(
-                np.array([n], dtype=np.int_),  # -1 b/c same reason as above
-                np.array([turb_F[0]]).flatten(),
-                np.array([turb_F[1]]).flatten(),
-                np.array([turb_F[2]]).flatten(),
-                np.array([turb_M[0]]).flatten(),
-                np.array([turb_M[1]]).flatten(),
-                np.array([turb_M[2]]).flatten(),
-            )
+            # Prepare point forces at transition node or rna
+            if tower_flag:
+                rna_F = inputs["rna_F"][:, k]
+                rna_M = inputs["rna_M"][:, k]
+                load.changePointLoads(
+                    np.array([n], dtype=np.int_),  # -1 b/c same reason as above
+                    np.array([rna_F[0]]).flatten(),
+                    np.array([rna_F[1]]).flatten(),
+                    np.array([rna_F[2]]).flatten(),
+                    np.array([rna_M[0]]).flatten(),
+                    np.array([rna_M[1]]).flatten(),
+                    np.array([rna_M[2]]).flatten(),
+                )
 
-            # distributed loads
-            Px, Py, Pz = inputs["Pz"][:, k], inputs["Py"][:, k], -inputs["Px"][:, k]  # switch to local c.s.
+                # distributed loads: switch to local c.s.
+                Px = np.r_[inputs["Pz"][:, k], inputs["tower_Pz"][:, k]]
+                Py = np.r_[inputs["Py"][:, k], inputs["tower_Py"][:, k]]
+                Pz = -1.0 * np.r_[inputs["Px"][:, k], inputs["tower_Px"][:, k]]
+
+            else:
+                turb_F = inputs["turbine_F"][:, k]
+                turb_M = inputs["turbine_M"][:, k]
+                load.changePointLoads(
+                    np.array([n], dtype=np.int_),  # -1 b/c same reason as above
+                    np.array([turb_F[0]]).flatten(),
+                    np.array([turb_F[1]]).flatten(),
+                    np.array([turb_F[2]]).flatten(),
+                    np.array([turb_M[0]]).flatten(),
+                    np.array([turb_M[1]]).flatten(),
+                    np.array([turb_M[2]]).flatten(),
+                )
+
+                # distributed loads: switch to local c.s.
+                Px, Py, Pz = inputs["Pz"][:, k], inputs["Py"][:, k], -inputs["Px"][:, k]
 
             # trapezoidally distributed loads
-            EL = np.arange(1, n)
-            xx1 = xy1 = xz1 = np.zeros(n - 1)
+            EL = element
+            xx1 = xy1 = xz1 = np.zeros(EL.shape)
             xx2 = xy2 = xz2 = 0.99 * L  # subtract small number b.c. of precision
             wx1 = Px[:-1]
             wx2 = Px[1:]
@@ -464,17 +532,31 @@ class MonopileFrame(om.ExplicitComponent):
         # Turbine mass added for modal analysis only- gravity loads accounted for in point force
         m_trans = float(inputs["transition_piece_mass"])
         I_trans = inputs["transition_piece_I"].flatten()
+
         m_grav = float(inputs["gravity_foundation_mass"])
         I_grav = inputs["gravity_foundation_I"].flatten()
+
         m_turb = float(inputs["turbine_mass"])
         cg_turb = inputs["turbine_cg"].flatten()
         I_turb = inputs["turbine_I"].flatten()
+
+        m_rna = float(inputs["rna_mass"])
+        cg_rna = inputs["rna_cg"].flatten()
+        I_rna = inputs["rna_I"].flatten()
+
         # Note, need len()-1 because Frame3DD crashes if mass add at end
-        midx = np.array([n - 1, n - 2, 1], dtype=np.int_)
-        m_add = np.array([m_turb, m_trans, m_grav])
-        mI = np.c_[I_turb, I_trans, I_grav]
-        mrho = np.c_[cg_turb, np.zeros(3), np.zeros(3)]
-        add_gravity = [False, True, True]
+        if tower_flag:
+            midx = np.array([n, n_mono, 1], dtype=np.int_)
+            m_add = np.r_[m_rna, m_trans, m_grav]
+            mI = np.c_[I_rna, I_trans, I_grav]
+            mrho = np.c_[cg_rna, np.zeros(3), np.zeros(3)]
+            add_gravity = [False, True, True]
+        else:
+            midx = np.array([n_mono - 1, n_mono - 2, 1], dtype=np.int_)
+            m_add = np.r_[m_turb, m_trans, m_grav]
+            mI = np.c_[I_turb, I_trans, I_grav]
+            mrho = np.c_[cg_turb, np.zeros(3), np.zeros(3)]
+            add_gravity = [False, True, True]
         self.frame.changeExtraNodeMass(
             midx,
             m_add,
@@ -505,7 +587,16 @@ class MonopileFrame(om.ExplicitComponent):
         # Get all mode shapes in batch
         NFREQ2 = int(NFREQ / 2)
         freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
-            xyz[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
+            z,
+            modal.freq,
+            modal.xdsp,
+            modal.ydsp,
+            modal.zdsp,
+            modal.xmpf,
+            modal.ympf,
+            modal.zmpf,
+            idx0=NREFINE,
+            base_slope0=False,
         )
         outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
         outputs["side_side_freqs"] = freq_y[:NFREQ2]
@@ -513,6 +604,22 @@ class MonopileFrame(om.ExplicitComponent):
         outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
         outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
         outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
+
+        if tower_flag:
+            freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
+                z[-n_tow:],
+                modal.freq,
+                modal.xdsp[:, -n_tow:],
+                modal.ydsp[:, -n_tow:],
+                modal.zdsp[:, -n_tow:],
+                modal.xmpf,
+                modal.ympf,
+                modal.zmpf,
+                base_slope0=False,
+            )
+            outputs["tower_fore_aft_modes"] = mshapes_x[:NFREQ2, :]
+            outputs["tower_side_side_modes"] = mshapes_y[:NFREQ2, :]
+            outputs["tower_torsion_modes"] = mshapes_z[:NFREQ2, :]
 
         # deflections due to loading (from cylinder top and wind/wave loads)
         outputs["monopile_deflection"] = np.sqrt(displacements.dx ** 2 + displacements.dy ** 2).T
@@ -537,12 +644,12 @@ class MonopileFrame(om.ExplicitComponent):
             Mxx[:, ic] = -forces.Mzz[ic, 1::2]
             Myy[:, ic] = forces.Myy[ic, 1::2]
             Mzz[:, ic] = forces.Txx[ic, 1::2]
-        outputs["monopile_Fz"] = Fz
-        outputs["monopile_Vx"] = Vx
-        outputs["monopile_Vy"] = Vy
-        outputs["monopile_Mxx"] = Mxx
-        outputs["monopile_Myy"] = Myy
-        outputs["monopile_Mzz"] = Mzz
+        outputs["monopile_Fz"] = Fz[: (n_mono - 1)]
+        outputs["monopile_Vx"] = Vx[: (n_mono - 1)]
+        outputs["monopile_Vy"] = Vy[: (n_mono - 1)]
+        outputs["monopile_Mxx"] = Mxx[: (n_mono - 1)]
+        outputs["monopile_Myy"] = Myy[: (n_mono - 1)]
+        outputs["monopile_Mzz"] = Mzz[: (n_mono - 1)]
 
 
 class MonopileSE(om.Group):
@@ -669,10 +776,20 @@ class MonopileSE(om.Group):
 
         self.add_subsystem("loads", mem.MemberLoads(n_full=n_full, n_lc=nLC, wind=wind, hydro=True), promotes=["*"])
 
+        n_full_tow = 0
+        try:
+            if self.options["modeling_options"]["flags"]["tower"]:
+                tow_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
+                n_height = tow_opt["n_height"]
+                n_full_tow = mem.get_nfull(n_height, nref=tow_opt["n_refine"])
+        except:
+            pass
+
         self.add_subsystem(
             "monopile",
             MonopileFrame(
                 n_full=n_full,
+                n_full_tow=n_full_tow,
                 frame3dd_opt=frame3dd_opt,
                 soil_springs=mod_opt["soil_springs"],
                 gravity_foundation=mod_opt["gravity_foundation"],
@@ -680,6 +797,7 @@ class MonopileSE(om.Group):
             ),
             promotes=[
                 "nodes_xyz",
+                "tower_xyz",
                 "section_A",
                 "section_Asx",
                 "section_Asy",
@@ -689,6 +807,15 @@ class MonopileSE(om.Group):
                 "section_rho",
                 "section_E",
                 "section_G",
+                "tower_A",
+                "tower_Asx",
+                "tower_Asy",
+                "tower_Ixx",
+                "tower_Iyy",
+                "tower_J0",
+                "tower_rho",
+                "tower_E",
+                "tower_G",
                 "transition_piece_height",
                 "transition_piece_mass",
                 "transition_piece_I",
@@ -698,9 +825,25 @@ class MonopileSE(om.Group):
                 "Px",
                 "Py",
                 "Pz",
+                "tower_Px",
+                "tower_Py",
+                "tower_Pz",
                 "turbine_mass",
                 "turbine_cg",
                 "turbine_I",
+                "rna_mass",
+                "rna_cg",
+                "rna_I",
+                "structural_frequencies",
+                "fore_aft_freqs",
+                "side_side_freqs",
+                "torsion_freqs",
+                "fore_aft_modes",
+                "side_side_modes",
+                "torsion_modes",
+                "tower_fore_aft_modes",
+                "tower_side_side_modes",
+                "tower_torsion_modes",
             ],
         )
 

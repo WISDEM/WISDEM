@@ -1017,13 +1017,13 @@ class PoseOptimization(object):
 
                 if "diameter" in kgrp:
                     wt_opt.model.add_design_var(
-                        f"floating.memgrp{idx}.outer_diameter",
+                        f"floating.memgrp{idx}.outer_diameter_in",
                         lower=kgrp["diameter"]["lower_bound"],
                         upper=kgrp["diameter"]["upper_bound"],
                     )
                 if "thickness" in kgrp:
                     wt_opt.model.add_design_var(
-                        f"floating.memgrp{idx}.layer_thickness",
+                        f"floating.memgrp{idx}.layer_thickness_in",
                         lower=kgrp["thickness"]["lower_bound"],
                         upper=kgrp["thickness"]["upper_bound"],
                     )
@@ -1369,7 +1369,7 @@ class PoseOptimization(object):
 
         elif monopile_constr["frequency_1"]["flag"]:
             wt_opt.model.add_constraint(
-                "fixedse.monopile.structural_frequencies",
+                "fixedse.structural_frequencies",
                 indices=[0],
                 lower=monopile_constr["frequency_1"]["lower_bound"],
                 upper=monopile_constr["frequency_1"]["upper_bound"],
@@ -1395,7 +1395,7 @@ class PoseOptimization(object):
 
         elif jacket_constr["frequency_1"]["flag"]:
             wt_opt.model.add_constraint(
-                "fixedse.jacket.structural_frequencies",
+                "fixedse.structural_frequencies",
                 indices=[0],
                 lower=jacket_constr["frequency_1"]["lower_bound"],
                 upper=jacket_constr["frequency_1"]["upper_bound"],

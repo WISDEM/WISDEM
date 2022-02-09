@@ -473,6 +473,17 @@ class WT_RNTA(om.Group):
                 self.connect("towerse.turbine_I_base", "fixedse.turbine_I")
                 self.connect("towerse.tower.turbine_F", "fixedse.monopile.turbine_F")
                 self.connect("towerse.tower.turbine_M", "fixedse.monopile.turbine_M")
+                self.connect("towerse.nodes_xyz", "fixedse.tower_xyz")
+                for var in ["A", "Asx", "Asy", "Ixx", "Iyy", "J0", "rho", "E", "G"]:
+                    self.connect(f"towerse.section_{var}", f"fixedse.tower_{var}")
+                for var in ["Px", "Py", "Pz"]:
+                    self.connect(f"towerse.{var}", f"fixedse.tower_{var}")
+            if modeling_options["flags"]["nacelle"]:
+                self.connect("drivese.base_F", "fixedse.monopile.rna_F")
+                self.connect("drivese.base_M", "fixedse.monopile.rna_M")
+                self.connect("drivese.rna_I_TT", "fixedse.rna_I")
+                self.connect("drivese.rna_cm", "fixedse.rna_cg")
+                self.connect("drivese.rna_mass", "fixedse.rna_mass")
 
         if modeling_options["flags"]["jacket"]:
             self.connect("materials.sigma_y", "fixedse.sigma_y_mat")
@@ -545,12 +556,12 @@ class WT_RNTA(om.Group):
             # Individual member connections
             for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
                 idx = modeling_options["floating"]["members"]["name2idx"][kname]
-                self.connect(f"floating.memgrp{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
+                self.connect(f"floating.memgrid{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
+                self.connect(f"floating.memgrid{idx}.layer_thickness", f"floatingse.member{k}.layer_thickness")
                 self.connect(f"floating.memgrp{idx}.outfitting_factor", f"floatingse.member{k}.outfitting_factor_in")
                 self.connect(f"floating.memgrp{idx}.s", f"floatingse.member{k}.s_in")
 
                 for var in [
-                    "layer_thickness",
                     "layer_materials",
                     "bulkhead_grid",
                     "bulkhead_thickness",
