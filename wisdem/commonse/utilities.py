@@ -17,72 +17,209 @@ def mode_fit(x, c2, c3, c4, c5, c6):
     return c2 * x ** 2.0 + c3 * x ** 3.0 + c4 * x ** 4.0 + c5 * x ** 5.0 + c6 * x ** 6.0
 
 
-def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6]):
+def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None, base_slope0=True):
+    if idx0 is None:
+        idx0 = 0
+
     # Normalize x input
-    xn = (x - x.min()) / (x.max() - x.min())
+    xn = (x - x[idx0]) / (x[-1] - x[idx0])
+
+    # Remove 0th and 1st order modes for base slope match
+    if y.ndim > 1:
+        y = y - y[idx0, np.newaxis, :]
+        if not base_slope0:
+            dy = np.gradient(y, xn, axis=0, edge_order=2)
+            y = y - np.outer(xn, dy[idx0, :])
+    else:
+        y = y - y[idx0]
+        if not base_slope0:
+            dy = np.gradient(y, xn, edge_order=2)
+            y = y - dy[idx0] * xn
 
     # Get coefficients to 2-6th order polynomial
     p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
 
     # Normalize for Elastodyn
+    # The normalization shouldn't be less than 1e-5 otherwise OpenFAST has trouble in single prec
     if y.ndim > 1:
         p6 = p6[2:, :]
-        # p6 = np.zeros((5, y.shape[1]))
-        # for k in range(y.shape[1]):
-        #    p6[:, k], _ = curve_fit(mode_fit, xn, y[:, k])
-        normval = np.maximum(np.abs(p6).sum(axis=0), 1e-6)
+        tempsum = np.sum(p6, axis=0)
+        normval = np.maximum(np.abs(tempsum), 1e-5)
+        normval *= np.sign(tempsum)
         p6 /= normval[np.newaxis, :]
     else:
         p6 = p6[2:]
-        # p6, _ = curve_fit(mode_fit, xn, y)
-        p6 /= p6.sum()
+        tempsum = p6.sum()
+        normval = np.maximum(np.abs(tempsum), 1e-5)
+        normval *= np.sign(tempsum)
+        p6 /= normval
 
     return p6
 
 
-def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
+def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None, base_slope0=True, expect_all=True, rank_and_file=False):
     # Number of frequencies and modes
     nfreq = len(freqs)
 
     # Get mode shapes in batch
     mpfs = np.abs(np.c_[xmpf, ympf, zmpf])
-    polys = get_modal_coefficients(r, np.vstack((xdsp, ydsp, zdsp)).T)
+    displacements = np.vstack((xdsp, ydsp, zdsp)).T
+
+    polys = get_modal_coefficients(r, displacements, idx0=idx0, base_slope0=base_slope0)
     xpolys = polys[:, :nfreq].T
     ypolys = polys[:, nfreq : (2 * nfreq)].T
     zpolys = polys[:, (2 * nfreq) :].T
-
-    nfreq2 = int(nfreq / 2)
-    mshapes_x = np.zeros((nfreq2, 5))
-    mshapes_y = np.zeros((nfreq2, 5))
-    mshapes_z = np.zeros((nfreq2, 5))
-    freq_x = np.zeros(nfreq2)
-    freq_y = np.zeros(nfreq2)
-    freq_z = np.zeros(nfreq2)
     ix = 0
     iy = 0
     iz = 0
-    for m in range(nfreq):
-        if mpfs[m, :].max() < 1e-11:
-            continue
-        imode = np.argmax(mpfs[m, :])
-        if imode == 0:
-            if ix >= nfreq2:
+
+    # Containers and counters for the mode shapes
+    nfreq2 = int(nfreq / 2)
+    mysize = nfreq2 if expect_all else nfreq
+    mshapes_x = np.zeros((mysize, 5))
+    mshapes_y = np.zeros((mysize, 5))
+    mshapes_z = np.zeros((mysize, 5))
+    freq_x = np.zeros(mysize)
+    freq_y = np.zeros(mysize)
+    freq_z = np.zeros(mysize)
+    
+    # Filter the modeshapes by their mpfs 
+    #   - guarauntees that no modeshapes are calculated at the same frequency, 
+    #   - does not guarantee a modeshape in every direction
+    #   - does not guarantee exact modeshape orders
+    if not rank_and_file:
+        # Identify which mode is which and whether it is a valid mode
+        imode = np.argmax(mpfs, axis=1)
+        mpfs_ratio = np.abs(mpfs.max(axis=1) / mpfs.min(axis=1))
+
+        for m in range(nfreq):
+            if np.isnan(freqs[m]) or (freqs[m] < 1e-1) or (mpfs[m, :].max() < 1e-13) or (mpfs_ratio[m] < 1e3): # 
+                print('---- ERROR IN get_xyz_mode_shapes ----')
+                print('m = {}'.format(m))
+                print('freqs: {}'.format(freqs))
+                print('mpfs_ratio: {}'.format(mpfs_ratio))
+                print('mpfs: {}'.format(mpfs))
                 continue
-            mshapes_x[ix, :] = xpolys[m, :]
-            freq_x[ix] = freqs[m]
-            ix += 1
-        elif imode == 1:
-            if iy >= nfreq2:
-                continue
-            mshapes_y[iy, :] = ypolys[m, :]
-            freq_y[iy] = freqs[m]
-            iy += 1
-        elif imode == 2:
-            if iz >= nfreq2:
-                continue
-            mshapes_z[iz, :] = zpolys[m, :]
-            freq_z[iz] = freqs[m]
-            iz += 1
+            if imode[m] == 0:
+                if expect_all and ix >= nfreq2:
+                    continue
+                mshapes_x[ix, :] = xpolys[m, :]
+                freq_x[ix] = freqs[m]
+                ix += 1
+            elif imode[m] == 1:
+                if expect_all and iy >= nfreq2:
+                    continue
+                mshapes_y[iy, :] = ypolys[m, :]
+                freq_y[iy] = freqs[m]
+                iy += 1
+            elif imode[m] == 2:
+                if expect_all and iz >= nfreq2:
+                    continue
+                mshapes_z[iz, :] = zpolys[m, :]
+                freq_z[iz] = freqs[m]
+                iz += 1
+
+    # "Rank and file" the modeshapes by their mpfs and order
+    # Filter the modeshapes by their mpfs 
+    #   - does guarauntees that modeshapes are calculated at different frequencies, 
+    #   - guarantees a modeshape in every direction
+    #   - guarantees exact modeshape orders
+    else:
+        # Pull out polys from dynamic (non rigid-body modes)
+        xpolys_dyn = xpolys[freqs > 1e-1,:]
+        ypolys_dyn = ypolys[freqs > 1e-1,:]
+        zpolys_dyn = zpolys[freqs > 1e-1,:]
+
+        # re-interpolate to better capture mode shapes
+        freqs_dyn = freqs[freqs > 1e-1]
+        dummy_span = np.arange(0.0,1.01,0.01) 
+        xdisp_dyn = np.zeros((len(freqs_dyn),len(dummy_span))) #xdsp[freqs > 1e-1]
+        ydisp_dyn = np.zeros((len(freqs_dyn),len(dummy_span))) #ydsp[freqs > 1e-1]
+        zdisp_dyn = np.zeros((len(freqs_dyn),len(dummy_span))) #zdsp[freqs > 1e-1]
+        for fidx, (xp, yp, zp) in enumerate(zip(xpolys_dyn, ypolys_dyn, zpolys_dyn)):
+            xpf = np.flip(np.append([0,0],xp))
+            ypf = np.flip(np.append([0,0],yp))
+            zpf = np.flip(np.append([0,0],zp))
+            xp_fun = np.poly1d(xpf)
+            yp_fun = np.poly1d(ypf)
+            zp_fun = np.poly1d(zpf)
+            xdisp_dyn[fidx,:] = xp_fun(dummy_span)
+            ydisp_dyn[fidx,:] = yp_fun(dummy_span)
+            zdisp_dyn[fidx,:] = zp_fun(dummy_span)
+
+        # Setup parsing variables
+        xmpf_dyn = np.abs(xmpf[freqs > 1e-1])
+        ympf_dyn = np.abs(ympf[freqs > 1e-1])
+        zmpf_dyn = np.abs(zmpf[freqs > 1e-1])
+        defl_number_x = np.zeros((len(freqs_dyn),1))
+        defl_number_y = np.zeros((len(freqs_dyn),1))
+        defl_number_z = np.zeros((len(freqs_dyn),1))
+
+        # Find order of the modes (i.e. number of inflections in the mode shape)
+        for i, (xd, yd, zd) in enumerate(zip(xdisp_dyn, ydisp_dyn, zdisp_dyn)):
+            xd_diff = np.diff(xd)
+            yd_diff = np.diff(yd)
+            zd_diff = np.diff(zd)
+            defl_number_x[i] = len(np.where(np.sign(xd_diff[:-1]) != np.sign(xd_diff[1:]))[0])
+            # Check second derivative for higher order modes
+            dnx2 = len(np.where(np.sign(np.diff(xd_diff[:-1])) != np.sign(np.diff(xd_diff[1:])))[0]) 
+            if dnx2 >= defl_number_x[i]: # Should only exist for higher order but monotonically increasing modes
+                defl_number_x[i] = dnx2+1
+            defl_number_y[i] = len(np.where(np.sign(yd_diff[:-1]) != np.sign(yd_diff[1:]))[0])
+            dny2 = len(np.where(np.sign(np.diff(yd_diff[:-1])) != np.sign(np.diff(yd_diff[1:])))[0])
+            if dny2 >= defl_number_y[i]: 
+                defl_number_y[i] = dny2+1
+            defl_number_z[i] = len(np.where(np.sign(zd_diff[:-1]) != np.sign(zd_diff[1:]))[0])
+            dnz2 = len(np.where(np.sign(np.diff(zd_diff[:-1])) != np.sign(np.diff(zd_diff[1:])))[0])
+            if dnz2 >= defl_number_z[i]: 
+                defl_number_z[i] = dnz2+1
+        
+        used_freq_idx = []
+        for i in range(mysize):
+            # Number of unique mode shape orders
+            x_uniq_num = int(len(np.unique(defl_number_x))-1)
+            if i >= x_uniq_num:
+                ix += 1
+            # Get index of most dominant direction for i'th mode shape
+            uniq_idx = min(i,x_uniq_num) # use i'th mode shape, unless it doesn't exist, then use next largest
+            mode_freq_idx = np.where(defl_number_x == np.unique(defl_number_x)[uniq_idx])[0] # find frequency index where i'th mode shape exists
+            # idx2delete =  np.where([mode_freq_idx==used for used in used_idx])[-1]
+            # mode_freq_idx = np.delete(mode_freq_idx, idx2delete)
+            x_polyidx = mode_freq_idx[np.argsort(-xmpf_dyn[mode_freq_idx])[min(ix, len(mode_freq_idx)-1)]] # find index for i'th or the "next" i'th desired mode shape polynomial 
+            mshapes_x[i,:] = xpolys_dyn[x_polyidx, :] 
+            freq_x[i] = freqs_dyn[x_polyidx]
+            if x_polyidx in used_freq_idx and i<3:
+                print('WARNING: Frequency index {} has been used again for i={} in the x-direction'.format(x_polyidx, i))
+            used_freq_idx.append(x_polyidx)
+
+            # repeat for x and z directions
+            y_uniq_num = int(len(np.unique(defl_number_y))-1)
+            if i > y_uniq_num:
+                iy += 1
+            uniq_idx = min(i,y_uniq_num) # use i'th mode shape, unless it doesn't exist, then use largest
+            mode_freq_idx = np.where(defl_number_y == np.unique(defl_number_y)[uniq_idx])[0] # find frequency index where i'th mode shape exists
+            y_polyidx = mode_freq_idx[np.argsort(-ympf_dyn[mode_freq_idx])[min(iy, len(mode_freq_idx)-1)]] # find index for i'th or the "next" i'th desired mode shape polynomial
+            mshapes_y[i,:] = ypolys_dyn[y_polyidx, :]
+            freq_y[i] = freqs_dyn[y_polyidx]
+            if y_polyidx in used_freq_idx and i<3:
+                print('WARNING: Frequency index {} has been used again for i={} in the y-direction'.format(y_polyidx, i))
+            used_freq_idx.append(y_polyidx)
+
+
+            z_uniq_num = int(len(np.unique(defl_number_z))-1)
+            if i > z_uniq_num:
+                iz += 1
+            uniq_idx = min(i,z_uniq_num) # use i'th mode shape, unless it doesn't exist, then use largest
+            mode_freq_idx = np.where(defl_number_z == np.unique(defl_number_z)[uniq_idx])[0] # find frequency index where i'th mode shape exists
+            z_polyidx = mode_freq_idx[np.argsort(-zmpf_dyn[mode_freq_idx])[min(iz, len(mode_freq_idx)-1)]] # find index for i'th or the "next" i'th desired mode shape polynomial
+            mshapes_z[i,:] = zpolys_dyn[z_polyidx, :]
+            freq_z[i] = freqs_dyn[z_polyidx]
+            if z_polyidx in used_freq_idx and i<3:
+                print('WARNING: Frequency index {} has been used again for i={} in the z-direction'.format(z_polyidx, i))
+            used_freq_idx.append(z_polyidx)
+
+
+
 
     return freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z
 
@@ -254,11 +391,15 @@ def linspace_with_deriv(start, stop, num):
     return y, dy_dstart, dy_dstop
 
 
-def sectionalInterp(xi, x, y):
+def sectional_interp(xi, x, y):
     epsilon = 1e-11
     xx = np.c_[x[:-1], x[1:] - epsilon].flatten()
     yy = np.c_[y, y].flatten()
     return np.interp(xi, xx, yy)
+
+
+def sectionalInterp(xi, x, y):
+    return sectional_interp(xi, x, y)
 
 
 def interp_with_deriv(x, xp, yp):
@@ -557,7 +698,7 @@ def closest_node(nodemat, inode):
     return np.sqrt(np.sum((xyz - inode[np.newaxis, :]) ** 2, axis=1)).argmin()
 
 
-def nodal2sectional(x):
+def nodal2sectional(x, axis=0):
     """Averages nodal data to be length-1 vector of sectional data
 
     INPUTS:
@@ -568,9 +709,19 @@ def nodal2sectional(x):
     -------
     y   : float vector,  sectional data
     """
-    y = 0.5 * (x[:-1] + x[1:])
-    dy = np.c_[0.5 * np.eye(y.size), np.zeros(y.size)]
-    dy[np.arange(y.size), 1 + np.arange(y.size)] = 0.5
+    if x.ndim == 1:
+        y = 0.5 * (x[:-1] + x[1:])
+        dy = np.c_[0.5 * np.eye(y.size), np.zeros(y.size)]
+        dy[np.arange(y.size), 1 + np.arange(y.size)] = 0.5
+    elif x.ndim == 2 and axis == 0:
+        y = 0.5 * (x[:-1, :] + x[1:, :])
+        dy = None
+    elif x.ndim == 2 and axis == 1:
+        y = 0.5 * (x[:, :-1] + x[:, 1:])
+        dy = None
+    else:
+        raise ValueError("Only 2 dimensions supported")
+
     return y, dy
 
 
