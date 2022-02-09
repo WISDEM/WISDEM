@@ -515,7 +515,7 @@ class TowerSE(om.Group):
         temp_opt["n_ballasts"] = [0]
         self.add_subsystem(
             "member",
-            mem.MemberStandard(column_options=temp_opt, idx=0, n_mat=n_mat, n_refine=NREFINE),
+            mem.MemberStandard(column_options=temp_opt, idx=0, n_mat=n_mat, n_refine=mod_opt["n_refine"]),
             promotes=promlist,
         )
 
