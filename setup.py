@@ -13,21 +13,23 @@ os.environ["NPY_DISTUTILS_APPEND_FLAGS"] = "1"
 bemExt = Extension(
     "wisdem.ccblade._bem",
     sources=[os.path.join("wisdem", "ccblade", "src", "bem.f90")],
-    extra_compile_args=["-O2", "-fPIC"],
+    extra_compile_args=["-O2", "-fPIC", "-std=c11"],
 )
 pyframeExt = Extension(
-    "wisdem.pyframe3dd._pyframe3dd", sources=glob.glob(os.path.join("wisdem", "pyframe3dd", "src", "*.c"))
+    "wisdem.pyframe3dd._pyframe3dd",
+    sources=glob.glob(os.path.join("wisdem", "pyframe3dd", "src", "*.c")),
+    extra_compile_args=["-O2", "-fPIC", "-std=c11"],
 )
 precompExt = Extension(
     "wisdem.rotorse._precomp",
     sources=[os.path.join("wisdem", "rotorse", "PreCompPy.f90")],
-    extra_compile_args=["-O2", "-fPIC"],
+    extra_compile_args=["-O2", "-fPIC", "-std=c11"],
 )
 
 # Top-level setup
 setup(
     name="WISDEM",
-    version="3.3.0",
+    version="3.5.1",
     description="Wind-Plant Integrated System Design & Engineering Model",
     long_description="""WISDEM is a Python package for conducting multidisciplinary analysis and
     optimization of wind turbines and plants.  It is built on top of NASA's OpenMDAO library.""",
@@ -41,13 +43,13 @@ setup(
         "openmdao>=3.4",
         "openpyxl",
         "pandas",
-        "pyside2",
         "pytest",
         "python-benedict",
         "pyyaml",
         "scipy",
         "simpy",
         "sortedcontainers",
+        "pyparsing<3",
     ],
     python_requires=">=3.7",
     package_data={"": ["*.yaml", "*.xlsx"], "wisdem": ["*.txt"]},

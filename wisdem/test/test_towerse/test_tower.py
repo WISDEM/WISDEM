@@ -5,8 +5,91 @@ import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
 import wisdem.towerse.tower as tow
-from wisdem.towerse import RIGID
 from wisdem.commonse import gravity as g
+
+npts = 100
+myones = np.ones((npts,))
+RIGID = tow.RIGID
+
+
+class TestPreDiscretization(unittest.TestCase):
+    def testAll(self):
+        inputs = {}
+        outputs = {}
+        inputs["hub_height"] = 125.0
+        inputs["tower_height"] = 100.0
+        inputs["foundation_height"] = 10.0
+
+        mydis = tow.PreDiscretization()
+        mydis.compute(inputs, outputs)
+        self.assertEqual(outputs["transition_piece_height"], 10.0)
+        self.assertEqual(outputs["z_start"], 10.0)
+        npt.assert_array_equal(outputs["joint1"], np.array([0.0, 0.0, 10.0]))
+        npt.assert_array_equal(outputs["joint2"], np.array([0.0, 0.0, 110.0]))
+        self.assertEqual(outputs["height_constraint"], 15.0)
+
+
+class TestMass(unittest.TestCase):
+    def testAll(self):
+        inputs = {}
+        outputs = {}
+        inputs["joint2"] = np.array([0.0, 0.0, 125.0])
+        inputs["rna_mass"] = 1000.0
+        inputs["rna_I"] = 3e4 * np.ones(6)
+        inputs["rna_cg"] = 20.0 * np.ones(3)
+        inputs["tower_mass"] = 3000.0
+        inputs["tower_center_of_mass"] = 0.5 * inputs["joint2"][-1]
+        inputs["tower_I_base"] = 2e4 * np.ones(6)
+
+        myobj = tow.TurbineMass()
+        myobj.compute(inputs, outputs)
+
+        self.assertEqual(outputs["turbine_mass"], 4e3)
+        h = np.r_[0.0, 0.0, 125.0]
+        npt.assert_equal(outputs["turbine_center_of_mass"], (1e3 * (inputs["rna_cg"] + h) + 3e3 * 0.5 * h) / 4e3)
+        # npt.assert_array_less(5e4, np.abs(outputs["turbine_I_base"]))
+
+
+class TestStruct(unittest.TestCase):
+    def setUp(self):
+        self.inputs = {}
+        self.outputs = {}
+        self.discrete_inputs = {}
+        self.discrete_outputs = {}
+
+        # Store analysis options
+        self.modeling_options = {}
+        self.modeling_options["materials"] = {}
+        self.modeling_options["materials"]["n_mat"] = 1
+
+        self.modeling_options["WISDEM"] = {}
+        self.modeling_options["WISDEM"]["n_dlc"] = 1
+        self.modeling_options["WISDEM"]["TowerSE"] = {}
+        self.modeling_options["WISDEM"]["TowerSE"]["buckling_method"] = "eurocode"
+        self.modeling_options["WISDEM"]["TowerSE"]["buckling_length"] = 30.0
+        self.modeling_options["WISDEM"]["TowerSE"]["n_layers"] = 1
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 3
+        self.modeling_options["WISDEM"]["TowerSE"]["n_refine"] = 3
+        self.modeling_options["WISDEM"]["TowerSE"]["wind"] = "PowerWind"
+
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_f"] = 1.0
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_m"] = 1.0
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_n"] = 1.0
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_b"] = 1.0
+        self.modeling_options["WISDEM"]["TowerSE"]["gamma_fatigue"] = 1.0
+
+        # Simplified the options available to the user
+        self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"] = {}
+        # self.modeling_options['TowerSE']['frame3dd']['DC']      = 80.0
+        self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["shear"] = True
+        self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["geom"] = True
+        # self.modeling_options['TowerSE']['frame3dd']['dx']      = -1
+        # self.modeling_options['TowerSE']['frame3dd']['nM']      = 6
+        # self.modeling_options['TowerSE']['frame3dd']['Mmethod'] = 1
+        # self.modeling_options['TowerSE']['frame3dd']['lump']    = 0
+        self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["tol"] = 1e-9
+        # self.modeling_options['TowerSE']['frame3dd']['shift']   = 0.0
+        # self.modeling_options['TowerSE']['frame3dd']['add_gravity'] = True
 
 
 class TestTowerSE(unittest.TestCase):
@@ -21,23 +104,15 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options["materials"] = {}
         self.modeling_options["materials"]["n_mat"] = 1
 
-        self.modeling_options["flags"] = {}
-        self.modeling_options["flags"]["monopile"] = False
-
         self.modeling_options["WISDEM"] = {}
+        self.modeling_options["WISDEM"]["n_dlc"] = 1
         self.modeling_options["WISDEM"]["TowerSE"] = {}
         self.modeling_options["WISDEM"]["TowerSE"]["buckling_method"] = "eurocode"
         self.modeling_options["WISDEM"]["TowerSE"]["buckling_length"] = 30.0
-        self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = 3
-        self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = 1
-        self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 0
-        self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 0
+        self.modeling_options["WISDEM"]["TowerSE"]["n_layers"] = 1
         self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 3
+        self.modeling_options["WISDEM"]["TowerSE"]["n_refine"] = 3
         self.modeling_options["WISDEM"]["TowerSE"]["wind"] = "PowerWind"
-        self.modeling_options["WISDEM"]["TowerSE"]["nLC"] = 1
-
-        self.modeling_options["WISDEM"]["TowerSE"]["soil_springs"] = False
-        self.modeling_options["WISDEM"]["TowerSE"]["gravity_foundation"] = False
 
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_f"] = 1.0
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_m"] = 1.0
@@ -65,23 +140,23 @@ class TestTowerSE(unittest.TestCase):
         prob.setup()
 
         prob["hub_height"] = 80.0
-        prob["transition_piece_mass"] = 0.0
-        prob["transition_piece_cost"] = 0.0
-        prob["gravity_foundation_mass"] = 0.0
 
         prob["tower_s"] = np.linspace(0, 1, 3)
-        prob["tower_foundation_height"] = 0.0
+        prob["foundation_height"] = 0.0
         prob["tower_height"] = 80.0
         # prob['tower_section_height'] = 40.0*np.ones(2)
         prob["tower_outer_diameter_in"] = 10.0 * np.ones(3)
         prob["tower_layer_thickness"] = 0.1 * np.ones((1, 3))
-        prob["tower_outfitting_factor"] = 1.0
+        prob["outfitting_factor_in"] = 1.0
         prob["tower_layer_materials"] = ["steel"]
         prob["material_names"] = ["steel"]
         prob["E_mat"] = 1e9 * np.ones((1, 3))
         prob["G_mat"] = 1e8 * np.ones((1, 3))
         prob["rho_mat"] = 1e4
         prob["sigma_y_mat"] = 1e8
+        prob["sigma_ult_mat"] = 1e8 * np.ones((1, 3))
+        prob["wohler_exp_mat"] = 1e1
+        prob["wohler_A_mat"] = 1e1
 
         prob["yaw"] = 0.0
         prob["rna_mass"] = 2e5
@@ -93,356 +168,62 @@ class TestTowerSE(unittest.TestCase):
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
         prob["shearExp"] = 0.2
-        prob["wind.Uref"] = 15.0
-        prob["pre.rna_F"] = 1e3 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
-        prob["pre.rna_M"] = 1e4 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
+        prob["env.Uref"] = 15.0
+        prob["tower.rna_F"] = 1e3 * np.arange(2, 5)
+        prob["tower.rna_M"] = 1e4 * np.arange(2, 5)
         prob.run_model()
 
         # All other tests from above
         mass_dens = 1e4 * (5.0 ** 2 - 4.9 ** 2) * np.pi
         npt.assert_equal(prob["z_start"], 0.0)
         npt.assert_equal(prob["transition_piece_height"], 0.0)
-        npt.assert_equal(prob["suctionpile_depth"], 0.0)
         npt.assert_equal(prob["z_param"], np.array([0.0, 40.0, 80.0]))
 
         self.assertEqual(prob["height_constraint"], 0.0)
-        self.assertEqual(prob["tower_cost"], prob["cm.cost"])
-        npt.assert_equal(prob["tower_I_base"], prob["cm.I_base"])
         npt.assert_almost_equal(prob["tower_center_of_mass"], 40.0)
-        npt.assert_equal(prob["tower_section_center_of_mass"], prob["cm.section_center_of_mass"])
-        self.assertEqual(prob["monopile_mass"], 0.0)
-        self.assertEqual(prob["monopile_cost"], 0.0)
         npt.assert_almost_equal(prob["tower_mass"], mass_dens * 80.0)
 
-        npt.assert_equal(prob["pre.kidx"], np.array([0], dtype=np.int_))
-        npt.assert_equal(prob["pre.kx"], np.array([RIGID]))
-        npt.assert_equal(prob["pre.ky"], np.array([RIGID]))
-        npt.assert_equal(prob["pre.kz"], np.array([RIGID]))
-        npt.assert_equal(prob["pre.ktx"], np.array([RIGID]))
-        npt.assert_equal(prob["pre.kty"], np.array([RIGID]))
-        npt.assert_equal(prob["pre.ktz"], np.array([RIGID]))
+        npt.assert_equal(prob.model.tower.frame.rnode, np.array([1], dtype=np.int_))
+        npt.assert_equal(prob.model.tower.frame.rKx, np.array([RIGID]))
+        npt.assert_equal(prob.model.tower.frame.rKy, np.array([RIGID]))
+        npt.assert_equal(prob.model.tower.frame.rKz, np.array([RIGID]))
+        npt.assert_equal(prob.model.tower.frame.rKtx, np.array([RIGID]))
+        npt.assert_equal(prob.model.tower.frame.rKty, np.array([RIGID]))
+        npt.assert_equal(prob.model.tower.frame.rKtz, np.array([RIGID]))
 
-        npt.assert_equal(prob["pre.midx"], np.array([6, 0, 0]))
-        npt.assert_equal(prob["pre.m"], np.array([2e5, 0, 0]))
-        npt.assert_equal(prob["pre.mrhox"], np.array([-3.0, 0.0, 0.0]))
-        npt.assert_equal(prob["pre.mrhoy"], np.array([0.0, 0.0, 0.0]))
-        npt.assert_equal(prob["pre.mrhoz"], np.array([1.0, 0.0, 0.0]))
-        npt.assert_equal(prob["pre.mIxx"], np.array([1e5, 0.0, 0.0]))
-        npt.assert_equal(prob["pre.mIyy"], np.array([1e5, 0.0, 0.0]))
-        npt.assert_equal(prob["pre.mIzz"], np.array([2e5, 0.0, 0.0]))
-        npt.assert_equal(prob["pre.mIxy"], np.zeros(3))
-        npt.assert_equal(prob["pre.mIxz"], np.zeros(3))
-        npt.assert_equal(prob["pre.mIyz"], np.zeros(3))
-
-        npt.assert_equal(prob["pre.plidx"], np.array([6]))
-        npt.assert_equal(prob["pre.Fx"], np.array([2e3]))
-        npt.assert_equal(prob["pre.Fy"], np.array([3e3]))
-        npt.assert_equal(prob["pre.Fz"], np.array([4e3]))
-        npt.assert_equal(prob["pre.Mxx"], np.array([2e4]))
-        npt.assert_equal(prob["pre.Myy"], np.array([3e4]))
-        npt.assert_equal(prob["pre.Mzz"], np.array([4e4]))
-
-    def testProblemFixedPile(self):
-        self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 3
-        self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 1
-        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 5
-        self.modeling_options["WISDEM"]["TowerSE"]["soil_springs"] = True
-        self.modeling_options["WISDEM"]["TowerSE"]["gravity_foundation"] = False
-        self.modeling_options["flags"]["monopile"] = True
-
-        prob = om.Problem()
-        prob.model = tow.TowerSE(modeling_options=self.modeling_options)
-        prob.setup()
-
-        prob["hub_height"] = 80.0
-        prob["water_depth"] = 30.0
-        prob["transition_piece_mass"] = 1e2
-        prob["transition_piece_cost"] = 1e3
-        prob["gravity_foundation_mass"] = 0.0  # 1e4
-
-        prob["tower_s"] = np.linspace(0, 1, 3)
-        prob["tower_foundation_height"] = 0.0
-        prob["tower_height"] = 60.0
-        prob["tower_outer_diameter_in"] = 10.0 * np.ones(3)
-        prob["tower_layer_thickness"] = 0.1 * np.ones((1, 3))
-        prob["tower_outfitting_factor"] = 1.0
-        hval = np.array([15.0, 30.0])
-        prob["monopile_s"] = np.cumsum(np.r_[0, hval]) / hval.sum()
-        prob["monopile_foundation_height"] = -45.0
-        prob["monopile_height"] = hval.sum()
-        prob["monopile_outer_diameter_in"] = 10.0 * np.ones(3)
-        prob["monopile_layer_thickness"] = 0.1 * np.ones((1, 3))
-        prob["monopile_outfitting_factor"] = 1.0
-        prob["tower_layer_materials"] = prob["monopile_layer_materials"] = ["steel"]
-        prob["material_names"] = ["steel"]
-        prob["E_mat"] = 1e9 * np.ones((1, 3))
-        prob["G_mat"] = 1e8 * np.ones((1, 3))
-        prob["rho_mat"] = 1e4
-        prob["sigma_y_mat"] = 1e8
-
-        prob["outfitting_factor"] = 1.0
-        prob["yaw"] = 0.0
-        prob["G_soil"] = 1e7
-        prob["nu_soil"] = 0.5
-        prob["rna_mass"] = 2e5
-        prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
-        prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
-        prob["wind_reference_height"] = 80.0
-        prob["z0"] = 0.0
-        prob["cd_usr"] = -1.0
-        prob["rho_air"] = 1.225
-        prob["mu_air"] = 1.7934e-5
-        prob["shearExp"] = 0.2
-        prob["rho_water"] = 1025.0
-        prob["mu_water"] = 1.3351e-3
-        prob["beta_wind"] = prob["beta_wave"] = 0.0
-        prob["Hsig_wave"] = 0.0
-        prob["Tsig_wave"] = 1e3
-        prob["wind.Uref"] = 15.0
-        prob["pre.rna_F"] = 1e3 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
-        prob["pre.rna_M"] = 1e4 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
-        prob.run_model()
-
-        # All other tests from above
-        mass_dens = 1e4 * (5.0 ** 2 - 4.9 ** 2) * np.pi
-        npt.assert_equal(prob["z_start"], -45.0)
-        npt.assert_equal(prob["transition_piece_height"], 0.0)
-        npt.assert_equal(prob["suctionpile_depth"], 15.0)
-        npt.assert_equal(prob["z_param"], np.array([-45.0, -30.0, 0.0, 30.0, 60.0]))
-
-        self.assertEqual(prob["height_constraint"], 20.0)
-        npt.assert_almost_equal(prob["tower_cost"], (60.0 / 105.0) * prob["cm.cost"])
-        npt.assert_equal(prob["tower_I_base"][:2], prob["cm.I_base"][:2] + 1e2 * 45 ** 2)
-        npt.assert_equal(prob["tower_I_base"][2:], prob["cm.I_base"][2:])
-        npt.assert_almost_equal(
-            prob["tower_center_of_mass"],
-            (7.5 * mass_dens * 105.0 + 0.0 * 1e2) / (mass_dens * 105 + 1e2),
-        )
-        npt.assert_equal(prob["tower_section_center_of_mass"], prob["cm.section_center_of_mass"])
-        npt.assert_almost_equal(prob["monopile_cost"], (45.0 / 105.0) * prob["cm.cost"] + 1e3)
-        npt.assert_almost_equal(prob["monopile_mass"], mass_dens * 45.0 + 1e2)
-        npt.assert_almost_equal(prob["tower_mass"], mass_dens * 60.0)
-
-        npt.assert_equal(prob["pre.kidx"], np.arange(4, dtype=np.int_))
-        npt.assert_array_less(prob["pre.kx"], RIGID)
-        npt.assert_array_less(prob["pre.ky"], RIGID)
-        npt.assert_array_less(prob["pre.kz"][0], RIGID)
-        npt.assert_array_less(prob["pre.ktx"], RIGID)
-        npt.assert_array_less(prob["pre.kty"], RIGID)
-        npt.assert_array_less(prob["pre.ktz"], RIGID)
-        npt.assert_array_less(0.0, prob["pre.kx"])
-        npt.assert_array_less(0.0, prob["pre.ky"])
-        npt.assert_array_less(0.0, prob["pre.kz"][0])
-        npt.assert_array_less(0.0, prob["pre.ktx"])
-        npt.assert_array_less(0.0, prob["pre.kty"])
-        npt.assert_array_less(0.0, prob["pre.ktz"])
-        npt.assert_equal(0.0, prob["pre.kz"][1:])
-
-        npt.assert_equal(prob["pre.midx"], np.array([12, 6, 0]))
-        npt.assert_equal(prob["pre.m"], np.array([2e5, 1e2, 0]))
-        npt.assert_equal(prob["pre.mrhox"], np.array([-3.0, 0.0, 0.0]))
-        npt.assert_equal(prob["pre.mrhoy"], np.array([0.0, 0.0, 0.0]))
-        npt.assert_equal(prob["pre.mrhoz"], np.array([1.0, 0.0, 0.0]))
-        npt.assert_equal(prob["pre.mIxx"], np.array([1e5, 1e2 * 25 * 0.5, 0]))
-        npt.assert_equal(prob["pre.mIyy"], np.array([1e5, 1e2 * 25 * 0.5, 0]))
-        npt.assert_equal(prob["pre.mIzz"], np.array([2e5, 1e2 * 25, 0]))
-        npt.assert_equal(prob["pre.mIxy"], np.zeros(3))
-        npt.assert_equal(prob["pre.mIxz"], np.zeros(3))
-        npt.assert_equal(prob["pre.mIyz"], np.zeros(3))
-
-        npt.assert_equal(prob["pre.plidx"], np.array([12]))
-        npt.assert_equal(prob["pre.Fx"], np.array([2e3]))
-        npt.assert_equal(prob["pre.Fy"], np.array([3e3]))
-        npt.assert_equal(prob["pre.Fz"], np.array([4e3]))
-        npt.assert_equal(prob["pre.Mxx"], np.array([2e4]))
-        npt.assert_equal(prob["pre.Myy"], np.array([3e4]))
-        npt.assert_equal(prob["pre.Mzz"], np.array([4e4]))
-        npt.assert_almost_equal(prob["tower.base_F"], [4.61183362e04, 1.59353875e03, -2.94077236e07], 0)
-        npt.assert_almost_equal(prob["tower.base_M"], [-248566.38259147, -3286049.81237828, 40000.0], 0)
-
-    def testProblemFixedPile_GBF(self):
-        self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 3
-        self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 1
-        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 5
-        self.modeling_options["WISDEM"]["TowerSE"]["soil_springs"] = False
-        self.modeling_options["WISDEM"]["TowerSE"]["gravity_foundation"] = True
-        self.modeling_options["flags"]["monopile"] = True
-
-        prob = om.Problem()
-        prob.model = tow.TowerSE(modeling_options=self.modeling_options)
-        prob.setup()
-
-        prob["hub_height"] = 80.0
-        prob["water_depth"] = 30.0
-        prob["transition_piece_mass"] = 1e2
-        prob["transition_piece_cost"] = 1e3
-        prob["gravity_foundation_mass"] = 1e4
-
-        prob["tower_s"] = np.linspace(0, 1, 3)
-        prob["tower_foundation_height"] = 0.0
-        prob["tower_height"] = 60.0
-        prob["tower_outer_diameter_in"] = 10.0 * np.ones(3)
-        prob["tower_layer_thickness"] = 0.1 * np.ones(3).reshape((1, 3))
-        prob["tower_outfitting_factor"] = 1.0
-        hval = np.array([15.0, 30.0])
-        prob["monopile_s"] = np.cumsum(np.r_[0, hval]) / hval.sum()
-        prob["monopile_foundation_height"] = -45.0
-        prob["monopile_height"] = hval.sum()
-        prob["monopile_outer_diameter_in"] = 10.0 * np.ones(3)
-        prob["monopile_layer_thickness"] = 0.1 * np.ones(3).reshape((1, 3))
-        prob["monopile_outfitting_factor"] = 1.0
-        prob["tower_layer_materials"] = prob["monopile_layer_materials"] = ["steel"]
-        prob["material_names"] = ["steel"]
-        prob["E_mat"] = 1e9 * np.ones((1, 3))
-        prob["G_mat"] = 1e8 * np.ones((1, 3))
-        prob["rho_mat"] = 1e4
-        prob["sigma_y_mat"] = 1e8
-
-        prob["outfitting_factor"] = 1.0
-        prob["yaw"] = 0.0
-        prob["rna_mass"] = 2e5
-        prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
-        prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
-        prob["wind_reference_height"] = 80.0
-        prob["z0"] = 0.0
-        prob["cd_usr"] = -1.0
-        prob["rho_air"] = 1.225
-        prob["mu_air"] = 1.7934e-5
-        prob["shearExp"] = 0.2
-        prob["rho_water"] = 1025.0
-        prob["mu_water"] = 1.3351e-3
-        prob["beta_wind"] = prob["beta_wave"] = 0.0
-        prob["Hsig_wave"] = 0.0
-        prob["Tsig_wave"] = 1e3
-        prob["wind.Uref"] = 15.0
-        prob["pre.rna_F"] = 1e3 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
-        prob["pre.rna_M"] = 1e4 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
-        prob.run_model()
-
-        # All other tests from above
-        mass_dens = 1e4 * (5.0 ** 2 - 4.9 ** 2) * np.pi
-        npt.assert_equal(prob["z_start"], -45.0)
-        npt.assert_equal(prob["transition_piece_height"], 0.0)
-        npt.assert_equal(prob["suctionpile_depth"], 15.0)
-        npt.assert_equal(prob["z_param"], np.array([-45.0, -30.0, 0.0, 30.0, 60.0]))
-
-        self.assertEqual(prob["height_constraint"], 20.0)
-        npt.assert_almost_equal(prob["tower_cost"], (60.0 / 105.0) * prob["cm.cost"])
-        npt.assert_equal(prob["tower_I_base"][:2], prob["cm.I_base"][:2] + 1e2 * 45 ** 2)
-        npt.assert_equal(prob["tower_I_base"][2:], prob["cm.I_base"][2:])
-        npt.assert_almost_equal(
-            prob["tower_center_of_mass"],
-            (7.5 * mass_dens * 105.0 + 0.0 * 1e2 + (-45) * 1e4) / (mass_dens * 105 + 1e2 + 1e4),
-        )
-        npt.assert_equal(prob["tower_section_center_of_mass"], prob["cm.section_center_of_mass"])
-        npt.assert_almost_equal(prob["monopile_cost"], (45.0 / 105.0) * prob["cm.cost"] + 1e3)
-        npt.assert_almost_equal(prob["monopile_mass"], mass_dens * 45.0 + 1e2 + 1e4)
-        npt.assert_almost_equal(prob["tower_mass"], mass_dens * 60.0)
-
-        npt.assert_equal(prob["pre.kidx"], 0)
-        npt.assert_equal(prob["pre.kx"], RIGID)
-        npt.assert_equal(prob["pre.ky"], RIGID)
-        npt.assert_equal(prob["pre.kz"], RIGID)
-        npt.assert_equal(prob["pre.ktx"], RIGID)
-        npt.assert_equal(prob["pre.kty"], RIGID)
-        npt.assert_equal(prob["pre.ktz"], RIGID)
-
-        npt.assert_equal(prob["pre.midx"], np.array([12, 6, 0]))
-        npt.assert_equal(prob["pre.m"], np.array([2e5, 1e2, 1e4]))
-        npt.assert_equal(prob["pre.mrhox"], np.array([-3.0, 0.0, 0.0]))
-        npt.assert_equal(prob["pre.mrhoy"], np.array([0.0, 0.0, 0.0]))
-        npt.assert_equal(prob["pre.mrhoz"], np.array([1.0, 0.0, 0.0]))
-        npt.assert_equal(prob["pre.mIxx"], np.array([1e5, 1e2 * 25 * 0.5, 1e4 * 25 * 0.25]))
-        npt.assert_equal(prob["pre.mIyy"], np.array([1e5, 1e2 * 25 * 0.5, 1e4 * 25 * 0.25]))
-        npt.assert_equal(prob["pre.mIzz"], np.array([2e5, 1e2 * 25, 1e4 * 25 * 0.5]))
-        npt.assert_equal(prob["pre.mIxy"], np.zeros(3))
-        npt.assert_equal(prob["pre.mIxz"], np.zeros(3))
-        npt.assert_equal(prob["pre.mIyz"], np.zeros(3))
-
-        npt.assert_equal(prob["pre.plidx"], np.array([12]))
-        npt.assert_equal(prob["pre.Fx"], np.array([2e3]))
-        npt.assert_equal(prob["pre.Fy"], np.array([3e3]))
-        npt.assert_equal(prob["pre.Fz"], np.array([4e3]))
-        npt.assert_equal(prob["pre.Mxx"], np.array([2e4]))
-        npt.assert_equal(prob["pre.Myy"], np.array([3e4]))
-        npt.assert_equal(prob["pre.Mzz"], np.array([4e4]))
-
-        npt.assert_almost_equal(prob["tower.base_F"], [3.74393291e04, 1.84264671e03, -3.39826364e07], 0)
-        npt.assert_almost_equal(prob["tower.base_M"], [-294477.83027742, -2732413.3684215, 40000.0], 0)
+        npt.assert_equal(prob.model.tower.frame.loadCases[0].NF, np.array([7]))
+        npt.assert_equal(prob.model.tower.frame.loadCases[0].Fx, np.array([2e3]))
+        npt.assert_equal(prob.model.tower.frame.loadCases[0].Fy, np.array([3e3]))
+        npt.assert_equal(prob.model.tower.frame.loadCases[0].Fz, np.array([4e3]))
+        npt.assert_equal(prob.model.tower.frame.loadCases[0].Mxx, np.array([2e4]))
+        npt.assert_equal(prob.model.tower.frame.loadCases[0].Myy, np.array([3e4]))
+        npt.assert_equal(prob.model.tower.frame.loadCases[0].Mzz, np.array([4e4]))
 
     def testAddedMassForces(self):
-        self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 3
-        self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 1
-        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 5
-        self.modeling_options["WISDEM"]["TowerSE"]["soil_springs"] = False
-        self.modeling_options["WISDEM"]["TowerSE"]["gravity_foundation"] = False
-        self.modeling_options["flags"]["monopile"] = True
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 3
 
         prob = om.Problem()
         prob.model = tow.TowerSE(modeling_options=self.modeling_options)
         prob.setup()
 
         prob["hub_height"] = 80.0
-        prob["water_depth"] = 30.0
-        prob["transition_piece_mass"] = 0.0
-        prob["transition_piece_cost"] = 0.0
-        prob["gravity_foundation_mass"] = 0.0
 
         prob["tower_s"] = np.linspace(0, 1, 3)
-        prob["tower_foundation_height"] = 0.0
+        prob["foundation_height"] = 0.0
         prob["tower_height"] = 60.0
         prob["tower_outer_diameter_in"] = 10.0 * np.ones(3)
         prob["tower_layer_thickness"] = 0.1 * np.ones((1, 3))
-        prob["tower_outfitting_factor"] = 1.0
+        prob["outfitting_factor_in"] = 1.0
         hval = np.array([15.0, 30.0])
-        prob["monopile_s"] = np.cumsum(np.r_[0, hval]) / hval.sum()
-        prob["monopile_foundation_height"] = -45.0
-        prob["monopile_height"] = hval.sum()
-        prob["monopile_outer_diameter_in"] = 10.0 * np.ones(3)
-        prob["monopile_layer_thickness"] = 0.1 * np.ones((1, 3))
-        prob["monopile_outfitting_factor"] = 1.0
-        prob["tower_layer_materials"] = prob["monopile_layer_materials"] = ["steel"]
+        prob["tower_layer_materials"] = ["steel"]
         prob["material_names"] = ["steel"]
         prob["E_mat"] = 1e9 * np.ones((1, 3))
         prob["G_mat"] = 1e8 * np.ones((1, 3))
         prob["rho_mat"] = 1e4
         prob["sigma_y_mat"] = 1e8
+        prob["sigma_ult_mat"] = 1e8 * np.ones((1, 3))
+        prob["wohler_exp_mat"] = 1e1
+        prob["wohler_A_mat"] = 1e1
 
         prob["yaw"] = 0.0
         # prob["G_soil"] = 1e7
@@ -456,43 +237,16 @@ class TestTowerSE(unittest.TestCase):
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
         prob["shearExp"] = 0.2
-        prob["rho_water"] = 1025.0
-        prob["mu_water"] = 1.3351e-3
-        prob["beta_wind"] = prob["beta_wave"] = 0.0
-        prob["Hsig_wave"] = 0.0
-        prob["Tsig_wave"] = 1e3
-        prob["wind.Uref"] = 15.0
-        prob["pre.rna_F"] = 1e3 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
-        prob["pre.rna_M"] = 1e4 * np.array(
-            [
-                2.0,
-                3.0,
-                4.0,
-            ]
-        )
+        prob["beta_wind"] = 0.0
+        prob["env.Uref"] = 15.0
+        prob["tower.rna_F"] = 1e3 * np.arange(2, 5)
+        prob["tower.rna_M"] = 1e4 * np.arange(2, 5)
         prob.run_model()
-
         myFz = copy.copy(prob["tower.tower_Fz"])
 
-        prob["rna_mass"] = 1e4
+        prob["tower.rna_F"][-1] += 1e4
         prob.run_model()
-        myFz[3:] -= 1e4 * g
-        npt.assert_almost_equal(prob["tower.tower_Fz"], myFz)
-
-        prob["transition_piece_mass"] = 1e2
-        prob.run_model()
-        myFz[3:6] -= 1e2 * g
-        npt.assert_almost_equal(prob["tower.tower_Fz"], myFz)
-
-        prob["gravity_foundation_mass"] = 1e3
-        prob.run_model()
-        # myFz[0] -= 1e3*g
+        myFz += 1e4
         npt.assert_almost_equal(prob["tower.tower_Fz"], myFz)
 
     def test15MWmode_shapes(self):
@@ -549,7 +303,6 @@ class TestTowerSE(unittest.TestCase):
             ]
         )
 
-        self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = len(d_param)
         self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = len(d_param)
 
         prob = om.Problem()
@@ -561,29 +314,28 @@ class TestTowerSE(unittest.TestCase):
         # prob["foundation_height"] = 0.0  # -30.0
 
         prob["tower_s"] = np.cumsum(np.r_[0.0, h_param]) / h_param.sum()
-        prob["tower_foundation_height"] = 0.0  # 15.0
-        prob["water_depth"] = 0.0  # 15.0
+        prob["foundation_height"] = 0.0  # 15.0
         prob["tower_height"] = h_param.sum()
         prob["tower_outer_diameter_in"] = d_param
         prob["tower_layer_thickness"] = t_param.reshape((1, len(t_param)))
-        prob["tower_outfitting_factor"] = 1.0
+        prob["outfitting_factor_in"] = 1.0
         prob["tower_layer_materials"] = ["steel"]
         prob["material_names"] = ["steel"]
         prob["E_mat"] = 210e9 * np.ones((1, 3))
         prob["G_mat"] = 79.3e9 * np.ones((1, 3))
         prob["rho_mat"] = 7850.0
         prob["sigma_y_mat"] = 345e6
+        prob["sigma_ult_mat"] = 500e6 * np.ones((1, 3))
+        prob["wohler_exp_mat"] = 4.0
+        prob["wohler_A_mat"] = 500e6
 
         prob["yaw"] = 0.0
-        prob["transition_piece_mass"] = 0.0  # 100e3
-        prob["transition_piece_cost"] = 0.0  # 100e3
         # prob['G_soil'] = 140e6
         # prob['nu_soil'] = 0.4
         prob["shearExp"] = 0.11
         prob["rho_air"] = 1.225
         prob["z0"] = 0.0
         prob["mu_air"] = 1.7934e-5
-        prob["life"] = 20.0
 
         mIxx = 379640227.0
         mIyy = 224477294.0
@@ -595,9 +347,9 @@ class TestTowerSE(unittest.TestCase):
         prob["rna_I"] = np.array([mIxx, mIyy, mIzz, mIxy, mIxz, mIyz])
         prob["rna_cg"] = np.array([-5.019, 0.0, 0.0])
 
-        prob["wind.Uref"] = 0.0  # 20.00138038
-        prob["pre.rna_F"] = np.zeros(3)  # np.array([3569257.70891496, -22787.83765441, -404483.54819059])
-        prob["pre.rna_M"] = np.zeros(3)  # np.array([68746553.1515807, 16045443.38557568, 1811078.988995])
+        prob["env.Uref"] = 0.0  # 20.00138038
+        prob["tower.rna_F"] = np.zeros(3)  # np.array([3569257.70891496, -22787.83765441, -404483.54819059])
+        prob["tower.rna_M"] = np.zeros(3)  # np.array([68746553.1515807, 16045443.38557568, 1811078.988995])
 
         # # --- run ---
         prob.run_model()
@@ -625,6 +377,8 @@ class TestTowerSE(unittest.TestCase):
         G = 80.8e9
         rho = 8500.0
         sigma_y = 450.0e6
+        sigma_ult = wohler_A = 500e6
+        wohler_exp = 4.0
 
         # --- extra mass ----
         m = np.array([285598.8])
@@ -643,12 +397,6 @@ class TestTowerSE(unittest.TestCase):
         wind_z0 = 0.0
         shearExp = 0.2
         cd_usr = -1.0
-        # ---------------
-
-        # --- wave ---
-        water_depth = 0.0
-        soilG = 140e6
-        soilnu = 0.4
         # ---------------
 
         # --- costs ---
@@ -679,14 +427,10 @@ class TestTowerSE(unittest.TestCase):
         Mzz2 = 147301.97023764
         # # ---------------
 
-        # --- fatigue ---
-        life = 20.0
-        # ---------------
-
-        self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"] = len(d_param)
-        self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = 1
         self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = len(d_param)
-        self.modeling_options["WISDEM"]["TowerSE"]["nLC"] = 2
+        self.modeling_options["WISDEM"]["TowerSE"]["n_layers"] = 1
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = len(d_param)
+        self.modeling_options["WISDEM"]["n_dlc"] = 2
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_f"] = 1.35
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_m"] = 1.3
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_n"] = 1.0
@@ -705,25 +449,23 @@ class TestTowerSE(unittest.TestCase):
 
             # --- geometry ----
             prob["hub_height"] = h_param.sum()
-            prob["water_depth"] = water_depth
-            # prob['tower_section_height'] = h_param
             prob["tower_s"] = np.cumsum(np.r_[0.0, h_param]) / h_param.sum()
-            prob["tower_foundation_height"] = z_foundation
+            prob["foundation_height"] = z_foundation
             prob["tower_height"] = h_param.sum()
             prob["tower_outer_diameter_in"] = d_param
-            # prob['tower_wall_thickness'] = t_param
             prob["tower_layer_thickness"] = t_param.reshape((1, len(t_param)))
-            prob["tower_outfitting_factor"] = Koutfitting
+            prob["outfitting_factor_in"] = Koutfitting
             prob["tower_layer_materials"] = ["steel"]
             prob["material_names"] = ["steel"]
             prob["yaw"] = yaw
-            # prob["G_soil"] = soilG
-            # prob["nu_soil"] = soilnu
             # --- material props ---
             prob["E_mat"] = E * np.ones((1, 3))
             prob["G_mat"] = G * np.ones((1, 3))
             prob["rho_mat"] = rho
             prob["sigma_y_mat"] = sigma_y
+            prob["sigma_ult_mat"] = sigma_ult * np.ones((1, 3))
+            prob["wohler_exp_mat"] = wohler_exp
+            prob["wohler_A_mat"] = wohler_A
 
             # --- extra mass ----
             prob["rna_mass"] = m
@@ -732,7 +474,7 @@ class TestTowerSE(unittest.TestCase):
             # -----------
 
             # --- costs ---
-            prob["unit_cost"] = material_cost
+            prob["unit_cost_mat"] = [material_cost]
             prob["labor_cost_rate"] = labor_cost
             prob["painting_cost_rate"] = painting_cost
             # -----------
@@ -744,22 +486,13 @@ class TestTowerSE(unittest.TestCase):
             prob["rho_air"] = 1.225
             prob["mu_air"] = 1.7934e-5
 
-            # --- fatigue ---
-            prob["life"] = life
-            # ---------------
-
             # # --- loading case 1: max Thrust ---
-            prob["wind1.Uref"] = wind_Uref1
+            prob["env1.Uref"] = wind_Uref1
+            prob["env2.Uref"] = wind_Uref2
 
-            prob["pre1.rna_F"] = np.r_[Fx1, Fy1, Fz1]
-            prob["pre1.rna_M"] = np.r_[Mxx1, Myy1, Mzz1]
+            prob["tower.rna_F"] = np.c_[[Fx1, Fy1, Fz1], [Fx2, Fy2, Fz2]]
+            prob["tower.rna_M"] = np.c_[[Mxx1, Myy1, Mzz1], [Mxx2, Myy2, Mzz2]]
             # # ---------------
-
-            # # --- loading case 2: max Wind Speed ---
-            prob["wind2.Uref"] = wind_Uref2
-
-            prob["pre2.rna_F"] = np.r_[Fx2, Fy2, Fz2]
-            prob["pre2.rna_M"] = np.r_[Mxx2, Myy2, Mzz2]
 
             return prob
 
@@ -775,38 +508,39 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob["tower_center_of_mass"], [38.78441074])
         npt.assert_almost_equal(prob["constr_d_to_t"], [168.23076923, 161.26373626])
         npt.assert_almost_equal(prob["constr_taper"], [0.8225, 0.78419453])
-        npt.assert_almost_equal(prob["wind1.Uref"], [11.73732])
-        npt.assert_almost_equal(prob["tower1.f1"], [0.33214436], 5)
-        npt.assert_almost_equal(prob["tower1.top_deflection"], [0.6988131])
+        npt.assert_almost_equal(prob["env1.Uref"], [11.73732])
+        npt.assert_almost_equal(prob["env2.Uref"], [70.0])
+        npt.assert_almost_equal(prob["tower.f1"], [0.34560], 5)
+        npt.assert_almost_equal(prob["tower.top_deflection"], [0.66837, 0.4749321])
         npt.assert_almost_equal(
-            prob["post1.constr_stress"], [0.3844339, 0.3436128, 0.2856628, 0.2421312, 0.1121663, 0.0623614]
+            prob["post.constr_stress"].T,
+            [
+                [0.4049813, 0.3679485, 0.3149976, 0.2846112, 0.1624641, 0.0675307],
+                [0.2803884, 0.2545789, 0.217153, 0.1937528, 0.1053185, 0.0462051],
+            ],
         )
         npt.assert_almost_equal(
-            prob["post1.constr_global_buckling"], [0.5170422, 0.4829785, 0.4351583, 0.4221748, 0.3168518, 0.2755187]
+            prob["post.constr_global_buckling"].T,
+            [
+                [0.4886788, 0.4503055, 0.3971611, 0.3689947, 0.252642, 0.1473065],
+                [0.3953861, 0.3657697, 0.3243708, 0.3011636, 0.2097029, 0.1316665],
+            ],
         )
         npt.assert_almost_equal(
-            prob["post1.constr_shell_buckling"], [0.2371124, 0.1861889, 0.1282914, 0.1073705, 0.0295743, 0.0130323]
-        )
-        npt.assert_almost_equal(prob["wind2.Uref"], [70.0])
-        npt.assert_almost_equal(prob["tower2.f1"], [0.33218936], 5)
-        npt.assert_almost_equal(prob["tower2.top_deflection"], [0.6440434])
-        npt.assert_almost_equal(
-            prob["post2.constr_stress"], [0.3728837, 0.3137352, 0.2421504, 0.18487, 0.0662662, 0.0471034]
+            prob["post.constr_shell_buckling"].T,
+            [
+                [0.2600685, 0.2103217, 0.1527136, 0.1415266, 0.0524728, 0.0142974],
+                [0.1347713, 0.1092965, 0.079095, 0.073742, 0.0270721, 0.0099099],
+            ],
         )
         npt.assert_almost_equal(
-            prob["post2.constr_global_buckling"], [0.5064959, 0.4570302, 0.3978452, 0.373074, 0.276448, 0.2668201]
+            prob["tower.turbine_F"].T, [[1.28474420e6, 0.0, -3.76200522e6], [9.30198601e5, 0.0, -4.39569591e6]], 2
         )
         npt.assert_almost_equal(
-            prob["post2.constr_shell_buckling"], [0.2258567, 0.1599288, 0.0970113, 0.0700506, 0.0156922, 0.0100741]
+            prob["tower.turbine_M"].T,
+            [[4.01664296e06, 1.11242143e08, -3.46781682e05], [-1.71083379e06, 7.98010157e07, 1.47301970e05]],
+            -2,
         )
-        npt.assert_almost_equal(prob["tower1.base_F"][0], 1300347.476206353, 2)  # 1.29980269e06, 2)
-        npt.assert_array_less(np.abs(prob["tower1.base_F"][1]), 1e2, 2)
-        npt.assert_almost_equal(prob["tower1.base_F"][2], -6.31005811e06, 2)
-        npt.assert_almost_equal(prob["tower1.base_M"], [4.14775052e06, 1.10758024e08, -3.46827499e05], 0)
-        npt.assert_almost_equal(prob["tower2.base_F"][0], 1617231.046083178, 2)
-        npt.assert_array_less(np.abs(prob["tower2.base_F"][1]), 1e2, 2)
-        npt.assert_almost_equal(prob["tower2.base_F"][2], -6.27903939e06, 2)
-        npt.assert_almost_equal(prob["tower2.base_M"], [-1.76120197e06, 1.12569564e08, 1.47321336e05], 0)
 
         # Now regression on DNV-GL C202 methods
         self.modeling_options["WISDEM"]["TowerSE"]["buckling_method"] = "dnvgl"
@@ -821,42 +555,46 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob["tower_center_of_mass"], [38.78441074])
         npt.assert_almost_equal(prob["constr_d_to_t"], [168.23076923, 161.26373626])
         npt.assert_almost_equal(prob["constr_taper"], [0.8225, 0.78419453])
-        npt.assert_almost_equal(prob["wind1.Uref"], [11.73732])
-        npt.assert_almost_equal(prob["tower1.f1"], [0.33214436], 5)
-        npt.assert_almost_equal(prob["tower1.top_deflection"], [0.6988131])
+        npt.assert_almost_equal(prob["env1.Uref"], [11.73732])
+        npt.assert_almost_equal(prob["env2.Uref"], [70.0])
+        npt.assert_almost_equal(prob["tower.f1"], [0.34560], 5)
+        npt.assert_almost_equal(prob["tower.top_deflection"], [0.66837, 0.4749321])
         npt.assert_almost_equal(
-            prob["post1.constr_stress"], [0.3844339, 0.3436128, 0.2856628, 0.2421312, 0.1121663, 0.0623614]
+            prob["post.constr_stress"].T,
+            [
+                [0.4049813, 0.3679485, 0.3149976, 0.2846112, 0.1624641, 0.0675307],
+                [0.2803884, 0.2545789, 0.217153, 0.1937528, 0.1053185, 0.0462051],
+            ],
         )
         npt.assert_almost_equal(
-            prob["post1.constr_global_buckling"], [0.6274373, 0.5691916, 0.4884754, 0.454831, 0.2769742, 0.2022617]
+            prob["post.constr_global_buckling"].T,
+            [
+                [0.5922989, 0.5317575, 0.4492056, 0.4047178, 0.2268246, 0.070537],
+                [0.446346, 0.3990504, 0.334617, 0.2975646, 0.1591067, 0.0474357],
+            ],
         )
         npt.assert_almost_equal(
-            prob["post1.constr_shell_buckling"], [0.0357574, 0.0318343, 0.0281723, 0.0347622, 0.0310088, 0.0276982]
-        )
-        npt.assert_almost_equal(prob["wind2.Uref"], [70.0])
-        npt.assert_almost_equal(prob["tower2.f1"], [0.33218936], 5)
-        npt.assert_almost_equal(prob["tower2.top_deflection"], [0.6440434])
-        npt.assert_almost_equal(
-            prob["post2.constr_stress"], [0.3728837, 0.3137352, 0.2421504, 0.18487, 0.0662662, 0.0471034]
+            prob["post.constr_shell_buckling"].T,
+            [
+                [0.0191805, 0.0147922, 0.010586, 0.00998, 0.0055687, 0.0014409],
+                [0.0268627, 0.0246294, 0.0201412, 0.0229699, 0.0175204, 0.0126214],
+            ],
         )
         npt.assert_almost_equal(
-            prob["post2.constr_global_buckling"], [0.616188, 0.532396, 0.4323648, 0.378272, 0.2126512, 0.1896404]
+            prob["tower.turbine_F"].T, [[1.28474420e6, 0.0, -3.76200522e6], [9.30198601e5, 0.0, -4.39569591e6]], 2
         )
         npt.assert_almost_equal(
-            prob["post2.constr_shell_buckling"], [0.0393843, 0.0397039, 0.0368479, 0.0463734, 0.0428983, 0.0394461]
+            prob["tower.turbine_M"].T,
+            [[4.01664296e06, 1.11242143e08, -3.46781682e05], [-1.71083379e06, 7.98010157e07, 1.47301970e05]],
+            -2,
         )
-        npt.assert_almost_equal(prob["tower1.base_F"][0], 1300347.476206353, 2)  # 1.29980269e06, 2)
-        npt.assert_array_less(np.abs(prob["tower1.base_F"][1]), 1e2, 2)
-        npt.assert_almost_equal(prob["tower1.base_F"][2], -6.31005811e06, 2)
-        npt.assert_almost_equal(prob["tower1.base_M"], [4.14775052e06, 1.10758024e08, -3.46827499e05], 0)
-        npt.assert_almost_equal(prob["tower2.base_F"][0], 1617231.046083178, 2)
-        npt.assert_array_less(np.abs(prob["tower2.base_F"][1]), 1e2, 2)
-        npt.assert_almost_equal(prob["tower2.base_F"][2], -6.27903939e06, 2)
-        npt.assert_almost_equal(prob["tower2.base_M"], [-1.76120197e06, 1.12569564e08, 1.47321336e05], 0)
 
 
 def suite():
     suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestPreDiscretization))
+    suite.addTest(unittest.makeSuite(TestMass))
+    suite.addTest(unittest.makeSuite(TestStruct))
     suite.addTest(unittest.makeSuite(TestTowerSE))
     return suite
 

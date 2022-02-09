@@ -23,7 +23,9 @@ class DriveMaterials(om.ExplicitComponent):
         self.add_input("E_mat", val=np.zeros([n_mat, 3]), units="Pa")
         self.add_input("G_mat", val=np.zeros([n_mat, 3]), units="Pa")
         self.add_input("Xt_mat", val=np.zeros([n_mat, 3]), units="Pa")
-        self.add_input("sigma_y_mat", val=np.zeros(n_mat), units="Pa")
+        self.add_input("Xy_mat", val=np.zeros(n_mat), units="Pa")
+        self.add_input("wohler_exp_mat", val=np.zeros(n_mat))
+        self.add_input("wohler_A_mat", val=np.zeros(n_mat))
         self.add_input("rho_mat", val=np.zeros(n_mat), units="kg/m**3")
         self.add_input("unit_cost_mat", val=np.zeros(n_mat), units="USD/kg")
         self.add_discrete_input("material_names", val=n_mat * [""])
@@ -37,6 +39,8 @@ class DriveMaterials(om.ExplicitComponent):
         self.add_output("hub_G", val=0.0, units="Pa")
         self.add_output("hub_rho", val=0.0, units="kg/m**3")
         self.add_output("hub_Xy", val=0.0, units="Pa")
+        self.add_output("hub_wohler_exp", val=0.0)
+        self.add_output("hub_wohler_A", val=0.0)
         self.add_output("hub_mat_cost", val=0.0, units="USD/kg")
         self.add_output("spinner_rho", val=0.0, units="kg/m**3")
         self.add_output("spinner_Xt", val=0.0, units="Pa")
@@ -45,11 +49,17 @@ class DriveMaterials(om.ExplicitComponent):
         self.add_output("lss_G", val=0.0, units="Pa")
         self.add_output("lss_rho", val=0.0, units="kg/m**3")
         self.add_output("lss_Xy", val=0.0, units="Pa")
+        self.add_output("lss_Xt", val=0.0, units="Pa")
+        self.add_output("lss_wohler_exp", val=0.0)
+        self.add_output("lss_wohler_A", val=0.0)
         self.add_output("lss_cost", val=0.0, units="USD/kg")
         self.add_output("hss_E", val=0.0, units="Pa")
         self.add_output("hss_G", val=0.0, units="Pa")
         self.add_output("hss_rho", val=0.0, units="kg/m**3")
         self.add_output("hss_Xy", val=0.0, units="Pa")
+        self.add_output("hss_Xt", val=0.0, units="Pa")
+        self.add_output("hss_wohler_exp", val=0.0)
+        self.add_output("hss_wohler_A", val=0.0)
         self.add_output("hss_cost", val=0.0, units="USD/kg")
         self.add_output("bedplate_E", val=0.0, units="Pa")
         self.add_output("bedplate_G", val=0.0, units="Pa")
@@ -61,8 +71,11 @@ class DriveMaterials(om.ExplicitComponent):
         # Convert to isotropic material
         E = np.mean(inputs["E_mat"], axis=1)
         G = np.mean(inputs["G_mat"], axis=1)
-        Xt = np.mean(inputs["Xt_mat"], axis=1)
-        sigy = inputs["sigma_y_mat"]
+        # Take the minimum Xt in longitudinal and transversal diretion, neglect direction 3 (through the fibers)
+        Xt = inputs["Xt_mat"][:, [0, 1]].min(axis=1)
+        sigy = inputs["Xy_mat"]
+        m = inputs["wohler_exp_mat"]
+        A = inputs["wohler_A_mat"]
         rho = inputs["rho_mat"]
         cost = inputs["unit_cost_mat"]
 
@@ -82,16 +95,29 @@ class DriveMaterials(om.ExplicitComponent):
         outputs["hub_G"] = G[hub_imat]
         outputs["hub_rho"] = rho[hub_imat]
         outputs["hub_Xy"] = sigy[hub_imat]
+        outputs["hub_wohler_exp"] = m[hub_imat]
+        outputs["hub_wohler_A"] = A[hub_imat]
         outputs["hub_mat_cost"] = cost[hub_imat]
 
         outputs["spinner_rho"] = rho[spin_imat]
         outputs["spinner_Xt"] = Xt[spin_imat]
+        if Xt[spin_imat] == 0.0:
+            raise Exception(
+                "The tensile strength of the composite used in the rotor hub spinner is zero. Please check your input file."
+            )
         outputs["spinner_mat_cost"] = cost[spin_imat]
 
         outputs["lss_E"] = E[lss_imat]
         outputs["lss_G"] = G[lss_imat]
         outputs["lss_rho"] = rho[lss_imat]
         outputs["lss_Xy"] = sigy[lss_imat]
+        outputs["lss_Xt"] = Xt[lss_imat]
+        if Xt[lss_imat] == 0.0:
+            raise Exception(
+                "The tensile strength of the material used in the low speed shaft is zero. Please check your input file."
+            )
+        outputs["lss_wohler_exp"] = m[lss_imat]
+        outputs["lss_wohler_A"] = A[lss_imat]
         outputs["lss_cost"] = cost[lss_imat]
 
         outputs["bedplate_E"] = E[bed_imat]
@@ -107,6 +133,13 @@ class DriveMaterials(om.ExplicitComponent):
             outputs["hss_G"] = G[hss_imat]
             outputs["hss_rho"] = rho[hss_imat]
             outputs["hss_Xy"] = sigy[hss_imat]
+            outputs["hss_Xt"] = Xt[hss_imat]
+            if Xt[hss_imat] == 0.0:
+                raise Exception(
+                    "The tensile strength of the material used in the high speed shaft is zero. Please check your input file."
+                )
+            outputs["hss_wohler_exp"] = m[hss_imat]
+            outputs["hss_wohler_A"] = A[hss_imat]
             outputs["hss_cost"] = cost[hss_imat]
 
 
@@ -118,11 +151,10 @@ class DrivetrainSE(om.Group):
 
     def initialize(self):
         self.options.declare("modeling_options")
-        self.options.declare("n_dlcs")
 
     def setup(self):
         opt = self.options["modeling_options"]["WISDEM"]["DriveSE"]
-        n_dlcs = self.options["n_dlcs"]
+        n_dlcs = self.options["modeling_options"]["WISDEM"]["n_dlc"]
         direct = opt["direct"]
         dogen = self.options["modeling_options"]["flags"]["generator"]
         n_pc = self.options["modeling_options"]["WISDEM"]["RotorSE"]["n_pc"]

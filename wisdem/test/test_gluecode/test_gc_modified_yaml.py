@@ -25,14 +25,12 @@ class TestRegression(unittest.TestCase):
     def test15MW(self):
         ## IEA 15MW
         fname_wt_input = test_dir + "IEA-15-240-RWT.yaml"
-        wt_opt, modeling_options, opt_options = run_wisdem(
-            fname_wt_input, fname_modeling_options, fname_analysis_options
-        )
+        wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
-        self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 69911.6542917299, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 78.1221982490, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 83.4955271223, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.2862284109, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 68693.1923999787, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 78.1214165931, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 82.2593011242, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.0481897272, 1)
         self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 144.386, 3)
 
 

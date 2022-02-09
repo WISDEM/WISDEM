@@ -27,13 +27,14 @@ dependencies:
   - ruamel_yaml
   - scipy
   - setuptools
+  - simpy
   - sortedcontainers
   - swig
   - pip:
-    - simpy
     - marmot-agents
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]
 #  - compilers # [not win]
 #  - petsc4py # [not win]
+#  - pyoptsparse # [not win]

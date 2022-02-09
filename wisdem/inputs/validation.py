@@ -19,8 +19,9 @@ fschema_opt = os.path.join(os.path.dirname(os.path.realpath(__file__)), "analysi
 
 # ---------------------
 def load_yaml(fname_input):
+    reader = ry.YAML(typ="safe", pure=True)
     with open(fname_input, "r", encoding="utf-8") as f:
-        input_yaml = ry.load(f, Loader=ry.Loader)
+        input_yaml = reader.load(f)
     return input_yaml
 
 

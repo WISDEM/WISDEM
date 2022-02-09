@@ -1,0 +1,50 @@
+general:
+    folder_output: outputs
+    fname_output: refturb_output
+
+design_variables:
+    floating:
+        joints:
+            flag: True
+            z_coordinate:
+                - names: [spar_keel]
+                  lower_bound: -40.0
+                  upper_bound: -15.0
+                - names: [spar_freeboard]
+                  lower_bound: -40.0
+                  upper_bound: -15.0
+        members:
+            flag: True
+            groups:
+                - names: [spar]
+                  ballast:
+                      lower_bound: 1.0
+                      upper_bound: 1e4
+
+    mooring:
+        line_length:
+            flag: True
+            lower_bound: 100.0
+            upper_bound: 1000.0
+
+merit_figure: inverse_design
+
+inverse_design:
+    floatingse.platform_hull_mass:
+        ref_value: 2.5e6
+        units: kg
+    floatingse.mooring_mass:
+        ref_value: 4.5e5
+        units: kg
+    floatingse.system_structural_center_of_mass:
+        ref_value: [0., -90.]
+        indices: [1, 2]
+        units: m
+
+driver:
+    optimization:
+        flag: True         # Flag to enable optimization
+        tol: 1.e-4          # Optimality tolerance
+        solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        step_size: 1.e-6    # Step size for finite differencing
+        form: forward       # Finite differencing mode, either forward or central

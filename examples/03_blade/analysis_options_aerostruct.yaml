@@ -40,6 +40,20 @@ design_variables:
                 max_increase: 1.3      # Maximum nondimensional increase at the n_opt locations
                 index_start: 1         # Lock the first DV from blade root
                 index_end: 3           # The last DV at blade tip is locked
+            te_ss:
+                flag: True             # Flag to optimize the spar cap thickness on the suction side
+                n_opt: 4               # Number of control points along blade span
+                max_decrease: 0.7      # Maximum nondimensional decrease at the n_opt locations
+                max_increase: 1.3      # Maximum nondimensional increase at the n_opt locations
+                index_start: 1         # Lock the first DV from blade root
+                index_end: 3           # The last DV at blade tip is locked
+            te_ps:
+                flag: True             # Flag to optimize the spar cap thickness on the pressure side
+                n_opt: 4               # Number of control points along blade span
+                max_decrease: 0.7      # Maximum nondimensional decrease at the n_opt locations
+                max_increase: 1.3      # Maximum nondimensional increase at the n_opt locations
+                index_start: 1         # Lock the first DV from blade root
+                index_end: 3           # The last DV at blade tip is locked
 
 merit_figure: LCOE
 
@@ -51,6 +65,16 @@ constraints:
             index_start: 1     # Do not enforce constraint at the first station from blade root of the n_opt from spar_cap_ss
             index_end: 3       # Do not enforce constraint at the last station at blade tip of the n_opt from spar_cap_ss
         strains_spar_cap_ps:
+            flag: True         # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade pressure side
+            max:    3500.e-6   # Value of maximum strains [-]
+            index_start: 1     # Do not enforce constraint at the first station from blade root of the n_opt from spar_cap_ps
+            index_end: 3       # Do not enforce constraint at the last station at blade tip of the n_opt from spar_cap_ps
+        strains_te_ss:
+            flag: True         # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade suction side
+            max:    3500.e-6   # Value of maximum strains [-]
+            index_start: 1     # Do not enforce constraint at the first station from blade root of the n_opt from spar_cap_ss
+            index_end: 3       # Do not enforce constraint at the last station at blade tip of the n_opt from spar_cap_ss
+        strains_te_ps:
             flag: True         # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade pressure side
             max:    3500.e-6   # Value of maximum strains [-]
             index_start: 1     # Do not enforce constraint at the first station from blade root of the n_opt from spar_cap_ps

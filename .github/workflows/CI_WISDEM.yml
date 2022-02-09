@@ -24,6 +24,7 @@ jobs:
           auto-update-conda: true
           python-version: 3.8
           environment-file: environment.yml
+          activate-environment: "test"
 
       # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
@@ -31,7 +32,7 @@ jobs:
         #shell: pwsh # putting in a shell command makes for compile linking problems later
         # (if you use the shell here, cannot use 'compiler' package)
         run: |
-          conda install -y petsc4py mpi4py compilers nlopt
+          conda install -y petsc4py mpi4py compilers pyoptsparse
 
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
@@ -43,11 +44,25 @@ jobs:
       #- name: Setup tmate session
       #  uses: mxschmitt/action-tmate@v3
 
-      # Install WISDEM
-      - name: Install WISDEM
+      # Install WISDEM with setup
+      - name: Install WISDEM with setup
         shell: pwsh
         run: |
           python setup.py develop
+
+      # Install WISDEM with pip
+      - name: Install WISDEM with pip for Unix
+        if: false == contains( matrix.os, 'windows')
+        shell: pwsh
+        run: |
+          pip install -vv --no-deps -e .
+
+      # Install WISDEM with pip
+      #- name: Install WISDEM with pip for Windows
+      #  if: contains( matrix.os, 'windows')
+      #  shell: pwsh
+      #  run: |
+      #    pip install -vv --no-deps --global-option --compiler=unix .
 
       # Run all tests
       - name: Run tests

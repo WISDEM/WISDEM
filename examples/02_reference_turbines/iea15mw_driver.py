@@ -1,6 +1,6 @@
 import os
-from wisdem import run_wisdem
 
+from wisdem import run_wisdem
 
 ## File management
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file

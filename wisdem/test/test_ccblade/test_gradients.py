@@ -157,10 +157,18 @@ class TestGradients(unittest.TestCase):
         self.dTp = derivs["dTp"]
 
         outputs, derivs = self.rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
-        self.P, self.T, self.Y, self.Z, self.Q, self.My, self.Mz, self.Mb = [outputs[k] for k in ("P", "T", "Y", "Z", "Q", "My", "Mz", "Mb")]
-        self.dP, self.dT, self.dY, self.dZ, self.dQ, self.dMy, self.dMz, self.dMb = [derivs[k] for k in ("dP", "dT", "dY", "dZ", "dQ", "dMy", "dMz", "dMb")]
-        self.CP, self.CT, self.CY, self.CZ, self.CQ, self.CMy, self.CMz, self.CMb = [outputs[k] for k in ("CP", "CT", "CY", "CZ", "CQ", "CMy", "CMz", "CMb")]
-        self.dCP, self.dCT, self.dCY, self.dCZ, self.dCQ, self.dCMy, self.dCMz, self.dCMb = [derivs[k] for k in ("dCP", "dCT", "dCY", "dCZ", "dCQ", "dCMy", "dCMz", "dCMb")]
+        self.P, self.T, self.Y, self.Z, self.Q, self.My, self.Mz, self.Mb = [
+            outputs[k] for k in ("P", "T", "Y", "Z", "Q", "My", "Mz", "Mb")
+        ]
+        self.dP, self.dT, self.dY, self.dZ, self.dQ, self.dMy, self.dMz, self.dMb = [
+            derivs[k] for k in ("dP", "dT", "dY", "dZ", "dQ", "dMy", "dMz", "dMb")
+        ]
+        self.CP, self.CT, self.CY, self.CZ, self.CQ, self.CMy, self.CMz, self.CMb = [
+            outputs[k] for k in ("CP", "CT", "CY", "CZ", "CQ", "CMy", "CMz", "CMb")
+        ]
+        self.dCP, self.dCT, self.dCY, self.dCZ, self.dCQ, self.dCMy, self.dCMz, self.dCMb = [
+            derivs[k] for k in ("dCP", "dCT", "dCY", "dCZ", "dCQ", "dCMy", "dCMz", "dCMb")
+        ]
 
         self.rotor.derivatives = False
         self.n = len(self.r)
@@ -819,7 +827,7 @@ class TestGradients(unittest.TestCase):
         dP_dRhub_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dRhub_fd, dT_dRhub, rtol=1e-5, atol=1e-8)
-        np.testing.assert_allclose(dY_dRhub_fd, dY_dRhub, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dRhub_fd, dY_dRhub, rtol=1e-3, atol=1e-8)
         np.testing.assert_allclose(dZ_dRhub_fd, dZ_dRhub, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dRhub_fd, dQ_dRhub, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dMy_dRhub_fd, dMy_dRhub, rtol=5e-4, atol=1e-8)
@@ -1917,7 +1925,7 @@ class TestGradients(unittest.TestCase):
         dP_dshear_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dshear_fd, dT_dshear, rtol=1e-5, atol=1e-8)
-        np.testing.assert_allclose(dY_dshear_fd, dY_dshear, rtol=5e-5) #, atol=1e-8)
+        np.testing.assert_allclose(dY_dshear_fd, dY_dshear, rtol=5e-5)  # , atol=1e-8)
         np.testing.assert_allclose(dZ_dshear_fd, dZ_dshear, rtol=1e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dshear_fd, dQ_dshear, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dMy_dshear_fd, dMy_dshear, rtol=5e-5, atol=1e-8)
@@ -4692,10 +4700,18 @@ class TestGradientsFreestreamArray(unittest.TestCase):
         self.Omega = self.Uinf * tsr / self.Rtip * 30.0 / np.pi  # convert to RPM
 
         outputs, derivs = self.rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
-        self.P, self.T, self.Y, self.Z, self.Q, self.My, self.Mz, self.Mb = [outputs[k] for k in ("P", "T", "Y", "Z", "Q", "My", "Mz", "Mb")]
-        self.dP, self.dT, self.dY, self.dZ, self.dQ, self.dMy, self.dMz, self.dMb = [derivs[k] for k in ("dP", "dT", "dY", "dZ", "dQ", "dMy", "dMz", "dMb")]
-        self.CP, self.CT, self.CY, self.CZ, self.CQ, self.CMy, self.CMz, self.CMb = [outputs[k] for k in ("CP", "CT", "CY", "CZ", "CQ", "CMy", "CMz", "CMb")]
-        self.dCP, self.dCT, self.dCY, self.dCZ, self.dCQ, self.dCMy, self.dCMz, self.dCMb = [derivs[k] for k in ("dCP", "dCT", "dCY", "dCZ", "dCQ", "dCMy", "dCMz", "dCMb")]
+        self.P, self.T, self.Y, self.Z, self.Q, self.My, self.Mz, self.Mb = [
+            outputs[k] for k in ("P", "T", "Y", "Z", "Q", "My", "Mz", "Mb")
+        ]
+        self.dP, self.dT, self.dY, self.dZ, self.dQ, self.dMy, self.dMz, self.dMb = [
+            derivs[k] for k in ("dP", "dT", "dY", "dZ", "dQ", "dMy", "dMz", "dMb")
+        ]
+        self.CP, self.CT, self.CY, self.CZ, self.CQ, self.CMy, self.CMz, self.CMb = [
+            outputs[k] for k in ("CP", "CT", "CY", "CZ", "CQ", "CMy", "CMz", "CMb")
+        ]
+        self.dCP, self.dCT, self.dCY, self.dCZ, self.dCQ, self.dCMy, self.dCMz, self.dCMb = [
+            derivs[k] for k in ("dCP", "dCT", "dCY", "dCZ", "dCQ", "dCMy", "dCMz", "dCMb")
+        ]
 
         self.rotor.derivatives = False
         self.n = len(self.r)
@@ -5161,10 +5177,18 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         self.dTp = derivs["dTp"]
 
         outputs, derivs = self.rotor.evaluate([self.Uinf], [self.Omega], [self.pitch], coefficients=True)
-        self.P, self.T, self.Y, self.Z, self.Q, self.My, self.Mz, self.Mb = [outputs[k] for k in ("P", "T", "Y", "Z", "Q", "My", "Mz", "Mb")]
-        self.dP, self.dT, self.dY, self.dZ, self.dQ, self.dMy, self.dMz, self.dMb = [derivs[k] for k in ("dP", "dT", "dY", "dZ", "dQ", "dMy", "dMz", "dMb")]
-        self.CP, self.CT, self.CY, self.CZ, self.CQ, self.CMy, self.CMz, self.CMb = [outputs[k] for k in ("CP", "CT", "CY", "CZ", "CQ", "CMy", "CMz", "CMb")]
-        self.dCP, self.dCT, self.dCY, self.dCZ, self.dCQ, self.dCMy, self.dCMz, self.dCMb = [derivs[k] for k in ("dCP", "dCT", "dCY", "dCZ", "dCQ", "dCMy", "dCMz", "dCMb")]
+        self.P, self.T, self.Y, self.Z, self.Q, self.My, self.Mz, self.Mb = [
+            outputs[k] for k in ("P", "T", "Y", "Z", "Q", "My", "Mz", "Mb")
+        ]
+        self.dP, self.dT, self.dY, self.dZ, self.dQ, self.dMy, self.dMz, self.dMb = [
+            derivs[k] for k in ("dP", "dT", "dY", "dZ", "dQ", "dMy", "dMz", "dMb")
+        ]
+        self.CP, self.CT, self.CY, self.CZ, self.CQ, self.CMy, self.CMz, self.CMb = [
+            outputs[k] for k in ("CP", "CT", "CY", "CZ", "CQ", "CMy", "CMz", "CMb")
+        ]
+        self.dCP, self.dCT, self.dCY, self.dCZ, self.dCQ, self.dCMy, self.dCMz, self.dCMb = [
+            derivs[k] for k in ("dCP", "dCT", "dCY", "dCZ", "dCQ", "dCMy", "dCMz", "dCMb")
+        ]
 
         self.rotor.derivatives = False
         self.n = len(self.r)
@@ -5457,10 +5481,10 @@ class TestGradients_RHub_Tip(unittest.TestCase):
             dP_dchord_fd[:, i] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dchord_fd, dT_dchord, rtol=5e-6, atol=1e-8)
-        np.testing.assert_allclose(dY_dchord_fd, dY_dchord, rtol=8e-5, atol=1e-8)
-        np.testing.assert_allclose(dZ_dchord_fd, dZ_dchord, rtol=5e-5, atol=1e-8)
-        np.testing.assert_allclose(dQ_dchord_fd, dQ_dchord, rtol=7e-5, atol=1e-8)
-        np.testing.assert_allclose(dMy_dchord_fd, dMy_dchord, rtol=3e-4, atol=1e-8)
+        np.testing.assert_allclose(dY_dchord_fd, dY_dchord, rtol=5e-3, atol=1e-8)
+        np.testing.assert_allclose(dZ_dchord_fd, dZ_dchord, rtol=5e-3, atol=1e-8)
+        np.testing.assert_allclose(dQ_dchord_fd, dQ_dchord, rtol=5e-3, atol=1e-8)
+        np.testing.assert_allclose(dMy_dchord_fd, dMy_dchord, rtol=5e-3, atol=1e-8)
         np.testing.assert_allclose(dMz_dchord_fd, dMz_dchord, rtol=3e-4, atol=1e-8)
         np.testing.assert_allclose(dMb_dchord_fd, dMb_dchord, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dP_dchord_fd, dP_dchord, rtol=7e-5, atol=1e-8)
@@ -5823,7 +5847,7 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         dP_dRhub_fd[:, 0] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dRhub_fd, dT_dRhub, rtol=1e-5, atol=1e-8)
-        np.testing.assert_allclose(dY_dRhub_fd, dY_dRhub, rtol=5e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dRhub_fd, dY_dRhub, rtol=1e-3, atol=1e-8)
         np.testing.assert_allclose(dZ_dRhub_fd, dZ_dRhub, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dRhub_fd, dQ_dRhub, rtol=5e-5, atol=1e-8)
         np.testing.assert_allclose(dMy_dRhub_fd, dMy_dRhub, rtol=7e-4, atol=1e-8)
@@ -7893,8 +7917,8 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         np.testing.assert_allclose(dY_dpresweep_fd, dY_dpresweep, rtol=4e-3, atol=1e-8)
         np.testing.assert_allclose(dZ_dpresweep_fd, dZ_dpresweep, rtol=4e-3, atol=1e-8)
         np.testing.assert_allclose(dQ_dpresweep_fd, dQ_dpresweep, rtol=3e-4, atol=1e-8)
-        np.testing.assert_allclose(dMy_dpresweep_fd, dMy_dpresweep, rtol=9e-4, atol=1e-8)
-        np.testing.assert_allclose(dMz_dpresweep_fd, dMz_dpresweep, rtol=9e-4, atol=1e-8)
+        np.testing.assert_allclose(dMy_dpresweep_fd, dMy_dpresweep, rtol=2e-3, atol=1e-8)
+        np.testing.assert_allclose(dMz_dpresweep_fd, dMz_dpresweep, rtol=2e-3, atol=1e-8)
         np.testing.assert_allclose(dMb_dpresweep_fd, dMb_dpresweep, rtol=4e-4, atol=1e-8)
         np.testing.assert_allclose(dP_dpresweep_fd, dP_dpresweep, rtol=3e-4, atol=1e-8)
 

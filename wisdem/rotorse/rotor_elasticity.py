@@ -3,10 +3,9 @@ import copy
 import numpy as np
 from openmdao.api import Group, ExplicitComponent
 from scipy.interpolate import PchipInterpolator
+
 from wisdem.rotorse.precomp import PreComp, Profile, CompositeSection, Orthotropic2DMaterial
-from wisdem.commonse.csystem import DirectionVector
 from wisdem.commonse.utilities import rotate, arc_length
-from wisdem.rotorse.rotor_cost import blade_cost_model
 from wisdem.rotorse.rail_transport import RailTransport
 
 
@@ -145,7 +144,6 @@ class RunPreComp(ExplicitComponent):
             desc="Spanwise position of the segmentation joint.",
         )
         self.add_input("joint_mass", val=0.0, desc="Mass of the joint.")
-        self.add_input("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
 
         # Outputs - Distributed beam properties
         self.add_output("z", val=np.zeros(n_span), units="m", desc="locations of properties along beam")
@@ -241,42 +239,42 @@ class RunPreComp(ExplicitComponent):
         # self.add_output('eps_crit_spar',    val=np.zeros(n_span), desc='critical strain in spar from panel buckling calculation')
         # self.add_output('eps_crit_te',      val=np.zeros(n_span), desc='critical strain in trailing-edge panels from panel buckling calculation')
         self.add_output(
-            "xu_strain_spar",
+            "xu_spar",
             val=np.zeros(n_span),
             desc="x-position of midpoint of spar cap on upper surface for strain calculation",
         )
         self.add_output(
-            "xl_strain_spar",
+            "xl_spar",
             val=np.zeros(n_span),
             desc="x-position of midpoint of spar cap on lower surface for strain calculation",
         )
         self.add_output(
-            "yu_strain_spar",
+            "yu_spar",
             val=np.zeros(n_span),
             desc="y-position of midpoint of spar cap on upper surface for strain calculation",
         )
         self.add_output(
-            "yl_strain_spar",
+            "yl_spar",
             val=np.zeros(n_span),
             desc="y-position of midpoint of spar cap on lower surface for strain calculation",
         )
         self.add_output(
-            "xu_strain_te",
+            "xu_te",
             val=np.zeros(n_span),
             desc="x-position of midpoint of trailing-edge panel on upper surface for strain calculation",
         )
         self.add_output(
-            "xl_strain_te",
+            "xl_te",
             val=np.zeros(n_span),
             desc="x-position of midpoint of trailing-edge panel on lower surface for strain calculation",
         )
         self.add_output(
-            "yu_strain_te",
+            "yu_te",
             val=np.zeros(n_span),
             desc="y-position of midpoint of trailing-edge panel on upper surface for strain calculation",
         )
         self.add_output(
-            "yl_strain_te",
+            "yl_te",
             val=np.zeros(n_span),
             desc="y-position of midpoint of trailing-edge panel on lower surface for strain calculation",
         )
@@ -293,57 +291,6 @@ class RunPreComp(ExplicitComponent):
             units="kg*m**2",
             desc="mass moments of inertia of all blades in hub c.s. order:Ixx, Iyy, Izz, Ixy, Ixz, Iyz",
         )
-
-        # Placeholder - rotor cost
-        self.add_discrete_input(
-            "component_id",
-            val=np.zeros(n_mat),
-            desc="1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE reinf.isotropic.",
-        )
-        self.add_input(
-            "unit_cost", val=np.zeros(n_mat), units="USD/kg", desc="1D array of the unit costs of the materials."
-        )
-        self.add_input(
-            "waste", val=np.zeros(n_mat), desc="1D array of the non-dimensional waste fraction of the materials."
-        )
-        self.add_input(
-            "rho_fiber",
-            val=np.zeros(n_mat),
-            units="kg/m**3",
-            desc="1D array of the density of the fibers of the materials.",
-        )
-        self.add_input(
-            "rho_area_dry",
-            val=np.zeros(n_mat),
-            units="kg/m**2",
-            desc="1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.",
-        )
-        self.add_input(
-            "ply_t",
-            val=np.zeros(n_mat),
-            units="m",
-            desc="1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.",
-        )
-        self.add_input(
-            "fvf",
-            val=np.zeros(n_mat),
-            desc="1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.",
-        )
-        self.add_input(
-            "fwf",
-            val=np.zeros(n_mat),
-            desc="1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.",
-        )
-        self.add_input(
-            "roll_mass",
-            val=np.zeros(n_mat),
-            units="kg",
-            desc="1D array of the roll mass of the composite fabrics. Non-composite materials are kept at 0.",
-        )
-
-        # Outputs
-        self.add_output("total_blade_cost", val=0.0, units="USD", desc="total blade cost")
-        self.add_output("total_blade_mass", val=0.0, units="USD", desc="total blade cost")
 
         self.add_output(
             "sc_ss_mats",
@@ -765,16 +712,16 @@ class RunPreComp(ExplicitComponent):
             else:
                 websCS[i] = CompositeSection([], [], [], [], [], [])
 
-        sector_idx_strain_spar_cap_ss = [
+        sector_idx_spar_cap_ss = [
             None if regs == None else regs[int(len(regs) / 2)] for regs in region_loc_ss[self.spar_cap_ss_var]
         ]
-        sector_idx_strain_spar_cap_ps = [
+        sector_idx_spar_cap_ps = [
             None if regs == None else regs[int(len(regs) / 2)] for regs in region_loc_ps[self.spar_cap_ps_var]
         ]
-        sector_idx_strain_te_ss = [
+        sector_idx_te_ss = [
             None if regs == None else regs[int(len(regs) / 2)] for regs in region_loc_ss[self.te_ss_var]
         ]
-        sector_idx_strain_te_ps = [
+        sector_idx_te_ps = [
             None if regs == None else regs[int(len(regs) / 2)] for regs in region_loc_ps[self.te_ps_var]
         ]
 
@@ -791,10 +738,10 @@ class RunPreComp(ExplicitComponent):
             upperCS,
             lowerCS,
             websCS,
-            sector_idx_strain_spar_cap_ps,
-            sector_idx_strain_spar_cap_ss,
-            sector_idx_strain_te_ps,
-            sector_idx_strain_te_ss,
+            sector_idx_spar_cap_ps,
+            sector_idx_spar_cap_ss,
+            sector_idx_te_ps,
+            sector_idx_te_ss,
         )
         (
             EIxx,
@@ -818,30 +765,28 @@ class RunPreComp(ExplicitComponent):
             y_cg,
         ) = beam.sectionProperties()
 
-        # outputs['eps_crit_spar'] = beam.panelBucklingStrain(sector_idx_strain_spar_cap_ss)
-        # outputs['eps_crit_te'] = beam.panelBucklingStrain(sector_idx_strain_te_ss)
+        # outputs['eps_crit_spar'] = beam.panelBucklingStrain(sector_idx_spar_cap_ss)
+        # outputs['eps_crit_te'] = beam.panelBucklingStrain(sector_idx_te_ss)
 
-        xu_strain_spar, xl_strain_spar, yu_strain_spar, yl_strain_spar = beam.criticalStrainLocations(
-            sector_idx_strain_spar_cap_ss, sector_idx_strain_spar_cap_ps
+        xu_spar, xl_spar, yu_spar, yl_spar = beam.criticalStrainLocations(
+            sector_idx_spar_cap_ss, sector_idx_spar_cap_ps
         )
-        xu_strain_te, xl_strain_te, yu_strain_te, yl_strain_te = beam.criticalStrainLocations(
-            sector_idx_strain_te_ss, sector_idx_strain_te_ps
-        )
+        xu_te, xl_te, yu_te, yl_te = beam.criticalStrainLocations(sector_idx_te_ss, sector_idx_te_ps)
 
         # Store what materials make up the composites for SC/TE
         for i in range(self.n_span):
             for j in range(self.n_mat):
-                if sector_idx_strain_spar_cap_ss[i]:
-                    if j in upperCS[i].mat_idx[sector_idx_strain_spar_cap_ss[i]]:
+                if sector_idx_spar_cap_ss[i]:
+                    if j in upperCS[i].mat_idx[sector_idx_spar_cap_ss[i]]:
                         outputs["sc_ss_mats"][i, j] = 1.0
-                if sector_idx_strain_spar_cap_ps[i]:
-                    if j in lowerCS[i].mat_idx[sector_idx_strain_spar_cap_ps[i]]:
+                if sector_idx_spar_cap_ps[i]:
+                    if j in lowerCS[i].mat_idx[sector_idx_spar_cap_ps[i]]:
                         outputs["sc_ps_mats"][i, j] = 1.0
-                if sector_idx_strain_te_ss[i]:
-                    if j in upperCS[i].mat_idx[sector_idx_strain_te_ss[i]]:
+                if sector_idx_te_ss[i]:
+                    if j in upperCS[i].mat_idx[sector_idx_te_ss[i]]:
                         outputs["te_ss_mats"][i, j] = 1.0
-                if sector_idx_strain_te_ps[i]:
-                    if j in lowerCS[i].mat_idx[sector_idx_strain_te_ps[i]]:
+                if sector_idx_te_ps[i]:
+                    if j in lowerCS[i].mat_idx[sector_idx_te_ps[i]]:
                         outputs["te_ps_mats"][i, j] = 1.0
 
         if inputs["joint_mass"] > 0.0:
@@ -877,14 +822,14 @@ class RunPreComp(ExplicitComponent):
         outputs["x_cg"] = x_cg
         outputs["y_cg"] = y_cg
 
-        outputs["xu_strain_spar"] = xu_strain_spar
-        outputs["xl_strain_spar"] = xl_strain_spar
-        outputs["yu_strain_spar"] = yu_strain_spar
-        outputs["yl_strain_spar"] = yl_strain_spar
-        outputs["xu_strain_te"] = xu_strain_te
-        outputs["xl_strain_te"] = xl_strain_te
-        outputs["yu_strain_te"] = yu_strain_te
-        outputs["yl_strain_te"] = yl_strain_te
+        outputs["xu_spar"] = xu_spar
+        outputs["xl_spar"] = xl_spar
+        outputs["yu_spar"] = yu_spar
+        outputs["yl_spar"] = yl_spar
+        outputs["xu_te"] = xu_te
+        outputs["xl_te"] = xl_te
+        outputs["yu_te"] = yu_te
+        outputs["yl_te"] = yl_te
 
         # Compute mass and inertia of blade and rotor
         blade_mass = np.trapz(rhoA, inputs["r"])
@@ -905,78 +850,6 @@ class RunPreComp(ExplicitComponent):
         outputs["blade_moment_of_inertia"] = blade_moment_of_inertia
         outputs["mass_all_blades"] = mass_all_blades
         outputs["I_all_blades"] = I_all_blades
-
-        # Placeholder - rotor cost
-        bcm = blade_cost_model(verbosity=self.verbosity)
-        bcm.name = ""
-        bcm.materials = {}
-        bcm.mat_options = {}
-
-        bcm.mat_options["core_mat_id"] = np.zeros(self.n_mat)
-        bcm.mat_options["coating_mat_id"] = -1
-        bcm.mat_options["le_reinf_mat_id"] = -1
-        bcm.mat_options["te_reinf_mat_id"] = -1
-
-        for i_mat in range(self.n_mat):
-            name = discrete_inputs["mat_name"][i_mat]
-            # if name != 'resin':
-            bcm.materials[name] = {}
-            bcm.materials[name]["id"] = i_mat + 1
-            bcm.materials[name]["name"] = discrete_inputs["mat_name"][i_mat]
-            bcm.materials[name]["density"] = inputs["rho"][i_mat]
-            bcm.materials[name]["unit_cost"] = inputs["unit_cost"][i_mat]
-            bcm.materials[name]["waste"] = inputs["waste"][i_mat] * 100.0
-            if discrete_inputs["component_id"][i_mat] > 1:  # It's a composite
-                bcm.materials[name]["fiber_density"] = inputs["rho_fiber"][i_mat]
-                bcm.materials[name]["area_density_dry"] = inputs["rho_area_dry"][i_mat]
-                bcm.materials[name]["fvf"] = inputs["fvf"][i_mat] * 100.0
-                bcm.materials[name]["fwf"] = inputs["fwf"][i_mat] * 100.0
-                bcm.materials[name]["ply_t"] = inputs["ply_t"][i_mat]
-                if discrete_inputs["component_id"][i_mat] > 3:  # The material does not need to be cut@station
-                    bcm.materials[name]["cut@station"] = "N"
-                else:
-                    bcm.materials[name]["cut@station"] = "Y"
-                    bcm.materials[name]["roll_mass"] = inputs["roll_mass"][i_mat]
-            else:
-                bcm.materials[name]["fvf"] = 100.0
-                bcm.materials[name]["fwf"] = 100.0
-                bcm.materials[name]["cut@station"] = "N"
-                if discrete_inputs["component_id"][i_mat] <= 0:
-                    bcm.materials[name]["ply_t"] = inputs["ply_t"][i_mat]
-
-            if discrete_inputs["component_id"][i_mat] == 0:
-                bcm.mat_options["coating_mat_id"] = bcm.materials[name]["id"]  # Assigning the material to the coating
-            elif discrete_inputs["component_id"][i_mat] == 1:
-                bcm.mat_options["core_mat_id"][bcm.materials[name]["id"] - 1] = 1  # Assigning the material to the core
-            elif discrete_inputs["component_id"][i_mat] == 2:
-                bcm.mat_options["skin_mat_id"] = bcm.materials[name]["id"]  # Assigning the material to the shell skin
-            elif discrete_inputs["component_id"][i_mat] == 3:
-                bcm.mat_options["skinwebs_mat_id"] = bcm.materials[name][
-                    "id"
-                ]  # Assigning the material to the webs skin
-            elif discrete_inputs["component_id"][i_mat] == 4:
-                bcm.mat_options["sc_mat_id"] = bcm.materials[name]["id"]  # Assigning the material to the spar caps
-            elif discrete_inputs["component_id"][i_mat] == 5:
-                bcm.mat_options["le_reinf_mat_id"] = bcm.materials[name]["id"]  # Assigning the material to the le reinf
-                bcm.mat_options["te_reinf_mat_id"] = bcm.materials[name]["id"]  # Assigning the material to the te reinf
-
-        # Rotor cost
-        bcm.upperCS = upperCS
-        bcm.lowerCS = lowerCS
-        bcm.websCS = websCS
-        bcm.profile = profile
-        bcm.chord = inputs["chord"]
-        bcm.r = inputs["r"] - inputs["r"][0]
-        bcm.bladeLength = inputs["r"][-1] - inputs["r"][0]
-        bcm.le_location = inputs["pitch_axis"]
-        blade_cost, blade_mass = bcm.execute_blade_cost_model()
-        self._bcm = bcm
-
-        if inputs["joint_mass"] > 0.0:
-            blade_cost += inputs["joint_cost"]
-
-        outputs["total_blade_cost"] = blade_cost
-        outputs["total_blade_mass"] = blade_mass
 
 
 class RotorElasticity(Group):
@@ -1025,16 +898,19 @@ class RotorElasticity(Group):
                 "sc_ps_mats",
                 "te_ss_mats",
                 "te_ps_mats",
-                "xu_strain_spar",
-                "xl_strain_spar",
-                "yu_strain_spar",
-                "yl_strain_spar",
-                "xu_strain_te",
-                "xl_strain_te",
-                "yu_strain_te",
-                "yl_strain_te",
+                "xu_spar",
+                "xl_spar",
+                "yu_spar",
+                "yl_spar",
+                "xu_te",
+                "xl_te",
+                "yu_te",
+                "yl_te",
             ],
         )
         # Check rail transportabiliy
-        if opt_options["constraints"]["blade"]["rail_transport"]["flag"]:
+        if (
+            modeling_options["WISDEM"]["RotorSE"]["rail_transport"]
+            or opt_options["constraints"]["blade"]["rail_transport"]["flag"]
+        ):
             self.add_subsystem("rail", RailTransport(modeling_options=modeling_options), promotes=promote_list)

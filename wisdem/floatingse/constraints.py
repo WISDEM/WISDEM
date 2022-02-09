@@ -1,7 +1,8 @@
 import numpy as np
 import openmdao.api as om
+
 import wisdem.commonse.utilities as util
-from wisdem.floatingse.member import NULL, MEMMAX
+from wisdem.commonse.cylinder_member import NULL, MEMMAX
 
 
 class FloatingConstraints(om.ExplicitComponent):
@@ -10,6 +11,7 @@ class FloatingConstraints(om.ExplicitComponent):
 
     def setup(self):
         opt = self.options["modeling_options"]
+        n_dlc = opt["WISDEM"]["n_dlc"]
         n_member = opt["floating"]["members"]["n_members"]
 
         self.add_input("Hsig_wave", val=0.0, units="m")
@@ -27,10 +29,10 @@ class FloatingConstraints(om.ExplicitComponent):
         self.add_input("platform_displacement", 0.0, units="m**3")
         self.add_input("platform_center_of_buoyancy", np.zeros(3), units="m")
         self.add_input("system_center_of_mass", np.zeros(3), units="m")
-        self.add_input("tower_top_node", np.zeros(3), units="m")
+        self.add_input("transition_node", np.zeros(3), units="m")
 
-        self.add_input("rna_F", np.zeros(3), units="N")
-        self.add_input("rna_M", np.zeros(3), units="N*m")
+        self.add_input("turbine_F", np.zeros((3, n_dlc)), units="N")
+        self.add_input("turbine_M", np.zeros((3, n_dlc)), units="N*m")
         self.add_input("max_surge_restoring_force", 0.0, units="N")
         self.add_input("operational_heel_restoring_force", np.zeros(6), units="N")
         self.add_input("survival_heel_restoring_force", np.zeros(6), units="N")
@@ -48,10 +50,10 @@ class FloatingConstraints(om.ExplicitComponent):
         n_member = opt["floating"]["members"]["n_members"]
 
         # Unpack inputs
-        Hsig = inputs["Hsig_wave"]
-        fairlead = np.abs(inputs["fairlead"])
-        R_fairlead = inputs["fairlead_radius"]
-        max_heel = inputs["survival_heel"]
+        Hsig = float(inputs["Hsig_wave"])
+        fairlead = np.abs(float(inputs["fairlead"]))
+        R_fairlead = float(inputs["fairlead_radius"])
+        max_heel = float(inputs["survival_heel"])
         cg = inputs["system_center_of_mass"]
         gamma = 1.1
 
@@ -78,8 +80,8 @@ class FloatingConstraints(om.ExplicitComponent):
             # Coordinate transformation about CG and change in z-position
             xp1_h, zp1_h = util.rotate(0.0, 0.0, xp1, zp1, max_heel)
             xp2_h, zp2_h = util.rotate(0.0, 0.0, xp2, zp2, max_heel)
-            dz1 = np.abs(xyz1[2] / (zp1 - zp1_h))
-            dz2 = np.abs(xyz2[2] / (zp2 - zp2_h))
+            dz1 = np.abs((zp1 - zp1_h) / xyz1[2])
+            dz2 = np.abs((zp2 - zp2_h) / xyz2[2])
 
             # See if change in z-coordinate is bigger than freeboard or draft, should be <1
             if xyz1[2] > 0.0 and xyz1[2] > xyz2[2]:
@@ -117,12 +119,12 @@ class FloatingConstraints(om.ExplicitComponent):
         outputs["metacentric_height"] = buoyancy2metacentre_BM - (cg[2] - z_cb)
 
         # Mooring strength checks
-        F_rna = inputs["rna_F"]
-        M_rna = inputs["rna_M"]
+        F_turb = inputs["turbine_F"].max(axis=1)
+        M_turb = inputs["turbine_M"].max(axis=1)
         surge_restore = inputs["max_surge_restoring_force"]
-        outputs["constr_mooring_surge"] = surge_restore - F_rna[0]
+        outputs["constr_mooring_surge"] = surge_restore - F_turb[0]
         heel_restore = inputs["operational_heel_restoring_force"]
         # (fairlead is assumed negative, made positive above, would otherwise be cg-fairlead)
         M_heel_restore = R_fairlead * heel_restore[2] + (cg[2] + fairlead) * heel_restore[:2].sum() + heel_restore[4]
-        tt2cg = inputs["tower_top_node"][2] - cg[2]
-        outputs["constr_mooring_heel"] = M_heel_restore - F_rna[0] * tt2cg - M_rna[1]
+        trans2cg = inputs["transition_node"][2] - cg[2]
+        outputs["constr_mooring_heel"] = M_heel_restore - F_turb[0] * trans2cg - M_turb[1]

@@ -2,11 +2,11 @@ name: IEA-10.0-198-RWT
 
 assembly:
     turbine_class: I
-    turbulence_class: B
+    turbulence_class: A
     drivetrain: direct_drive
     rotor_orientation: Upwind
     number_of_blades: 3
-    hub_height: 120.
+    hub_height: 119.
     rotor_diameter: 198.0
     rated_power: 10.e+6
 
@@ -613,6 +613,7 @@ materials:
       Xt: [600.0e+006, 600.0e+006, 600.0e+006]
       Xc: [600.0e+006, 600.0e+006, 600.0e+006]
       nu: [0.478, 0.478, 0.478]
+      m: 10
       unit_cost: 2.86
       waste: 0.15
       fiber_density: 2600.
@@ -627,6 +628,7 @@ materials:
       Xt: [600.0e+006, 600.0e+006, 600.0e+006]
       Xc: [600.0e+006, 600.0e+006, 600.0e+006]
       nu: [0.533, 0.533, 0.533]
+      m: 10
       unit_cost: 3.00
       waste: 0.15
       fiber_density: 2600.
@@ -641,6 +643,7 @@ materials:
       Xt: [600.0e+006, 600.0e+006, 600.0e+006]
       Xc: [600.0e+006, 600.0e+006, 600.0e+006]
       nu: [0.241, 0.241, 0.241]
+      m: 10
       unit_cost: 1.87
       waste: 0.05
       fiber_density: 2600.
@@ -664,16 +667,23 @@ materials:
       orth: 0
       unit_cost: 3.63
    -  name: steel
-      description: Steel of the tower
-      source: Standard steel with higher density to account for auxiliary systems of the tower (elevator, stairs, etc)
+      description: Steel of the tower and monopile ASTM A572 Grade 50
+      source: http://www.matweb.com/search/DataSheet.aspx?MatGUID=9ced5dc901c54bd1aef19403d0385d7f
       orth: 0
-      rho: 8500
-      E: 210.e+009
-      nu: 0.3
+      rho: 7800
       alpha: 0.0
-      Xy: 450.e+6
-    #   Xt: 355.e+006
-    #   Xc: 355.e+006
+      E: 200.e+009
+      nu: 0.3
+      G: 79.3e+009
+      GIc: 0  #Place holder, currently not used
+      GIIc: 0  #Place holder, currently not used
+      alp0: 0  #Place holder, currently not used
+      Xt: 450.e+006
+      Xc: 450.e+006
+      S: 0
+      Xy: 345.e+6
+      m: 3
+      unit_cost: 0.7
    -  name: steel_drive
       description: Steel of the drivetrain ASTM 4140 40Cr1Mo28
       source: http://www.matweb.com/search/DataSheet.aspx?MatGUID=38108bfd64c44b4c9c6a02af78d5b6c6
@@ -690,6 +700,7 @@ materials:
       Xc: 814.e+006
       S: 0
       Xy: 485.e+6
+      m: 3
       unit_cost: 0.9
    -  name: cast_iron
       description: TODO Steel of the drivetrain ASTM 4140 40Cr1Mo28
@@ -707,7 +718,21 @@ materials:
       Xc: 310.e+006
       S: 0
       Xy: 265.e+6
+      m: 3
       unit_cost: 0.5
+   -  name: adhesive
+      description: Sample adhesive
+      source: https://www.nrel.gov/docs/fy19osti/73585.pdf
+      orth: 0
+      rho: 1100
+      E: 4.56e+006
+      nu: 0.49
+      alpha: 0.0
+      Xt: 0.69e+006
+      Xc: 0.4e+006
+      S: 0.31e+006
+      G: 1520000.0
+      unit_cost: 9.0
 
 control:
     supervisory:
@@ -715,7 +740,7 @@ control:
         Vout: 25.0
         maxTS: 90.
     pitch:
-        PC_zeta: 1.0 
+        PC_zeta: 1.0
         PC_omega: 0.2
         ps_percent: 0.9
         max_pitch: 1.57

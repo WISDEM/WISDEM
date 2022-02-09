@@ -1,6 +1,7 @@
 import os
 import unittest
 import importlib
+from time import time
 from pathlib import Path
 
 thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -16,6 +17,7 @@ all_scripts = [
     "01_nrel_csm/mass",
     "01_nrel_csm/mass_and_cost",
     "01_nrel_csm/parametric",
+    "02_reference_turbines/iea10mw_driver",
     "03_blade/blade_driver",
     "04_openmdao/betz_limit",
     "04_openmdao/sellar",
@@ -48,6 +50,8 @@ all_scripts = [
     "13_design_of_experiments/doe_driver",
     "14_overridden_values/driver",
     "15_step_size_study/driver",
+    "16_inverse_design/inverse_spar_design",
+    "17_jacket/jacket_driver",
 ]
 
 
@@ -68,168 +72,20 @@ def execute_script(fscript):
     print(froot, os.path.realpath(fullpath))
     spec = importlib.util.spec_from_file_location(froot, os.path.realpath(fullpath))
     mod = importlib.util.module_from_spec(spec)
+    s = time()
     spec.loader.exec_module(mod)
+    print(time() - s, "seconds to run")
 
 
 class TestExamples(unittest.TestCase):
-    def test_nrel_csm(self):
-        scripts = [m for m in all_scripts if m.find("csm") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    def test_reference_turbines(self):
-        scripts = [m for m in all_scripts if m.find("reference") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    def test_blade(self):
-        scripts = [m for m in all_scripts if m.find("blade") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    def test_openmdao(self):
-        scripts = [m for m in all_scripts if m.find("openmdao") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    def test_tower_monopile(self):
-        scripts = [m for m in all_scripts if m.find("monopile") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    def test_drivetrain(self):
-        scripts = [m for m in all_scripts if m.find("drivetrain") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    def test_generator(self):
-        scripts = [m for m in all_scripts if m.find("generator") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    def test_plant_finance(self):
-        scripts = [m for m in all_scripts if m.find("finance") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    def test_floating(self):
-        scripts = [m for m in all_scripts if m.find("floating") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    def test_ccblade(self):
-        scripts = [m for m in all_scripts if m.find("ccblade") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    def test_airfoilprep(self):
-        scripts = [m for m in all_scripts if m.find("airfoil") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    def test_pyframe3dd(self):
-        scripts = [m for m in all_scripts if m.find("pyframe") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    def test_doe(self):
-        scripts = [m for m in all_scripts if m.find("design_of_experiments") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    def test_overridden(self):
-        scripts = [m for m in all_scripts if m.find("overridden_values") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    def test_step_size_study(self):
-        scripts = [m for m in all_scripts if m.find("step_size_study") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
-
-    """
-    def testAllExamplesRun(self):
-        for f in all_examples:
-            try:
-                if 'design_compare.py' not in str(f):
-                    # Go to location due to relative path use for airfoil files
-                    print('\n\n')
-                    print('NOW RUNNING:',f)
-                    print()
-                    basepath = os.path.dirname(os.path.realpath(f))
-                    os.chdir(basepath)
-
-                    # Get script/module name
-                    froot = os.path.splitext(os.path.basename(f))[0]
-
-                    # Use dynamic import capabilities
-                    # https://www.blog.pythonlibrary.org/2016/05/27/python-201-an-intro-to-importlib/
-                    spec = importlib.util.spec_from_file_location(froot, os.path.realpath(f))
-                    mod  = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(mod)
-            except:
-                self.assertTrue(False)
-    """
+    def test_all_scripts(self):
+        for ks, s in enumerate(all_scripts):
+            with self.subTest(f"Running: {s}", i=ks):
+                try:
+                    execute_script(s)
+                    self.assertTrue(True)
+                except:
+                    self.assertEqual(s, "Success")
 
 
 def suite():

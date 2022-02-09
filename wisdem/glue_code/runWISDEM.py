@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 
 import numpy as np
 import openmdao.api as om
@@ -20,14 +21,14 @@ if MPI:
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
 
-def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overridden_values=None):
+def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overridden_values=None, run_only=False):
     # Load all yaml inputs and validate (also fills in defaults)
     wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
 
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
-    myopt = PoseOptimization(modeling_options, opt_options)
+    myopt = PoseOptimization(wt_init, modeling_options, opt_options)
 
     if MPI:
 
@@ -36,8 +37,12 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         # Extract the number of cores available
         max_cores = MPI.COMM_WORLD.Get_size()
 
-        if max_cores / 2.0 != np.round(max_cores / 2.0):
-            raise ValueError("ERROR: the parallelization logic only works for an even number of cores available")
+        if max_cores > n_DV:
+            raise ValueError("ERROR: please reduce the number of cores, currently set to " +
+             str(max_cores) + ", to the number of finite differences " + str(n_DV) +
+             ", which is equal to the number of design variables DV for forward differencing" + 
+             " and DV times 2 for central differencing," + 
+              " or the parallelization logic will not work")
 
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD) evaluations based on the number of design variables (DV).
         n_FD = min([max_cores, n_DV])
@@ -53,8 +58,36 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         rank = 0
 
     folder_output = opt_options["general"]["folder_output"]
-    if rank == 0 and not os.path.isdir(folder_output):
-        os.mkdir(folder_output)
+
+    if rank == 0:
+        os.makedirs(folder_output, exist_ok=True)
+
+        # create logger
+        logger = logging.getLogger("wisdem/weis")
+        logger.setLevel(logging.INFO)
+
+        # create handlers
+        ht = logging.StreamHandler()
+        ht.setLevel(logging.WARNING)
+
+        flog = os.path.join(folder_output, opt_options["general"]["fname_output"] + ".log")
+        hf = logging.FileHandler(flog, mode="w")
+        hf.setLevel(logging.INFO)
+
+        # create formatters
+        formatter_t = logging.Formatter("%(module)s:%(funcName)s:%(lineno)d %(levelname)s:%(message)s")
+        formatter_f = logging.Formatter(
+            "P%(process)d %(asctime)s %(module)s:%(funcName)s:%(lineno)d %(levelname)s:%(message)s"
+        )
+
+        # add formatter to handlers
+        ht.setFormatter(formatter_t)
+        hf.setFormatter(formatter_f)
+
+        # add handlers to logger
+        logger.addHandler(ht)
+        logger.addHandler(hf)
+        logger.info("Started")
 
     if color_i == 0:  # the top layer of cores enters
         if MPI:
@@ -68,7 +101,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
             wt_opt = om.Problem(model=WindPark(modeling_options=modeling_options, opt_options=opt_options))
 
         # If at least one of the design variables is active, setup an optimization
-        if opt_options["opt_flag"]:
+        if opt_options["opt_flag"] and not run_only:
             wt_opt = myopt.set_driver(wt_opt)
             wt_opt = myopt.set_objective(wt_opt)
             wt_opt = myopt.set_design_variables(wt_opt, wt_init)
@@ -95,19 +128,19 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         # so these values are correctly placed in the problem.
         wt_opt = myopt.set_restart(wt_opt)
 
-        if "check_totals" in opt_options["driver"]:
+        if "check_totals" in opt_options["driver"] and not run_only:
             if opt_options["driver"]["check_totals"]:
                 wt_opt.run_model()
                 totals = wt_opt.compute_totals()
 
-        if "check_partials" in opt_options["driver"]:
+        if "check_partials" in opt_options["driver"] and not run_only:
             if opt_options["driver"]["check_partials"]:
                 wt_opt.run_model()
                 checks = wt_opt.check_partials(compact_print=True)
 
         sys.stdout.flush()
 
-        if opt_options["driver"]["step_size_study"]["flag"]:
+        if opt_options["driver"]["step_size_study"]["flag"] and not run_only:
             wt_opt.run_model()
             study_options = opt_options["driver"]["step_size_study"]
             step_sizes = study_options["step_sizes"]
@@ -131,7 +164,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
             np.save("total_derivs.npy", all_derivs)
 
         # Run openmdao problem
-        elif opt_options["opt_flag"]:
+        elif opt_options["opt_flag"] and not run_only:
             wt_opt.run_driver()
         else:
             wt_opt.run_model()

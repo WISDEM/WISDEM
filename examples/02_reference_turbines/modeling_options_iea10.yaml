@@ -1,0 +1,19 @@
+# Generic modeling options file to run standard WISDEM case
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+WISDEM:
+    RotorSE:
+        flag: True
+        spar_cap_ss: DP13_DP10_uniax # Name in the yaml of the spar cap laminate on the suction side
+        spar_cap_ps: DP07_DP04_uniax # Name in the yaml of the spar cap laminate on the suction side
+        te_ss: DP17_DP15_uniax # Name in the yaml of the spar cap laminate on the suction side
+        te_ps: DP02_DP00_uniax # Name in the yaml of the spar cap laminate on the suction side
+    DriveSE:
+        flag: True
+    TowerSE:
+        flag: True
+    FixedBottomSE:
+        flag: True
+        soil_springs: True
+    BOS:
+        flag: True
