@@ -35,6 +35,10 @@
 "grout_cure_time": 24             # hr
 "grout_pump_time": 2              # hr
 
+# Jackets
+"jacket_fasten_time": 12          # hr
+"jacket_release_time": 6          # hr
+
 # Scour Protection
 "drop_rocks_time": 10             # hr
 "load_rocks_time": 4              # hr

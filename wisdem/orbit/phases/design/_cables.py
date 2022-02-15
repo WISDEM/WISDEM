@@ -313,6 +313,7 @@ class CableSystem(DesignPhase):
 
             else:
                 self.touchdown = depth * 0.3
+                # TODO: Update this scaling function - should be closer to cable bend radius.  Unrealistic for deep water
 
     @staticmethod
     def _catenary(a, *data):
@@ -348,12 +349,20 @@ class CableSystem(DesignPhase):
     def free_cable_length(self):
         """Returns the length of the vertical portion of a cable section in km."""
 
+        _design = f"{self.cable_type}_system_design"
         depth = self.config["site"]["depth"]
+        _cable_depth = self.config[_design].get("floating_cable_depth", depth)
+
+        # Select prescribed cable depth if it is less than or equal to overall water dpeth
+        if _cable_depth > depth:
+            cable_depth = depth
+        else:
+            cable_depth = _cable_depth
 
         if not self.touchdown:
-            return depth / 1000
+            return cable_depth / 1000
 
-        return self._get_catenary_length(depth, self.touchdown) / 1000
+        return self._get_catenary_length(cable_depth, self.touchdown) / 1000
 
     @property
     def cable_lengths_by_type(self):

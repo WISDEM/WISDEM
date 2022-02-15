@@ -65,7 +65,7 @@ class MonopileInstallation(InstallPhase):
             Simulation specific configuration.
         weather : pd.DataFrame (optional)
             Weather profile at site.
-            Expects columns 'max_waveheight' and 'max_windspeed'.
+            Expects columns 'waveheight' and 'windspeed'.
         """
 
         super().__init__(weather, **kwargs)
@@ -174,7 +174,6 @@ class MonopileInstallation(InstallPhase):
 
         self.feeders = []
         for n in range(number):
-            # TODO: Add in option for named feeders.
             name = "Feeder {}".format(n)
 
             feeder = self.initialize_vessel(name, feeder_specs)
@@ -232,7 +231,6 @@ class MonopileInstallation(InstallPhase):
 @process
 def solo_install_monopiles(vessel, port, distance, monopiles, **kwargs):
     """
-    TODO:
     Logic that a Wind Turbine Installation Vessel (WTIV) uses during a single
     monopile installation process.
 

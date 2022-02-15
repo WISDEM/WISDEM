@@ -52,33 +52,6 @@ class ItemNotFound(Exception):
         return self.message
 
 
-class DeckSpaceExceeded(Exception):
-    """Error for exceeding vessel maximum deck space"""
-
-    def __init__(self, max, current, item):
-        """
-        Creates an instance of DeckSpaceExceeded.
-
-        Parameters
-        ----------
-        max : int | float
-            Maximum vessel deck space (m2).
-        current : int | float
-            Vessel deck space currently in use (m2).
-        item : dict
-            Item that exceeded deck space limit.
-        """
-
-        self.max = max
-        self.current = current
-        self.item = item
-
-        self.message = f"'{self.item['type']}' will exceed maximum deck space."
-
-    def __str__(self):
-        return self.message
-
-
 class CargoMassExceeded(Exception):
     """Error for exceeding vessel maximum cargo mass"""
 
