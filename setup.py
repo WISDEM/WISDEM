@@ -49,6 +49,7 @@ setup(
         "scipy",
         "simpy",
         "sortedcontainers",
+        "statsmodels",
         "pyparsing<3",
     ],
     python_requires=">=3.7",
