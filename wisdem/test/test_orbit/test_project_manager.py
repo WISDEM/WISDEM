@@ -296,10 +296,10 @@ def test_resolve_project_capacity():
     # Missing turbine rating
     config1 = {"plant": {"capacity": 600, "num_turbines": 40}}
 
-    out1 = ProjectManager.resolve_project_capacity(config1)
-    assert out1["plant"]["capacity"] == config1["plant"]["capacity"]
-    assert out1["plant"]["num_turbines"] == config1["plant"]["num_turbines"]
-    assert out1["turbine"]["turbine_rating"] == 15
+    project1 = ProjectManager(config1)
+    assert project1.config["plant"]["capacity"] == config1["plant"]["capacity"]
+    assert project1.config["plant"]["num_turbines"] == config1["plant"]["num_turbines"]
+    assert project1.config["turbine"]["turbine_rating"] == 15
 
     # Missing plant capacity
     config2 = {
@@ -307,18 +307,18 @@ def test_resolve_project_capacity():
         "turbine": {"turbine_rating": 15},
     }
 
-    out2 = ProjectManager.resolve_project_capacity(config2)
-    assert out2["plant"]["capacity"] == 600
-    assert out2["plant"]["num_turbines"] == config2["plant"]["num_turbines"]
-    assert out2["turbine"]["turbine_rating"] == config2["turbine"]["turbine_rating"]
+    project2 = ProjectManager(config2)
+    assert project2.config["plant"]["capacity"] == 600
+    assert project2.config["plant"]["num_turbines"] == config2["plant"]["num_turbines"]
+    assert project2.config["turbine"]["turbine_rating"] == config2["turbine"]["turbine_rating"]
 
     # Missing number of turbines
     config3 = {"plant": {"capacity": 600}, "turbine": {"turbine_rating": 15}}
 
-    out3 = ProjectManager.resolve_project_capacity(config3)
-    assert out3["plant"]["capacity"] == config3["plant"]["capacity"]
-    assert out3["plant"]["num_turbines"] == 40
-    assert out3["turbine"]["turbine_rating"] == config3["turbine"]["turbine_rating"]
+    project3 = ProjectManager(config3)
+    assert project3.config["plant"]["capacity"] == config3["plant"]["capacity"]
+    assert project3.config["plant"]["num_turbines"] == 40
+    assert project3.config["turbine"]["turbine_rating"] == config3["turbine"]["turbine_rating"]
 
     # Test for float precision
     config4 = {
@@ -326,10 +326,10 @@ def test_resolve_project_capacity():
         "turbine": {"turbine_rating": 15.0},
     }
 
-    out4 = ProjectManager.resolve_project_capacity(config4)
-    assert out4["plant"]["capacity"] == config4["plant"]["capacity"]
-    assert out4["plant"]["num_turbines"] == config4["plant"]["num_turbines"]
-    assert out4["turbine"]["turbine_rating"] == config4["turbine"]["turbine_rating"]
+    project4 = ProjectManager(config4)
+    assert project4.config["plant"]["capacity"] == config4["plant"]["capacity"]
+    assert project4.config["plant"]["num_turbines"] == config4["plant"]["num_turbines"]
+    assert project4.config["turbine"]["turbine_rating"] == config4["turbine"]["turbine_rating"]
 
     # Non matching calculated value
     config5 = {
@@ -338,19 +338,19 @@ def test_resolve_project_capacity():
     }
 
     with pytest.raises(AttributeError):
-        _ = ProjectManager.resolve_project_capacity(config5)
+        _ = ProjectManager(config5)
 
     # Test for not enough information
     config6 = {"plant": {"capacity": 600}}
 
-    out6 = ProjectManager.resolve_project_capacity(config6)
-    assert out6["plant"]["capacity"] == config6["plant"]["capacity"]
+    project6 = ProjectManager(config6)
+    assert project6.config["plant"]["capacity"] == config6["plant"]["capacity"]
 
     with pytest.raises(KeyError):
-        _ = out6["turbine"]["turbine_rating"]
+        _ = project6.config["turbine"]["turbine_rating"]
 
     with pytest.raises(KeyError):
-        _ = out6["plant"]["num_turbines"]
+        _ = project6.config["plant"]["num_turbines"]
 
 
 ### Exceptions
