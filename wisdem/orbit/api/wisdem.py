@@ -174,7 +174,7 @@ class OrbitWisdem(om.ExplicitComponent):
 
         # Jacket
         self.add_input("jacket_length", 65.0, units="m", desc="Length/height of jacket (including pile/buckets).")
-        self.add_discrete_input("jacket_num_legs", 3, units="m", desc="Number of legs in the jacket")
+        self.add_discrete_input("jacket_num_legs", 3, desc="Number of legs in the jacket")
         self.add_input("jacket_mass", 900.0, units="t", desc="mass of an individual jacket.")
         self.add_input("jacket_cost", 4e6, units="USD", desc="Jacket unit cost.")
         self.add_input(
@@ -430,6 +430,8 @@ class OrbitWisdem(om.ExplicitComponent):
                 }
 
         self._orbit_config = config
+        print(jacket_flag)
+        print(config)
         return config
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):

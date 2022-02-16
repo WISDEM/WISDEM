@@ -244,7 +244,7 @@ class ProjectManager:
 
         config["design_phases"] = [*design_phases.keys()]
         config["install_phases"] = [*install_phases.keys()]
-        config["orbit_version"] = str(ORBIT.__version__)
+        config["orbit_version"] = str(wisdem.orbit.__version__)
 
         return config
 
