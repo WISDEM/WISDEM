@@ -430,8 +430,6 @@ class OrbitWisdem(om.ExplicitComponent):
                 }
 
         self._orbit_config = config
-        print(jacket_flag)
-        print(config)
         return config
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
