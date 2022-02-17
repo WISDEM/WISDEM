@@ -63,7 +63,7 @@ def test_drag_embedment_fixed_length():
     custom = deepcopy(base)
     custom["mooring_system_design"] = {
         "anchor_type": "Drag Embedment",
-        "drag_embedment_fixed_length": 10,
+        "drag_embedment_fixed_length": 1000,
     }
 
     m = MooringSystemDesign(custom)

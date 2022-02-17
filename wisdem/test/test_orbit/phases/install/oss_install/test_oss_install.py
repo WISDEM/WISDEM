@@ -13,7 +13,7 @@ import pytest
 from wisdem.orbit import ProjectManager
 from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.core.defaults import process_times as pt
-from wisdem.orbit.phases.install import OffshoreSubstationInstallation
+from wisdem.orbit.phases.install import FloatingSubstationInstallation, OffshoreSubstationInstallation
 from wisdem.test.test_orbit.data import test_weather
 from wisdem.orbit.core.exceptions import MissingComponent
 
@@ -25,8 +25,8 @@ config_multi["num_feeders"] = 2
 
 @pytest.mark.parametrize(
     "config",
-    (config_single, config_multi, config_floating),
-    ids=["single_feeder", "multi_feeder", "floating"],
+    (config_single, config_multi),
+    ids=["single_feeder", "multi_feeder"],
 )
 def test_simulation_setup(config):
 
@@ -40,10 +40,18 @@ def test_simulation_setup(config):
     assert len(sim.port.items) == 2 * sim.num_substations
 
 
+def test_floating_simulation_setup():
+
+    sim = FloatingSubstationInstallation(config_floating)
+    assert sim.config == config_floating
+    assert sim.env
+    assert sim.num_substations == sim.config["num_substations"]
+
+
 @pytest.mark.parametrize(
     "config",
-    (config_single, config_multi, config_floating),
-    ids=["single_feeder", "multi_feeder", "floating"],
+    (config_single, config_multi),
+    ids=["single_feeder", "multi_feeder"],
 )
 def test_vessel_initialization(config):
 
@@ -63,8 +71,8 @@ def test_vessel_initialization(config):
 
 @pytest.mark.parametrize(
     "config",
-    (config_single, config_multi, config_floating),
-    ids=["single_feeder", "multi_feeder", "floating"],
+    (config_single, config_multi),
+    ids=["single_feeder", "multi_feeder"],
 )
 @pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
 def test_for_complete_logging(weather, config):
@@ -84,6 +92,21 @@ def test_for_complete_logging(weather, config):
     assert ~df["cost"].isnull().any()
     _ = sim.agent_efficiencies
     _ = sim.detailed_output
+
+
+@pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
+def test_for_complete_logging_floating(weather):
+
+    sim = FloatingSubstationInstallation(config_floating, weather=weather)
+    sim.run()
+
+    df = pd.DataFrame(sim.env.actions)
+    df = df.assign(shift=(df["time"] - df["time"].shift(1)))
+
+    for vessel in df["agent"].unique():
+        _df = df[df["agent"] == vessel].copy()
+        _df = _df.assign(shift=(_df["time"] - _df["time"].shift(1)))
+        assert (_df["shift"] - _df["duration"]).fillna(0.0).abs().max() < 1e-9
 
 
 def test_kwargs():

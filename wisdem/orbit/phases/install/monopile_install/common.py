@@ -36,7 +36,7 @@ class Monopile(Cargo):
 
     @staticmethod
     def release(**kwargs):
-        """Returns time required to release tmonopile from fastenings."""
+        """Returns time required to release monopile from fastenings."""
 
         key = "mono_release_time"
         time = kwargs.get(key, pt[key])
