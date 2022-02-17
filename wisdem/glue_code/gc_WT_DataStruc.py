@@ -3,9 +3,8 @@ import logging
 
 import numpy as np
 import openmdao.api as om
-from scipy.interpolate import PchipInterpolator, interp1d
-
 import wisdem.moorpy.MoorProps as mp
+from scipy.interpolate import PchipInterpolator, interp1d
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAero, ParametrizeBladeStruct
@@ -2371,19 +2370,21 @@ class Floating(om.Group):
         for k in range(len(member_link_data)):
             name_member = member_link_data[k][0]
             memidx = floating_init_options["members"]["name"].index(name_member)
-            n_grid = len(floating_init_options["members"]["grid_member_" + name_member])
+            n_geom = floating_init_options["members"]["n_geom"][memidx]
+            n_height = floating_init_options["members"]["n_height"][memidx]
             n_layers = floating_init_options["members"]["n_layers"][memidx]
             n_ballasts = floating_init_options["members"]["n_ballasts"][memidx]
             n_bulkheads = floating_init_options["members"]["n_bulkheads"][memidx]
             n_axial_joints = floating_init_options["members"]["n_axial_joints"][memidx]
 
             ivc = self.add_subsystem(f"memgrp{k}", om.IndepVarComp())
-            ivc.add_output("s", val=np.zeros(n_grid))
-            ivc.add_output("outer_diameter", val=np.zeros(n_grid), units="m")
+            ivc.add_output("s_in", val=np.zeros(n_geom))
+            ivc.add_output("s", val=np.zeros(n_height))
+            ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
+            ivc.add_discrete_output("layer_materials", val=[""] * n_layers)
+            ivc.add_output("layer_thickness_in", val=np.zeros((n_layers, n_geom)), units="m")
             ivc.add_output("bulkhead_grid", val=np.zeros(n_bulkheads))
             ivc.add_output("bulkhead_thickness", val=np.zeros(n_bulkheads), units="m")
-            ivc.add_discrete_output("layer_materials", val=[""] * n_layers)
-            ivc.add_output("layer_thickness", val=np.zeros((n_layers, n_grid)), units="m")
             ivc.add_output("ballast_grid", val=np.zeros((n_ballasts, 2)))
             ivc.add_output("ballast_volume", val=np.zeros(n_ballasts), units="m**3")
             ivc.add_discrete_output("ballast_materials", val=[""] * n_ballasts)
@@ -2400,13 +2401,19 @@ class Floating(om.Group):
             ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_spacing", 0.0, units="rad")
 
+            self.add_subsystem(f"memgrid{k}", MemberGrid(n_height=n_height, n_geom=n_geom, n_layers=n_layers))
+            self.connect(f"memgrp{k}.s_in", f"memgrid{k}.s_in")
+            self.connect(f"memgrp{k}.s", f"memgrid{k}.s_grid")
+            self.connect(f"memgrp{k}.outer_diameter_in", f"memgrid{k}.outer_diameter_in")
+            self.connect(f"memgrp{k}.layer_thickness_in", f"memgrid{k}.layer_thickness_in")
+
         self.add_subsystem("alljoints", AggregateJoints(floating_init_options=floating_init_options), promotes=["*"])
 
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
             idx = floating_init_options["members"]["name2idx"][name_member]
             self.connect(f"memgrp{idx}.grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
-            self.connect(f"memgrp{idx}.outer_diameter", "member_" + name_member + ":outer_diameter")
+            self.connect(f"memgrid{idx}.outer_diameter", "member_" + name_member + ":outer_diameter")
             self.connect(f"memgrp{idx}.s", "member_" + name_member + ":s")
 
 
@@ -2435,6 +2442,37 @@ class NodeDVs(om.ExplicitComponent):
             xyz[idx, dim] = inputs[f"jointdv_{i}"]
 
         outputs["location"] = xyz
+
+
+# Component that interpolates the diameter/thickness nodes to all of the other points needed in the member discretization
+class MemberGrid(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("n_layers")
+        self.options.declare("n_height")
+        self.options.declare("n_geom")
+
+    def setup(self):
+        n_layers = self.options["n_layers"]
+        n_height = self.options["n_height"]
+        n_geom = self.options["n_geom"]
+
+        self.add_input("s_in", val=np.zeros(n_geom))
+        self.add_input("s_grid", val=np.zeros(n_height))
+        self.add_input("outer_diameter_in", val=np.zeros(n_geom), units="m")
+        self.add_input("layer_thickness_in", val=np.zeros((n_layers, n_geom)), units="m")
+
+        self.add_output("outer_diameter", val=np.zeros(n_height), units="m")
+        self.add_output("layer_thickness", val=np.zeros((n_layers, n_height)), units="m")
+
+    def compute(self, inputs, outputs):
+        n_layers = self.options["n_layers"]
+
+        s_in = inputs["s_in"]
+        s_grid = inputs["s_grid"]
+
+        outputs["outer_diameter"] = np.interp(s_grid, s_in, inputs["outer_diameter_in"])
+        for k in range(n_layers):
+            outputs["layer_thickness"][k, :] = np.interp(s_grid, s_in, inputs["layer_thickness_in"][k, :])
 
 
 class AggregateJoints(om.ExplicitComponent):
