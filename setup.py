@@ -49,7 +49,7 @@ setup(
         "scipy",
         "simpy",
         "sortedcontainers",
-        "pyparsing<3",
+        "statsmodels",
     ],
     python_requires=">=3.7",
     package_data={"": ["*.yaml", "*.xlsx"], "wisdem": ["*.txt"]},

@@ -10,7 +10,7 @@ export_system:
   system_cost: 200e6
 plant:
   layout: grid
-  num_turbines: 40
+  capacity: 360
   turbine_spacing: 5
 site:
   depth: 20
@@ -20,4 +20,3 @@ site:
   distance_to_landfall: 30
 turbine:
   rotor_diameter: 154
-  turbine_rating: 9

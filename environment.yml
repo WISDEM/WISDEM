@@ -29,6 +29,7 @@ dependencies:
   - setuptools
   - simpy
   - sortedcontainers
+  - statsmodels
   - swig
   - pip:
     - marmot-agents
