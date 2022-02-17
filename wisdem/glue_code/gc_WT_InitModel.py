@@ -998,17 +998,21 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     for i in range(n_members):
         name_member = floating_init_options["members"]["name"][i]
         grid_member = floating_init_options["members"]["grid_member_" + floating_init_options["members"]["name"][i]]
+        grid_geom = floating_init_options["members"]["geom_member_" + floating_init_options["members"]["name"][i]]
         idx = floating_init_options["members"]["name2idx"][name_member]
 
         wt_opt[f"floating.memgrp{idx}.s"] = grid_member
-        wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["internal_structure"][
-            "outfitting_factor"
-        ]
-        wt_opt[f"floating.memgrp{idx}.outer_diameter"] = np.interp(
-            grid_member,
+        wt_opt[f"floating.memgrp{idx}.s_in"] = grid_geom
+
+        wt_opt[f"floating.memgrp{idx}.outer_diameter_in"] = np.interp(
+            grid_geom,
             floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
             floating["members"][i]["outer_shape"]["outer_diameter"]["values"],
         )
+
+        wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["internal_structure"][
+            "outfitting_factor"
+        ]
 
         istruct = floating["members"][i]["internal_structure"]
         if "bulkhead" in istruct:
@@ -1018,12 +1022,13 @@ def assign_floating_values(wt_opt, modeling_options, floating):
         n_layers = floating_init_options["members"]["n_layers"][i]
         layer_mat = [""] * n_layers
         for j in range(n_layers):
-            wt_opt[f"floating.memgrp{idx}.layer_thickness"][j, :] = np.interp(
-                grid_member,
+            layer_mat[j] = istruct["layers"][j]["material"]
+
+            wt_opt[f"floating.memgrp{idx}.layer_thickness_in"][j, :] = np.interp(
+                grid_geom,
                 istruct["layers"][j]["thickness"]["grid"],
                 istruct["layers"][j]["thickness"]["values"],
             )
-            layer_mat[j] = istruct["layers"][j]["material"]
         wt_opt[f"floating.memgrp{idx}.layer_materials"] = layer_mat
 
         if "ring_stiffeners" in istruct:

@@ -756,9 +756,7 @@ class FoundationCost(CostModule):
         )
 
         # Append all cost items to foundation_cost
-        foundation_cost = foundation_cost.append(equipment_costs)
-        foundation_cost = foundation_cost.append(labor_costs)
-        foundation_cost = foundation_cost.append(material_costs)
+        foundation_cost = pd.concat((foundation_cost, equipment_costs, labor_costs, material_costs))
 
         # Calculate mobilization cost as percentage of total foundation cost and add to foundation_cost
         # Assumed 5% of total foundation cost and add to foundation_cost for utility scale plant
@@ -781,7 +779,7 @@ class FoundationCost(CostModule):
             columns=["Type of cost", "Cost USD", "Phase of construction"],
         )
 
-        foundation_cost = foundation_cost.append(mob_cost)
+        foundation_cost = pd.concat((foundation_cost, mob_cost))
 
         # todo: we add a separate tab in the output file for costs (all costs will be the same format but it's a different format than other data)
         # columns in cost tab would include project_id, module, operation_id, type_of_cost, total_or_per_turbine, cost_usd
