@@ -461,7 +461,7 @@ class MonopileFrame(om.ExplicitComponent):
         self.frame = pyframe3dd.Frame(nodes, reactions, elements, options)
 
         # ------- enable dynamic analysis ----------
-        Mmethod = 2
+        Mmethod = 1
         lump = 0
         shift = 0.0
         # Run twice the number of modes to ensure that we can ignore the torsional modes and still get the desired number of fore-aft, side-side modes

@@ -440,7 +440,7 @@ class TowerModal(om.ExplicitComponent):
         Mmethod = 2
         lump = 0
         shift = 10.0
-        tol = 1e-9
+        tol = 1e-8
         # Run extra freqs because could get 6 rigid body modes at zero-freq
         myframe.enableDynamics(3 * NFREQ, Mmethod, lump, tol, shift)
         # ----------------------------
@@ -476,7 +476,7 @@ class TowerModal(om.ExplicitComponent):
         )
 
         # Debugging
-        myframe.write("floating_tower_debug.3dd")
+        # myframe.write("floating_tower_debug.3dd")
         # -----------------------------------
         # run the analysis
         try:
