@@ -437,10 +437,10 @@ class TowerModal(om.ExplicitComponent):
         myframe = pyframe3dd.Frame(nodes, reactions, elements, options)
 
         # ------- enable dynamic analysis ----------
-        Mmethod = 1
+        Mmethod = 2
         lump = 0
-        shift = 1e1
-        tol = 1e-7
+        shift = 10.0
+        tol = 1e-8
         # Run extra freqs because could get 6 rigid body modes at zero-freq
         myframe.enableDynamics(3 * NFREQ, Mmethod, lump, tol, shift)
         # ----------------------------
@@ -476,7 +476,7 @@ class TowerModal(om.ExplicitComponent):
         )
 
         # Debugging
-        # myframe.write('floating_tower_debug.3dd')
+        # myframe.write("floating_tower_debug.3dd")
         # -----------------------------------
         # run the analysis
         try:
@@ -503,6 +503,9 @@ class TowerModal(om.ExplicitComponent):
                     modal.zmpf,
                     base_slope0=False,
                 )
+
+                mpfs = np.abs(np.c_[modal.xmpf, modal.ympf, modal.zmpf])
+                ratios = mpfs.max(axis=1) / mpfs.min(axis=1)
 
                 outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
                 outputs["side_side_freqs"] = freq_y[:NFREQ2]

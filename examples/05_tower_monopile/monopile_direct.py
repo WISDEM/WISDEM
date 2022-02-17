@@ -19,16 +19,16 @@ n_load_cases = 2
 # Tower initial condition
 hubH = 87.6
 htrans = 10.0
-h_paramT = np.diff(np.linspace(htrans, hubH, n_control_points))
-d_paramT = np.linspace(7.0, 3.87, n_control_points)
-t_paramT = 1.3 * np.linspace(0.025, 0.021, n_control_points)
+h_paramT = 0.5 * (hubH - htrans) * np.ones(2)
+d_paramT = np.array([6.0, 4.935, 3.87])
+t_paramT = np.array([0.027, 0.0222, 0.019])
 
 # Monopile initial condition
 pile_depth = 25.0
 water_depth = 30.0
 h_paramM = np.r_[pile_depth, water_depth, htrans]
-d_paramM = np.linspace(8.0, 7.0, n_control_points)
-t_paramM = 0.025 * np.ones(n_control_points)
+d_paramM = 8.0 * np.ones(n_control_points)
+t_paramM = 0.055 * np.ones(n_control_points)
 
 max_diam = 8.0
 # ---
@@ -41,10 +41,11 @@ modeling_options["materials"]["n_mat"] = n_materials
 modeling_options["WISDEM"] = {}
 modeling_options["WISDEM"]["n_dlc"] = n_load_cases
 modeling_options["WISDEM"]["FixedBottomSE"] = {}
-modeling_options["WISDEM"]["FixedBottomSE"]["buckling_length"] = 30.0
+modeling_options["WISDEM"]["FixedBottomSE"]["buckling_length"] = 15.0
 modeling_options["WISDEM"]["FixedBottomSE"]["buckling_method"] = "dnvgl"
 modeling_options["WISDEM"]["FixedBottomSE"]["n_refine"] = 3
 modeling_options["flags"]["monopile"] = True
+modeling_options["flags"]["tower"] = False
 
 # Monopile foundation
 modeling_options["WISDEM"]["FixedBottomSE"]["soil_springs"] = True
@@ -78,25 +79,26 @@ if opt_flag:
     # Choose the optimizer to use
     prob.driver = om.ScipyOptimizeDriver()
     prob.driver.options["optimizer"] = "SLSQP"
+    prob.driver.options["maxiter"] = 40
 
     # Add objective
-    # prob.model.add_objective('tower_mass', scaler=1e-6) # Only tower
-    # prob.model.add_objective("structural_mass", scaler=1e-6)  # Both
-    prob.model.add_objective("monopile_mass", scaler=1e-6)  # Only monopile
+    # prob.model.add_objective('tower_mass', ref=1e6) # Only tower
+    # prob.model.add_objective("structural_mass", ref=1e6)  # Both
+    prob.model.add_objective("monopile_mass", ref=1e6)  # Only monopile
 
     # Add design variables, in this case the tower diameter and wall thicknesses
     prob.model.add_design_var("monopile_outer_diameter_in", lower=3.87, upper=max_diam)
-    prob.model.add_design_var("monopile_layer_thickness", lower=4e-3, upper=2e-1)
+    prob.model.add_design_var("monopile_layer_thickness", lower=4e-3, upper=2e-1, ref=1e-2)
 
     # Add constraints on the tower design
     prob.model.add_constraint("post.constr_stress", upper=1.0)
     prob.model.add_constraint("post.constr_global_buckling", upper=1.0)
     prob.model.add_constraint("post.constr_shell_buckling", upper=1.0)
-    prob.model.add_constraint("constr_d_to_t", lower=80.0, upper=500.0)
+    prob.model.add_constraint("constr_d_to_t", lower=80.0, upper=500.0, ref=1e2)
     prob.model.add_constraint("constr_taper", lower=0.2)
     prob.model.add_constraint("slope", upper=1.0)
     prob.model.add_constraint("suctionpile_depth", lower=0.0)
-    prob.model.add_constraint("monopile.f1", lower=0.13, upper=0.40)
+    prob.model.add_constraint("monopile.f1", lower=0.13, upper=0.40, ref=0.1)
     # ---
 
 # Set up the OpenMDAO problem
@@ -124,12 +126,12 @@ prob["nu_soil"] = 0.4
 
 # material properties
 prob["E_mat"] = 210e9 * np.ones((n_materials, 3))
-prob["G_mat"] = 80.8e9 * np.ones((n_materials, 3))
-prob["rho_mat"] = [8500.0]
-prob["sigma_y_mat"] = [450e6]
-prob["sigma_ult_mat"] = 600e6 * np.ones((n_materials, 3))
-prob["wohler_exp_mat"] = [10.0]
-prob["wohler_A_mat"] = [10.0]
+prob["G_mat"] = 79.3e9 * np.ones((n_materials, 3))
+prob["rho_mat"] = [7850.0]
+prob["sigma_y_mat"] = [345e6]
+prob["sigma_ult_mat"] = 1.12e9 * np.ones((n_materials, 3))
+prob["wohler_exp_mat"] = [4.0]
+prob["wohler_A_mat"] = [4.0]
 
 # cost rates
 prob["unit_cost_mat"] = [2.0]  # USD/kg

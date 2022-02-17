@@ -55,7 +55,7 @@ components:
                     values: [-55.0, -30.0, 0.0, 10.0]
             outer_diameter:
                 grid: *grid_mono
-                values: [8., 8.0, 8.0, 8.0]
+                values: [8.0, 8.0, 8.0, 8.0]
             drag_coefficient:
                 grid: [0.0, 1.0]
                 values: [1.0, 1.0]
