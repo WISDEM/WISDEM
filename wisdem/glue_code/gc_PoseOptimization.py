@@ -413,9 +413,8 @@ class PoseOptimization(object):
             pass
 
         else:
-            raise Exception(
-                "Design variables are set to be optimized or studied, but no driver is selected. Please enable a driver."
-            )
+            print("WARNING: Design variables are set to be optimized or studied, but no driver is selected.")
+            print("         If you want to run an optimization, please enable a driver.")
 
         return wt_opt
 
