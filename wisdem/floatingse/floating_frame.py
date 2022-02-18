@@ -1,5 +1,6 @@
 import numpy as np
 import openmdao.api as om
+
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.utilization_dnvgl as util_dnvgl
@@ -502,6 +503,7 @@ class TowerModal(om.ExplicitComponent):
                     modal.ympf,
                     modal.zmpf,
                     base_slope0=False,
+                    rank_and_file=True,
                 )
 
                 mpfs = np.abs(np.c_[modal.xmpf, modal.ympf, modal.zmpf])

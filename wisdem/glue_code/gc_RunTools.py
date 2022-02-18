@@ -1,6 +1,7 @@
 import os
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 import openmdao.api as om
 from wisdem.commonse.mpi_tools import MPI
@@ -56,12 +57,16 @@ class Convergence_Trends_Opt(om.ExplicitComponent):
             if self.options["opt_options"]["driver"]["optimization"]["flag"]:
                 for param in rec_data.keys():
                     if param != "tower.layer_thickness" and param != "tower.diameter":
-                        fig, ax = plt.subplots(1, 1, figsize=(5.3, 4))
-                        ax.plot(iterations, rec_data[param])
-                        ax.set(xlabel="Number of Iterations", ylabel=param)
-                        fig_name = "Convergence_trend_" + param + ".png"
-                        fig.savefig(os.path.join(folder_output, fig_name))
-                        plt.close(fig)
+                        try:
+                            fig, ax = plt.subplots(1, 1, figsize=(5.3, 4))
+                            ax.plot(np.squeeze(iterations), np.squeeze(rec_data[param]))
+                            ax.set(xlabel="Number of Iterations", ylabel=param)
+                            fig_name = "Convergence_trend_" + param + ".png"
+                            fig.savefig(os.path.join(folder_output, fig_name))
+                            plt.close(fig)
+                        except ValueError:
+                            print('Unable to plot convergence history for {}'.format(param))
+
 
             elif self.options["opt_options"]["driver"]["design_of_experiments"]["flag"]:
                 for resp in responses:
