@@ -2,8 +2,9 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-import wisdem.commonse.utilities as util
 from scipy.optimize import curve_fit
+
+import wisdem.commonse.utilities as util
 
 npts = 100
 myones = np.ones((npts,))
@@ -188,6 +189,69 @@ class TestAny(unittest.TestCase):
         npt.assert_array_equal(freq_x, np.r_[3, 6, 9, np.zeros(n2 - 3)])
         npt.assert_array_equal(freq_y, np.r_[1, 4, 7, np.zeros(n2 - 3)])
         npt.assert_array_equal(freq_z, np.r_[2, 5, 8, np.zeros(n2 - 3)])
+
+    def testGetXYModes_rank_and_file(self):
+        np.random.seed(314)
+        r = np.linspace(0, 1, 20)
+        n = 10
+        n2 = int(n / 2)
+        dx = dy = dz = np.tile(np.r_[r ** 2 + 10.0], (n, 1))
+
+        # Jitter the values randomly
+        dx += np.random.random(dx.shape)
+        dy += np.random.random(dy.shape)
+        dz += np.random.random(dz.shape)
+        freqs = np.arange(n)
+
+        # Assign random mpfs
+        xm = np.random.random(n)
+        ym = np.random.random(n)
+        zm = np.random.random(n)
+
+        freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
+            r, freqs, dx, dy, dz, xm, ym, zm, rank_and_file=True
+        )
+
+        # Ensure each mode shape's coefficients sum to 1
+        npt.assert_almost_equal(np.sum(mshapes_x, axis=1), np.ones(n2))
+        npt.assert_almost_equal(np.sum(mshapes_y, axis=1), np.ones(n2))
+        npt.assert_almost_equal(np.sum(mshapes_z, axis=1), np.ones(n2))
+
+        # Assert the order for each mode for this seeded random setup
+        npt.assert_array_equal(freq_x, np.r_[3, 7, 8, 4, 9])
+        npt.assert_array_equal(freq_y, np.r_[3, 2, 8, 7, 9])
+        npt.assert_array_equal(freq_z, np.r_[3, 9, 4, 8, 5])
+
+        mshapes_x_truth = np.array(
+            [
+                [-22.92022398, 129.46333573, -246.4030288, 192.11436963, -51.25445258],
+                [1336.9832145, -8154.95913311, 17975.66811644, -17015.65469796, 5858.96250013],
+                [21.878196, -104.20313009, 208.34202546, -190.69851021, 65.68141883],
+                [-71.51627174, 505.27856257, -1249.52043721, 1298.12252412, -481.36437775],
+                [-54.10105559, 288.84391942, -577.69093167, 512.63427927, -168.68621143],
+            ]
+        )
+        mshapes_y_truth = np.array(
+            [
+                [-22.92022398, 129.46333573, -246.4030288, 192.11436963, -51.25445258],
+                [39.6102757, -243.30461819, 560.37887651, -551.01420603, 195.32967201],
+                [21.878196, -104.20313009, 208.34202546, -190.69851021, 65.68141883],
+                [1336.9832145, -8154.95913311, 17975.66811644, -17015.65469796, 5858.96250013],
+                [-54.10105559, 288.84391942, -577.69093167, 512.63427927, -168.68621143],
+            ]
+        )
+        mshapes_z_truth = np.array(
+            [
+                [-22.92022398, 129.46333573, -246.4030288, 192.11436963, -51.25445258],
+                [-54.10105559, 288.84391942, -577.69093167, 512.63427927, -168.68621143],
+                [-71.51627174, 505.27856257, -1249.52043721, 1298.12252412, -481.36437775],
+                [21.878196, -104.20313009, 208.34202546, -190.69851021, 65.68141883],
+                [11.53705709, -85.1199343, 217.8419065, -228.79184901, 85.53281973],
+            ]
+        )
+        npt.assert_almost_equal(mshapes_x, mshapes_x_truth)
+        npt.assert_almost_equal(mshapes_y, mshapes_y_truth)
+        npt.assert_almost_equal(mshapes_z, mshapes_z_truth)
 
     def testRotateI(self):
         I = np.arange(6) + 1
