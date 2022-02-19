@@ -1,6 +1,5 @@
 import numpy as np
 import openmdao.api as om
-
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.utilization_dnvgl as util_dnvgl
@@ -348,6 +347,8 @@ class TowerModal(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("n_full")
+        self.options.declare("frame3dd_opt")
+        self.options.declare("rank_and_file", default=False)
 
     def setup(self):
         n_full = self.options["n_full"]
@@ -387,6 +388,7 @@ class TowerModal(om.ExplicitComponent):
         self.add_output("torsion_freqs", np.zeros(NFREQ2), units="Hz")
 
     def compute(self, inputs, outputs):
+        frame3dd_opt = self.options["frame3dd_opt"]
 
         # ------- node data ----------------
         xyz = inputs["tower_xyz"]
@@ -430,20 +432,18 @@ class TowerModal(om.ExplicitComponent):
 
         # ------ options ------------
         dx = -1.0
-        shear = geom = False
-        options = pyframe3dd.Options(shear, geom, dx)
+        options = pyframe3dd.Options(frame3dd_opt["shear"], frame3dd_opt["geom"], dx)
         # -----------------------------------
 
         # initialize frame3dd object
         myframe = pyframe3dd.Frame(nodes, reactions, elements, options)
 
         # ------- enable dynamic analysis ----------
-        Mmethod = 2
-        lump = 0
-        shift = 10.0
-        tol = 1e-8
         # Run extra freqs because could get 6 rigid body modes at zero-freq
-        myframe.enableDynamics(3 * NFREQ, Mmethod, lump, tol, shift)
+        lump = 0
+        myframe.enableDynamics(
+            3 * NFREQ, frame3dd_opt["modal_method"], lump, frame3dd_opt["tol"], frame3dd_opt["shift"]
+        )
         # ----------------------------
 
         # ------ static load case 1 ------------
@@ -503,11 +503,8 @@ class TowerModal(om.ExplicitComponent):
                     modal.ympf,
                     modal.zmpf,
                     base_slope0=False,
-                    rank_and_file=True,
+                    rank_and_file=self.options["rank_and_file"],
                 )
-
-                mpfs = np.abs(np.c_[modal.xmpf, modal.ympf, modal.zmpf])
-                ratios = mpfs.max(axis=1) / mpfs.min(axis=1)
 
                 outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
                 outputs["side_side_freqs"] = freq_y[:NFREQ2]
@@ -621,6 +618,8 @@ class FloatingFrame(om.Group):
         opt = self.options["modeling_options"]
         nLC = opt["WISDEM"]["n_dlc"]
         n_member = opt["floating"]["members"]["n_members"]
+        frame3dd_opt = opt["WISDEM"]["FloatingSE"]["frame3dd"]
+        rank_and_file = opt["WISDEM"]["FloatingSE"]["rank_and_file"]
 
         mem_vars = ["Px", "Py", "Pz", "qdyn"]
 
@@ -669,7 +668,11 @@ class FloatingFrame(om.Group):
             tow_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
             n_height = tow_opt["n_height"]
             n_full_tow = get_nfull(n_height, nref=tow_opt["n_refine"])
-            self.add_subsystem("tower", TowerModal(n_full=n_full_tow), promotes=["*"])
+            self.add_subsystem(
+                "tower",
+                TowerModal(n_full=n_full_tow, frame3dd_opt=frame3dd_opt, rank_and_file=rank_and_file),
+                promotes=["*"],
+            )
 
         self.add_subsystem("post", FloatingPost(options=opt["WISDEM"]["FloatingSE"], n_dlc=nLC), promotes=["*"])
 

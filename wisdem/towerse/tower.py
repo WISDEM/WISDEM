@@ -1,6 +1,5 @@
-import openmdao.api as om
-
 import numpy as np
+import openmdao.api as om
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.cylinder_member as mem
@@ -308,11 +307,10 @@ class TowerFrame(om.ExplicitComponent):
         self.frame = pyframe3dd.Frame(nodes, reactions, elements, options)
 
         # ------- enable dynamic analysis ----------
-        Mmethod = 1
         lump = 0
         shift = 0.0
         # Run twice the number of modes to ensure that we can ignore the torsional modes and still get the desired number of fore-aft, side-side modes
-        self.frame.enableDynamics(2 * NFREQ, Mmethod, lump, frame3dd_opt["tol"], shift)
+        self.frame.enableDynamics(2 * NFREQ, frame3dd_opt["modal_method"], lump, frame3dd_opt["tol"], shift)
         # ----------------------------
 
         # ------ static load case 1 ------------
