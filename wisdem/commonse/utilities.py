@@ -7,6 +7,8 @@ Copyright (c) NREL. All rights reserved.
 
 from __future__ import print_function
 
+import copy
+
 import numpy as np
 from scipy.linalg import solve_banded
 
@@ -120,115 +122,79 @@ def get_xyz_mode_shapes(
     #   - guarantees a modeshape in every direction
     #   - guarantees exact modeshape orders
     else:
-        # Pull out polys from dynamic (non rigid-body modes)
-        xpolys_dyn = xpolys[freqs > 1e-1, :]
-        ypolys_dyn = ypolys[freqs > 1e-1, :]
-        zpolys_dyn = zpolys[freqs > 1e-1, :]
-
-        # re-interpolate to better capture mode shapes
         freqs_dyn = freqs[freqs > 1e-1]
         dummy_span = np.arange(0.0, 1.01, 0.01)
-        xdisp_dyn = np.zeros((len(freqs_dyn), len(dummy_span)))  # xdsp[freqs > 1e-1]
-        ydisp_dyn = np.zeros((len(freqs_dyn), len(dummy_span)))  # ydsp[freqs > 1e-1]
-        zdisp_dyn = np.zeros((len(freqs_dyn), len(dummy_span)))  # zdsp[freqs > 1e-1]
-        for fidx, (xp, yp, zp) in enumerate(zip(xpolys_dyn, ypolys_dyn, zpolys_dyn)):
-            xpf = np.flip(np.append([0, 0], xp))
-            ypf = np.flip(np.append([0, 0], yp))
-            zpf = np.flip(np.append([0, 0], zp))
-            xp_fun = np.poly1d(xpf)
-            yp_fun = np.poly1d(ypf)
-            zp_fun = np.poly1d(zpf)
-            xdisp_dyn[fidx, :] = xp_fun(dummy_span)
-            ydisp_dyn[fidx, :] = yp_fun(dummy_span)
-            zdisp_dyn[fidx, :] = zp_fun(dummy_span)
+        defl_numbers = np.zeros((len(freqs_dyn), 3))
+        for j, polys in enumerate([xpolys, ypolys, zpolys]):
+            poly_dyn = polys[freqs > 1e-1, :]
+            for i, p in enumerate(poly_dyn):
+                pf = np.flip(np.append([0, 0], p))
+                diff = np.diff(np.poly1d(pf)(dummy_span))
 
-        # Setup parsing variables
+                defl_numbers[i, j] = len(np.where(np.sign(diff[:-1]) != np.sign(diff[1:]))[0])
+                # Check second derivative for higher order modes
+                dnx2 = len(np.where(np.sign(np.diff(diff[:-1])) != np.sign(np.diff(diff[1:])))[0])
+                if dnx2 >= defl_numbers[i, j]:  # Should only exist for higher order but monotonically increasing modes
+                    defl_numbers[i, j] = dnx2 + 1
+
+        def record_used_freqs(polyidx, i, used_freq_idx):
+            directions = ["x", "y", "z"]
+            if polyidx in used_freq_idx and i < 3:
+                print(
+                    f"WARNING: Frequency index {polyidx} has been used again for i={i} in the {directions[i]}-direction"
+                )
+            used_freq_idx.append(polyidx)
+            return used_freq_idx
+
         xmpf_dyn = np.abs(xmpf[freqs > 1e-1])
         ympf_dyn = np.abs(ympf[freqs > 1e-1])
         zmpf_dyn = np.abs(zmpf[freqs > 1e-1])
-        defl_number_x = np.zeros((len(freqs_dyn), 1))
-        defl_number_y = np.zeros((len(freqs_dyn), 1))
-        defl_number_z = np.zeros((len(freqs_dyn), 1))
-
-        # Find order of the modes (i.e. number of inflections in the mode shape)
-        for i, (xd, yd, zd) in enumerate(zip(xdisp_dyn, ydisp_dyn, zdisp_dyn)):
-            xd_diff = np.diff(xd)
-            yd_diff = np.diff(yd)
-            zd_diff = np.diff(zd)
-            defl_number_x[i] = len(np.where(np.sign(xd_diff[:-1]) != np.sign(xd_diff[1:]))[0])
-            # Check second derivative for higher order modes
-            dnx2 = len(np.where(np.sign(np.diff(xd_diff[:-1])) != np.sign(np.diff(xd_diff[1:])))[0])
-            if dnx2 >= defl_number_x[i]:  # Should only exist for higher order but monotonically increasing modes
-                defl_number_x[i] = dnx2 + 1
-            defl_number_y[i] = len(np.where(np.sign(yd_diff[:-1]) != np.sign(yd_diff[1:]))[0])
-            dny2 = len(np.where(np.sign(np.diff(yd_diff[:-1])) != np.sign(np.diff(yd_diff[1:])))[0])
-            if dny2 >= defl_number_y[i]:
-                defl_number_y[i] = dny2 + 1
-            defl_number_z[i] = len(np.where(np.sign(zd_diff[:-1]) != np.sign(zd_diff[1:]))[0])
-            dnz2 = len(np.where(np.sign(np.diff(zd_diff[:-1])) != np.sign(np.diff(zd_diff[1:])))[0])
-            if dnz2 >= defl_number_z[i]:
-                defl_number_z[i] = dnz2 + 1
-
         used_freq_idx = []
         for i in range(mysize):
             # Number of unique mode shape orders
-            x_uniq_num = int(len(np.unique(defl_number_x)) - 1)
+            x_uniq_num = int(len(np.unique(defl_numbers[:, 0])) - 1)
             if i >= x_uniq_num:
                 ix += 1
             # Get index of most dominant direction for i'th mode shape
             uniq_idx = min(i, x_uniq_num)  # use i'th mode shape, unless it doesn't exist, then use next largest
-            mode_freq_idx = np.where(defl_number_x == np.unique(defl_number_x)[uniq_idx])[
+            mode_freq_idx = np.where(defl_numbers[:, 0] == np.unique(defl_numbers[:, 0])[uniq_idx])[
                 0
             ]  # find frequency index where i'th mode shape exists
-            # idx2delete =  np.where([mode_freq_idx==used for used in used_idx])[-1]
-            # mode_freq_idx = np.delete(mode_freq_idx, idx2delete)
             x_polyidx = mode_freq_idx[
                 np.argsort(-xmpf_dyn[mode_freq_idx])[min(ix, len(mode_freq_idx) - 1)]
             ]  # find index for i'th or the "next" i'th desired mode shape polynomial
-            mshapes_x[i, :] = xpolys_dyn[x_polyidx, :]
+            mshapes_x[i, :] = xpolys[freqs > 1e-1, :][x_polyidx, :]
             freq_x[i] = freqs_dyn[x_polyidx]
-            if x_polyidx in used_freq_idx and i < 3:
-                print(
-                    "WARNING: Frequency index {} has been used again for i={} in the x-direction".format(x_polyidx, i)
-                )
-            used_freq_idx.append(x_polyidx)
+            used_freq_idx = record_used_freqs(x_polyidx, i, used_freq_idx)
 
-            # repeat for x and z directions
-            y_uniq_num = int(len(np.unique(defl_number_y)) - 1)
+            # repeat for y and z directions
+            y_uniq_num = int(len(np.unique(defl_numbers[:, 1])) - 1)
             if i > y_uniq_num:
                 iy += 1
             uniq_idx = min(i, y_uniq_num)  # use i'th mode shape, unless it doesn't exist, then use largest
-            mode_freq_idx = np.where(defl_number_y == np.unique(defl_number_y)[uniq_idx])[
+            mode_freq_idx = np.where(defl_numbers[:, 1] == np.unique(defl_numbers[:, 1])[uniq_idx])[
                 0
             ]  # find frequency index where i'th mode shape exists
             y_polyidx = mode_freq_idx[
                 np.argsort(-ympf_dyn[mode_freq_idx])[min(iy, len(mode_freq_idx) - 1)]
             ]  # find index for i'th or the "next" i'th desired mode shape polynomial
-            mshapes_y[i, :] = ypolys_dyn[y_polyidx, :]
+            mshapes_y[i, :] = ypolys[freqs > 1e-1, :][y_polyidx, :]
             freq_y[i] = freqs_dyn[y_polyidx]
-            if y_polyidx in used_freq_idx and i < 3:
-                print(
-                    "WARNING: Frequency index {} has been used again for i={} in the y-direction".format(y_polyidx, i)
-                )
-            used_freq_idx.append(y_polyidx)
+            used_freq_idx = record_used_freqs(y_polyidx, i, used_freq_idx)
 
-            z_uniq_num = int(len(np.unique(defl_number_z)) - 1)
+            z_uniq_num = int(len(np.unique(defl_numbers[:, 2])) - 1)
             if i > z_uniq_num:
                 iz += 1
             uniq_idx = min(i, z_uniq_num)  # use i'th mode shape, unless it doesn't exist, then use largest
-            mode_freq_idx = np.where(defl_number_z == np.unique(defl_number_z)[uniq_idx])[
+            mode_freq_idx = np.where(defl_numbers[:, 2] == np.unique(defl_numbers[:, 2])[uniq_idx])[
                 0
             ]  # find frequency index where i'th mode shape exists
             z_polyidx = mode_freq_idx[
                 np.argsort(-zmpf_dyn[mode_freq_idx])[min(iz, len(mode_freq_idx) - 1)]
             ]  # find index for i'th or the "next" i'th desired mode shape polynomial
-            mshapes_z[i, :] = zpolys_dyn[z_polyidx, :]
+            mshapes_z[i, :] = zpolys[freqs > 1e-1, :][z_polyidx, :]
             freq_z[i] = freqs_dyn[z_polyidx]
-            if z_polyidx in used_freq_idx and i < 3:
-                print(
-                    "WARNING: Frequency index {} has been used again for i={} in the z-direction".format(z_polyidx, i)
-                )
-            used_freq_idx.append(z_polyidx)
+            used_freq_idx = record_used_freqs(z_polyidx, i, used_freq_idx)
 
     return freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z
 
