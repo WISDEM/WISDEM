@@ -1,10 +1,9 @@
-import numpy as np
 import openmdao.api as om
+
+import numpy as np
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.cylinder_member as mem
-
-# from wisdem.commonse.utilization_eurocode import hoopStressEurocode
 from wisdem.commonse import NFREQ, gravity
 
 RIGID = 1e30
