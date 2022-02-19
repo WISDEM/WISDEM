@@ -1456,6 +1456,11 @@ properties:
                         description: Finite difference calculation mode
                         default: central
                         enum: [central, forward, complex]
+                    step_calc:
+                        type: string
+                        description: Step type for computing the size of the finite difference step.
+                        default: 'None'
+                        enum: [None, 'abs', 'rel_avg', 'rel_element', 'rel_legacy']
                     debug_print: &debug_print
                         type: boolean
                         default: False
