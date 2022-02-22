@@ -21,10 +21,9 @@ limitations under the License.
 
 """
 
-from __future__ import print_function
-from math import pi, sin, cos, radians, degrees, tan, ceil, floor
-import numpy as np
 import copy
+
+import numpy as np
 
 # from scipy.interpolate import RectBivariateSpline
 
@@ -136,9 +135,9 @@ class Polar(object):
         alpha = np.radians(self.alpha)
         cl_2d = self.cl
         cd_2d = self.cd
-        alpha_max_corr = radians(alpha_max_corr)
-        alpha_linear_min = radians(alpha_linear_min)
-        alpha_linear_max = radians(alpha_linear_max)
+        alpha_max_corr = np.radians(alpha_max_corr)
+        alpha_linear_min = np.radians(alpha_linear_min)
+        alpha_linear_max = np.radians(alpha_linear_max)
 
         # parameters in Du-Selig model
         a = 1
@@ -161,7 +160,7 @@ class Polar(object):
         )
 
         # not sure where this adjustment comes from (besides AirfoilPrep spreadsheet of course)
-        adj = ((pi / 2 - alpha) / (pi / 2 - alpha_max_corr)) ** 2
+        adj = ((np.pi / 2 - alpha) / (np.pi / 2 - alpha_max_corr)) ** 2
         adj[alpha <= alpha_max_corr] = 1.0
 
         # Du-Selig correction for lift
@@ -227,43 +226,43 @@ class Polar(object):
         self.cdmax = max(max(self.cd), cdmax)
 
         # extract matching info from ends
-        alpha_high = radians(self.alpha[-1])
+        alpha_high = np.radians(self.alpha[-1])
         cl_high = self.cl[-1]
         cd_high = self.cd[-1]
         cm_high = self.cm[-1]
 
-        alpha_low = radians(self.alpha[0])
+        alpha_low = np.radians(self.alpha[0])
         cl_low = self.cl[0]
         cd_low = self.cd[0]
 
-        if alpha_high > pi / 2:
+        if alpha_high > np.pi / 2:
             raise Exception("alpha[-1] > pi/2")
             return self
-        if alpha_low < -pi / 2:
+        if alpha_low < -np.pi / 2:
             raise Exception("alpha[0] < -pi/2")
             return self
 
         # parameters used in model
-        sa = sin(alpha_high)
-        ca = cos(alpha_high)
+        sa = np.sin(alpha_high)
+        ca = np.cos(alpha_high)
         self.A = (cl_high - self.cdmax * sa * ca) * sa / ca ** 2
         self.B = (cd_high - self.cdmax * sa * sa) / ca
 
         # alpha_high <-> 90
-        alpha1 = np.linspace(alpha_high, pi / 2, nalpha)
+        alpha1 = np.linspace(alpha_high, np.pi / 2, nalpha)
         alpha1 = alpha1[1:]  # remove first element so as not to duplicate when concatenating
         cl1, cd1 = self.__Viterna(alpha1, 1.0)
 
         # 90 <-> 180-alpha_high
-        alpha2 = np.linspace(pi / 2, pi - alpha_high, nalpha)
+        alpha2 = np.linspace(np.pi / 2, np.pi - alpha_high, nalpha)
         alpha2 = alpha2[1:]
-        cl2, cd2 = self.__Viterna(pi - alpha2, -cl_adj)
+        cl2, cd2 = self.__Viterna(np.pi - alpha2, -cl_adj)
 
         # 180-alpha_high <-> 180
-        alpha3 = np.linspace(pi - alpha_high, pi, nalpha)
+        alpha3 = np.linspace(np.pi - alpha_high, np.pi, nalpha)
         alpha3 = alpha3[1:]
-        cl3, cd3 = self.__Viterna(pi - alpha3, 1.0)
-        cl3 = (alpha3 - pi) / alpha_high * cl_high * cl_adj  # override with linear variation
+        cl3, cd3 = self.__Viterna(np.pi - alpha3, 1.0)
+        cl3 = (alpha3 - np.pi) / alpha_high * cl_high * cl_adj  # override with linear variation
 
         if alpha_low <= -alpha_high:
             alpha4 = []
@@ -280,19 +279,19 @@ class Polar(object):
             alpha5max = -alpha_high
 
         # -90 <-> -alpha_high
-        alpha5 = np.linspace(-pi / 2, alpha5max, nalpha)
+        alpha5 = np.linspace(-np.pi / 2, alpha5max, nalpha)
         alpha5 = alpha5[1:]
         cl5, cd5 = self.__Viterna(-alpha5, -cl_adj)
 
         # -180+alpha_high <-> -90
-        alpha6 = np.linspace(-pi + alpha_high, -pi / 2, nalpha)
+        alpha6 = np.linspace(-np.pi + alpha_high, -np.pi / 2, nalpha)
         alpha6 = alpha6[1:]
-        cl6, cd6 = self.__Viterna(alpha6 + pi, cl_adj)
+        cl6, cd6 = self.__Viterna(alpha6 + np.pi, cl_adj)
 
         # -180 <-> -180 + alpha_high
-        alpha7 = np.linspace(-pi, -pi + alpha_high, nalpha)
-        cl7, cd7 = self.__Viterna(alpha7 + pi, 1.0)
-        cl7 = (alpha7 + pi) / alpha_high * cl_high * cl_adj  # linear variation
+        alpha7 = np.linspace(-np.pi, -np.pi + alpha_high, nalpha)
+        cl7, cd7 = self.__Viterna(alpha7 + np.pi, 1.0)
+        cl7 = (alpha7 + np.pi) / alpha_high * cl_high * cl_adj  # linear variation
 
         alpha = np.concatenate((alpha7, alpha6, alpha5, alpha4, np.radians(self.alpha), alpha1, alpha2, alpha3))
         cl = np.concatenate((cl7, cl6, cl5, cl4, self.cl, cl1, cl2, cl3))
@@ -301,8 +300,8 @@ class Polar(object):
         cd = np.maximum(cd, cdmin)  # don't allow negative drag coefficients
 
         # Setup alpha and cm to be used in extrapolation
-        cm1_alpha = floor(self.alpha[0] / 10.0) * 10.0
-        cm2_alpha = ceil(self.alpha[-1] / 10.0) * 10.0
+        cm1_alpha = np.floor(self.alpha[0] / 10.0) * 10.0
+        cm2_alpha = np.ceil(self.alpha[-1] / 10.0) * 10.0
         alpha_num = abs(int((-180.0 - cm1_alpha) / 10.0 - 1))
         alpha_cm1 = np.linspace(-180.0, cm1_alpha, alpha_num)
         alpha_cm2 = np.linspace(cm2_alpha, 180.0, int((180.0 - cm2_alpha) / 10.0 + 1))
@@ -355,9 +354,9 @@ class Polar(object):
             p = -self.cl[0] / (self.cl[1] - self.cl[0])
             cm0 = self.cm[0] + p * (self.cm[1] - self.cm[0])
         self.cm0 = cm0
-        alpha_high = radians(self.alpha[-1])
-        XM = (-cm_high + cm0) / (cl_high * cos(alpha_high) + cd_high * sin(alpha_high))
-        cmCoef = (XM - 0.25) / tan((alpha_high - pi / 2))
+        alpha_high = np.radians(self.alpha[-1])
+        XM = (-cm_high + cm0) / (cl_high * np.cos(alpha_high) + cd_high * np.sin(alpha_high))
+        cmCoef = (XM - 0.25) / np.tan((alpha_high - np.pi / 2))
         return cmCoef
 
     def __getCM(self, i, cmCoef, alpha, cl_ext, cd_ext, alpha_low_deg, alpha_high_deg):
@@ -371,12 +370,15 @@ class Polar(object):
                 cm_new = self.cm0
             else:
                 if alpha[i] > 0:
-                    x = cmCoef * tan(radians(alpha[i]) - pi / 2) + 0.25
-                    cm_new = self.cm0 - x * (cl_ext[i] * cos(radians(alpha[i])) + cd_ext[i] * sin(radians(alpha[i])))
+                    x = cmCoef * np.tan(np.radians(alpha[i]) - np.pi / 2) + 0.25
+                    cm_new = self.cm0 - x * (
+                        cl_ext[i] * np.cos(np.radians(alpha[i])) + cd_ext[i] * np.sin(np.radians(alpha[i]))
+                    )
                 else:
-                    x = cmCoef * tan(-radians(alpha[i]) - pi / 2) + 0.25
+                    x = cmCoef * np.tan(-np.radians(alpha[i]) - np.pi / 2) + 0.25
                     cm_new = -(
-                        self.cm0 - x * (-cl_ext[i] * cos(-radians(alpha[i])) + cd_ext[i] * sin(-radians(alpha[i])))
+                        self.cm0
+                        - x * (-cl_ext[i] * np.cos(-np.radians(alpha[i])) + cd_ext[i] * np.sin(-np.radians(alpha[i])))
                     )
         else:
             if alpha[i] == 165:
@@ -421,8 +423,8 @@ class Polar(object):
         cl = self.cl
         cd = self.cd
 
-        alpha_linear_min = radians(alpha_linear_min)
-        alpha_linear_max = radians(alpha_linear_max)
+        alpha_linear_min = np.radians(alpha_linear_min)
+        alpha_linear_max = np.radians(alpha_linear_max)
 
         cn = cl * np.cos(alpha) + cd * np.sin(alpha)
 
@@ -468,7 +470,7 @@ class Polar(object):
 
         # return: control setting, stall angle, alpha for 0 cn, cn slope,
         #         cn at stall+, cn at stall-, alpha for min CD, min(CD)
-        return (0.0, degrees(alphaU), degrees(alpha0), m, cnStallUpper, cnStallLower, alpha[minIdx], cd[minIdx])
+        return (0.0, np.degrees(alphaU), np.degrees(alpha0), m, cnStallUpper, cnStallLower, alpha[minIdx], cd[minIdx])
 
     def plot(self):
         """plot cl/cd/cm polar
@@ -581,6 +583,9 @@ class Airfoil(object):
                 if "EOT" in line:
                     break
                 data = [float(s) for s in line.split()]
+                if len(data) < 4:
+                    raise ValueError(f"Error: Expected 4 columns of data but found, {data}")
+
                 alpha.append(data[0])
                 cl.append(data[1])
                 cd.append(data[2])
