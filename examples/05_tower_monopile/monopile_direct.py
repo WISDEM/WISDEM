@@ -63,6 +63,7 @@ modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"] = {}
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["shear"] = True
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["geom"] = True
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["tol"] = 1e-9
+modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["modal_method"] = 1
 
 modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = n_control_points
 modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"] = 1

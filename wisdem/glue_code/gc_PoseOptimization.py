@@ -1,8 +1,9 @@
 import os
 
-import numpy as np
 import openmdao.api as om
 from scipy.interpolate import PchipInterpolator
+
+import numpy as np
 
 
 class PoseOptimization(object):
@@ -180,7 +181,10 @@ class PoseOptimization(object):
                 n_grid = len(self.modeling["floating"]["members"]["grid_member_" + memname])
                 n_layers = self.modeling["floating"]["members"]["n_layers"][memidx]
                 if "diameter" in kgrp:
-                    n_DV += n_grid
+                    if "constant" in kgrp["diameter"]:
+                        n_DV += 1
+                    else:
+                        n_DV += n_grid
                 if "thickness" in kgrp:
                     n_DV += n_grid * n_layers
                 if "ballast" in kgrp:
@@ -272,7 +276,11 @@ class PoseOptimization(object):
             opt_options = self.opt["driver"]["optimization"]
             step_size = self._get_step_size()
 
-            wt_opt.model.approx_totals(method="fd", step=step_size, form=opt_options["form"])
+            if opt_options["step_calc"] == "None":
+                step_calc = None
+            else:
+                step_calc = opt_options["step_calc"]
+            wt_opt.model.approx_totals(method="fd", step=step_size, form=opt_options["form"], step_calc=step_calc)
 
             # Set optimization solver and options. First, Scipy's SLSQP and COBYLA
             if opt_options["solver"] in self.scipy_methods:

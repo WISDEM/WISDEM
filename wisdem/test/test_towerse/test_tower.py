@@ -50,48 +50,6 @@ class TestMass(unittest.TestCase):
         # npt.assert_array_less(5e4, np.abs(outputs["turbine_I_base"]))
 
 
-class TestStruct(unittest.TestCase):
-    def setUp(self):
-        self.inputs = {}
-        self.outputs = {}
-        self.discrete_inputs = {}
-        self.discrete_outputs = {}
-
-        # Store analysis options
-        self.modeling_options = {}
-        self.modeling_options["materials"] = {}
-        self.modeling_options["materials"]["n_mat"] = 1
-
-        self.modeling_options["WISDEM"] = {}
-        self.modeling_options["WISDEM"]["n_dlc"] = 1
-        self.modeling_options["WISDEM"]["TowerSE"] = {}
-        self.modeling_options["WISDEM"]["TowerSE"]["buckling_method"] = "eurocode"
-        self.modeling_options["WISDEM"]["TowerSE"]["buckling_length"] = 30.0
-        self.modeling_options["WISDEM"]["TowerSE"]["n_layers"] = 1
-        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 3
-        self.modeling_options["WISDEM"]["TowerSE"]["n_refine"] = 3
-        self.modeling_options["WISDEM"]["TowerSE"]["wind"] = "PowerWind"
-
-        self.modeling_options["WISDEM"]["TowerSE"]["gamma_f"] = 1.0
-        self.modeling_options["WISDEM"]["TowerSE"]["gamma_m"] = 1.0
-        self.modeling_options["WISDEM"]["TowerSE"]["gamma_n"] = 1.0
-        self.modeling_options["WISDEM"]["TowerSE"]["gamma_b"] = 1.0
-        self.modeling_options["WISDEM"]["TowerSE"]["gamma_fatigue"] = 1.0
-
-        # Simplified the options available to the user
-        self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"] = {}
-        # self.modeling_options['TowerSE']['frame3dd']['DC']      = 80.0
-        self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["shear"] = True
-        self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["geom"] = True
-        # self.modeling_options['TowerSE']['frame3dd']['dx']      = -1
-        # self.modeling_options['TowerSE']['frame3dd']['nM']      = 6
-        # self.modeling_options['TowerSE']['frame3dd']['Mmethod'] = 1
-        # self.modeling_options['TowerSE']['frame3dd']['lump']    = 0
-        self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["tol"] = 1e-9
-        # self.modeling_options['TowerSE']['frame3dd']['shift']   = 0.0
-        # self.modeling_options['TowerSE']['frame3dd']['add_gravity'] = True
-
-
 class TestTowerSE(unittest.TestCase):
     def setUp(self):
         self.inputs = {}
@@ -122,16 +80,10 @@ class TestTowerSE(unittest.TestCase):
 
         # Simplified the options available to the user
         self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"] = {}
-        # self.modeling_options['TowerSE']['frame3dd']['DC']      = 80.0
         self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["shear"] = True
         self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["geom"] = True
-        # self.modeling_options['TowerSE']['frame3dd']['dx']      = -1
-        # self.modeling_options['TowerSE']['frame3dd']['nM']      = 6
-        # self.modeling_options['TowerSE']['frame3dd']['Mmethod'] = 1
-        # self.modeling_options['TowerSE']['frame3dd']['lump']    = 0
+        self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["modal_method"] = 1
         self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["tol"] = 1e-9
-        # self.modeling_options['TowerSE']['frame3dd']['shift']   = 0.0
-        # self.modeling_options['TowerSE']['frame3dd']['add_gravity'] = True
 
     def testProblemLand(self):
 
@@ -594,7 +546,6 @@ def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestPreDiscretization))
     suite.addTest(unittest.makeSuite(TestMass))
-    suite.addTest(unittest.makeSuite(TestStruct))
     suite.addTest(unittest.makeSuite(TestTowerSE))
     return suite
 

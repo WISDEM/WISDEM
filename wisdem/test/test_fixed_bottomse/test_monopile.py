@@ -122,16 +122,10 @@ class TestMonopileSE(unittest.TestCase):
 
         # Simplified the options available to the user
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"] = {}
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["DC"]      = 80.0
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["shear"] = True
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["geom"] = True
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["dx"]      = -1
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["nM"]      = 6
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["Mmethod"] = 1
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["lump"]    = 0
+        self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["modal_method"] = 1
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["tol"] = 1e-9
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["shift"]   = 0.0
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["add_gravity"] = True
 
         self.modeling_options["flags"] = {}
         self.modeling_options["flags"]["tower"] = False

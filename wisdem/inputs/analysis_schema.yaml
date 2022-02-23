@@ -779,6 +779,10 @@ properties:
                                             properties:
                                                 lower_bound: *dbound
                                                 upper_bound: *dbound
+                                                constant:
+                                                    type: boolean
+                                                    description: Should the diameters be constant
+                                                    default: False
                                         thickness:
                                             type: object
                                             description: Thickness optimization of member group
@@ -1372,7 +1376,7 @@ properties:
 
     merit_figure:
         type: string
-        description: Objective function / merit figure for optimization (not checked via schema, but in python).  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation, platform_mass- floating platform mass without ballast, inverse_design- custom inverse design used to match reference values of any arbitrary output
+        description: Objective function / merit figure for optimization (not checked via schema, but in python).  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation, platform_mass- floating platform mass without variable ballast, inverse_design- custom inverse design used to match reference values of any arbitrary output
         default: LCOE
 
     inverse_design:
@@ -1452,6 +1456,11 @@ properties:
                         description: Finite difference calculation mode
                         default: central
                         enum: [central, forward, complex]
+                    step_calc:
+                        type: string
+                        description: Step type for computing the size of the finite difference step.
+                        default: 'None'
+                        enum: [None, 'abs', 'rel_avg', 'rel_element', 'rel_legacy']
                     debug_print: &debug_print
                         type: boolean
                         default: False
@@ -1492,7 +1501,7 @@ properties:
                     criterion:
                         type: string
                         description: Descriptor of sampling method for LatinHypercube generator
-                        default: None
+                        default: center
                         enum: [None, center, c, maximin, m, centermaximin, cm, correelation, corr]
                     iterations:
                         type: integer
