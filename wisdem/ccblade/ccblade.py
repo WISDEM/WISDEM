@@ -25,10 +25,9 @@ import warnings
 import multiprocessing as mp
 
 import numpy as np
+import wisdem.ccblade._bem as _bem
 from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
-
-import wisdem.ccblade._bem as _bem
 from wisdem.airfoilprep import Airfoil
 
 # ------------------
@@ -78,6 +77,9 @@ class CCAirfoil(object):
                 cm = np.c_[cm, cm]
 
             self.one_Re = True
+
+        if len(alpha) < 2:
+            raise ValueError(f"Need at least 2 angles of attack, but found {alpha}")
 
         kx = min(len(alpha) - 1, 3)
         ky = min(len(Re) - 1, 3)

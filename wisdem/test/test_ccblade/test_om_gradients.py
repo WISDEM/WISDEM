@@ -110,8 +110,9 @@ class Test(unittest.TestCase):
                 if "airfoil" not in input_name and "rho" not in input_name and "mu" not in input_name:
                     new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
 
-        assert_check_partials(new_check, rtol=5e-5, atol=10.)
+        assert_check_partials(new_check, rtol=5e-5, atol=10.0)
 
+    @unittest.skip("Not useful and now OpenMDAO complains")
     def test_ccblade_twist(self):
         """
         Right now this just compares fd to fd so it is not a meaningful test.
@@ -194,7 +195,7 @@ class Test(unittest.TestCase):
 
         prob.run_model()
 
-        check = prob.check_partials(out_stream=None, compact_print=True)
+        check = prob.check_partials(out_stream=None, compact_print=True, step=1e-7)
 
         # Manually filter some entries out of the assert_check_partials call.
         # Will want to add this functionality to OpenMDAO itself at some point.
@@ -202,7 +203,7 @@ class Test(unittest.TestCase):
         for comp_name in check:
             new_check[comp_name] = {}
             for (output_name, input_name) in check[comp_name]:
-                if "airfoil" not in input_name and "rho" not in input_name and "mu" not in input_name:
+                if not input_name in ["airfoil", "rho", "mu"]:
                     new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
 
         assert_check_partials(new_check)  # , rtol=5e-5, atol=1e-4)
@@ -290,7 +291,7 @@ class Test(unittest.TestCase):
                 if "airfoil" not in input_name and "rho" not in input_name and "mu" not in input_name:
                     new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
 
-        assert_check_partials(new_check, rtol=5e-4, atol=50.)
+        assert_check_partials(new_check, rtol=5e-4, atol=50.0)
 
 
 def suite():

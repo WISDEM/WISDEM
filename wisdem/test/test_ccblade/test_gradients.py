@@ -12,11 +12,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import os
 import unittest
-from os import path
 
 import numpy as np
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
+
+basepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../examples/_airfoil_files/")
 
 
 class TestGradients(unittest.TestCase):
@@ -96,18 +98,17 @@ class TestGradients(unittest.TestCase):
         self.mu = 1.81206e-5
 
         afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
-        basepath = path.join(path.dirname(path.realpath(__file__)), "../../../examples/_airfoil_files/")
 
         # load all airfoils
         airfoil_types = [0] * 8
-        airfoil_types[0] = afinit(basepath + "Cylinder1.dat")
-        airfoil_types[1] = afinit(basepath + "Cylinder2.dat")
-        airfoil_types[2] = afinit(basepath + "DU40_A17.dat")
-        airfoil_types[3] = afinit(basepath + "DU35_A17.dat")
-        airfoil_types[4] = afinit(basepath + "DU30_A17.dat")
-        airfoil_types[5] = afinit(basepath + "DU25_A17.dat")
-        airfoil_types[6] = afinit(basepath + "DU21_A17.dat")
-        airfoil_types[7] = afinit(basepath + "NACA64_A17.dat")
+        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")
+        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")
+        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")
+        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")
+        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")
+        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")
+        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")
+        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")
 
         # place at appropriate radial stations
         af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
@@ -3684,18 +3685,17 @@ class TestGradientsNotRotating(unittest.TestCase):
         self.mu = 1.81206e-5
 
         afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
-        basepath = path.join(path.dirname(path.realpath(__file__)), "../../../examples/_airfoil_files/")
 
         # load all airfoils
         airfoil_types = [0] * 8
-        airfoil_types[0] = afinit(basepath + "Cylinder1.dat")
-        airfoil_types[1] = afinit(basepath + "Cylinder2.dat")
-        airfoil_types[2] = afinit(basepath + "DU40_A17.dat")
-        airfoil_types[3] = afinit(basepath + "DU35_A17.dat")
-        airfoil_types[4] = afinit(basepath + "DU30_A17.dat")
-        airfoil_types[5] = afinit(basepath + "DU25_A17.dat")
-        airfoil_types[6] = afinit(basepath + "DU21_A17.dat")
-        airfoil_types[7] = afinit(basepath + "NACA64_A17.dat")
+        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")
+        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")
+        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")
+        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")
+        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")
+        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")
+        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")
+        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")
 
         # place at appropriate radial stations
         af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
@@ -4646,18 +4646,17 @@ class TestGradientsFreestreamArray(unittest.TestCase):
         self.mu = 1.81206e-5
 
         afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
-        basepath = path.join(path.dirname(path.realpath(__file__)), "../../../examples/_airfoil_files/")
 
         # load all airfoils
         airfoil_types = [0] * 8
-        airfoil_types[0] = afinit(basepath + "Cylinder1.dat")
-        airfoil_types[1] = afinit(basepath + "Cylinder2.dat")
-        airfoil_types[2] = afinit(basepath + "DU40_A17.dat")
-        airfoil_types[3] = afinit(basepath + "DU35_A17.dat")
-        airfoil_types[4] = afinit(basepath + "DU30_A17.dat")
-        airfoil_types[5] = afinit(basepath + "DU25_A17.dat")
-        airfoil_types[6] = afinit(basepath + "DU21_A17.dat")
-        airfoil_types[7] = afinit(basepath + "NACA64_A17.dat")
+        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")
+        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")
+        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")
+        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")
+        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")
+        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")
+        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")
+        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")
 
         # place at appropriate radial stations
         af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
@@ -5113,18 +5112,17 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         self.mu = 1.81206e-5
 
         afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
-        basepath = path.join(path.dirname(path.realpath(__file__)), "../../../examples/_airfoil_files/")
 
         # load all airfoils
         airfoil_types = [0] * 8
-        airfoil_types[0] = afinit(basepath + "Cylinder1.dat")
-        airfoil_types[1] = afinit(basepath + "Cylinder2.dat")
-        airfoil_types[2] = afinit(basepath + "DU40_A17.dat")
-        airfoil_types[3] = afinit(basepath + "DU35_A17.dat")
-        airfoil_types[4] = afinit(basepath + "DU30_A17.dat")
-        airfoil_types[5] = afinit(basepath + "DU25_A17.dat")
-        airfoil_types[6] = afinit(basepath + "DU21_A17.dat")
-        airfoil_types[7] = afinit(basepath + "NACA64_A17.dat")
+        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")
+        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")
+        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")
+        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")
+        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")
+        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")
+        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")
+        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")
 
         # place at appropriate radial stations
         af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
