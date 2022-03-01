@@ -295,14 +295,14 @@ def create_all_plots(
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             axeps.plot(
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["rotorse.rs.frame.strainU_spar"] * 1.0e6,
+                yaml_data["rotorse.rs.strains.strainU_spar"] * 1.0e6,
                 "-",
                 color=colors[idx],
                 label=label,
             )
             axeps.plot(
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["rotorse.rs.frame.strainL_spar"] * 1.0e6,
+                yaml_data["rotorse.rs.strains.strainL_spar"] * 1.0e6,
                 "-",
                 color=colors[idx],
             )

@@ -24,21 +24,36 @@ class TestPlantFinance(unittest.TestCase):
 
         self.discrete_inputs["turbine_number"] = 50
 
+        self.inputs["electricity_price"] = 0.04
+        self.inputs["reserve_margin_price"] = 120
+        self.inputs["capacity_credit"] = 1.
+        self.inputs["benchmark_price"] = 0.071
+
         self.mypfin = pf.PlantFinance(verbosity=True)
 
     def testRun(self):
         # Plant AEP way
         self.mypfin.compute(self.inputs, self.outputs, self.discrete_inputs, {})
 
-        lcoe = 1e3 * 50 * (0.12 * (1.2e3 + 7.7e3) + 7e2) / (1.6e7 * 50.0)
+        C = 0.12 * (1.2e3 + 7.7e3) + 7e2
+        E = (1.6e7 * 50.0) / (1e3 * 50 )
+        V = (1.6e7 * 50.0) / (1e3 * 50 ) * 0.04 + 120. * 1.
+        lcoe = C/E
+        plcoe = C/V*0.071
         self.assertEqual(self.outputs["lcoe"], lcoe)
+        self.assertEqual(self.outputs["plcoe"], plcoe)
 
         # Wake loss way
         self.inputs["plant_aep_in"] = 0.0
         self.mypfin.compute(self.inputs, self.outputs, self.discrete_inputs, {})
 
-        lcoe = 1e3 * 50 * (0.12 * (1.2e3 + 7.7e3) + 7e2) / (1.6e7 * 50.0 * (1 - 0.15))
+        C = 0.12 * (1.2e3 + 7.7e3) + 7e2
+        E = (1.6e7 * 50.0 * (1 - 0.15)) / (1e3 * 50 )
+        V = (1.6e7 * 50.0 * (1 - 0.15)) / (1e3 * 50 ) * 0.04 + 120. * 1.
+        lcoe = C/E
+        plcoe = C/V*0.071
         self.assertEqual(self.outputs["lcoe"], lcoe)
+        self.assertEqual(self.outputs["plcoe"], plcoe)
 
     def testDerivatives(self):
         prob = Problem()

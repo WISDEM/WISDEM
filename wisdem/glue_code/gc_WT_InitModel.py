@@ -1295,6 +1295,10 @@ def assign_costs_values(wt_opt, costs):
     wt_opt["costs.tower_mass_cost_coeff"] = costs["tower_mass_cost_coeff"]
     wt_opt["costs.controls_machine_rating_cost_coeff"] = costs["controls_machine_rating_cost_coeff"]
     wt_opt["costs.crane_cost"] = costs["crane_cost"]
+    wt_opt["costs.electricity_price"] = costs["electricity_price"]
+    wt_opt["costs.reserve_margin_price"] = costs["reserve_margin_price"]
+    wt_opt["costs.capacity_credit"] = costs["capacity_credit"]
+    wt_opt["costs.benchmark_price"] = costs["benchmark_price"]
 
     if "offset_tcc_per_kW" in costs:
         wt_opt["costs.offset_tcc_per_kW"] = costs["offset_tcc_per_kW"]

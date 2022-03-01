@@ -2840,6 +2840,33 @@ properties:
                 minimum: 0.0
                 maximum: 1.e+6
                 default: 12.e+3
+            electricity_price:
+                type: number
+                description: Electricity price used to compute value in beyond lcoe metrics
+                unit: USD/kW/h
+                minimum: 0.
+                maximum: 1.
+                default: 0.04
+            reserve_margin_price:
+                type: number
+                description: Reserve margin price used to compute value in beyond lcoe metrics
+                unit: USD/kW/yr
+                minimum: 0.
+                maximum: 1.e+4
+                default: 120.
+            capacity_credit:
+                type: number
+                description: Capacity credit used to compute value in beyond lcoe metrics
+                minimum: 0.
+                maximum: 1.
+                default: 1.
+            benchmark_price:
+                type: number
+                description: Benchmark price used to nondimensionalize value in beyond lcoe metrics
+                unit: USD/kW/h
+                minimum: 0.
+                maximum: 1.
+                default: 0.071
 definitions:
     distributed_data:
         grid_nd:
