@@ -35,19 +35,25 @@ class TestPlantFinance(unittest.TestCase):
         # Plant AEP way
         self.mypfin.compute(self.inputs, self.outputs, self.discrete_inputs, {})
 
-        lcoe = 1e3 * 50 * (0.12 * (1.2e3 + 7.7e3) + 7e2) / (1.6e7 * 50.0)
-        plcoe = 0.16516842105263158
+        C = 0.12 * (1.2e3 + 7.7e3) + 7e2
+        E = (1.6e7 * 50.0) / (1e3 * 50 )
+        V = (1.6e7 * 50.0) / (1e3 * 50 ) * 0.04 + 120. * 1.
+        lcoe = C/E
+        plcoe = C/V*0.071
         self.assertEqual(self.outputs["lcoe"], lcoe)
-        self.assertAlmostEqual(self.outputs["plcoe"], plcoe)
+        self.assertEqual(self.outputs["plcoe"], plcoe)
 
         # Wake loss way
         self.inputs["plant_aep_in"] = 0.0
         self.mypfin.compute(self.inputs, self.outputs, self.discrete_inputs, {})
 
-        lcoe = 1e3 * 50 * (0.12 * (1.2e3 + 7.7e3) + 7e2) / (1.6e7 * 50.0 * (1 - 0.15))
-        plcoe = 0.1890481927710843
+        C = 0.12 * (1.2e3 + 7.7e3) + 7e2
+        E = (1.6e7 * 50.0 * (1 - 0.15)) / (1e3 * 50 )
+        V = (1.6e7 * 50.0 * (1 - 0.15)) / (1e3 * 50 ) * 0.04 + 120. * 1.
+        lcoe = C/E
+        plcoe = C/V*0.071
         self.assertEqual(self.outputs["lcoe"], lcoe)
-        self.assertAlmostEqual(self.outputs["plcoe"], plcoe)
+        self.assertEqual(self.outputs["plcoe"], plcoe)
 
     def testDerivatives(self):
         prob = Problem()
