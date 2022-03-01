@@ -4,9 +4,6 @@ __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
 
-import os
-
-import pytest
 from wisdem.orbit import ProjectManager, load_config, save_config
 from wisdem.orbit.core.library import extract_library_specs
 

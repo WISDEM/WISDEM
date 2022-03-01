@@ -122,16 +122,15 @@ class TestMonopileSE(unittest.TestCase):
 
         # Simplified the options available to the user
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"] = {}
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["DC"]      = 80.0
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["shear"] = True
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["geom"] = True
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["dx"]      = -1
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["nM"]      = 6
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["Mmethod"] = 1
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["lump"]    = 0
+        self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["modal_method"] = 1
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["tol"] = 1e-9
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["shift"]   = 0.0
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["add_gravity"] = True
+
+        self.modeling_options["flags"] = {}
+        self.modeling_options["flags"]["tower"] = False
+        self.modeling_options["WISDEM"]["TowerSE"] = {}
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 0
 
     def testProblemFixedPile(self):
         self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = 3
@@ -153,6 +152,7 @@ class TestMonopileSE(unittest.TestCase):
         prob["monopile_foundation_height"] = -45.0
         prob["monopile_height"] = hval.sum()
         prob["monopile_outer_diameter_in"] = 10.0 * np.ones(3)
+        prob["monopile_top_diameter"] = 10.0
         prob["monopile_layer_thickness"] = 0.1 * np.ones((1, 3))
         prob["outfitting_factor_in"] = 1.0
         prob["monopile_layer_materials"] = ["steel"]
@@ -254,6 +254,7 @@ class TestMonopileSE(unittest.TestCase):
         prob["monopile_foundation_height"] = -45.0
         prob["monopile_height"] = hval.sum()
         prob["monopile_outer_diameter_in"] = 10.0 * np.ones(3)
+        prob["monopile_top_diameter"] = 10.0
         prob["monopile_layer_thickness"] = 0.1 * np.ones(3).reshape((1, 3))
         prob["outfitting_factor_in"] = 1.0
         prob["monopile_layer_materials"] = prob["monopile_layer_materials"] = ["steel"]
@@ -346,6 +347,7 @@ class TestMonopileSE(unittest.TestCase):
         prob["monopile_foundation_height"] = -45.0
         prob["monopile_height"] = hval.sum()
         prob["monopile_outer_diameter_in"] = 10.0 * np.ones(3)
+        prob["monopile_top_diameter"] = 10.0
         prob["monopile_layer_thickness"] = 0.1 * np.ones((1, 3))
         prob["outfitting_factor_in"] = 1.0
         prob["monopile_layer_materials"] = prob["monopile_layer_materials"] = ["steel"]
@@ -477,6 +479,7 @@ class TestMonopileSE(unittest.TestCase):
             prob["tower_foundation_height"] = z_foundation + h_param.sum()
             prob["monopile_height"] = h_param.sum()
             prob["monopile_outer_diameter_in"] = d_param
+            prob["monopile_top_diameter"] = d_param[-1]
             prob["monopile_layer_thickness"] = t_param.reshape((1, len(t_param)))
             prob["outfitting_factor_in"] = Koutfitting
             prob["monopile_layer_materials"] = ["steel"]

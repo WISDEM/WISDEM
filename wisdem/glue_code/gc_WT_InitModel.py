@@ -85,7 +85,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
 
     if modeling_options["flags"]["floating_platform"]:
         floating_platform = wt_init["components"]["floating_platform"]
-        wt_opt = assign_floating_values(wt_opt, modeling_options, floating_platform)
+        wt_opt = assign_floating_values(wt_opt, modeling_options, floating_platform, opt_options)
         mooring = wt_init["components"]["mooring"]
         wt_opt = assign_mooring_values(wt_opt, modeling_options, mooring)
 
@@ -968,8 +968,9 @@ def assign_jacket_values(wt_opt, modeling_options, jacket):
     return wt_opt
 
 
-def assign_floating_values(wt_opt, modeling_options, floating):
+def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
 
+    float_opt = opt_options["design_variables"]["floating"]
     floating_init_options = modeling_options["floating"]
     n_joints = floating_init_options["joints"]["n_joints"]
     # Loop through joints and assign location values to openmdao entry
@@ -998,17 +999,32 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     for i in range(n_members):
         name_member = floating_init_options["members"]["name"][i]
         grid_member = floating_init_options["members"]["grid_member_" + floating_init_options["members"]["name"][i]]
+        grid_geom = floating_init_options["members"]["geom_member_" + floating_init_options["members"]["name"][i]]
         idx = floating_init_options["members"]["name2idx"][name_member]
 
         wt_opt[f"floating.memgrp{idx}.s"] = grid_member
+        wt_opt[f"floating.memgrp{idx}.s_in"] = grid_geom
+
+        diameter_assigned = False
+        for j, kgrp in enumerate(float_opt["members"]["groups"]):
+            memname = kgrp["names"][0]
+            idx2 = floating_init_options["members"]["name2idx"][memname]
+            if idx == idx2:
+                wt_opt[f"floating.memgrp{idx}.outer_diameter_in"][:] = floating["members"][i]["outer_shape"][
+                    "outer_diameter"
+                ]["values"][0]
+                diameter_assigned = True
+
+        if not diameter_assigned:
+            wt_opt[f"floating.memgrp{idx}.outer_diameter_in"] = np.interp(
+                grid_geom,
+                floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
+                floating["members"][i]["outer_shape"]["outer_diameter"]["values"],
+            )
+
         wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["internal_structure"][
             "outfitting_factor"
         ]
-        wt_opt[f"floating.memgrp{idx}.outer_diameter"] = np.interp(
-            grid_member,
-            floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
-            floating["members"][i]["outer_shape"]["outer_diameter"]["values"],
-        )
 
         istruct = floating["members"][i]["internal_structure"]
         if "bulkhead" in istruct:
@@ -1018,12 +1034,13 @@ def assign_floating_values(wt_opt, modeling_options, floating):
         n_layers = floating_init_options["members"]["n_layers"][i]
         layer_mat = [""] * n_layers
         for j in range(n_layers):
-            wt_opt[f"floating.memgrp{idx}.layer_thickness"][j, :] = np.interp(
-                grid_member,
+            layer_mat[j] = istruct["layers"][j]["material"]
+
+            wt_opt[f"floating.memgrp{idx}.layer_thickness_in"][j, :] = np.interp(
+                grid_geom,
                 istruct["layers"][j]["thickness"]["grid"],
                 istruct["layers"][j]["thickness"]["values"],
             )
-            layer_mat[j] = istruct["layers"][j]["material"]
         wt_opt[f"floating.memgrp{idx}.layer_materials"] = layer_mat
 
         if "ring_stiffeners" in istruct:

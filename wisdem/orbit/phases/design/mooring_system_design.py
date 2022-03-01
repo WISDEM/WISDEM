@@ -106,7 +106,7 @@ class MooringSystemDesign(DesignPhase):
         """
 
         if self.anchor_type == "Drag Embedment":
-            fixed = self._design.get("drag_embedment_fixed_length", 0.5)
+            fixed = self._design.get("drag_embedment_fixed_length", 500)
 
         else:
             fixed = 0

@@ -9,7 +9,7 @@ jacksys_specs:
 storage_specs:
   max_cargo: 8000           # t
   max_deck_load: 8          # t/m^2
-  max_deck_space: 1000      # m^2
+  max_deck_space: 2000      # m^2
 transport_specs:
   max_waveheight: 2.5       # m
   max_windspeed: 20         # m/s

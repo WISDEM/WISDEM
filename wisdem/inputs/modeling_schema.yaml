@@ -286,10 +286,11 @@ properties:
                                 type: boolean
                                 default: True
                                 description: Inclusion of shear stiffening through axial loading
-                            modal:
-                                type: boolean
-                                default: True
-                                description: Whether or not to compute eigenvalues and natural frequencies
+                            modal_method:
+                                type: number
+                                enum: [1, 2]
+                                default: 1
+                                description: Eigenvalue solver 1=Subspace-Jacobi iteration, 2=Stodola (matrix iteration)
                             tol:
                                 type: number
                                 minimum: 1e-12
@@ -358,7 +359,34 @@ properties:
                         type: integer
                         default: 1
                         description: Number of Frame3DD element refinements for every specified section along tower/member
-                    frame3dd: *frame3dd
+                    frame3dd:
+                        type: object
+                        description: Set of Frame3DD options used for floating tower analysis
+                        default: {}
+                        properties:
+                            shear:
+                                type: boolean
+                                default: False
+                                description: Inclusion of shear area for symmetric sections
+                            geom:
+                                type: boolean
+                                default: False
+                                description: Inclusion of shear stiffening through axial loading
+                            modal_method:
+                                type: number
+                                enum: [1, 2]
+                                default: 2
+                                description: Eigenvalue solver 1=Subspace-Jacobi iteration, 2=Stodola (matrix iteration)
+                            shift:
+                                type: number
+                                default: 10.0
+                                description: Numerical matrix diagonal adder for eigenvalue solve of unrestrained structure
+                            tol:
+                                type: number
+                                minimum: 1e-12
+                                maximum: 1e-1
+                                default: 1e-8
+                                description: Convergence tolerance for modal eigenvalue solution
                     gamma_f: *gamma_f
                     gamma_m: *gamma_m
                     gamma_n: *gamma_n
@@ -369,6 +397,10 @@ properties:
                         type: boolean
                         default: True
                         description: Whether or not to assume a symmetric mooring system
+                    rank_and_file:
+                        type: boolean
+                        default: False
+                        description: Use the rank-and-file method of identifying mode shapes that guarantees modeshape numbers in all directions, but will reuse the same modeshape for multiple directions
 
             Loading:
                 type: object

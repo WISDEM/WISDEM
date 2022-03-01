@@ -13,6 +13,7 @@ from wisdem.orbit import ProjectManager
 class Orbit(om.Group):
     def initialize(self):
         self.options.declare("floating", default=False)
+        self.options.declare("jacket", default=False)
 
     def setup(self):
 
@@ -42,7 +43,9 @@ class Orbit(om.Group):
         self.set_input_defaults("design_install_plan_cost", 2.5e6, units="USD")
         self.set_input_defaults("boem_review_cost", 0.0, units="USD")
 
-        self.add_subsystem("orbit", OrbitWisdem(floating=self.options["floating"]), promotes=["*"])
+        self.add_subsystem(
+            "orbit", OrbitWisdem(floating=self.options["floating"], jacket=self.options["jacket"]), promotes=["*"]
+        )
 
 
 class OrbitWisdem(om.ExplicitComponent):
@@ -50,6 +53,7 @@ class OrbitWisdem(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("floating", default=False)
+        self.options.declare("jacket", default=False)
 
     def setup(self):
         """"""
@@ -157,7 +161,7 @@ class OrbitWisdem(om.ExplicitComponent):
         self.add_input("floating_substructure_cost", 10e6, units="USD", desc="Floating substructure unit cost.")
 
         # Monopile
-        self.add_input("monopile_length", 100.0, units="m", desc="Length of monopile.")
+        self.add_input("monopile_length", 100.0, units="m", desc="Length of monopile (including pile).")
         self.add_input("monopile_diameter", 7.0, units="m", desc="Diameter of monopile.")
         self.add_input("monopile_mass", 900.0, units="t", desc="mass of an individual monopile.")
         self.add_input("monopile_cost", 4e6, units="USD", desc="Monopile unit cost.")
@@ -167,6 +171,20 @@ class OrbitWisdem(om.ExplicitComponent):
             units="m**2",
             desc="Deck space required to transport a monopile. Defaults to 0 in order to not be a constraint on installation.",
         )
+
+        # Jacket
+        self.add_input("jacket_length", 65.0, units="m", desc="Length/height of jacket (including pile/buckets).")
+        self.add_discrete_input("jacket_num_legs", 3, desc="Number of legs in the jacket")
+        self.add_input("jacket_mass", 900.0, units="t", desc="mass of an individual jacket.")
+        self.add_input("jacket_cost", 4e6, units="USD", desc="Jacket unit cost.")
+        self.add_input(
+            "jacket_deck_space",
+            0.0,
+            units="m**2",
+            desc="Deck space required to transport a jacket. Defaults to 0 in order to not be a constraint on installation.",
+        )
+
+        # Generic fixed-bottom
         self.add_input("transition_piece_mass", 250.0, units="t", desc="mass of an individual transition piece.")
         self.add_input(
             "transition_piece_deck_space",
@@ -212,11 +230,12 @@ class OrbitWisdem(om.ExplicitComponent):
     def compile_orbit_config_file(self, inputs, outputs, discrete_inputs, discrete_outputs):
         """"""
 
-        floating = self.options["floating"]
+        floating_flag = self.options["floating"]
+        jacket_flag = self.options["jacket"]
 
         config = {
             # Vessels
-            "wtiv": "floating_heavy_lift_vessel" if floating else discrete_inputs["wtiv"],
+            "wtiv": "floating_heavy_lift_vessel" if floating_flag else discrete_inputs["wtiv"],
             "array_cable_install_vessel": "example_cable_lay_vessel",
             "array_cable_bury_vessel": "example_cable_lay_vessel",
             "export_cable_install_vessel": "example_cable_lay_vessel",
@@ -280,8 +299,8 @@ class OrbitWisdem(om.ExplicitComponent):
             },
             # Phase Specific
             "OffshoreSubstationInstallation": {
-                "oss_install_vessel": "floating_heavy_lift_vessel" if floating else "example_heavy_lift_vessel",
-                "feeder": "floating_barge" if floating else "future_feeder",
+                "oss_install_vessel": "floating_heavy_lift_vessel" if floating_flag else "example_heavy_lift_vessel",
+                "feeder": "floating_barge" if floating_flag else "future_feeder",
                 "num_feeders": int(discrete_inputs["num_feeders"]),
             },
             # Project development costs
@@ -311,7 +330,7 @@ class OrbitWisdem(om.ExplicitComponent):
         }
 
         # Unique design phases
-        if floating:
+        if floating_flag:
             config["install_phases"] = {
                 "ExportCableInstallation": 0,
                 "OffshoreSubstationInstallation": 0,
@@ -320,18 +339,20 @@ class OrbitWisdem(om.ExplicitComponent):
                 "ArrayCableInstallation": ("MooredSubInstallation", 0.25),
             }
         else:
+            fixedStr = "JacketInstallation" if jacket_flag else "MonopileInstallation"
+
             config["design_phases"] += ["ScourProtectionDesign"]
             config["install_phases"] = {
                 "ExportCableInstallation": 0,
                 "OffshoreSubstationInstallation": 0,
                 "ArrayCableInstallation": 0,
-                "MonopileInstallation": 0,
+                fixedStr: 0,
                 "ScourProtectionInstallation": 0,
-                "TurbineInstallation": ("MonopileInstallation", 0.25),
+                "TurbineInstallation": (fixedStr, 0.25),
             }
 
         # Unique vessels
-        if floating:
+        if floating_flag:
             vessels = {
                 "support_vessel": "example_support_vessel",
                 "towing_vessel": "example_towing_vessel",
@@ -350,7 +371,7 @@ class OrbitWisdem(om.ExplicitComponent):
         config.update(vessels)
 
         # Unique support structure design/assembly
-        if floating:
+        if floating_flag:
             config["port"] = {
                 "sub_assembly_lines": int(discrete_inputs["num_assembly_lines"]),
                 "turbine_assembly_cranes": int(discrete_inputs["num_port_cranes"]),
@@ -385,18 +406,28 @@ class OrbitWisdem(om.ExplicitComponent):
                 "monthly_rate": float(inputs["port_cost_per_month"]),
             }
 
-            config["monopile"] = {
-                "type": "Monopile",
-                "length": float(inputs["monopile_length"]),
-                "diameter": float(inputs["monopile_diameter"]),
-                "deck_space": float(inputs["monopile_deck_space"]),
-                "mass": float(inputs["monopile_mass"]),
-                "unit_cost": float(inputs["monopile_cost"]),
-            }
-
             config["scour_protection_design"] = {
                 "cost_per_tonne": 20,
             }
+
+            if jacket_flag:
+                config["jacket"] = {
+                    "type": "Jacket",
+                    "height": float(inputs["jacket_length"]),
+                    "num_legs": int(discrete_inputs["jacket_num_legs"]),
+                    "deck_space": float(inputs["jacket_deck_space"]),
+                    "mass": float(inputs["jacket_mass"]),
+                    "unit_cost": float(inputs["jacket_cost"]),
+                }
+            else:
+                config["monopile"] = {
+                    "type": "Monopile",
+                    "length": float(inputs["monopile_length"]),
+                    "diameter": float(inputs["monopile_diameter"]),
+                    "deck_space": float(inputs["monopile_deck_space"]),
+                    "mass": float(inputs["monopile_mass"]),
+                    "unit_cost": float(inputs["monopile_cost"]),
+                }
 
         self._orbit_config = config
         return config
