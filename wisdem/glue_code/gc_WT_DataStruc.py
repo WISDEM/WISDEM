@@ -589,6 +589,10 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             costs_ivc.add_output("tower_mass_cost_coeff", units="USD/kg", val=2.9)
             costs_ivc.add_output("controls_machine_rating_cost_coeff", units="USD/kW", val=21.15)
             costs_ivc.add_output("crane_cost", units="USD", val=12e3)
+            costs_ivc.add_output("electricity_price", val=0.04, units="USD/kW/h")
+            costs_ivc.add_output("reserve_margin_price", val=120., units="USD/kW/yr")
+            costs_ivc.add_output("capacity_credit", val=1.)
+            costs_ivc.add_output("benchmark_price", val=0.071, units='USD/kW/h')
 
         # Assembly setup
         self.add_subsystem("high_level_tower_props", ComputeHighLevelTowerProperties(modeling_options=modeling_options))
