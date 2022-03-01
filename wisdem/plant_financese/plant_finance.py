@@ -3,7 +3,7 @@ import openmdao.api as om
 
 class PlantFinance(om.ExplicitComponent):
     """
-    Compute LCOE for the wind plant
+    Compute LCOE for the wind plant, formulas from https://doi.org/10.1016/j.tej.2021.106931
 
     Parameters
     ----------
