@@ -5,7 +5,7 @@ from wisdem.rotorse.rotor import RotorSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.floatingse.floating import FloatingSE
 from wisdem.fixed_bottomse.jacket import JacketSE
-from wisdem.glue_code.gc_RunTools import Outputs_2_Screen, Convergence_Trends_Opt
+from wisdem.glue_code.gc_RunTools import Outputs_2_Screen
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
 from wisdem.fixed_bottomse.monopile import MonopileSE
 from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
@@ -783,9 +783,6 @@ class WindPark(om.Group):
             self.add_subsystem(
                 "outputs_2_screen", Outputs_2_Screen(modeling_options=modeling_options, opt_options=opt_options)
             )
-
-        # if opt_options["opt_flag"] and opt_options["recorder"]["flag"]:
-        #     self.add_subsystem("conv_plots", Convergence_Trends_Opt(opt_options=opt_options))
 
         # BOS inputs
         if modeling_options["WISDEM"]["BOS"]["flag"]:
