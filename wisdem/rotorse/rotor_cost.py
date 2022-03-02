@@ -2961,13 +2961,10 @@ class RotorCost(om.ExplicitComponent):
             val=0.01,
             desc="Percentage of blade length starting from blade root that is preformed and later inserted into the mold",
         )
-        self.add_input(
-            "joint_position",
-            val=0.0,
-            desc="Spanwise position of the segmentation joint.",
-        )
-        self.add_input("joint_mass", val=0.0, desc="Mass of the joint.")
-        self.add_input("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
+        self.add_input("joint_position", val=0.0, desc="Spanwise position of the segmentation joint.")
+        self.add_input("joint_material_cost", val=0, units="USD", desc="Joint materials cost (bolts + inserts + adhesive")
+        self.add_input("joint_nonmaterial_cost", val=0.0, units="USD", desc="Non-material joint cost (mfg, assembly, transportation).")
+        self.add_input("joint_mass", val=0.0, units="kg", desc="Mass of the joint.")
         # Outputs
         self.add_output(
             "sect_perimeter",
@@ -3107,6 +3104,12 @@ class RotorCost(om.ExplicitComponent):
             units="USD",
             desc="Total blade cost (variable and fixed)",
         )
+        self.add_output(
+            "joint_cost",
+            val=0.0,
+            units="USD",
+            desc="Total blade joint cost",
+        )
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -3140,7 +3143,9 @@ class RotorCost(om.ExplicitComponent):
         barrel_nut_unit_cost = inputs["barrel_nut_unit_cost"]
         LPS_unit_cost = inputs["LPS_unit_cost"]
         root_preform_length = inputs["root_preform_length"]
-        joint_cost = inputs["joint_cost"]
+        joint_nonmaterial_cost = inputs["joint_nonmaterial_cost"]
+        joint_material_cost = inputs["joint_material_cost"]
+        joint_cost = joint_material_cost + joint_nonmaterial_cost
 
         # Compute arc length along blade span
         arc_L_i = np.zeros(self.n_span)
@@ -3613,6 +3618,7 @@ class RotorCost(om.ExplicitComponent):
         outputs["cost_capital"] = cost_capital
         outputs["blade_fixed_cost"] = blade_fixed_cost
         outputs["total_blade_cost"] = total_blade_cost
+        outputs["joint_cost"] = joint_cost
 
 
 # OpenMDAO group to execute the blade cost model without the rest of WISDEM
@@ -3678,7 +3684,7 @@ class StandaloneRotorCost(om.Group):
         self.connect("blade.internal_structure_2d_fem.web_end_nd", "rc.web_end_nd")
         self.connect("blade.internal_structure_2d_fem.joint_position", "rc.joint_position")
         self.connect("blade.internal_structure_2d_fem.joint_mass", "rc.joint_mass")
-        self.connect("blade.internal_structure_2d_fem.joint_cost", "rc.joint_cost")
+        self.connect("blade.internal_structure_2d_fem.joint_nonmaterial_cost", "rc.joint_nonmaterial_cost")
         self.connect("materials.name", "rc.mat_name")
         self.connect("materials.orth", "rc.orth")
         self.connect("materials.rho", "rc.rho")

@@ -1607,7 +1607,8 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
             desc="Spanwise position of the segmentation joint.",
         )
         ivc.add_output("joint_mass", val=0.0, desc="Mass of the joint.")
-        ivc.add_output("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
+        ivc.add_output("joint_nonmaterial_cost", val=0.0, units="USD", desc="Cost of the joint.")
+        ivc.add_discrete_output("joint_bolt", val="M48", desc="Type of bolt: M30, M36, or M48")
 
         ivc.add_output("d_f", val=0.0, units="m", desc="Diameter of the fastener")
         ivc.add_output("sigma_max", val=0.0, units="Pa", desc="Max stress on bolt")
@@ -2999,6 +3000,12 @@ class Materials(om.Group):
             val=np.zeros([n_mat, 3]),
             units="Pa",
             desc="2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.",
+        )
+        ivc.add_output(
+            "S",
+            val=np.zeros([n_mat, 3]),
+            units="Pa",
+            desc="2D array of the Ultimate Shear Strength (USS) of the materials. Each row represents a material, the three columns represent S12, S13 and S23.",
         )
         ivc.add_output(
             "sigma_y",
