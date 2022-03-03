@@ -368,7 +368,7 @@ properties:
                                         maximum: 1.e+6
                                     bolt: 
                                         type: string
-                                        default: M32
+                                        default: M30
                                         enum: [M18, M24, M30, M36, M42, M48, M52]
                                         description: Bolt size for the blade bolted joint
                                     nonmaterial_cost: 

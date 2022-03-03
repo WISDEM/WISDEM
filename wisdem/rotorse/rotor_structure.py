@@ -1233,7 +1233,10 @@ class BladeJointSizing(ExplicitComponent):
         E_mat = inputs["E_mat"]
         S_mat = inputs["S_mat"]
         unit_cost_mat = inputs["unit_cost"]
-        insert_i = name_mat.index('joint_insert')
+        if 'joint_insert' in name_mat:
+            insert_i = name_mat.index('joint_insert')
+        else:
+            raise Exception('Please add a material named joint_insert to the geometry yaml')
         rho_insert = rho_mat[insert_i]
         pu_cost_insert = unit_cost_mat[insert_i]
         adhesive_i = name_mat.index('Adhesive')

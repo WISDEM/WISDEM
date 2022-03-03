@@ -164,6 +164,7 @@ class WindTurbineOntologyPython(object):
             ]["airfoil_position"]["labels"]
 
         # Blade
+        self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = False
         if self.modeling_options["flags"]["blade"]:
             self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] = np.linspace(
                 0.0, 1.0, self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
@@ -216,9 +217,7 @@ class WindTurbineOntologyPython(object):
                     )
 
             if self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["position"]>0.:
-                self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = True
-            else:
-                self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = False
+                self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = True                
 
         # Drivetrain
         if self.modeling_options["flags"]["nacelle"]:
