@@ -1489,7 +1489,11 @@ def assign_material_values(wt_opt, modeling_options, materials):
             nu[i, :] = materials[i]["nu"]
             Xt[i, :] = materials[i]["Xt"]
             Xc[i, :] = materials[i]["Xc"]
-            S[i, :] = materials[i]["S"]
+            if "S" in materials[i]:
+                S[i, :] = materials[i]["S"]
+            else:
+                if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+                    raise Exception("The blade joint sizer model is activated and requires the material shear strength S, which is not defined in the yaml for material " + materials[i]["name"])
 
         else:
             raise ValueError("The flag orth must be set to either 0 or 1. Error in material " + name[i])

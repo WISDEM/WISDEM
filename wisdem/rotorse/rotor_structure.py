@@ -1204,385 +1204,397 @@ class BladeJointSizing(ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        # # safety factors
-        # load_factor = inputs['load_factor']
-        # nprf = inputs['nprf']
-        # ny = inputs['ny']
-        # nf = inputs['nf']
-        # n0 = inputs['n0']
-        # ns = inputs['ns']
-        #
-        # #bolt parameters
-        # Sp_bolt = inputs['Sp_bolt']
-        # Sy_bolt = inputs['Sy_bolt']
-        # Su_bolt = inputs['Su_bolt']
-        # Se_bolt = inputs['Se_bolt']
-        # E_bolt = inputs['E_bolt']
-        # d_bolt = inputs['d_bolt']
-        # L_bolt = inputs['L_bolt']
-        # At = inputs['At']
-        # m_bolt = inputs['m_bolt']
-        # bolt = discrete_inputs['joint_bolt']
-        #
-        # # material parameters
-        # name_mat = discrete_inputs["name_mat"]
-        # rho_mat = inputs["rho_mat"]
-        # Xt_mat = inputs["Xt_mat"]
-        # Xy_mat = inputs["Xy_mat"]
-        # E_mat = inputs["E_mat"]
-        # S_mat = inputs["S_mat"]
-        # unit_cost_mat = inputs["unit_cost"]
-        # insert_i = name_mat.index('joint_insert')
-        # rho_insert = rho_mat[insert_i]
-        # pu_cost_insert = unit_cost_mat[insert_i]
-        # adhesive_i = name_mat.index('Adhesive')
-        # rho_adhesive = rho_mat[adhesive_i]
-        # pu_cost_adhesive = unit_cost_mat[adhesive_i]
-        # Sy_insert = Xy_mat[insert_i]
-        # Su_insert = Xt_mat[insert_i, 0]
-        # Se_insert = inputs['Se_insert']
-        # E_insert = E_mat[insert_i, 0]
-        # mu = inputs['mu_joint']
-        # sc_mat_i = name_mat.index('carbon_uni_industry_baseline')
-        # Ss_sc = S_mat[sc_mat_i, 0]
-        # rho_sc = rho_mat[sc_mat_i]
-        #
-        # # bolt properties
-        # Ld = L_bolt * 0.75
-        # Lt = L_bolt - Ld
-        # n_bolt = -2  # initialized
-        # n_bolt_prev = -1  # initialized
-        # if bolt == 'M48':
-        #     At = 1470 / 1e6
-        #     d_bolt = 0.048
-        #     m_bolt = 8.03
-        # if bolt == 'M42':
-        #     At = 1120 / 1e6
-        #     d_bolt = 0.042
-        #     m_bolt = 6.08
-        # if bolt == 'M36':
-        #     At = 817 / 1e6
-        #     d_bolt = 0.036
-        #     m_bolt = 4.4
-        # elif bolt == 'M30':
-        #     At = 561 / 1e6
-        #     d_bolt = 0.03
-        #     m_bolt = 2.95
-        # cost_bolt = m_bolt * 10
-        # Ad = np.pi * d_bolt ** 2 / 4
-        #
-        # #insert properties
-        # d_insert = d_bolt * 2  # keeping the insert much larger than the bolt reduces bolt loads, which drive the design.
-        # A_insert = np.pi * (d_insert ** 2 - d_bolt ** 2) / 4
-        # L_insert = L_bolt
-        # V_insert = A_insert * L_insert
-        # m_insert = V_insert * rho_insert
-        #
-        # # geometric properties and calculations
-        # layer_offset_y_pa = inputs["layer_offset_y_pa"]
-        # coord_xy_dim = inputs["coord_xy_dim"]
-        # layer_side = discrete_inputs["layer_side"]
-        # twist = inputs["twist"]
-        # ratio_SCmax = 0.8  # max sparcap/chord ratio
-        # joint_position = inputs['joint_position']
-        # i_span = util.find_nearest(self.nd_span, joint_position)
-        # p_le_i = inputs["pitch_axis"][i_span]
-        # t_layer = inputs['layer_thickness']
-        # w_layer = inputs['layer_width']
-        # layer_start_nd = inputs['layer_start_nd']
-        # layer_end_nd = inputs['layer_end_nd']
-        # bolt_spacing_dia = inputs['bolt_spacing_dia']
-        # ply_drop_slope = inputs['ply_drop_slope']
-        # t_adhesive = inputs['t_adhesive']
-        # t_max_sc = inputs['t_max_sc']
-        # L_blade = inputs['blade_length']
-        # eta = self.nd_span[i_span]  # joint location
-        # chord = inputs['chord'][i_span]
-        # L_segment = L_blade[-1] / self.n_span  # m
-        # sc_ss_layer_i = self.layer_name.index(self.spar_cap_ss)
-        # sc_ps_layer_i = self.layer_name.index(self.spar_cap_ps)
-        # t_sc = t_layer[sc_ss_layer_i][i_span]
-        # bolt_spacing = bolt_spacing_dia * d_bolt
-        # n_bolt_max = chord * ratio_SCmax // bolt_spacing  # max # bolts that can fit in 0.8 chord
-        # w_hole_bolthead = d_bolt * 2#7 / 3
-        # h_bolthead_hole_i = d_bolt * 2
-        # xy_coord = inputs["coord_xy_interp"][i_span, :, :]
-        # t_airfoil = inputs["rthick"][i_span]*chord
-        # d_b2b = t_airfoil - t_sc  # ss bolt to ps bolt distance
-        # t_max_sc = d_b2b * t_max_sc
-        #
-        # # Compute arc length at joint station
-        # xy_arc = util.arc_length(xy_coord)
-        # arc_L = xy_arc[-1]
-        # # w_sc = arc_L * chord * (layer_end_nd[sc_ss_layer_i, i_span] - layer_start_nd[sc_ss_layer_i, i_span])
-        # w_sc = w_layer[sc_ss_layer_i, i_span]
-        #
-        # # Loads
-        # Mflap_ultimate = abs(inputs['M1'][i_span]) * load_factor
-        # Medge_ultimate = abs(inputs['M2'][i_span]) * load_factor
-        # Fflap_ultimate = abs(inputs['F2'][i_span]) * load_factor
-        #
-        # # Fatigue factors
-        # a = inputs['a']
-        # b = inputs['b']
-        # c = inputs['c']
-        #
-        # # Fatigue loads. Remember DLC 6.1 ultimate load safety factor = 1.35. Old loads: # Mflap_ultimate = 1.64e6, Fflap_ultimate = 1.5e5, Medge_ultimate = 3.1e5
-        # kp = a * (1 - eta) ** 2 + b * (1 - eta) + c
-        # Mflap_fatigue = Mflap_ultimate * kp
-        # Fflap_fatigue = Fflap_ultimate * kp
-        # Medge_fatigue = Medge_ultimate * kp
-        #
-        # # Other
-        # itermax = int(inputs['itermax'])
-        # discrete = inputs['discrete']
-        #
-        # """ Loading calculations begin"""
-        # # 1- Calculate joint stiffness constant
-        # k_bolt = Ad * At * E_bolt / (Ad * Lt + At * Ld)  # bolt stiffness
-        # k_insert = A_insert * E_insert / L_bolt  # material stiffness.
-        # C = k_bolt / (k_bolt + k_insert)  # joint stiffness constant
-        #
-        # # 2- Calculate preload (initialize to 70% proof)
-        # Fi70p = 0.7 * Sp_bolt * At  # N, per bolt. Need a high preload like this to resist separation. This means that the ultimate bolt safety factor (nprf) needs to be low
-        # Fi = Fi70p
-        #
-        # # 3- Calculate # bolts such that axial flap bolt forces > edge bolt forces
-        # # Loop through number of possible bolts per spar cap, and calculate the following. When the flap ultimate and fatigue loads both
-        # # dominate, that is the minimum # bolts. Units are force per bolt ONLY HERE.
-        # for n_bolt_min in range(3, int(np.ceil(n_bolt_max) // 2 * 2 + 1), 2):
-        #     N = int(np.floor(n_bolt_min / 2))
-        #     N_array = np.linspace(1, N, N)
-        #     Fax_flap_ultimate_per_bolt = Mflap_ultimate / (d_b2b * n_bolt_min)
-        #     Fax_edge_ultimate_per_bolt = N * Medge_ultimate / (2 * bolt_spacing * np.sum(np.square(N_array)))
-        #     Fax_flap_fatigue_per_bolt = Mflap_fatigue / (d_b2b * n_bolt_min)
-        #     Fax_edge_fatigue_per_bolt = N * Medge_fatigue / (2 * bolt_spacing * np.sum(np.square(N_array)))
-        #     if Fax_flap_fatigue_per_bolt > Fax_edge_fatigue_per_bolt and Fax_flap_ultimate_per_bolt > Fax_edge_ultimate_per_bolt:
-        #         break
-        #
-        # # 4- Calculate # fasteners needed to resist extreme and fatigue flap loads, and LATER: satisfy adhesive mean stress limit.
-        #
-        # # a- joint ultimate, fatigue loads per spar cap side
-        # Fax_flap_ultimate = Mflap_ultimate / d_b2b
-        # Fax_flap_fatigue = Mflap_fatigue / d_b2b
-        # Fsh_flap_ultimate = Fflap_ultimate / 2
-        # Fsh_flap_fatigue = Fflap_fatigue / 2
-        #
-        # i = 0  # while loop counter
-        # n_bolt_list = []
-        # while n_bolt != n_bolt_prev:
-        #     i += 1
-        #     n_bolt_prev = n_bolt
-        #
-        #     # b- calc # bolts & inserts to resist flap axial ultimate loads
-        #     # bolts. Tensile stress only.
-        #     n_bolt_flap_ultimate = C * Fax_flap_ultimate / (Sp_bolt * At / nprf - Fi)
-        #     # inserts. Von-mises stress. Could consider torsion here. Equation derived with MATLAB symbolic toolbox
-        #     x3 = (
-        #                      ny * C ** 2 * Fax_flap_ultimate ** 2 - 2 * ny * C * Fax_flap_ultimate ** 2 + ny * Fax_flap_ultimate ** 2 + 3 * ny * Fsh_flap_ultimate ** 2) / (
-        #                      np.sqrt(
-        #                          A_insert ** 2 * C ** 2 * Fax_flap_ultimate ** 2 * Sy_insert ** 2 - 2 * A_insert ** 2 * C * Fax_flap_ultimate ** 2 * Sy_insert ** 2 + A_insert ** 2 * Fax_flap_ultimate ** 2 * Sy_insert ** 2 + 3 * A_insert ** 2 * Fsh_flap_ultimate ** 2 * Sy_insert ** 2 - 3 * Fi ** 2 * Fsh_flap_ultimate ** 2 * ny ** 2) + (
-        #                                  -Fax_flap_ultimate * Fi * ny + C * Fax_flap_ultimate * Fi * ny))
-        #     x4 = (
-        #                      ny * C ** 2 * Fax_flap_ultimate ** 2 - 2 * ny * C * Fax_flap_ultimate ** 2 + ny * Fax_flap_ultimate ** 2 + 3 * ny * Fsh_flap_ultimate ** 2) / (
-        #                      np.sqrt(
-        #                          A_insert ** 2 * C ** 2 * Fax_flap_ultimate ** 2 * Sy_insert ** 2 - 2 * A_insert ** 2 * C * Fax_flap_ultimate ** 2 * Sy_insert ** 2 + A_insert ** 2 * Fax_flap_ultimate ** 2 * Sy_insert ** 2 + 3 * A_insert ** 2 * Fsh_flap_ultimate ** 2 * Sy_insert ** 2 - 3 * Fi ** 2 * Fsh_flap_ultimate ** 2 * ny ** 2) - (
-        #                                  -Fax_flap_ultimate * Fi * ny + C * Fax_flap_ultimate * Fi * ny))
-        #     n_insert_flap_ultimate = max([x3, x4])
-        #
-        #     # c- calc # bolts & inserts needed to resist flap axial fatigue loads
-        #     # bolts. Tensile only.
-        #     sig_i_bolt = Fi / At
-        #     sig_a_bolt = Fax_flap_fatigue * C / At
-        #     Sa_bolt = Se_bolt - Se_bolt / Su_bolt * sig_i_bolt
-        #     n_bolt_flap_fatigue = nf * sig_a_bolt / Sa_bolt
-        #     # inserts. Von mises. Could consider torsion here. Removing because insert forces are far lower in ultimate, add this back in if
-        #     # that changes.
-        #     sig_i_insert = Fi / A_insert
-        #     Sa_insert = Se_insert - Se_insert / Su_insert * sig_i_insert
-        #     n_insert_flap_fatigue = (nf / Sa_insert) ** (1 / 2) * (
-        #                 (Fax_flap_fatigue * (1 - C) / A_insert) ** 2 + 3 * (Fsh_flap_fatigue / A_insert) ** 2) ** (
-        #                                         1 / 4)
-        #
-        #     # d - calc #bolts/inserts needed for spar cap to resist insert pull-out
-        #     n_bolt_pullout = 2 * ns * Fax_flap_ultimate / (Ss_sc * np.pi * (d_insert + 2 * t_adhesive))
-        #
-        #     # e - take max bolts needed as # bolt-insert pairs
-        #     n_bolt = np.max([n_bolt_flap_fatigue, n_bolt_flap_ultimate, n_insert_flap_ultimate, n_insert_flap_fatigue,
-        #          n_bolt_pullout, n_bolt_min])
-        #     if discrete:
-        #         n_bolt = np.ceil(n_bolt)
-        #     else:
-        #         precision = 2  # round up to two decimal places
-        #         n_bolt = np.true_divide(np.ceil(n_bolt * 10**precision), 10**precision)  # round up to nearest 0.01
-        #     n_bolt_list.append(n_bolt)
-        #
-        #     # check for negatives. This implies that the loads magnitudes are imbalanced and out of range for the calculation
-        #     if n_bolt_flap_ultimate < 0 or n_bolt_flap_fatigue < 0 or n_bolt_pullout < 0:
-        #         print('Warning: negative bolt number found. This implies that the preload exceeds the ultimate load'
-        #               ' requirements. Please check inputs (separation and ultimate safety factors)')
-        #
-        #     # 5- calculate preload to prevent separation and bolt shear. Make sure it's not requiring a preload that's too close
-        #     # to proof load....this could constrain the load the joint can handle.
-        #     Fi_sep = n0 * Fax_flap_ultimate * (1 - C) / n_bolt  # because separation is calculated based on extreme ultimate loading, the bolt ultimate safety factor (nprf) needs to be low.
-        #     Fi_sh = Fsh_flap_ultimate / (mu * n_bolt)
-        #     if Fi_sep > Fi70p:
-        #         print('Warning, separation preload requirement (', Fi_sep,
-        #               'N) > 70% bolt proof load and will be limited to prevent overloading.')
-        #     if Fi_sh > Fi70p:
-        #         print('Warning, shear preload requirement (', Fi_sh,
-        #               'N) > 70% bolt proof load and will be limited to prevent overloading.')
-        #     Fi = np.min([np.max([Fi_sh, Fi_sep]), Fi70p])
-        #
-        #     # if iteration is stuck in an Fi-driven loop, then take the max # bolts required by loop
-        #     if i > itermax:
-        #         if discrete:
-        #             print('Solution oscillating between bolt numbers. Choosing the maximum of these.')
-        #             seq = itermax
-        #             for x in range(2, itermax // 2):
-        #                 if n_bolt_list[-x:] == n_bolt_list[-2*x:-x]:
-        #                     seq = x
-        #             n_bolt = max(n_bolt_list[-seq:])
-        #         else:
-        #             print('Solution has not converged to 0.01 bolt. Choosing the maximum of the last three bolt numbers')
-        #             n_bolt = max(n_bolt_list[-3:])
-        #     if n_bolt >= n_bolt_max:
-        #         n_bolt_req = n_bolt
-        #         n_bolt = n_bolt_max
-        #
-        #     # print('n_bolt_flap_fatigue', n_bolt_flap_fatigue)
-        #     # print('n_bolt_flap_ultimate', n_bolt_flap_ultimate)
-        #     # print('n_insert_flap_ultimate', n_insert_flap_ultimate)
-        #     # print('n_insert_flap_fatigue', n_insert_flap_fatigue)
-        #     # print('n_bolt_pullout', n_bolt_pullout)
-        #     # print('n_bolt_min', n_bolt_min)
-        #     # print('n_bolt', n_bolt)
-        #     #
-        #     # print('Fi_sep', Fi_sep)
-        #     # print('Fi_sh', Fi_sh)
-        #     # print('Fi70p', Fi70p)
-        #     # print('Fi', Fi)
-        #     # print('################################################')
-        #
-        # # 6- loop through steps 4b-5 until n_bolt converges. Result is n_bolt
-        # if n_bolt >= n_bolt_max:
-        #     print('Warning. Unable to accommodate # bolts required (', n_bolt_req,
-        #               '). Limiting to max # bolts that can fit in '
-        #               'the cross section (', n_bolt_max, ').')
-        #
-        # # 7- calc spar cap dimensions needed to resist loads. Neglect fatigue because composites handle it better than
-        # # metal, generally. Shear will drive the design due to carbon fiber's isotropicity. Consider shearing due to
-        # # shear out on a z-line on the outside of the adhesive, in the middle of the bolt. Also consider shear at bolt
-        # # head hole. ***OR, the spar cap could be sized with WISDEM as usual.***
-        #
-        # # a- insert shear out.
-        # t1 = 2 * Fsh_flap_ultimate * ns / (L_insert * n_bolt * Ss_sc)
-        #
-        # # b- shear at bolt head hole.
-        # t2 = Fsh_flap_ultimate * ns / (bolt_spacing * Ss_sc * n_bolt) + w_hole_bolthead * h_bolthead_hole_i / bolt_spacing
-        #
-        # # c- spar cap dimensions
-        # t_req_sc = np.max([t1, t2, t_sc])
-        # if t_req_sc > t_max_sc:
-        #     t_req_sc = t_max_sc
-        #     # print('Warning, required spar cap thickness (', t_req_sc, ') is greater than max allowed (', t_max_sc, '). Limiting to max allowed')
-        # w_req_sc = np.max([n_bolt * bolt_spacing, w_sc]) # required width driven by number of bolts
-        # w_layer[sc_ss_layer_i, i_span] = w_req_sc
-        # w_layer[sc_ps_layer_i, i_span] = w_req_sc
-        # # if w_req_sc > w_sc:
-        #     # print('Warning, required spar cap width of ', w_req_sc, ' is greater than nominal. Update input files')
-        #
-        # # check if spar cap reaches TE or LE. If so, change y offset to prevent this
-        # offset = inputs["layer_offset_y_pa"]
-        # for i in [sc_ss_layer_i, sc_ps_layer_i]:
-        #     # print('offset =', offset[i, i_span])
-        #     if offset[i, i_span] + 0.5 * w_req_sc > ratio_SCmax * chord * (1.0 - p_le_i):  # hitting TE?
-        #         offset[i, i_span] = ratio_SCmax * chord * (1.0 - p_le_i) - w_req_sc - 0.5
-        #     elif offset[i, i_span] - 0.5 * w_req_sc < -ratio_SCmax * chord * p_le_i:  # hitting LE?
-        #         offset[i, i_span] = -ratio_SCmax * chord * p_le_i + (0.50 * w_req_sc)
-        #     # calculate layer start, end based on width
-        #     midpoint = calc_axis_intersection(inputs["coord_xy_dim"][i_span, :, :], inputs["twist"][i_span], offset[i, i_span], [0.0, 0.0], [discrete_inputs["layer_side"][i]])[0]
-        #     layer_start_nd[i, i_span] = midpoint - w_req_sc / arc_L / chord / 2.0
-        #     layer_end_nd[i, i_span] = midpoint + w_req_sc / arc_L / chord / 2.0
-        #
-        # # 8- once width and thickness are found, the required ply drop length will determine how long the bulge in the spar cap
-        # # is, and inform spar cap total mass. ***OR, the spar cap could be sized with WISDEM as usual.***
-        # h_bolthead_hole = t_req_sc / 2 + 7 / 6 * d_bolt
-        # dt = t_req_sc - t_sc
-        # L_transition = dt / ply_drop_slope  #TODO what do I want to do with this?
-        # if L_transition > L_segment:
-        #     print('Warning. Segments too short to accommodate ply drop requirements')
-        #
-        # # 9- mass calcs: bolt+insert mass - cutout mass
-        # n_bolt *= 2  # consider bolts in each spar cap
-        # m_bolt_tot = n_bolt * m_bolt
-        # m_insert_tot = n_bolt * m_insert
-        # V_adhesive = np.pi * ((d_insert + 2 * t_adhesive) ** 2 - d_insert ** 2) / 4 * L_insert * n_bolt  # m3
-        # m_adhesive_tot = V_adhesive * rho_adhesive
-        # V_bolthead_hole = h_bolthead_hole * np.pi * w_hole_bolthead ** 2 / 4
-        # V_bolthead_hole_tot = V_bolthead_hole * n_bolt
-        # V_insert_cutout_tot = np.pi * (d_insert + 2 * t_adhesive) ** 2 / 4 * L_insert * n_bolt  # m3
-        # V_cutout = V_insert_cutout_tot + V_bolthead_hole_tot  # m3
-        # m_cutout = V_cutout * rho_sc
-        # m_add = m_bolt_tot + m_insert_tot + m_adhesive_tot - m_cutout
-        #
-        # cost_adhesive = m_adhesive_tot * pu_cost_adhesive
-        # m_insert_stock = np.pi * (d_insert ** 2) / 4 * L_insert * n_bolt
-        # cost_insert = m_insert_stock * pu_cost_insert
-        # cost_bolt_tot = cost_bolt * n_bolt
-        # cost_joint_materials = cost_adhesive + cost_bolt_tot + cost_insert
-        # t_sc_ratio = t_req_sc / t_sc
-        # w_sc_ratio = w_req_sc / w_sc
-        #
-        # outputs['blade_mass'] = inputs['blade_mass_re'] + m_add
-        # outputs['layer_offset_y_bjs'] = offset
-        # outputs['layer_start_nd_bjs'] = layer_start_nd
-        # outputs['layer_end_nd_bjs'] = layer_end_nd
-        # outputs['layer_width_bjs'] = w_layer
-        # outputs['L_transition_joint'] = L_transition
-        # outputs['t_sc_ratio_joint'] = t_sc_ratio
-        # outputs['w_sc_ratio_joint'] = w_sc_ratio
-        # outputs['n_joint_bolt'] = n_bolt
-        # outputs['joint_mass'] = m_add
-        # outputs['joint_material_cost'] = cost_joint_materials
+        # safety factors
+        load_factor = inputs['load_factor']
+        nprf = inputs['nprf']
+        ny = inputs['ny']
+        nf = inputs['nf']
+        n0 = inputs['n0']
+        ns = inputs['ns']
+
+        #bolt parameters
+        Sp_bolt = inputs['Sp_bolt']
+        Sy_bolt = inputs['Sy_bolt']
+        Su_bolt = inputs['Su_bolt']
+        Se_bolt = inputs['Se_bolt']
+        E_bolt = inputs['E_bolt']
+        d_bolt = inputs['d_bolt']
+        L_bolt = inputs['L_bolt']
+        At = inputs['At']
+        m_bolt = inputs['m_bolt']
+        bolt = discrete_inputs['joint_bolt']
+
+        # material parameters
+        name_mat = discrete_inputs["name_mat"]
+        rho_mat = inputs["rho_mat"]
+        Xt_mat = inputs["Xt_mat"]
+        Xy_mat = inputs["Xy_mat"]
+        E_mat = inputs["E_mat"]
+        S_mat = inputs["S_mat"]
+        unit_cost_mat = inputs["unit_cost"]
+        insert_i = name_mat.index('joint_insert')
+        rho_insert = rho_mat[insert_i]
+        pu_cost_insert = unit_cost_mat[insert_i]
+        adhesive_i = name_mat.index('Adhesive')
+        rho_adhesive = rho_mat[adhesive_i]
+        pu_cost_adhesive = unit_cost_mat[adhesive_i]
+        Sy_insert = Xy_mat[insert_i]
+        Su_insert = Xt_mat[insert_i, 0]
+        Se_insert = inputs['Se_insert']
+        E_insert = E_mat[insert_i, 0]
+        mu = inputs['mu_joint']
+        sc_mat_i = name_mat.index('carbon_uni_industry_baseline')
+        Ss_sc = S_mat[sc_mat_i, 0]
+        rho_sc = rho_mat[sc_mat_i]
+
+        # bolt properties
+        Ld = L_bolt * 0.75
+        Lt = L_bolt - Ld
+        n_bolt = -2  # initialized
+        n_bolt_prev = -1  # initialized
+        if bolt == 'M52':
+            At = 1758 / 1e6
+            d_bolt = 0.052
+            m_bolt = 9.53
+        elif bolt == 'M48':
+            At = 1473 / 1e6
+            d_bolt = 0.048
+            m_bolt = 8.03
+        if bolt == 'M42':
+            At = 1120 / 1e6
+            d_bolt = 0.042
+            m_bolt = 6.08
+        if bolt == 'M36':
+            At = 817 / 1e6
+            d_bolt = 0.036
+            m_bolt = 4.4
+        elif bolt == 'M30':
+            At = 561 / 1e6
+            d_bolt = 0.03
+            m_bolt = 2.95
+        elif bolt == 'M24':
+            At = 353 / 1e6
+            d_bolt = 0.024
+            m_bolt = 1.91
+        elif bolt == 'M18':
+            At = 192 / 1e6
+            d_bolt = 0.018
+            m_bolt = 1.04
+        cost_bolt = m_bolt * 10
+        Ad = np.pi * d_bolt ** 2 / 4
+
+        #insert properties
+        d_insert = d_bolt * 2  # keeping the insert much larger than the bolt reduces bolt loads, which drive the design.
+        A_insert = np.pi * (d_insert ** 2 - d_bolt ** 2) / 4
+        L_insert = L_bolt
+        V_insert = A_insert * L_insert
+        m_insert = V_insert * rho_insert
+
+        # geometric properties and calculations
+        layer_offset_y_pa = inputs["layer_offset_y_pa"]
+        coord_xy_dim = inputs["coord_xy_dim"]
+        layer_side = discrete_inputs["layer_side"]
+        twist = inputs["twist"]
+        ratio_SCmax = 0.8  # max sparcap/chord ratio
+        joint_position = inputs['joint_position']
+        i_span = util.find_nearest(self.nd_span, joint_position)
+        p_le_i = inputs["pitch_axis"][i_span]
+        t_layer = inputs['layer_thickness']
+        w_layer = inputs['layer_width']
+        layer_start_nd = inputs['layer_start_nd']
+        layer_end_nd = inputs['layer_end_nd']
+        bolt_spacing_dia = inputs['bolt_spacing_dia']
+        ply_drop_slope = inputs['ply_drop_slope']
+        t_adhesive = inputs['t_adhesive']
+        t_max_sc = inputs['t_max_sc']
+        L_blade = inputs['blade_length']
+        eta = self.nd_span[i_span]  # joint location
+        chord = inputs['chord'][i_span]
+        L_segment = L_blade[-1] / self.n_span  # m
+        sc_ss_layer_i = self.layer_name.index(self.spar_cap_ss)
+        sc_ps_layer_i = self.layer_name.index(self.spar_cap_ps)
+        t_sc = t_layer[sc_ss_layer_i][i_span]
+        bolt_spacing = bolt_spacing_dia * d_bolt
+        n_bolt_max = chord * ratio_SCmax // bolt_spacing  # max # bolts that can fit in 0.8 chord
+        w_hole_bolthead = d_bolt * 2#7 / 3
+        h_bolthead_hole_i = d_bolt * 2
+        xy_coord = inputs["coord_xy_interp"][i_span, :, :]
+        t_airfoil = inputs["rthick"][i_span]*chord
+        d_b2b = t_airfoil - t_sc  # ss bolt to ps bolt distance
+        t_max_sc = d_b2b * t_max_sc
+
+        # Compute arc length at joint station
+        xy_arc = util.arc_length(xy_coord)
+        arc_L = xy_arc[-1]
+        # w_sc = arc_L * chord * (layer_end_nd[sc_ss_layer_i, i_span] - layer_start_nd[sc_ss_layer_i, i_span])
+        w_sc = w_layer[sc_ss_layer_i, i_span]
+
+        # Loads
+        Mflap_ultimate = abs(inputs['M1'][i_span]) * load_factor
+        Medge_ultimate = abs(inputs['M2'][i_span]) * load_factor
+        Fflap_ultimate = abs(inputs['F2'][i_span]) * load_factor
+
+        # Fatigue factors
+        a = inputs['a']
+        b = inputs['b']
+        c = inputs['c']
+
+        # Fatigue loads. Remember DLC 6.1 ultimate load safety factor = 1.35. Old loads: # Mflap_ultimate = 1.64e6, Fflap_ultimate = 1.5e5, Medge_ultimate = 3.1e5
+        kp = a * (1 - eta) ** 2 + b * (1 - eta) + c
+        Mflap_fatigue = Mflap_ultimate * kp
+        Fflap_fatigue = Fflap_ultimate * kp
+        Medge_fatigue = Medge_ultimate * kp
+
+        # Other
+        itermax = int(inputs['itermax'])
+        discrete = inputs['discrete']
+
+        """ Loading calculations begin"""
+        # 1- Calculate joint stiffness constant
+        k_bolt = Ad * At * E_bolt / (Ad * Lt + At * Ld)  # bolt stiffness
+        k_insert = A_insert * E_insert / L_bolt  # material stiffness.
+        C = k_bolt / (k_bolt + k_insert)  # joint stiffness constant
+
+        # 2- Calculate preload (initialize to 70% proof)
+        Fi70p = 0.7 * Sp_bolt * At  # N, per bolt. Need a high preload like this to resist separation. This means that the ultimate bolt safety factor (nprf) needs to be low
+        Fi = Fi70p
+
+        # 3- Calculate # bolts such that axial flap bolt forces > edge bolt forces
+        # Loop through number of possible bolts per spar cap, and calculate the following. When the flap ultimate and fatigue loads both
+        # dominate, that is the minimum # bolts. Units are force per bolt ONLY HERE.
+        for n_bolt_min in range(3, int(np.ceil(n_bolt_max) // 2 * 2 + 1), 2):
+            N = int(np.floor(n_bolt_min / 2))
+            N_array = np.linspace(1, N, N)
+            Fax_flap_ultimate_per_bolt = Mflap_ultimate / (d_b2b * n_bolt_min)
+            Fax_edge_ultimate_per_bolt = N * Medge_ultimate / (2 * bolt_spacing * np.sum(np.square(N_array)))
+            Fax_flap_fatigue_per_bolt = Mflap_fatigue / (d_b2b * n_bolt_min)
+            Fax_edge_fatigue_per_bolt = N * Medge_fatigue / (2 * bolt_spacing * np.sum(np.square(N_array)))
+            if Fax_flap_fatigue_per_bolt > Fax_edge_fatigue_per_bolt and Fax_flap_ultimate_per_bolt > Fax_edge_ultimate_per_bolt:
+                break
+
+        # 4- Calculate # fasteners needed to resist extreme and fatigue flap loads, and LATER: satisfy adhesive mean stress limit.
+
+        # a- joint ultimate, fatigue loads per spar cap side
+        Fax_flap_ultimate = Mflap_ultimate / d_b2b
+        Fax_flap_fatigue = Mflap_fatigue / d_b2b
+        Fsh_flap_ultimate = Fflap_ultimate / 2
+        Fsh_flap_fatigue = Fflap_fatigue / 2
+
+        i = 0  # while loop counter
+        n_bolt_list = []
+        while n_bolt != n_bolt_prev:
+            i += 1
+            n_bolt_prev = n_bolt
+
+            # b- calc # bolts & inserts to resist flap axial ultimate loads
+            # bolts. Tensile stress only.
+            n_bolt_flap_ultimate = C * Fax_flap_ultimate / (Sp_bolt * At / nprf - Fi)
+            # inserts. Von-mises stress. Could consider torsion here. Equation derived with MATLAB symbolic toolbox
+            x3 = (
+                             ny * C ** 2 * Fax_flap_ultimate ** 2 - 2 * ny * C * Fax_flap_ultimate ** 2 + ny * Fax_flap_ultimate ** 2 + 3 * ny * Fsh_flap_ultimate ** 2) / (
+                             np.sqrt(
+                                 A_insert ** 2 * C ** 2 * Fax_flap_ultimate ** 2 * Sy_insert ** 2 - 2 * A_insert ** 2 * C * Fax_flap_ultimate ** 2 * Sy_insert ** 2 + A_insert ** 2 * Fax_flap_ultimate ** 2 * Sy_insert ** 2 + 3 * A_insert ** 2 * Fsh_flap_ultimate ** 2 * Sy_insert ** 2 - 3 * Fi ** 2 * Fsh_flap_ultimate ** 2 * ny ** 2) + (
+                                         -Fax_flap_ultimate * Fi * ny + C * Fax_flap_ultimate * Fi * ny))
+            x4 = (
+                             ny * C ** 2 * Fax_flap_ultimate ** 2 - 2 * ny * C * Fax_flap_ultimate ** 2 + ny * Fax_flap_ultimate ** 2 + 3 * ny * Fsh_flap_ultimate ** 2) / (
+                             np.sqrt(
+                                 A_insert ** 2 * C ** 2 * Fax_flap_ultimate ** 2 * Sy_insert ** 2 - 2 * A_insert ** 2 * C * Fax_flap_ultimate ** 2 * Sy_insert ** 2 + A_insert ** 2 * Fax_flap_ultimate ** 2 * Sy_insert ** 2 + 3 * A_insert ** 2 * Fsh_flap_ultimate ** 2 * Sy_insert ** 2 - 3 * Fi ** 2 * Fsh_flap_ultimate ** 2 * ny ** 2) - (
+                                         -Fax_flap_ultimate * Fi * ny + C * Fax_flap_ultimate * Fi * ny))
+            n_insert_flap_ultimate = max([x3, x4])
+
+            # c- calc # bolts & inserts needed to resist flap axial fatigue loads
+            # bolts. Tensile only.
+            sig_i_bolt = Fi / At
+            sig_a_bolt = Fax_flap_fatigue * C / At
+            Sa_bolt = Se_bolt - Se_bolt / Su_bolt * sig_i_bolt
+            n_bolt_flap_fatigue = nf * sig_a_bolt / Sa_bolt
+            # inserts. Von mises. Could consider torsion here. Removing because insert forces are far lower in ultimate, add this back in if
+            # that changes.
+            sig_i_insert = Fi / A_insert
+            Sa_insert = Se_insert - Se_insert / Su_insert * sig_i_insert
+            n_insert_flap_fatigue = (nf / Sa_insert) ** (1 / 2) * (
+                        (Fax_flap_fatigue * (1 - C) / A_insert)   ** 2 + 3 * (Fsh_flap_fatigue / A_insert) ** 2) ** (
+                                                1 / 4)
+
+            # d - calc #bolts/inserts needed for spar cap to resist insert pull-out
+            n_bolt_pullout = 2 * ns * Fax_flap_ultimate / (Ss_sc * np.pi * (d_insert + 2 * t_adhesive))
+
+            # e - take max bolts needed as # bolt-insert pairs
+            n_bolt = np.max([n_bolt_flap_fatigue, n_bolt_flap_ultimate, n_insert_flap_ultimate, n_insert_flap_fatigue,
+                 n_bolt_pullout, n_bolt_min])
+            if discrete:
+                n_bolt = np.ceil(n_bolt)
+            else:
+                precision = 2  # round up to two decimal places
+                n_bolt = np.true_divide(np.ceil(n_bolt * 10**precision), 10**precision)  # round up to nearest 0.01
+            n_bolt_list.append(n_bolt)
+
+            # check for negatives. This implies that the loads magnitudes are imbalanced and out of range for the calculation
+            if n_bolt_flap_ultimate < 0 or n_bolt_flap_fatigue < 0 or n_bolt_pullout < 0:
+                print('Warning: negative bolt number found. This implies that the preload exceeds the ultimate load'
+                      ' requirements. Please check inputs (separation and ultimate safety factors)')
+
+            # 5- calculate preload to prevent separation and bolt shear. Make sure it's not requiring a preload that's too close
+            # to proof load....this could constrain the load the joint can handle.
+            Fi_sep = n0 * Fax_flap_ultimate * (1 - C) / n_bolt  # because separation is calculated based on extreme ultimate loading, the bolt ultimate safety factor (nprf) needs to be low.
+            Fi_sh = Fsh_flap_ultimate / (mu * n_bolt)
+            if Fi_sep > Fi70p:
+                print('Warning, separation preload requirement (', Fi_sep,
+                      'N) > 70% bolt proof load and will be limited to prevent overloading.')
+            if Fi_sh > Fi70p:
+                print('Warning, shear preload requirement (', Fi_sh,
+                      'N) > 70% bolt proof load and will be limited to prevent overloading.')
+            Fi = np.min([np.max([Fi_sh, Fi_sep]), Fi70p])
+
+            # if iteration is stuck in an Fi-driven loop, then take the max # bolts required by loop
+            if i > itermax:
+                if discrete:
+                    print('Solution oscillating between bolt numbers. Choosing the maximum of these.')
+                    seq = itermax
+                    for x in range(2, itermax // 2):
+                        if n_bolt_list[-x:] == n_bolt_list[-2*x:-x]:
+                            seq = x
+                    n_bolt = max(n_bolt_list[-seq:])
+                else:
+                    print('Solution has not converged to 0.01 bolt. Choosing the maximum of the last three bolt numbers')
+                    n_bolt = max(n_bolt_list[-3:])
+            if n_bolt >= n_bolt_max:
+                n_bolt_req = n_bolt
+                n_bolt = n_bolt_max
+
+            # print('n_bolt_flap_fatigue', n_bolt_flap_fatigue)
+            # print('n_bolt_flap_ultimate', n_bolt_flap_ultimate)
+            # print('n_insert_flap_ultimate', n_insert_flap_ultimate)
+            # print('n_insert_flap_fatigue', n_insert_flap_fatigue)
+            # print('n_bolt_pullout', n_bolt_pullout)
+            # print('n_bolt_min', n_bolt_min)
+            # print('n_bolt', n_bolt)
+            #
+            # print('Fi_sep', Fi_sep)
+            # print('Fi_sh', Fi_sh)
+            # print('Fi70p', Fi70p)
+            # print('Fi', Fi)
+            # print('################################################')
+
+        # 6- loop through steps 4b-5 until n_bolt converges. Result is n_bolt
+        if n_bolt >= n_bolt_max:
+            print('Warning. Unable to accommodate # bolts required (', n_bolt_req,
+                      '). Limiting to max # bolts that can fit in '
+                      'the cross section (', n_bolt_max, ').')
+
+        # 7- calc spar cap dimensions needed to resist loads. Neglect fatigue because composites handle it better than
+        # metal, generally. Shear will drive the design due to carbon fiber's isotropicity. Consider shearing due to
+        # shear out on a z-line on the outside of the adhesive, in the middle of the bolt. Also consider shear at bolt
+        # head hole. ***OR, the spar cap could be sized with WISDEM as usual.***
+
+        # a- insert shear out.
+        t1 = 2 * Fsh_flap_ultimate * ns / (L_insert * n_bolt * Ss_sc)
+
+        # b- shear at bolt head hole.
+        t2 = Fsh_flap_ultimate * ns / (bolt_spacing * Ss_sc * n_bolt) + w_hole_bolthead * h_bolthead_hole_i / bolt_spacing
+
+        # c- spar cap dimensions
+        t_req_sc = np.max([t1, t2, t_sc])
+        if t_req_sc > t_max_sc:
+            t_req_sc = t_max_sc
+            # print('Warning, required spar cap thickness (', t_req_sc, ') is greater than max allowed (', t_max_sc, '). Limiting to max allowed')
+        w_req_sc = np.max([n_bolt * bolt_spacing, w_sc]) # required width driven by number of bolts
+        w_layer[sc_ss_layer_i, i_span] = w_req_sc
+        w_layer[sc_ps_layer_i, i_span] = w_req_sc
+        # if w_req_sc > w_sc:
+            # print('Warning, required spar cap width of ', w_req_sc, ' is greater than nominal. Update input files')
+
+        # check if spar cap reaches TE or LE. If so, change y offset to prevent this
+        offset = inputs["layer_offset_y_pa"]
+        for i in [sc_ss_layer_i, sc_ps_layer_i]:
+            # print('offset =', offset[i, i_span])
+            if offset[i, i_span] + 0.5 * w_req_sc > ratio_SCmax * chord * (1.0 - p_le_i):  # hitting TE?
+                offset[i, i_span] = ratio_SCmax * chord * (1.0 - p_le_i) - w_req_sc - 0.5
+            elif offset[i, i_span] - 0.5 * w_req_sc < -ratio_SCmax * chord * p_le_i:  # hitting LE?
+                offset[i, i_span] = -ratio_SCmax * chord * p_le_i + (0.50 * w_req_sc)
+            # calculate layer start, end based on width
+            midpoint = calc_axis_intersection(inputs["coord_xy_dim"][i_span, :, :], inputs["twist"][i_span], offset[i, i_span], [0.0, 0.0], [discrete_inputs["layer_side"][i]])[0]
+            layer_start_nd[i, i_span] = midpoint - w_req_sc / arc_L / chord / 2.0
+            layer_end_nd[i, i_span] = midpoint + w_req_sc / arc_L / chord / 2.0
+
+        # 8- once width and thickness are found, the required ply drop length will determine how long the bulge in the spar cap
+        # is, and inform spar cap total mass. ***OR, the spar cap could be sized with WISDEM as usual.***
+        h_bolthead_hole = t_req_sc / 2 + 7 / 6 * d_bolt
+        dt = t_req_sc - t_sc
+        L_transition = dt / ply_drop_slope  #TODO what do I want to do with this?
+        if L_transition > L_segment:
+            print('Warning. Segments too short to accommodate ply drop requirements')
+
+        # 9- mass calcs: bolt+insert mass - cutout mass
+        n_bolt *= 2  # consider bolts in each spar cap
+        m_bolt_tot = n_bolt * m_bolt
+        m_insert_tot = n_bolt * m_insert
+        V_adhesive = np.pi * ((d_insert + 2 * t_adhesive) ** 2 - d_insert ** 2) / 4 * L_insert * n_bolt  # m3
+        m_adhesive_tot = V_adhesive * rho_adhesive
+        V_bolthead_hole = h_bolthead_hole * np.pi * w_hole_bolthead ** 2 / 4
+        V_bolthead_hole_tot = V_bolthead_hole * n_bolt
+        V_insert_cutout_tot = np.pi * (d_insert + 2 * t_adhesive) ** 2 / 4 * L_insert * n_bolt  # m3
+        V_cutout = V_insert_cutout_tot + V_bolthead_hole_tot  # m3
+        m_cutout = V_cutout * rho_sc
+        m_add = m_bolt_tot + m_insert_tot + m_adhesive_tot - m_cutout
+
+        cost_adhesive = m_adhesive_tot * pu_cost_adhesive
+        m_insert_stock = np.pi * (d_insert ** 2) / 4 * L_insert * n_bolt
+        cost_insert = m_insert_stock * pu_cost_insert
+        cost_bolt_tot = cost_bolt * n_bolt
+        cost_joint_materials = cost_adhesive + cost_bolt_tot + cost_insert
+        t_sc_ratio = t_req_sc / t_sc
+        w_sc_ratio = w_req_sc / w_sc
+
+        outputs['blade_mass'] = inputs['blade_mass_re'] + m_add
+        outputs['layer_offset_y_bjs'] = offset
+        outputs['layer_start_nd_bjs'] = layer_start_nd
+        outputs['layer_end_nd_bjs'] = layer_end_nd
+        outputs['layer_width_bjs'] = w_layer
+        outputs['L_transition_joint'] = L_transition
+        outputs['t_sc_ratio_joint'] = t_sc_ratio
+        outputs['w_sc_ratio_joint'] = w_sc_ratio
+        outputs['n_joint_bolt'] = n_bolt
+        outputs['joint_mass'] = m_add
+        outputs['joint_material_cost'] = cost_joint_materials
 
         ### TESTING WISDEM WITHOUT JOINT BELOW
-        m_add = 0
-        outputs['blade_mass'] = inputs['blade_mass_re'] + m_add
-        outputs['layer_offset_y_bjs'] = inputs['layer_offset_y_pa']
-        outputs['layer_start_nd_bjs'] = inputs['layer_start_nd']
-        outputs['layer_end_nd_bjs'] = inputs['layer_end_nd']
-        outputs['layer_width_bjs'] = inputs['layer_width']
-        outputs['L_transition_joint'] = 0
-        outputs['t_sc_ratio_joint'] = 1
-        outputs['w_sc_ratio_joint'] = 1
-        outputs['n_joint_bolt'] = 0
-        outputs['joint_mass'] = 0
-        outputs['joint_material_cost'] = 0
+        # m_add = 0
+        # outputs['blade_mass'] = inputs['blade_mass_re'] + m_add
+        # outputs['layer_offset_y_bjs'] = inputs['layer_offset_y_pa']
+        # outputs['layer_start_nd_bjs'] = inputs['layer_start_nd']
+        # outputs['layer_end_nd_bjs'] = inputs['layer_end_nd']
+        # outputs['layer_width_bjs'] = inputs['layer_width']
+        # outputs['L_transition_joint'] = 0
+        # outputs['t_sc_ratio_joint'] = 1
+        # outputs['w_sc_ratio_joint'] = 1
+        # outputs['n_joint_bolt'] = 0
+        # outputs['joint_mass'] = 0
+        # outputs['joint_material_cost'] = 0
         ### REMOVE ABOVE WHEN DONE TESTING WISDEM WITHOUT JOINT
 
 
 
 
         # print('Sparcap suction start = ', layer_start_nd[sc_ss_layer_i, i_span])
-        # print('Sparcap suction end = ', layer_end_nd[sc_ss_layer_i, i_span])
-        # print('Sparcap suction offset = ', offset[sc_ss_layer_i, i_span])
-        # print('Sparcap pressure start = ', layer_start_nd[sc_ps_layer_i, i_span])
-        # print('Sparcap pressure end = ', layer_end_nd[sc_ps_layer_i, i_span])
-        # print('Sparcap pressure offset = ', offset[sc_ps_layer_i, i_span])
-        # print('Sparcap suction offset = ', offset[sc_ss_layer_i, i_span])
-        # print('Sparcap pressure offset = ', offset[sc_ps_layer_i, i_span])
-        # print('t_req_sc_joint', t_req_sc)
-        # print('w_req_sc_joint', w_req_sc)
-        # print('t_sc_ratio_joint', t_sc_ratio)
-        # print('w_sc_ratio_joint', w_sc_ratio)
-        # print('n_joint_bolt', n_bolt)
-        # # print('blade mass initial', inputs['blade_mass_re'])
-        # print('joint_mass_adder', m_add)
-        # print('joint material cost', cost_joint_materials)
-        # print('blade mass final', outputs['blade_mass'])
-        # print('L_transition_joint', L_transition)
-        # print('joint model done')
+        print('Sparcap suction end = ', layer_end_nd[sc_ss_layer_i, i_span])
+        print('Sparcap suction offset = ', offset[sc_ss_layer_i, i_span])
+        print('Sparcap pressure start = ', layer_start_nd[sc_ps_layer_i, i_span])
+        print('Sparcap pressure end = ', layer_end_nd[sc_ps_layer_i, i_span])
+        print('Sparcap pressure offset = ', offset[sc_ps_layer_i, i_span])
+        print('Sparcap suction offset = ', offset[sc_ss_layer_i, i_span])
+        print('Sparcap pressure offset = ', offset[sc_ps_layer_i, i_span])
+        print('t_req_sc_joint', t_req_sc)
+        print('w_req_sc_joint', w_req_sc)
+        print('t_sc_ratio_joint', t_sc_ratio)
+        print('w_sc_ratio_joint', w_sc_ratio)
+        print('n_joint_bolt', n_bolt)
+        # print('blade mass initial', inputs['blade_mass_re'])
+        print('joint_mass_adder', m_add)
+        print('joint material cost', cost_joint_materials)
+        print('blade mass final', outputs['blade_mass'])
+        print('L_transition_joint', L_transition)
+        print('joint model done')
 
 
 class RotorStructure(Group):
@@ -1689,7 +1701,8 @@ class RotorStructure(Group):
             "constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options), promotes=["s"]
         )
         self.add_subsystem("brs", BladeRootSizing(rotorse_options=modeling_options["WISDEM"]["RotorSE"]))
-        self.add_subsystem("bjs", BladeJointSizing(rotorse_options=modeling_options["WISDEM"]["RotorSE"],
+        if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+            self.add_subsystem("bjs", BladeJointSizing(rotorse_options=modeling_options["WISDEM"]["RotorSE"],
                                                    n_mat=self.options["modeling_options"]["materials"]["n_mat"]))
 
         # if modeling_options['rotorse']['FatigueMode'] > 0:
@@ -1740,10 +1753,11 @@ class RotorStructure(Group):
         # Blade root moment to blade root sizing
         self.connect("frame.root_M", "brs.root_M")
 
-        # Moments to joint sizing
-        self.connect("frame.F2", "bjs.F2")
-        self.connect("frame.M1", "bjs.M1")
-        self.connect("frame.M2", "bjs.M2")
+        if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+            # Moments to joint sizing
+            self.connect("frame.F2", "bjs.F2")
+            self.connect("frame.M1", "bjs.M1")
+            self.connect("frame.M2", "bjs.M2")
 
 def calc_axis_intersection(xy_coord, rotation, offset, p_le_d, side, thk=0.0):
     # dimentional analysis that takes a rotation and offset from the pitch axis and calculates the airfoil intersection

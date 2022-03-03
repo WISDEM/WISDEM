@@ -115,9 +115,10 @@ class RotorSE(om.Group):
             "rp.powercurve.rated_Omega", ["rs.Omega_load", "rs.tot_loads_gust.aeroloads_Omega", "rs.constr.rated_Omega"]
         )
         self.connect("rp.powercurve.rated_pitch", ["rs.pitch_load", "rs.tot_loads_gust.aeroloads_pitch"])
-        self.connect("re.precomp.blade_mass", "rs.bjs.blade_mass_re")
-        self.connect("rs.bjs.joint_material_cost", "rc.joint_material_cost")
-        # TODO pass joint cost to rotor cost
+        if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+            self.connect("re.precomp.blade_mass", "rs.bjs.blade_mass_re")
+            self.connect("rs.bjs.joint_material_cost", "rc.joint_material_cost")
+            # TODO pass joint cost to rotor cost
 
         # Connections to RotorPower
         self.connect("wt_class.V_mean", "rp.cdf.xbar")
