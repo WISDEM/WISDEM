@@ -133,7 +133,7 @@ class WT_RNTA(om.Group):
             self.connect("blade.internal_structure_2d_fem.joint_position", "rotorse.re.precomp.joint_position")
             self.connect("blade.internal_structure_2d_fem.joint_mass", "rotorse.re.precomp.joint_mass")
             if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                self.connect("rotorse.rs.bjs.joint_mass", "rotorse.re.precomp.joint_mass")
+                #self.connect("rotorse.rs.bjs.joint_mass", "rotorse.re.precomp.joint_mass")
                 self.connect("blade.internal_structure_2d_fem.joint_bolt", "rotorse.rs.bjs.joint_bolt")
             self.connect("materials.name", "rotorse.re.precomp.mat_name")
             self.connect("materials.orth", "rotorse.re.precomp.orth")

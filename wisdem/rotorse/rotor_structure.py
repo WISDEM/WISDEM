@@ -1106,13 +1106,14 @@ class BladeJointSizing(ExplicitComponent):
         # options
         n_mat = int(self.options["n_mat"])
         rotorse_options = self.options["rotorse_options"]
-        n_layers = rotorse_options["n_layers"]
+        self.n_layers = n_layers = rotorse_options["n_layers"]
         self.nd_span = rotorse_options["nd_span"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_xy = n_xy = rotorse_options["n_xy"]
         self.spar_cap_ss = rotorse_options["spar_cap_ss"]
         self.spar_cap_ps = rotorse_options["spar_cap_ps"]
         self.layer_name = rotorse_options["layer_name"]
+        self.layer_mat = rotorse_options["layer_mat"]
 
         # safety factors. These will eventually come from the modeling yaml, but are currently hardcoded.
         self.add_input('load_factor', val=1.35, desc='input load multiplier. 1.35 recommended for DLC6.1. [float]')  # I find it better to change the load factor than the safety factors. It prevents limit errors (like divide by zero)
@@ -1243,9 +1244,13 @@ class BladeJointSizing(ExplicitComponent):
         Se_insert = inputs['Se_insert']
         E_insert = E_mat[insert_i, 0]
         mu = inputs['mu_joint']
-        sc_mat_i = name_mat.index('carbon_uni_industry_baseline')
-        Ss_sc = S_mat[sc_mat_i, 0]
-        rho_sc = rho_mat[sc_mat_i]
+        for i_lay in range(self.n_layers):
+            if self.layer_name[i_lay] == self.spar_cap_ss:
+                mat_name_spar_cap_ss = self.layer_mat[i_lay]
+                sc_mat_i = name_mat.index(mat_name_spar_cap_ss)
+                Ss_sc = S_mat[sc_mat_i, 0]
+                rho_sc = rho_mat[sc_mat_i]
+                break
 
         # bolt properties
         Ld = L_bolt * 0.75

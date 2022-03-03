@@ -369,7 +369,7 @@ properties:
                                     bolt: 
                                         type: string
                                         default: M32
-                                        enum: [M32, M42, M48, M52]
+                                        enum: [M18, M24, M30, M36, M42, M48, M52]
                                         description: Bolt size for the blade bolted joint
                                     nonmaterial_cost: 
                                         type: number
