@@ -724,7 +724,6 @@ class ShellMassCost(om.ExplicitComponent):
         outputs["shell_I_base"] = util.unassembleI(I_base)
 
         # Compute costs based on "Optimum Design of Steel Structures" by Farkas and Jarmai
-        # All dimensions for correlations based on mm, not meters.
         R_ave = 0.5 * (Rb + Rt)
         taper = np.minimum(Rb / Rt, Rt / Rb)
         nsec = t_full.size
@@ -1211,7 +1210,6 @@ class MemberComplex(om.ExplicitComponent):
         outputs["shell_I_base"] = util.unassembleI(I_base)
 
         # Compute costs based on "Optimum Design of Steel Structures" by Farkas and Jarmai
-        # All dimensions for correlations based on mm, not meters.
         R_ave = 0.5 * (Rb + Rt)
         taper = np.minimum(Rb / Rt, Rt / Rb)
         nsec = t_full.size
@@ -1343,7 +1341,6 @@ class MemberComplex(om.ExplicitComponent):
         outputs["bulkhead_I_base"] = util.unassembleI(I_keel)
 
         # Compute costs based on "Optimum Design of Steel Structures" by Farkas and Jarmai
-        # All dimensions for correlations based on mm, not meters.
         k_m = util.sectionalInterp(s_bulk, s_full, inputs["unit_cost_full"])
         k_f = inputs["labor_cost_rate"]  # 1.0 # USD / min labor
         k_p = inputs["painting_cost_rate"]  # USD / m^2 painting
@@ -1496,7 +1493,6 @@ class MemberComplex(om.ExplicitComponent):
         outputs["stiffener_I_base"] = util.unassembleI(I_keel)
 
         # Compute costs based on "Optimum Design of Steel Structures" by Farkas and Jarmai
-        # All dimensions for correlations based on mm, not meters.
         k_m = util.sectionalInterp(s_stiff, s_full, inputs["unit_cost_full"])
         k_f = inputs["labor_cost_rate"]  # 1.0 # USD / min labor
         k_p = inputs["painting_cost_rate"]  # USD / m^2 painting
