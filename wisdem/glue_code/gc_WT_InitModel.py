@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+
 import wisdem.commonse.utilities as util
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 
@@ -954,16 +955,11 @@ def assign_jacket_values(wt_opt, modeling_options, jacket):
     wt_opt["jacket.r_foot"] = jacket["r_foot"]
     wt_opt["jacket.r_head"] = jacket["r_head"]
     wt_opt["jacket.height"] = jacket["height"]
-    wt_opt["jacket.q"] = jacket["q"]
-    wt_opt["jacket.l_osg"] = jacket["l_osg"]
-    wt_opt["jacket.l_tp"] = jacket["l_tp"]
-    wt_opt["jacket.gamma_b"] = jacket["gamma_b"]
-    wt_opt["jacket.gamma_t"] = jacket["gamma_t"]
-    wt_opt["jacket.beta_b"] = jacket["beta_b"]
-    wt_opt["jacket.beta_t"] = jacket["beta_t"]
-    wt_opt["jacket.tau_b"] = jacket["tau_b"]
-    wt_opt["jacket.tau_t"] = jacket["tau_t"]
-    wt_opt["jacket.d_l"] = jacket["d_l"]
+    wt_opt["jacket.leg_diameter"] = jacket["leg_diameter"]
+    wt_opt["jacket.leg_thickness"] = jacket["leg_thickness"]
+    wt_opt["jacket.brace_diameters"] = jacket["brace_diameters"]
+    wt_opt["jacket.brace_thicknesses"] = jacket["brace_thicknesses"]
+    wt_opt["jacket.bay_spacing"] = jacket["bay_spacing"]
 
     return wt_opt
 

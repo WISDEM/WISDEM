@@ -1269,15 +1269,10 @@ properties:
                     - r_foot
                     - r_head
                     - height
-                    - q
-                    - l_osg
-                    - l_tp
-                    - gamma_b
-                    - gamma_t
-                    - beta_b
-                    - beta_t
-                    - tau_b
-                    - tau_t
+                    - leg_diameter
+                    - leg_thickness
+                    - brace_diameters
+                    - brace_thicknesses
                 optional:
                     - material
                     - transition_piece_mass
@@ -1306,37 +1301,21 @@ properties:
                     height:
                         type: number
                         description: Overall jacket height, meters.
-                    q:
+                    leg_thickness:
                         type: number
-                        description: Ratio of two consecutive bay heights.
-                    l_osg:
-                        type: number
-                        description: Lowest leg segment height, meters.
-                    l_tp:
-                        type: number
-                        description: Transition piece segment height, meters.
-                    gamma_b:
-                        type: number
-                        description: Leg radius-to-thickness ratio (bottom).
-                    gamma_t:
-                        type: number
-                        description: Leg radius-to-thickness ratio (top).
-                    beta_b:
-                        type: number
-                        description: Brace-to-leg diameter ratio (bottom).
-                    beta_t:
-                        type: number
-                        description: Brace-to-leg diameter ratio (top).
-                    tau_b:
-                        type: number
-                        description: Brace-to-leg thickness ratio (bottom).
-                    tau_t:
-                        type: number
-                        description: Brace-to-leg thickness ratio (top).
+                        description: Leg thickness, meters. Constant throughout each leg.
+                    brace_diameters:
+                        $ref: "#/definitions/distributed_data/length"
+                    brace_thicknesses:
+                        $ref: "#/definitions/distributed_data/length"
+                    bay_spacing:
+                        $ref: "#/definitions/distributed_data/grid_nd"
+                    leg_spacing:
+                        $ref: "#/definitions/distributed_data/grid_nd"
                     x_mb:
                         type: boolean
                         description: Mud brace included if true.
-                    d_l:
+                    leg_diameter:
                         type: number
                         description: Leg diameter, meters. Constant throughout each leg.
             floating_platform:

@@ -1,6 +1,6 @@
+import numpy as np
 import openmdao.api as om
 
-import numpy as np
 from wisdem.rotorse.rotor import RotorSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.floatingse.floating import FloatingSE
@@ -495,16 +495,11 @@ class WT_RNTA(om.Group):
             self.connect("jacket.r_foot", "fixedse.r_foot")
             self.connect("jacket.r_head", "fixedse.r_head")
             self.connect("jacket.height", "fixedse.height")
-            self.connect("jacket.q", "fixedse.q")
-            self.connect("jacket.l_osg", "fixedse.l_osg")
-            self.connect("jacket.l_tp", "fixedse.l_tp")
-            self.connect("jacket.gamma_b", "fixedse.gamma_b")
-            self.connect("jacket.gamma_t", "fixedse.gamma_t")
-            self.connect("jacket.beta_b", "fixedse.beta_b")
-            self.connect("jacket.beta_t", "fixedse.beta_t")
-            self.connect("jacket.tau_b", "fixedse.tau_b")
-            self.connect("jacket.tau_t", "fixedse.tau_t")
-            self.connect("jacket.d_l", "fixedse.d_l")
+            self.connect("jacket.leg_diameter", "fixedse.leg_diameter")
+            self.connect("jacket.leg_thickness", "fixedse.leg_thickness")
+            self.connect("jacket.brace_diameters", "fixedse.brace_diameters")
+            self.connect("jacket.brace_thicknesses", "fixedse.brace_thicknesses")
+            self.connect("jacket.bay_spacing", "fixedse.bay_spacing")
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.tower_mass", "fixedse.tower_mass")
                 self.connect("towerse.tower_cost", "fixedse.tower_cost")

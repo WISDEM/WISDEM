@@ -31,7 +31,7 @@ WISDEM:
         gamma_fatigue: 1.755  # Safety factor for fatigue loads
         buckling_method: dnvgl # Buckling code type [eurocode or dnvgl]
         buckling_length: 15    # Buckling parameter
-        save_truss_figures: False
+        save_truss_figures: True
         frame3dd:
             shear: True
             geom: True
