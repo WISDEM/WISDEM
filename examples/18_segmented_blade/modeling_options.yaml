@@ -1,0 +1,15 @@
+General:
+  verbosity: false
+WISDEM:
+  BOS:
+    flag: true
+  DriveSE:
+    flag: true
+  RotorSE:
+    flag: true
+    spar_cap_ps: Spar_cap_ps
+    spar_cap_ss: Spar_cap_ss
+#    te_ps: TE_SS_filler
+#    te_ss: TE_PS_filler
+  TowerSE:
+    flag: true

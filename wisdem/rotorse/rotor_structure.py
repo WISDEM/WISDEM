@@ -1390,9 +1390,10 @@ class BladeJointSizing(ExplicitComponent):
 
         i = 0  # while loop counter
         n_bolt_list = []
-        while n_bolt != n_bolt_prev:
+        while abs(n_bolt - n_bolt_prev) > 0.1:  # loop until converging on a number of bolts
             i += 1
             n_bolt_prev = n_bolt
+            print('n_bolt = ', n_bolt)
 
             # b- calc # bolts & inserts to resist flap axial ultimate loads
             # bolts. Tensile stress only.
@@ -1430,11 +1431,11 @@ class BladeJointSizing(ExplicitComponent):
             # e - take max bolts needed as # bolt-insert pairs
             n_bolt = np.max([n_bolt_flap_fatigue, n_bolt_flap_ultimate, n_insert_flap_ultimate, n_insert_flap_fatigue,
                  n_bolt_pullout, n_bolt_min])
-            if discrete:
-                n_bolt = np.ceil(n_bolt)
-            else:
-                precision = 2  # round up to two decimal places
-                n_bolt = np.true_divide(np.ceil(n_bolt * 10**precision), 10**precision)  # round up to nearest 0.01
+            # if discrete:
+            #     n_bolt = np.ceil(n_bolt)
+            # else:
+            #     precision = 2  # round up to two decimal places
+            #     n_bolt = np.true_divide(np.ceil(n_bolt * 10**precision), 10**precision)  # round up to nearest 0.01
             n_bolt_list.append(n_bolt)
 
             # check for negatives. This implies that the loads magnitudes are imbalanced and out of range for the calculation
@@ -1502,11 +1503,11 @@ class BladeJointSizing(ExplicitComponent):
         t2 = Fsh_flap_ultimate * ns / (bolt_spacing * Ss_sc * n_bolt) + w_hole_bolthead * h_bolthead_hole_i / bolt_spacing
 
         # c- spar cap dimensions
-        t_req_sc = np.max([t1, t2, t_sc])
+        t_req_sc = np.max([t1, t2])
         if t_req_sc > t_max_sc:
             t_req_sc = t_max_sc
             # print('Warning, required spar cap thickness (', t_req_sc, ') is greater than max allowed (', t_max_sc, '). Limiting to max allowed')
-        w_req_sc = np.max([n_bolt * bolt_spacing, w_sc]) # required width driven by number of bolts
+        w_req_sc = n_bolt * bolt_spacing  # required width driven by number of bolts
         w_layer[sc_ss_layer_i, i_span] = w_req_sc
         w_layer[sc_ps_layer_i, i_span] = w_req_sc
         # if w_req_sc > w_sc:
@@ -1585,24 +1586,21 @@ class BladeJointSizing(ExplicitComponent):
 
 
         # print('Sparcap suction start = ', layer_start_nd[sc_ss_layer_i, i_span])
-        print('Sparcap suction end = ', layer_end_nd[sc_ss_layer_i, i_span])
-        print('Sparcap suction offset = ', offset[sc_ss_layer_i, i_span])
-        print('Sparcap pressure start = ', layer_start_nd[sc_ps_layer_i, i_span])
-        print('Sparcap pressure end = ', layer_end_nd[sc_ps_layer_i, i_span])
-        print('Sparcap pressure offset = ', offset[sc_ps_layer_i, i_span])
-        print('Sparcap suction offset = ', offset[sc_ss_layer_i, i_span])
-        print('Sparcap pressure offset = ', offset[sc_ps_layer_i, i_span])
-        print('t_req_sc_joint', t_req_sc)
-        print('w_req_sc_joint', w_req_sc)
-        print('t_sc_ratio_joint', t_sc_ratio)
-        print('w_sc_ratio_joint', w_sc_ratio)
+        # print('Sparcap suction end = ', layer_end_nd[sc_ss_layer_i, i_span])
+        # print('Sparcap pressure start = ', layer_start_nd[sc_ps_layer_i, i_span])
+        # print('Sparcap pressure end = ', layer_end_nd[sc_ps_layer_i, i_span])
+        # print('Sparcap offset = ', offset[sc_ps_layer_i, i_span])
+        # print('t_req_sc_joint', t_req_sc)
+        # print('w_req_sc_joint', w_req_sc)
+        # print('t_sc_ratio_joint', t_sc_ratio)
+        # print('w_sc_ratio_joint', w_sc_ratio)
         print('n_joint_bolt', n_bolt)
         # print('blade mass initial', inputs['blade_mass_re'])
         print('joint_mass_adder', m_add)
-        print('joint material cost', cost_joint_materials)
-        print('blade mass final', outputs['blade_mass'])
-        print('L_transition_joint', L_transition)
-        print('joint model done')
+        # print('joint material cost', cost_joint_materials)
+        # print('blade mass final', outputs['blade_mass'])
+        # print('L_transition_joint', L_transition)
+        # print('joint model done')
 
 
 class RotorStructure(Group):
