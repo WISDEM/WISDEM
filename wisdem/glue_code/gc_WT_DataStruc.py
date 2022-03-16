@@ -2948,7 +2948,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                             + " kg/m2."
                         )
                     else:
-                        outputs["ply_t"] = inputs["ply_t_from_yaml"]
+                        outputs["ply_t"][i] = inputs["ply_t_from_yaml"][i]
                 else:
                     outputs["ply_t"][i] = ply_t[i]
 

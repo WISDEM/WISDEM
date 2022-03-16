@@ -3478,6 +3478,7 @@ class RotorCost(om.ExplicitComponent):
         bom.blade_specs["LE_length"] = blade_length
         bom.blade_specs["length_webs"] = web_length
         bom.blade_specs["blade_length"] = blade_length
+        bom.blade_specs["pultruded_spar_caps"] = pultruded_spar_caps
         consumables = bom.compute_consumables()
         name_consumables = consumables.keys()
         total_consumable_cost_wo_waste = 0.0
