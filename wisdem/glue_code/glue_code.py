@@ -234,6 +234,7 @@ class WT_RNTA(om.Group):
             self.connect("materials.rho_fiber", "rotorse.rc.rho_fiber")
             self.connect("materials.ply_t", "rotorse.rc.ply_t")
             self.connect("materials.fwf", "rotorse.rc.fwf")
+            self.connect("materials.fvf", "rotorse.rc.fvf")
             self.connect("materials.roll_mass", "rotorse.rc.roll_mass")
 
         # Connections to DriveSE

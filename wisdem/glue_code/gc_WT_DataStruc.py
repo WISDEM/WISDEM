@@ -2906,7 +2906,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                             + "%."
                         )
                     else:
-                        outputs["fvf"] = inputs["fvf_from_yaml"]
+                        outputs["fvf"][i] = inputs["fvf_from_yaml"][i]
                 else:
                     outputs["fvf"][i] = fvf[i]
 
@@ -2928,7 +2928,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                             + "%"
                         )
                     else:
-                        outputs["fwf"] = inputs["fwf_from_yaml"]
+                        outputs["fwf"][i] = inputs["fwf_from_yaml"][i]
                 else:
                     outputs["fwf"][i] = fwf[i]
 

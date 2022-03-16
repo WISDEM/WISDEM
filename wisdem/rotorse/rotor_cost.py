@@ -2888,7 +2888,12 @@ class RotorCost(om.ExplicitComponent):
         self.add_input(
             "fwf",
             val=np.zeros(n_mat),
-            desc="1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.",
+            desc="1D array of the non-dimensional fiber weight fraction of the composite materials. Non-composite materials are kept at 0.",
+        )
+        self.add_input(
+            "fvf",
+            val=np.zeros(n_mat),
+            desc="1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.",
         )
         self.add_input(
             "roll_mass",
@@ -3134,6 +3139,7 @@ class RotorCost(om.ExplicitComponent):
         ply_t[ply_t==0] = 1.e+6
         roll_mass = inputs["roll_mass"]
         fwf = inputs["fwf"]
+        fvf = inputs["fwf"]
         unit_cost = inputs["unit_cost"]
         flange_adhesive_squeezed = inputs["flange_adhesive_squeezed"]
         flange_thick = inputs["flange_thick"]
@@ -3327,6 +3333,11 @@ class RotorCost(om.ExplicitComponent):
                 volume2lay_sc_ss = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
                 fabric2lay_sc_ss = volume2lay_sc_ss / ply_t[i_mat]
                 mass_sc_ss = volume2lay_sc_ss * rho_mat[i_mat]
+                if fvf[i_mat] > 0.6:
+                    pultruded_spar_caps = True
+                    logger.debug("The fiber volume fraction in the spar caps is above 60%, the blade cost model model assumes pultrusion for the spar caps")
+                else:
+                    pultruded_spar_caps = False
             elif self.layer_name[i_lay] == self.spar_cap_ps:
                 spar_cap_width_ps[imin:imax] = width[imin:imax]
                 spar_cap_length_ps = (s[imax] - s[imin]) * blade_length
