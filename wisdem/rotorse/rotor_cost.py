@@ -56,15 +56,16 @@ class blade_bom(object):
         consumables["peel_ply"] = {}
         consumables["peel_ply"]["unit_cost"] = 1.94  # [$/m2] 0.18 $/sqft
         consumables["peel_ply"]["waste"] = 15.0  # [%]
-        consumables["peel_ply"]["total_cost_wo_waste"] = (
+        infusion_area = (
             sum(self.blade_specs["area_webs_w_flanges"])
             + self.blade_specs["area_lpskin_w_flanges"]
             + self.blade_specs["area_hpskin_w_flanges"]
-            + self.blade_specs["area_sc_lp"]
-            + self.blade_specs["area_sc_hp"]
             + self.blade_specs["area_lp_root"]
             + self.blade_specs["area_hp_root"]
-        ) * consumables["peel_ply"]["unit_cost"]
+        )
+        if not self.blade_specs["pultruded_spar_caps"]:
+            infusion_area += + self.blade_specs["area_sc_lp"] + self.blade_specs["area_sc_hp"]
+        consumables["peel_ply"]["total_cost_wo_waste"] =  infusion_area * consumables["peel_ply"]["unit_cost"]
         consumables["peel_ply"]["total_cost_w_waste"] = consumables["peel_ply"]["total_cost_wo_waste"] * (
             1 + consumables["peel_ply"]["waste"] / 100
         )
@@ -103,17 +104,7 @@ class blade_bom(object):
         consumables["adhesive_bulk"]["volume_area"] = 3.06e-5  # [m3/m2] 0.00075 ga/sf
         consumables["adhesive_bulk"]["waste"] = 5.0  # [%]
         consumables["adhesive_bulk"]["total_cost_wo_waste"] = (
-            consumables["adhesive_bulk"]["volume_area"]
-            * (
-                sum(self.blade_specs["area_webs_w_flanges"])
-                + self.blade_specs["area_lpskin_w_flanges"]
-                + self.blade_specs["area_hpskin_w_flanges"]
-                + self.blade_specs["area_sc_lp"]
-                + self.blade_specs["area_sc_hp"]
-                + self.blade_specs["area_lp_root"]
-                + self.blade_specs["area_hp_root"]
-            )
-            * consumables["adhesive_bulk"]["unit_cost"]
+            consumables["adhesive_bulk"]["volume_area"] * infusion_area * consumables["adhesive_bulk"]["unit_cost"]
         )
         consumables["adhesive_bulk"]["total_cost_w_waste"] = consumables["adhesive_bulk"]["total_cost_wo_waste"] * (
             1 + consumables["adhesive_bulk"]["waste"] / 100
@@ -123,15 +114,7 @@ class blade_bom(object):
         consumables["adhesive_cans"]["unit_cost"] = 6.65  # [$]
         consumables["adhesive_cans"]["waste"] = 5.0  # [%]
         consumables["adhesive_cans"]["units_area"] = 0.022  # [each/m2] 0.002 each/sf
-        consumables["adhesive_cans"]["units_blade"] = consumables["adhesive_cans"]["units_area"] * (
-            sum(self.blade_specs["area_webs_w_flanges"])
-            + self.blade_specs["area_lpskin_w_flanges"]
-            + self.blade_specs["area_hpskin_w_flanges"]
-            + self.blade_specs["area_sc_lp"]
-            + self.blade_specs["area_sc_hp"]
-            + self.blade_specs["area_lp_root"]
-            + self.blade_specs["area_hp_root"]
-        )
+        consumables["adhesive_cans"]["units_blade"] = consumables["adhesive_cans"]["units_area"] * infusion_area
         consumables["adhesive_cans"]["total_cost_wo_waste"] = (
             consumables["adhesive_cans"]["units_blade"] * consumables["adhesive_cans"]["unit_cost"]
         )
@@ -145,17 +128,7 @@ class blade_bom(object):
         consumables["release_agent"]["waste"] = 5.0  # [%]
         consumables["release_agent"]["volume_area"] = 2.57e-5  # [m3/m2] 0.00063 ga/sf
         consumables["release_agent"]["total_cost_wo_waste"] = (
-            consumables["release_agent"]["volume_area"]
-            * (
-                sum(self.blade_specs["area_webs_w_flanges"])
-                + self.blade_specs["area_lpskin_w_flanges"]
-                + self.blade_specs["area_hpskin_w_flanges"]
-                + self.blade_specs["area_sc_lp"]
-                + self.blade_specs["area_sc_hp"]
-                + self.blade_specs["area_lp_root"]
-                + self.blade_specs["area_hp_root"]
-            )
-            * consumables["release_agent"]["unit_cost"]
+            consumables["release_agent"]["volume_area"] * infusion_area * consumables["release_agent"]["unit_cost"]
         )
         consumables["release_agent"]["total_cost_w_waste"] = consumables["release_agent"]["total_cost_wo_waste"] * (
             1 + consumables["release_agent"]["waste"] / 100
@@ -167,17 +140,7 @@ class blade_bom(object):
         consumables["flow_medium"]["waste"] = 15.0  # [%]
         consumables["flow_medium"]["coverage"] = 70.0  # [%]
         consumables["flow_medium"]["total_cost_wo_waste"] = (
-            (
-                sum(self.blade_specs["area_webs_w_flanges"])
-                + self.blade_specs["area_lpskin_w_flanges"]
-                + self.blade_specs["area_hpskin_w_flanges"]
-                + self.blade_specs["area_sc_lp"]
-                + self.blade_specs["area_sc_hp"]
-                + self.blade_specs["area_lp_root"]
-                + self.blade_specs["area_hp_root"]
-            )
-            * consumables["flow_medium"]["coverage"]
-            / 100
+            infusion_area * consumables["flow_medium"]["coverage"] / 100
             * consumables["flow_medium"]["unit_cost"]
         )
         consumables["flow_medium"]["total_cost_w_waste"] = consumables["flow_medium"]["total_cost_wo_waste"] * (
