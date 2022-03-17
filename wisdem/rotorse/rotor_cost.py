@@ -2477,14 +2477,15 @@ class virtual_factory(object):
                 self.power_consumpt[3 + i_web]
                 + self.parallel_proc[3 + i_web] * blade_specs["mass_webs"][i_web] * kJ_per_kg
             )  # [kW] Root preform hp
-        self.power_consumpt[3 + self.n_webs] = (
-            self.power_consumpt[3 + self.n_webs]
-            + self.parallel_proc[3 + self.n_webs] * blade_specs["mass_sc_lp"] * kJ_per_kg
-        )  # [kW] Spar cap lp
-        self.power_consumpt[4 + self.n_webs] = (
-            self.power_consumpt[4 + self.n_webs]
-            + self.parallel_proc[4 + self.n_webs] * blade_specs["mass_sc_hp"] * kJ_per_kg
-        )  # [kW] Spar cap hp
+        if not blade_specs["pultruded_spar_caps"]:
+            self.power_consumpt[3 + self.n_webs] = (
+                self.power_consumpt[3 + self.n_webs]
+                + self.parallel_proc[3 + self.n_webs] * blade_specs["mass_sc_lp"] * kJ_per_kg
+            )  # [kW] Spar cap lp
+            self.power_consumpt[4 + self.n_webs] = (
+                self.power_consumpt[4 + self.n_webs]
+                + self.parallel_proc[4 + self.n_webs] * blade_specs["mass_sc_hp"] * kJ_per_kg
+            )  # [kW] Spar cap hp
         self.power_consumpt[5 + self.n_webs] = (
             self.power_consumpt[5 + self.n_webs]
             + self.parallel_proc[5 + self.n_webs] * (blade_specs["mass_shell_lp"]) * kJ_per_kg
@@ -2511,12 +2512,13 @@ class virtual_factory(object):
             self.tooling_investment[3 + i_web] = (
                 price_mold_sqm * self.parallel_proc[3 + i_web] * blade_specs["area_webs_w_flanges"][i_web]
             )  # [$] Mold of the webs, cost assumed equal to 10800 $ per meter square of surface
-        self.tooling_investment[3 + self.n_webs] = (
-            price_mold_sqm * self.parallel_proc[3 + self.n_webs] * blade_specs["area_sc_lp"]
-        )  # [$] Mold of the low pressure spar cap, cost assumed equal to 10800 $ per meter square of surface
-        self.tooling_investment[4 + self.n_webs] = (
-            price_mold_sqm * self.parallel_proc[4 + self.n_webs] * blade_specs["area_sc_hp"]
-        )  # [$] Mold of the high pressure spar cap, cost assumed equal to 10800 $ per meter square of surface
+        if not blade_specs["pultruded_spar_caps"]:
+            self.tooling_investment[3 + self.n_webs] = (
+                price_mold_sqm * self.parallel_proc[3 + self.n_webs] * blade_specs["area_sc_lp"]
+            )  # [$] Mold of the low pressure spar cap, cost assumed equal to 10800 $ per meter square of surface
+            self.tooling_investment[4 + self.n_webs] = (
+                price_mold_sqm * self.parallel_proc[4 + self.n_webs] * blade_specs["area_sc_hp"]
+            )  # [$] Mold of the high pressure spar cap, cost assumed equal to 10800 $ per meter square of surface
         self.tooling_investment[5 + self.n_webs] = (
             price_mold_sqm * self.parallel_proc[5 + self.n_webs] * blade_specs["area_lpskin_w_flanges"]
         )  # [$] Mold of the low pressure skin shell, assumed equal to 9400 $ per meter square of surface
@@ -2539,12 +2541,22 @@ class virtual_factory(object):
             self.equipm_investment[3 + i_web] = (
                 1700.0 * self.parallel_proc[3 + i_web] * blade_specs["length_webs"][i_web]
             )  # [$] Equipment for webs infusion is assumed at 1700 $ per meter of web length
-        self.equipm_investment[3 + self.n_webs] = (
-            1700.0 * self.parallel_proc[3 + self.n_webs] * blade_specs["length_sc_lp"]
-        )  # [$] Equipment for spar caps infusion is assumed at 1700 $ per meter of spar cap length
-        self.equipm_investment[4 + self.n_webs] = (
-            1700.0 * self.parallel_proc[4 + self.n_webs] * blade_specs["length_sc_hp"]
-        )  # [$] Equipment for spar caps infusion is assumed at 1700 $ per meter of spar cap length
+        if not blade_specs["pultruded_spar_caps"]:
+            self.equipm_investment[3 + self.n_webs] = (
+                1700.0 * self.parallel_proc[3 + self.n_webs] * blade_specs["length_sc_lp"]
+            )  # [$] Equipment for spar caps infusion is assumed at 1700 $ per meter of spar cap length
+            self.equipm_investment[4 + self.n_webs] = (
+                1700.0 * self.parallel_proc[4 + self.n_webs] * blade_specs["length_sc_hp"]
+            )  # [$] Equipment for spar caps infusion is assumed at 1700 $ per meter of spar cap length
+        else:
+            cutting_chamfering_unit = 2.e+5 # Assume one pultrusion cutting and chamfering unit costs $200k
+            max_sc_length = np.max([blade_specs["length_sc_lp"], blade_specs["length_sc_hp"]])											
+            stacking_table = 100. * max_sc_length # Assume a table to stack the SC planks will cost $100 per meter
+            fixture_unit = 200. * max_sc_length # Assume a SC fixture will cost $200 per meter													
+            self.equipm_investment[3 + self.n_webs] = (
+                self.parallel_proc[3 + self.n_webs] * cutting_chamfering_unit + stacking_table + fixture_unit)
+            self.equipm_investment[4 + self.n_webs] = (
+                self.parallel_proc[4 + self.n_webs] * cutting_chamfering_unit + stacking_table + fixture_unit)
         self.equipm_investment[5 + self.n_webs] = (
             1600.0 * self.parallel_proc[5 + self.n_webs] * blade_specs["skin_perimeter_wo_root"]
         )  # [$] Equipment for skins infusion is assumed at 1600 $ per meter of skin perimeter
