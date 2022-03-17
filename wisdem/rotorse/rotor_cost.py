@@ -373,6 +373,8 @@ class blade_labor_ct(object):
         self.sw_parameters["ply_volume"] = blade_specs["volumeskin2lay_webs"]  # Ply volume [m3]
         # Spar cap low pressure side
         self.lp_sc_parameters = {}
+        self.lp_sc_parameters["pultruded_spar_caps"] = blade_specs["pultruded_spar_caps"]
+        self.lp_sc_parameters["max_n_plies_sc"] = blade_specs["max_n_plies_sc_lp"]
         self.lp_sc_parameters["blade_length"] = blade_specs["blade_length"]  # Length of the blade [m]
         self.lp_sc_parameters["length"] = blade_specs["length_sc_lp"]  # Length of the spar caps [m]
         self.lp_sc_parameters["width"] = blade_specs["width_sc_start_lp"]  # Width of the spar caps [m]
@@ -386,6 +388,7 @@ class blade_labor_ct(object):
         self.lp_sc_parameters["ply_volume"] = blade_specs["volume2lay_sc_lp"]  # Ply volume [m3]
         # Spar caps high pressure side
         self.hp_sc_parameters = {}
+        self.hp_sc_parameters["max_n_plies_sc"] = blade_specs["max_n_plies_sc_hp"]
         self.hp_sc_parameters["blade_length"] = blade_specs["blade_length"]  # Length of the blade [m]
         self.hp_sc_parameters["length"] = blade_specs["length_sc_hp"]  # Length of the spar caps [m]
         self.hp_sc_parameters["width"] = blade_specs["width_sc_start_hp"]  # Width of the spar caps [m]
@@ -551,19 +554,35 @@ class blade_labor_ct(object):
             sw.manufacturing_steps(core=True)
             labor[3 + i_web], non_gating_ct[3 + i_web] = compute_total_labor_ct(sw, operation[3 + i_web], verbosity)
 
-        operation[3 + self.n_webs] = "Infusion spar cap lp"
-        sc_lp = sparcaps_labor(self.lp_sc_parameters)
-        sc_lp.manufacturing_steps()
-        labor[3 + self.n_webs], non_gating_ct[3 + self.n_webs] = compute_total_labor_ct(
-            sc_lp, operation[3 + self.n_webs], verbosity
-        )
+        if self.lp_sc_parameters["pultruded_spar_caps"]:
+            operation[3 + self.n_webs] = "Install pultruded spar cap lp"
+            sc_lp = sparcaps_pultrusion_labor()
+            sc_lp.manufacturing_steps(self.lp_sc_parameters['max_n_plies_sc'])
+            labor[3 + self.n_webs], non_gating_ct[3 + self.n_webs] = compute_total_labor_ct(
+                sc_lp, operation[3 + self.n_webs], verbosity
+            )
+            
+            operation[4 + self.n_webs] = "Install pultruded spar cap hp"
+            sc_hp = sparcaps_pultrusion_labor()
+            sc_hp.manufacturing_steps(self.hp_sc_parameters['max_n_plies_sc'])
+            labor[4 + self.n_webs], non_gating_ct[4 + self.n_webs] = compute_total_labor_ct(
+                sc_hp, operation[4 + self.n_webs], verbosity
+            )
 
-        operation[4 + self.n_webs] = "Infusion spar cap hp"
-        sc_hp = sparcaps_labor(self.hp_sc_parameters)
-        sc_hp.manufacturing_steps()
-        labor[4 + self.n_webs], non_gating_ct[4 + self.n_webs] = compute_total_labor_ct(
-            sc_hp, operation[4 + self.n_webs], verbosity
-        )
+        else:
+            operation[3 + self.n_webs] = "Infusion spar cap lp"
+            sc_lp = sparcaps_infusion_labor(self.lp_sc_parameters)
+            sc_lp.manufacturing_steps()
+            labor[3 + self.n_webs], non_gating_ct[3 + self.n_webs] = compute_total_labor_ct(
+                sc_lp, operation[3 + self.n_webs], verbosity
+            )
+
+            operation[4 + self.n_webs] = "Infusion spar cap hp"
+            sc_hp = sparcaps_infusion_labor(self.hp_sc_parameters)
+            sc_hp.manufacturing_steps()
+            labor[4 + self.n_webs], non_gating_ct[4 + self.n_webs] = compute_total_labor_ct(
+                sc_hp, operation[4 + self.n_webs], verbosity
+            )
 
         # Gating operations
         operation[8 + self.n_webs] = "Demolding"
@@ -596,7 +615,7 @@ class blade_labor_ct(object):
             team_size = brentq(lambda x: min_ct_lp_skin(x), 0.01, 100.0, xtol=1e-4)
         except:
             team_size = 100.0
-            # print("WARNING: the blade cost model is used beyond its applicability range. No team can limit the main mold cycle time to 24 hours. 100 workers are assumed at the low-pressure mold, but this is incorrect.")
+            logger.warning("WARNING: the blade cost model is used beyond its applicability range. No team can limit the main mold cycle time to 24 hours. 100 workers are assumed at the low-pressure mold, but this is incorrect.")
 
         labor[5 + self.n_webs], skin_mold_gating_ct[5 + self.n_webs] = labor_ct_lp_skin(team_size)
 
@@ -624,7 +643,7 @@ class blade_labor_ct(object):
             team_size = brentq(lambda x: min_ct_hp_skin(x), 0.01, 100.0, xtol=1e-4)
         except:
             team_size = 100.0
-            # print("WARNING: the blade cost model is used beyond its applicability range. No team can limit the main mold cycle time to 24 hours. 100 workers are assumed at the high-pressure mold, but this is incorrect.")
+            logger.warning("WARNING: the blade cost model is used beyond its applicability range. No team can limit the main mold cycle time to 24 hours. 100 workers are assumed at the high-pressure mold, but this is incorrect.")
 
         labor[6 + self.n_webs], non_gating_ct[6 + self.n_webs] = labor_ct_hp_skin(team_size)
 
@@ -652,7 +671,7 @@ class blade_labor_ct(object):
             team_size = brentq(lambda x: min_ct_assembly(x), 0.01, 100.0, xtol=1e-4)
         except:
             team_size = 100.0
-            # print("WARNING: the blade cost model is used beyond its applicability range. No team can limit the assembly cycle time to 24 hours. 100 workers are assumed at the assembly line, but this is incorrect.")
+            logger.warning("WARNING: the blade cost model is used beyond its applicability range. No team can limit the assembly cycle time to 24 hours. 100 workers are assumed at the assembly line, but this is incorrect.")
 
         labor[7 + self.n_webs], skin_mold_gating_ct[7 + self.n_webs] = labor_ct_assembly(team_size)
 
@@ -1189,7 +1208,7 @@ class shearweb_labor(infusion_process):
             setattr(self, var, process[var])
 
 
-class sparcaps_labor(infusion_process):
+class sparcaps_infusion_labor(infusion_process):
     def __init__(self, component_parameters, process={}):
 
         # Manufacturing process labor input data for the spar caps
@@ -1277,6 +1296,37 @@ class sparcaps_labor(infusion_process):
         self.insert_prep_trim["n_pers"] = 10.0  # Number of personnel involved in the operation
         self.insert_prep_trim["length"] = component_parameters["length"]
         self.insert_prep_trim["rate"] = 30.0  # Trim rate [m/hr/man]
+
+        for var in process.keys():
+            setattr(self, var, process[var])
+
+
+class sparcaps_pultrusion_labor(object):
+    
+    def manufacturing_steps(self, max_n_plies_sc, process={}):
+
+        # Load coil	into position
+        self.load_coil = {}
+        self.load_coil['n_pers'] = 4 # Time size constant across operations
+        self.load_coil["install_time"] = 0.5 # hr
+        self.load_coil["ct"] = self.load_coil["install_time"]
+        self.load_coil["labor"] = self.load_coil["ct"] * self.load_coil['n_pers']
+
+        # Cut/Chamfer of pultrusion plank cut and chamfer
+        self.cut_chamfer = {}
+        self.cut_chamfer['rate'] = 6 # plk/hr
+        sc_plies = max_n_plies_sc
+        self.cut_chamfer['ct'] = sc_plies / self.cut_chamfer['rate'] # hrs
+        self.cut_chamfer['labor'] = self.cut_chamfer["ct"] * self.load_coil['n_pers']
+
+        # Stacking of planks
+        self.stack = {}
+        self.stack['rate'] = 15 # plk/hr
+        self.stack['load'] = 0.5 # hr
+        self.stack['move'] = 0.25 # hr
+        self.stack['place'] = 0.5 # hr
+        self.stack['ct'] = sc_plies / self.stack['rate'] + self.stack['load'] + self.stack['move'] + self.stack['place'] # hrs
+        self.stack['labor'] = self.stack["ct"] * self.load_coil['n_pers']
 
         for var in process.keys():
             setattr(self, var, process[var])
@@ -3173,6 +3223,8 @@ class RotorCost(om.ExplicitComponent):
         volume2lay_sc_ps = 0.0
         mass_sc_ss = 0.0
         mass_sc_ps = 0.0
+        max_n_plies_sc_ss = 0.0
+        max_n_plies_sc_ps = 0.0
         fabric2lay_shell_ss = 0.0
         fabric2lay_shell_ps = 0.0
         n_plies_root_ss = 0.0
@@ -3296,6 +3348,7 @@ class RotorCost(om.ExplicitComponent):
                 volume2lay_sc_ss = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
                 fabric2lay_sc_ss = volume2lay_sc_ss / ply_t[i_mat]
                 mass_sc_ss = volume2lay_sc_ss * rho_mat[i_mat]
+                max_n_plies_sc_ss  = max(layer_thickness[i_lay, :])/ply_t[i_mat]
                 if fvf[i_mat] > 0.6:
                     pultruded_spar_caps = True
                     logger.debug("The fiber volume fraction in the spar caps is above 60%, the blade cost model model assumes pultrusion for the spar caps")
@@ -3310,6 +3363,7 @@ class RotorCost(om.ExplicitComponent):
                 volume2lay_sc_ps = np.trapz(layer_volume_span_ss[i_lay, :], s * blade_length)
                 fabric2lay_sc_ps = volume2lay_sc_ps / ply_t[i_mat]
                 mass_sc_ps = volume2lay_sc_ps * rho_mat[i_mat]
+                max_n_plies_sc_ps  = max(layer_thickness[i_lay, :])/ply_t[i_mat]
 
             # Shell skins
             elif component_id[i_mat] == 2:
@@ -3468,6 +3522,7 @@ class RotorCost(om.ExplicitComponent):
         mat_dictionary["total_ply_area_wo_waste"] = mat_area_scrap
 
         metallic_parts = {}
+        blade_specs["pultruded_spar_caps"] = pultruded_spar_caps
         blade_specs["blade_length"] = blade_length
         blade_specs["root_preform_length"] = root_preform_length
         blade_specs["root_D"] = chord[0]
@@ -3498,6 +3553,8 @@ class RotorCost(om.ExplicitComponent):
         blade_specs["fabric2lay_sc_hp"] = fabric2lay_sc_ps
         blade_specs["volume2lay_sc_lp"] = volume2lay_sc_ss
         blade_specs["volume2lay_sc_hp"] = volume2lay_sc_ps
+        blade_specs["max_n_plies_sc_lp"] = max_n_plies_sc_ss
+        blade_specs["max_n_plies_sc_hp"] = max_n_plies_sc_ps
         blade_specs["area_lpskin_wo_flanges"] = ss_area
         blade_specs["area_hpskin_wo_flanges"] = ps_area
         blade_specs["area_lpskin_w_flanges"] = ss_area_w_flanges
