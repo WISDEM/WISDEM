@@ -216,8 +216,13 @@ class WindTurbineOntologyPython(object):
                         "A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem."
                     )
 
-            if self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["position"]>0.:
-                self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = True                
+            joint_pos = self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["position"]
+            if joint_pos>0.:
+                self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = True
+                # Adjust grid to have grid point at join location
+                closest_grid_pt = np.argmin(abs(self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] - joint_pos))
+                self.modeling_options["WISDEM"]["RotorSE"]["nd_span"][closest_grid_pt] = joint_pos
+                self.modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] = closest_grid_pt
 
         # Drivetrain
         if self.modeling_options["flags"]["nacelle"]:

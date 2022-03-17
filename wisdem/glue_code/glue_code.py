@@ -224,7 +224,7 @@ class WT_RNTA(om.Group):
             self.connect("blade.internal_structure_2d_fem.definition_layer", "rotorse.rc.definition_layer")
             self.connect("blade.internal_structure_2d_fem.web_start_nd", "rotorse.rc.web_start_nd")
             self.connect("blade.internal_structure_2d_fem.web_end_nd", "rotorse.rc.web_end_nd")
-            self.connect("blade.internal_structure_2d_fem.joint_position", "rotorse.rc.joint_position")
+            # self.connect("blade.internal_structure_2d_fem.joint_position", "rotorse.rc.joint_position")
             self.connect("materials.name", "rotorse.rc.mat_name")
             self.connect("materials.orth", "rotorse.rc.orth")
             self.connect("materials.rho", "rotorse.rc.rho")

@@ -2,7 +2,7 @@ import os
 import unittest
 
 import openmdao.api as om
-from wisdem.rotorse.rotor_cost import StandaloneRotorCost, initialize_omdao_prob
+from wisdem.rotorse.blade_cost import StandaloneBladeCost, initialize_omdao_prob
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
 
@@ -12,15 +12,15 @@ fname_opt_options = os.path.join(example_dir, "analysis_options.yaml")
 accuracy = 0
 
 
-class TestRC(unittest.TestCase):
-    def testRotorCostIEA3p4(self):
+class TestBC(unittest.TestCase):
+    def testBladeCostIEA3p4(self):
 
         fname_modeling_options = os.path.join(example_dir, "modeling_options.yaml")
         fname_wt_input = os.path.join(example_dir, "IEA-3p4-130-RWT.yaml")
         wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
         wt_init, modeling_options, opt_options = wt_initial.get_input_data()
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
-        wt_opt = om.Problem(model=StandaloneRotorCost(modeling_options=modeling_options, opt_options=opt_options))
+        wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
@@ -44,7 +44,7 @@ class TestRC(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rc.blade_fixed_cost"][0], 34460.606087474116, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc.total_blade_cost"][0], 136539.98641022752, places=accuracy)
 
-    def testRotorCostIEA10(self):
+    def testBladeCostIEA10(self):
 
         fname_modeling_options = os.path.join(example_dir, "modeling_options_iea10.yaml")
         fname_wt_input = os.path.join(example_dir, "IEA-10-198-RWT.yaml")
@@ -52,7 +52,7 @@ class TestRC(unittest.TestCase):
         wt_init, modeling_options, opt_options = wt_initial.get_input_data()
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
         modeling_options["WISDEM"]["DriveSE"]["direct"] = False
-        wt_opt = om.Problem(model=StandaloneRotorCost(modeling_options=modeling_options, opt_options=opt_options))
+        wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
@@ -76,7 +76,7 @@ class TestRC(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rc.blade_fixed_cost"][0], 92421.6022312831, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc.total_blade_cost"][0], 356104.1533613165, places=accuracy)
 
-    def testRotorCostIEA15(self):
+    def testBladeCostIEA15(self):
 
         fname_modeling_options = os.path.join(example_dir, "modeling_options.yaml")
         fname_wt_input = os.path.join(example_dir, "IEA-15-240-RWT.yaml")
@@ -84,7 +84,7 @@ class TestRC(unittest.TestCase):
         wt_init, modeling_options, opt_options = wt_initial.get_input_data()
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
         modeling_options["WISDEM"]["DriveSE"]["direct"] = False
-        wt_opt = om.Problem(model=StandaloneRotorCost(modeling_options=modeling_options, opt_options=opt_options))
+        wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
@@ -111,7 +111,7 @@ class TestRC(unittest.TestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestRC))
+    suite.addTest(unittest.makeSuite(TestBC))
     return suite
 
 

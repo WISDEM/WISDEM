@@ -2807,8 +2807,161 @@ def compute_maintenance_cost(self, operation, investment_eq, investment_to, inve
     return cost_per_blade, cost_per_year
 
 
+class BladeSplit(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("mod_options")
+        self.options.declare("opt_options")
+
+    def setup(self):
+        mod_options = self.options["mod_options"]
+        rotorse_options = mod_options["WISDEM"]["RotorSE"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_span = n_span = rotorse_options["n_span"]
+        self.n_webs = n_webs = rotorse_options["n_webs"]
+        self.n_layers = n_layers = rotorse_options["n_layers"]
+        self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
+        self.layer_mat = rotorse_options["layer_mat"]
+        self.layer_name = rotorse_options["layer_name"]
+        self.spar_cap_ss = rotorse_options["spar_cap_ss"]
+        self.spar_cap_ps = rotorse_options["spar_cap_ps"]
+        self.id_joint_position = id_joint_position = rotorse_options["id_joint_position"]
+
+        # Inputs - Whole blade
+        self.add_input("blade_length", val=0.0, units="m", desc="blade length")
+        self.add_input("s", val=np.zeros(n_span), desc="blade nondimensional span location")
+        self.add_input("chord", val=np.zeros(n_span), units="m", desc="Chord distribution")
+        self.add_input(
+            "coord_xy_interp",
+            val=np.zeros((n_span, n_xy, 2)),
+            desc="3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations.",
+        )
+        self.add_input(
+            "web_start_nd",
+            val=np.zeros((n_webs, n_span)),
+            desc="2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
+        )
+        self.add_input(
+            "web_end_nd",
+            val=np.zeros((n_webs, n_span)),
+            desc="2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
+        )
+        self.add_input(
+            "layer_thickness",
+            val=np.zeros((n_layers, n_span)),
+            units="m",
+            desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        self.add_input(
+            "layer_start_nd",
+            val=np.zeros((n_layers, n_span)),
+            desc="2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        self.add_input(
+            "layer_end_nd",
+            val=np.zeros((n_layers, n_span)),
+            desc="2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        self.add_input("joint_position", val=0.0, desc="Spanwise position of the segmentation joint.")
+
+        # Outputs
+        # Blade inner portion
+        self.add_output("blade_length_inner", val=0.0, units="m", desc="Length of inner blade portion")
+        self.add_output("s_inner", val=np.zeros(id_joint_position), desc="Inner blade nondimensional span location")
+        self.add_output("chord_inner", val=np.zeros(id_joint_position), units="m", desc="Inner blade chord distribution")
+        self.add_output(
+            "coord_xy_interp_inner",
+            val=np.zeros((id_joint_position, n_xy, 2)),
+            desc="Inner blade 3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations.",
+        )
+        self.add_output(
+            "web_start_nd_inner",
+            val=np.zeros((n_webs, id_joint_position)),
+            desc="Inner blade 2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
+        )
+        self.add_output(
+            "web_end_nd_inner",
+            val=np.zeros((n_webs, id_joint_position)),
+            desc="Inner blade 2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
+        )
+        self.add_output(
+            "layer_thickness_inner",
+            val=np.zeros((n_layers, id_joint_position)),
+            units="m",
+            desc="Inner blade 2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        self.add_output(
+            "layer_start_nd_inner",
+            val=np.zeros((n_layers, id_joint_position)),
+            desc="Inner blade 2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        self.add_output(
+            "layer_end_nd_inner",
+            val=np.zeros((n_layers, id_joint_position)),
+            desc="Inner blade 2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        # Blade outer portion
+        self.add_output("blade_length_outer", val=0.0, units="m", desc="Length of outer blade portion")
+        self.add_output("s_outer", val=np.zeros(n_span-id_joint_position), desc="Outer blade nondimensional span location")
+        self.add_output("chord_outer", val=np.zeros(n_span-id_joint_position), units="m", desc="Outer blade chord distribution")
+        self.add_output(
+            "coord_xy_interp_outer",
+            val=np.zeros((n_span-id_joint_position, n_xy, 2)),
+            desc="Outer blade 3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations.",
+        )
+        self.add_output(
+            "web_start_nd_outer",
+            val=np.zeros((n_webs, n_span-id_joint_position)),
+            desc="Outer blade 2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
+        )
+        self.add_output(
+            "web_end_nd_outer",
+            val=np.zeros((n_webs, n_span-id_joint_position)),
+            desc="Outer blade 2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span.",
+        )
+        self.add_output(
+            "layer_thickness_outer",
+            val=np.zeros((n_layers, n_span-id_joint_position)),
+            units="m",
+            desc="Outer blade 2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        self.add_output(
+            "layer_start_nd_outer",
+            val=np.zeros((n_layers, n_span-id_joint_position)),
+            desc="Outer blade 2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        self.add_output(
+            "layer_end_nd_outer",
+            val=np.zeros((n_layers, n_span-id_joint_position)),
+            desc="Outer blade 2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+
+    def compute(self, inputs, outputs):
+        
+        outputs["blade_length_inner"] = inputs["blade_length"] * inputs["joint_position"]
+        inner_grid = inputs["s"][:self.id_joint_position]
+        outputs["s_inner"] = (inner_grid - inner_grid[0])/(inner_grid[-1] - inner_grid[0])
+        outputs["chord_inner"] = inputs["chord"][:self.id_joint_position]
+        outputs["coord_xy_interp_inner"] = inputs["coord_xy_interp"][:self.id_joint_position]
+        outputs["web_start_nd_inner"] = inputs["web_start_nd"][:self.id_joint_position]
+        outputs["web_end_nd_inner"] = inputs["web_end_nd"][:self.id_joint_position]
+        outputs["layer_thickness_inner"] = inputs["layer_thickness"][:self.id_joint_position]
+        outputs["layer_start_nd_inner"] = inputs["layer_start_nd"][:self.id_joint_position]
+        outputs["layer_end_nd_inner"] = inputs["layer_end_nd"][:self.id_joint_position]
+        
+        outputs["blade_length_outer"] = inputs["blade_length"] * (1. - inputs["joint_position"])
+        outer_grid = inputs["s"][self.id_joint_position:]
+        outputs["s_outer"] = (outer_grid - outer_grid[0])/(outer_grid[-1] - outer_grid[0])
+        outputs["chord_outer"] = inputs["chord"][self.id_joint_position:]
+        outputs["coord_xy_interp_outer"] = inputs["coord_xy_interp"][self.id_joint_position:]
+        outputs["web_start_nd_outer"] = inputs["web_start_nd"][self.id_joint_position:]
+        outputs["web_end_nd_outer"] = inputs["web_end_nd"][self.id_joint_position:]
+        outputs["layer_thickness_outer"] = inputs["layer_thickness"][self.id_joint_position:]
+        outputs["layer_start_nd_outer"] = inputs["layer_start_nd"][self.id_joint_position:]
+        outputs["layer_end_nd_outer"] = inputs["layer_end_nd"][self.id_joint_position:]
+
+
 # OpenMDAO component to execute the blade cost model
-class RotorCost(om.ExplicitComponent):
+class BladeCost(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("mod_options")
         self.options.declare("opt_options")
@@ -2991,7 +3144,7 @@ class RotorCost(om.ExplicitComponent):
             val=0.01,
             desc="Percentage of blade length starting from blade root that is preformed and later inserted into the mold",
         )
-        self.add_input("joint_position", val=0.0, desc="Spanwise position of the segmentation joint.")
+        
         self.add_input("joint_material_cost", val=0, units="USD", desc="Joint materials cost (bolts + inserts + adhesive")
         self.add_input("joint_nonmaterial_cost", val=0.0, units="USD", desc="Non-material joint cost (mfg, assembly, transportation).")
         self.add_input("joint_mass", val=0.0, units="kg", desc="Mass of the joint.")
@@ -3666,7 +3819,7 @@ class RotorCost(om.ExplicitComponent):
 
 
 # OpenMDAO group to execute the blade cost model without the rest of WISDEM
-class StandaloneRotorCost(om.Group):
+class StandaloneBladeCost(om.Group):
     def initialize(self):
         self.options.declare("modeling_options")
         self.options.declare("opt_options")
@@ -3713,32 +3866,87 @@ class StandaloneRotorCost(om.Group):
         )
         self.connect("blade.outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
 
-        self.add_subsystem("rc", RotorCost(mod_options=modeling_options, opt_options=opt_options))
+        if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+            self.add_subsystem("split", BladeSplit(mod_options=modeling_options, opt_options=opt_options))
+            self.add_subsystem("rc_in", BladeCost(mod_options=modeling_options, opt_options=opt_options))
+            self.add_subsystem("rc_out", BladeCost(mod_options=modeling_options, opt_options=opt_options))
+            # self.add_subsystem("total", TotalBladeCosts(mod_options=modeling_options, opt_options=opt_options))
 
-        self.connect("high_level_blade_props.blade_length", "rc.blade_length")
-        self.connect("blade.outer_shape_bem.s", "rc.s")
-        self.connect("blade.pa.chord_param", "rc.chord")
-        self.connect("blade.interp_airfoils.coord_xy_interp", "rc.coord_xy_interp")
-        self.connect("blade.internal_structure_2d_fem.layer_thickness", "rc.layer_thickness")
-        self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rc.layer_start_nd")
-        self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rc.layer_end_nd")
-        self.connect("blade.internal_structure_2d_fem.layer_web", "rc.layer_web")
-        self.connect("blade.internal_structure_2d_fem.definition_layer", "rc.definition_layer")
-        self.connect("blade.internal_structure_2d_fem.web_start_nd", "rc.web_start_nd")
-        self.connect("blade.internal_structure_2d_fem.web_end_nd", "rc.web_end_nd")
-        self.connect("blade.internal_structure_2d_fem.joint_position", "rc.joint_position")
-        self.connect("blade.internal_structure_2d_fem.joint_mass", "rc.joint_mass")
-        self.connect("blade.internal_structure_2d_fem.joint_nonmaterial_cost", "rc.joint_nonmaterial_cost")
-        self.connect("materials.name", "rc.mat_name")
-        self.connect("materials.orth", "rc.orth")
-        self.connect("materials.rho", "rc.rho")
-        self.connect("materials.component_id", "rc.component_id")
-        self.connect("materials.unit_cost", "rc.unit_cost")
-        self.connect("materials.waste", "rc.waste")
-        self.connect("materials.rho_fiber", "rc.rho_fiber")
-        self.connect("materials.ply_t", "rc.ply_t")
-        self.connect("materials.fwf", "rc.fwf")
-        self.connect("materials.roll_mass", "rc.roll_mass")
+            # Inputs to be split between inner and outer blade portions
+            self.connect("high_level_blade_props.blade_length", "split.blade_length")
+            self.connect("blade.outer_shape_bem.s", "split.s")
+            self.connect("blade.pa.chord_param", "split.chord")
+            self.connect("blade.interp_airfoils.coord_xy_interp", "split.coord_xy_interp")
+            self.connect("blade.internal_structure_2d_fem.layer_thickness", "split.layer_thickness")
+            self.connect("blade.internal_structure_2d_fem.layer_start_nd", "split.layer_start_nd")
+            self.connect("blade.internal_structure_2d_fem.layer_end_nd", "split.layer_end_nd")
+            self.connect("blade.internal_structure_2d_fem.web_start_nd", "split.web_start_nd")
+            self.connect("blade.internal_structure_2d_fem.web_end_nd", "split.web_end_nd")
+            self.connect("blade.internal_structure_2d_fem.joint_position", "split.joint_position")
+
+            # Common inputs to blade cost model
+            self.connect("materials.name", ["rc_in.mat_name", "rc_out.mat_name"])
+            self.connect("materials.orth", ["rc_in.orth", "rc_out.orth"])
+            self.connect("materials.rho", ["rc_in.rho", "rc_out.rho"])
+            self.connect("materials.component_id", ["rc_in.component_id", "rc_out.component_id"])
+            self.connect("materials.unit_cost", ["rc_in.unit_cost", "rc_out.unit_cost"])
+            self.connect("materials.waste", ["rc_in.waste", "rc_out.waste"])
+            self.connect("materials.rho_fiber", ["rc_in.rho_fiber", "rc_out.rho_fiber"])
+            self.connect("materials.ply_t", ["rc_in.ply_t", "rc_out.ply_t"])
+            self.connect("materials.fwf", ["rc_in.fwf", "rc_out.fwf"])
+            self.connect("materials.roll_mass", ["rc_in.roll_mass", "rc_out.roll_mass"])
+            self.connect("blade.internal_structure_2d_fem.definition_layer", ["rc_in.definition_layer", "rc_out.definition_layer"])
+            self.connect("blade.internal_structure_2d_fem.layer_web", ["rc_in.layer_web","rc_out.layer_web"])
+
+            # Inner blade portion inputs
+            self.connect("split.blade_length_inner","rc_in.blade_length")
+            self.connect("split.s_inner","rc_in.s")
+            self.connect("split.chord_inner","rc_in.chord")
+            self.connect("split.coord_xy_interp_inner","rc_in.coord_xy_interp")
+            self.connect("split.layer_thickness_inner","rc_in.layer_thickness")
+            self.connect("split.layer_start_nd_inner","rc_in.layer_start_nd")
+            self.connect("split.layer_end_nd_inner","rc_in.layer_end_nd")
+            self.connect("split.web_start_nd_inner","rc_in.web_start_nd")
+            self.connect("split.web_end_nd_inner","rc_in.web_end_nd")
+            # Outer blade portion inputs
+            self.connect("split.blade_length_outer","rc_out.blade_length")
+            self.connect("split.s_outer","rc_out.s")
+            self.connect("split.chord_outer","rc_out.chord")
+            self.connect("split.coord_xy_interp_outer","rc_out.coord_xy_interp")
+            self.connect("split.layer_thickness_outer","rc_out.layer_thickness")
+            self.connect("split.layer_start_nd_outer","rc_out.layer_start_nd")
+            self.connect("split.layer_end_nd_outer","rc_out.layer_end_nd")
+            self.connect("split.web_start_nd_outer","rc_out.web_start_nd")
+            self.connect("split.web_end_nd_outer","rc_out.web_end_nd")
+        else:
+            self.add_subsystem("rc", BladeCost(mod_options=modeling_options, opt_options=opt_options))
+
+            self.connect("high_level_blade_props.blade_length", "rc.blade_length")
+            self.connect("blade.outer_shape_bem.s", "rc.s")
+            self.connect("blade.pa.chord_param", "rc.chord")
+            self.connect("blade.interp_airfoils.coord_xy_interp", "rc.coord_xy_interp")
+            self.connect("blade.internal_structure_2d_fem.layer_thickness", "rc.layer_thickness")
+            self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rc.layer_start_nd")
+            self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rc.layer_end_nd")
+            self.connect("blade.internal_structure_2d_fem.layer_web", "rc.layer_web")
+            self.connect("blade.internal_structure_2d_fem.definition_layer", "rc.definition_layer")
+            self.connect("blade.internal_structure_2d_fem.web_start_nd", "rc.web_start_nd")
+            self.connect("blade.internal_structure_2d_fem.web_end_nd", "rc.web_end_nd")
+            # self.connect("blade.internal_structure_2d_fem.joint_position", "rc.joint_position")
+            self.connect("blade.internal_structure_2d_fem.joint_mass", "rc.joint_mass")
+            self.connect("blade.internal_structure_2d_fem.joint_nonmaterial_cost", "rc.joint_nonmaterial_cost")
+            self.connect("materials.name", "rc.mat_name")
+            self.connect("materials.orth", "rc.orth")
+            self.connect("materials.rho", "rc.rho")
+            self.connect("materials.component_id", "rc.component_id")
+            self.connect("materials.unit_cost", "rc.unit_cost")
+            self.connect("materials.waste", "rc.waste")
+            self.connect("materials.rho_fiber", "rc.rho_fiber")
+            self.connect("materials.ply_t", "rc.ply_t")
+            self.connect("materials.fwf", "rc.fwf")
+            self.connect("materials.roll_mass", "rc.roll_mass")
+
+
 
 
 def initialize_omdao_prob(wt_opt, modeling_options, wt_init):
@@ -3765,7 +3973,7 @@ if __name__ == "__main__":
     wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
     modeling_options["WISDEM"]["RotorSE"]["flag"] = False
-    wt_opt = om.Problem(model=StandaloneRotorCost(modeling_options=modeling_options, opt_options=opt_options))
+    wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
     wt_opt.setup(derivatives=False)
     myopt = PoseOptimization(wt_init, modeling_options, opt_options)
     wt_opt = myopt.set_initial(wt_opt, wt_init)
