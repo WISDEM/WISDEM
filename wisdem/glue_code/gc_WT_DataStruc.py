@@ -1606,7 +1606,7 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
             val=0.0,
             desc="Spanwise position of the segmentation joint.",
         )
-        ivc.add_output("joint_mass", val=0.0, desc="Mass of the joint.")
+        ivc.add_output("joint_mass", val=0.0, units='kg', desc="Mass of the joint.")
         ivc.add_output("joint_nonmaterial_cost", val=0.0, units="USD", desc="Cost of the joint.")
         ivc.add_discrete_output("joint_bolt", val="M48", desc="Type of bolt: M30, M36, or M48")
 
