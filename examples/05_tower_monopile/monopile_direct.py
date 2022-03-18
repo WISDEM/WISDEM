@@ -5,6 +5,7 @@ import os
 
 import numpy as np
 import openmdao.api as om
+
 from wisdem.commonse.fileIO import save_data
 from wisdem.fixed_bottomse.monopile import MonopileSE
 
@@ -99,7 +100,7 @@ if opt_flag:
     prob.model.add_constraint("constr_taper", lower=0.2)
     prob.model.add_constraint("slope", upper=1.0)
     prob.model.add_constraint("suctionpile_depth", lower=0.0)
-    prob.model.add_constraint("monopile.f1", lower=0.13, upper=0.40, ref=0.1)
+    prob.model.add_constraint("f1", lower=0.13, upper=0.40, ref=0.1)
     # ---
 
 # Set up the OpenMDAO problem
