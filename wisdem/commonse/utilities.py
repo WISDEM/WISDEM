@@ -9,8 +9,9 @@ from __future__ import print_function
 
 import copy
 
-import numpy as np
 from scipy.linalg import solve_banded
+
+import numpy as np
 
 # from scipy.optimize import curve_fit
 
@@ -145,67 +146,69 @@ def get_xyz_mode_shapes(
                 else:
                     defl_numbers[i, j] = dnx1
 
-        used_freq_idx = []
-
-        def record_used_freqs(polyidx, i):
+        def record_used_freqs(polyidx, i, used_freq_idx):
             directions = ["x", "y", "z"]
             if polyidx in used_freq_idx and i < 3:
                 print(
                     f"WARNING: Frequency index {polyidx} has been used again for i={i} in the {directions[i]}-direction"
                 )
             used_freq_idx.append(polyidx)
+            return used_freq_idx
 
-        xmpf_dyn = mpfs[idyn, 0]
-        ympf_dyn = mpfs[idyn, 1]
-        zmpf_dyn = mpfs[idyn, 2]
-        x_uniq, x_uniq_inv = np.unique(defl_numbers[:, 0], return_inverse=True)
-        x_uniq_num = x_uniq.size - 1
-        y_uniq, y_uniq_inv = np.unique(defl_numbers[:, 1], return_inverse=True)
-        y_uniq_num = y_uniq.size - 1
-        z_uniq, z_uniq_inv = np.unique(defl_numbers[:, 2], return_inverse=True)
-        z_uniq_num = z_uniq.size - 1
+        xmpf_dyn = np.abs(xmpf[freqs > 1e-1])
+        ympf_dyn = np.abs(ympf[freqs > 1e-1])
+        zmpf_dyn = np.abs(zmpf[freqs > 1e-1])
+        used_freq_idx = []
         for i in range(mysize):
             # Number of unique mode shape orders
+            x_uniq_num = int(len(np.unique(defl_numbers[:, 0])) - 1)
             if i >= x_uniq_num:
                 ix += 1
             # Get index of most dominant direction for i'th mode shape
             uniq_idx = min(i, x_uniq_num)  # use i'th mode shape, unless it doesn't exist, then use next largest
-            mode_freq_idx = np.where(x_uniq_inv == x_uniq_inv[uniq_idx])[
+            mode_freq_idx = np.where(defl_numbers[:, 0] == np.unique(defl_numbers[:, 0])[uniq_idx])[
                 0
             ]  # find frequency index where i'th mode shape exists
             x_polyidx = mode_freq_idx[
                 np.argsort(-xmpf_dyn[mode_freq_idx])[min(ix, len(mode_freq_idx) - 1)]
             ]  # find index for i'th or the "next" i'th desired mode shape polynomial
-            mshapes_x[i, :] = xpolys[idyn, :][x_polyidx, :]
+            mshapes_x[i, :] = xpolys[freqs > 1e-1, :][x_polyidx, :]
             freq_x[i] = freqs_dyn[x_polyidx]
-            record_used_freqs(x_polyidx, i)
+            used_freq_idx = record_used_freqs(x_polyidx, i, used_freq_idx)
 
             # repeat for y and z directions
+            y_uniq_num = int(len(np.unique(defl_numbers[:, 1])) - 1)
             if i > y_uniq_num:
                 iy += 1
             uniq_idx = min(i, y_uniq_num)  # use i'th mode shape, unless it doesn't exist, then use largest
-            mode_freq_idx = np.where(y_uniq_inv == y_uniq_inv[uniq_idx])[
+            mode_freq_idx = np.where(defl_numbers[:, 1] == np.unique(defl_numbers[:, 1])[uniq_idx])[
                 0
             ]  # find frequency index where i'th mode shape exists
             y_polyidx = mode_freq_idx[
                 np.argsort(-ympf_dyn[mode_freq_idx])[min(iy, len(mode_freq_idx) - 1)]
             ]  # find index for i'th or the "next" i'th desired mode shape polynomial
-            mshapes_y[i, :] = ypolys[idyn, :][y_polyidx, :]
+            mshapes_y[i, :] = ypolys[freqs > 1e-1, :][y_polyidx, :]
             freq_y[i] = freqs_dyn[y_polyidx]
-            record_used_freqs(y_polyidx, i)
+            used_freq_idx = record_used_freqs(y_polyidx, i, used_freq_idx)
 
+            z_uniq_num = int(len(np.unique(defl_numbers[:, 2])) - 1)
             if i > z_uniq_num:
                 iz += 1
             uniq_idx = min(i, z_uniq_num)  # use i'th mode shape, unless it doesn't exist, then use largest
-            mode_freq_idx = np.where(z_uniq_inv == z_uniq_inv[uniq_idx])[
+            mode_freq_idx = np.where(defl_numbers[:, 2] == np.unique(defl_numbers[:, 2])[uniq_idx])[
                 0
             ]  # find frequency index where i'th mode shape exists
             z_polyidx = mode_freq_idx[
                 np.argsort(-zmpf_dyn[mode_freq_idx])[min(iz, len(mode_freq_idx) - 1)]
             ]  # find index for i'th or the "next" i'th desired mode shape polynomial
-            mshapes_z[i, :] = zpolys[idyn, :][z_polyidx, :]
+            mshapes_z[i, :] = zpolys[freqs > 1e-1, :][z_polyidx, :]
             freq_z[i] = freqs_dyn[z_polyidx]
-            record_used_freqs(z_polyidx, i)
+            used_freq_idx = record_used_freqs(z_polyidx, i, used_freq_idx)
+
+    if rank_and_file:
+        print("modes here")
+        print(mshapes_x[:2, :])
+        print(mshapes_y[:2, :])
 
     return freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z
 
