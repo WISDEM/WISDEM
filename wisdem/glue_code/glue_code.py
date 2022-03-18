@@ -212,7 +212,7 @@ class WT_RNTA(om.Group):
                     self.connect("blade.run_inn_af.coord_xy_interp", "rotorse.split.coord_xy_interp")
                 else:
                     self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.split.coord_xy_interp")
-                self.connect("blade.ps.layer_thickness_param.layer_thickness", "rotorse.split.layer_thickness")
+                self.connect("blade.ps.layer_thickness_param", "rotorse.split.layer_thickness")
                 self.connect("rotorse.rs.bjs.layer_start_nd_bjs", "rotorse.split.layer_start_nd")
                 self.connect("rotorse.rs.bjs.layer_end_nd_bjs", "rotorse.split.layer_end_nd")
                 self.connect("blade.internal_structure_2d_fem.web_start_nd", "rotorse.split.web_start_nd")

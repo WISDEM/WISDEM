@@ -138,8 +138,9 @@ class RotorSE(om.Group):
         self.add_subsystem("total_bc", TotalBladeCosts())
         if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
             self.connect("re.precomp.blade_mass", "rs.bjs.blade_mass_re")
+            self.connect("rc_in.total_blade_cost","total_bc.inner_blade_cost")
             self.connect("rc_out.total_blade_cost","total_bc.outer_blade_cost")
-            self.connect("rs.bjs.joint_total_cost", "rc.total_bc.joint_cost")
+            self.connect("rs.bjs.joint_total_cost", "total_bc.joint_cost")
         else:
             self.connect("rc.total_blade_cost","total_bc.inner_blade_cost")
 

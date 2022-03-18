@@ -1568,7 +1568,7 @@ class BladeJointSizing(ExplicitComponent):
         outputs['n_joint_bolt'] = n_bolt
         outputs['joint_mass'] = m_add
         outputs['joint_material_cost'] = cost_joint_materials
-        outputs['joint_total_cost'] = cost_joint_materials + inputs["joint_nonmaterial_costs"]
+        outputs['joint_total_cost'] = cost_joint_materials + inputs["joint_nonmaterial_cost"]
 
         ### TESTING WISDEM WITHOUT JOINT BELOW
         # m_add = 0
