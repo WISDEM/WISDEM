@@ -1183,6 +1183,7 @@ class BladeJointSizing(ExplicitComponent):
         self.add_input('itermax', val=20, desc='max # calculation iterations. [int]')  # (hardcoded)
         self.add_input('discrete', val=False, desc='whether discrete calculation is allowed. Set to False if in optimization loop. [bool]')  # (hardcoded) TODO could add as user input
         self.add_input('blade_mass_re', val=0, units='kg', desc='blade mass')
+        self.add_input("joint_nonmaterial_cost", val=0.0, units="USD", desc="Non-material joint cost (mfg, assembly, transportation).")
 
         self.add_output('t_sc_joint', val=0, units='m', desc='Required sparcap thickness at joint. [float]')
         self.add_output('w_sc_joint', val=0, units='m', desc='Required sparcap width at joint. [float]')
@@ -1202,6 +1203,7 @@ class BladeJointSizing(ExplicitComponent):
 
         self.add_output('blade_mass', val=0, units='kg', desc='blade mass')
         self.add_output("joint_material_cost", val=0, units='USD', desc='cost of joint metallic parts (bolts, washers, and inserts)')
+        self.add_output("joint_total_cost", val=0, units='USD', desc='Total cost of the bolted joint (metallic parts and nonmaterial costs)')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -1566,6 +1568,7 @@ class BladeJointSizing(ExplicitComponent):
         outputs['n_joint_bolt'] = n_bolt
         outputs['joint_mass'] = m_add
         outputs['joint_material_cost'] = cost_joint_materials
+        outputs['joint_total_cost'] = cost_joint_materials + inputs["joint_nonmaterial_costs"]
 
         ### TESTING WISDEM WITHOUT JOINT BELOW
         # m_add = 0
