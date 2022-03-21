@@ -40,6 +40,8 @@ class PlantFinance(om.ExplicitComponent):
     -------
     plant_aep : float
         Annual Energy Production of the wind plant
+    capacity_factor : float
+        Capacity factor of the wind plant
     lcoe : float
         Levelized cost of energy for the wind plant
     lvoe : float
