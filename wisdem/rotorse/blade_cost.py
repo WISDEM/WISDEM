@@ -520,7 +520,7 @@ class blade_labor_ct(object):
         self.shipping_prep["length"] = blade_specs["blade_length"]  # Length of the blade [m]
         self.shipping_prep["n_bolts"] = self.cut_drill["n_bolts"]  # Number of root bolts
 
-    def execute_blade_labor_ct(self):
+    def execute_blade_labor_ct(self, root):
 
         # Run all manufacturing steps to estimate labor and cycle time
         verbosity = 0
@@ -538,15 +538,16 @@ class blade_labor_ct(object):
         material_cutting.material_cutting_steps()
         labor[0], non_gating_ct[0] = compute_total_labor_ct(material_cutting, operation[0], verbosity)
 
-        operation[1] = "Root preform lp"
-        root_lp = root_preform_labor(self.root_parameters_lp)
-        root_lp.manufacturing_steps()
-        labor[1], non_gating_ct[1] = compute_total_labor_ct(root_lp, operation[1], verbosity)
+        if root:
+            operation[1] = "Root preform lp"
+            root_lp = root_preform_labor(self.root_parameters_lp)
+            root_lp.manufacturing_steps()
+            labor[1], non_gating_ct[1] = compute_total_labor_ct(root_lp, operation[1], verbosity)
 
-        operation[2] = "Root preform hp"
-        root_hp = root_preform_labor(self.root_parameters_hp)
-        root_hp.manufacturing_steps()
-        labor[2], non_gating_ct[2] = compute_total_labor_ct(root_hp, operation[2], verbosity)
+            operation[2] = "Root preform hp"
+            root_hp = root_preform_labor(self.root_parameters_hp)
+            root_hp.manufacturing_steps()
+            labor[2], non_gating_ct[2] = compute_total_labor_ct(root_hp, operation[2], verbosity)
 
         for i_web in range(self.n_webs):
             operation[3 + i_web] = "Infusion shear web number " + str(i_web + 1)
@@ -674,6 +675,7 @@ class blade_labor_ct(object):
             logger.debug("WARNING: the blade cost model is used beyond its applicability range. No team can limit the assembly cycle time to 24 hours. 100 workers are assumed at the assembly line, but this is incorrect.")
 
         labor[7 + self.n_webs], skin_mold_gating_ct[7 + self.n_webs] = labor_ct_assembly(team_size)
+
 
         operation[9 + self.n_webs] = "Trim"
         trim = trim_labor(self.trim)
@@ -2999,11 +3001,13 @@ class BladeCost(om.ExplicitComponent):
         self.options.declare("mod_options")
         self.options.declare("opt_options")
         self.options.declare("n_span")
+        self.options.declare("root")
 
     def setup(self):
         mod_options = self.options["mod_options"]
         rotorse_options = mod_options["WISDEM"]["RotorSE"]
         self.n_span = n_span = self.options["n_span"]
+        self.root = root = self.options["root"]
         self.n_webs = n_webs = rotorse_options["n_webs"]
         self.n_layers = n_layers = rotorse_options["n_layers"]
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
@@ -3350,7 +3354,10 @@ class BladeCost(om.ExplicitComponent):
         t_bolt_unit_cost = inputs["t_bolt_unit_cost"]
         barrel_nut_unit_cost = inputs["barrel_nut_unit_cost"]
         LPS_unit_cost = inputs["LPS_unit_cost"]
-        root_preform_length = inputs["root_preform_length"]
+        if self.root:
+            root_preform_length = inputs["root_preform_length"]
+        else:
+            root_preform_length = 0.
 
         # Compute arc length along blade span
         arc_L_i = np.zeros(self.n_span)
@@ -3761,7 +3768,7 @@ class BladeCost(om.ExplicitComponent):
         metallic_parts["n_bolts"] = n_bolts
 
         labor_ct = blade_labor_ct(blade_specs, mat_dictionary, metallic_parts)
-        operation, labor_hours, skin_mold_gating_ct, non_gating_ct = labor_ct.execute_blade_labor_ct()
+        operation, labor_hours, skin_mold_gating_ct, non_gating_ct = labor_ct.execute_blade_labor_ct(self.root)
         total_labor_hours = sum(labor_hours)
         total_skin_mold_gating_ct = sum(skin_mold_gating_ct)
         total_non_gating_ct = sum(non_gating_ct)
@@ -3892,8 +3899,8 @@ class StandaloneBladeCost(om.Group):
             self.add_subsystem("split", BladeSplit(mod_options=modeling_options, opt_options=opt_options))
             n_span_in = modeling_options["WISDEM"]["RotorSE"]["id_joint_position"]+1
             n_span_out = modeling_options["WISDEM"]["RotorSE"]["n_span"] - modeling_options["WISDEM"]["RotorSE"]["id_joint_position"]
-            self.add_subsystem("rc_in", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span_in))
-            self.add_subsystem("rc_out", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span_out))
+            self.add_subsystem("rc_in", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span_in, root = True))
+            self.add_subsystem("rc_out", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span_out, root = False))
 
             # Inputs to be split between inner and outer blade portions
             self.connect("high_level_blade_props.blade_length", "split.blade_length")
@@ -3943,7 +3950,7 @@ class StandaloneBladeCost(om.Group):
             self.connect("split.web_end_nd_outer","rc_out.web_end_nd")
         else:
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
-            self.add_subsystem("rc", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span))
+            self.add_subsystem("rc", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span, root = True))
 
             self.connect("high_level_blade_props.blade_length", "rc.blade_length")
             self.connect("blade.outer_shape_bem.s", "rc.s")

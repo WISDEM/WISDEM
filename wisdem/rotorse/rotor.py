@@ -109,8 +109,8 @@ class RotorSE(om.Group):
             self.add_subsystem("split", BladeSplit(mod_options=modeling_options, opt_options=opt_options))
             n_span_in = modeling_options["WISDEM"]["RotorSE"]["id_joint_position"]+1
             n_span_out = modeling_options["WISDEM"]["RotorSE"]["n_span"] - modeling_options["WISDEM"]["RotorSE"]["id_joint_position"]
-            self.add_subsystem("rc_in", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span_in))
-            self.add_subsystem("rc_out", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span_out))
+            self.add_subsystem("rc_in", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span_in, root = True))
+            self.add_subsystem("rc_out", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span_out, root = False))
             # Inner blade portion inputs
             self.connect("split.blade_length_inner","rc_in.blade_length")
             self.connect("split.s_inner","rc_in.s")
@@ -133,7 +133,7 @@ class RotorSE(om.Group):
             self.connect("split.web_end_nd_outer","rc_out.web_end_nd")
         else:
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
-            self.add_subsystem("rc", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span))
+            self.add_subsystem("rc", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span, root = True))
 
         self.add_subsystem("total_bc", TotalBladeCosts())
         if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
