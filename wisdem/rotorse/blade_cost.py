@@ -585,7 +585,7 @@ class blade_labor_ct(object):
                 sc_hp, operation[4 + self.n_webs], verbosity
             )
 
-        # Gating operations
+        # Gating operations, this step is computed here and not later to make sure the 24hr gating cycle time is respected.
         operation[8 + self.n_webs] = "Demolding"
         demold = demold_labor(self.demold)
         demold.demold_steps()
