@@ -426,7 +426,7 @@ class ComputePowerCurve(ExplicitComponent):
         driveEta = float(inputs["gearbox_efficiency"]) * gen_eff
 
         # Set baseline power production
-        myout, derivs = self.ccblade.evaluate(Uhub, Omega_rpm, pitch, coefficients=True)
+        myout, derivs = self.ccblade.evaluate(Uhub, Omega_tsr*30./np.pi, pitch, coefficients=True)
         P_aero, T, Q, M, Cp_aero, Ct_aero, Cq_aero, Cm_aero = [
             myout[key] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
         ]
@@ -739,7 +739,7 @@ class ComputePowerCurve(ExplicitComponent):
                             lambda x: np.abs(rated_power_dist(x, Uhub[i], Omega_rpm[i])),
                             pitch0,
                             method="slsqp",
-                            bounds=[bnds],
+                            bounds=bnds,
                             constraints=const,
                             tol=TOL,
                         )
