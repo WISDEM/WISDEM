@@ -3976,6 +3976,7 @@ class StandaloneBladeCost(om.Group):
 
         self.add_subsystem("total_bc", TotalBladeCosts())
         if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+            self.connect("rc_in.total_blade_cost","total_bc.inner_blade_cost")
             self.connect("rc_out.total_blade_cost","total_bc.outer_blade_cost")
             self.connect("blade.internal_structure_2d_fem.joint_nonmaterial_cost", "total_bc.joint_cost")
         else:

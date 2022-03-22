@@ -155,7 +155,7 @@ class TestBC(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rc_out.cost_capital"][0], 2524.0029347944633, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc_out.blade_fixed_cost"][0], 11145.195980137732, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc_out.total_blade_cost"][0], 52536.638356387906, places=accuracy)
-        self.assertAlmostEqual(wt_opt["total_bc.total_blade_cost"][0], 71136.6383563879, places=accuracy)
+        self.assertAlmostEqual(wt_opt["total_bc.total_blade_cost"][0], 482605.566566197, places=accuracy)
 
 def suite():
     suite = unittest.TestSuite()
