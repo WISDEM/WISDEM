@@ -9,6 +9,8 @@ from wisdem.commonse import gravity
 from wisdem.commonse.csystem import DirectionVector
 from wisdem.ccblade.ccblade_component import CCBladeLoads, CCBladeEvaluate
 from wisdem.rotorse.geometry_tools.geometry import remap2grid
+import logging
+logger = logging.getLogger("wisdem/weis")
 
 
 class BladeCurvature(ExplicitComponent):
@@ -1395,7 +1397,7 @@ class BladeJointSizing(ExplicitComponent):
         while abs(n_bolt - n_bolt_prev) > 0.1:  # loop until converging on a number of bolts
             i += 1
             n_bolt_prev = n_bolt
-            print('n_bolt = ', n_bolt)
+            # print('n_bolt = ', n_bolt)
 
             # b- calc # bolts & inserts to resist flap axial ultimate loads
             # bolts. Tensile stress only.
@@ -1442,7 +1444,7 @@ class BladeJointSizing(ExplicitComponent):
 
             # check for negatives. This implies that the loads magnitudes are imbalanced and out of range for the calculation
             if n_bolt_flap_ultimate < 0 or n_bolt_flap_fatigue < 0 or n_bolt_pullout < 0:
-                print('Warning: negative bolt number found. This implies that the preload exceeds the ultimate load'
+                logger.debug('Warning: negative bolt number found. This implies that the preload exceeds the ultimate load'
                       ' requirements. Please check inputs (separation and ultimate safety factors)')
 
             # 5- calculate preload to prevent separation and bolt shear. Make sure it's not requiring a preload that's too close
@@ -1450,24 +1452,24 @@ class BladeJointSizing(ExplicitComponent):
             Fi_sep = n0 * Fax_flap_ultimate * (1 - C) / n_bolt  # because separation is calculated based on extreme ultimate loading, the bolt ultimate safety factor (nprf) needs to be low.
             Fi_sh = Fsh_flap_ultimate / (mu * n_bolt)
             if Fi_sep > Fi70p:
-                print('Warning, separation preload requirement (', Fi_sep,
+                logger.debug('Warning, separation preload requirement (', Fi_sep,
                       'N) > 70% bolt proof load and will be limited to prevent overloading.')
             if Fi_sh > Fi70p:
-                print('Warning, shear preload requirement (', Fi_sh,
+                logger.debug('Warning, shear preload requirement (', Fi_sh,
                       'N) > 70% bolt proof load and will be limited to prevent overloading.')
             Fi = np.min([np.max([Fi_sh, Fi_sep]), Fi70p])
 
             # if iteration is stuck in an Fi-driven loop, then take the max # bolts required by loop
             if i > itermax:
                 if discrete:
-                    print('Solution oscillating between bolt numbers. Choosing the maximum of these.')
+                    logger.debug('Solution oscillating between bolt numbers. Choosing the maximum of these.')
                     seq = itermax
                     for x in range(2, itermax // 2):
                         if n_bolt_list[-x:] == n_bolt_list[-2*x:-x]:
                             seq = x
                     n_bolt = max(n_bolt_list[-seq:])
                 else:
-                    print('Solution has not converged to 0.01 bolt. Choosing the maximum of the last three bolt numbers')
+                    logger.debug('Solution has not converged to 0.01 bolt. Choosing the maximum of the last three bolt numbers')
                     n_bolt = max(n_bolt_list[-3:])
             if n_bolt >= n_bolt_max:
                 n_bolt_req = n_bolt
@@ -1489,7 +1491,7 @@ class BladeJointSizing(ExplicitComponent):
 
         # 6- loop through steps 4b-5 until n_bolt converges. Result is n_bolt
         if n_bolt >= n_bolt_max:
-            print('Warning. Unable to accommodate # bolts required (', n_bolt_req,
+            logger.debug('Warning. Unable to accommodate # bolts required (', n_bolt_req,
                       '). Limiting to max # bolts that can fit in '
                       'the cross section (', n_bolt_max, ').')
 
@@ -1534,7 +1536,7 @@ class BladeJointSizing(ExplicitComponent):
         dt = t_req_sc - t_sc
         L_transition = dt / ply_drop_slope  #TODO what do I want to do with this?
         if L_transition > L_segment:
-            print('Warning. Segments too short to accommodate ply drop requirements')
+            logger.debug('Warning. Segments too short to accommodate ply drop requirements')
 
         # 9- mass calcs: bolt+insert mass - cutout mass
         n_bolt *= 2  # consider bolts in each spar cap
@@ -1597,9 +1599,9 @@ class BladeJointSizing(ExplicitComponent):
         # print('w_req_sc_joint', w_req_sc)
         # print('t_sc_ratio_joint', t_sc_ratio)
         # print('w_sc_ratio_joint', w_sc_ratio)
-        print('n_joint_bolt', n_bolt)
+        # print('n_joint_bolt', n_bolt)
         # print('blade mass initial', inputs['blade_mass_re'])
-        print('joint_mass_adder', m_add)
+        # print('joint_mass_adder', m_add)
         # print('joint material cost', cost_joint_materials)
         # print('blade mass final', outputs['blade_mass'])
         # print('L_transition_joint', L_transition)

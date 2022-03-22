@@ -7,16 +7,17 @@ from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
 
 wisdem_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-example_dir = os.path.join(wisdem_dir, "examples", "02_reference_turbines")  # get path example 03_blade
-fname_opt_options = os.path.join(example_dir, "analysis_options.yaml")
+example_dir02 = os.path.join(wisdem_dir, "examples", "02_reference_turbines")  # get path example 02_reference_turbines
+example_dir03 = os.path.join(wisdem_dir, "examples", "03_blade")  # get path example 03_blade
+fname_opt_options = os.path.join(example_dir02, "analysis_options.yaml")
 accuracy = 0
 
 
 class TestBC(unittest.TestCase):
     def testBladeCostIEA3p4(self):
 
-        fname_modeling_options = os.path.join(example_dir, "modeling_options.yaml")
-        fname_wt_input = os.path.join(example_dir, "IEA-3p4-130-RWT.yaml")
+        fname_modeling_options = os.path.join(example_dir02, "modeling_options.yaml")
+        fname_wt_input = os.path.join(example_dir02, "IEA-3p4-130-RWT.yaml")
         wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
         wt_init, modeling_options, opt_options = wt_initial.get_input_data()
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
@@ -46,8 +47,8 @@ class TestBC(unittest.TestCase):
 
     def testBladeCostIEA10(self):
 
-        fname_modeling_options = os.path.join(example_dir, "modeling_options_iea10.yaml")
-        fname_wt_input = os.path.join(example_dir, "IEA-10-198-RWT.yaml")
+        fname_modeling_options = os.path.join(example_dir02, "modeling_options_iea10.yaml")
+        fname_wt_input = os.path.join(example_dir02, "IEA-10-198-RWT.yaml")
         wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
         wt_init, modeling_options, opt_options = wt_initial.get_input_data()
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
@@ -78,8 +79,8 @@ class TestBC(unittest.TestCase):
 
     def testBladeCostIEA15(self):
 
-        fname_modeling_options = os.path.join(example_dir, "modeling_options.yaml")
-        fname_wt_input = os.path.join(example_dir, "IEA-15-240-RWT.yaml")
+        fname_modeling_options = os.path.join(example_dir02, "modeling_options.yaml")
+        fname_wt_input = os.path.join(example_dir02, "IEA-15-240-RWT.yaml")
         wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
         wt_init, modeling_options, opt_options = wt_initial.get_input_data()
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
@@ -108,6 +109,53 @@ class TestBC(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rc.blade_fixed_cost"][0], 145093.17767219, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc.total_blade_cost"][0], 615925.8906317754, places=accuracy)
 
+    def testBladeCostBAR_USC(self):
+
+        fname_modeling_options = os.path.join(example_dir03, "modeling_options.yaml")
+        fname_wt_input = os.path.join(example_dir03, "BAR_USC.yaml")
+        wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
+        wt_init, modeling_options, opt_options = wt_initial.get_input_data()
+        modeling_options["WISDEM"]["RotorSE"]["flag"] = False
+        wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
+        wt_opt.setup(derivatives=False)
+        myopt = PoseOptimization(wt_init, modeling_options, opt_options)
+        wt_opt = myopt.set_initial(wt_opt, wt_init)
+        wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init)
+        wt_opt.run_model()
+
+        self.assertAlmostEqual(wt_opt["rc_in.total_labor_hours"][0], 1750.7449896744745, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.total_non_gating_ct"][0], 192.8046182063546, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.total_metallic_parts_cost"][0], 6482.0815222645215, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.total_consumable_cost_w_waste"][0], 8807.09170136831, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.total_blade_mat_cost_w_waste"][0], 280221.03727427527, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.total_cost_labor"][0], 59153.48279337347, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.total_cost_utility"][0], 1826.3396141097405, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.blade_variable_cost"][0], 341200.85968175845, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.total_cost_equipment"][0], 9614.277038808075, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.total_cost_tooling"][0], 17156.692648656877, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.total_cost_building"][0], 842.3838836380187, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.total_maintenance_cost"][0], 7601.642299673956, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.total_labor_overhead"][0], 17746.04483801204, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.cost_capital"][0], 17307.02781926173, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.blade_fixed_cost"][0], 70268.06852805069, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_in.total_blade_cost"][0], 411468.9282098091, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.total_labor_hours"][0], 330.70091389289024, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.total_non_gating_ct"][0], 68.03884638670057, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.total_metallic_parts_cost"][0], 3428.7667570837384, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.total_consumable_cost_w_waste"][0], 2898.312583402607, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.total_blade_mat_cost_w_waste"][0], 30109.20162015121, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.total_cost_labor"][0], 11129.391172290238, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.total_cost_utility"][0], 152.84958380873056, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.blade_variable_cost"][0], 41391.442376250176, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.total_cost_equipment"][0], 1414.4471863503768, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.total_cost_tooling"][0], 2510.9560206957676, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.total_cost_building"][0], 177.01847670844526, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.total_maintenance_cost"][0], 1179.954009901608, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.total_labor_overhead"][0], 3338.817351687071, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.cost_capital"][0], 2524.0029347944633, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.blade_fixed_cost"][0], 11145.195980137732, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rc_out.total_blade_cost"][0], 52536.638356387906, places=accuracy)
+        self.assertAlmostEqual(wt_opt["total_bc.total_blade_cost"][0], 71136.6383563879, places=accuracy)
 
 def suite():
     suite = unittest.TestSuite()
