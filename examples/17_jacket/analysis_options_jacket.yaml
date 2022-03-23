@@ -28,10 +28,6 @@ design_variables:
             flag: True
             lower_bound: 0.05
             upper_bound: 0.5
-        bay_spacing:
-            flag: False
-            lower_bound: 0.1
-            upper_bound: 0.9
 
 merit_figure: jacket_mass
 
@@ -54,6 +50,7 @@ driver:
         solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         step_size: 1.e-6      # Step size for finite differencing
         form: forward         # Finite differencing mode, either forward or central
+        debug_print: False
 
 recorder:
     flag: False                            # Flag to activate OpenMDAO recorder
