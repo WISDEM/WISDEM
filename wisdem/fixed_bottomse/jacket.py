@@ -31,7 +31,7 @@ class ComputeJacketNodes(om.ExplicitComponent):
         self.add_input("height", val=70.0, units="m")
         self.add_input("r_foot", val=10.0, units="m")
         self.add_input("r_head", val=6.0, units="m")
-        self.add_input("bay_spacing", val=np.zeros((n_bays + 1)))
+        self.add_input("bay_spacing", val=np.linspace(0.1, 0.9, n_bays + 1))
 
         self.add_output("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)), units="m")
         self.add_output("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)), units="m")
@@ -92,8 +92,8 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.add_input("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)), units="m")
         self.add_input("leg_diameter", val=1.4, units="m")
         self.add_input("leg_thickness", val=0.1, units="m")
-        self.add_input("brace_diameters", val=np.zeros((n_bays)), units="m")
-        self.add_input("brace_thicknesses", val=np.zeros((n_bays)), units="m")
+        self.add_input("brace_diameters", val=np.ones((n_bays)), units="m")
+        self.add_input("brace_thicknesses", val=np.ones((n_bays)) * 0.1, units="m")
 
         self.add_discrete_input("material_names", val=n_mat * [""])
         self.add_input("E_mat", val=np.zeros([n_mat, 3]), units="Pa")
