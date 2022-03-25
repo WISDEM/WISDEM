@@ -952,6 +952,12 @@ properties:
                                 default: 1.4175 #1.35*1.05
                                 minimum: 1.0
                                 maximum: 10.0
+                    t_sc_joint:
+                        type: object
+                        default: {}
+                        description: Enforce a maximum allowable spar cap thickness, expressed as the ratio of the required spar cap thickness at the joint location to the nominal spar cap thickness.
+                        properties:
+                            flag: *flag
                     rail_transport:
                         type: object
                         default: {}

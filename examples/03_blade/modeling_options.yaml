@@ -6,8 +6,8 @@ WISDEM:
         flag: True
         spar_cap_ss: Spar_cap_ss
         spar_cap_ps: Spar_cap_ps
-        te_ss: TE_reinforcement_ss
-        te_ps: TE_reinforcement_ps
+        te_ss: TE_reinf_ss
+        te_ps: TE_reinf_ps
     DriveSE:
         flag: True
     TowerSE:             # Options of TowerSE module

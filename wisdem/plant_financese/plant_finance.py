@@ -40,6 +40,8 @@ class PlantFinance(om.ExplicitComponent):
     -------
     plant_aep : float
         Annual Energy Production of the wind plant
+    capacity_factor : float
+        Capacity factor of the wind plant
     lcoe : float
         Levelized cost of energy for the wind plant
     lvoe : float
@@ -86,6 +88,7 @@ class PlantFinance(om.ExplicitComponent):
         self.add_input("benchmark_price", val=0.071, units='USD/kW/h')
 
         self.add_output("plant_aep", val=0.0, units="USD/kW/h")
+        self.add_output("capacity_factor", val=0.0, desc="Capacity factor of the wind farm")
         self.add_output("lcoe", val=0.0, units="USD/kW/h", desc="Levelized cost of energy: LCOE is the cost that, if assigned to every unit of electricity by an asset over an evaluation period, will equal the total costs during that same period when discounted to the base year.")
         self.add_output("lvoe", val=0.0, units="USD/kW/h", desc="Levelized value of energy: LVOE is the discounted sum of total value divided by the discounted sum of electrical energy generated.")
         self.add_output("value_factor", val=0.0, desc="Value factor is the LVOE divided by a benchmark price.")
@@ -189,6 +192,7 @@ class PlantFinance(om.ExplicitComponent):
 
         # Assign openmdao outputs
         outputs["plant_aep"] = park_aep
+        outputs["capacity_factor"] = nec / 8760.
         outputs['lcoe'] = lcoe
         outputs['lvoe'] = lvoe
         outputs['value_factor'] = value_factor

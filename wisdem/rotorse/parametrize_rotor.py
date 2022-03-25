@@ -239,7 +239,7 @@ class ComputeReynolds(om.ExplicitComponent):
         n_span = self.options["n_span"]
 
         self.add_input("rho", val=0.0, units="kg/m**3")
-        self.add_input("mu", val=0.0, units="kg/m/s")
+        self.add_input("mu", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
         self.add_input("local_airfoil_velocities", val=np.zeros((n_span)), units="m/s")
         self.add_input("chord", val=np.zeros((n_span)), units="m")
         self.add_output("Re", val=np.zeros((n_span)), ref=1.0e6)
