@@ -366,6 +366,17 @@ properties:
                                         default: 0.0
                                         minimum: 0.0
                                         maximum: 1.e+6
+                                    bolt: 
+                                        type: string
+                                        default: M30
+                                        enum: [M18, M24, M30, M36, M42, M48, M52]
+                                        description: Bolt size for the blade bolted joint
+                                    nonmaterial_cost: 
+                                        type: number
+                                        description: Cost of the joint not from materials.
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 1.e+6
                     # cfd_geometry:
                         # type: object
                         # TODO
@@ -1269,15 +1280,10 @@ properties:
                     - r_foot
                     - r_head
                     - height
-                    - q
-                    - l_osg
-                    - l_tp
-                    - gamma_b
-                    - gamma_t
-                    - beta_b
-                    - beta_t
-                    - tau_b
-                    - tau_t
+                    - leg_diameter
+                    - leg_thickness
+                    - brace_diameters
+                    - brace_thicknesses
                 optional:
                     - material
                     - transition_piece_mass
@@ -1306,37 +1312,21 @@ properties:
                     height:
                         type: number
                         description: Overall jacket height, meters.
-                    q:
+                    leg_thickness:
                         type: number
-                        description: Ratio of two consecutive bay heights.
-                    l_osg:
-                        type: number
-                        description: Lowest leg segment height, meters.
-                    l_tp:
-                        type: number
-                        description: Transition piece segment height, meters.
-                    gamma_b:
-                        type: number
-                        description: Leg radius-to-thickness ratio (bottom).
-                    gamma_t:
-                        type: number
-                        description: Leg radius-to-thickness ratio (top).
-                    beta_b:
-                        type: number
-                        description: Brace-to-leg diameter ratio (bottom).
-                    beta_t:
-                        type: number
-                        description: Brace-to-leg diameter ratio (top).
-                    tau_b:
-                        type: number
-                        description: Brace-to-leg thickness ratio (bottom).
-                    tau_t:
-                        type: number
-                        description: Brace-to-leg thickness ratio (top).
+                        description: Leg thickness, meters. Constant throughout each leg.
+                    brace_diameters:
+                        $ref: "#/definitions/distributed_data/length"
+                    brace_thicknesses:
+                        $ref: "#/definitions/distributed_data/length"
+                    bay_spacing:
+                        $ref: "#/definitions/distributed_data/grid_nd"
+                    leg_spacing:
+                        $ref: "#/definitions/distributed_data/grid_nd"
                     x_mb:
                         type: boolean
                         description: Mud brace included if true.
-                    d_l:
+                    leg_diameter:
                         type: number
                         description: Leg diameter, meters. Constant throughout each leg.
             floating_platform:
@@ -2859,7 +2849,7 @@ properties:
                 description: Capacity credit used to compute value in beyond lcoe metrics
                 minimum: 0.
                 maximum: 1.
-                default: 1.
+                default: 0.
             benchmark_price:
                 type: number
                 description: Benchmark price used to nondimensionalize value in beyond lcoe metrics

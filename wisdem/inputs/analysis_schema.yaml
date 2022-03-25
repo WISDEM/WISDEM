@@ -617,7 +617,7 @@ properties:
                                 unit: m
                                 description: Design variable bound
                             upper_bound: *rheadbound
-                    d_l:
+                    leg_diameter:
                         type: object
                         description: Adjust the diameter of the jacket legs.
                         default: {}
@@ -645,87 +645,48 @@ properties:
                                 unit: m
                                 description: Design variable bound
                             upper_bound: *h_bound
-                    q:
+                    leg_thickness:
                         type: object
-                        description: Ratio of two consecutive bay heights.
+                        description: Adjust the leg thicknesses of the jacket.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &dim_bound
+                                type: number
+                                minimum: 0.001
+                                maximum: 10.0
+                                default: 0.1
+                                unit: m
+                                description: Design variable bound
+                            upper_bound: *dim_bound
+                    brace_diameters:
+                        type: object
+                        description: Adjust the brace diameters of the jacket.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *dim_bound
+                            upper_bound: *dim_bound
+                    brace_thicknesses:
+                        type: object
+                        description: Adjust the brace thicknesses of the jacket.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: *dim_bound
+                            upper_bound: *dim_bound
+                    bay_spacing:
+                        type: object
+                        description: Jacket bay nodal spacing.
                         default: {}
                         properties:
                             flag: *flag
                             lower_bound: &dimless_bound
                                 type: number
-                                minimum: 0.01
-                                maximum: 100.0
-                                default: 0.8
+                                minimum: 0.0
+                                maximum: 1.0
+                                default: 0.1
                                 description: Design variable bound
-                            upper_bound: *dimless_bound
-                    l_osg:
-                        type: object
-                        description: Lowest leg segment height, meters.
-                        default: {}
-                        properties:
-                            flag: *flag
-                            lower_bound: *dimless_bound
-                            upper_bound: *dimless_bound
-                    l_tp:
-                        type: object
-                        description: Transition piece segment height, meters.
-                        default: {}
-                        properties:
-                            flag: *flag
-                            lower_bound: *dimless_bound
-                            upper_bound: *dimless_bound
-                    gamma_b:
-                        type: object
-                        description: Leg radius-to-thickness ratio (bottom).
-                        default: {}
-                        properties:
-                            flag: *flag
-                            lower_bound: &gam_bound
-                                type: number
-                                minimum: 0.01
-                                maximum: 100.0
-                                default: 4
-                                description: Design variable bound
-                            upper_bound: *gam_bound
-                    gamma_t:
-                        type: object
-                        description: Leg radius-to-thickness ratio (top).
-                        default: {}
-                        properties:
-                            flag: *flag
-                            lower_bound: *gam_bound
-                            upper_bound: *gam_bound
-                    beta_b:
-                        type: object
-                        description: Brace-to-leg diameter ratio (bottom).
-                        default: {}
-                        properties:
-                            flag: *flag
-                            lower_bound: *dimless_bound
-                            upper_bound: *dimless_bound
-                    beta_t:
-                        type: object
-                        description: Brace-to-leg diameter ratio (top).
-                        default: {}
-                        properties:
-                            flag: *flag
-                            lower_bound: *dimless_bound
-                            upper_bound: *dimless_bound
-                    tau_b:
-                        type: object
-                        description: Brace-to-leg thickness ratio (bottom).
-                        default: {}
-                        properties:
-                            flag: *flag
-                            lower_bound: *dimless_bound
-                            upper_bound: *dimless_bound
-                    tau_t:
-                        type: object
-                        description: Brace-to-leg thickness ratio (top).
-                        default: {}
-                        properties:
-                            flag: *flag
-                            lower_bound: *dimless_bound
                             upper_bound: *dimless_bound
             floating:
                 type: object
@@ -991,6 +952,12 @@ properties:
                                 default: 1.4175 #1.35*1.05
                                 minimum: 1.0
                                 maximum: 10.0
+                    t_sc_joint:
+                        type: object
+                        default: {}
+                        description: Enforce a maximum allowable spar cap thickness, expressed as the ratio of the required spar cap thickness at the joint location to the nominal spar cap thickness.
+                        properties:
+                            flag: *flag
                     rail_transport:
                         type: object
                         default: {}

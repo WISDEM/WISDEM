@@ -1,4 +1,4 @@
-name: 5MW Tower only
+name: 5MW Turbine
 
 assembly:
     turbine_class: I
@@ -48,16 +48,11 @@ components:
         r_foot: 6.
         r_head: 3.
         height: 50.
-        q: 0.9
-        l_osg: 5.0
-        l_tp: 4.0
-        gamma_b: 4.0
-        gamma_t: 6.0
-        beta_b: 0.9
-        beta_t: 0.8
-        tau_b: 0.8
-        tau_t: 0.6
-        d_l: 2.
+        leg_thickness: 0.1
+        brace_diameters: [1.0, 1.0, 1.0, 1.0]
+        brace_thicknesses: [0.1, 0.1, 0.1, 0.1]
+        bay_spacing: [0.1, 0.3, 0.5, 0.7, 0.9]
+        leg_diameter: 2.
         x_mb: False
 materials:
    -  name: steel

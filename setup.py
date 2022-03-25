@@ -4,7 +4,6 @@ import os
 import glob
 
 from setuptools import find_packages
-
 from numpy.distutils.core import Extension, setup
 
 os.environ["NPY_DISTUTILS_APPEND_FLAGS"] = "1"
@@ -40,7 +39,7 @@ setup(
         "jsonschema",
         "marmot-agents>=0.2.5",
         "numpy",
-        "openmdao>=3.4",
+        "openmdao>=3.4,<3.17",
         "openpyxl",
         "pandas",
         "pytest",

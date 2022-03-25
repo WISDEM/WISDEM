@@ -1,10 +1,10 @@
 import copy
 import logging
 
+import numpy as np
 import openmdao.api as om
 from scipy.interpolate import PchipInterpolator, interp1d
 
-import numpy as np
 import wisdem.moorpy.MoorProps as mp
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
@@ -590,9 +590,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             costs_ivc.add_output("controls_machine_rating_cost_coeff", units="USD/kW", val=21.15)
             costs_ivc.add_output("crane_cost", units="USD", val=12e3)
             costs_ivc.add_output("electricity_price", val=0.04, units="USD/kW/h")
-            costs_ivc.add_output("reserve_margin_price", val=120., units="USD/kW/yr")
-            costs_ivc.add_output("capacity_credit", val=1.)
-            costs_ivc.add_output("benchmark_price", val=0.071, units='USD/kW/h')
+            costs_ivc.add_output("reserve_margin_price", val=120.0, units="USD/kW/yr")
+            costs_ivc.add_output("capacity_credit", val=1.0)
+            costs_ivc.add_output("benchmark_price", val=0.071, units="USD/kW/h")
 
         # Assembly setup
         self.add_subsystem("high_level_tower_props", ComputeHighLevelTowerProperties(modeling_options=modeling_options))
@@ -1606,8 +1606,9 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
             val=0.0,
             desc="Spanwise position of the segmentation joint.",
         )
-        ivc.add_output("joint_mass", val=0.0, desc="Mass of the joint.")
-        ivc.add_output("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
+        ivc.add_output("joint_mass", val=0.0, units='kg', desc="Mass of the joint.")
+        ivc.add_output("joint_nonmaterial_cost", val=0.0, units="USD", desc="Cost of the joint.")
+        ivc.add_discrete_output("joint_bolt", val="M48", desc="Type of bolt: M30, M36, or M48")
 
         ivc.add_output("d_f", val=0.0, units="m", desc="Diameter of the fastener")
         ivc.add_output("sigma_max", val=0.0, units="Pa", desc="Max stress on bolt")
@@ -2272,6 +2273,8 @@ class Jacket(om.Group):
 
     def setup(self):
         fixedbottomse_options = self.options["fixedbottomse_options"]
+        n_bays = fixedbottomse_options["n_bays"]
+        n_legs = fixedbottomse_options["n_legs"]
 
         ivc = self.add_subsystem("jacket_indep_vars", om.IndepVarComp(), promotes=["*"])
         ivc.add_output(
@@ -2293,57 +2296,33 @@ class Jacket(om.Group):
             desc="Overall jacket height, meters.",
         )
         ivc.add_output(
-            "q",
-            val=0.0,
-            desc="Ratio of two consecutive bay heights.",
-        )
-        ivc.add_output(
-            "l_osg",
-            val=0.0,
-            units="m",
-            desc="Lowest leg segment height, meters.",
-        )
-        ivc.add_output(
-            "l_tp",
-            val=0.0,
-            units="m",
-            desc="Transition piece segment height, meters.",
-        )
-        ivc.add_output(
-            "gamma_b",
-            val=0.0,
-            desc="Leg radius-to-thickness ratio (bottom).",
-        )
-        ivc.add_output(
-            "gamma_t",
-            val=0.0,
-            desc="Leg radius-to-thickness ratio (top).",
-        )
-        ivc.add_output(
-            "beta_b",
-            val=0.0,
-            desc="Brace-to-leg diameter ratio (bottom).",
-        )
-        ivc.add_output(
-            "beta_t",
-            val=0.0,
-            desc="Brace-to-leg diameter ratio (top).",
-        )
-        ivc.add_output(
-            "tau_b",
-            val=0.0,
-            desc="Brace-to-leg thickness ratio (bottom).",
-        )
-        ivc.add_output(
-            "tau_t",
-            val=0.0,
-            desc="Brace-to-leg thickness ratio (top).",
-        )
-        ivc.add_output(
-            "d_l",
+            "leg_diameter",
             val=0.0,
             units="m",
             desc="Leg diameter, meters. Constant throughout each leg.",
+        )
+        ivc.add_output(
+            "leg_thickness",
+            val=0.0,
+            units="m",
+            desc="Leg thickness, meters. Constant throughout each leg.",
+        )
+        ivc.add_output(
+            "brace_diameters",
+            val=np.zeros((n_bays)),
+            units="m",
+            desc="Brace diameter, meters. Array starts at the bottom of the jacket.",
+        )
+        ivc.add_output(
+            "brace_thicknesses",
+            val=np.zeros((n_bays)),
+            units="m",
+            desc="Brace thickness, meters. Array starts at the bottom of the jacket.",
+        )
+        ivc.add_output(
+            "bay_spacing",
+            val=np.zeros((n_bays + 1)),
+            desc="Bay nodal spacing. Array starts at the bottom of the jacket.",
         )
         ivc.add_output(
             "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of jacket"
@@ -2905,7 +2884,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                             + "%."
                         )
                     else:
-                        outputs["fvf"] = inputs["fvf_from_yaml"]
+                        outputs["fvf"][i] = inputs["fvf_from_yaml"][i]
                 else:
                     outputs["fvf"][i] = fvf[i]
 
@@ -2927,7 +2906,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                             + "%"
                         )
                     else:
-                        outputs["fwf"] = inputs["fwf_from_yaml"]
+                        outputs["fwf"][i] = inputs["fwf_from_yaml"][i]
                 else:
                     outputs["fwf"][i] = fwf[i]
 
@@ -2947,7 +2926,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                             + " kg/m2."
                         )
                     else:
-                        outputs["ply_t"] = inputs["ply_t_from_yaml"]
+                        outputs["ply_t"][i] = inputs["ply_t_from_yaml"][i]
                 else:
                     outputs["ply_t"][i] = ply_t[i]
 
@@ -2999,6 +2978,12 @@ class Materials(om.Group):
             val=np.zeros([n_mat, 3]),
             units="Pa",
             desc="2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.",
+        )
+        ivc.add_output(
+            "S",
+            val=np.zeros([n_mat, 3]),
+            units="Pa",
+            desc="2D array of the Ultimate Shear Strength (USS) of the materials. Each row represents a material, the three columns represent S12, S13 and S23.",
         )
         ivc.add_output(
             "sigma_y",

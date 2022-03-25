@@ -8,23 +8,17 @@ Accessible via: https://wes.copernicus.org/articles/3/553/2018/
 
 import numpy as np
 import openmdao.api as om
-import matplotlib.pyplot as plt
+
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
+import wisdem.commonse.manufacturing as manu
 import wisdem.commonse.cross_sections as cs
 import wisdem.commonse.utilization_dnvgl as util_dnvgl
 import wisdem.commonse.utilization_constraints as util_con
 from wisdem.commonse import NFREQ, RIGID, gravity
 
 
-class GetGreekLetters(om.ExplicitComponent):
-    """
-    This component computes the intermediate values needed to use the jacket
-    parameterization outlined in the Häfele paper. Specifically, this follows
-    section 2.1: Topology.
-
-    See the geometry_schema.yaml or the paper for an explanation of each of
-    these parameters.
-    """
+class ComputeJacketNodes(om.ExplicitComponent):
+    """"""
 
     def initialize(self):
         self.options.declare("modeling_options")
@@ -34,113 +28,10 @@ class GetGreekLetters(om.ExplicitComponent):
         n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
         n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
 
-        self.add_input("r_foot", val=10.0, units="m")
-        self.add_input("r_head", val=6.0, units="m")
-        self.add_input("height", val=70.0, units="m")
-        self.add_input("q", val=0.9)
-        self.add_input("l_osg", val=5.0, units="m")
-        self.add_input("l_tp", val=4.0, units="m")
-
-        self.add_input("gamma_b", val=6.0)
-        self.add_input("gamma_t", val=8.0)
-        self.add_input("beta_b", val=0.9)
-        self.add_input("beta_t", val=0.8)
-        self.add_input("tau_b", val=0.6)
-        self.add_input("tau_t", val=0.5)
-
-        self.add_output("gamma_i", val=np.zeros((n_bays + 1)))
-        self.add_output("beta_i", val=np.zeros((n_bays)))
-        self.add_output("tau_i", val=np.zeros((n_bays)))
-
-        self.add_output("xi", val=0.0)
-        self.add_output("nu", val=0.0)
-        self.add_output("psi_s", val=0.0)
-        self.add_output("psi_p", val=0.0)
-
-        self.add_output("lower_bay_heights", val=np.zeros((n_bays + 1)), units="m")
-        self.add_output("lower_bay_radii", val=np.zeros((n_bays + 1)), units="m")
-        self.add_output("l_mi", val=np.zeros((n_bays)), units="m")
-
-    def compute(self, inputs, outputs):
-        mod_opt = self.options["modeling_options"]
-        n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
-        n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
-
-        r_foot = inputs["r_foot"]
-        r_head = inputs["r_head"]
-        L = inputs["height"]
-        q = inputs["q"]
-        l_osg = inputs["l_osg"]
-        l_tp = inputs["l_tp"]
-
-        gamma_b = inputs["gamma_b"]
-        gamma_t = inputs["gamma_t"]
-        beta_b = inputs["beta_b"]
-        beta_t = inputs["beta_t"]
-        tau_b = inputs["tau_b"]
-        tau_t = inputs["tau_t"]
-
-        # Do calculations to get the rough topology
-        xi = r_head / r_foot  # must be <= 1; taper towards the top
-        nu = 2 * np.pi / n_legs  # angle enclosed by two legs
-        psi_s = np.arctan(r_foot * (1 - xi) / L)  # spatial batter angle
-        psi_p = np.arctan(r_foot * (1 - xi) * np.sin(nu / 2.0) / L)
-
-        # Compute all bay heights
-        tmp = q ** np.arange(n_bays)
-        bay_heights = l_i = (L - l_osg - l_tp) / (np.sum(tmp) / tmp)
-
-        # Compute the starting elevations of the bays and the radii
-        lower_bay_heights = np.hstack((0.0, bay_heights))
-        lower_bay_radii = r_i = r_foot - np.tan(psi_s) * (l_osg + np.cumsum(lower_bay_heights))
-
-        # x joint layer info
-        l_mi = l_i * r_i[:-1] / (r_i[:-1] + r_i[1:])
-
-        gamma_i = (gamma_t - gamma_b) * (l_osg + np.cumsum(l_i) + l_mi) / (L - l_i[-1] + l_mi[-1] - l_tp) + gamma_b
-        gamma_i = np.hstack((gamma_b, gamma_i))
-
-        length = L - l_i[-1] - l_osg - l_tp
-        beta_i = (beta_t - beta_b) / length * np.cumsum(l_i) + beta_b
-        tau_i = (tau_t - tau_b) / length * np.cumsum(l_i) + tau_b
-
-        outputs["xi"] = xi
-        outputs["nu"] = nu
-        outputs["psi_s"] = psi_s
-        outputs["psi_p"] = psi_p
-        outputs["gamma_i"] = gamma_i
-        outputs["beta_i"] = beta_i
-        outputs["tau_i"] = tau_i
-        outputs["lower_bay_heights"] = lower_bay_heights
-        outputs["lower_bay_radii"] = lower_bay_radii
-        outputs["l_mi"] = l_mi
-
-
-class ComputeNodes(om.ExplicitComponent):
-    """
-    This component computes the xyz locations of each of the bay and leg nodes
-    within the jacket structure. Going from the parameterization outlined in the
-    Häfele paper to nodal information requires the intermediary values computed
-    in the previous component as well as some dimensioned properties of the jacket.
-    """
-
-    def initialize(self):
-        self.options.declare("modeling_options")
-
-    def setup(self):
-        mod_opt = self.options["modeling_options"]
-        n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
-        n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
-
-        self.add_input("nu", val=0.0)
-        self.add_input("psi_p", val=0.0)
-        self.add_input("lower_bay_heights", val=np.zeros((n_bays + 1)), units="m")
-        self.add_input("lower_bay_radii", val=np.zeros((n_bays + 1)), units="m")
-        self.add_input("l_mi", val=np.zeros((n_bays)), units="m")
-        self.add_input("l_osg", val=5.0, units="m")
         self.add_input("height", val=70.0, units="m")
         self.add_input("r_foot", val=10.0, units="m")
         self.add_input("r_head", val=6.0, units="m")
+        self.add_input("bay_spacing", val=np.linspace(0.1, 0.9, n_bays + 1))
 
         self.add_output("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)), units="m")
         self.add_output("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)), units="m")
@@ -150,75 +41,24 @@ class ComputeNodes(om.ExplicitComponent):
         n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
         n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
 
-        nu = inputs["nu"]
-        psi_p = inputs["psi_p"]
-        lower_bay_heights = inputs["lower_bay_heights"]
-        lower_bay_radii = inputs["lower_bay_radii"]
-        l_mi = inputs["l_mi"]
-        l_osg = inputs["l_osg"]
-        L = inputs["height"]
         r_foot = inputs["r_foot"]
         r_head = inputs["r_head"]
+        height = inputs["height"]
 
-        # Take in member properties, like diameters and thicknesses
-        bay_nodes = np.zeros((n_legs, n_bays + 1, 3))
-        bay_nodes[:, :, 2] = np.cumsum(lower_bay_heights)
-        bay_nodes[:, :, 2] += l_osg
+        leg_spacing = np.linspace(0, 1.0, n_bays + 2)
+        z_leg = leg_spacing * height
+        x_leg = leg_spacing * (r_head - r_foot) + r_foot
+        for i in range(n_legs):
+            outputs["leg_nodes"][i, :, 0] = x_leg * np.cos(i / n_legs * 2 * np.pi)
+            outputs["leg_nodes"][i, :, 1] = x_leg * np.sin(i / n_legs * 2 * np.pi)
+            outputs["leg_nodes"][i, :, 2] = z_leg
 
-        for idx in range(n_legs):
-            tmp = np.outer(lower_bay_radii, np.array([np.cos(nu * idx), np.sin(nu * idx)]))
-            bay_nodes[idx, :, 0:2] = tmp
-
-        leg_nodes = np.zeros((n_legs, n_bays + 2, 3))
-        tmp = l_mi / np.cos(psi_p)
-        leg_nodes[:, 1:-1, 2] = bay_nodes[:, :-1, 2] + tmp
-        leg_nodes[:, -1, 2] = L
-
-        leg_radii = np.interp(
-            leg_nodes[0, :, 2],
-            np.linspace(leg_nodes[0, 0, 2], leg_nodes[0, -1, 2], n_bays + 2),
-            np.linspace(r_foot[0], r_head[0], n_bays + 2),
-        )
-        for idx in range(n_legs):
-            tmp = np.outer(leg_radii, np.array([np.cos(nu * idx), np.sin(nu * idx)]))
-            leg_nodes[idx, :, 0:2] = tmp
-
-        outputs["bay_nodes"] = bay_nodes
-        outputs["leg_nodes"] = leg_nodes
-
-
-class ComputeDiameterAndThicknesses(om.ExplicitComponent):
-    """
-    This component computes the diameters and thicknesses of the legs and braces
-    following section 2.2 of the Häfele paper.
-    """
-
-    def initialize(self):
-        self.options.declare("modeling_options")
-
-    def setup(self):
-        mod_opt = self.options["modeling_options"]
-        n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
-        n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
-
-        self.add_input("d_l", val=1.4, units="m")
-        self.add_input("gamma_i", val=np.zeros((n_bays + 1)))
-        self.add_input("beta_i", val=np.zeros((n_bays)))
-        self.add_input("tau_i", val=np.zeros((n_bays)))
-
-        self.add_output("leg_thicknesses", val=np.zeros((n_bays + 1)), units="m")
-        self.add_output("brace_diameters", val=np.zeros((n_bays)), units="m")
-        self.add_output("brace_thicknesses", val=np.zeros((n_bays)), units="m")
-
-    def compute(self, inputs, outputs):
-        d_l = inputs["d_l"]
-        gamma_i = inputs["gamma_i"]
-        beta_i = inputs["beta_i"]
-        tau_i = inputs["tau_i"]
-
-        outputs["leg_thicknesses"] = t_l = d_l / (2 * gamma_i)
-        outputs["brace_diameters"] = d_b = beta_i * d_l
-        outputs["brace_thicknesses"] = t_b = tau_i * t_l[:-1]
+        z_bay = inputs["bay_spacing"] * height
+        x_bay = inputs["bay_spacing"] * (r_head - r_foot) + r_foot
+        for i in range(n_legs):
+            outputs["bay_nodes"][i, :, 0] = x_bay * np.cos(i / n_legs * 2 * np.pi)
+            outputs["bay_nodes"][i, :, 1] = x_bay * np.sin(i / n_legs * 2 * np.pi)
+            outputs["bay_nodes"][i, :, 2] = z_bay
 
 
 class ComputeFrame3DD(om.ExplicitComponent):
@@ -250,10 +90,10 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         self.add_input("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)), units="m")
         self.add_input("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)), units="m")
-        self.add_input("d_l", val=1.4, units="m")
-        self.add_input("leg_thicknesses", val=np.zeros((n_bays + 1)), units="m")
-        self.add_input("brace_diameters", val=np.zeros((n_bays)), units="m")
-        self.add_input("brace_thicknesses", val=np.zeros((n_bays)), units="m")
+        self.add_input("leg_diameter", val=1.4, units="m")
+        self.add_input("leg_thickness", val=0.1, units="m")
+        self.add_input("brace_diameters", val=np.ones((n_bays)), units="m")
+        self.add_input("brace_thicknesses", val=np.ones((n_bays)) * 0.1, units="m")
 
         self.add_discrete_input("material_names", val=n_mat * [""])
         self.add_input("E_mat", val=np.zeros([n_mat, 3]), units="Pa")
@@ -268,15 +108,18 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.add_input("gravity_foundation_mass", 0.0, units="kg")
         self.add_input("gravity_foundation_I", np.zeros(6), units="kg*m**2")
         self.add_input("tower_mass", val=0.0, units="kg")
-        self.add_input("tower_cost", val=0.0, units="USD")
 
         # For modal analysis only (loads captured in turbine_F & turbine_M)
         self.add_input("turbine_mass", val=0.0, units="kg")
         self.add_input("turbine_cg", val=np.zeros(3), units="m")
         self.add_input("turbine_I", np.zeros(6), units="kg*m**2")
 
+        n_node = 3 * n_legs * (n_bays + 1) + 1
+        self.add_output("jacket_nodes", np.zeros((n_node, 3)), units="m")
+
         n_elem = 2 * (n_legs * (n_bays + 1)) + 4 * (n_legs * n_bays) + int(x_mb) * n_legs + n_legs
 
+        self.add_output("jacket_elem_N", np.zeros((n_elem, 2)))
         self.add_output("jacket_elem_L", np.zeros(n_elem), units="m")
         self.add_output("jacket_elem_D", np.zeros(n_elem), units="m")
         self.add_output("jacket_elem_t", np.zeros(n_elem), units="m")
@@ -288,12 +131,11 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.add_output("jacket_elem_J0", np.zeros(n_elem), units="kg*m**2")
         self.add_output("jacket_elem_E", np.zeros(n_elem), units="Pa")
         self.add_output("jacket_elem_G", np.zeros(n_elem), units="Pa")
+        self.add_output("jacket_elem_rho", np.zeros(n_elem), units="kg/m**3")
         self.add_output("jacket_elem_sigma_y", np.zeros(n_elem), units="Pa")
         self.add_output("jacket_elem_qdyn", np.zeros((n_elem, n_dlc)), units="Pa")
         self.add_output("jacket_mass", 0.0, units="kg")
-        self.add_output("jacket_cost", 0.0, units="USD")
         self.add_output("structural_mass", val=0.0, units="kg")
-        self.add_output("structural_cost", val=0.0, units="USD")
 
         self.add_output("jacket_base_F", np.zeros((3, n_dlc)), units="N")
         self.add_output("jacket_base_M", np.zeros((3, n_dlc)), units="N*m")
@@ -347,6 +189,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
         node_indices = np.arange(1, n + 1)
         r = np.zeros(n)
         nodes = pyframe3dd.NodeData(node_indices, xyz[:, 0], xyz[:, 1], xyz[:, 2], r)
+        outputs["jacket_nodes"] = xyz
 
         # Create arrays to later reference the indices for each node. Needed because
         # Frame3DD expects a singular nodal array but we want to keep information
@@ -402,7 +245,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         # Add leg members.
         for jdx in range(n_bays + 1):
-            itube = cs.Tube(inputs["d_l"], inputs["leg_thicknesses"][jdx])
+            itube = cs.Tube(inputs["leg_diameter"], inputs["leg_thickness"])
             for idx in range(n_legs):
                 add_element(leg_nodes, leg_indices, bay_nodes, bay_indices, itube, idx, jdx, idx, jdx)
                 add_element(bay_nodes, bay_indices, leg_nodes, leg_indices, itube, idx, jdx, idx, jdx + 1)
@@ -470,18 +313,12 @@ class ComputeFrame3DD(om.ExplicitComponent):
         N1 = self.N1
         N2 = self.N2
 
-        # Populate mass and cost outputs
-        outputs["jacket_mass"] = np.sum(Area[:-n_legs] * rho[:-n_legs] * L[:-n_legs])
-        outputs["structural_mass"] = outputs["jacket_mass"] + inputs["tower_mass"]
-        outputs["structural_cost"] = (
-            outputs["jacket_cost"] + inputs["tower_cost"]
-        )  # TODO : actually compute the jacket cost
-
         # Modify last n_legs elements to make them rigid due to the ghost node
         E[-n_legs:] *= 1.0e8
         G[-n_legs:] *= 1.0e8
         rho[-n_legs:] = 1.0e-2
 
+        outputs["jacket_elem_N"] = connect_mat = np.c_[N1, N2] - 1  # Storing as 0-indexed
         outputs["jacket_elem_L"] = L
         outputs["jacket_elem_D"] = D
         outputs["jacket_elem_t"] = t
@@ -493,9 +330,9 @@ class ComputeFrame3DD(om.ExplicitComponent):
         outputs["jacket_elem_J0"] = J0
         outputs["jacket_elem_E"] = E
         outputs["jacket_elem_G"] = G
+        outputs["jacket_elem_rho"] = rho
         outputs["jacket_elem_sigma_y"] = inputs["sigma_y_mat"][imat]
         outputs["jacket_elem_qdyn"] = 1.0e2  # hardcoded value for now
-
         outputs["jacket_elem_sigma_y"][-n_legs:] *= 1e6
         outputs["jacket_elem_qdyn"][-n_legs:] *= 1e4
 
@@ -503,6 +340,11 @@ class ComputeFrame3DD(om.ExplicitComponent):
         roll = np.zeros(self.num_elements - 1)
 
         elements = pyframe3dd.ElementData(element, N1, N2, Area, Asx, Asy, J0, Ixx, Iyy, E, G, roll, rho)
+
+        # Populate mass and cost outputs
+        # TODO: Is there an "outfitting" factor for jackets.  Seems like it would be much smaller than monopiles
+        outputs["jacket_mass"] = np.sum(Area[:-n_legs] * rho[:-n_legs] * L[:-n_legs])
+        outputs["structural_mass"] = outputs["jacket_mass"] + inputs["tower_mass"]
 
         # ------ options ------------
         dx = -1.0
@@ -720,6 +562,121 @@ class JacketPost(om.ExplicitComponent):
             outputs["constr_global_buckling"][:, k] = results["Global"][:-n_legs]
 
 
+class JacketCost(om.ExplicitComponent):
+    """
+    Compute the jacket costs using textbook relations, much like the monopile calcs.
+
+    """
+
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        mod_opt = self.options["modeling_options"]
+        n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
+        n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
+        x_mb = mod_opt["WISDEM"]["FixedBottomSE"]["mud_brace"]
+        n_mat = mod_opt["materials"]["n_mat"]
+        n_node = 3 * n_legs * (n_bays + 1) + 1
+        n_elem = 2 * (n_legs * (n_bays + 1)) + 4 * (n_legs * n_bays) + int(x_mb) * n_legs + n_legs
+
+        self.add_input("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)), units="m")
+
+        self.add_discrete_input("material_names", val=n_mat * [""])
+        self.add_input("unit_cost_mat", val=np.zeros(n_mat), units="USD/kg")
+        self.add_input("labor_cost_rate", 0.0, units="USD/min")
+        self.add_input("painting_cost_rate", 0.0, units="USD/m/m")
+
+        self.add_input("jacket_nodes", np.zeros((n_node, 3)), units="m")
+        self.add_input("jacket_elem_N", np.zeros((n_elem, 2)))
+        self.add_input("jacket_elem_L", np.zeros(n_elem), units="m")
+        self.add_input("jacket_elem_D", np.zeros(n_elem), units="m")
+        self.add_input("jacket_elem_t", np.zeros(n_elem), units="m")
+        self.add_input("jacket_mass", 0.0, units="kg")
+
+        self.add_input("tower_cost", val=0.0, units="USD")
+
+        self.add_output("jacket_cost", 0.0, units="USD")
+        self.add_output("structural_cost", val=0.0, units="USD")
+
+    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+        mod_opt = self.options["modeling_options"]
+        n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
+        material_name = mod_opt["WISDEM"]["FixedBottomSE"]["material"]
+        eps = 1e-8
+
+        # Unpack inputs and ignore ghost nodes
+        leg_nodes = inputs["leg_nodes"]
+        connect_mat = np.int_(inputs["jacket_elem_N"][:-n_legs, :])
+        L = inputs["jacket_elem_L"][:-n_legs]
+        D = inputs["jacket_elem_D"][:-n_legs]
+        t = inputs["jacket_elem_t"][:-n_legs]
+        xyz = inputs["jacket_nodes"]
+        m_total = inputs["jacket_mass"]
+        n_edges = L.size
+        N0 = connect_mat[:, 0]
+        N1 = connect_mat[:, 1]
+
+        # Compute costs based on "Optimum Design of Steel Structures" by Farkas and Jarmai
+        imat = discrete_inputs["material_names"].index(material_name)
+        k_m = inputs["unit_cost_mat"][imat]  # 1.1 # USD / kg carbon steel plate
+        k_f = inputs["labor_cost_rate"]  # 1.0 # USD / min labor
+        k_p = inputs["painting_cost_rate"]  # USD / m^2 painting
+        k_e = 0.064  # Industrial electricity rate $/kWh https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=epmt_5_6_a
+        e_f = 15.9  # Electricity usage kWh/kg for steel
+        # e_fo = 26.9  # Electricity usage kWh/kg for stainless steel
+        theta = 3  # Manufacturing difficulty factor
+
+        # Prep vectors for elements and legs for some vector math
+        edge_vec = xyz[N0, :] - xyz[N1, :]
+        leg_vec = np.squeeze(leg_nodes[:, -1, :] - leg_nodes[:, 0, :])
+        leg_L = np.linalg.norm(leg_vec, axis=1)
+
+        # Get the angle of intersection between all edges (as vectors) and all legs (as vectors)
+        leg_alpha = np.arccos(np.dot(edge_vec, leg_vec.T) / np.outer(L, leg_L))
+        # If angle of intersection is close to 0 or 180, the edge is part of a leg
+        tol = np.deg2rad(5)
+        idx_leg = np.any((np.abs(leg_alpha) < tol) | (np.abs(leg_alpha - np.pi) < tol), axis=1)
+        D[idx_leg] = 0.0  # No double-counting time for leg elements since single piece
+
+        # Now determine which angle to use based on which leg a given edge node is on
+        edge_alpha = 0.5 * np.pi * np.ones(n_edges)
+        for k in range(n_legs):
+            tol = 1e-2 * leg_L[k]
+            sec1 = np.linalg.norm(np.squeeze(leg_nodes[k, -1, :])[np.newaxis, :] - xyz[N0, :], axis=1)
+            sec2 = np.linalg.norm(xyz[N0, :] - np.squeeze(leg_nodes[k, 0, :])[np.newaxis, :], axis=1)
+            on_leg_k = np.abs(leg_L[k] - sec1 - sec2) < tol
+            edge_alpha[on_leg_k] = leg_alpha[on_leg_k, k]
+        edge_alpha = np.minimum(edge_alpha, np.pi - edge_alpha) + eps
+
+        # Run manufacturing time estimate functions
+        weld_L = 2 * np.pi * D / np.sin(edge_alpha)  # Multiply by 2 for both ends
+        n_pieces = n_edges - np.count_nonzero(D)
+        t_cut = 2 * manu.steel_tube_cutgrind_time(theta, 0.5 * D, t, edge_alpha)  # Multiply by 2 for both ends
+        t_weld = manu.steel_tube_welding_time(theta, n_pieces, m_total, weld_L, t)
+        t_manufacture = t_cut + t_weld
+        K_f = k_f * t_manufacture
+
+        # Cost step 5) Painting by surface area
+        theta_p = 2
+        K_p = k_p * theta_p * np.pi * np.sum(D[:-n_legs] * L[:-n_legs])
+
+        # Material cost with waste fraction, but without outfitting,
+        K_m = 1.21 * np.sum(k_m * m_total)
+
+        # Electricity usage
+        K_e = k_e * (e_f * m_total)  # + e_fo * (coeff - 1.0) * m_total
+
+        # Assemble all costs for now
+        tempSum = K_m + K_e + K_p + K_f
+
+        # Capital cost share from BLS MFP by NAICS
+        K_c = 0.118 * tempSum / (1.0 - 0.118)
+
+        outputs["jacket_cost"] = K_c
+        outputs["structural_cost"] = outputs["jacket_cost"] + inputs["tower_cost"]
+
+
 # Assemble the system together in an OpenMDAO Group
 class JacketSE(om.Group):
     """
@@ -733,14 +690,7 @@ class JacketSE(om.Group):
     def setup(self):
         modeling_options = self.options["modeling_options"]
 
-        self.add_subsystem("greek", GetGreekLetters(modeling_options=modeling_options), promotes=["*"])
-        self.add_subsystem("nodes", ComputeNodes(modeling_options=modeling_options), promotes=["*"])
-        self.add_subsystem(
-            "properties", ComputeDiameterAndThicknesses(modeling_options=modeling_options), promotes=["*"]
-        )
+        self.add_subsystem("nodes", ComputeJacketNodes(modeling_options=modeling_options), promotes=["*"])
         self.add_subsystem("frame3dd", ComputeFrame3DD(modeling_options=modeling_options), promotes=["*"])
-        self.add_subsystem(
-            "post",
-            JacketPost(modeling_options=modeling_options),
-            promotes=["*"],
-        )
+        self.add_subsystem("post", JacketPost(modeling_options=modeling_options), promotes=["*"])
+        self.add_subsystem("cost", JacketCost(modeling_options=modeling_options), promotes=["*"])

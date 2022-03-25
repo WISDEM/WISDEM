@@ -1,6 +1,8 @@
 import numpy as np
-
 from wisdem.commonse import eps
+
+# Compute costs based on "Optimum Design of Steel Structures" by Farkas and Jarmai
+# All correlations are based in mm and all inputs are assumed to be in m and then converted within the functions
 
 
 def steel_cutting_plasma_time(length, thickness):

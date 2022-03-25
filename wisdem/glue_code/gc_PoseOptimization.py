@@ -1,9 +1,8 @@
 import os
 
+import numpy as np
 import openmdao.api as om
 from scipy.interpolate import PchipInterpolator
-
-import numpy as np
 
 
 class PoseOptimization(object):
@@ -852,11 +851,32 @@ class PoseOptimization(object):
                 ref=5.0,
             )
 
-        if jacket_opt["d_l"]["flag"]:
+        if jacket_opt["leg_diameter"]["flag"]:
             wt_opt.model.add_design_var(
-                "jacket.d_l",
-                lower=jacket_opt["d_l"]["lower_bound"],
-                upper=jacket_opt["d_l"]["upper_bound"],
+                "jacket.leg_diameter",
+                lower=jacket_opt["leg_diameter"]["lower_bound"],
+                upper=jacket_opt["leg_diameter"]["upper_bound"],
+            )
+
+        if jacket_opt["leg_thickness"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.leg_thickness",
+                lower=jacket_opt["leg_thickness"]["lower_bound"],
+                upper=jacket_opt["leg_thickness"]["upper_bound"],
+            )
+
+        if jacket_opt["brace_diameters"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.brace_diameters",
+                lower=jacket_opt["brace_diameters"]["lower_bound"],
+                upper=jacket_opt["brace_diameters"]["upper_bound"],
+            )
+
+        if jacket_opt["brace_thicknesses"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.brace_thicknesses",
+                lower=jacket_opt["brace_thicknesses"]["lower_bound"],
+                upper=jacket_opt["brace_thicknesses"]["upper_bound"],
             )
 
         if jacket_opt["height"]["flag"]:
@@ -866,67 +886,11 @@ class PoseOptimization(object):
                 upper=jacket_opt["height"]["upper_bound"],
             )
 
-        if jacket_opt["q"]["flag"]:
+        if jacket_opt["bay_spacing"]["flag"]:
             wt_opt.model.add_design_var(
-                "jacket.q",
-                lower=jacket_opt["q"]["lower_bound"],
-                upper=jacket_opt["q"]["upper_bound"],
-            )
-
-        if jacket_opt["l_osg"]["flag"]:
-            wt_opt.model.add_design_var(
-                "jacket.l_osg",
-                lower=jacket_opt["l_osg"]["lower_bound"],
-                upper=jacket_opt["l_osg"]["upper_bound"],
-            )
-
-        if jacket_opt["l_tp"]["flag"]:
-            wt_opt.model.add_design_var(
-                "jacket.l_tp",
-                lower=jacket_opt["l_tp"]["lower_bound"],
-                upper=jacket_opt["l_tp"]["upper_bound"],
-            )
-
-        if jacket_opt["gamma_b"]["flag"]:
-            wt_opt.model.add_design_var(
-                "jacket.gamma_b",
-                lower=jacket_opt["gamma_b"]["lower_bound"],
-                upper=jacket_opt["gamma_b"]["upper_bound"],
-            )
-
-        if jacket_opt["gamma_t"]["flag"]:
-            wt_opt.model.add_design_var(
-                "jacket.gamma_t",
-                lower=jacket_opt["gamma_t"]["lower_bound"],
-                upper=jacket_opt["gamma_t"]["upper_bound"],
-            )
-
-        if jacket_opt["beta_b"]["flag"]:
-            wt_opt.model.add_design_var(
-                "jacket.beta_b",
-                lower=jacket_opt["beta_b"]["lower_bound"],
-                upper=jacket_opt["beta_b"]["upper_bound"],
-            )
-
-        if jacket_opt["beta_t"]["flag"]:
-            wt_opt.model.add_design_var(
-                "jacket.beta_t",
-                lower=jacket_opt["beta_t"]["lower_bound"],
-                upper=jacket_opt["beta_t"]["upper_bound"],
-            )
-
-        if jacket_opt["tau_b"]["flag"]:
-            wt_opt.model.add_design_var(
-                "jacket.tau_b",
-                lower=jacket_opt["tau_b"]["lower_bound"],
-                upper=jacket_opt["tau_b"]["upper_bound"],
-            )
-
-        if jacket_opt["tau_t"]["flag"]:
-            wt_opt.model.add_design_var(
-                "jacket.tau_t",
-                lower=jacket_opt["tau_t"]["lower_bound"],
-                upper=jacket_opt["tau_t"]["upper_bound"],
+                "jacket.bay_spacing",
+                lower=jacket_opt["bay_spacing"]["lower_bound"],
+                upper=jacket_opt["bay_spacing"]["upper_bound"],
             )
 
         # -- Control --
@@ -1209,6 +1173,13 @@ class PoseOptimization(object):
             else:
                 print(
                     "WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced."
+                )
+        if blade_constr["t_sc_joint"]["flag"] and self.modeling["WISDEM"]["RotorSE"]["bjs"]:
+            if blade_opt["structure"]["spar_cap_ss"]["flag"] or blade_opt["structure"]["spar_cap_ps"]["flag"]:
+                wt_opt.model.add_constraint("rotorse.rs.bjs.t_sc_ratio_joint", upper=1.0)  # TODO add sparcap width and thickness. Could pack into array if upper can. Or just do two separately. Fine if they are always enforced together
+            else:
+                print(
+                    "WARNING: the ratio of joint-required to nominal spar cap thickness is enforced, but spar caps thickness is not an active design variable. The constraint is not enforced."
                 )
 
         if blade_constr["chord"]["flag"]:
