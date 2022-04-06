@@ -14,28 +14,21 @@ class TestRC(unittest.TestCase):
     def testBladeJointSizerBAR_USC(self):
 
         wisdem_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-        example_dir = os.path.join(wisdem_dir, "examples", "18_segmented_blade")  # get path example 03_blade
+        example_dir = os.path.join(wisdem_dir, "examples", "03_blade")  # get path example 03_blade
         fname_modeling_options = os.path.join(example_dir, "modeling_options.yaml")
         fname_wt_input = os.path.join(example_dir, "BAR_USC.yaml")
         fname_analysis_options = os.path.join(example_dir, "analysis_options_no_opt.yaml")
         accuracy = 0
-        wt_opt, modeling_options, analysis_options = run_wisdem(fname_wt_input, fname_modeling_options,
+        wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options,
                                                                 fname_analysis_options)
-        # TODO prevent model from creating output files. Also, maybe there's a way to just run the parts of the code being tested?
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.blade_mass"][0], 50063.19790792579, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.L_transition_joint"][0], 0.2427557944762739, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.t_sc_ratio_joint"][0], 2.3761676787299004, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.n_joint_bolt"][0], 36.53783575753797, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_mass"][0], 449.6091546753399, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_material_cost"][0], 1783.5469763758085, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.layer_start_nd_bjs"][2, 20], 0.10727560035555678, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.layer_start_nd_bjs"][3, 20], 0.5584724343531979, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.layer_end_nd_bjs"][2, 20], 0.44034799099288907, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.layer_end_nd_bjs"][3, 20], 0.8915448249905302, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.layer_offset_y_bjs"][2, 20], 0.11525697296129567, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.layer_offset_y_bjs"][3, 20], 0.11525697296129567, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.layer_width_bjs"][2, 20], 1.97304313090705, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.layer_width_bjs"][3, 20], 1.97304313090705, places=accuracy)
+
+        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.blade_mass"][0], 51002.33629166093, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.L_transition_joint"][0], -0.004017126893942291, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.t_reinf_ratio_joint"][0], 0.9899571827651443, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.w_reinf_ratio_joint"][0], 1.2087641190997038, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.n_joint_bolt"][0], 38.05368523091661, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_mass"][0], 430.94139294963134, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_material_cost"][0], 1857.5411987710845, places=accuracy)
 
 
 def suite():

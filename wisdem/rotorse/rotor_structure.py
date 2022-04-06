@@ -1329,6 +1329,8 @@ class BladeJointSizing(ExplicitComponent):
         ss_layer_i = self.layer_name.index(reinf_mat_ss)
         ps_layer_i = self.layer_name.index(reinf_mat_ps)
         t_reinf = t_layer[ss_layer_i][i_span]
+        if t_reinf == 0.:
+            raise Exception('The joint reinforcement layer thickness is 0 mm. Please check the input geometry yaml.')
         bolt_spacing = bolt_spacing_dia * d_bolt
         n_bolt_max = chord * ratio_SCmax // bolt_spacing  # max # bolts that can fit in 0.8 chord
         w_hole_bolthead = d_bolt * 2#7 / 3
