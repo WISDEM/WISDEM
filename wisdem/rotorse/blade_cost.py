@@ -975,7 +975,7 @@ class infusion_process(object):
             self.vacuum_bag["n_pers"], self.peel_ply["area"], self.vacuum_bag["rate"], 0, 0
         )
 
-        # Pull of full vacuuum
+        # Pull of full vacuum
         self.vacuum_pull["labor"], self.vacuum_pull["ct"] = compute_labor_ct(
             self.vacuum_pull["n_pers"], self.peel_ply["area"], self.vacuum_pull["rate"], 0, 1
         )
