@@ -260,6 +260,7 @@ class Gearbox(om.ExplicitComponent):
             m_gearbox = inputs["gearbox_mass_user"]
             R_gearbox = inputs["gearbox_radius_user"]
             L_gearbox = inputs["gearbox_length_user"]
+            outputs["carrier_mass"] = 0.0
 
         I = np.zeros(3)
         I[0] = 0.5 * R_gearbox**2
