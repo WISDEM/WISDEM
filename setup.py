@@ -41,6 +41,7 @@ setup(
         "numpy",
         "openmdao>=3.18",
         "openpyxl",
+        "nlopt",
         "pandas",
         "pytest",
         "python-benedict",
