@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-import os
-
 # Tower analysis
 # Optimization by flag
 # Two load cases
+import os
+
 import numpy as np
 import openmdao.api as om
+
 from wisdem.towerse.tower import TowerSE
 from wisdem.commonse.fileIO import save_data
 
