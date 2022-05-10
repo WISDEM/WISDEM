@@ -14,7 +14,7 @@ dependencies:
   - mpi4py
   - nlopt
   - numpy
-  - openmdao>=3.4, <3.17
+  - openmdao>=3.18
   - openpyxl
   - pandas
   - pip
