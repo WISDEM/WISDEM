@@ -133,7 +133,7 @@ class WT_RNTA(om.Group):
             self.connect("blade.internal_structure_2d_fem.joint_position", "rotorse.re.precomp.joint_position")
             self.connect("blade.internal_structure_2d_fem.joint_mass", "rotorse.re.precomp.joint_mass")
             if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                #self.connect("rotorse.rs.bjs.joint_mass", "rotorse.re.precomp.joint_mass")
+                # self.connect("rotorse.rs.bjs.joint_mass", "rotorse.re.precomp.joint_mass")
                 self.connect("blade.internal_structure_2d_fem.joint_bolt", "rotorse.rs.bjs.joint_bolt")
             self.connect("materials.name", "rotorse.re.precomp.mat_name")
             self.connect("materials.orth", "rotorse.re.precomp.orth")
@@ -192,7 +192,9 @@ class WT_RNTA(om.Group):
                 self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.rs.bjs.coord_xy_interp")
                 self.connect("blade.interp_airfoils.r_thick_interp", "rotorse.rs.bjs.rthick")
                 self.connect("blade.internal_structure_2d_fem.joint_position", "rotorse.rs.bjs.joint_position")
-                self.connect("blade.internal_structure_2d_fem.joint_nonmaterial_cost", "rotorse.rs.bjs.joint_nonmaterial_cost")
+                self.connect(
+                    "blade.internal_structure_2d_fem.joint_nonmaterial_cost", "rotorse.rs.bjs.joint_nonmaterial_cost"
+                )
                 # self.connect("blade.outer_shape_bem.thickness", "rotorse.rs.bjs.blade_thickness")
                 self.connect("blade.internal_structure_2d_fem.layer_offset_y_pa", "rotorse.rs.bjs.layer_offset_y_pa")
                 self.connect("blade.compute_coord_xy_dim.coord_xy_dim", "rotorse.rs.bjs.coord_xy_dim")
@@ -201,10 +203,9 @@ class WT_RNTA(om.Group):
                 self.connect("blade.outer_shape_bem.pitch_axis", "rotorse.rs.bjs.pitch_axis")
                 self.connect("materials.unit_cost", "rotorse.rs.bjs.unit_cost")
 
-
             # Connections to RotorCost
             if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                 # Inputs to be split between inner and outer blade portions
+                # Inputs to be split between inner and outer blade portions
                 self.connect("blade.high_level_blade_props.blade_length", "rotorse.split.blade_length")
                 self.connect("blade.outer_shape_bem.s", "rotorse.split.s")
                 self.connect("blade.pa.chord_param", "rotorse.split.chord")
@@ -231,8 +232,13 @@ class WT_RNTA(om.Group):
                 self.connect("materials.fwf", ["rotorse.rc_in.fwf", "rotorse.rc_out.fwf"])
                 self.connect("materials.fvf", ["rotorse.rc_in.fvf", "rotorse.rc_out.fvf"])
                 self.connect("materials.roll_mass", ["rotorse.rc_in.roll_mass", "rotorse.rc_out.roll_mass"])
-                self.connect("blade.internal_structure_2d_fem.definition_layer", ["rotorse.rc_in.definition_layer", "rotorse.rc_out.definition_layer"])
-                self.connect("blade.internal_structure_2d_fem.layer_web", ["rotorse.rc_in.layer_web","rotorse.rc_out.layer_web"])
+                self.connect(
+                    "blade.internal_structure_2d_fem.definition_layer",
+                    ["rotorse.rc_in.definition_layer", "rotorse.rc_out.definition_layer"],
+                )
+                self.connect(
+                    "blade.internal_structure_2d_fem.layer_web", ["rotorse.rc_in.layer_web", "rotorse.rc_out.layer_web"]
+                )
 
             else:
                 self.connect("blade.high_level_blade_props.blade_length", "rotorse.rc.blade_length")
@@ -324,23 +330,22 @@ class WT_RNTA(om.Group):
             self.connect("nacelle.transformer_mass_user", "drivese.transformer_mass_user")
 
             if modeling_options["WISDEM"]["DriveSE"]["direct"]:
-                self.connect("nacelle.nose_diameter", "drivese.nose_diameter")  # only used in direct
-                self.connect("nacelle.nose_wall_thickness", "drivese.nose_wall_thickness")  # only used in direct
-                self.connect(
-                    "nacelle.bedplate_wall_thickness", "drivese.bedplate_wall_thickness"
-                )  # only used in direct
+                self.connect("nacelle.nose_diameter", "drivese.nose_diameter")
+                self.connect("nacelle.nose_wall_thickness", "drivese.nose_wall_thickness")
+                self.connect("nacelle.bedplate_wall_thickness", "drivese.bedplate_wall_thickness")
             else:
-                self.connect("nacelle.hss_length", "drivese.L_hss")  # only used in geared
-                self.connect("nacelle.hss_diameter", "drivese.hss_diameter")  # only used in geared
-                self.connect("nacelle.hss_wall_thickness", "drivese.hss_wall_thickness")  # only used in geared
+                self.connect("nacelle.hss_length", "drivese.L_hss")
+                self.connect("nacelle.hss_diameter", "drivese.hss_diameter")
+                self.connect("nacelle.hss_wall_thickness", "drivese.hss_wall_thickness")
                 self.connect("nacelle.hss_material", "drivese.hss_material")
-                self.connect("nacelle.planet_numbers", "drivese.planet_numbers")  # only used in geared
-                self.connect("nacelle.gear_configuration", "drivese.gear_configuration")  # only used in geared
-                self.connect("nacelle.bedplate_flange_width", "drivese.bedplate_flange_width")  # only used in geared
-                self.connect(
-                    "nacelle.bedplate_flange_thickness", "drivese.bedplate_flange_thickness"
-                )  # only used in geared
-                self.connect("nacelle.bedplate_web_thickness", "drivese.bedplate_web_thickness")  # only used in geared
+                self.connect("nacelle.planet_numbers", "drivese.planet_numbers")
+                self.connect("nacelle.gear_configuration", "drivese.gear_configuration")
+                self.connect("nacelle.gearbox_mass_user", "drivese.gearbox_mass_user")
+                self.connect("nacelle.gearbox_radius_user", "drivese.gearbox_radius_user")
+                self.connect("nacelle.gearbox_length_user", "drivese.gearbox_length_user")
+                self.connect("nacelle.bedplate_flange_width", "drivese.bedplate_flange_width")
+                self.connect("nacelle.bedplate_flange_thickness", "drivese.bedplate_flange_thickness")
+                self.connect("nacelle.bedplate_web_thickness", "drivese.bedplate_web_thickness")
 
             self.connect("hub.hub_material", "drivese.hub_material")
             self.connect("hub.spinner_material", "drivese.spinner_material")
