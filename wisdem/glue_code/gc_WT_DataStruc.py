@@ -1622,6 +1622,16 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
         ivc.add_output("joint_mass", val=0.0, units="kg", desc="Mass of the joint.")
         ivc.add_output("joint_nonmaterial_cost", val=0.0, units="USD", desc="Cost of the joint.")
         ivc.add_discrete_output("joint_bolt", val="M48", desc="Type of bolt: M30, M36, or M48")
+        ivc.add_discrete_output(
+            "reinforcement_layer_ss",
+            val="joint_reinf_ss",
+            desc="Layer identifier for the reinforcement layer at the join where bolts are inserted, suction side",
+        )
+        ivc.add_discrete_output(
+            "reinforcement_layer_ps",
+            val="joint_reinf_ps",
+            desc="Layer identifier for the reinforcement layer at the join where bolts are inserted, pressure side",
+        )
 
         ivc.add_output("d_f", val=0.0, units="m", desc="Diameter of the fastener")
         ivc.add_output("sigma_max", val=0.0, units="Pa", desc="Max stress on bolt")

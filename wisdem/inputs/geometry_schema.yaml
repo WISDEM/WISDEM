@@ -376,7 +376,16 @@ properties:
                                         description: Cost of the joint not from materials.
                                         default: 0.0
                                         minimum: 0.0
+                                        unit: USD
                                         maximum: 1.e+6
+                                    reinforcement_layer_ss:
+                                        type: string
+                                        description: Layer identifier for the joint reinforcement on the suction side
+                                        default: joint_reinf_ss
+                                    reinforcement_layer_ps:
+                                        type: string
+                                        description: Layer identifier for the joint reinforcement on the pressure side
+                                        default: joint_reinf_ps
                     # cfd_geometry:
                         # type: object
                         # TODO

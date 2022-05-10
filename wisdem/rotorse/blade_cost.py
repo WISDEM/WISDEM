@@ -796,7 +796,7 @@ class material_cutting_process(object):
             if (
                 self.materials["orth"][i_mat] == 1
                 and self.materials["component_id"][i_mat] > 1
-                and self.materials["component_id"][i_mat] < 3
+                and self.materials["component_id"][i_mat] < 4
             ):
                 # Number of rolls
                 self.materials["n_rolls"][i_mat] = (

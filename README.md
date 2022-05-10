@@ -52,7 +52,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
         conda install -y cython git jsonschema make matplotlib nlopt numpy openmdao openpyxl pandas pip pyside2 pytest python-benedict pyyaml ruamel_yaml scipy setuptools simpy sortedcontainers statsmodels swig
         conda install -y pyoptsparse                 # (Linux only)
-        conda install -y gfortran pyoptsparse        # (Mac only)
+        conda install -y gfortran pyoptsparse        # (Mac only without Homebrew or Macports compilers)
         conda install -y m2w64-toolchain libpython   # (Windows only)
         pip install marmot-agents
         git clone https://github.com/WISDEM/WISDEM.git

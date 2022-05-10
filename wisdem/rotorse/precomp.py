@@ -822,9 +822,7 @@ class Profile:
         y = np.array(y)
 
         # separate into 2 halves
-        for i in range(len(x)):
-            if x[i + 1] >= x[i]:
-                break
+        i = np.argmin(x)
 
         xu = x[i::-1]
         yu = y[i::-1]

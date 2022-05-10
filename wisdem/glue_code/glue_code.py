@@ -195,6 +195,12 @@ class WT_RNTA(om.Group):
                 self.connect(
                     "blade.internal_structure_2d_fem.joint_nonmaterial_cost", "rotorse.rs.bjs.joint_nonmaterial_cost"
                 )
+                self.connect(
+                    "blade.internal_structure_2d_fem.reinforcement_layer_ss", "rotorse.rs.bjs.reinforcement_layer_ss"
+                )
+                self.connect(
+                    "blade.internal_structure_2d_fem.reinforcement_layer_ps", "rotorse.rs.bjs.reinforcement_layer_ps"
+                )
                 # self.connect("blade.outer_shape_bem.thickness", "rotorse.rs.bjs.blade_thickness")
                 self.connect("blade.internal_structure_2d_fem.layer_offset_y_pa", "rotorse.rs.bjs.layer_offset_y_pa")
                 self.connect("blade.compute_coord_xy_dim.coord_xy_dim", "rotorse.rs.bjs.coord_xy_dim")
@@ -214,8 +220,8 @@ class WT_RNTA(om.Group):
                 else:
                     self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.split.coord_xy_interp")
                 self.connect("blade.ps.layer_thickness_param", "rotorse.split.layer_thickness")
-                self.connect("rotorse.rs.bjs.layer_start_nd_bjs", "rotorse.split.layer_start_nd")
-                self.connect("rotorse.rs.bjs.layer_end_nd_bjs", "rotorse.split.layer_end_nd")
+                self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.split.layer_start_nd")
+                self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rotorse.split.layer_end_nd")
                 self.connect("blade.internal_structure_2d_fem.web_start_nd", "rotorse.split.web_start_nd")
                 self.connect("blade.internal_structure_2d_fem.web_end_nd", "rotorse.split.web_end_nd")
                 self.connect("blade.internal_structure_2d_fem.joint_position", "rotorse.split.joint_position")
