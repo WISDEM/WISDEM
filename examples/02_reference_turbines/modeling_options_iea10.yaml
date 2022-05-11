@@ -15,15 +15,11 @@ WISDEM:
         frame3dd:
             shear: True
             geom: True
-            tol: 1e-6
-            modal_method: 2
     FixedBottomSE:
         flag: True
-        soil_springs: True
+        soil_springs: False # Setting this True crashes the eigenvalue solver on Github actions
         frame3dd:
             shear: True
             geom: True
-            tol: 1e-6
-            modal_method: 2
     BOS:
         flag: True
