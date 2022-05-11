@@ -2733,7 +2733,7 @@ class MooringProperties(om.ExplicitComponent):
             line_obj = mp.getLineProps(1e3 * d[0], type=line_mat[0])
 
         if not line_obj is None:
-            outputs["line_mass_density"] = line_obj.mlin
+            outputs["line_mass_density"] = line_obj.m
             outputs["line_stiffness"] = line_obj.EA
             outputs["line_breaking_load"] = line_obj.MBL
             outputs["line_cost_rate"] = line_obj.cost
