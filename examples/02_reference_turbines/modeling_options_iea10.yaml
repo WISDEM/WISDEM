@@ -12,8 +12,18 @@ WISDEM:
         flag: True
     TowerSE:
         flag: True
+        frame3dd:
+            shear: True
+            geom: True
+            tol: 1e-6
+            modal_method: 2
     FixedBottomSE:
         flag: True
         soil_springs: True
+        frame3dd:
+            shear: True
+            geom: True
+            tol: 1e-6
+            modal_method: 2
     BOS:
         flag: True
