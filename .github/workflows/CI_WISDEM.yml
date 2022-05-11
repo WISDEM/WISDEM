@@ -12,7 +12,7 @@ jobs:
       fail-fast: False
       matrix:
         os: ["ubuntu-latest", "windows-latest"]
-        python-version: ["3.8"]
+        python-version: ["3.8", "3.9"]
 
     steps:
       - uses: actions/checkout@v2
@@ -22,17 +22,17 @@ jobs:
           miniconda-version: "latest"
           channels: conda-forge
           auto-update-conda: true
-          python-version: 3.8
+          python-version: matrix.python-version
           environment-file: environment.yml
           activate-environment: "test"
 
       # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
-        #shell: pwsh # putting in a shell command makes for compile linking problems later
-        # (if you use the shell here, cannot use 'compiler' package)
+        # if you use the shell here, cannot use 'compiler' package due to linker conflicts
+        shell: pwsh
         run: |
-          conda install -y petsc4py mpi4py compilers pyoptsparse
+          conda install -y petsc4py mpi4py gfortran pyoptsparse
 
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
