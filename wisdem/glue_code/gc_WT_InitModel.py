@@ -901,18 +901,12 @@ def assign_tower_values(wt_opt, modeling_options, tower):
             wt_opt["towerse.tower.rna_M"] = M
 
         if modeling_options["flags"]["monopile"]:
+            # Monopile has the option for joint tower-monopile analysis, so load it here too.  Not true for jackets
             wt_opt["fixedse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
             wt_opt["fixedse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
             wt_opt["fixedse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
             wt_opt["fixedse.monopile.rna_F"] = F
             wt_opt["fixedse.monopile.rna_M"] = M
-
-        if modeling_options["flags"]["jacket"]:
-            wt_opt["fixedse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
-            wt_opt["fixedse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
-            wt_opt["fixedse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
-            wt_opt["fixedse.jacket.rna_F"] = F
-            wt_opt["fixedse.jacket.rna_M"] = M
 
     return wt_opt
 

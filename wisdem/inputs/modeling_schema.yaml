@@ -289,7 +289,7 @@ properties:
                             modal_method:
                                 type: number
                                 enum: [1, 2]
-                                default: 1
+                                default: 2
                                 description: Eigenvalue solver 1=Subspace-Jacobi iteration, 2=Stodola (matrix iteration)
                             tol:
                                 type: number

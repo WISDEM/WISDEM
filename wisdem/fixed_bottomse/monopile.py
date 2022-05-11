@@ -298,10 +298,6 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_input("tower_E", np.zeros(ntow_sec), units="Pa")
         self.add_input("tower_G", np.zeros(ntow_sec), units="Pa")
 
-        self.add_input("rna_mass", val=0.0, units="kg")
-        self.add_input("rna_I", np.zeros(6), units="kg*m**2")
-        self.add_input("rna_cg", np.zeros(3), units="m")
-
         # point loads
         self.add_input("rna_F", np.zeros((3, nLC)), units="N")
         self.add_input("rna_M", np.zeros((3, nLC)), units="N*m")
@@ -318,6 +314,9 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_input("turbine_mass", val=0.0, units="kg")
         self.add_input("turbine_cg", val=np.zeros(3), units="m")
         self.add_input("turbine_I", np.zeros(6), units="kg*m**2")
+        self.add_input("rna_mass", val=0.0, units="kg")
+        self.add_input("rna_I", np.zeros(6), units="kg*m**2")
+        self.add_input("rna_cg", np.zeros(3), units="m")
 
         # combined wind-water distributed loads
         self.add_input("Px", val=np.zeros((n_full, nLC)), units="N/m")
