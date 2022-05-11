@@ -539,8 +539,8 @@ class JacketPost(om.ExplicitComponent):
         Myy = inputs["jacket_Myy"]
         Mzz = inputs["jacket_Mzz"]
 
-        M = np.sqrt(Mxx ** 2 + Myy ** 2)
-        V = np.sqrt(Vx ** 2 + Vy ** 2)
+        M = np.sqrt(Mxx**2 + Myy**2)
+        V = np.sqrt(Vx**2 + Vy**2)
 
         # See http://svn.code.sourceforge.net/p/frame3dd/code/trunk/doc/Frame3DD-manual.html#structuralmodeling
         # print(Fz.shape, Az.shape, M.shape, r.shape, Iyy.shape)
