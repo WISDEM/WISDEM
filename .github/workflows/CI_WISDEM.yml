@@ -11,8 +11,8 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
-        os: ["ubuntu-latest", "windows-latest"]
-        python-version: ["3.8", "3.9"]
+        os: [ubuntu-latest, windows-latest]
+        python-version: [3.7, 3.8]
 
     steps:
       - uses: actions/checkout@v2
@@ -22,7 +22,7 @@ jobs:
           miniconda-version: "latest"
           channels: conda-forge
           auto-update-conda: true
-          python-version: matrix.python-version
+          python-version: ${{ matrix.python-version }}
           environment-file: environment.yml
           activate-environment: "test"
 
