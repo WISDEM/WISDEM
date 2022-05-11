@@ -337,7 +337,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
         outputs["jacket_elem_qdyn"][-n_legs:] *= 1e4
 
         element = np.arange(1, self.num_elements + 1)
-        roll = np.zeros(self.num_elements - 1)
+        roll = np.zeros(self.num_elements)
 
         elements = pyframe3dd.ElementData(element, N1, N2, Area, Asx, Asy, J0, Ixx, Iyy, E, G, roll, rho)
 
@@ -438,7 +438,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
             add_gravity,
         )
 
-        # self.frame.write("system.3dd")
+        # self.frame.write("jacket.3dd")
         # self.frame.draw()
         displacements, forces, reactions, internalForces, mass, modal = self.frame.run()
 
