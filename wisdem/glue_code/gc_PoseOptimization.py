@@ -1449,8 +1449,8 @@ class PoseOptimization(object):
             if float_constr[f"{modestr}_period"]["flag"]:
                 wt_opt.model.add_constraint(
                     f"floatingse.{modestr}_period",
-                    lower=float_constr[modestr]["lower_bound"],
-                    upper=float_constr[modestr]["upper_bound"],
+                    lower=float_constr[f"{modestr}_period"]["lower_bound"],
+                    upper=float_constr[f"{modestr}_period"]["upper_bound"],
                 )
 
         return wt_opt
