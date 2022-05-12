@@ -1446,7 +1446,7 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("floatingse.constr_system_global_buckling", upper=1.0)
 
         for modestr in ["surge", "sway", "heave", "roll", "pitch", "yaw"]:
-            if float_constr[modestr]["flag"]:
+            if float_constr[f"{modestr}_period"]["flag"]:
                 wt_opt.model.add_constraint(
                     f"floatingse.{modestr}_period",
                     lower=float_constr[modestr]["lower_bound"],
