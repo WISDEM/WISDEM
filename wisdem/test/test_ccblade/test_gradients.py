@@ -16,6 +16,7 @@ import os
 import unittest
 
 import numpy as np
+
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 
 basepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../examples/_airfoil_files/")
@@ -462,7 +463,7 @@ class TestGradients(unittest.TestCase):
             dP_dchord_fd[:, i] = (Pd - self.P) / delta
 
         np.testing.assert_allclose(dT_dchord_fd, dT_dchord, rtol=5e-6, atol=1e-8)
-        np.testing.assert_allclose(dY_dchord_fd, dY_dchord, rtol=7e-5, atol=1e-8)
+        np.testing.assert_allclose(dY_dchord_fd, dY_dchord, rtol=1e-4, atol=1e-8)
         np.testing.assert_allclose(dZ_dchord_fd, dZ_dchord, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dQ_dchord_fd, dQ_dchord, rtol=7e-5, atol=1e-8)
         np.testing.assert_allclose(dMy_dchord_fd, dMy_dchord, rtol=4e-4, atol=1e-8)
