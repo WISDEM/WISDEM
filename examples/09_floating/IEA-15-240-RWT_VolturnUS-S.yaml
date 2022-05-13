@@ -464,8 +464,8 @@ components:
             distance_tt_hub: 5.614
             overhang: 12.0313
             drag_coefficient: 0.5
-            distance_hub2mb: 1.0
-            distance_mb2mb: 1.2
+            distance_hub_mb: 1.0
+            distance_mb_mb: 1.2
             lss_diameter: [3.0, 3.0]
             lss_wall_thickness: [0.1, 0.1]
             nose_diameter: [2.2, 2.2]

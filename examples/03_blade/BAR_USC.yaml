@@ -419,8 +419,8 @@ components:
             diameter: 3.0
             uptilt: 0.06981317007977318
             distance_tt_hub: 3.0
-            distance_hub2mb: 1.912
-            distance_mb2mb: 0.368
+            distance_hub_mb: 1.912
+            distance_mb_mb: 0.368
             overhang: 7.0
             lss_diameter: [0.577, 0.577]
             lss_wall_thickness: [0.288, 0.288]
@@ -441,8 +441,6 @@ components:
             lss_material: steel
             hss_material: steel
             bedplate_material: steel
-            distance_hub_mb: 2.0
-            distance_mb_mb: 1.0
             generator_mass_user: 0.0
             generator_rpm_efficiency_user:
                 grid: [0.0, 1.0]
