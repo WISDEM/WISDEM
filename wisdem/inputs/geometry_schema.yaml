@@ -366,12 +366,12 @@ properties:
                                         default: 0.0
                                         minimum: 0.0
                                         maximum: 1.e+6
-                                    bolt: 
+                                    bolt:
                                         type: string
                                         default: M30
                                         enum: [M18, M24, M30, M36, M42, M48, M52]
                                         description: Bolt size for the blade bolted joint
-                                    nonmaterial_cost: 
+                                    nonmaterial_cost:
                                         type: number
                                         description: Cost of the joint not from materials.
                                         default: 0.0
@@ -521,7 +521,7 @@ properties:
                                     - values
                                 properties:
                                     grid:
-                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                        $ref: "#/definitions/distributed_data/length"
                                     values:
                                         $ref: "#/definitions/distributed_data/length"
                             gear_ratio:
@@ -531,6 +531,27 @@ properties:
                                 minimum: 1
                                 maximum: 1000
                                 default: 1.0
+                            gearbox_length_user:
+                                type: number
+                                description: User input override of gearbox length along shaft, only used when using gearbox_mass_user is > 0
+                                unit: meter
+                                minimum: 0.
+                                maximum: 20.
+                                default: 0.0
+                            gearbox_radius_user:
+                                type: number
+                                description: User input override of gearbox radius, only used when using gearbox_mass_user is > 0
+                                unit: m
+                                minimum: 0.
+                                maximum: 20.0
+                                default: 0.0
+                            gearbox_mass_user:
+                                type: number
+                                description: User input override of gearbox mass
+                                unit: kg
+                                minimum: 0.
+                                maximum: 1.e+9
+                                default: 0.0
                             gearbox_efficiency:
                                 type: number
                                 description: Efficiency of the gearbox system.

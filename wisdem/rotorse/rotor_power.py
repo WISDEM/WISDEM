@@ -7,11 +7,11 @@ January 2020
 
 import logging
 
+import numpy as np
 from openmdao.api import Group, ExplicitComponent
 from scipy.optimize import brentq, minimize, minimize_scalar
 from scipy.interpolate import PchipInterpolator
 
-import numpy as np
 from wisdem.ccblade.Polar import Polar
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.utilities import smooth_abs, smooth_min, linspace_with_deriv
@@ -426,7 +426,7 @@ class ComputePowerCurve(ExplicitComponent):
         driveEta = float(inputs["gearbox_efficiency"]) * gen_eff
 
         # Set baseline power production
-        myout, derivs = self.ccblade.evaluate(Uhub, Omega_tsr*30./np.pi, pitch, coefficients=True)
+        myout, derivs = self.ccblade.evaluate(Uhub, Omega_tsr * 30.0 / np.pi, pitch, coefficients=True)
         P_aero, T, Q, M, Cp_aero, Ct_aero, Cq_aero, Cm_aero = [
             myout[key] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
         ]
@@ -483,7 +483,9 @@ class ComputePowerCurve(ExplicitComponent):
                 const = {}
                 const["type"] = "eq"
                 const["fun"] = const_Urated
-                params_rated = minimize(lambda x: x[1], x0, method="slsqp", bounds=bnds, constraints=const, tol=TOL)
+                params_rated = minimize(
+                    lambda x: x[1], x0, method="slsqp", bounds=bnds, constraints=const, tol=TOL, options={"disp": False}
+                )
 
                 if params_rated.success and not np.isnan(params_rated.x[1]):
                     U_rated = params_rated.x[1]
@@ -553,7 +555,9 @@ class ComputePowerCurve(ExplicitComponent):
                 const = {}
                 const["type"] = "eq"
                 const["fun"] = const_Urated_Tpeak
-                params_rated = minimize(lambda x: x[1], x0, method="slsqp", bounds=bnds, constraints=const, tol=TOL)
+                params_rated = minimize(
+                    lambda x: x[1], x0, method="slsqp", bounds=bnds, constraints=const, tol=TOL, options={"disp": False}
+                )
 
                 if params_rated.success and not np.isnan(params_rated.x[1]):
                     U_rated = params_rated.x[1]
@@ -664,7 +668,7 @@ class ComputePowerCurve(ExplicitComponent):
                     bounds=[bnds],
                     constraints=const,
                     tol=TOL,
-                    options={"maxiter": 20},  #'catol':0.01*max_T},
+                    options={"maxiter": 20, "disp": False},  #'catol':0.01*max_T},
                 )
                 pitch[i] = params.x[0]
             else:
@@ -742,6 +746,7 @@ class ComputePowerCurve(ExplicitComponent):
                             bounds=bnds,
                             constraints=const,
                             tol=TOL,
+                            options={"disp": False},
                         )
                         if params.success and not np.isnan(params.x[0]):
                             pitch[i] = params.x[0]
@@ -762,8 +767,8 @@ class ComputePowerCurve(ExplicitComponent):
                 Q[i_3:] = P[i_3:] / Omega[i_3:]
                 M[i_3:] = 0
                 pitch[i_3:] = 0
-                Cp[i_3:] = P[i_3:] / (0.5 * inputs["rho"] * np.pi * R_tip ** 2 * Uhub[i_3:] ** 3)
-                Cp_aero[i_3:] = P_aero[i_3:] / (0.5 * inputs["rho"] * np.pi * R_tip ** 2 * Uhub[i_3:] ** 3)
+                Cp[i_3:] = P[i_3:] / (0.5 * inputs["rho"] * np.pi * R_tip**2 * Uhub[i_3:] ** 3)
+                Cp_aero[i_3:] = P_aero[i_3:] / (0.5 * inputs["rho"] * np.pi * R_tip**2 * Uhub[i_3:] ** 3)
                 Ct_aero[i_3:] = 0
                 Cq_aero[i_3:] = 0
                 Cm_aero[i_3:] = 0
@@ -1047,7 +1052,7 @@ def eval_unsteady(alpha, cl, cd, cm):
     unsteady["alpha0"] = alpha0
     unsteady["alpha1"] = alpha1
     unsteady["alpha2"] = alpha2
-    unsteady["Cd0"] = 0.
+    unsteady["Cd0"] = 0.0
     unsteady["Cm0"] = cm0
     unsteady["Cn1"] = cn1
     unsteady["Cn2"] = cn2

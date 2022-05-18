@@ -1,0 +1,71 @@
+# Default mooring line property coefficients for MoorPy
+# The following is YAML syntax and follows a heirarchy of
+# lineProps -> [line material name] -> [line material coefficients]
+
+# All possible lineProps coefficients are as follow:
+#    mass_0    :     # linear mass density offset [kg/m]
+#    mass_d    :     # linear mass density per diameter [kg/m^2]
+#    mass_d2   :     # linear mass density per diameter^2 [kg/m^3]
+#    mass_d3   :     # linear mass density per diameter^3 [kg/m^4]
+#
+#    EA_0      :     # stiffness offset [N]
+#    EA_d      :     # stiffness per diameter [N/m]
+#    EA_d2     :     # stiffness per diameter^2 [N/m^2]
+#    EA_d3     :     # stiffness per diameter^3 [N/m^3]
+#
+#    MBL_0     :     # minimum breaking load offset [N]
+#    MBL_d     :     # minimum breaking load per diameter [N/m]
+#    MBL_d2    :     # minimum breaking load per diameter^2 [N/m^2]
+#    MBL_d3    :     # minimum breaking load per diameter^3 [N/m^3]
+#
+#    dvol_dnom :     # volume-equivalent diameter per nominal diameter [-]
+#
+#    cost_0    :     # cost offset [$/m]
+#    cost_d    :     # cost per diameter [$/m^2]
+#    cost_d2   :     # cost per diameter^2 [$/m^3]
+#    cost_d3   :     # cost per diameter^2 [$/m^4]
+#    cost_mass :     # cost per mass [$/kg]
+#    cost_EA   :     # cost per stiffness [$/m/N]
+#    cost_MBL  :     # cost per MBL [$/m/N]
+
+
+lineProps:
+
+  chain       :            # R4 grade studless chain
+    mass_d2   :  19.9e3    # linear mass density per diameter^2 [kg/m^3]
+    EA_d2     :  85.4e9    # stiffness per diameter^2 [N/m^2]
+    MBL_d     :  66.72e6   # minimum breaking load per diameter [N/m]
+    MBL_d2    : 482.2e6    # minimum breaking load per diameter^2 [N/m^2]
+    dvol_dnom :   1.8      # volume-equivalent diameter per nominal diameter [-]
+    cost_mass :   2.585    # cost per mass [$/kg]
+
+
+  chain_studlink :         # R4 grade studlink chain
+    mass_d2   :  19.9e3    # linear mass density per diameter^2 [kg/m^3]
+    EA_d2     :  85.4e9    # stiffness per diameter^2 [N/m^2]
+    MBL_d     :  66.72e6   # minimum breaking load per diameter [N/m]
+    MBL_d2    : 482.2e6    # minimum breaking load per diameter^2 [N/m^2]
+    dvol_dnom :   1.89     # volume-equivalent diameter per nominal diameter [-]
+    cost_mass :   2.585    # cost per mass [$/kg]
+
+
+  polyester   :            # polyester synthetic rope
+    mass_d2   :  797.8     # linear mass density per diameter^2 [kg/m^3]
+    EA_d2     :  1.09e9    # stiffness per diameter^2 [N/m^2]
+    MBL_d2    :  170.5e6   # minimum breaking load per diameter^2 [N/m^2]
+    dvol_dnom :  0.86      # volume-equivalent diameter per nominal diameter [-]
+    cost_MBL  :  1.65e-05  # cost per MBL [$/m/N]
+
+  nylon       :            # nylon synthetic rope
+    mass_d2   :  647.6     # linear mass density per diameter^2 [kg/m^3]
+    EA_d2     :  1.18e8    # stiffness per diameter^2 [N/m^2]
+    MBL_d2    :  139.4e6   # minimum breaking load per diameter^2 [N/m^2]
+    dvol_dnom :  0.85      # volume-equivalent diameter per nominal diameter [-]
+    cost_MBL  :  4.29e-05  # cost per MBL [$/m/N]
+
+  wire        :
+    mass_d2   :  3989.7    # linear mass density per diameter^2 [kg/m^3]
+    EA_d2     :  4.04e10   # stiffness per diameter^2 [N/m^2]
+    MBL_d2    :  633.36e6  # minimum breaking load per diameter^2 [N/m^2]
+    dvol_dnom :  0.8       # volume-equivalent diameter per nominal diameter [-]
+    cost_d2   :  0.04542e6 # cost per diameter^2 with d in meters [$/m]

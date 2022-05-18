@@ -521,9 +521,15 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     wt_opt["blade.internal_structure_2d_fem.joint_bolt"] = internal_structure_2d_fem["joint"]["bolt"]
     wt_opt["blade.internal_structure_2d_fem.joint_position"] = internal_structure_2d_fem["joint"]["position"]
     wt_opt["blade.internal_structure_2d_fem.joint_mass"] = internal_structure_2d_fem["joint"]["mass"]
-    wt_opt["blade.internal_structure_2d_fem.joint_nonmaterial_cost"] = internal_structure_2d_fem["joint"]["nonmaterial_cost"]
-    wt_opt["blade.internal_structure_2d_fem.reinforcement_layer_ss"] = internal_structure_2d_fem["joint"]["reinforcement_layer_ss"]
-    wt_opt["blade.internal_structure_2d_fem.reinforcement_layer_ps"] = internal_structure_2d_fem["joint"]["reinforcement_layer_ps"]
+    wt_opt["blade.internal_structure_2d_fem.joint_nonmaterial_cost"] = internal_structure_2d_fem["joint"][
+        "nonmaterial_cost"
+    ]
+    wt_opt["blade.internal_structure_2d_fem.reinforcement_layer_ss"] = internal_structure_2d_fem["joint"][
+        "reinforcement_layer_ss"
+    ]
+    wt_opt["blade.internal_structure_2d_fem.reinforcement_layer_ps"] = internal_structure_2d_fem["joint"][
+        "reinforcement_layer_ps"
+    ]
 
     # Blade root
     wt_opt["blade.internal_structure_2d_fem.d_f"] = internal_structure_2d_fem["root"]["d_f"]
@@ -701,6 +707,9 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
             wt_opt["nacelle.bedplate_flange_thickness"] = nacelle["drivetrain"]["bedplate_flange_thickness"]
             wt_opt["nacelle.bedplate_web_thickness"] = nacelle["drivetrain"]["bedplate_web_thickness"]
             wt_opt["nacelle.gear_configuration"] = nacelle["drivetrain"]["gear_configuration"].lower()
+            wt_opt["nacelle.gearbox_mass_user"] = nacelle["drivetrain"]["gearbox_mass_user"]
+            wt_opt["nacelle.gearbox_radius_user"] = nacelle["drivetrain"]["gearbox_radius_user"]
+            wt_opt["nacelle.gearbox_length_user"] = nacelle["drivetrain"]["gearbox_length_user"]
             wt_opt["nacelle.planet_numbers"] = nacelle["drivetrain"]["planet_numbers"]
             wt_opt["nacelle.hss_material"] = nacelle["drivetrain"]["hss_material"]
 
@@ -871,20 +880,33 @@ def assign_tower_values(wt_opt, modeling_options, tower):
     wt_opt["tower.outfitting_factor"] = tower["internal_structure_2d_fem"]["outfitting_factor"]
 
     if "Loading" in modeling_options["WISDEM"]:
+        F = []
+        M = []
+        n_dlc = modeling_options["WISDEM"]["n_dlc"]
+        for k in range(n_dlc):
+            F = np.append(F, modeling_options["WISDEM"]["Loading"]["loads"][k]["force"])
+            M = np.append(M, modeling_options["WISDEM"]["Loading"]["loads"][k]["moment"])
+        F = F.reshape((n_dlc, 3)).T
+        M = M.reshape((n_dlc, 3)).T
+
         if modeling_options["flags"]["tower"]:
             wt_opt["towerse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
             wt_opt["towerse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
             wt_opt["towerse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
-            F = []
-            M = []
             n_dlc = modeling_options["WISDEM"]["n_dlc"]
             for k in range(n_dlc):
                 kstr = "" if n_dlc <= 1 else str(k + 1)
                 wt_opt[f"towerse.env{kstr}.Uref"] = modeling_options["WISDEM"]["Loading"]["loads"][k]["velocity"]
-                F = np.append(F, modeling_options["WISDEM"]["Loading"]["loads"][k]["force"])
-                M = np.append(M, modeling_options["WISDEM"]["Loading"]["loads"][k]["moment"])
-            wt_opt["towerse.tower.rna_F"] = F.reshape((n_dlc, 3)).T
-            wt_opt["towerse.tower.rna_M"] = M.reshape((n_dlc, 3)).T
+            wt_opt["towerse.tower.rna_F"] = F
+            wt_opt["towerse.tower.rna_M"] = M
+
+        if modeling_options["flags"]["monopile"]:
+            # Monopile has the option for joint tower-monopile analysis, so load it here too.  Not true for jackets
+            wt_opt["fixedse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
+            wt_opt["fixedse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
+            wt_opt["fixedse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
+            wt_opt["fixedse.monopile.rna_F"] = F
+            wt_opt["fixedse.monopile.rna_M"] = M
 
     return wt_opt
 
@@ -1491,7 +1513,10 @@ def assign_material_values(wt_opt, modeling_options, materials):
                 S[i, :] = materials[i]["S"]
             else:
                 if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                    raise Exception("The blade joint sizer model is activated and requires the material shear strength S, which is not defined in the yaml for material " + materials[i]["name"])
+                    raise Exception(
+                        "The blade joint sizer model is activated and requires the material shear strength S, which is not defined in the yaml for material "
+                        + materials[i]["name"]
+                    )
 
         else:
             raise ValueError("The flag orth must be set to either 0 or 1. Error in material " + name[i])

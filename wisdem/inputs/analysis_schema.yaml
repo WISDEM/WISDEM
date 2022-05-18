@@ -1339,7 +1339,23 @@ properties:
                     stress: *vonmises
                     global_buckling: *globalb
                     shell_buckling: *shellb
-
+                    surge_period: &period
+                        type: object
+                        default: {}
+                        description: Ensure that the rigid body period stays within bounds
+                        properties:
+                            flag: *flag
+                            lower_bound: &periodminmax
+                                type: number
+                                default: 1.0
+                                minimum: 0.01
+                                unit: s
+                            upper_bound: *periodminmax
+                    sway_period: *period
+                    heave_period: *period
+                    roll_period: *period
+                    pitch_period: *period
+                    yaw_period: *period
 
     merit_figure:
         type: string

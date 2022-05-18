@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
+
 import wisdem.floatingse.mooring as mm
 
 
@@ -58,16 +59,17 @@ class TestMooring(unittest.TestCase):
 
         npt.assert_almost_equal(self.outputs["operational_heel_restoring_force"][[1, 3, 5]], 0.0, 2)
         self.assertGreater(self.outputs["operational_heel_restoring_force"][0], 0.0)
-        self.assertGreater(self.outputs["operational_heel_restoring_force"][2], 1e3)
-        self.assertGreater(self.outputs["operational_heel_restoring_force"][4], 1e3)
+        self.assertGreater(np.abs(self.outputs["operational_heel_restoring_force"][2]), 1e3)
+        self.assertGreater(np.abs(self.outputs["operational_heel_restoring_force"][4]), 1e3)
 
         npt.assert_almost_equal(self.outputs["survival_heel_restoring_force"][[1, 3, 5]], 0.0, 2)
         self.assertGreater(
             self.outputs["survival_heel_restoring_force"][0], self.outputs["operational_heel_restoring_force"][0]
         )
-        self.assertGreater(self.outputs["survival_heel_restoring_force"][2], 1e3)
+        self.assertGreater(np.abs(self.outputs["survival_heel_restoring_force"][2]), 1e3)
         self.assertGreater(
-            self.outputs["survival_heel_restoring_force"][4], self.outputs["operational_heel_restoring_force"][4]
+            np.abs(self.outputs["survival_heel_restoring_force"][4]),
+            np.abs(self.outputs["operational_heel_restoring_force"][4]),
         )
 
         self.assertAlmostEqual(self.outputs["mooring_mass"], 6 * 270 * 0.1 + 6 * 100)

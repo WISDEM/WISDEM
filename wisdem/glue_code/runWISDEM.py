@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import warnings
 
 import numpy as np
 import openmdao.api as om
@@ -13,12 +14,14 @@ from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
 
 np.warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+# Suppress the maxfev warnings is scipy _minpack_py, line:175
+warnings.simplefilter("ignore", RuntimeWarning, lineno=175)
 
 if MPI:
     # from openmdao.api import PetscImpl as impl
     # from mpi4py import MPI
     # from petsc4py import PETSc
-    from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
+    from wisdem.commonse.mpi_tools import subprocessor_loop, subprocessor_stop, map_comm_heirarchical
 
 
 def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overridden_values=None, run_only=False):
@@ -38,11 +41,15 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         max_cores = MPI.COMM_WORLD.Get_size()
 
         if max_cores > n_DV:
-            raise ValueError("ERROR: please reduce the number of cores, currently set to " +
-             str(max_cores) + ", to the number of finite differences " + str(n_DV) +
-             ", which is equal to the number of design variables DV for forward differencing" + 
-             " and DV times 2 for central differencing," + 
-              " or the parallelization logic will not work")
+            raise ValueError(
+                "ERROR: please reduce the number of cores, currently set to "
+                + str(max_cores)
+                + ", to the number of finite differences "
+                + str(n_DV)
+                + ", which is equal to the number of design variables DV for forward differencing"
+                + " and DV times 2 for central differencing,"
+                + " or the parallelization logic will not work"
+            )
 
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD) evaluations based on the number of design variables (DV).
         n_FD = min([max_cores, n_DV])

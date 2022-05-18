@@ -12,10 +12,10 @@ from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAe
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, remap2grid, trailing_edge_smoothing
 
 try:
-    from INN_interface.INN import INN
     from INN_interface import utils
-    from INN_interface.cst import AirfoilShape as AirfoilShape_cst
     from INN_interface.cst import CSTAirfoil
+    from INN_interface.cst import AirfoilShape as AirfoilShape_cst
+    from INN_interface.INN import INN
 
     INN_loaded = True
 except:
@@ -240,6 +240,19 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             )
             nacelle_ivc.add_output(
                 "gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive"
+            )
+            nacelle_ivc.add_output("gearbox_mass_user", val=0.0, units="kg", desc="User override of gearbox mass.")
+            nacelle_ivc.add_output(
+                "gearbox_radius_user",
+                val=0.0,
+                units="m",
+                desc="User override of gearbox radius (only used if gearbox_mass_user is > 0).",
+            )
+            nacelle_ivc.add_output(
+                "gearbox_length_user",
+                val=0.0,
+                units="m",
+                desc="User override of gearbox length (only used if gearbox_mass_user is > 0).",
             )
             nacelle_ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
             if modeling_options["flags"]["nacelle"]:
@@ -1606,11 +1619,19 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
             val=0.0,
             desc="Spanwise position of the segmentation joint.",
         )
-        ivc.add_output("joint_mass", val=0.0, units='kg', desc="Mass of the joint.")
+        ivc.add_output("joint_mass", val=0.0, units="kg", desc="Mass of the joint.")
         ivc.add_output("joint_nonmaterial_cost", val=0.0, units="USD", desc="Cost of the joint.")
         ivc.add_discrete_output("joint_bolt", val="M48", desc="Type of bolt: M30, M36, or M48")
-        ivc.add_discrete_output("reinforcement_layer_ss", val="joint_reinf_ss", desc="Layer identifier for the reinforcement layer at the join where bolts are inserted, suction side")
-        ivc.add_discrete_output("reinforcement_layer_ps", val="joint_reinf_ps", desc="Layer identifier for the reinforcement layer at the join where bolts are inserted, pressure side")
+        ivc.add_discrete_output(
+            "reinforcement_layer_ss",
+            val="joint_reinf_ss",
+            desc="Layer identifier for the reinforcement layer at the join where bolts are inserted, suction side",
+        )
+        ivc.add_discrete_output(
+            "reinforcement_layer_ps",
+            val="joint_reinf_ps",
+            desc="Layer identifier for the reinforcement layer at the join where bolts are inserted, pressure side",
+        )
 
         ivc.add_output("d_f", val=0.0, units="m", desc="Diameter of the fastener")
         ivc.add_output("sigma_max", val=0.0, units="Pa", desc="Max stress on bolt")
@@ -2712,7 +2733,7 @@ class MooringProperties(om.ExplicitComponent):
             line_obj = mp.getLineProps(1e3 * d[0], type=line_mat[0])
 
         if not line_obj is None:
-            outputs["line_mass_density"] = line_obj.mlin
+            outputs["line_mass_density"] = line_obj.m
             outputs["line_stiffness"] = line_obj.EA
             outputs["line_breaking_load"] = line_obj.MBL
             outputs["line_cost_rate"] = line_obj.cost
