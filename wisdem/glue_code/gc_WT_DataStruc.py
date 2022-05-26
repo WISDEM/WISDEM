@@ -12,9 +12,6 @@ from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAe
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, remap2grid, trailing_edge_smoothing
 
 try:
-    from INN_interface import utils
-    from INN_interface.cst import CSTAirfoil
-    from INN_interface.cst import AirfoilShape as AirfoilShape_cst
     from INN_interface.INN import INN
 
     INN_loaded = True
