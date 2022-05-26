@@ -1404,10 +1404,12 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("floatingse.constr_fixed_margin", upper=1.0)
 
         if float_constr["variable_ballast_capacity"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_variable_margin", upper=1.0)
+            wt_opt.model.add_constraint("floatingse.constr_variable_margin", lower=0.0, upper=1.0)
 
         if float_constr["metacentric_height"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.metacentric_height", lower=0.0)
+            wt_opt.model.add_constraint(
+                "floatingse.metacentric_height", lower=float_constr["metacentric_height"]["lower_bound"]
+            )
 
         if float_constr["freeboard_margin"]["flag"]:
             wt_opt.model.add_constraint("floatingse.constr_freeboard_heel_margin", upper=1.0)
