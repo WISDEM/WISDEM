@@ -1,16 +1,13 @@
 import numpy as np
 import openmdao.api as om
+
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.utilization_dnvgl as util_dnvgl
 import wisdem.commonse.utilization_constraints as util_con
 from wisdem.commonse import NFREQ, gravity
 from wisdem.commonse.cylinder_member import NULL, MEMMAX, MemberLoads, get_nfull
-
-NNODES_MAX = 1000
-NELEM_MAX = 1000
-RIGID = 1e30
-EPS = 1e-6
+from wisdem.floatingse.floating_system import RIGID, NELEM_MAX, NNODES_MAX
 
 
 class PlatformLoads(om.ExplicitComponent):
@@ -582,8 +579,8 @@ class FloatingPost(om.ExplicitComponent):
         Myy = inputs["platform_Myy"][:nelem, :]
         Mzz = inputs["platform_Mzz"][:nelem, :]
 
-        M = np.sqrt(Mxx ** 2 + Myy ** 2)
-        V = np.sqrt(Vx ** 2 + Vy ** 2)
+        M = np.sqrt(Mxx**2 + Myy**2)
+        V = np.sqrt(Vx**2 + Vy**2)
 
         # Initialize outputs
         outputs["constr_platform_stress"] = NULL * np.ones((NELEM_MAX, n_dlc))
