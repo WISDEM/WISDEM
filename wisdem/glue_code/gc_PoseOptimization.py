@@ -1439,13 +1439,13 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("floatingse.constr_anchor_lateral", lower=0.0)
 
         if float_constr["stress"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_system_stress", upper=1.0)
+            wt_opt.model.add_constraint("floatingse.constr_platform_stress", upper=1.0)
 
         if float_constr["shell_buckling"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_system_shell_buckling", upper=1.0)
+            wt_opt.model.add_constraint("floatingse.constr_platform_shell_buckling", upper=1.0)
 
         if float_constr["global_buckling"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_system_global_buckling", upper=1.0)
+            wt_opt.model.add_constraint("floatingse.constr_platform_global_buckling", upper=1.0)
 
         for modestr in ["surge", "sway", "heave", "roll", "pitch", "yaw"]:
             if float_constr[f"{modestr}_period"]["flag"]:
