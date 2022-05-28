@@ -2,6 +2,8 @@ import copy
 
 import numpy as np
 import openmdao.api as om
+from sortedcontainers import SortedDict
+
 import wisdem.commonse.frustum as frustum
 import wisdem.commonse.utilities as util
 import wisdem.commonse.manufacturing as manufacture
@@ -10,7 +12,6 @@ import wisdem.commonse.utilization_dnvgl as util_dnvgl
 import wisdem.commonse.utilization_eurocode as util_euro
 import wisdem.commonse.utilization_constraints as util_con
 from wisdem.commonse import eps, gravity
-from sortedcontainers import SortedDict
 from wisdem.commonse.wind_wave_drag import CylinderEnvironment
 
 NULL = -9999
@@ -47,8 +48,8 @@ def I_cyl(r_i, r_o, h, m):
         r_o = r_o.flatten()
     else:
         n = 1
-    Ixx = Iyy = (m / 12.0) * (3.0 * (r_i ** 2.0 + r_o ** 2.0) + h ** 2.0)
-    J0 = 0.5 * m * (r_i ** 2.0 + r_o ** 2.0)
+    Ixx = Iyy = (m / 12.0) * (3.0 * (r_i**2.0 + r_o**2.0) + h**2.0)
+    J0 = 0.5 * m * (r_i**2.0 + r_o**2.0)
     return np.c_[Ixx, Iyy, J0, np.zeros((n, 3))]
 
 
@@ -242,7 +243,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         xyz0 = inputs["joint1"]
         xyz1 = inputs["joint2"]
         dxyz = xyz1 - xyz0
-        h_col = np.sqrt(np.sum(dxyz ** 2))
+        h_col = np.sqrt(np.sum(dxyz**2))
         lthick = inputs["layer_thickness"]
         lthick = 0.5 * (lthick[:, :-1] + lthick[:, 1:])
 
@@ -737,7 +738,7 @@ class ShellMassCost(om.ExplicitComponent):
         e_fo = 26.9  # Electricity usage kWh/kg for stainless steel
 
         # Cost Step 1) Cutting flat plates for taper using plasma cutter
-        cutLengths = 2.0 * np.sqrt((Rt - Rb) ** 2.0 + H ** 2.0)  # Factor of 2 for both sides
+        cutLengths = 2.0 * np.sqrt((Rt - Rb) ** 2.0 + H**2.0)  # Factor of 2 for both sides
         # Cost Step 2) Rolling plates
         # Cost Step 3) Welding rolled plates into shells (set difficulty factor based on tapering with logistic function)
         theta_F = 4.0 - 3.0 / (1 + np.exp(-5.0 * (taper - 0.75)))
@@ -1129,7 +1130,7 @@ class MemberComplex(om.ExplicitComponent):
         A_web = h_web * t_web
         A_flange = w_flange * t_flange
         A_stiff = n_stiff * (A_web + A_flange)
-        Ix_stiff = 0.5 * n_stiff * (A_web * R_w ** 2 + A_flange * R_f ** 2)
+        Ix_stiff = 0.5 * n_stiff * (A_web * R_w**2 + A_flange * R_f**2)
         Iz_stiff = 2 * Ix_stiff
         t_eff = A_stiff / (2 * np.pi * R_w)
 
@@ -1183,7 +1184,7 @@ class MemberComplex(om.ExplicitComponent):
         k_m = util.sectionalInterp(s_section, s_full, inputs["unit_cost_full"])
         R_w = 0.5 * (Rb + Rt) - t_full - 0.5 * h_web
         R_f = 0.5 * (Rb + Rt) - t_full - h_web - 0.5 * t_flange
-        Ix_stiff = 0.5 * n_stiff * (A_web * R_w ** 2 + A_flange * R_f ** 2)
+        Ix_stiff = 0.5 * n_stiff * (A_web * R_w**2 + A_flange * R_f**2)
         Iz_stiff = 2 * Ix_stiff
 
         # Total mass of cylinder
@@ -1223,7 +1224,7 @@ class MemberComplex(om.ExplicitComponent):
         e_fo = 26.9  # Electricity usage kWh/kg for stainless steel
 
         # Cost Step 1) Cutting flat plates for taper using plasma cutter
-        cutLengths = 2.0 * np.sqrt((Rt - Rb) ** 2.0 + H ** 2.0)  # Factor of 2 for both sides
+        cutLengths = 2.0 * np.sqrt((Rt - Rb) ** 2.0 + H**2.0)  # Factor of 2 for both sides
         # Cost Step 2) Rolling plates
         # Cost Step 3) Welding rolled plates into shells (set difficulty factor based on tapering with logistic function)
         theta_F = 4.0 - 3.0 / (1 + np.exp(-5.0 * (taper - 0.75)))
@@ -1321,7 +1322,7 @@ class MemberComplex(om.ExplicitComponent):
             self.insert_section(s0[k], s1[k], iprop)
 
         # Compute bulkhead mass independent of shell
-        m_bulk = coeff_bulk * rho_bulk * np.pi * R_id_bulk ** 2 * t_bulk
+        m_bulk = coeff_bulk * rho_bulk * np.pi * R_id_bulk**2 * t_bulk
         outputs["bulkhead_mass"] = m_bulk.sum()
 
         z_cg = 0.0 if outputs["bulkhead_mass"] == 0.0 else np.dot(z_bulk, m_bulk) / m_bulk.sum()
@@ -1329,7 +1330,7 @@ class MemberComplex(om.ExplicitComponent):
 
         # Compute moments of inertia at keel
         # Assume bulkheads are just simple thin discs with radius R_od-t_wall and mass already computed
-        J0 = 0.5 * m_bulk * R_id_bulk ** 2
+        J0 = 0.5 * m_bulk * R_id_bulk**2
         Ixx = Iyy = 0.5 * J0
         dz = z_bulk - z_full[0]
         I_keel = np.zeros((3, 3))
@@ -1359,7 +1360,7 @@ class MemberComplex(om.ExplicitComponent):
 
         # Cost Step 3) Painting (two sided)
         theta_p = 1.0
-        K_p = k_p * theta_p * 2 * (np.pi * R_id_bulk ** 2.0).sum()
+        K_p = k_p * theta_p * 2 * (np.pi * R_id_bulk**2.0).sum()
 
         # Material cost, without outfitting
         K_m = np.sum(k_m * m_bulk)
@@ -1472,8 +1473,8 @@ class MemberComplex(om.ExplicitComponent):
             self.insert_section(s0[k], s1[k], iprop)
 
         # Material volumes by section
-        V_web = np.pi * (R_wo ** 2 - R_wi ** 2) * t_web
-        V_flange = np.pi * (R_fo ** 2 - R_fi ** 2) * w_flange
+        V_web = np.pi * (R_wo**2 - R_wi**2) * t_web
+        V_flange = np.pi * (R_fo**2 - R_fi**2) * w_flange
 
         # Ring mass by volume by section
         m_web = rho_stiff * V_web
@@ -1521,7 +1522,7 @@ class MemberComplex(om.ExplicitComponent):
             * theta_p
             * 2
             * np.pi
-            * np.sum(R_wo ** 2.0 - R_wi ** 2.0 + 0.5 * (R_fo + R_fi) * (2 * w_flange + 2 * t_flange) - R_fo * t_web)
+            * np.sum(R_wo**2.0 - R_wi**2.0 + 0.5 * (R_fo + R_fi) * (2 * w_flange + 2 * t_flange) - R_fo * t_web)
         )
 
         # Material cost, without outfitting
@@ -1676,6 +1677,8 @@ class MemberComplex(om.ExplicitComponent):
 
         # Convert non-dimensional to dimensional
         s_grid = np.array(list(self.sections.keys()))
+        _, idx = np.unique(s_grid.round(6), return_index=True)  # Ensure no duplicates
+        s_grid = s_grid[idx]
         r_grid = 0.5 * np.interp(s_grid, s_full, d_full)
         n_nodes = s_grid.size
         nodes = np.outer(s_grid, dxyz) + xyz0[np.newaxis, :]
@@ -1859,8 +1862,8 @@ class MemberHydro(om.ExplicitComponent):
         # 2nd moment of area for circular cross section
         # Note: Assuming Iwater here depends on "water displacement" cross-section
         # and not actual moment of inertia type of cross section (thin hoop)
-        outputs["Iwater"] = 0.25 * np.pi * r_waterline ** 4.0
-        outputs["Awater"] = np.pi * r_waterline ** 2.0
+        outputs["Iwater"] = 0.25 * np.pi * r_waterline**4.0
+        outputs["Awater"] = np.pi * r_waterline**2.0
 
         # Calculate diagonal entries of added mass matrix
         temp = np.linspace(z_under[0], z_under[-1], 200)
@@ -1872,9 +1875,9 @@ class MemberHydro(om.ExplicitComponent):
         # Lxy = np.sqrt((xyz[:, 0].max() - xyz[:, 0].min()) ** 2 + (xyz[:, 1].max() - xyz[:, 1].min()) ** 2)
         D = 2 * r_under.max()
         # Lxy = np.maximum(Lxy, D)
-        m_a[2] = (1.0 / 6.0) * rho_water * D ** 3.0  # A33 heave * Lxy *
+        m_a[2] = (1.0 / 6.0) * rho_water * D**3.0  # A33 heave * Lxy *
         m_a[3:5] = (
-            np.pi * rho_water * np.trapz((z_under - z_cb) ** 2.0 * r_under ** 2.0, z_under)
+            np.pi * rho_water * np.trapz((z_under - z_cb) ** 2.0 * r_under**2.0, z_under)
         )  # A44 roll, A55 pitch
         m_a[5] = 0.0  # A66 yaw
         outputs["added_mass"] = m_a
@@ -2195,8 +2198,8 @@ class CylinderPostFrame(om.ExplicitComponent):
         Myy = inputs["cylinder_Myy"]
         Mzz = inputs["cylinder_Mzz"]
 
-        M = np.sqrt(Mxx ** 2 + Myy ** 2)
-        V = np.sqrt(Vx ** 2 + Vy ** 2)
+        M = np.sqrt(Mxx**2 + Myy**2)
+        V = np.sqrt(Vx**2 + Vy**2)
 
         # Geom properties
         Az = itube.Area
