@@ -839,8 +839,8 @@ materials:
       area_density_dry: 6.230769230769231
       component_id: 4
    -  name: glass_biax
-      description: Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy
-      source: Vectorply E-LT-5500, Hybrid Rule of Mixtures
+      description: (+-45)6 PPG-Devold DB810- E05—a fabric infused with Epikote MGS RIMR 135/Epicure RIMH 1366 epoxy resin
+      source: (+-45)6 PPG-Devold DB810- E05—a fabric infused with Epikote MGS RIMR 135/Epicure RIMH 1366 epoxy resin
       orth: 1.0
       rho: 1940.0
       E: [11023100000.0, 11023100000.0, 16047700000.0]
@@ -863,8 +863,8 @@ materials:
       component_id: 3
       roll_mass: 181.4368
    -  name: glass_triax
-      description: Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy
-      source: Vectorply E-LT-5500, Hybrid Rule of Mixtures
+      description: ((±45)(0)2)s Saertex U14EU920-00940-T1300 and Saertex VU-90079-00830-01270—fabrics infused with Vantico TDT 177-155.
+      source: ((+-45)(0)2)s Saertex U14EU920-00940-T1300 and Saertex VU-90079-00830-01270—fabrics infused with Vantico TDT 177-155.
       orth: 1.0
       rho: 1940.0
       E: [28211400000.0, 16238800000.0, 15835500000.0]
@@ -898,4 +898,4 @@ control:
     shutdown: {limit_type: gen_speed, limit_value: 2.0}
 environment: {air_density: 1.225, air_dyn_viscosity: 1.81e-05, weib_shape_parameter: 2.0, air_speed_sound: 340.0, shear_exp: 0.2, water_density: 1025.0, water_dyn_viscosity: 0.0013351, soil_shear_modulus: 140000000.0, soil_poisson: 0.4, gravity: 9.80665, air_pressure: 103500.0, air_vapor_pressure: 1700.0, water_depth: 0.0, V_mean: 0.0}
 bos: {plant_turbine_spacing: 7, plant_row_spacing: 7, commissioning_pct: 0.01, decommissioning_pct: 0.15, distance_to_substation: 50.0, distance_to_interconnection: 8.0, interconnect_voltage: 130, distance_to_landfall: 100, distance_to_site: 100, port_cost_per_month: 2000000.0, site_auction_price: 0.0, site_assessment_plan_cost: 0.0, site_assessment_cost: 0.0, construction_operations_plan_cost: 0.0, boem_review_cost: 0.0, design_install_plan_cost: 0.0}
-costs: {wake_loss_factor: 0.15, fixed_charge_rate: 0.065, bos_per_kW: 446.0, opex_per_kW: 43.0, turbine_number: 120, labor_rate: 58.8, painting_rate: 30.0, blade_mass_cost_coeff: 14.6, hub_mass_cost_coeff: 3.9, pitch_system_mass_cost_coeff: 22.1, spinner_mass_cost_coeff: 11.1, lss_mass_cost_coeff: 11.9, bearing_mass_cost_coeff: 4.5, gearbox_mass_cost_coeff: 12.9, hss_mass_cost_coeff: 6.8, generator_mass_cost_coeff: 12.4, bedplate_mass_cost_coeff: 2.9, yaw_mass_cost_coeff: 8.3, converter_mass_cost_coeff: 18.8, transformer_mass_cost_coeff: 18.8, hvac_mass_cost_coeff: 124.0, cover_mass_cost_coeff: 5.7, elec_connec_machine_rating_cost_coeff: 41.85, platforms_mass_cost_coeff: 17.1, tower_mass_cost_coeff: 2.9, controls_machine_rating_cost_coeff: 21.15, crane_cost: 12000.0}
+costs: {wake_loss_factor: 0.15, fixed_charge_rate: 0.0578, bos_per_kW: 441.0, opex_per_kW: 43.0, turbine_number: 120, labor_rate: 58.8, painting_rate: 30.0, blade_mass_cost_coeff: 14.6, hub_mass_cost_coeff: 3.9, pitch_system_mass_cost_coeff: 22.1, spinner_mass_cost_coeff: 11.1, lss_mass_cost_coeff: 11.9, bearing_mass_cost_coeff: 4.5, gearbox_mass_cost_coeff: 12.9, hss_mass_cost_coeff: 6.8, generator_mass_cost_coeff: 12.4, bedplate_mass_cost_coeff: 2.9, yaw_mass_cost_coeff: 8.3, converter_mass_cost_coeff: 18.8, transformer_mass_cost_coeff: 18.8, hvac_mass_cost_coeff: 124.0, cover_mass_cost_coeff: 5.7, elec_connec_machine_rating_cost_coeff: 41.85, platforms_mass_cost_coeff: 17.1, tower_mass_cost_coeff: 2.9, controls_machine_rating_cost_coeff: 21.15, crane_cost: 12000.0}
