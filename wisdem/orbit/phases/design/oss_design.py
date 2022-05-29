@@ -7,6 +7,7 @@ __email__ = "Jake.Nunemaker@nrel.gov"
 
 
 import numpy as np
+
 from wisdem.orbit.phases.design import DesignPhase
 
 
@@ -260,7 +261,7 @@ class OffshoreSubstationDesign(DesignPhase):
         oss_pile_cost_rate = _design.get("oss_pile_cost_rate", 0)
 
         substructure_mass = 0.4 * self.topside_mass
-        substructure_pile_mass = 8 * substructure_mass ** 0.5574
+        substructure_pile_mass = 8 * substructure_mass**0.5574
         self.substructure_cost = (
             substructure_mass * oss_substructure_cost_rate + substructure_pile_mass * oss_pile_cost_rate
         )

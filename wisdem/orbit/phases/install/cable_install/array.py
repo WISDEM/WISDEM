@@ -10,6 +10,7 @@ from copy import deepcopy
 
 import numpy as np
 from marmot import process
+
 from wisdem.orbit.core import Vessel
 from wisdem.orbit.core.logic import position_onsite
 from wisdem.orbit.phases.install import InstallPhase

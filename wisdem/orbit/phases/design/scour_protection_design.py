@@ -8,6 +8,7 @@ __email__ = "robert.hammond@nrel.gov"
 from math import ceil
 
 import numpy as np
+
 from wisdem.orbit.phases.design import DesignPhase
 
 
@@ -113,7 +114,7 @@ class ScourProtectionDesign(DesignPhase):
 
         r = self.diameter / 2 + self.scour_depth / np.tan(np.radians(self.phi))
 
-        volume = np.pi * self.protection_depth * (r ** 2 - (self.diameter / 2) ** 2)
+        volume = np.pi * self.protection_depth * (r**2 - (self.diameter / 2) ** 2)
 
         self.scour_protection_tonnes = ceil(self.rock_density * volume / 1000.0)
 

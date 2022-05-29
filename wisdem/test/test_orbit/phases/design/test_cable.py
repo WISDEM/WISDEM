@@ -11,6 +11,7 @@ import itertools
 
 import numpy as np
 import pytest
+
 from wisdem.orbit.phases.design._cables import Cable, Plant
 
 cables = {

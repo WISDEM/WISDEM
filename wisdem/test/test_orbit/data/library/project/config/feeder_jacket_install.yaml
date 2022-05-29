@@ -1,0 +1,25 @@
+feeder: test_feeder
+jacket:
+  height: 100
+  deck_space: 500
+  diameter: 10
+  length: 50
+  mass: 350
+  unit_cost: 5e6
+num_feeders: 1
+plant:
+  num_turbines: 20
+port:
+  monthly_rate: 100000
+  name: Test Port
+  num_cranes: 1
+site:
+  depth: 40
+  distance: 50
+transition_piece:
+  deck_space: 250
+  mass: 350
+  unit_cost: 3e6
+turbine:
+  hub_height: 100
+wtiv: test_wtiv

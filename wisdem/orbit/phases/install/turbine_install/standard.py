@@ -12,6 +12,7 @@ from math import ceil
 import numpy as np
 import simpy
 from marmot import process
+
 from wisdem.orbit.core import Vessel
 from wisdem.orbit.core.logic import (
     jackdown_if_required,

@@ -38,6 +38,14 @@
 # Jackets
 "jacket_fasten_time": 12          # hr
 "jacket_release_time": 6          # hr
+"jacket_lift_time": 4             # hr
+"jacket_lower_time": 8            # hr
+"jacket_grout_time": 8            # hr
+"jacket_pin_template_time": 4     # hr
+"jacket_pile_drive_time": 6       # hr, per leg
+"jacket_position_pile": 6         # hr, per leg
+"jacket_vessel_reposition": 4     # hr, per leg
+"jacket_suction_bucket": 12       # hr, per leg
 
 # Scour Protection
 "drop_rocks_time": 10             # hr
