@@ -1,4 +1,5 @@
 import numpy as np
+
 import wisdem.inputs as sch
 
 
@@ -217,7 +218,7 @@ class WindTurbineOntologyPython(object):
                     )
 
             joint_pos = self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["position"]
-            if joint_pos>0.:
+            if joint_pos > 0.0:
                 self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = True
                 # Adjust grid to have grid point at join location
                 closest_grid_pt = np.argmin(abs(self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] - joint_pos))
@@ -886,7 +887,7 @@ class WindTurbineOntologyPython(object):
                         "grid"
                     ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
                     self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["width"][
-                    "values"
+                        "values"
                     ] = wt_opt["blade.internal_structure_2d_fem.layer_width"][i, :].tolist()
                 if (
                     wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] == 2
@@ -902,7 +903,7 @@ class WindTurbineOntologyPython(object):
                         "grid"
                     ] = wt_opt["blade.internal_structure_2d_fem.s"].tolist()
                     self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["offset_y_pa"][
-                    "values"
+                        "values"
                     ] = wt_opt["blade.internal_structure_2d_fem.layer_offset_y_pa"][i, :].tolist()
                 if (
                     wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] == 4
@@ -927,7 +928,9 @@ class WindTurbineOntologyPython(object):
             # TODO assign joint mass to wt_init from rs.bjs
             # Elastic properties of the blade
             if self.modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["mass"] = float(wt_opt["rotorse.rs.bjs.joint_mass"])
+                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["mass"] = float(
+                    wt_opt["rotorse.rs.bjs.joint_mass"]
+                )
 
             self.wt_init["components"]["blade"]["elastic_properties_mb"] = {}
             self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"] = {}
@@ -1231,6 +1234,17 @@ class WindTurbineOntologyPython(object):
                 self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                     "values"
                 ] = wt_opt["monopile.layer_thickness"][i, :].tolist()
+
+        # Update jacket
+        if self.modeling_options["flags"]["jacket"]:
+            self.wt_init["components"]["jacket"]["r_foot"] = float(wt_opt["jacket.r_foot"][0])
+            self.wt_init["components"]["jacket"]["r_head"] = float(wt_opt["jacket.r_head"][0])
+            self.wt_init["components"]["jacket"]["height"] = float(wt_opt["jacket.height"][0])
+            self.wt_init["components"]["jacket"]["leg_diameter"] = float(wt_opt["jacket.leg_diameter"][0])
+            self.wt_init["components"]["jacket"]["leg_thickness"] = float(wt_opt["jacket.leg_thickness"][0])
+            self.wt_init["components"]["jacket"]["brace_diameters"] = wt_opt["jacket.brace_diameters"].tolist()
+            self.wt_init["components"]["jacket"]["brace_thicknesses"] = wt_opt["jacket.brace_thicknesses"].tolist()
+            self.wt_init["components"]["jacket"]["bay_spacing"] = wt_opt["jacket.bay_spacing"].tolist()
 
         # Update floating platform and mooring
         if self.modeling_options["flags"]["floating"]:
