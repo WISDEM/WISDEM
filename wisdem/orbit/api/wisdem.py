@@ -15,6 +15,7 @@ class Orbit(om.Group):
     def initialize(self):
         self.options.declare("floating", default=False)
         self.options.declare("jacket", default=False)
+        self.options.declare("jacket_legs", default=0)
 
     def setup(self):
 
@@ -45,7 +46,13 @@ class Orbit(om.Group):
         self.set_input_defaults("boem_review_cost", 0.0, units="USD")
 
         self.add_subsystem(
-            "orbit", OrbitWisdem(floating=self.options["floating"], jacket=self.options["jacket"]), promotes=["*"]
+            "orbit",
+            OrbitWisdem(
+                floating=self.options["floating"],
+                jacket=self.options["jacket"],
+                jacket_legs=self.options["jacket_legs"],
+            ),
+            promotes=["*"],
         )
 
 
@@ -55,6 +62,7 @@ class OrbitWisdem(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("floating", default=False)
         self.options.declare("jacket", default=False)
+        self.options.declare("jacket_legs", default=0)
 
     def setup(self):
         """"""
@@ -175,15 +183,9 @@ class OrbitWisdem(om.ExplicitComponent):
 
         # Jacket
         self.add_input("jacket_length", 65.0, units="m", desc="Length/height of jacket (including pile/buckets).")
-        self.add_discrete_input("jacket_num_legs", 3, desc="Number of legs in the jacket")
         self.add_input("jacket_mass", 900.0, units="t", desc="mass of an individual jacket.")
         self.add_input("jacket_cost", 4e6, units="USD", desc="Jacket unit cost.")
-        self.add_input(
-            "jacket_deck_space",
-            40.0,
-            units="m**2",
-            desc="Deck space required to transport a jacket. Defaults to 0 in order to not be a constraint on installation.",
-        )
+        self.add_input("jacket_r_foot", 10.0, units="m", desc="Radius of jacket legs at base from centeroid.")
 
         # Generic fixed-bottom
         self.add_input("transition_piece_mass", 250.0, units="t", desc="mass of an individual transition piece.")
@@ -420,8 +422,8 @@ class OrbitWisdem(om.ExplicitComponent):
                 config["jacket"] = {
                     "type": "Jacket",
                     "height": float(inputs["jacket_length"]),
-                    "num_legs": int(discrete_inputs["jacket_num_legs"]),
-                    "deck_space": float(inputs["jacket_deck_space"]),
+                    "num_legs": int(self.options["jacket_legs"]),
+                    "deck_space": 4 * float(inputs["jacket_r_foot"]) ** 2,
                     "mass": float(inputs["jacket_mass"]),
                     "unit_cost": float(inputs["jacket_cost"]),
                 }
