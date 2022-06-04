@@ -146,6 +146,14 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.add_output("jacket_Myy", np.zeros((n_elem, n_dlc)), units="N*m")
         self.add_output("jacket_Mzz", np.zeros((n_elem, n_dlc)), units="N*m")
 
+        # Frequencies
+        self.add_output("f1", val=0.0, units="Hz")
+        self.add_output("f2", val=0.0, units="Hz")
+        self.add_output("structural_frequencies", np.zeros(NFREQ), units="Hz")
+
+        self.add_output("jacket_deflection", np.zeros((n_node, n_dlc)), units="m")
+        self.add_output("top_deflection", np.zeros(n_dlc), units="m")
+
         self.idx = 0
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -442,6 +450,15 @@ class ComputeFrame3DD(om.ExplicitComponent):
         # self.frame.draw()
         displacements, forces, reactions, internalForces, mass, modal = self.frame.run()
 
+        # natural frequncies
+        outputs["f1"] = modal.freq[0]
+        outputs["f2"] = modal.freq[1]
+        outputs["structural_frequencies"] = modal.freq[:NFREQ]
+
+        # deflections due to loading (from cylinder top and wind/wave loads)
+        outputs["jacket_deflection"] = np.sqrt(displacements.dx**2 + displacements.dy**2).T
+        outputs["top_deflection"] = outputs["jacket_deflection"][-1, :]
+
         # Determine reaction forces
         outputs["jacket_base_F"] = -np.c_[
             reactions.Fx.sum(axis=1), reactions.Fy.sum(axis=1), reactions.Fz.sum(axis=1)
@@ -633,7 +650,8 @@ class JacketCost(om.ExplicitComponent):
         leg_L = np.linalg.norm(leg_vec, axis=1)
 
         # Get the angle of intersection between all edges (as vectors) and all legs (as vectors)
-        leg_alpha = np.arccos(np.dot(edge_vec, leg_vec.T) / np.outer(L, leg_L))
+        vec_vals = np.dot(edge_vec, leg_vec.T) / np.outer(L, leg_L)
+        leg_alpha = np.arccos(np.minimum(np.maximum(vec_vals, -1.0), 1.0))
         # If angle of intersection is close to 0 or 180, the edge is part of a leg
         tol = np.deg2rad(5)
         idx_leg = np.any((np.abs(leg_alpha) < tol) | (np.abs(leg_alpha - np.pi) < tol), axis=1)
