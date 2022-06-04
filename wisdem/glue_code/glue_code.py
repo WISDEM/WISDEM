@@ -844,7 +844,14 @@ class WindPark(om.Group):
         self.add_subsystem("wt", WT_RNTA(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
         if modeling_options["WISDEM"]["BOS"]["flag"]:
             if modeling_options["flags"]["offshore"]:
-                self.add_subsystem("orbit", Orbit(floating=modeling_options["flags"]["floating_platform"]))
+                self.add_subsystem(
+                    "orbit",
+                    Orbit(
+                        floating=modeling_options["flags"]["floating"],
+                        jacket=modeling_options["flags"]["jacket"],
+                        jacket_legs=modeling_options["WISDEM"]["FixedBottomSE"]["n_legs"],
+                    ),
+                )
             else:
                 self.add_subsystem("landbosse", LandBOSSE())
 
@@ -874,6 +881,13 @@ class WindPark(om.Group):
                     self.connect("monopile.transition_piece_mass", "orbit.transition_piece_mass")
                     self.connect("monopile.transition_piece_cost", "orbit.transition_piece_cost")
                     self.connect("monopile.diameter", "orbit.monopile_diameter", src_indices=[0])
+                elif modeling_options["flags"]["jacket"]:
+                    self.connect("jacket.r_foot", "orbit.jacket_r_foot")
+                    self.connect("jacket.height", "orbit.jacket_length")
+                    self.connect("fixedse.jacket_mass", "orbit.jacket_mass")
+                    self.connect("fixedse.jacket_cost", "orbit.jacket_cost")
+                    self.connect("jacket.transition_piece_mass", "orbit.transition_piece_mass")
+                    self.connect("jacket.transition_piece_cost", "orbit.transition_piece_cost")
                 elif modeling_options["flags"]["floating"]:
                     self.connect("mooring.n_lines", "orbit.num_mooring_lines")
                     self.connect("floatingse.line_mass", "orbit.mooring_line_mass", src_indices=[0])
