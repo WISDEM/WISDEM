@@ -835,12 +835,11 @@ class PoseOptimization(object):
             )
 
         # -- Jacket --
-        if jacket_opt["r_foot"]["flag"]:
+        if jacket_opt["foot_head_ratio"]["flag"]:
             wt_opt.model.add_design_var(
-                "jacket.r_foot",
-                lower=jacket_opt["r_foot"]["lower_bound"],
-                upper=jacket_opt["r_foot"]["upper_bound"],
-                ref=5.0,
+                "jacket.foot_head_ratio",
+                lower=jacket_opt["foot_head_ratio"]["lower_bound"],
+                upper=jacket_opt["foot_head_ratio"]["upper_bound"],
             )
 
         if jacket_opt["r_head"]["flag"]:
@@ -1369,6 +1368,9 @@ class PoseOptimization(object):
 
         if jacket_constr["shell_buckling"]["flag"]:
             wt_opt.model.add_constraint("fixedse.constr_shell_buckling", upper=1.0)
+
+        if jacket_constr["tower_diameter_coupling"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.constr_diam_consistency", upper=1.0)
 
         if jacket_constr["frequency_1"]["flag"]:
             wt_opt.model.add_constraint(

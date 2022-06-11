@@ -516,8 +516,6 @@ class WT_RNTA(om.Group):
             self.connect("env.Tsig_wave", "fixedse.Tsig_wave")
             self.connect("monopile.diameter", "fixedse.monopile_outer_diameter_in")
             self.connect("monopile.diameter", "fixedse.monopile_top_diameter", src_indices=[-1])
-            if modeling_options["flags"]["tower"]:
-                self.connect("tower.diameter", "fixedse.tower_base_diameter", src_indices=[0])
             self.connect("monopile.foundation_height", "fixedse.monopile_foundation_height")
             self.connect("monopile.outfitting_factor", "fixedse.outfitting_factor_in")
             self.connect("monopile.height", "fixedse.monopile_height")
@@ -539,6 +537,7 @@ class WT_RNTA(om.Group):
             self.connect("monopile.transition_piece_mass", "fixedse.transition_piece_mass")
             self.connect("monopile.gravity_foundation_mass", "fixedse.gravity_foundation_mass")
             if modeling_options["flags"]["tower"]:
+                self.connect("tower.diameter", "fixedse.tower_base_diameter", src_indices=[0])
                 self.connect("towerse.tower_mass", "fixedse.tower_mass")
                 self.connect("towerse.tower_cost", "fixedse.tower_cost")
                 self.connect("towerse.turbine_mass", "fixedse.turbine_mass")
@@ -564,7 +563,7 @@ class WT_RNTA(om.Group):
             self.connect("materials.G", "fixedse.G_mat")
             self.connect("materials.rho", "fixedse.rho_mat")
             self.connect("materials.name", "fixedse.material_names")
-            self.connect("jacket.r_foot", "fixedse.r_foot")
+            self.connect("jacket.foot_head_ratio", "fixedse.foot_head_ratio")
             self.connect("jacket.r_head", "fixedse.r_head")
             self.connect("jacket.height", "fixedse.height")
             self.connect("jacket.leg_diameter", "fixedse.leg_diameter")
@@ -580,6 +579,7 @@ class WT_RNTA(om.Group):
                 self.connect("towerse.turbine_I_base", "fixedse.turbine_I")
                 self.connect("towerse.tower.turbine_F", "fixedse.turbine_F")
                 self.connect("towerse.tower.turbine_M", "fixedse.turbine_M")
+                self.connect("tower.diameter", "fixedse.tower_base_diameter", src_indices=[0])
 
         if modeling_options["flags"]["floating"]:
             self.connect("env.rho_water", "floatingse.rho_water")
@@ -882,7 +882,7 @@ class WindPark(om.Group):
                     self.connect("monopile.transition_piece_cost", "orbit.transition_piece_cost")
                     self.connect("monopile.diameter", "orbit.monopile_diameter", src_indices=[0])
                 elif modeling_options["flags"]["jacket"]:
-                    self.connect("jacket.r_foot", "orbit.jacket_r_foot")
+                    self.connect("fixedse.r_foot", "orbit.jacket_r_foot")
                     self.connect("jacket.height", "orbit.jacket_length")
                     self.connect("fixedse.jacket_mass", "orbit.jacket_mass")
                     self.connect("fixedse.jacket_cost", "orbit.jacket_cost")

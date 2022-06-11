@@ -2171,7 +2171,7 @@ class Hub(om.Group):
 
 class Compute_Grid(om.ExplicitComponent):
     """
-    Compute the non-dimensional grid for a tower or monopile/jacket.
+    Compute the non-dimensional grid for a tower or monopile.
 
     Using the dimensional `ref_axis` array, this component computes the
     non-dimensional grid, height (vertical distance) and length (curve distance)
@@ -2298,10 +2298,9 @@ class Jacket(om.Group):
 
         ivc = self.add_subsystem("jacket_indep_vars", om.IndepVarComp(), promotes=["*"])
         ivc.add_output(
-            "r_foot",
-            val=0.0,
-            units="m",
-            desc="Radius of foot (bottom) of jacket, in meters.",
+            "foot_head_ratio",
+            val=1.5,
+            desc="Ratio of radius of foot (bottom) of jacket to head.",
         )
         ivc.add_output(
             "r_head",

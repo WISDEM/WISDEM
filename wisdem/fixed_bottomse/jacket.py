@@ -29,20 +29,24 @@ class ComputeJacketNodes(om.ExplicitComponent):
         n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
 
         self.add_input("height", val=70.0, units="m")
-        self.add_input("r_foot", val=10.0, units="m")
         self.add_input("r_head", val=6.0, units="m")
+        self.add_input("foot_head_ratio", val=1.5)
         self.add_input("bay_spacing", val=np.linspace(0.1, 0.9, n_bays + 1))
+        self.add_input("tower_base_diameter", val=0.0, units="m")
 
+        self.add_output("r_foot", val=10.0, units="m")
         self.add_output("leg_nodes", val=np.zeros((n_legs, n_bays + 2, 3)), units="m")
         self.add_output("bay_nodes", val=np.zeros((n_legs, n_bays + 1, 3)), units="m")
+        self.add_output("constr_diam_consistency", val=0.0)
 
     def compute(self, inputs, outputs):
         mod_opt = self.options["modeling_options"]
         n_legs = mod_opt["WISDEM"]["FixedBottomSE"]["n_legs"]
         n_bays = mod_opt["WISDEM"]["FixedBottomSE"]["n_bays"]
 
-        r_foot = inputs["r_foot"]
+        ratio = inputs["foot_head_ratio"]
         r_head = inputs["r_head"]
+        outputs["r_foot"] = r_foot = r_head * ratio
         height = inputs["height"]
 
         leg_spacing = np.linspace(0, 1.0, n_bays + 2)
@@ -59,6 +63,8 @@ class ComputeJacketNodes(om.ExplicitComponent):
             outputs["bay_nodes"][i, :, 0] = x_bay * np.cos(i / n_legs * 2 * np.pi)
             outputs["bay_nodes"][i, :, 1] = x_bay * np.sin(i / n_legs * 2 * np.pi)
             outputs["bay_nodes"][i, :, 2] = z_bay
+
+        outputs["constr_diam_consistency"] = inputs["tower_base_diameter"] / r_head
 
 
 class ComputeFrame3DD(om.ExplicitComponent):

@@ -4,10 +4,10 @@ general:
 design_variables:
 
     jacket:
-        r_foot:
+        foot_head_ratio:
             flag: True
-            lower_bound: 6.
-            upper_bound: 16.
+            lower_bound: 1.1
+            upper_bound: 5.0
         r_head:
             flag: True
             lower_bound: 2.
@@ -38,6 +38,12 @@ constraints:
         global_buckling:
             flag: False
         shell_buckling:
+            flag: True
+        frequency_1:
+            flag: False #True
+            lower_bound: 0.13
+            upper_bound: 0.40
+        tower_diameter_coupling:
             flag: True
 
 driver:
