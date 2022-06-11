@@ -9,6 +9,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 from math import pi, log
 
 from scipy.optimize import fsolve
+
 from wisdem.orbit.core.defaults import common_costs
 from wisdem.orbit.phases.design import DesignPhase
 
@@ -221,7 +222,7 @@ class MonopileDesign(DesignPhase):
             "diameter": D_tp,
             "mass": m_tp,
             "length": L_tp,
-            "deck_space": D_tp ** 2,
+            "deck_space": D_tp**2,
             "unit_cost": m_tp * self.tp_steel_cost,
         }
 
@@ -344,7 +345,7 @@ class MonopileDesign(DesignPhase):
         """
 
         density = kwargs.get("monopile_density", 7860)  # kg/m3
-        volume = (pi / 4) * (Dp ** 2 - (Dp - tp) ** 2) * Lt
+        volume = (pi / 4) * (Dp**2 - (Dp - tp) ** 2) * Lt
         mass = density * volume / 907.185
 
         return mass
@@ -546,7 +547,7 @@ class MonopileDesign(DesignPhase):
             Coefficient of thrust.
         """
 
-        ct = min([3.5 * (2 * rated_windspeed + 3.5) / (rated_windspeed ** 2), 1])
+        ct = min([3.5 * (2 * rated_windspeed + 3.5) / (rated_windspeed**2), 1])
 
         return ct
 

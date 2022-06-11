@@ -7,8 +7,9 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 
 from marmot import Agent, le, process
-from wisdem.orbit.core import WetStorage
 from marmot._exceptions import AgentNotRegistered
+
+from wisdem.orbit.core import WetStorage
 from wisdem.orbit.core.logic import position_onsite
 from wisdem.orbit.phases.install import InstallPhase
 from wisdem.orbit.phases.install.mooring_install.mooring import (

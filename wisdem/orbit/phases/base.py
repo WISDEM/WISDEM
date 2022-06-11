@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 
 from benedict import benedict
+
 from wisdem.orbit.core.library import initialize_library, extract_library_data
 from wisdem.orbit.core.exceptions import MissingInputs
 

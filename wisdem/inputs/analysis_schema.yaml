@@ -589,18 +589,17 @@ properties:
                 description: Design variables associated with the jacket
                 default: {}
                 properties:
-                    r_foot:
+                    foot_head_ratio:
                         type: object
-                        description: Adjust the radius of the jacket foot.
+                        description: Adjust the ratio of the jacket foot (bottom) radius to that of the head (top)
                         default: {}
                         properties:
                             flag: *flag
                             lower_bound: &rfootbound
                                 type: number
-                                minimum: 0.1
+                                minimum: 1.0
                                 maximum: 100.0
-                                default: 5.0
-                                unit: m
+                                default: 1.5
                                 description: Design variable bound
                             upper_bound: *rfootbound
                     r_head:

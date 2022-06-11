@@ -12,3 +12,4 @@ from .vessel import Vessel
 from .library import loader
 from .components import Crane, JackingSys
 from .environment import OrbitEnvironment as Environment
+from .supply_chain import SubstructureDelivery
