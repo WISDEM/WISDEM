@@ -2536,8 +2536,8 @@ properties:
                 type: number
                 description: Shear modulus of the soil.
                 unit: Pa
-                minimum: 100.e+6
-                maximum: 200.e+6
+                minimum: 10.e+6
+                maximum: 500.e+6
                 default: 140.e+6
             soil_poisson:
                 type: number
