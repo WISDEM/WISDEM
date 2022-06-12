@@ -515,11 +515,11 @@ class TowerSoil(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
 
-        G = inputs["G"]
-        nu = inputs["nu"]
-        h = np.linspace(inputs["depth"], 0.0, self.options["npts"])
-        r0 = 0.5 * inputs["d0"]
-
+        G = float(inputs["G"])
+        nu = float(inputs["nu"])
+        depth = float(inputs["depth"])
+        h = np.linspace(depth, 0.0, self.options["npts"])
+        r0 = 0.5 * float(inputs["d0"])
         # vertical
         eta = 1.0 + 0.6 * (1.0 - nu) * h / r0
         k_z = 4 * G * r0 * eta / (1.0 - nu)

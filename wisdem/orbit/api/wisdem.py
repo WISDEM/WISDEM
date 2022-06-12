@@ -174,12 +174,6 @@ class OrbitWisdem(om.ExplicitComponent):
         self.add_input("monopile_diameter", 7.0, units="m", desc="Diameter of monopile.")
         self.add_input("monopile_mass", 900.0, units="t", desc="mass of an individual monopile.")
         self.add_input("monopile_cost", 4e6, units="USD", desc="Monopile unit cost.")
-        self.add_input(
-            "monopile_deck_space",
-            36.0,
-            units="m**2",
-            desc="Deck space required to transport a monopile. Defaults to 0 in order to not be a constraint on installation.",
-        )
 
         # Jacket
         self.add_input("jacket_length", 65.0, units="m", desc="Length/height of jacket (including pile/buckets).")
@@ -432,7 +426,7 @@ class OrbitWisdem(om.ExplicitComponent):
                     "type": "Monopile",
                     "length": float(inputs["monopile_length"]),
                     "diameter": float(inputs["monopile_diameter"]),
-                    "deck_space": float(inputs["monopile_deck_space"]),
+                    "deck_space": 0.25 * float(inputs["monopile_diameter"] * inputs["monopile_length"]),
                     "mass": float(inputs["monopile_mass"]),
                     "unit_cost": float(inputs["monopile_cost"]),
                 }

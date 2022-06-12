@@ -309,6 +309,7 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_input("gravity_foundation_I", np.zeros(6), units="kg*m**2")
         self.add_input("transition_piece_height", 0.0, units="m")
         self.add_input("suctionpile_depth", 0.0, units="m")
+        self.add_input("water_depth", val=0.0, units="m")
 
         # For modal analysis only (loads captured in turbine_F & turbine_M)
         self.add_input("turbine_mass", val=0.0, units="kg")
@@ -380,6 +381,7 @@ class MonopileFrame(om.ExplicitComponent):
             if self.options["soil_springs"]:
                 z_soil = inputs["z_soil"]
                 k_soil = inputs["k_soil"]
+                depth = float(inputs["water_depth"])
                 z_pile = z[z <= (z[0] + 1e-1 + np.abs(z_soil[0]))]
                 if z_pile.size != NREFINE + 1:
                     print(z)
@@ -388,15 +390,15 @@ class MonopileFrame(om.ExplicitComponent):
                     raise ValueError("Please use only one section for submerged pile for now")
                 k_mono = np.zeros((z_pile.size, 6))
                 for k in range(6):
-                    k_mono[:, k] = np.interp(z_pile + np.abs(z_soil[0]), z_soil, k_soil[:, k])
+                    k_mono[:, k] = np.interp(z_pile + np.abs(depth), z_soil, k_soil[:, k])
                 kidx = np.arange(len(z_pile), dtype=np.int_)
-                kx = np.array([k_mono[:, 0]])
-                ky = np.array([k_mono[:, 2]])
+                kx = k_mono[:, 0]
+                ky = k_mono[:, 2]
                 kz = np.zeros(k_mono.shape[0])
-                kz[0] = np.array([k_mono[0, 4]])
-                ktx = np.array([k_mono[:, 1]])
-                kty = np.array([k_mono[:, 3]])
-                ktz = np.array([k_mono[:, 5]])
+                kz[0] = k_mono[0, 4]
+                ktx = k_mono[:, 1]
+                kty = k_mono[:, 3]
+                ktz = k_mono[:, 5]
 
             else:
                 z_pile = z[z <= (z[0] + 1e-1 + inputs["suctionpile_depth"])]
