@@ -968,8 +968,8 @@ class WindTurbineOntologyPython(object):
                 Ii[12] = wt_opt["rotorse.rhoA"][i] * wt_opt["rotorse.re.y_cg"][i]
                 Ii[13] = -wt_opt["rotorse.rhoA"][i] * wt_opt["rotorse.re.x_cg"][i]
                 Ii[15] = wt_opt["rotorse.re.precomp.edge_iner"][i]
-                Ii[16] = wt_opt["rotorse.re.precomp.edge_iner"][i]
-                # Ii[18] = wt_opt['re.precomp.edge_iner'][i]
+                #Ii[16] = wt_opt["rotorse.re.precomp.edge_iner"][i]
+                Ii[18] = wt_opt['rotorse.re.precomp.flap_iner'][i]
                 Ii[20] = wt_opt["rotorse.rhoJ"][i]
                 I.append(Ii.tolist())
             self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["inertia_matrix"]["values"] = I
