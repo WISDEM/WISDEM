@@ -17,7 +17,6 @@ import numpy as np
 import pandas as pd
 from benedict import benedict
 
-import wisdem.orbit as orbit
 from wisdem.orbit.phases import DesignPhase, InstallPhase
 from wisdem.orbit.core.library import initialize_library, export_library_specs, extract_library_data
 from wisdem.orbit.phases.design import (
@@ -247,7 +246,7 @@ class ProjectManager:
 
         config["design_phases"] = [*design_phases.keys()]
         config["install_phases"] = [*install_phases.keys()]
-        config["orbit_version"] = str(orbit.__version__)
+        config["orbit_version"] = str(ORBIT.__version__)
 
         return config
 
@@ -350,6 +349,8 @@ class ProjectManager:
         for k, _ in right.items():
             if k in new and isinstance(new[k], dict) and isinstance(right[k], collections.Mapping):
                 new[k] = cls.merge_dicts(new[k], right[k], overwrite=overwrite, add_keys=add_keys)
+            elif k in new and isinstance(new[k], list) and isinstance(right[k], list):
+                new[k].extend(right[k])
             else:
                 if overwrite or k not in new:
                     new[k] = right[k]
