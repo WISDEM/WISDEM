@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from benedict import benedict
 
+import wisdem.orbit as orbit
 from wisdem.orbit.phases import DesignPhase, InstallPhase
 from wisdem.orbit.core.library import initialize_library, export_library_specs, extract_library_data
 from wisdem.orbit.phases.design import (
@@ -246,7 +247,7 @@ class ProjectManager:
 
         config["design_phases"] = [*design_phases.keys()]
         config["install_phases"] = [*install_phases.keys()]
-        config["orbit_version"] = str(ORBIT.__version__)
+        config["orbit_version"] = str(orbit.__version__)
 
         return config
 
