@@ -12,6 +12,7 @@ from collections import OrderedDict
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
 from wisdem.orbit.core.library import export_library_specs, extract_library_specs
 from wisdem.orbit.phases.design._cables import Plant, CableSystem
 
@@ -79,6 +80,7 @@ class ArraySystemDesign(CableSystem):
             "cables": "list | str",
             "touchdown_distance": "m (optional, default: 0)",
             "average_exclusion_percent": "float (optional)",
+            "floating_cable_depth": "m (optional, default: water depth)",
         },
     }
 
@@ -126,6 +128,8 @@ class ArraySystemDesign(CableSystem):
             "array_system_length_by_type": self.total_cable_length_by_type,
             "array_system_total_cost": self.total_cable_cost,
             "array_system_cost_by_type": self.cost_by_type,
+            "array_system_num_turbines_full_string": self.num_turbines_full_string,
+            "array_system_num_full_strings": self.num_full_strings,
         }
 
         return _output

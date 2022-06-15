@@ -1,5 +1,5 @@
 storage_specs:
-  max_cargo: 6000       # t
+  max_cargo: 10000       # t
   max_deck_load: 8      # t/m^2
   max_deck_space: 600   # m^2
 transport_specs:

@@ -12,6 +12,7 @@ from __future__ import print_function
 import numpy as np
 import openmdao.api as om
 from scipy.optimize import brentq
+
 from wisdem.commonse.constants import gravity
 
 # TODO CHECK
@@ -377,7 +378,7 @@ class LinearWaves(WaveBase):
         omega = 2.0 * np.pi / inputs["Tsig_wave"]
 
         # compute wave number from dispersion relationship
-        k = brentq(lambda k: omega ** 2 - gravity * k * np.tanh(d * k), 0, 1e3 * omega ** 2 / gravity)
+        k = brentq(lambda k: omega**2 - gravity * k * np.tanh(d * k), 0, 1e3 * omega**2 / gravity, disp=False)
         self.k = k
         outputs["phase_speed"] = omega / k
 
@@ -514,11 +515,11 @@ class TowerSoil(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
 
-        G = inputs["G"]
-        nu = inputs["nu"]
-        h = np.linspace(inputs["depth"], 0.0, self.options["npts"])
-        r0 = 0.5 * inputs["d0"]
-
+        G = float(inputs["G"])
+        nu = float(inputs["nu"])
+        depth = float(inputs["depth"])
+        h = np.linspace(depth, 0.0, self.options["npts"])
+        r0 = 0.5 * float(inputs["d0"])
         # vertical
         eta = 1.0 + 0.6 * (1.0 - nu) * h / r0
         k_z = 4 * G * r0 * eta / (1.0 - nu)
@@ -529,10 +530,10 @@ class TowerSoil(om.ExplicitComponent):
 
         # rocking
         eta = 1.0 + 1.2 * (1.0 - nu) * h / r0 + 0.2 * (2.0 - nu) * (h / r0) ** 3
-        k_thetax = 8.0 * G * r0 ** 3 * eta / (3.0 * (1.0 - nu))
+        k_thetax = 8.0 * G * r0**3 * eta / (3.0 * (1.0 - nu))
 
         # torsional
-        k_phi = 16.0 * G * r0 ** 3 * np.ones(h.size) / 3.0
+        k_phi = 16.0 * G * r0**3 * np.ones(h.size) / 3.0
 
         outputs["k"] = np.c_[k_x, k_thetax, k_x, k_thetax, k_z, k_phi]
         outputs["z_k"] = -h
@@ -548,7 +549,7 @@ class TowerSoil(om.ExplicitComponent):
 
         # vertical
         eta = 1.0 + 0.6 * (1.0 - nu) * h / r0
-        deta_dr0 = -0.6 * (1.0 - nu) * h / r0 ** 2
+        deta_dr0 = -0.6 * (1.0 - nu) * h / r0**2
         dkz_dr0 = 4 * G / (1.0 - nu) * (eta + r0 * deta_dr0)
 
         deta_dh = 0.6 * (1.0 - nu) / r0
@@ -556,7 +557,7 @@ class TowerSoil(om.ExplicitComponent):
 
         # horizontal
         eta = 1.0 + 0.55 * (2.0 - nu) * h / r0
-        deta_dr0 = -0.55 * (2.0 - nu) * h / r0 ** 2
+        deta_dr0 = -0.55 * (2.0 - nu) * h / r0**2
         dkx_dr0 = 32.0 * (1.0 - nu) * G / (7.0 - 8.0 * nu) * (eta + r0 * deta_dr0)
 
         deta_dh = 0.55 * (2.0 - nu) / r0
@@ -564,14 +565,14 @@ class TowerSoil(om.ExplicitComponent):
 
         # rocking
         eta = 1.0 + 1.2 * (1.0 - nu) * h / r0 + 0.2 * (2.0 - nu) * (h / r0) ** 3
-        deta_dr0 = -1.2 * (1.0 - nu) * h / r0 ** 2 - 3 * 0.2 * (2.0 - nu) * (h / r0) ** 3 / r0
-        dkthetax_dr0 = 8.0 * G / (3.0 * (1.0 - nu)) * (3 * r0 ** 2 * eta + r0 ** 3 * deta_dr0)
+        deta_dr0 = -1.2 * (1.0 - nu) * h / r0**2 - 3 * 0.2 * (2.0 - nu) * (h / r0) ** 3 / r0
+        dkthetax_dr0 = 8.0 * G / (3.0 * (1.0 - nu)) * (3 * r0**2 * eta + r0**3 * deta_dr0)
 
-        deta_dh = 1.2 * (1.0 - nu) / r0 + 3 * 0.2 * (2.0 - nu) * (1.0 / r0) ** 3 * h ** 2
-        dkthetax_dh = 8.0 * G * r0 ** 3 / (3.0 * (1.0 - nu)) * deta_dh
+        deta_dh = 1.2 * (1.0 - nu) / r0 + 3 * 0.2 * (2.0 - nu) * (1.0 / r0) ** 3 * h**2
+        dkthetax_dh = 8.0 * G * r0**3 / (3.0 * (1.0 - nu)) * deta_dh
 
         # torsional
-        dkphi_dr0 = 16.0 * G * 3 * r0 ** 2 / 3.0
+        dkphi_dr0 = 16.0 * G * 3 * r0**2 / 3.0
         dkphi_dh = 0.0
 
         dk_dr0 = np.c_[dkx_dr0, dkthetax_dr0, dkx_dr0, dkthetax_dr0, dkz_dr0, dkphi_dr0]

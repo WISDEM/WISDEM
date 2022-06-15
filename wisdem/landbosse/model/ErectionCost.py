@@ -14,7 +14,7 @@ m_per_ft = 0.3048
 
 class Point(object):
     def __init__(self, x, y):
-        if type(x) == type(pd.Series()):
+        if type(x) == type(pd.Series(dtype=np.float_)):
             self.x = float(x.values[0])
             self.y = float(y.values[0])
         elif type(x) == type(np.array([])):
@@ -780,7 +780,7 @@ class ErectionCost(CostModule):
                     "Crane poly",
                 ],
             )
-            crane_poly = crane_poly.append(df, sort=True)
+            crane_poly = pd.concat((crane_poly, df), sort=True)
         return crane_poly
 
     def calculate_component_lift_max_wind_speed(self, *, component_group, crane_poly, component_max_speed, operation):
@@ -856,7 +856,7 @@ class ErectionCost(CostModule):
 
             # Transform the "Lift boolean" indexes in the series to a list of booleans
             # that signify if the crane can lift a component.
-            bool_list = list()
+            bool_list = []
             for component in component_group["Component"]:
                 if crane["Lift boolean {component}".format(component=component)] is False:
                     crane_bool = False
@@ -880,7 +880,7 @@ class ErectionCost(CostModule):
             component_group_new["Boom system"] = crane["Boom system"]
             component_group_new["crane_bool"] = bool_list
 
-            component_max_speed = component_max_speed.append(component_group_new, sort=True)
+            component_max_speed = pd.concat((component_max_speed, component_group_new), sort=True)
 
         crane_poly_new = crane_poly.copy()
         crane_poly_new["Crane bool {}".format(operation)] = min(bool_list)
@@ -1176,14 +1176,14 @@ class ErectionCost(CostModule):
             # find the crane that corresponds to the minimum cost for each operation
             crane = separate_basetop[separate_basetop["Total cost USD"] == min_val]
             cost = crane.groupby("Operation").min()
-            total_separate_cost = total_separate_cost.append(cost, sort=True)
+            total_separate_cost = pd.concat((total_separate_cost, cost), sort=True)
 
         # reset index for separate crane costs
         total_separate_cost = total_separate_cost.reset_index()
 
         # duplicate offload records because assuming two offload cranes are on site
-        total_separate_cost = total_separate_cost.append(
-            total_separate_cost.loc[total_separate_cost["Operation"] == "Offload"], sort=True
+        total_separate_cost = pd.concat(
+            (total_separate_cost, total_separate_cost.loc[total_separate_cost["Operation"] == "Offload"]), sort=True
         )
 
         # sum costs for separate cranes to get total for all cranes
@@ -1308,8 +1308,8 @@ class ErectionCost(CostModule):
 
         # append data for offloading
         if len(offload_specs) != 0:
-            crane_specs_withoffload = crane_specs.append(offload_specs, sort=True)
-            operation_time_withoffload = operation_time.append(offload_time, sort=True)
+            crane_specs_withoffload = pd.concat((crane_specs, offload_specs), sort=True)
+            operation_time_withoffload = pd.concat((operation_time, offload_time), sort=True)
         else:
             raise Exception("ErectionCost calculate_costs(): offload_specs empty")
 

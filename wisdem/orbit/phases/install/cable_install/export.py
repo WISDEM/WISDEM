@@ -10,7 +10,7 @@ from copy import deepcopy
 from math import ceil
 
 from marmot import process
-from wisdem.orbit.core import Vessel
+
 from wisdem.orbit.core.logic import position_onsite
 from wisdem.orbit.phases.install import InstallPhase
 from wisdem.orbit.core.exceptions import InsufficientCable
@@ -42,8 +42,7 @@ class ExportCableInstallation(InstallPhase):
         "export_cable_bury_vessel": "str | dict (optional)",
         "export_cable_trench_vessel": "str (optional)",
         "site": {"distance": "km"},
-        "plant": {"num_turbines": "int"},
-        "turbine": {"turbine_rating": "MW"},
+        "plant": {"capacity": "MW"},
         "export_system": {
             "cable": {
                 "linear_density": "t/km",
@@ -171,16 +170,14 @@ class ExportCableInstallation(InstallPhase):
         OffshoreBOS model.
         """
 
-        tr = self.config["turbine"]["turbine_rating"]
-        num = self.config["plant"]["num_turbines"]
-        capacity = num * tr
+        capacity = self.config["plant"]["capacity"]
 
         voltage = self.config["export_system"].get("interconnection_voltage", 345)
         distance = self.config["export_system"].get("interconnection_distance", 3)
 
         switchyard_cost = 18115 * voltage + 165944
         onshore_substation_cost = (0.165 * 1e6) * capacity  # From BNEF Tomorrow's Cost of Offshore Wind
-        onshore_misc_cost = 11795 * capacity ** 0.3549 + 350000
+        onshore_misc_cost = 11795 * capacity**0.3549 + 350000
         transmission_line_cost = (1176 * voltage + 218257) * (distance ** (1 - 0.1063))
 
         onshore_transmission_cost = (

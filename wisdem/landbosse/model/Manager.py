@@ -1,6 +1,7 @@
 import math
 import traceback
 
+import pandas as pd
 from wisdem.landbosse.model.ErectionCost import ErectionCost
 from wisdem.landbosse.model.CollectionCost import Array, Cable, ArraySystem
 from wisdem.landbosse.model.FoundationCost import FoundationCost
@@ -112,16 +113,19 @@ class Manager:
                 )
                 self.output_dict["total_road_cost"] = road_cost
 
-            total_costs = self.output_dict["total_collection_cost"]
-            total_costs = total_costs.append(self.output_dict["total_road_cost"], sort=False)
-            total_costs = total_costs.append(self.output_dict["total_transdist_cost"], sort=False)
-            total_costs = total_costs.append(self.output_dict["total_substation_cost"], sort=False)
-            total_costs = total_costs.append(self.output_dict["total_foundation_cost"], sort=False)
-            total_costs = total_costs.append(self.output_dict["total_erection_cost"], sort=False)
-            total_costs = total_costs.append(self.output_dict["total_development_cost"], sort=False)
-
-            self.input_dict["project_value_usd"] = total_costs.sum(numeric_only=True)[0]
-            self.input_dict["foundation_cost_usd"] = self.output_dict["total_foundation_cost"].sum(numeric_only=True)[0]
+            total_costs = pd.concat(
+                (
+                    self.output_dict["total_collection_cost"],
+                    self.output_dict["total_road_cost"],
+                    self.output_dict["total_transdist_cost"],
+                    self.output_dict["total_substation_cost"],
+                    self.output_dict["total_foundation_cost"],
+                    self.output_dict["total_erection_cost"],
+                    self.output_dict["total_development_cost"],
+                )
+            )
+            self.input_dict["project_value_usd"] = float(total_costs["Cost USD"].sum())
+            self.input_dict["foundation_cost_usd"] = self.output_dict["total_foundation_cost"]["Cost USD"].sum()
 
             management_cost = ManagementCost(
                 input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name

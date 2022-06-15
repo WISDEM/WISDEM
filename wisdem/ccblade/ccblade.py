@@ -79,6 +79,9 @@ class CCAirfoil(object):
 
             self.one_Re = True
 
+        if len(alpha) < 2:
+            raise ValueError(f"Need at least 2 angles of attack, but found {alpha}")
+
         kx = min(len(alpha) - 1, 3)
         ky = min(len(Re) - 1, 3)
 
@@ -673,7 +676,7 @@ class CCBlade(object):
         alpha, W, Re = _bem.relativewind(phi, a, ap, Vx, Vy, self.pitch, chord, theta, self.rho, self.mu)
 
         dalpha_dx = np.array([1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0])
-        dRe_dx = np.array([0.0, Re / chord, 0.0, Re * Vx / W ** 2, Re * Vy / W ** 2, 0.0, 0.0, 0.0, 0.0])
+        dRe_dx = np.array([0.0, Re / chord, 0.0, Re * Vx / W**2, Re * Vy / W**2, 0.0, 0.0, 0.0, 0.0])
 
         # cl, cd (spline derivatives)
         cl, cd = af.evaluate(alpha, Re)
@@ -731,7 +734,7 @@ class CCBlade(object):
             cn = cl * cphi + cd * sphi  # these expressions should always contain drag
             ct = cl * sphi - cd * cphi
 
-            q = 0.5 * self.rho * W ** 2
+            q = 0.5 * self.rho * W**2
             Np = cn * q * chord
             Tp = ct * q * chord
 
@@ -988,7 +991,7 @@ class CCBlade(object):
                         phi_upper = np.pi - epsilon
 
                 try:
-                    phi_star = brentq(errf, phi_lower, phi_upper, args=args)
+                    phi_star = brentq(errf, phi_lower, phi_upper, args=args, disp=False)
 
                 except ValueError:
 
@@ -1355,8 +1358,8 @@ class CCBlade(object):
 
         # normalize if necessary
         if coefficients:
-            q = 0.5 * self.rho * Uinf ** 2
-            A = np.pi * self.rotorR ** 2
+            q = 0.5 * self.rho * Uinf**2
+            A = np.pi * self.rotorR**2
             CP = P / (q * A * Uinf)
             CT = T / (q * A)
             CY = Y / (q * A)

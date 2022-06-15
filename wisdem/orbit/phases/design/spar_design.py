@@ -7,6 +7,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 
 from numpy import exp, log
+
 from wisdem.orbit.phases.design import DesignPhase
 
 
@@ -71,7 +72,7 @@ class SparDesign(DesignPhase):
         rating = self.config["turbine"]["turbine_rating"]
         depth = self.config["site"]["depth"]
 
-        mass = 535.93 + 17.664 * rating ** 2 + 0.02328 * depth * log(depth)
+        mass = 535.93 + 17.664 * rating**2 + 0.02328 * depth * log(depth)
 
         return mass
 
@@ -112,7 +113,7 @@ class SparDesign(DesignPhase):
         """
 
         rating = self.config["turbine"]["turbine_rating"]
-        mass = -16.536 * rating ** 2 + 1261.8 * rating - 1554.6
+        mass = -16.536 * rating**2 + 1261.8 * rating - 1554.6
 
         return mass
 
@@ -135,7 +136,7 @@ class SparDesign(DesignPhase):
         rating = self.config["turbine"]["turbine_rating"]
         depth = self.config["site"]["depth"]
 
-        mass = exp(3.58 + 0.196 * (rating ** 0.5) * log(rating) + 0.00001 * depth * log(depth))
+        mass = exp(3.58 + 0.196 * (rating**0.5) * log(rating) + 0.00001 * depth * log(depth))
 
         return mass
 

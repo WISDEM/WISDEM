@@ -38,6 +38,7 @@ import warnings
 import yaml
 import pandas as pd
 from yaml import Dumper
+
 from wisdem.orbit.core.exceptions import LibraryItemNotFoundError
 
 ROOT = os.path.abspath(os.path.join(os.path.abspath(__file__), "../../.."))
@@ -283,7 +284,7 @@ PATH_LIBRARY = {
     # project details
     "config": os.path.join("project", "config"),
     "plant": os.path.join("project", "plant"),
-    "port": os.path.join("project", "port"),
+    "port": os.path.join("project", "ports"),
     "project_development": os.path.join("project", "development"),
     "site": os.path.join("project", "site"),
     # substructures

@@ -6,13 +6,13 @@ on: [push, pull_request]
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
-    name: Build (${{ matrix.os }})
+    name: Build (${{ matrix.os }}, Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: False
       matrix:
-        os: ["ubuntu-latest", "windows-latest"]
-        python-version: ["3.8"]
+        os: [ubuntu-latest, windows-latest]
+        python-version: [3.8, 3.9]
 
     steps:
       - uses: actions/checkout@v2
@@ -22,17 +22,20 @@ jobs:
           miniconda-version: "latest"
           channels: conda-forge
           auto-update-conda: true
-          python-version: 3.8
+          python-version: ${{ matrix.python-version }}
           environment-file: environment.yml
           activate-environment: "test"
 
       # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
-        #shell: pwsh # putting in a shell command makes for compile linking problems later
-        # (if you use the shell here, cannot use 'compiler' package)
+        # if you use the shell here, cannot use 'compiler' package due to linker conflicts
+        shell: bash -l {0}
+        #shell: pwsh
         run: |
-          conda install -y petsc4py mpi4py compilers pyoptsparse
+          conda install -y petsc4py mpi4py gfortran pyoptsparse
+          conda init bash
+          conda info -e
 
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
@@ -46,20 +49,23 @@ jobs:
 
       # Install WISDEM with setup
       - name: Install WISDEM with setup
-        shell: pwsh
+        shell: bash -l {0}
+        #shell: pwsh
         run: |
           python setup.py develop
 
       # Install WISDEM with pip
       - name: Install WISDEM with pip for Unix
         if: false == contains( matrix.os, 'windows')
-        shell: pwsh
+        shell: bash -l {0}
+        #shell: pwsh
         run: |
           pip install -vv --no-deps -e .
 
       # Install WISDEM with pip
       #- name: Install WISDEM with pip for Windows
       #  if: contains( matrix.os, 'windows')
+      #  shell: bash -l {0}
       #  shell: pwsh
       #  run: |
       #    pip install -vv --no-deps --global-option --compiler=unix .
@@ -67,7 +73,8 @@ jobs:
       # Run all tests
       - name: Run tests
         if: contains( matrix.os, 'ubuntu')
-        shell: pwsh
+        shell: bash -l {0}
+        #shell: pwsh
         run: |
           pytest --cov-config=.coverageac --cov=wisdem
 
@@ -76,7 +83,8 @@ jobs:
         if: contains( matrix.os, 'ubuntu')
         # This also works, https://github.com/AndreMiras/coveralls-python-action
         #uses: AndreMiras/coveralls-python-action@develop
-        shell: pwsh
+        shell: bash -l {0}
+        #shell: pwsh
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

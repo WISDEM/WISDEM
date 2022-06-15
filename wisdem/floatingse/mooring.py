@@ -1,5 +1,6 @@
 import numpy as np
 import openmdao.api as om
+
 import wisdem.moorpy as mp
 import wisdem.moorpy.MoorProps as props
 
@@ -168,10 +169,10 @@ class Mooring(om.ExplicitComponent):
         line_obj = None
         line_mat = self.options["options"]["line_material"][0]
         if line_mat == "custom":
-            min_break_load = float(inputs["line_breaking_load_coeff"]) * d ** 2
-            mass_den = float(inputs["line_mass_density_coeff"]) * d ** 2
-            ea_stiff = float(inputs["line_stiffness_coeff"]) * d ** 2
-            cost_rate = float(inputs["line_cost_rate_coeff"]) * d ** 2
+            min_break_load = float(inputs["line_breaking_load_coeff"]) * d**2
+            mass_den = float(inputs["line_mass_density_coeff"]) * d**2
+            ea_stiff = float(inputs["line_stiffness_coeff"]) * d**2
+            cost_rate = float(inputs["line_cost_rate_coeff"]) * d**2
         elif line_mat == "chain_stud":
             line_obj = props.getLineProps(1e3 * d, type="chain", stud="stud")
         else:
@@ -179,7 +180,7 @@ class Mooring(om.ExplicitComponent):
 
         if not line_obj is None:
             min_break_load = line_obj.MBL
-            mass_den = line_obj.mlin
+            mass_den = line_obj.m
             ea_stiff = line_obj.EA
             cost_rate = line_obj.cost
 
@@ -308,7 +309,7 @@ class Mooring(om.ExplicitComponent):
             Frestore[ia] = np.dot(fbody[:2], idir)
             for k in range(n_lines):
                 f = ms.lineList[0].getEndForce(endB=0)
-                Fa[k] = np.sqrt(np.sum(f ** 2))
+                Fa[k] = np.sqrt(np.sum(f**2))
 
             Tmax[ia] = np.abs(Fa).max()
 
@@ -339,15 +340,15 @@ class Mooring(om.ExplicitComponent):
         line_obj = None
         line_mat = self.options["options"]["line_material"][0]
         if line_mat == "custom":
-            mass_den = float(inputs["line_mass_density_coeff"]) * d ** 2
-            cost_rate = float(inputs["line_cost_rate_coeff"]) * d ** 2
+            mass_den = float(inputs["line_mass_density_coeff"]) * d**2
+            cost_rate = float(inputs["line_cost_rate_coeff"]) * d**2
         elif line_mat == "chain_stud":
             line_obj = props.getLineProps(1e3 * d, type="chain", stud="stud")
         else:
             line_obj = props.getLineProps(1e3 * d, type=line_mat)
 
         if not line_obj is None:
-            mass_den = line_obj.mlin
+            mass_den = line_obj.m
             cost_rate = line_obj.cost
 
         # Cost of anchors

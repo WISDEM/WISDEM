@@ -1,21 +1,21 @@
 repos:
 -   repo: https://github.com/timothycrosley/isort
-    rev: 4.3.21
+    rev: 5.10.1
     hooks:
         - id: isort
           name: isort
           stages: [commit]
 
 -   repo: https://github.com/psf/black
-    rev: stable
+    rev: 22.3.0
     hooks:
         - id: black
           name: black
           stages: [commit]
-          language_version: python3.8
+          language_version: python3
 
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v4.2.0
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer

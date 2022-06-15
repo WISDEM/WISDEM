@@ -7,6 +7,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 
 from marmot import process
+
 from wisdem.orbit.core import Cargo
 from wisdem.orbit.core.logic import jackdown_if_required
 from wisdem.orbit.core.defaults import process_times as pt
@@ -36,7 +37,7 @@ class Monopile(Cargo):
 
     @staticmethod
     def release(**kwargs):
-        """Returns time required to release tmonopile from fastenings."""
+        """Returns time required to release monopile from fastenings."""
 
         key = "mono_release_time"
         time = kwargs.get(key, pt[key])

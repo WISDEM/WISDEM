@@ -3,8 +3,6 @@ import openmdao.api as om
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.cylinder_member as mem
-
-# from wisdem.commonse.utilization_eurocode import hoopStressEurocode
 from wisdem.commonse import NFREQ, gravity
 
 RIGID = 1e30
@@ -309,11 +307,10 @@ class TowerFrame(om.ExplicitComponent):
         self.frame = pyframe3dd.Frame(nodes, reactions, elements, options)
 
         # ------- enable dynamic analysis ----------
-        Mmethod = 1
         lump = 0
         shift = 0.0
         # Run twice the number of modes to ensure that we can ignore the torsional modes and still get the desired number of fore-aft, side-side modes
-        self.frame.enableDynamics(2 * NFREQ, Mmethod, lump, frame3dd_opt["tol"], shift)
+        self.frame.enableDynamics(2 * NFREQ, frame3dd_opt["modal_method"], lump, frame3dd_opt["tol"], shift)
         # ----------------------------
 
         # ------ static load case 1 ------------
@@ -358,7 +355,7 @@ class TowerFrame(om.ExplicitComponent):
 
         # Add mass for modal analysis only (loads are captured in rna_F & rna_M)
         mID = np.array([n], dtype=np.int_)  # Cannot add at top node due to bug
-        m_add = inputs["rna_mass"]
+        m_add = float(inputs["rna_mass"])
         cg_add = inputs["rna_cg"].reshape((-1, 1))
         I_add = inputs["rna_I"].reshape((-1, 1))
         add_gravity = False
@@ -515,7 +512,7 @@ class TowerSE(om.Group):
         temp_opt["n_ballasts"] = [0]
         self.add_subsystem(
             "member",
-            mem.MemberStandard(column_options=temp_opt, idx=0, n_mat=n_mat, n_refine=NREFINE),
+            mem.MemberStandard(column_options=temp_opt, idx=0, n_mat=n_mat, n_refine=mod_opt["n_refine"]),
             promotes=promlist,
         )
 

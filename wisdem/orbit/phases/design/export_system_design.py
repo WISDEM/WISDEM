@@ -6,6 +6,7 @@ __maintainer__ = "Rob Hammond"
 __email__ = "robert.hammond@nrel.gov"
 
 import numpy as np
+
 from wisdem.orbit.phases.design._cables import CableSystem
 
 

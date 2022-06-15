@@ -15,7 +15,9 @@ from itertools import product
 
 import numpy as np
 import pandas as pd
-import wisdem.orbit
+from benedict import benedict
+
+import wisdem.orbit as orbit
 from wisdem.orbit.phases import DesignPhase, InstallPhase
 from wisdem.orbit.core.library import initialize_library, export_library_specs, extract_library_data
 from wisdem.orbit.phases.design import (
@@ -30,6 +32,7 @@ from wisdem.orbit.phases.design import (
     OffshoreSubstationDesign,
 )
 from wisdem.orbit.phases.install import (
+    JacketInstallation,
     TurbineInstallation,
     MonopileInstallation,
     MooredSubInstallation,
@@ -38,6 +41,7 @@ from wisdem.orbit.phases.install import (
     GravityBasedInstallation,
     MooringSystemInstallation,
     ScourProtectionInstallation,
+    FloatingSubstationInstallation,
     OffshoreSubstationInstallation,
 )
 from wisdem.orbit.core.exceptions import PhaseNotFound, WeatherProfileError, PhaseDependenciesInvalid
@@ -71,6 +75,8 @@ class ProjectManager:
         MooredSubInstallation,
         MooringSystemInstallation,
         GravityBasedInstallation,
+        FloatingSubstationInstallation,
+        JacketInstallation,
     ]
 
     def __init__(self, config, library_path=None, weather=None):
@@ -97,7 +103,8 @@ class ProjectManager:
             ],
         )
         self._phases = {}
-        self.config = self.resolve_project_capacity(config)
+        self.config = benedict(config)
+        self.resolve_project_capacity()
         self.weather = self.transform_weather_input(weather)
 
         self.design_results = {}
@@ -148,6 +155,24 @@ class ProjectManager:
 
         if install_phases:
             self.progress = ProjectProgress(self.progress_logs)
+
+        self._print_warnings()
+
+    def _print_warnings(self):
+
+        try:
+            df = pd.DataFrame(self.logs)
+            df = df.loc[~df["message"].isnull()]
+            df = df.loc[df["message"].str.contains("Exceeded")]
+
+            for msg in df["message"].unique():
+
+                idx = df.loc[df["message"] == msg].index[0]
+                phase = df.loc[idx, "phase"]
+                print(f"{phase}:\n\t {msg}")
+
+        except KeyError:
+            pass
 
     @property
     def phases(self):
@@ -222,34 +247,29 @@ class ProjectManager:
 
         config["design_phases"] = [*design_phases.keys()]
         config["install_phases"] = [*install_phases.keys()]
-        config["orbit_version"] = str(wisdem.orbit.__version__)
+        config["orbit_version"] = str(orbit.__version__)
 
         return config
 
-    @staticmethod
-    def resolve_project_capacity(config):
+    def resolve_project_capacity(self):
         """
         Resolves the relationship between 'project_capacity', 'num_turbines'
         and 'turbine_rating' and verifies that input and calculated values
-        match. Adds missing values that can be calculated to the 'config'.
-
-        Parameters
-        ----------
-        config : dict
+        match. Adds missing values that can be calculated to the 'self.config'.
         """
 
         try:
-            project_capacity = config["plant"]["capacity"]
+            project_capacity = self.config["plant"]["capacity"]
         except KeyError:
             project_capacity = None
 
         try:
-            turbine_rating = config["turbine"]["turbine_rating"]
+            turbine_rating = self.config["turbine"]["turbine_rating"]
         except KeyError:
             turbine_rating = None
 
         try:
-            num_turbines = config["plant"]["num_turbines"]
+            num_turbines = self.config["plant"]["num_turbines"]
         except KeyError:
             num_turbines = None
 
@@ -260,21 +280,19 @@ class ProjectManager:
         else:
             if all((project_capacity, turbine_rating)):
                 num_turbines = ceil(project_capacity / turbine_rating)
-                config["plant"]["num_turbines"] = num_turbines
+                self.config["plant"]["num_turbines"] = num_turbines
 
             elif all((project_capacity, num_turbines)):
                 turbine_rating = project_capacity / num_turbines
                 try:
-                    config["turbine"]["turbine_rating"] = turbine_rating
+                    self.config["turbine"]["turbine_rating"] = turbine_rating
 
                 except KeyError:
-                    config["turbine"] = {"turbine_rating": turbine_rating}
+                    self.config["turbine"] = {"turbine_rating": turbine_rating}
 
             elif all((num_turbines, turbine_rating)):
                 project_capacity = turbine_rating * num_turbines
-                config["plant"]["capacity"] = project_capacity
-
-        return config
+                self.config["plant"]["capacity"] = project_capacity
 
     @classmethod
     def find_key_match(cls, target):
@@ -332,6 +350,8 @@ class ProjectManager:
         for k, _ in right.items():
             if k in new and isinstance(new[k], dict) and isinstance(right[k], collections.Mapping):
                 new[k] = cls.merge_dicts(new[k], right[k], overwrite=overwrite, add_keys=add_keys)
+            elif k in new and isinstance(new[k], list) and isinstance(right[k], list):
+                new[k].extend(right[k])
             else:
                 if overwrite or k not in new:
                     new[k] = right[k]
@@ -850,9 +870,6 @@ class ProjectManager:
     def logs(self):
         """Returns list of all logs in the project."""
 
-        if not self._output_logs:
-            raise Exception("Project hasn't been ran yet.")
-
         return sorted(self._output_logs, key=lambda l: l["time"])
 
     @property
@@ -1280,7 +1297,7 @@ class ProjectManager:
     def total_capex(self):
         """Returns total project CapEx including soft costs."""
 
-        return self.bos_capex + self.turbine_capex + self.soft_capex
+        return self.bos_capex + self.turbine_capex + self.soft_capex + self.project_capex
 
     @property
     def total_capex_per_kw(self):

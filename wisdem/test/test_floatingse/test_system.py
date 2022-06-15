@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
+
 import wisdem.floatingse.floating_system as sys
 from wisdem.commonse import gravity as g
 from wisdem.commonse.cylinder_member import NULL, MEMMAX
@@ -159,13 +160,25 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["platform_elem_sigma_y"][:6], 5 * np.arange(6) + 1)
         self.assertEqual(self.outputs["platform_displacement"], 6e1)
         centroid = np.array([0.375, 0.25, 0.25])
-        R = np.zeros(6)
-        R[0] = np.sum((self.inputs["member0:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]) ** 2)
-        R[1] = np.sum((self.inputs["member1:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]) ** 2)
-        R[2] = np.sum((self.inputs["member2:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]) ** 2)
-        R[3] = np.sum((self.inputs["member3:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]) ** 2)
-        R[4] = np.sum((self.inputs["member4:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]) ** 2)
-        R[5] = np.sum((self.inputs["member5:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]) ** 2)
+        R = np.zeros((6, 2))
+        R[0,] = (
+            self.inputs["member0:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        )
+        R[1,] = (
+            self.inputs["member1:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        )
+        R[2,] = (
+            self.inputs["member2:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        )
+        R[3,] = (
+            self.inputs["member3:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        )
+        R[4,] = (
+            self.inputs["member4:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        )
+        R[5,] = (
+            self.inputs["member5:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        )
 
         npt.assert_equal(self.outputs["platform_center_of_buoyancy"], centroid)
         npt.assert_equal(self.outputs["platform_centroid"], centroid)
@@ -175,10 +188,10 @@ class TestPlatform(unittest.TestCase):
         self.assertEqual(self.outputs["platform_hull_mass"], 6e3 + 1e3 - 6e2)
         self.assertEqual(self.outputs["platform_cost"], 6 * 2e3 + 3e3)
         self.assertEqual(self.outputs["platform_Awater"], 30)
-        self.assertEqual(self.outputs["platform_Iwater"], 6 * 15 + 5 * R.sum())
+        self.assertEqual(self.outputs["platform_Iwater"], 6 * 15 + 5 * np.sum(R[:, 1] ** 2))
         npt.assert_equal(self.outputs["platform_added_mass"], 6 * np.arange(6))
         npt.assert_equal(self.outputs["platform_variable_capacity"], 10 + np.arange(6))
-        npt.assert_equal(self.outputs["transition_piece_I"], 1e3 * 0.5 ** 2 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
+        npt.assert_equal(self.outputs["transition_piece_I"], 1e3 * 0.5**2 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
         npt.assert_array_less(1e2, self.outputs["platform_I_hull"] - self.outputs["transition_piece_I"])
 
     def testPlatformTurbineSystem(self):

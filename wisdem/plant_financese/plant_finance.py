@@ -3,7 +3,7 @@ import openmdao.api as om
 
 class PlantFinance(om.ExplicitComponent):
     """
-    Compute LCOE for the wind plant
+    Compute LCOE for the wind plant, formulas from https://doi.org/10.1016/j.tej.2021.106931
 
     Parameters
     ----------
@@ -27,14 +27,43 @@ class PlantFinance(om.ExplicitComponent):
         The losses in AEP due to waked conditions
     fixed_charge_rate : float
         Fixed charge rate for coe calculation
+    electricity_price : float
+        Electricity price
+    reserve_margin_price : float
+        Reserve margin price
+    capacity_credit : float
+        Capacity credit
+    benchmark_price : float
+        Benchmark price
 
     Returns
     -------
-    lcoe : float
-        Levelized cost of energy for the wind plant
     plant_aep : float
         Annual Energy Production of the wind plant
-
+    capacity_factor : float
+        Capacity factor of the wind plant
+    lcoe : float
+        Levelized cost of energy for the wind plant
+    lvoe : float
+        Levelized value of energy
+    value_factor : float
+        Value factor
+    nvoc : float
+        Net value of capacity
+    nvoe : float
+        Net value of energy
+    slcoe : float
+        System LCOE
+    bcr : float
+        Benefit cost ratio
+    cbr : float
+        Cost benefit ratio
+    roi : float
+        Return of investment
+    pm : float
+        Profit margin
+    plcoe : float
+        Profitability adjusted LCOE
     """
 
     def initialize(self):
@@ -53,9 +82,24 @@ class PlantFinance(om.ExplicitComponent):
         self.add_input("turbine_aep", val=0.0, units="kW*h")
         self.add_input("wake_loss_factor", val=0.15)
         self.add_input("fixed_charge_rate", val=0.075)
+        self.add_input("electricity_price", val=0.04, units="USD/kW/h")
+        self.add_input("reserve_margin_price", val=120., units="USD/kW/yr")
+        self.add_input("capacity_credit", val=1.)
+        self.add_input("benchmark_price", val=0.071, units='USD/kW/h')
 
-        self.add_output("lcoe", val=0.0, units="USD/kW/h")
         self.add_output("plant_aep", val=0.0, units="USD/kW/h")
+        self.add_output("capacity_factor", val=0.0, desc="Capacity factor of the wind farm")
+        self.add_output("lcoe", val=0.0, units="USD/kW/h", desc="Levelized cost of energy: LCOE is the cost that, if assigned to every unit of electricity by an asset over an evaluation period, will equal the total costs during that same period when discounted to the base year.")
+        self.add_output("lvoe", val=0.0, units="USD/kW/h", desc="Levelized value of energy: LVOE is the discounted sum of total value divided by the discounted sum of electrical energy generated.")
+        self.add_output("value_factor", val=0.0, desc="Value factor is the LVOE divided by a benchmark price.")
+        self.add_output("nvoc", val=0.0, units="USD/kW/yr", desc="Net value of capacity: NVOC is the difference in an asset’s total annualized value and annualized cost, divided by the installed capacity of the asset. NVOC ≥ 0 for economic viability.")
+        self.add_output("nvoe", val=0.0, units="USD/kW/h", desc="Net value of energy: NVOE is the difference between LVOE and LCOE. NVOE ≥ 0 for economic viability.")
+        self.add_output("slcoe", val=0.0, units="USD/kW/h", desc="System LCOE: SLCOE is the negative of NVOE but further adjusted by a benchmark price. System LCOE ≤ benchmark price for economic viability.")
+        self.add_output("bcr", val=0.0, desc="Benefit cost ratio: BCR is the discounted sum of total value divided by the discounted sum of total cost. A higher BCR is more competitive. BCR ≥ 1 for economic viability")
+        self.add_output("cbr", val=0.0, desc="Cost benefit ratio: CBR is the inverse of BCR. CBR ≤ 1 for economic viability. A lower CBR is more competitive.")
+        self.add_output("roi", val=0.0, desc="Return on investment: ROI can also be expressed as BCR – 1. A higher ROI is more competitive. ROI ≥ 0 for economic viability.")
+        self.add_output("pm", val=0.0, desc="Profit margin: PM can also be expressed as 1 - CBR. A higher PM is more competitive. PM ≥ 0 for economic viability.")
+        self.add_output("plcoe", val=0.0, units="USD/kW/h", desc="Profitability adjusted PLCOE is the product of a benchmark price and CBR, which is equal to LCOE divided by value factor. A lower PLCOE is more competitive. PLCOE ≤ benchmark price for economic viability.")
 
         self.declare_partials("*", "*")
 
@@ -69,6 +113,10 @@ class PlantFinance(om.ExplicitComponent):
         fcr = inputs["fixed_charge_rate"]
         wlf = inputs["wake_loss_factor"]
         turb_aep = inputs["turbine_aep"]
+        electricity_price = inputs["electricity_price"]
+        reserve_margin_price = inputs["reserve_margin_price"]
+        capacity_credit = inputs["capacity_credit"]
+        benchmark_price = inputs["benchmark_price"]
         c_turbine = tcc_per_kW * t_rating
         c_bos_turbine = bos_per_kW * t_rating
         c_opex_turbine = opex_per_kW * t_rating
@@ -127,10 +175,35 @@ class PlantFinance(om.ExplicitComponent):
         dcopex_dtrating = -c_opex / t_rating
         dicc_dcturb = dicc_dcbos = dcopex_dcopex = 1.0 / t_rating
 
-        # compute COE and LCOE values
-        lcoe = (icc * fcr + c_opex) / nec  # changed per COE report
-        outputs["lcoe"] = lcoe
+        C = icc * fcr + c_opex
+        E = nec
+        V = nec * electricity_price + reserve_margin_price * capacity_credit
+        lcoe = C / E
+        lvoe = V / E
+        value_factor = lvoe / benchmark_price
+        nvoc = V - C
+        nvoe = lvoe - lcoe
+        slcoe = benchmark_price - nvoe
+        bcr = V / C
+        cbr = C / V
+        roi = (V - C)/C
+        pm = (V - C)/V
+        plcoe = C / V * benchmark_price
+
+        # Assign openmdao outputs
         outputs["plant_aep"] = park_aep
+        outputs["capacity_factor"] = nec / 8760.
+        outputs['lcoe'] = lcoe
+        outputs['lvoe'] = lvoe
+        outputs['value_factor'] = value_factor
+        outputs['nvoc'] = nvoc
+        outputs['nvoe'] = nvoe
+        outputs['slcoe'] = slcoe
+        outputs['bcr'] = bcr
+        outputs['cbr'] = cbr
+        outputs['roi'] = roi
+        outputs['pm'] = pm
+        outputs['plcoe'] = plcoe
 
         self.J = {}
         self.J["lcoe", "tcc_per_kW"] = dicc_dcturb * fcr / nec
@@ -143,26 +216,44 @@ class PlantFinance(om.ExplicitComponent):
         self.J["lcoe", "plant_aep_in"] = -dnec_dpaep * lcoe / nec
         self.J["lcoe", "machine_rating"] = (dicc_dtrating * fcr + dcopex_dtrating) / nec - dnec_dtrating * lcoe / nec
 
-        if self.options["verbosity"]:
-            print("################################################")
-            print("Computation of LCoE from Plant_FinanceSE")
-            print("Number of turbines in the park    %u" % n_turbine)
-            print("Turbine rating                    %.2f kW" % t_rating)
-            print("Turbine capital cost per kW       %.2f USD/kW" % tcc_per_kW)
-            print("BoS costs per kW                  %.2f USD/kW" % bos_per_kW)
-            print("Opex costs per kW                 %.2f USD/kW" % opex_per_kW)
-            print("Fixed charge rate                 %.2f %%" % (fcr * 100.0))
-            print("Wake loss factor                  %.2f %%" % (wlf * 100.0))
-            print("AEP of the single turbine         %.2f GWh" % (turb_aep * 1.0e-006))
-            print("AEP of the wind plant             %.2f GWh" % (park_aep * 1.0e-006))
-            print("Initial capital costs per kW      %.2f $/kW" % icc)
-            print("Total initial capital cost        %.2f M USD" % (icc * n_turbine * t_rating * 1.0e-006))
-            print("Opex costs of the park            %.2f M USD/yr" % (c_opex_turbine * n_turbine * 1.0e-006))
-            print("Net energy capture                %.2f MWh/MW/yr" % nec)
-            print(
-                "LCoE                              %.2f USD/MWh" % (lcoe * 1.0e003)
-            )  # removed "coe", best to have only one metric for cost
-            print("################################################")
-
+    
     def compute_partials(self, inputs, J, discrete_inputs):
         J = self.J
+
+# OpenMDAO group to execute the plant finance SE model as a standalone
+class StandalonePlantFinanceSE(om.Group):
+
+    def setup(self):
+
+        self.add_subsystem(
+            "financese",
+            PlantFinance(),
+            promotes=['*']
+        )
+
+
+if __name__ == "__main__":
+    wt_opt = om.Problem(model=StandalonePlantFinanceSE())
+    wt_opt.setup(derivatives=False)
+    wt_opt['machine_rating'] = 5.e+3
+    wt_opt['tcc_per_kW'] = 1.5e+3
+    wt_opt['bos_per_kW'] = 446.
+    wt_opt['opex_per_kW'] = 43.
+    wt_opt['turbine_aep'] = 25.e+6
+    wt_opt['fixed_charge_rate'] = 0.065
+    wt_opt['turbine_number'] = 120
+    wt_opt.run_model()
+    
+    
+    print("plant_aep ", wt_opt["plant_aep"])
+    print("lcoe ", wt_opt["lcoe"])
+    print("lvoe ", wt_opt["lvoe"])
+    print("value_factor ", wt_opt["value_factor"])
+    print("nvoc ", wt_opt["nvoc"])
+    print("nvoe ", wt_opt["nvoe"])
+    print("slcoe ", wt_opt["slcoe"])
+    print("bcr ", wt_opt["bcr"])
+    print("cbr ", wt_opt["cbr"])
+    print("roi ", wt_opt["roi"])
+    print("pm ", wt_opt["pm"])
+    print("plcoe ", wt_opt["plcoe"])

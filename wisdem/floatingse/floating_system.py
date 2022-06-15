@@ -1,11 +1,12 @@
 import numpy as np
 import openmdao.api as om
+
 import wisdem.commonse.utilities as util
 from wisdem.commonse import gravity
 from wisdem.commonse.cylinder_member import NULL, MEMMAX
 
-NNODES_MAX = 1000
-NELEM_MAX = 1000
+NNODES_MAX = 200  # 1000
+NELEM_MAX = 200  # 1000
 RIGID = 1e30
 EPS = 1e-6
 
@@ -171,7 +172,7 @@ class PlatformFrame(om.ExplicitComponent):
         itrans_platform = util.closest_node(node_platform, inputs["transition_node"])
         m_trans = float(inputs["transition_piece_mass"])
         r_trans = Rnode[itrans_platform]
-        I_trans = m_trans * r_trans ** 2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
+        I_trans = m_trans * r_trans**2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
         outputs["transition_piece_I"] = I_trans
 
         # Store outputs
@@ -206,7 +207,6 @@ class PlatformFrame(om.ExplicitComponent):
         volume = 0.0
         Awater = 0.0
         Iwater = 0.0
-        m_added = np.zeros(6)
         cg_plat = np.zeros(3)
         cb_plat = np.zeros(3)
         centroid = outputs["platform_centroid"][:2]
@@ -239,9 +239,9 @@ class PlatformFrame(om.ExplicitComponent):
             m_ball += inputs[f"member{k}:ballast_mass"]
             Awater_k = inputs[f"member{k}:Awater"]
             Awater += Awater_k
-            Rwater2 = np.sum((inputs[f"member{k}:waterline_centroid"] - centroid) ** 2)
-            Iwater += inputs[f"member{k}:Iwater"] + Awater_k * Rwater2
-            m_added += inputs[f"member{k}:added_mass"]
+            # Just the y-coordinate because the waterplane area is used for metacentric height, which is based on Iwater_x
+            Rwater = inputs[f"member{k}:waterline_centroid"][1] - centroid[1]
+            Iwater += inputs[f"member{k}:Iwater"] + Awater_k * Rwater**2
             variable_capacity[k] = inputs[f"member{k}:variable_ballast_capacity"]
 
             # Center of mass / buoyancy tallies
@@ -260,9 +260,10 @@ class PlatformFrame(om.ExplicitComponent):
         cg_plat /= mass
         cb_plat /= volume
 
-        # With CG known, loop back through to compute platform I
+        # With CG known, loop back through to compute platform I and added mass
         unit_z = np.array([0.0, 0.0, 1.0])
         I_hull = np.zeros((3, 3))
+        m_added = np.zeros(6)
         for k in range(n_member):
             xyz_k = inputs[f"member{k}:nodes_xyz"]
             inodes = np.where(xyz_k[:, 0] == NULL)[0][0]
@@ -282,6 +283,11 @@ class PlatformFrame(om.ExplicitComponent):
 
             # Now do parallel axis theorem
             I_hull += np.array(I_k_rot) + imass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+
+            # Added mass
+            m_add_k = inputs[f"member{k}:added_mass"]
+            m_added[:3] += m_add_k[:3]
+            m_added[3:] += m_add_k[3:] + np.diag(m_add_k[0] * (np.dot(R, R) * np.eye(3) - np.outer(R, R)))
 
         # Add in transition piece
         R = cg_plat - cg_trans
@@ -451,12 +457,12 @@ class PlatformTurbineSystem(om.ExplicitComponent):
             ds = outputs["member_variable_height"][k]
 
             # Compute I aligned with member
-            h_k = ds * np.sqrt(np.sum(vec_k ** 2))
+            h_k = ds * np.sqrt(np.sum(vec_k**2))
             if h_k == 0.0:
                 continue
             r_k = np.sqrt(V_variable_member[k] / h_k / np.pi)
             I_k = (
-                m_variable_member[k] * np.r_[(3 * r_k ** 2 + h_k ** 2) / 12.0 * np.ones(2), 0.5 * r_k ** 2, np.ones(3)]
+                m_variable_member[k] * np.r_[(3 * r_k**2 + h_k**2) / 12.0 * np.ones(2), 0.5 * r_k**2, np.ones(3)]
             )
 
             # Rotate I to global c.s.

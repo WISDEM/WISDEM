@@ -8,6 +8,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 import pandas as pd
 import pytest
+
 from wisdem.orbit.core import WetStorage
 from wisdem.orbit.phases.install.quayside_assembly_tow.common import TurbineAssemblyLine, SubstructureAssemblyLine
 

@@ -13,9 +13,6 @@ from wisdem.rotorse.geometry_tools.geometry import AirfoilShape, remap2grid, tra
 
 try:
     from INN_interface.INN import INN
-    from INN_interface import utils
-    from INN_interface.cst import AirfoilShape as AirfoilShape_cst
-    from INN_interface.cst import CSTAirfoil
 
     INN_loaded = True
 except:
@@ -240,6 +237,19 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             )
             nacelle_ivc.add_output(
                 "gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive"
+            )
+            nacelle_ivc.add_output("gearbox_mass_user", val=0.0, units="kg", desc="User override of gearbox mass.")
+            nacelle_ivc.add_output(
+                "gearbox_radius_user",
+                val=0.0,
+                units="m",
+                desc="User override of gearbox radius (only used if gearbox_mass_user is > 0).",
+            )
+            nacelle_ivc.add_output(
+                "gearbox_length_user",
+                val=0.0,
+                units="m",
+                desc="User override of gearbox length (only used if gearbox_mass_user is > 0).",
             )
             nacelle_ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
             if modeling_options["flags"]["nacelle"]:
@@ -506,7 +516,10 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Floating substructure inputs
         if modeling_options["flags"]["floating_platform"]:
-            self.add_subsystem("floating", Floating(floating_init_options=modeling_options["floating"]))
+            self.add_subsystem(
+                "floating",
+                Floating(floating_init_options=modeling_options["floating"], opt_options=self.options["opt_options"]),
+            )
             self.add_subsystem("mooring", Mooring(options=modeling_options))
             self.connect("floating.joints_xyz", "mooring.joints_xyz")
 
@@ -586,6 +599,10 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             costs_ivc.add_output("tower_mass_cost_coeff", units="USD/kg", val=2.9)
             costs_ivc.add_output("controls_machine_rating_cost_coeff", units="USD/kW", val=21.15)
             costs_ivc.add_output("crane_cost", units="USD", val=12e3)
+            costs_ivc.add_output("electricity_price", val=0.04, units="USD/kW/h")
+            costs_ivc.add_output("reserve_margin_price", val=120.0, units="USD/kW/yr")
+            costs_ivc.add_output("capacity_credit", val=1.0)
+            costs_ivc.add_output("benchmark_price", val=0.071, units="USD/kW/h")
 
         # Assembly setup
         self.add_subsystem("high_level_tower_props", ComputeHighLevelTowerProperties(modeling_options=modeling_options))
@@ -1599,8 +1616,19 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
             val=0.0,
             desc="Spanwise position of the segmentation joint.",
         )
-        ivc.add_output("joint_mass", val=0.0, desc="Mass of the joint.")
-        ivc.add_output("joint_cost", val=0.0, units="USD", desc="Cost of the joint.")
+        ivc.add_output("joint_mass", val=0.0, units="kg", desc="Mass of the joint.")
+        ivc.add_output("joint_nonmaterial_cost", val=0.0, units="USD", desc="Cost of the joint.")
+        ivc.add_discrete_output("joint_bolt", val="M48", desc="Type of bolt: M30, M36, or M48")
+        ivc.add_discrete_output(
+            "reinforcement_layer_ss",
+            val="joint_reinf_ss",
+            desc="Layer identifier for the reinforcement layer at the join where bolts are inserted, suction side",
+        )
+        ivc.add_discrete_output(
+            "reinforcement_layer_ps",
+            val="joint_reinf_ps",
+            desc="Layer identifier for the reinforcement layer at the join where bolts are inserted, pressure side",
+        )
 
         ivc.add_output("d_f", val=0.0, units="m", desc="Diameter of the fastener")
         ivc.add_output("sigma_max", val=0.0, units="Pa", desc="Max stress on bolt")
@@ -2143,7 +2171,7 @@ class Hub(om.Group):
 
 class Compute_Grid(om.ExplicitComponent):
     """
-    Compute the non-dimensional grid for a tower or monopile/jacket.
+    Compute the non-dimensional grid for a tower or monopile.
 
     Using the dimensional `ref_axis` array, this component computes the
     non-dimensional grid, height (vertical distance) and length (curve distance)
@@ -2265,13 +2293,14 @@ class Jacket(om.Group):
 
     def setup(self):
         fixedbottomse_options = self.options["fixedbottomse_options"]
+        n_bays = fixedbottomse_options["n_bays"]
+        n_legs = fixedbottomse_options["n_legs"]
 
         ivc = self.add_subsystem("jacket_indep_vars", om.IndepVarComp(), promotes=["*"])
         ivc.add_output(
-            "r_foot",
-            val=0.0,
-            units="m",
-            desc="Radius of foot (bottom) of jacket, in meters.",
+            "foot_head_ratio",
+            val=1.5,
+            desc="Ratio of radius of foot (bottom) of jacket to head.",
         )
         ivc.add_output(
             "r_head",
@@ -2286,57 +2315,33 @@ class Jacket(om.Group):
             desc="Overall jacket height, meters.",
         )
         ivc.add_output(
-            "q",
-            val=0.0,
-            desc="Ratio of two consecutive bay heights.",
-        )
-        ivc.add_output(
-            "l_osg",
-            val=0.0,
-            units="m",
-            desc="Lowest leg segment height, meters.",
-        )
-        ivc.add_output(
-            "l_tp",
-            val=0.0,
-            units="m",
-            desc="Transition piece segment height, meters.",
-        )
-        ivc.add_output(
-            "gamma_b",
-            val=0.0,
-            desc="Leg radius-to-thickness ratio (bottom).",
-        )
-        ivc.add_output(
-            "gamma_t",
-            val=0.0,
-            desc="Leg radius-to-thickness ratio (top).",
-        )
-        ivc.add_output(
-            "beta_b",
-            val=0.0,
-            desc="Brace-to-leg diameter ratio (bottom).",
-        )
-        ivc.add_output(
-            "beta_t",
-            val=0.0,
-            desc="Brace-to-leg diameter ratio (top).",
-        )
-        ivc.add_output(
-            "tau_b",
-            val=0.0,
-            desc="Brace-to-leg thickness ratio (bottom).",
-        )
-        ivc.add_output(
-            "tau_t",
-            val=0.0,
-            desc="Brace-to-leg thickness ratio (top).",
-        )
-        ivc.add_output(
-            "d_l",
+            "leg_diameter",
             val=0.0,
             units="m",
             desc="Leg diameter, meters. Constant throughout each leg.",
+        )
+        ivc.add_output(
+            "leg_thickness",
+            val=0.0,
+            units="m",
+            desc="Leg thickness, meters. Constant throughout each leg.",
+        )
+        ivc.add_output(
+            "brace_diameters",
+            val=np.zeros((n_bays)),
+            units="m",
+            desc="Brace diameter, meters. Array starts at the bottom of the jacket.",
+        )
+        ivc.add_output(
+            "brace_thicknesses",
+            val=np.zeros((n_bays)),
+            units="m",
+            desc="Brace thickness, meters. Array starts at the bottom of the jacket.",
+        )
+        ivc.add_output(
+            "bay_spacing",
+            val=np.zeros((n_bays + 1)),
+            desc="Bay nodal spacing. Array starts at the bottom of the jacket.",
         )
         ivc.add_output(
             "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of jacket"
@@ -2349,9 +2354,11 @@ class Jacket(om.Group):
 class Floating(om.Group):
     def initialize(self):
         self.options.declare("floating_init_options")
+        self.options.declare("opt_options")
 
     def setup(self):
         floating_init_options = self.options["floating_init_options"]
+        float_opt = self.options["opt_options"]["design_variables"]["floating"]
         n_joints = floating_init_options["joints"]["n_joints"]
         n_members = floating_init_options["members"]["n_members"]
 
@@ -2371,19 +2378,36 @@ class Floating(om.Group):
         for k in range(len(member_link_data)):
             name_member = member_link_data[k][0]
             memidx = floating_init_options["members"]["name"].index(name_member)
-            n_grid = len(floating_init_options["members"]["grid_member_" + name_member])
+            n_geom = floating_init_options["members"]["n_geom"][memidx]
+            n_height = floating_init_options["members"]["n_height"][memidx]
             n_layers = floating_init_options["members"]["n_layers"][memidx]
             n_ballasts = floating_init_options["members"]["n_ballasts"][memidx]
             n_bulkheads = floating_init_options["members"]["n_bulkheads"][memidx]
             n_axial_joints = floating_init_options["members"]["n_axial_joints"][memidx]
 
             ivc = self.add_subsystem(f"memgrp{k}", om.IndepVarComp())
-            ivc.add_output("s", val=np.zeros(n_grid))
-            ivc.add_output("outer_diameter", val=np.zeros(n_grid), units="m")
+            ivc.add_output("s_in", val=np.zeros(n_geom))
+            ivc.add_output("s", val=np.zeros(n_height))
+
+            diameter_assigned = False
+            for i, kgrp in enumerate(float_opt["members"]["groups"]):
+                memname = kgrp["names"][0]
+                idx = floating_init_options["members"]["name2idx"][memname]
+                if idx == k:
+                    if "diameter" in float_opt["members"]["groups"][i]:
+                        if float_opt["members"]["groups"][i]["diameter"]["constant"]:
+                            ivc.add_output("outer_diameter_in", val=0.0, units="m")
+                        else:
+                            ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
+                        diameter_assigned = True
+
+            if not diameter_assigned:
+                ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
+
+            ivc.add_discrete_output("layer_materials", val=[""] * n_layers)
+            ivc.add_output("layer_thickness_in", val=np.zeros((n_layers, n_geom)), units="m")
             ivc.add_output("bulkhead_grid", val=np.zeros(n_bulkheads))
             ivc.add_output("bulkhead_thickness", val=np.zeros(n_bulkheads), units="m")
-            ivc.add_discrete_output("layer_materials", val=[""] * n_layers)
-            ivc.add_output("layer_thickness", val=np.zeros((n_layers, n_grid)), units="m")
             ivc.add_output("ballast_grid", val=np.zeros((n_ballasts, 2)))
             ivc.add_output("ballast_volume", val=np.zeros(n_ballasts), units="m**3")
             ivc.add_discrete_output("ballast_materials", val=[""] * n_ballasts)
@@ -2400,13 +2424,19 @@ class Floating(om.Group):
             ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_spacing", 0.0, units="rad")
 
+            self.add_subsystem(f"memgrid{k}", MemberGrid(n_height=n_height, n_geom=n_geom, n_layers=n_layers))
+            self.connect(f"memgrp{k}.s_in", f"memgrid{k}.s_in")
+            self.connect(f"memgrp{k}.s", f"memgrid{k}.s_grid")
+            self.connect(f"memgrp{k}.outer_diameter_in", f"memgrid{k}.outer_diameter_in")
+            self.connect(f"memgrp{k}.layer_thickness_in", f"memgrid{k}.layer_thickness_in")
+
         self.add_subsystem("alljoints", AggregateJoints(floating_init_options=floating_init_options), promotes=["*"])
 
         for i in range(n_members):
             name_member = floating_init_options["members"]["name"][i]
             idx = floating_init_options["members"]["name2idx"][name_member]
             self.connect(f"memgrp{idx}.grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
-            self.connect(f"memgrp{idx}.outer_diameter", "member_" + name_member + ":outer_diameter")
+            self.connect(f"memgrid{idx}.outer_diameter", "member_" + name_member + ":outer_diameter")
             self.connect(f"memgrp{idx}.s", "member_" + name_member + ":s")
 
 
@@ -2435,6 +2465,40 @@ class NodeDVs(om.ExplicitComponent):
             xyz[idx, dim] = inputs[f"jointdv_{i}"]
 
         outputs["location"] = xyz
+
+
+# Component that interpolates the diameter/thickness nodes to all of the other points needed in the member discretization
+class MemberGrid(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("n_layers")
+        self.options.declare("n_height")
+        self.options.declare("n_geom")
+
+    def setup(self):
+        n_layers = self.options["n_layers"]
+        n_height = self.options["n_height"]
+        n_geom = self.options["n_geom"]
+
+        self.add_input("s_in", val=np.zeros(n_geom))
+        self.add_input("s_grid", val=np.zeros(n_height))
+        self.add_input("outer_diameter_in", shape_by_conn=True, units="m")
+        self.add_input("layer_thickness_in", val=np.zeros((n_layers, n_geom)), units="m")
+
+        self.add_output("outer_diameter", val=np.zeros(n_height), units="m")
+        self.add_output("layer_thickness", val=np.zeros((n_layers, n_height)), units="m")
+
+    def compute(self, inputs, outputs):
+        n_layers = self.options["n_layers"]
+
+        s_in = inputs["s_in"]
+        s_grid = inputs["s_grid"]
+
+        if len(inputs["outer_diameter_in"]) > 1:
+            outputs["outer_diameter"] = np.interp(s_grid, s_in, inputs["outer_diameter_in"])
+        else:
+            outputs["outer_diameter"][:] = inputs["outer_diameter_in"]
+        for k in range(n_layers):
+            outputs["layer_thickness"][k, :] = np.interp(s_grid, s_in, inputs["layer_thickness_in"][k, :])
 
 
 class AggregateJoints(om.ExplicitComponent):
@@ -2665,7 +2729,7 @@ class MooringProperties(om.ExplicitComponent):
             line_obj = mp.getLineProps(1e3 * d[0], type=line_mat[0])
 
         if not line_obj is None:
-            outputs["line_mass_density"] = line_obj.mlin
+            outputs["line_mass_density"] = line_obj.m
             outputs["line_stiffness"] = line_obj.EA
             outputs["line_breaking_load"] = line_obj.MBL
             outputs["line_cost_rate"] = line_obj.cost
@@ -2839,7 +2903,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                             + "%."
                         )
                     else:
-                        outputs["fvf"] = inputs["fvf_from_yaml"]
+                        outputs["fvf"][i] = inputs["fvf_from_yaml"][i]
                 else:
                     outputs["fvf"][i] = fvf[i]
 
@@ -2861,7 +2925,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                             + "%"
                         )
                     else:
-                        outputs["fwf"] = inputs["fwf_from_yaml"]
+                        outputs["fwf"][i] = inputs["fwf_from_yaml"][i]
                 else:
                     outputs["fwf"][i] = fwf[i]
 
@@ -2881,7 +2945,7 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
                             + " kg/m2."
                         )
                     else:
-                        outputs["ply_t"] = inputs["ply_t_from_yaml"]
+                        outputs["ply_t"][i] = inputs["ply_t_from_yaml"][i]
                 else:
                     outputs["ply_t"][i] = ply_t[i]
 
@@ -2933,6 +2997,12 @@ class Materials(om.Group):
             val=np.zeros([n_mat, 3]),
             units="Pa",
             desc="2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.",
+        )
+        ivc.add_output(
+            "S",
+            val=np.zeros([n_mat, 3]),
+            units="Pa",
+            desc="2D array of the Ultimate Shear Strength (USS) of the materials. Each row represents a material, the three columns represent S12, S13 and S23.",
         )
         ivc.add_output(
             "sigma_y",

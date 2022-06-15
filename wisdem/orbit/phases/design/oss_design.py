@@ -7,6 +7,7 @@ __email__ = "Jake.Nunemaker@nrel.gov"
 
 
 import numpy as np
+
 from wisdem.orbit.phases.design import DesignPhase
 
 
@@ -142,11 +143,12 @@ class OffshoreSubstationDesign(DesignPhase):
         """
 
         _design = self.config.get("substation_design", {})
-        self.num_substations = _design.get("num_substations", 1)
 
         num_turbines = self.config["plant"]["num_turbines"]
         turbine_rating = self.config["turbine"]["turbine_rating"]
+        capacity = num_turbines * turbine_rating
 
+        self.num_substations = _design.get("num_substations", int(np.ceil(capacity / 500)))
         self.num_mpt = np.ceil(num_turbines * turbine_rating / (250 * self.num_substations))
         self.mpt_rating = (
             round(((num_turbines * turbine_rating * 1.15) / (self.num_mpt * self.num_substations)) / 10.0) * 10.0
@@ -259,7 +261,7 @@ class OffshoreSubstationDesign(DesignPhase):
         oss_pile_cost_rate = _design.get("oss_pile_cost_rate", 0)
 
         substructure_mass = 0.4 * self.topside_mass
-        substructure_pile_mass = 8 * substructure_mass ** 0.5574
+        substructure_pile_mass = 8 * substructure_mass**0.5574
         self.substructure_cost = (
             substructure_mass * oss_substructure_cost_rate + substructure_pile_mass * oss_pile_cost_rate
         )

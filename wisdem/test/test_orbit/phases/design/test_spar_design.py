@@ -8,6 +8,7 @@ from copy import deepcopy
 from itertools import product
 
 import pytest
+
 from wisdem.orbit.phases.design import SparDesign
 
 base = {

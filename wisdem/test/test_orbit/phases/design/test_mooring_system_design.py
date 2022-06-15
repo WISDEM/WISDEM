@@ -9,6 +9,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 from copy import deepcopy
 
 import pytest
+
 from wisdem.orbit.phases.design import MooringSystemDesign
 
 base = {
@@ -63,7 +64,7 @@ def test_drag_embedment_fixed_length():
     custom = deepcopy(base)
     custom["mooring_system_design"] = {
         "anchor_type": "Drag Embedment",
-        "drag_embedment_fixed_length": 10,
+        "drag_embedment_fixed_length": 1000,
     }
 
     m = MooringSystemDesign(custom)

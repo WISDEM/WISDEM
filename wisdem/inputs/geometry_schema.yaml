@@ -366,6 +366,26 @@ properties:
                                         default: 0.0
                                         minimum: 0.0
                                         maximum: 1.e+6
+                                    bolt:
+                                        type: string
+                                        default: M30
+                                        enum: [M18, M24, M30, M36, M42, M48, M52]
+                                        description: Bolt size for the blade bolted joint
+                                    nonmaterial_cost:
+                                        type: number
+                                        description: Cost of the joint not from materials.
+                                        default: 0.0
+                                        minimum: 0.0
+                                        unit: USD
+                                        maximum: 1.e+6
+                                    reinforcement_layer_ss:
+                                        type: string
+                                        description: Layer identifier for the joint reinforcement on the suction side
+                                        default: joint_reinf_ss
+                                    reinforcement_layer_ps:
+                                        type: string
+                                        description: Layer identifier for the joint reinforcement on the pressure side
+                                        default: joint_reinf_ps
                     # cfd_geometry:
                         # type: object
                         # TODO
@@ -501,7 +521,7 @@ properties:
                                     - values
                                 properties:
                                     grid:
-                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                        $ref: "#/definitions/distributed_data/length"
                                     values:
                                         $ref: "#/definitions/distributed_data/length"
                             gear_ratio:
@@ -511,6 +531,27 @@ properties:
                                 minimum: 1
                                 maximum: 1000
                                 default: 1.0
+                            gearbox_length_user:
+                                type: number
+                                description: User input override of gearbox length along shaft, only used when using gearbox_mass_user is > 0
+                                unit: meter
+                                minimum: 0.
+                                maximum: 20.
+                                default: 0.0
+                            gearbox_radius_user:
+                                type: number
+                                description: User input override of gearbox radius, only used when using gearbox_mass_user is > 0
+                                unit: m
+                                minimum: 0.
+                                maximum: 20.0
+                                default: 0.0
+                            gearbox_mass_user:
+                                type: number
+                                description: User input override of gearbox mass
+                                unit: kg
+                                minimum: 0.
+                                maximum: 1.e+9
+                                default: 0.0
                             gearbox_efficiency:
                                 type: number
                                 description: Efficiency of the gearbox system.
@@ -1269,15 +1310,10 @@ properties:
                     - r_foot
                     - r_head
                     - height
-                    - q
-                    - l_osg
-                    - l_tp
-                    - gamma_b
-                    - gamma_t
-                    - beta_b
-                    - beta_t
-                    - tau_b
-                    - tau_t
+                    - leg_diameter
+                    - leg_thickness
+                    - brace_diameters
+                    - brace_thicknesses
                 optional:
                     - material
                     - transition_piece_mass
@@ -1306,37 +1342,21 @@ properties:
                     height:
                         type: number
                         description: Overall jacket height, meters.
-                    q:
+                    leg_thickness:
                         type: number
-                        description: Ratio of two consecutive bay heights.
-                    l_osg:
-                        type: number
-                        description: Lowest leg segment height, meters.
-                    l_tp:
-                        type: number
-                        description: Transition piece segment height, meters.
-                    gamma_b:
-                        type: number
-                        description: Leg radius-to-thickness ratio (bottom).
-                    gamma_t:
-                        type: number
-                        description: Leg radius-to-thickness ratio (top).
-                    beta_b:
-                        type: number
-                        description: Brace-to-leg diameter ratio (bottom).
-                    beta_t:
-                        type: number
-                        description: Brace-to-leg diameter ratio (top).
-                    tau_b:
-                        type: number
-                        description: Brace-to-leg thickness ratio (bottom).
-                    tau_t:
-                        type: number
-                        description: Brace-to-leg thickness ratio (top).
+                        description: Leg thickness, meters. Constant throughout each leg.
+                    brace_diameters:
+                        $ref: "#/definitions/distributed_data/length"
+                    brace_thicknesses:
+                        $ref: "#/definitions/distributed_data/length"
+                    bay_spacing:
+                        $ref: "#/definitions/distributed_data/grid_nd"
+                    leg_spacing:
+                        $ref: "#/definitions/distributed_data/grid_nd"
                     x_mb:
                         type: boolean
                         description: Mud brace included if true.
-                    d_l:
+                    leg_diameter:
                         type: number
                         description: Leg diameter, meters. Constant throughout each leg.
             floating_platform:
@@ -2516,8 +2536,8 @@ properties:
                 type: number
                 description: Shear modulus of the soil.
                 unit: Pa
-                minimum: 100.e+6
-                maximum: 200.e+6
+                minimum: 10.e+6
+                maximum: 500.e+6
                 default: 140.e+6
             soil_poisson:
                 type: number
@@ -2840,6 +2860,33 @@ properties:
                 minimum: 0.0
                 maximum: 1.e+6
                 default: 12.e+3
+            electricity_price:
+                type: number
+                description: Electricity price used to compute value in beyond lcoe metrics
+                unit: USD/kW/h
+                minimum: 0.
+                maximum: 1.
+                default: 0.04
+            reserve_margin_price:
+                type: number
+                description: Reserve margin price used to compute value in beyond lcoe metrics
+                unit: USD/kW/yr
+                minimum: 0.
+                maximum: 1.e+4
+                default: 120.
+            capacity_credit:
+                type: number
+                description: Capacity credit used to compute value in beyond lcoe metrics
+                minimum: 0.
+                maximum: 1.
+                default: 0.
+            benchmark_price:
+                type: number
+                description: Benchmark price used to nondimensionalize value in beyond lcoe metrics
+                unit: USD/kW/h
+                minimum: 0.
+                maximum: 1.
+                default: 0.071
 definitions:
     distributed_data:
         grid_nd:

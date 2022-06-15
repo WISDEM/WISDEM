@@ -5,6 +5,7 @@ import os
 
 import pytest
 from marmot import Environment
+
 from wisdem.orbit.core import Vessel
 from wisdem.orbit.core.library import initialize_library, extract_library_specs
 from wisdem.test.test_orbit.data import test_weather

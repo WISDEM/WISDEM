@@ -8,6 +8,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 import simpy
 from marmot import process
+
 from wisdem.orbit.core import Vessel
 from wisdem.orbit.core.logic import shuttle_items_to_queue, prep_for_site_operations
 from wisdem.orbit.phases.install import InstallPhase

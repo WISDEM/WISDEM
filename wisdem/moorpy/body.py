@@ -1,4 +1,5 @@
 import numpy as np
+
 from wisdem.moorpy.helpers import (
     getH,
     printVec,
@@ -12,7 +13,22 @@ from wisdem.moorpy.helpers import (
 class Body:
     """A class for any object in the mooring system that will have its own reference frame"""
 
-    def __init__(self, mooringSys, num, type, r6, m=0, v=0, rCG=np.zeros(3), AWP=0, rM=np.zeros(3), f6Ext=np.zeros(6)):
+    def __init__(
+        self,
+        mooringSys,
+        num,
+        type,
+        r6,
+        m=0,
+        v=0,
+        rCG=np.zeros(3),
+        AWP=0,
+        rM=np.zeros(3),
+        f6Ext=np.zeros(6),
+        I=np.zeros(3),
+        CdA=np.zeros(3),
+        Ca=np.zeros(3),
+    ):
         """Initialize Body attributes
 
         Parameters
@@ -37,6 +53,12 @@ class Body:
             coorindates or height of metacenter relative to body reference frame [m]. The default is np.zeros(3).
         f6Ext : array, optional
             applied external forces and moments vector in global orientation (not including weight/buoyancy) [N]. The default is np.zeros(6).
+        I : array, optional
+            Mass moment of inertia about 3 axes.
+        CdA : array, optional
+            Product of drag coefficient and frontal area in three directions [m^2].
+        Ca : array, optional
+            Added mass coefficient in three directions.
         attachedP: list, int
             list of ID numbers of any Points attached to the Body
         rPointRel: list, float
@@ -64,14 +86,31 @@ class Body:
         else:
             self.rM = np.array(rM, dtype=np.float_)
 
+        # >>> should streamline the below <<<
+        if np.isscalar(I):
+            self.I = np.array([I, I, I], dtype=float)
+        else:
+            self.I = np.array(I, dtype=float)
+
+        if np.isscalar(CdA):
+            self.CdA = np.array([CdA, CdA, CdA], dtype=float)
+        else:
+            self.CdA = np.array(CdA, dtype=float)
+
+        if np.isscalar(Ca):
+            self.Ca = np.array([Ca, Ca, Ca], dtype=float)
+        else:
+            self.Ca = np.array(Ca, dtype=float)
+
         self.f6Ext = np.array(
-            f6Ext, dtype=np.float_
+            f6Ext, dtype=float
         )  # for adding external forces and moments in global orientation (not including weight/buoyancy)
 
         self.attachedP = []  # ID numbers of any Points attached to the Body
         self.rPointRel = []  # coordinates of each attached Point relative to the Body reference frame
 
         self.attachedR = []  # ID numbers of any Rods attached to the Body (not yet implemented)
+        self.r6RodRel = []  # coordinates and unit vector of each attached Rod relative to the Body reference frame
 
         self.R = np.eye(3)  # body orientation rotation matrix
         # print("Created Body "+str(self.number))
@@ -96,6 +135,29 @@ class Body:
         self.rPointRel.append(np.array(rAttach))
 
         # print("attached Point "+str(pointID)+" to Body "+str(self.number))
+
+    def attachRod(self, rodID, endCoords):
+        """Adds a Point to the Body, at the specified relative position on the body.
+
+        Parameters
+        ----------
+        rodID : int
+            The identifier ID number of a point
+        endCoords : array
+            The position of the Rods two ends relative to the body reference frame [m]
+
+        Returns
+        -------
+        None.
+
+        """
+
+        k = (endCoords[3:] - endCoords[:3]) / np.linalg.norm(endCoords[3:] - endCoords[:3])
+
+        self.attachedR.append(rodID)
+        self.r6RodRel.append(np.hstack([endCoords[:3], k]))
+
+        print("attached Rod " + str(rodID) + " to Body " + str(self.number))
 
     def setPosition(self, r6):
         """Sets the position of the Body, along with that of any dependent objects.
@@ -129,6 +191,13 @@ class Body:
         for PointID, rPointRel in zip(self.attachedP, self.rPointRel):
             rPoint = np.matmul(self.R, rPointRel) + self.r6[:3]  # rPoint = transformPosition(rPointRel, r6)
             self.sys.pointList[PointID - 1].setPosition(rPoint)
+
+        # update the position of any attached Rods
+        for rodID, r6Rel in zip(self.attachedR, self.r6RodRel):
+            rA = np.matmul(self.R, r6Rel[:3]) + self.r6[:3]
+            k = np.matmul(self.R, r6Rel[3:])
+            self.sys.rodList[rodID - 1].rA = rA
+            self.sys.rodList[rodID - 1].rB = rA + k * self.sys.rodList[rodID - 1].L
 
         if self.sys.display > 3:
             printVec(rPoint)

@@ -6,6 +6,7 @@
 
 
 import numpy as np
+
 import wisdem.moorpy as mp
 
 
@@ -37,42 +38,42 @@ def getLineProps(dmm, type="chain", stud="studless", source="Orcaflex-altered", 
 
         if type == "chain":
             c = 1.96e4  # grade 2=1.37e4; grade 3=1.96e4; ORQ=2.11e4; R4=2.74e4
-            MBL = c * d ** 2 * (44 - 80 * d) * 1000  # [N]  The same for both studless and studlink
+            MBL = c * d**2 * (44 - 80 * d) * 1000  # [N]  The same for both studless and studlink
             if stud == "studless":
-                massden = 19.9 * d ** 2 * 1000  # [kg/m]
-                EA = 0.854e8 * d ** 2 * 1000  # [N]
+                massden = 19.9 * d**2 * 1000  # [kg/m]
+                EA = 0.854e8 * d**2 * 1000  # [N]
                 d_vol = 1.8 * d  # [m]
             elif stud == "studlink" or stud == "stud":
-                massden = 21.9 * d ** 2 * 1000  # [kg/m]
-                EA = 1.010e8 * d ** 2 * 1000  # [N]
+                massden = 21.9 * d**2 * 1000  # [kg/m]
+                EA = 1.010e8 * d**2 * 1000  # [N]
                 d_vol = 1.89 * d  # [m]
             else:
                 raise ValueError("getLineProps error: Choose either studless or stud chain type ")
 
         elif type == "nylon":
-            massden = 0.6476 * d ** 2 * 1000  # [kg/m]
-            EA = 1.18e5 * d ** 2 * 1000  # [N]
-            MBL = 139357 * d ** 2 * 1000  # [N] for wet nylon line, 163950d^2 for dry nylon line
+            massden = 0.6476 * d**2 * 1000  # [kg/m]
+            EA = 1.18e5 * d**2 * 1000  # [N]
+            MBL = 139357 * d**2 * 1000  # [N] for wet nylon line, 163950d^2 for dry nylon line
             d_vol = 0.85 * d  # [m]
         elif type == "polyester":
-            massden = 0.7978 * d ** 2 * 1000  # [kg/m]
-            EA = 1.09e6 * d ** 2 * 1000  # [N]
-            MBL = 170466 * d ** 2 * 1000  # [N]
+            massden = 0.7978 * d**2 * 1000  # [kg/m]
+            EA = 1.09e6 * d**2 * 1000  # [N]
+            MBL = 170466 * d**2 * 1000  # [N]
             d_vol = 0.86 * d  # [m]
         elif type == "polypropylene":
-            massden = 0.4526 * d ** 2 * 1000  # [kg/m]
-            EA = 1.06e6 * d ** 2 * 1000  # [N]
-            MBL = 105990 * d ** 2 * 1000  # [N]
+            massden = 0.4526 * d**2 * 1000  # [kg/m]
+            EA = 1.06e6 * d**2 * 1000  # [N]
+            MBL = 105990 * d**2 * 1000  # [N]
             d_vol = 0.80 * d  # [m]
         elif type == "wire-fiber" or type == "fiber":
-            massden = 3.6109 * d ** 2 * 1000  # [kg/m]
-            EA = 3.67e7 * d ** 2 * 1000  # [N]
-            MBL = 584175 * d ** 2 * 1000  # [N]
+            massden = 3.6109 * d**2 * 1000  # [kg/m]
+            EA = 3.67e7 * d**2 * 1000  # [N]
+            MBL = 584175 * d**2 * 1000  # [N]
             d_vol = 0.82 * d  # [m]
         elif type == "wire-wire" or type == "wire" or type == "IWRC":
-            massden = 3.9897 * d ** 2 * 1000  # [kg/m]
-            EA = 4.04e7 * d ** 2 * 1000  # [N]
-            MBL = 633358 * d ** 2 * 1000  # [N]
+            massden = 3.9897 * d**2 * 1000  # [kg/m]
+            EA = 4.04e7 * d**2 * 1000  # [N]
+            MBL = 633358 * d**2 * 1000  # [N]
             d_vol = 0.80 * d  # [m]
         else:
             raise ValueError("getLineProps error: Linetype not valid. Choose from given rope types or chain ")
@@ -94,15 +95,15 @@ def getLineProps(dmm, type="chain", stud="studless", source="Orcaflex-altered", 
         if type == "chain":
             c = 2.74e4  # grade 2=1.37e4; grade 3=1.96e4; ORQ=2.11e4; R4=2.74e4
             MBL = (
-                (371360 * d ** 2 + 51382.72 * d) * (c / 2.11e4) * 1000
+                (371360 * d**2 + 51382.72 * d) * (c / 2.11e4) * 1000
             )  # this is a fit quadratic term to the cubic MBL equation. No negatives
             if stud == "studless":
-                massden = 19.9 * d ** 2 * 1000  # [kg/m]
-                EA = 0.854e8 * d ** 2 * 1000  # [N]
+                massden = 19.9 * d**2 * 1000  # [kg/m]
+                EA = 0.854e8 * d**2 * 1000  # [N]
                 d_vol = 1.8 * d  # [m]
             elif stud == "studlink" or stud == "stud":
-                massden = 21.9 * d ** 2 * 1000  # [kg/m]
-                EA = 1.010e8 * d ** 2 * 1000  # [N]
+                massden = 21.9 * d**2 * 1000  # [kg/m]
+                EA = 1.010e8 * d**2 * 1000  # [N]
                 d_vol = 1.89 * d  # [m]
             else:
                 raise ValueError("getLineProps error: Choose either studless or stud chain type ")
@@ -114,15 +115,15 @@ def getLineProps(dmm, type="chain", stud="studless", source="Orcaflex-altered", 
             # cost = 0.0
 
         elif type == "nylon":
-            massden = 0.6476 * d ** 2 * 1000  # [kg/m]
-            EA = 1.18e5 * d ** 2 * 1000  # [N]
-            MBL = 139357 * d ** 2 * 1000  # [N] for wet nylon line, 163950d^2 for dry nylon line
+            massden = 0.6476 * d**2 * 1000  # [kg/m]
+            EA = 1.18e5 * d**2 * 1000  # [N]
+            MBL = 139357 * d**2 * 1000  # [N] for wet nylon line, 163950d^2 for dry nylon line
             d_vol = 0.85 * d  # [m]
             cost = (0.42059603 * MBL / 1000 / 9.81) + 109.5  # [$/m] from old NREL-internal
         elif type == "polyester":
-            massden = 0.7978 * d ** 2 * 1000  # [kg/m]
-            EA = 1.09e6 * d ** 2 * 1000  # [N]
-            MBL = 170466 * d ** 2 * 1000  # [N]
+            massden = 0.7978 * d**2 * 1000  # [kg/m]
+            EA = 1.09e6 * d**2 * 1000  # [N]
+            MBL = 170466 * d**2 * 1000  # [N]
             d_vol = 0.86 * d  # [m]
 
             # cost = (0.42059603*MBL/1000/9.81) + 109.5   # [$/m] from old NREL-internal
@@ -130,21 +131,27 @@ def getLineProps(dmm, type="chain", stud="studless", source="Orcaflex-altered", 
             cost = 0.162 * (MBL / 9.81 / 1000)  # [$/m]
 
         elif type == "polypropylene":
-            massden = 0.4526 * d ** 2 * 1000  # [kg/m]
-            EA = 1.06e6 * d ** 2 * 1000  # [N]
-            MBL = 105990 * d ** 2 * 1000  # [N]
+            massden = 0.4526 * d**2 * 1000  # [kg/m]
+            EA = 1.06e6 * d**2 * 1000  # [N]
+            MBL = 105990 * d**2 * 1000  # [N]
             d_vol = 0.80 * d  # [m]
-            cost = (0.42059603 * MBL / 1000 / 9.81) + 109.5  # [$/m] from old NREL-internal
+            cost = 1.0 * ((0.42059603 * MBL / 1000 / 9.81) + 109.5)  # [$/m] from old NREL-internal
+        elif type == "hmpe":
+            massden = 0.4526 * d**2 * 1000  # [kg/m]
+            EA = 38.17e6 * d**2 * 1000  # [N]
+            MBL = 619000 * d**2 * 1000  # [N]
+            d_vol = 1.01 * d  # [m]
+            cost = 0.01 * MBL / 1000 / 9.81  # [$/m] from old NREL-internal
         elif type == "wire-fiber" or type == "fiber":
-            massden = 3.6109 * d ** 2 * 1000  # [kg/m]
-            EA = 3.67e7 * d ** 2 * 1000  # [N]
-            MBL = 584175 * d ** 2 * 1000  # [N]
+            massden = 3.6109 * d**2 * 1000  # [kg/m]
+            EA = 3.67e7 * d**2 * 1000  # [N]
+            MBL = 584175 * d**2 * 1000  # [N]
             d_vol = 0.82 * d  # [m]
             cost = 0.53676471 * MBL / 1000 / 9.81  # [$/m] from old NREL-internal
         elif type == "wire-wire" or type == "wire" or type == "IWRC":
-            massden = 3.9897 * d ** 2 * 1000  # [kg/m]
-            EA = 4.04e7 * d ** 2 * 1000  # [N]
-            MBL = 633358 * d ** 2 * 1000  # [N]
+            massden = 3.9897 * d**2 * 1000  # [kg/m]
+            EA = 4.04e7 * d**2 * 1000  # [N]
+            MBL = 633358 * d**2 * 1000  # [N]
             d_vol = 0.80 * d  # [m]
             # cost = MBL * 900./15.0e6
             # cost = (0.33*MBL/1000/9.81) + 139.5         # [$/m] from old NREL-internal
@@ -179,7 +186,7 @@ def getLineProps(dmm, type="chain", stud="studless", source="Orcaflex-altered", 
 
 
 def getAnchorProps(fx, fz, type="drag-embedment", display=0):
-    """ Calculates anchor required capacity and cost based on specified loadings and anchor type"""
+    """Calculates anchor required capacity and cost based on specified loadings and anchor type"""
 
     # for now this is based on API RP-2SK guidance for static analysis of permanent mooring systems
     # fx and fz are horizontal and vertical load components assumed to come from a dynamic (or equivalent) analysis.

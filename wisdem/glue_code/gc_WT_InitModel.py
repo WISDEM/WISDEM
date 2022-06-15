@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+
 import wisdem.commonse.utilities as util
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
 
@@ -85,7 +86,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
 
     if modeling_options["flags"]["floating_platform"]:
         floating_platform = wt_init["components"]["floating_platform"]
-        wt_opt = assign_floating_values(wt_opt, modeling_options, floating_platform)
+        wt_opt = assign_floating_values(wt_opt, modeling_options, floating_platform, opt_options)
         mooring = wt_init["components"]["mooring"]
         wt_opt = assign_mooring_values(wt_opt, modeling_options, mooring)
 
@@ -517,9 +518,18 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     wt_opt["blade.internal_structure_2d_fem.layer_rotation_yaml"] = layer_rotation
 
     # Spanwise joint
+    wt_opt["blade.internal_structure_2d_fem.joint_bolt"] = internal_structure_2d_fem["joint"]["bolt"]
     wt_opt["blade.internal_structure_2d_fem.joint_position"] = internal_structure_2d_fem["joint"]["position"]
     wt_opt["blade.internal_structure_2d_fem.joint_mass"] = internal_structure_2d_fem["joint"]["mass"]
-    wt_opt["blade.internal_structure_2d_fem.joint_cost"] = internal_structure_2d_fem["joint"]["cost"]
+    wt_opt["blade.internal_structure_2d_fem.joint_nonmaterial_cost"] = internal_structure_2d_fem["joint"][
+        "nonmaterial_cost"
+    ]
+    wt_opt["blade.internal_structure_2d_fem.reinforcement_layer_ss"] = internal_structure_2d_fem["joint"][
+        "reinforcement_layer_ss"
+    ]
+    wt_opt["blade.internal_structure_2d_fem.reinforcement_layer_ps"] = internal_structure_2d_fem["joint"][
+        "reinforcement_layer_ps"
+    ]
 
     # Blade root
     wt_opt["blade.internal_structure_2d_fem.d_f"] = internal_structure_2d_fem["root"]["d_f"]
@@ -697,6 +707,9 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
             wt_opt["nacelle.bedplate_flange_thickness"] = nacelle["drivetrain"]["bedplate_flange_thickness"]
             wt_opt["nacelle.bedplate_web_thickness"] = nacelle["drivetrain"]["bedplate_web_thickness"]
             wt_opt["nacelle.gear_configuration"] = nacelle["drivetrain"]["gear_configuration"].lower()
+            wt_opt["nacelle.gearbox_mass_user"] = nacelle["drivetrain"]["gearbox_mass_user"]
+            wt_opt["nacelle.gearbox_radius_user"] = nacelle["drivetrain"]["gearbox_radius_user"]
+            wt_opt["nacelle.gearbox_length_user"] = nacelle["drivetrain"]["gearbox_length_user"]
             wt_opt["nacelle.planet_numbers"] = nacelle["drivetrain"]["planet_numbers"]
             wt_opt["nacelle.hss_material"] = nacelle["drivetrain"]["hss_material"]
 
@@ -867,20 +880,33 @@ def assign_tower_values(wt_opt, modeling_options, tower):
     wt_opt["tower.outfitting_factor"] = tower["internal_structure_2d_fem"]["outfitting_factor"]
 
     if "Loading" in modeling_options["WISDEM"]:
+        F = []
+        M = []
+        n_dlc = modeling_options["WISDEM"]["n_dlc"]
+        for k in range(n_dlc):
+            F = np.append(F, modeling_options["WISDEM"]["Loading"]["loads"][k]["force"])
+            M = np.append(M, modeling_options["WISDEM"]["Loading"]["loads"][k]["moment"])
+        F = F.reshape((n_dlc, 3)).T
+        M = M.reshape((n_dlc, 3)).T
+
         if modeling_options["flags"]["tower"]:
             wt_opt["towerse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
             wt_opt["towerse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
             wt_opt["towerse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
-            F = []
-            M = []
             n_dlc = modeling_options["WISDEM"]["n_dlc"]
             for k in range(n_dlc):
                 kstr = "" if n_dlc <= 1 else str(k + 1)
                 wt_opt[f"towerse.env{kstr}.Uref"] = modeling_options["WISDEM"]["Loading"]["loads"][k]["velocity"]
-                F = np.append(F, modeling_options["WISDEM"]["Loading"]["loads"][k]["force"])
-                M = np.append(M, modeling_options["WISDEM"]["Loading"]["loads"][k]["moment"])
-            wt_opt["towerse.tower.rna_F"] = F.reshape((n_dlc, 3)).T
-            wt_opt["towerse.tower.rna_M"] = M.reshape((n_dlc, 3)).T
+            wt_opt["towerse.tower.rna_F"] = F
+            wt_opt["towerse.tower.rna_M"] = M
+
+        if modeling_options["flags"]["monopile"]:
+            # Monopile has the option for joint tower-monopile analysis, so load it here too.  Not true for jackets
+            wt_opt["fixedse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
+            wt_opt["fixedse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
+            wt_opt["fixedse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
+            wt_opt["fixedse.monopile.rna_F"] = F
+            wt_opt["fixedse.monopile.rna_M"] = M
 
     return wt_opt
 
@@ -951,25 +977,21 @@ def assign_jacket_values(wt_opt, modeling_options, jacket):
     wt_opt["jacket.transition_piece_mass"] = jacket["transition_piece_mass"]
     wt_opt["jacket.transition_piece_cost"] = jacket["transition_piece_cost"]
     wt_opt["jacket.gravity_foundation_mass"] = jacket["gravity_foundation_mass"]
-    wt_opt["jacket.r_foot"] = jacket["r_foot"]
     wt_opt["jacket.r_head"] = jacket["r_head"]
+    wt_opt["jacket.foot_head_ratio"] = jacket["r_foot"] / jacket["r_head"]
     wt_opt["jacket.height"] = jacket["height"]
-    wt_opt["jacket.q"] = jacket["q"]
-    wt_opt["jacket.l_osg"] = jacket["l_osg"]
-    wt_opt["jacket.l_tp"] = jacket["l_tp"]
-    wt_opt["jacket.gamma_b"] = jacket["gamma_b"]
-    wt_opt["jacket.gamma_t"] = jacket["gamma_t"]
-    wt_opt["jacket.beta_b"] = jacket["beta_b"]
-    wt_opt["jacket.beta_t"] = jacket["beta_t"]
-    wt_opt["jacket.tau_b"] = jacket["tau_b"]
-    wt_opt["jacket.tau_t"] = jacket["tau_t"]
-    wt_opt["jacket.d_l"] = jacket["d_l"]
+    wt_opt["jacket.leg_diameter"] = jacket["leg_diameter"]
+    wt_opt["jacket.leg_thickness"] = jacket["leg_thickness"]
+    wt_opt["jacket.brace_diameters"] = jacket["brace_diameters"]
+    wt_opt["jacket.brace_thicknesses"] = jacket["brace_thicknesses"]
+    wt_opt["jacket.bay_spacing"] = jacket["bay_spacing"]
 
     return wt_opt
 
 
-def assign_floating_values(wt_opt, modeling_options, floating):
+def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
 
+    float_opt = opt_options["design_variables"]["floating"]
     floating_init_options = modeling_options["floating"]
     n_joints = floating_init_options["joints"]["n_joints"]
     # Loop through joints and assign location values to openmdao entry
@@ -998,17 +1020,32 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     for i in range(n_members):
         name_member = floating_init_options["members"]["name"][i]
         grid_member = floating_init_options["members"]["grid_member_" + floating_init_options["members"]["name"][i]]
+        grid_geom = floating_init_options["members"]["geom_member_" + floating_init_options["members"]["name"][i]]
         idx = floating_init_options["members"]["name2idx"][name_member]
 
         wt_opt[f"floating.memgrp{idx}.s"] = grid_member
+        wt_opt[f"floating.memgrp{idx}.s_in"] = grid_geom
+
+        diameter_assigned = False
+        for j, kgrp in enumerate(float_opt["members"]["groups"]):
+            memname = kgrp["names"][0]
+            idx2 = floating_init_options["members"]["name2idx"][memname]
+            if idx == idx2:
+                wt_opt[f"floating.memgrp{idx}.outer_diameter_in"][:] = floating["members"][i]["outer_shape"][
+                    "outer_diameter"
+                ]["values"][0]
+                diameter_assigned = True
+
+        if not diameter_assigned:
+            wt_opt[f"floating.memgrp{idx}.outer_diameter_in"] = np.interp(
+                grid_geom,
+                floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
+                floating["members"][i]["outer_shape"]["outer_diameter"]["values"],
+            )
+
         wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["internal_structure"][
             "outfitting_factor"
         ]
-        wt_opt[f"floating.memgrp{idx}.outer_diameter"] = np.interp(
-            grid_member,
-            floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
-            floating["members"][i]["outer_shape"]["outer_diameter"]["values"],
-        )
 
         istruct = floating["members"][i]["internal_structure"]
         if "bulkhead" in istruct:
@@ -1018,12 +1055,13 @@ def assign_floating_values(wt_opt, modeling_options, floating):
         n_layers = floating_init_options["members"]["n_layers"][i]
         layer_mat = [""] * n_layers
         for j in range(n_layers):
-            wt_opt[f"floating.memgrp{idx}.layer_thickness"][j, :] = np.interp(
-                grid_member,
+            layer_mat[j] = istruct["layers"][j]["material"]
+
+            wt_opt[f"floating.memgrp{idx}.layer_thickness_in"][j, :] = np.interp(
+                grid_geom,
                 istruct["layers"][j]["thickness"]["grid"],
                 istruct["layers"][j]["thickness"]["values"],
             )
-            layer_mat[j] = istruct["layers"][j]["material"]
         wt_opt[f"floating.memgrp{idx}.layer_materials"] = layer_mat
 
         if "ring_stiffeners" in istruct:
@@ -1278,6 +1316,10 @@ def assign_costs_values(wt_opt, costs):
     wt_opt["costs.tower_mass_cost_coeff"] = costs["tower_mass_cost_coeff"]
     wt_opt["costs.controls_machine_rating_cost_coeff"] = costs["controls_machine_rating_cost_coeff"]
     wt_opt["costs.crane_cost"] = costs["crane_cost"]
+    wt_opt["costs.electricity_price"] = costs["electricity_price"]
+    wt_opt["costs.reserve_margin_price"] = costs["reserve_margin_price"]
+    wt_opt["costs.capacity_credit"] = costs["capacity_credit"]
+    wt_opt["costs.benchmark_price"] = costs["benchmark_price"]
 
     if "offset_tcc_per_kW" in costs:
         wt_opt["costs.offset_tcc_per_kW"] = costs["offset_tcc_per_kW"]
@@ -1423,6 +1465,7 @@ def assign_material_values(wt_opt, modeling_options, materials):
     nu = np.zeros([n_mat, 3])
     Xt = np.zeros([n_mat, 3])
     Xc = np.zeros([n_mat, 3])
+    S = np.zeros([n_mat, 3])
     sigma_y = np.zeros(n_mat)
     m = np.ones(n_mat)
     A = np.zeros(n_mat)
@@ -1458,12 +1501,22 @@ def assign_material_values(wt_opt, modeling_options, materials):
                 Xt[i, :] = np.ones(3) * materials[i]["Xt"]
             if "Xc" in materials[i]:
                 Xc[i, :] = np.ones(3) * materials[i]["Xc"]
+            if "S" in materials[i]:
+                S[i, :] = np.ones(3) * materials[i]["S"]
         elif orth[i] == 1:
             E[i, :] = materials[i]["E"]
             G[i, :] = materials[i]["G"]
             nu[i, :] = materials[i]["nu"]
             Xt[i, :] = materials[i]["Xt"]
             Xc[i, :] = materials[i]["Xc"]
+            if "S" in materials[i]:
+                S[i, :] = materials[i]["S"]
+            else:
+                if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+                    raise Exception(
+                        "The blade joint sizer model is activated and requires the material shear strength S, which is not defined in the yaml for material "
+                        + materials[i]["name"]
+                    )
 
         else:
             raise ValueError("The flag orth must be set to either 0 or 1. Error in material " + name[i])
@@ -1503,6 +1556,7 @@ def assign_material_values(wt_opt, modeling_options, materials):
     wt_opt["materials.G"] = G
     wt_opt["materials.Xt"] = Xt
     wt_opt["materials.Xc"] = Xc
+    wt_opt["materials.S"] = S
     wt_opt["materials.nu"] = nu
     wt_opt["materials.wohler_exp"] = m
     wt_opt["materials.wohler_intercept"] = A

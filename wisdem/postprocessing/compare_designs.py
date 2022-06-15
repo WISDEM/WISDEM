@@ -22,6 +22,7 @@ import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
+
 import wisdem.postprocessing.wisdem_get as getter
 from wisdem.glue_code.runWISDEM import run_wisdem, load_wisdem
 
@@ -162,6 +163,9 @@ def create_all_plots(
                     layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
                     if modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"] == layer_name:
                         ilayer = i
+
+            if ilayer is None:
+                raise KeyError("Suction side spar cap layer not found")
             axsc.plot(
                 yaml_data["blade.outer_shape_bem.s"],
                 yaml_data["blade.ps.layer_thickness_param"][ilayer, :] * 1e3,
@@ -218,6 +222,9 @@ def create_all_plots(
                     layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
                     if modeling_options["WISDEM"]["RotorSE"]["te_ss"] == layer_name:
                         ilayer = i
+
+            if ilayer is None:
+                raise KeyError("Suction side TE layer not found")
             axte.plot(
                 yaml_data["blade.outer_shape_bem.s"],
                 yaml_data["blade.ps.layer_thickness_param"][ilayer, :] * 1e3,
@@ -289,14 +296,14 @@ def create_all_plots(
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             axeps.plot(
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["rotorse.rs.frame.strainU_spar"] * 1.0e6,
+                yaml_data["rotorse.rs.strains.strainU_spar"] * 1.0e6,
                 "-",
                 color=colors[idx],
                 label=label,
             )
             axeps.plot(
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["rotorse.rs.frame.strainL_spar"] * 1.0e6,
+                yaml_data["rotorse.rs.strains.strainL_spar"] * 1.0e6,
                 "-",
                 color=colors[idx],
             )
@@ -493,7 +500,7 @@ def create_all_plots(
     if zs.min() < -5.0:
         ax2.plot(vx, np.zeros(2), color="b", linestyle="--")
         ax2.plot(vx, -water_depth * np.ones(2), color=brown, linestyle="--")
-        ax2.plot(vx, 20 * np.ones(2), color="g", linestyle="--")
+        ax2.plot(vx, h_trans * np.ones(2), color="g", linestyle="--")
     ax2.set_xlim(vx)
     if mult_flag:
         ax2.legend(fontsize=font_size)
@@ -819,7 +826,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "Rated pitch": ["control.rated_pitch", "deg"],
         "Rated thrust": ["rotorse.rp.powercurve.rated_T", "kN"],
         "Rated torque": ["rotorse.rp.powercurve.rated_Q", "kN*m"],
-        "Blade mass": ["rotorse.re.precomp.blade_mass", "kg"],
+        "Blade mass": ["rotorse.rs.bjs.blade_mass", "kg"],
         "Blade cost": ["rotorse.re.precomp.total_blade_cost", "USD"],
         "Tip defl": ["tcons.tip_deflection", "m"],
         "Tip defl ratio": ["tcons.tip_deflection_ratio", None],

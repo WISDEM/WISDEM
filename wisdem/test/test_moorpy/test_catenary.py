@@ -2,6 +2,7 @@
 
 import pytest
 from numpy.testing import assert_allclose
+
 from wisdem.moorpy.Catenary import catenary
 
 # inputs of:  x, z, L, EA, w, CB, HF0, VF0

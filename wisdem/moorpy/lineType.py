@@ -34,7 +34,7 @@ class LineType:
         """
         self.name = name  # identifier string
         self.d = d  # volume-equivalent diameter [m]
-        self.mlin = massden  # linear desnity [kg/m]
+        self.m = massden  # linear desnity [kg/m]
         self.w = (massden - np.pi / 4 * d * d * 1025) * 9.81  # wet weight [N/m]
         self.EA = EA  # extensional stiffness [N]
         self.MBL = MBL  # minimum breaking load [N]

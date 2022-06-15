@@ -4,6 +4,7 @@ import unittest
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
+
 import wisdem.fixed_bottomse.monopile as mon
 from wisdem.commonse import gravity as g
 
@@ -84,7 +85,7 @@ class TestMass(unittest.TestCase):
         npt.assert_equal(outputs["gravity_foundation_I"], 0.5 * 3 * I_root)
         npt.assert_equal(
             outputs["monopile_I_base"],
-            20 * np.ones(6) + 0.5 * 3 * I_root + 2 * I_root + 2 * 40 ** 2 * np.r_[1, 1, np.zeros(4)],
+            20 * np.ones(6) + 0.5 * 3 * I_root + 2 * I_root + 2 * 40**2 * np.r_[1, 1, np.zeros(4)],
         )
 
 
@@ -122,16 +123,15 @@ class TestMonopileSE(unittest.TestCase):
 
         # Simplified the options available to the user
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"] = {}
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["DC"]      = 80.0
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["shear"] = True
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["geom"] = True
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["dx"]      = -1
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["nM"]      = 6
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["Mmethod"] = 1
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["lump"]    = 0
+        self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["modal_method"] = 1
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["tol"] = 1e-9
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["shift"]   = 0.0
-        # self.modeling_options["FixedBottomSE"]["frame3dd"]["add_gravity"] = True
+
+        self.modeling_options["flags"] = {}
+        self.modeling_options["flags"]["tower"] = False
+        self.modeling_options["WISDEM"]["TowerSE"] = {}
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 0
 
     def testProblemFixedPile(self):
         self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = 3
@@ -153,6 +153,7 @@ class TestMonopileSE(unittest.TestCase):
         prob["monopile_foundation_height"] = -45.0
         prob["monopile_height"] = hval.sum()
         prob["monopile_outer_diameter_in"] = 10.0 * np.ones(3)
+        prob["monopile_top_diameter"] = 10.0
         prob["monopile_layer_thickness"] = 0.1 * np.ones((1, 3))
         prob["outfitting_factor_in"] = 1.0
         prob["monopile_layer_materials"] = ["steel"]
@@ -188,7 +189,7 @@ class TestMonopileSE(unittest.TestCase):
         prob.run_model()
 
         # All other tests from above
-        mass_dens = 1e4 * (5.0 ** 2 - 4.9 ** 2) * np.pi
+        mass_dens = 1e4 * (5.0**2 - 4.9**2) * np.pi
         npt.assert_equal(prob["z_start"], -45.0)
         npt.assert_equal(prob["transition_piece_height"], 0.0)
         npt.assert_equal(prob["suctionpile_depth"], 15.0)
@@ -254,6 +255,7 @@ class TestMonopileSE(unittest.TestCase):
         prob["monopile_foundation_height"] = -45.0
         prob["monopile_height"] = hval.sum()
         prob["monopile_outer_diameter_in"] = 10.0 * np.ones(3)
+        prob["monopile_top_diameter"] = 10.0
         prob["monopile_layer_thickness"] = 0.1 * np.ones(3).reshape((1, 3))
         prob["outfitting_factor_in"] = 1.0
         prob["monopile_layer_materials"] = prob["monopile_layer_materials"] = ["steel"]
@@ -287,7 +289,7 @@ class TestMonopileSE(unittest.TestCase):
         prob.run_model()
 
         # All other tests from above
-        mass_dens = 1e4 * (5.0 ** 2 - 4.9 ** 2) * np.pi
+        mass_dens = 1e4 * (5.0**2 - 4.9**2) * np.pi
         npt.assert_equal(prob["z_start"], -45.0)
         npt.assert_equal(prob["transition_piece_height"], 0.0)
         npt.assert_equal(prob["suctionpile_depth"], 15.0)
@@ -346,6 +348,7 @@ class TestMonopileSE(unittest.TestCase):
         prob["monopile_foundation_height"] = -45.0
         prob["monopile_height"] = hval.sum()
         prob["monopile_outer_diameter_in"] = 10.0 * np.ones(3)
+        prob["monopile_top_diameter"] = 10.0
         prob["monopile_layer_thickness"] = 0.1 * np.ones((1, 3))
         prob["outfitting_factor_in"] = 1.0
         prob["monopile_layer_materials"] = prob["monopile_layer_materials"] = ["steel"]
@@ -477,6 +480,7 @@ class TestMonopileSE(unittest.TestCase):
             prob["tower_foundation_height"] = z_foundation + h_param.sum()
             prob["monopile_height"] = h_param.sum()
             prob["monopile_outer_diameter_in"] = d_param
+            prob["monopile_top_diameter"] = d_param[-1]
             prob["monopile_layer_thickness"] = t_param.reshape((1, len(t_param)))
             prob["outfitting_factor_in"] = Koutfitting
             prob["monopile_layer_materials"] = ["steel"]
@@ -532,35 +536,35 @@ class TestMonopileSE(unittest.TestCase):
         npt.assert_almost_equal(prob["constr_taper"], [1.0, 0.9166667])
         npt.assert_almost_equal(prob["env1.Uref"], [11.73732])
         npt.assert_almost_equal(prob["env2.Uref"], [70.0])
-        npt.assert_almost_equal(prob["monopile.f1"], [2.83631], 5)
-        npt.assert_almost_equal(prob["monopile.top_deflection"], [0.0792818, 0.0553289])
+        npt.assert_almost_equal(prob["monopile.f1"], [3.53554], 5)
+        npt.assert_almost_equal(prob["monopile.top_deflection"], [0.056755, 0.0394022])
         npt.assert_almost_equal(
             prob["post.constr_stress"].T,
             [
-                [0.0336395, 0.0149126, 0.1512779, 0.1427477, 0.0663379, 0.0318876],
-                [0.0378226, 0.019121, 0.09563, 0.0878763, 0.0355308, 0.0230348],
+                [0.0351606, 0.0333986, 0.0282518, 0.1424751, 0.0662178, 0.0318841],
+                [0.0389098, 0.0365737, 0.0313247, 0.0876736, 0.0354505, 0.0230317],
             ],
         )
         npt.assert_almost_equal(
             prob["post.constr_global_buckling"].T,
             [
-                [0.1120719, 0.1312739, 0.2502725, 0.2503711, 0.1804118, 0.1316626],
-                [0.1153096, 0.1275146, 0.2098183, 0.2088527, 0.1564201, 0.1238287],
+                [0.1107676, 0.1075019, 0.1056221, 0.2501391, 0.1803002, 0.1316626],
+                [0.1143874, 0.1107056, 0.1078354, 0.2086791, 0.1563373, 0.1238287],
             ],
         )
         npt.assert_almost_equal(
             prob["post.constr_shell_buckling"].T,
             [
-                [0.0214201, 0.0013399, 0.0510951, 0.0536558, 0.0175436, 0.008013],
-                [0.0235103, 0.002891, 0.0245412, 0.0271653, 0.0110795, 0.0090083],
+                [0.0216672, 0.0030219, 0.002256, 0.0534934, 0.0175031, 0.0080114],
+                [0.0237064, 0.0049778, 0.0045687, 0.0270818, 0.0110622, 0.0090072],
             ],
         )
-        npt.assert_almost_equal(prob["monopile.mudline_F"][0, :], [1285099.14, 930507.61], 2)
+        npt.assert_almost_equal(prob["monopile.mudline_F"][0, :], [1284941.89, 930370.5], 2)
         npt.assert_array_less(np.abs(prob["monopile.mudline_F"][1, :]), 1e2, 2)
         npt.assert_almost_equal(prob["monopile.mudline_F"][2, :], [-4.67522712e06, -5.11992336e06], 2)
         npt.assert_almost_equal(
             prob["monopile.mudline_M"].T,
-            [[3996248.0, 49418829.0, -346819.0], [-1698349.0, 34912815.0, 147319.0]],
+            [[3989782.0, 49333681.0, -346819.0], [-1695401.0, 34848171.0, 147319.0]],
             0,
         )
 
@@ -579,20 +583,20 @@ class TestMonopileSE(unittest.TestCase):
         npt.assert_almost_equal(prob["constr_taper"], [1.0, 0.9166667])
         npt.assert_almost_equal(prob["env1.Uref"], [11.73732])
         npt.assert_almost_equal(prob["env2.Uref"], [70.0])
-        npt.assert_almost_equal(prob["monopile.f1"], [2.83631], 5)
-        npt.assert_almost_equal(prob["monopile.top_deflection"], [0.0792818, 0.0553289])
+        npt.assert_almost_equal(prob["monopile.f1"], [3.53554], 5)
+        npt.assert_almost_equal(prob["monopile.top_deflection"], [0.056755, 0.0394022])
         npt.assert_almost_equal(
             prob["post.constr_stress"].T,
             [
-                [0.0336395, 0.0149126, 0.1512779, 0.1427477, 0.0663379, 0.0318876],
-                [0.0378226, 0.019121, 0.09563, 0.0878763, 0.0355308, 0.0230348],
+                [0.0351606, 0.0333986, 0.0282518, 0.1424751, 0.0662178, 0.0318841],
+                [0.0389098, 0.0365737, 0.0313247, 0.0876736, 0.0354505, 0.0230317],
             ],
         )
         npt.assert_almost_equal(
             prob["post.constr_global_buckling"].T,
             [
-                [0.0688552, 0.1046238, 0.3265798, 0.3237271, 0.1852752, 0.0861362],
-                [0.0757284, 0.0986898, 0.2539549, 0.2488751, 0.1419365, 0.0721543],
+                [0.0664103, 0.0601506, 0.0564786, 0.3232934, 0.1850668, 0.0861362],
+                [0.0739785, 0.0668608, 0.061271, 0.2485466, 0.1417801, 0.0721543],
             ],
         )
         npt.assert_almost_equal(
@@ -602,12 +606,12 @@ class TestMonopileSE(unittest.TestCase):
                 [0.0725777, 0.0423913, 0.0389151, 0.0503152, 0.0450089, 0.039363],
             ],
         )
-        npt.assert_almost_equal(prob["monopile.mudline_F"][0, :], [1285099.14, 930507.61], 2)
+        npt.assert_almost_equal(prob["monopile.mudline_F"][0, :], [1284941.89, 930370.5], 2)
         npt.assert_array_less(np.abs(prob["monopile.mudline_F"][1, :]), 1e2, 2)
         npt.assert_almost_equal(prob["monopile.mudline_F"][2, :], [-4.67522712e06, -5.11992336e06], 2)
         npt.assert_almost_equal(
             prob["monopile.mudline_M"].T,
-            [[3996248.0, 49418829.0, -346819.0], [-1698349.0, 34912815.0, 147319.0]],
+            [[3989782.0, 49333681.0, -346819.0], [-1695401.0, 34848171.0, 147319.0]],
             0,
         )
 
