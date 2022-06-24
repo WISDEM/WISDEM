@@ -496,6 +496,7 @@ class MemberDiscretization(om.ExplicitComponent):
         self.add_output("outfitting_full", val=np.ones(n_full - 1))
         self.add_output("nodes_r", np.zeros(n_full), units="m")
         self.add_output("nodes_xyz", np.zeros((n_full, 3)), units="m")
+        self.add_output("z_global", np.zeros(n_full), units="m")
 
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
@@ -541,7 +542,8 @@ class MemberDiscretization(om.ExplicitComponent):
         xyz0 = inputs["joint1"]
         xyz1 = inputs["joint2"]
         dxyz = xyz1 - xyz0
-        outputs["nodes_xyz"] = np.outer(s_full, dxyz) + xyz0[np.newaxis, :]
+        outputs["nodes_xyz"] = xyz = np.outer(s_full, dxyz) + xyz0[np.newaxis, :]
+        outputs["z_global"] = xyz[:, -1]
 
 
 class ShellMassCost(om.ExplicitComponent):
@@ -2372,7 +2374,7 @@ class MemberLoads(om.Group):
             "rho_air",
             "mu_air",
             "yaw",
-            ("z", "z_full"),
+            ("z", "z_global"),
             ("d", "d_full"),
         ]
         if hydro:

@@ -1,5 +1,6 @@
 import numpy as np
 import openmdao.api as om
+
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.cylinder_member as mem
@@ -398,7 +399,7 @@ class TowerFrame(om.ExplicitComponent):
         outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
 
         # deflections due to loading (from cylinder top and wind/wave loads)
-        outputs["tower_deflection"] = np.sqrt(displacements.dx ** 2 + displacements.dy ** 2).T
+        outputs["tower_deflection"] = np.sqrt(displacements.dx**2 + displacements.dy**2).T
         outputs["top_deflection"] = outputs["tower_deflection"][-1, :]
 
         # Record total forces and moments at base
@@ -463,6 +464,7 @@ class TowerSE(om.Group):
             "material_names",
             "painting_cost_rate",
             "labor_cost_rate",
+            "z_global",
             "z_param",
             "z_full",
             "s_full",

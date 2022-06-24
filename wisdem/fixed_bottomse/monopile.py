@@ -689,6 +689,7 @@ class MonopileSE(om.Group):
             "material_names",
             "painting_cost_rate",
             "labor_cost_rate",
+            "z_global",
             "z_param",
             "z_full",
             "s_full",
