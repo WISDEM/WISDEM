@@ -259,7 +259,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         # Add leg members.
         for jdx in range(n_bays + 1):
-            itube = cs.Tube(inputs["leg_diameter"], inputs["leg_thickness"])
+            itube = cs.Tube(float(inputs["leg_diameter"]), float(inputs["leg_thickness"]))
             for idx in range(n_legs):
                 add_element(leg_nodes, leg_indices, bay_nodes, bay_indices, itube, idx, jdx, idx, jdx)
                 add_element(bay_nodes, bay_indices, leg_nodes, leg_indices, itube, idx, jdx, idx, jdx + 1)
@@ -632,7 +632,7 @@ class JacketCost(om.ExplicitComponent):
         leg_nodes = inputs["leg_nodes"]
         connect_mat = np.int_(inputs["jacket_elem_N"][:-n_legs, :])
         L = inputs["jacket_elem_L"][:-n_legs]
-        D = inputs["jacket_elem_D"][:-n_legs]
+        D = inputs["jacket_elem_D"][:-n_legs].copy()
         t = inputs["jacket_elem_t"][:-n_legs]
         xyz = inputs["jacket_nodes"]
         m_total = inputs["jacket_mass"]
@@ -697,7 +697,7 @@ class JacketCost(om.ExplicitComponent):
         # Capital cost share from BLS MFP by NAICS
         K_c = 0.118 * tempSum / (1.0 - 0.118)
 
-        outputs["jacket_cost"] = K_c
+        outputs["jacket_cost"] = K_c + tempSum
         outputs["structural_cost"] = outputs["jacket_cost"] + inputs["tower_cost"]
 
 

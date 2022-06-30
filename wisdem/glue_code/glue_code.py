@@ -498,6 +498,25 @@ class WT_RNTA(om.Group):
             self.connect("costs.labor_rate", "towerse.labor_cost_rate")
             self.connect("costs.painting_rate", "towerse.painting_cost_rate")
 
+        if modeling_options["flags"]["monopile"] or modeling_options["flags"]["jacket"]:
+            self.connect("materials.E", "fixedse.E_mat")
+            self.connect("materials.G", "fixedse.G_mat")
+            self.connect("materials.rho", "fixedse.rho_mat")
+            self.connect("materials.name", "fixedse.material_names")
+            self.connect("materials.unit_cost", "fixedse.unit_cost_mat")
+            self.connect("costs.labor_rate", "fixedse.labor_cost_rate")
+            self.connect("costs.painting_rate", "fixedse.painting_cost_rate")
+            self.connect("materials.sigma_y", "fixedse.sigma_y_mat")
+            if modeling_options["flags"]["tower"]:
+                self.connect("towerse.tower_mass", "fixedse.tower_mass")
+                self.connect("towerse.tower_cost", "fixedse.tower_cost")
+                self.connect("towerse.turbine_mass", "fixedse.turbine_mass")
+                self.connect("towerse.turbine_center_of_mass", "fixedse.turbine_cg")
+                self.connect("towerse.turbine_I_base", "fixedse.turbine_I")
+                self.connect("towerse.tower.turbine_F", "fixedse.turbine_F")
+                self.connect("towerse.tower.turbine_M", "fixedse.turbine_M")
+                self.connect("tower.diameter", "fixedse.tower_base_diameter", src_indices=[0])
+
         if modeling_options["flags"]["monopile"]:
             if modeling_options["flags"]["blade"]:
                 self.connect("rotorse.rp.gust.V_gust", "fixedse.env.Uref")
@@ -522,29 +541,13 @@ class WT_RNTA(om.Group):
             self.connect("monopile.s", "fixedse.monopile_s")
             self.connect("monopile.layer_thickness", "fixedse.monopile_layer_thickness")
             self.connect("monopile.layer_mat", "fixedse.monopile_layer_materials")
-            self.connect("materials.name", "fixedse.material_names")
-            self.connect("materials.E", "fixedse.E_mat")
-            self.connect("materials.G", "fixedse.G_mat")
-            self.connect("materials.rho", "fixedse.rho_mat")
-            self.connect("materials.sigma_y", "fixedse.sigma_y_mat")
             self.connect("materials.Xt", "fixedse.sigma_ult_mat")
             self.connect("materials.wohler_exp", "fixedse.wohler_exp_mat")
             self.connect("materials.wohler_intercept", "fixedse.wohler_A_mat")
-            self.connect("materials.unit_cost", "fixedse.unit_cost_mat")
-            self.connect("costs.labor_rate", "fixedse.labor_cost_rate")
-            self.connect("costs.painting_rate", "fixedse.painting_cost_rate")
             self.connect("monopile.transition_piece_cost", "fixedse.transition_piece_cost")
             self.connect("monopile.transition_piece_mass", "fixedse.transition_piece_mass")
             self.connect("monopile.gravity_foundation_mass", "fixedse.gravity_foundation_mass")
             if modeling_options["flags"]["tower"]:
-                self.connect("tower.diameter", "fixedse.tower_base_diameter", src_indices=[0])
-                self.connect("towerse.tower_mass", "fixedse.tower_mass")
-                self.connect("towerse.tower_cost", "fixedse.tower_cost")
-                self.connect("towerse.turbine_mass", "fixedse.turbine_mass")
-                self.connect("towerse.turbine_center_of_mass", "fixedse.turbine_cg")
-                self.connect("towerse.turbine_I_base", "fixedse.turbine_I")
-                self.connect("towerse.tower.turbine_F", "fixedse.monopile.turbine_F")
-                self.connect("towerse.tower.turbine_M", "fixedse.monopile.turbine_M")
                 self.connect("towerse.nodes_xyz", "fixedse.tower_xyz")
                 for var in ["A", "Asx", "Asy", "Ixx", "Iyy", "J0", "rho", "E", "G"]:
                     self.connect(f"towerse.section_{var}", f"fixedse.tower_{var}")
@@ -558,11 +561,6 @@ class WT_RNTA(om.Group):
                 self.connect("drivese.rna_mass", "fixedse.rna_mass")
 
         if modeling_options["flags"]["jacket"]:
-            self.connect("materials.sigma_y", "fixedse.sigma_y_mat")
-            self.connect("materials.E", "fixedse.E_mat")
-            self.connect("materials.G", "fixedse.G_mat")
-            self.connect("materials.rho", "fixedse.rho_mat")
-            self.connect("materials.name", "fixedse.material_names")
             self.connect("jacket.foot_head_ratio", "fixedse.foot_head_ratio")
             self.connect("jacket.r_head", "fixedse.r_head")
             self.connect("jacket.height", "fixedse.height")
@@ -571,15 +569,6 @@ class WT_RNTA(om.Group):
             self.connect("jacket.brace_diameters", "fixedse.brace_diameters")
             self.connect("jacket.brace_thicknesses", "fixedse.brace_thicknesses")
             self.connect("jacket.bay_spacing", "fixedse.bay_spacing")
-            if modeling_options["flags"]["tower"]:
-                self.connect("towerse.tower_mass", "fixedse.tower_mass")
-                self.connect("towerse.tower_cost", "fixedse.tower_cost")
-                self.connect("towerse.turbine_mass", "fixedse.turbine_mass")
-                self.connect("towerse.turbine_center_of_mass", "fixedse.turbine_cg")
-                self.connect("towerse.turbine_I_base", "fixedse.turbine_I")
-                self.connect("towerse.tower.turbine_F", "fixedse.turbine_F")
-                self.connect("towerse.tower.turbine_M", "fixedse.turbine_M")
-                self.connect("tower.diameter", "fixedse.tower_base_diameter", src_indices=[0])
 
         if modeling_options["flags"]["floating"]:
             self.connect("env.rho_water", "floatingse.rho_water")

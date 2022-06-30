@@ -833,6 +833,8 @@ class MonopileSE(om.Group):
                 "turbine_mass",
                 "turbine_cg",
                 "turbine_I",
+                "turbine_F",
+                "turbine_M",
                 "rna_mass",
                 "rna_cg",
                 "rna_I",
