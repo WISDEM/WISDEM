@@ -2,6 +2,7 @@ import os
 import unittest
 
 import openmdao.api as om
+
 from wisdem.rotorse.blade_cost import StandaloneBladeCost, initialize_omdao_prob
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
@@ -21,6 +22,10 @@ class TestBC(unittest.TestCase):
         wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
         wt_init, modeling_options, opt_options = wt_initial.get_input_data()
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
+        modeling_options["WISDEM"]["DriveSE"]["flag"] = False
+        modeling_options["WISDEM"]["TowerSE"]["flag"] = False
+        modeling_options["flags"]["nacelle"] = False
+        modeling_options["flags"]["tower"] = False
         wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
@@ -53,6 +58,10 @@ class TestBC(unittest.TestCase):
         wt_init, modeling_options, opt_options = wt_initial.get_input_data()
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
         modeling_options["WISDEM"]["DriveSE"]["direct"] = False
+        modeling_options["WISDEM"]["DriveSE"]["flag"] = False
+        modeling_options["WISDEM"]["TowerSE"]["flag"] = False
+        modeling_options["flags"]["nacelle"] = False
+        modeling_options["flags"]["tower"] = False
         wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
@@ -85,6 +94,10 @@ class TestBC(unittest.TestCase):
         wt_init, modeling_options, opt_options = wt_initial.get_input_data()
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
         modeling_options["WISDEM"]["DriveSE"]["direct"] = False
+        modeling_options["WISDEM"]["DriveSE"]["flag"] = False
+        modeling_options["WISDEM"]["TowerSE"]["flag"] = False
+        modeling_options["flags"]["nacelle"] = False
+        modeling_options["flags"]["tower"] = False
         wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
@@ -116,6 +129,10 @@ class TestBC(unittest.TestCase):
         wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
         wt_init, modeling_options, opt_options = wt_initial.get_input_data()
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
+        modeling_options["WISDEM"]["DriveSE"]["flag"] = False
+        modeling_options["WISDEM"]["TowerSE"]["flag"] = False
+        modeling_options["flags"]["nacelle"] = False
+        modeling_options["flags"]["tower"] = False
         wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
@@ -156,6 +173,7 @@ class TestBC(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rc_out.blade_fixed_cost"][0], 11286.48033595233, places=accuracy)
         self.assertAlmostEqual(wt_opt["rc_out.total_blade_cost"][0], 53326.460068053544, places=accuracy)
         self.assertAlmostEqual(wt_opt["total_bc.total_blade_cost"][0], 485944.53517966263, places=accuracy)
+
 
 def suite():
     suite = unittest.TestSuite()

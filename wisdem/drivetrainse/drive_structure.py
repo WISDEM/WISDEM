@@ -203,7 +203,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         gamma_f = float(self.options["modeling_options"]["gamma_f"])
         gamma_m = float(self.options["modeling_options"]["gamma_m"])
         gamma_n = float(self.options["modeling_options"]["gamma_n"])
-        gamma = (gamma_f * gamma_m * gamma_n,)
+        gamma = gamma_f * gamma_m * gamma_n
 
         m_hub = float(inputs["hub_system_mass"])
         cm_hub = float(inputs["hub_system_cm"])
