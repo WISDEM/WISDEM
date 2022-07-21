@@ -1223,6 +1223,46 @@ properties:
                                 maximum: 5.0
                                 unit: meter
                                 description: Minimum size to ensure human maintenance access
+                    shaft_deflection:
+                        type: object
+                        default: {}
+                        description: Allowable non-torque deflection of the shaft, in meters, at the generator rotor attachment for direct drive or gearbox attachment for geared drive
+                        properties:
+                            flag: *flag
+                            upper_bound: &defl_upper
+                                type: number
+                                default: 1e-4
+                                minimum: 1e-6
+                                maximum: 1.0
+                                unit: meter
+                                description: Upper limit of deflection
+                    shaft_angle:
+                        type: object
+                        default: {}
+                        description: Allowable non-torque angular deflection of the shaft, in radians, at the generator rotor attachment for direct drive or gearbox attachment for geared drive
+                        properties:
+                            flag: *flag
+                            upper_bound: &angular_upper
+                                type: number
+                                default: 1e-3
+                                minimum: 1e-5
+                                maximum: 1.0
+                                unit: radian
+                                description: Upper limit of angular deflection
+                    stator_deflection:
+                        type: object
+                        default: {}
+                        description: Allowable deflection of the nose or bedplate, in meters, at the generator stator attachment
+                        properties:
+                            flag: *flag
+                            upper_bound: *defl_upper
+                    stator_angle:
+                        type: object
+                        default: {}
+                        description: Allowable non-torque angular deflection of the nose or bedplate, in radians, at the generator stator attachment
+                        properties:
+                            flag: *flag
+                            upper_bound: *angular_upper
                     ecc:
                         type: object
                         default: {}

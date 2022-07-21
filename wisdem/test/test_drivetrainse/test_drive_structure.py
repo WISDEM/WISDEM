@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
+
 import wisdem.drivetrainse.layout as lay
 import wisdem.drivetrainse.drive_structure as ds
 from wisdem.commonse import gravity
@@ -51,9 +52,9 @@ class TestDirectStructure(unittest.TestCase):
 
         self.inputs["other_mass"] = 200e3
         self.inputs["mb1_mass"] = 10e3
-        self.inputs["mb1_I"] = 10e3 * 0.5 * 2 ** 2 * np.ones(3)
+        self.inputs["mb1_I"] = 10e3 * 0.5 * 2**2 * np.ones(3)
         self.inputs["mb2_mass"] = 10e3
-        self.inputs["mb2_I"] = 10e3 * 0.5 * 1.5 ** 2 * np.ones(3)
+        self.inputs["mb2_I"] = 10e3 * 0.5 * 1.5**2 * np.ones(3)
         self.inputs["mb1_max_defl_ang"] = 0.008
         self.inputs["mb2_max_defl_ang"] = 0.008
 
@@ -98,6 +99,11 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs["lss_G"] = self.inputs["hss_G"] = self.inputs["bedplate_G"] = 80.8e9
         self.inputs["lss_rho"] = self.inputs["hss_rho"] = self.inputs["bedplate_rho"] = 7850.0
         self.inputs["lss_Xy"] = self.inputs["hss_Xy"] = self.inputs["bedplate_Xy"] = 250e6
+
+        self.inputs["shaft_deflection_allowable"] = 1e-4
+        self.inputs["shaft_angle_allowable"] = 1e-3
+        self.inputs["stator_deflection_allowable"] = 1e-4
+        self.inputs["stator_angle_allowable"] = 1e-3
 
         self.opt["gamma_f"] = 1.35
         self.opt["gamma_m"] = 1.3
@@ -372,7 +378,7 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_mb2"][[0, 2]], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_torq"], 0.0, decimal=2)
         self.assertAlmostEqual(
-            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3 ** 4 - 2.4 ** 4) / 32 / self.inputs["L_lss"], 4
+            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3**4 - 2.4**4) / 32 / self.inputs["L_lss"], 4
         )
 
         g = np.array([30e2, 40e2, 50e2])
@@ -389,17 +395,17 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_torq"].flatten(), np.r_[2 * g[0], 0.0, 0.0], decimal=2)
 
         r = 0.5 * 3.3
-        self.assertAlmostEqual(self.outputs["lss_axial_load2stress"][0], 1.0 / (np.pi * (r ** 2 - (r - 0.45) ** 2)))
+        self.assertAlmostEqual(self.outputs["lss_axial_load2stress"][0], 1.0 / (np.pi * (r**2 - (r - 0.45) ** 2)))
         npt.assert_almost_equal(self.outputs["lss_axial_load2stress"][1:4], 0.0)
         npt.assert_almost_equal(
-            self.outputs["lss_axial_load2stress"][4:], r / (0.25 * np.pi * (r ** 4 - (r - 0.45) ** 4))
+            self.outputs["lss_axial_load2stress"][4:], r / (0.25 * np.pi * (r**4 - (r - 0.45) ** 4))
         )
         self.assertAlmostEqual(self.outputs["lss_shear_load2stress"][0], 0.0)
         self.assertGreater(self.outputs["lss_shear_load2stress"][1], 0.0)
         self.assertGreater(self.outputs["lss_shear_load2stress"][2], 0.0)
         npt.assert_almost_equal(self.outputs["lss_shear_load2stress"][4:], 0.0)
         npt.assert_almost_equal(
-            self.outputs["lss_shear_load2stress"][3], r / (0.5 * np.pi * (r ** 4 - (r - 0.45) ** 4))
+            self.outputs["lss_shear_load2stress"][3], r / (0.5 * np.pi * (r**4 - (r - 0.45) ** 4))
         )
 
     def testRunRotatingDirect_withTilt(self):
@@ -421,7 +427,7 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_mb2"][[0, 2]], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_torq"], 0.0, decimal=2)
         self.assertAlmostEqual(
-            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3 ** 4 - 2.4 ** 4) / 32 / self.inputs["L_lss"], 4
+            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3**4 - 2.4**4) / 32 / self.inputs["L_lss"], 4
         )
 
         g = np.array([30e2, 40e2, 50e2])
@@ -438,17 +444,17 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_torq"].flatten(), np.r_[2 * g[0], 0.0, 0.0], decimal=2)
 
         r = 0.5 * 3.3
-        self.assertAlmostEqual(self.outputs["lss_axial_load2stress"][0], 1.0 / (np.pi * (r ** 2 - (r - 0.45) ** 2)))
+        self.assertAlmostEqual(self.outputs["lss_axial_load2stress"][0], 1.0 / (np.pi * (r**2 - (r - 0.45) ** 2)))
         npt.assert_almost_equal(self.outputs["lss_axial_load2stress"][1:4], 0.0)
         npt.assert_almost_equal(
-            self.outputs["lss_axial_load2stress"][4:], r / (0.25 * np.pi * (r ** 4 - (r - 0.45) ** 4))
+            self.outputs["lss_axial_load2stress"][4:], r / (0.25 * np.pi * (r**4 - (r - 0.45) ** 4))
         )
         self.assertAlmostEqual(self.outputs["lss_shear_load2stress"][0], 0.0)
         self.assertGreater(self.outputs["lss_shear_load2stress"][1], 0.0)
         self.assertGreater(self.outputs["lss_shear_load2stress"][2], 0.0)
         npt.assert_almost_equal(self.outputs["lss_shear_load2stress"][4:], 0.0)
         npt.assert_almost_equal(
-            self.outputs["lss_shear_load2stress"][3], r / (0.5 * np.pi * (r ** 4 - (r - 0.45) ** 4))
+            self.outputs["lss_shear_load2stress"][3], r / (0.5 * np.pi * (r**4 - (r - 0.45) ** 4))
         )
 
     def testRunRotatingGeared_noTilt(self):
@@ -470,7 +476,7 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_mb2"][[0, 2]], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_torq"], 0.0, decimal=2)
         self.assertAlmostEqual(
-            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3 ** 4 - 2.4 ** 4) / 32 / self.inputs["L_lss"], 4
+            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3**4 - 2.4**4) / 32 / self.inputs["L_lss"], 4
         )
 
         g = np.array([30e2, 40e2, 50e2])
@@ -487,17 +493,17 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_torq"].flatten(), np.r_[2 * g[0], 0.0, 0.0], decimal=2)
 
         r = 0.5 * 3.3
-        self.assertAlmostEqual(self.outputs["lss_axial_load2stress"][0], 1.0 / (np.pi * (r ** 2 - (r - 0.45) ** 2)))
+        self.assertAlmostEqual(self.outputs["lss_axial_load2stress"][0], 1.0 / (np.pi * (r**2 - (r - 0.45) ** 2)))
         npt.assert_almost_equal(self.outputs["lss_axial_load2stress"][1:4], 0.0)
         npt.assert_almost_equal(
-            self.outputs["lss_axial_load2stress"][4:], r / (0.25 * np.pi * (r ** 4 - (r - 0.45) ** 4))
+            self.outputs["lss_axial_load2stress"][4:], r / (0.25 * np.pi * (r**4 - (r - 0.45) ** 4))
         )
         self.assertAlmostEqual(self.outputs["lss_shear_load2stress"][0], 0.0)
         self.assertGreater(self.outputs["lss_shear_load2stress"][1], 0.0)
         self.assertGreater(self.outputs["lss_shear_load2stress"][2], 0.0)
         npt.assert_almost_equal(self.outputs["lss_shear_load2stress"][4:], 0.0)
         npt.assert_almost_equal(
-            self.outputs["lss_shear_load2stress"][3], r / (0.5 * np.pi * (r ** 4 - (r - 0.45) ** 4))
+            self.outputs["lss_shear_load2stress"][3], r / (0.5 * np.pi * (r**4 - (r - 0.45) ** 4))
         )
 
     def testRunRotatingGeared_withTilt(self):
@@ -520,7 +526,7 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_mb2"][[0, 2]], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_torq"], 0.0, decimal=2)
         self.assertAlmostEqual(
-            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3 ** 4 - 2.4 ** 4) / 32 / self.inputs["L_lss"], 4
+            self.outputs["lss_spring_constant"], 80.8e9 * np.pi * (3.3**4 - 2.4**4) / 32 / self.inputs["L_lss"], 4
         )
 
         g = np.array([30e2, 40e2, 50e2])
@@ -537,17 +543,17 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_torq"].flatten(), np.r_[2 * g[0], 0.0, 0.0], decimal=2)
 
         r = 0.5 * 3.3
-        self.assertAlmostEqual(self.outputs["lss_axial_load2stress"][0], 1.0 / (np.pi * (r ** 2 - (r - 0.45) ** 2)))
+        self.assertAlmostEqual(self.outputs["lss_axial_load2stress"][0], 1.0 / (np.pi * (r**2 - (r - 0.45) ** 2)))
         npt.assert_almost_equal(self.outputs["lss_axial_load2stress"][1:4], 0.0)
         npt.assert_almost_equal(
-            self.outputs["lss_axial_load2stress"][4:], r / (0.25 * np.pi * (r ** 4 - (r - 0.45) ** 4))
+            self.outputs["lss_axial_load2stress"][4:], r / (0.25 * np.pi * (r**4 - (r - 0.45) ** 4))
         )
         self.assertAlmostEqual(self.outputs["lss_shear_load2stress"][0], 0.0)
         self.assertGreater(self.outputs["lss_shear_load2stress"][1], 0.0)
         self.assertGreater(self.outputs["lss_shear_load2stress"][2], 0.0)
         npt.assert_almost_equal(self.outputs["lss_shear_load2stress"][4:], 0.0)
         npt.assert_almost_equal(
-            self.outputs["lss_shear_load2stress"][3], r / (0.5 * np.pi * (r ** 4 - (r - 0.45) ** 4))
+            self.outputs["lss_shear_load2stress"][3], r / (0.5 * np.pi * (r**4 - (r - 0.45) ** 4))
         )
 
     def testHSS_noTilt(self):
@@ -620,7 +626,7 @@ class TestDirectStructure(unittest.TestCase):
         self.compute_layout()
         myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, modeling_options=self.opt, direct_drive=True)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
-        J = 0.5 * np.pi * (2.5 ** 4 - 2 ** 4)
+        J = 0.5 * np.pi * (2.5**4 - 2**4)
         sigma = 1e5 / J * 2.5
         npt.assert_almost_equal(self.outputs["lss_axial_stress"], 0.0, decimal=4)
         npt.assert_almost_equal(self.outputs["lss_shear_stress"].flatten(), np.r_[np.zeros(3), sigma], decimal=4)
@@ -647,7 +653,7 @@ class TestDirectStructure(unittest.TestCase):
         self.compute_layout()
         myobj = ds.HSS_Frame(modeling_options=self.opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs)
-        J = 0.5 * np.pi * (2.5 ** 4 - 2 ** 4)
+        J = 0.5 * np.pi * (2.5**4 - 2**4)
         sigma = 1e5 / 50.0 / J * 2.5
         npt.assert_almost_equal(self.outputs["hss_axial_stress"], 0.0, decimal=4)
         npt.assert_almost_equal(self.outputs["hss_bending_stress"], 0.0, decimal=4)

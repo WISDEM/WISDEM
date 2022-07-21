@@ -1392,6 +1392,11 @@ class PoseOptimization(object):
                 mystr = k + "_vonmises" if k in ["lss", "hss", "bedplate"] else k + "_defl"
                 wt_opt.model.add_constraint("drivese.constr_" + mystr, upper=1.0)
 
+        for k in ["shaft", "stator"]:
+            for m in ["deflection", "angle"]:
+                if drive_constr[f"{k}_{m}"]["flag"]:
+                    wt_opt.model.add_constraint(f"drivese.constr_{k}_{m}", upper=1.0)
+
         for k in ["length", "height", "access", "ecc"]:
             if drive_constr[k]["flag"]:
                 wt_opt.model.add_constraint("drivese.constr_" + k, lower=0.0)
@@ -1637,9 +1642,17 @@ class PoseOptimization(object):
                 wt_opt["rotorse.stall_check.stall_margin"] = blade_constr["stall"]["margin"] * 180.0 / np.pi
                 wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
 
-        if self.modeling["flags"]["nacelle"] and self.modeling["WISDEM"]["DriveSE"]["direct"]:
+        if self.modeling["flags"]["nacelle"]:
             drive_constr = self.opt["constraints"]["drivetrain"]
-            wt_opt["drivese.access_diameter"] = drive_constr["access"]["lower_bound"]
+
+            wt_opt["drivese.shaft_deflection_allowable"] = drive_constr["shaft_deflection"]["upper_bound"]
+            wt_opt["drivese.shaft_angle_allowable"] = drive_constr["shaft_angle"]["upper_bound"]
+
+            wt_opt["drivese.stator_deflection_allowable"] = drive_constr["stator_deflection"]["upper_bound"]
+            wt_opt["drivese.stator_angle_allowable"] = drive_constr["stator_angle"]["upper_bound"]
+
+            if self.modeling["WISDEM"]["DriveSE"]["direct"]:
+                wt_opt["drivese.access_diameter"] = drive_constr["access"]["lower_bound"]
 
         if self.modeling["flags"]["floating"]:
             float_constr = self.opt["constraints"]["floating"]

@@ -2,6 +2,7 @@
 # Import needed libraries
 import numpy as np
 import openmdao.api as om
+
 from wisdem.commonse.fileIO import save_data
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
 
@@ -58,6 +59,10 @@ if opt_flag:
     prob.model.add_constraint("constr_bedplate_vonmises", upper=1.0)
     prob.model.add_constraint("constr_mb1_defl", upper=1.0)
     prob.model.add_constraint("constr_mb2_defl", upper=1.0)
+    prob.model.add_constraint("constr_shaft_deflection", upper=1.0)
+    prob.model.add_constraint("constr_shaft_angle", upper=1.0)
+    prob.model.add_constraint("constr_stator_deflection", upper=1.0)
+    prob.model.add_constraint("constr_stator_angle", upper=1.0)
     prob.model.add_constraint("constr_hub_diameter", lower=0.0)
     prob.model.add_constraint("constr_length", lower=0.0)
     prob.model.add_constraint("constr_height", lower=0.0)
@@ -114,6 +119,10 @@ prob["overhang"] = 12.0313
 prob["drive_height"] = 5.614
 prob["tilt"] = 6.0
 prob["access_diameter"] = 2.0
+prob["shaft_deflection_allowable"] = 1e-4
+prob["shaft_angle_allowable"] = 1e-3
+prob["stator_deflection_allowable"] = 1e-4
+prob["stator_angle_allowable"] = 1e-3
 
 myones = np.ones(2)
 prob["lss_diameter"] = 3.0 * myones
@@ -175,6 +184,10 @@ print("constr_lss_vonmises:", prob["constr_lss_vonmises"].flatten())
 print("constr_bedplate_vonmises:", prob["constr_bedplate_vonmises"].flatten())
 print("constr_mb1_defl:", prob["constr_mb1_defl"])
 print("constr_mb2_defl:", prob["constr_mb2_defl"])
+print("constr_shaft_deflection:", prob["constr_shaft_deflection"])
+print("constr_shaft_angle:", prob["constr_shaft_angle"])
+print("constr_stator_deflection:", prob["constr_stator_deflection"])
+print("constr_stator_angle:", prob["constr_stator_angle"])
 print("constr_hub_diameter:", prob["constr_hub_diameter"])
 print("constr_length:", prob["constr_length"])
 print("constr_height:", prob["constr_height"])

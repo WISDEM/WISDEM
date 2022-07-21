@@ -3,6 +3,7 @@
 
 import numpy as np
 import openmdao.api as om
+
 import wisdem.pyframe3dd.pyframe3dd as frame3dd
 from wisdem.commonse import gravity
 from wisdem.commonse.csystem import DirectionVector
@@ -84,7 +85,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         Equivalent spring constant for the low speed shaft froom T=(G*J/L)*theta
     torq_deflection : float, [m]
         Maximum deflection distance at rotor (direct) or gearbox (geared) attachment
-    torq_rotation : float, [rad]
+    torq_angle : float, [rad]
         Maximum rotation angle at rotor (direct) or gearbox (geared) attachment
     torq_axial_stress : numpy array[5, n_dlcs], [Pa]
         Axial stress in Curved_beam structure
@@ -147,9 +148,12 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         self.add_input("lss_rho", val=0.0, units="kg/m**3")
         self.add_input("lss_Xy", val=0.0, units="Pa")
 
+        self.add_input("shaft_deflection_allowable", val=1.0, units="m")
+        self.add_input("shaft_angle_allowable", val=1.0, units="rad")
+
         self.add_output("lss_spring_constant", 0.0, units="N*m/rad")
         self.add_output("torq_deflection", val=0.0, units="m")
-        self.add_output("torq_rotation", val=0.0, units="rad")
+        self.add_output("torq_angle", val=0.0, units="rad")
         self.add_output("lss_axial_stress", np.zeros((4, n_dlcs)), units="Pa")
         self.add_output("lss_shear_stress", np.zeros((4, n_dlcs)), units="Pa")
         self.add_output("constr_lss_vonmises", np.zeros((4, n_dlcs)))
@@ -161,6 +165,8 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         self.add_output("M_torq", val=np.zeros((3, n_dlcs)), units="N*m")
         self.add_output("lss_axial_load2stress", val=np.zeros(6), units="m**2")
         self.add_output("lss_shear_load2stress", val=np.zeros(6), units="m**2")
+        self.add_output("constr_shaft_deflection", 0.0)
+        self.add_output("constr_shaft_angle", 0.0)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -197,12 +203,16 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         gamma_f = float(self.options["modeling_options"]["gamma_f"])
         gamma_m = float(self.options["modeling_options"]["gamma_m"])
         gamma_n = float(self.options["modeling_options"]["gamma_n"])
+        gamma = gamma_f * gamma_m * gamma_n
 
         m_hub = float(inputs["hub_system_mass"])
         cm_hub = float(inputs["hub_system_cm"])
         I_hub = inputs["hub_system_I"]
         F_hub = inputs["F_hub"]
         M_hub = inputs["M_hub"]
+
+        torq_defl_allow = float(inputs["shaft_deflection_allowable"])
+        torq_angle_allow = float(inputs["shaft_angle_allowable"])
 
         # ------- node data ----------------
         n = len(s_lss)
@@ -320,7 +330,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
 
         # Loop over DLCs and append to outputs
         rotor_gearbox_deflection = np.zeros(n_dlcs)
-        rotor_gearbox_rotation = np.zeros(n_dlcs)
+        rotor_gearbox_angle = np.zeros(n_dlcs)
         outputs["F_mb1"] = np.zeros((3, n_dlcs))
         outputs["F_mb2"] = np.zeros((3, n_dlcs))
         outputs["F_torq"] = np.zeros((3, n_dlcs))
@@ -337,7 +347,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
                 + displacements.dy[k, itorq - 1] ** 2
                 + displacements.dz[k, itorq - 1] ** 2
             )
-            rotor_gearbox_rotation[k] = (
+            rotor_gearbox_angle[k] = (
                 displacements.dxrot[k, itorq - 1]
                 + displacements.dyrot[k, itorq - 1]
                 + displacements.dzrot[k, itorq - 1]
@@ -347,12 +357,12 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
             Fx = forces.Nx[k, 1::2]
             Vy = forces.Vy[k, 1::2]
             Vz = -forces.Vz[k, 1::2]
-            F = np.sqrt(Vz ** 2 + Vy ** 2)
+            F = np.sqrt(Vz**2 + Vy**2)
 
             Mxx = forces.Txx[k, 1::2]
             Myy = forces.Myy[k, 1::2]
             Mzz = -forces.Mzz[k, 1::2]
-            M = np.sqrt(Myy ** 2 + Mzz ** 2)
+            M = np.sqrt(Myy**2 + Mzz**2)
 
             # Record total forces and moments
             outputs["F_mb1"][:, k] = -1.0 * np.array([reactions.Fx[k, 0], reactions.Fy[k, 0], reactions.Fz[k, 0]])
@@ -369,11 +379,13 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
                 outputs["lss_axial_stress"][:, k],
                 hoop,
                 outputs["lss_shear_stress"][:, k],
-                gamma_f * gamma_m * gamma_n,
+                gamma,
                 sigma_y,
             )
         outputs["torq_deflection"] = rotor_gearbox_deflection.max()
-        outputs["torq_rotation"] = rotor_gearbox_rotation.max()
+        outputs["torq_angle"] = rotor_gearbox_angle.max()
+        outputs["constr_shaft_deflection"] = gamma * outputs["torq_deflection"] / torq_defl_allow
+        outputs["constr_shaft_angle"] = gamma * outputs["torq_angle"] / torq_angle_allow
 
         # Load->stress conversion for fatigue
         ax_load2stress = np.zeros(6)
@@ -492,6 +504,7 @@ class HSS_Frame(om.ExplicitComponent):
         gamma_f = float(self.options["modeling_options"]["gamma_f"])
         gamma_m = float(self.options["modeling_options"]["gamma_m"])
         gamma_n = float(self.options["modeling_options"]["gamma_n"])
+        gamma = gamma_f * gamma_m * gamma_n
 
         M_hub = inputs["M_hub"]
         gear_ratio = float(inputs["gear_ratio"])
@@ -592,12 +605,12 @@ class HSS_Frame(om.ExplicitComponent):
             Fx = forces.Nx[k, 1::2]
             Vy = forces.Vy[k, 1::2]
             Vz = -forces.Vz[k, 1::2]
-            F = np.sqrt(Vz ** 2 + Vy ** 2)
+            F = np.sqrt(Vz**2 + Vy**2)
 
             Mxx = forces.Txx[k, 1::2]
             Myy = forces.Myy[k, 1::2]
             Mzz = -forces.Mzz[k, 1::2]
-            M = np.sqrt(Myy ** 2 + Mzz ** 2)
+            M = np.sqrt(Myy**2 + Mzz**2)
 
             # Record total forces and moments
             outputs["F_generator"][:, k] = -1.0 * np.array([reactions.Fx[k, 0], reactions.Fy[k, 0], reactions.Fz[k, 0]])
@@ -612,7 +625,7 @@ class HSS_Frame(om.ExplicitComponent):
                 outputs["hss_axial_stress"][:, k],
                 hoop,
                 outputs["hss_shear_stress"][:, k],
-                gamma_f * gamma_m * gamma_n,
+                gamma,
                 sigma_y,
             )
 
@@ -698,11 +711,11 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         Total deflection distance of bearing 2
     stator_deflection : float, [m]
         Maximum deflection distance at stator attachment
-    mb1_rotation : numpy array[n_dlcs], [rad]
+    mb1_angle : numpy array[n_dlcs], [rad]
         Total rotation angle of bearing 1
-    mb2_rotation : numpy array[n_dlcs], [rad]
+    mb2_angle : numpy array[n_dlcs], [rad]
         Total rotation angle of bearing 2
-    stator_rotation : float, [rad]
+    stator_angle : float, [rad]
         Maximum rotation angle at stator attachment
     base_F : numpy array[3, n_dlcs], [N]
         Total reaction force at bedplate base in tower top coordinate system
@@ -764,12 +777,15 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         self.add_input("bedplate_rho", val=0.0, units="kg/m**3")
         self.add_input("bedplate_Xy", val=0.0, units="Pa")
 
+        self.add_input("stator_deflection_allowable", val=1.0, units="m")
+        self.add_input("stator_angle_allowable", val=1.0, units="rad")
+
         self.add_output("mb1_deflection", val=np.zeros(n_dlcs), units="m")
         self.add_output("mb2_deflection", val=np.zeros(n_dlcs), units="m")
         self.add_output("stator_deflection", val=0.0, units="m")
-        self.add_output("mb1_rotation", val=np.zeros(n_dlcs), units="rad")
-        self.add_output("mb2_rotation", val=np.zeros(n_dlcs), units="rad")
-        self.add_output("stator_rotation", val=0.0, units="rad")
+        self.add_output("mb1_angle", val=np.zeros(n_dlcs), units="rad")
+        self.add_output("mb2_angle", val=np.zeros(n_dlcs), units="rad")
+        self.add_output("stator_angle", val=0.0, units="rad")
         self.add_output("base_F", val=np.zeros((3, n_dlcs)), units="N")
         self.add_output("base_M", val=np.zeros((3, n_dlcs)), units="N*m")
         self.add_output("bedplate_nose_axial_stress", np.zeros((12 + 3, n_dlcs)), units="Pa")
@@ -778,6 +794,8 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         self.add_output("constr_bedplate_vonmises", np.zeros((12 + 3, n_dlcs)))
         self.add_output("constr_mb1_defl", val=np.zeros(n_dlcs))
         self.add_output("constr_mb2_defl", val=np.zeros(n_dlcs))
+        self.add_output("constr_stator_deflection", 0.0)
+        self.add_output("constr_stator_angle", 0.0)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -821,6 +839,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         gamma_f = float(self.options["modeling_options"]["gamma_f"])
         gamma_m = float(self.options["modeling_options"]["gamma_m"])
         gamma_n = float(self.options["modeling_options"]["gamma_n"])
+        gamma = gamma_f * gamma_m * gamma_n
 
         F_mb1 = inputs["F_mb1"]
         F_mb2 = inputs["F_mb2"]
@@ -828,6 +847,8 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         M_mb2 = inputs["M_mb2"]
 
         m_other = float(inputs["other_mass"])
+        stator_defl_allow = float(inputs["stator_deflection_allowable"])
+        stator_angle_allow = float(inputs["stator_angle_allowable"])
 
         # ------- node data ----------------
         n = len(x_c) + len(x_nose)
@@ -923,16 +944,16 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
 
         # ------------ Bedplate "curved beam" geometry for post-processing -------------
         # Need to compute neutral axis, so shift points such that bedplate top is at x=0
-        R_c = np.sqrt((x_c - x_c[-1]) ** 2 + z_c ** 2)
-        Ro = np.sqrt((x_outer - x_c[-1]) ** 2 + z_outer ** 2)
-        Ri = np.sqrt((x_inner - x_c[-1]) ** 2 + z_inner ** 2)
+        R_c = np.sqrt((x_c - x_c[-1]) ** 2 + z_c**2)
+        Ro = np.sqrt((x_outer - x_c[-1]) ** 2 + z_outer**2)
+        Ri = np.sqrt((x_inner - x_c[-1]) ** 2 + z_inner**2)
         r_bed_o = 0.5 * D_bed
         r_bed_i = r_bed_o - t_bed
-        A_bed = np.pi * (r_bed_o ** 2 - r_bed_i ** 2)
+        A_bed = np.pi * (r_bed_o**2 - r_bed_i**2)
 
         # Radius of the neutral axis
         # http://faculty.fairfield.edu/wdornfeld/ME311/BasicStressEqns-DBWallace.pdf
-        R_n = A_bed / (2 * np.pi * (np.sqrt(R_c ** 2 - r_bed_i ** 2) - np.sqrt(R_c ** 2 - r_bed_o ** 2)))
+        R_n = A_bed / (2 * np.pi * (np.sqrt(R_c**2 - r_bed_i**2) - np.sqrt(R_c**2 - r_bed_o**2)))
         e_cn = R_c - R_n
         # ------------------------------------
 
@@ -940,9 +961,9 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         outputs["mb1_deflection"] = np.zeros(n_dlcs)
         outputs["mb2_deflection"] = np.zeros(n_dlcs)
         stator_deflection = np.zeros(n_dlcs)
-        outputs["mb1_rotation"] = np.zeros(n_dlcs)
-        outputs["mb2_rotation"] = np.zeros(n_dlcs)
-        stator_rotation = np.zeros(n_dlcs)
+        outputs["mb1_angle"] = np.zeros(n_dlcs)
+        outputs["mb2_angle"] = np.zeros(n_dlcs)
+        stator_angle = np.zeros(n_dlcs)
         outputs["base_F"] = np.zeros((3, n_dlcs))
         outputs["base_M"] = np.zeros((3, n_dlcs))
         outputs["bedplate_nose_axial_stress"] = np.zeros((n - 1, n_dlcs))
@@ -962,13 +983,13 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
                 + displacements.dy[k, istator - 1] ** 2
                 + displacements.dz[k, istator - 1] ** 2
             )
-            outputs["mb1_rotation"][k] = (
+            outputs["mb1_angle"][k] = (
                 displacements.dxrot[k, i1 - 1] + displacements.dyrot[k, i1 - 1] + displacements.dzrot[k, i1 - 1]
             )
-            outputs["mb2_rotation"][k] = (
+            outputs["mb2_angle"][k] = (
                 displacements.dxrot[k, i2 - 1] + displacements.dyrot[k, i2 - 1] + displacements.dzrot[k, i2 - 1]
             )
-            stator_rotation[k] = (
+            stator_angle[k] = (
                 displacements.dxrot[k, istator - 1]
                 + displacements.dyrot[k, istator - 1]
                 + displacements.dzrot[k, istator - 1]
@@ -978,12 +999,12 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
             Fx = forces.Nx[k, 1::2]
             Vy = forces.Vy[k, 1::2]
             Vz = -forces.Vz[k, 1::2]
-            F = np.sqrt(Vz ** 2 + Vy ** 2)
+            F = np.sqrt(Vz**2 + Vy**2)
 
             Mxx = forces.Txx[k, 1::2]
             Myy = forces.Myy[k, 1::2]
             Mzz = -forces.Mzz[k, 1::2]
-            M = np.sqrt(Myy ** 2 + Mzz ** 2)
+            M = np.sqrt(Myy**2 + Mzz**2)
 
             # Record total forces and moments
             F_base_k = DirectionVector(-reactions.Fx[k, :].sum(), -reactions.Fy[k, :].sum(), -reactions.Fz[k, :].sum())
@@ -1006,15 +1027,17 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
                 outputs["bedplate_nose_axial_stress"][:, k],
                 outputs["bedplate_nose_bending_stress"][:, k],
                 outputs["bedplate_nose_shear_stress"][:, k],
-                gamma_f * gamma_m * gamma_n,
+                gamma,
                 sigma_y,
             )
 
         # Evaluate bearing limits
-        outputs["constr_mb1_defl"] = np.abs(outputs["mb1_rotation"] / inputs["mb1_max_defl_ang"])
-        outputs["constr_mb2_defl"] = np.abs(outputs["mb2_rotation"] / inputs["mb2_max_defl_ang"])
+        outputs["constr_mb1_defl"] = np.abs(outputs["mb1_angle"] / inputs["mb1_max_defl_ang"])
+        outputs["constr_mb2_defl"] = np.abs(outputs["mb2_angle"] / inputs["mb2_max_defl_ang"])
         outputs["stator_deflection"] = stator_deflection.max()
-        outputs["stator_rotation"] = stator_rotation.max()
+        outputs["stator_angle"] = stator_angle.max()
+        outputs["constr_stator_deflection"] = gamma * outputs["stator_deflection"] / stator_defl_allow
+        outputs["constr_stator_angle"] = gamma * outputs["stator_angle"] / stator_angle_allow
 
 
 class Bedplate_IBeam_Frame(om.ExplicitComponent):
@@ -1078,11 +1101,11 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         Total deflection distance of bearing 2
     bedplate_deflection : float, [m]
         Maximum deflection distance at bedplate I-beam tip
-    mb1_rotation : numpy array[n_dlcs], [rad]
+    mb1_angle : numpy array[n_dlcs], [rad]
         Total rotation angle of bearing 1
-    mb2_rotation : numpy array[n_dlcs], [rad]
+    mb2_angle : numpy array[n_dlcs], [rad]
         Total rotation angle of bearing 2
-    bedplate_rotation : float, [rad]
+    bedplate_angle : float, [rad]
         Maximum rotation angle at bedplate I-beam tip
     base_F : numpy array[3, n_dlcs], [N]
         Total reaction force at bedplate base in tower top coordinate system
@@ -1142,12 +1165,15 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         self.add_input("bedplate_rho", val=0.0, units="kg/m**3")
         self.add_input("bedplate_Xy", val=0.0, units="Pa")
 
+        self.add_input("stator_deflection_allowable", val=1.0, units="m")
+        self.add_input("stator_angle_allowable", val=1.0, units="rad")
+
         self.add_output("mb1_deflection", val=np.zeros(n_dlcs), units="m")
         self.add_output("mb2_deflection", val=np.zeros(n_dlcs), units="m")
-        self.add_output("bedplate_deflection", val=0.0, units="m")
-        self.add_output("mb1_rotation", val=np.zeros(n_dlcs), units="rad")
-        self.add_output("mb2_rotation", val=np.zeros(n_dlcs), units="rad")
-        self.add_output("bedplate_rotation", val=0.0, units="rad")
+        self.add_output("stator_deflection", val=0.0, units="m")
+        self.add_output("mb1_angle", val=np.zeros(n_dlcs), units="rad")
+        self.add_output("mb2_angle", val=np.zeros(n_dlcs), units="rad")
+        self.add_output("stator_angle", val=0.0, units="rad")
         self.add_output("base_F", val=np.zeros((3, n_dlcs)), units="N")
         self.add_output("base_M", val=np.zeros((3, n_dlcs)), units="N*m")
         self.add_output("bedplate_axial_stress", np.zeros((22, n_dlcs)), units="Pa")
@@ -1156,6 +1182,8 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         self.add_output("constr_bedplate_vonmises", np.zeros((22, n_dlcs)))
         self.add_output("constr_mb1_defl", val=np.zeros(n_dlcs))
         self.add_output("constr_mb2_defl", val=np.zeros(n_dlcs))
+        self.add_output("constr_stator_deflection", 0.0)
+        self.add_output("constr_stator_angle", 0.0)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -1189,6 +1217,7 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         gamma_f = float(self.options["modeling_options"]["gamma_f"])
         gamma_m = float(self.options["modeling_options"]["gamma_m"])
         gamma_n = float(self.options["modeling_options"]["gamma_n"])
+        gamma = gamma_f * gamma_m * gamma_n
 
         F_mb1 = inputs["F_mb1"]
         F_mb2 = inputs["F_mb2"]
@@ -1200,6 +1229,8 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         M_gen = inputs["M_generator"]
 
         m_other = float(inputs["other_mass"])
+        stator_defl_allow = float(inputs["stator_deflection_allowable"])
+        stator_angle_allow = float(inputs["stator_angle_allowable"])
 
         # ------- node data ----------------
         n = len(s_drive)
@@ -1323,8 +1354,8 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         # Loop over DLCs and append to outputs
         outputs["mb1_deflection"] = np.zeros(n_dlcs)
         outputs["mb2_deflection"] = np.zeros(n_dlcs)
-        outputs["mb1_rotation"] = np.zeros(n_dlcs)
-        outputs["mb2_rotation"] = np.zeros(n_dlcs)
+        outputs["mb1_angle"] = np.zeros(n_dlcs)
+        outputs["mb2_angle"] = np.zeros(n_dlcs)
         outputs["base_F"] = np.zeros((3, n_dlcs))
         outputs["base_M"] = np.zeros((3, n_dlcs))
         outputs["bedplate_axial_stress"] = np.zeros((2 * n - 2, n_dlcs))
@@ -1343,13 +1374,13 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
                 np.sqrt(displacements.dx[k, n] ** 2 + displacements.dy[k, n] ** 2 + displacements.dz[k, n] ** 2),
                 np.sqrt(displacements.dx[k, -1] ** 2 + displacements.dy[k, -1] ** 2 + displacements.dz[k, -1] ** 2),
             )
-            outputs["mb1_rotation"][k] = (
+            outputs["mb1_angle"][k] = (
                 displacements.dxrot[k, i1 - 1] + displacements.dyrot[k, i1 - 1] + displacements.dzrot[k, i1 - 1]
             )
-            outputs["mb2_rotation"][k] = (
+            outputs["mb2_angle"][k] = (
                 displacements.dxrot[k, i2 - 1] + displacements.dyrot[k, i2 - 1] + displacements.dzrot[k, i2 - 1]
             )
-            bedplate_rotation = np.maximum(
+            bedplate_angle = np.maximum(
                 displacements.dxrot[k, n] + displacements.dyrot[k, n] + displacements.dzrot[k, n],
                 displacements.dxrot[k, -1] + displacements.dyrot[k, -1] + displacements.dzrot[k, -1],
             )
@@ -1385,12 +1416,14 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
                 outputs["bedplate_axial_stress"][:, k],
                 hoop,
                 outputs["bedplate_shear_stress"][:, k],
-                gamma_f * gamma_m * gamma_n,
+                gamma,
                 sigma_y,
             )
 
         # Evaluate bearing limits
-        outputs["constr_mb1_defl"] = outputs["mb1_rotation"] / inputs["mb1_max_defl_ang"]
-        outputs["constr_mb2_defl"] = outputs["mb2_rotation"] / inputs["mb2_max_defl_ang"]
-        outputs["bedplate_deflection"] = bedplate_deflection.max()
-        outputs["bedplate_rotation"] = bedplate_rotation.max()
+        outputs["constr_mb1_defl"] = outputs["mb1_angle"] / inputs["mb1_max_defl_ang"]
+        outputs["constr_mb2_defl"] = outputs["mb2_angle"] / inputs["mb2_max_defl_ang"]
+        outputs["stator_deflection"] = bedplate_deflection.max()
+        outputs["stator_angle"] = bedplate_angle.max()
+        outputs["constr_stator_deflection"] = gamma * outputs["stator_deflection"] / stator_defl_allow
+        outputs["constr_stator_angle"] = gamma * outputs["stator_angle"] / stator_angle_allow
