@@ -689,6 +689,8 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
         wt_opt["nacelle.lss_diameter"] = nacelle["drivetrain"]["lss_diameter"]
 
         if modeling_options["WISDEM"]["DriveSE"]["direct"]:
+            if wt_opt["nacelle.gear_ratio"] > 1:
+                raise Exception('The gear ratio is larger than 1, but the wind turbine is marked as direct drive. Please check the input yaml file.')
             # Direct only
             wt_opt["nacelle.nose_wall_thickness"] = nacelle["drivetrain"]["nose_wall_thickness"]
             wt_opt["nacelle.nose_diameter"] = nacelle["drivetrain"]["nose_diameter"]
@@ -698,6 +700,8 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
             v_bed_thick_in = nacelle["drivetrain"]["bedplate_wall_thickness"]["values"]
             wt_opt["nacelle.bedplate_wall_thickness"] = np.interp(s_bedplate, s_bed_thick_in, v_bed_thick_in)
         else:
+            if wt_opt["nacelle.gear_ratio"] == 1:
+                raise Exception('The gear ratio is set to 1, but the wind turbine is marked as geared. Please check the input yaml file.')
             # Geared only
             wt_opt["nacelle.hss_wall_thickness"] = nacelle["drivetrain"]["hss_wall_thickness"]
             wt_opt["nacelle.hss_diameter"] = nacelle["drivetrain"]["hss_diameter"]
