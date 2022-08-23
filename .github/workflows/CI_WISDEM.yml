@@ -24,7 +24,7 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           environment-file: environment.yml
-          activate-environment: "test"
+          activate-environment: test
 
       # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
@@ -33,7 +33,7 @@ jobs:
         shell: bash -l {0}
         #shell: pwsh
         run: |
-          conda install -y petsc4py mpi4py gfortran pyoptsparse
+          conda install -y petsc4py mpi4py gfortran
           conda init bash
           conda info -e
 
