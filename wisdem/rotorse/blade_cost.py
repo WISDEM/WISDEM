@@ -596,6 +596,12 @@ class blade_labor_ct(object):
         # LP skin infusion
         operation[5 + self.n_webs] = "Lp skin"
 
+        # Set gating cycle time. If blades are longer than 30 m, use 24 hrs, if shorter, use 12 hr
+        if self.lp_skin_parameters["blade_length"] > 30.:
+            gating_time_target = 24.
+        else:
+            gating_time_target = 12.
+
         def labor_ct_lp_skin(team_size):
             lp_skin = lphp_skin_labor(self.lp_skin_parameters, team_size)
             lp_skin.manufacturing_steps(core=True, Extra_Operations_Skin=True, trim_excess=False)
@@ -608,12 +614,12 @@ class blade_labor_ct(object):
 
             return labor, ct
 
-        def min_ct_lp_skin(team_size):
+        def min_ct_lp_skin(team_size, gating_time_target):
             _, ct = labor_ct_lp_skin(team_size)
-            return ct - (23.9999 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
+            return ct - (gating_time_target-1.e-4 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
 
         try:
-            team_size = brentq(lambda x: min_ct_lp_skin(x), 0.01, 100.0, xtol=1e-4, disp=False)
+            team_size = brentq(lambda x: min_ct_lp_skin(x, gating_time_target), 0.01, 100.0, xtol=1e-4, disp=False)
         except:
             team_size = 100.0
             logger.debug(
@@ -637,13 +643,13 @@ class blade_labor_ct(object):
 
             return labor, ct
 
-        def min_ct_hp_skin(team_size):
+        def min_ct_hp_skin(team_size, gating_time_target):
             _, ct = labor_ct_hp_skin(team_size)
 
-            return ct - (23.9999 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
+            return ct - (gating_time_target-1.e-4 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
 
         try:
-            team_size = brentq(lambda x: min_ct_hp_skin(x), 0.01, 100.0, xtol=1e-4)
+            team_size = brentq(lambda x: min_ct_hp_skin(x, gating_time_target), 0.01, 100.0, xtol=1e-4)
         except:
             team_size = 100.0
             logger.debug(
@@ -667,13 +673,13 @@ class blade_labor_ct(object):
 
             return labor, ct
 
-        def min_ct_assembly(team_size):
+        def min_ct_assembly(team_size, gating_time_target):
             _, ct = labor_ct_assembly(team_size)
 
-            return ct - (23.9999 - skin_mold_gating_ct[5 + self.n_webs] - skin_mold_gating_ct[8 + self.n_webs])
+            return ct - (gating_time_target-1.e-4 - skin_mold_gating_ct[5 + self.n_webs] - skin_mold_gating_ct[8 + self.n_webs])
 
         try:
-            team_size = brentq(lambda x: min_ct_assembly(x), 0.01, 100.0, xtol=1e-4)
+            team_size = brentq(lambda x: min_ct_assembly(x, gating_time_target), 0.01, 100.0, xtol=1e-4)
         except:
             team_size = 100.0
             logger.debug(
@@ -2314,7 +2320,7 @@ class virtual_factory(object):
         self.n_webs = blade_specs["n_webs"]
 
         # Financial parameters
-        self.wage = 20.0  # [$] Wage of an unskilled worker
+        self.wage = 35.0  # [$] Wage of an unskilled worker
         self.beni = 30.4  # [%] Benefits on wage and salary
         self.overhead = 30.0  # [%] Labor overhead
         self.crr = 10.0  # [%] Capital recovery rate
@@ -3358,7 +3364,7 @@ class BladeCost(om.ExplicitComponent):
         ply_t[ply_t == 0] = 1.0e6
         roll_mass = inputs["roll_mass"]
         fwf = inputs["fwf"]
-        fvf = inputs["fwf"]
+        fvf = inputs["fvf"]
         unit_cost = inputs["unit_cost"]
         flange_adhesive_squeezed = inputs["flange_adhesive_squeezed"]
         flange_thick = inputs["flange_thick"]

@@ -17,6 +17,60 @@ import wisdem.commonse.utilization_constraints as util_con
 from wisdem.commonse import NFREQ, RIGID, gravity
 
 
+class PreDiscretization(om.ExplicitComponent):
+    """
+    Process some of the tower YAML inputs.
+
+    Parameters
+    ----------
+    tower_foundation_height : float, [m]
+        Starting z-coordinate value of the tower with 0 at the water line
+    transition_piece_height : float, [m]
+        Point mass height of transition piece above water line
+    transition_piece_mass : float, [kg]
+        Point mass of transition piece
+    transition_piece_cost : float, [USD]
+        Cost of transition piece
+
+    Returns
+    -------
+    transition_piece_height : float, [m]
+        Point mass height of transition piece above water line
+    joint1 : numpy array[3], [m]
+        Global dimensional coordinates (x-y-z) for bottom node of member
+    joint2 : numpy array[3], [m]
+        Global dimensional coordinates (x-y-z) for top node of member
+    suctionpile_depth : float, [m]
+        Depth of monopile below sea floor
+    bending_height : float, [m]
+        Length of monopile above mudline subject to bending
+
+    """
+
+    def setup(self):
+        self.add_input("tower_foundation_height", val=0.0, units="m")
+        self.add_input("tower_base_diameter", val=0.0, units="m")
+        self.add_input("transition_piece_mass", 0.0, units="kg")
+
+        self.add_output("transition_piece_height", 0.0, units="m")
+        self.add_output("transition_node", val=np.zeros(3), units="m")
+        self.add_output("transition_piece_I", np.zeros(6), units="kg*m**2")
+
+    def compute(self, inputs, outputs):
+        # Unpack values
+        fh_tow = inputs["tower_foundation_height"]
+        m_trans = inputs["transition_piece_mass"]
+        d_trans = inputs["tower_base_diameter"]
+
+        outputs["transition_piece_height"] = fh_tow
+        outputs["transition_node"] = np.r_[0.0, 0.0, fh_tow]
+
+        # Mass properties for transition piece and gravity foundation
+        r_trans = 0.5 * d_trans
+        I_trans = m_trans * r_trans**2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]  # shell
+        outputs["transition_piece_I"] = I_trans
+
+
 class ComputeJacketNodes(om.ExplicitComponent):
     """"""
 
@@ -122,6 +176,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         n_node = 3 * n_legs * (n_bays + 1) + 1
         self.add_output("jacket_nodes", np.zeros((n_node, 3)), units="m")
+        self.add_output("leg_indices", np.zeros(n_legs))
 
         n_elem = 2 * (n_legs * (n_bays + 1)) + 4 * (n_legs * n_bays) + int(x_mb) * n_legs + n_legs
 
@@ -218,7 +273,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
         rnode = np.array(leg_indices[:, 0], dtype=np.int_)
         kx = ky = kz = ktx = kty = ktz = np.array([RIGID] * len(rnode))
         reactions = pyframe3dd.ReactionData(rnode, kx, ky, kz, ktx, kty, ktz, rigid=RIGID)
-
+        outputs["leg_indices"] = rnode
         # ------ frame element data ------------
 
         self.num_elements = 0
@@ -618,6 +673,7 @@ class JacketCost(om.ExplicitComponent):
         self.add_input("jacket_mass", 0.0, units="kg")
 
         self.add_input("tower_cost", val=0.0, units="USD")
+        self.add_input("transition_piece_cost", 0.0, units="USD")
 
         self.add_output("jacket_cost", 0.0, units="USD")
         self.add_output("structural_cost", val=0.0, units="USD")
@@ -629,6 +685,7 @@ class JacketCost(om.ExplicitComponent):
         eps = 1e-8
 
         # Unpack inputs and ignore ghost nodes
+        c_trans = inputs["transition_piece_cost"]
         leg_nodes = inputs["leg_nodes"]
         connect_mat = np.int_(inputs["jacket_elem_N"][:-n_legs, :])
         L = inputs["jacket_elem_L"][:-n_legs]
@@ -697,7 +754,7 @@ class JacketCost(om.ExplicitComponent):
         # Capital cost share from BLS MFP by NAICS
         K_c = 0.118 * tempSum / (1.0 - 0.118)
 
-        outputs["jacket_cost"] = K_c + tempSum
+        outputs["jacket_cost"] = K_c + tempSum + c_trans
         outputs["structural_cost"] = outputs["jacket_cost"] + inputs["tower_cost"]
 
 
@@ -714,6 +771,7 @@ class JacketSE(om.Group):
     def setup(self):
         modeling_options = self.options["modeling_options"]
 
+        self.add_subsystem("pre", PreDiscretization(), promotes=["*"])
         self.add_subsystem("nodes", ComputeJacketNodes(modeling_options=modeling_options), promotes=["*"])
         self.add_subsystem("frame3dd", ComputeFrame3DD(modeling_options=modeling_options), promotes=["*"])
         self.add_subsystem("post", JacketPost(modeling_options=modeling_options), promotes=["*"])
