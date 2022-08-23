@@ -516,6 +516,7 @@ class WT_RNTA(om.Group):
                 self.connect("towerse.tower.turbine_F", "fixedse.turbine_F")
                 self.connect("towerse.tower.turbine_M", "fixedse.turbine_M")
                 self.connect("tower.diameter", "fixedse.tower_base_diameter", src_indices=[0])
+                self.connect("tower_grid.foundation_height", "fixedse.tower_foundation_height")
 
         if modeling_options["flags"]["monopile"]:
             if modeling_options["flags"]["blade"]:
@@ -524,7 +525,6 @@ class WT_RNTA(om.Group):
             self.connect("env.rho_air", "fixedse.rho_air")
             self.connect("env.mu_air", "fixedse.mu_air")
             self.connect("env.shear_exp", "fixedse.shearExp")
-            self.connect("tower_grid.foundation_height", "fixedse.tower_foundation_height")
             self.connect("env.water_depth", "fixedse.water_depth")
             self.connect("env.rho_water", "fixedse.rho_water")
             self.connect("env.mu_water", "fixedse.mu_water")
@@ -561,6 +561,8 @@ class WT_RNTA(om.Group):
                 self.connect("drivese.rna_mass", "fixedse.rna_mass")
 
         if modeling_options["flags"]["jacket"]:
+            self.connect("jacket.transition_piece_cost", "fixedse.transition_piece_cost")
+            self.connect("jacket.transition_piece_mass", "fixedse.transition_piece_mass")
             self.connect("jacket.foot_head_ratio", "fixedse.foot_head_ratio")
             self.connect("jacket.r_head", "fixedse.r_head")
             self.connect("jacket.height", "fixedse.height")
