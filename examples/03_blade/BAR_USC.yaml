@@ -888,8 +888,8 @@ materials:
       roll_mass: 181.4368
    -  {name: medium_density_foam, description: "Airex C70.130 PVC Foam, source 'https://www.3accorematerials.com/uploads/documents/TDS-AIREX-C70-E_1106.pdf'", orth: 0.0, rho: 130.0, E: 142500000.0, G: 54000000000.0, nu: 0.3194, Xt: 2083000.0, Xc: 1563000.0, S: 1250000.0, GIc: 303.0, GIIc: 3446.0, alp0: 53.0, component_id: 1, waste: 0.2, unit_cost: 13.0}
    -  {name: resin, description: epoxy, E: 1000000.0, nu: 0.3, G: 312500.0, GIc: 0.0, GIIc: 0.0, alp0: 0.0, Xt: 0.0, Xc: 0.0, S: 0.0, rho: 1150.0, alpha: 0.0, orth: 0.0, unit_cost: 3.63}
-   -  {name: steel, description: Steel of the tower and monopile ASTM A572 Grade 50, source: "'http://www.matweb.com/search/DataSheet.aspx?MatGUID=9ced5dc901c54bd1aef19403d0385d7f'", orth: 0, rho: 7800, alpha: 0.0, E: 200000000000.0, nu: 0.3, G: 79300000000.0, GIc: 0, GIIc: 0, alp0: 0, Xt: 450000000.0, Xc: 450000000.0, S: 0, Xy: 345000000.0, m: 3, unit_cost: 0.7}
-   -  {name: joint_insert, description: Stainless steel 440a tempered @315C, source: (http://www.matweb.com/search/datasheet_print.aspx?matguid=4f9c4c71102d4cd9b4c52622588e99a0), orth: 0.0, rho: 7800.0, alpha: 0.0, E: 210e9, nu: 0.283, G: 83.9e9, GIc: 0.0, GIIc: 0.0, alp0: 0.0, Xt: 1790e6, Xc: 1790e6, S: 0.0, Xy: 1650e6, unit_cost: 2}
+   -  {name: steel, description: Steel of the tower and monopile ASTM A572 Grade 50, source: "'http://www.matweb.com/search/DataSheet.aspx?MatGUID=9ced5dc901c54bd1aef19403d0385d7f'", orth: 0, rho: 7800, alpha: 0.0, E: 200000000000.0, nu: 0.3, G: 79300000000.0, GIc: 0, GIIc: 0, alp0: 0, Xt: 450000000.0, Xc: 450000000.0, S: 0, Xy: 345000000.0, m: 3, A: 3.5534648443719767e10, unit_cost: 0.7}
+   -  {name: joint_insert, description: Stainless steel 440a tempered @315C, orth: 0.0, rho: 7800.0, alpha: 0.0, E: 210e9, nu: 0.283, G: 83.9e9, GIc: 0.0, GIIc: 0.0, alp0: 0.0, Xt: 1790e6, Xc: 1790e6, S: 0.0, Xy: 1650e6, unit_cost: 2}
 control:
     supervisory: {Vin: 4.0, Vout: 25.0, maxTS: 85.0, rated_power: 5000000.0, minOmega: 0.0, maxOmega: 0.9927432785343746}
     pitch: {PC_zeta: 1.1, PC_omega: 0.2, ps_percent: 0.8, max_pitch: 1.57, max_pitch_rate: 0.03488888888888889, min_pitch: 0.0}
