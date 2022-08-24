@@ -73,8 +73,8 @@ constraints:
             flag: True
             margin: 1.4175
         stall:
-            flag: False    # Constraint on minimum stall margin
-            margin: 0.087 # Value of minimum stall margin in [rad]
+            flag: True    # Constraint on minimum stall margin
+            margin: 0.05233 # Value of minimum stall margin in [rad]
         moment_coefficient:
             flag: True
             max: 0.16
