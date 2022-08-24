@@ -1,0 +1,41 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+WISDEM:
+    RotorSE:
+        flag: True
+        spar_cap_ss: Spar_cap_ss
+        spar_cap_ps: Spar_cap_ps
+        peak_thrust_shaving: True
+        thrust_shaving_coeff: 0.8
+    DriveSE:
+        flag: True
+    TowerSE:
+        flag: True
+        wind: PowerWind  # Wind used
+        gamma_f: 1.35    # Safety factor for fatigue loads
+        gamma_m: 1.3     # Safety factor for material properties
+        gamma_n: 1.0     # Safety factor for ...
+        gamma_b: 1.1     # Safety factor for ...
+        gamma_fatigue: 1.755  # Safety factor for fatigue loads
+        buckling_method: dnvgl # Buckling code type [eurocode or dnvgl]
+        buckling_length: 15    # Buckling parameter
+        frame3dd:
+            shear: True
+            geom: True
+            tol: 1e-9
+    FixedBottomSE:             # Options of TowerSE module
+        flag: True
+        wind: PowerWind  # Wind used
+        gamma_f: 1.35    # Safety factor for fatigue loads
+        gamma_m: 1.3     # Safety factor for material properties
+        gamma_n: 1.0     # Safety factor for ...
+        gamma_b: 1.1     # Safety factor for ...
+        gamma_fatigue: 1.755  # Safety factor for fatigue loads
+        buckling_method: dnvgl # Buckling code type [eurocode or dnvgl]
+        buckling_length: 15    # Buckling parameter
+        frame3dd:
+            shear: True
+            geom: True
+            tol: 1e-9
+    BOS:
+        flag: True
