@@ -3,7 +3,7 @@
 #SBATCH --time=04:00:00
 #SBATCH --nodes=3
 #SBATCH --job-name=20mw_tut
-#SBATCH --mail-user pbortolo@nrel.gov
+#SBATCH --mail-user username@nrel.gov
 #SBATCH --mail-type BEGIN,END,FAIL
 #SBATCH --output=job_log.%j.out  # %j will be replaced with the job ID
 
