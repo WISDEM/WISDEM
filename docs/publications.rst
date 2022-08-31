@@ -3,6 +3,17 @@ Publications
 
 A list of relevant publications related to WISDEM is provided here. The publications are ranked in chronological order.
 
+- 2022
+   #. Jasa, John, Bortolotti, Pietro, Zalkind, Daniel, Barter, Garrett. "Effectively using multifidelity optimization for wind turbine design" Wind Energ. Sci., 7, 991–1006, 2022 DOI: `10.5194/wes-7-991-2022 <https://doi.org/10.5194/wes-7-991-2022>`_
+   #. Jasa, John, Glaws, Andrew, Bortolotti, Pietro, Vijayakumar, Ganesh, and Barter, Garrett. 2022 "Wind turbine blade design with airfoil shape control using invertible neural networks" J. Phys.: Conf. Ser. 2265 042052 DOI: `10.1088/1742-6596/2265/4/042052 <https://doi.org/10.1088/1742-6596/2265/4/042052>`_
+   #. Anderson, Benjamin, Bortolotti, Pietro, and Johnson, Nick. 2022. "Development of an open-source segmented blade design tool". DOI: `10.1088/1742-6596/2265/3/032023 <https://doi.org/10.1088/1742-6596/2265/3/032023>`_
+   #. Bortolotti, Pietro, Bay, Christopher, Barter, Garrett, Gaertner, Evan, Dykes, Katherine, McWilliam, Michael, Friis-Moller, Mikkel, Molgaard Pedersen, Mads, and Zahle, Frederik. 2022. "System Modeling Frameworks for Wind Turbines and Plants: Review and Requirements Specifications". United States. DOI: `10.2172/1868328 <https://doi.org/10.2172/1868328>`_
+
+- 2021
+   #. Bortolotti, Pietro, Johnson, Nick, Abbas, Nikhar J, Anderson, Evan, Camarena, Ernesto, Paquette, Josh. "Land-based wind turbines with flexible rail transportable blades–Part I: Conceptual design and aeroservoelastic performance" Wind Energ. Sci., 6, 1277–1290, 2021
+   DOI: `10.5194/wes-6-1277-2021 <https://doi.org/10.5194/wes-6-1277-2021>`_
+   #. Bortolotti, Pietro, Ivanov, Hristo, Johnson, Nick, Barter, Garrett, Veers, Paul, Namura, Nobuo. "Challenges, opportunities, and a research roadmap for downwind wind turbines" Wind Energy 2022;25:354–367. DOI: `10.1002/we.2676 <https://doi.org/10.1002/we.2676>`_
+
 - 2020
   
    #. Carron, WS and Bortolotti, P. "Innovative rail transport of a supersized land-based wind turbine blade." *Journal of Physics: Conference Series*, 1618. 2020. DOI: `10.1088/1742-6596/1618/4/042041 <https://doi.org/10.1088/1742-6596/1618/4/042041>`_
