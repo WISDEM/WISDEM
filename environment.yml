@@ -12,6 +12,7 @@ dependencies:
   - mpi4py
   - nlopt
   - numpy
+  - numpydoc
   - openmdao>=3.18
   - openpyxl
   - pandas
@@ -32,6 +33,9 @@ dependencies:
   - swig
   - pip:
     - marmot-agents
+    - sphinx
+    - sphinxcontrib-bibtex
+    - sphinx_rtd_theme
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]
