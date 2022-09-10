@@ -2154,7 +2154,6 @@ class Hub(om.Group):
             ivc.add_output("clearance_hub_spinner", val=0.0, units="m")
             ivc.add_output("spin_hole_incr", val=0.0)
             ivc.add_output("pitch_system_scaling_factor", val=0.54)
-            ivc.add_output("spinner_gust_ws", val=70.0, units="m/s")
             ivc.add_output("hub_in2out_circ", val=1.2)
             ivc.add_discrete_output("hub_material", val="steel")
             ivc.add_discrete_output("spinner_material", val="carbon")
