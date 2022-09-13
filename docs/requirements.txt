@@ -4,13 +4,18 @@
 matplotlib
 numpy
 scipy
-openmdao>=2.0
+openmdao>=3.18
 simpy
 marmot-agents
+cython
+jsonschema
+make
+openpyxl
+swig
+compilers
 
 # docs
 sphinx>2.0
-numpydoc
 numpydoc
 sphinxcontrib.bibtex<2.0.0
 sphinx-rtd-theme
