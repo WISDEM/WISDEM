@@ -1,0 +1,45 @@
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - coveralls
+  - cython
+  - gfortran
+  - git
+  - jsonschema
+  - make
+  - matplotlib
+  - mpi4py
+  - nlopt
+  - numpy
+  - numpydoc
+  - openmdao>=3.18
+  - openpyxl
+  - pandas
+  - pip
+  - pyoptsparse
+  - pyside2
+  - pytest
+  - pytest-cov
+  - python
+  - python-benedict
+  - pyyaml
+  - ruamel_yaml
+  - scipy
+  - setuptools<60.0
+  - simpy
+  - sortedcontainers
+  - sphinx
+  - sphinxcontrib-bibtex
+  - sphinx_rtd_theme
+  - statsmodels
+  - swig
+  - pip:
+    - marmot-agents
+# Needs to be done outside of environment file:
+#  - m2w64-toolchain # [win]
+#  - libpython # [win]
+#  - compilers # [not win]
+#  - petsc4py # [not win]
+#  - pyoptsparse # [not win]
