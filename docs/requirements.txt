@@ -4,7 +4,7 @@
 matplotlib
 numpy
 scipy
-openmdao>=3.18
+openmdao
 simpy
 marmot-agents
 cython
@@ -15,8 +15,8 @@ swig
 compilers
 
 # docs
-sphinx>2.0
+sphinx
 numpydoc
-sphinxcontrib.bibtex<2.0.0
+sphinxcontrib.bibtex
 sphinx-rtd-theme
 # sphinx-autoapi
