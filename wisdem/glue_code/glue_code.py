@@ -286,7 +286,7 @@ class WT_RNTA(om.Group):
             self.connect("hub.clearance_hub_spinner", "drivese.clearance_hub_spinner")
             self.connect("hub.spin_hole_incr", "drivese.spin_hole_incr")
             self.connect("hub.pitch_system_scaling_factor", "drivese.pitch_system_scaling_factor")
-            self.connect("hub.spinner_gust_ws", "drivese.spinner_gust_ws")
+            self.connect("rotorse.wt_class.V_extreme50", "drivese.spinner_gust_ws")
 
             self.connect("configuration.n_blades", "drivese.n_blades")
 
@@ -922,6 +922,7 @@ class WindPark(om.Group):
                 self.connect("configuration.n_blades", "landbosse.number_of_blades")
                 if modeling_options["flags"]["blade"]:
                     self.connect("rotorse.rp.powercurve.rated_T", "landbosse.rated_thrust_N")
+                    self.connect("rotorse.wt_class.V_extreme50", "landbosse.gust_velocity_m_per_s")
                 self.connect("towerse.tower_mass", "landbosse.tower_mass")
                 if modeling_options["flags"]["nacelle"]:
                     self.connect("drivese.nacelle_mass", "landbosse.nacelle_mass")

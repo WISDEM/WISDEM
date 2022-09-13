@@ -968,8 +968,8 @@ class WindTurbineOntologyPython(object):
                 Ii[12] = wt_opt["rotorse.rhoA"][i] * wt_opt["rotorse.re.y_cg"][i]
                 Ii[13] = -wt_opt["rotorse.rhoA"][i] * wt_opt["rotorse.re.x_cg"][i]
                 Ii[15] = wt_opt["rotorse.re.precomp.edge_iner"][i]
-                #Ii[16] = wt_opt["rotorse.re.precomp.edge_iner"][i]
-                Ii[18] = wt_opt['rotorse.re.precomp.flap_iner'][i]
+                # Ii[16] = wt_opt["rotorse.re.precomp.edge_iner"][i]
+                Ii[18] = wt_opt["rotorse.re.precomp.flap_iner"][i]
                 Ii[20] = wt_opt["rotorse.rhoJ"][i]
                 I.append(Ii.tolist())
             self.wt_init["components"]["blade"]["elastic_properties_mb"]["six_x_six"]["inertia_matrix"]["values"] = I
@@ -992,7 +992,6 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["hub"]["pitch_system_scaling_factor"] = float(
                 wt_opt["hub.pitch_system_scaling_factor"]
             )
-            self.wt_init["components"]["hub"]["spinner_gust_ws"] = float(wt_opt["hub.spinner_gust_ws"])
 
         # Update nacelle
         if self.modeling_options["flags"]["nacelle"]:
@@ -1262,8 +1261,8 @@ class WindTurbineOntologyPython(object):
 
                 s_in = wt_opt[f"floating.memgrp{idx}.s_in"].tolist()
                 yaml_out["members"][i]["outer_shape"]["outer_diameter"]["grid"] = s_in
-                d_in = wt_opt[f"floating.memgrp{idx}.outer_diameter_in"]           
-                if len(d_in)==len(s_in):
+                d_in = wt_opt[f"floating.memgrp{idx}.outer_diameter_in"]
+                if len(d_in) == len(s_in):
                     yaml_out["members"][i]["outer_shape"]["outer_diameter"]["values"] = d_in.tolist()
                 else:
                     d_in2 = d_in * np.ones(len(s_in))

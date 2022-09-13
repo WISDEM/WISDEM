@@ -27,6 +27,7 @@ class TurbineClass(om.ExplicitComponent):
         # parameters
         self.add_discrete_input("turbine_class", val="I")
         self.add_input("V_mean_overwrite", val=0.0)
+        self.add_input("V_extreme50_overwrite", val=0.0)
 
         self.add_output("V_mean", 0.0, units="m/s")
         self.add_output("V_extreme1", 0.0, units="m/s")
@@ -53,5 +54,10 @@ class TurbineClass(om.ExplicitComponent):
             outputs["V_mean"] = 0.2 * Vref
         else:
             outputs["V_mean"] = inputs["V_mean_overwrite"]
+
         outputs["V_extreme1"] = 0.8 * Vref
-        outputs["V_extreme50"] = 1.4 * Vref
+
+        if inputs["V_extreme50_overwrite"] == 0.0:
+            outputs["V_extreme50"] = 1.4 * Vref
+        else:
+            outputs["V_extreme50"] = inputs["V_extreme50_overwrite"]
