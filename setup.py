@@ -46,6 +46,7 @@ setup(
         "pytest",
         "python-benedict",
         "pyyaml",
+        "ruamel-yaml",
         "scipy",
         "simpy",
         "sortedcontainers",

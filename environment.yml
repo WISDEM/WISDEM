@@ -29,13 +29,13 @@ dependencies:
   - setuptools<60.0
   - simpy
   - sortedcontainers
+  - sphinx
+  - sphinxcontrib-bibtex
+  - sphinx_rtd_theme
   - statsmodels
   - swig
   - pip:
     - marmot-agents
-    - sphinx
-    - sphinxcontrib-bibtex
-    - sphinx_rtd_theme
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]
