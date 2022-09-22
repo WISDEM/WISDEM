@@ -19,4 +19,5 @@ RotorSE
     aep
     loads_deflections_strains
     rail
+    blade_joint_sizer
 
