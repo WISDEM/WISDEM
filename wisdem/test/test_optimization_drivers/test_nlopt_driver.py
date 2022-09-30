@@ -10,10 +10,11 @@ from openmdao.utils.assert_utils import assert_near_equal
 from openmdao.utils.general_utils import run_driver
 from openmdao.test_suite.components.sellar import SellarDerivatives, SellarDerivativesGrouped
 from openmdao.test_suite.groups.sin_fitter import SineFitter
-from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 from openmdao.test_suite.components.paraboloid import Paraboloid
 from openmdao.test_suite.components.simple_comps import NonSquareArrayComp
 from openmdao.test_suite.components.expl_comp_array import TestExplCompArrayDense
+
+from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
 try:
     import nlopt
@@ -818,7 +819,7 @@ class TestNLoptDriver(unittest.TestCase):
 
         assert_near_equal(prob["z"][0], 1.9776, 1e-3)
         assert_near_equal(prob["z"][1], 0.0, 1e-3)
-        assert_near_equal(prob["x"], 0.0, 1e-3)
+        assert_near_equal(prob["x"], 0.0, 1e-2)
 
     def test_simple_paraboloid_lower_linear(self):
 
@@ -1663,6 +1664,7 @@ class TestNLoptDriverFeatures(unittest.TestCase):
     def test_feature_basic(self):
         import openmdao.api as om
         from openmdao.test_suite.components.paraboloid import Paraboloid
+
         from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
         prob = om.Problem()
@@ -1690,6 +1692,7 @@ class TestNLoptDriverFeatures(unittest.TestCase):
     def test_feature_optimizer(self):
         import openmdao.api as om
         from openmdao.test_suite.components.paraboloid import Paraboloid
+
         from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
         prob = om.Problem()
@@ -1715,6 +1718,7 @@ class TestNLoptDriverFeatures(unittest.TestCase):
     def test_feature_maxiter(self):
         import openmdao.api as om
         from openmdao.test_suite.components.paraboloid import Paraboloid
+
         from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
         prob = om.Problem()
@@ -1741,6 +1745,7 @@ class TestNLoptDriverFeatures(unittest.TestCase):
     def test_feature_tol(self):
         import openmdao.api as om
         from openmdao.test_suite.components.paraboloid import Paraboloid
+
         from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
         prob = om.Problem()
