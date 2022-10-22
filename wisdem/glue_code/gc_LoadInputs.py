@@ -1010,6 +1010,19 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["nacelle"]["drivetrain"]["generator_length"] = float(
                 wt_opt["nacelle.L_generator"]
             )
+            if not self.modeling_options["flags"]["generator"]:
+                self.wt_init["components"]["nacelle"]["drivetrain"]["generator_mass_user"] = float(
+                    wt_opt["generator.generator_mass_user"]
+                )
+                self.wt_init["components"]["nacelle"]["drivetrain"]["generator_radius_user"] = float(
+                    wt_opt["generator.generator_radius_user"]
+                )
+                self.wt_init["components"]["nacelle"]["drivetrain"]["generator_rpm_efficiency_user"]["grid"] = wt_opt[
+                    "generator.generator_efficiency_user"
+                ][:, 0].tolist()
+                self.wt_init["components"]["nacelle"]["drivetrain"]["generator_rpm_efficiency_user"]["values"] = wt_opt[
+                    "generator.generator_efficiency_user"
+                ][:, 1].tolist()
             s_lss = np.linspace(0.0, 1.0, len(wt_opt["nacelle.lss_diameter"])).tolist()
             self.wt_init["components"]["nacelle"]["drivetrain"]["lss_diameter"] = wt_opt[
                 "nacelle.lss_diameter"
@@ -1358,6 +1371,65 @@ class WindTurbineOntologyPython(object):
         # Update controller
         if self.modeling_options["flags"]["control"]:
             self.wt_init["control"]["torque"]["tsr"] = float(wt_opt["control.rated_TSR"])
+
+        # Update cost coefficients
+        if self.modeling_options["flags"]["costs"]:
+            if float(wt_opt["tcc.blade_mass"]) > 0.0:
+                self.wt_init["costs"]["blade_mass_cost_coeff"] = float(
+                    wt_opt["tcc.blade_cost"] / wt_opt["tcc.blade_mass"]
+                )
+            if float(wt_opt["tcc.hub_mass"]) > 0.0:
+                self.wt_init["costs"]["hub_mass_cost_coeff"] = float(wt_opt["tcc.hub_cost"] / wt_opt["tcc.hub_mass"])
+            if float(wt_opt["tcc.pitch_system_mass"]) > 0.0:
+                self.wt_init["costs"]["pitch_system_mass_cost_coeff"] = float(
+                    wt_opt["tcc.pitch_system_cost"] / wt_opt["tcc.pitch_system_mass"]
+                )
+            if float(wt_opt["tcc.spinner_mass"]) > 0.0:
+                self.wt_init["costs"]["spinner_mass_cost_coeff"] = float(
+                    wt_opt["tcc.spinner_cost"] / wt_opt["tcc.spinner_mass"]
+                )
+            if float(wt_opt["tcc.lss_mass"]) > 0.0:
+                self.wt_init["costs"]["lss_mass_cost_coeff"] = float(wt_opt["tcc.lss_cost"] / wt_opt["tcc.lss_mass"])
+            if float(wt_opt["tcc.main_bearing_mass"]) > 0.0:
+                self.wt_init["costs"]["bearing_mass_cost_coeff"] = float(
+                    wt_opt["tcc.main_bearing_cost"] / wt_opt["tcc.main_bearing_mass"]
+                )
+            if float(wt_opt["tcc.gearbox_mass"]) > 0.0:
+                self.wt_init["costs"]["gearbox_mass_cost_coeff"] = float(
+                    wt_opt["tcc.gearbox_cost"] / wt_opt["tcc.gearbox_mass"]
+                )
+            if float(wt_opt["tcc.hss_mass"]) > 0.0:
+                self.wt_init["costs"]["hss_mass_cost_coeff"] = float(wt_opt["tcc.hss_cost"] / wt_opt["tcc.hss_mass"])
+            if float(wt_opt["tcc.generator_mass"]) > 0.0:
+                self.wt_init["costs"]["generator_mass_cost_coeff"] = float(
+                    wt_opt["tcc.generator_cost"] / wt_opt["tcc.generator_mass"]
+                )
+            if float(wt_opt["tcc.bedplate_mass"]) > 0.0:
+                self.wt_init["costs"]["bedplate_mass_cost_coeff"] = float(
+                    wt_opt["tcc.bedplate_cost"] / wt_opt["tcc.bedplate_mass"]
+                )
+            if float(wt_opt["tcc.yaw_mass"]) > 0.0:
+                self.wt_init["costs"]["yaw_mass_cost_coeff"] = float(
+                    wt_opt["tcc.yaw_system_cost"] / wt_opt["tcc.yaw_mass"]
+                )
+            if float(wt_opt["tcc.converter_mass"]) > 0.0:
+                self.wt_init["costs"]["converter_mass_cost_coeff"] = float(
+                    wt_opt["tcc.converter_cost"] / wt_opt["tcc.converter_mass"]
+                )
+            if float(wt_opt["tcc.transformer_mass"]) > 0.0:
+                self.wt_init["costs"]["transformer_mass_cost_coeff"] = float(
+                    wt_opt["tcc.transformer_cost"] / wt_opt["tcc.transformer_mass"]
+                )
+            if float(wt_opt["tcc.hvac_mass"]) > 0.0:
+                self.wt_init["costs"]["hvac_mass_cost_coeff"] = float(wt_opt["tcc.hvac_cost"] / wt_opt["tcc.hvac_mass"])
+            if float(wt_opt["tcc.cover_mass"]) > 0.0:
+                self.wt_init["costs"]["cover_mass_cost_coeff"] = float(
+                    wt_opt["tcc.cover_cost"] / wt_opt["tcc.cover_mass"]
+                )
+            if float(wt_opt["tcc.tower_mass"]) > 0.0:
+                self.wt_init["costs"]["tower_mass_cost_coeff"] = float(
+                    wt_opt["tcc.tower_cost"] / wt_opt["tcc.tower_mass"]
+                )
 
         # Write yamls with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)

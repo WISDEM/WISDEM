@@ -68,6 +68,8 @@ if opt_flag:
     prob.model.add_constraint("constr_height", lower=0.0)
     prob.model.add_constraint("constr_access", lower=0.0)
     prob.model.add_constraint("constr_ecc", lower=0.0)
+    prob.model.add_constraint("L_lss", lower=0.1)
+    prob.model.add_constraint("L_nose", lower=0.1)
     # ---
 
 
