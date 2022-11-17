@@ -311,6 +311,7 @@ properties:
                                         fiber_orientation:
                                             type: object
                                             description: orientation of the fibers
+                                            default: {'grid':[0.0, 1.0], 'values':[0.0, 0.0]}
                                             required:
                                                 - grid
                                                 - values
@@ -2892,6 +2893,7 @@ definitions:
         grid_nd:
             type: array
             description: Grid along a beam expressed non-dimensional from 0 to 1
+            default: [0.0, 1.0]
             items:
                 type: number
                 unit: none
@@ -2912,6 +2914,7 @@ definitions:
         grid_aoa:
             type: array
             description: Grid of angles of attack to describe polars
+            default: [-3.14159265359, 3.14159265359]
             items:
                 type: number
                 unit: radians
@@ -2936,6 +2939,7 @@ definitions:
         nd:
             type: array
             description: Non dimensional quantity described along a beam and expressed non-dimensional
+            default: [0.0, 0.0]
             items:
                 type: number
                 unit: none
@@ -2944,6 +2948,7 @@ definitions:
         length:
             type: array
             description: Length quantity described along a beam, expressed in meter
+            default: [0.0, 0.0]
             items:
                 type: number
                 unit: meter
@@ -2952,6 +2957,7 @@ definitions:
         angle:
             type: array
             description: Angle quantity along a beam, expressed in radians
+            default: [0.0, 0.0]
             items:
                 type: number
                 unit: radians
@@ -2960,6 +2966,7 @@ definitions:
         mass_length:
             type: array
             description: Mass per unit length along a beam, expressed in kilogram per meter
+            default: [0.0, 0.0]
             items:
                 type: number
                 unit: kg/m
@@ -2968,6 +2975,7 @@ definitions:
         area:
             type: array
             description: Cross sectional area along a beam, expressed in meter squared
+            default: [0.0, 0.0]
             items:
                 type: number
                 unit: m2
@@ -2977,6 +2985,7 @@ definitions:
         elast_mod:
             type: array
             description: Modulus of elasticity of a material along a beam, expressed in Newton over meter squared
+            default: [0.0, 0.0]
             items:
                 type: number
                 unit: N m2
@@ -2986,6 +2995,7 @@ definitions:
         shear_mod:
             type: array
             description: Shear modulus of elasticity of a material along a beam, expressed in Newton over meter squared
+            default: [0.0, 0.0]
             items:
                 type: number
                 unit: N/m2
@@ -2995,6 +3005,7 @@ definitions:
         area_moment:
             type: array
             description: Area moment of inertia of a section along a beam, expressed in meter to the power of four
+            default: [0.0, 0.0]
             items:
                 type: number
                 unit: m4
@@ -3004,6 +3015,7 @@ definitions:
         mass_moment:
             type: array
             description: Mass moment of inertia of a section along a beam, expressed in kilogram times meter squared per meter
+            default: [0.0, 0.0]
             items:
                 type: number
                 unit: kg*m2/m
@@ -3013,6 +3025,7 @@ definitions:
         tors_stiff_const:
             type: array
             description: Torsional stiffness constant with respect to ze axis at the shear center [m4/rad]. For a circular section only this is identical to the polar moment of inertia
+            default: [0.0, 0.0]
             items:
                 type: number
                 unit: m4/rad
@@ -3021,6 +3034,7 @@ definitions:
         shear_stiff:
             type: array
             description: Shearing stiffness along the beam
+            default: [0.0, 0.0]
             items:
                 type: number
                 unit: N
@@ -3029,6 +3043,7 @@ definitions:
         axial_stiff:
             type: array
             description: Axial stiffness EA along the beam
+            default: [0.0, 0.0]
             items:
                 type: number
                 unit: N
@@ -3037,6 +3052,7 @@ definitions:
         bending_stiff:
             type: array
             description: Bending stiffness E11-E22 along the beam
+            default: [0.0, 0.0]
             items:
                 type: number
                 unit: N/m2
@@ -3045,6 +3061,7 @@ definitions:
         tors_stiff:
             type: array
             description: Torsional stiffness GJ along the beam
+            default: [0.0, 0.0]
             items:
                 type: number
                 unit: N/m2

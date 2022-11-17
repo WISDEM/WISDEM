@@ -267,6 +267,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     layer_name = n_layers * [""]
     layer_mat = n_layers * [""]
     thickness = np.zeros((n_layers, n_span))
+    orientation = np.zeros((n_layers, n_span))
     layer_rotation = np.zeros((n_layers, n_span))
     layer_offset_y_pa = np.zeros((n_layers, n_span))
     layer_width = np.zeros((n_layers, n_span))
@@ -283,10 +284,17 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     for i in range(n_layers):
         layer_name[i] = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
         layer_mat[i] = modeling_options["WISDEM"]["RotorSE"]["layer_mat"][i]
-        thickness[i] = np.interp(
+        thickness[i, :] = np.interp(
             nd_span,
             internal_structure_2d_fem["layers"][i]["thickness"]["grid"],
             internal_structure_2d_fem["layers"][i]["thickness"]["values"],
+            left=0.0,
+            right=0.0,
+        )
+        orientation[i, :] = np.interp(
+            nd_span,
+            internal_structure_2d_fem["layers"][i]["fiber_orientation"]["grid"],
+            internal_structure_2d_fem["layers"][i]["fiber_orientation"]["values"],
             left=0.0,
             right=0.0,
         )
@@ -500,6 +508,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     # Assign the openmdao values
     wt_opt["blade.internal_structure_2d_fem.layer_side"] = layer_side
     wt_opt["blade.internal_structure_2d_fem.layer_thickness"] = thickness
+    wt_opt["blade.internal_structure_2d_fem.layer_orientation"] = orientation
     wt_opt["blade.internal_structure_2d_fem.layer_midpoint_nd"] = layer_midpoint_nd
     wt_opt["blade.internal_structure_2d_fem.layer_web"] = layer_web
     wt_opt["blade.internal_structure_2d_fem.definition_web"] = definition_web

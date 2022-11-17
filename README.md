@@ -44,6 +44,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 1.  Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
 
+        conda config --add channels conda-forge
         conda create -y --name wisdem-env  -f https://raw.githubusercontent.com/WISDEM/WISDEM/develop/environment.yml python=3.9
         conda activate wisdem-env
 
