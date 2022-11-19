@@ -449,6 +449,13 @@ class NLoptDriver(Driver):
                 self._grad_cache = self._compute_totals(
                     of=self._obj_and_nlcons, wrt=self._dvlist, return_format="array"
                 )
+                # Bug in OpenMDAO return_format that sometimes gives dict instead
+                if isinstance(self._grad_cache, dict):
+                    temp = []
+                    for k in self._grad_cache.keys():
+                        val = self._grad_cache[k].flatten()
+                        temp = np.r_[temp, val]
+                    self._grad_cache = temp.reshape((-1,grad.size))
                 grad[:] = self._grad_cache[0, :]
 
         except Exception as msg:

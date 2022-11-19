@@ -86,6 +86,8 @@ materials:
       Xc: 2.16e+9
       S: 0
       Xy: 345.e+6
+      m: 3
+      A: 3.5534648443719767e10
       unit_cost: 0.7
 
 environment:

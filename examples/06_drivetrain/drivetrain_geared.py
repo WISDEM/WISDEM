@@ -2,10 +2,11 @@
 # Import needed libraries
 import numpy as np
 import openmdao.api as om
+
 from wisdem.commonse.fileIO import save_data
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
 
-opt_flag = False  # True
+opt_flag = True
 # ---
 
 # Set input options
@@ -62,6 +63,10 @@ if opt_flag:
     prob.model.add_constraint("constr_bedplate_vonmises", upper=1.0)
     prob.model.add_constraint("constr_mb1_defl", upper=1.0)
     prob.model.add_constraint("constr_mb2_defl", upper=1.0)
+    prob.model.add_constraint("constr_shaft_deflection", upper=1.0)
+    prob.model.add_constraint("constr_shaft_angle", upper=1.0)
+    prob.model.add_constraint("constr_stator_deflection", upper=1.0)
+    prob.model.add_constraint("constr_stator_angle", upper=1.0)
     prob.model.add_constraint("constr_hub_diameter", lower=0.0)
     prob.model.add_constraint("constr_length", lower=0.0)
     prob.model.add_constraint("constr_height", lower=0.0)
@@ -132,6 +137,10 @@ prob["bedplate_flange_thickness"] = 0.1
 prob["bedplate_flange_width"] = 1.0
 prob["bear1.D_shaft"] = 2.2
 prob["bear2.D_shaft"] = 2.2
+prob["shaft_deflection_allowable"] = 1e-4
+prob["shaft_angle_allowable"] = 1e-3
+prob["stator_deflection_allowable"] = 1e-4
+prob["stator_angle_allowable"] = 1e-3
 # ---
 
 # Material properties
@@ -160,8 +169,8 @@ save_data("drivetrain_example", prob)
 # ---
 
 # Display all inputs and outputs
-prob.model.list_inputs(units=True)
-prob.model.list_outputs(units=True)
+# prob.model.list_inputs(units=True)
+# prob.model.list_outputs(units=True)
 
 # Print out the objective, design variables and constraints
 print("nacelle_mass:", prob["nacelle_mass"])
@@ -188,6 +197,10 @@ print("constr_hss_vonmises:", prob["constr_hss_vonmises"].flatten())
 print("constr_bedplate_vonmises:", prob["constr_bedplate_vonmises"].flatten())
 print("constr_mb1_defl:", prob["constr_mb1_defl"])
 print("constr_mb2_defl:", prob["constr_mb2_defl"])
+print("constr_shaft_deflection:", prob["constr_shaft_deflection"])
+print("constr_shaft_angle:", prob["constr_shaft_angle"])
+print("constr_stator_deflection:", prob["constr_stator_deflection"])
+print("constr_stator_angle:", prob["constr_stator_angle"])
 print("constr_hub_diameter:", prob["constr_hub_diameter"])
 print("constr_length:", prob["constr_length"])
 print("constr_height:", prob["constr_height"])

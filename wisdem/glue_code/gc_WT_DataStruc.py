@@ -1536,6 +1536,12 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
             desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
         ivc.add_output(
+            "layer_orientation",
+            val=np.zeros((n_layers, n_span)),
+            units="rad",
+            desc="Fiber orientation of the composite layer with 0-value meaning alignment with reference axis. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        ivc.add_output(
             "layer_midpoint_nd",
             val=np.zeros((n_layers, n_span)),
             desc="2D array of the non-dimensional midpoint defined along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span.",
@@ -1690,6 +1696,12 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
             val=np.zeros((n_layers, n_span)),
             units="m",
             desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
+        self.add_input(
+            "layer_orientation",
+            val=np.zeros((n_layers, n_span)),
+            units="rad",
+            desc="Fiber orientation of the composite layer with 0-value meaning alignment with reference axis. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
         self.add_input(
             "layer_rotation_yaml",
@@ -2154,7 +2166,6 @@ class Hub(om.Group):
             ivc.add_output("clearance_hub_spinner", val=0.0, units="m")
             ivc.add_output("spin_hole_incr", val=0.0)
             ivc.add_output("pitch_system_scaling_factor", val=0.54)
-            ivc.add_output("spinner_gust_ws", val=70.0, units="m/s")
             ivc.add_output("hub_in2out_circ", val=1.2)
             ivc.add_discrete_output("hub_material", val="steel")
             ivc.add_discrete_output("spinner_material", val="carbon")

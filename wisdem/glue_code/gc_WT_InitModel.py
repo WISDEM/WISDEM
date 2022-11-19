@@ -267,6 +267,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     layer_name = n_layers * [""]
     layer_mat = n_layers * [""]
     thickness = np.zeros((n_layers, n_span))
+    orientation = np.zeros((n_layers, n_span))
     layer_rotation = np.zeros((n_layers, n_span))
     layer_offset_y_pa = np.zeros((n_layers, n_span))
     layer_width = np.zeros((n_layers, n_span))
@@ -283,10 +284,17 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     for i in range(n_layers):
         layer_name[i] = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
         layer_mat[i] = modeling_options["WISDEM"]["RotorSE"]["layer_mat"][i]
-        thickness[i] = np.interp(
+        thickness[i, :] = np.interp(
             nd_span,
             internal_structure_2d_fem["layers"][i]["thickness"]["grid"],
             internal_structure_2d_fem["layers"][i]["thickness"]["values"],
+            left=0.0,
+            right=0.0,
+        )
+        orientation[i, :] = np.interp(
+            nd_span,
+            internal_structure_2d_fem["layers"][i]["fiber_orientation"]["grid"],
+            internal_structure_2d_fem["layers"][i]["fiber_orientation"]["values"],
             left=0.0,
             right=0.0,
         )
@@ -500,6 +508,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     # Assign the openmdao values
     wt_opt["blade.internal_structure_2d_fem.layer_side"] = layer_side
     wt_opt["blade.internal_structure_2d_fem.layer_thickness"] = thickness
+    wt_opt["blade.internal_structure_2d_fem.layer_orientation"] = orientation
     wt_opt["blade.internal_structure_2d_fem.layer_midpoint_nd"] = layer_midpoint_nd
     wt_opt["blade.internal_structure_2d_fem.layer_web"] = layer_web
     wt_opt["blade.internal_structure_2d_fem.definition_web"] = definition_web
@@ -656,7 +665,6 @@ def assign_hub_values(wt_opt, hub, flags):
         wt_opt["hub.clearance_hub_spinner"] = hub["clearance_hub_spinner"]
         wt_opt["hub.spin_hole_incr"] = hub["spin_hole_incr"]
         wt_opt["hub.pitch_system_scaling_factor"] = hub["pitch_system_scaling_factor"]
-        wt_opt["hub.spinner_gust_ws"] = hub["spinner_gust_ws"]
         wt_opt["hub.hub_material"] = hub["hub_material"]
         wt_opt["hub.spinner_material"] = hub["spinner_material"]
 
@@ -689,6 +697,10 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
         wt_opt["nacelle.lss_diameter"] = nacelle["drivetrain"]["lss_diameter"]
 
         if modeling_options["WISDEM"]["DriveSE"]["direct"]:
+            if wt_opt["nacelle.gear_ratio"] > 1:
+                raise Exception(
+                    "The gear ratio is larger than 1, but the wind turbine is marked as direct drive. Please check the input yaml file."
+                )
             # Direct only
             wt_opt["nacelle.nose_wall_thickness"] = nacelle["drivetrain"]["nose_wall_thickness"]
             wt_opt["nacelle.nose_diameter"] = nacelle["drivetrain"]["nose_diameter"]
@@ -698,6 +710,10 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
             v_bed_thick_in = nacelle["drivetrain"]["bedplate_wall_thickness"]["values"]
             wt_opt["nacelle.bedplate_wall_thickness"] = np.interp(s_bedplate, s_bed_thick_in, v_bed_thick_in)
         else:
+            if wt_opt["nacelle.gear_ratio"] == 1:
+                raise Exception(
+                    "The gear ratio is set to 1, but the wind turbine is marked as geared. Please check the input yaml file."
+                )
             # Geared only
             wt_opt["nacelle.hss_wall_thickness"] = nacelle["drivetrain"]["hss_wall_thickness"]
             wt_opt["nacelle.hss_diameter"] = nacelle["drivetrain"]["hss_diameter"]

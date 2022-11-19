@@ -2,11 +2,10 @@ import os
 import csv
 from pathlib import Path
 
-import wisdem as wstart
 import getdocstrings
 from docstring_parser import parse
 
-source_dir = os.path.dirname(os.path.realpath(wstart.__file__))
+source_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 allpy = Path(source_dir).rglob("*.py") if os.path.exists(source_dir) else []
 
 parsed_args = [["File", "Class", "Var Name", "Var Type", "Var Units", "Var Desc"]]

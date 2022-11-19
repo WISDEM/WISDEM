@@ -1,5 +1,6 @@
 import numpy as np
 import openmdao.api as om
+
 import wisdem.drivetrainse.layout as lay
 import wisdem.drivetrainse.drive_structure as ds
 import wisdem.drivetrainse.drive_components as dc
@@ -271,9 +272,9 @@ class DrivetrainSE(om.Group):
             if direct:
                 self.connect("lss_rpm", "generator.shaft_rpm")
                 self.connect("torq_deflection", "generator.y_sh")
-                self.connect("torq_rotation", "generator.theta_sh")
+                self.connect("torq_angle", "generator.theta_sh")
                 self.connect("stator_deflection", "generator.y_bd")
-                self.connect("stator_rotation", "generator.theta_bd")
+                self.connect("stator_angle", "generator.theta_bd")
 
                 self.linear_solver = lbgs = om.LinearBlockGS()
                 self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
