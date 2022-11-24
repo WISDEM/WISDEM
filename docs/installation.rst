@@ -12,7 +12,8 @@ Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell
 
 .. code-block:: bash
 
-    conda create -y --name wisdem-env  -f https://raw.githubusercontent.com/WISDEM/WISDEM/develop/environment.yml python=3.9
+    conda config --add channels conda-forge
+    conda env create --name wisdem-env -f https://raw.githubusercontent.com/WISDEM/WISDEM/master/environment.yml python=3.9
     conda activate wisdem-env
 
 Note that any future occasion on which you wish to use WISDEM, you will only have to start with ``conda activate wisdem-env``.  For those working behind company firewalls, you may have to change the conda authentication with ``conda config --set ssl_verify no``.  Proxy servers can also be set with ``conda config --set proxy_servers.http http://id:pw@address:port`` and ``conda config --set proxy_servers.https https://id:pw@address:port``.
@@ -46,7 +47,6 @@ Finally, for all systems:
 
     git clone https://github.com/WISDEM/WISDEM.git
     cd WISDEM
-    git checkout develop
     pip install -e .
 
 Run Unit Tests
