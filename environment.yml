@@ -9,7 +9,9 @@ dependencies:
   - jsonschema
   - make
   - matplotlib
+  - meson
   - mpi4py
+  - ninja
   - nlopt
   - numpy
   - numpydoc
@@ -26,7 +28,7 @@ dependencies:
   - pyyaml
   - ruamel_yaml
   - scipy
-  - setuptools<60.0
+  - setuptools
   - simpy
   - sortedcontainers
   - sphinx

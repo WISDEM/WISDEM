@@ -14,20 +14,22 @@ import math
 from sys import platform
 from ctypes import POINTER, Structure, c_int, pointer, c_double
 from collections import namedtuple
-from distutils.sysconfig import get_config_var
 
 import numpy as np
 
-libext = get_config_var("EXT_SUFFIX")
+# from distutils.sysconfig import get_config_var
+
+
+libext = None  # get_config_var("EXT_SUFFIX")
 if libext is None or libext == "":
     if platform == "linux" or platform == "linux2":
         libext = ".so"
     elif platform == "darwin":
-        # libext = '.dyld'
-        libext = ".so"
+        libext = ".dylib"
+        # libext = ".so"
     elif platform == "win32":
-        # libext = '.dll'
-        libext = ".pyd"
+        libext = ".dll"
+        # libext = ".pyd"
     elif platform == "cygwin":
         libext = ".dll"
 
