@@ -3,9 +3,10 @@ import unittest
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
+from openmdao.utils.assert_utils import assert_check_partials
+
 import wisdem.commonse.environment as env
 from wisdem.commonse import gravity as g
-from openmdao.utils.assert_utils import assert_check_partials
 
 npts = 100
 myones = np.ones((npts,))
@@ -73,7 +74,7 @@ class TestLinearWaves(unittest.TestCase):
         rho = 1e3
         U_exp = 5 + omega * a * np.cosh(k * (z + D)) / np.sinh(k * D)
         W_exp = -omega * a * np.sinh(k * (z + D)) / np.sinh(k * D)
-        V_exp = np.sqrt(U_exp ** 2 + W_exp ** 2)
+        V_exp = np.sqrt(U_exp**2 + W_exp**2)
         A_exp = omega * omega * a * np.cosh(k * (z + D)) / np.sinh(k * D)
         p_exp = -rho * g * (z - a * np.cosh(k * (z + D)) / np.cosh(k * D))
 
@@ -120,7 +121,7 @@ class TestPowerWindGradients(unittest.TestCase):
         z = np.linspace(0.0, 100.0, 20)
         nPoints = len(z)
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         root = prob.model = om.Group()
         root.add_subsystem("p", env.PowerWind(nPoints=nPoints))
 
@@ -144,7 +145,7 @@ class TestLogWindGradients(unittest.TestCase):
         nPoints = 20
         z = np.linspace(0.1, 100.0, nPoints)
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         root = prob.model = om.Group()
         root.add_subsystem("p", env.LogWind(nPoints=nPoints))
 
@@ -171,7 +172,7 @@ class TestLogWindGradients(unittest.TestCase):
 #         z = np.linspace(z_floor, z_surface, 20)
 #         nPoints = len(z)
 #
-#         prob = om.Problem()
+#         prob = om.Problem(reports=False)
 #         root = prob.model = om.Group()
 #         root.add_subsystem('p', env.LinearWaves(nPoints=nPoints))
 #
@@ -200,7 +201,7 @@ class TestLogWindGradients(unittest.TestCase):
 #         G = 140e6
 #         nu = 0.4
 #
-#         prob = om.Problem()
+#         prob = om.Problem(reports=False)
 #         root = prob.model = om.Group()
 #         root.add_subsystem('p', env.TowerSoil())
 #

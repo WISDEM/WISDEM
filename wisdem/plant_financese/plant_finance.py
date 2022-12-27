@@ -83,23 +83,69 @@ class PlantFinance(om.ExplicitComponent):
         self.add_input("wake_loss_factor", val=0.15)
         self.add_input("fixed_charge_rate", val=0.075)
         self.add_input("electricity_price", val=0.04, units="USD/kW/h")
-        self.add_input("reserve_margin_price", val=120., units="USD/kW/yr")
-        self.add_input("capacity_credit", val=1.)
-        self.add_input("benchmark_price", val=0.071, units='USD/kW/h')
+        self.add_input("reserve_margin_price", val=120.0, units="USD/kW/yr")
+        self.add_input("capacity_credit", val=1.0)
+        self.add_input("benchmark_price", val=0.071, units="USD/kW/h")
 
         self.add_output("plant_aep", val=0.0, units="USD/kW/h")
         self.add_output("capacity_factor", val=0.0, desc="Capacity factor of the wind farm")
-        self.add_output("lcoe", val=0.0, units="USD/kW/h", desc="Levelized cost of energy: LCOE is the cost that, if assigned to every unit of electricity by an asset over an evaluation period, will equal the total costs during that same period when discounted to the base year.")
-        self.add_output("lvoe", val=0.0, units="USD/kW/h", desc="Levelized value of energy: LVOE is the discounted sum of total value divided by the discounted sum of electrical energy generated.")
+        self.add_output(
+            "lcoe",
+            val=0.0,
+            units="USD/kW/h",
+            desc="Levelized cost of energy: LCOE is the cost that, if assigned to every unit of electricity by an asset over an evaluation period, will equal the total costs during that same period when discounted to the base year.",
+        )
+        self.add_output(
+            "lvoe",
+            val=0.0,
+            units="USD/kW/h",
+            desc="Levelized value of energy: LVOE is the discounted sum of total value divided by the discounted sum of electrical energy generated.",
+        )
         self.add_output("value_factor", val=0.0, desc="Value factor is the LVOE divided by a benchmark price.")
-        self.add_output("nvoc", val=0.0, units="USD/kW/yr", desc="Net value of capacity: NVOC is the difference in an asset’s total annualized value and annualized cost, divided by the installed capacity of the asset. NVOC ≥ 0 for economic viability.")
-        self.add_output("nvoe", val=0.0, units="USD/kW/h", desc="Net value of energy: NVOE is the difference between LVOE and LCOE. NVOE ≥ 0 for economic viability.")
-        self.add_output("slcoe", val=0.0, units="USD/kW/h", desc="System LCOE: SLCOE is the negative of NVOE but further adjusted by a benchmark price. System LCOE ≤ benchmark price for economic viability.")
-        self.add_output("bcr", val=0.0, desc="Benefit cost ratio: BCR is the discounted sum of total value divided by the discounted sum of total cost. A higher BCR is more competitive. BCR ≥ 1 for economic viability")
-        self.add_output("cbr", val=0.0, desc="Cost benefit ratio: CBR is the inverse of BCR. CBR ≤ 1 for economic viability. A lower CBR is more competitive.")
-        self.add_output("roi", val=0.0, desc="Return on investment: ROI can also be expressed as BCR – 1. A higher ROI is more competitive. ROI ≥ 0 for economic viability.")
-        self.add_output("pm", val=0.0, desc="Profit margin: PM can also be expressed as 1 - CBR. A higher PM is more competitive. PM ≥ 0 for economic viability.")
-        self.add_output("plcoe", val=0.0, units="USD/kW/h", desc="Profitability adjusted PLCOE is the product of a benchmark price and CBR, which is equal to LCOE divided by value factor. A lower PLCOE is more competitive. PLCOE ≤ benchmark price for economic viability.")
+        self.add_output(
+            "nvoc",
+            val=0.0,
+            units="USD/kW/yr",
+            desc="Net value of capacity: NVOC is the difference in an asset’s total annualized value and annualized cost, divided by the installed capacity of the asset. NVOC ≥ 0 for economic viability.",
+        )
+        self.add_output(
+            "nvoe",
+            val=0.0,
+            units="USD/kW/h",
+            desc="Net value of energy: NVOE is the difference between LVOE and LCOE. NVOE ≥ 0 for economic viability.",
+        )
+        self.add_output(
+            "slcoe",
+            val=0.0,
+            units="USD/kW/h",
+            desc="System LCOE: SLCOE is the negative of NVOE but further adjusted by a benchmark price. System LCOE ≤ benchmark price for economic viability.",
+        )
+        self.add_output(
+            "bcr",
+            val=0.0,
+            desc="Benefit cost ratio: BCR is the discounted sum of total value divided by the discounted sum of total cost. A higher BCR is more competitive. BCR ≥ 1 for economic viability",
+        )
+        self.add_output(
+            "cbr",
+            val=0.0,
+            desc="Cost benefit ratio: CBR is the inverse of BCR. CBR ≤ 1 for economic viability. A lower CBR is more competitive.",
+        )
+        self.add_output(
+            "roi",
+            val=0.0,
+            desc="Return on investment: ROI can also be expressed as BCR – 1. A higher ROI is more competitive. ROI ≥ 0 for economic viability.",
+        )
+        self.add_output(
+            "pm",
+            val=0.0,
+            desc="Profit margin: PM can also be expressed as 1 - CBR. A higher PM is more competitive. PM ≥ 0 for economic viability.",
+        )
+        self.add_output(
+            "plcoe",
+            val=0.0,
+            units="USD/kW/h",
+            desc="Profitability adjusted PLCOE is the product of a benchmark price and CBR, which is equal to LCOE divided by value factor. A lower PLCOE is more competitive. PLCOE ≤ benchmark price for economic viability.",
+        )
 
         self.declare_partials("*", "*")
 
@@ -186,24 +232,24 @@ class PlantFinance(om.ExplicitComponent):
         slcoe = benchmark_price - nvoe
         bcr = V / C
         cbr = C / V
-        roi = (V - C)/C
-        pm = (V - C)/V
+        roi = (V - C) / C
+        pm = (V - C) / V
         plcoe = C / V * benchmark_price
 
         # Assign openmdao outputs
         outputs["plant_aep"] = park_aep
-        outputs["capacity_factor"] = nec / 8760.
-        outputs['lcoe'] = lcoe
-        outputs['lvoe'] = lvoe
-        outputs['value_factor'] = value_factor
-        outputs['nvoc'] = nvoc
-        outputs['nvoe'] = nvoe
-        outputs['slcoe'] = slcoe
-        outputs['bcr'] = bcr
-        outputs['cbr'] = cbr
-        outputs['roi'] = roi
-        outputs['pm'] = pm
-        outputs['plcoe'] = plcoe
+        outputs["capacity_factor"] = nec / 8760.0
+        outputs["lcoe"] = lcoe
+        outputs["lvoe"] = lvoe
+        outputs["value_factor"] = value_factor
+        outputs["nvoc"] = nvoc
+        outputs["nvoe"] = nvoe
+        outputs["slcoe"] = slcoe
+        outputs["bcr"] = bcr
+        outputs["cbr"] = cbr
+        outputs["roi"] = roi
+        outputs["pm"] = pm
+        outputs["plcoe"] = plcoe
 
         self.J = {}
         self.J["lcoe", "tcc_per_kW"] = dicc_dcturb * fcr / nec
@@ -216,35 +262,29 @@ class PlantFinance(om.ExplicitComponent):
         self.J["lcoe", "plant_aep_in"] = -dnec_dpaep * lcoe / nec
         self.J["lcoe", "machine_rating"] = (dicc_dtrating * fcr + dcopex_dtrating) / nec - dnec_dtrating * lcoe / nec
 
-    
     def compute_partials(self, inputs, J, discrete_inputs):
         J = self.J
 
+
 # OpenMDAO group to execute the plant finance SE model as a standalone
 class StandalonePlantFinanceSE(om.Group):
-
     def setup(self):
 
-        self.add_subsystem(
-            "financese",
-            PlantFinance(),
-            promotes=['*']
-        )
+        self.add_subsystem("financese", PlantFinance(), promotes=["*"])
 
 
 if __name__ == "__main__":
-    wt_opt = om.Problem(model=StandalonePlantFinanceSE())
+    wt_opt = om.Problem(model=StandalonePlantFinanceSE(), reports=False)
     wt_opt.setup(derivatives=False)
-    wt_opt['machine_rating'] = 5.e+3
-    wt_opt['tcc_per_kW'] = 1.5e+3
-    wt_opt['bos_per_kW'] = 446.
-    wt_opt['opex_per_kW'] = 43.
-    wt_opt['turbine_aep'] = 25.e+6
-    wt_opt['fixed_charge_rate'] = 0.065
-    wt_opt['turbine_number'] = 120
+    wt_opt["machine_rating"] = 5.0e3
+    wt_opt["tcc_per_kW"] = 1.5e3
+    wt_opt["bos_per_kW"] = 446.0
+    wt_opt["opex_per_kW"] = 43.0
+    wt_opt["turbine_aep"] = 25.0e6
+    wt_opt["fixed_charge_rate"] = 0.065
+    wt_opt["turbine_number"] = 120
     wt_opt.run_model()
-    
-    
+
     print("plant_aep ", wt_opt["plant_aep"])
     print("lcoe ", wt_opt["lcoe"])
     print("lvoe ", wt_opt["lvoe"])

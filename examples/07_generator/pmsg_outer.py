@@ -1,6 +1,7 @@
 # Import the modules
 import numpy as np
 import openmdao.api as om
+
 import wisdem.commonse.fileIO as fio
 from wisdem.drivetrainse.generator import Generator
 
@@ -15,7 +16,7 @@ opt_flag = False
 n_pc = 20
 
 # Initialize problem instance
-prob = om.Problem()
+prob = om.Problem(reports=False)
 prob.model = Generator(design="pmsg_outer", n_pc=n_pc)
 # ---
 

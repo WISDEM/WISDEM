@@ -597,10 +597,10 @@ class blade_labor_ct(object):
         operation[5 + self.n_webs] = "Lp skin"
 
         # Set gating cycle time. If blades are longer than 30 m, use 24 hrs, if shorter, use 12 hr
-        if self.lp_skin_parameters["blade_length"] > 30.:
-            gating_time_target = 24.
+        if self.lp_skin_parameters["blade_length"] > 30.0:
+            gating_time_target = 24.0
         else:
-            gating_time_target = 12.
+            gating_time_target = 12.0
 
         def labor_ct_lp_skin(team_size):
             lp_skin = lphp_skin_labor(self.lp_skin_parameters, team_size)
@@ -616,7 +616,7 @@ class blade_labor_ct(object):
 
         def min_ct_lp_skin(team_size, gating_time_target):
             _, ct = labor_ct_lp_skin(team_size)
-            return ct - (gating_time_target-1.e-4 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
+            return ct - (gating_time_target - 1.0e-4 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
 
         try:
             team_size = brentq(lambda x: min_ct_lp_skin(x, gating_time_target), 0.01, 100.0, xtol=1e-4, disp=False)
@@ -646,7 +646,7 @@ class blade_labor_ct(object):
         def min_ct_hp_skin(team_size, gating_time_target):
             _, ct = labor_ct_hp_skin(team_size)
 
-            return ct - (gating_time_target-1.e-4 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
+            return ct - (gating_time_target - 1.0e-4 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
 
         try:
             team_size = brentq(lambda x: min_ct_hp_skin(x, gating_time_target), 0.01, 100.0, xtol=1e-4)
@@ -676,7 +676,12 @@ class blade_labor_ct(object):
         def min_ct_assembly(team_size, gating_time_target):
             _, ct = labor_ct_assembly(team_size)
 
-            return ct - (gating_time_target-1.e-4 - skin_mold_gating_ct[5 + self.n_webs] - skin_mold_gating_ct[8 + self.n_webs])
+            return ct - (
+                gating_time_target
+                - 1.0e-4
+                - skin_mold_gating_ct[5 + self.n_webs]
+                - skin_mold_gating_ct[8 + self.n_webs]
+            )
 
         try:
             team_size = brentq(lambda x: min_ct_assembly(x, gating_time_target), 0.01, 100.0, xtol=1e-4)
@@ -4056,7 +4061,9 @@ if __name__ == "__main__":
     wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
     modeling_options["WISDEM"]["RotorSE"]["flag"] = False
-    wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
+    wt_opt = om.Problem(
+        model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options), reports=False
+    )
     wt_opt.setup(derivatives=False)
     myopt = PoseOptimization(wt_init, modeling_options, opt_options)
     wt_opt = myopt.set_initial(wt_opt, wt_init)

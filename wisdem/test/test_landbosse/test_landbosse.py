@@ -1,6 +1,7 @@
 import pandas as pd
 import pytest
 import openmdao.api as om
+
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 from wisdem.landbosse.landbosse_omdao.OpenMDAODataframeCache import OpenMDAODataframeCache
 
@@ -11,7 +12,7 @@ def landbosse_costs_by_module_type_operation():
     Executes LandBOSSE and extracts cost output for the regression
     test.
     """
-    prob = om.Problem()
+    prob = om.Problem(reports=False)
     prob.model = LandBOSSE()
     prob.setup()
     prob.run_model()
