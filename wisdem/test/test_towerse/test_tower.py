@@ -443,8 +443,8 @@ class TestTowerSE(unittest.TestCase):
             prob["env1.Uref"] = wind_Uref1
             prob["env2.Uref"] = wind_Uref2
 
-            prob["tower.rna_F"] = np.c_[[Fx1, Fy1, Fz1], [Fx2, Fy2, Fz2]]
-            prob["tower.rna_M"] = np.c_[[Mxx1, Myy1, Mzz1], [Mxx2, Myy2, Mzz2]]
+            prob["tower.rna_F"] = np.c_[np.r_[Fx1, Fy1, Fz1], np.r_[Fx2, Fy2, Fz2]]
+            prob["tower.rna_M"] = np.c_[np.r_[Mxx1, Myy1, Mzz1], np.r_[Mxx2, Myy2, Mzz2]]
             # # ---------------
 
             return prob
