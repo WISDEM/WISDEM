@@ -2,6 +2,7 @@
 
 import numpy as np
 import openmdao.api as om
+
 from wisdem.commonse import fileIO
 from wisdem.floatingse import FloatingSE
 
@@ -48,7 +49,7 @@ opt["mooring"]["line_material"] = ["custom"] * 3
 opt["materials"] = {}
 opt["materials"]["n_mat"] = 2
 
-prob = om.Problem()
+prob = om.Problem(reports=False)
 prob.model = FloatingSE(modeling_options=opt)
 prob.setup()
 
@@ -72,7 +73,7 @@ h = np.array([10.0, 20.0, 10.0, 8.0])
 prob["member0.outfitting_factor_in"] = 1.05  # Fraction of additional outfitting mass for each column
 prob["member0.grid_axial_joints"] = []
 prob["member0.ballast_grid"] = np.array([[0, 0.25], [0, 0.5]])
-prob["member0.ballast_volume"] = [np.pi * 7 ** 2 * 5, 0.0]
+prob["member0.ballast_volume"] = [np.pi * 7**2 * 5, 0.0]
 prob["member0.s_in"] = np.cumsum(np.r_[0, h]) / h.sum()
 prob["member0.outer_diameter_in"] = 14 * np.ones(npts)
 prob["member0.layer_thickness"] = 0.05 * np.ones((1, npts))

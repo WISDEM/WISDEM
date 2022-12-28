@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
+
 import wisdem.commonse.utilities as util
 import wisdem.commonse.cylinder_member as member
 from wisdem.commonse import gravity as g
@@ -67,8 +68,8 @@ class TestInputs(unittest.TestCase):
         npt.assert_equal(outputs["outfitting_factor"], 1.05 * myones)
         npt.assert_equal(outputs["ballast_density"], np.array([1e5, 1e5, 1e3]))
         npt.assert_equal(outputs["ballast_unit_cost"], np.array([2e1, 2e1, 0.0]))
-        A = np.pi * (16 - 3.75 ** 2)
-        I = (256.0 - 3.75 ** 4) * np.pi / 4.0
+        A = np.pi * (16 - 3.75**2)
+        I = (256.0 - 3.75**4) * np.pi / 4.0
         npt.assert_equal(outputs["z_param"], 100 * np.linspace(0, 1, 5))
         npt.assert_equal(outputs["sec_loc"], np.linspace(0, 1, 4))
         # npt.assert_equal(outputs["str_tw"], np.zeros(nout))
@@ -277,9 +278,9 @@ class TestMemberComponent(unittest.TestCase):
     def testMainSections(self):
         self.mem.add_main_sections(self.inputs, self.outputs)
 
-        m = np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2) * 1e3 * 1.1 * 100.0
-        Iax = 0.5 * m * 0.25 * (10.0 ** 2 + 9.9 ** 2)
-        Ix = (1 / 12.0) * m * (3 * 0.25 * (10.0 ** 2 + 9.9 ** 2) + 100 ** 2) + m * 50 * 50  # parallel axis on last term
+        m = np.pi * 0.25 * (10.0**2 - 9.9**2) * 1e3 * 1.1 * 100.0
+        Iax = 0.5 * m * 0.25 * (10.0**2 + 9.9**2)
+        Ix = (1 / 12.0) * m * (3 * 0.25 * (10.0**2 + 9.9**2) + 100**2) + m * 50 * 50  # parallel axis on last term
         self.assertAlmostEqual(self.outputs["shell_mass"], m)
         self.assertAlmostEqual(self.outputs["shell_z_cg"], 50.0)
         npt.assert_almost_equal(self.outputs["shell_I_base"], [Ix, Ix, Iax, 0.0, 0.0, 0.0], decimal=5)
@@ -293,10 +294,10 @@ class TestMemberComponent(unittest.TestCase):
             else:
                 self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
                 self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
-                self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
-                self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0**2 - 9.9**2))
+                self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
                 self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
                 self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
@@ -314,9 +315,9 @@ class TestMemberComponent(unittest.TestCase):
 
         A_stiff = 0.2 * 0.5 + 1 * 0.3
         n_stiff = 8
-        m = np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2) * 1e3 * 1.1 * 100.0
-        Iax = 0.5 * m * 0.25 * (10.0 ** 2 + 9.9 ** 2)
-        Ix = (1 / 12.0) * m * (3 * 0.25 * (10.0 ** 2 + 9.9 ** 2) + 100 ** 2) + m * 50 * 50  # parallel axis on last term
+        m = np.pi * 0.25 * (10.0**2 - 9.9**2) * 1e3 * 1.1 * 100.0
+        Iax = 0.5 * m * 0.25 * (10.0**2 + 9.9**2)
+        Ix = (1 / 12.0) * m * (3 * 0.25 * (10.0**2 + 9.9**2) + 100**2) + m * 50 * 50  # parallel axis on last term
         m += n_stiff * A_stiff * 1e3 * 1.1 * 100.0
         Iz_stiff = n_stiff * (0.2 * 0.5 * (0.5 * 9.9 - 0.25) ** 2 + 1 * 0.3 * (0.5 * 9.9 - 0.5 - 0.15) ** 2)
         Iax += Iz_stiff * 1e3 * 1.1 * 100
@@ -334,10 +335,10 @@ class TestMemberComponent(unittest.TestCase):
                 self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
                 self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05 + n_stiff * A_stiff / (2 * np.pi * 4.7))
                 self.assertAlmostEqual(
-                    self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2) + n_stiff * A_stiff
+                    self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0**2 - 9.9**2) + n_stiff * A_stiff
                 )
                 self.assertAlmostEqual(
-                    self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64 + Iz_stiff
+                    self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0**4 - 9.9**4) / 64 + Iz_stiff
                 )
                 self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
                 self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
@@ -349,9 +350,9 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["s_ghost2"] = 0.9
         self.mem.add_main_sections(self.inputs, self.outputs)
 
-        m = np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2) * 1e3 * 1.1 * 90.0
-        Iax = 0.5 * m * 0.25 * (10.0 ** 2 + 9.9 ** 2)
-        Ix = (1 / 12.0) * m * (3 * 0.25 * (10.0 ** 2 + 9.9 ** 2) + 90 ** 2) + m * 45 * 45
+        m = np.pi * 0.25 * (10.0**2 - 9.9**2) * 1e3 * 1.1 * 90.0
+        Iax = 0.5 * m * 0.25 * (10.0**2 + 9.9**2)
+        Ix = (1 / 12.0) * m * (3 * 0.25 * (10.0**2 + 9.9**2) + 90**2) + m * 45 * 45
         self.assertAlmostEqual(self.outputs["shell_mass"], m)
         self.assertAlmostEqual(self.outputs["shell_z_cg"], 45.0)
         npt.assert_almost_equal(self.outputs["shell_I_base"], [Ix, Ix, Iax, 0.0, 0.0, 0.0], decimal=5)
@@ -365,10 +366,10 @@ class TestMemberComponent(unittest.TestCase):
                 if k < 0.9:
                     self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
                     self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
-                    self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
-                    self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                    self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                    self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0**2 - 9.9**2))
+                    self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
                     self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
                     self.assertAlmostEqual(self.mem.sections[k].G, 1e5)
@@ -399,19 +400,19 @@ class TestMemberComponent(unittest.TestCase):
             inbulk = np.any(np.logical_and(k >= bulks[:, 0], k < bulks[:, 1]))
             if inbulk:
                 self.assertAlmostEqual(self.mem.sections[k].t, 5.0)
-                self.assertAlmostEqual(self.mem.sections[k].A, np.pi * 0.25 * (10.0 ** 2 - 0 ** 2))
-                self.assertAlmostEqual(self.mem.sections[k].Ixx, np.pi * (10.0 ** 4 - 0 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Iyy, np.pi * (10.0 ** 4 - 0 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * np.pi * (10.0 ** 4 - 0 ** 4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].A, np.pi * 0.25 * (10.0**2 - 0**2))
+                self.assertAlmostEqual(self.mem.sections[k].Ixx, np.pi * (10.0**4 - 0**4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].Iyy, np.pi * (10.0**4 - 0**4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * np.pi * (10.0**4 - 0**4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].rho, 1.1 * 1e3)
             elif k == 1.0:
                 self.assertEqual(self.mem.sections[k], None)
                 continue
             else:
-                self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
-                self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0**2 - 9.9**2))
+                self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
                 self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
 
@@ -422,12 +423,12 @@ class TestMemberComponent(unittest.TestCase):
 
         nbulk = len(bgrid)
         R_i = 0.5 * 10 - 0.05
-        m_bulk = 1.1 * 1e3 * np.pi * R_i ** 2 * 1.0
+        m_bulk = 1.1 * 1e3 * np.pi * R_i**2 * 1.0
         npt.assert_almost_equal(self.outputs["bulkhead_mass"], m_bulk * nbulk)
         npt.assert_almost_equal(self.outputs["bulkhead_z_cg"], 100 * bgrid.mean())
 
-        J0 = 0.50 * m_bulk * R_i ** 2
-        I0 = 0.25 * m_bulk * R_i ** 2
+        J0 = 0.50 * m_bulk * R_i**2
+        I0 = 0.25 * m_bulk * R_i**2
 
         I = np.zeros(6)
         I[2] = nbulk * J0
@@ -454,10 +455,10 @@ class TestMemberComponent(unittest.TestCase):
             inbulk = np.any(np.logical_and(k >= bulks[:, 0], k < bulks[:, 1]))
             if inbulk:
                 self.assertAlmostEqual(self.mem.sections[k].t, 5.0)
-                self.assertAlmostEqual(self.mem.sections[k].A, np.pi * 0.25 * (10.0 ** 2 - 0 ** 2))
-                self.assertAlmostEqual(self.mem.sections[k].Ixx, np.pi * (10.0 ** 4 - 0 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Iyy, np.pi * (10.0 ** 4 - 0 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * np.pi * (10.0 ** 4 - 0 ** 4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].A, np.pi * 0.25 * (10.0**2 - 0**2))
+                self.assertAlmostEqual(self.mem.sections[k].Ixx, np.pi * (10.0**4 - 0**4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].Iyy, np.pi * (10.0**4 - 0**4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * np.pi * (10.0**4 - 0**4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].rho, 1.1 * 1e3)
                 self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
             elif k == 1.0:
@@ -465,10 +466,10 @@ class TestMemberComponent(unittest.TestCase):
                 continue
             else:
                 if k < 0.9:
-                    self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
-                    self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                    self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                    self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0**2 - 9.9**2))
+                    self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
                     self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
                     self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
@@ -489,12 +490,12 @@ class TestMemberComponent(unittest.TestCase):
 
         nbulk = len(bgrid)
         R_i = 0.5 * 10 - 0.05
-        m_bulk = 1.1 * 1e3 * np.pi * R_i ** 2 * 1.0
+        m_bulk = 1.1 * 1e3 * np.pi * R_i**2 * 1.0
         npt.assert_almost_equal(self.outputs["bulkhead_mass"], m_bulk * nbulk)
         npt.assert_almost_equal(self.outputs["bulkhead_z_cg"], 100 * bgrid.mean())
 
-        J0 = 0.50 * m_bulk * R_i ** 2
-        I0 = 0.25 * m_bulk * R_i ** 2
+        J0 = 0.50 * m_bulk * R_i**2
+        I0 = 0.25 * m_bulk * R_i**2
 
         I = np.zeros(6)
         I[2] = nbulk * J0
@@ -524,8 +525,8 @@ class TestMemberComponent(unittest.TestCase):
         self.assertEqual(self.outputs["constr_web_compactness"], np.sqrt(5) * 0.2 / 0.5)
 
         # Test Mass
-        A1 = np.pi * (Rwo ** 2 - Rwi ** 2)
-        A2 = np.pi * (Rwi ** 2 - Rfi ** 2)
+        A1 = np.pi * (Rwo**2 - Rwi**2)
+        A2 = np.pi * (Rwi**2 - Rfi**2)
         V1 = A1 * 0.2
         V2 = A2 * 1.0
         m1 = V1 * 1e3
@@ -542,7 +543,7 @@ class TestMemberComponent(unittest.TestCase):
         I_sec = (I_web + I_fl).flatten()
 
         I = np.zeros(6)
-        I[0] = np.sum(I_sec[0] + m * z_stiff ** 2.0)
+        I[0] = np.sum(I_sec[0] + m * z_stiff**2.0)
         I[1] = I[0]
         I[2] = 5 * I_sec[2]
         npt.assert_almost_equal(self.outputs["stiffener_I_base"], I)
@@ -555,20 +556,20 @@ class TestMemberComponent(unittest.TestCase):
         for k in key:
             instiff = np.any(np.logical_and(k >= stiffs[:, 0], k < stiffs[:, 1]))
             if instiff:
-                a = f * A1 + A2 + 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2)
+                a = f * A1 + A2 + 1.1 * np.pi * 0.25 * (10.0**2 - 9.9**2)
                 self.assertAlmostEqual(self.mem.sections[k].A, a)
-                self.assertGreater(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertGreater(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertGreater(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                self.assertGreater(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                self.assertGreater(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                self.assertGreater(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].t, 5 - np.sqrt(25 - a / np.pi))
             elif k == 1.0:
                 self.assertEqual(self.mem.sections[k], None)
                 continue
             else:
-                self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
-                self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0**2 - 9.9**2))
+                self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
 
             self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
@@ -598,8 +599,8 @@ class TestMemberComponent(unittest.TestCase):
         self.assertEqual(self.outputs["constr_web_compactness"], np.sqrt(5) * 0.2 / 0.5)
 
         # Test Mass
-        A1 = np.pi * (Rwo ** 2 - Rwi ** 2)
-        A2 = np.pi * (Rwi ** 2 - Rfi ** 2)
+        A1 = np.pi * (Rwo**2 - Rwi**2)
+        A2 = np.pi * (Rwi**2 - Rfi**2)
         V1 = A1 * 0.2
         V2 = A2 * 1.0
         m1 = V1 * 1e3
@@ -616,7 +617,7 @@ class TestMemberComponent(unittest.TestCase):
         I_sec = (I_web + I_fl).flatten()
 
         I = np.zeros(6)
-        I[0] = np.sum(I_sec[0] + m * z_stiff ** 2.0)
+        I[0] = np.sum(I_sec[0] + m * z_stiff**2.0)
         I[1] = I[0]
         I[2] = 4 * I_sec[2]
         npt.assert_almost_equal(self.outputs["stiffener_I_base"], I)
@@ -629,11 +630,11 @@ class TestMemberComponent(unittest.TestCase):
         for k in key:
             instiff = np.any(np.logical_and(k >= stiffs[:, 0], k < stiffs[:, 1]))
             if instiff:
-                a = f * A1 + A2 + 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2)
+                a = f * A1 + A2 + 1.1 * np.pi * 0.25 * (10.0**2 - 9.9**2)
                 self.assertAlmostEqual(self.mem.sections[k].A, a)
-                self.assertGreater(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertGreater(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                self.assertGreater(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                self.assertGreater(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                self.assertGreater(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                self.assertGreater(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
                 self.assertAlmostEqual(self.mem.sections[k].t, 5 - np.sqrt(25 - a / np.pi))
                 self.assertAlmostEqual(self.mem.sections[k].D, 10.0)
             elif k == 1.0:
@@ -641,10 +642,10 @@ class TestMemberComponent(unittest.TestCase):
                 continue
             else:
                 if k < 0.9:
-                    self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2))
-                    self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                    self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-                    self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].A, 1.1 * np.pi * 0.25 * (10.0**2 - 9.9**2))
+                    self.assertAlmostEqual(self.mem.sections[k].Ixx, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].Iyy, 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+                    self.assertAlmostEqual(self.mem.sections[k].J0, 2 * 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
                     self.assertAlmostEqual(self.mem.sections[k].t, 1.1 * 0.05)
                     self.assertAlmostEqual(self.mem.sections[k].rho, 1e3)
                     self.assertAlmostEqual(self.mem.sections[k].E, 1e6)
@@ -667,15 +668,15 @@ class TestMemberComponent(unittest.TestCase):
         self.mem.add_main_sections(self.inputs, self.outputs)
         self.mem.add_ballast_sections(self.inputs, self.outputs)
 
-        area = 0.25 * np.pi * 9.9 ** 2
+        area = 0.25 * np.pi * 9.9**2
         h = 10 * np.pi / area
         cg_perm = (2 * 0.5 * h + 4 * (8 + 0.5 * h)) / 6
         m_perm = np.pi * 6e4
 
         I_perm = np.zeros(6)
-        I_perm[2] = 0.5 * m_perm * 0.25 * 9.9 ** 2
+        I_perm[2] = 0.5 * m_perm * 0.25 * 9.9**2
         I_perm[0] = (
-            m_perm * (3 * 0.25 * 9.9 ** 2 + h ** 2) / 12.0
+            m_perm * (3 * 0.25 * 9.9**2 + h**2) / 12.0
             + (1 / 3) * m_perm * (0.5 * h) ** 2
             + (2 / 3) * m_perm * (8 + 0.5 * h) ** 2
         )
@@ -696,15 +697,15 @@ class TestMemberComponent(unittest.TestCase):
         self.mem.add_main_sections(self.inputs, self.outputs)
         self.mem.add_ballast_sections(self.inputs, self.outputs)
 
-        area = 0.25 * np.pi * 9.9 ** 2
+        area = 0.25 * np.pi * 9.9**2
         h = 10 * np.pi / area
         cg_perm = (2 * (10 + 0.5 * h) + 4 * (18 + 0.5 * h)) / 6
         m_perm = np.pi * 6e4
 
         I_perm = np.zeros(6)
-        I_perm[2] = 0.5 * m_perm * 0.25 * 9.9 ** 2
+        I_perm[2] = 0.5 * m_perm * 0.25 * 9.9**2
         I_perm[0] = (
-            m_perm * (3 * 0.25 * 9.9 ** 2 + h ** 2) / 12.0
+            m_perm * (3 * 0.25 * 9.9**2 + h**2) / 12.0
             + (1 / 3) * m_perm * (10 + 0.5 * h) ** 2
             + (2 / 3) * m_perm * (18 + 0.5 * h) ** 2
         )
@@ -725,19 +726,19 @@ class TestMemberComponent(unittest.TestCase):
         self.mem.add_ballast_sections(self.inputs, self.outputs)
         self.mem.compute_mass_properties(self.inputs, self.outputs)
 
-        m_shell = np.pi * 0.25 * (10.0 ** 2 - 9.9 ** 2) * 1e3 * 1.1 * 100.0
+        m_shell = np.pi * 0.25 * (10.0**2 - 9.9**2) * 1e3 * 1.1 * 100.0
         R_i = 0.5 * 10 - 0.05
         cg_shell = 50
 
         nbulk = len(self.inputs["bulkhead_grid"])
-        m_bulk = 1.1 * 1e3 * np.pi * R_i ** 2 * 1.0
+        m_bulk = 1.1 * 1e3 * np.pi * R_i**2 * 1.0
         cg_bulk = 100 * self.inputs["bulkhead_grid"].mean()
 
         Rwo = 0.5 * (10 - 2 * 0.05)
         Rwi = Rwo - 0.5
         Rfi = Rwi - 0.3
-        A1 = np.pi * (Rwo ** 2 - Rwi ** 2)
-        A2 = np.pi * (Rwi ** 2 - Rfi ** 2)
+        A1 = np.pi * (Rwo**2 - Rwi**2)
+        A2 = np.pi * (Rwi**2 - Rfi**2)
         V1 = A1 * 0.2
         V2 = A2 * 1.0
         m1 = V1 * 1e3
@@ -745,7 +746,7 @@ class TestMemberComponent(unittest.TestCase):
         m_stiff = m1 + m2
         cg_stiff = 50.0
 
-        area = 0.25 * np.pi * 9.9 ** 2
+        area = 0.25 * np.pi * 9.9**2
         h = 10 * np.pi / area
         cg_perm = (2 * 0.5 * h + 4 * (8 + 0.5 * h)) / 6
         m_perm = np.pi * 6e4
@@ -791,9 +792,9 @@ class TestMemberComponent(unittest.TestCase):
             npt.assert_almost_equal(self.outputs["section_" + var][nelem:], NULL)
         npt.assert_almost_equal(self.outputs["section_D"][:nelem], 10.0)
         npt.assert_almost_equal(self.outputs["section_t"][:nelem], 1.1 * 0.05)
-        npt.assert_almost_equal(self.outputs["section_Ixx"][:nelem], 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-        npt.assert_almost_equal(self.outputs["section_Iyy"][:nelem], 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
-        npt.assert_almost_equal(self.outputs["section_J0"][:nelem], 2 * 1.1 * np.pi * (10.0 ** 4 - 9.9 ** 4) / 64)
+        npt.assert_almost_equal(self.outputs["section_Ixx"][:nelem], 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+        npt.assert_almost_equal(self.outputs["section_Iyy"][:nelem], 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
+        npt.assert_almost_equal(self.outputs["section_J0"][:nelem], 2 * 1.1 * np.pi * (10.0**4 - 9.9**4) / 64)
         npt.assert_almost_equal(self.outputs["section_rho"][:nelem], 1e3)
         npt.assert_almost_equal(self.outputs["section_E"][:nelem], 1e6)
         npt.assert_almost_equal(self.outputs["section_G"][:nelem], 1e5)
@@ -1029,7 +1030,7 @@ class TestGroup(unittest.TestCase):
         opt["n_ballasts"] = [0]
         opt["n_axial_joints"] = [0]
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         prob.model = member.MemberStandard(column_options=opt, idx=0, n_mat=2)
 
@@ -1084,7 +1085,7 @@ class TestGroup(unittest.TestCase):
         opt["n_ballasts"] = [2]
         opt["n_axial_joints"] = [3]
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         prob.model = member.MemberDetailed(column_options=opt, idx=0, n_mat=2)
 

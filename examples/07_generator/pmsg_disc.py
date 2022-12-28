@@ -1,5 +1,6 @@
 import numpy as np
 import openmdao.api as om
+
 import wisdem.commonse.fileIO as fio
 from wisdem.drivetrainse.generator import Generator
 
@@ -7,7 +8,7 @@ opt_flag = False
 n_pc = 20
 
 # Example optimization of a generator for costs on a 5 MW reference turbine
-prob = om.Problem()
+prob = om.Problem(reports=False)
 prob.model = Generator(design="pmsg_disc", n_pc=n_pc)
 
 if opt_flag:

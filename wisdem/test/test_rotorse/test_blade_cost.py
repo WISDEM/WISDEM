@@ -26,7 +26,9 @@ class TestBC(unittest.TestCase):
         modeling_options["WISDEM"]["TowerSE"]["flag"] = False
         modeling_options["flags"]["nacelle"] = False
         modeling_options["flags"]["tower"] = False
-        wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
+        wt_opt = om.Problem(
+            reports=False, model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options)
+        )
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
@@ -62,7 +64,9 @@ class TestBC(unittest.TestCase):
         modeling_options["WISDEM"]["TowerSE"]["flag"] = False
         modeling_options["flags"]["nacelle"] = False
         modeling_options["flags"]["tower"] = False
-        wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
+        wt_opt = om.Problem(
+            reports=False, model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options)
+        )
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
@@ -98,7 +102,9 @@ class TestBC(unittest.TestCase):
         modeling_options["WISDEM"]["TowerSE"]["flag"] = False
         modeling_options["flags"]["nacelle"] = False
         modeling_options["flags"]["tower"] = False
-        wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
+        wt_opt = om.Problem(
+            reports=False, model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options)
+        )
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
@@ -133,7 +139,9 @@ class TestBC(unittest.TestCase):
         modeling_options["WISDEM"]["TowerSE"]["flag"] = False
         modeling_options["flags"]["nacelle"] = False
         modeling_options["flags"]["tower"] = False
-        wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
+        wt_opt = om.Problem(
+            reports=False, model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options)
+        )
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)

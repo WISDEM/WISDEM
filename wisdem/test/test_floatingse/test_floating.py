@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 from openmdao.api import Problem
+
 from wisdem.floatingse.floating import FloatingSE
 
 npts = 5
@@ -48,7 +49,7 @@ class TestOC3Mass(unittest.TestCase):
         opt["materials"] = {}
         opt["materials"]["n_mat"] = 2
 
-        prob = Problem()
+        prob = Problem(reports=False)
         prob.model = FloatingSE(modeling_options=opt)
         prob.setup()
 
@@ -136,15 +137,15 @@ class TestOC3Mass(unittest.TestCase):
 
         prob.run_model()
 
-        m_top = np.pi * 3.2 ** 2.0 * 0.05 * 7850.0
+        m_top = np.pi * 3.2**2.0 * 0.05 * 7850.0
         ansys_m_bulk = 13204.0 + 2.0 * 27239.0 + m_top
         ansys_m_shell = 80150.0 + 32060.0 + 79701.0 + 1251800.0
         ansys_m_stiff = 1390.9 * 52 + 1282.2 + 1121.2 + 951.44 * 3
         ansys_m_spar = ansys_m_bulk + ansys_m_shell + ansys_m_stiff
         ansys_cg = np.array([0.0, 0.0, -58.926])
-        ansys_Ixx = 2178400000.0 + m_top * (0.25 * 3.2 ** 2.0 + (10 - ansys_cg[-1]) ** 2)
-        ansys_Iyy = 2178400000.0 + m_top * (0.25 * 3.2 ** 2.0 + (10 - ansys_cg[-1]) ** 2)
-        ansys_Izz = 32297000.0 + 0.5 * m_top * 3.2 ** 2.0
+        ansys_Ixx = 2178400000.0 + m_top * (0.25 * 3.2**2.0 + (10 - ansys_cg[-1]) ** 2)
+        ansys_Iyy = 2178400000.0 + m_top * (0.25 * 3.2**2.0 + (10 - ansys_cg[-1]) ** 2)
+        ansys_Izz = 32297000.0 + 0.5 * m_top * 3.2**2.0
         ansys_I = np.array([ansys_Ixx, ansys_Iyy, ansys_Izz, 0.0, 0.0, 0.0])
 
         npt.assert_allclose(

@@ -1,12 +1,13 @@
 # 0 ---------- (marker for docs)
 import openmdao.api as om
+
 from wisdem.nrelcsm.nrel_csm_mass_2015 import nrel_csm_mass_2015
 
 # 0 ---------- (marker for docs)
 
 # 1 ---------- (marker for docs)
 # OpenMDAO Problem instance
-prob = om.Problem()
+prob = om.Problem(reports=False)
 prob.model = nrel_csm_mass_2015()
 prob.setup()
 # 1 ---------- (marker for docs)
