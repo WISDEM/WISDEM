@@ -1437,7 +1437,7 @@ class BladeJointSizing(ExplicitComponent):
             n_bolt_pullout = 2 * ns * Fax_flap_ultimate / (S_ss * np.pi * (d_insert + 2 * t_adhesive))
 
             # e - take max bolts needed as # bolt-insert pairs
-            n_bolt = np.max([n_bolt_flap_fatigue, n_bolt_flap_ultimate, n_insert_flap_ultimate, n_insert_flap_fatigue,
+            n_bolt = np.max(np.r_[n_bolt_flap_fatigue, n_bolt_flap_ultimate, n_insert_flap_ultimate, n_insert_flap_fatigue,
                  n_bolt_pullout, n_bolt_min])
             # if discrete:
             #     n_bolt = np.ceil(n_bolt)
@@ -1461,7 +1461,7 @@ class BladeJointSizing(ExplicitComponent):
             if Fi_sh > Fi70p:
                 logger.debug('Warning, shear preload requirement (', Fi_sh,
                       'N) > 70% bolt proof load and will be limited to prevent overloading.')
-            Fi = np.min([np.max([Fi_sh, Fi_sep]), Fi70p])
+            Fi = np.min(np.r_[np.max(np.r_[Fi_sh, Fi_sep]), Fi70p])
 
             # if iteration is stuck in an Fi-driven loop, then take the max # bolts required by loop
             if i > itermax:
