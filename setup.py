@@ -109,7 +109,7 @@ if __name__ == "__main__":
             "openpyxl",
             "nlopt",
             "pandas",
-            "pytest",
+            "pydoe2",
             "python-benedict",
             "pyyaml",
             "ruamel.yaml",
