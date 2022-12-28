@@ -3557,8 +3557,8 @@ class BladeCost(om.ExplicitComponent):
                     mass_root_preform_ps += add_volume_ps * rho_mat[i_mat]
                     width_ss_interp = np.interp(root_preform_length, s, width_ss)
                     width_ps_interp = np.interp(root_preform_length, s, width_ps)
-                    area_root_ss = np.trapz([width_ss[0], width_ss_interp], [0, blade_length * root_preform_length])
-                    area_root_ps = np.trapz([width_ps[0], width_ps_interp], [0, blade_length * root_preform_length])
+                    area_root_ss = np.trapz(np.r_[width_ss[0], width_ss_interp], np.r_[0, blade_length * root_preform_length])
+                    area_root_ps = np.trapz(np.r_[width_ps[0], width_ps_interp], np.r_[0, blade_length * root_preform_length])
 
                 # Fabric shear webs
                 if layer_web[i_lay] != 0:
@@ -3711,11 +3711,11 @@ class BladeCost(om.ExplicitComponent):
         spar_cap_ps_area = np.trapz(spar_cap_width_ps, blade_length * s)
         sect_perimeter_ss_interp = np.interp(root_preform_length, s, sect_perimeter_ss)
         ss_area_root = np.trapz(
-            [sect_perimeter_ss[0], sect_perimeter_ss_interp], [0, blade_length * root_preform_length]
+            np.r_[sect_perimeter_ss[0], sect_perimeter_ss_interp], np.r_[0, blade_length * root_preform_length]
         )
         sect_perimeter_ps_interp = np.interp(root_preform_length, s, sect_perimeter_ps)
         ps_area_root = np.trapz(
-            [sect_perimeter_ps[0], sect_perimeter_ps_interp], [0, blade_length * root_preform_length]
+            np.r_[sect_perimeter_ps[0], sect_perimeter_ps_interp], np.r_[0, blade_length * root_preform_length]
         )
         bom.blade_specs = {}
         bom.blade_specs["area_webs_w_flanges"] = web_area_w_flanges
