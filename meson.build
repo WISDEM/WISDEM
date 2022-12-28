@@ -11,9 +11,10 @@ project(
   ],
 )
 
-add_languages('fortran')
-
 cc = meson.get_compiler('c')
+add_languages('fortran', native: false)
+fc = meson.get_compiler('fortran')
+is_windows = host_machine.system() == 'windows'
 
 # We need -lm for all C code (assuming it uses math functions, which is safe to
 # assume for SciPy). For C++ it isn't needed, because libstdc++/libc++ is
