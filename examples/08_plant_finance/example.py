@@ -2,10 +2,11 @@
 
 # Import the libraries
 import openmdao.api as om
+
 from wisdem.plant_financese.plant_finance import PlantFinance
 
 # Initialize the OpenMDAO instance
-prob = om.Problem()
+prob = om.Problem(reports=False)
 prob.model = PlantFinance()
 prob.setup()
 

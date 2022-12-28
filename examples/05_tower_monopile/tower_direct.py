@@ -58,7 +58,7 @@ modeling_options["WISDEM"]["TowerSE"]["wind"] = "PowerWind"
 # ---
 
 # Instantiate OpenMDAO problem and create a model using the TowerSE group
-prob = om.Problem()
+prob = om.Problem(reports=False)
 prob.model = TowerSE(modeling_options=modeling_options)
 # ---
 

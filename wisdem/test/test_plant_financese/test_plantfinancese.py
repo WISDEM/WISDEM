@@ -2,8 +2,9 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
-import wisdem.plant_financese.plant_finance as pf
 from openmdao.api import Group, Problem
+
+import wisdem.plant_financese.plant_finance as pf
 
 
 class TestPlantFinance(unittest.TestCase):
@@ -26,7 +27,7 @@ class TestPlantFinance(unittest.TestCase):
 
         self.inputs["electricity_price"] = 0.04
         self.inputs["reserve_margin_price"] = 120
-        self.inputs["capacity_credit"] = 1.
+        self.inputs["capacity_credit"] = 1.0
         self.inputs["benchmark_price"] = 0.071
 
         self.mypfin = pf.PlantFinance(verbosity=True)
@@ -36,10 +37,10 @@ class TestPlantFinance(unittest.TestCase):
         self.mypfin.compute(self.inputs, self.outputs, self.discrete_inputs, {})
 
         C = 0.12 * (1.2e3 + 7.7e3) + 7e2
-        E = (1.6e7 * 50.0) / (1e3 * 50 )
-        V = (1.6e7 * 50.0) / (1e3 * 50 ) * 0.04 + 120. * 1.
-        lcoe = C/E
-        plcoe = C/V*0.071
+        E = (1.6e7 * 50.0) / (1e3 * 50)
+        V = (1.6e7 * 50.0) / (1e3 * 50) * 0.04 + 120.0 * 1.0
+        lcoe = C / E
+        plcoe = C / V * 0.071
         self.assertEqual(self.outputs["lcoe"], lcoe)
         self.assertEqual(self.outputs["plcoe"], plcoe)
 
@@ -48,15 +49,15 @@ class TestPlantFinance(unittest.TestCase):
         self.mypfin.compute(self.inputs, self.outputs, self.discrete_inputs, {})
 
         C = 0.12 * (1.2e3 + 7.7e3) + 7e2
-        E = (1.6e7 * 50.0 * (1 - 0.15)) / (1e3 * 50 )
-        V = (1.6e7 * 50.0 * (1 - 0.15)) / (1e3 * 50 ) * 0.04 + 120. * 1.
-        lcoe = C/E
-        plcoe = C/V*0.071
+        E = (1.6e7 * 50.0 * (1 - 0.15)) / (1e3 * 50)
+        V = (1.6e7 * 50.0 * (1 - 0.15)) / (1e3 * 50) * 0.04 + 120.0 * 1.0
+        lcoe = C / E
+        plcoe = C / V * 0.071
         self.assertEqual(self.outputs["lcoe"], lcoe)
         self.assertEqual(self.outputs["plcoe"], plcoe)
 
     def testDerivatives(self):
-        prob = Problem()
+        prob = Problem(reports=False)
         root = prob.model = Group()
         root.add_subsystem("pf", pf.PlantFinance(), promotes=["*"])
         prob.setup()

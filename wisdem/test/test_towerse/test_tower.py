@@ -4,6 +4,7 @@ import unittest
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
+
 import wisdem.towerse.tower as tow
 from wisdem.commonse import gravity as g
 
@@ -87,7 +88,7 @@ class TestTowerSE(unittest.TestCase):
 
     def testProblemLand(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = tow.TowerSE(modeling_options=self.modeling_options)
         prob.setup()
 
@@ -126,7 +127,7 @@ class TestTowerSE(unittest.TestCase):
         prob.run_model()
 
         # All other tests from above
-        mass_dens = 1e4 * (5.0 ** 2 - 4.9 ** 2) * np.pi
+        mass_dens = 1e4 * (5.0**2 - 4.9**2) * np.pi
         npt.assert_equal(prob["z_start"], 0.0)
         npt.assert_equal(prob["transition_piece_height"], 0.0)
         npt.assert_equal(prob["z_param"], np.array([0.0, 40.0, 80.0]))
@@ -154,7 +155,7 @@ class TestTowerSE(unittest.TestCase):
     def testAddedMassForces(self):
         self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 3
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = tow.TowerSE(modeling_options=self.modeling_options)
         prob.setup()
 
@@ -257,7 +258,7 @@ class TestTowerSE(unittest.TestCase):
 
         self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = len(d_param)
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = tow.TowerSE(modeling_options=self.modeling_options)
         prob.setup()
 
@@ -390,7 +391,7 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options["WISDEM"]["TowerSE"]["gamma_fatigue"] = 1.35 * 1.3 * 1.0
 
         def fill_prob():
-            prob = om.Problem()
+            prob = om.Problem(reports=False)
             prob.model = tow.TowerSE(modeling_options=self.modeling_options)
             prob.setup()
 
@@ -442,8 +443,8 @@ class TestTowerSE(unittest.TestCase):
             prob["env1.Uref"] = wind_Uref1
             prob["env2.Uref"] = wind_Uref2
 
-            prob["tower.rna_F"] = np.c_[[Fx1, Fy1, Fz1], [Fx2, Fy2, Fz2]]
-            prob["tower.rna_M"] = np.c_[[Mxx1, Myy1, Mzz1], [Mxx2, Myy2, Mzz2]]
+            prob["tower.rna_F"] = np.c_[np.r_[Fx1, Fy1, Fz1], np.r_[Fx2, Fy2, Fz2]]
+            prob["tower.rna_M"] = np.c_[np.r_[Mxx1, Myy1, Mzz1], np.r_[Mxx2, Myy2, Mzz2]]
             # # ---------------
 
             return prob

@@ -264,7 +264,7 @@ class TestGroup(unittest.TestCase):
         opt["materials"] = {}
         opt["materials"]["n_mat"] = 2
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = sys.FloatingSystem(modeling_options=opt)
         prob.setup()
 
