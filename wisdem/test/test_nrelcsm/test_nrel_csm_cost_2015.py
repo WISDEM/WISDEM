@@ -2,13 +2,14 @@ import unittest
 
 import numpy as np
 from openmdao.api import Problem
+
 from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
 
 
 class TestNewAssembly(unittest.TestCase):
     def setUp(self):
         turbine = Turbine_CostsSE_2015(verbosity=False)
-        self.prob = Problem(turbine)
+        self.prob = Problem(turbine, reports=False)
         self.prob.setup()
 
         self.prob["blade_mass"] = 17650.67  # inline with the windpact estimates

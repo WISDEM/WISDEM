@@ -139,7 +139,7 @@ class TestMonopileSE(unittest.TestCase):
         self.modeling_options["WISDEM"]["FixedBottomSE"]["soil_springs"] = True
         self.modeling_options["WISDEM"]["FixedBottomSE"]["gravity_foundation"] = False
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = mon.MonopileSE(modeling_options=self.modeling_options)
         prob.setup()
 
@@ -241,7 +241,7 @@ class TestMonopileSE(unittest.TestCase):
         self.modeling_options["WISDEM"]["FixedBottomSE"]["soil_springs"] = False
         self.modeling_options["WISDEM"]["FixedBottomSE"]["gravity_foundation"] = True
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = mon.MonopileSE(modeling_options=self.modeling_options)
         prob.setup()
 
@@ -334,7 +334,7 @@ class TestMonopileSE(unittest.TestCase):
         self.modeling_options["WISDEM"]["FixedBottomSE"]["soil_springs"] = False
         self.modeling_options["WISDEM"]["FixedBottomSE"]["gravity_foundation"] = False
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = mon.MonopileSE(modeling_options=self.modeling_options)
         prob.setup()
 
@@ -464,7 +464,7 @@ class TestMonopileSE(unittest.TestCase):
         self.modeling_options["WISDEM"]["FixedBottomSE"]["gravity_foundation"] = False
 
         def fill_prob():
-            prob = om.Problem()
+            prob = om.Problem(reports=False)
             prob.model = mon.MonopileSE(modeling_options=self.modeling_options)
             prob.setup()
 

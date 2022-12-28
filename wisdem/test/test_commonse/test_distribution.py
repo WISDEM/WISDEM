@@ -4,6 +4,7 @@ import unittest
 import numpy as np
 import openmdao.api as om
 from openmdao.utils.assert_utils import assert_check_partials
+
 from wisdem.commonse.distribution import WeibullCDF, RayleighCDF, WeibullWithMeanCDF
 
 np.random.seed(314)
@@ -13,7 +14,7 @@ class Test(unittest.TestCase):
     def test_distributions(self):
         nspline = 10
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         prob.model.add_subsystem("comp1", WeibullCDF(nspline=nspline), promotes_inputs=["*"])
         prob.model.add_subsystem("comp2", WeibullWithMeanCDF(nspline=nspline), promotes_inputs=["*"])

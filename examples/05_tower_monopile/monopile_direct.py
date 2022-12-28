@@ -72,7 +72,7 @@ modeling_options["WISDEM"]["FixedBottomSE"]["wind"] = "PowerWind"
 # ---
 
 # Instantiate OpenMDAO problem and create a model using the FixedBottomSE group
-prob = om.Problem()
+prob = om.Problem(reports=False)
 prob.model = MonopileSE(modeling_options=modeling_options)
 # ---
 

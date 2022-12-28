@@ -30,7 +30,7 @@ opt["flags"]["generator"] = False
 # ---
 
 # Initialize OpenMDAO problem
-prob = om.Problem()
+prob = om.Problem(reports=False)
 prob.model = DrivetrainSE(modeling_options=opt)
 # ---
 

@@ -30,11 +30,7 @@ class Test(unittest.TestCase):
         modeling_options["materials"] = {}
         modeling_options["materials"]["n_mat"] = 1
 
-        prob = om.Problem(
-            model=JacketSE(
-                modeling_options=modeling_options,
-            )
-        )
+        prob = om.Problem(reports=False, model=JacketSE(modeling_options=modeling_options))
 
         prob.setup()
 
