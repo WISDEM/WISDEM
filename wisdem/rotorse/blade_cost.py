@@ -3544,12 +3544,12 @@ class BladeCost(om.ExplicitComponent):
                     layer_volume_span_interp_ss = np.interp(root_preform_length, s, layer_volume_span_ss[i_lay, :])
                     layer_volume_span_interp_ps = np.interp(root_preform_length, s, layer_volume_span_ps[i_lay, :])
                     add_volume_ss = np.trapz(
-                        [layer_volume_span_ss[i_lay, 0], layer_volume_span_interp_ss],
-                        [0, blade_length * root_preform_length],
+                        np.r_[layer_volume_span_ss[i_lay, 0], layer_volume_span_interp_ss],
+                        np.r_[0, blade_length * root_preform_length],
                     )
                     add_volume_ps = np.trapz(
-                        [layer_volume_span_ps[i_lay, 0], layer_volume_span_interp_ps],
-                        [0, blade_length * root_preform_length],
+                        np.r_[layer_volume_span_ps[i_lay, 0], layer_volume_span_interp_ps],
+                        np.r_[0, blade_length * root_preform_length],
                     )
                     volume_root_preform_ss += add_volume_ss
                     volume_root_preform_ps += add_volume_ps
