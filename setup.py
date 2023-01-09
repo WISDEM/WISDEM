@@ -6,6 +6,7 @@
 import os
 import re
 import shutil
+import platform
 import subprocess
 
 import setuptools
@@ -19,6 +20,12 @@ def run_meson_build():
     meson_args = ""
     if "MESON_ARGS" in os.environ:
         meson_args = os.environ["MESON_ARGS"]
+
+    if platform.system() == "Windows":
+        if not "FC" in os.environ:
+            os.environ["FC"] = "gfortran"
+        if not "CC" in os.environ:
+            os.environ["CC"] = "gcc"
 
     # configure
     meson_path = shutil.which("meson")
@@ -102,6 +109,7 @@ if __name__ == "__main__":
         author="NREL WISDEM Team",
         author_email="systems.engineering@nrel.gov",
         install_requires=[
+            "dearpygui",
             "jsonschema",
             "marmot-agents>=0.2.5",
             "numpy",

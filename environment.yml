@@ -21,7 +21,6 @@ dependencies:
   - pip
   - pydoe2
   - pyoptsparse
-  - pyside2
   - pytest
   - pytest-cov
   - python
@@ -39,9 +38,9 @@ dependencies:
   - swig
   - pip:
     - marmot-agents
+    - dearpygui
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]
 #  - compilers # [not win]
 #  - petsc4py # [not win]
-#  - pyoptsparse # [not win]
