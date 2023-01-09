@@ -61,7 +61,7 @@ class DPGLineEdit(object):
         self._mydict = dictionary
         self._mykey = key
         self._list_re = re.compile(r"^\[.*\]$")
-
+        print(key, value, parent_tag)
         if self.is_list(str(value)):
             dpg.add_input_text(label=key, default_value=str(list(value)), callback=self.mycallback, parent=parent_tag)
 
@@ -348,20 +348,23 @@ class GUI_Master(object):
         if not app_data is None:
             fpath = app_data["file_path_name"].strip()
 
-            if user_data.find("geometry") >= 0:
+            if user_data.lower().find("geometry") >= 0:
                 self.geometry_dict = val.load_geometry_yaml(fpath)
                 mydict = self.geometry_dict
+                id_root = "geometry"
 
-            elif user_data.find("modeling") >= 0:
+            elif user_data.lower().find("modeling") >= 0:
                 self.modeling_dict = val.load_modeling_yaml(fpath)
                 mydict = self.modeling_dict
+                id_root = "modeling"
 
-            elif user_data.find("analysis") >= 0:
+            elif user_data.lower().find("analysis") >= 0:
                 self.analysis_dict = val.load_analysis_yaml(fpath)
                 mydict = self.analysis_dict
+                id_root = "analysis"
 
         # Delete the old nested yaml file and add the new one
-        obj_id = user_data.replace("field", "context")
+        obj_id = id_root + "_context"  # user_data.replace("field", "context")
         dpg.delete_item(obj_id, children_only=True)
         self._recursion_dict_display(mydict, parent_tag=obj_id)
 
