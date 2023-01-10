@@ -378,6 +378,7 @@ def install_moored_substructures(vessel, queue, distance, substructures, station
                 num_vessels=station_keeping_vessels,
             )
             yield queue.vessel.release.succeed()
+            vessel.submit_debug_log(progress="Substructure")
             n += 1
 
         else:

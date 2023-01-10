@@ -2,9 +2,13 @@
 
 import numpy as np
 import pytest
+import matplotlib.pyplot as plt
 from numpy.testing import assert_allclose
 
 import wisdem.moorpy as mp
+
+# from wisdem.moorpy.MoorProps import getLineProps
+from wisdem.moorpy.helpers import getLineProps
 
 inCBs = [0, 1.0, 10.0]  # friction coefficients as inputs for test_seabed
 

@@ -4,8 +4,9 @@
 # from numpy.testing import assert_allclose
 
 import numpy as np
-import moorpy as mp
 import matplotlib.pyplot as plt
+
+import wisdem.moorpy as mp
 
 ms = mp.System(depth=200)
 

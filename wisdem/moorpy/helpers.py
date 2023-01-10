@@ -165,7 +165,7 @@ def transformPosition(rRelPoint, r6):
     rRelPoint : array
         x,y,z coordinates of a point relative to a local frame [m]
     r6 : array
-        6DOF position vector of the origin of the local frame, in the global frame coorindates [m]
+        6DOF position vector of the origin of the local frame, in the global frame coorindates [m, rad]
 
     Returns
     -------
@@ -432,7 +432,6 @@ def dsolve2(
             if display > 2:
                 print("  limiting oscillation with alpha=" + str(alpha))
                 print(f"   dX_last was {dX_last}, dX was going to be {dX}, now it'll be {alpha*dX}")
-                print(f"   dX_last was {dX_last/1000}, dX was going to be {dX/1000}, now it'll be {alpha*dX/1000}")
 
             dX = alpha * dX  # scale down dX
 
