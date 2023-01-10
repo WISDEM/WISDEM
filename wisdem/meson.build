@@ -1,7 +1,7 @@
 # NumPy include directory - needed in all submodules
 incdir_numpy = get_option('incdir_numpy')
 if incdir_numpy == ''
-    incdir_numpy = run_command(py3_target,
+    incdir_numpy = run_command(py3,
       [
         '-c',
         'import os; os.chdir(".."); import numpy; print(numpy.get_include())'

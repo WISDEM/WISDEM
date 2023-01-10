@@ -35,6 +35,7 @@ def run_meson_build(staging_dir):
     )
     sysargs = meson_call.split(" ")
     sysargs = [arg for arg in sysargs if arg != ""]
+    print(sysargs)
     p1 = subprocess.run(sysargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     setup_log = os.path.join(staging_dir, "setup.log")
     with open(setup_log, "wb") as f:
@@ -47,6 +48,8 @@ def run_meson_build(staging_dir):
     # build
     meson_call = f"{meson_path} compile -vC {staging_dir}"
     sysargs = meson_call.split(" ")
+    sysargs = [arg for arg in sysargs if arg != ""]
+    print(sysargs)
     p2 = subprocess.run(sysargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     compile_log = os.path.join(staging_dir, "compile.log")
     with open(compile_log, "wb") as f:
