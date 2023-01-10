@@ -81,8 +81,8 @@ jobs:
       - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
         run: |
-          cd wisdem/test
-          pytest test_gluecode
+          cd wisdem/test/test_gluecode
+          pytest test_g*
 
       # Run coveralls
       - name: Run coveralls

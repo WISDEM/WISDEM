@@ -61,7 +61,7 @@ class DPGLineEdit(object):
         self._mydict = dictionary
         self._mykey = key
         self._list_re = re.compile(r"^\[.*\]$")
-        print(key, value, parent_tag)
+
         if self.is_list(str(value)):
             dpg.add_input_text(label=key, default_value=str(list(value)), callback=self.mycallback, parent=parent_tag)
 
