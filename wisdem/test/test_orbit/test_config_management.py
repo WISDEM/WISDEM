@@ -3,7 +3,6 @@ __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
-
 from wisdem.orbit import ProjectManager, load_config, save_config
 from wisdem.orbit.core.library import extract_library_specs
 

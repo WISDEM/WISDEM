@@ -223,6 +223,31 @@ def getAnchorProps(fx, fz, type="drag-embedment", display=0):
         anchorInstCost = 179331 * euros2dollars  # installation cost
         anchorDecomCost = 125532 * euros2dollars  # decommissioning cost
 
+    elif type == "deadweight-granite":
+        capacity_x = (
+            1.6 * fx / 9.81
+        )  # no safety factors given explicitly for deadweight anchors in the standards; assuming these safety factors are the same as piles/gravity/plates
+        capacity_z = (
+            2.0 * fz / 9.81
+        )  # no safety factors given explicitly for deadweight anchors in the standards; assuming these safety factors are the same as piles/gravity/plates
+        capacity = np.linalg.norm([capacity_x, capacity_z])
+        anchorMatCost = 0.05 * capacity  # cost of a granite deadweight anchor is about $50 per ton (from Senu)
+        anchorInstCost = 0
+        anchorDecomCost = 0
+
+    elif type == "deadweight-concrete":
+        capacity_x = (
+            1.6 * fx / 9.81
+        )  # no safety factors given explicitly for deadweight anchors in the standards; assuming these safety factors are the same as piles/gravity/plates
+        capacity_z = (
+            2.0 * fz / 9.81
+        )  # no safety factors given explicitly for deadweight anchors in the standards; assuming these safety factors are the same as piles/gravity/plates
+        capacity = np.linalg.norm([capacity_x, capacity_z])
+        anchorMatCost = 0.075 * capacity  # cost of a concrete deadweight anchor is about $75 per ton (from Senu)
+        # reinforced concrete is about $1000 per ton ($1 per kg), but we don't need reinforced concrete for deadweight anchors
+        anchorInstCost = 0
+        anchorDecomCost = 0
+
     elif type == "plate":
         capacity_x = 2.0 * fx / 9.81
         capacity_z = 2.0 * fz / 9.81

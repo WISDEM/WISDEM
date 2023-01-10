@@ -40,7 +40,7 @@ The core modules draw upon some utility packages, which are typically compiled c
 
 Installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WISDEM&reg; requires [Anaconda 64-bit](https://www.anaconda.com/distribution/).
 
-The installation instructions below use the environment name, "wisdem-env," but any name is acceptable.  For those working behind company firewalls, you may have to change the conda authentication with `conda config --set ssl_verify no`.  Proxy servers can also be set with `conda config --set proxy_servers.http http://id:pw@address:port` and `conda config --set proxy_servers.https https://id:pw@address:port`.
+The installation instructions below use the environment name, "wisdem-env," but any name is acceptable.  For those working behind company firewalls, you may have to change the conda authentication with `conda config --set ssl_verify no`.  Proxy servers can also be set with `conda config --set proxy_servers.http http://id:pw@address:port` and `conda config --set proxy_servers.https https://id:pw@address:port`. To setup an environment based on a different Github branch of WISDEM, simply substitute the branch name for `master` in the setup line.
 
 1.  Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
 

@@ -9,7 +9,9 @@ dependencies:
   - jsonschema
   - make
   - matplotlib
+  - meson
   - mpi4py
+  - ninja
   - nlopt
   - numpy
   - numpydoc
@@ -17,8 +19,8 @@ dependencies:
   - openpyxl
   - pandas
   - pip
+  - pydoe2
   - pyoptsparse
-  - pyside2
   - pytest
   - pytest-cov
   - python
@@ -26,7 +28,7 @@ dependencies:
   - pyyaml
   - ruamel_yaml
   - scipy
-  - setuptools<60.0
+  - setuptools
   - simpy
   - sortedcontainers
   - sphinx
@@ -36,9 +38,9 @@ dependencies:
   - swig
   - pip:
     - marmot-agents
+    - dearpygui
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]
 #  - compilers # [not win]
 #  - petsc4py # [not win]
-#  - pyoptsparse # [not win]

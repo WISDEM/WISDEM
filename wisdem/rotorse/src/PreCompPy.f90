@@ -113,7 +113,7 @@ contains
         real(dbp), intent(out) :: area        ! Area, Cross-Sectional area (m)
         real(dbp), intent(out) :: iflap_eta   ! Flap_iner, Section flap inertia about the YG axis per unit length (Kg-m)
         real(dbp), intent(out) :: ilag_zeta   ! Lag_iner, Section lag inertia about the XG axis per unit length (Kg-m)
-        real(dbp), intent(out) :: tw_iner     ! Tw_iner, Orientation of the section principal inertia axes with respect the blade reference plane, θ (deg)
+        real(dbp), intent(out) :: tw_iner     ! Tw_iner, Orientation of the section principal inertia axes with respect the blade reference plane, theta (deg)
         real(dbp), intent(out) :: zcm_ref     ! X_cm, X-coordinate of the center-of-mass offset with respect to the XR-YR axes (m)
         real(dbp), intent(out) :: ycm_ref     ! Y_cm, Chordwise offset of the section center of mass with respect to the XR-YR axes (m)
 

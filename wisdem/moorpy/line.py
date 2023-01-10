@@ -5,6 +5,7 @@ from matplotlib import cm
 
 from wisdem.moorpy.helpers import LineError, CatenaryError, makeTower, rotationMatrix, read_mooring_file
 from wisdem.moorpy.Catenary import catenary
+from wisdem.moorpy.nonlinear import nonlinear
 
 
 class Line:
@@ -68,6 +69,8 @@ class Line:
         self.qs = 1  # flag indicating quasi-static analysis (1). Set to 0 for time series data
         self.show = True  # a flag that will be set to false if we don't want to show the line (e.g. if results missing)
         # print("Created Line "+str(self.number))
+        self.color = "k"
+        self.lw = 0.5
 
     def loadData(self, dirname, rootname, sep=".MD."):
         """Loads line-specific time series data from a MoorDyn output file"""
@@ -79,14 +82,14 @@ class Line:
         elif self.isRod == 0:
             strtype = "Line"
 
-        if path.exists(dirname + rootname + ".MD." + strtype + str(self.number) + ".out"):
+        filename = dirname + rootname + sep + strtype + str(self.number) + ".out"
+
+        if path.exists(filename):
 
             # try:
 
             # load time series data
-            data, ch, channels, units = read_mooring_file(
-                dirname + rootname + sep, strtype + str(self.number) + ".out"
-            )  # remember number starts on 1 rather than 0
+            data, ch, channels, units = read_mooring_file("", filename)  # remember number starts on 1 rather than 0
 
             # get time info
             if "Time" in ch:
@@ -118,6 +121,16 @@ class Line:
                 if "Node0Ku" in ch:
                     for i in range(self.nNodes):
                         self.Ku[:, i] = data[:, ch["Node" + str(i) + "Ku"]]
+            else:
+                # read in Rod buoyancy force data if available
+                if "Node0Box" in ch:
+                    self.Bx = np.zeros([nT, self.nNodes])
+                    self.By = np.zeros([nT, self.nNodes])
+                    self.Bz = np.zeros([nT, self.nNodes])
+                    for i in range(self.nNodes):
+                        self.Bx[:, i] = data[:, ch["Node" + str(i) + "Box"]]
+                        self.By[:, i] = data[:, ch["Node" + str(i) + "Boy"]]
+                        self.Bz[:, i] = data[:, ch["Node" + str(i) + "Boz"]]
 
             self.Ux = np.zeros([nT, self.nNodes])  # read in fluid velocity data if available
             self.Uy = np.zeros([nT, self.nNodes])
@@ -160,6 +173,7 @@ class Line:
         else:
             self.Tdata = []
             self.show = False
+            print(f"Error geting data for {'Rod' if self.isRod else 'Line'} {self.number}: {filename}")
 
         # >>> this was another option for handling issues - maybe no longer needed <<<
         # except Exception as e:
@@ -174,15 +188,16 @@ class Line:
         if Time < 0:
             ts = np.int(-Time)  # negative value indicates passing a time step index
         else:  # otherwise it's a time in s, so find closest time step
-            for index, item in enumerate(self.Tdata):
-                # print "index is "+str(index)+" and item is "+str(item)
-                if len(self.Tdata) > 0:
+            if len(self.Tdata) > 0:
+                for index, item in enumerate(self.Tdata):
                     ts = -1
                     if item > Time:
                         ts = index
                         break
-            if ts == -1:
-                raise LineError("getTimestep: requested time likely out of range")
+                if ts == -1:
+                    raise LineError(self.number, "getTimestep: requested time likely out of range")
+            else:
+                raise LineError(self.number, "getTimestep: zero time steps are stored")
 
         return ts
 
@@ -240,21 +255,34 @@ class Line:
             ):  # if a line end is at the seabed, but the cb is still set negative to indicate off the seabed
                 self.cb = 0.0  # set to zero so that the line includes seabed interaction.
 
-            try:
-                (fAH, fAV, fBH, fBV, info) = catenary(
-                    LH,
-                    LV,
-                    self.L,
-                    self.type["EA"],
-                    self.type["w"],
-                    self.cb,
-                    HF0=self.HF,
-                    VF0=self.VF,
-                    nNodes=n,
-                    plots=1,
+            # ----- check for linear vs nonlinear line elasticity -----
+
+            # If EA is found in the line properties we will run the original catenary function
+            if "EA" in self.type:
+
+                try:
+                    (fAH, fAV, fBH, fBV, info) = catenary(
+                        LH,
+                        LV,
+                        self.L,
+                        self.type["EA"],
+                        self.type["w"],
+                        self.cb,
+                        HF0=self.HF,
+                        VF0=self.VF,
+                        nNodes=n,
+                        plots=1,
+                    )
+                except CatenaryError as error:
+                    raise LineError(self.number, error.message)
+
+                # (fAH, fAV, fBH, fBV, info) = catenary(LH, LV, self.L, self.type['EA'], self.type['w'], CB=self.cb, HF0=self.HF, VF0=self.VF, nNodes=n, plots=1)   # call line model
+
+            # If EA isnt found then we will use the ten-str relationship defined in the input file
+            else:
+                (fAH, fAV, fBH, fBV, info) = nonlinear(
+                    LH, LV, self.L, self.type["Str"], self.type["Ten"], self.type["w"]
                 )
-            except CatenaryError as error:
-                raise LineError(self.number, error.message)
 
             Xs = self.rA[0] + info["X"] * cosBeta
             Ys = self.rA[1] + info["X"] * sinBeta
@@ -307,7 +335,7 @@ class Line:
             else:
 
                 # handle whether or not there is tension data
-                try:  # use average to go from segment tension to node tensions
+                try:  # use average to go from segment tension to node tensions <<< can skip this once MD is updated to output node tensions
                     Te = 0.5 * (np.append(self.Te[ts, 0], self.Te[ts, :]) + np.append(self.Te[ts, :], self.Te[ts, -1]))
                 except:  # otherwise return zeros to avoid an error (might want a warning in some cases?)
                     Te = np.zeros(self.nNodes)
@@ -686,21 +714,29 @@ class Line:
         if reset == True:  # Indicates not to use previous fairlead force values to start catenary
             self.HF = 0  # iteration with, and insteady use the default values.
 
-        try:
-            (fAH, fAV, fBH, fBV, info) = catenary(
-                LH,
-                LV,
-                self.L,
-                self.type["EA"],
-                self.type["w"],
-                CB=self.cb,
-                Tol=tol,
-                HF0=self.HF,
-                VF0=self.VF,
-                plots=profiles,
-            )  # call line model
-        except CatenaryError as error:
-            raise LineError(self.number, error.message)
+        # ----- get line results for linear or nonlinear elasticity -----
+
+        # If EA is found in the line properties we will run the original catenary function
+        if "EA" in self.type:
+            try:
+                (fAH, fAV, fBH, fBV, info) = catenary(
+                    LH,
+                    LV,
+                    self.L,
+                    self.type["EA"],
+                    self.type["w"],
+                    CB=self.cb,
+                    Tol=tol,
+                    HF0=self.HF,
+                    VF0=self.VF,
+                    plots=profiles,
+                )  # call line model
+
+            except CatenaryError as error:
+                raise LineError(self.number, error.message)
+        # If EA isnt found then we will use the ten-str relationship defined in the input file
+        else:
+            (fAH, fAV, fBH, fBV, info) = nonlinear(LH, LV, self.L, self.type["Str"], self.type["Ten"], self.type["w"])
 
         self.HF = info["HF"]
         self.VF = info["VF"]
@@ -846,21 +882,27 @@ class Line:
         elif self.cb < 0:  # if a line end is at the seabed, but the cb is still set negative to indicate off the seabed
             self.cb = 0.0  # set to zero so that the line includes seabed interaction.
 
-        try:
-            (fAH, fAV, fBH, fBV, info) = catenary(
-                LH,
-                LV,
-                self.L,
-                self.type["EA"],
-                self.type["w"],
-                self.cb,
-                HF0=self.HF,
-                VF0=self.VF,
-                nNodes=self.nNodes,
-                plots=1,
-            )
-        except CatenaryError as error:
-            raise LineError(self.number, error.message)
+        # If EA is found in the line properties we will run the original catenary function
+        if "EA" in self.type:
+            try:
+                (fAH, fAV, fBH, fBV, info) = catenary(
+                    LH,
+                    LV,
+                    self.L,
+                    self.type["EA"],
+                    self.type["w"],
+                    CB=self.cb,
+                    Tol=tol,
+                    HF0=self.HF,
+                    VF0=self.VF,
+                    plots=profiles,
+                )  # call line model
+
+            except CatenaryError as error:
+                raise LineError(self.number, error.message)
+        # If EA isnt found then we will use the ten-str relationship defined in the input file
+        else:
+            (fAH, fAV, fBH, fBV, info) = nonlinear(LH, LV, self.L, self.type["Str"], self.type["Ten"], self.type["w"])
 
         Ts = info["Te"]
         return Ts

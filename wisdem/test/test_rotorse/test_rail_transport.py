@@ -4,12 +4,13 @@ import unittest
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
+
 import wisdem.rotorse.rail_transport as rt
 
 
 class TestRT(unittest.TestCase):
     def testRailTransport(self):
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         # Data structure generated with
         # np.savez('rail.npz', blade_ref_axis = inputs['blade_ref_axis'],
@@ -68,10 +69,10 @@ class TestRT(unittest.TestCase):
 
         prob.run_model()
 
-        print(prob["constr_LV_4axle_horiz"][0]) 
-        print(prob["constr_LV_4axle_horiz"][1]) 
-        print(prob["constr_LV_8axle_horiz"][0]) 
-        print(prob["constr_LV_8axle_horiz"][1]) 
+        print(prob["constr_LV_4axle_horiz"][0])
+        print(prob["constr_LV_4axle_horiz"][1])
+        print(prob["constr_LV_8axle_horiz"][0])
+        print(prob["constr_LV_8axle_horiz"][1])
 
         self.assertAlmostEqual(prob["constr_LV_4axle_horiz"][0], 2.205225587616127, places=1)
         self.assertAlmostEqual(prob["constr_LV_4axle_horiz"][1], 2.5000819086864334, places=1)

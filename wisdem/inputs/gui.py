@@ -1,64 +1,54 @@
-from typing import Dict, Any, List, Union
-import yaml
-import sys, traceback
+import os
 import re
-from pathlib import Path
+from typing import Any, Dict, List, Union
 
-from PySide2.QtWidgets import (  # type: ignore
-    QHBoxLayout,
-    QVBoxLayout,
-    QLineEdit,
-    QPushButton,
-    QLabel,
-    QFormLayout,
-    QTabWidget,
-    QWidget,
-    QMainWindow,
-    QFileDialog,
-    QApplication,
-    QMessageBox,
-)
+import dearpygui.dearpygui as dpg
 
+import wisdem.inputs.validation as val
 from wisdem.glue_code.runWISDEM import run_wisdem
 
 
-class FocusQLineEdit(QLineEdit):
+def _hsv_to_rgb(h, s, v):
+    if s == 0.0:
+        return (v, v, v)
+    i = int(h * 6.0)  # XXX assume int() truncates!
+    f = (h * 6.0) - i
+    p, q, t = v * (1.0 - s), v * (1.0 - s * f), v * (1.0 - s * (1.0 - f))
+    i %= 6
+    if i == 0:
+        return (255 * v, 255 * t, 255 * p)
+    if i == 1:
+        return (255 * q, 255 * v, 255 * p)
+    if i == 2:
+        return (255 * p, 255 * v, 255 * t)
+    if i == 3:
+        return (255 * p, 255 * q, 255 * v)
+    if i == 4:
+        return (255 * t, 255 * p, 255 * v)
+    if i == 5:
+        return (255 * v, 255 * p, 255 * q)
+
+
+class DPGLineEdit(object):
     """
-    FocusQLineEdit subclasses QLineEdit to add the following functionality:
+    Introduces a value edit on a line for the yaml dictionary leafs.  Updates referenced dictionary on callback.
 
-    - Observing focus loss events and, when focus is lost
-
-    - Updating a value in given dictionary and key based on the input
-      in this text field.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, dictionary: Union[List[Any], Dict[str, Any]], key: str, value: Any, parent_tag: str) -> None:
         """
         The instance attributes for this class are:
 
-        _dictionary: Dict[str, Any]
+        _mydict: Dict[str, Any]
             The dictionary to be changed when this text field is changed.
 
-        _key_on_dictionary: str
+        _mykey: str
             The key on the dictionary to be changed when this text field
             changes.
 
         _list_re: re.Pattern
             The regex that matches a string that contains a list, so that
             it does not need to be instantiated each time it is used.
-
-        These attributes default to None. If either one of them is None, no
-        attempt will be made to change the dictionary.
-        """
-        self._dictionary = None
-        self._key_on_dictionary = None
-        self._list_re = re.compile(r"^\[.*\]$")
-        super(FocusQLineEdit, self).__init__(*args, *kwargs)
-
-    def set_dictionary_and_key(self, dictionary: Union[List[Any], Dict[str, Any]], key: str) -> None:
-        """
-        This method sets the dictionary and key to be modified when the focus
-        changes out of this widget
 
         Parameters
         ----------
@@ -68,32 +58,55 @@ class FocusQLineEdit(QLineEdit):
         key: str
             The key whose value is to be changed on the dictionary.
         """
-        self._dictionary = dictionary
-        self._key_on_dictionary = key
+        self._mydict = dictionary
+        self._mykey = key
+        self._list_re = re.compile(r"^\[.*\]$")
 
-    def focusOutEvent(self, arg__1) -> None:
-        """
-        Overrides focusOutEvent() in the base class (the base class's method is
-        called before anything in this method executes, though).
+        if self.is_list(str(value)):
+            dpg.add_input_text(label=key, default_value=str(list(value)), callback=self.mycallback, parent=parent_tag)
 
-        The purpose of this override is to observe focus out events. When this
-        control looses focus, it updates the underlying specified in the
-        instance attributes.
+        elif self.is_float(value):
+            dpg.add_input_float(
+                label=key, default_value=float(value), width=200, callback=self.mycallback, parent=parent_tag
+            )
+
+        elif self.is_boolean(value):
+            dpg.add_input_text(
+                label=key, default_value=str(bool(value)), width=150, callback=self.mycallback, parent=parent_tag
+            )
+
+        elif self.is_integer(value):
+            # (have to list after is_boolean otherwise T/F becomes 1/0)
+            dpg.add_input_int(
+                label=key, default_value=int(value), width=200, callback=self.mycallback, parent=parent_tag
+            )
+
+        else:
+            dpg.add_input_text(
+                label=key, default_value=str(value), width=300, callback=self.mycallback, parent=parent_tag
+            )
+
+    def mycallback(self, sender, app_data) -> None:
         """
-        super(FocusQLineEdit, self).focusOutEvent(arg__1)
-        if self._dictionary is not None and self._key_on_dictionary is not None:
-            if self.is_list(self.text()):
-                value = self.parse_list()
-            elif self.is_float(self.text()):
-                value = float(self.text())  # type: ignore
-            elif self.is_boolean(self.text()):
-                value = self.parse_boolean(self.text())  # type: ignore
+        Callback on line item entry to update referenced dictionary
+        """
+        if self._mydict is not None and self._mykey is not None:
+            if self.is_list(str(app_data)):
+                value = self.parse_list(app_data)
+
+            elif self.is_float(app_data):
+                value = float(app_data)
+
+            elif self.is_integer(app_data):
+                value = int(app_data)
+
+            elif self.is_boolean(app_data):
+                value = self.parse_boolean(app_data)
+
             else:
-                value = self.text()  # type: ignore
-            self._dictionary[self._key_on_dictionary] = value
-            # print("New level dictionary", self._dictionary)
-        # else:
-        #     print("Focus lost, but dictionary and key are not set.")
+                value = str(app_data)
+
+            self._mydict[self._mykey] = value
 
     def parse_list(self) -> List[Union[str, float]]:
         """
@@ -133,10 +146,8 @@ class FocusQLineEdit(QLineEdit):
         bool
             The value, parsed as a boolean.
         """
-        if value == "True" or value == "true":
-            return True
-        else:
-            return False
+
+        return True if str(value).lower() == "true" else False
 
     @staticmethod
     def is_float(value: Any) -> bool:
@@ -221,59 +232,41 @@ class FocusQLineEdit(QLineEdit):
         bool
             True if the string represents a boolean, false otherwise.
         """
-        return value == "True" or value == "False" or value == "true" or value == "false"
+        return str(value).lower() in ["true", "false"]
 
 
-class FormAndMenuWindow(QMainWindow):
-    """
-    This class creates a form to edit a dictionary. It nests tabs for different
-    levels of the nesting within the dictionaries.
+class GUI_Master(object):
+    def __init__(self):
+        self._input_mode = True
 
-    This automatically builds an interface from the dictionary.
-    """
+        self.working_dir = os.path.expanduser("~")
+        self.froot_export = "gui_export"
 
-    def __init__(self, parent=None):
+        self.geometry_dict = {}
+        self.modeling_dict = {}
+        self.analysis_dict = {}
+
+    def _on_demo_close(self):
+        pass
+
+    def _get_file_names(self):
+        fname_geom = f"{self.froot_export}_geometry.yaml"
+        fname_model = f"{self.froot_export}_modeling.yaml"
+        fname_anal = f"{self.froot_export}_analysis.yaml"
+        return fname_geom, fname_model, fname_anal
+
+    def _write_files(self):
         """
-        Parameters
-        ----------
-        dict_to_edit: Dict[str, Any]
-            The dictionary to edit in this form.
-
-        output_filename: str
-            The filename to write the dictionary when the save button is clicked.
-
-        parent
-            The parent as needed by the base class.
+        The "Run WEIS" click event handler calls this method when it is ready
+        to make an attempt to run WEIS. It checks to see if all file shave been
+        edited
         """
-        super(FormAndMenuWindow, self).__init__(parent)
-        self.analysis_yaml_editor_widget = None
-        self.modeling_yaml_widget = None
-        self.geometry_yaml_widget = None
-        self.geometry_filename_line_edit = None
-        self.modeling_filename_line_edit = None
-        self.analysis_filename_line_edit = None
-        self.geometry_dict = None
-        self.analysis_dict = None
-        self.modeling_dict = None
-        self.geometry_filename = None
-        self.analysis_filename = None
-        self.modeling_filename = None
-        self.main_widget = None
-        self.status_widget = None
-        self.status_label = None
+        fname_geom, fname_model, fname_anal = self._get_file_names()
+        val.write_yaml(self.geometry_dict, fname_geom)
+        val.write_yaml(self.modeling_dict, fname_model)
+        val.write_yaml(self.analysis_dict, fname_anal)
 
-    def setup(self) -> None:
-        """
-        After this class is instantiated, this method should be called to
-        lay out the user interface.
-        """
-        self.setWindowTitle("YAML GUI")
-        # self.setup_menu_bar()
-
-        central_widget = self.create_central_widget()
-        self.setCentralWidget(central_widget)
-
-    def recursion_ui_setup(self, dict_or_list: Union[List[Any], Dict[str, Any]]) -> QFormLayout:
+    def _recursion_dict_display(self, dict_or_list, parent_tag=""):
         """
         This recursive method is where the automatic layout magic happens.
         This method calls itself recursively as it descends down the dictionary
@@ -289,319 +282,208 @@ class FormAndMenuWindow(QMainWindow):
         dict_or_list: Dict[str, Any]
             The dictionary to automatically lay out in to the interface.
         """
-        form_level_layout = QFormLayout()
-        dict_tabs = QTabWidget()
-        display_tabs = False
         subscripts_values = dict_or_list.items() if type(dict_or_list) is dict else enumerate(dict_or_list)  # type: ignore
+
         for k, v in subscripts_values:
+            # Create the unique tag for this item
+            itag = dpg.generate_uuid()
 
             # Recursive call for nested dictionaries within dictionaries.
             if type(v) is dict:
-                display_tabs = True
-                child_widget = QWidget()
-                child_layout = self.recursion_ui_setup(v)
-                child_widget.setLayout(child_layout)
-                dict_tabs.addTab(child_widget, str(k))
+                dpg.add_tree_node(label=k, tag=itag, parent=parent_tag)
+                self._recursion_dict_display(v, parent_tag=itag)
 
             # Recursive call for nested dictionaries within lists.
-            elif type(v) is list and type(v[0]) is dict:
-                display_tabs = True
-                child_widget = QWidget()
-                child_layout = self.recursion_ui_setup(v)
-                child_widget.setLayout(child_layout)
-                dict_tabs.addTab(child_widget, str(k))
+            elif type(v) is list and len(v) > 0 and type(v[0]) is dict:
+                dpg.add_tree_node(label=k, tag=itag, parent=parent_tag, bullet=True)
+                self._recursion_dict_display(v, parent_tag=itag)
 
             # Otherwise just lay out a label and text field.
             else:
-                line_edit = FocusQLineEdit(str(v))
-                line_edit.setMinimumWidth(150)
-                line_edit.set_dictionary_and_key(dict_or_list, k)
-                form_level_layout.addRow(QLabel(k), line_edit)
+                DPGLineEdit(dict_or_list, k, v, parent_tag)
 
-        # If there is a nested dictionary, display it.
-        if display_tabs:
-            form_level_layout.addRow(dict_tabs)
+    def _run_program(self):
+        with dpg.window(modal=True, no_close=True, popup=True, show=True, autosize=True, tag="run_popup"):
+            dpg.add_text("Running WISDEM in terminal or console window")
 
-        # Return the whole layout
-        return form_level_layout
+            current_dir = os.getcwd()
+            os.chdir(self.working_dir)
 
-    def write_dict_to_yaml(self) -> None:
-        """
-        This is the event handler for the save button. It simply writes the
-        dictionary (which has been continuously updated during focus out
-        events) to a YAML file as specified in self.output_filename.
-        """
-        with open(self.output_filename, "w") as file:
-            yaml.dump(self.dict_to_edit, file)
+            fname_geom, fname_model, fname_anal = self._get_file_names()
+            self._write_files()
+            run_wisdem(fname_geom, fname_model, fname_anal)
 
-    def create_central_widget(self) -> QWidget:
-        """
-        Returns
-        -------
-        QWidget
-            The form with buttons on it.
-        """
-        status_and_main_widget = QWidget()
-        status_and_main_widget_layout = QVBoxLayout()
+            os.chdir(current_dir)
 
-        self.status_widget = QWidget()
-        status_form_layout = QFormLayout()
-        status_label = QLabel("Status:")
-        self.status_label = QLabel()
-        self.status_label.setText("Please create simulation configurations.")
-        status_form_layout.addRow(status_label, self.status_label)
-        self.status_widget.setLayout(status_form_layout)
+        dpg.configure_item("run_popup", show=False)
 
-        self.main_widget = QWidget()
-        subsection_width = 500
-        subsection_height = 900
+    def _export_root(self, sender, app_data):
+        self.froot_export = app_data
 
-        geometry_section_label = QLabel("Geometry")
-        geometry_section_label.setStyleSheet("font-weight: bold;")
-        geometry_filename_button = QPushButton("Select geometry YAML...")
-        # geometry_visualize_button = QPushButton("Visualize geometry")
-        self.geometry_filename_line_edit = QLineEdit()
-        self.geometry_filename_line_edit.setPlaceholderText("Please select a geometry file.")
-        self.geometry_filename_line_edit.setFixedWidth(200)
-        self.geometry_filename_line_edit.setReadOnly(True)
-        geometry_filename_button.clicked.connect(self.file_picker_geometry)
-
-        modeling_section_label = QLabel("Modeling")
-        modeling_section_label.setStyleSheet("font-weight: bold;")
-        modeling_filename_button = QPushButton("Select modeling YAML...")
-        self.modeling_filename_line_edit = QLineEdit()
-        self.modeling_filename_line_edit.setPlaceholderText("Please select a modeling file.")
-        self.modeling_filename_line_edit.setFixedWidth(200)
-        self.modeling_filename_line_edit.setReadOnly(True)
-        modeling_filename_button.clicked.connect(self.file_picker_modeling)
-
-        analysis_section_label = QLabel("Analysis")
-        analysis_section_label.setStyleSheet("font-weight: bold;")
-        analysis_filename_button = QPushButton("Select analysis YAML...")
-        self.analysis_filename_line_edit = QLineEdit()
-        self.analysis_filename_line_edit.setPlaceholderText("Please select an analysis file...")
-        self.analysis_filename_line_edit.setFixedWidth(200)
-        self.analysis_filename_line_edit.setReadOnly(True)
-        analysis_filename_button.clicked.connect(self.file_picker_analysis)
-
-        run_weis_button = QPushButton("Run WISDEM")
-        run_weis_button.clicked.connect(self.run_weis_clicked)
-
-        self.modeling_yaml_widget = QWidget()
-        self.analysis_yaml_editor_widget = QWidget()
-        self.geometry_yaml_widget = QWidget()
-
-        geometry_layout = QFormLayout()
-        geometry_layout.addRow(geometry_section_label)
-        geometry_layout.addRow(self.geometry_filename_line_edit, geometry_filename_button)
-        # geometry_layout.addRow(geometry_visualize_button)
-        geometry_layout.addRow(self.geometry_yaml_widget)
-        geometry_widget = QWidget()
-        geometry_widget.setFixedWidth(subsection_width)
-        geometry_widget.setFixedHeight(subsection_height)
-        geometry_widget.setLayout(geometry_layout)
-
-        modeling_layout = QFormLayout()
-        modeling_layout.addRow(modeling_section_label)
-        modeling_layout.addRow(self.modeling_filename_line_edit, modeling_filename_button)
-        modeling_layout.addRow(self.modeling_yaml_widget)
-        modeling_widget = QWidget()
-        modeling_widget.setFixedWidth(subsection_width)
-        modeling_widget.setFixedHeight(subsection_height)
-        modeling_widget.setLayout(modeling_layout)
-
-        analysis_layout = QFormLayout()
-        analysis_layout.addRow(analysis_section_label)
-        analysis_layout.addRow(self.analysis_filename_line_edit, analysis_filename_button)
-        analysis_layout.addRow(self.analysis_yaml_editor_widget)
-        analysis_widget = QWidget()
-        analysis_widget.setFixedWidth(subsection_width)
-        analysis_widget.setFixedHeight(subsection_height)
-        analysis_widget.setLayout(analysis_layout)
-
-        main_layout = QHBoxLayout()
-        main_layout.addWidget(geometry_widget)
-        main_layout.addWidget(modeling_widget)
-        main_layout.addWidget(analysis_widget)
-        main_layout.addWidget(run_weis_button)
-
-        self.main_widget.setLayout(main_layout)
-        # return self.main_widget
-
-        status_and_main_widget_layout.addWidget(self.status_widget)
-        status_and_main_widget_layout.addWidget(self.main_widget)
-        status_and_main_widget.setLayout(status_and_main_widget_layout)
-
-        return status_and_main_widget
-
-    def run_weis_clicked(self):
-        """
-        When the "Run WEIS" button is clicked, a popup dialog
-        will pop up asking what the user wants to do. If the user
-        has skipped any configuration files, then it will tell them
-        to go back and create those configuration files. If the user
-        has specified all the configuration files, then it will prompt
-        the user for confirmation before saving the WEIS configuration
-        files.
-        """
-        if self.geometry_filename is None:
-            msg = QMessageBox()
-            msg.setText("Run WISDEM: Missing file")
-            msg.setInformativeText("You did not specify a geometry file.")
-            msg.addButton(QMessageBox.Cancel)
-            msg.exec()
-        elif self.modeling_filename is None:
-            msg = QMessageBox()
-            msg.setText("Run WISDEM: Missing file")
-            msg.setInformativeText("You did not specify a modeling file.")
-            msg.addButton(QMessageBox.Cancel)
-            msg.exec()
-        elif self.analysis_filename is None:
-            msg = QMessageBox()
-            msg.setText("Run WISDEM: Missing file")
-            msg.setInformativeText("You did not specify an analysis file.")
-            msg.addButton(QMessageBox.Cancel)
-            msg.exec()
+    def _mode_set(self):
+        if dpg.get_value("mode_dropdown") == "Input Editor":
+            self._input_mode = True
+        elif dpg.get_value("mode_dropdown") == "Output Viewer":
+            self._input_mode = False
         else:
-            self.status_label.setText("Writing files...")
-            self.write_configuration_files()
-            self.status_label.setText("Configuration files written.")
-            msg = QMessageBox()
-            msg.setText("Run WISDEM: Configuration files complete!")
-            msg.setInformativeText("Click cancel to back out and continue editing. Click OK to run WISDEM.")
-            msg.addButton(QMessageBox.Cancel)
-            msg.addButton(QMessageBox.Ok)
-            choice = msg.exec()
-            if choice == QMessageBox.Ok:
-                self.disable_ui_and_execute_wisdem()
+            print(dpg.get_value("mode_dropdown"), self._input_mode)
+            raise ValueError("Shouldn't get here")
 
-    def write_configuration_files(self):
-        """
-        The "Run WEIS" click event handler calls this method when it is ready
-        to make an attempt to run WEIS. It checks to see if all file shave been
-        edited
-        """
-        if self.geometry_filename is not None:
-            print(f"Writing geometry: {self.geometry_filename}")
-            with open(self.geometry_filename, "w") as file:
-                yaml.dump(self.geometry_dict, file)
-        else:
-            print("No geometry file to write")
+    def _set_workdir(self, sender, app_data):
+        if not app_data is None:
+            self.working_dir = app_data["current_path"].strip()
+        dpg.configure_item("workdir_field", default_value=f"Working directory: {self.working_dir}")
 
-        if self.analysis_filename is not None:
-            print(f"Writing analysis: {self.analysis_filename}")
-            with open(self.analysis_filename, "w") as file:
-                yaml.dump(self.analysis_dict, file)
-        else:
-            print("No analysis file to write")
+    def _choose_workdir(self):
+        dpg.add_file_dialog(
+            label="Working Directory Selector",
+            directory_selector=True,
+            show=True,
+            width=500,
+            height=400,
+            callback=self._set_workdir,
+        )
 
-        if self.modeling_filename is not None:
-            print(f"Writing modeling: {self.modeling_filename}")
-            with open(self.modeling_filename, "w") as file:
-                yaml.dump(self.modeling_dict, file)
-        else:
-            print("No modeling file to write")
+    def _set_file_field(self, sender, app_data, user_data):
+        if not app_data is None:
+            fpath = app_data["file_path_name"].strip()
 
-    def disable_ui_and_execute_wisdem(self):
-        """
-        This method disables all widgets on the UI and executes WISDEM. It
-        displays message boxes depending on whether WISDEM executed
-        successfully.
-        """
-        self.main_widget.setEnabled(False)
-        self.status_label.setText("Running WISDEM")
+            if user_data.lower().find("geometry") >= 0:
+                self.geometry_dict = val.load_geometry_yaml(fpath)
+                mydict = self.geometry_dict
+                id_root = "geometry"
 
-        try:
-            wt_opt, modeling_options, analysis_options = run_wisdem(
-                self.geometry_filename, self.modeling_filename, self.analysis_filename
+            elif user_data.lower().find("modeling") >= 0:
+                self.modeling_dict = val.load_modeling_yaml(fpath)
+                mydict = self.modeling_dict
+                id_root = "modeling"
+
+            elif user_data.lower().find("analysis") >= 0:
+                self.analysis_dict = val.load_analysis_yaml(fpath)
+                mydict = self.analysis_dict
+                id_root = "analysis"
+
+        # Delete the old nested yaml file and add the new one
+        obj_id = id_root + "_context"  # user_data.replace("field", "context")
+        dpg.delete_item(obj_id, children_only=True)
+        self._recursion_dict_display(mydict, parent_tag=obj_id)
+
+    def _choose_file(self, sender, app_data, user_data):
+        with dpg.file_dialog(
+            label="YAML File Selector",
+            directory_selector=False,
+            show=True,
+            width=500,
+            height=400,
+            user_data=user_data,
+            callback=self._set_file_field,
+        ):
+            dpg.add_file_extension("YAML Files (*.yml *.yaml){.yml,.yaml}", color=(0, 255, 255, 255))
+            dpg.add_file_extension(".*", color=(255, 255, 255, 255))
+
+    def show_gui(self):
+        def _log(sender, app_data, user_data):
+            print(f"sender: {sender}, \t app_data: {app_data}, \t user_data: {user_data}")
+
+        # Make buttons stand out a big more
+        with dpg.theme(tag="button_theme"):
+            with dpg.theme_component(dpg.mvButton):
+                dpg.add_theme_color(dpg.mvThemeCol_Button, _hsv_to_rgb(3.0 / 7.0, 0.6, 0.6))
+                dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, _hsv_to_rgb(3.0 / 7.0, 0.8, 0.8))
+                dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, _hsv_to_rgb(3.0 / 7.0, 0.7, 0.7))
+                dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 5)
+                dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 3, 3)
+
+        with dpg.window(width=1200, height=1000, on_close=self._on_demo_close, pos=(0, 0), no_title_bar=True):
+
+            with dpg.menu_bar():
+
+                # with dpg.menu(label="Mode"):
+
+                #    dpg.add_combo( ("Input Editor", "Output Viewer"), width=140, default_value="Input Editor",
+                #                   label="Mode", tag="mode_dropdown", callback=self._mode_set)
+
+                with dpg.menu(label="Files"):
+
+                    dpg.add_menu_item(label="Set Working Diretory...", callback=self._choose_workdir)
+
+                    with dpg.menu(label="Import"):
+
+                        dpg.add_menu_item(label="Geometry YAML", user_data="geometry", callback=self._choose_file)
+                        dpg.add_menu_item(label="Modeling YAML", user_data="modeling", callback=self._choose_file)
+                        dpg.add_menu_item(label="Analysis YAML", user_data="analysis", callback=self._choose_file)
+                        # dpg.add_menu_item(label="Output NPZ")
+
+                    dpg.add_menu_item(label="Export Input Files...")
+
+                with dpg.menu(label="Run"):
+
+                    dpg.add_menu_item(label="Run WISDEM/WEIS...", callback=self._run_program)
+
+            # Display and/or change working directory
+            with dpg.group(horizontal=True):
+                dpg.add_text("Temp", tag="workdir_field")
+                dpg.add_button(label="Change", callback=self._choose_workdir)
+                dpg.bind_item_theme(dpg.last_item(), "button_theme")
+
+            dpg.add_input_text(
+                label="Export Prefix",
+                default_value=self.froot_export,
+                width=300,
+                callback=self._export_root,
+                tag="export_field",
             )
-        except Exception as err:
-            short_error_message = f"{type(err)}: {err}. More details on command line."
-            traceback.print_exc(file=sys.stdout)
-            self.status_label.setText("Execution error")
-            msg = QMessageBox()
-            msg.setText("WISDEM execution error")
-            msg.setInformativeText(short_error_message)
-            msg.addButton(QMessageBox.Ok)
-            msg.exec()
-            self.main_widget.setEnabled(True)
-        else:
-            self.status_label.setText("Execution success")
-            msg = QMessageBox()
-            msg.setText("WISDEM executed successfully")
-            msg.addButton(QMessageBox.Ok)
-            msg.exec()
-            self.main_widget.setEnabled(True)
+            dpg.add_text("")
+            dpg.add_text("WISDEM/WEIS YAML-Based Input Files:", color=(255, 255, 0))
 
-    def file_picker_geometry(self):
-        """
-        Shows the open file dialog for the geometry file.
+            with dpg.tab_bar():
 
-        Returns
-        -------
-        None
-            Returns nothing for now.
-        """
-        dialog = QFileDialog(self)
-        dialog.setFileMode(QFileDialog.ExistingFile)
-        dialog.setViewMode(QFileDialog.Detail)
-        self.geometry_filename, _ = dialog.getOpenFileName(None, "Open File", str(Path.home()), "YAML (*.yml *.yaml)")
-        self.geometry_filename_line_edit.setText(self.geometry_filename)
-        self.geometry_dict = self.read_yaml_to_dictionary(self.geometry_filename)
-        layout = self.recursion_ui_setup(self.geometry_dict)
-        self.geometry_yaml_widget.setLayout(layout)
+                with dpg.tab(label="Geometry"):
+                    dpg.add_button(label="Import YAML File", user_data="geometry", callback=self._choose_file)
+                    dpg.bind_item_theme(dpg.last_item(), "button_theme")
+                    dpg.add_text("")
+                    dpg.add_collapsing_header(label="WindIO Geometry", tag="geometry_context")
 
-    def file_picker_modeling(self):
-        """
-        Shows the open dialog
+                with dpg.tab(label="Modeling"):
+                    dpg.add_button(label="Import YAML File", user_data="modeling", callback=self._choose_file)
+                    dpg.bind_item_theme(dpg.last_item(), "button_theme")
+                    dpg.add_text("")
+                    dpg.add_collapsing_header(label="WISDEM/WEIS Modeling", tag="modeling_context")
 
-        Returns
-        -------
-        None
-            Returns nothing for now.
-        """
-        dialog = QFileDialog(self)
-        dialog.setFileMode(QFileDialog.ExistingFile)
-        dialog.setViewMode(QFileDialog.Detail)
-        self.modeling_filename, _ = dialog.getOpenFileName(None, "Open File", str(Path.home()), "YAML (*.yml *.yaml)")
-        self.modeling_filename_line_edit.setText(self.modeling_filename)
-        self.modeling_dict = self.read_yaml_to_dictionary(self.modeling_filename)
-        layout = self.recursion_ui_setup(self.modeling_dict)
-        self.modeling_yaml_widget.setLayout(layout)
+                with dpg.tab(label="Analysis"):
+                    dpg.add_button(label="Import YAML File", user_data="analysis", callback=self._choose_file)
+                    dpg.bind_item_theme(dpg.last_item(), "button_theme")
+                    dpg.add_text("")
+                    dpg.add_collapsing_header(label="WISDEM/WEIS Analysis", tag="analysis_context")
 
-    def file_picker_analysis(self) -> None:
-        """
-        Shows the open dialog for the analysis YAML
+        # Do init steps
+        temp_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
+            "examples",
+            "02_reference_turbines",
+        )
+        temp_geom = os.path.join(temp_dir, "IEA-15-240-RWT.yaml")
+        temp_model = os.path.join(temp_dir, "modeling_options.yaml")
+        temp_anal = os.path.join(temp_dir, "analysis_options.yaml")
 
-        Returns
-        -------
-        None
-        """
-        dialog = QFileDialog(self)
-        dialog.setFileMode(QFileDialog.ExistingFile)
-        dialog.setViewMode(QFileDialog.Detail)
-        self.analysis_filename, _ = dialog.getOpenFileName(None, "Open File", str(Path.home()), "YAML (*.yml *.yaml)")
-        self.analysis_filename_line_edit.setText(self.analysis_filename)
-        self.analysis_dict = self.read_yaml_to_dictionary(self.analysis_filename)
-        layout = self.recursion_ui_setup(self.analysis_dict)
-        self.analysis_yaml_editor_widget.setLayout(layout)
-
-    @staticmethod
-    def read_yaml_to_dictionary(input_filename: str) -> Dict[str, Any]:
-        """
-        This reads the YAML input which is used to build the user interface.
-        """
-        with open(input_filename) as file:
-            result = yaml.load(file, Loader=yaml.FullLoader)
-        return result
+        self._set_workdir(None, None)
+        self._set_file_field(None, {"file_path_name": temp_geom}, "geometry_field")
+        self._set_file_field(None, {"file_path_name": temp_model}, "modeling_field")
+        self._set_file_field(None, {"file_path_name": temp_anal}, "analysis_field")
 
 
 def run():
-    # Create the Qt Application
-    app = QApplication(sys.argv)
-    # Create and show the form
-    form = FormAndMenuWindow()
-    form.setup()
-    form.show()
-    # Run the main Qt loop
-    sys.exit(app.exec_())
+    dpg.create_context()
+    dpg.create_viewport(title="NREL's WISDEM/WEIS Input/Output GUI", width=600, height=600)
+
+    mygui = GUI_Master()
+    mygui.show_gui()
+
+    dpg.setup_dearpygui()
+    dpg.show_viewport()
+    dpg.start_dearpygui()
+    dpg.destroy_context()
+
+
+if __name__ == "__main__":
+    run()

@@ -1,11 +1,16 @@
-import numpy as np
 import os
 import sys
-from wisdem.glue_code.runWISDEM import run_wisdem
+
+# Numpy deprecation warnings
+import warnings
+
+import numpy as np
+
 from wisdem.inputs import load_yaml
 from wisdem.inputs.gui import run as guirun
+from wisdem.glue_code.runWISDEM import run_wisdem
 
-np.warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
 
 
 def read_master_file(fyaml):

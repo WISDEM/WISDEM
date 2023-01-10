@@ -5,6 +5,7 @@ import traceback
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
+
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
 
 npts = 12
@@ -87,7 +88,7 @@ class TestGroup(unittest.TestCase):
         opt["flags"] = {}
         opt["flags"]["generator"] = True
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = DrivetrainSE(modeling_options=opt)
         prob.setup()
         prob = set_common(prob, opt)
@@ -189,7 +190,7 @@ class TestGroup(unittest.TestCase):
         opt["flags"] = {}
         opt["flags"]["generator"] = False
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = DrivetrainSE(modeling_options=opt)
         prob.setup()
         prob = set_common(prob, opt)
@@ -259,7 +260,7 @@ class TestGroup(unittest.TestCase):
         opt["flags"] = {}
         opt["flags"]["generator"] = True
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = DrivetrainSE(modeling_options=opt)
         prob.setup()
         prob = set_common(prob, opt)
@@ -385,7 +386,7 @@ class TestGroup(unittest.TestCase):
         opt["materials"] = {}
         opt["materials"]["n_mat"] = 1
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = DrivetrainSE(modeling_options=opt)
         prob.setup()
         prob = set_common(prob, opt)

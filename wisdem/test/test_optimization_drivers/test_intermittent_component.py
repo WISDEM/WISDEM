@@ -63,7 +63,7 @@ class Rosenbrock2(IntermittentComponent):
 
 class TestIntermittentComponent(unittest.TestCase):
     def test_run(self):
-        prob = om.Problem(model=om.Group(num_par_fd=num_procs))
+        prob = om.Problem(reports=False, model=om.Group(num_par_fd=num_procs))
         prob.model.approx_totals(method="fd")
         indeps = prob.model.add_subsystem("indeps", om.IndepVarComp(), promotes=["*"])
         indeps.add_output("x", 1.2 * np.ones(rosenbrock_size))

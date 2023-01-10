@@ -220,6 +220,7 @@ class System:
 
         self.pointList.append(Point(self, len(self.pointList) + 1, mytype, r, m=m, v=v, fExt=fExt, DOFs=DOFs, d=d))
 
+        return len(self.pointList)  # return the index of the added point
         # print("Created Point "+str(self.pointList[-1].number))
         # handle display message if/when MoorPy is reorganized by classes
 
@@ -290,7 +291,7 @@ class System:
 
     """
 
-    def addLineType(self, type_string, d, mass, EA):
+    def addLineType(self, type_string, d, mass, EA, name=""):
         """Convenience function to add a LineType to a mooring system or adjust
         the values of an existing line type if it has the same name/key.
 
@@ -310,11 +311,13 @@ class System:
         None.
 
         """
+        if len(name) == 0:
+            name = type_string + str(d)
 
         w = (mass - np.pi / 4 * d**2 * self.rho) * self.g
 
         lineType = dict(
-            name=type_string + str(d), d_vol=d, w=w, m=mass, EA=EA, material=type_string
+            name=name, d_vol=d, w=w, m=mass, EA=EA, material=type_string
         )  # make dictionary for this line type
 
         lineType["material"] = "unspecified"  # fill this in so it's available later
@@ -337,7 +340,7 @@ class System:
             string identifier of the material type be used.
         source : dict or filename (optional)
             YAML file name or dictionary containing line property scaling coefficients
-        name : any dict index (optional)
+        name : string (optional)
             Identifier for the line type (otherwise will be generated automatically).
 
         Returns
@@ -450,14 +453,43 @@ class System:
                         mass = float(entries[2])
                         w = (mass - np.pi / 4 * d**2 * self.rho) * self.g
                         lineType = dict(name=type_string, d_vol=d, w=w, m=mass)  # make dictionary for this rod type
-                        try:
-                            lineType["EA"] = float(
-                                entries[3].split("|")[0]
-                            )  # get EA, and only take first value if multiples are given
-                        except:
-                            lineType["EA"] = 1e9
-                            print("EA entry not recognized - using placeholder value of 1000 MN")
 
+                        # support linear (EA) or nonlinear (filename string) option for elasticity
+                        # if there is a text file in the EA input
+                        if entries[3].find(".txt") != -1:
+                            # Then we read in ten-strain file
+                            ten_str_fname = entries[3]
+                            ten_str = open(ten_str_fname[1:-1], "r")
+
+                            # Read line in ten-strain file until we hit '---' signifying the end of the file
+                            for line in ten_str:
+                                # skip first 3 lines (Header for input file)
+                                line = next(ten_str)
+                                line = next(ten_str)
+                                line = next(ten_str)
+                                # Preallocate Arrays
+                                str_array = []
+                                ten_array = []
+                                # Loop through lines until you hit '---' signifying the end of the file
+                                while line.count("---") == 0:
+                                    ten_str_entries = line.split()  # split entries ten_str_entries: strain tension
+                                    str_array.append(ten_str_entries[0])  # First one is strain
+                                    ten_array.append(ten_str_entries[1])  # Second one is tension
+                                    line = next(ten_str)  # go to next line
+                            lineType[
+                                "Str"
+                            ] = str_array  # make new entry in the dictionary to carry tension and strain arrays
+                            lineType["Ten"] = ten_array
+
+                        else:
+
+                            try:
+                                lineType["EA"] = float(
+                                    entries[3].split("|")[0]
+                                )  # get EA, and only take first value if multiples are given
+                            except:
+                                lineType["EA"] = 1e9
+                                print("EA entry not recognized - using placeholder value of 1000 MN")
                         if (
                             len(entries) >= 10
                         ):  # read in other elasticity and hydro coefficients as well if enough columns are provided
@@ -947,7 +979,7 @@ class System:
 
         return bathGrid_Xs, bathGrid_Ys, bathGrid
 
-    def unload(self, fileName, MDversion=2, line_dL=0, rod_dL=0, flag="p"):
+    def unload(self, fileName, MDversion=2, line_dL=0, rod_dL=0, flag="p", outputList=[]):
         """Unloads a MoorPy system into a MoorDyn-style input file
 
         Parameters
@@ -958,6 +990,8 @@ class System:
             Optional specified for target segment length when discretizing Lines
         rod_dL : float, optional
             Optional specified for target segment length when discretizing Rods
+        outputList : list of strings, optional
+            Optional list of additional requested output channels
 
         Returns
         -------
@@ -1027,18 +1061,11 @@ class System:
             for key, lineType in self.lineTypes.items():
                 di = lineTypeDefaults.copy()  # start with a new dictionary of just the defaults
                 di.update(lineType)  # then copy in the lineType's existing values
+                # L.append("{:<12} {:7.4f} {:8.2f}  {:7.3e} {:7.3e} {:7.3e}   {:<7.3f} {:<7.3f} {:<7.2f} {:<7.2f}".format(
+                # key, di['d_vol'], di['m'], di['EA'], di['cIntDamp'], di['EI'], di['Can'], di['Cat'], di['Cdn'], di['Cdt']))
                 L.append(
-                    "{:<12} {:7.4f} {:8.2f}  {:7.3e} {:7.3e} {:7.3e}   {:<7.3f} {:<7.3f} {:<7.2f} {:<7.2f}".format(
-                        key,
-                        di["d_vol"],
-                        di["m"],
-                        di["EA"],
-                        di["cIntDamp"],
-                        di["EI"],
-                        di["Can"],
-                        di["Cat"],
-                        di["Cdn"],
-                        di["Cdt"],
+                    "{:<12} {:7.4f} {:8.2f}  {:7.3e} {:7.3e}       {:<7.3f} {:<7.3f} {:<7.2f} {:<7.2f}".format(
+                        key, di["d_vol"], di["m"], di["EA"], di["BA"], di["Can"], di["Cat"], di["Cdn"], di["Cdt"]
                     )
                 )
 
@@ -1133,6 +1160,8 @@ class System:
 
             L.append("--------------------------- OUTPUTS --------------------------------------------")
 
+            Outputs = Outputs + outputList  # add any user-specified outputs passed to unload
+
             for Output in Outputs:
                 L.append(Output)
             # L.append("END")
@@ -1189,6 +1218,7 @@ class System:
             Outputs = [
                 f"FairTen{i+1}" for i in range(len(self.lineList))
             ]  # for now, have a fairlead tension output for each line
+            Outputs = Outputs + outputList  # add any user-specified outputs passed to unload
 
             print("attempting to write " + fileName + " for MoorDyn v" + str(MDversion))
             # Array to add strings to for each line of moordyn input file
@@ -1905,7 +1935,7 @@ class System:
 
         self.DOFtype_solve_for = DOFtype
         # create arrays for the initial positions of the objects that need to find equilibrium, and the max step sizes
-        X0, db = self.getPositions(DOFtype=DOFtype, dXvals=[30, 0.1])
+        X0, db = self.getPositions(DOFtype=DOFtype, dXvals=[30, 0.02])
 
         # temporary for backwards compatibility <<<<<<<<<<
         """
@@ -2879,7 +2909,10 @@ class System:
 
         # set bounds
         if rbound == 0:
-            rbound = max([max(xs), max(ys), -min(xs), -min(ys)])  # this is the most extreme coordinate
+            if len(xs) > 0:
+                rbound = max([max(xs), max(ys), -min(xs), -min(ys)])  # this is the most extreme coordinate
+            else:
+                rbound = self.depth
 
         # set the DATA bounds on the axis
         if bounds == "default":
@@ -2912,9 +2945,9 @@ class System:
             if len(self.rodList) == 0:  # usually, there are no rods in the rodList
                 pass
             else:
-                if self.qs == 0 and len(rod.Tdata) == 0:
-                    pass
-                elif isinstance(rod, Line):
+                # if self.qs==0 and len(rod.Tdata) == 0:
+                #    pass
+                if isinstance(rod, Line) and rod.show:
                     rod.drawLine(time, ax, color=color, shadow=shadow)
                 # if isinstance(rod, Point):  # zero-length special case
                 #    not plotting points for now
@@ -3447,6 +3480,8 @@ class System:
             Whether or not to repeat the animation. The default is True.
         delay : int, optional
             The time between consecutive animation runs in milliseconds. The default is 0.
+        runtime: int, optional
+            The desired time that the animation should run to in seconds. The default is -1, which means to run the full simulation
 
         Returns
         -------
@@ -3506,34 +3541,42 @@ class System:
             imooring.drawLine(0, ax)
         """
         # set figure x/y/z bounds
-        d = 1600  # can make this an input later
-        ax.set_xlim((-d, d))
-        ax.set_ylim((-d, d))
+        """
+        d = 1600                # can make this an input later
+        ax.set_xlim((-d,d))
+        ax.set_ylim((-d,d));
         ax.set_zlim((-self.depth, 300))
-        ax.set_xlabel("x")
-        ax.set_ylabel("y")
-        ax.set_zlabel("z")
+
 
         # make the axes scaling equal
         rangex = np.diff(ax.get_xlim3d())[0]
         rangey = np.diff(ax.get_ylim3d())[0]
         rangez = np.diff(ax.get_zlim3d())[0]
         ax.set_box_aspect([rangex, rangey, rangez])
-
+        """
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.set_zlabel("z")
         label = ax.text(-100, 100, 0, "time=0", ha="center", va="center", fontsize=10, color="k")
 
+        # find idyn, the index of the first line in the lineList that contains a series of Tdata
+        idyn = (
+            len(self.lineList) - 1
+        )  # note, the idyn approach is not robust to different Lines having output, or Rods. Should reconsider.
         for line in self.lineList:
             if len(line.Tdata) > 0:
                 idyn = line.number - 1
                 break
 
-        if runtime == -1:
+        if runtime == -1:  # if the full simulation is desired to be animated
             nFrames = len(self.lineList[idyn].Tdata)
-        else:
+        else:  # if only part of the simulation is to be animated, up to a certain runtime in seconds
             itime = int(np.where(self.lineList[idyn].Tdata == runtime)[0])
             nFrames = len(self.lineList[idyn].Tdata[0:itime])
 
-        dt = self.lineList[idyn].Tdata[1] - self.lineList[idyn].Tdata[0]
+        dt = (
+            self.lineList[idyn].Tdata[1] - self.lineList[idyn].Tdata[0]
+        )  # time step length (s) <<< should get this from main MoorDyn output file <<<
 
         # Animation: update the figure with the updated coordinates from update_Coords function
         # NOTE: the animation needs to be stored in a variable, return out of the method, and referenced when calling self.animatelines()

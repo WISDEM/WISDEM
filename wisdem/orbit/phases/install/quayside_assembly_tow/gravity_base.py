@@ -371,6 +371,7 @@ def install_gravity_base_foundations(vessel, queue, distance, substructures, sta
                 num_vessels=station_keeping_vessels,
             )
             yield queue.vessel.release.succeed()
+            vessel.submit_debug_log(progress="Substructure")
             n += 1
 
         else:

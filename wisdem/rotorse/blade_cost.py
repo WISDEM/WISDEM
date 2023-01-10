@@ -597,10 +597,10 @@ class blade_labor_ct(object):
         operation[5 + self.n_webs] = "Lp skin"
 
         # Set gating cycle time. If blades are longer than 30 m, use 24 hrs, if shorter, use 12 hr
-        if self.lp_skin_parameters["blade_length"] > 30.:
-            gating_time_target = 24.
+        if self.lp_skin_parameters["blade_length"] > 30.0:
+            gating_time_target = 24.0
         else:
-            gating_time_target = 12.
+            gating_time_target = 12.0
 
         def labor_ct_lp_skin(team_size):
             lp_skin = lphp_skin_labor(self.lp_skin_parameters, team_size)
@@ -616,7 +616,7 @@ class blade_labor_ct(object):
 
         def min_ct_lp_skin(team_size, gating_time_target):
             _, ct = labor_ct_lp_skin(team_size)
-            return ct - (gating_time_target-1.e-4 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
+            return ct - (gating_time_target - 1.0e-4 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
 
         try:
             team_size = brentq(lambda x: min_ct_lp_skin(x, gating_time_target), 0.01, 100.0, xtol=1e-4, disp=False)
@@ -646,7 +646,7 @@ class blade_labor_ct(object):
         def min_ct_hp_skin(team_size, gating_time_target):
             _, ct = labor_ct_hp_skin(team_size)
 
-            return ct - (gating_time_target-1.e-4 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
+            return ct - (gating_time_target - 1.0e-4 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
 
         try:
             team_size = brentq(lambda x: min_ct_hp_skin(x, gating_time_target), 0.01, 100.0, xtol=1e-4)
@@ -676,7 +676,12 @@ class blade_labor_ct(object):
         def min_ct_assembly(team_size, gating_time_target):
             _, ct = labor_ct_assembly(team_size)
 
-            return ct - (gating_time_target-1.e-4 - skin_mold_gating_ct[5 + self.n_webs] - skin_mold_gating_ct[8 + self.n_webs])
+            return ct - (
+                gating_time_target
+                - 1.0e-4
+                - skin_mold_gating_ct[5 + self.n_webs]
+                - skin_mold_gating_ct[8 + self.n_webs]
+            )
 
         try:
             team_size = brentq(lambda x: min_ct_assembly(x, gating_time_target), 0.01, 100.0, xtol=1e-4)
@@ -3539,12 +3544,12 @@ class BladeCost(om.ExplicitComponent):
                     layer_volume_span_interp_ss = np.interp(root_preform_length, s, layer_volume_span_ss[i_lay, :])
                     layer_volume_span_interp_ps = np.interp(root_preform_length, s, layer_volume_span_ps[i_lay, :])
                     add_volume_ss = np.trapz(
-                        [layer_volume_span_ss[i_lay, 0], layer_volume_span_interp_ss],
-                        [0, blade_length * root_preform_length],
+                        np.r_[layer_volume_span_ss[i_lay, 0], layer_volume_span_interp_ss],
+                        np.r_[0, blade_length * root_preform_length],
                     )
                     add_volume_ps = np.trapz(
-                        [layer_volume_span_ps[i_lay, 0], layer_volume_span_interp_ps],
-                        [0, blade_length * root_preform_length],
+                        np.r_[layer_volume_span_ps[i_lay, 0], layer_volume_span_interp_ps],
+                        np.r_[0, blade_length * root_preform_length],
                     )
                     volume_root_preform_ss += add_volume_ss
                     volume_root_preform_ps += add_volume_ps
@@ -3552,8 +3557,8 @@ class BladeCost(om.ExplicitComponent):
                     mass_root_preform_ps += add_volume_ps * rho_mat[i_mat]
                     width_ss_interp = np.interp(root_preform_length, s, width_ss)
                     width_ps_interp = np.interp(root_preform_length, s, width_ps)
-                    area_root_ss = np.trapz([width_ss[0], width_ss_interp], [0, blade_length * root_preform_length])
-                    area_root_ps = np.trapz([width_ps[0], width_ps_interp], [0, blade_length * root_preform_length])
+                    area_root_ss = np.trapz(np.r_[width_ss[0], width_ss_interp], np.r_[0, blade_length * root_preform_length])
+                    area_root_ps = np.trapz(np.r_[width_ps[0], width_ps_interp], np.r_[0, blade_length * root_preform_length])
 
                 # Fabric shear webs
                 if layer_web[i_lay] != 0:
@@ -3706,11 +3711,11 @@ class BladeCost(om.ExplicitComponent):
         spar_cap_ps_area = np.trapz(spar_cap_width_ps, blade_length * s)
         sect_perimeter_ss_interp = np.interp(root_preform_length, s, sect_perimeter_ss)
         ss_area_root = np.trapz(
-            [sect_perimeter_ss[0], sect_perimeter_ss_interp], [0, blade_length * root_preform_length]
+            np.r_[sect_perimeter_ss[0], sect_perimeter_ss_interp], np.r_[0, blade_length * root_preform_length]
         )
         sect_perimeter_ps_interp = np.interp(root_preform_length, s, sect_perimeter_ps)
         ps_area_root = np.trapz(
-            [sect_perimeter_ps[0], sect_perimeter_ps_interp], [0, blade_length * root_preform_length]
+            np.r_[sect_perimeter_ps[0], sect_perimeter_ps_interp], np.r_[0, blade_length * root_preform_length]
         )
         bom.blade_specs = {}
         bom.blade_specs["area_webs_w_flanges"] = web_area_w_flanges
@@ -4056,7 +4061,9 @@ if __name__ == "__main__":
     wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
     modeling_options["WISDEM"]["RotorSE"]["flag"] = False
-    wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
+    wt_opt = om.Problem(
+        model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options), reports=False
+    )
     wt_opt.setup(derivatives=False)
     myopt = PoseOptimization(wt_init, modeling_options, opt_options)
     wt_opt = myopt.set_initial(wt_opt, wt_init)

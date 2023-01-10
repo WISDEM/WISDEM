@@ -5,6 +5,7 @@ import unittest
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
+
 from wisdem.commonse import fileIO
 
 
@@ -46,7 +47,7 @@ class MyGroup(om.Group):
 
 class TestFileIO(unittest.TestCase):
     def setUp(self):
-        self.prob = om.Problem(model=MyGroup())
+        self.prob = om.Problem(reports=False, model=MyGroup())
         self.prob.setup()
         self.prob["float_in"] = 5.0
         self.prob.run_model()
