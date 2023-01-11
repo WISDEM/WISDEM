@@ -85,7 +85,7 @@ if __name__ == "__main__":
     staging_dir = "meson_build"
 
     # this keeps the meson build system from running more than once
-    if "dist" not in str(os.path.abspath(__file__)) and not os.path.isdir(staging_dir):
+    if "dist" not in str(os.path.abspath(__file__)):
         cwd = os.getcwd()
         run_meson_build(staging_dir)
         os.chdir(cwd)
