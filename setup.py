@@ -37,6 +37,7 @@ def run_meson_build(staging_dir):
     sysargs = [arg for arg in sysargs if arg != ""]
     print(sysargs)
     p1 = subprocess.run(sysargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    os.makedirs(staging_dir, exist_ok=True)
     setup_log = os.path.join(staging_dir, "setup.log")
     with open(setup_log, "wb") as f:
         f.write(p1.stdout)
@@ -133,7 +134,7 @@ if __name__ == "__main__":
             "testing": ["pytest"],
         },
         python_requires=">=3.8",
-        package_data={"": ["*.yaml", "*.xlsx"], "wisdem": ["*.txt"]},
+        package_data={"": ["*.yaml", "*.xlsx", "*.txt", "*.so", "*.lib", "*.pyd", "*.pdb", "*.dylib", "*.dll"]},
         # package_dir      = {'': 'wisdem'},
         packages=setuptools.find_packages(exclude=["docs", "tests", "ext"]),
         license="Apache License, Version 2.0",
