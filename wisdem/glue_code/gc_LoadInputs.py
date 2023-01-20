@@ -250,9 +250,16 @@ class WindTurbineOntologyPython(object):
 
         # Monopile
         if self.modeling_options["flags"]["monopile"]:
-            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = len(
-                self.wt_init["components"]["monopile"]["outer_shape_bem"]["outer_diameter"]["grid"]
+            monopile = self.wt_init["components"]["monopile"]
+            svec = np.unique(
+                np.r_[
+                    monopile["outer_shape_bem"]["outer_diameter"]["grid"],
+                    monopile["outer_shape_bem"]["reference_axis"]["x"]["grid"],
+                    monopile["outer_shape_bem"]["reference_axis"]["y"]["grid"],
+                    monopile["outer_shape_bem"]["reference_axis"]["z"]["grid"],
+                ]
             )
+            self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = len(svec)
             self.modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"] = len(
                 self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["layers"]
             )
