@@ -1049,7 +1049,7 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
             if idx == idx2:
                 wt_opt[f"floating.memgrp{idx}.outer_diameter_in"][:] = floating["members"][i]["outer_shape"][
                     "outer_diameter"
-                ]["values"][0]
+                ]["values"]
                 diameter_assigned = True
 
         if not diameter_assigned:
@@ -1058,6 +1058,10 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                 floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
                 floating["members"][i]["outer_shape"]["outer_diameter"]["values"],
             )
+
+        wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["internal_structure"][
+            "outfitting_factor"
+        ]
 
         wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["internal_structure"][
             "outfitting_factor"
