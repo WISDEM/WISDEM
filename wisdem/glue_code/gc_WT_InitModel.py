@@ -1063,10 +1063,6 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
             "outfitting_factor"
         ]
 
-        wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["internal_structure"][
-            "outfitting_factor"
-        ]
-
         istruct = floating["members"][i]["internal_structure"]
         if "bulkhead" in istruct:
             wt_opt[f"floating.memgrp{idx}.bulkhead_grid"] = istruct["bulkhead"]["thickness"]["grid"]
