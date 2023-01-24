@@ -735,7 +735,7 @@ properties:
                                         names: *floatname
                                         diameter:
                                             type: object
-                                            default: {}
+                                            #default: {}
                                             description: Diameter optimization of member group
                                             properties:
                                                 lower_bound: *dbound
@@ -746,14 +746,14 @@ properties:
                                                     default: False
                                         thickness:
                                             type: object
-                                            default: {}
+                                            #default: {}
                                             description: Thickness optimization of member group
                                             properties:
                                                 lower_bound: *tbound
                                                 upper_bound: *tbound
                                         ballast:
                                             type: object
-                                            default: {}
+                                            #default: {}
                                             description: Ballast volume optimization of member group
                                             properties:
                                                 lower_bound:
@@ -771,7 +771,7 @@ properties:
                                         axial_joints:
                                             type: array
                                             description: List of axial joint sets in this member group that are optimized as one
-                                            default: []
+                                            #default: []
                                             items:
                                                 type: object
                                                 default: {}
@@ -791,17 +791,17 @@ properties:
                                                         default: 1.0
                                         stiffeners:
                                             type: object
-                                            default: {}
+                                            #default: {}
                                             description: Stiffener optimization of member group
                                             properties:
                                                 ring:
                                                     type: object
-                                                    default: {}
+                                                    #default: {}
                                                     description: Ring stiffener optimization of member group
                                                     properties:
                                                         size: # currently not implemented as a DV in gc_PoseOptimization.py
                                                             type: object
-                                                            default: {}
+                                                            #default: {}
                                                             description: Ring stiffener sizing multiplier on T-shape
                                                             properties:
                                                                 min_gain:  &mingain
@@ -816,7 +816,7 @@ properties:
                                                         spacing:
                                                             type: object
                                                             description: Ring stiffener spacing along member axis
-                                                            default: {}
+                                                            #default: {}
                                                             properties:
                                                                 lower_bound:
                                                                     type: number
@@ -828,22 +828,23 @@ properties:
                                                                     type: number
                                                                     unit: none
                                                                     description: Design variable bound
+                                                                    default: 0.1
                                                                     minimum: 0.0
                                                 longitudinal:
                                                     type: object
-                                                    default: {}
+                                                    #default: {}
                                                     description: Longitudinal stiffener optimization of member group
                                                     properties:
                                                         size: # currently not implemented as a DV in gc_PoseOptimization.py
                                                             type: object
-                                                            default: {}
+                                                            #default: {}
                                                             description: Longitudinal stiffener sizing multiplier on T-shape
                                                             properties:
                                                                 min_gain: *mingain
                                                                 max_gain: *maxgain
                                                         spacing:
                                                             type: object
-                                                            default: {}
+                                                            #default: {}
                                                             description: Longitudinal stiffener spacing around member annulus
                                                             properties:
                                                                 lower_bound:
@@ -857,6 +858,7 @@ properties:
                                                                     type: number
                                                                     unit: rad
                                                                     description: Design variable bound
+                                                                    default: 0.1
                                                                     minimum: 0.0
                                                                     maximum: 3.141592653589793 #180 deg
             mooring:
