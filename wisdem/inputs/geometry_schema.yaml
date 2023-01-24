@@ -1805,6 +1805,8 @@ properties:
                                         - fixed
                                         - fix
                                         - connection
+                                        - connect
+                                        - free
                                         - vessel
                                 location:
                                     type: array
