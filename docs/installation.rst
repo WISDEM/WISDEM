@@ -21,7 +21,7 @@ Note that any future occasion on which you wish to use WISDEM, you will only hav
 Install WISDEM
 ^^^^^^^^^^^^^^
 
-In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer* mode.  This is done by first installing WISDEM dependencies and then installing WISDEM from the Github source code.  Note the differences between Windows and Mac build systems.  For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
+In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer/editable* mode (`pip` has been unreliable for this type of install, so we recommend a slightly outdated approach).  This is done by first installing WISDEM dependencies and then installing WISDEM from the Github source code.  Note the differences between Windows and Mac build systems.  For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
 
 For Linux and Mac systems:
 
@@ -47,7 +47,7 @@ Finally, for all systems:
 
     git clone https://github.com/WISDEM/WISDEM.git
     cd WISDEM
-    pip install -e .
+    python setup.py develop
 
 Run Unit Tests
 ^^^^^^^^^^^^^^

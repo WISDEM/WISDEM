@@ -55,7 +55,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
         conda install -y m2w64-toolchain libpython       # (Windows only)
         git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
-        pip install -e .
+        python setup.py develop				 # Currently more reliable than: pip install -e
 
 
 **NOTE:** To use WISDEM again after installation is complete, you will always need to activate the conda environment first with `conda activate wisdem-env`
