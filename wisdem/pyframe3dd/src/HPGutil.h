@@ -12,7 +12,7 @@
 
 
 /* ---------------------------------------------------------------------------
-COLOR - change color on the screen ... 
+COLOR - change color on the screen ...
  Screen   Color  Scheme  : 0 = white on black, 1 = bright
  first digit= 3  for text color          first digit= 4  for  background color
  second digit codes:     1=red, 2=green, 3=gold, 4=blue, 5=purple, 6=lght blue
@@ -38,7 +38,7 @@ void errorMsg ( const char *errString );
 
 
 /*  -------------------------------------------------------------------------
-OPENFILE  -  open a file or print a diagnostic error message 
+OPENFILE  -  open a file or print a diagnostic error message
 ---------------------------------------------------------------------------- */
 FILE *openFile (const char *path, const char *fileName, const char *mode, char *usage );
 
@@ -66,11 +66,11 @@ int getLine ( FILE *fp, int lim, char *s );
 
 
 /*  ---------------------------------------------------------------------------
- * getTime  parse a numeric time string of YYYYMMDDhhmmss 
+ * getTime  parse a numeric time string of YYYYMMDDhhmmss
  * The input variables y, m, d, hr, mn, sc are the indices of the string s[]
- * which start the YYYY, MM, DD, hh, mm, ss sections of the time string.  
+ * which start the YYYY, MM, DD, hh, mm, ss sections of the time string.
  * An offset (os) in seconds is added to allow for correction between
- * time zones, UTC and GPS times.  
+ * time zones, UTC and GPS times.
  * The corresponding time is returned in "time_t" format.
  * ---------------------------------------------------------------------------
  */

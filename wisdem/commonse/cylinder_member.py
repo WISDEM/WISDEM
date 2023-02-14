@@ -1064,7 +1064,6 @@ class MemberComplex(om.ExplicitComponent):
         self.sections[s_new] = copy.copy(self.sections[keys_orig[idx]])
 
     def insert_section(self, s0, s1, cross_section0):
-
         idx0 = self.sections.bisect_left(s0)
         idx1 = self.sections.bisect_left(s1)
         keys_orig = self.sections.keys()

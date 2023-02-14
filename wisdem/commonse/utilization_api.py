@@ -308,7 +308,6 @@ def _safety_factor(Ficj, yield_stress):
 def shellBuckling_withStiffeners(
     P, sigma_ax, R_od, t_wall, h_section, h_web, t_web, w_flange, t_flange, L_stiffener, E, nu, sigma_y, loading="hydro"
 ):
-
     # APPLIED STRESSES (Section 11 of API Bulletin 2U)
     stiffener_factor_KthL, stiffener_factor_KthG = _compute_stiffener_factors(
         P, sigma_ax, R_od, t_wall, h_web, t_web, w_flange, t_flange, L_stiffener, E, nu

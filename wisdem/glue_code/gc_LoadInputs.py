@@ -5,7 +5,6 @@ import wisdem.inputs as sch
 
 class WindTurbineOntologyPython(object):
     def __init__(self, fname_input_wt, fname_input_modeling, fname_input_analysis):
-
         self.modeling_options = sch.load_modeling_yaml(fname_input_modeling)
         self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
         if fname_input_wt is None:
@@ -741,7 +740,6 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["floating"]["members"]["name2idx"] = name2grp
 
     def write_ontology(self, wt_opt, fname_output):
-
         # Update blade
         if self.modeling_options["flags"]["blade"]:
             # Update blade outer shape
@@ -1083,7 +1081,6 @@ class WindTurbineOntologyPython(object):
 
         # Update generator
         if self.modeling_options["flags"]["generator"]:
-
             self.wt_init["components"]["nacelle"]["generator"]["B_r"] = float(wt_opt["generator.B_r"])
             self.wt_init["components"]["nacelle"]["generator"]["P_Fe0e"] = float(wt_opt["generator.P_Fe0e"])
             self.wt_init["components"]["nacelle"]["generator"]["P_Fe0h"] = float(wt_opt["generator.P_Fe0h"])

@@ -946,7 +946,6 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-
         # If devices are defined along span, manipulate the grid s to always have a grid point where it is needed, and reinterpolate the blade quantities, namely chord, twist, pitch axis, and reference axis
         if len(inputs["span_end"]) > 0:
             nd_span_orig = np.linspace(0.0, 1.0, self.n_span)
@@ -1097,7 +1096,6 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # Reconstruct the blade relative thickness along span with a pchip
         r_thick_used = np.zeros(self.n_af_span)
         ac_used = np.zeros(self.n_af_span)
@@ -1489,7 +1487,6 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-
         for i in range(self.n_span):
             x = inputs["coord_xy_dim"][i, :, 0]
             y = inputs["coord_xy_dim"][i, :, 1]
@@ -1848,7 +1845,6 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
         # self.declare_partials('web_start_nd', ['coord_xy_dim', 'twist'], method='fd')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # Initialize temporary arrays for the outputs
         web_rotation = np.zeros((self.n_webs, self.n_span))
         layer_rotation = np.zeros((self.n_layers, self.n_span))
@@ -1877,7 +1873,6 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
 
             # Loop through the webs and compute non-dimensional start and end positions along the profile
             for j in range(self.n_webs):
-
                 offset = inputs["web_offset_y_pa_yaml"][j, i]
                 # Geometry checks on webs
                 if offset < ratio_Websmax * (-chord * p_le_i) or offset > ratio_Websmax * (chord * (1.0 - p_le_i)):
@@ -2819,7 +2814,6 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
         self.options.declare("composites", default=True)
 
     def setup(self):
-
         mat_init_options = self.options["mat_init_options"]
         self.n_mat = n_mat = mat_init_options["n_mat"]
 
@@ -2882,7 +2876,6 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         density_resin = 0.0
         for i in range(self.n_mat):
             if discrete_inputs["name"][i] == "resin":
@@ -2899,7 +2892,6 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
 
         for i in range(self.n_mat):
             if discrete_inputs["component_id"][i] > 1:  # It's a composite
-
                 # Formula to estimate the fiber volume fraction fvf from the laminate and the fiber densities
                 fvf[i] = (inputs["rho"][i] - density_resin) / (inputs["rho_fiber"][i] - density_resin)
                 if inputs["fvf_from_yaml"][i] > 0.0:

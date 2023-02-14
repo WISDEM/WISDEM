@@ -64,7 +64,6 @@ def distfunc(dinp, ival=1):
 
 
 def tanhdist(delta1=None, delta2=None, _len=None, i1=None, i2=None):
-
     if i2 == i1:
         return fdist
     delta1 = delta1 / _len
@@ -72,10 +71,10 @@ def tanhdist(delta1=None, delta2=None, _len=None, i1=None, i2=None):
     ni = i2 - i1
     fdist = np.zeros(ni + 1)
     if delta1 <= 0.0 and 1.0 / delta2 < ni:
-        delta1 = 1 / (ni ** 2 * delta2 * 1.02)
+        delta1 = 1 / (ni**2 * delta2 * 1.02)
     else:
         if delta2 <= 0.0 and 1.0 / delta1 < ni:
-            delta2 = 1 / (ni ** 2 * delta1 * 1.02)
+            delta2 = 1 / (ni**2 * delta1 * 1.02)
     if delta1 > 0.0 and delta2 > 0.0:
         a = np.sqrt(delta2) / np.sqrt(delta1)
         b = 1.0 / (ni * np.sqrt(delta1 * delta2))
@@ -109,17 +108,16 @@ def tanhdist(delta1=None, delta2=None, _len=None, i1=None, i2=None):
 
 
 def sinhdist(delta1=None, delta2=None, _len=None, i1=None, i2=None):
-
     if i2 == i1:
         return fdist
     delta1 = delta1 / _len
     delta2 = delta2 / _len
     ni = i2 - i1
     if (delta1 <= 0.0) and ((1 / delta2) < ni):
-        delta1 = 1 / (ni ** 2 * delta2 * 1.02)
+        delta1 = 1 / (ni**2 * delta2 * 1.02)
     else:
         if (delta2 <= 0.0) and (1 / delta1 < ni):
-            delta2 = 1 / (ni ** 2 * delta1 * 1.02)
+            delta2 = 1 / (ni**2 * delta1 * 1.02)
     if (delta1 > 0.0) and (delta2 > 0.0):
         a = np.sqrt(delta2) / np.sqrt(delta1)
         b = 1.0 / (ni * np.sqrt(delta1 * delta2))
@@ -166,7 +164,6 @@ def transsinh(b):
 
 
 def _transsinh(delta, b):
-
     return delta / (np.sinh(delta) + 1.0 * 10 ** (-60)) - 1.0 / b
 
 
@@ -184,7 +181,6 @@ def transtanh(b):
 
 
 def _transtanh(delta, b):
-
     return delta / (np.tanh(0.5 * delta) + 1.0 * 10 ** (-60)) - 2.0 / b
 
 
@@ -242,7 +238,6 @@ def transtanh_(b=None):
 
 
 if __name__ == "__main__":
-
     d = distfunc([[0, 0.0001, 1], [0.5, 0.001, 30], [1, 0.0001, 100]])
     import matplotlib.pylab as plt
 

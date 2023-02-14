@@ -26,7 +26,6 @@ _ = simul_config.pop("export_cable_bury_vessel")
 
 @pytest.mark.parametrize("config", (base_config, simul_config), ids=["separate", "simultaneous"])
 def test_simulation_setup(config):
-
     sim = ExportCableInstallation(config)
     assert sim.env
     assert sim.cable
@@ -38,7 +37,6 @@ def test_simulation_setup(config):
 
 @pytest.mark.parametrize("config", (base_config, simul_config), ids=["separate", "simultaneous"])
 def test_vessel_initialization(config):
-
     sim = ExportCableInstallation(config)
     assert sim.install_vessel
     assert sim.install_vessel.cable_storage
@@ -50,7 +48,6 @@ def test_vessel_initialization(config):
 @pytest.mark.parametrize("config", (base_config, simul_config), ids=["separate", "simultaneous"])
 @pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
 def test_for_complete_logging(config, weather):
-
     sim = ExportCableInstallation(config, weather=weather)
     sim.run()
 
@@ -69,7 +66,6 @@ def test_for_complete_logging(config, weather):
 
 
 def test_simultaneous_speed_kwargs():
-
     sim = ExportCableInstallation(simul_config)
     sim.run()
     baseline = sim.total_phase_time
@@ -86,7 +82,6 @@ def test_simultaneous_speed_kwargs():
 
 
 def test_separate_speed_kwargs():
-
     sim = ExportCableInstallation(base_config)
     sim.run()
     df = pd.DataFrame(sim.env.actions)
@@ -111,7 +106,6 @@ def test_separate_speed_kwargs():
 
 
 def test_kwargs_for_export_install():
-
     new_export_system = {"cable": {"linear_density": 50.0, "sections": [1000], "number": 1}}
     new_site = {"distance": 50, "depth": 20}
 
@@ -140,7 +134,6 @@ def test_kwargs_for_export_install():
     failed = []
 
     for kw in keywords:
-
         default = pt[kw]
 
         if "speed" in kw:
@@ -172,7 +165,6 @@ def test_kwargs_for_export_install():
 
 
 def test_kwargs_for_export_install_in_ProjectManager():
-
     new_export_system = {
         "cable": {"linear_density": 50.0, "sections": [1000], "number": 1},
         "system_cost": 200e6,
@@ -204,7 +196,6 @@ def test_kwargs_for_export_install_in_ProjectManager():
     failed = []
 
     for kw in keywords:
-
         default = pt[kw]
 
         if "speed" in kw:

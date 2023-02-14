@@ -17,7 +17,6 @@ fname_analysis_options = test_dir + "analysis_options.yaml"
 
 class TestRegression(unittest.TestCase):
     def test5MW(self):
-
         ## NREL 5MW
         fname_wt_input = test_dir + "nrel5mw.yaml"
 

@@ -139,10 +139,10 @@ class CylinderBuckling:
         """"""
 
         if self._long:
-            return ((self.s ** 2) / (self.r * self.t)) * np.sqrt(1 - self.v ** 2)
+            return ((self.s**2) / (self.r * self.t)) * np.sqrt(1 - self.v**2)
 
         else:
-            return ((self.l ** 2) / (self.r * self.t)) * np.sqrt(1 - self.v ** 2)
+            return ((self.l**2) / (self.r * self.t)) * np.sqrt(1 - self.v**2)
 
     @property
     def Z(self):
@@ -164,7 +164,7 @@ class CylinderBuckling:
         """See Section 3.4, Table 3-2."""
 
         psi = 5.34
-        xi = 0.856 * self.Z ** 0.75
+        xi = 0.856 * self.Z**0.75
         rho = 0.6
         return psi * np.sqrt(1 + (rho * xi / psi) ** 2)
 
@@ -203,7 +203,7 @@ class CylinderBuckling:
             raise ValueError("Cylinder is not longitudinally stiffened. Incorrect use of this equation.")
 
         psi = 5.34 + 4 * (self.s / self.l) ** 2
-        xi = 0.856 * np.sqrt(self.s / self.l) * self.Z ** 3 / 4
+        xi = 0.856 * np.sqrt(self.s / self.l) * self.Z**3 / 4
         rho = 0.6
         return psi * np.sqrt(1 + (rho * xi / psi) ** 2)
 
@@ -253,15 +253,15 @@ class CylinderBuckling:
         """"""
 
         if self._long:
-            return ((C * np.pi ** 2 * self.E) / (12 * (1 - self.v ** 2))) * (self.t / self.s) ** 2
+            return ((C * np.pi**2 * self.E) / (12 * (1 - self.v**2))) * (self.t / self.s) ** 2
 
         else:
-            return ((C * np.pi ** 2 * self.E) / (12 * (1 - self.v ** 2))) * (self.t / self.l) ** 2
+            return ((C * np.pi**2 * self.E) / (12 * (1 - self.v**2))) * (self.t / self.l) ** 2
 
     def von_mises(self, axial, hoop, shear):
         a = ((axial + hoop) / 2.0) ** 2
         b = ((axial - hoop) / 2.0) ** 2
-        c = shear ** 2
+        c = shear**2
 
         return np.sqrt(a + 3.0 * (b + c))
 
@@ -276,7 +276,7 @@ class CylinderBuckling:
         sigma_t :
         """
 
-        I = np.pi * self.r ** 3 * self.te
+        I = np.pi * self.r**3 * self.te
 
         # Axial stress contributions
         sigma_a = Fz / (2 * np.pi * self.r * self.te)
@@ -289,7 +289,6 @@ class CylinderBuckling:
         return {"Shell": shell_utilization, "Global": global_utilization}
 
     def utilization_shell(self, _axial, _bending, _hoop, _shear):
-
         # Set Positive Stresses Equal to 0. See 3.2.4 - 3.2.6
         axial = np.abs(np.minimum(_axial, 0.0))
         bending = np.abs(np.minimum(_bending, 0.0))
@@ -320,7 +319,6 @@ class CylinderBuckling:
         return np.abs(fak).mean()
 
     def _fak_wrapper(self, axial, *data):
-
         bending, hoop, shear = data
         util, _ = self.utilization_shell(axial, bending, hoop, shear)
 
@@ -337,8 +335,8 @@ class CylinderBuckling:
         k = 2.0  # Fixed-free
         L = self._l.sum() - self.mod_length
 
-        I = np.pi * self.r ** 3 * self.te
-        fE = (np.pi ** 2 * self.E * I) / ((k * L) ** 2 * self.Ac)
+        I = np.pi * self.r**3 * self.te
+        fE = (np.pi**2 * self.E * I) / ((k * L) ** 2 * self.Ac)
 
         # fak
         fakd = fak / gamma
@@ -346,7 +344,7 @@ class CylinderBuckling:
         # ls
         lambda_s = k * L / (np.pi * np.sqrt(I / self.Ac)) * np.sqrt(fak / self.E)
 
-        fkcd = (1 - 0.28 * lambda_s ** 2) * fak / 1.45
+        fkcd = (1 - 0.28 * lambda_s**2) * fak / 1.45
         fkcd[lambda_s > 1.34] = 0.9 / (lambda_s[lambda_s > 1.34] ** 2) * fak / 1.45
 
         util = sigma_a / np.array(fkcd) + 1 / fakd * (sigma_m / (1 - sigma_a / fE))

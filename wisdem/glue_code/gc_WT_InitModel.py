@@ -650,7 +650,6 @@ def assign_te_flaps_values(wt_opt, modeling_options, blade):
 
 
 def assign_hub_values(wt_opt, hub, flags):
-
     wt_opt["hub.diameter"] = hub["diameter"]
     wt_opt["hub.cone"] = hub["cone_angle"]
     # wt_opt['hub.drag_coeff']                  = hub['drag_coefficient'] # GB: This doesn't connect to anything
@@ -750,7 +749,6 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
 
 
 def assign_generator_values(wt_opt, modeling_options, nacelle):
-
     wt_opt["generator.B_r"] = nacelle["generator"]["B_r"]
     wt_opt["generator.P_Fe0e"] = nacelle["generator"]["P_Fe0e"]
     wt_opt["generator.P_Fe0h"] = nacelle["generator"]["P_Fe0h"]
@@ -1006,7 +1004,6 @@ def assign_jacket_values(wt_opt, modeling_options, jacket):
 
 
 def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
-
     float_opt = opt_options["design_variables"]["floating"]
     floating_init_options = modeling_options["floating"]
     n_joints = floating_init_options["joints"]["n_joints"]
@@ -1224,7 +1221,6 @@ def assign_control_values(wt_opt, modeling_options, control):
 
 
 def assign_configuration_values(wt_opt, assembly, opt_options):
-
     class_val = assembly["turbine_class"].upper()
     if class_val in [1, "1"]:
         class_val = "I"
@@ -1258,7 +1254,6 @@ def assign_configuration_values(wt_opt, assembly, opt_options):
 
 
 def assign_environment_values(wt_opt, environment, offshore, blade_flag):
-
     wt_opt["env.rho_air"] = environment["air_density"]
     wt_opt["env.mu_air"] = environment["air_dyn_viscosity"]
     if offshore:
@@ -1279,7 +1274,6 @@ def assign_environment_values(wt_opt, environment, offshore, blade_flag):
 
 
 def assign_bos_values(wt_opt, bos, offshore):
-
     wt_opt["bos.plant_turbine_spacing"] = bos["plant_turbine_spacing"]
     wt_opt["bos.plant_row_spacing"] = bos["plant_row_spacing"]
     wt_opt["bos.commissioning_pct"] = bos["commissioning_pct"]
@@ -1303,7 +1297,6 @@ def assign_bos_values(wt_opt, bos, offshore):
 
 
 def assign_costs_values(wt_opt, costs):
-
     wt_opt["costs.turbine_number"] = costs["turbine_number"]
     wt_opt["costs.opex_per_kW"] = costs["opex_per_kW"]
     wt_opt["costs.bos_per_kW"] = costs["bos_per_kW"]

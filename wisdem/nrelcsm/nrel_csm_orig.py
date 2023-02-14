@@ -5,10 +5,12 @@ Created by NWTC Systems Engineering Sub-Task on 2012-08-01.
 Copyright (c) NREL. All rights reserved.
 """
 
+from math import pi, exp, gamma
+
 import numpy as np
-from math import pi, gamma, exp
-from wisdem.commonse.utilities import smooth_abs, smooth_min, hstack
+
 from wisdem.nrelcsm.csmPPI import PPI
+from wisdem.commonse.utilities import hstack, smooth_abs, smooth_min
 
 # Initialize ref and current YYYYMM
 # Calling program can override these
@@ -28,7 +30,6 @@ ppi = PPI(ref_yr, ref_mon, curr_yr, curr_mon)
 
 class aero_csm(object):
     def __init__(self):
-
         # Variables
         # machine_rating = Float(units = 'kW', iotype='in', desc= 'rated machine power in kW')
         # max_tip_speed = Float(units = 'm/s', iotype='in', desc= 'maximum allowable tip speed for the rotor')
@@ -112,7 +113,7 @@ class aero_csm(object):
         self.ratedRPM = (30.0 / pi) * self.omegaM
 
         # compute variable-speed torque constant k
-        kTorque = (air_density * pi * self.rotorDiam ** 5 * self.maxCp) / (64 * self.maxTipSpdRatio ** 3)  # k
+        kTorque = (air_density * pi * self.rotorDiam**5 * self.maxCp) / (64 * self.maxTipSpdRatio**3)  # k
 
         b = -Tm / (self.omegaM - omega0)  # b - quadratic formula values to determine omegaT
         c = (Tm * omega0) / (self.omegaM - omega0)  # c
@@ -120,11 +121,11 @@ class aero_csm(object):
         # omegaT is rotor speed at which regions 2 and 2.5 intersect
         # add check for feasibility of omegaT calculation 09/20/2012
         omegaTflag = True
-        if (b ** 2 - 4 * kTorque * c) > 0:
-            omegaT = -(b / (2 * kTorque)) - (np.sqrt(b ** 2 - 4 * kTorque * c) / (2 * kTorque))  # Omega T
+        if (b**2 - 4 * kTorque * c) > 0:
+            omegaT = -(b / (2 * kTorque)) - (np.sqrt(b**2 - 4 * kTorque * c) / (2 * kTorque))  # Omega T
 
             windOmegaT = (omegaT * self.rotorDiam) / (2 * self.maxTipSpdRatio)  # Wind  at omegaT (M25)
-            pwrOmegaT = kTorque * omegaT ** 3 / 1000  # Power at ometaT (M26)
+            pwrOmegaT = kTorque * omegaT**3 / 1000  # Power at ometaT (M26)
 
         else:
             omegaTflag = False
@@ -132,9 +133,9 @@ class aero_csm(object):
             pwrOmegaT = self.ratedPower
 
         # compute rated wind speed
-        d = air_density * np.pi * self.rotorDiam ** 2.0 * 0.25 * self.maxCp
+        d = air_density * np.pi * self.rotorDiam**2.0 * 0.25 * self.maxCp
         self.ratedWindSpeed = 0.33 * ((2.0 * self.ratedHubPower * 1000.0 / (d)) ** (1.0 / 3.0)) + 0.67 * (
-            (((self.ratedHubPower - pwrOmegaT) * 1000.0) / (1.5 * d * windOmegaT ** 2.0)) + windOmegaT
+            (((self.ratedHubPower - pwrOmegaT) * 1000.0) / (1.5 * d * windOmegaT**2.0)) + windOmegaT
         )
 
         # set up for idealized power curve
@@ -171,7 +172,7 @@ class aero_csm(object):
         # compute turbine load outputs
         self.rotor_torque = self.ratedHubPower / (self.ratedRPM * (pi / 30.0)) * 1000.0
         self.rotor_thrust = (
-            air_density * thrust_coefficient * pi * rotor_diameter ** 2 * (self.ratedWindSpeed ** 2) / 8.0
+            air_density * thrust_coefficient * pi * rotor_diameter**2 * (self.ratedWindSpeed**2) / 8.0
         )
 
     def idealPowerCurve(self, Wind, ITP, kTorque, windOmegaT, pwrOmegaT, n, omegaTflag):
@@ -229,7 +230,6 @@ def weibull(X, K, L):
 
 class aep_calc_csm(object):
     def __init__(self):
-
         # Variables
         # power_curve = Array(iotype='in', units='kW', desc='total power after drivetrain losses')
         # wind_curve = Array(iotype='in', units='m/s', desc='wind curve associated with power curve')
@@ -292,13 +292,11 @@ class drivetrain_csm(object):
     """drivetrain losses from NREL cost and scaling model"""
 
     def __init__(self, drivetrain_type="geared"):
-
         self.drivetrain_type = drivetrain_type
 
         power = np.zeros(161)  # Array(iotype='out', units='kW', desc='total power after drivetrain losses')
 
     def compute(self, aero_power, aero_torque, aero_thrust, rated_power):
-
         if self.drivetrain_type == "geared":
             constant = 0.01289
             linear = 0.08510
@@ -333,13 +331,12 @@ class drivetrain_csm(object):
         self.power = aero_power * eff
 
     def provideJ(self):
-
         # gradients
         dPbar_dPa = dPbar_dPbar1 * dPbar1_dPbar0 / rated_power
-        dPbar_dPr = -dPbar_dPbar1 * dPbar1_dPbar0 * aero_power / rated_power ** 2
+        dPbar_dPr = -dPbar_dPbar1 * dPbar1_dPbar0 * aero_power / rated_power**2
 
-        deff_dPa = dPbar_dPa * (constant / Pbar ** 2 - quadratic)
-        deff_dPr = dPbar_dPr * (constant / Pbar ** 2 - quadratic)
+        deff_dPa = dPbar_dPa * (constant / Pbar**2 - quadratic)
+        deff_dPr = dPbar_dPr * (constant / Pbar**2 - quadratic)
 
         dP_dPa = eff + aero_power * deff_dPa
         dP_dPr = aero_power * deff_dPr
@@ -377,7 +374,6 @@ class aep_csm(object):
         wind_speed_50m,
         weibull_k,
     ):
-
         self.aero.compute(
             machine_rating,
             max_tip_speed,
@@ -495,14 +491,12 @@ class blades_csm(object):
         ) / (1.0 - 0.28)
 
     def list_deriv_vars(self):
-
         inputs = ["rotor_diameter"]
         outputs = ["blade_mass", "blade_cost"]
 
         return inputs, outputs
 
     def provideJ(self):
-
         self.J = np.array([[self.d_mass_d_diameter], [self.d_cost_d_diameter]])
 
         return self.J
@@ -563,7 +557,7 @@ class hub_csm(object):
         ppi.curr_mon = curr_mon
 
         # *** Pitch bearing and mechanism
-        bearingCost = 0.2106 * self.rotor_diameter ** 2.6576
+        bearingCost = 0.2106 * self.rotor_diameter**2.6576
         bearingCostEscalator = ppi.compute("IPPI_PMB")
         self.pitch_system_cost = bearingCostEscalator * (bearingCost + bearingCost * 1.28)
 
@@ -587,7 +581,7 @@ class hub_csm(object):
         )
 
         self.d_hub_cost_d_diameter = 0.0
-        self.d_pitch_cost_d_diameter = bearingCostEscalator * 2.28 * 2.6576 * (0.2106 * self.rotor_diameter ** 1.6576)
+        self.d_pitch_cost_d_diameter = bearingCostEscalator * 2.28 * 2.6576 * (0.2106 * self.rotor_diameter**1.6576)
         self.d_spinner_cost_d_diameter = spinnerCostEscalator * (5.57 * self.d_spinner_mass_d_diameter)
         self.d_system_cost_d_diameter = (
             self.d_hub_cost_d_diameter + self.d_pitch_cost_d_diameter + self.d_spinner_cost_d_diameter
@@ -608,7 +602,6 @@ class hub_csm(object):
         )
 
     def list_deriv_vars(self):
-
         inputs = ["rotor_diameter", "blade_mass"]
         outputs = [
             "hub_mass",
@@ -624,7 +617,6 @@ class hub_csm(object):
         return inputs, outputs
 
     def provideJ(self):
-
         self.J = np.array(
             [
                 [self.d_hub_mass_d_diameter, self.d_hub_mass_d_blade_mass],
@@ -755,14 +747,14 @@ class nacelle_csm(object):
         ) ** (1.0 / 3.0)
         inDiam = outDiam * hFact
 
-        self.lowSpeedShaft_mass = 1.25 * (np.pi / 4) * (outDiam ** 2 - inDiam ** 2) * lenShaft * 7860
+        self.lowSpeedShaft_mass = 1.25 * (np.pi / 4) * (outDiam**2 - inDiam**2) * lenShaft * 7860
 
-        LowSpeedShaftCost2002 = 0.0998 * self.rotor_diameter ** 2.8873
+        LowSpeedShaftCost2002 = 0.0998 * self.rotor_diameter**2.8873
         lssCostEsc = ppi.compute("IPPI_LSS")
 
         self.lowSpeedShaft_cost = LowSpeedShaftCost2002 * lssCostEsc
 
-        d_mass_d_outD = 1.25 * (np.pi / 4) * (1 - 0.1 ** 2) * 2 * outDiam * lenShaft * 7860
+        d_mass_d_outD = 1.25 * (np.pi / 4) * (1 - 0.1**2) * 2 * outDiam * lenShaft * 7860
         d_outD_mult = (
             ((32.0 / np.pi) * hollow * 3.25) ** (1.0 / 3.0)
             * (1.0 / 6.0)
@@ -772,12 +764,12 @@ class nacelle_csm(object):
         d_outD_d_mass = d_outD_mult * 2.0 * (bendMom / 71070000) * (1.0 / 71070000.0) * (mmtArm * 1.25 * 9.81)
         d_outD_d_torque = d_outD_mult * 2.0 * (self.rotor_torque * 3.0 / 371000000.0) * (3.0 / 371000000.0)
         self.d_lss_mass_d_r_diameter = (
-            d_mass_d_outD * d_outD_d_diameter + 1.25 * (np.pi / 4) * (outDiam ** 2 - inDiam ** 2) * 7860 * 0.03
+            d_mass_d_outD * d_outD_d_diameter + 1.25 * (np.pi / 4) * (outDiam**2 - inDiam**2) * 7860 * 0.03
         )
         self.d_lss_mass_d_r_mass = d_mass_d_outD * d_outD_d_mass
         self.d_lss_mass_d_r_torque = d_mass_d_outD * d_outD_d_torque
 
-        self.d_lss_cost_d_r_diameter = lssCostEsc * 2.8873 * 0.0998 * self.rotor_diameter ** 1.8873
+        self.d_lss_cost_d_r_diameter = lssCostEsc * 2.8873 * 0.0998 * self.rotor_diameter**1.8873
 
         # Gearbox
         costCoeff = [None, 16.45, 74.101, 15.25697015, 0]
@@ -853,12 +845,12 @@ class nacelle_csm(object):
         self.electronicCabling_mass = 0.0
 
         # --- bearings
-        self.bearings_mass = 0.00012266667 * (self.rotor_diameter ** 3.5) - 0.00030360 * (self.rotor_diameter ** 2.5)
+        self.bearings_mass = 0.00012266667 * (self.rotor_diameter**3.5) - 0.00030360 * (self.rotor_diameter**2.5)
         HousingMass = self.bearings_mass
         self.bearings_mass += HousingMass
 
         self.d_bearings_mass_d_r_diameter = 2 * (
-            3.5 * 0.00012266667 * (self.rotor_diameter ** 2.5) - 0.00030360 * 2.5 * (self.rotor_diameter ** 1.5)
+            3.5 * 0.00012266667 * (self.rotor_diameter**2.5) - 0.00030360 * 2.5 * (self.rotor_diameter**1.5)
         )
 
         # --- mechanical brake
@@ -871,9 +863,9 @@ class nacelle_csm(object):
         self.VSElectronics_mass = 0.0
 
         # --- yaw drive bearings
-        self.yawSystem_mass = 1.6 * (0.0009 * self.rotor_diameter ** 3.314)
+        self.yawSystem_mass = 1.6 * (0.0009 * self.rotor_diameter**3.314)
 
-        self.d_yaw_mass_d_r_diameter = 3.314 * 1.6 * (0.0009 * self.rotor_diameter ** 2.314)
+        self.d_yaw_mass_d_r_diameter = 3.314 * 1.6 * (0.0009 * self.rotor_diameter**2.314)
 
         # --- hydraulics, cooling
         self.HVAC_mass = 0.08 * self.machine_rating
@@ -1015,7 +1007,7 @@ class nacelle_csm(object):
         self.d_electronics_cost_d_rating = 40.0 * econnectionsCostEsc
 
         # --- bearings
-        bearingMass = 0.00012266667 * (self.rotor_diameter ** 3.5) - 0.00030360 * (self.rotor_diameter ** 2.5)
+        bearingMass = 0.00012266667 * (self.rotor_diameter**3.5) - 0.00030360 * (self.rotor_diameter**2.5)
         HousingMass = bearingMass
         brngSysCostFactor = 17.6  # $/kg
         Bearings2002 = bearingMass * brngSysCostFactor
@@ -1037,10 +1029,10 @@ class nacelle_csm(object):
         self.d_vselectronics_cost_d_rating = VspdEtronicsCostEsc * 79.32
 
         # --- yaw drive bearings
-        YawDrvBearing2002 = 2 * (0.0339 * self.rotor_diameter ** 2.9637)
+        YawDrvBearing2002 = 2 * (0.0339 * self.rotor_diameter**2.9637)
         self.yawSystem_cost = YawDrvBearing2002 * yawDrvBearingCostEsc
 
-        self.d_yaw_cost_d_r_diameter = yawDrvBearingCostEsc * 2 * 2.9637 * (0.0339 * self.rotor_diameter ** 1.9637)
+        self.d_yaw_cost_d_r_diameter = yawDrvBearingCostEsc * 2 * 2.9637 * (0.0339 * self.rotor_diameter**1.9637)
 
         # --- hydraulics, cooling
         self.HVAC_cost = 12.0 * self.machine_rating  # 2002
@@ -1125,7 +1117,6 @@ class nacelle_csm(object):
         )
 
     def list_deriv_vars(self):
-
         inputs = ["rotor_diameter", "rotor_mass", "rotor_thrust", "rotor_torque", "machine_rating"]
         outputs = [
             "nacelle_mass",
@@ -1159,7 +1150,6 @@ class nacelle_csm(object):
         return inputs, outputs
 
     def provideJ(self):
-
         self.J = np.array(
             [
                 [
@@ -1282,14 +1272,12 @@ class tower_csm(object):
         self.d_cost_d_hheight = twrCostCoeff * twrCostEscalator * self.d_mass_d_hheight
 
     def list_deriv_vars(self):
-
         inputs = ["rotor_diameter", "hub_height"]
         outputs = ["tower_mass", "tower_cost"]
 
         return inputs, outputs
 
     def provideJ(self):
-
         self.J = np.array(
             [[self.d_mass_d_diameter, self.d_mass_d_hheight], [self.d_cost_d_diameter, self.d_cost_d_hheight]]
         )
@@ -1298,6 +1286,7 @@ class tower_csm(object):
 
 
 ##### Turbine
+
 
 # -------------------------------------------------------
 # Rotor mass adder
@@ -1309,7 +1298,6 @@ class rotor_mass_adder(object):
         self.rotor_mass = 0.0  # Float(units='kg', iotype='out', desc= 'overall rotor mass')
 
     def compute(self, blade_mass, hub_system_mass, blade_number=3):
-
         # Variables
         self.blade_mass = blade_mass  # Float(0.0, units='kg', iotype='in', desc='mass for a single wind turbine blade')
         self.hub_system_mass = hub_system_mass  # Float(0.0, units='kg', iotype='in', desc='hub system mass')
@@ -1323,14 +1311,12 @@ class rotor_mass_adder(object):
         self.d_mass_d_hub_mass = 1.0
 
     def list_deriv_vars(self):
-
         inputs = ["blade_mass", "hub_system_mass"]
         outputs = ["rotor_mass"]
 
         return inputs, outputs
 
     def provideJ(self):
-
         self.J = np.array([[self.d_mass_d_blade_mass, self.d_mass_d_hub_mass]])
 
         return self.J
@@ -1339,7 +1325,6 @@ class rotor_mass_adder(object):
 # ------------------------------------------------------------------
 class turbine_csm(object):
     def __init__(self):
-
         super(turbine_csm, self).__init__()
 
         # Outputs
@@ -1410,7 +1395,6 @@ class turbine_csm(object):
             self.d_cost_d_tower_cost = 1.0
 
     def list_deriv_vars(self):
-
         inputs = [
             "blade_mass",
             "hub_system_mass",
@@ -1427,7 +1411,6 @@ class turbine_csm(object):
         return inputs, outputs
 
     def provideJ(self):
-
         self.J = np.array(
             [
                 [
@@ -1459,7 +1442,6 @@ class turbine_csm(object):
 # --------------------------------------------------------------------
 class tcc_csm(object):
     def __init__(self):
-
         super(tcc_csm, self).__init__()  # will actually run the workflow
 
         # Outputs
@@ -1487,7 +1469,6 @@ class tcc_csm(object):
         advanced_bedplate=0,
         advanced_tower=False,
     ):
-
         # Variables
         self.rotor_diameter = rotor_diameter  # Float(units = 'm', iotype='in', desc= 'rotor diameter of the machine')
         self.machine_rating = machine_rating  # Float(units = 'kW', iotype='in', desc = 'rated power of wind turbine')
@@ -1565,7 +1546,6 @@ class tcc_csm(object):
 
 class bos_csm(object):
     def __init__(self):
-
         # Outputs
         # bos_breakdown = VarTree(BOSVarTree(), iotype='out', desc='BOS cost breakdown')
         # bos_costs = Float(iotype='out', desc='Overall wind plant balance of station/system costs up to point of comissioning')
@@ -1594,7 +1574,6 @@ class bos_csm(object):
         month=12,
         multiplier=1.0,
     ):
-
         # for coding ease
         # Default Variables
         self.machine_rating = machine_rating  # Float(iotype='in', units='kW', desc='turbine machine rating')
@@ -1721,7 +1700,7 @@ class bos_csm(object):
             eFact = elC1 * self.machine_rating * self.machine_rating + elC2 * self.machine_rating + elInt
             electrical_costs = self.machine_rating * eFact * ppi.compute("IPPI_LEL")
             self.d_electrical_d_rating = ppi.compute("IPPI_LEL") * (
-                3.0 * elC1 * self.machine_rating ** 2.0 + 2.0 * elC2 * self.machine_rating + elInt
+                3.0 * elC1 * self.machine_rating**2.0 + 2.0 * elC2 * self.machine_rating + elInt
             )
 
             rcC1 = 2.17e-06
@@ -1730,7 +1709,7 @@ class bos_csm(object):
             rFact = rcC1 * self.machine_rating * self.machine_rating + rcC2 * self.machine_rating + rcInt
             roadsCivil_costs = self.machine_rating * rFact * ppi.compute("IPPI_RDC")
             self.d_preparation_d_rating = ppi.compute("IPPI_RDC") * (
-                3.0 * rcC1 * self.machine_rating ** 2.0 + 2.0 * rcC2 * self.machine_rating + rcInt
+                3.0 * rcC1 * self.machine_rating**2.0 + 2.0 * rcC2 * self.machine_rating + rcInt
             )
 
             iCoeff = 1.965
@@ -1751,7 +1730,7 @@ class bos_csm(object):
 
             transportation_costs = self.machine_rating * tFact * ppi.compute("IPPI_TPT")
             self.d_transport_d_rating = ppi.compute("IPPI_TPT") * (
-                tpC1 * 3.0 * self.machine_rating ** 2.0 + tpC2 * 2.0 * self.machine_rating + tpInt
+                tpC1 * 3.0 * self.machine_rating**2.0 + tpC2 * 2.0 * self.machine_rating + tpInt
             )
 
         elif iDepth == 2:  # offshore shallow
@@ -1770,7 +1749,7 @@ class bos_csm(object):
             ppi.ref_yr = 2002
             transportation_costs = self.machine_rating * tFact * ppi.compute("IPPI_TPT")
             self.d_transport_d_rating = ppi.compute("IPPI_TPT") * (
-                tpC1 * 3.0 * self.machine_rating ** 2.0 + tpC2 * 2.0 * self.machine_rating + tpInt
+                tpC1 * 3.0 * self.machine_rating**2.0 + tpC2 * 2.0 * self.machine_rating + tpInt
             )
             ppi.ref_yr = 2003
 
@@ -1938,7 +1917,6 @@ class bos_csm(object):
         )
 
     def list_deriv_vars(self):
-
         inputs = ["machine_rating", "rotor_diameter", "turbine_cost", "hub_height", "RNA_mass"]
         outputs = [
             "bos_breakdown.development_costs",
@@ -1955,7 +1933,6 @@ class bos_csm(object):
         return inputs, outputs
 
     def provideJ(self):
-
         self.J = np.array(
             [
                 [
@@ -2045,7 +2022,6 @@ class opex_csm(object):
         self.opex_breakdown_other_opex = 0.0
 
     def compute(self, sea_depth, year, month, turbine_number, machine_rating, net_aep):
-
         # initialize variables
         if sea_depth == 0:
             offshore = False
@@ -2099,7 +2075,6 @@ class opex_csm(object):
         )
 
     def compute_partials(self):
-
         # dervivatives
         self.d_corrective_d_aep = 0.0
         self.d_corrective_d_rating = lrcCF * costlrcEscFactor * self.turbine_number
@@ -2215,7 +2190,7 @@ class fin_csm(object):
         self.d_coe_d_bos_cost = self.fixed_charge_rate / self.net_aep
         self.d_coe_d_avg_opex = (1 - self.tax_rate) / self.net_aep
         self.d_coe_d_net_aep = -(icc * self.fixed_charge_rate + self.avg_annual_opex * (1 - self.tax_rate)) / (
-            self.net_aep ** 2
+            self.net_aep**2
         )
 
         if offshore:
@@ -2224,17 +2199,15 @@ class fin_csm(object):
             self.d_lcoe_d_turbine_cost = self.turbine_number * amortFactor / self.net_aep
         self.d_lcoe_d_bos_cost = amortFactor / self.net_aep
         self.d_lcoe_d_avg_opex = 1.0 / self.net_aep
-        self.d_lcoe_d_net_aep = -(icc * amortFactor + self.avg_annual_opex) / (self.net_aep ** 2)
+        self.d_lcoe_d_net_aep = -(icc * amortFactor + self.avg_annual_opex) / (self.net_aep**2)
 
     def list_deriv_vars(self):
-
         inputs = ["turbine_cost", "bos_costs", "avg_annual_opex", "net_aep"]
         outputs = ["coe", "lcoe"]
 
         return inputs, outputs
 
     def provideJ(self):
-
         # Jacobian
         self.J = np.array(
             [

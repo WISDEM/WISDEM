@@ -2,9 +2,8 @@
 Copyright (c) NREL. All rights reserved.
 """
 
-import openmdao.api as om
-
 import numpy as np
+import openmdao.api as om
 
 
 ###### Rotor
@@ -1343,7 +1342,6 @@ class Outputs2Screen(om.ExplicitComponent):
         self.options.declare("verbosity", default=False)
 
     def setup(self):
-
         self.add_input("blade_cost", 0.0, units="USD")
         self.add_input("blade_mass", 0.0, units="kg")
         self.add_input("hub_cost", 0.0, units="USD")
@@ -1390,7 +1388,6 @@ class Outputs2Screen(om.ExplicitComponent):
         self.add_input("turbine_mass_tcc", 0.0, units="kg")
 
     def compute(self, inputs, outputs):
-
         if self.options["verbosity"] == True:
             print("################################################")
             print("Computation of costs of the main turbine components from TurbineCostSE")

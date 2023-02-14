@@ -2,11 +2,11 @@
 
 /*
  Copyright (C) 2012 Henri P. Gavin
- 
+
     HPGutil is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version. 
+    (at your option) any later version.
 
     HPGutil is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,8 +24,8 @@
 #define DEBUG 0
 
 
-/* 
- * COLOR - change color on the screen ... 
+/*
+ * COLOR - change color on the screen ...
  * Screen   Color  Scheme  : 0 = white on black, 1 = bright
  * first digit= 3  for text color	  first digit= 4  for  background color
  * second digit codes:
@@ -53,7 +53,7 @@ void color ( const int colorCode )	/*  change the screen color      */
 void textColor ( const char tColor, const char bColor, const char nbf, const char uline )
 {
 #if ANSI_SYS
-	fprintf (stderr, "\033[%02d",0);// Control Sequence Introducer & reset		
+	fprintf (stderr, "\033[%02d",0);// Control Sequence Introducer & reset
 	// background colors
 	if ( bColor == 'k' ) fprintf (stderr, ";%02d", 40 ); // black
 	if ( bColor == 'r' ) fprintf (stderr, ";%02d", 41 ); // red
@@ -108,8 +108,8 @@ void errorMsg ( const char *errString )
 }
 
 
-/* 
- * OPENFILE  -  open a file or print a diagnostic error message 
+/*
+ * OPENFILE  -  open a file or print a diagnostic error message
  */
 FILE *openFile ( const char *path, const char *fileName, const char *mode, char *usage )
 {
@@ -122,7 +122,7 @@ FILE *openFile ( const char *path, const char *fileName, const char *mode, char 
 #if DEBUG
 	printf(" openFile ... file name = %s\n", pathToFile);
 #endif
-	if ((fp=fopen(pathToFile,mode)) == NULL ) { // open file 
+	if ((fp=fopen(pathToFile,mode)) == NULL ) { // open file
 		switch (*mode) {
 		   sprintf(errMsg," openFile: ");
 		   case 'w':
@@ -143,16 +143,16 @@ FILE *openFile ( const char *path, const char *fileName, const char *mode, char 
 #if DEBUG
 	printf(" openFile ... fp = %x\n", fp);
 #endif
-	
+
 		return fp;
 	}
 }
 
 
-/* 
+/*
  * SCANLINE -  scan through a line until a 'a' is reached, like getline() 3feb94
  */
-int scanLine ( FILE *fp, int lim, char *s, const char a ) 
+int scanLine ( FILE *fp, int lim, char *s, const char a )
 {
        	int     c=0,  i=-1;
 
@@ -162,7 +162,7 @@ int scanLine ( FILE *fp, int lim, char *s, const char a )
 }
 
 
-/* 
+/*
  * SCANLABEL -  scan through a line until a '"' is reached, like getline()
  */
 int scanLabel ( FILE *fp, int lim, char *s, const char a )
@@ -171,24 +171,24 @@ int scanLabel ( FILE *fp, int lim, char *s, const char a )
 
 	while (--lim > 0 && (c=getc(fp)) != EOF && c != a)
 		;			// scan to first delimitter char
-	while (--lim > 0 && (c=getc(fp)) != EOF && c != a) 
+	while (--lim > 0 && (c=getc(fp)) != EOF && c != a)
 		s[++i] = c;		// read the label between delimitters
 	s[++i]='\0';
 	return i ;
 }
 
 
-/* 
+/*
  * SCANFILE -  count the number of lines of multi-column data in a data file,
- * skipping over "head_lines" lines of header information 
+ * skipping over "head_lines" lines of header information
  */
 int scanFile ( FILE *fp, int head_lines, int start_chnl, int stop_chnl )
 {
 	int	points = 0,
-		i, chn, ok=1;	
+		i, chn, ok=1;
 	float	data_value;
 	char	ch;
-	
+
 	// scan through the header
 	for (i=1;i<=head_lines;i++)     while (( ch = getc(fp)) != '\n') ;
 
@@ -198,7 +198,7 @@ int scanFile ( FILE *fp, int head_lines, int start_chnl, int stop_chnl )
 			ok=fscanf(fp,"%f",&data_value);
 			if (ok==1)      ++points;
 		}
-		if(ok>0) while (( ch = getc(fp)) != '\n') ; 
+		if(ok>0) while (( ch = getc(fp)) != '\n') ;
 	} while (ok==1);
 
 	points = (int) ( points / (stop_chnl - start_chnl + 1) );
@@ -210,10 +210,10 @@ int scanFile ( FILE *fp, int head_lines, int start_chnl, int stop_chnl )
 }
 
 
-/* 
+/*
  * GETLINE -  get line form a stream into a character string, return length
  * from K&R	       3feb94
- */  
+ */
 int getLine ( FILE *fp, int lim, char *s )
 {
 	int     c=0, i=0;
@@ -226,12 +226,12 @@ int getLine ( FILE *fp, int lim, char *s )
 }
 
 
-/* 
- * getTime  parse a numeric time string similar to YYYYMMDDhhmmss 
+/*
+ * getTime  parse a numeric time string similar to YYYYMMDDhhmmss
  * The input variables y, m, d, hr, mn, sc are the indices of the string s[]
- * which start the YYYY, MM, DD, hh, mm, ss sections of the time string.  
+ * which start the YYYY, MM, DD, hh, mm, ss sections of the time string.
  * The corresponding time is returned in "time_t" format.
- */  
+ */
 time_t getTime( char s[], int y, int m, int d, int hr, int mn, int sc, int os )
 {
         char   temp[16];
@@ -250,7 +250,7 @@ time_t getTime( char s[], int y, int m, int d, int hr, int mn, int sc, int os )
 	/*  all times are Universal Time never daylight savings time */
 	t_tm.tm_isdst = -1 ;
 
-	t_time = mktime(&t_tm);      // normalize t_tm 
+	t_time = mktime(&t_tm);      // normalize t_tm
 
 //	printf("%d ... %s", (int) t_time, ctime(&t_time) );
 
@@ -282,7 +282,7 @@ void showProgress ( int i, int n, int count )
 }
 
 
-/* 
+/*
  * SFERR  -  Display error message upon an erronous *scanf operation
  */
 void sferr ( char s[] )

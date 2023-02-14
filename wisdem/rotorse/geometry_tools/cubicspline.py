@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.linalg import solve_banded
+
 from wisdem.commonse.utilities import _checkIfFloat
 
 
@@ -9,7 +10,6 @@ class NaturalCubicSpline(object):
     """
 
     def __init__(self, xp, yp):
-
         if np.any(np.diff(xp) < 0):
             raise TypeError("xp must be in ascending order")
 
@@ -37,7 +37,6 @@ class NaturalCubicSpline(object):
         self.yp = yp
 
     def __call__(self, x, deriv=False):
-
         x, n = _checkIfFloat(x)
         y = np.zeros(n)
         dydx = np.zeros(n)
@@ -61,14 +60,14 @@ class NaturalCubicSpline(object):
 
             A = (x2 - x[i]) / (x2 - x1)
             B = 1 - A
-            C = 1.0 / 6 * (A ** 3 - A) * (x2 - x1) ** 2
-            D = 1.0 / 6 * (B ** 3 - B) * (x2 - x1) ** 2
+            C = 1.0 / 6 * (A**3 - A) * (x2 - x1) ** 2
+            D = 1.0 / 6 * (B**3 - B) * (x2 - x1) ** 2
 
             y[i] = A * y1 + B * y2 + C * self.fpp[j] + D * self.fpp[j + 1]
             dAdx = -1.0 / (x2 - x1)
             dBdx = -dAdx
-            dCdx = 1.0 / 6 * (3 * A ** 2 - 1) * dAdx * (x2 - x1) ** 2
-            dDdx = 1.0 / 6 * (3 * B ** 2 - 1) * dBdx * (x2 - x1) ** 2
+            dCdx = 1.0 / 6 * (3 * A**2 - 1) * dAdx * (x2 - x1) ** 2
+            dDdx = 1.0 / 6 * (3 * B**2 - 1) * dBdx * (x2 - x1) ** 2
             dydx[i] = dAdx * y1 + dBdx * y2 + dCdx * self.fpp[j] + dDdx * self.fpp[j + 1]
 
         if n == 1:

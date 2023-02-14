@@ -110,7 +110,6 @@ class MonopileInstallation(InstallPhase):
         self.supply_chain = self.config.get("monopile_supply_chain", {})
 
         if self.supply_chain.get("enabled", False):
-
             delivery_time = self.supply_chain.get("substructure_delivery_time", 168)
             # storage = self.supply_chain.get("substructure_storage", "inf")
             supply_chain = SubstructureDelivery(
@@ -321,7 +320,6 @@ def solo_install_monopiles(vessel, port, distance, monopiles, **kwargs):
             vessel.at_site = True
 
         if vessel.at_site:
-
             if vessel.storage.items:
                 # Prep for monopile install
                 yield prep_for_site_operations(vessel, survey_required=True, **kwargs)
@@ -377,9 +375,7 @@ def install_monopiles_from_queue(wtiv, queue, monopiles, distance, **kwargs):
             wtiv.at_site = True
 
         if wtiv.at_site:
-
             if queue.vessel:
-
                 # Prep for monopile install
                 yield prep_for_site_operations(wtiv, survey_required=True, **kwargs)
 

@@ -421,7 +421,6 @@ class System:
 
         # assuming YAML format
         if ".yaml" in filename.lower() or ".yml" in filename.lower():
-
             with open(filename) as file:
                 mooring = yaml.load(file, Loader=yaml.FullLoader)  # get dict from YAML file
 
@@ -434,7 +433,6 @@ class System:
             # read in the data
 
             for line in f:  # loop through each line in the file
-
                 # get line type property sets
                 if line.count("---") > 0 and (
                     line.upper().count("LINE DICTIONARY") > 0 or line.upper().count("LINE TYPES") > 0
@@ -482,7 +480,6 @@ class System:
                             lineType["Ten"] = ten_array
 
                         else:
-
                             try:
                                 lineType["EA"] = float(
                                     entries[3].split("|")[0]
@@ -879,7 +876,6 @@ class System:
         # points
         pointDict = dict()
         for i, d in enumerate(data["points"]):
-
             pointDict[d["name"]] = i  # make dictionary based on names pointing to point indices, for name-based linking
 
             entry0 = d["name"].lower()
@@ -933,7 +929,6 @@ class System:
 
         # lines
         for i, d in enumerate(data["lines"]):
-
             num = i + 1
 
             lUnstr = np.float_(d["length"])
@@ -1024,7 +1019,7 @@ class System:
                 [len(self.lineList), 2]
             )  # First column is Anchor Node, second is Fairlead node
             for point_ind, point in enumerate(self.pointList, start=1):  # Loop through all the points
-                for (line, line_pos) in zip(
+                for line, line_pos in zip(
                     point.attached, point.attachedEndB
                 ):  # Loop through all the lines #s connected to this point
                     if line_pos == 0:  # If the A side of this line is connected to the point
@@ -1085,7 +1080,6 @@ class System:
                     # Check if the point is attached to body
                     for body in self.bodyList:
                         for attached_Point in body.attachedP:
-
                             if attached_Point == point.number:
                                 # point_type = "Body" + str(body.number)
                                 point_type = "Vessel"
@@ -1201,7 +1195,7 @@ class System:
                 [len(self.lineList), 2]
             )  # First column is Anchor Node, second is Fairlead node
             for point_ind, point in enumerate(self.pointList, start=1):  # Loop through all the points
-                for (line, line_pos) in zip(
+                for line, line_pos in zip(
                     point.attached, point.attachedEndB
                 ):  # Loop through all the lines #s connected to this point
                     if line_pos == 0:  # If the A side of this line is connected to the point
@@ -1998,7 +1992,6 @@ class System:
         self.Es = []
 
         def eval_func_equil(X, args):
-
             Y = self.mooringEq(X, DOFtype=DOFtype, tol=lineTol)
             oths = dict(status=1)  # other outputs - returned as dict for easy use
 
@@ -2008,7 +2001,6 @@ class System:
             return Y, oths, False
 
         def step_func_equil(X, args, Y, oths, Ytarget, err, tol_, iter, maxIter):
-
             # get stiffness matrix
             if finite_difference:
                 K = self.getSystemStiffness(DOFtype=DOFtype)
@@ -2027,9 +2019,7 @@ class System:
                 else:
                     dX = np.linalg.solve(K, Y)  # calculate position adjustment according to Newton's method
             except:
-
                 if np.linalg.det(K) == 0.0:  # if the stiffness matrix is singular, we will modify the approach
-
                     # first try ignoring any DOFs with zero stiffness
                     indices = list(range(n))  # list of DOF indices that will remain active for this step
                     mask = [True] * n  # this is a mask to be applied to the array K indices
@@ -2110,7 +2100,6 @@ class System:
         # Print statements if it ever reaches the maximum number of iterations
         if info["iter"] == maxIter - 1:
             if display > 1:
-
                 if finite_difference:
                     K = self.getSystemStiffness(DOFtype=DOFtype)
                 else:
@@ -2215,9 +2204,7 @@ class System:
         # ------------------------- perform linearization --------------------------------
 
         if solveOption == 0:  # ::: forward difference approach :::
-
             for i in range(n):  # loop through each DOF
-
                 X2 = np.array(X1, dtype=np.float_)
                 X2[i] += dX[i]  # perturb positions by dx in each DOF in turn
                 F2p = self.mooringEq(
@@ -2232,11 +2219,9 @@ class System:
                 K[:, i] = -(F2p - F1) / dX[i]  # take finite difference of force w.r.t perturbation
 
         elif solveOption == 1:  # ::: adaptive central difference approach :::
-
             nTries = 3  # number of refinements to allow -1
 
             for i in range(n):  # loop through each DOF
-
                 dXi = 1.0 * dX[i]
 
                 # potentially iterate with smaller step sizes if we're at a taut-slack transition (but don't get too small, or else numerical errors)
@@ -2362,9 +2347,7 @@ class System:
         # ------------------------- perform linearization --------------------------------
 
         if solveOption == 0:  # ::: forward difference approach :::
-
             for i in range(self.nCpldDOF):  # loop through each DOF
-
                 X2 = np.array(X1, dtype=np.float_)
                 X2[i] += dX[i]  # perturb positions by dx in each DOF in turn
                 self.setPositions(X2, DOFtype="coupled")  # set the perturbed coupled DOFs
@@ -2385,16 +2368,13 @@ class System:
                     J[:, i] = (T2p - T1) / dX[i]
 
         elif solveOption == 1:  # ::: adaptive central difference approach :::
-
             # nTries = 1  # number of refinements to allow -1
 
             for i in range(self.nCpldDOF):  # loop through each DOF
-
                 dXi = 1.0 * dX[i]
                 # print(f'__________ nCpldDOF = {i+1} __________')
                 # potentially iterate with smaller step sizes if we're at a taut-slack transition (but don't get too small, or else numerical errors)
                 for j in range(nTries):
-
                     # print(f'-------- nTries = {j+1} --------')
                     X2 = np.array(X1, dtype=np.float_)
                     X2[i] += dXi  # perturb positions by dx in each DOF in turn
@@ -2532,7 +2512,6 @@ class System:
             if (
                 body1.type in d
             ):  # >>>> when DOFtype==both, this approach gives different indexing than what is in setPositions/getForces and getSystemStiffness <<<<<
-
                 # i = (body1.number-1)*6      # start counting index for body DOFs based on body number to keep indexing consistent
 
                 # get body's self-stiffness matrix (now only cross-coupling terms will be handled on a line-by-line basis)
@@ -2553,7 +2532,6 @@ class System:
                     ) in (
                         point1.attached
                     ):  # go through each attached line to the Point, looking for when its other end is attached to something that moves
-
                         endFound = 0  # simple flag to indicate when the other end's attachment has been found
                         j = (
                             i + 6
@@ -2575,7 +2553,6 @@ class System:
                         # look through Bodies further on in the list (coupling with earlier Bodies will already have been taken care of)
                         for body2 in self.bodyList[self.bodyList.index(body1) + 1 :]:
                             if body2.type in d:
-
                                 # go through each attached Point
                                 for pointID2, rPointRel2 in zip(body2.attachedP, body2.rPointRel):
                                     point2 = self.pointList[pointID2 - 1]
@@ -2583,7 +2560,6 @@ class System:
                                     if (
                                         lineID in point2.attached
                                     ):  # if the line is also attached to this Point2 in Body2
-
                                         # following are analagous to what's in functions getH and translateMatrix3to6 except for cross coupling between two bodies
                                         r2 = rotatePosition(
                                             rPointRel2, body2.r6[3:]
@@ -2613,7 +2589,6 @@ class System:
                             for point2 in self.pointList:
                                 if point2.type in d:  # if it's a free point and
                                     if lineID in point2.attached:  # the line is also attached to it
-
                                         # only add up one off-diagonal sub-matrix for now, then we'll mirror at the end
                                         # K[i  :i+3, j:j+3] += K3
                                         # K[i+3:i+6, j:j+3] += np.matmul(H1.T, K3)
@@ -2636,7 +2611,6 @@ class System:
         # go through each movable point in the system
         for point in self.pointList:
             if point.type in d:
-
                 n = point.nDOF
 
                 # >>> TODO: handle case of free end point resting on seabed <<<
@@ -2647,7 +2621,6 @@ class System:
 
                 # go through attached lines and add cross-coupling terms
                 for lineID in point.attached:
-
                     j = i + n
 
                     # go through movable points to see if one is attached
@@ -2700,7 +2673,6 @@ class System:
         """
         anchorloads = []
         for point in self.pointList:
-
             # Only calculate anchor load if point is fixed
             if point.type == 1:
                 confz = self.data[N:, self.ch["CON" + str(point.number) + "FZ"]] / 1000
@@ -2779,10 +2751,8 @@ class System:
         else:
             ratios = []
             for line in self.lineList:
-
                 # Only works if tensions are in lineN.MD.out files
                 if hasattr(line, "Ten"):
-
                     if hasattr(line.type, "MBL"):
                         ratios.append(np.amax(line.Ten[N:, :]) / line.type["MBL"])
                     else:
@@ -2807,7 +2777,6 @@ class System:
 
         # Temporarily storing all data in main output file in system.data ..... probably will want to change this at some point
         if path.exists(dirname + rootname + ".MD.out"):
-
             self.data, self.ch, self.channels, self.units = read_mooring_file(
                 dirname + rootname + sep, "out"
             )  # remember number starts on 1 rather than 0
@@ -3063,7 +3032,6 @@ class System:
                     )
 
         if isinstance(bathymetry, str):  # or, if it's a string, load in the bathymetry file
-
             # parse through the MoorDyn bathymetry file
             bathGrid_Xs, bathGrid_Ys, bathGrid = self.readBathymetryFile(bathymetry)
             if rang == "hold":
@@ -3313,7 +3281,6 @@ class System:
                 ax.text(xloc, yloc, i, c="r")
 
         if isinstance(bathymetry, str):  # or, if it's a string, load in the bathymetry file
-
             # parse through the MoorDyn bathymetry file
             bathGrid_Xs, bathGrid_Ys, bathGrid = self.readBathymetryFile(bathymetry)
 
@@ -3452,7 +3419,6 @@ class System:
         redraws the lines and rods in their next positions."""
 
         for rod in self.rodList:
-
             if (
                 isinstance(rod, Line) and rod.show
             ):  # draw it if MoorPy is representing it as as Rod-Line object, and it's set to be shown
@@ -3595,7 +3561,6 @@ class System:
         return line_ani
 
     def unload_md_driver(self, outFileName, outroot="driver", MDinputfile="test.dat", depth=600):
-
         """Function to output moordyn driver input file
         Parameters
         ----------

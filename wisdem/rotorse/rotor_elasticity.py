@@ -143,7 +143,7 @@ class RunPreComp(ExplicitComponent):
             val=0.0,
             desc="Spanwise position of the segmentation joint.",
         )
-        self.add_input("joint_mass", val=0.0, units='kg', desc="Mass of the joint.")
+        self.add_input("joint_mass", val=0.0, units="kg", desc="Mass of the joint.")
 
         # Outputs - Distributed beam properties
         self.add_output("z", val=np.zeros(n_span), units="m", desc="locations of properties along beam")
@@ -314,7 +314,6 @@ class RunPreComp(ExplicitComponent):
         )
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         ##############################
         def region_stacking(
             i,
@@ -368,7 +367,6 @@ class RunPreComp(ExplicitComponent):
                 for i_sec, start_nd_arci, end_nd_arci in zip(idx, start_nd_arc, end_nd_arc):
                     name = layer_name[i_sec]
                     if start_nd_arci <= dp0 and end_nd_arci >= dp1:
-
                         if name in region_loc.keys():
                             if region_loc[name][i] == None:
                                 region_loc[name][i] = [i_reg]
@@ -544,7 +542,6 @@ class RunPreComp(ExplicitComponent):
             idx_s = 0
             idx_le_precomp = np.argmax(profile_i_rot_precomp[:, 0])
             if idx_le_precomp != 0:
-
                 if profile_i_rot_precomp[0, 0] == profile_i_rot_precomp[-1, 0]:
                     idx_s = 1
                 profile_i_rot_precomp = np.row_stack(

@@ -90,8 +90,8 @@ Blade twist as a design variable by adding or subtracting radians from the initi
     *Default* = False
 
 :code:`inverse` : Boolean
-    When set to True, the twist is defined inverting the 
-    blade-element momentum equations to achieve a desired margin to stall, 
+    When set to True, the twist is defined inverting the
+    blade-element momentum equations to achieve a desired margin to stall,
     which is defined among the constraints.
     :code:`flag` and :code:`inverse` cannot be simultaneously be set to True
 
@@ -99,7 +99,7 @@ Blade twist as a design variable by adding or subtracting radians from the initi
 
 :code:`n_opt` : Integer
     Number of equally-spaced control points of the spline
-    parametrizing the twist distribution along blade span. 
+    parametrizing the twist distribution along blade span.
 
     *Default* = 8
 
@@ -119,7 +119,7 @@ Blade twist as a design variable by adding or subtracting radians from the initi
 
 :code:`index_start` : Integer
     Integer setting the first DV of the :code:`n_opt` along span that is optimized.
-    It is recommended to set :code:`index_start` to 1 
+    It is recommended to set :code:`index_start` to 1
     to lock the first DV and prevent the optimizer to try to
     optimize the twist of the blade root cylinder.
 
@@ -169,7 +169,7 @@ Blade chord as a design variable by scaling (multiplying) the initial value at s
 
 :code:`index_end` : Integer
     Integer setting the last DV of the :code:`n_opt` along span that is optimized.
-    It is recommended to lock the last point close to blade tip, setting :code:`index_end` to :code:`n_opt` minus 1. 
+    It is recommended to lock the last point close to blade tip, setting :code:`index_end` to :code:`n_opt` minus 1.
     The last point controls the chord length at blade tip and due to
     the imperfect tip loss models of CCBlade, it is usually a good
     idea to taper the chord manually and do not let a numerical
@@ -191,7 +191,7 @@ Adjust airfoil positions along the blade span.
 
 :code:`af_start` : Integer
     Index of airfoil where the optimization can start shifting airfoil
-    position. The airfoil at blade tip is always locked. It is advised 
+    position. The airfoil at blade tip is always locked. It is advised
     to keep the airfoils close to blade root locked.
 
     *Default* = 4
@@ -239,7 +239,7 @@ Blade suction-side spar cap thickness as a design variable by scaling (multiplyi
 
 :code:`index_start` : Integer
     Integer setting the first DV of the :code:`n_opt` along span that is optimized.
-    It is recommended to set :code:`index_start` to 1 
+    It is recommended to set :code:`index_start` to 1
     to lock the first DV and impose a pre-
     defined taper to small thicknesses and mimic a blade
     manufacturability constraint.
@@ -248,7 +248,7 @@ Blade suction-side spar cap thickness as a design variable by scaling (multiplyi
 
 :code:`index_end` : Integer
     Integer setting the last DV of the :code:`n_opt` along span that is optimized.
-    It is recommended to lock the last point close to blade tip, setting :code:`index_end` to :code:`n_opt` minus 1. 
+    It is recommended to lock the last point close to blade tip, setting :code:`index_end` to :code:`n_opt` minus 1.
     This imposes a predefined taper to small thicknesses and mimic a blade
     manufacturability constraint.
 
@@ -286,7 +286,7 @@ Blade pressure-side spar cap thickness as a design variable by scaling (multiply
 
 :code:`index_start` : Integer
     Integer setting the first DV of the :code:`n_opt` along span that is optimized.
-    It is recommended to set :code:`index_start` to 1 
+    It is recommended to set :code:`index_start` to 1
     to lock the first DV and impose a pre-
     defined taper to small thicknesses and mimic a blade
     manufacturability constraint.
@@ -295,7 +295,7 @@ Blade pressure-side spar cap thickness as a design variable by scaling (multiply
 
 :code:`index_end` : Integer
     Integer setting the last DV of the :code:`n_opt` along span that is optimized.
-    It is recommended to lock the last point close to blade tip, setting :code:`index_end` to :code:`n_opt` minus 1. 
+    It is recommended to lock the last point close to blade tip, setting :code:`index_end` to :code:`n_opt` minus 1.
     This imposes a predefined taper to small thicknesses and mimic a blade
     manufacturability constraint.
 

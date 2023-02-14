@@ -38,7 +38,6 @@ class TestNewAssembly(unittest.TestCase):
         self.prob["main_bearing_number"] = 2
 
     def test1(self):
-
         self.prob.run_model()
 
         self.assertEqual(np.round(self.prob["rotor_cost"], 2), 1292397.85)

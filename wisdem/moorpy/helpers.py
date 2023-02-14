@@ -366,7 +366,6 @@ def dsolve2(
         print(f"Starting dsolve iterations>>>   aiming for Y={Ytarget}")
 
     for iter in range(maxIter):
-
         # call evaluation function
         Y, oths, stop = eval_func(X, args)
 
@@ -398,7 +397,6 @@ def dsolve2(
 
             # looks like things didn't converge, so if N=1 do a linear fit on the last 30% of points to estimate the soln
             if N == 1:
-
                 m, b = np.polyfit(Es[int(0.7 * iter) : iter, 0], Xs[int(0.7 * iter) : iter, 0], 1)
                 X = np.array([b])
                 Y = np.array([0.0])
@@ -424,7 +422,6 @@ def dsolve2(
 
         # the equation for the plane we don't want to recross is then sum(X*dX_last) = sum(Xlim*dX_last)
         if np.sum((X + dX) * dX_last) < np.sum(Xlim * dX_last):  # if we cross are going to cross it
-
             alpha = np.sum((Xlim - X) * dX_last) / np.sum(
                 dX * dX_last
             )  # this is how much we need to scale down dX to land on it rather than cross it
@@ -437,10 +434,8 @@ def dsolve2(
 
         # also avoid extreme accelerations in the same direction
         for i in range(N):
-
             # should update the following for ytol >>>
             if abs(dX_last[i]) > tols[i]:  # only worry about accelerations if the last step was non-negligible
-
                 dX_max = (
                     a_max * dX_last[i]
                 )  # set the maximum permissible dx in each direction based an an acceleration limit
@@ -452,7 +447,6 @@ def dsolve2(
                     a_i = dX[i] / dX_max  # calculate ratio of desired dx to max dx
 
                     if a_i > 1.0:
-
                         if display > 2:
                             print(f"    limiting acceleration ({1.0/a_i:6.4f}) for axis {i}")
                             print(f"     dX_last was {dX_last}, dX was going to be {dX}")
@@ -484,7 +478,6 @@ def dsolve2(
 
         # enforce bounds
         for i in range(N):
-
             if X[i] + dX[i] < Xmin[i]:
                 dX[i] = Xmin[i] - X[i]
 
@@ -494,7 +487,6 @@ def dsolve2(
         dXlist2[iter, :] = dX
         # check for convergence
         if (ytol == 0 and all(np.abs(dX) < tols)) or (ytol > 0 and all(np.abs(err) < ytol)):
-
             if display > 0:
                 print(
                     "Iteration converged after "
@@ -802,7 +794,6 @@ def read_mooring_file(dirName, fileName):
     i = 0
 
     for line in f:  # loop through lines in file
-
         if i == 0:
             for entry in line.split():  # loop over the elemets, split by whitespace
                 channels.append(entry)  # append to the last element of the list

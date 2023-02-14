@@ -7,7 +7,6 @@ import wisdem.nrelcsm.nrel_csm_mass_2015 as nct2015
 
 class TestAll(unittest.TestCase):
     def testMass(self):
-
         # simple test of module
         prob = om.Problem(reports=False)
         prob.model = nct2015.nrel_csm_mass_2015()
@@ -50,7 +49,6 @@ class TestAll(unittest.TestCase):
         self.assertAlmostEqual(float(prob["turbine_mass"]), 467008.1322012795, 2)
 
     def testMassAndCost(self):
-
         # simple test of module
         prob = om.Problem(reports=False)
         prob.model = nct2015.nrel_csm_2015()

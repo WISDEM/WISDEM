@@ -6,7 +6,7 @@
  http://frame3dd.sourceforge.net/
  ---------------------------------------------------------------------------
  Copyright (C) 1992-2014  Henri P. Gavin
- 
+
     FRAME3DD is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -87,17 +87,17 @@ void compute_reaction_forces(
 );
 
 
-/* add_feF :  add fixed end forces to internal element forces 
- * removed reaction calculations on 2014-05-14 
- *  
-void add_feF(	
+/* add_feF :  add fixed end forces to internal element forces
+ * removed reaction calculations on 2014-05-14
+ *
+void add_feF(
 	vec3 *xyz,		//< XYZ locations of each node
 	double *L,		//< length of each frame element, effective
-	int *N1, int *N2,	//< node connectivity	
-	float *p,		//< roll angle, radians	
-	double **Q,		//< frame element end forces 
+	int *N1, int *N2,	//< node connectivity
+	float *p,		//< roll angle, radians
+	double **Q,		//< frame element end forces
 	double **eqF_temp,	//< temp. equiv.end forces for all frame elements
-	double **eqF_mech,	//< mech. equiv.end forces for all frame elements 
+	double **eqF_mech,	//< mech. equiv.end forces for all frame elements
 	int nE,			//< number of frame elements
 	int DoF,		//< number of degrees of freedom
 	int verbose		//< 1: copious screen output; 0: none
@@ -137,7 +137,7 @@ void element_end_forces(
 	double *D,	/**< displacement vector			*/
 	int shear,	/**< 1: include shear deformation, 0: don't	*/
 	int geom,	/**< 1: include goemetric stiffness, 0: don't	*/
-	int *axial_strain_warning /** < 0: strains < 0.001         */ 
+	int *axial_strain_warning /** < 0: strains < 0.001         */
 );
 
 
@@ -174,7 +174,7 @@ void static_condensation(
 );
 
 
-/**     
+/**
  	Paz condensation of mass and stiffness matrices
 	matches the response at a particular frequency, sqrt(L)/2/pi
         Paz M. Dynamic condensation. AIAA J 1984;22(5):724-727.
@@ -212,7 +212,7 @@ void modal_condensation(
 /**
 	release allocated memory
 */
-void deallocate( 
+void deallocate(
 	int nN, int nE, int nL, int *nF, int *nU, int *nW, int *nP, int *nT, int DoF,
 	int modes,
 	vec3 *xyz, float *rj, double *L, double *Le,
@@ -224,20 +224,19 @@ void deallocate(
 	float ***U, float ***W, float ***P, float ***T,
 	float **Dp,
 	double **F_mech, double **F_temp,
-	double ***eqF_mech, double ***eqF_temp, double *F, double *dF, 
+	double ***eqF_mech, double ***eqF_temp, double *F, double *dF,
 	double **K, double **Q,
 	double *D, double *dD,
 	double *R, double *dR,
 	float *d, float *EMs,
 	float *NMs, float *NMx, float *NMy, float *NMz,
-	double **M, double *f, double **V, 
-	int *c, int *m, 
+	double **M, double *f, double **V,
+	int *c, int *m,
 	double **pkNx, double **pkVy, double **pkVz, double **pkTx, double **pkMy, double **pkMz,
 	double **pkDx, double **pkDy, double **pkDz, double **pkRx, double **pkSy, double **pkSz,
 	float *EKx, float *EKy, float *EKz, float *EKtx, float *EKty, float *EKtz
-	
+
 );
 
 
 #endif /* FRAME_PY_FRAME_H */
-

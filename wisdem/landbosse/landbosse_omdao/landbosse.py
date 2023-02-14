@@ -3,6 +3,7 @@ from math import ceil
 
 import numpy as np
 import openmdao.api as om
+
 from wisdem.landbosse.model.Manager import Manager
 from wisdem.landbosse.model.DefaultMasterInputDict import DefaultMasterInputDict
 from wisdem.landbosse.landbosse_omdao.OpenMDAODataframeCache import OpenMDAODataframeCache
@@ -18,7 +19,6 @@ use_default_component_data = -1.0
 
 class LandBOSSE(om.Group):
     def setup(self):
-
         # Add a tower section height variable. The default value of 30 m is for transportable tower sections.
         self.set_input_defaults("tower_section_length_m", 30.0, units="m")
         self.set_input_defaults("blade_drag_coefficient", use_default_component_data)  # Unitless
@@ -768,7 +768,7 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         tower_section_mass = tower_mass_tonnes / number_of_sections
 
-        tower_section_surface_area_m2 = np.pi * tower_section_height_m * (tower_radius ** 2)
+        tower_section_surface_area_m2 = np.pi * tower_section_height_m * (tower_radius**2)
 
         sections = []
         for i in range(number_of_sections):

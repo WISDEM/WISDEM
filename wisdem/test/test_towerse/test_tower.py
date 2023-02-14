@@ -87,7 +87,6 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["tol"] = 1e-9
 
     def testProblemLand(self):
-
         prob = om.Problem(reports=False)
         prob.model = tow.TowerSE(modeling_options=self.modeling_options)
         prob.setup()

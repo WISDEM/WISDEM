@@ -33,7 +33,6 @@ if under_mpirun():
         sys.stdout.write("\n")
         sys.stdout.flush()
 
-
 else:
     MPI = None
 

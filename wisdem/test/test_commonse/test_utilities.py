@@ -176,7 +176,7 @@ class TestAny(unittest.TestCase):
         r = np.linspace(0, 1, 20)
         n = 10
         n2 = int(n / 2)
-        dx = dy = dz = np.tile(np.r_[r ** 2 + 10.0], (n, 1))
+        dx = dy = dz = np.tile(np.r_[r**2 + 10.0], (n, 1))
         freqs = np.arange(n)
         xm = np.zeros(n)
         ym = np.zeros(n)
@@ -195,7 +195,7 @@ class TestAny(unittest.TestCase):
         r = np.linspace(0, 1, 20)
         n = 10
         n2 = int(n / 2)
-        dx = dy = dz = np.tile(np.r_[r ** 2 + 10.0], (n, 1))
+        dx = dy = dz = np.tile(np.r_[r**2 + 10.0], (n, 1))
 
         # Jitter the values randomly
         dx += np.random.random(dx.shape)

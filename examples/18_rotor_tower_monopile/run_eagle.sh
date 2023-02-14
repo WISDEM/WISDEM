@@ -15,4 +15,3 @@ mpirun -np 92 python design_run.py
 python create_conv_plots.py
 # Compare initial designs at 15MW and linearly scaled 15MW with final design found by WISDEM
 compare_designs IEA15MW_FB.yaml IEA15MW_FB_scaled.yaml 20MW_opt/IEA20MW_FB.yaml --labels 15MW 15MWs 20MWopt
- 

@@ -201,7 +201,6 @@ def test_correct_turbines():
 
 
 def test_floating_calculations():
-
     base = deepcopy(config_full_ring)
     base["site"]["depth"] = 50
     number = base["plant"]["num_turbines"]

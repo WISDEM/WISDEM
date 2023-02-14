@@ -69,7 +69,7 @@ int read_reaction_data(
     int verbose, /**< 1: copious screen output; 0: none      */
     int geom,
     float *EKx, float *EKy, float *EKz,  /* extra stiffness */
-    float *EKtx, float *EKty, float *EKtz    
+    float *EKtx, float *EKty, float *EKtz
 );
 
 
@@ -228,4 +228,3 @@ void dots ( FILE *fp, int n );
 
 /** EVALUATE -  displays a randomly-generated evaluation message.  */
 // void evaluate (  float error, float rms_resid, float tol, int geom );
-
