@@ -426,7 +426,6 @@ class PoseOptimization(object):
         return wt_opt
 
     def set_objective(self, wt_opt):
-
         # Set merit figure. Each objective has its own scaling.
         if self.opt["merit_figure"] == "AEP":
             wt_opt.model.add_objective("rotorse.rp.AEP", ref=-1.0e6)
@@ -497,7 +496,6 @@ class PoseOptimization(object):
         return wt_opt
 
     def set_design_variables(self, wt_opt, wt_init):
-
         # Set optimization design variables.
         rotorD_opt = self.opt["design_variables"]["rotor_diameter"]
         blade_opt = self.opt["design_variables"]["blade"]
@@ -1664,7 +1662,6 @@ class PoseOptimization(object):
 
     def set_restart(self, wt_opt):
         if "warmstart_file" in self.opt["driver"]["optimization"]:
-
             # Directly read the pyoptsparse sqlite db file
             from pyoptsparse import SqliteDict
 

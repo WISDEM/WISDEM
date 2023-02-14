@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.interpolate import griddata
 from numpy.linalg import norm
+from scipy.interpolate import griddata
 
 
 def project_points(points, x, N_vect):
@@ -31,12 +31,10 @@ def project_points(points, x, N_vect):
 
 
 def normalize(v):
-
     return v / (np.dot(v, v) ** 2 + 1.0e-16)
 
 
 def curvature(points):
-
     if len(points.shape) < 2:
         return None
     if points.shape[1] == 1:
@@ -49,7 +47,7 @@ def curvature(points):
         y1 = d1[1, 1:]
         x2 = d2[0, :]
         y2 = d2[1, :]
-        curv = (x1 * y2 - y1 * x2) / (x1 ** 2 + y1 ** 2) ** (3.0 / 2.0)
+        curv = (x1 * y2 - y1 * x2) / (x1**2 + y1**2) ** (3.0 / 2.0)
 
     elif points.shape[1] == 3:
         d1 = np.diff(points.T)
@@ -61,7 +59,7 @@ def curvature(points):
         y2 = d2[1, :]
         z2 = d2[2, :]
         curv = ((z2 * y1 - y2 * z1) ** 2.0 + (x2 * z1 - z2 * x1) ** 2.0 + (y2 * x1 - x2 * y1) ** 2.0) ** 0.5 / (
-            x1 ** 2.0 + y1 ** 2.0 + z1 ** 2.0 + 1.0e-30
+            x1**2.0 + y1**2.0 + z1**2.0 + 1.0e-30
         ) ** (3.0 / 2.0)
 
     curvt = np.zeros(points.shape[0])
@@ -165,17 +163,17 @@ RotZ = lambda a: np.array([[np.cos(a), -np.sin(a), 0], [np.sin(a), np.cos(a), 0]
 
 
 def RotMat(u, theta):
-    """ 
+    """
     Calculate the rotation matrix from a unit vector, u and an angle, theta
-    
+
     http://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
     \f[
         R =\left[ \begin{array}{ccc}
-        \cos\theta +u_x^2 \left(1-\cos \theta\right) & 
-        u_x u_y \left(1-\cos \theta\right) - u_z \sin \theta & 
-        u_x u_z \left(1-\cos \theta\right) + u_y \sin \theta \\ 
-        u_y u_x \left(1-\cos \theta\right) + u_z \sin \theta & 
-        \cos \theta + u_y^2\left(1-\cos \theta\right) & 
+        \cos\theta +u_x^2 \left(1-\cos \theta\right) &
+        u_x u_y \left(1-\cos \theta\right) - u_z \sin \theta &
+        u_x u_z \left(1-\cos \theta\right) + u_y \sin \theta \\
+        u_y u_x \left(1-\cos \theta\right) + u_z \sin \theta &
+        \cos \theta + u_y^2\left(1-\cos \theta\right) &
         u_y u_z \left(1-\cos \theta\right) - u_x \sin \theta \\
         u_z u_x \left(1-\cos \theta\right) - u_y \sin \theta &
         u_z u_y \left(1-\cos \theta\right) + u_x \sin \theta &
@@ -216,7 +214,7 @@ def dotXC(rot, x, center):
     """
     Transpose and Multiply the x array by a rotational matrix around a center
     """
-    from numpy import zeros, array, dot
+    from numpy import dot, array, zeros
 
     if isinstance(x, list):
         x_tmp = array([x[0].flatten(), x[1].flatten(), x[2].flatten()]).T

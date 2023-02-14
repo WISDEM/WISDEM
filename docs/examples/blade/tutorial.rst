@@ -6,7 +6,7 @@
 This example walks through a blade optimization problem with increasing complexity.
 All of the iterations use the same geometry input file, ``BAR0.yaml``, which describes a baseline design from the NREL-Sandia Big Adaptive Rotor (BAR) project.
 This blade uses glass fiber-reinforced polymer in the spar cap design.  The same ``modeling_options.yaml`` file is also common to all iterations and shows that all modules are called, the airfoil polars are discretized at 200 angles of attack, etc.
-The example file runs four cases one after the other for testing purposes. To run the cases one by one, make sure to comment out all cases at lines 15-18 except the case that should run. 
+The example file runs four cases one after the other for testing purposes. To run the cases one by one, make sure to comment out all cases at lines 15-18 except the case that should run.
 
 
 Baseline Design

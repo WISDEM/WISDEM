@@ -288,11 +288,11 @@ The screen output should look something like the following,
                 Function evaluations: 12
                 Gradient evaluations: 12
     Optimization Complete
-    
+
     ...
-    
+
     nacelle_mass: [149485.62543167]
-    
+
     L_h1: [0.22298585]
     L_12: [0.1]
     L_lss: [0.42298585]
@@ -309,7 +309,7 @@ The screen output should look something like the following,
     bedplate_web_thickness: [0.09595255]
     bedplate_flange_thickness: [0.09892329]
     bedplate_flange_width: [0.1]
-    
+
     constr_lss_vonmises: [0.98187486 0.9993906  0.99831682 0.99952247]
     constr_hss_vonmises: [0.03251358 0.03215481]
     constr_bedplate_vonmises: [1.51989918e-03 9.77245633e-03 6.01676078e-01 5.99836120e-01
@@ -323,4 +323,3 @@ The screen output should look something like the following,
     constr_hub_diameter: [0.09206083]
     constr_length: [-2.18136176e-10]
     constr_height: [1.69326612]
-    

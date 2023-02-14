@@ -3,6 +3,7 @@ import traceback
 
 import numpy as np
 import pandas as pd
+
 from wisdem.landbosse.model.CostModule import CostModule
 from wisdem.landbosse.model.WeatherDelay import WeatherDelay as WD
 
@@ -587,7 +588,6 @@ class SitePreparationCost(CostModule):
         ) * calculate_cost_output_dict["wind_multiplier"]
 
         if calculate_cost_input_dict["road_distributed_wind"] and calculate_cost_input_dict["turbine_rating_MW"] >= 0.1:
-
             labor_for_new_roads_cost_usd = (labor_data["Cost USD"].sum()) + calculate_cost_output_dict[
                 "managament_crew_cost_before_wind_delay"
             ]
@@ -601,7 +601,6 @@ class SitePreparationCost(CostModule):
         elif (
             calculate_cost_input_dict["road_distributed_wind"] and calculate_cost_input_dict["turbine_rating_MW"] < 0.1
         ):  # small DW
-
             labor_for_new_roads_cost_usd = labor_data["Cost USD"].sum()
             labor_for_new_and_old_roads_cost_usd = self.new_and_existing_total_road_cost(labor_for_new_roads_cost_usd)
 

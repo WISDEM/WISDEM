@@ -3,9 +3,10 @@
 
 # Imports and loading an airfoil
 import os
-import numpy as np
-from wisdem.airfoilprep import Polar, Airfoil
 
+import numpy as np
+
+from wisdem.airfoilprep import Polar, Airfoil
 
 airfoil = Airfoil.initFromAerodynFile("../_airfoil_files/DU21_A17.dat")
 # ------

@@ -273,7 +273,6 @@ def transfer_moored_substructures_from_storage(group, feed, distance, queue, tow
     transit_time = distance / group.transit_speed
 
     while True:
-
         start = group.env.now
         assembly = yield feed.get()
         delay = group.env.now - start
@@ -341,7 +340,6 @@ def install_moored_substructures(vessel, queue, distance, substructures, station
     n = 0
     while n < substructures:
         if queue.vessel:
-
             start = vessel.env.now
             if n == 0:
                 vessel.mobilize()

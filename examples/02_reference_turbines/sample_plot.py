@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+
 from wisdem.glue_code.runWISDEM import load_wisdem
 
 refturb, _, _ = load_wisdem("outputs/refturb_output.pkl")

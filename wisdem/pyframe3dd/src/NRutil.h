@@ -138,5 +138,3 @@ void free_f3tensor();
 #endif /* ANSI */
 
 #endif /* _FRAME_NRUTIL_H */
-
-

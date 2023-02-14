@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
+
 import wisdem.commonse.utilization_api as util
 from wisdem.commonse import gravity as g
 
@@ -39,7 +40,7 @@ class TestUtilization(unittest.TestCase):
 
         Fe = 3.0
         Fr = 4.0 / 3.0
-        Fi = Fe * Fr * (1.0 + 3.75 * Fr ** 2) ** (-0.25)
+        Fi = Fe * Fr * (1.0 + 3.75 * Fr**2) ** (-0.25)
         self.assertEqual(util._plasticityRF(Fe, Fy), Fi)
         npt.assert_equal(util._plasticityRF(Fe * myones, Fy), Fi * myones)
 

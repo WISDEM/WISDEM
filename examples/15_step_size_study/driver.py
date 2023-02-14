@@ -7,6 +7,7 @@ using WISDEM and then visualize the results.
 import os
 
 import numpy as np
+
 from wisdem import run_wisdem
 
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file

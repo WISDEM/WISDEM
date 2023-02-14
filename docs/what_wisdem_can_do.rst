@@ -64,7 +64,7 @@ This is not an exhaustive list and WISDEM's capabilities have changed over the y
       - ~20 design variables
       - Blade twist, chord, spar cap thickness
       - `Paper <https://iopscience.iop.org/article/10.1088/1742-6596/1618/4/042041/pdf>`_
-      
+
 
 What WISDEM cannot do
 ---------------------
@@ -103,4 +103,4 @@ When to use OpenFAST
 `OpenFAST <https://openfast.readthedocs.io/en/master/>`_ is a well-established higher-fidelity tool for turbine simulation.
 Whereas WISDEM and WEIS are design for design optimization, OpenFAST focuses on turbine analysis.
 OpenFAST gives more physically accurate results but has a much larger computational cost than WISDEM.
-OpenFAST has been used across multiple decades by hundreds of researchers for a huge number of research projects. 
+OpenFAST has been used across multiple decades by hundreds of researchers for a huge number of research projects.

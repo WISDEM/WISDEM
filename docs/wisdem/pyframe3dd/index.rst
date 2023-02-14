@@ -16,5 +16,3 @@ License
 -------
 
 Frame3DD uses the GNU General Public License (GPL), which carries strong copy-left restrictions.  The standalone `pyFrame3DD repository <https://github.com/WISDEM/pyFrame3DD>`_ is therefore also released under the GNU GPL license.  For WISDEM, NREL has obtained a special dispensation from the Frame3DD author to use it within this codebase but still retain the Apache License, Version 2.0.
-
-  

@@ -395,20 +395,16 @@ class GUI_Master(object):
                 dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 3, 3)
 
         with dpg.window(width=1200, height=1000, on_close=self._on_demo_close, pos=(0, 0), no_title_bar=True):
-
             with dpg.menu_bar():
-
                 # with dpg.menu(label="Mode"):
 
                 #    dpg.add_combo( ("Input Editor", "Output Viewer"), width=140, default_value="Input Editor",
                 #                   label="Mode", tag="mode_dropdown", callback=self._mode_set)
 
                 with dpg.menu(label="Files"):
-
                     dpg.add_menu_item(label="Set Working Diretory...", callback=self._choose_workdir)
 
                     with dpg.menu(label="Import"):
-
                         dpg.add_menu_item(label="Geometry YAML", user_data="geometry", callback=self._choose_file)
                         dpg.add_menu_item(label="Modeling YAML", user_data="modeling", callback=self._choose_file)
                         dpg.add_menu_item(label="Analysis YAML", user_data="analysis", callback=self._choose_file)
@@ -417,7 +413,6 @@ class GUI_Master(object):
                     dpg.add_menu_item(label="Export Input Files...")
 
                 with dpg.menu(label="Run"):
-
                     dpg.add_menu_item(label="Run WISDEM/WEIS...", callback=self._run_program)
 
             # Display and/or change working directory
@@ -437,7 +432,6 @@ class GUI_Master(object):
             dpg.add_text("WISDEM/WEIS YAML-Based Input Files:", color=(255, 255, 0))
 
             with dpg.tab_bar():
-
                 with dpg.tab(label="Geometry"):
                     dpg.add_button(label="Import YAML File", user_data="geometry", callback=self._choose_file)
                     dpg.bind_item_theme(dpg.last_item(), "button_theme")

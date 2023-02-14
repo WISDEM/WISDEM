@@ -368,7 +368,6 @@ class WT_RNTA(om.Group):
             self.connect("materials.unit_cost", "drivese.unit_cost_mat")
 
             if modeling_options["flags"]["generator"]:
-
                 self.connect("generator.B_r", "drivese.generator.B_r")
                 self.connect("generator.P_Fe0e", "drivese.generator.P_Fe0e")
                 self.connect("generator.P_Fe0h", "drivese.generator.P_Fe0h")
@@ -802,7 +801,6 @@ class InverseDesign(om.ExplicitComponent):
         total = 0.0
         # Loop through all of the keys in the inverse_design definition
         for name in opt_options["inverse_design"]:
-
             item = opt_options["inverse_design"][name]
 
             # Grab the short name for each parameter to match

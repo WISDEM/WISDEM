@@ -8,6 +8,7 @@ Copyright (c) NREL. All rights reserved.
 
 import numpy as np
 import openmdao.api as om
+
 from wisdem.commonse.utilities import CubicSplineSegment, nodal2sectional
 
 # -------------------------------------------------------------------------------
@@ -144,7 +145,7 @@ def fatigue(M_DEL, N_DEL, d, t, m=4, DC=80.0, eta=1.265, stress_factor=1.0, weld
     if weld_factor:
         x1 = 24.0
         x2 = 26.0
-        spline = CubicSplineSegment(x1, x2, 1.0, (25.0 / x2) ** 0.25, 0.0, 25.0 ** 0.25 * -0.25 * x2 ** -1.25)
+        spline = CubicSplineSegment(x1, x2, 1.0, (25.0 / x2) ** 0.25, 0.0, 25.0**0.25 * -0.25 * x2**-1.25)
         weld = spline.eval(tvec)
         weld[tvec >= x2] = (25.0 / tvec[tvec >= x2]) ** 0.25
         weld[tvec <= x1] = 1.0
@@ -152,7 +153,7 @@ def fatigue(M_DEL, N_DEL, d, t, m=4, DC=80.0, eta=1.265, stress_factor=1.0, weld
         weld = 1.0
 
     # stress
-    I = np.pi * r ** 3 * tvec
+    I = np.pi * r**3 * tvec
     sigma = M_DEL * r / I * stress_factor * 1e3  # convert to N/mm^2
 
     # maximum allowed stress
@@ -177,7 +178,7 @@ def vonMisesStressUtilization(axial_stress, hoop_stress, shear_stress, gamma, si
     # von mises stress
     a = ((axial_stress + hoop_stress) / 2.0) ** 2
     b = ((axial_stress - hoop_stress) / 2.0) ** 2
-    c = shear_stress ** 2
+    c = shear_stress**2
     von_mises = np.sqrt(a + 3.0 * (b + c))
 
     # stress margin
