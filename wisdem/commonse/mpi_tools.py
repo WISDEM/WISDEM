@@ -40,14 +40,13 @@ else:
 
 def map_comm_heirarchical(n_DV, n_OF, openmp=False):
     """
-    Heirarchical parallelization communicator mapping.  Assumes n_DV top level processes euqual to the 
-    number of design variables (x2 for central finite differencing) with n_OF subprocessors each, which is the
-    number of openfast simulations.
-    Requires comm_world_size >= n_DV + n_DV*n_OF.  Noninclusive, Ki not included in K2i execution.
-    This is not the most efficient architecture, as it is noninclusive, that means that the n_DV cores idle
-    while n_OF run. This was however easier to generalize
-    The openmp flags is activated when OpenFAST runs with openmp and the cores are distributed across nodes
-    to leverage openmp.
+    Heirarchical parallelization communicator mapping.  Assumes a number of top level processes 
+    equal to the number of design variables (x2 if central finite differencing is used), each 
+    with its associated number of openfast simulations.
+    When openmp flag is turned on, the code spreads the openfast simulations across nodes to
+    lavereage the opnemp parallelization of OpenFAST. The cores that will run under openmp, are marked
+    in the color map as 1000000. The ones handling python and the DV are marked as 0, and 
+    finally the master ones for each openfast run are marked with a 1.
     """
     if openmp == True:
         n_procs_per_node = 36 # Number of 
@@ -56,16 +55,20 @@ def map_comm_heirarchical(n_DV, n_OF, openmp=False):
 
         comm_map_down = {}
         comm_map_up = {}
-        color_map = [1] * num_procs
+        color_map = [1000000] * num_procs
 
         n_DV_per_node = n_DV / n_nodes
 
+        # for m in range(n_DV_per_node):
         for nn in range(int(n_nodes)):
             for n_dv in range(int(n_DV_per_node)):
-                comm_map_down[nn*n_procs_per_node + n_dv] = [int(n_DV_per_node) + 
-                    + n_dv * n_OF + nn*(n_procs_per_node) + j for j in range(n_OF) ]
+                comm_map_down[nn*n_procs_per_node + n_dv] = [int(n_DV_per_node) + n_dv * n_OF + nn*(n_procs_per_node) + j for j in range(n_OF) ]
 
+                # This core handles python, so in the colormap the entry is 0
                 color_map[nn*n_procs_per_node + n_dv] = int(0)
+                # These cores handles openfast, so in the colormap the entry is 1
+                for k in comm_map_down[nn*n_procs_per_node + n_dv]:
+                    color_map[k] = int(1)
 
                 for j in comm_map_down[nn*n_procs_per_node + n_dv]:
                     comm_map_up[j] = nn*n_procs_per_node + n_dv
