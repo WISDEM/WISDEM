@@ -29,6 +29,9 @@ def run_meson_build(staging_dir):
 
     # configure
     meson_path = shutil.which("meson")
+    if meson_path is None:
+        raise OSError("The meson command cannot be found on the system")
+
     meson_call = (
         f"{meson_path} setup {staging_dir} --prefix={prefix} "
         + f"-Dpython.purelibdir={purelibdir} -Dpython.platlibdir={purelibdir} {meson_args}"
