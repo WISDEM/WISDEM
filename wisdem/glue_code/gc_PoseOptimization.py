@@ -1089,6 +1089,7 @@ class PoseOptimization(object):
 
         # Set non-linear blade constraints
         blade_constr = self.opt["constraints"]["blade"]
+
         if blade_constr["strains_spar_cap_ss"]["flag"]:
             if blade_opt["structure"]["spar_cap_ss"]["flag"]:
                 if blade_constr["strains_spar_cap_ss"]["index_end"] > blade_opt["structure"]["spar_cap_ss"]["n_opt"]:
@@ -1262,6 +1263,15 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint(
                 "rotorse.rp.AEP", lower=self.opt["constraints"]["blade"]["AEP"]["min"], ref=-1.0e6
             )
+
+        # to constrain C_T and forcibly design higher thrust turbines
+        if blade_constr["thrust_coeff"]["flag"]:
+            if 'lower' in blade_constr["thrust_coeff"]:
+                wt_opt.model.add_constraint("rotorse.rp.powercurve.Ct_regII", lower= blade_constr["thrust_coeff"]["lower"])
+            elif 'upper' in blade_constr["thrust_coeff"]:
+                wt_opt.model.add_constraint("rotorse.rp.powercurve.Ct_regII", upper= blade_constr["thrust_coeff"]["upper"])
+            else:
+                raise Exception("thrust coefficient constraint requested but now upper or lower constraint found.")
 
         # Tower contraints
         tower_constr = self.opt["constraints"]["tower"]
