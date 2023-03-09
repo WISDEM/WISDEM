@@ -630,8 +630,10 @@ class RunPreComp(ExplicitComponent):
                                 ps_end_nd_arc.append(1.0)
                             else:
                                 ps_end_nd_arc_temp = float(spline_arc2xnd(inputs["layer_end_nd"][idx_sec, i]))
-                                if np.isclose(ps_end_nd_arc_temp, profile_i_rot[-1, 0]) and profile_i_rot[-1, 0] != 1.0:
+                                if np.isclose(ps_end_nd_arc_temp, profile_i_rot[-1, 0], atol=1.e-2) and profile_i_rot[-1, 0] != 1.0:
                                     ps_end_nd_arc_temp = 1.0
+                                if ps_end_nd_arc_temp > 1.:
+                                    ps_end_nd_arc_temp = 1.
                                 ps_end_nd_arc.append(ps_end_nd_arc_temp)
                             if inputs["layer_start_nd"][idx_sec, i] < loc_LE:
                                 ps_start_nd_arc.append(0.0)
