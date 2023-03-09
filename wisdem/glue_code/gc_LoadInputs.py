@@ -689,10 +689,10 @@ class WindTurbineOntologyPython(object):
             ]
         elif blade_opt_options["structure"]["spar_cap_ss"]["n_opt"] < 4:
             raise ValueError("Cannot optimize spar cap suction side with less than 4 control points along blade span")
-        elif blade_opt_options["aero_shape"]["spar_cap_ss"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
+        elif blade_opt_options["structure"]["spar_cap_ss"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
             raise ValueError("""Please set WISDEM->RotorSE->n_span in the modeling options yaml larger 
-                than aero_shape->spar_cap_ss->n_opt in the analysis options yaml. n_span and spar_cap_ss n_opt are """,
-                self.modeling_options["WISDEM"]["RotorSE"]["n_span"], blade_opt_options["aero_shape"]["spar_cap_ss"]["n_opt"])
+                than structure->spar_cap_ss->n_opt in the analysis options yaml. n_span and spar_cap_ss n_opt are """,
+                self.modeling_options["WISDEM"]["RotorSE"]["n_span"], blade_opt_options["structure"]["spar_cap_ss"]["n_opt"])
 
         if not blade_opt_options["structure"]["spar_cap_ps"]["flag"]:
             blade_opt_options["structure"]["spar_cap_ps"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"][
@@ -700,10 +700,10 @@ class WindTurbineOntologyPython(object):
             ]
         elif blade_opt_options["structure"]["spar_cap_ps"]["n_opt"] < 4:
             raise ValueError("Cannot optimize spar cap pressure side with less than 4 control points along blade span")
-        elif blade_opt_options["aero_shape"]["spar_cap_ps"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
+        elif blade_opt_options["structure"]["spar_cap_ps"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
             raise ValueError("""Please set WISDEM->RotorSE->n_span in the modeling options yaml larger 
-                than aero_shape->spar_cap_ps->n_opt in the analysis options yaml. n_span and spar_cap_ps n_opt are """,
-                self.modeling_options["WISDEM"]["RotorSE"]["n_span"], blade_opt_options["aero_shape"]["spar_cap_ps"]["n_opt"])
+                than structure->spar_cap_ps->n_opt in the analysis options yaml. n_span and spar_cap_ps n_opt are """,
+                self.modeling_options["WISDEM"]["RotorSE"]["n_span"], blade_opt_options["structure"]["spar_cap_ps"]["n_opt"])
 
         if not blade_opt_options["structure"]["te_ss"]["flag"]:
             blade_opt_options["structure"]["te_ss"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
@@ -711,10 +711,10 @@ class WindTurbineOntologyPython(object):
             raise ValueError(
                 "Cannot optimize trailing edge suction side with less than 4 control points along blade span"
             )
-        elif blade_opt_options["aero_shape"]["te_ss"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
+        elif blade_opt_options["structure"]["te_ss"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
             raise ValueError("""Please set WISDEM->RotorSE->n_span in the modeling options yaml larger 
-                than aero_shape->te_ss->n_opt in the analysis options yaml. n_span and te_ss n_opt are """,
-                self.modeling_options["WISDEM"]["RotorSE"]["n_span"], blade_opt_options["aero_shape"]["te_ss"]["n_opt"])
+                than structure->te_ss->n_opt in the analysis options yaml. n_span and te_ss n_opt are """,
+                self.modeling_options["WISDEM"]["RotorSE"]["n_span"], blade_opt_options["structure"]["te_ss"]["n_opt"])
 
         if not blade_opt_options["structure"]["te_ps"]["flag"]:
             blade_opt_options["structure"]["te_ps"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
@@ -722,10 +722,10 @@ class WindTurbineOntologyPython(object):
             raise ValueError(
                 "Cannot optimize trailing edge pressure side with less than 4 control points along blade span"
             )
-        elif blade_opt_options["aero_shape"]["te_ps"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
+        elif blade_opt_options["structure"]["te_ps"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
             raise ValueError("""Please set WISDEM->RotorSE->n_span in the modeling options yaml larger 
-                than aero_shape->te_ps->n_opt in the analysis options yaml. n_span and te_ps n_opt are """,
-                self.modeling_options["WISDEM"]["RotorSE"]["n_span"], blade_opt_options["aero_shape"]["te_ps"]["n_opt"])
+                than structure->te_ps->n_opt in the analysis options yaml. n_span and te_ps n_opt are """,
+                self.modeling_options["WISDEM"]["RotorSE"]["n_span"], blade_opt_options["structure"]["te_ps"]["n_opt"])
 
         # Handle linked joints and members in floating platform
         if self.modeling_options["flags"]["floating"]:
