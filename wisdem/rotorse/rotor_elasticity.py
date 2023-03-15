@@ -333,25 +333,11 @@ class RunPreComp(ExplicitComponent):
             # chordwise regions, generate the precomp composite class instance
 
             # error handling to makes sure there were no numeric errors causing values very close too, but not exactly, 0 or 1
-            start_nd_arc = [
-                0.0 if start_nd_arci != 0.0 and np.isclose(start_nd_arci, 0.0) else start_nd_arci
-                for start_nd_arci in start_nd_arc
-            ]
-            end_nd_arc = [
-                0.0 if end_nd_arci != 0.0 and np.isclose(end_nd_arci, 0.0) else end_nd_arci
-                for end_nd_arci in end_nd_arc
-            ]
-            start_nd_arc = [
-                1.0 if start_nd_arci != 1.0 and np.isclose(start_nd_arci, 1.0) else start_nd_arci
-                for start_nd_arci in start_nd_arc
-            ]
-            end_nd_arc = [
-                1.0 if end_nd_arci != 1.0 and np.isclose(end_nd_arci, 1.0) else end_nd_arci
-                for end_nd_arci in end_nd_arc
-            ]
-
-            # region end points
-            dp = sorted(list(set(start_nd_arc + end_nd_arc)))
+            start_nd_arc = np.array(start_nd_arc)
+            end_nd_arc = np.array(end_nd_arc)
+            start_nd_arc[start_nd_arc < 0.] = 0.
+            end_nd_arc[end_nd_arc > 1.] = 1.
+            dp = np.sort(np.unique(np.concatenate((start_nd_arc,end_nd_arc))))
 
             # initialize
             n_plies = []
@@ -644,8 +630,10 @@ class RunPreComp(ExplicitComponent):
                                 ps_end_nd_arc.append(1.0)
                             else:
                                 ps_end_nd_arc_temp = float(spline_arc2xnd(inputs["layer_end_nd"][idx_sec, i]))
-                                if np.isclose(ps_end_nd_arc_temp, profile_i_rot[-1, 0]) and profile_i_rot[-1, 0] != 1.0:
+                                if np.isclose(ps_end_nd_arc_temp, profile_i_rot[-1, 0], atol=1.e-2) and profile_i_rot[-1, 0] != 1.0:
                                     ps_end_nd_arc_temp = 1.0
+                                if ps_end_nd_arc_temp > 1.:
+                                    ps_end_nd_arc_temp = 1.
                                 ps_end_nd_arc.append(ps_end_nd_arc_temp)
                             if inputs["layer_start_nd"][idx_sec, i] < loc_LE:
                                 ps_start_nd_arc.append(0.0)
