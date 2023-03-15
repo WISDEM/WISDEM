@@ -407,6 +407,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                 if np.min(layer_start_nd[i, :])<0. or np.max(layer_start_nd[i, :])>1.:
                     raise Exception("""The start_nd_arc layer cannot be smaller than 0 nor 
                     larger than 1. Check the input yaml for layer """, layer_name[i])
+
             if "end_nd_arc" in internal_structure_2d_fem["layers"][i]:
                 if "fixed" in internal_structure_2d_fem["layers"][i]["end_nd_arc"].keys():
                     if internal_structure_2d_fem["layers"][i]["end_nd_arc"]["fixed"] == "TE":
