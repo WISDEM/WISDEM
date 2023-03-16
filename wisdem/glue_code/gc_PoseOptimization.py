@@ -46,6 +46,8 @@ class PoseOptimization(object):
         tower_opt = self.opt["design_variables"]["tower"]
         mono_opt = self.opt["design_variables"]["monopile"]
         jacket_opt = self.opt["design_variables"]["jacket"]
+        rated_power_opt = self.opt["design_variables"]["rated_power"]
+        hub_height_opt = self.opt["design_variables"]["hub_height"]
         hub_opt = self.opt["design_variables"]["hub"]
         drive_opt = self.opt["design_variables"]["drivetrain"]
         float_opt = self.opt["design_variables"]["floating"]
@@ -118,7 +120,8 @@ class PoseOptimization(object):
             n_DV += blade_opt["structure"]["te_ps"]["index_end"] - blade_opt["structure"]["te_ps"]["index_start"]
         if self.opt["design_variables"]["control"]["tsr"]["flag"]:
             n_DV += 1
-
+        if self.opt["design_variables"]["control"]["V_in"]["flag"]:
+            n_DV += 1
         if tower_opt["outer_diameter"]["flag"]:
             n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height"]
         if tower_opt["layer_thickness"]["flag"]:
@@ -138,6 +141,10 @@ class PoseOptimization(object):
         #        self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
         #        * self.modeling["WISDEM"]["FixedBottomSE"]["n_layers"]
         #    )
+        if rated_power_opt["flag"]:
+            n_DV += 1
+        if hub_height_opt["flag"]:
+            n_DV += 1
         if hub_opt["cone"]["flag"]:
             n_DV += 1
         if hub_opt["hub_diameter"]["flag"]:
@@ -500,6 +507,7 @@ class PoseOptimization(object):
 
         # Set optimization design variables.
         rotorD_opt = self.opt["design_variables"]["rotor_diameter"]
+        hub_height_opt = self.opt["design_variables"]["hub_height"]
         blade_opt = self.opt["design_variables"]["blade"]
         tower_opt = self.opt["design_variables"]["tower"]
         monopile_opt = self.opt["design_variables"]["monopile"]
@@ -507,6 +515,7 @@ class PoseOptimization(object):
         control_opt = self.opt["design_variables"]["control"]
         hub_opt = self.opt["design_variables"]["hub"]
         drive_opt = self.opt["design_variables"]["drivetrain"]
+        rated_power_opt = self.opt["design_variables"]["rated_power"]
         float_opt = self.opt["design_variables"]["floating"]
         mooring_opt = self.opt["design_variables"]["mooring"]
 
@@ -774,6 +783,11 @@ class PoseOptimization(object):
             )
 
         # -- Tower --
+        if hub_height_opt["flag"]:
+            wt_opt.model.add_design_var(
+                "configuration.hub_height_user", lower=hub_height_opt["minimum"], upper=hub_height_opt["maximum"], ref=80.0
+            )
+
         if tower_opt["outer_diameter"]["flag"]:
             wt_opt.model.add_design_var(
                 "tower.diameter",
@@ -897,7 +911,15 @@ class PoseOptimization(object):
             wt_opt.model.add_design_var(
                 "control.rated_TSR", lower=control_opt["tsr"]["minimum"], upper=control_opt["tsr"]["maximum"], ref=1e1
             )
+        if control_opt["V_in"]["flag"]:
+            wt_opt.model.add_design_var(
+                "control.V_in", lower=control_opt["V_in"]["minimum"], upper=control_opt["V_in"]["maximum"], ref=3.0
+        )
         # -- Hub & Drivetrain --
+        if rated_power_opt["flag"]:
+            wt_opt.model.add_design_var(
+                "configuration.rated_power", lower=rated_power_opt["minimum"], upper=rated_power_opt["maximum"], ref=1e-2
+            )
         if hub_opt["cone"]["flag"]:
             wt_opt.model.add_design_var(
                 "hub.cone", lower=hub_opt["cone"]["lower_bound"], upper=hub_opt["cone"]["upper_bound"], ref=1e-2
