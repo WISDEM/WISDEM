@@ -42,6 +42,24 @@ properties:
                         minimum: 0.0
                         maximum: 1000.0
                         unit: m
+            hub_height:
+                type: object
+                default: {}
+                description: Adjust the hub_height (scaling of other tower properties not garanteed)
+                properties:
+                    flag: *flag
+                    minimum:
+                        type: number
+                        default: 50.0
+                        minimum: 1E-6
+                        maximum: 100.0
+                        unit: m
+                    maximum:
+                        type: number
+                        default: 150.0
+                        minimum: 10.0
+                        maximum: 1000.0
+                        unit: m
             blade:
                 type: object
                 default: {}
@@ -285,6 +303,26 @@ properties:
                             minimum:
                                 type: number
                                 default: 0.
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: none
+                                description: Minimum allowable value
+                            maximum:
+                                type: number
+                                default: 0.
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: none
+                                description: Maximum allowable value
+                    V_in:
+                        type: object
+                        default: {}
+                        description: Adjust the cut-in speed
+                        properties:
+                            flag: *flag
+                            minimum:
+                                type: number
+                                default: 0.0
                                 minimum: 0.0
                                 maximum: 30.0
                                 unit: none
