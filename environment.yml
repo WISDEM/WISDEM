@@ -39,6 +39,7 @@ dependencies:
   - pip:
     - marmot-agents
     - dearpygui
+    - git+https://github.com/NREL/electrolyzer@develop
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]

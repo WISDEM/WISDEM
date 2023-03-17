@@ -117,6 +117,7 @@ if __name__ == "__main__":
         author_email="systems.engineering@nrel.gov",
         install_requires=[
             "dearpygui",
+            "electrolyzer",
             "jsonschema",
             "marmot-agents>=0.2.5",
             "numpy",
