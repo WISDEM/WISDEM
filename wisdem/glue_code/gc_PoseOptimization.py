@@ -333,6 +333,8 @@ class PoseOptimization(object):
                     wt_opt.driver.opt_settings["Major iterations limit"] = int(opt_options["max_major_iter"])
                     wt_opt.driver.opt_settings["Iterations limit"] = int(opt_options["max_minor_iter"])
                     wt_opt.driver.opt_settings["Major feasibility tolerance"] = float(opt_options["tol"])
+                    if "time_limit" in opt_options:
+                        wt_opt.driver.opt_settings["Time limit"] = int(opt_options["time_limit"])
                     wt_opt.driver.opt_settings["Summary file"] = os.path.join(folder_output, "SNOPT_Summary_file.txt")
                     wt_opt.driver.opt_settings["Print file"] = os.path.join(folder_output, "SNOPT_Print_file.txt")
                     if "hist_file_name" in opt_options:
