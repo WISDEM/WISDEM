@@ -73,6 +73,7 @@ class WindTurbineOntologyPython(object):
             flags["nacelle"] = self.modeling_options["WISDEM"]["DriveSE"]["flag"]
         if flags["generator"]:
             flags["generator"] = self.modeling_options["WISDEM"]["DriveSE"]["flag"]
+        flags["HydrogenProduction"] = self.modeling_options["WISDEM"]["HydrogenProduction"]["flag"]
         flags["hub"] = flags["nacelle"] = flags["hub"] or flags["nacelle"]  # Hub and nacelle have to go together
 
         # Blades and airfoils

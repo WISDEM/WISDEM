@@ -3,6 +3,7 @@ import openmdao.api as om
 
 from wisdem.rotorse.rotor import RotorSE
 from wisdem.towerse.tower import TowerSE
+from wisdem.h2.hydrogen_group import HydrogenProduction
 from wisdem.floatingse.floating import FloatingSE
 from wisdem.fixed_bottomse.jacket import JacketSE
 from wisdem.glue_code.gc_RunTools import Outputs_2_Screen
@@ -851,6 +852,14 @@ class WindPark(om.Group):
             self.add_subsystem(
                 "outputs_2_screen", Outputs_2_Screen(modeling_options=modeling_options, opt_options=opt_options)
             )
+
+        if modeling_options["flags"]["HydrogenProduction"]:
+            self.add_subsystem("h2", HydrogenProduction(modeling_options=modeling_options))
+
+            # If no power input file supplied, connect computed power curve spline
+            if "power_filename" not in modeling_options["WISDEM"]["HydrogenProduction"]:
+                self.connect("rotorse.rp.powercurve.V_spline", "h2.V_spline")
+                self.connect("rotorse.rp.powercurve.P_spline", "h2.P_spline")
 
         # BOS inputs
         if modeling_options["WISDEM"]["BOS"]["flag"]:

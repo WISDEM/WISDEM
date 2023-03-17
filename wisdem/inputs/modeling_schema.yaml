@@ -464,3 +464,17 @@ properties:
                                     description: Applied wind reference velocity, if necessary
                                     default: 0.0
                                     unit: meter
+            HydrogenProduction:
+                type: object
+                default: {}
+                properties:
+                    flag: *flag
+                    wind_filename:
+                        type: string
+                        description: Filename for wind history, should either be formatted as TurbSim (.bts) OR as a simple wind timeseries (.csv).
+                    modeling_options:
+                        type: string
+                        description: Filename (YAML) for electrolyzer model configuration. Must match schema defined by NREL/electrolyzer
+                    power_filename:
+                        type: string
+                        description: Filename for power history. Should contain two columns with one header row. The first column contains the timepoints in second, the second column contains the turbine power in kW.
