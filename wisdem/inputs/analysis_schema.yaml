@@ -42,6 +42,24 @@ properties:
                         minimum: 0.0
                         maximum: 1000.0
                         unit: m
+            rated_power:
+                type: object
+                default: {}
+                properties:
+                    flag: *flag
+                    min:
+                        type: number
+                        default: 1E6
+                        minimum: 1.0
+                        unit: W
+                    max:
+                        type: number
+                        default: 5E6 
+                        minimum: 1.0
+                        unit: W
+                    scaler:
+                        type: number
+                        default: 1.0
             hub_height:
                 type: object
                 default: {}
