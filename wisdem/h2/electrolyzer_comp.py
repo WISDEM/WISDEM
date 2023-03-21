@@ -1,6 +1,5 @@
 import logging
 
-import numpy as np
 import openmdao.api as om
 
 from electrolyzer import run_electrolyzer
@@ -20,7 +19,7 @@ class ElectrolyzerModel(om.ExplicitComponent):
         self.options.declare("h2_modeling_options")
 
     def setup(self):
-        self.add_input("p_wind", shape_by_conn=True, units="kW")
+        self.add_input("p_wind", shape_by_conn=True, units="W")
         self.add_output("h2_produced", units="kg")
         self.add_output("max_curr_density", units="A/cm**2")
 
@@ -28,18 +27,9 @@ class ElectrolyzerModel(om.ExplicitComponent):
         # Set electrolyzer parameters from model inputs
         power_signal = inputs["p_wind"]
 
-        # Create cosine test signal.
-        # TODO: Remove once we merge the hourly timescale update in NREL/electrolyzer
-        turbine_rating = 3.4  # MW
-        test_signal_angle = np.linspace(0, 8 * np.pi, 3600 * 8 + 10)
-        base_value = (turbine_rating / 2) + 0.2
-        variation_value = turbine_rating - base_value
-        power_test_signal = (base_value + variation_value * np.cos(test_signal_angle)) * 1e6
-        # ---
-
         h2_prod, max_curr_density = run_electrolyzer(
             self.options["h2_modeling_options"],
-            power_test_signal,
+            power_signal,
             optimize=True
         )
 
