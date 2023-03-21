@@ -333,11 +333,9 @@ class RunPreComp(ExplicitComponent):
             # chordwise regions, generate the precomp composite class instance
 
             # error handling to makes sure there were no numeric errors causing values very close too, but not exactly, 0 or 1
-            start_nd_arc = np.array(start_nd_arc)
-            end_nd_arc = np.array(end_nd_arc)
-            start_nd_arc[start_nd_arc < 0.] = 0.
-            end_nd_arc[end_nd_arc > 1.] = 1.
-            dp = np.sort(np.unique(np.concatenate((start_nd_arc,end_nd_arc))))
+            start_nd_arc = [0.0 if start_nd_arci < 0.0 else start_nd_arci for start_nd_arci in start_nd_arc ]
+            end_nd_arc = [1.0 if end_nd_arci > 1.0 else end_nd_arci for end_nd_arci in end_nd_arc ]
+            dp = sorted(list(set(start_nd_arc + end_nd_arc)))
 
             # initialize
             n_plies = []
