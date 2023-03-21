@@ -1488,6 +1488,11 @@ properties:
                         default: 100
                         minimum: 0
                         maximum: 100000
+                    time_limit:
+                        type: integer
+                        description: Max seconds of major iteration runtime for SNOPT
+                        default: 0
+                        minimum: 0
                     max_function_calls:
                         type: integer
                         description: Max number of calls to objective function evaluation
