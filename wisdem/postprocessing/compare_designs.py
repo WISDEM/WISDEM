@@ -802,6 +802,18 @@ def save_lcoe_data_to_file(list_of_sims, folder_output):
         pass
 
 
+def save_h2_data_to_file(list_of_sims, folder_output):
+    h2_data = np.zeros((2, len(list_of_sims)))
+    try:
+        for idx, yaml_data in enumerate(list_of_sims):
+            h2_data[0, idx] = yaml_data["h2.electrolyzer.h2_produced"]
+            h2_data[1, idx] = yaml_data["h2.electrolyzer.max_curr_density"][0]
+
+        np.savetxt(os.path.join(folder_output, "h2.dat"), h2_data)
+    except:
+        pass
+
+
 def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
 
     # These are options for the plotting and saving
@@ -847,6 +859,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "Tower freqs": ["towerse.tower.structural_frequencies", "Hz"],
         "Monopile/jacket freqs": ["fixedse.structural_frequencies", "Hz"],
         "Floating Tower freqs": ["floatingse.tower_freqs", "Hz"],
+        "H2 Produced": ["h2.h2_produced", "kg"],
     }
 
     # Generally it's not necessary to change the code below here, unless you
@@ -859,6 +872,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
     # Call the functions to print, save, and plot results
     print_results_to_screen(list_of_sims, list_of_labels, values_to_print)
     save_lcoe_data_to_file(list_of_sims, folder_output)
+    save_h2_data_to_file(list_of_sims, folder_output)
     create_all_plots(
         list_of_sims,
         list_of_labels,
