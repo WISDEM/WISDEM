@@ -806,8 +806,8 @@ def save_h2_data_to_file(list_of_sims, folder_output):
     h2_data = np.zeros((2, len(list_of_sims)))
     try:
         for idx, yaml_data in enumerate(list_of_sims):
-            h2_data[0, idx] = yaml_data["h2.electrolyzer.h2_produced"]
-            h2_data[1, idx] = yaml_data["h2.electrolyzer.max_curr_density"][0]
+            h2_data[0, idx] = yaml_data["h2.h2_produced"]
+            h2_data[1, idx] = yaml_data["h2.max_curr_density"][0]
 
         np.savetxt(os.path.join(folder_output, "h2.dat"), h2_data)
     except:
