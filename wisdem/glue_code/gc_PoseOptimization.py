@@ -498,7 +498,7 @@ class PoseOptimization(object):
                 wt_opt.model.add_objective("rotorse.ccblade.CP", ref=-1.0)
 
         elif self.opt["merit_figure"] == "h2_produced":
-            wt_opt.model.add_objective("h2.h2_produced")
+            wt_opt.model.add_objective("h2.h2_produced", ref=-1.0)
 
         elif self.opt["merit_figure"] == "inverse_design":
             wt_opt.model.add_objective("inverse_design.objective")
