@@ -604,7 +604,7 @@ class RunPreComp(ExplicitComponent):
             # time1 = time.time()
             for idx_sec in range(self.n_layers):
                 if discrete_inputs["definition_layer"][idx_sec] != 10:
-                    if inputs["layer_thickness"][idx_sec, i] != 0.0:
+                    if inputs["layer_thickness"][idx_sec, i] > 1.e-6:
                         if inputs["layer_start_nd"][idx_sec, i] < loc_LE or inputs["layer_end_nd"][idx_sec, i] < loc_LE:
                             ss_idx.append(idx_sec)
                             if inputs["layer_start_nd"][idx_sec, i] < loc_LE:
@@ -656,7 +656,7 @@ class RunPreComp(ExplicitComponent):
                 else:
                     target_idx = inputs["layer_web"][idx_sec] - 1
 
-                    if inputs["layer_thickness"][idx_sec, i] != 0.0:
+                    if inputs["layer_thickness"][idx_sec, i] > 1.e-6:
                         web_idx.append(idx_sec)
 
                         start_nd_arc = float(spline_arc2xnd(inputs["web_start_nd"][int(target_idx), i]))
