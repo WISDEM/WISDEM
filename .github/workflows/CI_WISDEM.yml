@@ -60,10 +60,11 @@ jobs:
           python setup.py develop
 
       # Install WISDEM with pip
-      - name: Install WISDEM with pip for Unix
-        if: false == contains( matrix.os, 'windows')
-        run: |
-          pip install -vv --no-deps -e .
+      #- name: Install WISDEM with pip for Unix
+      #  if: false == contains( matrix.os, 'windows')
+      #  run: |
+      #    /bin/rm -rf meson_build
+      #    pip install -vv --no-deps -e .
 
       # Install WISDEM with pip
       #- name: Install WISDEM with pip for Windows
