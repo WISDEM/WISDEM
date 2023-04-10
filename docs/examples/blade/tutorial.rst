@@ -132,7 +132,7 @@ To run this optimization problem, we can use the same geometry and modeling inpu
     :start-after: blade:
     :end-before: structure:
 
-with the objective function set to:
+Just increase :code:`n_opt` to 8 and :code:`index_end` for both suction- and pressure-side spar caps. The objective function is set to:
 
 .. code-block:: yaml
 
@@ -145,7 +145,7 @@ and the constraints are,
     :start-after: constraints:
     :end-before: tower:
 
-To run the optimization, just be sure to pass in this new analysis options,
+To run the optimization, just be sure to increase :code:`max_iter` to 10 and pass in this new analysis options,
 
 .. code-block:: bash
 
@@ -169,24 +169,26 @@ Once the optimization terminates, the same ``compare_designs`` script can be use
 
 .. code-block:: bash
 
-    $ compare_designs outputs/BAR-USC.yaml outputs_aero/blade_out.yaml outputs_struct/blade_out.yaml
+    $ compare_designs BAR-USC.yaml outputs_struct/blade_out.yaml --labels Init Opt
 
-The relaxed tip deflection constraint compared to when the baseline was created allows the spar cap thickness to come down and the overall blade mass drops from 60.3 metric tons to 54.5 metric tons.  This is shown in :numref:`fig_opt2_spar` and :numref:`fig_opt2_mass`.
+The relaxed tip deflection constraint compared to when the baseline was created allows the spar cap thickness to come down and the overall blade mass drops from 51 metric tons to 50 metric tons.  This is shown in :numref:`fig_opt2_spar` and :numref:`fig_opt2_mass`.
 
 .. _fig_opt2_spar:
-.. figure:: /images/blade/bladeopt2_sparcap.*
+.. figure:: /images/blade/sc_opt.png
     :height: 4in
     :align: center
 
     Baseline versus optimized spar cap thickness profiles
 
 .. _fig_opt2_mass:
-.. figure:: /images/blade/bladeopt2_mass.*
+.. figure:: /images/blade/mass.png
     :height: 4in
     :align: center
 
-    Baseline versus optimized blade mass profiles
+    Baseline versus optimized blade mass profiles. The bump at 70% span corresponds to the spanwise joint of BAR-USC.
 
+WISDEM also estimates the final blade cost, which is reported in the output file outputs_struct/blade_out.csv in the field :code:`tcc.blade_cost`. 
+The blade cost after the optimization is USD 538.5k. The initial cost was USD 556.7k. The reduction is larger than blade mass because spar caps are made of expensive carbon fiber.
 
 Aero-Structural Optimization
 ============================
