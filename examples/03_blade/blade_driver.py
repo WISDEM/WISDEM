@@ -27,5 +27,3 @@ if rank == 0:
         "RUN COMPLETED. RESULTS ARE AVAILABLE HERE: "
         + os.path.join(mydir, analysis_options["general"]["folder_output"])
     )
-
-run([wt_opt], ["optimized"], modeling_options, analysis_options)

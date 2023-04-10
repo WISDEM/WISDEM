@@ -4,8 +4,8 @@
 -----------------------------
 
 This example walks through a blade optimization problem with increasing complexity.
-All of the iterations use the same geometry input file, ``BAR0.yaml``, which describes a baseline design from the NREL-Sandia Big Adaptive Rotor (BAR) project.
-This blade uses glass fiber-reinforced polymer in the spar cap design.  The same ``modeling_options.yaml`` file is also common to all iterations and shows that all modules are called, the airfoil polars are discretized at 200 angles of attack, etc.
+All of the iterations use the same geometry input file, ``BAR-USC.yaml``, which describes a baseline design from the NREL-Sandia Big Adaptive Rotor (BAR) project described in this GitHub [repository](https://github.com/NREL/BAR_Designs).
+This blade uses carbon fiber-reinforced polymer in the spar cap design.  The same ``modeling_options.yaml`` file is also common to all iterations and shows that all WISDEM modules are called. The file has dozens of optional inputs hidden. The full list of inputs is available among the `modeling-options`_.
 The example file runs four cases one after the other for testing purposes. To run the cases one by one, make sure to comment out all cases at lines 15-18 except the case that should run. 
 
 
@@ -16,26 +16,30 @@ Whenever conducting a design optimization, it is helpful to first run the starti
 
 .. code-block:: bash
 
-    $ wisdem BAR0.yaml modeling_options.yaml analysis_options_no_opt.yaml
+    $ wisdem BAR-USC.yaml modeling_options.yaml analysis_options_no_opt.yaml
 
 
 Simple Aerodynamic Optimization
 ===============================
 
-The file, ``analysis_options_aero.yaml``, is used first to run a blade twist optimization. This is activated by turning on the appropriate design variable flags in the file,
+The file, ``analysis_options_aero.yaml``, is used to run a blade twist optimization. This is activated by turning on the appropriate design variable flags in the file,
 
 .. literalinclude:: /../examples/03_blade/analysis_options_aero.yaml
     :language: yaml
     :start-after: blade:
     :end-before: structure:
 
-We are also setting the number of spline control points at 8 and the maximum decrease and increase that the optimizer can apply to the twist (in radians) at each evenly spaced control point along the blade span.  We also need to set the objective function to be AEP with,
+First, we must increase the number of the twist spline control points to 8. We also need to adjust the indices controlling which of these control points can be varied by the optimizer, and which are instead locked. In the twist section, let's set :code:`index_start` to 2 (this means that the first 2 of 8 spanwise control points sections are locked), whereas we let all other 6 spanwise control points in the hands of the optimizer. We do this by setting :code:`index_end` to 8. No need to adjust the maximum decrease and increase that the optimizer can apply to the twist in radians, nor to activate the :code:`inverse` flag.
+
+For chord, we leave the :code:`flag` to False.
+
+AEP is the quantity that we maximize,
 
 .. code-block:: yaml
 
     merit_figure: AEP
 
-To better guide the optimization, we activate a stall margin constraint using the same *flag* type of setting, with a value of :math:`5^{\circ} deg \approx 0.087 rad`.
+To better guide the optimization, we activate a stall margin constraint using the same *flag* type of setting, with a value of :math:`5^{\circ} deg \approx 0.087 rad`. If we were to optimize chord, we might also like to constrain chord to a maximum and set a constrain guiding the diameter of the blade root bolt circle.
 
 .. literalinclude:: /../examples/03_blade/analysis_options_aero.yaml
     :language: yaml
@@ -63,7 +67,7 @@ Now to run the optimization we do,
 
 .. code-block:: bash
 
-    $ wisdem BAR0.yaml modeling_options.yaml analysis_options_aero.yaml
+    $ wisdem BAR-USC.yaml modeling_options.yaml analysis_options_aero.yaml
 
 or we comment out lines 16, 17, and 18 in blade_driver.py and we do:
 
@@ -89,26 +93,26 @@ Once the optimization terminates, type in the terminal:
 
 .. code-block:: bash
 
-    $ compare_designs outputs/BAR0.yaml outputs_aero/blade_out.yaml
+    $ compare_designs BAR_USC.yaml outputs_aero/blade_out.yaml --labels Init Opt
 
 This script compares the initial and optimized designs.
-Some screen output is generated, as well as plots (contained in the `outputs` folder), such as in :numref:`fig_opt1_induction` and :numref:`fig_opt1_twist`. The twist optimization had to cope with a wider
-margin to stall than the baseline was originally designed to.  The results show higher twist angles
-towards the blade tip, but the AEP is only mildly reduced by 0.18%.
+Some screen output is generated, as well as plots (contained in the `outputs` folder), such as in :numref:`fig_opt1_induction` and :numref:`fig_opt1_twist_opt`. 
+The twist optimization did not have to satisfy a previous constrain for low induction rotors, and after 10 design iterations
+AEP grows from 24.34872 to 24.64157 GW*h.
 
 .. _fig_opt1_induction:
-.. figure:: /images/blade/bladeopt1_induction.*
+.. figure:: /images/blade/induction.png
     :height: 4in
     :align: center
 
-    Baseline versus optimized induction profiles
+    Initial versus optimized induction profiles
 
 .. _fig_opt1_twist:
-.. figure:: /images/blade/bladeopt1_twist.*
+.. figure:: /images/blade/twist_opt.png
     :height: 4in
     :align: center
 
-    Baseline versus optimized twist profiles
+    Initial versus optimized twist profiles
 
 
 Simple Structural Optimization
@@ -145,7 +149,7 @@ To run the optimization, just be sure to pass in this new analysis options,
 
 .. code-block:: bash
 
-    $ wisdem BAR0.yaml modeling_options.yaml analysis_options_struct.yaml
+    $ wisdem BAR-USC.yaml modeling_options.yaml analysis_options_struct.yaml
 
 or, to use the Python driver, be sure to comment out lines 15, 16, and 18 and only leave this uncommented
 
@@ -165,7 +169,7 @@ Once the optimization terminates, the same ``compare_designs`` script can be use
 
 .. code-block:: bash
 
-    $ compare_designs outputs/BAR0.yaml outputs_aero/blade_out.yaml outputs_struct/blade_out.yaml
+    $ compare_designs outputs/BAR-USC.yaml outputs_aero/blade_out.yaml outputs_struct/blade_out.yaml
 
 The relaxed tip deflection constraint compared to when the baseline was created allows the spar cap thickness to come down and the overall blade mass drops from 60.3 metric tons to 54.5 metric tons.  This is shown in :numref:`fig_opt2_spar` and :numref:`fig_opt2_mass`.
 
@@ -218,7 +222,7 @@ To run the optimization, just be sure to pass in this new analysis options
 
 .. code-block:: bash
 
-    $ wisdem BAR0.yaml modeling_options.yaml analysis_options_aerostruct.yaml
+    $ wisdem BAR-USC.yaml modeling_options.yaml analysis_options_aerostruct.yaml
 
 or, to use the Python driver, be sure run line 18 as above to be
 
