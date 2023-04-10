@@ -123,7 +123,7 @@ Next, we shift from an aerodynamic optimization of the blade to a structural opt
 - The design variables as the thickness of the blade structural layers :code:`Spar_cap_ss` and :code:`Spar_cap_ps`
 - The thickness is parameterized in 8 locations along span and can vary between 70 and 130% of the initial value (using the :code:`max_decrease` and :code:`max_increase` options)
 - The merit figure is blade mass instead of AEP
-- A max allowable strain of :math:`3500 \mu\epsilon` and the blade tip deflection constrain the problem, but the latter ratio is relaxed from a safety factor of 1.4175 to 1.134
+- A max allowable strain of :math:`3500 \mu\epsilon` and the blade tip deflection constrain the problem, but the latter ratio is relaxed to 1.134
 
 To run this optimization problem, we can use the same geometry and modeling input files, and the optimization problem is captured in ``analysis_options_struct.yaml``.  The design variables are,
 
@@ -197,10 +197,13 @@ Finally, we will combine the previous two scenarios and use the levelized cost o
 
 .. literalinclude:: /../examples/03_blade/analysis_options_aerostruct.yaml
     :language: yaml
-    :start-after: blade:
-    :end-before: structure:
+    :start-after: design_variables:
+    :end-before: te_ss:
 
-with blade chord also activated as a design variable. The objective function set to:
+with rotor diameter, blade chord and twist, and spar caps thickness activated as a design variable. 
+Again, increase the field :code:`n_opt` to 8 for chord, twist, and spar caps thickness. Also, set :code:`index_end` to 8 for twist (optimize twist all the way to the tip) and to 7 for chord and spar caps (lock the point at the tip). Do not forget to set :code:`index_end` to 7 also in the strain constraints.
+
+The objective function set to:
 
 .. code-block:: yaml
 
@@ -211,7 +214,7 @@ and the constraints are,
 .. literalinclude:: /../examples/03_blade/analysis_options_aerostruct.yaml
     :language: yaml
     :start-after: constraints:
-    :end-before: tower:
+    :end-before: driver:
 
 One more change for this final example is tighter optimization convergence tolerance (:math:`1e-5`), because LCOE tends to move only a very small amount from one design to the next,
 
@@ -239,17 +242,17 @@ and then do,
     $ python blade_driver.py
 
 
-We can then use the ``compare_designs`` command in the same way as above to plot the optimization results, two of which are shown in, :numref:`fig_opt3_chord` and :numref:`fig_opt3_twist`.  With more moving parts, it can be harder to interpret the results.  In the end, LCOE is reduced marginally compared to the structural optimization-only case.
+We can then use the ``compare_designs`` command in the same way as above to plot the optimization results, two of which are shown in, :numref:`fig_opt3_induction` and :numref:`fig_opt3_twist`.  With more moving parts, it can be harder to interpret the results.  In the end, LCOE is increased marginally because the initial blade tip deflection constraint, which is set to 1.4175 in the analysis options yaml, is initially violated and the optimizer has to stiffen up and shorten the blade. The rotor diameter is reduced from 206 m to 202.7 and twist is simultaneously adjusted to keep performance up. 
 
-.. _fig_opt3_chord:
-.. figure:: /images/blade/bladeopt3_chord.*
+.. fig_opt3_induction:
+.. figure:: /images/blade/induction2.png
     :height: 4in
     :align: center
 
-    Baseline versus optimized chord profiles
+    Baseline versus optimized induction profiles
 
 .. _fig_opt3_twist:
-.. figure:: /images/blade/bladeopt3_twist.*
+.. figure:: /images/blade/twist_opt2.png
     :height: 4in
     :align: center
 
