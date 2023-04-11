@@ -33,7 +33,7 @@ def run_meson_build(staging_dir):
         raise OSError("The meson command cannot be found on the system")
 
     meson_call = (
-        f"{meson_path} setup {staging_dir} --prefix={prefix} --wipe "
+        f"{meson_path} setup {staging_dir} --prefix={prefix} "
         + f"-Dpython.purelibdir={purelibdir} -Dpython.platlibdir={purelibdir} {meson_args}"
     )
     sysargs = meson_call.split(" ")

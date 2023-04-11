@@ -63,6 +63,7 @@ jobs:
       - name: Install WISDEM with pip for Unix
         if: false == contains( matrix.os, 'windows')
         run: |
+          rm -rf meson_build
           pip install -vv --no-deps -e .
 
       # Install WISDEM with pip
