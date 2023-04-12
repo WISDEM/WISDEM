@@ -14,7 +14,7 @@ design_variables:
                 index_start: 2 # Lock the first two DVs from blade root
                 index_end: 4 # All DVs close to blade tip are active
             chord:
-                flag: True  # Flag to optimize the chord
+                flag: False  # Flag to optimize the chord
                 n_opt: 4     # Number of control points along blade span
                 max_decrease: 0.3 # Minimum multiplicative gain on existing chord at the n_opt locations
                 max_increase: 3. # Maximum multiplicative gain on existing chord at the n_opt locations
@@ -29,9 +29,9 @@ constraints:
             flag: True     # Constraint on minimum stall margin
             margin: 0.087 # Value of minimum stall margin in [rad]
         chord:
-            flag: True # Constraint max chord to its default value (4.75 m)
+            flag: False # Constraint max chord to its default value (4.75 m)
         root_circle_diameter:
-            flag: True # Constraint for the minimum blade root circle diameter
+            flag: False # Constraint for the minimum blade root circle diameter
             max_ratio: 1.2 # The recommended value can be up to 20% larger than the actual
 
 driver:

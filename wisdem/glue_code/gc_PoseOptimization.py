@@ -585,11 +585,11 @@ class PoseOptimization(object):
                 blade_opt["structure"]["spar_cap_ss"]["index_end"] = blade_opt["structure"]["spar_cap_ss"]["n_opt"]
             indices_spar_cap_ss = range(spar_cap_ss_options["index_start"], spar_cap_ss_options["index_end"])
             s_opt_spar_cap_ss = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"])
-            spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"]
+            spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"].lower()
             layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
             n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
             for i in range(n_layers):
-                if layer_name[i] == spar_cap_ss_name:
+                if layer_name[i].lower() == spar_cap_ss_name:
                     spar_cap_ss_interpolator= PchipInterpolator(wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
                                                                 wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
                     init_spar_cap_ss_opt= spar_cap_ss_interpolator(s_opt_spar_cap_ss)
@@ -1521,8 +1521,8 @@ class PoseOptimization(object):
             wt_opt["blade.opt_var.s_opt_spar_cap_ps"] = np.linspace(
                 0.0, 1.0, blade_opt["structure"]["spar_cap_ps"]["n_opt"]
             )
-            spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"]
-            spar_cap_ps_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ps"]
+            spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"].lower()
+            spar_cap_ps_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ps"].lower()
             if (
                 spar_cap_ss_name != "none"
                 and spar_cap_ps_name != "none"
@@ -1533,12 +1533,12 @@ class PoseOptimization(object):
                 n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
                 ss_before_ps = False
                 for i in range(n_layers):
-                    if layer_name[i] == spar_cap_ss_name:
+                    if layer_name[i].lower() == spar_cap_ss_name:
                         spar_cap_ss_interpolator= PchipInterpolator(wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
                                                                     wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
                         init_spar_cap_ss_opt = spar_cap_ss_interpolator(wt_opt["blade.opt_var.s_opt_spar_cap_ss"])
                         ss_before_ps = True
-                    elif layer_name[i] == spar_cap_ps_name:
+                    elif layer_name[i].lower() == spar_cap_ps_name:
                         if (
                             self.opt["design_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
                             == False
