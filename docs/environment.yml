@@ -8,6 +8,7 @@ dependencies:
   - gfortran
   - git
   - jsonschema
+  - cmake
   - make
   - matplotlib
   - meson
