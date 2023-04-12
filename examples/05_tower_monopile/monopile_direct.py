@@ -59,8 +59,8 @@ modeling_options["WISDEM"]["FixedBottomSE"]["gamma_fatigue"] = 1.35 * 1.3 * 1.0
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"] = {}
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["shear"] = True
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["geom"] = True
-modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["tol"] = 1e-9
-modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["modal_method"] = 2
+modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["tol"] = 1e-7
+modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["modal_method"] = 1
 
 modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = n_control_points
 modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"] = 1
