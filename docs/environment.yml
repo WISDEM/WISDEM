@@ -13,7 +13,6 @@ dependencies:
   - meson
   - mpi4py
   - ninja
-  - nlopt
   - numpy
   - numpydoc
   - openmdao>=3.18
