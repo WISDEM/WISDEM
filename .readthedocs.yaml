@@ -18,6 +18,7 @@ build:
 # Shouldn't need conda for building the docs, but it is an option
 conda:
   environment: environment.yml
+  environment: docs/environment.yml
 
 
 # Build documentation in the docs/ directory with Sphinx
