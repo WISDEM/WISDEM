@@ -1,4 +1,4 @@
-# NOTE: This only differs from the main environment.yml by the addition of 'compilers'
+# NOTE: This only differs from the main environment.yml by the addition of 'compilers' and 'cmake'
 
 channels:
   - conda-forge
@@ -6,6 +6,7 @@ channels:
 
 dependencies:
   - compilers
+  - cmake
   - coveralls
   - cython
   - git
