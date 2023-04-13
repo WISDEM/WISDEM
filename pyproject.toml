@@ -97,13 +97,15 @@ compare_designs = "wisdem.postprocessing.compare_designs:main"
 # This is configuration specific to the `setuptools` build backend.
 # If you are using a different build backend, you will need to change this.
 [tool.setuptools]
+zip-safe = false
 
 #[tool.setuptools.packages]
 #find = {}
 
 [tool.setuptools.packages.find]
-where = ["wisdem"]
-#exclude = ["docs", "tests", "ext"]
+#where = ["wisdem"]
+exclude = ["docs", "tests", "ext"]
+namespaces = true
 
 [tool.setuptools.package-data]
 # If there are data files included in your packages that need to be
