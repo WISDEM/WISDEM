@@ -37,19 +37,6 @@ len(Re)    degree of spline
 4+           cubic
 ========= =====================
 
-
-.. rubric:: Class Summary:
-
-.. autoclass:: CCAirfoil
-
-    .. rubric:: Methods
-    .. autosummary::
-        :nosignatures:
-
-        ~CCAirfoil.initFromAerodynFile
-        ~CCAirfoil.evaluate
-
-
 .. _ccblade-class-label:
 
 CCBlade Class
@@ -57,21 +44,3 @@ CCBlade Class
 This class provides aerodynamic analysis of wind turbine rotor blades using BEM theory.
 It can compute distributed aerodynamic loads and integrated quantities such as power, thrust, and torque.
 An emphasis is placed on convergence robustness and differentiable output so that it can be used with gradient-based optimization.
-
-.. rubric:: Class Summary:
-
-.. autoclass:: CCBlade
-
-    .. rubric:: Methods
-    .. autosummary::
-        :nosignatures:
-
-        ~CCBlade.distributedAeroLoads
-        ~CCBlade.evaluate
-
-.. autogenerate
-    .. autosummary::
-        :toctree: generated
-
-        ~CCBlade.distributedAeroLoads
-        ~CCBlade.evaluate
