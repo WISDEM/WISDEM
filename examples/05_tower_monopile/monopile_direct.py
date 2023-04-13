@@ -16,22 +16,18 @@ opt_flag = True
 n_control_points = 4
 n_materials = 1
 n_load_cases = 2
+max_diam = 8.0
 
 # Tower initial condition
 hubH = 87.6
 htrans = 10.0
-h_paramT = 0.5 * (hubH - htrans) * np.ones(2)
-d_paramT = np.array([6.0, 4.935, 3.87])
-t_paramT = np.array([0.027, 0.0222, 0.019])
 
 # Monopile initial condition
 pile_depth = 25.0
 water_depth = 30.0
 h_paramM = np.r_[pile_depth, water_depth, htrans]
-d_paramM = 8.0 * np.ones(n_control_points)
-t_paramM = 0.055 * np.ones(n_control_points)
-
-max_diam = 8.0
+d_paramM = 0.9 * max_diam * np.ones(n_control_points)
+t_paramM = 0.02 * np.ones(n_control_points)
 # ---
 
 # Store analysis options in dictionary
@@ -63,7 +59,7 @@ modeling_options["WISDEM"]["FixedBottomSE"]["gamma_fatigue"] = 1.35 * 1.3 * 1.0
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"] = {}
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["shear"] = True
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["geom"] = True
-modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["tol"] = 1e-9
+modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["tol"] = 1e-7
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["modal_method"] = 1
 
 modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = n_control_points

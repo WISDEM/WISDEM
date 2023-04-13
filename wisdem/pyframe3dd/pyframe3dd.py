@@ -936,14 +936,6 @@ class Frame(object):
             c_modalResults,
         )
 
-        nantest = np.isnan(np.c_[fout.Nx, fout.Vy, fout.Vz, fout.Txx, fout.Myy, fout.Mzz])
-        if not nanokay and np.any(nantest):
-            raise RuntimeError("Frame3DD did not exit gracefully")
-        elif exitCode == 182 or exitCode == 183:
-            pass
-        elif exitCode != 0:
-            raise RuntimeError("Frame3DD did not exit gracefully")
-
         # put mass values back in since tuple is read only
         mout = NodeMasses(
             total_mass.value,
@@ -963,6 +955,15 @@ class Frame(object):
             modalout.xmpf[i] = xmpf[i].value
             modalout.ympf[i] = ympf[i].value
             modalout.zmpf[i] = zmpf[i].value
+
+        nantest1 = np.isnan(np.c_[fout.Nx, fout.Vy, fout.Vz, fout.Txx, fout.Myy, fout.Mzz])
+        nantest2 = np.isnan(modalout.freq)
+        if not nanokay and (np.any(nantest1) or np.any(nantest2)):
+            raise RuntimeError("Frame3DD did not exit gracefully")
+        elif exitCode == 182 or exitCode == 183:
+            pass
+        elif exitCode != 0:
+            raise RuntimeError("Frame3DD did not exit gracefully")
 
         return dout, fout, rout, ifout, mout, modalout
 
