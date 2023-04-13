@@ -144,3 +144,7 @@ atomic = true
 #lines_after_imports = 2
 #lines_between_types = 1
 #src_paths=isort,test
+
+[tool.coverage.run]
+source = ["wisdem"]
+omit = ["wisdem/test/*", "wisdem/floating/visualize.py"]
