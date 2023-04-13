@@ -106,49 +106,7 @@ if __name__ == "__main__":
     #    open(init_file).read(),
     # )[0]
 
-    setuptools.setup(
-        name="WISDEM",
-        version="3.8",
-        description="Wind-Plant Integrated System Design & Engineering Model",
-        long_description="""WISDEM is a Python package for conducting multidisciplinary analysis and
-        optimization of wind turbines and plants.  It is built on top of NASA's OpenMDAO library.""",
-        url="https://github.com/WISDEM/WISDEM",
-        author="NREL WISDEM Team",
-        author_email="systems.engineering@nrel.gov",
-        install_requires=[
-            "dearpygui",
-            "jsonschema",
-            "marmot-agents>=0.2.5",
-            "numpy",
-            "openmdao>=3.18",
-            "openpyxl",
-            "nlopt",
-            "pandas",
-            "pydoe2",
-            "python-benedict",
-            "pyyaml",
-            "ruamel.yaml",
-            "scipy",
-            "simpy",
-            "sortedcontainers",
-            "statsmodels",
-        ],
-        extras_require={
-            "testing": ["pytest"],
-        },
-        python_requires=">=3.8",
-        package_data={"": ["*.yaml", "*.xlsx", "*.txt", "*.so", "*.lib", "*.pyd", "*.pdb", "*.dylib", "*.dll"]},
-        # package_dir      = {'': 'wisdem'},
-        packages=setuptools.find_packages(exclude=["docs", "tests", "ext"]),
-        license="Apache License, Version 2.0",
-        entry_points={
-            "console_scripts": [
-                "wisdem=wisdem.main:wisdem_cmd",
-                "compare_designs=wisdem.postprocessing.compare_designs:main",
-            ],
-        },
-        zip_safe=False,
-    )
+    setuptools.setup()
 
 # os.environ['NPY_DISTUTILS_APPEND_FLAGS'] = '1'
 
