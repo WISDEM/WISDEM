@@ -26,7 +26,7 @@ classifiers = [  # Optional
   # Indicate who your project is intended for
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering",
-  
+
   "License :: OSI Approved :: Apache Software License",
 
   # Specify the Python versions you support here. In particular, ensure
@@ -71,7 +71,7 @@ dependencies = [
 # Similar to `dependencies` above, these must be valid existing
 # projects.
 [project.optional-dependencies] # Optional
-dev = ["meson", "swig"]
+dev = ["meson", "ninja", "swig"]
 test = ["coveralls", "pytest", "pytest-cov"]
 docs = ["sphinx", "sphinxcontrib-bibtex", "sphinx_rtd_theme"]
 
@@ -90,7 +90,7 @@ docs = ["sphinx", "sphinxcontrib-bibtex", "sphinx_rtd_theme"]
 "Documentation" = "https://wisdem.readthedocs.io"
 "Project" = "https://www.nrel.gov/wind/systems-engineering.html"
 
-[project.scripts] 
+[project.scripts]
 wisdem = "wisdem.main:wisdem_cmd"
 compare_designs = "wisdem.postprocessing.compare_designs:main"
 
@@ -129,8 +129,7 @@ exclude = '''
 '''
 
 [tool.isort]
-# https://github.com/timothycrosley/isort
-# https://github.com/timothycrosley/isort/wiki/isort-Settings
+# https://github.com/PyCQA/isort
 multi_line_output = 3
 include_trailing_comma = true
 force_grid_wrap = 0
