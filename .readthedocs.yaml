@@ -29,9 +29,9 @@ sphinx:
 #    - pdf
 
 # Optionally declare the Python requirements required to build your docs
-#python:
-#  install:
-#    - requirements: docs/requirements.txt
-#    - method: pip
-#      path: .
+python:
+  version: 3.10
+  install:
+    - method: pip
+      path: .
 #  system_packages: true
