@@ -970,7 +970,7 @@ properties:
                         description: Design variables related to the electrolyzer control
                         properties:
                             system_rating_MW:
-                                flag: &flag
+                                flag: *flag
                                     type: boolean
                                     default: False
                                     description: Activates as a design variable or constraint
