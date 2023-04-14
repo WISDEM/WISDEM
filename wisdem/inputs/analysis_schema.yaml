@@ -978,7 +978,7 @@ properties:
                                     unit: MW
                                 maximum:
                                     type: number
-                                    default: 0.
+                                    default: 5.0
                                     minimum: 0.0
                                     unit: MW
     constraints:
