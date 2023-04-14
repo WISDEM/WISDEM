@@ -3,6 +3,7 @@ import logging
 import openmdao.api as om
 
 from electrolyzer import run_electrolyzer
+import electrolyzer.inputs.validation as val
 
 logger = logging.getLogger("wisdem/weis")
 
@@ -16,7 +17,7 @@ class ElectrolyzerModel(om.ExplicitComponent):
     could be later made into WISDEM modeling options to allow for more user configuration.
     """
     def initialize(self):
-        self.options.declare("h2_modeling_options")
+        self.options.declare("h2_modeling_options_path")
         self.options.declare("h2_opt_options")
 
     def setup(self):
@@ -26,15 +27,17 @@ class ElectrolyzerModel(om.ExplicitComponent):
         self.add_output("h2_produced", units="kg")
         self.add_output("max_curr_density", units="A/cm**2")
 
+        self.h2_modeling_options_dict = val.load_modeling_yaml(self.options["h2_modeling_options_path"])
+
     def compute(self, inputs, outputs):
         # Set electrolyzer parameters from model inputs
         power_signal = inputs["p_wind"]
 
         if self.options["h2_opt_options"]["control"]["system_rating_MW"]["flag"]:
-            self.options["h2_modeling_options"]["electrolyzer"]["control"]["system_rating_MW"] = inputs["system_rating_MW"]
+            self.h2_modeling_options_dict["electrolyzer"]["control"]["system_rating_MW"] = inputs["system_rating_MW"]
 
         h2_prod, max_curr_density = run_electrolyzer(
-            self.options["h2_modeling_options"],
+            self.h2_modeling_options_dict,
             power_signal,
             optimize=True
         )

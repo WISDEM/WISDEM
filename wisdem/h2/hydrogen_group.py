@@ -45,9 +45,9 @@ class HydrogenProduction(om.Group):
 
         self.add_subsystem("compute_power", ComputePower(modeling_options=modeling_options), promotes=["*"])
 
-        h2_modeling_options = h2_options["modeling_options"]
+        h2_modeling_options_path = h2_options["modeling_options"]
         h2_model = ElectrolyzerModel(
-            h2_modeling_options=h2_modeling_options,
+            h2_modeling_options_path=h2_modeling_options_path,
             h2_opt_options=h2_opt_options
         )
         self.add_subsystem("electrolyzer", h2_model, promotes=["*"])
