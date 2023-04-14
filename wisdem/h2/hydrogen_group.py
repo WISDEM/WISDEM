@@ -24,7 +24,7 @@ class HydrogenProduction(om.Group):
 
     def setup(self):
         modeling_options = self.options["modeling_options"]
-        h2_opt_options = self.options["opt_options"]["electrolyzer"]  #### pick up here
+        h2_opt_options = self.options["opt_options"]["design_variables"]["electrolyzer"]  #### pick up here
         h2_options = modeling_options["WISDEM"]["HydrogenProduction"]
 
         read_in_wind_file = "wind_filename" in h2_options
