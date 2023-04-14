@@ -34,7 +34,7 @@ class ElectrolyzerModel(om.ExplicitComponent):
         power_signal = inputs["p_wind"]
 
         if self.options["h2_opt_options"]["control"]["system_rating_MW"]["flag"]:
-            self.h2_modeling_options_dict["electrolyzer"]["control"]["system_rating_MW"] = inputs["system_rating_MW"]
+            self.h2_modeling_options_dict["electrolyzer"]["control"]["system_rating_MW"] = inputs["system_rating_MW"][0]
 
         h2_prod, max_curr_density = run_electrolyzer(
             self.h2_modeling_options_dict,
