@@ -52,6 +52,7 @@ class PoseOptimization(object):
         drive_opt = self.opt["design_variables"]["drivetrain"]
         float_opt = self.opt["design_variables"]["floating"]
         mooring_opt = self.opt["design_variables"]["mooring"]
+        electrolyzer_opt = self.opt["design_variables"]["electrolyzer"]
 
         if rotorD_opt["flag"]:
             n_DV += 1
@@ -214,6 +215,10 @@ class PoseOptimization(object):
                 n_DV += n_design
             if mooring_opt["line_diameter"]["flag"]:
                 n_DV += n_design
+
+        # include electrolyzer design variables
+        if electrolyzer_opt["control"]["system_rating_MW"]["flag"]:
+            n_DV += 1
 
         # Wrap-up at end with multiplier for finite differencing
         if self.opt["driver"]["optimization"]["form"] == "central":
