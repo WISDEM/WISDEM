@@ -20,10 +20,13 @@ class HydrogenProduction(om.Group):
 
     def initialize(self):
         self.options.declare("modeling_options")
+        self.options.declare("opt_options")
 
     def setup(self):
         modeling_options = self.options["modeling_options"]
+        h2_opt_options = self.options["opt_options"]["electrolyzer"]  #### pick up here
         h2_options = modeling_options["WISDEM"]["HydrogenProduction"]
+
         read_in_wind_file = "wind_filename" in h2_options
         read_in_power_signal = "power_filename" in h2_options
 
@@ -44,6 +47,7 @@ class HydrogenProduction(om.Group):
 
         h2_modeling_options = h2_options["modeling_options"]
         h2_model = ElectrolyzerModel(
-            h2_modeling_options=h2_modeling_options
+            h2_modeling_options=h2_modeling_options,
+            h2_opt_options=h2_opt_options
         )
         self.add_subsystem("electrolyzer", h2_model, promotes=["*"])

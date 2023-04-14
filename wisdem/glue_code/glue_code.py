@@ -854,7 +854,7 @@ class WindPark(om.Group):
             )
 
         if modeling_options["flags"]["HydrogenProduction"]:
-            self.add_subsystem("h2", HydrogenProduction(modeling_options=modeling_options))
+            self.add_subsystem("h2", HydrogenProduction(modeling_options=modeling_options, opt_options=opt_options))
 
             # If no power input file supplied, connect computed power curve spline
             if "power_filename" not in modeling_options["WISDEM"]["HydrogenProduction"]:

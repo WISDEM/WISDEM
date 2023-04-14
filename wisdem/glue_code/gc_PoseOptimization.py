@@ -500,6 +500,9 @@ class PoseOptimization(object):
         elif self.opt["merit_figure"] == "h2_produced":
             wt_opt.model.add_objective("h2.h2_produced", ref=-1.0)
 
+        elif self.opt["merit_figure"] == "h2_produced":
+            wt_opt.model.add_objective("h2.h2_produced", ref=-1.0)
+
         elif self.opt["merit_figure"] == "inverse_design":
             wt_opt.model.add_objective("inverse_design.objective")
 
@@ -523,6 +526,7 @@ class PoseOptimization(object):
         rated_power_opt = self.opt["design_variables"]["rated_power"]
         float_opt = self.opt["design_variables"]["floating"]
         mooring_opt = self.opt["design_variables"]["mooring"]
+        electrolyzer_opt = self.opt["design_variables"]["electrolyzer"]
 
         # -- Rotor & Blade --
         if rotorD_opt["flag"]:
@@ -1087,6 +1091,14 @@ class PoseOptimization(object):
                 "mooring.line_stiffness_coeff",
                 lower=mooring_opt["line_stiffness_coeff"]["lower_bound"],
                 upper=mooring_opt["line_stiffness_coeff"]["upper_bound"],
+            )
+
+        # -- Hydrogen --
+        if electrolyzer_opt["control"]["system_rating_MW"]["flag"]:
+            wt_opt.model.add_design_var(
+                "h2.system_rating_MW",
+                lower=electrolyzer_opt["control"]["system_rating_MW"]["minimum"],
+                upper=electrolyzer_opt["control"]["system_rating_MW"]["maximum"],
             )
 
         return wt_opt
