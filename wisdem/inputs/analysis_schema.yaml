@@ -971,9 +971,6 @@ properties:
                         properties:
                             system_rating_MW:
                                 flag: *flag
-                                    type: boolean
-                                    default: False
-                                    description: Activates as a design variable or constraint
                                 minimum:
                                     type: number
                                     default: 0.
