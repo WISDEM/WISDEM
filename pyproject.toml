@@ -7,7 +7,7 @@ name = "wisdem"
 version = "3.9"
 description = "Wind-Plant Integrated System Design & Engineering Model"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = {text = "Apache-2.0"}
 keywords = ["wind", "turbine", "mdao", "design", "optimization"]
 authors = [
