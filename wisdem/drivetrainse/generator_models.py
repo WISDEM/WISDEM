@@ -8,6 +8,7 @@ from wisdem.commonse import gravity
 
 eps = 1e-3
 
+
 # Convenience functions for computing McDonald's C and F parameters
 def chsMshc(x):
     return np.cosh(x) * np.sin(x) - np.sinh(x) * np.cos(x)
@@ -169,7 +170,6 @@ def winding_factor(Sin, b, c, p, m):
 
 # ---------------------------------
 def shell_constant(R, t, l, x, E, v):
-
     Lambda = (3 * (1 - v**2) / (R**2 * t**2)) ** 0.25
     D = E * t**3 / (12 * (1 - v**2))
     C_14 = (np.sinh(Lambda * l)) ** 2 + (np.sin(Lambda * l)) ** 2
@@ -184,7 +184,6 @@ def shell_constant(R, t, l, x, E, v):
 
 # ---------------------------------
 def plate_constant(a, b, E, v, r_o, t):
-
     D = E * t**3 / (12 * (1 - v**2))
     C_2 = 0.25 * (1 - (b / a) ** 2 * (1 + 2 * np.log(a / b)))
     C_3 = 0.25 * (b / a) * (((b / a) ** 2 + 1) * np.log(a / b) + (b / a) ** 2 - 1)

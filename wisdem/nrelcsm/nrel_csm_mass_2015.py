@@ -3,8 +3,8 @@ Copyright (c) NREL. All rights reserved.
 """
 
 from __future__ import print_function
-import numpy as np
 
+import numpy as np
 import openmdao.api as om
 
 from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
@@ -297,7 +297,7 @@ class BearingMass(om.ExplicitComponent):
         bearing_mass_exp = inputs["bearing_mass_exp"]
 
         # calculates the mass of a SINGLE bearing
-        outputs["main_bearing_mass"] = bearing_mass_coeff * rotor_diameter ** bearing_mass_exp
+        outputs["main_bearing_mass"] = bearing_mass_coeff * rotor_diameter**bearing_mass_exp
 
 
 # --------------------------------------------------------------------
@@ -411,7 +411,6 @@ class BrakeMass(om.ExplicitComponent):
         self.add_output("brake_mass", 0.0, units="kg")
 
     def compute(self, inputs, outputs):
-
         # Unpack inputs
         rotor_torque = float(inputs["rotor_torque"])
         coeff = float(inputs["brake_mass_coeff"])
@@ -523,7 +522,7 @@ class BedplateMass(om.ExplicitComponent):
         bedplate_mass_exp = inputs["bedplate_mass_exp"]
 
         # calculate the bedplate mass
-        outputs["bedplate_mass"] = rotor_diameter ** bedplate_mass_exp
+        outputs["bedplate_mass"] = rotor_diameter**bedplate_mass_exp
 
 
 # --------------------------------------------------------------------
@@ -564,11 +563,12 @@ class YawSystemMass(om.ExplicitComponent):
 
         # calculate yaw system mass #TODO - 50% adder for non-bearing mass
         outputs["yaw_mass"] = 1.5 * (
-            yaw_mass_coeff * rotor_diameter ** yaw_mass_exp
+            yaw_mass_coeff * rotor_diameter**yaw_mass_exp
         )  # JMF do we really want to expose all these?
 
 
 # TODO: no variable speed mass; ignore for now
+
 
 # --------------------------------------------------------------------
 class HydraulicCoolingMass(om.ExplicitComponent):
@@ -646,6 +646,7 @@ class NacelleCoverMass(om.ExplicitComponent):
 
 
 # TODO: ignoring controls and electronics mass for now
+
 
 # --------------------------------------------------------------------
 class PlatformsMainframeMass(om.ExplicitComponent):
@@ -777,7 +778,7 @@ class TowerMass(om.ExplicitComponent):
         tower_mass_exp = inputs["tower_mass_exp"]
 
         # calculate the tower mass
-        outputs["tower_mass"] = tower_mass_coeff * hub_height ** tower_mass_exp
+        outputs["tower_mass"] = tower_mass_coeff * hub_height**tower_mass_exp
 
 
 # Turbine mass adder

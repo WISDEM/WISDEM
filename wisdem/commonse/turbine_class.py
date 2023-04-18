@@ -36,7 +36,6 @@ class TurbineClass(om.ExplicitComponent):
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         turbine_class = discrete_inputs["turbine_class"].upper()
 
         if turbine_class == "I":

@@ -14,7 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 *//**
-	@file 
+	@file
 	3D vector type and related functions/methods.
 */
 #ifndef MSTRAP_VEC3_H
@@ -87,4 +87,3 @@ char vec3_isnan(const vec3 *A);
 #endif
 
 #endif
-

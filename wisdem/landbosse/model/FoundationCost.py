@@ -4,6 +4,7 @@ import traceback
 import numpy as np
 import pandas as pd
 from scipy.optimize import root_scalar
+
 from wisdem.landbosse.model.CostModule import CostModule
 from wisdem.landbosse.model.WeatherDelay import WeatherDelay as WD
 
@@ -270,7 +271,7 @@ class FoundationCost(CostModule):
         k_d = 0.95  # wind directionality factor
         k_zt = 1  # topographic factor
         v = foundation_load_input_data["gust_velocity_m_per_s"]
-        wind_pressure = 0.613 * k_z * k_zt * k_d * v ** 2
+        wind_pressure = 0.613 * k_z * k_zt * k_d * v**2
 
         # calculate wind loads on each tower component
         g = 0.85  # gust factor
@@ -279,7 +280,7 @@ class FoundationCost(CostModule):
 
         # calculate drag rotor
         rho = 1.225  # air density in kg/m^3
-        f_r = (0.5 * rho * c_d * a_f * v ** 2) * multiplier_rotor
+        f_r = (0.5 * rho * c_d * a_f * v**2) * multiplier_rotor
 
         f = f_t + f_r
 
@@ -347,7 +348,7 @@ class FoundationCost(CostModule):
 
         # calculate foundation radius based on gapping
         # check if gapping constrain is already satisfied - r / 3 < e
-        foundation_vol = np.pi * r_test_gapping ** 2 * foundation_load_input_data["depth"]
+        foundation_vol = np.pi * r_test_gapping**2 * foundation_load_input_data["depth"]
         v_1 = (
             foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete)
             + f_dead
@@ -358,7 +359,7 @@ class FoundationCost(CostModule):
         else:
 
             def r_g(x):
-                foundation_vol = np.pi * x ** 2 * foundation_load_input_data["depth"]
+                foundation_vol = np.pi * x**2 * foundation_load_input_data["depth"]
                 v_1 = (
                     foundation_vol
                     * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete)
@@ -378,14 +379,14 @@ class FoundationCost(CostModule):
 
         # calculate foundation radius based on bearing pressure
         def r_b(x):
-            foundation_vol = np.pi * r_test_bearing ** 2 * foundation_load_input_data["depth"]
+            foundation_vol = np.pi * r_test_bearing**2 * foundation_load_input_data["depth"]
             v_1 = (
                 foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete)
                 + f_dead
             )
             e = m_tot / v_1
             a_eff = v_1 / bearing_pressure
-            return 2 * (x ** 2 - e * (x ** 2 - e ** 2) ** 0.5) - a_eff
+            return 2 * (x**2 - e * (x**2 - e**2) ** 0.5) - a_eff
 
         result = root_scalar(r_b, method="brentq", bracket=[0.9 * r_overturn, 50], xtol=1e-10, maxiter=50)
         r_bearing = result.root
@@ -441,7 +442,7 @@ class FoundationCost(CostModule):
             # backfill); TODO: Add to sphinx -> (volume excavated = pi*(r_pick + .5m)^2 this assumes vertical sides which
             #  does not reflect reality as OSHA requires benched sides over 3’)
             foundation_size_output_data["foundation_volume_concrete_m3_per_turbine"] = (
-                np.pi * r ** 2 * foundation_size_input_data["depth"] * 0.45
+                np.pi * r**2 * foundation_size_input_data["depth"] * 0.45
             )
 
         return foundation_size_output_data

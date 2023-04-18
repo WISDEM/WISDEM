@@ -3,6 +3,7 @@ from math import ceil
 
 import numpy as np
 import pandas as pd
+
 from wisdem.landbosse.model.CostModule import CostModule
 from wisdem.landbosse.model.WeatherDelay import WeatherDelay
 
@@ -1296,13 +1297,13 @@ class ErectionCost(CostModule):
         for erection.
         """
         [crane_specs, operation_time] = self.calculate_erection_operation_time()
-        crane_specs = crane_specs.infer_objects() # cast cols of Booleans to bool dtype
+        crane_specs = crane_specs.infer_objects()  # cast cols of Booleans to bool dtype
 
         self.output_dict["crane_specs"] = crane_specs
         self.output_dict["operation_time"] = operation_time
 
         [offload_specs, offload_time] = self.calculate_offload_operation_time()
-        offload_specs = offload_specs.infer_objects() # cast cols of Booleans to bool dtype
+        offload_specs = offload_specs.infer_objects()  # cast cols of Booleans to bool dtype
 
         self.output_dict["offload_specs"] = offload_specs
         self.output_dict["offload_time"] = offload_time

@@ -49,7 +49,6 @@ def test_full_run_logging(weather):
 
 
 def test_kwargs():
-
     sim = ScourProtectionInstallation(config)
     sim.run()
     baseline = sim.total_phase_time
@@ -59,7 +58,6 @@ def test_kwargs():
     failed = []
 
     for kw in keywords:
-
         default = pt[kw]
         kwargs = {kw: default + 2}
 
@@ -81,7 +79,6 @@ def test_kwargs():
 
 
 def test_kwargs_in_ProjectManager():
-
     base = deepcopy(config)
     base["install_phases"] = ["ScourProtectionInstallation"]
 
@@ -94,7 +91,6 @@ def test_kwargs_in_ProjectManager():
     failed = []
 
     for kw in keywords:
-
         default = pt[kw]
         processes = {kw: default + 2}
 

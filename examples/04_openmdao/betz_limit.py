@@ -3,6 +3,7 @@ import openmdao.api as om
 
 # --
 
+
 # Specific the Actuator Disc theory into a derived OpenMDAO class
 class ActuatorDisc(om.ExplicitComponent):
     # Inputs and Outputs
@@ -36,7 +37,7 @@ class ActuatorDisc(om.ExplicitComponent):
         Vu = inputs["Vu"]
         rho = inputs["rho"]
         Area = inputs["Area"]
-        qA = 0.5 * rho * Area * Vu ** 2
+        qA = 0.5 * rho * Area * Vu**2
         outputs["Vd"] = Vd = Vu * (1 - 2 * a)
         outputs["Vr"] = 0.5 * (Vu + Vd)
         outputs["Ct"] = Ct = 4 * a * (1 - a)
@@ -60,16 +61,16 @@ class ActuatorDisc(om.ExplicitComponent):
         J["Vr", "Vu"] = one_minus_a
         J["Vd", "a"] = -2.0 * Vu
         J["Ct", "a"] = 4.0 - 8.0 * a
-        J["thrust", "a"] = 0.5 * rho * Vu ** 2 * Area * J["Ct", "a"]
-        J["thrust", "Area"] = 2.0 * Vu ** 2 * a * rho * one_minus_a
+        J["thrust", "a"] = 0.5 * rho * Vu**2 * Area * J["Ct", "a"]
+        J["thrust", "Area"] = 2.0 * Vu**2 * a * rho * one_minus_a
         J["thrust", "Vu"] = 4.0 * a_area_rho_vu * one_minus_a
-        J["Cp", "a"] = 4.0 * a * (2.0 * a - 2.0) + 4.0 * one_minus_a ** 2
+        J["Cp", "a"] = 4.0 * a * (2.0 * a - 2.0) + 4.0 * one_minus_a**2
         J["power", "a"] = (
-            2.0 * Area * Vu ** 3 * a * rho * (2.0 * a - 2.0) + 2.0 * Area * Vu ** 3 * rho * one_minus_a ** 2
+            2.0 * Area * Vu**3 * a * rho * (2.0 * a - 2.0) + 2.0 * Area * Vu**3 * rho * one_minus_a**2
         )
-        J["power", "Area"] = 2.0 * Vu ** 3 * a * rho * one_minus_a ** 2
-        J["power", "rho"] = 2.0 * a_times_area * Vu ** 3 * (one_minus_a) ** 2
-        J["power", "Vu"] = 6.0 * Area * Vu ** 2 * a * rho * one_minus_a ** 2
+        J["power", "Area"] = 2.0 * Vu**3 * a * rho * one_minus_a**2
+        J["power", "rho"] = 2.0 * a_times_area * Vu**3 * (one_minus_a) ** 2
+        J["power", "Vu"] = 6.0 * Area * Vu**2 * a * rho * one_minus_a**2
         # -- end the class
 
 

@@ -1,8 +1,9 @@
 # Import the libraries we need
-import openmdao.api as om
 import numpy as np
+import openmdao.api as om
 
 # -------
+
 
 # Create the mock mathematical relationships associated with Discipline 1 using an OpenMDAO component
 class SellarDis1(om.ExplicitComponent):
@@ -11,7 +12,6 @@ class SellarDis1(om.ExplicitComponent):
     """
 
     def setup(self):
-
         # Global Design Variable
         self.add_input("z", val=np.zeros(2))
 
@@ -37,7 +37,7 @@ class SellarDis1(om.ExplicitComponent):
         x1 = inputs["x"]
         y2 = inputs["y2"]
 
-        outputs["y1"] = z1 ** 2 + z2 + x1 - 0.2 * y2
+        outputs["y1"] = z1**2 + z2 + x1 - 0.2 * y2
         # -- end Discipline 1
 
 
@@ -70,7 +70,7 @@ class SellarDis2(om.ExplicitComponent):
         z2 = inputs["z"][1]
         y1 = inputs["y1"]
 
-        outputs["y2"] = y1 ** 0.5 + z1 + z2
+        outputs["y2"] = y1**0.5 + z1 + z2
         # -- end Discipline 2
 
 

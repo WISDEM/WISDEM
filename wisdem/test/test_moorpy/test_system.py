@@ -99,7 +99,6 @@ def test_stiffness_body():
 
 
 def test_basic():
-
     depth = 600
     angle = np.arange(3) * np.pi * 2 / 3  # line headings list
     anchorR = 1600  # anchor radius/spacing
@@ -328,7 +327,6 @@ def test_seabed(CB):
 
 
 if __name__ == "__main__":
-
     # test_basic()
 
     """

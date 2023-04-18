@@ -31,7 +31,7 @@ Source Documentation
 
 :mod:`nrel_csm_cost_2015`
 --------------------------
-	       
+
 .. module:: wisdem.nrelcsm.nrel_csm_cost_2015
 .. autoclass:: BladeCost2015
 .. autoclass:: HubCost2015

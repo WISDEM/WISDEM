@@ -6,7 +6,7 @@
  http://frame3dd.sourceforge.net/
  ---------------------------------------------------------------------------
  Copyright (C) 1992-2009  Henri P. Gavin
- 
+
     FRAME3DD is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -29,7 +29,7 @@
 #define PYFRAME_EIG_H
 
 /**
-	Find the lowest m eigenvalues, w, and eigenvectors, V, of the 
+	Find the lowest m eigenvalues, w, and eigenvectors, V, of the
 	general eigenproblem, K V = w M V, using sub-space / Jacobi iteration.
 
 	@param K is an n by n  symmetric real (stiffness) matrix
@@ -75,4 +75,3 @@ int stodola(
 );
 
 #endif /* FRAME_EIG_H */
-

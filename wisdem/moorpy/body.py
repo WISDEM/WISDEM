@@ -225,7 +225,6 @@ class Body:
         #       recalculating it in each of the following function calls.
 
         if lines_only == False:
-
             # add weight, which may result in moments as well as a force
             rCG_rotated = rotatePosition(
                 self.rCG, self.r6[3:]
@@ -251,7 +250,6 @@ class Body:
 
         # add forces from any attached Points (and their attached lines)
         for PointID, rPointRel in zip(self.attachedP, self.rPointRel):
-
             fPoint = self.sys.pointList[PointID - 1].getForces(lines_only=lines_only)  # get net force on attached Point
             rPoint_rotated = rotatePosition(
                 rPointRel, self.r6[3:]
@@ -341,7 +339,6 @@ class Body:
         K = np.zeros([6, 6])
 
         for PointID, rPointRel in zip(self.attachedP, self.rPointRel):
-
             r = rotatePosition(
                 rPointRel, self.r6[3:]
             )  # relative position of Point about body ref point in unrotated reference frame
@@ -362,7 +359,6 @@ class Body:
         K[3:, :3] = K[:3, 3:].T  # copy over other off-diagonal sub-matrix
 
         if lines_only == False:
-
             # rotational stiffness effect of weight
             rCG_rotated = rotatePosition(
                 self.rCG, self.r6[3:]

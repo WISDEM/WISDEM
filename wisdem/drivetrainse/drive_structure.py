@@ -169,7 +169,6 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         self.add_output("constr_shaft_angle", 0.0)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # Unpack inputs
         upwind = discrete_inputs["upwind"]
         Cup = -1.0 if upwind else 1.0
@@ -482,7 +481,6 @@ class HSS_Frame(om.ExplicitComponent):
         self.add_output("M_generator", val=np.zeros((3, n_dlcs)), units="N*m")
 
     def compute(self, inputs, outputs):
-
         # Unpack inputs
         tilt = float(np.deg2rad(inputs["tilt"]))
 
@@ -798,7 +796,6 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         self.add_output("constr_stator_angle", 0.0)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # Unpack inputs
         upwind = discrete_inputs["upwind"]
         Cup = -1.0 if upwind else 1.0
@@ -1186,7 +1183,6 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         self.add_output("constr_stator_angle", 0.0)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # Unpack inputs
         upwind = discrete_inputs["upwind"]
         Cup = -1.0 if upwind else 1.0

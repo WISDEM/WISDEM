@@ -1,9 +1,10 @@
 import openmdao.api as om
+
+from wisdem.rotorse.blade_cost import BladeCost, BladeSplit, TotalBladeCosts
 from wisdem.rotorse.rotor_power import RotorPower, NoStallConstraint
 from wisdem.commonse.turbine_class import TurbineClass
 from wisdem.rotorse.rotor_structure import RotorStructure
 from wisdem.rotorse.rotor_elasticity import RotorElasticity
-from wisdem.rotorse.blade_cost import BladeCost, BladeSplit, TotalBladeCosts
 from wisdem.ccblade.ccblade_component import CCBladeTwist
 
 
@@ -107,42 +108,52 @@ class RotorSE(om.Group):
 
         if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
             self.add_subsystem("split", BladeSplit(mod_options=modeling_options, opt_options=opt_options))
-            n_span_in = modeling_options["WISDEM"]["RotorSE"]["id_joint_position"]+1
-            n_span_out = modeling_options["WISDEM"]["RotorSE"]["n_span"] - modeling_options["WISDEM"]["RotorSE"]["id_joint_position"]
-            self.add_subsystem("rc_in", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span_in, root = True))
-            self.add_subsystem("rc_out", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span_out, root = False))
+            n_span_in = modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] + 1
+            n_span_out = (
+                modeling_options["WISDEM"]["RotorSE"]["n_span"]
+                - modeling_options["WISDEM"]["RotorSE"]["id_joint_position"]
+            )
+            self.add_subsystem(
+                "rc_in", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span=n_span_in, root=True)
+            )
+            self.add_subsystem(
+                "rc_out",
+                BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span=n_span_out, root=False),
+            )
             # Inner blade portion inputs
-            self.connect("split.blade_length_inner","rc_in.blade_length")
-            self.connect("split.s_inner","rc_in.s")
-            self.connect("split.chord_inner","rc_in.chord")
-            self.connect("split.coord_xy_interp_inner","rc_in.coord_xy_interp")
-            self.connect("split.layer_thickness_inner","rc_in.layer_thickness")
-            self.connect("split.layer_start_nd_inner","rc_in.layer_start_nd")
-            self.connect("split.layer_end_nd_inner","rc_in.layer_end_nd")
-            self.connect("split.web_start_nd_inner","rc_in.web_start_nd")
-            self.connect("split.web_end_nd_inner","rc_in.web_end_nd")
+            self.connect("split.blade_length_inner", "rc_in.blade_length")
+            self.connect("split.s_inner", "rc_in.s")
+            self.connect("split.chord_inner", "rc_in.chord")
+            self.connect("split.coord_xy_interp_inner", "rc_in.coord_xy_interp")
+            self.connect("split.layer_thickness_inner", "rc_in.layer_thickness")
+            self.connect("split.layer_start_nd_inner", "rc_in.layer_start_nd")
+            self.connect("split.layer_end_nd_inner", "rc_in.layer_end_nd")
+            self.connect("split.web_start_nd_inner", "rc_in.web_start_nd")
+            self.connect("split.web_end_nd_inner", "rc_in.web_end_nd")
             # Outer blade portion inputs
-            self.connect("split.blade_length_outer","rc_out.blade_length")
-            self.connect("split.s_outer","rc_out.s")
-            self.connect("split.chord_outer","rc_out.chord")
-            self.connect("split.coord_xy_interp_outer","rc_out.coord_xy_interp")
-            self.connect("split.layer_thickness_outer","rc_out.layer_thickness")
-            self.connect("split.layer_start_nd_outer","rc_out.layer_start_nd")
-            self.connect("split.layer_end_nd_outer","rc_out.layer_end_nd")
-            self.connect("split.web_start_nd_outer","rc_out.web_start_nd")
-            self.connect("split.web_end_nd_outer","rc_out.web_end_nd")
+            self.connect("split.blade_length_outer", "rc_out.blade_length")
+            self.connect("split.s_outer", "rc_out.s")
+            self.connect("split.chord_outer", "rc_out.chord")
+            self.connect("split.coord_xy_interp_outer", "rc_out.coord_xy_interp")
+            self.connect("split.layer_thickness_outer", "rc_out.layer_thickness")
+            self.connect("split.layer_start_nd_outer", "rc_out.layer_start_nd")
+            self.connect("split.layer_end_nd_outer", "rc_out.layer_end_nd")
+            self.connect("split.web_start_nd_outer", "rc_out.web_start_nd")
+            self.connect("split.web_end_nd_outer", "rc_out.web_end_nd")
         else:
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
-            self.add_subsystem("rc", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span = n_span, root = True))
+            self.add_subsystem(
+                "rc", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span=n_span, root=True)
+            )
 
         self.add_subsystem("total_bc", TotalBladeCosts())
         if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
             self.connect("re.precomp.blade_mass", "rs.bjs.blade_mass_re")
-            self.connect("rc_in.total_blade_cost","total_bc.inner_blade_cost")
-            self.connect("rc_out.total_blade_cost","total_bc.outer_blade_cost")
+            self.connect("rc_in.total_blade_cost", "total_bc.inner_blade_cost")
+            self.connect("rc_out.total_blade_cost", "total_bc.outer_blade_cost")
             self.connect("rs.bjs.joint_total_cost", "total_bc.joint_cost")
         else:
-            self.connect("rc.total_blade_cost","total_bc.inner_blade_cost")
+            self.connect("rc.total_blade_cost", "total_bc.inner_blade_cost")
 
         # Connection from ra to rs for the rated conditions
         self.connect("rp.gust.V_gust", ["rs.aero_gust.V_load", "rs.aero_hub_loads.V_load"])

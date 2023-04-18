@@ -11,14 +11,14 @@
 %%       vol.       => Vol.
 %%       no.        => No.
 %%       chap.      => Chap.
-%%       Tech. Rep. => 
+%%       Tech. Rep. =>
 %%       thesis     => Thesis ***
 %%       rewrote format.bvolume
 %%       added format.mtitle (no formatting for misc titles--add in .bib)
 %%       Revised format.tr.number to reflect that there is no default type listing for technical reports.
 %%       In techreport, replaced "format.tr.number output.nonnull" with "format.tr.number "number" output.check
 %% *** Last modified 30 January 2009 by Elaine T. Hale. ***
-%% 
+%%
 %% Copyright 1994-2007 Patrick W Daly
  % ===============================================================
  % IMPORTANT NOTICE:
@@ -571,8 +571,8 @@ FUNCTION {end.quote.btitle}
 }
 
 FUNCTION {format.mtitle}
-{ title "title" 
-	bibinfo.check 
+{ title "title"
+	bibinfo.check
 }
 
 FUNCTION {format.full.names}
@@ -787,8 +787,8 @@ FUNCTION {format.bvolume}
 			duplicate$ empty$ 'pop$
 				{ ","
 					" "
-					* * 
-					swap$ * 
+					* *
+					swap$ *
 					"."
 					" "
 					* swap$ * * }

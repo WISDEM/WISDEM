@@ -4,9 +4,10 @@
 -----------------------------
 
 This example walks through a blade optimization problem with increasing complexity.
+
 All of the iterations use the same geometry input file, ``BAR-USC.yaml``, which describes a baseline design from the NREL-Sandia Big Adaptive Rotor (BAR) project described in this GitHub [repository](https://github.com/NREL/BAR_Designs).
 This blade uses carbon fiber-reinforced polymer in the spar cap design.  The same ``modeling_options.yaml`` file is also common to all iterations and shows that all WISDEM modules are called. The file has dozens of optional inputs hidden. The full list of inputs is available among the `modeling-options`_.
-The example file runs four cases one after the other for testing purposes. To run the cases one by one, make sure to comment out all cases at lines 15-18 except the case that should run. 
+The example file runs four cases one after the other for testing purposes. To run the cases one by one, make sure to comment out all cases at lines 15-18 except the case that should run.
 
 
 Baseline Design
@@ -96,7 +97,7 @@ Once the optimization terminates, type in the terminal:
     $ compare_designs BAR_USC.yaml outputs_aero/blade_out.yaml --labels Init Opt
 
 This script compares the initial and optimized designs.
-Some screen output is generated, as well as plots (contained in the `outputs` folder), such as in :numref:`fig_opt1_induction` and :numref:`fig_opt1_twist_opt`. 
+Some screen output is generated, as well as plots (contained in the `outputs` folder), such as in :numref:`fig_opt1_induction` and :numref:`fig_opt1_twist_opt`.
 The twist optimization did not have to satisfy a previous constrain for low induction rotors, and after 10 design iterations
 AEP grows from 24.34872 to 24.64157 GW*h.
 
@@ -187,7 +188,7 @@ The relaxed tip deflection constraint compared to when the baseline was created 
 
     Baseline versus optimized blade mass profiles. The bump at 70% span corresponds to the spanwise joint of BAR-USC.
 
-WISDEM also estimates the final blade cost, which is reported in the output file outputs_struct/blade_out.csv in the field :code:`tcc.blade_cost`. 
+WISDEM also estimates the final blade cost, which is reported in the output file outputs_struct/blade_out.csv in the field :code:`tcc.blade_cost`.
 The blade cost after the optimization is USD 538.5k. The initial cost was USD 556.7k. The reduction is larger than blade mass because spar caps are made of expensive carbon fiber.
 
 Aero-Structural Optimization
@@ -200,7 +201,7 @@ Finally, we will combine the previous two scenarios and use the levelized cost o
     :start-after: design_variables:
     :end-before: te_ss:
 
-with rotor diameter, blade chord and twist, and spar caps thickness activated as a design variable. 
+with rotor diameter, blade chord and twist, and spar caps thickness activated as a design variable.
 Again, increase the field :code:`n_opt` to 8 for chord, twist, and spar caps thickness. Also, set :code:`index_end` to 8 for twist (optimize twist all the way to the tip) and to 7 for chord and spar caps (lock the point at the tip). Do not forget to set :code:`index_end` to 7 also in the strain constraints.
 
 The objective function set to:
@@ -242,7 +243,7 @@ and then do,
     $ python blade_driver.py
 
 
-We can then use the ``compare_designs`` command in the same way as above to plot the optimization results, two of which are shown in, :numref:`fig_opt3_induction` and :numref:`fig_opt3_twist`.  With more moving parts, it can be harder to interpret the results.  In the end, LCOE is increased marginally because the initial blade tip deflection constraint, which is set to 1.4175 in the analysis options yaml, is initially violated and the optimizer has to stiffen up and shorten the blade. The rotor diameter is reduced from 206 m to 202.7 and twist is simultaneously adjusted to keep performance up. 
+We can then use the ``compare_designs`` command in the same way as above to plot the optimization results, two of which are shown in, :numref:`fig_opt3_induction` and :numref:`fig_opt3_twist`.  With more moving parts, it can be harder to interpret the results.  In the end, LCOE is increased marginally because the initial blade tip deflection constraint, which is set to 1.4175 in the analysis options yaml, is initially violated and the optimizer has to stiffen up and shorten the blade. The rotor diameter is reduced from 206 m to 202.7 and twist is simultaneously adjusted to keep performance up.
 
 .. fig_opt3_induction:
 .. figure:: /images/blade/induction2.png

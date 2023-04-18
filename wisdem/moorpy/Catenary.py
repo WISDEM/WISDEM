@@ -125,7 +125,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
 
     # ProfileType 0 case - entirely along seabed
     if ZF == 0.0 and CB >= 0.0 and W > 0:
-
         ProfileType = 0
 
         if CB == 0 or XF <= L:  # case 1: no friction, or zero tension
@@ -163,7 +162,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
         info["Zextreme"] = 0
 
         if plots > 0:
-
             if CB > 0 and XF > L:
                 xB = L - HF / W / CB  # location of point at which line tension reaches zero
             else:
@@ -189,7 +187,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
 
     # ProfileType 4 case - fully slack
     elif (W > 0.0) and (L >= XF + LHanging):
-
         if CB >= 0.0:  # one end on seabed
             ProfileType = 4
             # this is a special case that requires no iteration
@@ -213,16 +210,13 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
             info["Zextreme"] = 0
 
             if plots > 0:
-
                 for I in range(nNodes):
                     if s[I] > L - LHanging:  # this node is on the suspended/hanging portion of the line
-
                         Xs[I] = XF
                         Zs[I] = ZF - (L - s[I] + 0.5 * W / EA * (L - s[I]) ** 2)
                         Te[I] = W * (s[I] - (L - LHanging))
 
                     else:  # this node is on the seabed
-
                         Xs[I] = np.min([s[I], XF])
                         Zs[I] = 0.0
                         Te[I] = 0.0
@@ -249,7 +243,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
             info["Zextreme"] = CB
 
             if plots > 0:
-
                 for I in range(nNodes):
                     if s[I] < LHanging1:  # the 1st suspended/hanging portion of the line
                         Xs[I] = 0.0
@@ -275,7 +268,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
 
         # slack case
         if dz_hanging >= ZF:
-
             # figure out how line will hang
             LB = (ZF + L + W * L**2 / 2 / EA) / (
                 2 + W * L / EA
@@ -301,7 +293,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
             info["Zextreme"] = -hA
 
             if plots > 0:
-
                 for I in range(nNodes):
                     if s[I] < LA:  # the 1st suspended/hanging portion of the line
                         Xs[I] = 0.0
@@ -315,7 +306,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
 
         # taut case
         else:
-
             # figure out how line will hang
             LB = (ZF + L + W * L**2 / 2 / EA) / (
                 2 + W * L / EA
@@ -354,7 +344,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
 
     # Use an iterable solver function to solve for the forces on the line
     else:
-
         # Initialize some commonly used terms that don't depend on the iteration:
 
         WL = W * L
@@ -369,7 +358,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
 
         # make HF and VF initial guesses if either was provided as zero <<<<<<<<<<<< why does it matter if VF0 is zero??
         if HF0 <= 0 or VF0 <= 0:
-
             XF2 = XF * XF
             ZF2 = ZF * ZF
 
@@ -462,7 +450,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
 
             # retry if it failed
             if info3["iter"] >= MaxIter - 1 or info3["oths"]["error"] == True:
-
                 X0 = X
                 Ytarget = [0, 0]
                 args = dict(cat=[XF, ZF, L, EA, W, CB, WL, WEA, L_EA, CB_EA], step=[0.1, 1.0, 2.0])
@@ -482,7 +469,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
 
                 # check if it failed
                 if info4["iter"] >= 10 * MaxIter - 1 or info4["oths"]["error"] == True:
-
                     print("catenary solve failed on all 3 attempts.")
                     print(
                         f"catenary({XF}, {ZF}, {L}, {EA}, {W}, CB={CB}, HF0={HF0}, VF0={VF0}, Tol={Tol}, MaxIter={MaxIter}, plots=1)"
@@ -584,7 +570,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
         if (
             info["ProfileType"] == 1 and CB < 0 and VF - WL < 0.0
         ):  # only need to do this if the line is slack (has zero slope somewhere)
-
             VFMinWL = VF - WL
             LBot = L - VF / W
             # unstretched length of line resting on seabed (Jonkman's PhD eqn 2-38), LMinVFOVrW
@@ -611,7 +596,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
 
         # handle special case of a U-shaped line that has seabed contact (using 2 new catenary solves)
         if info["ProfileType"] == 1 and info["Zextreme"] < min(CB, 0):
-
             # we will solve this as two separate lines to form the U shape
             info["ProfileType"] = "U"
             ProfileType = "U"
@@ -626,7 +610,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
             # set up a 1D solve for the correct choice of the anchor point so that horizontal tensions balance
 
             def eval_func_U(X, args):
-
                 info = dict(error=False)
 
                 X1 = X[0]
@@ -653,7 +636,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
                 return np.array([Himbalance]), info, False  # returns Y value, misc dict, and stop flag
 
             def step_func_U(X, args, Y, info, Ytarget, err, tols, iter, maxIter):
-
                 dX = -err[0] / info["dH_dX"]
 
                 # print(f" Step is {dX}")
@@ -679,7 +661,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
             )
 
             if plots > 0 or (info1["error"] and info2["error"]):
-
                 s = np.hstack([info1["s"], info2["s"] + L1])
                 Xs = np.hstack([info1["X"], info2["X"] + X1])
                 Zs = np.hstack([info1["Z"], info2["Z"] + Z1])
@@ -824,10 +805,8 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
 
         # the normal case
         else:
-
             # do plotting-related calculations if needed (plots=1: show plots; plots=2: just return values)
             if plots > 0 or info["error"] == True:
-
                 # calculate some commonly used terms that depend on HF and VF:  AGAIN
                 VFMinWL = VF - WL
                 LBot = L - VF / W
@@ -843,7 +822,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
                 SQRT1VFMinWL_HF2 = np.sqrt(1.0 + VFMinWL_HF**2)
 
                 for I in range(nNodes):
-
                     # calculate some values for the current node
                     Ws = W * s[I]
                     VFMinWLs = VFMinWL + Ws  # = VF - W*(L-s[I])
@@ -853,7 +831,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
 
                     # No portion of the line rests on the seabed
                     if ProfileType == 1:
-
                         Xs[I] = (
                             np.log(VFMinWLs_HF + SQRT1VFMinWLs_HF2) - np.log(VFMinWL_HF + SQRT1VFMinWL_HF2)
                         ) * HF_W + s_EA * HF
@@ -862,7 +839,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
 
                     # A portion of the line must rest on the seabed
                     elif ProfileType in [2, 3]:
-
                         if CB > 0:
                             xB = LBot - HF_W / CB  # location of point at which line tension reaches zero
                         else:
@@ -872,19 +848,16 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
                         if (
                             s[I] <= xB and CB > 0
                         ):  # (aka Lbot - s > HF/(CB*W) ) if this node rests on the seabed and the tension is zero
-
                             Xs[I] = s[I]
                             Zs[I] = 0.0
                             Te[I] = 0.0
 
                         elif s[I] <= LBot:  # // .TRUE. if this node rests on the seabed and the tension is nonzero
-
                             Xs[I] = s[I] + 0.5 * CB * W / EA * (s[I] * s[I] - 2.0 * xB * s[I] + xB * xBlim)
                             Zs[I] = 0.0
                             Te[I] = HF + CB * VFMinWLs
 
                         else:  #  // LBot < s <= L ! This node must be above the seabed
-
                             Xs[I] = (
                                 LBot
                                 + HF_W * np.log(VFMinWLs_HF + SQRT1VFMinWLs_HF2)
@@ -915,7 +888,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
         info["Te"] = Te
 
     if plots == 2 or info["error"] == True:  # also show the profile plot
-
         plt.figure()
         plt.plot(Xs, Zs)
 
@@ -1034,7 +1006,6 @@ def eval_func_cat(X, args):
 
     # No portion of the line rests on the seabed
     if ProfileType == 1:
-
         if VF_HF + SQRT1VF_HF2 <= 0:
             info["error"] = True
             info["message"] = "ProfileType 1: VF_HF + SQRT1VF_HF2 <= 0"
@@ -1044,7 +1015,6 @@ def eval_func_cat(X, args):
             # note: these errors seemed to occur when a buoyant line got to an HF=0 iteration (hopefully avoided now)
 
         else:
-
             LBot = 0  # note that there is no seabed contact (for clarity in outputs)
 
             EXF = (
@@ -1074,7 +1044,6 @@ def eval_func_cat(X, args):
             # dZFdVF = ( np.sign(VF)*VF_HF /SQRT1VF_HF2 - VFMinWL_HF /SQRT1VFMinWL_HF2 )/ W + L_EA
 
     elif ProfileType == 27:
-
         if VF_HF + SQRT1VF_HF2 <= 0:
             info["error"] = True
             info["message"] = "ProfileType 2: VF_HF + SQRT1VF_HF2 <= 0"
@@ -1097,13 +1066,11 @@ def eval_func_cat(X, args):
 
     # A portion of the line must rest on the seabed and the anchor tension is zero
     elif ProfileType in [2, 3]:
-
         if VF_HF + SQRT1VF_HF2 <= 0:
             info["error"] = True
             info["message"] = "ProfileType 2 or 3: VF_HF + SQRT1VF_HF2 <= 0"
 
         else:
-
             if CB > 0:
                 xB = LBot - HF_W / CB  # location of point at which line tension reaches zero
             else:

@@ -151,7 +151,6 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_output("platform_Mzz", NULL * np.ones((NELEM_MAX, n_dlc)), units="N*m")
 
     def compute(self, inputs, outputs):
-
         # Unpack variables
         opt = self.options["options"]
         n_attach = opt["mooring"]["n_attach"]

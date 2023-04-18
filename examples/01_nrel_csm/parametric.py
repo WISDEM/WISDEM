@@ -77,7 +77,6 @@ aep = np.zeros(Rating.shape)
 npts = Rating.size
 print("Running, ", npts, " points in the parametric study")
 for k in range(npts):
-
     # Populate remaining NREL CSM inputs for this iteration
     prob["machine_rating"] = Rating[k]
     prob["rotor_diameter"] = Diameter[k]

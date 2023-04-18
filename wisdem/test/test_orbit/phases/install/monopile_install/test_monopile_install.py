@@ -29,7 +29,6 @@ config_wtiv_multi_feeder["num_feeders"] = 2
     ids=["wtiv_only", "single_feeder", "multi_feeder"],
 )
 def test_simulation_setup(config):
-
     sim = MonopileInstallation(config)
     assert sim.config == config
     assert sim.env
@@ -50,7 +49,6 @@ def test_simulation_setup(config):
     ids=["wtiv_only", "single_feeder", "multi_feeder"],
 )
 def test_vessel_initialization(config):
-
     sim = MonopileInstallation(config)
     assert sim.wtiv
     assert sim.wtiv.jacksys
@@ -72,7 +70,6 @@ def test_vessel_initialization(config):
 )
 @pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
 def test_for_complete_logging(weather, config):
-
     sim = MonopileInstallation(config, weather=weather)
     sim.run()
 
@@ -90,7 +87,6 @@ def test_for_complete_logging(weather, config):
 
 
 def test_kwargs():
-
     sim = MonopileInstallation(config_wtiv)
     sim.run()
     baseline = sim.total_phase_time
@@ -111,7 +107,6 @@ def test_kwargs():
     failed = []
 
     for kw in keywords:
-
         default = pt[kw]
 
         if kw == "mono_drive_rate":
@@ -143,7 +138,6 @@ def test_kwargs():
 
 
 def test_kwargs_in_ProjectManager():
-
     base = deepcopy(config_wtiv)
     base["install_phases"] = ["MonopileInstallation"]
     project = ProjectManager(base)
@@ -166,7 +160,6 @@ def test_kwargs_in_ProjectManager():
     failed = []
 
     for kw in keywords:
-
         default = pt[kw]
 
         if kw == "mono_drive_rate":
@@ -201,7 +194,6 @@ def test_kwargs_in_ProjectManager():
 
 
 def test_grout_kwargs():
-
     sim = MonopileInstallation(config_wtiv)
     sim.run()
 

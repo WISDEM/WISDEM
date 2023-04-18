@@ -1,13 +1,15 @@
 from __future__ import print_function
+
 import sys
+
 import numpy as np
 from scipy.optimize import minimize
-from scipy.interpolate import pchip, Akima1DInterpolator, PchipInterpolator
+from scipy.interpolate import PchipInterpolator, Akima1DInterpolator, pchip
 
+from wisdem.commonse.utilities import arc_length
+from wisdem.rotorse.geometry_tools.distfunc import distfunc
 from wisdem.rotorse.geometry_tools.geom_tools import curvature
 from wisdem.rotorse.geometry_tools.cubicspline import NaturalCubicSpline
-from wisdem.rotorse.geometry_tools.distfunc import distfunc
-from wisdem.commonse.utilities import arc_length
 
 
 class Curve(object):
@@ -23,7 +25,6 @@ class Curve(object):
             self.initialize(points)
 
     def initialize(self, points):
-
         self.points = points
         self.ni = points.shape[0]
 
@@ -47,14 +48,12 @@ class Curve(object):
         self.dp = np.array([t1[i, :] / np.linalg.norm(t1[i, :]) for i in range(np.shape(t1)[0])])
 
     def _build_splines(self):
-
         self._splines = []
 
         for j in range(np.shape(self.points)[1]):
             self._splines.append(PchipInterpolator(self.s, self.points[:, j]))
 
     def redistribute(self, dist=None, s=None):
-
         if dist is not None:
             self.s = distfunc(dist)
         else:
@@ -90,7 +89,6 @@ class AirfoilShape(Curve):
     """
 
     def initialize(self, points):
-
         self.LE = np.array([])  # Leading edge coordinates
         self.TE = np.array([])  # Trailing edge coordinates
         self.sLE = 0.0  # Leading edge curve fraction
@@ -118,13 +116,12 @@ class AirfoilShape(Curve):
         self.chord = np.linalg.norm(self.LE - self.TE)
 
     def _sdist(self, s):
-
         x = self._splines[0](s)
         y = self._splines[1](s)
         return -(((x - self.TE[0]) ** 2 + (y - self.TE[1]) ** 2) ** 0.5)
 
     def leading_edge_dist(self, ni):
-        """ function that returns a suitable cell size based on airfoil LE curvature """
+        """function that returns a suitable cell size based on airfoil LE curvature"""
 
         min_ds1 = 1.0 / ni * 0.1
         max_ds1 = 1.0 / ni * 0.5
@@ -282,7 +279,6 @@ class AirfoilShape(Curve):
 
 
 def remap2grid(x_ref, y_ref, x, spline=PchipInterpolator, axis=-1):
-
     try:
         if axis != -1:
             spline_y = spline(x_ref, y_ref, axis=axis)

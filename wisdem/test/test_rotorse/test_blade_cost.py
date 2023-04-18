@@ -16,7 +16,6 @@ accuracy = 0
 
 class TestBC(unittest.TestCase):
     def testBladeCostIEA3p4(self):
-
         fname_modeling_options = os.path.join(example_dir02, "modeling_options.yaml")
         fname_wt_input = os.path.join(example_dir02, "IEA-3p4-130-RWT.yaml")
         wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
@@ -53,7 +52,6 @@ class TestBC(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rc.total_blade_cost"][0], 168026.5782434057, places=accuracy)
 
     def testBladeCostIEA10(self):
-
         fname_modeling_options = os.path.join(example_dir02, "modeling_options_iea10.yaml")
         fname_wt_input = os.path.join(example_dir02, "IEA-10-198-RWT.yaml")
         wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
@@ -91,7 +89,6 @@ class TestBC(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rc.total_blade_cost"][0], 441388.17368284846, places=accuracy)
 
     def testBladeCostIEA15(self):
-
         fname_modeling_options = os.path.join(example_dir02, "modeling_options.yaml")
         fname_wt_input = os.path.join(example_dir02, "IEA-15-240-RWT.yaml")
         wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
@@ -129,7 +126,6 @@ class TestBC(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rc.total_blade_cost"][0], 721919.7501834856, places=accuracy)
 
     def testBladeCostBAR_USC(self):
-
         fname_modeling_options = os.path.join(example_dir03, "modeling_options.yaml")
         fname_wt_input = os.path.join(example_dir03, "BAR_USC.yaml")
         wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)

@@ -80,7 +80,6 @@ class Vessel(Agent):
 
     @process
     def task_wrapper(self, name, duration, constraints={}, suspendable=False, **kwargs):
-
         duration /= self.avail
         yield self.task(name, duration, constraints, suspendable, **kwargs)
 

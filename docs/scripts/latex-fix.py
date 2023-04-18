@@ -8,41 +8,38 @@ Copyright (c) NREL. All rights reserved.
 """
 
 import re
-from tempfile import mkstemp
+from os import close, remove
 from shutil import move
-from os import remove, close
+from tempfile import mkstemp
 
-GET_CAPTION_FLAG = 'TABLE CAPTION::'
-INSERT_CAPTION_FLAG = '***PUT CAPTION HERE***'
-CITE_FLAG = '\\citep{'
+GET_CAPTION_FLAG = "TABLE CAPTION::"
+INSERT_CAPTION_FLAG = "***PUT CAPTION HERE***"
+CITE_FLAG = "\\citep{"
 
 
 def fixit(path, flag):
-
-
     oldfile = open(path)
     handle, temp_path = mkstemp()
-    newfile = open(temp_path, 'w')
+    newfile = open(temp_path, "w")
 
     for line in oldfile:
         # get rid of left over reference numbers
-        line = re.sub('\{\[\}[0-9]+\{\]\}', '', line)
+        line = re.sub("\{\[\}[0-9]+\{\]\}", "", line)
 
         # put table captions into place
         if GET_CAPTION_FLAG in line:
             caption = line.split(GET_CAPTION_FLAG)[1].lstrip().rstrip()
-            line = ''
+            line = ""
 
         if INSERT_CAPTION_FLAG in line:
             line = line.replace(INSERT_CAPTION_FLAG, caption)
 
         # hack to fix citations that use the name right before
-        if flag == '--citefix' and CITE_FLAG in line:
-            matches = re.findall('(?:\S+\s)?\S*\\' + CITE_FLAG, line)
+        if flag == "--citefix" and CITE_FLAG in line:
+            matches = re.findall("(?:\S+\s)?\S*\\" + CITE_FLAG, line)
             for match in matches:
                 if match.split()[0][0].isupper():  # capitalized name before citation
-                    line = line.replace(match, '\\cite{')
-
+                    line = line.replace(match, "\\cite{")
 
         newfile.write(line)
 
@@ -53,11 +50,9 @@ def fixit(path, flag):
     move(temp_path, path)
 
 
-
-
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     import sys
+
     path = sys.argv[1]
     flag = None
     if len(sys.argv) > 2:

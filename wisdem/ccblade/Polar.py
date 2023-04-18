@@ -190,7 +190,7 @@ class Polar(object):
         a = 1
         b = 1
         d = 1
-        lam = tsr / (1 + tsr ** 2) ** 0.5  # modified tip speed ratio
+        lam = tsr / (1 + tsr**2) ** 0.5  # modified tip speed ratio
         expon = d / lam / r_over_R
 
         # find linear region with numpy polyfit
@@ -208,11 +208,11 @@ class Polar(object):
             fcl = (
                 1.0
                 / cl_slope
-                * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r ** expon) / (b + chord_over_r ** expon) - 1)
+                * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r**expon) / (b + chord_over_r**expon) - 1)
             )
         elif lift_method == "Snel":
             # Snel correction
-            fcl = 3.0 * chord_over_r ** 2.0
+            fcl = 3.0 * chord_over_r**2.0
         else:
             raise Exception("The keyword argument lift_method (3d correction for lift) can only be DuSelig or Snel.")
 
@@ -314,7 +314,7 @@ class Polar(object):
         # parameters used in model
         sa = np.sin(alpha_high)
         ca = np.cos(alpha_high)
-        self.A = (cl_high - self.cdmax * sa * ca) * sa / ca ** 2
+        self.A = (cl_high - self.cdmax * sa * ca) * sa / ca**2
         self.B = (cd_high - self.cdmax * sa * sa) / ca
 
         # alpha_high <-> 90
@@ -674,7 +674,7 @@ class Polar(object):
         return figs
 
     def alpha0(self, window=None):
-        """ Finds alpha0, angle of zero lift """
+        """Finds alpha0, angle of zero lift"""
         if window is None:
             if self._radians:
                 window = [np.radians(-30), np.radians(30)]
@@ -698,7 +698,7 @@ class Polar(object):
         return alpha_linear_region, cl_linear_region, cl_slope, alpha0
 
     def cl_max(self, window=None):
-        """ Finds cl_max , returns (Cl_max,alpha_max) """
+        """Finds cl_max , returns (Cl_max,alpha_max)"""
         if window is None:
             if self._radians:
                 window = [np.radians(-40), np.radians(40)]
@@ -741,6 +741,7 @@ class Polar(object):
            slope (in inverse units of alpha, or in radians-1 if radians=True)
            alpha_0 in the same unit as alpha, or in radians if radians=True
         """
+
         # --- Return function
         def myret(sl, a0):
             # wrapper function to return degrees or radians
@@ -1200,7 +1201,6 @@ def _find_linear_region(x, y, nMin, x0=None):
 
 
 def _zero_crossings(y, x=None, direction=None):
-
     """
     Find zero-crossing points in a discrete vector, using linear interpolation.
     direction: 'up' or 'down', to select only up-crossings or down-crossings
@@ -1377,7 +1377,7 @@ def smooth_heaviside(x, k=1, rng=(-np.inf, np.inf), method="exp"):
             n = 4.0
             # Compact support
             s = 2.0 / (mx - mn) * (x - (mn + mx) / 2.0)  # transform compact support into ]-1,1[
-            x = -n * s / (s ** 2 - 1.0)  # then transform   ]-1,1[  into ]-inf,inf[
+            x = -n * s / (s**2 - 1.0)  # then transform   ]-1,1[  into ]-inf,inf[
             x[k * x > 100] = 100.0 / k
             x[k * x < -100] = -100.0 / k
             H[b] = 1.0 / (1 + np.exp(-k * x))

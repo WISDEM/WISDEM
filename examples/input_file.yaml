@@ -6,5 +6,3 @@ analysis_file: /home/username/project_folder/analysis_options.yaml
 # Outputs
 output_directory: /home/username/project_folder/outputs
 output_geometry_file: /home/username/project_folder/better_turbine.yaml
-
-

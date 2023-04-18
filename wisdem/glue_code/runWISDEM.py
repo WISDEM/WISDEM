@@ -36,7 +36,6 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
     myopt = PoseOptimization(wt_init, modeling_options, opt_options)
 
     if MPI:
-
         n_DV = myopt.get_number_design_variables()
 
         # Extract the number of cores available
