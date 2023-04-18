@@ -2812,8 +2812,8 @@ class BladeSplit(om.ExplicitComponent):
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
         self.layer_mat = rotorse_options["layer_mat"]
         self.layer_name = rotorse_options["layer_name"]
-        self.spar_cap_ss = rotorse_options["spar_cap_ss"]
-        self.spar_cap_ps = rotorse_options["spar_cap_ps"]
+        self.spar_cap_ss = rotorse_options["spar_cap_ss"].lower()
+        self.spar_cap_ps = rotorse_options["spar_cap_ps"].lower()
         self.id_joint_position = id_joint_position = rotorse_options["id_joint_position"]
 
         # Inputs - Whole blade
@@ -3005,8 +3005,8 @@ class BladeCost(om.ExplicitComponent):
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
         self.layer_mat = rotorse_options["layer_mat"]
         self.layer_name = rotorse_options["layer_name"]
-        self.spar_cap_ss = rotorse_options["spar_cap_ss"]
-        self.spar_cap_ps = rotorse_options["spar_cap_ps"]
+        self.spar_cap_ss = rotorse_options["spar_cap_ss"].lower()
+        self.spar_cap_ps = rotorse_options["spar_cap_ps"].lower()
         mat_init_options = self.options["mod_options"]["materials"]
         self.n_mat = n_mat = mat_init_options["n_mat"]
 
@@ -3539,7 +3539,7 @@ class BladeCost(om.ExplicitComponent):
                         fabric2lay_webs[layer_web[i_lay] - 1] += add_volume / ply_t[i_mat]
 
                 # Spar caps
-                elif self.layer_name[i_lay] == self.spar_cap_ss:
+                elif self.layer_name[i_lay].lower() == self.spar_cap_ss:
                     spar_cap_width_ss[imin:imax] = width[imin:imax]
                     spar_cap_length_ss = (s[imax] - s[imin]) * blade_length
                     width_sc_start_ss = width[imin]
@@ -3556,7 +3556,7 @@ class BladeCost(om.ExplicitComponent):
                         )
                     else:
                         pultruded_spar_caps = False
-                elif self.layer_name[i_lay] == self.spar_cap_ps:
+                elif self.layer_name[i_lay].lower() == self.spar_cap_ps:
                     spar_cap_width_ps[imin:imax] = width[imin:imax]
                     spar_cap_length_ps = (s[imax] - s[imin]) * blade_length
                     width_sc_start_ps = width[imin]

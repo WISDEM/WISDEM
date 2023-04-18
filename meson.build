@@ -8,6 +8,7 @@ project(
   meson_version: '>= 0.60',
   default_options: [
     'buildtype=debugoptimized',
+    'c_std=c11',
   ],
 )
 

@@ -6,8 +6,11 @@ import openmdao.api as om
 from wisdem.plant_financese.plant_finance import PlantFinance
 
 # Initialize the OpenMDAO instance
+mygroup = om.Group()
+mygroup.add_subsystem("main", PlantFinance(), promotes=["*"])
+
 prob = om.Problem(reports=False)
-prob.model = PlantFinance()
+prob.model = mygroup
 prob.setup()
 
 # Set variable inputs with intended units

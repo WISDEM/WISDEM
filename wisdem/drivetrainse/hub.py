@@ -82,7 +82,7 @@ class HubShell(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare("gamma", default=1.0)
+        self.options.declare("gamma", default=2.0)
 
     def setup(self):
         # Inputs
@@ -217,7 +217,7 @@ class Spinner(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare("gamma", default=False)
+        self.options.declare("gamma", default=1.5)
 
     def setup(self):
         # Inputs

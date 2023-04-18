@@ -9,7 +9,7 @@ import numpy as np
 import openmdao
 import openmdao.utils.coloring as coloring_mod
 from openmdao.core.driver import Driver, RecordingDebugging
-from openmdao.utils.general_utils import simple_warning
+from openmdao.utils.general_utils import issue_warning
 
 try:
     from openmdao.utils.class_util import weak_method_wrapper as weak_method_wrapper
@@ -366,7 +366,7 @@ class NLoptDriver(Driver):
                     pct = info["coloring"]._solves_info()[-1]
                     if info["min_improve_pct"] > pct:
                         info["coloring"] = info["static"] = None
-                        simple_warning(
+                        issue_warning(
                             "%s: Coloring was deactivated.  Improvement of %.1f%% was "
                             "less than min allowed (%.1f%%)." % (self.msginfo, pct, info["min_improve_pct"])
                         )
