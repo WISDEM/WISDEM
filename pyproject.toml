@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wisdem"
-version = "3.9"
+version = "3.9.2"
 description = "Wind-Plant Integrated System Design & Engineering Model"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -151,3 +151,7 @@ atomic = true
 [tool.coverage.run]
 source = ["wisdem"]
 omit = ["wisdem/test/*", "wisdem/floating/visualize.py"]
+
+[tool.cibuildwheel]
+skip = ["cp36-*", "cp37-*", "cp38-*", "*-win32", "*arm64", "pp*"]
+build-frontend = "build"
