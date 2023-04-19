@@ -10,8 +10,19 @@ import platform
 import subprocess
 
 import setuptools
+from setuptools.dist import Distribution
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
+class bdist_wheel(_bdist_wheel):
+    def finalize_options(self):
+        _bdist_wheel.finalize_options(self)
+        self.root_is_pure = False
 
+class BinaryDistribution(Distribution):
+    """Distribution which always forces a binary package with platform name"""
+    def has_ext_modules(foo):
+        return True
+    
 def run_meson_build(staging_dir):
     prefix = os.path.join(os.getcwd(), staging_dir)
     purelibdir = "."
@@ -106,7 +117,7 @@ if __name__ == "__main__":
     #    open(init_file).read(),
     # )[0]
 
-    setuptools.setup()
+    setuptools.setup(cmdclass={'bdist_wheel': bdist_wheel}, distclass=BinaryDistribution)
 
 # os.environ['NPY_DISTUTILS_APPEND_FLAGS'] = '1'
 
