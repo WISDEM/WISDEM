@@ -1642,7 +1642,7 @@ class PoseOptimization(object):
                             ],
                             extrapolate=False)
                         init_te_ss_opt = te_ss_interpolator(wt_opt["blade.opt_var.s_opt_te_ss"])
-                        for j in range(len(init_te_ps_opt)):
+                        for j in range(len(init_te_ss_opt)):
                             if np.isnan(init_te_ss_opt[j]):
                                 init_te_ss_opt[j] = 0.
                         ss_before_ps = True
