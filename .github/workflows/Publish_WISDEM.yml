@@ -29,25 +29,6 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.3
 
-      #- name: Build wheels linux
-      #  if: true == contains( matrix.os, 'ubuntu')
-      #  uses: pypa/cibuildwheel@v2.12.3
-      #  env:
-      #    CIBW_PLATFORM: linux
-
-      #- name: Build wheels mac
-      #  if: true == contains( matrix.os, 'macos')
-      #  uses: pypa/cibuildwheel@v2.12.3
-      #  env:
-      #    CIBW_ARCHS_MACOS: x86_64 arm64
-      #    CIBW_PLATFORM: macos
-
-      #- name: Build wheels windows
-      #  if: true == contains( matrix.os, 'windows')
-      #  uses: pypa/cibuildwheel@v2.12.3
-      #  env:
-      #    CIBW_PLATFORM: windows
-
       - uses: actions/upload-artifact@v3
         with:
           path: ./wheelhouse/*.whl
@@ -71,7 +52,7 @@ jobs:
     # upload to PyPI on every tag starting with 'v'
     #if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     # alternatively, to publish when a GitHub Release is created, use the following rule:
-    if: github.event_name == 'release' && github.event.action == 'published'
+    #if: github.event_name == 'release' && github.event.action == 'published'
     steps:
       - uses: actions/download-artifact@v3
         with:
