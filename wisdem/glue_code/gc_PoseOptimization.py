@@ -595,8 +595,12 @@ class PoseOptimization(object):
                     spar_cap_ss_interpolator = PchipInterpolator(
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                        extrapolate=False
                     )
                     init_spar_cap_ss_opt = spar_cap_ss_interpolator(s_opt_spar_cap_ss)
+                    for j in range(len(init_spar_cap_ss_opt)):
+                        if np.isnan(init_spar_cap_ss_opt[j]):
+                            init_spar_cap_ss_opt[j] = 0.
             wt_opt.model.add_design_var(
                 "blade.opt_var.spar_cap_ss_opt",
                 indices=indices_spar_cap_ss,
@@ -705,8 +709,12 @@ class PoseOptimization(object):
                     spar_cap_ps_interpolator = PchipInterpolator(
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                        extrapolate=False
                     )
                     init_spar_cap_ps_opt = spar_cap_ps_interpolator(s_opt_spar_cap_ps)
+                    for j in range(len(init_spar_cap_ps_opt)):
+                        if np.isnan(init_spar_cap_ps_opt[j]):
+                            init_spar_cap_ps_opt[j] = 0.
             wt_opt.model.add_design_var(
                 "blade.opt_var.spar_cap_ps_opt",
                 indices=indices_spar_cap_ps,
@@ -733,8 +741,12 @@ class PoseOptimization(object):
                     te_ss_interpolator = PchipInterpolator(
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                        extrapolate=False
                     )
                     init_te_ss_opt = te_ss_interpolator(s_opt_te_ss)
+                    for j in range(len(init_te_ss_opt)):
+                        if np.isnan(init_te_ss_opt[j]):
+                            init_te_ss_opt[j] = 0.
             wt_opt.model.add_design_var(
                 "blade.opt_var.te_ss_opt",
                 indices=indices_te_ss,
@@ -763,8 +775,12 @@ class PoseOptimization(object):
                     te_ps_interpolator = PchipInterpolator(
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                        extrapolate=False
                     )
                     init_te_ps_opt = te_ps_interpolator(s_opt_te_ps)
+                    for j in range(len(init_te_ps_opt)):
+                        if np.isnan(init_te_ps_opt[j]):
+                            init_te_ps_opt[j] = 0.
             wt_opt.model.add_design_var(
                 "blade.opt_var.te_ps_opt",
                 indices=indices_te_ps,
@@ -1575,8 +1591,11 @@ class PoseOptimization(object):
                             wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                                 "values"
                             ],
-                        )
+                            extrapolate=False)
                         init_spar_cap_ss_opt = spar_cap_ss_interpolator(wt_opt["blade.opt_var.s_opt_spar_cap_ss"])
+                        for j in range(len(init_spar_cap_ss_opt)):
+                            if np.isnan(init_spar_cap_ss_opt[j]):
+                                init_spar_cap_ss_opt[j] = 0.
                         ss_before_ps = True
                     elif layer_name[i].lower() == spar_cap_ps_name:
                         if (
@@ -1590,8 +1609,11 @@ class PoseOptimization(object):
                                 wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                                     "values"
                                 ],
-                            )
+                                extrapolate=False)
                             init_spar_cap_ps_opt = spar_cap_ps_interpolator(wt_opt["blade.opt_var.s_opt_spar_cap_ps"])
+                            for j in range(len(init_spar_cap_ps_opt)):
+                                if np.isnan(init_spar_cap_ps_opt[j]):
+                                    init_spar_cap_ps_opt[j] = 0.
                         else:
                             init_spar_cap_ps_opt = init_spar_cap_ss_opt
                 if not ss_before_ps:
@@ -1618,8 +1640,11 @@ class PoseOptimization(object):
                             wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                                 "values"
                             ],
-                        )
+                            extrapolate=False)
                         init_te_ss_opt = te_ss_interpolator(wt_opt["blade.opt_var.s_opt_te_ss"])
+                        for j in range(len(init_te_ss_opt)):
+                            if np.isnan(init_te_ss_opt[j]):
+                                init_te_ss_opt[j] = 0.
                         ss_before_ps = True
                     elif layer_name[i] == te_ps_name:
                         if (
@@ -1632,8 +1657,11 @@ class PoseOptimization(object):
                                 wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                                     "values"
                                 ],
-                            )
+                                extrapolate=False)
                             init_te_ps_opt = te_ps_interpolator(wt_opt["blade.opt_var.s_opt_te_ps"])
+                            for j in range(len(init_te_ps_opt)):
+                                if np.isnan(init_te_ps_opt[j]):
+                                    init_te_ps_opt[j] = 0.
                         else:
                             init_te_ps_opt = init_te_ss_opt
                 if not ss_before_ps:
