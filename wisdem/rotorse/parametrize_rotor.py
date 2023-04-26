@@ -191,16 +191,16 @@ class ParametrizeBladeStruct(om.ExplicitComponent):
         opt_ps = self.opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["flag"]
         for i in range(self.n_layers):
             if layer_name[i] == spar_cap_ss_name and opt_ss and opt_ps:
-                opt_m_interp = np.interp(inputs["s"], inputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt"])
+                opt_m_interp = PchipInterpolator(inputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt"])(inputs["s"])
                 ss_before_ps = True
             elif layer_name[i] == spar_cap_ps_name and opt_ss and opt_ps:
                 if (
                     self.opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
                     == False
                 ) or ss_before_ps == False:
-                    opt_m_interp = np.interp(inputs["s"], inputs["s_opt_spar_cap_ps"], inputs["spar_cap_ps_opt"])
+                    opt_m_interp = PchipInterpolator(inputs["s_opt_spar_cap_ps"], inputs["spar_cap_ps_opt"])(inputs["s"])
                 else:
-                    opt_m_interp = np.interp(inputs["s"], inputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt"])
+                    opt_m_interp = PchipInterpolator(inputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt"])(inputs["s"])
             else:
                 opt_m_interp = inputs["layer_thickness_original"][i, :]
 
@@ -214,15 +214,15 @@ class ParametrizeBladeStruct(om.ExplicitComponent):
         opt_ps = self.opt_options["design_variables"]["blade"]["structure"]["te_ss"]["flag"]
         for i in range(self.n_layers):
             if layer_name[i] == te_ss_name and opt_ss and opt_ps:
-                opt_m_interp = np.interp(inputs["s"], inputs["s_opt_te_ss"], inputs["te_ss_opt"])
+                opt_m_interp = PchipInterpolator(inputs["s_opt_te_ss"], inputs["te_ss_opt"])(inputs["s"])
                 ss_before_ps = True
             elif layer_name[i] == te_ps_name and opt_ss and opt_ps:
                 if (
                     self.opt_options["design_variables"]["blade"]["structure"]["te_ps"]["equal_to_suction"] == False
                 ) or ss_before_ps == False:
-                    opt_m_interp = np.interp(inputs["s"], inputs["s_opt_te_ps"], inputs["te_ps_opt"])
+                    opt_m_interp = PchipInterpolator(inputs["s_opt_te_ps"], inputs["te_ps_opt"])(inputs["s"])
                 else:
-                    opt_m_interp = np.interp(inputs["s"], inputs["s_opt_te_ss"], inputs["te_ss_opt"])
+                    opt_m_interp = PchipInterpolator(inputs["s_opt_te_ss"], inputs["te_ss_opt"])(inputs["s"])
             else:
                 opt_m_interp = outputs["layer_thickness_param"][i, :]
 
