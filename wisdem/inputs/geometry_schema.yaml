@@ -3108,7 +3108,7 @@ definitions:
                     description: Name of the layer to lock the edge
         axis_coordinates:
             type: object
-            description: The reference system is located at blade root, with z aligned with the pitch axis, x pointing towards the suction sides of the airfoils (standard prebend will be negative) and y pointing to the trailing edge (standard sweep will be positive)
+            description: The reference system is used across wind turbine components. For the blade, the reference system is located at blade root, with z aligned with the pitch axis, x pointing towards the suction sides of the airfoils (standard prebend will be negative) and y pointing to the trailing edge (standard sweep will be positive). For tower and monopile, the reference system is located at tower/monopile base, with z aligned along the height pointing upwards, x aligned with the main wind direction, and y pointing to the side following the right hand rule.
             required:
                 - x
                 - y
