@@ -1,4 +1,5 @@
 import numpy as np
+
 from wisdem.commonse import eps
 
 # Compute costs based on "Optimum Design of Steel Structures" by Farkas and Jarmai

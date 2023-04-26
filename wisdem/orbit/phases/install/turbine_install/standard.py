@@ -308,7 +308,6 @@ def solo_install_turbines(vessel, port, distance, turbines, tower_sections, num_
             vessel.at_site = True
 
         if vessel.at_site:
-
             if vessel.storage.items:
                 yield prep_for_site_operations(vessel, **kwargs)
 
@@ -380,9 +379,7 @@ def install_turbine_components_from_queue(wtiv, queue, distance, turbines, tower
             wtiv.at_site = True
 
         if wtiv.at_site:
-
             if queue.vessel:
-
                 # Prep for turbine install
                 yield prep_for_site_operations(wtiv, **kwargs)
 

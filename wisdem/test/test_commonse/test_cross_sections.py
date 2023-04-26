@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
+
 from wisdem.commonse.cross_sections import Tube
 
 npts = 100

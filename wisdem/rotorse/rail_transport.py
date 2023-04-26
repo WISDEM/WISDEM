@@ -1,10 +1,12 @@
 import numpy as np
 import scipy.constants as spc
-import wisdem.commonse.utilities as util
-import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 from openmdao.api import ExplicitComponent
 from scipy.optimize import minimize
+
+import wisdem.commonse.utilities as util
+import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 from wisdem.commonse.constants import gravity
+
 
 # This isn't used, but keeping around the code for now
 def enforce_length(x, y, z, L0):
@@ -14,9 +16,9 @@ def enforce_length(x, y, z, L0):
     zn = z.copy()
     rn = util.arc_length(np.c_[xn, yn, zn])
 
-    counter=0
-    while np.abs(rn[-1] - r0) > 1e-2 and counter<100:
-        counter+=1
+    counter = 0
+    while np.abs(rn[-1] - r0) > 1e-2 and counter < 100:
+        counter += 1
         L = np.diff(rn)
         xn[1:] = (L0 / L) * (xn[1:] - xn[:-1]) + xn[:-1]
         zn[1:] = (L0 / L) * (zn[1:] - zn[:-1]) + zn[:-1]
@@ -166,7 +168,6 @@ class RailTransport(ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-
         PBEAM = False
         _8axle = False
 
@@ -217,8 +218,8 @@ class RailTransport(ExplicitComponent):
         EIxy_cs = EIxy.copy()
 
         # translate to elastic center
-        EIxx_cs -= y_sc_cs ** 2 * EA
-        EIyy_cs -= x_sc_cs ** 2 * EA
+        EIxx_cs -= y_sc_cs**2 * EA
+        EIyy_cs -= x_sc_cs**2 * EA
         EIxy_cs -= x_sc_cs * y_sc_cs * EA
 
         # get rotation angle
@@ -370,7 +371,6 @@ class RailTransport(ExplicitComponent):
         # Find rotation angles that keep blade within inner boundary
         # Function that does the structural analysis to be called during optimization
         def rotate_blade(ang):
-
             # Node location starting points when curving towards SS
             # (towards the LEFT with LE pointed down and standing at the root looking at tip)
             x_rot1, z_rot1 = util.rotate(r_curveH, 0.0, r_curveH + x_ref, z_ref, ang[0])
@@ -380,8 +380,8 @@ class RailTransport(ExplicitComponent):
             x_rot2, z_rot2 = util.rotate(-r_curveH, 0.0, -r_curveH + x_ref, z_ref, ang[1])
 
             # Check solved blade shape against envelope
-            r_check1 = np.sqrt(x_rot1 ** 2 + z_rot1 ** 2)
-            r_check2 = np.sqrt(x_rot2 ** 2 + z_rot2 ** 2)
+            r_check1 = np.sqrt(x_rot1**2 + z_rot1**2)
+            r_check2 = np.sqrt(x_rot2**2 + z_rot2**2)
 
             # Formulate as constraints for SLSQP
             cboundary = np.sum(np.maximum(r_envelopeH_inner1 - r_check1, 0.0)) + np.sum(
@@ -410,11 +410,10 @@ class RailTransport(ExplicitComponent):
         # x_rot2, z_rot2 = util.rotate(-r_curveH, 0.0, -r_curveH + x_ref, z_ref, np.deg2rad(-20))
         # nodes2 = pyframe3dd.NodeData(inode, x_rot2, y_ref, z_rot2, rad)
 
-
-        x_rail_inner  = np.linspace(0., 2.*r_envelopeH.min(), 10000)
-        y_rail_inner  = np.sqrt(r_envelopeH.min()**2. - (x_rail_inner-r_envelopeH.min())**2.)
-        x_rail_outer  = np.linspace(0., 2.*r_envelopeH.max(), 10000)
-        y_rail_outer  = np.sqrt(r_envelopeH.max()**2. - (x_rail_outer-r_envelopeH.max())**2.)
+        x_rail_inner = np.linspace(0.0, 2.0 * r_envelopeH.min(), 10000)
+        y_rail_inner = np.sqrt(r_envelopeH.min() ** 2.0 - (x_rail_inner - r_envelopeH.min()) ** 2.0)
+        x_rail_outer = np.linspace(0.0, 2.0 * r_envelopeH.max(), 10000)
+        y_rail_outer = np.sqrt(r_envelopeH.max() ** 2.0 - (x_rail_outer - r_envelopeH.max()) ** 2.0)
 
         # # # # Undeflected transport
         # import matplotlib.pyplot as plt
@@ -437,28 +436,25 @@ class RailTransport(ExplicitComponent):
         # plt.show()
         # exit()
 
-        
-
         def get_max_force_h(FrIn):
             # Objective function to minimize the reaction force of the first flatcat, which holds blade root, during a lateral curve
             Fr = FrIn[2:].reshape((self.n_span - 1, 2))
             RF_flatcar_1 = np.zeros(2)
             for k in range(2):
-                q_iter    = np.r_[0., Fr[:,k]]
-                V_iter    = np.zeros(self.n_span)
-                M_iter    = np.zeros(self.n_span)
+                q_iter = np.r_[0.0, Fr[:, k]]
+                V_iter = np.zeros(self.n_span)
+                M_iter = np.zeros(self.n_span)
                 for i in range(self.n_span):
-                    V_iter[i] = np.trapz(q_iter[i:],r[i:])
+                    V_iter[i] = np.trapz(q_iter[i:], r[i:])
                 for i in range(self.n_span):
-                    M_iter[i] = np.trapz(V_iter[i:],r[i:])
-                
+                    M_iter[i] = np.trapz(V_iter[i:], r[i:])
+
                 RF_flatcar_1[k] = 0.5 * V_iter[0] + M_iter[0] / flatcar_tc_length
 
-            return np.sum(abs(RF_flatcar_1)*1.e-5)
+            return np.sum(abs(RF_flatcar_1) * 1.0e-5)
 
         # Function that does the structural analysis to be called during optimization
         def run_hcurve(FrIn, optFlag=True, final=False):
-
             angle = FrIn[0:2]
             if final:
                 print("Flapwise rotations at blade root: ", angle)
@@ -476,7 +472,6 @@ class RailTransport(ExplicitComponent):
             # Initialize Frame3dd objects
             blade1 = pyframe3dd.Frame(nodes1, reactions, elements, options)
             blade2 = pyframe3dd.Frame(nodes2, reactions, elements, options)
-
 
             Fr = FrIn[2:].reshape((self.n_span - 1, 2))
 
@@ -515,18 +510,12 @@ class RailTransport(ExplicitComponent):
                 x = blade.nx + displacements.dx[0, :]
                 y = blade.ny + displacements.dy[0, :]
                 z = blade.nz + displacements.dz[0, :]
-                x_defl , z_defl = enforce_length(x, y, z, L0)
+                x_defl, z_defl = enforce_length(x, y, z, L0)
 
                 # Check solved blade shape against envelope
-                
-                r_check_outer[:, k] = (
-                    np.sqrt(x_defl ** 2 + z_defl ** 2)
-                    - r_outer
-                )
-                r_check_inner[:, k] = (
-                    r_inner - 
-                    np.sqrt(x_defl ** 2 + z_defl ** 2)
-                )
+
+                r_check_outer[:, k] = np.sqrt(x_defl**2 + z_defl**2) - r_outer
+                r_check_inner[:, k] = r_inner - np.sqrt(x_defl**2 + z_defl**2)
 
                 # if final and k==1:
                 #     print("Undeflected blade length: ", util.arc_length(np.vstack((blade.nx, blade.nz)).T)[-1])
@@ -555,7 +544,7 @@ class RailTransport(ExplicitComponent):
                 #  - Lateral force on wheels (multiply by 0.5 for 2 wheel sets)
                 #  - Moment around axis perpendicular to ground
                 RF_derailH[k] = (
-                    0.5 * np.sqrt(forces_rxn.Fx ** 2 + forces_rxn.Fz ** 2) + np.abs(forces_rxn.Myy) / flatcar_tc_length
+                    0.5 * np.sqrt(forces_rxn.Fx**2 + forces_rxn.Fz**2) + np.abs(forces_rxn.Myy) / flatcar_tc_length
                 )
 
                 # Element shear and bending, one per element, which are already in principle directions in Hansen's notation
@@ -585,7 +574,15 @@ class RailTransport(ExplicitComponent):
                 cstrainSS = np.maximum(np.abs(strainSS) - max_strains, 0.0)
 
                 # Accumulate constraints
-                cons = np.array([np.sum(cboundary_outer), np.sum(cboundary_inner), np.sum(crxn), np.sum(cstrainPS), np.sum(cstrainSS)])
+                cons = np.array(
+                    [
+                        np.sum(cboundary_outer),
+                        np.sum(cboundary_inner),
+                        np.sum(crxn),
+                        np.sum(cstrainPS),
+                        np.sum(cstrainSS),
+                    ]
+                )
                 # cons = np.array([np.sum(cboundary_outer), np.sum(crxn), np.sum(cstrainPS), np.sum(cstrainSS)])
 
                 return -cons
@@ -598,11 +595,11 @@ class RailTransport(ExplicitComponent):
         const["fun"] = run_hcurve
 
         npts = 2 * (self.n_span - 1)
-        bounds = [(-max_rot, max_rot),(-max_rot, max_rot)]
+        bounds = [(-max_rot, max_rot), (-max_rot, max_rot)]
         for i in range(npts):
             bounds.append((0, 1e2))
         # bounds = [(-1e2, 1e2)] * (npts + 2)
-        x0 = np.r_[result.x, 0. * np.ones(npts)]
+        x0 = np.r_[result.x, 0.0 * np.ones(npts)]
         result = minimize(
             lambda x: np.sum(np.abs(x[2:])),
             # get_max_force_h,

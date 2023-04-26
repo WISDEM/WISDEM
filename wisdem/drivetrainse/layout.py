@@ -3,8 +3,9 @@
 
 import numpy as np
 import openmdao.api as om
-import wisdem.commonse.utilities as util
 from scipy.special import ellipeinc
+
+import wisdem.commonse.utilities as util
 from wisdem.commonse.cross_sections import IBeam
 
 
@@ -22,16 +23,16 @@ def rod_prop(s, Di, ti, rho):
 
     D = equal_pts(Di)
     t = equal_pts(ti)
-    y = 0.25 * rho * np.pi * (D ** 2 - (D - 2 * t) ** 2)
+    y = 0.25 * rho * np.pi * (D**2 - (D - 2 * t) ** 2)
     m = np.trapz(y, s)
     cm = np.trapz(y * s, s) / m
     Dm = D.mean()
     tm = t.mean()
     I = np.array(
         [
-            0.5 * 0.25 * (Dm ** 2 + (Dm - 2 * tm) ** 2),
-            (1.0 / 12.0) * (3 * 0.25 * (Dm ** 2 + (Dm - 2 * tm) ** 2) + L ** 2),
-            (1.0 / 12.0) * (3 * 0.25 * (Dm ** 2 + (Dm - 2 * tm) ** 2) + L ** 2),
+            0.5 * 0.25 * (Dm**2 + (Dm - 2 * tm) ** 2),
+            (1.0 / 12.0) * (3 * 0.25 * (Dm**2 + (Dm - 2 * tm) ** 2) + L**2),
+            (1.0 / 12.0) * (3 * 0.25 * (Dm**2 + (Dm - 2 * tm) ** 2) + L**2),
         ]
     )
     return m, cm, m * I
@@ -234,7 +235,6 @@ class DirectLayout(Layout):
         self.add_output("constr_ecc", 0.0, units="m")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # Unpack inputs
         L_12 = float(inputs["L_12"])
         L_h1 = float(inputs["L_h1"])
@@ -329,7 +329,7 @@ class DirectLayout(Layout):
         D_bed = np.sqrt((z_outer - z_inner) ** 2 + (x_outer - x_inner) ** 2)
         r_bed_o = 0.5 * D_bed
         r_bed_i = r_bed_o - t_bed
-        A_bed = np.pi * (r_bed_o ** 2 - r_bed_i ** 2)
+        A_bed = np.pi * (r_bed_o**2 - r_bed_i**2)
 
         # This finds the central angle (rad2) given the parametric angle (rad)
         rad2 = np.arctan(L_bedplate / H_bedplate * np.tan(rad))
@@ -357,9 +357,9 @@ class DirectLayout(Layout):
             r_bed_i_k = 0.5 * (r_bed_i[k] + r_bed_i[k + 1])
             I_sec = mass[k] * np.array(
                 [
-                    0.5 * (r_bed_o_k ** 2 + r_bed_i_k ** 2),
-                    (1.0 / 12.0) * (3 * (r_bed_o_k ** 2 + r_bed_i_k ** 2) + arc[k] ** 2),
-                    (1.0 / 12.0) * (3 * (r_bed_o_k ** 2 + r_bed_i_k ** 2) + arc[k] ** 2),
+                    0.5 * (r_bed_o_k**2 + r_bed_i_k**2),
+                    (1.0 / 12.0) * (3 * (r_bed_o_k**2 + r_bed_i_k**2) + arc[k] ** 2),
+                    (1.0 / 12.0) * (3 * (r_bed_o_k**2 + r_bed_i_k**2) + arc[k] ** 2),
                 ]
             )
             I_sec_rot = util.rotateI(I_sec, 0.5 * np.pi - rad2[k], axis="y")
@@ -476,7 +476,6 @@ class GearedLayout(Layout):
         self.add_output("bedplate_web_height", val=0.0, units="m")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # Unpack inputs
         upwind = discrete_inputs["upwind"]
         Cup = -1.0 if upwind else 1.0
@@ -567,8 +566,8 @@ class GearedLayout(Layout):
         cg_bedplate = np.r_[Cup * (L_overhang - 0.5 * L_bedplate), 0.0, myI.CG]  # from tower top
         I_bedplate = (
             bedplate_rho * L_bedplate * np.r_[myI.J0, myI.Ixx, myI.Iyy]
-            + m_bedplate * L_bedplate ** 2 / 12.0 * np.r_[0.0, 1.0, 1.0]
-            + m_bedplate * yoff ** 2 * np.r_[1.0, 0.0, 1.0]
+            + m_bedplate * L_bedplate**2 / 12.0 * np.r_[0.0, 1.0, 1.0]
+            + m_bedplate * yoff**2 * np.r_[1.0, 0.0, 1.0]
         )
         outputs["bedplate_web_height"] = bed_h_web
         outputs["bedplate_mass"] = 2 * m_bedplate

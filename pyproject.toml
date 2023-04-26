@@ -1,6 +1,117 @@
 [build-system]
-requires = ["setuptools", "numpy", "ninja", "meson>=0.60.0"]
+requires = ["setuptools", "numpy", "ninja", "meson>=0.60.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "wisdem"
+version = "3.9.2"
+description = "Wind-Plant Integrated System Design & Engineering Model"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Apache-2.0"}
+keywords = ["wind", "turbine", "mdao", "design", "optimization"]
+authors = [
+  {name = "NREL WISDEM Team", email = "systems.engineering@nrel.gov" }
+]
+maintainers = [
+  {name = "NREL WISDEM Team", email = "systems.engineering@nrel.gov" }
+]
+classifiers = [  # Optional
+  # How mature is this project? Common values are
+  #   3 - Alpha
+  #   4 - Beta
+  #   5 - Production/Stable
+  "Development Status :: 4 - Beta",
+
+  # Indicate who your project is intended for
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+
+  "License :: OSI Approved :: Apache Software License",
+
+  # Specify the Python versions you support here. In particular, ensure
+  # that you indicate you support Python 3. These classifiers are *not*
+  # checked by "pip install". See instead "python_requires" below.
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: C",
+  "Programming Language :: Fortran",
+]
+
+dependencies = [
+  "dearpygui",
+  "jsonschema",
+  "marmot-agents>=0.2.5",
+  "nlopt",
+  "numpy",
+  "openmdao>=3.18",
+  "openpyxl",
+  "pandas",
+  "pydoe2",
+  "pyoptsparse",
+  "python-benedict",
+  "pyyaml",
+  "ruamel.yaml",
+  "scipy",
+  "simpy",
+  "sortedcontainers",
+  "statsmodels",
+]
+
+# List additional groups of dependencies here (e.g. development
+# dependencies). Users will be able to install these using the "extras"
+# syntax, for example:
+#
+#   $ pip install sampleproject[dev]
+#
+# Similar to `dependencies` above, these must be valid existing
+# projects.
+[project.optional-dependencies] # Optional
+dev = ["meson", "ninja", "swig"]
+test = ["coveralls", "pytest", "pytest-cov"]
+docs = ["sphinx", "sphinxcontrib-bibtex", "sphinx_rtd_theme"]
+
+# List URLs that are relevant to your project
+#
+# This field corresponds to the "Project-URL" and "Home-Page" metadata fields:
+# https://packaging.python.org/specifications/core-metadata/#project-url-multiple-use
+# https://packaging.python.org/specifications/core-metadata/#home-page-optional
+#
+# Examples listed include a pattern for specifying where the package tracks
+# issues, where the source is hosted, where to say thanks to the package
+# maintainers, and where to support the project financially. The key is
+# what's used to render the link text on PyPI.
+[project.urls]  # Optional
+"Homepage" = "https://github.com/WISDEM/WISDEM"
+"Documentation" = "https://wisdem.readthedocs.io"
+"Project" = "https://www.nrel.gov/wind/systems-engineering.html"
+
+[project.scripts]
+wisdem = "wisdem.main:wisdem_cmd"
+compare_designs = "wisdem.postprocessing.compare_designs:main"
+
+# This is configuration specific to the `setuptools` build backend.
+# If you are using a different build backend, you will need to change this.
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+#[tool.setuptools.packages]
+#find = {}
+
+[tool.setuptools.packages.find]
+#where = ["wisdem"]
+exclude = ["docs", "tests", "ext"]
+namespaces = true
+
+[tool.setuptools.package-data]
+# If there are data files included in your packages that need to be
+# installed, specify them here.
+"*" = ["*.yaml", "*.xlsx", "*.txt", "*.so", "*.lib", "*.pyd", "*.pdb", "*.dylib", "*.dll"]
 
 [tool.black]
 line-length = 120
@@ -19,3 +130,28 @@ exclude = '''
   | dist
 )/
 '''
+
+[tool.isort]
+# https://github.com/PyCQA/isort
+multi_line_output = "3"
+include_trailing_comma = true
+force_grid_wrap = false
+use_parentheses = true
+line_length = "120"
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+known_first_party = ["wisdem"]
+length_sort = "1"
+profile = "black"
+skip_glob = ['__init__.py']
+atomic = true
+#lines_after_imports = 2
+#lines_between_types = 1
+#src_paths=isort,test
+
+[tool.coverage.run]
+source = ["wisdem"]
+omit = ["wisdem/test/*", "wisdem/floating/visualize.py"]
+
+[tool.cibuildwheel]
+skip = ["cp36-*", "cp37-*", "cp38-*", "*-win32", "*arm64", "pp*"]
+build-frontend = "build"

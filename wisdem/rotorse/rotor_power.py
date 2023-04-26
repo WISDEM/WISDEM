@@ -875,11 +875,9 @@ class ComputeSplines(ExplicitComponent):
 # Class to define a constraint so that the blade cannot operate in stall conditions
 class NoStallConstraint(ExplicitComponent):
     def initialize(self):
-
         self.options.declare("modeling_options")
 
     def setup(self):
-
         modeling_options = self.options["modeling_options"]
         self.n_span = n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
         self.n_aoa = n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]  # Number of angle of attacks
@@ -915,7 +913,6 @@ class NoStallConstraint(ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-
         i_min = np.argmin(abs(inputs["min_s"] - inputs["s"]))
 
         for i in range(self.n_span):
@@ -944,7 +941,6 @@ class NoStallConstraint(ExplicitComponent):
 
 class AEP(ExplicitComponent):
     def initialize(self):
-
         self.options.declare("nspline")
 
     def setup(self):
@@ -969,7 +965,6 @@ class AEP(ExplicitComponent):
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs):
-
         lossFactor = inputs["lossFactor"]
         P = inputs["P"]
         CDF_V = inputs["CDF_V"]
@@ -993,7 +988,6 @@ class AEP(ExplicitComponent):
 
 
 def compute_P_and_eff(aeroPower, ratedPower, Omega_rpm, drivetrainType, drivetrainEff):
-
     if not np.any(drivetrainEff):
         drivetrainType = drivetrainType.upper()
         if drivetrainType == "GEARED":

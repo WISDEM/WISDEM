@@ -17,6 +17,7 @@ import traceback
 
 import numpy as np
 import pandas as pd
+
 from wisdem.landbosse.model.CostModule import CostModule
 from wisdem.landbosse.model.WeatherDelay import WeatherDelay as WD
 
@@ -271,7 +272,6 @@ class ArraySystem(CostModule):
     """
 
     def __init__(self, input_dict, output_dict, project_name):
-
         self.input_dict = input_dict
         self.output_dict = output_dict
         self.project_name = project_name
@@ -458,7 +458,7 @@ class ArraySystem(CostModule):
                 string_to_substation_length.append(
                     c
                     * np.sqrt(
-                        row_spacing_rotor_diameters ** 2
+                        row_spacing_rotor_diameters**2
                         + (turb_space_scaling * idx * turbine_spacing_rotor_diameters) ** 2
                     )
                 )
@@ -525,7 +525,6 @@ class ArraySystem(CostModule):
 
         # This 'elif' is essentially a switch for distributed wind:
         elif num_full_strings < 1 and num_partial_strings >= 0:
-
             # if number of turbines is less than total string capacity,
             # find the terminal cable and find total cable len
             # up till that cable.
@@ -549,7 +548,6 @@ class ArraySystem(CostModule):
                 ) + len_to_substation
 
             else:
-
                 cable.num_turb_per_cable = total_turbines - turbines_per_cable[(count - 1)]
                 cable.array_cable_len = (
                     cable.num_turb_per_cable + cable.downstream_connection
@@ -563,7 +561,6 @@ class ArraySystem(CostModule):
 
         else:  # Switch for utility scale landbosse
             if cable.turb_sequence == len(cable_specs):
-
                 # Only add len_to_substation to the final cable in the string
                 total_cable_len = (
                     num_full_strings * cable.array_cable_len
@@ -630,7 +627,6 @@ class ArraySystem(CostModule):
         self.output_dict["num_strings"] = self.output_dict["num_full_strings"] + self.output_dict["num_partial_strings"]
 
         if self.input_dict["user_defined_distance_to_grid_connection"] == 0:  # where (0 = No) and (1 = Yes)
-
             # This only gets used if number of strings is <= 1 :
             distributed_wind_distance_to_grid = (
                 self.input_dict["turbine_spacing_rotor_diameters"] * self.input_dict["rotor_diameter_m"]
@@ -838,7 +834,6 @@ class ArraySystem(CostModule):
         return construction_time_output_data["operation_data_entire_farm"]
 
     def calculate_costs(self, calculate_costs_input_dict, calculate_costs_output_dict):
-
         # read in rsmeans data:
         # rsmeans = calculate_costs_input_dict['rsmeans']
         operation_data = calculate_costs_output_dict["operation_data_entire_farm"]

@@ -211,7 +211,6 @@ class ExportSystemDesign(CableSystem):
         }
 
         for name, cable in self.cables.items():
-
             output["export_system"]["cable"] = {
                 "linear_density": cable.linear_density,
                 "sections": [self.length],

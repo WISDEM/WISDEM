@@ -259,7 +259,6 @@ class TowerFrame(om.ExplicitComponent):
         self.add_output("turbine_M", val=np.zeros((3, nLC)), units="N*m")
 
     def compute(self, inputs, outputs):
-
         frame3dd_opt = self.options["frame3dd_opt"]
         nLC = self.options["nLC"]
 

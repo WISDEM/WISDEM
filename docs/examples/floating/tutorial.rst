@@ -1,5 +1,5 @@
 .. _floating_tutorial-label:
-  
+
 9. Floating Platform Examples
 -----------------------------
 

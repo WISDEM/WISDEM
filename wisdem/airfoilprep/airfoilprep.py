@@ -143,7 +143,7 @@ class Polar(object):
         a = 1
         b = 1
         d = 1
-        lam = tsr / (1 + tsr ** 2) ** 0.5  # modified tip speed ratio
+        lam = tsr / (1 + tsr**2) ** 0.5  # modified tip speed ratio
         expon = d / lam / r_over_R
         expon_d = d / lam / r_over_R / 2.0
 
@@ -154,9 +154,9 @@ class Polar(object):
         alpha0 = -p[1] / m
 
         # correction factor
-        fcl = 1.0 / m * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r ** expon) / (b + chord_over_r ** expon) - 1)
+        fcl = 1.0 / m * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r**expon) / (b + chord_over_r**expon) - 1)
         fcd = (
-            1.0 / m * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r ** expon_d) / (b + chord_over_r ** expon_d) - 1)
+            1.0 / m * (1.6 * chord_over_r / 0.1267 * (a - chord_over_r**expon_d) / (b + chord_over_r**expon_d) - 1)
         )
 
         # not sure where this adjustment comes from (besides AirfoilPrep spreadsheet of course)
@@ -245,7 +245,7 @@ class Polar(object):
         # parameters used in model
         sa = np.sin(alpha_high)
         ca = np.cos(alpha_high)
-        self.A = (cl_high - self.cdmax * sa * ca) * sa / ca ** 2
+        self.A = (cl_high - self.cdmax * sa * ca) * sa / ca**2
         self.B = (cd_high - self.cdmax * sa * sa) / ca
 
         # alpha_high <-> 90
@@ -563,7 +563,6 @@ class Airfoil(object):
 
         # loop through tables
         for i in range(numTables):
-
             # read Reynolds number
             Re = float(f.readline().split()[0]) * 1e6
 
@@ -840,7 +839,7 @@ class Airfoil(object):
         cd = np.zeros((len(alpha), len(Re)))
         cm = np.zeros((len(alpha), len(Re)))
 
-        for (idx, p) in enumerate(polarList):
+        for idx, p in enumerate(polarList):
             cl[:, idx] = p.cl
             cd[:, idx] = p.cd
             cm[:, idx] = p.cm
@@ -985,7 +984,6 @@ class Airfoil(object):
 
 
 if __name__ == "__main__":
-
     import os
     from argparse import ArgumentParser, RawTextHelpFormatter
 
@@ -1022,7 +1020,6 @@ if __name__ == "__main__":
 
     # perform actions
     if args.stall3D is not None:
-
         if fileOut is None:
             name, ext = os.path.splitext(args.src_file)
             fileOut = name + "_3D" + ext
@@ -1037,7 +1034,6 @@ if __name__ == "__main__":
         af3D.writeToAerodynFile(fileOut)
 
         if args.plot:
-
             for p, p3D in zip(af.polars, af3D.polars):
                 # plt.figure(figsize=(6.0, 2.6))
                 # plt.subplot(121)
@@ -1062,7 +1058,6 @@ if __name__ == "__main__":
             plt.show()
 
     elif args.extrap is not None:
-
         if fileOut is None:
             name, ext = os.path.splitext(args.src_file)
             fileOut = name + "_extrap" + ext
@@ -1077,7 +1072,6 @@ if __name__ == "__main__":
         afext.writeToAerodynFile(fileOut)
 
         if args.plot:
-
             for p, pext in zip(af.polars, afext.polars):
                 # plt.figure(figsize=(6.0, 2.6))
                 # plt.subplot(121)
@@ -1109,7 +1103,6 @@ if __name__ == "__main__":
             plt.show()
 
     elif args.blend is not None:
-
         if fileOut is None:
             name1, ext = os.path.splitext(args.src_file)
             name2, ext = os.path.splitext(os.path.basename(args.blend[0]))
@@ -1125,7 +1118,6 @@ if __name__ == "__main__":
         afOut.writeToAerodynFile(fileOut)
 
         if args.plot:
-
             for p in afOut.polars:
                 fig = plt.figure()
                 ax = fig.add_subplot(111)

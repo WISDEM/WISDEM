@@ -1,5 +1,5 @@
-/*	
- This file is part of FRAME3DD: 
+/*
+ This file is part of FRAME3DD:
  Static and dynamic structural analysis of 2D & 3D frames and trusses
  with elastic and geometric stiffness.
  ---------------------------------------------------------------------------
@@ -42,7 +42,6 @@
 
 // Zvert=1: Z axis is vertical... rotate about Y-axis, then rotate about Z-axis
 // Zvert=0: Y axis is vertical... rotate about Z-axis, then rotate about Y-axis
-#define Zvert 1	
+#define Zvert 1
 
 #endif /* FRAME_COMMON_H */
-

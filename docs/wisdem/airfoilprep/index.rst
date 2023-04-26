@@ -15,5 +15,3 @@ AirfoilPrep.py
 
     intro
     documentation
-
-

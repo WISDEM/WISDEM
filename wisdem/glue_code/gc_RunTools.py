@@ -12,11 +12,9 @@ class Convergence_Trends_Opt(om.ExplicitComponent):
     """
 
     def initialize(self):
-
         self.options.declare("opt_options")
 
     def compute(self, inputs, outputs):
-
         folder_output = self.options["opt_options"]["general"]["folder_output"]
         optimization_log = os.path.join(folder_output, self.options["opt_options"]["recorder"]["file_name"])
         if MPI:
@@ -120,7 +118,6 @@ class PlotRecorder(om.Group):
 
 
 if __name__ == "__main__":
-
     opt_options = {}
     opt_options["general"] = {}
     opt_options["general"]["folder_output"] = "path2outputfolder"

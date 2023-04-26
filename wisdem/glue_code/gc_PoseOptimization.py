@@ -428,7 +428,6 @@ class PoseOptimization(object):
         return wt_opt
 
     def set_objective(self, wt_opt):
-
         # Set merit figure. Each objective has its own scaling.
         if self.opt["merit_figure"] == "AEP":
             wt_opt.model.add_objective("rotorse.rp.AEP", ref=-1.0e6)
@@ -499,7 +498,6 @@ class PoseOptimization(object):
         return wt_opt
 
     def set_design_variables(self, wt_opt, wt_init):
-
         # Set optimization design variables.
         rotorD_opt = self.opt["design_variables"]["rotor_diameter"]
         blade_opt = self.opt["design_variables"]["blade"]
@@ -528,9 +526,11 @@ class PoseOptimization(object):
                 blade_opt["aero_shape"]["twist"]["index_end"] = blade_opt["aero_shape"]["twist"]["n_opt"]
             indices_twist = range(twist_options["index_start"], twist_options["index_end"])
             s_opt_twist = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["twist"]["n_opt"])
-            twist_interpolator= PchipInterpolator(wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"],
-                                                  wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"])
-            init_twist_opt= twist_interpolator(s_opt_twist)
+            twist_interpolator = PchipInterpolator(
+                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"],
+            )
+            init_twist_opt = twist_interpolator(s_opt_twist)
             wt_opt.model.add_design_var(
                 "blade.opt_var.twist_opt",
                 indices=indices_twist,
@@ -548,9 +548,11 @@ class PoseOptimization(object):
                 blade_opt["aero_shape"]["chord"]["index_end"] = blade_opt["aero_shape"]["chord"]["n_opt"]
             indices_chord = range(chord_options["index_start"], chord_options["index_end"])
             s_opt_chord = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["chord"]["n_opt"])
-            chord_interpolator= PchipInterpolator(wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"],
-                                                  wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"])
-            init_chord_opt= chord_interpolator(s_opt_chord)
+            chord_interpolator = PchipInterpolator(
+                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"],
+            )
+            init_chord_opt = chord_interpolator(s_opt_chord)
             wt_opt.model.add_design_var(
                 "blade.opt_var.chord_opt",
                 indices=indices_chord,
@@ -585,14 +587,20 @@ class PoseOptimization(object):
                 blade_opt["structure"]["spar_cap_ss"]["index_end"] = blade_opt["structure"]["spar_cap_ss"]["n_opt"]
             indices_spar_cap_ss = range(spar_cap_ss_options["index_start"], spar_cap_ss_options["index_end"])
             s_opt_spar_cap_ss = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"])
-            spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"]
+            spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"].lower()
             layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
             n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
             for i in range(n_layers):
-                if layer_name[i] == spar_cap_ss_name:
-                    spar_cap_ss_interpolator= PchipInterpolator(wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-                                                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
-                    init_spar_cap_ss_opt= spar_cap_ss_interpolator(s_opt_spar_cap_ss)
+                if layer_name[i].lower() == spar_cap_ss_name:
+                    spar_cap_ss_interpolator = PchipInterpolator(
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                        extrapolate=False
+                    )
+                    init_spar_cap_ss_opt = spar_cap_ss_interpolator(s_opt_spar_cap_ss)
+                    for j in range(len(init_spar_cap_ss_opt)):
+                        if np.isnan(init_spar_cap_ss_opt[j]):
+                            init_spar_cap_ss_opt[j] = 0.
             wt_opt.model.add_design_var(
                 "blade.opt_var.spar_cap_ss_opt",
                 indices=indices_spar_cap_ss,
@@ -606,9 +614,11 @@ class PoseOptimization(object):
             n_opt = L_D_options["n_opt"]
             indices = range(L_D_options["index_start"], L_D_options["index_end"])
             s_opt_L_D = np.linspace(0.0, 1.0, n_opt)
-            L_D_interpolator= PchipInterpolator(wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
-                                                wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"])
-            init_L_D_opt= L_D_interpolator(s_opt_L_D)
+            L_D_interpolator = PchipInterpolator(
+                wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
+            )
+            init_L_D_opt = L_D_interpolator(s_opt_L_D)
 
             wt_opt.model.add_design_var(
                 "inn_af.L_D_opt",
@@ -622,9 +632,11 @@ class PoseOptimization(object):
             n_opt = c_d_options["n_opt"]
             indices = range(c_d_options["index_start"], c_d_options["index_end"])
             s_opt_c_d = np.linspace(0.0, 1.0, n_opt)
-            c_d_interpolator= PchipInterpolator(wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"],
-                                                wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"])
-            init_c_d_opt= c_d_interpolator(s_opt_c_d)
+            c_d_interpolator = PchipInterpolator(
+                wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"],
+            )
+            init_c_d_opt = c_d_interpolator(s_opt_c_d)
 
             wt_opt.model.add_design_var(
                 "inn_af.c_d_opt",
@@ -638,9 +650,11 @@ class PoseOptimization(object):
             n_opt = stall_options["n_opt"]
             indices = range(stall_options["index_start"], stall_options["index_end"])
             s_opt_stall = np.linspace(0.0, 1.0, n_opt)
-            stall_interpolator= PchipInterpolator(wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
-                                                  wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"])
-            init_stall_opt= stall_interpolator(s_opt_stall)
+            stall_interpolator = PchipInterpolator(
+                wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"],
+            )
+            init_stall_opt = stall_interpolator(s_opt_stall)
 
             wt_opt.model.add_design_var(
                 "inn_af.stall_margin_opt",
@@ -654,9 +668,11 @@ class PoseOptimization(object):
             n_opt = t_c_options["n_opt"]
             indices = range(t_c_options["index_start"], t_c_options["index_end"])
             s_opt_t_c = np.linspace(0.0, 1.0, n_opt)
-            t_c_interpolator= PchipInterpolator(wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["grid"],
-                                                wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"])
-            init_t_c_opt= t_c_interpolator(s_opt_t_c)
+            t_c_interpolator = PchipInterpolator(
+                wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"],
+            )
+            init_t_c_opt = t_c_interpolator(s_opt_t_c)
 
             wt_opt.model.add_design_var(
                 "inn_af.r_thick_opt",
@@ -690,9 +706,15 @@ class PoseOptimization(object):
             n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
             for i in range(n_layers):
                 if layer_name[i] == spar_cap_ps_name:
-                    spar_cap_ps_interpolator= PchipInterpolator(wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-                                                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
-                    init_spar_cap_ps_opt= spar_cap_ps_interpolator(s_opt_spar_cap_ps)
+                    spar_cap_ps_interpolator = PchipInterpolator(
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                        extrapolate=False
+                    )
+                    init_spar_cap_ps_opt = spar_cap_ps_interpolator(s_opt_spar_cap_ps)
+                    for j in range(len(init_spar_cap_ps_opt)):
+                        if np.isnan(init_spar_cap_ps_opt[j]):
+                            init_spar_cap_ps_opt[j] = 0.
             wt_opt.model.add_design_var(
                 "blade.opt_var.spar_cap_ps_opt",
                 indices=indices_spar_cap_ps,
@@ -716,9 +738,15 @@ class PoseOptimization(object):
             n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
             for i in range(n_layers):
                 if layer_name[i] == te_ss_name:
-                    te_ss_interpolator= PchipInterpolator(wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-                                                          wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
-                    init_te_ss_opt= te_ss_interpolator(s_opt_te_ss)
+                    te_ss_interpolator = PchipInterpolator(
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                        extrapolate=False
+                    )
+                    init_te_ss_opt = te_ss_interpolator(s_opt_te_ss)
+                    for j in range(len(init_te_ss_opt)):
+                        if np.isnan(init_te_ss_opt[j]):
+                            init_te_ss_opt[j] = 0.
             wt_opt.model.add_design_var(
                 "blade.opt_var.te_ss_opt",
                 indices=indices_te_ss,
@@ -744,9 +772,15 @@ class PoseOptimization(object):
             n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
             for i in range(n_layers):
                 if layer_name[i] == te_ps_name:
-                    te_ps_interpolator= PchipInterpolator(wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-                                                          wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
-                    init_te_ps_opt= te_ps_interpolator(s_opt_te_ps)
+                    te_ps_interpolator = PchipInterpolator(
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                        extrapolate=False
+                    )
+                    init_te_ps_opt = te_ps_interpolator(s_opt_te_ps)
+                    for j in range(len(init_te_ps_opt)):
+                        if np.isnan(init_te_ps_opt[j]):
+                            init_te_ps_opt[j] = 0.
             wt_opt.model.add_design_var(
                 "blade.opt_var.te_ps_opt",
                 indices=indices_te_ps,
@@ -1248,10 +1282,14 @@ class PoseOptimization(object):
 
         # to constrain C_T and forcibly design higher thrust turbines
         if blade_constr["thrust_coeff"]["flag"]:
-            if 'lower' in blade_constr["thrust_coeff"]:
-                wt_opt.model.add_constraint("rotorse.rp.powercurve.Ct_regII", lower= blade_constr["thrust_coeff"]["lower"])
-            elif 'upper' in blade_constr["thrust_coeff"]:
-                wt_opt.model.add_constraint("rotorse.rp.powercurve.Ct_regII", upper= blade_constr["thrust_coeff"]["upper"])
+            if "lower" in blade_constr["thrust_coeff"]:
+                wt_opt.model.add_constraint(
+                    "rotorse.rp.powercurve.Ct_regII", lower=blade_constr["thrust_coeff"]["lower"]
+                )
+            elif "upper" in blade_constr["thrust_coeff"]:
+                wt_opt.model.add_constraint(
+                    "rotorse.rp.powercurve.Ct_regII", upper=blade_constr["thrust_coeff"]["upper"]
+                )
             else:
                 raise Exception("thrust coefficient constraint requested but now upper or lower constraint found.")
 
@@ -1481,37 +1519,49 @@ class PoseOptimization(object):
 
         if self.modeling["flags"]["blade"]:
             wt_opt["blade.opt_var.s_opt_twist"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["twist"]["n_opt"])
-            twist_interpolator= PchipInterpolator(wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"],
-                                                  wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"])
-            init_twist_opt= twist_interpolator(wt_opt["blade.opt_var.s_opt_twist"])
+            twist_interpolator = PchipInterpolator(
+                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"],
+            )
+            init_twist_opt = twist_interpolator(wt_opt["blade.opt_var.s_opt_twist"])
             wt_opt["blade.opt_var.twist_opt"] = init_twist_opt
             wt_opt["blade.opt_var.s_opt_chord"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["chord"]["n_opt"])
-            chord_interpolator= PchipInterpolator(wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"],
-                                                  wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"])
-            init_chord_opt= chord_interpolator(wt_opt["blade.opt_var.s_opt_chord"])
+            chord_interpolator = PchipInterpolator(
+                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"],
+            )
+            init_chord_opt = chord_interpolator(wt_opt["blade.opt_var.s_opt_chord"])
             wt_opt["blade.opt_var.chord_opt"] = init_chord_opt
             if self.modeling["WISDEM"]["RotorSE"]["inn_af"]:
                 wt_opt["inn_af.s_opt_r_thick"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["t/c"]["n_opt"])
-                r_thick_interpolator= PchipInterpolator(wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["grid"],
-                                                        wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"])
-                init_r_thick_opt= r_thick_interpolator(wt_opt["inn_af.s_opt_r_thick"])
+                r_thick_interpolator = PchipInterpolator(
+                    wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["grid"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"],
+                )
+                init_r_thick_opt = r_thick_interpolator(wt_opt["inn_af.s_opt_r_thick"])
                 wt_opt["inn_af.r_thick_opt"] = init_r_thick_opt
                 wt_opt["inn_af.s_opt_L_D"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["L/D"]["n_opt"])
-                L_D_interpolator= PchipInterpolator(wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
-                                                    wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"])
+                L_D_interpolator = PchipInterpolator(
+                    wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
+                )
                 init_L_D_opt = L_D_interpolator(wt_opt["inn_af.s_opt_L_D"])
                 wt_opt["inn_af.L_D_opt"] = init_L_D_opt
                 wt_opt["inn_af.s_opt_c_d"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["c_d"]["n_opt"])
-                c_d_interpolator= PchipInterpolator(wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"],
-                                                    wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"])
+                c_d_interpolator = PchipInterpolator(
+                    wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"],
+                )
                 init_c_d_opt = c_d_interpolator(wt_opt["inn_af.s_opt_c_d"])
                 wt_opt["inn_af.c_d_opt"] = init_c_d_opt
 
                 wt_opt["inn_af.s_opt_stall_margin"] = np.linspace(
                     0.0, 1.0, blade_opt["aero_shape"]["stall_margin"]["n_opt"]
                 )
-                stall_margin_interpolator= PchipInterpolator(wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
-                                                             wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"])
+                stall_margin_interpolator = PchipInterpolator(
+                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"],
+                )
                 init_stall_margin_opt = stall_margin_interpolator(wt_opt["inn_af.s_opt_stall_margin"])
                 wt_opt["inn_af.stall_margin_opt"] = init_stall_margin_opt
 
@@ -1521,8 +1571,8 @@ class PoseOptimization(object):
             wt_opt["blade.opt_var.s_opt_spar_cap_ps"] = np.linspace(
                 0.0, 1.0, blade_opt["structure"]["spar_cap_ps"]["n_opt"]
             )
-            spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"]
-            spar_cap_ps_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ps"]
+            spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"].lower()
+            spar_cap_ps_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ps"].lower()
             if (
                 spar_cap_ss_name != "none"
                 and spar_cap_ps_name != "none"
@@ -1533,19 +1583,37 @@ class PoseOptimization(object):
                 n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
                 ss_before_ps = False
                 for i in range(n_layers):
-                    if layer_name[i] == spar_cap_ss_name:
-                        spar_cap_ss_interpolator= PchipInterpolator(wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-                                                                    wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
+                    if layer_name[i].lower() == spar_cap_ss_name:
+                        spar_cap_ss_interpolator = PchipInterpolator(
+                            wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                "grid"
+                            ],
+                            wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                "values"
+                            ],
+                            extrapolate=False)
                         init_spar_cap_ss_opt = spar_cap_ss_interpolator(wt_opt["blade.opt_var.s_opt_spar_cap_ss"])
+                        for j in range(len(init_spar_cap_ss_opt)):
+                            if np.isnan(init_spar_cap_ss_opt[j]):
+                                init_spar_cap_ss_opt[j] = 0.
                         ss_before_ps = True
-                    elif layer_name[i] == spar_cap_ps_name:
+                    elif layer_name[i].lower() == spar_cap_ps_name:
                         if (
                             self.opt["design_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
                             == False
                         ) or (ss_before_ps == False):
-                            spar_cap_ps_interpolator= PchipInterpolator(wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-                                                                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
+                            spar_cap_ps_interpolator = PchipInterpolator(
+                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                    "grid"
+                                ],
+                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                    "values"
+                                ],
+                                extrapolate=False)
                             init_spar_cap_ps_opt = spar_cap_ps_interpolator(wt_opt["blade.opt_var.s_opt_spar_cap_ps"])
+                            for j in range(len(init_spar_cap_ps_opt)):
+                                if np.isnan(init_spar_cap_ps_opt[j]):
+                                    init_spar_cap_ps_opt[j] = 0.
                         else:
                             init_spar_cap_ps_opt = init_spar_cap_ss_opt
                 if not ss_before_ps:
@@ -1565,17 +1633,35 @@ class PoseOptimization(object):
                 ss_before_ps = False
                 for i in range(n_layers):
                     if layer_name[i] == te_ss_name:
-                        te_ss_interpolator= PchipInterpolator(wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-                                                              wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
+                        te_ss_interpolator = PchipInterpolator(
+                            wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                "grid"
+                            ],
+                            wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                "values"
+                            ],
+                            extrapolate=False)
                         init_te_ss_opt = te_ss_interpolator(wt_opt["blade.opt_var.s_opt_te_ss"])
+                        for j in range(len(init_te_ss_opt)):
+                            if np.isnan(init_te_ss_opt[j]):
+                                init_te_ss_opt[j] = 0.
                         ss_before_ps = True
                     elif layer_name[i] == te_ps_name:
                         if (
                             self.opt["design_variables"]["blade"]["structure"]["te_ps"]["equal_to_suction"] == False
                         ) or ss_before_ps == False:
-                            te_ps_interpolator= PchipInterpolator(wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-                                                                  wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
+                            te_ps_interpolator = PchipInterpolator(
+                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                    "grid"
+                                ],
+                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
+                                    "values"
+                                ],
+                                extrapolate=False)
                             init_te_ps_opt = te_ps_interpolator(wt_opt["blade.opt_var.s_opt_te_ps"])
+                            for j in range(len(init_te_ps_opt)):
+                                if np.isnan(init_te_ps_opt[j]):
+                                    init_te_ps_opt[j] = 0.
                         else:
                             init_te_ps_opt = init_te_ss_opt
                 if not ss_before_ps:
@@ -1620,7 +1706,6 @@ class PoseOptimization(object):
 
     def set_restart(self, wt_opt):
         if "warmstart_file" in self.opt["driver"]["optimization"]:
-
             # Directly read the pyoptsparse sqlite db file
             from pyoptsparse import SqliteDict
 

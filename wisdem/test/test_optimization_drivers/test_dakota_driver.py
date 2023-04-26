@@ -1,8 +1,8 @@
 import unittest
 
 import numpy as np
-
 from openmdao.utils.assert_utils import assert_near_equal
+
 from wisdem.optimization_drivers.dakota_driver import DakotaOptimizer
 
 try:

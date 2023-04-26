@@ -6,7 +6,7 @@
  http://frame3dd.sourceforge.net/
  ---------------------------------------------------------------------------
  Copyright (C) 1992-2009  Henri P. Gavin
- 
+
     FRAME3DD is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -28,11 +28,11 @@
 
 /* -------------------------------------------------------------------------
 COORD_TRANS - calculate the 9 elements of the block-diagonal 12-by-12
-coordinate transformation matrix, t1, t2, ..., t9.  
+coordinate transformation matrix, t1, t2, ..., t9.
 
 These coordinate transformation factors are used to:
-* transform frame element end forces from the element (local) coordinate system 
-to the structral (global) coordinate system.  
+* transform frame element end forces from the element (local) coordinate system
+to the structral (global) coordinate system.
 * transfrom end displacements from the structural (global) coordinate system
 to the element (local) coordinate system,
 * transform the frame element stiffness and mass matrices
@@ -41,12 +41,12 @@ from element (local) coordinates to structral (global) coordinates.
 Element matrix coordinate transformations are carried out by function ATMA
 in frame3dd.c
 
-Currently coordinate transformations do not consider the effect of 
+Currently coordinate transformations do not consider the effect of
 finite node sizes ... this needs work, and could require a substantial
-re-write of much of the code.  
+re-write of much of the code.
 
 Currently the effect of finite node sizes is used only in the calculation
-of the element stiffness matrices.  
+of the element stiffness matrices.
 ------------------------------------------------------------------------- */
 void coord_trans(
 		vec3 *xyz,
@@ -84,7 +84,7 @@ void coord_trans(
 	   	*t2 = Cy;
 		*t3 = Cz;
 
-		*t4 = (-Cx*Cz*Sp - Cy*Cp)/den;    
+		*t4 = (-Cx*Cz*Sp - Cy*Cp)/den;
  		*t5 = (-Cy*Cz*Sp + Cx*Cp)/den;
 		*t6 = Sp*den;
 
@@ -109,7 +109,7 @@ void coord_trans(
 	   	*t2 = Cy;
 		*t3 = Cz;
 
-		*t4 = (-Cx*Cy*Cp - Cz*Sp)/den;    
+		*t4 = (-Cx*Cy*Cp - Cz*Sp)/den;
 		*t5 = den*Cp;
  		*t6 = (-Cy*Cz*Cp + Cx*Sp)/den;
 
@@ -141,7 +141,7 @@ void atma(
 	ma = dmatrix(1,12,1,12);
 
 	for (i=1; i<=12; i++)
-	    for (j=i; j<=12; j++) 
+	    for (j=i; j<=12; j++)
 		ma[j][i] = ma[i][j] = a[j][i] = a[i][j] = 0.0;
 
 	for (i=0; i<=3; i++) {
@@ -160,19 +160,19 @@ void atma(
 /*  effect of finite node radius on coordinate transformation  ... */
 /*  this needs work ... */
 /*
- 	a[5][1] =  r1*t7; 
-  	a[5][2] =  r1*t8; 
-  	a[5][3] =  r1*t9; 
-  	a[6][1] = -r1*t4; 
-  	a[6][2] = -r1*t5; 
-  	a[6][3] = -r1*t6; 
- 
-  	a[11][7] = -r2*t7; 
-  	a[11][8] = -r2*t8; 
-  	a[11][9] = -r2*t9; 
-  	a[12][7] =  r2*t4; 
-  	a[12][8] =  r2*t5; 
-  	a[12][9] =  r2*t6; 
+ 	a[5][1] =  r1*t7;
+  	a[5][2] =  r1*t8;
+  	a[5][3] =  r1*t9;
+  	a[6][1] = -r1*t4;
+  	a[6][2] = -r1*t5;
+  	a[6][3] = -r1*t6;
+
+  	a[11][7] = -r2*t7;
+  	a[11][8] = -r2*t8;
+  	a[11][9] = -r2*t9;
+  	a[12][7] =  r2*t4;
+  	a[12][8] =  r2*t5;
+  	a[12][9] =  r2*t6;
 */
 
 #ifdef MATRIX_DEBUG

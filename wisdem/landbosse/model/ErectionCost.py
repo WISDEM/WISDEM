@@ -3,6 +3,7 @@ from math import ceil
 
 import numpy as np
 import pandas as pd
+
 from wisdem.landbosse.model.CostModule import CostModule
 from wisdem.landbosse.model.WeatherDelay import WeatherDelay
 
@@ -466,7 +467,7 @@ class ErectionCost(CostModule):
         self.output_dict["component_name_topvbase"] = project_data["components"][["Component", "Operation"]]
 
         # create groups for operations
-        top_v_base = project_data["components"].groupby(["Operation"])
+        top_v_base = project_data["components"].groupby("Operation")
 
         # group crane data by boom system and crane name to get distinct cranes
         crane_grouped = project_data["crane_specs"].groupby(
@@ -1038,10 +1039,9 @@ class ErectionCost(CostModule):
         # Intent is to keep the most expensive labor row.
 
         # group crew costs by crew type and operation
-        crew_cost_grouped = crew_cost.groupby(["Crew type ID", "Operation"]).sum().reset_index()
+        crew_cost_grouped = crew_cost.groupby(["Crew type ID", "Operation"]).sum(numeric_only=True).reset_index()
 
         # merge crane data with grouped crew costs
-
         possible_crane_cost = pd.merge(possible_crane_cost, crew_cost_grouped, on=["Crew type ID", "Operation"])
 
         # calculate labor costs
@@ -1277,7 +1277,7 @@ class ErectionCost(CostModule):
 
         # Aggregate and sum
         management_crew_cost_grouped = (
-            management_crews.groupby(["Crew type ID", "Operation", "Crew name"]).sum().reset_index()
+            management_crews.groupby(["Crew type ID", "Operation", "Crew name"]).sum(numeric_only=True).reset_index()
         )
 
         # Total management cost
@@ -1297,11 +1297,13 @@ class ErectionCost(CostModule):
         for erection.
         """
         [crane_specs, operation_time] = self.calculate_erection_operation_time()
+        crane_specs = crane_specs.infer_objects()  # cast cols of Booleans to bool dtype
 
         self.output_dict["crane_specs"] = crane_specs
         self.output_dict["operation_time"] = operation_time
 
         [offload_specs, offload_time] = self.calculate_offload_operation_time()
+        offload_specs = offload_specs.infer_objects()  # cast cols of Booleans to bool dtype
 
         self.output_dict["offload_specs"] = offload_specs
         self.output_dict["offload_time"] = offload_time

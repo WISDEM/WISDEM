@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
+
 import wisdem.drivetrainse.generator_models as gm
 
 
@@ -55,7 +56,6 @@ class TestGenerators(unittest.TestCase):
         self.inputs["y_tau_pr"] = 10.0 / 12
 
     def testPMSG_Outer(self):
-
         myobj = gm.PMSG_Outer(n_pc=20)
 
         self.inputs["machine_rating"] = 10.321e6
@@ -128,7 +128,6 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["generator_mass"], 166530.21537414)
 
     def testPMSG_Arms(self):
-
         myobj = gm.PMSG_Arms(n_pc=20)
 
         self.inputs["shaft_rpm"] = np.linspace(5, 12.1, 20)
@@ -186,7 +185,6 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["mass_PM"], 1683.970424551947)
 
     def testPMSG_disc(self):
-
         myobj = gm.PMSG_Disc(n_pc=20)
 
         self.inputs["shaft_rpm"] = np.linspace(5, 12.1, 20)
@@ -240,7 +238,6 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["mass_PM"], 1959.3502831)
 
     def testEESG(self):
-
         myobj = gm.EESG(n_pc=20)
 
         self.inputs["shaft_rpm"] = np.linspace(5, 12.1, 20)
@@ -292,7 +289,6 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["generator_mass"], 130823.74127458173)
 
     def testSCIG(self):
-
         myobj = gm.SCIG(n_pc=20)
 
         self.inputs["shaft_rpm"] = 100 * np.linspace(2, 12, 20)
@@ -350,7 +346,6 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["TC1"], 0.29453832454167966)
 
     def testDFIG(self):
-
         myobj = gm.DFIG(n_pc=20)
 
         self.inputs["shaft_rpm"] = 100 * np.linspace(2, 12, 20)

@@ -8,7 +8,7 @@ Regulation trajectory and AEP
 A conventional variable-speed variable-pitch turbine features four region I, II, III, and IV, plus an intermediate region II1/2:
 
 1. Region I: the turbine does not generate any power since the wind is below the cut-in speed, which is usually set at 3 or 4 m/s.
-2. Region II: the turbines operates at its specified tip-speed ratio until either rated power or the maximum rotation speed is reached 
+2. Region II: the turbines operates at its specified tip-speed ratio until either rated power or the maximum rotation speed is reached
 3. Region II1/2: if the maximum rotor speed is reached before rated power, the turbine maintains its rotor speed, therefore reducing the tip speed ratio, and pitches to maximize the power coefficient
 4. Region III: the blades are pitched and the turbine generates its nameplate power at constant rotor speed and generator torque.
 5. Region IV: the wind is beyond cut out speed, the turbine is shutdown, and no power is generated.
@@ -23,4 +23,4 @@ Once the regulation trajectory is completed, the annual energy production (AEP) 
 
 where P is in Watts, loss is the drivetrain efficiency, and f(V) is a probability density function for the site.
 
-Notably, WISDEM does not implement any peak shaving of the aerodynamic thrust. 
+Notably, WISDEM does not implement any peak shaving of the aerodynamic thrust.

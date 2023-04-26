@@ -12,12 +12,12 @@ from io import StringIO
 
 import numpy as np
 import numpy.testing as npt
+
 from wisdem.pyframe3dd import Frame, Options, NodeData, ElementData, ReactionData, StaticLoadCase
 
 
 class FrameTestEXA(unittest.TestCase):
     def testFixedFree_FreeFree(self):
-
         # nodes
         nn = 11
         node = np.arange(1, nn + 1, dtype=np.int_)
@@ -79,7 +79,7 @@ class FrameTestEXA(unittest.TestCase):
 
         L = z.max() - z.min()
         beta = np.array([1.875194, 4.69361268, 7.85429819])
-        anal = beta ** 2 / L ** 2 * np.sqrt(E[0] * Iy[0] / (rho[0] * Ax[0])) / np.pi / 2
+        anal = beta**2 / L**2 * np.sqrt(E[0] * Iy[0] / (rho[0] * Ax[0])) / np.pi / 2
 
         self.assertAlmostEqual(modal.freq[0], anal[0], 1)
         self.assertAlmostEqual(modal.freq[1], anal[0], 1)
@@ -95,7 +95,7 @@ class FrameTestEXA(unittest.TestCase):
         displacements, forces, rxns, internalForces, mass, modal = frame0.run(nanokay=True)
 
         beta = np.array([4.72969344, 7.85302489, 10.99545361])
-        anal = beta ** 2 / L ** 2 * np.sqrt(E[0] * Iy[0] / (rho[0] * Ax[0])) / np.pi / 2
+        anal = beta**2 / L**2 * np.sqrt(E[0] * Iy[0] / (rho[0] * Ax[0])) / np.pi / 2
         freq = modal.freq
         freq = freq[freq > 1e-1]
         self.assertAlmostEqual(freq[0], anal[0], -1)

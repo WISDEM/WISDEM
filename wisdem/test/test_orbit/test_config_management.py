@@ -10,7 +10,6 @@ complete_project = extract_library_specs("config", "complete_project")
 
 
 def test_save_and_load_equality(tmp_yaml_del):
-
     save_config(complete_project, "tmp.yaml", overwrite=True)
     new = load_config("tmp.yaml")
 
@@ -18,6 +17,5 @@ def test_save_and_load_equality(tmp_yaml_del):
 
 
 def test_orbit_version_ProjectManager():
-
     config = ProjectManager.compile_input_dict(["MonopileDesign", "MonopileInstallation"])
     assert "orbit_version" in config.keys()

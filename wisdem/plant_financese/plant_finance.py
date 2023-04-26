@@ -70,7 +70,6 @@ class PlantFinance(om.ExplicitComponent):
         self.options.declare("verbosity", default=False)
 
     def setup(self):
-
         # Inputs
         self.add_input("machine_rating", val=0.0, units="kW")
         self.add_input("tcc_per_kW", val=0.0, units="USD/kW")
@@ -269,7 +268,6 @@ class PlantFinance(om.ExplicitComponent):
 # OpenMDAO group to execute the plant finance SE model as a standalone
 class StandalonePlantFinanceSE(om.Group):
     def setup(self):
-
         self.add_subsystem("financese", PlantFinance(), promotes=["*"])
 
 

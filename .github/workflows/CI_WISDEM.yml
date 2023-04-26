@@ -18,11 +18,11 @@ jobs:
       fail-fast: False
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.9", "3.10", "3.11"]
 
     steps:
       - name: checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # Official way to do miniconda, but it messes with the worker environment and shell
       - name: Install miniconda
@@ -63,6 +63,7 @@ jobs:
       - name: Install WISDEM with pip for Unix
         if: false == contains( matrix.os, 'windows')
         run: |
+          rm -rf meson_build
           pip install -vv --no-deps -e .
 
       # Install WISDEM with pip
@@ -75,7 +76,7 @@ jobs:
       - name: Run tests
         if: contains( matrix.os, 'ubuntu')
         run: |
-          pytest --cov-config=.coverageac --cov=wisdem
+          pytest --cov=wisdem
 
       # Run limited test on WINDOWS
       - name: Add dependencies windows specific

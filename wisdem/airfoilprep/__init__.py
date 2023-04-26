@@ -1,1 +1,1 @@
-from .airfoilprep import Airfoil, Polar
+from .airfoilprep import Polar, Airfoil

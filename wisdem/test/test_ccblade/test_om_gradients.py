@@ -107,7 +107,7 @@ class Test(unittest.TestCase):
         new_check = {}
         for comp_name in check:
             new_check[comp_name] = {}
-            for (output_name, input_name) in check[comp_name]:
+            for output_name, input_name in check[comp_name]:
                 if "airfoil" not in input_name and "rho" not in input_name and "mu" not in input_name:
                     new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
 
@@ -203,7 +203,7 @@ class Test(unittest.TestCase):
         new_check = {}
         for comp_name in check:
             new_check[comp_name] = {}
-            for (output_name, input_name) in check[comp_name]:
+            for output_name, input_name in check[comp_name]:
                 if not input_name in ["airfoil", "rho", "mu"]:
                     new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
 
@@ -288,7 +288,7 @@ class Test(unittest.TestCase):
         new_check = {}
         for comp_name in check:
             new_check[comp_name] = {}
-            for (output_name, input_name) in check[comp_name]:
+            for output_name, input_name in check[comp_name]:
                 if "airfoil" not in input_name and "rho" not in input_name and "mu" not in input_name:
                     new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
 
