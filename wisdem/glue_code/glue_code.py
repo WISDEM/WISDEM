@@ -856,6 +856,9 @@ class WindPark(om.Group):
         if modeling_options["flags"]["HydrogenProduction"]:
             self.add_subsystem("h2", HydrogenProduction(modeling_options=modeling_options, opt_options=opt_options))
 
+            # Connect LCOE for input to LCOH model
+            self.connect("financese.lcoe", "h2.lcoe")
+
             # If no power input file supplied, connect computed power curve spline
             if "power_filename" not in modeling_options["WISDEM"]["HydrogenProduction"]:
                 self.connect("rotorse.rp.powercurve.V_spline", "h2.V_spline")
