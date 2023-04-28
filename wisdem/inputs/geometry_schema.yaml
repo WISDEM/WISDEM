@@ -56,7 +56,7 @@ properties:
             drivetrain:
                 type: string
                 default: geared
-                enum: [geared, direct_drive, direct, pm_direct_drive]
+                enum: [Geared, geared, Direct_drive, Direct_Drive, Direct, direct_drive, direct, pm_direct_drive]
                 description: String characterizing the drivetrain configuration
             rotor_orientation:
                 type: string
