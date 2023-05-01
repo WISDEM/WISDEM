@@ -505,8 +505,8 @@ class PoseOptimization(object):
         elif self.opt["merit_figure"] == "h2_produced":
             wt_opt.model.add_objective("h2.h2_produced", ref=-1.0)
 
-        elif self.opt["merit_figure"] == "h2_produced":
-            wt_opt.model.add_objective("h2.h2_produced", ref=-1.0)
+        elif self.opt["merit_figure"] == "LCOH":
+            wt_opt.model.add_objective("h2.lcoh", ref=1.0)
 
         elif self.opt["merit_figure"] == "inverse_design":
             wt_opt.model.add_objective("inverse_design.objective")
