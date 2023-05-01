@@ -1099,6 +1099,7 @@ class PoseOptimization(object):
             )
 
         # -- Hydrogen --
+        print("CHECK THIS", electrolyzer_opt)
         if electrolyzer_opt["control"]["system_rating_MW"]["flag"]:
             wt_opt.model.add_design_var(
                 "h2.system_rating_MW",

@@ -1,4 +1,5 @@
 import openmdao.api as om
+import electrolyzer.inputs.validation as val
 
 from .electrolyzer_comp import ElectrolyzerModel
 from .read_in_wind import ReadInWind
@@ -24,7 +25,7 @@ class HydrogenProduction(om.Group):
 
     def setup(self):
         modeling_options = self.options["modeling_options"]
-        h2_opt_options = self.options["opt_options"]["design_variables"]["electrolyzer"]  #### pick up here
+        h2_opt_options = self.options["opt_options"]["design_variables"]["electrolyzer"]
         h2_options = modeling_options["WISDEM"]["HydrogenProduction"]
 
         read_in_wind_file = "wind_filename" in h2_options
@@ -45,9 +46,10 @@ class HydrogenProduction(om.Group):
 
         self.add_subsystem("compute_power", ComputePower(modeling_options=modeling_options), promotes=["*"])
 
-        h2_modeling_options_path = h2_options["modeling_options"]
+        h2_modeling_options = val.load_modeling_yaml(h2_options["modeling_options"])
+        
         h2_model = ElectrolyzerModel(
-            h2_modeling_options_path=h2_modeling_options_path,
+            h2_modeling_options=h2_modeling_options,
             h2_opt_options=h2_opt_options
         )
         self.add_subsystem("electrolyzer", h2_model, promotes=["*"])
