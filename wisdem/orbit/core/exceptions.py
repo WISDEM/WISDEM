@@ -29,7 +29,6 @@ class MissingComponent(Exception):
         self.message = f"{vessel} is missing required component(s) '{component}'."
 
     def __str__(self):
-
         return self.message
 
 

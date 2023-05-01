@@ -1,5 +1,6 @@
 import numpy as np
 import openmdao.api as om
+
 from wisdem.commonse import NFREQ
 
 from .csystem import DirectionVector
@@ -184,6 +185,7 @@ class TipDeflectionConstraint(om.ExplicitComponent):
             parked_margin = overhang + blade_yaw.x - r_interp
         outputs["blade_tip_tower_clearance"] = parked_margin
         outputs["tip_deflection_ratio"] = delta * inputs["max_allowable_td_ratio"] / parked_margin
+
 
 class TurbineConstraints(om.Group):
     def initialize(self):

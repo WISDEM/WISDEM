@@ -216,5 +216,3 @@ typedef struct {
     double *xdsp, *ydsp, *zdsp, *xrot, *yrot, *zrot;
 
 } ModalResults;
-
-

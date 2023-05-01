@@ -18,7 +18,6 @@ no_supply = extract_library_specs("config", "moored_install_no_supply")
 
 
 def test_simulation_setup():
-
     sim = MooredSubInstallation(config)
     assert sim.config == config
     assert sim.env
@@ -33,7 +32,6 @@ def test_simulation_setup():
 @pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
 @pytest.mark.parametrize("config", (config, no_supply))
 def test_for_complete_logging(weather, config):
-
     sim = MooredSubInstallation(config, weather=weather)
     sim.run()
 

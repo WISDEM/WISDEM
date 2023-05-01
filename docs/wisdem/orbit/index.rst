@@ -25,4 +25,3 @@ ORBIT can be easily used as a standalone module.  This can be done through WISDE
 to
 
 >>> import wisdem.orbit
-

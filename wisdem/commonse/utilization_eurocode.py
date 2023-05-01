@@ -1,4 +1,5 @@
 import numpy as np
+
 from wisdem.commonse.constants import eps
 from wisdem.commonse.utilities import smooth_max, smooth_min, cubic_spline_eval
 
@@ -21,7 +22,6 @@ def hoopStressEurocode(d, t, L_reinforced, hoop):
 
 
 def bucklingGL(d, t, Fz, Myy, tower_height, E, sigma_y, gamma_f=1.2, gamma_b=1.1):
-
     # other factors
     alpha = 0.21  # buckling imperfection factor
     beta = 1.0  # bending coefficient
@@ -42,13 +42,13 @@ def bucklingGL(d, t, Fz, Myy, tower_height, E, sigma_y, gamma_f=1.2, gamma_b=1.1
     Mp = Wp * sigma_y / gamma_b
 
     # factors
-    Ne = np.pi ** 2 * (E * I) / (1.1 * tower_height ** 2)
+    Ne = np.pi**2 * (E * I) / (1.1 * tower_height**2)
     lambda_bar = np.sqrt(Np * gamma_b / Ne)
-    phi = 0.5 * (1 + alpha * (lambda_bar - 0.2) + lambda_bar ** 2)
+    phi = 0.5 * (1 + alpha * (lambda_bar - 0.2) + lambda_bar**2)
     kappa = np.ones(A.shape)
     idx = lambda_bar > 0.2
     kappa[idx] = 1.0 / (phi[idx] + np.sqrt(phi[idx] ** 2 - lambda_bar[idx] ** 2))
-    delta_n = 0.25 * kappa * lambda_bar ** 2
+    delta_n = 0.25 * kappa * lambda_bar**2
     delta_n = np.minimum(delta_n, 0.1)
 
     GL_utilization = Nd / (kappa * Np) + beta * Md / Mp + delta_n  # this is utilization must be <1
@@ -114,9 +114,8 @@ def shellBucklingEurocode(d, t, sigma_z, sigma_t, tau_zt, L_reinforced, E, sigma
 
 
 def _cxsmooth(omega, rovert):
-
     Cxb = 6.0  # clamped-clamped
-    constant = 1 + 1.83 / 1.7 - 2.07 / 1.7 ** 2
+    constant = 1 + 1.83 / 1.7 - 2.07 / 1.7**2
 
     ptL1 = 1.7 - 0.25
     ptR1 = 1.7 + 0.25
@@ -128,13 +127,12 @@ def _cxsmooth(omega, rovert):
     ptR3 = (0.5 + Cxb) * rovert + 1.0
 
     if omega < ptL1:
-        Cx = constant - 1.83 / omega + 2.07 / omega ** 2
+        Cx = constant - 1.83 / omega + 2.07 / omega**2
 
     elif omega >= ptL1 and omega <= ptR1:
-
-        fL = constant - 1.83 / ptL1 + 2.07 / ptL1 ** 2
+        fL = constant - 1.83 / ptL1 + 2.07 / ptL1**2
         fR = 1.0
-        gL = 1.83 / ptL1 ** 2 - 4.14 / ptL1 ** 3
+        gL = 1.83 / ptL1**2 - 4.14 / ptL1**3
         gR = 0.0
         Cx = cubic_spline_eval(ptL1, ptR1, fL, fR, gL, gR, omega)
 
@@ -142,7 +140,6 @@ def _cxsmooth(omega, rovert):
         Cx = 1.0
 
     elif omega >= ptL2 and omega <= ptR2:
-
         fL = 1.0
         fR = 1 + 0.2 / Cxb * (1 - 2.0 * ptR2 / rovert)
         gL = 0.0
@@ -153,7 +150,6 @@ def _cxsmooth(omega, rovert):
         Cx = 1 + 0.2 / Cxb * (1 - 2.0 * omega / rovert)
 
     elif omega >= ptL3 and omega <= ptR3:
-
         fL = 1 + 0.2 / Cxb * (1 - 2.0 * ptL3 / rovert)
         fR = 0.6
         gL = -0.4 / Cxb / rovert
@@ -167,7 +163,6 @@ def _cxsmooth(omega, rovert):
 
 
 def _sigmasmooth(omega, E, rovert):
-
     Ctheta = 1.5  # clamped-clamped
 
     ptL = 1.63 * rovert * Ctheta - 1
@@ -175,34 +170,30 @@ def _sigmasmooth(omega, E, rovert):
 
     if omega < 20.0 * Ctheta:
         offset = 10.0 / (20 * Ctheta) ** 2 - 5 / (20 * Ctheta) ** 3
-        Cthetas = 1.5 + 10.0 / omega ** 2 - 5 / omega ** 3 - offset
+        Cthetas = 1.5 + 10.0 / omega**2 - 5 / omega**3 - offset
         sigma = 0.92 * E * Cthetas / omega / rovert
 
     elif omega >= 20.0 * Ctheta and omega < ptL:
-
         sigma = 0.92 * E * Ctheta / omega / rovert
 
     elif omega >= ptL and omega <= ptR:
-
-        alpha1 = 0.92 / 1.63 - 2.03 / 1.63 ** 4
+        alpha1 = 0.92 / 1.63 - 2.03 / 1.63**4
 
         fL = 0.92 * E * Ctheta / ptL / rovert
         fR = E * (1.0 / rovert) ** 2 * (alpha1 + 2.03 * (Ctheta / ptR * rovert) ** 4)
-        gL = -0.92 * E * Ctheta / rovert / ptL ** 2
-        gR = -E * (1.0 / rovert) * 2.03 * 4 * (Ctheta / ptR * rovert) ** 3 * Ctheta / ptR ** 2
+        gL = -0.92 * E * Ctheta / rovert / ptL**2
+        gR = -E * (1.0 / rovert) * 2.03 * 4 * (Ctheta / ptR * rovert) ** 3 * Ctheta / ptR**2
 
         sigma = cubic_spline_eval(ptL, ptR, fL, fR, gL, gR, omega)
 
     else:
-
-        alpha1 = 0.92 / 1.63 - 2.03 / 1.63 ** 4
+        alpha1 = 0.92 / 1.63 - 2.03 / 1.63**4
         sigma = E * (1.0 / rovert) ** 2 * (alpha1 + 2.03 * (Ctheta / omega * rovert) ** 4)
 
     return sigma
 
 
 def _tausmooth(omega, rovert):
-
     ptL1 = 9
     ptR1 = 11
 
@@ -210,12 +201,12 @@ def _tausmooth(omega, rovert):
     ptR2 = 8.7 * rovert + 1
 
     if omega < ptL1:
-        C_tau = np.sqrt(1.0 + 42.0 / omega ** 3 - 42.0 / 10 ** 3)
+        C_tau = np.sqrt(1.0 + 42.0 / omega**3 - 42.0 / 10**3)
 
     elif omega >= ptL1 and omega <= ptR1:
-        fL = np.sqrt(1.0 + 42.0 / ptL1 ** 3 - 42.0 / 10 ** 3)
+        fL = np.sqrt(1.0 + 42.0 / ptL1**3 - 42.0 / 10**3)
         fR = 1.0
-        gL = -63.0 / ptL1 ** 4 / fL
+        gL = -63.0 / ptL1**4 / fL
         gR = 0.0
         C_tau = cubic_spline_eval(ptL1, ptR1, fL, fR, gL, gR, omega)
 
@@ -395,10 +386,9 @@ def _buckling_reduction_factor(alpha, beta, eta, lambda_0, lambda_bar):
         chi = 1.0
 
     elif lambda_bar >= ptL and lambda_bar <= ptR:  # cubic spline section
-
         fracR = (ptR - lambda_0) / (lambda_p - lambda_0)
         fL = 1.0
-        fR = 1 - beta * fracR ** eta
+        fR = 1 - beta * fracR**eta
         gL = 0.0
         gR = -beta * eta * fracR ** (eta - 1) / (lambda_p - lambda_0)
 
@@ -408,7 +398,7 @@ def _buckling_reduction_factor(alpha, beta, eta, lambda_0, lambda_bar):
         chi = 1.0 - beta * ((lambda_bar - lambda_0) / (lambda_p - lambda_0)) ** eta
 
     else:
-        chi = alpha / lambda_bar ** 2
+        chi = alpha / lambda_bar**2
 
     # if (lambda_bar <= lambda_0):
     #     chi = 1.0

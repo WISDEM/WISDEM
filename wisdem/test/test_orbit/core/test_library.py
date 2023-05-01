@@ -58,7 +58,6 @@ def test_extract_library_specs_fail():
 
 
 def test_phase_specific_file_extraction():
-
     project = ProjectManager(config)
     turbine_config = project.create_config_for_phase("TurbineInstallation")
     monopile_config = project.create_config_for_phase("MonopileInstallation")

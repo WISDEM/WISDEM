@@ -533,7 +533,6 @@ class CCBladeTwist(ExplicitComponent):
         self.declare_partials("*", "*", method="fd")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # Create Airfoil class instances
         af = [None] * self.n_span
         for i in range(self.n_span):

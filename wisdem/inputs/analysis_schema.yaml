@@ -45,6 +45,7 @@ properties:
             rated_power:
                 type: object
                 default: {}
+                description: Wind turbine power rating
                 properties:
                     flag: *flag
                     min:

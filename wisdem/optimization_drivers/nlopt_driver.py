@@ -9,7 +9,7 @@ import numpy as np
 import openmdao
 import openmdao.utils.coloring as coloring_mod
 from openmdao.core.driver import Driver, RecordingDebugging
-from openmdao.utils.general_utils import simple_warning
+from openmdao.utils.general_utils import issue_warning
 
 try:
     from openmdao.utils.class_util import weak_method_wrapper as weak_method_wrapper
@@ -266,7 +266,6 @@ class NLoptDriver(Driver):
                 meta_low = meta["lower"]
                 meta_high = meta["upper"]
                 for j in range(size):
-
                     if isinstance(meta_low, np.ndarray):
                         p_low = meta_low[j]
                     else:
@@ -314,7 +313,6 @@ class NLoptDriver(Driver):
                 # because it's easier to defined each
                 # constraint by index.
                 for j in range(size):
-
                     # Equality constraints are added as two inequality constraints
                     if equals is not None:
                         args = [name, False, j]
@@ -368,7 +366,7 @@ class NLoptDriver(Driver):
                     pct = info["coloring"]._solves_info()[-1]
                     if info["min_improve_pct"] > pct:
                         info["coloring"] = info["static"] = None
-                        simple_warning(
+                        issue_warning(
                             "%s: Coloring was deactivated.  Improvement of %.1f%% was "
                             "less than min allowed (%.1f%%)." % (self.msginfo, pct, info["min_improve_pct"])
                         )
@@ -422,7 +420,6 @@ class NLoptDriver(Driver):
         f_new = 1e10
 
         try:
-
             # Pass in new parameters
             i = 0
             for name, meta in self._designvars.items():
@@ -455,7 +452,7 @@ class NLoptDriver(Driver):
                     for k in self._grad_cache.keys():
                         val = self._grad_cache[k].flatten()
                         temp = np.r_[temp, val]
-                    self._grad_cache = temp.reshape((-1,grad.size))
+                    self._grad_cache = temp.reshape((-1, grad.size))
                 grad[:] = self._grad_cache[0, :]
 
         except Exception as msg:

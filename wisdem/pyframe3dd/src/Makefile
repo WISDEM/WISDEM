@@ -1,9 +1,9 @@
 CC=clang #gcc
 CFLAGS = -c -g -O2 -fPIC
 
-OBS   = coordtrans.o HPGutil.o NRutil.o 
-PYOBS = py_main.o py_io.o py_frame3dd.o py_eig.o py_HPGmatrix.o 
-EOBS  = main.o frame3dd.o frame3dd_io.o eig.o HPGmatrix.o 
+OBS   = coordtrans.o HPGutil.o NRutil.o
+PYOBS = py_main.o py_io.o py_frame3dd.o py_eig.o py_HPGmatrix.o
+EOBS  = main.o frame3dd.o frame3dd_io.o eig.o HPGmatrix.o
 
 ifeq ($(OS),Windows_NT)
     ARCHFLAGS=-D WIN64
@@ -28,12 +28,12 @@ EXE = frame3dd
 all: shared exec
 
 %.o: %.c %.h
-	$(CC) $(CFLAGS) -o $@ $< 
+	$(CC) $(CFLAGS) -o $@ $<
 
 shared : $(OBS) $(PYOBS)
 	$(CC) $(LDFLAGS) -o $(LIB) $(PYOBS) $(OBS)
 
-exec : $(EOBS) $(OBS) 
+exec : $(EOBS) $(OBS)
 	$(CC) -o $(EXE) $(EOBS) $(OBS) -lm
 
 clean:

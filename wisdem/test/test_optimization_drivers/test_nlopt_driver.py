@@ -85,7 +85,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(derivs[0, 1], 8.0, 1e-6)
 
     def test_compute_totals_return_array_non_square(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -116,7 +115,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(np.eye(2), derivs[1:3, :], 1.0e-3)
 
     def test_deriv_wrt_self(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -136,7 +134,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(J, np.eye(2), 1.0e-3)
 
     def test_optimizer_simple_paraboloid_unconstrained(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -160,7 +157,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"], -7.3333333, 1e-6)
 
     def test_simple_paraboloid_unconstrained(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -211,7 +207,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"], -7.3333333, 1e-6)
 
     def test_simple_paraboloid_upper(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -240,7 +235,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"], -7.833334, 1e-6)
 
     def test_simple_paraboloid_lower(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -270,7 +264,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"], -7.833334, 1e-6)
 
     def test_simple_paraboloid_equality(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -299,7 +292,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"], -7.833334, 1e-4)
 
     def test_missing_objective(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -323,7 +315,6 @@ class TestNLoptDriver(unittest.TestCase):
         self.assertEqual(exception.args[0], msg)
 
     def test_simple_paraboloid_double_sided_low(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -350,7 +341,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"] - prob["x"], -11.0, 1e-6)
 
     def test_simple_paraboloid_double_sided_high(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -377,7 +367,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["x"] - prob["y"], 11.0, 1e-6)
 
     def test_simple_array_comp2D(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -412,7 +401,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(obj, 20.0, 1e-6)
 
     def test_simple_array_comp2D_eq_con(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -442,7 +430,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(obj, 41.5, 1e-6)
 
     def test_simple_array_comp2D_dbl_sided_con(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -476,7 +463,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(con, np.array([[24.0, 21.0], [3.5, 17.5]]), 1e-6)
 
     def test_simple_array_comp2D_dbl_sided_con_array(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -506,7 +492,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(obj, 20.0, 1e-6)
 
     def test_simple_array_comp2D_array_lo_hi(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -541,7 +526,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(obj, 20.0, 1e-6)
 
     def test_simple_paraboloid_scaled_desvars_fwd(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -568,7 +552,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["x"] - prob["y"], 11.0, 1e-6)
 
     def test_simple_paraboloid_scaled_desvars_rev(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -595,7 +578,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["x"] - prob["y"], 11.0, 1e-6)
 
     def test_simple_paraboloid_scaled_constraint_fwd(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -622,7 +604,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["x"] - prob["y"], 11.0, 1e-6)
 
     def test_simple_paraboloid_scaled_objective_fwd(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -649,7 +630,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["x"] - prob["y"], 11.0, 1e-6)
 
     def test_simple_paraboloid_scaled_objective_rev(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -676,7 +656,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["x"] - prob["y"], 11.0, 1e-6)
 
     def test_sellar_mdf(self):
-
         prob = om.Problem(reports=False)
         model = prob.model = SellarDerivativesGrouped()
 
@@ -715,7 +694,6 @@ class TestNLoptDriver(unittest.TestCase):
     def test_reraise_exception_from_callbacks(self):
         class ReducedActuatorDisc(om.ExplicitComponent):
             def setup(self):
-
                 # Inputs
                 self.add_input("a", 0.5, desc="Induced Velocity Factor")
                 self.add_input(
@@ -768,7 +746,6 @@ class TestNLoptDriver(unittest.TestCase):
         self.assertTrue(msg in str(context.exception))
 
     def test_simple_paraboloid_upper_LN_COBYLA(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -797,7 +774,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"], -7.833334, 1e-6)
 
     def test_sellar_mdf_LN_COBYLA(self):
-
         prob = om.Problem(reports=False)
         model = prob.model = SellarDerivativesGrouped()
 
@@ -822,7 +798,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["x"], 0.0, 1e-2)
 
     def test_simple_paraboloid_lower_linear(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -853,7 +828,6 @@ class TestNLoptDriver(unittest.TestCase):
         self.assertEqual(prob.driver._obj_and_nlcons, ["comp.f_xy"])
 
     def test_simple_paraboloid_equality_linear(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -882,7 +856,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"], -7.833334, 1e-6)
 
     def test_debug_print_option(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -1037,7 +1010,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["parab.f_xy"], -27, 1e-6)
 
     def test_multiple_objectives_error(self):
-
         import openmdao.api as om
         from openmdao.test_suite.components.paraboloid import Paraboloid
 
@@ -1236,7 +1208,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["f"], 0.0, 1e-6)
 
     def test_simple_paraboloid_upper_LD_MMA(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -1264,7 +1235,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"], -7.83333333, 1e-6)
 
     def test_simple_paraboloid_upper_LD_CCSAQ(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -1292,7 +1262,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"], -7.83333333, 1e-6)
 
     def test_simple_paraboloid_upper_GN_ORIG_DIRECT(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -1323,7 +1292,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"], -7.83333333, 1e-2)
 
     def test_simple_paraboloid_upper_GN_ORIG_DIRECT_L(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -1354,7 +1322,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"], -7.83333333, 1e-2)
 
     def test_simple_paraboloid_equality_COBYLA(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -1383,7 +1350,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"], -7.833334, 1e-4)
 
     def test_simple_paraboloid_equality_ISRES(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -1417,7 +1383,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"], -7.833334, 0.05)
 
     def test_simple_paraboloid_equality_failure_MMA(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -1453,7 +1418,6 @@ class TestNLoptDriver(unittest.TestCase):
         self.assertIn(msg, exception.args[0])
 
     def test_simple_paraboloid_equality_failure_LD_CCSAQ(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -1489,7 +1453,6 @@ class TestNLoptDriver(unittest.TestCase):
         self.assertIn(msg, exception.args[0])
 
     def test_simple_paraboloid_equality_failure_GN_ORIG_DIRECT(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -1525,7 +1488,6 @@ class TestNLoptDriver(unittest.TestCase):
         self.assertIn(msg, exception.args[0])
 
     def test_simple_paraboloid_equality_failure_GN_ORIG_DIRECT_L(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -1561,7 +1523,6 @@ class TestNLoptDriver(unittest.TestCase):
         self.assertIn(msg, exception.args[0])
 
     def test_simple_paraboloid_equality_failure_GN_AGS(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 
@@ -1597,7 +1558,6 @@ class TestNLoptDriver(unittest.TestCase):
         self.assertIn(msg, exception.args[0])
 
     def test_maxtime(self):
-
         prob = om.Problem(reports=False)
         model = prob.model
 

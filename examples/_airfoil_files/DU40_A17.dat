@@ -10,7 +10,7 @@ line
    1.3519   Cn extrapolated to value at positive stall angle of attack
   -0.3226   Cn at stall value for negative angle of attack
    0.00     Angle of attack for minimum CD (deg)
-   0.0113   Minimum CD value  
+   0.0113   Minimum CD value
 -180.00    0.000   0.0602   0.0000
 -175.00    0.218   0.0699   0.0934
 -170.00    0.397   0.1107   0.1697
@@ -148,4 +148,3 @@ line
  175.00   -0.226   0.0702  -0.1022
  180.00    0.000   0.0602   0.0000
 EOT
-

@@ -161,24 +161,12 @@ class TestPlatform(unittest.TestCase):
         self.assertEqual(self.outputs["platform_displacement"], 6e1)
         centroid = np.array([0.375, 0.25, 0.25])
         R = np.zeros((6, 2))
-        R[0,] = (
-            self.inputs["member0:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
-        )
-        R[1,] = (
-            self.inputs["member1:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
-        )
-        R[2,] = (
-            self.inputs["member2:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
-        )
-        R[3,] = (
-            self.inputs["member3:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
-        )
-        R[4,] = (
-            self.inputs["member4:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
-        )
-        R[5,] = (
-            self.inputs["member5:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
-        )
+        R[0,] = self.inputs["member0:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        R[1,] = self.inputs["member1:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        R[2,] = self.inputs["member2:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        R[3,] = self.inputs["member3:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        R[4,] = self.inputs["member4:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
+        R[5,] = self.inputs["member5:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
 
         npt.assert_equal(self.outputs["platform_center_of_buoyancy"], centroid)
         npt.assert_equal(self.outputs["platform_centroid"], centroid)
@@ -245,7 +233,6 @@ class TestPlatform(unittest.TestCase):
 
 class TestGroup(unittest.TestCase):
     def testRunAll(self):
-
         opt = {}
         opt["floating"] = {}
         opt["WISDEM"] = {}

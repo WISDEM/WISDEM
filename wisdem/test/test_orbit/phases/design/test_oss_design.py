@@ -24,7 +24,6 @@ base = {
     product(range(10, 51, 10), range(3, 13, 1), range(20, 80, 10)),
 )
 def test_parameter_sweep(depth, num_turbines, turbine_rating):
-
     config = {
         "site": {"depth": depth},
         "plant": {"num_turbines": num_turbines},
@@ -49,7 +48,6 @@ def test_parameter_sweep(depth, num_turbines, turbine_rating):
 
 
 def test_oss_kwargs():
-
     test_kwargs = {
         "mpt_cost_rate": 13500,
         "topside_fab_cost_rate": 15500,
@@ -70,7 +68,6 @@ def test_oss_kwargs():
     base_cost = o.total_cost
 
     for k, v in test_kwargs.items():
-
         config = deepcopy(base)
         config["substation_design"] = {}
         config["substation_design"][k] = v

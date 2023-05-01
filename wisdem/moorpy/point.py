@@ -317,7 +317,6 @@ class Point:
 
         # add seabed or hydrostatic terms if needed
         if lines_only == False:
-
             # if partially submerged, apply a hydrostatic stiffness based on buoyancy
             if self.r[2] + self.zSpan[1] > 0.0 and self.r[2] + self.zSpan[0] < 0.0:
                 K[2, 2] += (

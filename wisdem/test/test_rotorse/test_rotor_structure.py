@@ -6,6 +6,7 @@ import unittest
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
+
 import wisdem.rotorse.rotor_structure as rs
 from wisdem.commonse import gravity
 

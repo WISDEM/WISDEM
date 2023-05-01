@@ -1,3 +1,3 @@
-from .pyframe3dd import Frame, StaticLoadCase, NodeData, ReactionData, ElementData, Options
+from .pyframe3dd import Frame, Options, NodeData, ElementData, ReactionData, StaticLoadCase
 
 # import frame3dd

@@ -17,12 +17,12 @@ import unittest
 from os import path
 
 import numpy as np
+
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 
 
 class TestNREL5MW(unittest.TestCase):
     def setUp(self):
-
         # geometry
         Rhub = 1.5
         Rtip = 63.0
@@ -125,7 +125,6 @@ class TestNREL5MW(unittest.TestCase):
         self.rotor = CCBlade(r, chord, theta, af, Rhub, Rtip, B, rho, mu, precone, tilt, yaw, shearExp=0.2, hubHt=90.0)
 
     def test_thrust_torque(self):
-
         Uinf = np.array([3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25])
         Omega = np.array(
             [

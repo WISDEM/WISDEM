@@ -143,7 +143,7 @@ class RunPreComp(ExplicitComponent):
             val=0.0,
             desc="Spanwise position of the segmentation joint.",
         )
-        self.add_input("joint_mass", val=0.0, units='kg', desc="Mass of the joint.")
+        self.add_input("joint_mass", val=0.0, units="kg", desc="Mass of the joint.")
 
         # Outputs - Distributed beam properties
         self.add_output("z", val=np.zeros(n_span), units="m", desc="locations of properties along beam")
@@ -314,7 +314,6 @@ class RunPreComp(ExplicitComponent):
         )
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         ##############################
         def region_stacking(
             i,
@@ -333,11 +332,25 @@ class RunPreComp(ExplicitComponent):
             # chordwise regions, generate the precomp composite class instance
 
             # error handling to makes sure there were no numeric errors causing values very close too, but not exactly, 0 or 1
-            start_nd_arc = np.array(start_nd_arc)
-            end_nd_arc = np.array(end_nd_arc)
-            start_nd_arc[start_nd_arc < 0.] = 0.
-            end_nd_arc[end_nd_arc > 1.] = 1.
-            dp = np.sort(np.unique(np.concatenate((start_nd_arc,end_nd_arc))))
+            start_nd_arc = [
+                0.0 if start_nd_arci != 0.0 and np.isclose(start_nd_arci, 0.0) else start_nd_arci
+                for start_nd_arci in start_nd_arc
+            ]
+            end_nd_arc = [
+                0.0 if end_nd_arci != 0.0 and np.isclose(end_nd_arci, 0.0) else end_nd_arci
+                for end_nd_arci in end_nd_arc
+            ]
+            start_nd_arc = [
+                1.0 if start_nd_arci != 1.0 and np.isclose(start_nd_arci, 1.0) else start_nd_arci
+                for start_nd_arci in start_nd_arc
+            ]
+            end_nd_arc = [
+                1.0 if end_nd_arci != 1.0 and np.isclose(end_nd_arci, 1.0) else end_nd_arci
+                for end_nd_arci in end_nd_arc
+            ]
+
+            # region end points
+            dp = sorted(list(set(start_nd_arc + end_nd_arc)))
 
             # initialize
             n_plies = []
@@ -354,7 +367,6 @@ class RunPreComp(ExplicitComponent):
                 for i_sec, start_nd_arci, end_nd_arci in zip(idx, start_nd_arc, end_nd_arc):
                     name = layer_name[i_sec]
                     if start_nd_arci <= dp0 and end_nd_arci >= dp1:
-
                         if name in region_loc.keys():
                             if region_loc[name][i] == None:
                                 region_loc[name][i] = [i_reg]
@@ -530,7 +542,6 @@ class RunPreComp(ExplicitComponent):
             idx_s = 0
             idx_le_precomp = np.argmax(profile_i_rot_precomp[:, 0])
             if idx_le_precomp != 0:
-
                 if profile_i_rot_precomp[0, 0] == profile_i_rot_precomp[-1, 0]:
                     idx_s = 1
                 profile_i_rot_precomp = np.row_stack(
@@ -590,7 +601,7 @@ class RunPreComp(ExplicitComponent):
             # time1 = time.time()
             for idx_sec in range(self.n_layers):
                 if discrete_inputs["definition_layer"][idx_sec] != 10:
-                    if inputs["layer_thickness"][idx_sec, i] != 0.0:
+                    if inputs["layer_thickness"][idx_sec, i] > 1.0e-6:
                         if inputs["layer_start_nd"][idx_sec, i] < loc_LE or inputs["layer_end_nd"][idx_sec, i] < loc_LE:
                             ss_idx.append(idx_sec)
                             if inputs["layer_start_nd"][idx_sec, i] < loc_LE:
@@ -630,10 +641,13 @@ class RunPreComp(ExplicitComponent):
                                 ps_end_nd_arc.append(1.0)
                             else:
                                 ps_end_nd_arc_temp = float(spline_arc2xnd(inputs["layer_end_nd"][idx_sec, i]))
-                                if np.isclose(ps_end_nd_arc_temp, profile_i_rot[-1, 0], atol=1.e-2) and profile_i_rot[-1, 0] != 1.0:
+                                if (
+                                    np.isclose(ps_end_nd_arc_temp, profile_i_rot[-1, 0], atol=1.0e-2)
+                                    and profile_i_rot[-1, 0] != 1.0
+                                ):
                                     ps_end_nd_arc_temp = 1.0
-                                if ps_end_nd_arc_temp > 1.:
-                                    ps_end_nd_arc_temp = 1.
+                                if ps_end_nd_arc_temp > 1.0:
+                                    ps_end_nd_arc_temp = 1.0
                                 ps_end_nd_arc.append(ps_end_nd_arc_temp)
                             if inputs["layer_start_nd"][idx_sec, i] < loc_LE:
                                 ps_start_nd_arc.append(0.0)
@@ -642,7 +656,7 @@ class RunPreComp(ExplicitComponent):
                 else:
                     target_idx = inputs["layer_web"][idx_sec] - 1
 
-                    if inputs["layer_thickness"][idx_sec, i] != 0.0:
+                    if inputs["layer_thickness"][idx_sec, i] > 1.0e-6:
                         web_idx.append(idx_sec)
 
                         start_nd_arc = float(spline_arc2xnd(inputs["web_start_nd"][int(target_idx), i]))

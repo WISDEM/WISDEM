@@ -2,12 +2,12 @@ import unittest
 
 import numpy as np
 import numpy.testing as npt
+
 from wisdem.commonse.csystem import DirectionVector
 
 
 class TestCSystem(unittest.TestCase):
     def test(self):
-
         x = np.array([1.0, 2.0])
         y = np.array([1.3, 4.3])
         z = np.array([2.3, 2.3])

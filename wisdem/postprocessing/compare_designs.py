@@ -760,7 +760,6 @@ def print_results_to_screen(list_of_sims, list_of_labels, values_to_print):
         size_of_variable = len(value_sizer)
 
         for idx in range(size_of_variable):
-
             if size_of_variable > 1:
                 augmented_key = f"{key}_{idx}"
             else:
@@ -815,7 +814,6 @@ def save_h2_data_to_file(list_of_sims, folder_output):
 
 
 def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
-
     # These are options for the plotting and saving
     show_plots = False  # if True, print plots to screen in addition to saving files
     font_size = 12
@@ -860,6 +858,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "Monopile/jacket freqs": ["fixedse.structural_frequencies", "Hz"],
         "Floating Tower freqs": ["floatingse.tower_freqs", "Hz"],
         "H2 Produced": ["h2.h2_produced", "kg"],
+        "LCOH": ["h2.lcoh", "USD/kg"],
     }
 
     # Generally it's not necessary to change the code below here, unless you

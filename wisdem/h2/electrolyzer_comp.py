@@ -3,6 +3,7 @@ import logging
 import openmdao.api as om
 
 import electrolyzer.inputs.validation as val
+from electrolyzer import run_lcoh
 
 logger = logging.getLogger("wisdem/weis")
 

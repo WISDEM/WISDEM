@@ -10,7 +10,7 @@ The class structure for all the modules is listed below.
 .. module:: wisdem.floatingse.floating
 .. class:: FloatingSE
 
-	    
+
 *FloatingSE* Vertical, Submerged Column of Frustums
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -24,7 +24,7 @@ The class structure for all the modules is listed below.
 .. class:: ColumnBuckling
 .. class:: Column
 
-	    
+
 *FloatingSE* Structural Analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -33,24 +33,23 @@ The class structure for all the modules is listed below.
 .. class:: TrussIntegerToBoolean
 .. class:: Loading
 
-	    
+
 *FloatingSE* Mooring Analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. module:: wisdem.floatingse.map_mooring
 .. class:: MapMooring
 
-	    
+
 *FloatingSE* Stability Analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. module:: wisdem.floatingse.substructure
 .. class:: SubstructureGeometry
 .. class:: Substructure
-	    
+
 *FloatingSE* Visualization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. module:: wisdem.floatingse.visualize
 .. class:: Visualize
-

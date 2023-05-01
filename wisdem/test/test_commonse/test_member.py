@@ -304,7 +304,6 @@ class TestMemberComponent(unittest.TestCase):
                 self.assertAlmostEqual(self.mem.sections[k].sigy, 2e5)
 
     def testMainSectionsWithAxial(self):
-
         self.inputs["axial_stiffener_web_thickness"] = 0.2
         self.inputs["axial_stiffener_flange_thickness"] = 0.3
         self.inputs["axial_stiffener_web_height"] = 0.5

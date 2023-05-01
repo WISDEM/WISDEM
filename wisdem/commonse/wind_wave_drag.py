@@ -268,7 +268,6 @@ class CylinderWindDrag(om.ExplicitComponent):
         self.declare_partials("windLoads_beta", "beta_wind", val=1.0)
 
     def compute(self, inputs, outputs):
-
         rho = inputs["rho_air"]
         U = inputs["U"]
         d = inputs["d"]
@@ -302,7 +301,6 @@ class CylinderWindDrag(om.ExplicitComponent):
         outputs["windLoads_beta"] = beta
 
     def compute_partials(self, inputs, J):
-
         # rename
         rho = inputs["rho_air"]
         U = inputs["U"]
@@ -431,7 +429,6 @@ class CylinderWaveDrag(om.ExplicitComponent):
         self.declare_partials("waveLoads_beta", "beta_wave", val=1.0)
 
     def compute(self, inputs, outputs):
-
         # wlevel = inputs['wlevel']
         # if wlevel > 0.0: wlevel *= -1.0
 
@@ -502,7 +499,6 @@ class CylinderWaveDrag(om.ExplicitComponent):
         outputs["waveLoads_beta"] = beta
 
     def compute_partials(self, inputs, J):
-
         # wlevel = inputs['wlevel']
         # if wlevel > 0.0: wlevel *= -1.0
 

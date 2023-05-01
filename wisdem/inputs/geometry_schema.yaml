@@ -2025,7 +2025,7 @@ properties:
                     description: Name of the airfoil
                 coordinates:
                     type: object
-                    description: Airfoil coordinates described from trailing edge (x=0) along the suction side (y>0) to leading edge (x=1) to trailing edge (x=0) along the pressure side (y<0)
+                    description: Airfoil coordinates described from trailing edge (x=1) along the suction side (y>0) to leading edge (x=0) back to trailing edge (x=1) along the pressure side (y<0)
                     required:
                         - x
                         - y

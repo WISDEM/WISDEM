@@ -513,7 +513,6 @@ class Frame(object):
         self.loadCases = []
 
     def changeExtraNodeMass(self, node, mass, Ixx, Iyy, Izz, Ixy, Ixz, Iyz, rhox, rhoy, rhoz, addGravityLoad):
-
         self.ENMnode = np.array(node).astype(np.int32).flatten()
         nnode = len(self.ENMnode)
         self.ENMmass = np.copy(mass).flatten()
@@ -546,7 +545,6 @@ class Frame(object):
         )
 
     def changeExtraElementMass(self, element, mass, addGravityLoad):
-
         self.EEMelement = np.array(element).astype(np.int32)
         nelem = len(self.EEMelement)
         self.EEMmass = np.copy(mass).flatten()
@@ -582,7 +580,6 @@ class Frame(object):
         )
 
     def enableDynamics(self, nM, Mmethod, lump, tol, shift):
-
         self.nM = nM
         self.Mmethod = Mmethod
         self.lump = lump
@@ -590,9 +587,7 @@ class Frame(object):
         self.shift = shift
 
     def __addGravityToExtraMass(self):
-
         if np.any(self.addGravityLoadForExtraNodeMass):
-
             # need to save all in memory
             nLC = len(self.loadCases)
             self.PLN = [0] * nLC
@@ -604,7 +599,6 @@ class Frame(object):
             self.PLMz = [0] * nLC
 
             for icase, lc in enumerate(self.loadCases):
-
                 gx = lc.gx
                 gy = lc.gy
                 gz = lc.gz
@@ -661,7 +655,6 @@ class Frame(object):
                 )
 
         if np.any(self.addGravityLoadForExtraElementMass):
-
             L = self.eL
 
             # add to interior point load
@@ -675,7 +668,6 @@ class Frame(object):
             self.IPLxE = np.array([[] * nLC])
 
             for icase, lc in enumerate(self.loadCases):
-
                 gx = lc.gx
                 gy = lc.gy
                 gz = lc.gz
@@ -723,7 +715,6 @@ class Frame(object):
                 )
 
     def run(self, nanokay=False):
-
         nCases = len(self.loadCases)  # number of load cases
         nN = len(self.nodes.node)  # number of nodes
         nE = len(self.elements.element)  # number of elements
@@ -893,7 +884,6 @@ class Frame(object):
         zmpf = [0] * nM
 
         for i in range(nM):
-
             freq[i] = c_double()
             xmpf[i] = c_double()
             ympf[i] = c_double()
@@ -936,14 +926,6 @@ class Frame(object):
             c_modalResults,
         )
 
-        nantest = np.isnan(np.c_[fout.Nx, fout.Vy, fout.Vz, fout.Txx, fout.Myy, fout.Mzz])
-        if not nanokay and np.any(nantest):
-            raise RuntimeError("Frame3DD did not exit gracefully")
-        elif exitCode == 182 or exitCode == 183:
-            pass
-        elif exitCode != 0:
-            raise RuntimeError("Frame3DD did not exit gracefully")
-
         # put mass values back in since tuple is read only
         mout = NodeMasses(
             total_mass.value,
@@ -963,6 +945,15 @@ class Frame(object):
             modalout.xmpf[i] = xmpf[i].value
             modalout.ympf[i] = ympf[i].value
             modalout.zmpf[i] = zmpf[i].value
+
+        nantest1 = np.isnan(np.c_[fout.Nx, fout.Vy, fout.Vz, fout.Txx, fout.Myy, fout.Mzz])
+        nantest2 = np.isnan(modalout.freq)
+        if not nanokay and (np.any(nantest1) or np.any(nantest2)):
+            raise RuntimeError("Frame3DD did not exit gracefully")
+        elif exitCode == 182 or exitCode == 183:
+            pass
+        elif exitCode != 0:
+            raise RuntimeError("Frame3DD did not exit gracefully")
 
         return dout, fout, rout, ifout, mout, modalout
 
@@ -1245,7 +1236,6 @@ class StaticLoadCase(object):
     """docstring"""
 
     def __init__(self, gx, gy, gz):
-
         self.gx = gx
         self.gy = gy
         self.gz = gz
@@ -1266,7 +1256,6 @@ class StaticLoadCase(object):
         self.changePrescribedDisplacements(i, d, d, d, d, d, d)
 
     def changePointLoads(self, N, Fx, Fy, Fz, Mxx, Myy, Mzz):
-
         # copying to prevent any user error with variables pointing to something else (b/c memory address is shared by C)
         self.NF = np.array(N).astype(np.int32)
         self.Fx = np.copy(Fx)
@@ -1281,7 +1270,6 @@ class StaticLoadCase(object):
         )
 
     def changeUniformLoads(self, EL, Ux, Uy, Uz):
-
         self.ELU = np.array(EL).astype(np.int32)
         self.Ux = np.copy(Ux)
         self.Uy = np.copy(Uy)
@@ -1290,7 +1278,6 @@ class StaticLoadCase(object):
         self.uL = C_UniformLoads(len(EL), ip(self.ELU), dp(self.Ux), dp(self.Uy), dp(self.Uz))
 
     def changeTrapezoidalLoads(self, EL, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2):
-
         self.ELT = np.array(EL).astype(np.int32)
         self.xx1 = np.copy(xx1)
         self.xx2 = np.copy(xx2)
@@ -1323,7 +1310,6 @@ class StaticLoadCase(object):
         )
 
     def changeElementLoads(self, EL, Px, Py, Pz, x):
-
         self.ELE = np.array(EL).astype(np.int32)
         self.Px = np.copy(Px)
         self.Py = np.copy(Py)
@@ -1333,7 +1319,6 @@ class StaticLoadCase(object):
         self.eL = C_ElementLoads(len(EL), ip(self.ELE), dp(self.Px), dp(self.Py), dp(self.Pz), dp(self.xE))
 
     def changeTemperatureLoads(self, EL, a, hy, hz, Typ, Tym, Tzp, Tzm):
-
         self.ELTemp = np.array(EL).astype(np.int32)
         self.a = np.copy(a)
         self.hy = np.copy(hy)
@@ -1356,7 +1341,6 @@ class StaticLoadCase(object):
         )
 
     def changePrescribedDisplacements(self, N, Dx, Dy, Dz, Dxx, Dyy, Dzz):
-
         self.ND = np.array(N).astype(np.int32)
         self.Dx = np.copy(Dx)
         self.Dy = np.copy(Dy)

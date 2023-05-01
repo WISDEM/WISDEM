@@ -11,12 +11,12 @@ import unittest
 from io import StringIO
 
 import numpy as np
+
 from wisdem.pyframe3dd import Frame, Options, NodeData, ElementData, ReactionData, StaticLoadCase
 
 
 class FrameTestEXA(unittest.TestCase):
     def setUp(self):
-
         # nodes
         node = np.arange(1, 13)
         x = np.array([0.0, 120.0, 240.0, 360.0, 480.0, 600.0, 720.0, 120.0, 240.0, 360.0, 480.0, 600.0])
@@ -132,7 +132,6 @@ class FrameTestEXA(unittest.TestCase):
         self.displacements, self.forces, self.reactions, self.internalForces, self.mass, self.modal = frame.run()
 
     def test_disp1(self):
-
         disp = self.displacements
         iCase = 0
 
@@ -198,7 +197,6 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(disp.dzrot[iCase, :], dzrot, decimal=6)
 
     def test_disp2(self):
-
         disp = self.displacements
         iCase = 1
 
@@ -264,7 +262,6 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(disp.dzrot[iCase, :], dzrot, decimal=6)
 
     def test_force1(self):
-
         forces = self.forces
         iCase = 0
 
@@ -327,7 +324,6 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(forces.Mzz[iCase, :], out[:, 7], decimal=3)
 
     def test_force2(self):
-
         forces = self.forces
         iCase = 1
 
@@ -390,7 +386,6 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(forces.Mzz[iCase, :], out[:, 7], decimal=3)
 
     def test_reactions1(self):
-
         reactions = self.reactions
         iCase = 0
 
@@ -422,7 +417,6 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(reactions.Mzz[iCase, :], out[:, 6], decimal=3)
 
     def test_reactions2(self):
-
         reactions = self.reactions
         iCase = 1
 
@@ -454,7 +448,6 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(reactions.Mzz[iCase, :], out[:, 6], decimal=3)
 
     def test_if1(self):
-
         intF = self.internalForces
         iE = 3
         iCase = 0
@@ -492,7 +485,6 @@ class FrameTestEXA(unittest.TestCase):
         np.testing.assert_array_almost_equal(intF[iE].Rx[iCase, :], out[:, 10], decimal=3)
 
     def test_if2(self):
-
         intF = self.internalForces
         iE = 7
         iCase = 1
@@ -532,7 +524,6 @@ class FrameTestEXA(unittest.TestCase):
 
 class FrameTestEXB(unittest.TestCase):
     def setUp(self):
-
         # nodes
         string = StringIO(
             """
@@ -656,7 +647,6 @@ class FrameTestEXB(unittest.TestCase):
         self.displacements, self.forces, self.reactions, self.internalForces, self.mass, self.modal = frame.run()
 
     def test_disp1(self):
-
         disp = self.displacements
         iCase = 0
 
@@ -677,7 +667,6 @@ class FrameTestEXB(unittest.TestCase):
         np.testing.assert_almost_equal(disp.dzrot[iCase, :], dzrot, decimal=6)
 
     def test_force1(self):
-
         forces = self.forces
         iCase = 0
 
@@ -706,7 +695,6 @@ class FrameTestEXB(unittest.TestCase):
         np.testing.assert_array_almost_equal(forces.Mzz[iCase, :], out[:, 7], decimal=3)
 
     def test_reactions1(self):
-
         reactions = self.reactions
         iCase = 0
 
@@ -730,7 +718,6 @@ class FrameTestEXB(unittest.TestCase):
         np.testing.assert_array_almost_equal(reactions.Mzz[iCase, :], out[:, 6], decimal=3)
 
     def test_if1(self):
-
         intF = self.internalForces
         iE = 1
         iCase = 0
@@ -846,7 +833,6 @@ class FrameTestEXB(unittest.TestCase):
         np.testing.assert_array_almost_equal(intF[iE].Rx[iCase, :], out[:, 10], decimal=3)
 
     def test_mass(self):
-
         mass = self.mass
 
         string = StringIO(
@@ -871,7 +857,6 @@ class FrameTestEXB(unittest.TestCase):
         np.testing.assert_array_almost_equal(mass.zinrta, out[:, 6], decimal=3)
 
     def test_modal(self):
-
         modal = self.modal
         iM = 0
 
@@ -901,7 +886,6 @@ class FrameTestEXB(unittest.TestCase):
 
 class GravityAdd(unittest.TestCase):
     def test_addgrav_working(self):
-
         # nodes
         nnode = 3
         node = np.arange(1, 1 + nnode)

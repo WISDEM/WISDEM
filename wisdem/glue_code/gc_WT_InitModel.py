@@ -227,40 +227,48 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                         + ". Please check the yaml input file"
                     )
             else:
-                web_rotation[i, :] = np.nan_to_num(PchipInterpolator(
-                    internal_structure_2d_fem["webs"][i]["rotation"]["grid"],
-                    internal_structure_2d_fem["webs"][i]["rotation"]["values"],
-                    extrapolate= False,
+                web_rotation[i, :] = np.nan_to_num(
+                    PchipInterpolator(
+                        internal_structure_2d_fem["webs"][i]["rotation"]["grid"],
+                        internal_structure_2d_fem["webs"][i]["rotation"]["values"],
+                        extrapolate=False,
+                        # left=0.0,
+                        # right=0.0,
+                    )(nd_span)
+                )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                definition_web[i] = 2
+            web_offset_y_pa[i, :] = np.nan_to_num(
+                PchipInterpolator(
+                    internal_structure_2d_fem["webs"][i]["offset_y_pa"]["grid"],
+                    internal_structure_2d_fem["webs"][i]["offset_y_pa"]["values"],
+                    extrapolate=False,
                     # left=0.0,
                     # right=0.0,
-                )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
-                definition_web[i] = 2
-            web_offset_y_pa[i, :] = np.nan_to_num(PchipInterpolator(
-                internal_structure_2d_fem["webs"][i]["offset_y_pa"]["grid"],
-                internal_structure_2d_fem["webs"][i]["offset_y_pa"]["values"],
-                extrapolate= False,
-                # left=0.0,
-                # right=0.0,
-            )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                )(nd_span)
+            )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
         elif (
             "start_nd_arc" in internal_structure_2d_fem["webs"][i]
             and "end_nd_arc" in internal_structure_2d_fem["webs"][i]
         ):
             definition_web[i] = 3
-            web_start_nd[i, :] = np.nan_to_num(PchipInterpolator(
-                internal_structure_2d_fem["webs"][i]["start_nd_arc"]["grid"],
-                internal_structure_2d_fem["webs"][i]["start_nd_arc"]["values"],
-                extrapolate= False,
-                # left=0.0,
-                # right=0.0,
-            )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
-            web_end_nd[i, :] = np.nan_to_num(PchipInterpolator(
-                internal_structure_2d_fem["webs"][i]["end_nd_arc"]["grid"],
-                internal_structure_2d_fem["webs"][i]["end_nd_arc"]["values"],
-                extrapolate= False,
-                # left=0.0,
-                # right=0.0,
-            )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+            web_start_nd[i, :] = np.nan_to_num(
+                PchipInterpolator(
+                    internal_structure_2d_fem["webs"][i]["start_nd_arc"]["grid"],
+                    internal_structure_2d_fem["webs"][i]["start_nd_arc"]["values"],
+                    extrapolate=False,
+                    # left=0.0,
+                    # right=0.0,
+                )(nd_span)
+            )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+            web_end_nd[i, :] = np.nan_to_num(
+                PchipInterpolator(
+                    internal_structure_2d_fem["webs"][i]["end_nd_arc"]["grid"],
+                    internal_structure_2d_fem["webs"][i]["end_nd_arc"]["values"],
+                    extrapolate=False,
+                    # left=0.0,
+                    # right=0.0,
+                )(nd_span)
+            )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
         else:
             raise ValueError("Webs definition not supported. Please check the yaml input.")
 
@@ -285,20 +293,24 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     for i in range(n_layers):
         layer_name[i] = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
         layer_mat[i] = modeling_options["WISDEM"]["RotorSE"]["layer_mat"][i]
-        thickness[i, :] = np.nan_to_num(PchipInterpolator(
-            internal_structure_2d_fem["layers"][i]["thickness"]["grid"],
-            internal_structure_2d_fem["layers"][i]["thickness"]["values"],
-            extrapolate= False,
-            # left=0.0,
-            # right=0.0,
-        )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
-        orientation[i, :] = np.nan_to_num(PchipInterpolator(
-            internal_structure_2d_fem["layers"][i]["fiber_orientation"]["grid"],
-            internal_structure_2d_fem["layers"][i]["fiber_orientation"]["values"],
-            extrapolate= False,
-            # left=0.0,
-            # right=0.0,
-        )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+        thickness[i, :] = np.nan_to_num(
+            PchipInterpolator(
+                internal_structure_2d_fem["layers"][i]["thickness"]["grid"],
+                internal_structure_2d_fem["layers"][i]["thickness"]["values"],
+                extrapolate=False,
+                # left=0.0,
+                # right=0.0,
+            )(nd_span)
+        )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+        orientation[i, :] = np.nan_to_num(
+            PchipInterpolator(
+                internal_structure_2d_fem["layers"][i]["fiber_orientation"]["grid"],
+                internal_structure_2d_fem["layers"][i]["fiber_orientation"]["values"],
+                extrapolate=False,
+                # left=0.0,
+                # right=0.0,
+            )(nd_span)
+        )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
         if (
             "rotation" not in internal_structure_2d_fem["layers"][i]
             and "offset_y_pa" not in internal_structure_2d_fem["layers"][i]
@@ -323,28 +335,34 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                         "Invalid rotation reference for layer " + layer_name[i] + ". Please check the yaml input file."
                     )
             else:
-                layer_rotation[i, :] = np.nan_to_num(PchipInterpolator(
-                    internal_structure_2d_fem["layers"][i]["rotation"]["grid"],
-                    internal_structure_2d_fem["layers"][i]["rotation"]["values"],
-                    extrapolate= False,
+                layer_rotation[i, :] = np.nan_to_num(
+                    PchipInterpolator(
+                        internal_structure_2d_fem["layers"][i]["rotation"]["grid"],
+                        internal_structure_2d_fem["layers"][i]["rotation"]["values"],
+                        extrapolate=False,
+                        # left=0.0,
+                        # right=0.0,
+                    )(nd_span)
+                )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                definition_layer[i] = 3
+            layer_offset_y_pa[i, :] = np.nan_to_num(
+                PchipInterpolator(
+                    internal_structure_2d_fem["layers"][i]["offset_y_pa"]["grid"],
+                    internal_structure_2d_fem["layers"][i]["offset_y_pa"]["values"],
+                    extrapolate=False,
                     # left=0.0,
                     # right=0.0,
-                )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
-                definition_layer[i] = 3
-            layer_offset_y_pa[i, :] = np.nan_to_num(PchipInterpolator(
-                internal_structure_2d_fem["layers"][i]["offset_y_pa"]["grid"],
-                internal_structure_2d_fem["layers"][i]["offset_y_pa"]["values"],
-                extrapolate= False,
-                # left=0.0,
-                # right=0.0,
-            )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
-            layer_width[i, :] = np.nan_to_num(PchipInterpolator(
-                internal_structure_2d_fem["layers"][i]["width"]["grid"],
-                internal_structure_2d_fem["layers"][i]["width"]["values"],
-                extrapolate= False,
-                # left=0.0,
-                # right=0.0,
-            )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                )(nd_span)
+            )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+            layer_width[i, :] = np.nan_to_num(
+                PchipInterpolator(
+                    internal_structure_2d_fem["layers"][i]["width"]["grid"],
+                    internal_structure_2d_fem["layers"][i]["width"]["values"],
+                    extrapolate=False,
+                    # left=0.0,
+                    # right=0.0,
+                )(nd_span)
+            )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
             layer_side[i] = internal_structure_2d_fem["layers"][i]["side"]
         if (
             "midpoint_nd_arc" in internal_structure_2d_fem["layers"][i]
@@ -358,20 +376,24 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                     definition_layer[i] = 5
                     # layer_midpoint_nd[i,:] = -np.ones(n_span) # To be assigned later!
             else:
-                layer_midpoint_nd[i, :] = np.nan_to_num(PchipInterpolator(
-                    internal_structure_2d_fem["layers"][i]["midpoint_nd_arc"]["grid"],
-                    internal_structure_2d_fem["layers"][i]["midpoint_nd_arc"]["values"],
-                    extrapolate= False,
+                layer_midpoint_nd[i, :] = np.nan_to_num(
+                    PchipInterpolator(
+                        internal_structure_2d_fem["layers"][i]["midpoint_nd_arc"]["grid"],
+                        internal_structure_2d_fem["layers"][i]["midpoint_nd_arc"]["values"],
+                        extrapolate=False,
+                        # left=0.0,
+                        # right=0.0,
+                    )(nd_span)
+                )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+            layer_width[i, :] = np.nan_to_num(
+                PchipInterpolator(
+                    internal_structure_2d_fem["layers"][i]["width"]["grid"],
+                    internal_structure_2d_fem["layers"][i]["width"]["values"],
+                    extrapolate=False,
                     # left=0.0,
                     # right=0.0,
-                )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
-            layer_width[i, :] = np.nan_to_num(PchipInterpolator(
-                internal_structure_2d_fem["layers"][i]["width"]["grid"],
-                internal_structure_2d_fem["layers"][i]["width"]["values"],
-                extrapolate= False,
-                # left=0.0,
-                # right=0.0,
-            )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                )(nd_span)
+            )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
         if "start_nd_arc" in internal_structure_2d_fem["layers"][i] and definition_layer[i] == 0:
             if "fixed" in internal_structure_2d_fem["layers"][i]["start_nd_arc"].keys():
                 if internal_structure_2d_fem["layers"][i]["start_nd_arc"]["fixed"] == "TE":
@@ -396,17 +418,22 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                             + " , but this layer does not exist in the yaml."
                         )
             else:
-                layer_start_nd[i, :] = np.nan_to_num(PchipInterpolator(
-                    internal_structure_2d_fem["layers"][i]["start_nd_arc"]["grid"],
-                    internal_structure_2d_fem["layers"][i]["start_nd_arc"]["values"],
-                    extrapolate= False,
-                    # left=0.0,
-                    # right=0.0,
-                )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
-                
-                if np.min(layer_start_nd[i, :])<0. or np.max(layer_start_nd[i, :])>1.:
-                    raise Exception("""The start_nd_arc layer cannot be smaller than 0 nor 
-                    larger than 1. Check the input yaml for layer """, layer_name[i])
+                layer_start_nd[i, :] = np.nan_to_num(
+                    PchipInterpolator(
+                        internal_structure_2d_fem["layers"][i]["start_nd_arc"]["grid"],
+                        internal_structure_2d_fem["layers"][i]["start_nd_arc"]["values"],
+                        extrapolate=False,
+                        # left=0.0,
+                        # right=0.0,
+                    )(nd_span)
+                )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+
+                if np.min(layer_start_nd[i, :]) < 0.0 or np.max(layer_start_nd[i, :]) > 1.0:
+                    raise Exception(
+                        """The start_nd_arc layer cannot be smaller than 0 nor
+                    larger than 1. Check the input yaml for layer """,
+                        layer_name[i],
+                    )
 
             if "end_nd_arc" in internal_structure_2d_fem["layers"][i]:
                 if "fixed" in internal_structure_2d_fem["layers"][i]["end_nd_arc"].keys():
@@ -432,13 +459,15 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                             )
             if "width" in internal_structure_2d_fem["layers"][i]:
                 definition_layer[i] = 7
-                layer_width[i, :] = np.nan_to_num(PchipInterpolator(
-                    internal_structure_2d_fem["layers"][i]["width"]["grid"],
-                    internal_structure_2d_fem["layers"][i]["width"]["values"],
-                    extrapolate= False,
-                    # left=0.0,
-                    # right=0.0,
-                )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                layer_width[i, :] = np.nan_to_num(
+                    PchipInterpolator(
+                        internal_structure_2d_fem["layers"][i]["width"]["grid"],
+                        internal_structure_2d_fem["layers"][i]["width"]["values"],
+                        extrapolate=False,
+                        # left=0.0,
+                        # right=0.0,
+                    )(nd_span)
+                )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
 
         if "end_nd_arc" in internal_structure_2d_fem["layers"][i] and definition_layer[i] == 0:
             if "fixed" in internal_structure_2d_fem["layers"][i]["end_nd_arc"].keys():
@@ -458,27 +487,34 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                     if flag == False:
                         raise ValueError("Error with layer " + internal_structure_2d_fem["layers"][i]["name"])
             else:
-                layer_end_nd[i, :] = np.nan_to_num(PchipInterpolator(
-                    internal_structure_2d_fem["layers"][i]["end_nd_arc"]["grid"],
-                    internal_structure_2d_fem["layers"][i]["end_nd_arc"]["values"],
-                    extrapolate= False,
-                    # left=0.0,
-                    # right=0.0,
-                )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                layer_end_nd[i, :] = np.nan_to_num(
+                    PchipInterpolator(
+                        internal_structure_2d_fem["layers"][i]["end_nd_arc"]["grid"],
+                        internal_structure_2d_fem["layers"][i]["end_nd_arc"]["values"],
+                        extrapolate=False,
+                        # left=0.0,
+                        # right=0.0,
+                    )(nd_span)
+                )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
 
-            if np.min(layer_end_nd[i, :])<0. or np.max(layer_end_nd[i, :])>1.:
-                raise Exception("""The end_nd_arc layer cannot be smaller than 0 nor 
-                larger than 1. Check the input yaml for layer """, layer_name[i])
+            if np.min(layer_end_nd[i, :]) < 0.0 or np.max(layer_end_nd[i, :]) > 1.0:
+                raise Exception(
+                    """The end_nd_arc layer cannot be smaller than 0 nor
+                larger than 1. Check the input yaml for layer """,
+                    layer_name[i],
+                )
 
             if "width" in internal_structure_2d_fem["layers"][i]:
                 definition_layer[i] = 8
-                layer_width[i, :] = np.nan_to_num(PchipInterpolator(
-                    internal_structure_2d_fem["layers"][i]["width"]["grid"],
-                    internal_structure_2d_fem["layers"][i]["width"]["values"],
-                    extrapolate= False,
-                    # left=0.0,
-                    # right=0.0,
-                )(nd_span)) # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                layer_width[i, :] = np.nan_to_num(
+                    PchipInterpolator(
+                        internal_structure_2d_fem["layers"][i]["width"]["grid"],
+                        internal_structure_2d_fem["layers"][i]["width"]["values"],
+                        extrapolate=False,
+                        # left=0.0,
+                        # right=0.0,
+                    )(nd_span)
+                )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
             if "start_nd_arc" in internal_structure_2d_fem["layers"][i]:
                 definition_layer[i] = 9
 
@@ -661,7 +697,6 @@ def assign_te_flaps_values(wt_opt, modeling_options, blade):
 
 
 def assign_hub_values(wt_opt, hub, flags):
-
     wt_opt["hub.diameter"] = hub["diameter"]
     wt_opt["hub.cone"] = hub["cone_angle"]
     # wt_opt['hub.drag_coeff']                  = hub['drag_coefficient'] # GB: This doesn't connect to anything
@@ -761,7 +796,6 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
 
 
 def assign_generator_values(wt_opt, modeling_options, nacelle):
-
     wt_opt["generator.B_r"] = nacelle["generator"]["B_r"]
     wt_opt["generator.P_Fe0e"] = nacelle["generator"]["P_Fe0e"]
     wt_opt["generator.P_Fe0h"] = nacelle["generator"]["P_Fe0h"]
@@ -1007,7 +1041,6 @@ def assign_jacket_values(wt_opt, modeling_options, jacket):
 
 
 def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
-
     float_opt = opt_options["design_variables"]["floating"]
     floating_init_options = modeling_options["floating"]
     n_joints = floating_init_options["joints"]["n_joints"]
@@ -1233,7 +1266,6 @@ def assign_control_values(wt_opt, modeling_options, control):
 
 
 def assign_configuration_values(wt_opt, assembly, opt_options):
-
     class_val = assembly["turbine_class"].upper()
     if class_val in [1, "1"]:
         class_val = "I"
@@ -1267,7 +1299,6 @@ def assign_configuration_values(wt_opt, assembly, opt_options):
 
 
 def assign_environment_values(wt_opt, environment, offshore, blade_flag):
-
     wt_opt["env.rho_air"] = environment["air_density"]
     wt_opt["env.mu_air"] = environment["air_dyn_viscosity"]
     if offshore:
@@ -1288,7 +1319,6 @@ def assign_environment_values(wt_opt, environment, offshore, blade_flag):
 
 
 def assign_bos_values(wt_opt, bos, offshore):
-
     wt_opt["bos.plant_turbine_spacing"] = bos["plant_turbine_spacing"]
     wt_opt["bos.plant_row_spacing"] = bos["plant_row_spacing"]
     wt_opt["bos.commissioning_pct"] = bos["commissioning_pct"]
@@ -1312,7 +1342,6 @@ def assign_bos_values(wt_opt, bos, offshore):
 
 
 def assign_costs_values(wt_opt, costs):
-
     wt_opt["costs.turbine_number"] = costs["turbine_number"]
     wt_opt["costs.opex_per_kW"] = costs["opex_per_kW"]
     wt_opt["costs.bos_per_kW"] = costs["bos_per_kW"]
@@ -1430,9 +1459,21 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=F
         # Re-interpolate cl-cd-cm along the Re dimension if less than n_Re were provided in the input yaml (common condition)
         for l in range(n_aoa):
             for k in range(n_tab):
-                cl[i, l, :, k] = PchipInterpolator(Re_j, cl[i, l, j_Re, k])(Re) if (len(cl[i, l, j_Re, k]) != 1) else cl[i, l, j_Re, k]
-                cd[i, l, :, k] = PchipInterpolator(Re_j, cd[i, l, j_Re, k])(Re) if (len(cd[i, l, j_Re, k]) != 1) else cd[i, l, j_Re, k]
-                cm[i, l, :, k] = PchipInterpolator(Re_j, cm[i, l, j_Re, k])(Re) if (len(cm[i, l, j_Re, k]) != 1) else cm[i, l, j_Re, k]
+                cl[i, l, :, k] = (
+                    PchipInterpolator(Re_j, cl[i, l, j_Re, k])(Re)
+                    if (len(cl[i, l, j_Re, k]) != 1)
+                    else cl[i, l, j_Re, k]
+                )
+                cd[i, l, :, k] = (
+                    PchipInterpolator(Re_j, cd[i, l, j_Re, k])(Re)
+                    if (len(cd[i, l, j_Re, k]) != 1)
+                    else cd[i, l, j_Re, k]
+                )
+                cm[i, l, :, k] = (
+                    PchipInterpolator(Re_j, cm[i, l, j_Re, k])(Re)
+                    if (len(cm[i, l, j_Re, k]) != 1)
+                    else cm[i, l, j_Re, k]
+                )
 
         points = np.column_stack((airfoils[i]["coordinates"]["x"], airfoils[i]["coordinates"]["y"]))
         # Check that airfoil points are declared from the TE suction side to TE pressure side

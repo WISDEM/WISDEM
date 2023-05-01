@@ -20,9 +20,9 @@ WISDEM is written in Python using `OpenMDAO <https://openmdao.org/>`_ to manage 
 
 .. figure:: /images/wisdem/WISDEM_Overview2.*
     :align: center
-    
+
 We've also provided an `XDSM <https://mdolab.engin.umich.edu/wiki/xdsm-overview.html>`_ diagram showing how the WISDEM analysis blocks are connected.
 This diagram is based on the workflow for a turbine optimization where we vary blade design parameters.
-    
+
 .. figure:: /images/wisdem/xdsm_wisdem.*
     :align: center

@@ -1,11 +1,11 @@
 # 1 ---------
 
-import numpy as np
 from math import pi
+
+import numpy as np
 import matplotlib.pyplot as plt
 
-from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
-
+from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 
 plot_flag = False
 
