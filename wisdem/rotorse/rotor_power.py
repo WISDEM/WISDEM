@@ -432,13 +432,13 @@ class ComputePowerCurve(ExplicitComponent):
             myout[key] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
         ]
         # P, eff  = compute_P_and_eff(P_aero, P_rated, Omega_rpm, driveType, driveEta)
-        eff = PchipInterpolator(lss_rpm, driveEta)(Omega_rpm)
+        eff = np.interp(Omega_rpm, lss_rpm, driveEta)
         P = P_aero * eff
         Cp = Cp_aero * eff
 
         # Find rated index and guess at rated speed
         if P_aero[-1] > P_rated:
-            U_rated = PchipInterpolator(P, Uhub)(P_rated)
+            U_rated = np.interp(P_rated, P, Uhub)
             i_rated = np.nonzero(U_rated <= Uhub)[0][0]
         else:
             U_rated = Uhub[-1] + 1e-6
@@ -449,7 +449,7 @@ class ComputePowerCurve(ExplicitComponent):
 
         # Guess at Region 2.5, but we will do a more rigorous search below
         if Omega_max < Omega_tsr[-1]:
-            U_2p5 = PchipInterpolator(Omega_tsr, Uhub)(Omega[-1])
+            U_2p5 = np.interp(Omega[-1], Omega_tsr, Uhub)
             outputs["V_R25"] = U_2p5
         else:
             U_2p5 = U_rated
@@ -471,7 +471,7 @@ class ComputePowerCurve(ExplicitComponent):
                 myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_i_rpm], [pitch_i], coefficients=False)
                 P_aero_i = float(myout["P"])
                 # P_i,_  = compute_P_and_eff(P_aero_i.flatten(), P_rated, Omega_i_rpm, driveType, driveEta)
-                eff_i = PchipInterpolator(lss_rpm, driveEta)(Omega_i_rpm)
+                eff_i = np.interp(Omega_i_rpm, lss_rpm, driveEta)
                 P_i = float(P_aero_i * eff_i)
                 return 1e-4 * (P_i - P_rated)
 
@@ -529,7 +529,7 @@ class ComputePowerCurve(ExplicitComponent):
                 Cq_aero_rated,
                 Cm_aero_rated,
             ) = [float(myout[key]) for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]]
-            eff_rated = PchipInterpolator(lss_rpm, driveEta)(Omega_rpm_rated)
+            eff_rated = np.interp(Omega_rpm_rated, lss_rpm, driveEta)
             Cp_rated = Cp_aero_rated * eff_rated
             P_rated = P_rated
 
@@ -545,7 +545,7 @@ class ComputePowerCurve(ExplicitComponent):
                     myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_i_rpm], [pitch_i], coefficients=False)
                     P_aero_i = float(myout["P"])
                     # P_i,_  = compute_P_and_eff(P_aero_i.flatten(), P_rated, Omega_i_rpm, driveType, driveEta)
-                    eff_i = PchipInterpolator(lss_rpm, driveEta)(Omega_i_rpm)
+                    eff_i = np.interp(Omega_i_rpm, lss_rpm, driveEta)
                     P_i = float(P_aero_i * eff_i)
                     T_i = float(myout["T"])
                     return 1e-4 * (P_i - P_rated), 1e-4 * (T_i - max_T)
@@ -581,7 +581,7 @@ class ComputePowerCurve(ExplicitComponent):
                     Cq_aero_rated,
                     Cm_aero_rated,
                 ) = [float(myout[key]) for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]]
-                eff_rated = PchipInterpolator(lss_rpm, driveEta)(Omega_rpm_rated)
+                eff_rated = np.interp(Omega_rpm_rated, lss_rpm, driveEta)
                 Cp_rated = Cp_aero_rated * eff_rated
                 P_rated = P_rated
 
@@ -687,7 +687,7 @@ class ComputePowerCurve(ExplicitComponent):
                 myout[key] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
             ]
             # P[i], eff[i] = compute_P_and_eff(P_aero[i], P_rated, Omega_rpm[i], driveType, driveEta)
-            eff[i] = PchipInterpolator(lss_rpm, driveEta)(Omega_rpm[i])
+            eff[i] = np.interp(Omega_rpm[i], lss_rpm, driveEta)
             P[i] = P_aero[i] * eff[i]
             Cp[i] = Cp_aero[i] * eff[i]
 
@@ -699,7 +699,7 @@ class ComputePowerCurve(ExplicitComponent):
             def rated_power_dist(pitch_i, Uhub_i, Omega_rpm_i):
                 myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_rpm_i], [pitch_i], coefficients=False)
                 P_aero_i = myout["P"]
-                eff_i = PchipInterpolator(lss_rpm, driveEta)(Omega_rpm_i)
+                eff_i = np.interp(Omega_rpm_i, lss_rpm, driveEta)
                 P_i = P_aero_i * eff_i
                 return 1e-4 * (P_i - P_rated)
 
@@ -730,7 +730,7 @@ class ComputePowerCurve(ExplicitComponent):
                     P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [
                         myout[key] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
                     ]
-                    eff[i] = PchipInterpolator(lss_rpm, driveEta)(Omega_rpm[i])
+                    eff[i] = np.interp(Omega_rpm[i], lss_rpm, driveEta)
                     P[i] = P_aero[i] * eff[i]
                     Cp[i] = Cp_aero[i] * eff[i]
                     # P[i]        = P_rated
@@ -756,7 +756,7 @@ class ComputePowerCurve(ExplicitComponent):
                         P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [
                             myout[key] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
                         ]
-                        eff[i] = PchipInterpolator(lss_rpm, driveEta)(Omega_rpm[i])
+                        eff[i] = np.interp(Omega_rpm[i], lss_rpm, driveEta)
                         P[i] = P_aero[i] * eff[i]
                         Cp[i] = Cp_aero[i] * eff[i]
                         # P[i]        = P_rated
@@ -1030,7 +1030,7 @@ def compute_P_and_eff(aeroPower, ratedPower, Omega_rpm, drivetrainType, drivetra
         eff = np.maximum(eff, 1e-3)
     else:
         # Use table lookup from rpm to calculate total efficiency
-        eff = PchipInterpolator(drivetrainEff[:, 0], drivetrainEff[:, 1])(Omega_rpm)
+        eff = np.interp(Omega_rpm, drivetrainEff[:, 0], drivetrainEff[:, 1])
 
     return aeroPower * eff, eff
 

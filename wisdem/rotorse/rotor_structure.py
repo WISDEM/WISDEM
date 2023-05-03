@@ -3,7 +3,6 @@ import logging
 import numpy as np
 from openmdao.api import Group, ExplicitComponent
 from scipy.interpolate import interp1d
-from scipy.interpolate import PchipInterpolator
 
 import wisdem.ccblade._bem as _bem
 import wisdem.commonse.utilities as util
@@ -941,12 +940,12 @@ class DesignConstraints(ExplicitComponent):
         max_strainU_te = inputs["max_strainU_te"]
         max_strainL_te = inputs["max_strainL_te"]
 
-        # outputs['constr_min_strainU_spar'] = abs(PchipsInterpolator(s, strainU_spar)(s_opt_spar_cap_ss)) / abs(min_strainU_spar)
-        # outputs['constr_min_strainL_spar'] = abs(PchipsInterpolator(s, strainL_spar)(s_opt_spar_cap_ps)) / abs(min_strainL_spar)
-        outputs["constr_max_strainU_spar"] = abs(PchipInterpolator(s, strainU_spar)(s_opt_spar_cap_ss)) / max_strainU_spar
-        outputs["constr_max_strainL_spar"] = abs(PchipInterpolator(s, strainL_spar)(s_opt_spar_cap_ps)) / max_strainL_spar
-        outputs["constr_max_strainU_te"] = abs(PchipInterpolator(s, strainU_te)(s_opt_te_ss)) / max_strainU_te
-        outputs["constr_max_strainL_te"] = abs(PchipInterpolator(s, strainL_te)(s_opt_te_ps)) / max_strainL_te
+        # outputs['constr_min_strainU_spar'] = abs(np.interp(s_opt_spar_cap_ss, s, strainU_spar)) / abs(min_strainU_spar)
+        # outputs['constr_min_strainL_spar'] = abs(np.interp(s_opt_spar_cap_ps, s, strainL_spar)) / abs(min_strainL_spar)
+        outputs["constr_max_strainU_spar"] = abs(np.interp(s_opt_spar_cap_ss, s, strainU_spar)) / max_strainU_spar
+        outputs["constr_max_strainL_spar"] = abs(np.interp(s_opt_spar_cap_ps, s, strainL_spar)) / max_strainL_spar
+        outputs["constr_max_strainU_te"] = abs(np.interp(s_opt_te_ss, s, strainU_te)) / max_strainU_te
+        outputs["constr_max_strainL_te"] = abs(np.interp(s_opt_te_ps, s, strainL_te)) / max_strainL_te
 
         # Constraints on blade frequencies
         threeP = discrete_inputs["blade_number"] * inputs["rated_Omega"] / 60.0

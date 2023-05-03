@@ -4,7 +4,6 @@ import logging
 import numpy as np
 import openmdao.api as om
 from scipy.optimize import brentq
-from scipy.interpolate import PchipInterpolator
 
 from wisdem.commonse.utilities import arc_length
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
@@ -3508,8 +3507,8 @@ class BladeCost(om.ExplicitComponent):
 
                 # Root volume
                 if orth[i_mat]:
-                    layer_volume_span_interp_ss = PchipInterpolator(s, layer_volume_span_ss[i_lay, :])(root_preform_length)
-                    layer_volume_span_interp_ps = PchipInterpolator(s, layer_volume_span_ps[i_lay, :])(root_preform_length)
+                    layer_volume_span_interp_ss = np.interp(root_preform_length, s, layer_volume_span_ss[i_lay, :])
+                    layer_volume_span_interp_ps = np.interp(root_preform_length, s, layer_volume_span_ps[i_lay, :])
                     add_volume_ss = np.trapz(
                         np.r_[layer_volume_span_ss[i_lay, 0], layer_volume_span_interp_ss],
                         np.r_[0, blade_length * root_preform_length],
@@ -3522,8 +3521,8 @@ class BladeCost(om.ExplicitComponent):
                     volume_root_preform_ps += add_volume_ps
                     mass_root_preform_ss += add_volume_ss * rho_mat[i_mat]
                     mass_root_preform_ps += add_volume_ps * rho_mat[i_mat]
-                    width_ss_interp = PchipInterpolator(s, width_ss)(root_preform_length)
-                    width_ps_interp = PchipInterpolator(s, width_ps)(root_preform_length)
+                    width_ss_interp = np.interp(root_preform_length, s, width_ss)
+                    width_ps_interp = np.interp(root_preform_length, s, width_ps)
                     area_root_ss = np.trapz(
                         np.r_[width_ss[0], width_ss_interp], np.r_[0, blade_length * root_preform_length]
                     )
@@ -3680,11 +3679,11 @@ class BladeCost(om.ExplicitComponent):
         ps_area_w_flanges = ps_area + 2.0 * flange_width * blade_length
         spar_cap_ss_area = np.trapz(spar_cap_width_ss, blade_length * s)
         spar_cap_ps_area = np.trapz(spar_cap_width_ps, blade_length * s)
-        sect_perimeter_ss_interp = PchipInterpolator(s, sect_perimeter_ss)(root_preform_length)
+        sect_perimeter_ss_interp = np.interp(root_preform_length, s, sect_perimeter_ss)
         ss_area_root = np.trapz(
             np.r_[sect_perimeter_ss[0], sect_perimeter_ss_interp], np.r_[0, blade_length * root_preform_length]
         )
-        sect_perimeter_ps_interp = PchipInterpolator(s, sect_perimeter_ps)(root_preform_length)
+        sect_perimeter_ps_interp = np.interp(root_preform_length, s, sect_perimeter_ps)
         ps_area_root = np.trapz(
             np.r_[sect_perimeter_ps[0], sect_perimeter_ps_interp], np.r_[0, blade_length * root_preform_length]
         )
