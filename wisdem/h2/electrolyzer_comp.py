@@ -33,10 +33,9 @@ class ElectrolyzerModel(om.ExplicitComponent):
         # Set electrolyzer parameters from model inputs
         power_signal = inputs["p_wind"]
         lcoe = inputs["lcoe"][0]
-        system_rating_MW = inputs["system_rating_MW"][0]
 
         if self.options["h2_opt_options"]["control"]["system_rating_MW"]["flag"]:
-            self.options["h2_modeling_options"]["electrolyzer"]["control"]["system_rating_MW"] = system_rating_MW
+            self.options["h2_modeling_options"]["electrolyzer"]["control"]["system_rating_MW"] = inputs["system_rating_MW"][0]
 
         h2_prod, max_curr_density, lcoh = run_lcoh(
             self.options["h2_modeling_options"],
