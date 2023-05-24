@@ -56,6 +56,7 @@ properties:
             drivetrain:
                 type: string
                 default: geared
+                enum: [Geared, geared, Direct_drive, Direct_Drive, Direct, direct_drive, direct, pm_direct_drive, Constant_eff]
                 description: String characterizing the drivetrain configuration
             rotor_orientation:
                 type: string
@@ -399,32 +400,112 @@ properties:
                         # TODO
             hub:
                 type: object
+                required:
+                    - diameter
+                    - cone_angle
                 properties:
-                    outer_shape_bem:
-                        type: object
-                        required:
-                            - diameter
-                            - cone_angle
-                            - drag_coefficient
-                        properties:
-                            diameter:
-                                type: number
-                                description: Diameter of the hub measured at the blade root positions.
-                                unit: meter
-                                minimum: 0.
-                                maximum: 10.
-                            cone_angle:
-                                type: number
-                                description: Rotor precone angle, defined positive for both upwind and downwind rotors.
-                                unit: rad
-                                minimum: 0
-                                maximum: 0.4
-                            drag_coefficient:
-                                type: number
-                                description: Equivalent drag coefficient to compute the aerodynamic forces generated on the hub.
-                                unit: none
-                                minimum: 0
-                                maximum: 2.
+                    diameter:
+                        type: number
+                        description: Diameter of the hub measured at the blade root positions.
+                        unit: meter
+                        minimum: 0.
+                        maximum: 20.
+                    cone_angle:
+                        type: number
+                        description: Rotor precone angle, defined positive for both upwind and downwind rotors.
+                        unit: rad
+                        minimum: 0
+                        maximum: 0.4
+                    drag_coefficient:
+                        type: number
+                        description: Equivalent drag coefficient to compute the aerodynamic forces generated on the hub.
+                        default: 0.5
+                        unit: none
+                        minimum: 0
+                        maximum: 2.
+                    flange_t2shell_t:
+                        type: number
+                        description: Ratio of flange thickness to shell thickness
+                        default: 6.
+                        unit: none
+                        minimum: 0
+                        maximum: 20.
+                    flange_OD2hub_D:
+                        type: number
+                        description: Ratio of flange outer diameter to hub diameter
+                        default: 0.6
+                        unit: none
+                        minimum: 0
+                        maximum: 10.
+                    flange_ID2OD:
+                        type: number
+                        description: Check this
+                        unit: none
+                        default: 0.8
+                        minimum: 0
+                        maximum: 10.
+                    hub_blade_spacing_margin:
+                        type: number
+                        description: Ratio of flange thickness to shell thickness
+                        default: 1.2
+                        unit: none
+                        minimum: 0
+                        maximum: 20.
+                    hub_stress_concentration:
+                        type: number
+                        description: Stress concentration factor. Stress concentration occurs at all fillets,notches, lifting lugs, hatches and are accounted for by assigning a stress concentration factor
+                        unit: none
+                        default: 3.
+                        minimum: 0
+                        maximum: 20.
+                    n_front_brackets:
+                        type: integer
+                        description: Number of front spinner brackets
+                        unit: none
+                        default: 5
+                        minimum: 0
+                        maximum: 20
+                    n_rear_brackets:
+                        type: integer
+                        description: Number of rear spinner brackets
+                        unit: none
+                        default: 5
+                        minimum: 0
+                        maximum: 20
+                    clearance_hub_spinner:
+                        type: number
+                        description: Clearance between spinner and hub
+                        default: 0.5
+                        unit: m
+                        minimum: 0
+                        maximum: 20.
+                    spin_hole_incr:
+                        type: number
+                        description: Ratio between access hole diameter in the spinner and blade root diameter. Typical value 1.2
+                        unit: none
+                        default: 1.2
+                        minimum: 0
+                        maximum: 20.
+                    pitch_system_scaling_factor:
+                        type: number
+                        description: Scaling factor to tune the total mass (0.54 is recommended for modern designs)
+                        unit: none
+                        default: 0.54
+                        minimum: 0
+                        maximum: 2.
+                    spinner_gust_ws:
+                        type: number
+                        description: Extreme gust wind speed used to size the hub
+                        unit: m/s
+                        default: 70.
+                        minimum: 0
+                        maximum: 100.
+                    hub_material:
+                        type: string
+                        description: Material of the shell of the hub
+                    spinner_material:
+                        type: string
+                        description: Material of the spinner
                     elastic_properties_mb:
                         type: object
                         required:
@@ -2013,7 +2094,6 @@ properties:
                                     unit: Newton
                                     description: Maximum vertical load (perpendicular to the sea floor) that the anchor can support
                                     minimum: 0.0
-
     airfoils:
         type: array
         description: Database of airfoils
@@ -2443,7 +2523,6 @@ properties:
                         unit: rad/s
                         minimum: 0
                         default: 10.
-
     environment:
         type: object
         required:
@@ -3108,7 +3187,7 @@ definitions:
                     description: Name of the layer to lock the edge
         axis_coordinates:
             type: object
-            description: The reference system is located at blade root, with z aligned with the pitch axis, x pointing towards the suction sides of the airfoils (standard prebend will be negative) and y pointing to the trailing edge (standard sweep will be positive)
+            description: The reference system is used across wind turbine components. For the blade, the reference system is located at blade root, with z aligned with the pitch axis, x pointing towards the suction sides of the airfoils (standard prebend will be negative) and y pointing to the trailing edge (standard sweep will be positive). For tower and monopile, the reference system is located at tower/monopile base, with z aligned along the height pointing upwards, x aligned with the main wind direction, and y pointing to the side following the right hand rule.
             required:
                 - x
                 - y
