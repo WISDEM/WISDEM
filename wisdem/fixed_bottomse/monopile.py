@@ -728,7 +728,7 @@ class MonopileSE(om.Group):
             ("wall_thickness", "monopile_wall_thickness"),
         ]
         if n_height > 2:
-            promlist + ["thickness_slope"]
+            promlist += ["thickness_slope"]
 
         temp_opt = mod_opt.copy()
         temp_opt["n_height"] = [n_height]
