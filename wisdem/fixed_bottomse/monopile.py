@@ -849,6 +849,7 @@ class MonopileSE(om.Group):
                 "tower_torsion_modes",
                 "f1",
                 "f2",
+                "water_depth"
             ],
         )
 
