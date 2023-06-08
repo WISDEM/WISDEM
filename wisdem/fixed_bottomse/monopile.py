@@ -546,7 +546,7 @@ class MonopileFrame(om.ExplicitComponent):
 
         # Note, need len()-1 because Frame3DD crashes if mass add at end
         if tower_flag:
-            midx = np.array([n, n_mono, 1], dtype=np.int_)
+            midx = np.array([n-1, n_mono, 1], dtype=np.int_)
             m_add = np.r_[m_rna, m_trans, m_grav]
             mI = np.c_[I_rna, I_trans, I_grav]
             mrho = np.c_[cg_rna, np.zeros(3), np.zeros(3)]
@@ -574,7 +574,7 @@ class MonopileFrame(om.ExplicitComponent):
 
         # ------------------------------------
         # Debugging
-        # self.frame.write('monopile_debug.3dd')
+        self.frame.write('monopile_debug.3dd')
         # -----------------------------------
         # run the analysis
         displacements, forces, rxns, internalForces, mass, modal = self.frame.run()
