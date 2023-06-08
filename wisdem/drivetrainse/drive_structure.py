@@ -1032,7 +1032,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         outputs["constr_mb1_defl"] = np.abs(outputs["mb1_angle"] / inputs["mb1_max_defl_ang"])
         outputs["constr_mb2_defl"] = np.abs(outputs["mb2_angle"] / inputs["mb2_max_defl_ang"])
         outputs["stator_deflection"] = stator_deflection.max()
-        outputs["stator_angle"] = stator_angle.max()
+        outputs["stator_angle"] = np.abs(stator_angle).max()
         outputs["constr_stator_deflection"] = gamma * outputs["stator_deflection"] / stator_defl_allow
         outputs["constr_stator_angle"] = gamma * outputs["stator_angle"] / stator_angle_allow
 
