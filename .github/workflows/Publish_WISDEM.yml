@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Setup GNU Fortran
-        uses: modflowpy/install-gfortran-action@v1
+        uses: awvwgk/setup-fortran@main
               
       - name: Checkout
         uses: actions/checkout@v3
