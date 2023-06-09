@@ -548,6 +548,12 @@ class WT_RNTA(om.Group):
             self.connect("monopile.gravity_foundation_mass", "fixedse.gravity_foundation_mass")
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.nodes_xyz", "fixedse.tower_xyz")
+                self.connect("towerse.d_full", "fixedse.tower_d_full")
+                self.connect("towerse.t_full", "fixedse.tower_t_full")
+                self.connect("towerse.sigma_y_full", "fixedse.tower_sigma_y_full")
+                self.connect("towerse.qdyn", "fixedse.tower_qdyn")
+                self.connect("tower_grid.height", "fixedse.tower_bending_height")
+
                 for var in ["A", "Asx", "Asy", "Ixx", "Iyy", "J0", "rho", "E", "G"]:
                     self.connect(f"towerse.section_{var}", f"fixedse.tower_{var}")
                 for var in ["Px", "Py", "Pz"]:

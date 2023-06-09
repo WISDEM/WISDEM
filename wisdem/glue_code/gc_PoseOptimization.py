@@ -1293,8 +1293,10 @@ class PoseOptimization(object):
             else:
                 raise Exception("thrust coefficient constraint requested but now upper or lower constraint found.")
 
-        # Tower contraints
+        # Tower and monopile contraints
         tower_constr = self.opt["constraints"]["tower"]
+        monopile_constr = self.opt["constraints"]["monopile"]
+        
         if tower_constr["height_constraint"]["flag"]:
             wt_opt.model.add_constraint(
                 "towerse.height_constraint",
@@ -1302,13 +1304,13 @@ class PoseOptimization(object):
                 upper=tower_constr["height_constraint"]["upper_bound"],
             )
 
-        if tower_constr["stress"]["flag"]:
+        if tower_constr["stress"]["flag"] and not monopile_constr["stress"]["flag"]:
             wt_opt.model.add_constraint("towerse.post.constr_stress", upper=1.0)
 
-        if tower_constr["global_buckling"]["flag"]:
+        if tower_constr["global_buckling"]["flag"] and not monopile_constr["global_buckling"]["flag"]:
             wt_opt.model.add_constraint("towerse.post.constr_global_buckling", upper=1.0)
 
-        if tower_constr["shell_buckling"]["flag"]:
+        if tower_constr["shell_buckling"]["flag"] and not monopile_constr["shell_buckling"]["flag"]:
             wt_opt.model.add_constraint("towerse.post.constr_shell_buckling", upper=1.0)
 
         if tower_constr["d_to_t"]["flag"]:
@@ -1345,16 +1347,19 @@ class PoseOptimization(object):
                 upper=tower_constr["frequency_1"]["upper_bound"],
             )
 
-        # Monopile constraints
-        monopile_constr = self.opt["constraints"]["monopile"]
-
-        if monopile_constr["stress"]["flag"]:
+        if monopile_constr["stress"]["flag"] and tower_constr["stress"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.post_monopile_tower.constr_stress", upper=1.0)
+        elif monopile_constr["stress"]["flag"]:
             wt_opt.model.add_constraint("fixedse.post.constr_stress", upper=1.0)
 
-        if monopile_constr["global_buckling"]["flag"]:
+        if monopile_constr["global_buckling"]["flag"] and tower_constr["global_buckling"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.post_monopile_tower.constr_global_buckling", upper=1.0)
+        elif monopile_constr["global_buckling"]["flag"]:
             wt_opt.model.add_constraint("fixedse.post.constr_global_buckling", upper=1.0)
 
-        if monopile_constr["shell_buckling"]["flag"]:
+        if monopile_constr["shell_buckling"]["flag"] and tower_constr["shell_buckling"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.post_monopile_tower.constr_shell_buckling", upper=1.0)
+        elif monopile_constr["shell_buckling"]["flag"]:
             wt_opt.model.add_constraint("fixedse.post.constr_shell_buckling", upper=1.0)
 
         if monopile_constr["d_to_t"]["flag"]:
