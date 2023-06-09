@@ -469,6 +469,10 @@ properties:
                 default: {}
                 properties:
                     flag: *flag
+                    rating_equals_turbine_rating: 
+                        type: boolean
+                        default: False
+                        description: if True then the electrolyzer rating will be connected to, and inherit from, the turbine rating
                     wind_filename:
                         type: string
                         description: Filename for wind history, should either be formatted as TurbSim (.bts) OR as a simple wind timeseries (.csv).

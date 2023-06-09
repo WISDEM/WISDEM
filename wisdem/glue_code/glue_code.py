@@ -857,6 +857,10 @@ class WindPark(om.Group):
             # Connect LCOE for input to LCOH model
             self.connect("financese.lcoe", "h2.lcoe")
 
+            # Base electrolyzer rating on the turbine rating if desired
+            if modeling_options["WISDEM"]["HydrogenProduction"]["rating_equals_turbine_rating"]:
+                self.connect("configuration.rated_power", "h2.system_rating_MW")
+
             # If no power input file supplied, connect computed power curve spline
             if "power_filename" not in modeling_options["WISDEM"]["HydrogenProduction"]:
                 self.connect("rotorse.rp.powercurve.V_spline", "h2.V_spline")

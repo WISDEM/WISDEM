@@ -19,11 +19,13 @@ class ElectrolyzerModel(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("h2_modeling_options")
         self.options.declare("h2_opt_options")
+        self.options.declare("modeling_options")
 
     def setup(self):
         self.add_input("p_wind", shape_by_conn=True, units="W")
         self.add_input("lcoe", units="USD/kW/h")
-        if self.options["h2_opt_options"]["control"]["system_rating_MW"]["flag"]:
+        if self.options["h2_opt_options"]["control"]["system_rating_MW"]["flag"] \
+            or self.options["modeling_options"]["rating_equals_turbine_rating"]:
             self.add_input("system_rating_MW", units="MW")
         self.add_output("h2_produced", units="kg")
         self.add_output("max_curr_density", units="A/cm**2")
@@ -34,7 +36,8 @@ class ElectrolyzerModel(om.ExplicitComponent):
         power_signal = inputs["p_wind"]
         lcoe = inputs["lcoe"][0]
 
-        if self.options["h2_opt_options"]["control"]["system_rating_MW"]["flag"]:
+        if self.options["h2_opt_options"]["control"]["system_rating_MW"]["flag"] \
+            or self.options["modeling_options"]["rating_equals_turbine_rating"]:
             self.options["h2_modeling_options"]["electrolyzer"]["control"]["system_rating_MW"] = inputs["system_rating_MW"][0]
 
         h2_prod, max_curr_density, lcoh = run_lcoh(

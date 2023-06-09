@@ -986,6 +986,10 @@ properties:
                                         default: 5.0
                                         minimum: 0.0
                                         unit: MW
+                                    scaler:
+                                        type: number
+                                        default: 1.0
+                                        
     constraints:
         type: object
         default: {}

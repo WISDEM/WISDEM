@@ -50,6 +50,7 @@ class HydrogenProduction(om.Group):
         
         h2_model = ElectrolyzerModel(
             h2_modeling_options=h2_modeling_options,
-            h2_opt_options=h2_opt_options
+            h2_opt_options=h2_opt_options,
+            modeling_options=h2_options
         )
         self.add_subsystem("electrolyzer", h2_model, promotes=["*"])

@@ -857,6 +857,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "Tower freqs": ["towerse.tower.structural_frequencies", "Hz"],
         "Monopile/jacket freqs": ["fixedse.structural_frequencies", "Hz"],
         "Floating Tower freqs": ["floatingse.tower_freqs", "Hz"],
+        "Electrolyzer rating": ["h2.system_rating_MW", "MW"],
         "H2 Produced": ["h2.h2_produced", "kg"],
         "LCOH": ["h2.lcoh", "USD/kg"],
     }
