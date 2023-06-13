@@ -527,7 +527,7 @@ class MonopileFrame(om.ExplicitComponent):
                 rna_F = inputs["rna_F"][:, k]
                 rna_M = inputs["rna_M"][:, k]
                 load.changePointLoads(
-                    np.array([n], dtype=np.int_),  # -1 b/c same reason as above
+                    np.array([n-1], dtype=np.int_),  # -1 b/c same reason as above
                     np.array([rna_F[0]]).flatten(),
                     np.array([rna_F[1]]).flatten(),
                     np.array([rna_F[2]]).flatten(),
@@ -545,7 +545,7 @@ class MonopileFrame(om.ExplicitComponent):
                 turb_F = inputs["turbine_F"][:, k]
                 turb_M = inputs["turbine_M"][:, k]
                 load.changePointLoads(
-                    np.array([n], dtype=np.int_),  # -1 b/c same reason as above
+                    np.array([n-1], dtype=np.int_),  # -1 b/c same reason as above
                     np.array([turb_F[0]]).flatten(),
                     np.array([turb_F[1]]).flatten(),
                     np.array([turb_F[2]]).flatten(),
