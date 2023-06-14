@@ -223,7 +223,7 @@ properties:
                                 type: number
                                 description: Partial safety factor for hub sizing
                                 minimum: 1.0
-                                maximum: 5.0
+                                maximum: 7.0
                                 default: 2.0
                                 unit: none
                             spinner_gamma:
