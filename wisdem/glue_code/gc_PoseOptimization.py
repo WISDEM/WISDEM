@@ -577,38 +577,6 @@ class PoseOptimization(object):
                 "blade.opt_var.af_position", indices=indices_af, lower=lb_af[indices_af], upper=ub_af[indices_af]
             )
 
-        spar_cap_ss_options = blade_opt["structure"]["spar_cap_ss"]
-        if spar_cap_ss_options["flag"]:
-            if blade_opt["structure"]["spar_cap_ss"]["index_end"] > blade_opt["structure"]["spar_cap_ss"]["n_opt"]:
-                raise Exception(
-                    "Check the analysis options yaml, index_end of the blade spar_cap_ss is higher than the number of DVs n_opt"
-                )
-            elif blade_opt["structure"]["spar_cap_ss"]["index_end"] == 0:
-                blade_opt["structure"]["spar_cap_ss"]["index_end"] = blade_opt["structure"]["spar_cap_ss"]["n_opt"]
-            indices_spar_cap_ss = range(spar_cap_ss_options["index_start"], spar_cap_ss_options["index_end"])
-            s_opt_spar_cap_ss = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"])
-            spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"].lower()
-            layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
-            n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
-            for i in range(n_layers):
-                if layer_name[i].lower() == spar_cap_ss_name:
-                    spar_cap_ss_interpolator = PchipInterpolator(
-                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
-                        extrapolate=False
-                    )
-                    init_spar_cap_ss_opt = spar_cap_ss_interpolator(s_opt_spar_cap_ss)
-                    for j in range(len(init_spar_cap_ss_opt)):
-                        if np.isnan(init_spar_cap_ss_opt[j]):
-                            init_spar_cap_ss_opt[j] = 0.
-            wt_opt.model.add_design_var(
-                "blade.opt_var.spar_cap_ss_opt",
-                indices=indices_spar_cap_ss,
-                lower=init_spar_cap_ss_opt[indices_spar_cap_ss] * spar_cap_ss_options["max_decrease"],
-                upper=init_spar_cap_ss_opt[indices_spar_cap_ss] * spar_cap_ss_options["max_increase"],
-                ref=1.0e-2,
-            )
-
         L_D_options = blade_opt["aero_shape"]["L/D"]
         if L_D_options["flag"]:
             n_opt = L_D_options["n_opt"]
@@ -689,6 +657,44 @@ class PoseOptimization(object):
                 upper=z_options["upper_bound"],
             )
 
+        spar_cap_ss_options = blade_opt["structure"]["spar_cap_ss"]
+        if spar_cap_ss_options["flag"]:
+            if blade_opt["structure"]["spar_cap_ss"]["index_end"] > blade_opt["structure"]["spar_cap_ss"]["n_opt"]:
+                raise Exception(
+                    "Check the analysis options yaml, index_end of the blade spar_cap_ss is higher than the number of DVs n_opt"
+                )
+            elif blade_opt["structure"]["spar_cap_ss"]["index_end"] == 0:
+                blade_opt["structure"]["spar_cap_ss"]["index_end"] = blade_opt["structure"]["spar_cap_ss"]["n_opt"]
+            indices_spar_cap_ss = range(spar_cap_ss_options["index_start"], spar_cap_ss_options["index_end"])
+            s_opt_spar_cap_ss = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"])
+            spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"].lower()
+            layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
+            n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
+            spar_cap_ss_found = False
+            for i in range(n_layers):
+                if layer_name[i].lower() == spar_cap_ss_name:
+                    spar_cap_ss_found = True
+                    spar_cap_ss_interpolator = PchipInterpolator(
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                        extrapolate=False
+                    )
+                    init_spar_cap_ss_opt = spar_cap_ss_interpolator(s_opt_spar_cap_ss)
+                    for j in range(len(init_spar_cap_ss_opt)):
+                        if np.isnan(init_spar_cap_ss_opt[j]):
+                            init_spar_cap_ss_opt[j] = 0.
+            if not spar_cap_ss_found:
+                raise Exception(
+                        "Please set the spar cap name for suction side among the RotorSE modeling options"
+                    )
+            wt_opt.model.add_design_var(
+                "blade.opt_var.spar_cap_ss_opt",
+                indices=indices_spar_cap_ss,
+                lower=init_spar_cap_ss_opt[indices_spar_cap_ss] * spar_cap_ss_options["max_decrease"],
+                upper=init_spar_cap_ss_opt[indices_spar_cap_ss] * spar_cap_ss_options["max_increase"],
+                ref=1.0e-2,
+            )
+
         # Only add the pressure side design variables if we do set
         # `equal_to_suction` as False in the optimization yaml.
         spar_cap_ps_options = blade_opt["structure"]["spar_cap_ps"]
@@ -704,8 +710,10 @@ class PoseOptimization(object):
             spar_cap_ps_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ps"]
             layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
             n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
+            spar_cap_ps_found = False
             for i in range(n_layers):
                 if layer_name[i] == spar_cap_ps_name:
+                    spar_cap_ps_found = True
                     spar_cap_ps_interpolator = PchipInterpolator(
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
@@ -715,6 +723,10 @@ class PoseOptimization(object):
                     for j in range(len(init_spar_cap_ps_opt)):
                         if np.isnan(init_spar_cap_ps_opt[j]):
                             init_spar_cap_ps_opt[j] = 0.
+            if not spar_cap_ps_found:
+                raise Exception(
+                        "Please set the spar cap name for pressure side among the RotorSE modeling options"
+                    )
             wt_opt.model.add_design_var(
                 "blade.opt_var.spar_cap_ps_opt",
                 indices=indices_spar_cap_ps,
