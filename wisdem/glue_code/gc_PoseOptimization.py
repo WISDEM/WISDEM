@@ -1599,6 +1599,7 @@ class PoseOptimization(object):
                 layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
                 n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
                 ss_before_ps = False
+                spar_cap_ps_found = False
                 for i in range(n_layers):
                     if layer_name[i].lower() == spar_cap_ss_name:
                         spar_cap_ss_interpolator = PchipInterpolator(
@@ -1615,6 +1616,7 @@ class PoseOptimization(object):
                                 init_spar_cap_ss_opt[j] = 0.
                         ss_before_ps = True
                     elif layer_name[i].lower() == spar_cap_ps_name:
+                        spar_cap_ps_found = True
                         if (
                             self.opt["design_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
                             == False
@@ -1633,7 +1635,7 @@ class PoseOptimization(object):
                                     init_spar_cap_ps_opt[j] = 0.
                         else:
                             init_spar_cap_ps_opt = init_spar_cap_ss_opt
-                if not ss_before_ps:
+                if not ss_before_ps or not spar_cap_ps_found:
                     raise Exception(
                         "Please set the spar cap names for suction and pressure sides among the RotorSE modeling options"
                     )
