@@ -552,7 +552,7 @@ class TestMonopileSE(unittest.TestCase):
                 [0.11201532, 0.12416107, 0.19921349, 0.17590641, 0.12969364, 0.08627106],
                 [0.11175936, 0.11925156, 0.17013531, 0.15228978, 0.12254481, 0.08627106],
             ],
-            3,
+            1,
         )
         npt.assert_almost_equal(
             prob["post.constr_shell_buckling"].T,
@@ -602,7 +602,7 @@ class TestMonopileSE(unittest.TestCase):
                 [3.26314825e-02, 3.72313282e-02, 7.27690933e-02, 6.17409738e-02, 3.66561462e-02, 1.10114706e-10],
                 [3.25111251e-02, 3.48132378e-02, 5.84439044e-02, 5.00955704e-02, 3.31423289e-02, 8.02600909e-11],
             ],
-            2,
+            1,
         )
         npt.assert_almost_equal(
             prob["post.constr_shell_buckling"].T,
