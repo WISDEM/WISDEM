@@ -37,16 +37,16 @@ constraints:
         shell_buckling:
             flag: True
         d_to_t:
-            flag: True
+            flag: False
             lower_bound: 120.0
             upper_bound: 2000.0
         taper:
-            flag: True
+            flag: False
             lower_bound: 0.2
         slope:
             flag: True
         frequency_1:
-            flag: True
+            flag: False
             lower_bound: 0.13
             upper_bound: 0.40
     monopile:
@@ -57,18 +57,20 @@ constraints:
         shell_buckling:
             flag: True
         d_to_t:
-            flag: True
+            flag: False
             lower_bound: 120.0
             upper_bound: 2000.0
         taper:
-            flag: True
+            flag: False
             lower_bound: 0.2
         slope:
+            flag: True
+        thickness_slope:
             flag: True
         frequency_1:
             flag: True
             lower_bound: 0.13
-            upper_bound: 0.40
+            upper_bound: 0.20
         pile_depth:
             flag: True
             lower_bound: 0.0
