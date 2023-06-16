@@ -31,7 +31,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
     wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
 
-    if "folder_output" in overridden_values:
+    if (overridden_values is not None) and ("folder_output" in overridden_values):
         opt_options["general"]["folder_output"] = overridden_values.pop("folder_output")
 
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
