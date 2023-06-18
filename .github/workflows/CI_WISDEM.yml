@@ -11,7 +11,7 @@ jobs:
 
     defaults:
         run:
-            shell: bash -l {0}
+            shell: bash -el {0}
 
 
     strategy:
@@ -24,14 +24,16 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v3
 
-      # Official way to do miniconda, but it messes with the worker environment and shell
-      - name: Install miniconda
+      - name: Install conda/mamba
         uses: conda-incubator/setup-miniconda@v2
         # https://github.com/marketplace/actions/setup-miniconda
         with:
-          miniconda-version: "latest"
-          channels: conda-forge
-          auto-update-conda: true
+          #miniconda-version: "latest"
+          #miniforge-version: "latest"
+          mamba-version: "*"
+          channels: conda-forge,defaults
+          channel-priority: true          
+          #auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           environment-file: environment.yml
           activate-environment: test
@@ -41,14 +43,14 @@ jobs:
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         run: |
-          conda install -y petsc4py mpi4py gfortran
-          conda info -e
+          mamba install -y petsc4py mpi4py gfortran
+          mamba info -e
 
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
         run: |
-          conda install -y m2w64-toolchain libpython
+          mamba install -y m2w64-toolchain libpython
 
       # Debugging session
       #- name: Setup tmate session
