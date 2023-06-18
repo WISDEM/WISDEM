@@ -4,10 +4,11 @@ import traceback
 import pandas as pd
 
 from wisdem.landbosse.model.ErectionCost import ErectionCost
-from wisdem.landbosse.model.CollectionCost import Array, Cable, ArraySystem
+from wisdem.landbosse.model.CollectionCost import ArraySystem
 from wisdem.landbosse.model.FoundationCost import FoundationCost
 from wisdem.landbosse.model.ManagementCost import ManagementCost
 from wisdem.landbosse.model.SubstationCost import SubstationCost
+from wisdem.landbosse.model.TransportCost import TransportCost
 from wisdem.landbosse.model.DevelopmentCost import DevelopmentCost
 from wisdem.landbosse.model.GridConnectionCost import GridConnectionCost
 from wisdem.landbosse.model.SitePreparationCost import SitePreparationCost
@@ -70,6 +71,11 @@ class Manager:
             )
             substation_cost.run_module()
 
+            transport_cost = TransportCost(
+                input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name
+            )
+            transport_cost.run_module()
+            
             transdist_cost = GridConnectionCost(
                 input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name
             )
@@ -120,6 +126,7 @@ class Manager:
                     self.output_dict["total_road_cost"],
                     self.output_dict["total_transdist_cost"],
                     self.output_dict["total_substation_cost"],
+                    self.output_dict["total_transport_cost"],
                     self.output_dict["total_foundation_cost"],
                     self.output_dict["total_erection_cost"],
                     self.output_dict["total_development_cost"],
@@ -132,8 +139,8 @@ class Manager:
                 input_dict=self.input_dict, output_dict=self.output_dict, project_name=project_name
             )
             management_cost.run_module()
-
             return 0
+        
         except Exception:
             traceback.print_exc()
             return 1  # module did not run successfully
