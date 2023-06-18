@@ -761,15 +761,14 @@ class Blade(om.Group):
             self.connect("interp_airfoils.coord_xy_interp", "compute_coord_xy_dim.coord_xy_interp")
 
         # If the flag is true, generate the 3D x,y,z points of the outer blade shape
-        if rotorse_options["lofted_output"] == True:
-            self.add_subsystem(
-                "blade_lofted",
-                Blade_Lofted_Shape(rotorse_options=rotorse_options),
-            )
-            self.connect("compute_coord_xy_dim.coord_xy_dim", "blade_lofted.coord_xy_dim")
-            self.connect("pa.twist_param", "blade_lofted.twist")
-            self.connect("outer_shape_bem.s", "blade_lofted.s")
-            self.connect("high_level_blade_props.blade_ref_axis", "blade_lofted.ref_axis")
+        self.add_subsystem(
+            "blade_lofted",
+            Blade_Lofted_Shape(rotorse_options=rotorse_options),
+        )
+        self.connect("compute_coord_xy_dim.coord_xy_dim", "blade_lofted.coord_xy_dim")
+        self.connect("pa.twist_param", "blade_lofted.twist")
+        self.connect("outer_shape_bem.s", "blade_lofted.s")
+        self.connect("high_level_blade_props.blade_ref_axis", "blade_lofted.ref_axis")
 
         # Import blade internal structure data and remap composites on the outer blade shape
         self.add_subsystem(
@@ -1485,6 +1484,8 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
             units="m",
             desc="4D array of the s, and x, y, and z coordinates of the points describing the outer shape of the blade. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
         )
+        self.add_output("wetted_area", val=0.0, units="m**2", desc="The wetted (painted) surface area of the blade")
+        self.add_output("projected_area", val=0.0, units="m**2", desc="The projected surface area of the blade")
 
     def compute(self, inputs, outputs):
         for i in range(self.n_span):
@@ -1501,11 +1502,21 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
                 ) + np.hstack([0, inputs["ref_axis"][i, :]])
                 k = k + 1
 
-        np.savetxt(
-            "3d_xyz_nrel5mw.dat",
-            outputs["3D_shape"],
-            header="\t point number [-]\t\t\t\t x [m] \t\t\t\t\t y [m]  \t\t\t\t z [m] \t\t\t\t The coordinate system follows the BeamDyn one.",
-        )
+        # Integrate along span for surface area
+        wetted_chord = inputs["coord_xy_dim"][:,:,1].max(axis=1) - inputs["coord_xy_dim"][:,:,1].min(axis=1)
+        outputs["wetted_area"] = np.trapz(wetted_chord, inputs["ref_axis"][:,2])
+
+        projected_chord = outputs["coord_xy_dim_twisted"][:,:,1].max(axis=1) - outputs["coord_xy_dim_twisted"][:,:,1].min(axis=1)
+        outputs["projected_area"] = np.trapz(projected_chord, inputs["ref_axis"][:,2])
+        
+        # Debug output
+        rotorse_options = self.options["rotorse_options"]
+        if rotorse_options["lofted_output"] == True:
+            np.savetxt(
+                "3d_xyz_blade_lofted.dat",
+                outputs["3D_shape"],
+                header="\t point number [-]\t\t\t\t x [m] \t\t\t\t\t y [m]  \t\t\t\t z [m] \t\t\t\t The coordinate system follows the BeamDyn one.",
+            )
 
 
 class Blade_Internal_Structure_2D_FEM(om.Group):
