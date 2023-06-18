@@ -65,7 +65,6 @@ def compare_expected_to_actual(expected_df, actual_module_type_operation_list, v
     )
 
     comparison["% delta"] = (comparison["Cost / project actual"] / comparison["Cost / project expected"] - 1) * 100
-
     comparison.to_csv(validation_output_csv, index=False)
 
     # If the comparison dataframe is empty, that means there are no common
@@ -104,4 +103,5 @@ def test_landbosse(landbosse_costs_by_module_type_operation):
     result = compare_expected_to_actual(
         costs_by_module_type_operation, landbosse_costs_by_module_type_operation, "test.csv"
     )
+
     assert result
