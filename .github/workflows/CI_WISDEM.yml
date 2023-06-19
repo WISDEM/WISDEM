@@ -31,7 +31,7 @@ jobs:
           #miniconda-version: "latest"
           #miniforge-version: "latest"
           mamba-version: "*"
-          channels: conda-forge,defaults
+          channels: conda-forge
           channel-priority: true          
           #auto-update-conda: true
           python-version: ${{ matrix.python-version }}
@@ -76,7 +76,7 @@ jobs:
 
       # Run all tests
       - name: Run tests
-        if: contains( matrix.os, 'ubuntu')
+        if: false == contains( matrix.os, 'windows')
         run: |
           pytest --cov=wisdem
 
