@@ -43,7 +43,7 @@ jobs:
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         run: |
-          mamba install -y petsc4py mpi4py gfortran
+          mamba install -y petsc4py gfortran
           mamba info -e
 
       # Install dependencies of WISDEM specific to windows
@@ -81,7 +81,7 @@ jobs:
           pytest --cov=wisdem
 
       # Run limited test on WINDOWS
-      - name: Add dependencies windows specific
+      - name: Limited Windows test
         if: contains( matrix.os, 'windows')
         run: |
           cd wisdem/test/test_gluecode
