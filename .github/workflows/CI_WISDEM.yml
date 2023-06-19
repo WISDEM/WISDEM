@@ -11,27 +11,29 @@ jobs:
 
     defaults:
         run:
-            shell: bash -l {0}
+            shell: bash -el {0}
 
 
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest] #macos-latest, 
         python-version: ["3.9", "3.10", "3.11"]
 
     steps:
       - name: checkout repository
         uses: actions/checkout@v3
 
-      # Official way to do miniconda, but it messes with the worker environment and shell
-      - name: Install miniconda
+      - name: Install conda/mamba
         uses: conda-incubator/setup-miniconda@v2
         # https://github.com/marketplace/actions/setup-miniconda
         with:
-          miniconda-version: "latest"
+          #miniconda-version: "latest"
+          #miniforge-version: "latest"
+          mamba-version: "*"
           channels: conda-forge
-          auto-update-conda: true
+          channel-priority: true          
+          #auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           environment-file: environment.yml
           activate-environment: test
@@ -41,15 +43,19 @@ jobs:
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         run: |
-          conda install -y petsc4py mpi4py gfortran
-          conda info -e
+          mamba install -y petsc4py gfortran
+          mamba info -e
 
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
         run: |
-          conda install -y m2w64-toolchain libpython
+          mamba install -y m2w64-toolchain libpython
 
+      - name: Debug config
+        run: |
+          mamba list
+    
       # Debugging session
       #- name: Setup tmate session
       #  uses: mxschmitt/action-tmate@v3
@@ -74,12 +80,12 @@ jobs:
 
       # Run all tests
       - name: Run tests
-        if: contains( matrix.os, 'ubuntu')
+        if: false == contains( matrix.os, 'windows')
         run: |
           pytest --cov=wisdem
 
       # Run limited test on WINDOWS
-      - name: Add dependencies windows specific
+      - name: Limited Windows test
         if: contains( matrix.os, 'windows')
         run: |
           cd wisdem/test/test_gluecode
