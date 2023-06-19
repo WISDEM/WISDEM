@@ -13,10 +13,10 @@ dependencies:
   - mpi4py
   - ninja
   - nlopt
-  - numpy
+  - numpy<1.25
   - numpydoc
   - openmdao>=3.18
-  - openpyxl==3.1.0
+  - openpyxl
   - pandas
   - pip
   - pydoe2
