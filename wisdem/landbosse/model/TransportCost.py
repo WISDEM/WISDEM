@@ -80,7 +80,7 @@ class TransportCost(CostModule):
 
         f_infra = scipy.interpolate.interp1d(xlen, yinfra, fill_value='extrapolate', assume_sorted=True)
         cost_infra = f_infra(blade_length)
-        print(cost_per_blade, cost_infra, n_turb)
+
         # Multiply by 4x for 3 blades + 1 tower
         calculate_costs_output_dict["transport_cost_usd"] = 4 * cost_per_blade * n_turb + cost_infra
         

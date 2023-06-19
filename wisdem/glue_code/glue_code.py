@@ -927,7 +927,7 @@ class WindPark(om.Group):
                 if modeling_options["flags"]["blade"]:
                     self.connect("rotorse.rp.powercurve.rated_T", "landbosse.rated_thrust_N")
                     self.connect("rotorse.wt_class.V_extreme50", "landbosse.gust_velocity_m_per_s")
-                    self.connect("blade.blade_lofted.projected_area", "landbosse.blade_surface_area")
+                    self.connect("blade.compute_coord_xy_dim.projected_area", "landbosse.blade_surface_area")
                 self.connect("towerse.tower_mass", "landbosse.tower_mass")
                 if modeling_options["flags"]["nacelle"]:
                     self.connect("drivese.nacelle_mass", "landbosse.nacelle_mass")
