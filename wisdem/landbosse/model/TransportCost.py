@@ -71,9 +71,9 @@ class TransportCost(CostModule):
         n_turb = calculate_costs_input_dict["num_turbines"]
         # Transport cost is $/blade * nblades + infrastructure costs + cost for tower & nacelle
         # Blade transport from emp.lbl.gov/publications/supersized-wind-turbine-blade-study
-        xlen = np.array([65., 75., 95., 115.])
-        ycost = 1e3 * np.array([52, 70, 120, 171])
-        yinfra = 1e6 * np.array([0.0, 0.2, 1.0, 5.0])
+        xlen = np.array([-500., 0., 65., 75., 95., 115.])
+        ycost = 1e3 * np.array([0.0, 0.0, 52., 70., 120., 171.])
+        yinfra = 1e6 * np.array([0.0, 0.0, 0.0, 0.2, 1.0, 5.0])
 
         f_blade = scipy.interpolate.interp1d(xlen, ycost, fill_value='extrapolate', assume_sorted=True)
         cost_per_blade = f_blade(blade_length)
