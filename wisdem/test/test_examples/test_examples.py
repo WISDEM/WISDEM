@@ -83,7 +83,7 @@ class TestExamples(unittest.TestCase):
         for ks, s in enumerate(all_scripts):
             with self.subTest(f"Running: {s}", i=ks):
                 try:
-                    #execute_script(s)
+                    execute_script(s)
                     self.assertTrue(True)
                 except:
                     self.assertEqual(s, "Success")
