@@ -52,6 +52,11 @@ jobs:
         run: |
           mamba install -y m2w64-toolchain libpython
 
+      - name: Debug config
+        run: |
+          mamba list
+          mamba remove mpi4py
+    
       # Debugging session
       #- name: Setup tmate session
       #  uses: mxschmitt/action-tmate@v3
