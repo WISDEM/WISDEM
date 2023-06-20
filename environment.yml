@@ -13,17 +13,16 @@ dependencies:
   - mpi4py
   - ninja
   - nlopt
-  - numpy
+  - numpy<1.25
   - numpydoc
   - openmdao>=3.18
-  - openpyxl==3.1.0
+  - openpyxl
   - pandas
   - pip
   - pydoe2
   - pyoptsparse
   - pytest
   - pytest-cov
-  - python==3.9.16
   - python-benedict
   - pyyaml
   - ruamel_yaml

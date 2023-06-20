@@ -5,8 +5,6 @@ name: Build and upload to PyPI
 #on: [push, pull_request]
 # Alternatively, to publish when a (published) GitHub Release is created, use the following:
 on:
-  push:
-  pull_request:
   release:
     types:
       - published
@@ -21,7 +19,7 @@ jobs:
 
     steps:
       - name: Setup GNU Fortran
-        uses: modflowpy/install-gfortran-action@v1
+        uses: awvwgk/setup-fortran@main
               
       - name: Checkout
         uses: actions/checkout@v3

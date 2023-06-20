@@ -546,7 +546,7 @@ class TowerSE(om.Group):
 
         self.add_subsystem(
             "post",
-            mem.CylinderPostFrame(modeling_options=mod_opt, n_dlc=nLC),
+            mem.CylinderPostFrame(modeling_options=mod_opt, n_dlc=nLC, n_full = n_full),
             promotes=[
                 "z_full",
                 "d_full",

@@ -8,8 +8,10 @@ import re
 import shutil
 import platform
 import subprocess
-
 import setuptools
+
+#######
+# This forces wheels to be platform specific
 from setuptools.dist import Distribution
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
 
@@ -22,6 +24,7 @@ class BinaryDistribution(Distribution):
     """Distribution which always forces a binary package with platform name"""
     def has_ext_modules(foo):
         return True
+#######
     
 def run_meson_build(staging_dir):
     prefix = os.path.join(os.getcwd(), staging_dir)

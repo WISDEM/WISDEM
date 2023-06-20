@@ -285,6 +285,11 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_input("section_E", np.zeros(n_full - 1), units="Pa")
         self.add_input("section_G", np.zeros(n_full - 1), units="Pa")
         self.add_output("section_L", np.zeros(n_full - 1 + ntow_sec), units="m")
+        self.add_input("d_full", np.zeros(n_full), units="m")
+        self.add_input("t_full", np.zeros(n_full - 1), units="m")
+        self.add_input("sigma_y_full", np.zeros(n_full -1), units="Pa")
+        self.add_input("qdyn", np.zeros((n_full,nLC)), units="Pa")
+        self.add_input("bending_height", 0.0, units="m")
 
         # cross-sectional data along tower
         self.add_input("tower_xyz", np.zeros((n_full_tow, 3)), units="m")
@@ -297,6 +302,11 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_input("tower_rho", np.zeros(ntow_sec), units="kg/m**3")
         self.add_input("tower_E", np.zeros(ntow_sec), units="Pa")
         self.add_input("tower_G", np.zeros(ntow_sec), units="Pa")
+        self.add_input("tower_d_full", np.zeros(n_full_tow), units="m")
+        self.add_input("tower_t_full", np.zeros(ntow_sec), units="m")
+        self.add_input("tower_sigma_y_full", np.zeros(ntow_sec), units="Pa")
+        self.add_input("tower_qdyn", np.zeros((n_full_tow,nLC)), units="Pa")
+        self.add_input("tower_bending_height", 0.0, units="m")
 
         # point loads
         self.add_input("rna_F", np.zeros((3, nLC)), units="N")
@@ -353,6 +363,24 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_output("monopile_Mzz", val=np.zeros((n_full - 1, nLC)), units="N*m")
         self.add_output("mudline_F", val=np.zeros((3, nLC)), units="N")
         self.add_output("mudline_M", val=np.zeros((3, nLC)), units="N*m")
+
+
+        # Tower and monopile combined
+        self.add_output("monopile_tower_z_full", val=np.zeros(n_full + n_full_tow - 1), units="m")
+        self.add_output("monopile_tower_d_full", val=np.zeros(n_full + n_full_tow - 1), units="m")
+        self.add_output("monopile_tower_t_full", val=np.zeros(n_full + ntow_sec - 1), units="m")
+        self.add_output("monopile_tower_rho_full", val=np.zeros(n_full + ntow_sec -1), units="kg/m**3")
+        self.add_output("monopile_tower_E_full", val=np.zeros(n_full + ntow_sec -1), units="Pa")
+        self.add_output("monopile_tower_G_full", val=np.zeros(n_full + ntow_sec -1), units="Pa")
+        self.add_output("monopile_tower_sigma_y_full", val=np.zeros(n_full + ntow_sec -1), units="Pa")
+        self.add_output("monopile_tower_bending_height", val=0.0, units="m")
+        self.add_output("monopile_tower_qdyn", val=np.zeros((n_full + n_full_tow - 1, nLC)), units="Pa")
+        self.add_output("monopile_tower_Fz", val=np.zeros((n_full + ntow_sec -1, nLC)), units="N")
+        self.add_output("monopile_tower_Vx", val=np.zeros((n_full + ntow_sec -1, nLC)), units="N")
+        self.add_output("monopile_tower_Vy", val=np.zeros((n_full + ntow_sec -1, nLC)), units="N")
+        self.add_output("monopile_tower_Mxx", val=np.zeros((n_full + ntow_sec -1, nLC)), units="N*m")
+        self.add_output("monopile_tower_Myy", val=np.zeros((n_full + ntow_sec -1, nLC)), units="N*m")
+        self.add_output("monopile_tower_Mzz", val=np.zeros((n_full + ntow_sec -1, nLC)), units="N*m")
 
     def compute(self, inputs, outputs):
         frame3dd_opt = self.options["frame3dd_opt"]
@@ -437,6 +465,23 @@ class MonopileFrame(om.ExplicitComponent):
             E = np.r_[inputs["section_E"], inputs["tower_E"]]
             G = np.r_[inputs["section_G"], inputs["tower_G"]]
             rho = np.r_[inputs["section_rho"], inputs["tower_rho"]]
+            d = np.r_[inputs["d_full"][:-1], inputs["tower_d_full"]]
+            t = np.r_[inputs["t_full"], inputs["tower_t_full"]]
+            sigma_y = np.r_[inputs["sigma_y_full"], inputs["tower_sigma_y_full"]]
+
+            outputs["monopile_tower_z_full"] = z
+            outputs["monopile_tower_d_full"] = d
+            outputs["monopile_tower_t_full"] = t
+            outputs["monopile_tower_rho_full"] = rho
+            outputs["monopile_tower_E_full"] = E
+            outputs["monopile_tower_G_full"] = G
+            outputs["monopile_tower_sigma_y_full"] = sigma_y
+            outputs["monopile_tower_bending_height"] = inputs['bending_height'] + inputs['tower_bending_height']
+            for ic in range(nLC):
+                qdyn = np.r_[inputs["qdyn"][:-1,ic], inputs["tower_qdyn"][:,ic]]
+                outputs["monopile_tower_qdyn"][:, ic] = qdyn
+
+
         else:
             Area = inputs["section_A"]
             Asx = inputs["section_Asx"]
@@ -482,7 +527,7 @@ class MonopileFrame(om.ExplicitComponent):
                 rna_F = inputs["rna_F"][:, k]
                 rna_M = inputs["rna_M"][:, k]
                 load.changePointLoads(
-                    np.array([n], dtype=np.int_),  # -1 b/c same reason as above
+                    np.array([n-1], dtype=np.int_),  # -1 b/c same reason as above
                     np.array([rna_F[0]]).flatten(),
                     np.array([rna_F[1]]).flatten(),
                     np.array([rna_F[2]]).flatten(),
@@ -500,7 +545,7 @@ class MonopileFrame(om.ExplicitComponent):
                 turb_F = inputs["turbine_F"][:, k]
                 turb_M = inputs["turbine_M"][:, k]
                 load.changePointLoads(
-                    np.array([n], dtype=np.int_),  # -1 b/c same reason as above
+                    np.array([n-1], dtype=np.int_),  # -1 b/c same reason as above
                     np.array([turb_F[0]]).flatten(),
                     np.array([turb_F[1]]).flatten(),
                     np.array([turb_F[2]]).flatten(),
@@ -546,7 +591,7 @@ class MonopileFrame(om.ExplicitComponent):
 
         # Note, need len()-1 because Frame3DD crashes if mass add at end
         if tower_flag:
-            midx = np.array([n, n_mono, 1], dtype=np.int_)
+            midx = np.array([n-1, n_mono, 1], dtype=np.int_)
             m_add = np.r_[m_rna, m_trans, m_grav]
             mI = np.c_[I_rna, I_trans, I_grav]
             mrho = np.c_[cg_rna, np.zeros(3), np.zeros(3)]
@@ -650,6 +695,14 @@ class MonopileFrame(om.ExplicitComponent):
         outputs["monopile_Mxx"] = Mxx[: (n_mono - 1)]
         outputs["monopile_Myy"] = Myy[: (n_mono - 1)]
         outputs["monopile_Mzz"] = Mzz[: (n_mono - 1)]
+    
+
+        outputs["monopile_tower_Fz"] = Fz
+        outputs["monopile_tower_Vx"] = Vx
+        outputs["monopile_tower_Vy"] = Vy
+        outputs["monopile_tower_Mxx"] = Mxx
+        outputs["monopile_tower_Myy"] = Myy
+        outputs["monopile_tower_Mzz"] = Mzz
 
 
 class MonopileSE(om.Group):
@@ -728,7 +781,7 @@ class MonopileSE(om.Group):
             ("wall_thickness", "monopile_wall_thickness"),
         ]
         if n_height > 2:
-            promlist + ["thickness_slope"]
+            promlist += ["thickness_slope"]
 
         temp_opt = mod_opt.copy()
         temp_opt["n_height"] = [n_height]
@@ -778,13 +831,10 @@ class MonopileSE(om.Group):
         self.add_subsystem("loads", mem.MemberLoads(n_full=n_full, n_lc=nLC, wind=wind, hydro=True), promotes=["*"])
 
         n_full_tow = 0
-        try:
-            if self.options["modeling_options"]["flags"]["tower"]:
-                tow_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
-                n_height = tow_opt["n_height"]
-                n_full_tow = mem.get_nfull(n_height, nref=tow_opt["n_refine"])
-        except:
-            pass
+        if self.options["modeling_options"]["flags"]["tower"]:
+            tow_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
+            n_height = tow_opt["n_height"]
+            n_full_tow = mem.get_nfull(n_height, nref=tow_opt["n_refine"])
 
         self.add_subsystem(
             "monopile",
@@ -808,6 +858,16 @@ class MonopileSE(om.Group):
                 "section_rho",
                 "section_E",
                 "section_G",
+                "d_full",
+                "t_full",
+                "sigma_y_full",
+                "tower_d_full",
+                "tower_t_full",
+                "tower_sigma_y_full",
+                "bending_height",
+                "tower_bending_height",
+                "qdyn",
+                "tower_qdyn",
                 "tower_A",
                 "tower_Asx",
                 "tower_Asy",
@@ -849,12 +909,14 @@ class MonopileSE(om.Group):
                 "tower_torsion_modes",
                 "f1",
                 "f2",
+                "water_depth"
             ],
         )
 
+        # Compute stress and buckling constraints for monopile alone
         self.add_subsystem(
             "post",
-            mem.CylinderPostFrame(modeling_options=mod_opt, n_dlc=nLC),
+            mem.CylinderPostFrame(modeling_options=mod_opt, n_dlc=nLC, n_full = n_full),
             promotes=[
                 "z_full",
                 "d_full",
@@ -878,3 +940,26 @@ class MonopileSE(om.Group):
         self.connect("monopile.monopile_Mxx", "post.cylinder_Mxx")
         self.connect("monopile.monopile_Myy", "post.cylinder_Myy")
         self.connect("monopile.monopile_Mzz", "post.cylinder_Mzz")
+
+        if self.options["modeling_options"]["flags"]["tower"]:
+            # Compute stress and buckling constraints for monopile and tower combined
+            self.add_subsystem(
+                "post_monopile_tower",
+                mem.CylinderPostFrame(modeling_options=mod_opt, n_dlc=nLC, n_full = n_full + n_full_tow - 1),
+            )
+
+            self.connect("monopile.monopile_tower_z_full", "post_monopile_tower.z_full")
+            self.connect("monopile.monopile_tower_d_full", "post_monopile_tower.d_full")
+            self.connect("monopile.monopile_tower_t_full", "post_monopile_tower.t_full")
+            self.connect("monopile.monopile_tower_rho_full", "post_monopile_tower.rho_full")
+            self.connect("monopile.monopile_tower_E_full", "post_monopile_tower.E_full")
+            self.connect("monopile.monopile_tower_G_full", "post_monopile_tower.G_full")
+            self.connect("monopile.monopile_tower_sigma_y_full", "post_monopile_tower.sigma_y_full")
+            self.connect("monopile.monopile_tower_bending_height", "post_monopile_tower.bending_height")
+            self.connect("monopile.monopile_tower_qdyn", "post_monopile_tower.qdyn")
+            self.connect("monopile.monopile_tower_Fz", "post_monopile_tower.cylinder_Fz")
+            self.connect("monopile.monopile_tower_Vx", "post_monopile_tower.cylinder_Vx")
+            self.connect("monopile.monopile_tower_Vy", "post_monopile_tower.cylinder_Vy")
+            self.connect("monopile.monopile_tower_Mxx", "post_monopile_tower.cylinder_Mxx")
+            self.connect("monopile.monopile_tower_Myy", "post_monopile_tower.cylinder_Myy")
+            self.connect("monopile.monopile_tower_Mzz", "post_monopile_tower.cylinder_Mzz")

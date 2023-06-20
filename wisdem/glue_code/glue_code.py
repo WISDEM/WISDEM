@@ -549,6 +549,12 @@ class WT_RNTA(om.Group):
             self.connect("monopile.gravity_foundation_mass", "fixedse.gravity_foundation_mass")
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.nodes_xyz", "fixedse.tower_xyz")
+                self.connect("towerse.d_full", "fixedse.tower_d_full")
+                self.connect("towerse.t_full", "fixedse.tower_t_full")
+                self.connect("towerse.sigma_y_full", "fixedse.tower_sigma_y_full")
+                self.connect("towerse.qdyn", "fixedse.tower_qdyn")
+                self.connect("tower_grid.height", "fixedse.tower_bending_height")
+
                 for var in ["A", "Asx", "Asy", "Ixx", "Iyy", "J0", "rho", "E", "G"]:
                     self.connect(f"towerse.section_{var}", f"fixedse.tower_{var}")
                 for var in ["Px", "Py", "Pz"]:
@@ -937,6 +943,7 @@ class WindPark(om.Group):
                 if modeling_options["flags"]["blade"]:
                     self.connect("rotorse.rp.powercurve.rated_T", "landbosse.rated_thrust_N")
                     self.connect("rotorse.wt_class.V_extreme50", "landbosse.gust_velocity_m_per_s")
+                    self.connect("blade.compute_coord_xy_dim.projected_area", "landbosse.blade_surface_area")
                 self.connect("towerse.tower_mass", "landbosse.tower_mass")
                 if modeling_options["flags"]["nacelle"]:
                     self.connect("drivese.nacelle_mass", "landbosse.nacelle_mass")

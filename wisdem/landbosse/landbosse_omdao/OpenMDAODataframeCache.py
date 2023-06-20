@@ -1,4 +1,5 @@
 import os
+
 import warnings
 
 with warnings.catch_warnings():
@@ -8,7 +9,7 @@ with warnings.catch_warnings():
 
 # The library path is where to find the default input data for LandBOSSE.
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../.."))
-if ROOT.endswith("wisdem"):
+if ROOT.endswith('wisdem'):
     library_path = os.path.join(ROOT, "library", "landbosse")
 else:
     library_path = os.path.join(ROOT, "project_input_template", "project_data")
@@ -81,10 +82,10 @@ class OpenMDAODataframeCache:
         else:
             xlsx_filename = os.path.join(xlsx_path, f"{xlsx_basename}.xlsx")
 
-        xlsx = pd.ExcelFile(xlsx_filename, engine="openpyxl")
+        xlsx = pd.ExcelFile(xlsx_filename, engine='openpyxl')
         sheets_dict = {sheet_name: xlsx.parse(sheet_name) for sheet_name in xlsx.sheet_names}
         for sheet_name in xlsx.sheet_names:
-            sheets_dict[sheet_name].dropna(inplace=True, how="all")
+            sheets_dict[sheet_name].dropna(inplace=True, how='all')
         cls._cache[xlsx_basename] = sheets_dict
         return cls.copy_dataframes(sheets_dict)
 
