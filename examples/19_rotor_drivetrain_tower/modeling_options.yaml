@@ -1,0 +1,15 @@
+General:
+    verbosity: False
+WISDEM:
+    RotorSE:
+        flag: True
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+    TowerSE:
+        flag: True
+        gamma_f: 1.1
+        gamma_m: 1.15
+    DriveSE:
+        flag: True
+    BOS:
+        flag: True
