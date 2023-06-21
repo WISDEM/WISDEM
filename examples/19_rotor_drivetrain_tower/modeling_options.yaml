@@ -7,8 +7,6 @@ WISDEM:
         spar_cap_ps: Spar_Cap_PS
     TowerSE:
         flag: True
-        gamma_f: 1.1
-        gamma_m: 1.15
     DriveSE:
         flag: True
     BOS:
