@@ -1,7 +1,5 @@
 import math
 import traceback
-import pytest
-import traceback
 
 class ManagementCost:
     """
