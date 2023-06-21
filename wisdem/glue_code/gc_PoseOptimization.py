@@ -577,34 +577,6 @@ class PoseOptimization(object):
                 "blade.opt_var.af_position", indices=indices_af, lower=lb_af[indices_af], upper=ub_af[indices_af]
             )
 
-        spar_cap_ss_options = blade_opt["structure"]["spar_cap_ss"]
-        if spar_cap_ss_options["flag"]:
-            if blade_opt["structure"]["spar_cap_ss"]["index_end"] > blade_opt["structure"]["spar_cap_ss"]["n_opt"]:
-                raise Exception(
-                    "Check the analysis options yaml, index_end of the blade spar_cap_ss is higher than the number of DVs n_opt"
-                )
-            elif blade_opt["structure"]["spar_cap_ss"]["index_end"] == 0:
-                blade_opt["structure"]["spar_cap_ss"]["index_end"] = blade_opt["structure"]["spar_cap_ss"]["n_opt"]
-            indices_spar_cap_ss = range(spar_cap_ss_options["index_start"], spar_cap_ss_options["index_end"])
-            s_opt_spar_cap_ss = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"])
-            spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"].lower()
-            layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
-            n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
-            for i in range(n_layers):
-                if layer_name[i].lower() == spar_cap_ss_name:
-                    spar_cap_ss_interpolator = PchipInterpolator(
-                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
-                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
-                    )
-                    init_spar_cap_ss_opt = spar_cap_ss_interpolator(s_opt_spar_cap_ss)
-            wt_opt.model.add_design_var(
-                "blade.opt_var.spar_cap_ss_opt",
-                indices=indices_spar_cap_ss,
-                lower=init_spar_cap_ss_opt[indices_spar_cap_ss] * spar_cap_ss_options["max_decrease"],
-                upper=init_spar_cap_ss_opt[indices_spar_cap_ss] * spar_cap_ss_options["max_increase"],
-                ref=1.0e-2,
-            )
-
         L_D_options = blade_opt["aero_shape"]["L/D"]
         if L_D_options["flag"]:
             n_opt = L_D_options["n_opt"]
@@ -685,6 +657,44 @@ class PoseOptimization(object):
                 upper=z_options["upper_bound"],
             )
 
+        spar_cap_ss_options = blade_opt["structure"]["spar_cap_ss"]
+        if spar_cap_ss_options["flag"]:
+            if blade_opt["structure"]["spar_cap_ss"]["index_end"] > blade_opt["structure"]["spar_cap_ss"]["n_opt"]:
+                raise Exception(
+                    "Check the analysis options yaml, index_end of the blade spar_cap_ss is higher than the number of DVs n_opt"
+                )
+            elif blade_opt["structure"]["spar_cap_ss"]["index_end"] == 0:
+                blade_opt["structure"]["spar_cap_ss"]["index_end"] = blade_opt["structure"]["spar_cap_ss"]["n_opt"]
+            indices_spar_cap_ss = range(spar_cap_ss_options["index_start"], spar_cap_ss_options["index_end"])
+            s_opt_spar_cap_ss = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"])
+            spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"].lower()
+            layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
+            n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
+            spar_cap_ss_found = False
+            for i in range(n_layers):
+                if layer_name[i].lower() == spar_cap_ss_name:
+                    spar_cap_ss_found = True
+                    spar_cap_ss_interpolator = PchipInterpolator(
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                        extrapolate=False
+                    )
+                    init_spar_cap_ss_opt = spar_cap_ss_interpolator(s_opt_spar_cap_ss)
+                    for j in range(len(init_spar_cap_ss_opt)):
+                        if np.isnan(init_spar_cap_ss_opt[j]):
+                            init_spar_cap_ss_opt[j] = 0.
+            if not spar_cap_ss_found:
+                raise Exception(
+                        "Please set the spar cap name for suction side among the RotorSE modeling options"
+                    )
+            wt_opt.model.add_design_var(
+                "blade.opt_var.spar_cap_ss_opt",
+                indices=indices_spar_cap_ss,
+                lower=init_spar_cap_ss_opt[indices_spar_cap_ss] * spar_cap_ss_options["max_decrease"],
+                upper=init_spar_cap_ss_opt[indices_spar_cap_ss] * spar_cap_ss_options["max_increase"],
+                ref=1.0e-2,
+            )
+
         # Only add the pressure side design variables if we do set
         # `equal_to_suction` as False in the optimization yaml.
         spar_cap_ps_options = blade_opt["structure"]["spar_cap_ps"]
@@ -700,13 +710,23 @@ class PoseOptimization(object):
             spar_cap_ps_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ps"]
             layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
             n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
+            spar_cap_ps_found = False
             for i in range(n_layers):
                 if layer_name[i] == spar_cap_ps_name:
+                    spar_cap_ps_found = True
                     spar_cap_ps_interpolator = PchipInterpolator(
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                        extrapolate=False
                     )
                     init_spar_cap_ps_opt = spar_cap_ps_interpolator(s_opt_spar_cap_ps)
+                    for j in range(len(init_spar_cap_ps_opt)):
+                        if np.isnan(init_spar_cap_ps_opt[j]):
+                            init_spar_cap_ps_opt[j] = 0.
+            if not spar_cap_ps_found:
+                raise Exception(
+                        "Please set the spar cap name for pressure side among the RotorSE modeling options"
+                    )
             wt_opt.model.add_design_var(
                 "blade.opt_var.spar_cap_ps_opt",
                 indices=indices_spar_cap_ps,
@@ -733,8 +753,12 @@ class PoseOptimization(object):
                     te_ss_interpolator = PchipInterpolator(
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                        extrapolate=False
                     )
                     init_te_ss_opt = te_ss_interpolator(s_opt_te_ss)
+                    for j in range(len(init_te_ss_opt)):
+                        if np.isnan(init_te_ss_opt[j]):
+                            init_te_ss_opt[j] = 0.
             wt_opt.model.add_design_var(
                 "blade.opt_var.te_ss_opt",
                 indices=indices_te_ss,
@@ -763,8 +787,12 @@ class PoseOptimization(object):
                     te_ps_interpolator = PchipInterpolator(
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
                         wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"],
+                        extrapolate=False
                     )
                     init_te_ps_opt = te_ps_interpolator(s_opt_te_ps)
+                    for j in range(len(init_te_ps_opt)):
+                        if np.isnan(init_te_ps_opt[j]):
+                            init_te_ps_opt[j] = 0.
             wt_opt.model.add_design_var(
                 "blade.opt_var.te_ps_opt",
                 indices=indices_te_ps,
@@ -1277,8 +1305,10 @@ class PoseOptimization(object):
             else:
                 raise Exception("thrust coefficient constraint requested but now upper or lower constraint found.")
 
-        # Tower contraints
+        # Tower and monopile contraints
         tower_constr = self.opt["constraints"]["tower"]
+        monopile_constr = self.opt["constraints"]["monopile"]
+        
         if tower_constr["height_constraint"]["flag"]:
             wt_opt.model.add_constraint(
                 "towerse.height_constraint",
@@ -1286,13 +1316,13 @@ class PoseOptimization(object):
                 upper=tower_constr["height_constraint"]["upper_bound"],
             )
 
-        if tower_constr["stress"]["flag"]:
+        if tower_constr["stress"]["flag"] and not monopile_constr["stress"]["flag"]:
             wt_opt.model.add_constraint("towerse.post.constr_stress", upper=1.0)
 
-        if tower_constr["global_buckling"]["flag"]:
+        if tower_constr["global_buckling"]["flag"] and not monopile_constr["global_buckling"]["flag"]:
             wt_opt.model.add_constraint("towerse.post.constr_global_buckling", upper=1.0)
 
-        if tower_constr["shell_buckling"]["flag"]:
+        if tower_constr["shell_buckling"]["flag"] and not monopile_constr["shell_buckling"]["flag"]:
             wt_opt.model.add_constraint("towerse.post.constr_shell_buckling", upper=1.0)
 
         if tower_constr["d_to_t"]["flag"]:
@@ -1329,16 +1359,19 @@ class PoseOptimization(object):
                 upper=tower_constr["frequency_1"]["upper_bound"],
             )
 
-        # Monopile constraints
-        monopile_constr = self.opt["constraints"]["monopile"]
-
-        if monopile_constr["stress"]["flag"]:
+        if monopile_constr["stress"]["flag"] and tower_constr["stress"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.post_monopile_tower.constr_stress", upper=1.0)
+        elif monopile_constr["stress"]["flag"]:
             wt_opt.model.add_constraint("fixedse.post.constr_stress", upper=1.0)
 
-        if monopile_constr["global_buckling"]["flag"]:
+        if monopile_constr["global_buckling"]["flag"] and tower_constr["global_buckling"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.post_monopile_tower.constr_global_buckling", upper=1.0)
+        elif monopile_constr["global_buckling"]["flag"]:
             wt_opt.model.add_constraint("fixedse.post.constr_global_buckling", upper=1.0)
 
-        if monopile_constr["shell_buckling"]["flag"]:
+        if monopile_constr["shell_buckling"]["flag"] and tower_constr["shell_buckling"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.post_monopile_tower.constr_shell_buckling", upper=1.0)
+        elif monopile_constr["shell_buckling"]["flag"]:
             wt_opt.model.add_constraint("fixedse.post.constr_shell_buckling", upper=1.0)
 
         if monopile_constr["d_to_t"]["flag"]:
@@ -1566,6 +1599,7 @@ class PoseOptimization(object):
                 layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
                 n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
                 ss_before_ps = False
+                spar_cap_ps_found = False
                 for i in range(n_layers):
                     if layer_name[i].lower() == spar_cap_ss_name:
                         spar_cap_ss_interpolator = PchipInterpolator(
@@ -1575,10 +1609,14 @@ class PoseOptimization(object):
                             wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                                 "values"
                             ],
-                        )
+                            extrapolate=False)
                         init_spar_cap_ss_opt = spar_cap_ss_interpolator(wt_opt["blade.opt_var.s_opt_spar_cap_ss"])
+                        for j in range(len(init_spar_cap_ss_opt)):
+                            if np.isnan(init_spar_cap_ss_opt[j]):
+                                init_spar_cap_ss_opt[j] = 0.
                         ss_before_ps = True
                     elif layer_name[i].lower() == spar_cap_ps_name:
+                        spar_cap_ps_found = True
                         if (
                             self.opt["design_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
                             == False
@@ -1590,11 +1628,14 @@ class PoseOptimization(object):
                                 wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                                     "values"
                                 ],
-                            )
+                                extrapolate=False)
                             init_spar_cap_ps_opt = spar_cap_ps_interpolator(wt_opt["blade.opt_var.s_opt_spar_cap_ps"])
+                            for j in range(len(init_spar_cap_ps_opt)):
+                                if np.isnan(init_spar_cap_ps_opt[j]):
+                                    init_spar_cap_ps_opt[j] = 0.
                         else:
                             init_spar_cap_ps_opt = init_spar_cap_ss_opt
-                if not ss_before_ps:
+                if not ss_before_ps or not spar_cap_ps_found:
                     raise Exception(
                         "Please set the spar cap names for suction and pressure sides among the RotorSE modeling options"
                     )
@@ -1618,8 +1659,11 @@ class PoseOptimization(object):
                             wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                                 "values"
                             ],
-                        )
+                            extrapolate=False)
                         init_te_ss_opt = te_ss_interpolator(wt_opt["blade.opt_var.s_opt_te_ss"])
+                        for j in range(len(init_te_ss_opt)):
+                            if np.isnan(init_te_ss_opt[j]):
+                                init_te_ss_opt[j] = 0.
                         ss_before_ps = True
                     elif layer_name[i] == te_ps_name:
                         if (
@@ -1632,8 +1676,11 @@ class PoseOptimization(object):
                                 wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                                     "values"
                                 ],
-                            )
+                                extrapolate=False)
                             init_te_ps_opt = te_ps_interpolator(wt_opt["blade.opt_var.s_opt_te_ps"])
+                            for j in range(len(init_te_ps_opt)):
+                                if np.isnan(init_te_ps_opt[j]):
+                                    init_te_ps_opt[j] = 0.
                         else:
                             init_te_ps_opt = init_te_ss_opt
                 if not ss_before_ps:

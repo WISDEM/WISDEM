@@ -2123,12 +2123,11 @@ class CylinderPostFrame(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("modeling_options")
         self.options.declare("n_dlc")
+        self.options.declare("n_full")
 
     def setup(self):
-        n_height = self.options["modeling_options"]["n_height"]
-        n_refine = self.options["modeling_options"]["n_refine"]
-        n_full = get_nfull(n_height, nref=n_refine)
         n_dlc = self.options["n_dlc"]
+        n_full = self.options["n_full"]
 
         # effective geometry -- used for handbook methods to estimate hoop stress, buckling, fatigue
         self.add_input("z_full", np.zeros(n_full), units="m")
