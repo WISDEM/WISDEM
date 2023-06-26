@@ -1081,6 +1081,9 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["hub"]["pitch_system_scaling_factor"] = float(
                 wt_opt["hub.pitch_system_scaling_factor"]
             )
+            self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_mass'] = float(wt_opt["drivese.hub_system_mass"])
+            self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_inertia'] = wt_opt["drivese.hub_system_I"].tolist()
+            # self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_center_mass'] = wt_opt["drivese.hub_system_cm"].tolist()
 
         # Update nacelle
         if self.modeling_options["flags"]["nacelle"]:
@@ -1130,6 +1133,11 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["nacelle"]["drivetrain"]["bedplate_material"] = wt_opt[
                 "nacelle.bedplate_material"
             ]
+            self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["system_mass"] = float(wt_opt["drivese.above_yaw_mass"])
+            self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["yaw_mass"] = float(wt_opt["drivese.yaw_mass"])
+            self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["system_inertia"] = wt_opt["drivese.above_yaw_I"].tolist()
+            self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["system_inertia_tt"] = wt_opt["drivese.above_yaw_I_TT"].tolist()
+            self.wt_init["components"]["nacelle"]["elastic_properties_mb"]["system_center_mass"] = wt_opt["drivese.above_yaw_cm"].tolist()
 
             if self.modeling_options["WISDEM"]["DriveSE"]["direct"]:
                 # Direct only

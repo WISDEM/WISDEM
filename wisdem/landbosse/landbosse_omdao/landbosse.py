@@ -27,6 +27,7 @@ class LandBOSSE(om.Group):
         self.set_input_defaults("blade_offload_hook_height", use_default_component_data, units="m")
         self.set_input_defaults("blade_offload_cycle_time", use_default_component_data, units="h")
         self.set_input_defaults("blade_drag_multiplier", use_default_component_data)  # Unitless
+        self.set_input_defaults("blade_surface_area", use_default_component_data, units="m**2")
 
         self.set_input_defaults("turbine_spacing_rotor_diameters", 4)
         self.set_input_defaults("row_spacing_rotor_diameters", 10)
@@ -66,6 +67,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         self.add_input("blade_offload_hook_height", use_default_component_data, units="m")
         self.add_input("blade_offload_cycle_time", use_default_component_data, units="h")
         self.add_input("blade_drag_multiplier", use_default_component_data)  # Unitless
+        self.add_input("blade_surface_area", use_default_component_data, units="m**2")
 
         # Even though LandBOSSE doesn't use foundation height, TowerSE does,
         # and foundation height can be used with hub height to calculate
@@ -649,21 +651,21 @@ class LandBOSSE_API(om.ExplicitComponent):
         kg_per_tonne = 1000
 
         # Get the hub height
-        hub_height_meters = inputs["hub_height_meters"][0]
+        hub_height_meters = float(inputs["hub_height_meters"])
 
         # Make the nacelle. This does not include the hub or blades.
-        nacelle_mass_kg = inputs["nacelle_mass"][0]
+        nacelle_mass_kg = float(inputs["nacelle_mass"])
         nacelle = input_components[input_components["Component"].str.startswith("Nacelle")].iloc[0].copy()
         if inputs["nacelle_mass"] != use_default_component_data:
             nacelle["Mass tonne"] = nacelle_mass_kg / kg_per_tonne
             nacelle["Component"] = "Nacelle"
-        nacelle["Lift height m"] = hub_height_meters
+        nacelle["Lift height m"] = nacelle["Lever arm m"] = hub_height_meters
         output_components_list.append(nacelle)
 
         # Make the hub
-        hub_mass_kg = inputs["hub_mass"][0]
+        hub_mass_kg = float(inputs["hub_mass"])
         hub = input_components[input_components["Component"].str.startswith("Hub")].iloc[0].copy()
-        hub["Lift height m"] = hub_height_meters
+        hub["Lift height m"] = hub["Lever arm m"] = hub_height_meters
         if hub_mass_kg != use_default_component_data:
             hub["Mass tonne"] = hub_mass_kg / kg_per_tonne
         output_components_list.append(hub)
@@ -672,33 +674,35 @@ class LandBOSSE_API(om.ExplicitComponent):
         blade = input_components[input_components["Component"].str.startswith("Blade")].iloc[0].copy()
 
         # There is always a hub height, so use that as the lift height
-        blade["Lift height m"] = hub_height_meters
+        blade["Lift height m"] = blade["Lever arm m"] = hub_height_meters
 
-        if inputs["blade_drag_coefficient"][0] != use_default_component_data:
-            blade["Coeff drag"] = inputs["blade_drag_coefficient"][0]
+        if float(inputs["blade_drag_coefficient"]) != use_default_component_data:
+            blade["Coeff drag"] = float(inputs["blade_drag_coefficient"])
 
-        if inputs["blade_lever_arm"][0] != use_default_component_data:
-            blade["Lever arm m"] = inputs["blade_lever_arm"][0]
+        if float(inputs["blade_lever_arm"]) != use_default_component_data:
+            blade["Lever arm m"] = float(inputs["blade_lever_arm"])
 
-        if inputs["blade_install_cycle_time"][0] != use_default_component_data:
-            blade["Cycle time installation hrs"] = inputs["blade_install_cycle_time"][0]
+        if float(inputs["blade_install_cycle_time"]) != use_default_component_data:
+            blade["Cycle time installation hrs"] = float(inputs["blade_install_cycle_time"])
 
-        if inputs["blade_offload_hook_height"][0] != use_default_component_data:
+        if float(inputs["blade_offload_hook_height"]) != use_default_component_data:
             blade["Offload hook height m"] = hub_height_meters
 
-        if inputs["blade_offload_cycle_time"][0] != use_default_component_data:
+        if float(inputs["blade_offload_cycle_time"]) != use_default_component_data:
             blade["Offload cycle time hrs"] = inputs["blade_offload_cycle_time"]
 
-        if inputs["blade_drag_multiplier"][0] != use_default_component_data:
+        if float(inputs["blade_drag_multiplier"]) != use_default_component_data:
             blade["Multiplier drag rotor"] = inputs["blade_drag_multiplier"]
 
-        if inputs["blade_mass"][0] != use_default_component_data:
-            blade["Mass tonne"] = inputs["blade_mass"][0] / kg_per_tonne
+        if float(inputs["blade_mass"]) != use_default_component_data:
+            blade["Mass tonne"] = float(inputs["blade_mass"]) / kg_per_tonne
+
+        if float(inputs["blade_surface_area"]) != use_default_component_data:
+            blade["Surface area sq m"] = float(inputs["blade_surface_area"])
 
         # Assume that number_of_blades always has a reasonable value. It's
         # default count when the discrete input is declared of 3 is always
         # reasonable unless overridden by another input.
-
         number_of_blades = discrete_inputs["number_of_blades"]
         for i in range(number_of_blades):
             component = f"Blade {i + 1}"
@@ -707,8 +711,8 @@ class LandBOSSE_API(om.ExplicitComponent):
             output_components_list.append(blade_i)
 
         # Make tower sections
-        tower_mass_tonnes = inputs["tower_mass"][0] / kg_per_tonne
-        tower_height_m = hub_height_meters - inputs["foundation_height"][0]
+        tower_mass_tonnes = float(inputs["tower_mass"]) / kg_per_tonne
+        tower_height_m = hub_height_meters - float(inputs["foundation_height"])
         default_tower_section = input_components[input_components["Component"].str.startswith("Tower")].iloc[0]
         tower_sections = self.make_tower_sections(tower_mass_tonnes, tower_height_m, default_tower_section)
         output_components_list.extend(tower_sections)

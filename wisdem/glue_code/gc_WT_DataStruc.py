@@ -754,6 +754,8 @@ class Blade(om.Group):
             "compute_coord_xy_dim",
             Compute_Coord_XY_Dim(rotorse_options=rotorse_options),
         )
+        self.connect("pa.twist_param", "compute_coord_xy_dim.twist")
+        self.connect("high_level_blade_props.blade_ref_axis", "compute_coord_xy_dim.ref_axis")
 
         if rotorse_options["inn_af"]:
             self.connect("run_inn_af.coord_xy_interp", "compute_coord_xy_dim.coord_xy_interp")
@@ -766,9 +768,7 @@ class Blade(om.Group):
                 "blade_lofted",
                 Blade_Lofted_Shape(rotorse_options=rotorse_options),
             )
-            self.connect("compute_coord_xy_dim.coord_xy_dim", "blade_lofted.coord_xy_dim")
-            self.connect("pa.twist_param", "blade_lofted.twist")
-            self.connect("outer_shape_bem.s", "blade_lofted.s")
+            self.connect("compute_coord_xy_dim.coord_xy_dim_twisted", "blade_lofted.coord_xy_dim_twisted")
             self.connect("high_level_blade_props.blade_ref_axis", "blade_lofted.ref_axis")
 
         # Import blade internal structure data and remap composites on the outer blade shape
@@ -1178,9 +1178,21 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
             desc="1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.",
         )
         self.add_input(
+            "twist",
+            val=np.zeros(n_span),
+            units="rad",
+            desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
+        )
+        self.add_input(
             "coord_xy_interp",
             val=np.zeros((n_span, n_xy, 2)),
             desc="3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.",
+        )
+        self.add_input(
+            "ref_axis",
+            val=np.zeros((n_span, 3)),
+            units="m",
+            desc="2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
         )
 
         self.add_output(
@@ -1189,10 +1201,19 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
             units="m",
             desc="3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.",
         )
+        self.add_output(
+            "coord_xy_dim_twisted",
+            val=np.zeros((n_span, n_xy, 2)),
+            units="m",
+            desc="3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.",
+        )
+        self.add_output("wetted_area", val=0.0, units="m**2", desc="The wetted (painted) surface area of the blade")
+        self.add_output("projected_area", val=0.0, units="m**2", desc="The projected surface area of the blade")
 
     def compute(self, inputs, outputs):
         pitch_axis = inputs["pitch_axis"]
         chord = inputs["chord"]
+        twist = inputs["twist"]
         coord_xy_interp = inputs["coord_xy_interp"]
 
         coord_xy_dim = copy.copy(coord_xy_interp)
@@ -1201,6 +1222,21 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
 
         outputs["coord_xy_dim"] = coord_xy_dim
 
+        coord_xy_twist = copy.copy(coord_xy_interp)
+        x = coord_xy_dim[:, :, 0]
+        y = coord_xy_dim[:, :, 1]
+        coord_xy_twist[:, :, 0] = x * np.cos(twist[:,np.newaxis]) - y * np.sin(twist[:,np.newaxis])
+        coord_xy_twist[:, :, 1] = y * np.cos(twist[:,np.newaxis]) + x * np.sin(twist[:,np.newaxis])
+        outputs["coord_xy_dim_twisted"] = coord_xy_twist
+
+        # Integrate along span for surface area
+        wetted_chord = coord_xy_dim[:,:,1].max(axis=1) - coord_xy_dim[:,:,1].min(axis=1)
+        outputs["wetted_area"] = np.trapz(wetted_chord, inputs["ref_axis"][:,2])
+
+        projected_chord = coord_xy_twist[:,:,1].max(axis=1) - coord_xy_twist[:,:,1].min(axis=1)
+        outputs["projected_area"] = np.trapz(projected_chord, inputs["ref_axis"][:,2])
+        
+            
 
 class INN_Airfoils(om.ExplicitComponent):
     # Openmdao component to run the inverted neural network framework for airfoil design
@@ -1449,17 +1485,6 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
 
         self.add_input(
-            "s",
-            val=np.zeros(n_span),
-            desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
-        )
-        self.add_input(
-            "twist",
-            val=np.zeros(n_span),
-            units="rad",
-            desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
-        )
-        self.add_input(
             "ref_axis",
             val=np.zeros((n_span, 3)),
             units="m",
@@ -1467,13 +1492,6 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
         )
 
         self.add_input(
-            "coord_xy_dim",
-            val=np.zeros((n_span, n_xy, 2)),
-            units="m",
-            desc="3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.",
-        )
-
-        self.add_output(
             "coord_xy_dim_twisted",
             val=np.zeros((n_span, n_xy, 2)),
             units="m",
@@ -1487,25 +1505,20 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-        for i in range(self.n_span):
-            x = inputs["coord_xy_dim"][i, :, 0]
-            y = inputs["coord_xy_dim"][i, :, 1]
-            outputs["coord_xy_dim_twisted"][i, :, 0] = x * np.cos(inputs["twist"][i]) - y * np.sin(inputs["twist"][i])
-            outputs["coord_xy_dim_twisted"][i, :, 1] = y * np.cos(inputs["twist"][i]) + x * np.sin(inputs["twist"][i])
-
         k = 0
         for i in range(self.n_span):
             for j in range(self.n_xy):
                 outputs["3D_shape"][k, :] = np.array(
-                    [k, outputs["coord_xy_dim_twisted"][i, j, 1], outputs["coord_xy_dim_twisted"][i, j, 0], 0.0]
+                    [k, inputs["coord_xy_dim_twisted"][i, j, 1], inputs["coord_xy_dim_twisted"][i, j, 0], 0.0]
                 ) + np.hstack([0, inputs["ref_axis"][i, :]])
                 k = k + 1
 
-        np.savetxt(
-            "3d_xyz_nrel5mw.dat",
-            outputs["3D_shape"],
-            header="\t point number [-]\t\t\t\t x [m] \t\t\t\t\t y [m]  \t\t\t\t z [m] \t\t\t\t The coordinate system follows the BeamDyn one.",
-        )
+        # Debug output
+            np.savetxt(
+                "3d_xyz_blade_lofted.dat",
+                outputs["3D_shape"],
+                header="\t point number [-]\t\t\t\t x [m] \t\t\t\t\t y [m]  \t\t\t\t z [m] \t\t\t\t The coordinate system follows the BeamDyn one.",
+            )
 
 
 class Blade_Internal_Structure_2D_FEM(om.Group):
