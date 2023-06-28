@@ -1,0 +1,148 @@
+general:
+    folder_output: outputs_rotor_drivetrain_tower_lcoe
+    fname_output: lcoe_output
+
+design_variables:
+    rotor_diameter: 
+        flag: True 
+        minimum: 100.0
+        maximum: 180.0
+        scaler: 1.e-2
+    blade:
+        aero_shape:
+          twist:
+              flag: True 
+              inverse: False
+              n_opt: 8
+              max_decrease: 0.08722222222222223
+              max_increase: 0.08722222222222223
+              index_start: 2
+              index_end: 8
+          chord:
+              flag: True 
+              n_opt: 8     
+              max_decrease: 0.2
+              max_increase: 2.0
+              index_start: 1
+              index_end: 7
+        structure:
+            spar_cap_ss:
+                flag: True 
+                n_opt: 8     
+                max_decrease: 0.2
+                max_increase: 2.0
+                index_start: 1
+                index_end: 7
+            spar_cap_ps:
+                flag: True
+                equal_to_suction: True 
+                n_opt: 8
+                max_decrease: 0.2
+                max_increase: 2.0
+                index_start: 1
+                index_end: 7
+    drivetrain:
+        lss_diameter:
+            flag: True
+            lower_bound: 0.1
+            upper_bound: 2.0
+        hss_diameter:
+            flag: True
+            lower_bound: 0.1
+            upper_bound: 2.0
+        lss_wall_thickness:
+            flag: True
+            lower_bound: 0.001
+            upper_bound: 0.5
+        hss_wall_thickness:
+            flag: True
+            lower_bound: 0.001
+            upper_bound: 0.5
+        bedplate_web_thickness:
+            flag: True
+            lower_bound: 0.001
+            upper_bound: 0.5
+        bedplate_flange_thickness:
+            flag: True
+            lower_bound: 0.001
+            upper_bound: 0.5
+        bedplate_flange_width:
+            flag: True
+            lower_bound: 0.01
+            upper_bound: 2.0
+    tower:
+        outer_diameter:
+            flag: False 
+            lower_bound: 3.87
+            upper_bound: 4.3
+        layer_thickness:
+            flag: True
+            lower_bound: 4.e-3
+            upper_bound: 2.e-1
+            
+merit_figure: LCOE
+
+constraints:
+  blade:
+    stall:
+      flag: True
+      margin: 0.05233
+    chord:
+      flag: True 
+      max: 4.3
+    root_circle_diameter:
+      flag: False
+      max_ratio: 1.
+    strains_spar_cap_ss:
+      flag: True
+      max:  3500.e-6
+      index_start: 1
+      index_end: 7
+    strains_spar_cap_ps:
+      flag: True
+      max:  3500.e-6
+      index_start: 1
+      index_end: 7
+    tip_deflection:
+      flag: True
+      margin: 1.41
+  drivetrain:
+    lss:
+      flag: True
+    hss:
+      flag: True
+    bedplate:
+      flag: True
+    shaft_deflection:
+      flag: True
+    shaft_angle:
+      flag: True
+  tower:
+    stress:
+      flag: True
+    global_buckling:
+      flag: True
+    shell_buckling:
+      flag: True
+    thickness_slope:
+      flag: True
+    slope:
+      flag: True
+    frequency:
+      flag: True
+
+driver:
+    optimization:
+        flag: True         # Flag to enable optimization
+        tol: 1.e-3          # Optimality tolerance
+        # max_major_iter: 100  # Maximum number of major design iterations (SNOPT)
+        # max_minor_iter: 1000 # Maximum number of minor design iterations (SNOPT)
+        max_iter: 2         # Maximum number of iterations (SLSQP)
+        solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        # step_size: 1.e-3    # Step size for finite differencing
+        form: central       # Finite differencing mode, either forward or central
+        verify_level: -1 # SNOPT check derivatives (-1 means no deriv checks)
+        
+recorder:
+    flag: True              # Flag to activate OpenMDAO recorder
+    file_name: log_opt_lcoe.sql  # Name of OpenMDAO recorder
