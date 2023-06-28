@@ -25,7 +25,6 @@ class TestRegression(unittest.TestCase):
         solver = "GA"
         analysis_options["driver"]["optimization"]["solver"] = solver
         analysis_options["driver"]["optimization"]["max_gen"] = 1
-        print("CHECK THIS", analysis_options)
         new_fname_analysis_options = f"{fname_analysis_options.split('/')[-1].split('.')[0]}_{solver}.yaml"
         write_yaml(analysis_options, new_fname_analysis_options)
 
