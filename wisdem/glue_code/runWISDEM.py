@@ -31,9 +31,16 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
     wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
 
-    if (overridden_values is not None) and ("folder_output" in overridden_values):
-        opt_options["general"]["folder_output"] = overridden_values.pop("folder_output")
-
+    if overridden_values is not None:
+        if "folder_output" in overridden_values:
+            opt_options["general"]["folder_output"] = overridden_values.pop("folder_output")
+        if "hydrogen_modeling_options" in overridden_values:
+            modeling_options["WISDEM"]["HydrogenProduction"]["modeling_options"] = overridden_values.pop("hydrogen_modeling_options")
+        if "hydrogen_wind_file" in overridden_values:
+            modeling_options["WISDEM"]["HydrogenProduction"]["wind_filename"] = overridden_values.pop("hydrogen_wind_file")
+        if "opt_flag" in overridden_values:
+            opt_options["driver"]["opt_flag"] = overridden_values.pop("opt_flag")
+        
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
     myopt = PoseOptimization(wt_init, modeling_options, opt_options)
