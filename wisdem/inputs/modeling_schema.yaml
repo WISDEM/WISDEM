@@ -482,3 +482,7 @@ properties:
                     power_filename:
                         type: string
                         description: Filename for power history. Should contain two columns with one header row. The first column contains the timepoints in second, the second column contains the turbine power in kW.
+                    overridden_values:
+                        type: object
+                        default: {}
+                        description: Values to override in the hydrogen input

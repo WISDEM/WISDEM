@@ -40,6 +40,9 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
             modeling_options["WISDEM"]["HydrogenProduction"]["wind_filename"] = overridden_values.pop("hydrogen_wind_file")
         if "opt_flag" in overridden_values:
             opt_options["driver"]["opt_flag"] = overridden_values.pop("opt_flag")
+        if "electrolyzer_rating_MW" in overridden_values:
+            relative_electrolyzer_rating = overridden_values.pop("electrolyzer_rating_MW")
+            modeling_options["WISDEM"]["HydrogenProduction"]["overridden_values"] = {"electrolyzer_rating_MW": relative_electrolyzer_rating}
         
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.

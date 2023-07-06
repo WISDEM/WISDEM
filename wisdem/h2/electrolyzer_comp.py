@@ -40,6 +40,10 @@ class ElectrolyzerModel(om.ExplicitComponent):
             or self.options["modeling_options"]["rating_equals_turbine_rating"]:
             self.options["h2_modeling_options"]["electrolyzer"]["control"]["system_rating_MW"] = inputs["system_rating_MW"][0]
 
+        elif "electrolyzer_rating_MW" in self.options["modeling_options"]["overridden_values"]:
+            electrolyzer_rating_MW = self.options["modeling_options"]["overridden_values"]["electrolyzer_rating_MW"]
+            self.options["h2_modeling_options"]["electrolyzer"]["control"]["system_rating_MW"] = electrolyzer_rating_MW
+
         h2_prod, max_curr_density, lcoh, _, _  = run_lcoh(
             self.options["h2_modeling_options"],
             power_signal,
