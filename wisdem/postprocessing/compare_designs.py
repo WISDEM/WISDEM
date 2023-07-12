@@ -43,12 +43,19 @@ def create_all_plots(
     show_plots,
     font_size,
     extension,
+    colors=None,
 ):
     mult_flag = len(list_of_sims) > 1
 
-    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    if colors is None:
+        colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    else:
+        colors = colors + plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
     if not mult_flag:
         colors = ["k"] + colors
+
+    print("COLORS: ", colors)
 
     # Twist
     try:
@@ -120,9 +127,13 @@ def create_all_plots(
 
         s_opt_chord = list_of_sims[0]["blade.outer_shape_bem.s"]
         chord_opt = list_of_sims[0]["blade.pa.chord_param"]
+        max_chord = analysis_options["constraints"]["blade"]["chord"]["max"]
+        chord_bounds_lower = np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["max_decrease"]) * chord_opt
+        chord_bounds_upper = np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["max_increase"]) * chord_opt
+        chord_bounds_upper[chord_bounds_upper>max_chord] = max_chord
         axc.plot(
             s_opt_chord,
-            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["max_decrease"]) * chord_opt,
+            chord_bounds_lower,
             ":o",
             color=colors[idx + 1],
             markersize=3,
@@ -130,7 +141,7 @@ def create_all_plots(
         )
         axc.plot(
             s_opt_chord,
-            np.array(analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["max_increase"]) * chord_opt,
+            chord_bounds_upper,
             ":o",
             color=colors[idx + 1],
             markersize=3,
@@ -813,7 +824,7 @@ def save_h2_data_to_file(list_of_sims, folder_output):
         pass
 
 
-def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
+def run(list_of_sims, list_of_labels, modeling_options, analysis_options, colors=None):
     # These are options for the plotting and saving
     show_plots = False  # if True, print plots to screen in addition to saving files
     font_size = 12
@@ -830,7 +841,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "TSR": ["control.rated_TSR", None],
         "AEP": ["rotorse.rp.AEP", "GW*h"],
         "LCOE": ["financese.lcoe", "USD/(MW*h)"],
-        # "Cp": ["rotorse.rp.powercurve.Cp_aero", None],
+        "Cp": ["rotorse.rp.powercurve.Cp_aero", None], # was commented
         "Rated velocity": ["rotorse.rp.powercurve.rated_V", "m/s"],
         "Rated rpm": ["rotorse.rp.powercurve.rated_Omega", "rpm"],
         "Rated pitch": ["control.rated_pitch", "deg"],
@@ -882,6 +893,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         show_plots,
         font_size,
         extension,
+        colors=colors,
     )
 
 
