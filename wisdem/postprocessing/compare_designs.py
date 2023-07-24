@@ -33,7 +33,20 @@ this_dir = os.path.dirname(os.path.realpath(__file__))
 fname_modeling_options_default = this_dir + os.sep + "default_modeling_options.yaml"
 fname_analysis_options_default = this_dir + os.sep + "default_analysis_options.yaml"
 
+def get_lims(key, xlims, ylims):
 
+        if key in xlims:
+            xlim = xlims[key]
+        else:
+            xlim = ()
+
+        if key in ylims:
+            ylim = ylims[key]
+        else:
+            ylim = ()
+        
+        return xlim, ylim
+    
 def create_all_plots(
     list_of_sims,
     list_of_labels,
@@ -44,6 +57,9 @@ def create_all_plots(
     font_size,
     extension,
     colors=None,
+    ylims = {},
+    xlims = {},
+    legend_outside = False
 ):
     mult_flag = len(list_of_sims) > 1
 
@@ -56,9 +72,12 @@ def create_all_plots(
         colors = ["k"] + colors
 
     print("COLORS: ", colors)
+    print("mult_flag: ", mult_flag)
 
     # Twist
     try:
+        key = "twist_opt"
+        xlim, ylim = get_lims(key, xlims, ylims)
         ftw, axtw = plt.subplots(1, 1, figsize=(5.3, 4))
 
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
@@ -96,8 +115,14 @@ def create_all_plots(
         )
 
         if mult_flag:
-            axtw.legend(fontsize=font_size)
-
+            if legend_outside:
+                axtw.legend(fontsize=font_size, loc='center left', bbox_to_anchor=(1, 0.5))
+            else:
+                axtw.legend(fontsize=font_size)
+        if len(xlim) > 0:
+            axtw.set_xlim(xlim)
+        if len(ylim) > 0:
+            axtw.set_ylim(ylim)
         plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
         plt.ylabel("Twist [deg]", fontsize=font_size + 2, fontweight="bold")
         plt.xticks(fontsize=font_size)
@@ -111,6 +136,8 @@ def create_all_plots(
 
     try:
         # Chord
+        key = "chord_opt"
+        xlim, ylim = get_lims(key, xlims, ylims)
         fc, axc = plt.subplots(1, 1, figsize=(5.3, 4))
 
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
@@ -147,8 +174,16 @@ def create_all_plots(
             markersize=3,
         )
 
+        if len(xlim) > 0:
+            axc.set_xlim(xlim)
+        if len(ylim) > 0:
+            axc.set_ylim(ylim)
+
         if mult_flag:
-            axc.legend(fontsize=font_size)
+            if legend_outside:
+                axc.legend(fontsize=font_size, loc='center left', bbox_to_anchor=(1, 0.5))
+            else:
+                axc.legend(fontsize=font_size)
         plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
         plt.ylabel("Chord [m]", fontsize=font_size + 2, fontweight="bold")
         plt.xticks(fontsize=font_size)
@@ -162,6 +197,8 @@ def create_all_plots(
 
     # Spar caps
     try:
+        key = "spar_cap_ss"
+        xlim, ylim = get_lims(key, xlims, ylims)
         fsc, axsc = plt.subplots(1, 1, figsize=(5.3, 4))
 
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
@@ -206,8 +243,16 @@ def create_all_plots(
             markersize=3,
         )
 
+        if len(xlim) > 0:
+            axsc.set_xlim(xlim)
+        if len(ylim) > 0:
+            axsc.set_ylim(ylim)
+
         if mult_flag:
-            axsc.legend(fontsize=font_size)
+            if legend_outside:
+                axsc.legend(fontsize=font_size, loc='center left', bbox_to_anchor=(1, 0.5))
+            else:
+                axsc.legend(fontsize=font_size)
         plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
         plt.ylabel("Spar Caps Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
         plt.xticks(fontsize=font_size)
@@ -221,6 +266,8 @@ def create_all_plots(
 
     # Trailing edge reinforcements
     try:
+        key = "te_ss"
+        xlim, ylim = get_lims(key, xlims, ylims)
         fte, axte = plt.subplots(1, 1, figsize=(5.3, 4))
 
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
@@ -263,8 +310,16 @@ def create_all_plots(
             markersize=3,
         )
 
+        if len(xlim) > 0:
+            axte.set_xlim(xlim)
+        if len(ylim) > 0:
+            axte.set_ylim(ylim)
+
         if mult_flag:
-            axte.legend(fontsize=font_size)
+            if legend_outside:
+                axte.legend(fontsize=font_size, loc='center left', bbox_to_anchor=(1, 0.5))
+            else:
+                axte.legend(fontsize=font_size)
         plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
         plt.ylabel("TE Reinforcement Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
         plt.xticks(fontsize=font_size)
@@ -278,6 +333,8 @@ def create_all_plots(
 
     # Skins
     try:
+        key = "skins"
+        xlim, ylim = get_lims(key, xlims, ylims)
         f, ax = plt.subplots(1, 1, figsize=(5.3, 4))
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             ax.plot(
@@ -288,7 +345,14 @@ def create_all_plots(
                 label=label,
             )
         if mult_flag:
-            ax.legend(fontsize=font_size)
+            if legend_outside:
+                ax.legend(fontsize=font_size, loc='center left', bbox_to_anchor=(1, 0.5))
+            else:
+                ax.legend(fontsize=font_size)
+        if len(xlim) > 0:
+            ax.set_xlim(xlim)
+        if len(ylim) > 0:
+            ax.set_ylim(ylim)
         # plt.ylim([0., 120])
         plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
         plt.ylabel("Outer Shell Skin Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
@@ -303,6 +367,8 @@ def create_all_plots(
 
     # Strains spar caps
     try:
+        key = "strainL_spar"
+        xlim, ylim = get_lims(key, xlims, ylims)
         feps, axeps = plt.subplots(1, 1, figsize=(5.3, 4))
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             axeps.plot(
@@ -318,10 +384,17 @@ def create_all_plots(
                 "-",
                 color=colors[idx],
             )
-
-        plt.ylim([-5e3, 5e3])
+        if len(xlim) > 0:
+            axeps.set_xlim(xlim)
+        if len(ylim) > 0:
+            axeps.set_ylim(ylim)
+        else:
+            plt.ylim([-5e3, 5e3])
         if mult_flag:
-            axeps.legend(fontsize=font_size)
+            if legend_outside:
+                axeps.legend(fontsize=font_size, loc='center left', bbox_to_anchor=(1, 0.5))
+            else:
+                axeps.legend(fontsize=font_size)
         plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
         plt.ylabel("Spar Caps Strains [mu eps]", fontsize=font_size + 2, fontweight="bold")
         plt.xticks(fontsize=font_size)
@@ -335,6 +408,8 @@ def create_all_plots(
 
     # Strains trailing edge
     try:
+        key = "strainU_te"
+        xlim, ylim = get_lims(key, xlims, ylims)
         fete, axete = plt.subplots(1, 1, figsize=(5.3, 4))
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             axete.plot(
@@ -350,10 +425,17 @@ def create_all_plots(
                 "-",
                 color=colors[idx],
             )
-
-        plt.ylim([-5e3, 5e3])
+        if len(xlim) > 0:
+            axete.set_xlim(xlim)
+        if len(ylim) > 0:
+            axete.set_ylim(ylim)
+        else:
+            plt.ylim([-5e3, 5e3])
         if mult_flag:
-            axete.legend(fontsize=font_size)
+            if legend_outside:
+                axete.legend(fontsize=font_size, loc='center left', bbox_to_anchor=(1, 0.5))
+            else:
+                axete.legend(fontsize=font_size)
         plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
         plt.ylabel("Trailing Edge Strains [mu eps]", fontsize=font_size + 2, fontweight="bold")
         plt.xticks(fontsize=font_size)
@@ -367,6 +449,8 @@ def create_all_plots(
 
     # Angle of attack and stall angle
     try:
+        key = "aoa_along_span"
+        xlim, ylim = get_lims(key, xlims, ylims)
         faoa, axaoa = plt.subplots(1, 1, figsize=(5.3, 4))
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             axaoa.plot(
@@ -384,8 +468,16 @@ def create_all_plots(
             label="Stall",
         )
         if mult_flag:
-            axaoa.legend(fontsize=font_size)
-        axaoa.set_ylim([0, 20])
+            if legend_outside:
+                axaoa.legend(fontsize=font_size, loc='center left', bbox_to_anchor=(1, 0.5))
+            else:
+                axaoa.legend(fontsize=font_size)
+        if len(xlim) > 0:
+            axaoa.set_xlim(xlim)
+        if len(ylim) > 0:
+            axaoa.set_ylim(ylim)
+        else:
+            axaoa.set_ylim([0, 20])
         plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
         plt.ylabel("Angle of Attack [deg]", fontsize=font_size + 2, fontweight="bold")
         plt.xticks(fontsize=font_size)
@@ -399,6 +491,8 @@ def create_all_plots(
 
     # Airfoil efficiency
     try:
+        key = "airfoil_efficiency"
+        xlim, ylim = get_lims(key, xlims, ylims)
         feff, axeff = plt.subplots(1, 1, figsize=(5.3, 4))
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             axeff.plot(
@@ -409,7 +503,14 @@ def create_all_plots(
                 label=label,
             )
         if mult_flag:
-            axeff.legend(fontsize=font_size)
+            if legend_outside:
+                axeff.legend(fontsize=font_size, loc='center left', bbox_to_anchor=(1, 0.5))
+            else:
+                axeff.legend(fontsize=font_size)
+        if len(xlim) > 0:
+            axeff.set_xlim(xlim)
+        if len(ylim) > 0:
+            axeff.set_ylim(ylim)
         plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
         plt.ylabel("Airfoil Efficiency [-]", fontsize=font_size + 2, fontweight="bold")
         plt.xticks(fontsize=font_size)
@@ -423,6 +524,8 @@ def create_all_plots(
 
     # Prebend and sweep
     try:
+        key = "prebend"
+        xlim, ylim = get_lims(key, xlims, ylims)
         fbend, axbend = plt.subplots(1, 1, figsize=(5.3, 4))
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             axbend.plot(
@@ -433,7 +536,14 @@ def create_all_plots(
                 label=label,
             )
         if mult_flag:
-            axbend.legend(fontsize=font_size)
+            if legend_outside:
+                axbend.legend(fontsize=font_size, loc='center left', bbox_to_anchor=(1, 0.5))
+            else:
+                axbend.legend(fontsize=font_size)
+        if len(xlim) > 0:
+            axbend.set_xlim(xlim)
+        if len(ylim) > 0:
+            axbend.set_ylim(ylim)
         plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
         plt.ylabel("Prebend [m]", fontsize=font_size + 2, fontweight="bold")
         plt.xticks(fontsize=font_size)
@@ -443,6 +553,8 @@ def create_all_plots(
         fig_name = "prebend" + extension
         fbend.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
 
+        key = "sweep"
+        xlim, ylim = get_lims(key, xlims, ylims)
         fsweep, axsweep = plt.subplots(1, 1, figsize=(5.3, 4))
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             axsweep.plot(
@@ -453,7 +565,14 @@ def create_all_plots(
                 label=label,
             )
         if mult_flag:
-            axsweep.legend(fontsize=font_size)
+            if legend_outside:
+                axsweep.legend(fontsize=font_size, loc='center left', bbox_to_anchor=(1, 0.5))
+            else:
+                axsweep.legend(fontsize=font_size)
+        if len(xlim) > 0:
+            axbend.set_xlim(xlim)
+        if len(ylim) > 0:
+            axbend.set_ylim(ylim)
         plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
         plt.ylabel("Sweep [m]", fontsize=font_size + 2, fontweight="bold")
         plt.xticks(fontsize=font_size)
@@ -467,9 +586,15 @@ def create_all_plots(
 
     # Tower geometry
     # try:
+    key = "tower.diameter"
+    xlim, ylim = get_lims(key, xlims, ylims)
     brown = np.array([150.0, 75.0, 0.0]) / 256.0
     ftow = plt.figure(figsize=(11, 4))
     ax1 = ftow.add_subplot(121)
+    if len(xlim) > 0:
+        ax1.set_xlim(xlim)
+    if len(ylim) > 0:
+        ax1.set_ylim(ylim)
     for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
         ax1.plot(
             getter.get_tower_diameter(yaml_data),
@@ -496,7 +621,13 @@ def create_all_plots(
     plt.yticks(fontsize=font_size)
     plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
 
+    key = "tower.thickness"
+    xlim, ylim = get_lims(key, xlims, ylims)
     ax2 = ftow.add_subplot(122)
+    if len(xlim) > 0:
+        ax2.set_xlim(xlim)
+    if len(ylim) > 0:
+        ax2.set_ylim(ylim)
     for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
         y = 1e3 * getter.get_tower_thickness(yaml_data)
         ax2.step(
@@ -514,7 +645,10 @@ def create_all_plots(
         ax2.plot(vx, h_trans * np.ones(2), color="g", linestyle="--")
     ax2.set_xlim(vx)
     if mult_flag:
-        ax2.legend(fontsize=font_size)
+        if legend_outside:
+            ax2.legend(fontsize=font_size, loc='center left', bbox_to_anchor=(1, 0.5))
+        else:
+            ax2.legend(fontsize=font_size)
     plt.xlabel("Wall Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
     plt.xticks(fontsize=font_size)
     plt.setp(ax2.get_yticklabels(), visible=False)
@@ -522,217 +656,307 @@ def create_all_plots(
     plt.subplots_adjust(bottom=0.15, left=0.15)
     fig_name = "tower-monopile_geometry" + extension
     ftow.subplots_adjust(hspace=0.02, wspace=0.02, bottom=0.15, left=0.15)
+    plt.tight_layout()
     ftow.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
     # except KeyError:
     #    pass
 
-    def simple_plot_results(x_axis_label, y_axis_label, x_axis_data_name, y_axis_data_name, plot_filename):
+    def simple_plot_results(x_axis_label, y_axis_label, x_axis_data_name, y_axis_data_name, plot_filename, ylim=(), xlim=(), yscalar=1.0):
         f, ax = plt.subplots(1, 1, figsize=(5.3, 4))
         for i_yaml, yaml_data in enumerate(list_of_sims):
             ax.plot(
                 yaml_data[x_axis_data_name],
-                yaml_data[y_axis_data_name],
+                yscalar*np.array(yaml_data[y_axis_data_name]),
                 "-",
                 color=colors[i_yaml],
                 label=list_of_labels[i_yaml],
             )
         if mult_flag:
-            ax.legend(fontsize=font_size)
+            if legend_outside:
+                ax.legend(fontsize=font_size, loc='center left', bbox_to_anchor=(1, 0.5))
+            else:
+                ax.legend(fontsize=font_size)
         plt.xlabel(x_axis_label, fontsize=font_size + 2, fontweight="bold")
         plt.ylabel(y_axis_label, fontsize=font_size + 2, fontweight="bold")
         plt.xticks(fontsize=font_size)
         plt.yticks(fontsize=font_size)
         plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
         plt.subplots_adjust(bottom=0.15, left=0.15)
+        if len(ylim) > 0:
+            ax.set(ylim=ylim)
+        if len(xlim) > 0:
+            ax.set(xlim=xlim)
         fig_name = plot_filename + extension
         f.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
         plt.close()
 
     try:
         # Edgewise stiffness
+        key = "EIxx"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Blade Nondimensional Span [-]",
             "Edgewise Stiffness [Nm2]",
             "blade.outer_shape_bem.s",
             "rotorse.EIxx",
             "edge",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Torsional stiffness
+        key = "GJ"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Blade Nondimensional Span [-]",
             "Torsional Stiffness [Nm2]",
             "blade.outer_shape_bem.s",
             "rotorse.GJ",
             "torsion",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Flapwise stiffness
+        key = "EIyy"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Blade Nondimensional Span [-]",
             "Flapwise Stiffness [Nm2]",
             "blade.outer_shape_bem.s",
             "rotorse.EIyy",
             "flap",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Mass
+        key = "rhoA"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Blade Nondimensional Span [-]",
             "Unit Mass [kg/m]",
             "blade.outer_shape_bem.s",
             "rotorse.rhoA",
             "mass",
+            xlim=xlim,
+            ylim=ylim
         )
     except KeyError:
         pass
 
     try:
         # Relative thickness
+        key = "r_thick_interp"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Blade Nondimensional Span [-]",
             "Relative Thickness [-]",
             "blade.outer_shape_bem.s",
             "blade.interp_airfoils.r_thick_interp",
             "r_thick",
+            xlim=xlim,
+            ylim=ylim
         )
     except KeyError:
         pass
 
     try:
+        
         # Induction
+        key = "ax_induct_regII"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Blade Nondimensional Span [-]",
             "Axial Induction [-]",
             "blade.outer_shape_bem.s",
             "rotorse.rp.powercurve.ax_induct_regII",
             "induction",
+            xlim=xlim,
+            ylim=ylim
         )
-
+        
         # Lift coefficient
+        key = "cl_regII"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Blade Nondimensional Span [-]",
             "Lift Coefficient [-]",
             "blade.outer_shape_bem.s",
             "rotorse.rp.powercurve.cl_regII",
             "lift_coeff",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Drag coefficient
+        key = "cd_regII"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Blade Nondimensional Span [-]",
             "Drag Coefficient [-]",
             "blade.outer_shape_bem.s",
             "rotorse.rp.powercurve.cd_regII",
             "drag_coeff",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Power curve pitch
+        key = "pitch"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Wind velocity [m/s]",
             "Pitch angle [deg]",
             "rotorse.rp.powercurve.V",
             "rotorse.rp.powercurve.pitch",
             "pitch",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Power curve power
+        key = "P"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Wind velocity [m/s]",
             "Electrical Power [W]",
             "rotorse.rp.powercurve.V",
             "rotorse.rp.powercurve.P",
             "power_elec",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Power curve power (mechanical)
+        key = "P_aero"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Wind velocity [m/s]",
             "Mechanical Power [W]",
             "rotorse.rp.powercurve.V",
             "rotorse.rp.powercurve.P_aero",
             "power_aero",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Power curve power coeff
+        key = "Cp"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Wind velocity [m/s]",
             "Electrical Power Coefficient [-]",
             "rotorse.rp.powercurve.V",
             "rotorse.rp.powercurve.Cp",
             "cp_elec",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Power curve power coeff (mechanical)
+        key = "Cp_aero"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Wind velocity [m/s]",
             "Mechanical Power Coefficient [-]",
             "rotorse.rp.powercurve.V",
             "rotorse.rp.powercurve.Cp_aero",
             "cp_aero",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Power curve rpm
+        key = "Omega"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Wind velocity [m/s]",
             "Rotor speed [rpm]",
             "rotorse.rp.powercurve.V",
             "rotorse.rp.powercurve.Omega",
             "omega",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Power curve thrust
+        key = "T"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Wind velocity [m/s]",
             "Thrust [N]",
             "rotorse.rp.powercurve.V",
             "rotorse.rp.powercurve.T",
             "thrust",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Power curve thrust coeff
+        key = "Ct_aero"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Wind velocity [m/s]",
             "Thrust Coefficient [-]",
             "rotorse.rp.powercurve.V",
             "rotorse.rp.powercurve.Ct_aero",
             "ct_aero",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Power curve torque
+        key = "Q"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Wind velocity [m/s]",
-            "Torque [Nm]",
+            "Torque [MNm]",
             "rotorse.rp.powercurve.V",
             "rotorse.rp.powercurve.Q",
             "torque",
+            xlim=xlim,
+            ylim=ylim,
+            yscalar=1E-6
         )
 
         # Power curve torque coeff
+        key = "Cq_aero"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Wind velocity [m/s]",
             "Torque Coefficient [-]",
             "rotorse.rp.powercurve.V",
             "rotorse.rp.powercurve.Cq_aero",
             "cq_aero",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Power curve moment
+        key = "M"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Wind velocity [m/s]",
             "Blade moment [Nm]",
             "rotorse.rp.powercurve.V",
             "rotorse.rp.powercurve.M",
             "moment",
+            xlim=xlim,
+            ylim=ylim
         )
 
         # Power curve moment coeff
+        key = "Cm_aero"
+        xlim, ylim = get_lims(key, xlims, ylims)
         simple_plot_results(
             "Wind velocity [m/s]",
             "Blade moment coefficient [-]",
             "rotorse.rp.powercurve.V",
             "rotorse.rp.powercurve.Cm_aero",
             "cm_aero",
+            xlim=xlim,
+            ylim=ylim
         )
     except KeyError:
         pass
@@ -824,7 +1048,7 @@ def save_h2_data_to_file(list_of_sims, folder_output):
         pass
 
 
-def run(list_of_sims, list_of_labels, modeling_options, analysis_options, colors=None):
+def run(list_of_sims, list_of_labels, modeling_options, analysis_options, colors=None, ylims={}, xlims={}, legend_outside=False):
     # These are options for the plotting and saving
     show_plots = False  # if True, print plots to screen in addition to saving files
     font_size = 12
@@ -894,6 +1118,9 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options, colors
         font_size,
         extension,
         colors=colors,
+        ylims=ylims,
+        xlims=xlims,
+        legend_outside=legend_outside
     )
 
 

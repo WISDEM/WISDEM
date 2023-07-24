@@ -79,7 +79,7 @@ class WT_RNTA(om.Group):
             self.connect("env.rho_air", "blade.compute_reynolds.rho")
             self.connect("env.mu_air", "blade.compute_reynolds.mu")
 
-            # Conncetions to ccblade
+            # Connections to ccblade
             self.connect("blade.pa.chord_param", "rotorse.chord")
             self.connect("blade.pa.twist_param", "rotorse.ccblade.theta_in")
             self.connect("blade.opt_var.s_opt_chord", "rotorse.ccblade.s_opt_chord")
