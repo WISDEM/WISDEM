@@ -44,12 +44,16 @@ class ElectrolyzerModel(om.ExplicitComponent):
             electrolyzer_rating_MW = self.options["modeling_options"]["overridden_values"]["electrolyzer_rating_MW"]
             self.options["h2_modeling_options"]["electrolyzer"]["control"]["system_rating_MW"] = electrolyzer_rating_MW
 
-        h2_prod, max_curr_density, lcoh, _, _  = run_lcoh(
+        h2_prod, max_curr_density, lcoh, lcoh_dict, _  = run_lcoh(
             self.options["h2_modeling_options"],
             power_signal,
             lcoe,
             optimize=True
         )
+
+        lt = lcoh_dict["LCOH Breakdown"]["Life Totals [$]"]
+        capex = lt["CapEx"]
+        opex = lt["OM"]
 
         msg = (
             f"\n====== Electrolyzer ======\n"
@@ -62,4 +66,6 @@ class ElectrolyzerModel(om.ExplicitComponent):
 
         outputs["h2_produced"] = h2_prod
         outputs["max_curr_density"] = max_curr_density
+        outputs["capex"] = capex
+        outputs["opex"] = opex
         outputs["lcoh"] = lcoh
