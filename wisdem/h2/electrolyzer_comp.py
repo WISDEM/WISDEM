@@ -29,6 +29,8 @@ class ElectrolyzerModel(om.ExplicitComponent):
             self.add_input("system_rating_MW", units="MW")
         self.add_output("h2_produced", units="kg")
         self.add_output("max_curr_density", units="A/cm**2")
+        self.add_output("capex", units="USD")
+        self.add_output("opex", units="USD")
         self.add_output("lcoh", units="USD/kg")
 
     def compute(self, inputs, outputs):
