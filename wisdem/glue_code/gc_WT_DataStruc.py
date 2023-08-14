@@ -1964,13 +1964,6 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                         layer_rotation[j, i] = -inputs["twist"][i]
                     else:
                         layer_rotation[j, i] = -inputs["layer_rotation_yaml"][j, i]
-                    midpoint = calc_axis_intersection(
-                        inputs["coord_xy_dim"][i, :, :],
-                        -layer_rotation[j, i],
-                        inputs["layer_offset_y_pa_yaml"][j, i],
-                        [0.0, 0.0],
-                        [discrete_inputs["layer_side"][j]],
-                    )[0]
 
                     # Geometry check to make sure the spar caps does not exceed 80% of the chord
                     width = inputs["layer_width_yaml"][j, i]
@@ -1992,7 +1985,14 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     else:
                         outputs["layer_width"][j, i] = copy.copy(width)
                         outputs["layer_offset_y_pa"][j, i] = copy.copy(offset)
-
+                    
+                    midpoint = calc_axis_intersection(
+                        inputs["coord_xy_dim"][i, :, :],
+                        -layer_rotation[j, i],
+                        outputs["layer_offset_y_pa"][j, i],
+                        [0.0, 0.0],
+                        [discrete_inputs["layer_side"][j]],
+                    )[0]
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = midpoint + width / arc_L_i / 2.0
 
