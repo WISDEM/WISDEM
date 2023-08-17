@@ -1532,7 +1532,7 @@ class BladeJointSizing(ExplicitComponent):
         # 3- Calculate # bolts such that axial flap bolt forces > edge bolt forces
         # Loop through number of possible bolts per spar cap, and calculate the following. When the flap ultimate and fatigue loads both
         # dominate, that is the minimum # bolts. Units are force per bolt ONLY HERE.
-        for n_bolt_min in range(3, np.min([5, int(np.ceil(n_bolt_max) // 2 * 2 + 1)]), 2):
+        for n_bolt_min in range(3, np.max([5, int(np.ceil(n_bolt_max) // 2 * 2 + 1)]), 2):
             N = int(np.floor(n_bolt_min / 2))
             N_array = np.linspace(1, N, N)
             Fax_flap_ultimate_per_bolt = Mflap_ultimate / (d_b2b * n_bolt_min)
