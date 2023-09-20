@@ -21,6 +21,9 @@ jobs:
         python-version: ["3.9", "3.10", "3.11"]
 
     steps:
+      - name: Setup GNU Fortran
+        uses: modflowpy/install-gfortran-action@v1
+        
       - name: checkout repository
         uses: actions/checkout@v3
 
@@ -61,22 +64,24 @@ jobs:
       #  uses: mxschmitt/action-tmate@v3
 
       # Install WISDEM with setup
-      - name: Install WISDEM with setup
+      #- name: Install WISDEM with setup
+      #  run: |
+      #    pip install -vv --no-deps -e .
+
+      # Install WISDEM with pip
+      - name: Install WISDEM with pip for Unix
+        if: false == contains( matrix.os, 'windows')
         run: |
           pip install -vv --no-deps -e .
 
       # Install WISDEM with pip
-      #- name: Install WISDEM with pip for Unix
-      #  if: false == contains( matrix.os, 'windows')
-      #  run: |
-      #    rm -rf meson_build
-      #    pip install -vv --no-deps -e .
-
-      # Install WISDEM with pip
-      #- name: Install WISDEM with pip for Windows
-      #  if: contains( matrix.os, 'windows')
-      #  run: |
-      #    pip install -vv --no-deps --global-option --compiler=unix .
+      - name: Install WISDEM with pip for Windows
+        if: contains( matrix.os, 'windows')
+        env:
+            FC: 'gfortran.exe'
+        run: |
+            pip install -vv --no-deps .
+            which gfortran.exe
 
       # Run all tests
       - name: Run tests
