@@ -55,7 +55,7 @@ jobs:
         if: false == contains( matrix.os, 'windows')
         run: |
           micromamba install -y petsc4py gfortran
-          micromamba info -e
+          micromamba info
 
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
