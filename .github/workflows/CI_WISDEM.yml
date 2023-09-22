@@ -82,13 +82,13 @@ jobs:
       - name: Install WISDEM with pip for Windows
         if: contains( matrix.os, 'windows')
         env:
-            FC: 'C:\Miniconda\envs\test\Scripts\gfortan.EXE'
+            FC: 'C:\Miniconda\envs\test\Scripts\gfortran.exe'
         run: |
             python setup.py install
     
       # Debugging session
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
 
       # Run all tests
       - name: Run tests
