@@ -13,7 +13,6 @@ jobs:
         run:
             shell: bash -el {0}
 
-
     strategy:
       fail-fast: False
       matrix:
@@ -56,7 +55,6 @@ jobs:
         run: |
           micromamba install -y petsc4py gfortran
           micromamba info
-        shell: micromamba-shell {0}
 
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
@@ -69,7 +67,6 @@ jobs:
         run: |
           micromamba list
           which gfortran
-        shell: micromamba-shell {0}
     
       # Debugging session
       #- name: Setup tmate session
@@ -95,7 +92,6 @@ jobs:
         run: |
             micromamba activate wisdem-actions
             pip install -vv --no-deps .
-            which gfortran.exe
 
       # Run all tests
       - name: Run tests
