@@ -26,46 +26,44 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v3
 
-      - name: Install mamba
-        uses: mamba-org/setup-micromamba@v1
-        # https://github.com/mamba-org/setup-micromamba
-        with:
-            environment-file: environment.yml
-            environment-name: wisdem-actions
-            init-shell: bash powershell
-            post-cleanup: 'all'
-      #- name: Install conda/mamba
-      #  uses: conda-incubator/setup-miniconda@v2
-      #  # https://github.com/marketplace/actions/setup-miniconda
+      #- name: Install mamba
+      #  uses: mamba-org/setup-micromamba@v1
+      #  # https://github.com/mamba-org/setup-micromamba
       #  with:
-      #    #miniconda-version: "latest"
-      #    #miniforge-version: "latest"
-      #    mamba-version: "*"
-      #    channels: conda-forge
-      #    channel-priority: true          
-      #    #auto-update-conda: true
-      #    python-version: ${{ matrix.python-version }}
-      #    environment-file: environment.yml
-      #    activate-environment: test
-      #    auto-activate-base: false
+      #      environment-file: environment.yml
+      #      environment-name: wisdem-actions
+      #      init-shell: bash powershell
+      #      post-cleanup: 'all'
+      - name: Install conda/mamba
+        uses: conda-incubator/setup-miniconda@v2
+        # https://github.com/marketplace/actions/setup-miniconda
+        with:
+          miniforge-variant: Mambaforge
+          miniforge-version: "latest"
+          #mamba-version: "*"
+          channels: conda-forge
+          channel-priority: true          
+          #auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          environment-file: environment.yml
+          activate-environment: test
+          auto-activate-base: false
 
       # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         run: |
-          micromamba install -y petsc4py gfortran
-          micromamba info
+          mamba install -y petsc4py gfortran
 
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
         run: |
-          micromamba activate wisdem-actions
-          micromamba install -y m2w64-toolchain libpython
+          mamba install -y m2w64-toolchain libpython
 
       - name: Debug config
         run: |
-          micromamba list
+          mamba list
           which gfortran
     
       # Debugging session
@@ -82,7 +80,6 @@ jobs:
         if: false == contains( matrix.os, 'windows')
         run: |
           pip install -vv --no-deps -e .
-        shell: micromamba-shell {0}
 
       # Install WISDEM with pip
       - name: Install WISDEM with pip for Windows
@@ -90,7 +87,6 @@ jobs:
         env:
             FC: 'gfortran.exe'
         run: |
-            micromamba activate wisdem-actions
             pip install -vv --no-deps .
 
       # Run all tests
@@ -98,13 +94,11 @@ jobs:
         if: false == contains( matrix.os, 'windows')
         run: |
           pytest --cov=wisdem
-        shell: micromamba-shell {0}
 
       # Run limited test on WINDOWS
       - name: Limited Windows test
         if: contains( matrix.os, 'windows')
         run: |
-          micromamba activate wisdem-actions
           cd wisdem/test/test_gluecode
           pytest test_g*
 
@@ -117,4 +111,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           coveralls --service=github
-        shell: micromamba-shell {0}
