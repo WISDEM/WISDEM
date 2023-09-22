@@ -20,30 +20,17 @@ jobs:
         python-version: ["3.9", "3.10", "3.11"]
 
     steps:
-      #- name: Setup GNU Fortran
-      #  uses: modflowpy/install-gfortran-action@v1
-        
       - name: checkout repository
         uses: actions/checkout@v3
 
-      #- name: Install mamba
-      #  uses: mamba-org/setup-micromamba@v1
-      #  # https://github.com/mamba-org/setup-micromamba
-      #  with:
-      #      environment-file: environment.yml
-      #      environment-name: wisdem-actions
-      #      init-shell: bash powershell
-      #      post-cleanup: 'all'
       - name: Install conda/mamba
         uses: conda-incubator/setup-miniconda@v2
         # https://github.com/marketplace/actions/setup-miniconda
         with:
-          #miniforge-variant: Mambaforge
-          miniforge-version: "latest"
+          # To use mamba, uncomment here, comment out the miniforge line
           #mamba-version: "*"
-          channels: conda-forge
-          channel-priority: true          
-          #auto-update-conda: true
+          miniforge-version: "latest"
+          auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           environment-file: environment.yml
           activate-environment: test
@@ -68,21 +55,22 @@ jobs:
           which pip
 
       # Install WISDEM with setup
-      #- name: Install WISDEM with setup
-      #  run: |
-      #    python setup.py install
-
-      # Install WISDEM with pip
-      - name: Install WISDEM with pip for Unix
-        if: false == contains( matrix.os, 'windows')
+      # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
+      - name: Install WISDEM with setup
         run: |
           python setup.py install
 
       # Install WISDEM with pip
-      - name: Install WISDEM with pip for Windows
-        if: contains( matrix.os, 'windows')
-        run: |
-            python setup.py install
+      #- name: Install WISDEM with pip for Unix
+      #  if: false == contains( matrix.os, 'windows')
+      #  run: |
+      #    python setup.py install
+
+      # Install WISDEM with pip
+      #- name: Install WISDEM with pip for Windows
+      #  if: contains( matrix.os, 'windows')
+      #  run: |
+      #      python setup.py install
     
       # Debugging session
       #- name: Setup tmate session
