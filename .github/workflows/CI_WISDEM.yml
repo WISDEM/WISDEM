@@ -40,7 +40,7 @@ jobs:
         with:
           #miniforge-variant: Mambaforge
           #miniforge-version: "latest"
-          mamba-version: "*"
+          #mamba-version: "*"
           channels: conda-forge
           channel-priority: true          
           #auto-update-conda: true
@@ -53,17 +53,17 @@ jobs:
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         run: |
-          mamba install -y petsc4py gfortran
+          conda install -y petsc4py gfortran
 
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
         run: |
-          mamba install -y m2w64-toolchain libpython
+          conda install -y m2w64-toolchain libpython
 
       - name: Debug config
         run: |
-          mamba list
+          conda list
           which -a gfortran
           which pip
 
@@ -81,10 +81,7 @@ jobs:
       # Install WISDEM with pip
       - name: Install WISDEM with pip for Windows
         if: contains( matrix.os, 'windows')
-        env:
-            FC: 'C:\Miniconda\envs\test\Scripts\gfortran.EXE'
         run: |
-            ls /c/Miniconda/envs/test/Scripts/
             python setup.py install
     
       # Debugging session
