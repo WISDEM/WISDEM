@@ -82,7 +82,7 @@ jobs:
       - name: Install WISDEM with pip for Windows
         if: contains( matrix.os, 'windows')
         env:
-            FC: "C:\Miniconda\envs\test\Scripts\gfortan.EXE"
+            FC: 'C:\Miniconda\envs\test\Scripts\gfortan.EXE'
         run: |
             python setup.py install
     
