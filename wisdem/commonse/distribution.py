@@ -30,8 +30,7 @@ class WeibullCDF(CDFBase):
 
         self.add_input("A", shape=1, desc="scale factor")
 
-        arange = np.arange(self.options["nspline"])
-        self.declare_partials("F", "x", rows=arange, cols=arange)
+        self.declare_partials("F", "x")
         self.declare_partials("F", ["A", "k"])
 
     def compute(self, inputs, outputs):
@@ -42,7 +41,7 @@ class WeibullCDF(CDFBase):
         A = inputs["A"]
         k = inputs["k"]
 
-        J["F", "x"] = np.exp(-((x / A) ** k)) * (x / A) ** (k - 1) * k / A
+        J["F", "x"] = np.diag(np.exp(-((x / A) ** k)) * (x / A) ** (k - 1) * k / A)
         J["F", "A"] = -k / A * np.exp(-((x / A) ** k)) * (x / A) ** k
         J["F", "k"] = np.exp(-((x / A) ** k)) * (x / A) ** k * np.log(x / A)
 
