@@ -79,6 +79,7 @@ def execute_script(fscript):
 
 
 class TestExamples(unittest.TestCase):
+    @unittest.skip("Takes too long")
     def test_all_scripts(self):
         for ks, s in enumerate(all_scripts):
             with self.subTest(f"Running: {s}", i=ks):

@@ -38,9 +38,9 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         # https://github.com/marketplace/actions/setup-miniconda
         with:
-          miniforge-variant: Mambaforge
-          miniforge-version: "latest"
-          #mamba-version: "*"
+          #miniforge-variant: Mambaforge
+          #miniforge-version: "latest"
+          mamba-version: "*"
           channels: conda-forge
           channel-priority: true          
           #auto-update-conda: true
@@ -65,29 +65,30 @@ jobs:
         run: |
           mamba list
           which gfortran
+          which pip
     
       # Debugging session
       #- name: Setup tmate session
       #  uses: mxschmitt/action-tmate@v3
 
       # Install WISDEM with setup
-      #- name: Install WISDEM with setup
+      - name: Install WISDEM with setup
+        run: |
+          python setup.py install
+
+      # Install WISDEM with pip
+      #- name: Install WISDEM with pip for Unix
+      #  if: false == contains( matrix.os, 'windows')
       #  run: |
       #    pip install -vv --no-deps -e .
 
       # Install WISDEM with pip
-      - name: Install WISDEM with pip for Unix
-        if: false == contains( matrix.os, 'windows')
-        run: |
-          pip install -vv --no-deps -e .
-
-      # Install WISDEM with pip
-      - name: Install WISDEM with pip for Windows
-        if: contains( matrix.os, 'windows')
-        env:
-            FC: 'gfortran.exe'
-        run: |
-            pip install -vv --no-deps .
+      #- name: Install WISDEM with pip for Windows
+      #  if: contains( matrix.os, 'windows')
+      #  env:
+      #      FC: 'gfortran.exe'
+      #  run: |
+      #      pip install -vv --no-deps .
 
       # Run all tests
       - name: Run tests
