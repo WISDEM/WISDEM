@@ -82,7 +82,7 @@ jobs:
       - name: Install WISDEM with pip for Windows
         if: contains( matrix.os, 'windows')
         env:
-            FC: 'C:\Miniconda\envs\test\Scripts\gfortran.exe'
+            FC: 'C:\Miniconda\envs\test\Scripts\gfortran.EXE'
         run: |
             python setup.py install
     
@@ -94,14 +94,14 @@ jobs:
       - name: Run tests
         if: false == contains( matrix.os, 'windows')
         run: |
-          pytest --cov=wisdem
+          pytest -p no:warnings --disable-warnings --cov=wisdem
 
       # Run limited test on WINDOWS
       - name: Limited Windows test
         if: contains( matrix.os, 'windows')
         run: |
           cd wisdem/test/test_gluecode
-          pytest test_g*
+          pytest  -p no:warnings --disable-warnings test_g*
 
       # Run coveralls
       - name: Run coveralls
