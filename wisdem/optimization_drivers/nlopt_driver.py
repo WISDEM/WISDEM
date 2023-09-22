@@ -458,7 +458,7 @@ class NLoptDriver(Driver):
         except Exception as msg:
             self._exc_info = msg
 
-        return float(f_new)
+        return float(f_new[0])
 
     def _confunc(self, x_new, grad, name, dbl, idx):
         """

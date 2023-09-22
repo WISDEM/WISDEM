@@ -1,7 +1,5 @@
 """ Unit tests for the NLOpt Driver."""
 
-import sys
-import copy
 import unittest
 
 import numpy as np
@@ -12,7 +10,7 @@ from openmdao.test_suite.components.sellar import SellarDerivatives, SellarDeriv
 from openmdao.test_suite.groups.sin_fitter import SineFitter
 from openmdao.test_suite.components.paraboloid import Paraboloid
 from openmdao.test_suite.components.simple_comps import NonSquareArrayComp
-from openmdao.test_suite.components.expl_comp_array import TestExplCompArrayDense
+from openmdao.test_suite.components.expl_comp_array import TestExplCompArrayDense as examp
 
 from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
@@ -371,7 +369,7 @@ class TestNLoptDriver(unittest.TestCase):
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
-        model.add_subsystem("comp", TestExplCompArrayDense(), promotes=["*"])
+        model.add_subsystem("comp", examp(), promotes=["*"])
         model.add_subsystem(
             "con",
             om.ExecComp("c = areas - 20.0", c=np.zeros((2, 2)), areas=np.zeros((2, 2))),
@@ -405,7 +403,7 @@ class TestNLoptDriver(unittest.TestCase):
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
-        model.add_subsystem("comp", TestExplCompArrayDense(), promotes=["*"])
+        model.add_subsystem("comp", examp(), promotes=["*"])
         model.add_subsystem(
             "obj",
             om.ExecComp("o = areas[0, 0] + areas[1, 1]", areas=np.zeros((2, 2))),
@@ -434,7 +432,7 @@ class TestNLoptDriver(unittest.TestCase):
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
-        model.add_subsystem("comp", TestExplCompArrayDense(), promotes=["*"])
+        model.add_subsystem("comp", examp(), promotes=["*"])
         model.add_subsystem(
             "obj",
             om.ExecComp("o = areas[0, 0]", areas=np.zeros((2, 2))),
@@ -467,7 +465,7 @@ class TestNLoptDriver(unittest.TestCase):
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
-        model.add_subsystem("comp", TestExplCompArrayDense(), promotes=["*"])
+        model.add_subsystem("comp", examp(), promotes=["*"])
         model.add_subsystem(
             "obj",
             om.ExecComp("o = areas[0, 0]", areas=np.zeros((2, 2))),
@@ -496,7 +494,7 @@ class TestNLoptDriver(unittest.TestCase):
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
-        model.add_subsystem("comp", TestExplCompArrayDense(), promotes=["*"])
+        model.add_subsystem("comp", examp(), promotes=["*"])
         model.add_subsystem(
             "con",
             om.ExecComp("c = areas - 20.0", c=np.zeros((2, 2)), areas=np.zeros((2, 2))),
