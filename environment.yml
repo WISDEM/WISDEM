@@ -21,7 +21,7 @@ dependencies:
   - pip
   - pydoe2
   - pyoptsparse
-  - pytest<7.4
+  - pytest
   - pytest-cov
   - python-benedict
   - pyyaml

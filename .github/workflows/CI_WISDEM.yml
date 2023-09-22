@@ -84,6 +84,7 @@ jobs:
         env:
             FC: 'C:\Miniconda\envs\test\Scripts\gfortran.EXE'
         run: |
+            ls /c/Miniconda/envs/test/Scripts/
             python setup.py install
     
       # Debugging session
