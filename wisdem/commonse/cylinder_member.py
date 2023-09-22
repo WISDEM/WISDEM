@@ -613,6 +613,7 @@ class ShellMassCost(om.ExplicitComponent):
         self.add_input("labor_cost_rate", 0.0, units="USD/min")
         self.add_input("painting_cost_rate", 0.0, units="USD/m/m")
 
+        self.add_output("labor_hours", val=0.0, units="h")
         self.add_output("shell_cost", val=0.0, units="USD")
         self.add_output("shell_mass", val=0.0, units="kg")
         self.add_output("shell_z_cg", val=0.0, units="m")
@@ -747,14 +748,18 @@ class ShellMassCost(om.ExplicitComponent):
         # Cost Step 4) Circumferential welds to join cans together
         theta_A = 2.0
 
-        # Labor-based expenses
-        K_f = k_f * (
+        # Labor hours
+        labor_minutes = (
             manufacture.steel_cutting_plasma_time(cutLengths, t_full)
             + manufacture.steel_rolling_time(theta_F, R_ave, t_full)
             + manufacture.steel_butt_welding_time(theta_A, nsec, mshell_tot, cutLengths, t_full)
             + manufacture.steel_butt_welding_time(theta_A, nsec, mshell_tot, 2 * np.pi * Rb[1:], t_full[1:])
         )
-
+        outputs["labor_hours"] = labor_minutes / 60.0
+        
+        # Labor-based expenses
+        K_f = k_f * labor_minutes
+        
         # Cost step 5) Painting- outside and inside
         theta_p = 2
         K_p = k_p * theta_p * 2 * (2 * np.pi * R_ave * H).sum()
