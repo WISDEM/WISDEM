@@ -33,7 +33,7 @@ jobs:
         with:
             environment-file: environment.yml
             environment-name: wisdem-actions
-            init-shell: bash pwsh
+            init-shell: bash powershell
             post-cleanup: 'all'
       #- name: Install conda/mamba
       #  uses: conda-incubator/setup-miniconda@v2
