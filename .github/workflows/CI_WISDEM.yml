@@ -33,7 +33,7 @@ jobs:
         with:
             environment-file: environment.yml
             environment-name: wisdem-actions
-            init-shell: bash
+            init-shell: bash pwsh
             post-cleanup: 'all'
       #- name: Install conda/mamba
       #  uses: conda-incubator/setup-miniconda@v2
@@ -56,17 +56,20 @@ jobs:
         run: |
           micromamba install -y petsc4py gfortran
           micromamba info
+        shell: micromamba-shell {0}
 
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
         run: |
+          micromamba activate wisdem-actions
           micromamba install -y m2w64-toolchain libpython
 
       - name: Debug config
         run: |
           micromamba list
           which gfortran
+        shell: micromamba-shell {0}
     
       # Debugging session
       #- name: Setup tmate session
@@ -82,6 +85,7 @@ jobs:
         if: false == contains( matrix.os, 'windows')
         run: |
           pip install -vv --no-deps -e .
+        shell: micromamba-shell {0}
 
       # Install WISDEM with pip
       - name: Install WISDEM with pip for Windows
@@ -89,6 +93,7 @@ jobs:
         env:
             FC: 'gfortran.exe'
         run: |
+            micromamba activate wisdem-actions
             pip install -vv --no-deps .
             which gfortran.exe
 
@@ -97,11 +102,13 @@ jobs:
         if: false == contains( matrix.os, 'windows')
         run: |
           pytest --cov=wisdem
+        shell: micromamba-shell {0}
 
       # Run limited test on WINDOWS
       - name: Limited Windows test
         if: contains( matrix.os, 'windows')
         run: |
+          micromamba activate wisdem-actions
           cd wisdem/test/test_gluecode
           pytest test_g*
 
@@ -114,3 +121,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           coveralls --service=github
+        shell: micromamba-shell {0}
