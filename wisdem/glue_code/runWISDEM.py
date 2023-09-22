@@ -195,7 +195,9 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
 
 
 def load_wisdem(frootin):
-    froot = os.path.splitext(frootin)[0]
+    froot,fext = os.path.splitext(frootin)
+    if fext not in ['.yaml','.pkl']:
+        froot = frootin
     fgeom = froot + ".yaml"
     fmodel = froot + "-modeling.yaml"
     fopt = froot + "-analysis.yaml"
