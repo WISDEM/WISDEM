@@ -648,7 +648,7 @@ class ComputePowerCurve(ExplicitComponent):
             # fix_pitch_regI12, which locks pitch in region I 1/2, is on
             if (
                 ((Omega[i] == Omega_tsr[i]) and not self.peak_thrust_shaving)
-                or ((Omega[i] == Omega_tsr[i]) and self.peak_thrust_shaving and (T[i] <= max_T))
+                or ((Omega[i] == Omega_tsr[i]) and self.peak_thrust_shaving and (T[i]/max_T <= 1.04))
                 or ((Omega[i] == Omega_min) and self.fix_pitch_regI12)
                 or (found_rated and (i == i_rated))
             ):
