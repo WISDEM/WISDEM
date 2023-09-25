@@ -10,6 +10,7 @@ dependencies:
   - make
   - matplotlib
   - meson
+  - moorpy
   - mpi4py
   - ninja
   - nlopt

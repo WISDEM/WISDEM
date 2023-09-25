@@ -45,6 +45,7 @@ dependencies = [
   "dearpygui",
   "jsonschema",
   "marmot-agents>=0.2.5",
+  "moorpy",
   "nlopt",
   "numpy",
   "openmdao>=3.18",

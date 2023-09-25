@@ -1,8 +1,8 @@
 import numpy as np
 import openmdao.api as om
 
-import wisdem.moorpy as mp
-import wisdem.moorpy.MoorProps as props
+import moorpy as mp
+import moorpy.MoorProps as props
 
 NLINES_MAX = 15
 NPTS_PLOT = 101
