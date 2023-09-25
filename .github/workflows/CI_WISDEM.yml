@@ -115,23 +115,28 @@ jobs:
         python-version: ["3.10"]
 
     steps:
+      - name: Setup GNU Fortran
+        uses: awvwgk/setup-fortran@main #modflowpy/install-intelfortran-action@v1
+              
       - name: checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
+        id: cp
         with:
             python-version: ${{ matrix.python-version }}
+            update-environment: true
 
       # Install WISDEM with setup
       # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
       - name: Install WISDEM with setup
         run: |
-          python -m pip install --upgrade pip install pytest
-          python -m pip install .
+          '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip install pytest
+          '${{ steps.cp.outputs.python-path }}' -m pip install -vv .
 
       # Run limited tests
       - name: Limited test
         run: |
           cd wisdem/test/test_gluecode
-          pytest  -p no:warnings --disable-warnings test_g*
+          pytest -p no:warnings --disable-warnings test_g*
