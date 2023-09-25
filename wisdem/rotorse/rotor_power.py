@@ -646,6 +646,9 @@ class ComputePowerCurve(ExplicitComponent):
         for i in range(i_3):
             # No need to optimize if already doing well or if flag
             # fix_pitch_regI12, which locks pitch in region I 1/2, is on
+            # For the 1.04 value on thrust shaving, that is about the level of compliance we see for the Region 2.5
+            # points coming out of the optimization routines in the next block of code. This way, a Region 2 point that is
+            # at optimal TSR-rpm and 0-deg pitch but 1% over the thrust target can be allowed to stand.
             if (
                 ((Omega[i] == Omega_tsr[i]) and not self.peak_thrust_shaving)
                 or ((Omega[i] == Omega_tsr[i]) and self.peak_thrust_shaving and (T[i]/max_T <= 1.04))
