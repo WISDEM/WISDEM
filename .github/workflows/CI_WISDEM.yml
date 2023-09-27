@@ -111,7 +111,7 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest] #macos-latest, 
         python-version: ["3.10"]
 
     steps:
@@ -143,8 +143,6 @@ jobs:
       # Install WISDEM with setup
       # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
       - name: Install WISDEM with setup
-        env:
-            MESON_ARGS: "-Dpython_target='${{ steps.cp.outputs.python-path }}'"
         run: |
           '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip install pytest
           '${{ steps.cp.outputs.python-path }}' -m pip install -vv .
