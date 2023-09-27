@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Setup GNU Fortran
-        uses: awvwgk/setup-fortran@main
+        uses: awvwgk/setup-fortran@v1
             
       - name: Checkout
         uses: actions/checkout@v4
