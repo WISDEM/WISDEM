@@ -10,12 +10,13 @@ dependencies:
   - make
   - matplotlib
   - meson
+  - moorpy
   - mpi4py
   - ninja
   - nlopt
-  - numpy<1.25
+  - numpy>=1.26
   - numpydoc
-  - openmdao>=3.18
+  - openmdao<3.28
   - openpyxl
   - pandas
   - pip

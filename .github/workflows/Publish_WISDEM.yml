@@ -19,13 +19,22 @@ jobs:
 
     steps:
       - name: Setup GNU Fortran
+        if: false == contains( matrix.os, 'windows')
         uses: awvwgk/setup-fortran@main
-              
+        
+      - name: Install mingw-w64 on Windows
+        if: contains(matrix.os, 'windows')
+        uses: msys2/setup-msys2@v2
+        with:
+          path-type: inherit
+          install: |
+            mingw-w64-x86_64-gcc-fortran
+            
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.12.3
+        uses: pypa/cibuildwheel@v2.16.1
 
       - uses: actions/upload-artifact@v3
         with:
@@ -59,7 +68,7 @@ jobs:
           name: artifact
           path: dist
 
-      - uses: pypa/gh-action-pypi-publish@v1.8.5
+      - uses: pypa/gh-action-pypi-publish@v1.8.10
         with:
           user: __token__
           password: ${{ secrets.pypi_password }}
