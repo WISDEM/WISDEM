@@ -104,9 +104,9 @@ jobs:
     name: Pip Build-Test (${{ matrix.os }} Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
 
-    #defaults:
-    #    run:
-    #        shell: bash -el {0}
+    defaults:
+        run:
+            shell: bash -el {0}
 
     strategy:
       fail-fast: False
@@ -116,21 +116,9 @@ jobs:
 
     steps:
       - name: Setup GNU Fortran
-        if: false == contains( matrix.os, 'windows')
         uses: awvwgk/setup-fortran@v1
         with:
             compiler: intel-classic
-        
-      - name: Install mingw-w64 on Windows
-        if: contains(matrix.os, 'windows')
-        uses: msys2/setup-msys2@v2
-        with:
-          path-type: inherit
-          install: |
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-gcc-fortran
-            mingw-w64-x86_64-gcc-libgfortran
-            mingw-w64-x86_64-gcc-libs
             
       - name: checkout repository
         uses: actions/checkout@v4
@@ -145,14 +133,12 @@ jobs:
       # Install WISDEM with setup
       # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
       - name: Install WISDEM with setup
-        shell: msys2 {0}
         run: |
           '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip install pytest
           '${{ steps.cp.outputs.python-path }}' -m pip install -vv .
 
       # Run limited tests
       - name: Limited test
-        shell: msys2 {0}
         run: |
           cd wisdem/test/test_gluecode
           pytest -p no:warnings --disable-warnings test_g*
