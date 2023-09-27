@@ -117,7 +117,7 @@ jobs:
     steps:
       - name: Setup GNU Fortran
         if: false == contains( matrix.os, 'windows')
-        uses: awvwgk/setup-fortran@main
+        uses: awvwgk/setup-fortran@v1
         
       - name: Install mingw-w64 on Windows
         if: contains(matrix.os, 'windows')
@@ -125,7 +125,10 @@ jobs:
         with:
           path-type: inherit
           install: |
+            mingw-w64-x86_64-gcc
             mingw-w64-x86_64-gcc-fortran
+            mingw-w64-x86_64-gcc-libgfortran
+            mingw-w64-x86_64-gcc-libs
             
       - name: checkout repository
         uses: actions/checkout@v4
