@@ -153,5 +153,5 @@ source = ["wisdem"]
 omit = ["wisdem/test/*", "wisdem/floating/visualize.py"]
 
 [tool.cibuildwheel]
-skip = ["cp36-*", "cp37-*", "cp38-*", "*win*", "*arm64*", "pp*", "*i686*"]
+skip = ["cp36-*", "cp37-*", "cp38-*", "*win32*", "*arm64*", "pp*", "*i686*"]
 build-frontend = "build"
