@@ -493,13 +493,6 @@ properties:
                         default: 0.54
                         minimum: 0
                         maximum: 2.
-                    spinner_gust_ws:
-                        type: number
-                        description: Extreme gust wind speed used to size the hub
-                        unit: m/s
-                        default: 70.
-                        minimum: 0
-                        maximum: 100.
                     hub_material:
                         type: string
                         description: Material of the shell of the hub

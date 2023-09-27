@@ -534,6 +534,12 @@ class MiscNacelleComponents(om.ExplicitComponent):
         component center of mass
     platform_I : numpy array[3], [m]
         component mass moments of inertia
+    cover_length : float, [m]
+        length of cover and outer nacelle
+    cover_height : float, [m]
+        height of cover and outer nacelle
+    cover_width : float, [m]
+        width of cover and outer nacelle
     cover_mass : float, [kg]
         component mass
     cover_cm : numpy array[3], [m]
@@ -565,6 +571,9 @@ class MiscNacelleComponents(om.ExplicitComponent):
         self.add_output("platform_mass", 0.0, units="kg")
         self.add_output("platform_cm", np.zeros(3), units="m")
         self.add_output("platform_I", np.zeros(3), units="m")
+        self.add_output("cover_length", 0.0, units="m")
+        self.add_output("cover_height", 0.0, units="m")
+        self.add_output("cover_width", 0.0, units="m")
         self.add_output("cover_mass", 0.0, units="kg")
         self.add_output("cover_cm", np.zeros(3), units="m")
         self.add_output("cover_I", np.zeros(3), units="m")
@@ -605,6 +614,9 @@ class MiscNacelleComponents(om.ExplicitComponent):
         )
         if upwind:
             cm_cover[0] *= -1.0
+        outputs["cover_length"] = L_cover
+        outputs["cover_height"] = H_cover
+        outputs["cover_width"] = W_cover
         outputs["cover_mass"] = m_cover
         outputs["cover_cm"] = cm_cover
         outputs["cover_I"] = I_cover
