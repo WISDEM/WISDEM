@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install conda/mamba
         uses: conda-incubator/setup-miniconda@v2
@@ -111,15 +111,12 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu-latest, windows-latest] #macos-latest, 
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.10"]
 
     steps:
-      - name: Setup GNU Fortran
-        uses: awvwgk/setup-fortran@main #modflowpy/install-intelfortran-action@v1
-              
       - name: checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
