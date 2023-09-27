@@ -119,7 +119,7 @@ jobs:
         #if: false == contains( matrix.os, 'windows')
         uses: awvwgk/setup-fortran@v1
         with:
-            compiler: intel
+            compiler: intel-classic
         
       #- name: Install mingw-w64 on Windows
       #  if: contains(matrix.os, 'windows')
