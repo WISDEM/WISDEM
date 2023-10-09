@@ -1786,6 +1786,36 @@ class BladeJointSizing(ExplicitComponent):
         outputs["joint_total_cost"] = cost_joint_materials + inputs["joint_nonmaterial_cost"]
 
 
+class RotorCG(ExplicitComponent):
+    # OpenMDAO component that computes the 3D curvature of the blade
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        n_span = self.options["modeling_options"]["WISDEM"]["RotorSE"]["n_span"]
+
+        # Inputs
+        self.add_input("Rhub", val=0.0, units="m", desc="hub radius")
+        self.add_input("precone", val=0.0, units="deg", desc="precone angle")
+        self.add_input("blade_mass_re", val=0, units="kg", desc="blade mass")
+        self.add_input("blade_span_cg_re", val=0.0, units="m", desc="Distance along the blade span for its center of gravity")
+        self.add_input("joint_mass", val=0.0, units="kg", desc="Mass of bolts + inserts minus reinforcement layer cutouts at joint")
+        self.add_input("joint_position", val=0, desc="nondimensionalized joint position along blade")
+
+        # Outputs
+        self.add_output("blade_span_cg", val=0.0, units="m", desc="Distance along the blade span for its center of gravity")
+        self.add_output("blades_cg_hubcc", val=np.zeros(3), units="m", desc="total cone angle from precone and curvature")
+
+    def compute(self, inputs, outputs):
+        Rhub = inputs["Rhub"]
+        r_cg = inputs["blade_span_cg_re"]
+        precone = inputs["precone"]
+        
+        cg = (r_cg + Rhub) * np.cos(np.deg2rad(precone))
+
+        outputs["blades_cg_hubcc"] = np.array([-cg, 0.0, 0.0])
+    
+        
 class RotorStructure(Group):
     # OpenMDAO group to compute the blade elastic properties, deflections, and loading
     def initialize(self):
@@ -1899,6 +1929,8 @@ class RotorStructure(Group):
                 ),
             )
 
+        self.add_subsystem("rotorcg", RotorCG(rotorse_options=modeling_options["WISDEM"]["RotorSE"]))
+            
         # if modeling_options['rotorse']['FatigueMode'] > 0:
         #     promoteListFatigue = ['r', 'gamma_f', 'gamma_m', 'E', 'Xt', 'Xc', 'x_tc', 'y_tc', 'EIxx', 'EIyy', 'pitch_axis', 'chord', 'layer_name', 'layer_mat', 'definition_layer', 'sc_ss_mats','sc_ps_mats','te_ss_mats','te_ps_mats','rthick']
         #     self.add_subsystem('fatigue', BladeFatigue(modeling_options = modeling_options, opt_options = opt_options), promotes=promoteListFatigue)
