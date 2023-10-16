@@ -836,7 +836,7 @@ class RunPreComp(ExplicitComponent):
 
         # Compute mass and inertia of blade and rotor
         blade_mass = np.trapz(rhoA_joint, inputs["r"])
-        blade_span_cg = np.trapz(rhoA_joint * inputs["r"], inputs["r"])
+        blade_span_cg = np.trapz(rhoA_joint * inputs["r"], inputs["r"]) / blade_mass
         blade_moment_of_inertia = np.trapz(rhoA_joint * inputs["r"] ** 2.0, inputs["r"])
         tilt = inputs["uptilt"]
         n_blades = discrete_inputs["n_blades"]
@@ -911,6 +911,11 @@ class RotorElasticity(Group):
                 "xl_te",
                 "yu_te",
                 "yl_te",
+                "blade_mass",
+                "blade_span_cg",
+                "blade_moment_of_inertia",
+                "mass_all_blades",
+                "I_all_blades",
             ],
         )
         # Check rail transportabiliy

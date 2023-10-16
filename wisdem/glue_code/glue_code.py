@@ -304,12 +304,9 @@ class WT_RNTA(om.Group):
             self.connect("rotorse.rs.frame.root_M", "drivese.pitch_system.BRFM", src_indices=[1])
 
             self.connect("blade.pa.chord_param", "drivese.blade_root_diameter", src_indices=[0])
-            if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                self.connect("rotorse.rs.bjs.blade_mass", "drivese.blade_mass")
-            else:
-                self.connect("rotorse.re.precomp.blade_mass", "drivese.blade_mass")
-            self.connect("rotorse.re.precomp.mass_all_blades", "drivese.blades_mass")
-            self.connect("rotorse.re.precomp.I_all_blades", "drivese.blades_I")
+            self.connect("rotorse.blade_mass", "drivese.blade_mass")
+            self.connect("rotorse.mass_all_blades", "drivese.blades_mass")
+            self.connect("rotorse.I_all_blades", "drivese.blades_I")
 
             self.connect("nacelle.distance_hub2mb", "drivese.L_h1")
             self.connect("nacelle.distance_mb2mb", "drivese.L_12")
@@ -692,10 +689,7 @@ class WT_RNTA(om.Group):
         self.connect("configuration.n_blades", "tcc.blade_number")
         self.connect("configuration.rated_power", "tcc.machine_rating")
         if modeling_options["flags"]["blade"]:
-            if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                self.connect("rotorse.rs.bjs.blade_mass", "tcc.blade_mass")
-            else:
-                self.connect("rotorse.re.precomp.blade_mass", "tcc.blade_mass")
+            self.connect("rotorse.blade_mass", "tcc.blade_mass")
             self.connect("rotorse.total_bc.total_blade_cost", "tcc.blade_cost_external")
 
         if modeling_options["flags"]["nacelle"]:
@@ -892,13 +886,10 @@ class WindPark(om.Group):
                     self.connect("floating.transition_piece_mass", "orbit.transition_piece_mass")
                     self.connect("floating.transition_piece_cost", "orbit.transition_piece_cost")
                     self.connect("floatingse.platform_cost", "orbit.floating_substructure_cost")
-                if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                    self.connect("rotorse.rs.bjs.blade_mass", "orbit.blade_mass")
-                else:
-                    self.connect("rotorse.re.precomp.blade_mass", "orbit.blade_mass")
-                self.connect("tcc.turbine_cost_kW", "orbit.turbine_capex")
                 if modeling_options["flags"]["nacelle"]:
                     self.connect("drivese.nacelle_mass", "orbit.nacelle_mass")
+                self.connect("rotorse.blade_mass", "orbit.blade_mass")
+                self.connect("tcc.turbine_cost_kW", "orbit.turbine_capex")
                 self.connect("rotorse.wt_class.V_mean", "orbit.site_mean_windspeed")
                 self.connect("rotorse.rp.powercurve.rated_V", "orbit.turbine_rated_windspeed")
                 self.connect("bos.plant_turbine_spacing", "orbit.plant_turbine_spacing")
@@ -932,10 +923,7 @@ class WindPark(om.Group):
                 if modeling_options["flags"]["nacelle"]:
                     self.connect("drivese.nacelle_mass", "landbosse.nacelle_mass")
                     self.connect("drivese.hub_system_mass", "landbosse.hub_mass")
-                if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                    self.connect("rotorse.rs.bjs.blade_mass", "landbosse.blade_mass")
-                else:
-                    self.connect("rotorse.re.precomp.blade_mass", "landbosse.blade_mass")
+                self.connect("rotorse.blade_mass", "landbosse.blade_mass")
                 self.connect("tower_grid.foundation_height", "landbosse.foundation_height")
                 self.connect("bos.plant_turbine_spacing", "landbosse.turbine_spacing_rotor_diameters")
                 self.connect("bos.plant_row_spacing", "landbosse.row_spacing_rotor_diameters")
@@ -975,8 +963,5 @@ class WindPark(om.Group):
         if modeling_options["flags"]["blade"]:
             self.connect("rotorse.rp.AEP", "outputs_2_screen.aep")
             self.connect("financese.lcoe", "outputs_2_screen.lcoe")
-            if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-                self.connect("rotorse.rs.bjs.blade_mass", "outputs_2_screen.blade_mass")
-            else:
-                self.connect("rotorse.re.precomp.blade_mass", "outputs_2_screen.blade_mass")
+            self.connect("rotorse.blade_mass", "outputs_2_screen.blade_mass")
             self.connect("rotorse.rs.tip_pos.tip_deflection", "outputs_2_screen.tip_deflection")

@@ -82,10 +82,13 @@ class RotorSE(om.Group):
 
         self.add_subsystem("wt_class", TurbineClass())
 
+        re_promote_add = ["chord", "theta", "r", "precurve", "presweep",
+                          "blade_mass", "blade_span_cg", "blade_moment_of_inertia",
+                          "mass_all_blades", "I_all_blades"]
         self.add_subsystem(
             "re",
             RotorElasticity(modeling_options=modeling_options, opt_options=opt_options),
-            promotes=promoteGeom + ["chord", "theta", "r", "precurve", "presweep"],
+            promotes=promoteGeom + re_promote_add,
         )
 
         self.add_subsystem(
@@ -103,7 +106,7 @@ class RotorSE(om.Group):
         self.add_subsystem(
             "rs",
             RotorStructure(modeling_options=modeling_options, opt_options=opt_options, freq_run=False),
-            promotes=promoteGeom + promoteCC + ["s", "precurveTip", "presweepTip"],
+            promotes=promoteGeom + promoteCC + ["s", "precurveTip", "presweepTip", "blade_span_cg"],
         )
 
         if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
@@ -148,7 +151,6 @@ class RotorSE(om.Group):
 
         self.add_subsystem("total_bc", TotalBladeCosts())
         if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
-            self.connect("re.precomp.blade_mass", "rs.bjs.blade_mass_re")
             self.connect("rc_in.total_blade_cost", "total_bc.inner_blade_cost")
             self.connect("rc_out.total_blade_cost", "total_bc.outer_blade_cost")
             self.connect("rs.bjs.joint_total_cost", "total_bc.joint_cost")
