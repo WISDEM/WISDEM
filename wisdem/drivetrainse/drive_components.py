@@ -1032,6 +1032,8 @@ class RNA_Adder(om.ExplicitComponent):
         Mass of hub system (hub + spinner + pitch)
     nacelle_mass : float, [kg]
         Mass of nacelle system
+    blades_cm : float, [m]
+        Center of mass for all blades from blade attachment centerpoint in hub c.s.
     hub_system_cm : float, [m]
         Hub center of mass from hub flange in hub c.s.
     nacelle_cm : numpy array[3], [m]
@@ -1063,6 +1065,7 @@ class RNA_Adder(om.ExplicitComponent):
         self.add_input("blades_mass", 0.0, units="kg")
         self.add_input("hub_system_mass", 0.0, units="kg")
         self.add_input("nacelle_mass", 0.0, units="kg")
+        self.add_input("blades_cm", 0.0, units="m")
         self.add_input("hub_system_cm", 0.0, units="m")
         self.add_input("nacelle_cm", np.zeros(3), units="m")
         self.add_input("blades_I", np.zeros(6), units="kg*m**2")

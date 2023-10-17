@@ -304,6 +304,7 @@ class WT_RNTA(om.Group):
             self.connect("rotorse.rs.frame.root_M", "drivese.pitch_system.BRFM", src_indices=[1])
 
             self.connect("blade.pa.chord_param", "drivese.blade_root_diameter", src_indices=[0])
+            self.connect("rotorse.rs.curvature.blades_cg_hubcc", "drivese.blades_cm")
             self.connect("rotorse.blade_mass", "drivese.blade_mass")
             self.connect("rotorse.mass_all_blades", "drivese.blades_mass")
             self.connect("rotorse.I_all_blades", "drivese.blades_I")
