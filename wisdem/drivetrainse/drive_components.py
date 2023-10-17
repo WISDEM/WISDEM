@@ -1110,7 +1110,7 @@ class RNA_Adder(om.ExplicitComponent):
         hub_I_TT = hub_I + hub_mass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
 
         R = blades_cm
-        blades_I_TT = blades_I + hub_mass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        blades_I_TT = blades_I + blades_mass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
         
         outputs["rna_I_TT"] = util.unassembleI(hub_I_TT + blades_I_TT + nac_I_TT)
 
