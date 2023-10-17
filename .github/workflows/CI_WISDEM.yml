@@ -117,8 +117,8 @@ jobs:
     steps:
       - name: Setup GNU Fortran
         uses: awvwgk/setup-fortran@v1
-        with:
-            compiler: intel-classic
+        #with:
+        #    compiler: intel-classic
             
       - name: checkout repository
         uses: actions/checkout@v4
