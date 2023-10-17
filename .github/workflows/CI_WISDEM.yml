@@ -27,6 +27,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         # https://github.com/marketplace/actions/setup-miniconda
         with:
+          # To use mamba, uncomment here, comment out the miniforge line
           #mamba-version: "*"
           miniforge-version: "latest"
           auto-update-conda: true
@@ -116,6 +117,8 @@ jobs:
     steps:
       - name: Setup GNU Fortran
         uses: awvwgk/setup-fortran@v1
+        #with:
+        #    compiler: intel-classic
             
       - name: checkout repository
         uses: actions/checkout@v4
