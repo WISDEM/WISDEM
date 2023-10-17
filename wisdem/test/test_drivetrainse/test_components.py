@@ -448,6 +448,7 @@ class TestComponents(unittest.TestCase):
         inputs["hub_system_mass"] = 25e3
         inputs["hub_system_I"] = 25e3 * np.arange(1, 7)
         inputs["hub_system_cm"] = 2.0
+        inputs["blades_cm"] = 0.0
         inputs["shaft_start"] = np.zeros(3)
 
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)

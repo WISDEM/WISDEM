@@ -37,7 +37,7 @@ class TestRS(unittest.TestCase):
         npt.assert_equal(outputs["x_az"], myzero)
         npt.assert_equal(outputs["y_az"], myzero)
         npt.assert_equal(outputs["z_az"], inputs["r"])
-        npt.assert_equal(outputs["blades_cg_hubcc"], np.zeros(3))
+        npt.assert_equal(outputs["blades_cg_hubcc"], 0.0)
 
         # Some coning: Z is 'r'
         inputs["precone"] = 3.0
@@ -46,7 +46,7 @@ class TestRS(unittest.TestCase):
         npt.assert_equal(outputs["x_az"], myzero)
         npt.assert_equal(outputs["y_az"], myzero)
         npt.assert_equal(outputs["z_az"], inputs["r"])
-        npt.assert_equal(outputs["blades_cg_hubcc"], np.array([-51*np.sin(np.deg2rad(3)), 0., 0.]))
+        npt.assert_equal(outputs["blades_cg_hubcc"], 51*np.sin(np.deg2rad(3)))
 
         # Some curve: X is 'flap'
         inputs["precurve"] = np.linspace(0, 1, npts)
@@ -58,7 +58,7 @@ class TestRS(unittest.TestCase):
         npt.assert_equal(outputs["x_az"], inputs["precurve"])
         npt.assert_equal(outputs["y_az"], myzero)
         npt.assert_equal(outputs["z_az"], inputs["r"])
-        npt.assert_almost_equal(outputs["blades_cg_hubcc"], np.array([-51*np.sin(np.deg2rad(cone[50])), 0., 0.]))
+        npt.assert_almost_equal(outputs["blades_cg_hubcc"], 51*np.sin(np.deg2rad(cone[50])))
 
         # Some curve: Y is 'edge'
         inputs["precurve"] = myzero
@@ -81,7 +81,7 @@ class TestRS(unittest.TestCase):
         npt.assert_equal(outputs["x_az"], inputs["precurve"])
         npt.assert_equal(outputs["y_az"], inputs["presweep"])
         npt.assert_equal(outputs["z_az"], inputs["r"])
-        npt.assert_almost_equal(outputs["blades_cg_hubcc"], np.array([-51*np.sin(np.deg2rad(cone[50])), 0., 0.]))
+        npt.assert_almost_equal(outputs["blades_cg_hubcc"], 51*np.sin(np.deg2rad(cone[50])))
 
     def testTotalLoads(self):
         inputs = {}

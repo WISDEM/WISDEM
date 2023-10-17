@@ -46,7 +46,7 @@ class BladeCurvature(ExplicitComponent):
             "z_az", val=np.zeros(n_span), units="m", desc="location of blade in azimuth z-coordinate system"
         )
         self.add_output("s", val=np.zeros(n_span), units="m", desc="cumulative path length along blade")
-        self.add_output("blades_cg_hubcc", val=np.zeros(3), units="m", desc="total cone angle from precone and curvature")
+        self.add_output("blades_cg_hubcc", val=0.0, units="m", desc="cg of all blades relative to hub along shaft axis. Distance is should be interpreted as negative for upwind and positive for downwind turbines")
 
     def compute(self, inputs, outputs):
         r = inputs["r"]
@@ -75,7 +75,7 @@ class BladeCurvature(ExplicitComponent):
         # Compute cg location of all blades in hub coordinates
         cone_cg = np.interp(r_cg, r, totalCone)
         cg = (r_cg + Rhub) * np.sin(np.deg2rad(cone_cg))
-        outputs["blades_cg_hubcc"] = np.r_[-cg, 0.0, 0.0]
+        outputs["blades_cg_hubcc"] = cg
 
 
 class TotalLoads(ExplicitComponent):
