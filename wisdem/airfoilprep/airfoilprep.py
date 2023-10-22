@@ -300,8 +300,9 @@ class Polar(object):
         cd = np.maximum(cd, cdmin)  # don't allow negative drag coefficients
 
         # Setup alpha and cm to be used in extrapolation
-        cm1_alpha = np.floor(self.alpha[0] / 10.0) * 10.0
-        cm2_alpha = np.ceil(self.alpha[-1] / 10.0) * 10.0
+        eps = 1e-13
+        cm1_alpha = np.floor(self.alpha[0] / 10.0 - eps) * 10.0
+        cm2_alpha = np.ceil(self.alpha[-1] / 10.0 + eps) * 10.0
         alpha_num = abs(int((-180.0 - cm1_alpha) / 10.0 - 1))
         alpha_cm1 = np.linspace(-180.0, cm1_alpha, alpha_num)
         alpha_cm2 = np.linspace(cm2_alpha, 180.0, int((180.0 - cm2_alpha) / 10.0 + 1))
