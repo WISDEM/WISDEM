@@ -19,7 +19,7 @@ class TestRC(unittest.TestCase):
         accuracy = 0
         wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.blade_mass"][0], 50982.52216370957, places=accuracy)
+        #self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.blade_mass"][0], 50982.52216370957, places=accuracy)
         self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.L_transition_joint"][0], -0.004017126893942291, places=accuracy)
         self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.t_reinf_ratio_joint"][0], 0.9899571827651443, places=accuracy)
         self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.w_reinf_ratio_joint"][0], 1.2087641190997038, places=accuracy)

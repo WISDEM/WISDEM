@@ -5,32 +5,31 @@ on: [push, pull_request]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  build:
-    name: Build (${{ matrix.os }} Python ${{ matrix.python-version }})
+  build_conda:
+    name: Conda Build-Test (${{ matrix.os }} Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
 
     defaults:
         run:
-            shell: bash -l {0}
-
+            shell: bash -el {0}
 
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest] #macos-latest, 
         python-version: ["3.9", "3.10", "3.11"]
 
     steps:
       - name: checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      # Official way to do miniconda, but it messes with the worker environment and shell
-      - name: Install miniconda
+      - name: Install conda/mamba
         uses: conda-incubator/setup-miniconda@v2
         # https://github.com/marketplace/actions/setup-miniconda
         with:
-          miniconda-version: "latest"
-          channels: conda-forge
+          # To use mamba, uncomment here, comment out the miniforge line
+          #mamba-version: "*"
+          miniforge-version: "latest"
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           environment-file: environment.yml
@@ -41,8 +40,7 @@ jobs:
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         run: |
-          conda install -y petsc4py mpi4py gfortran
-          conda info -e
+          conda install -y petsc4py gfortran
 
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
@@ -50,40 +48,46 @@ jobs:
         run: |
           conda install -y m2w64-toolchain libpython
 
-      # Debugging session
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
+      - name: Debug config
+        run: |
+          conda list
+          which -a gfortran
+          which pip
 
       # Install WISDEM with setup
+      # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
       - name: Install WISDEM with setup
         run: |
-          python setup.py develop
+          python setup.py install
 
       # Install WISDEM with pip
-      - name: Install WISDEM with pip for Unix
-        if: false == contains( matrix.os, 'windows')
-        run: |
-          rm -rf meson_build
-          pip install -vv --no-deps -e .
+      #- name: Install WISDEM with pip for Unix
+      #  if: false == contains( matrix.os, 'windows')
+      #  run: |
+      #    python setup.py install
 
       # Install WISDEM with pip
       #- name: Install WISDEM with pip for Windows
       #  if: contains( matrix.os, 'windows')
       #  run: |
-      #    pip install -vv --no-deps --global-option --compiler=unix .
+      #      python setup.py install
+    
+      # Debugging session
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
 
       # Run all tests
       - name: Run tests
-        if: contains( matrix.os, 'ubuntu')
+        if: false == contains( matrix.os, 'windows')
         run: |
-          pytest --cov=wisdem
+          pytest -p no:warnings --disable-warnings --cov=wisdem
 
       # Run limited test on WINDOWS
-      - name: Add dependencies windows specific
+      - name: Limited Windows test
         if: contains( matrix.os, 'windows')
         run: |
           cd wisdem/test/test_gluecode
-          pytest test_g*
+          pytest  -p no:warnings --disable-warnings test_g*
 
       # Run coveralls
       - name: Run coveralls
@@ -94,3 +98,47 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           coveralls --service=github
+
+          
+  build_pip:
+    name: Pip Build-Test (${{ matrix.os }} Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+        run:
+            shell: bash -el {0}
+
+    strategy:
+      fail-fast: False
+      matrix:
+        os: [ubuntu-latest] #, windows-latest, macos-latest, 
+        python-version: ["3.10"]
+
+    steps:
+      - name: Setup GNU Fortran
+        uses: awvwgk/setup-fortran@v1
+        #with:
+        #    compiler: intel-classic
+            
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        id: cp
+        with:
+            python-version: ${{ matrix.python-version }}
+            update-environment: true
+
+      # Install WISDEM with setup
+      # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
+      - name: Install WISDEM with setup
+        run: |
+          '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip install pytest
+          '${{ steps.cp.outputs.python-path }}' -m pip install -vv .
+
+      # Run limited tests
+      - name: Limited test
+        run: |
+          cd wisdem/test/test_gluecode
+          pytest -p no:warnings --disable-warnings test_g*

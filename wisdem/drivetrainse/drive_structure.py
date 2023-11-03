@@ -172,46 +172,46 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         # Unpack inputs
         upwind = discrete_inputs["upwind"]
         Cup = -1.0 if upwind else 1.0
-        tilt = float(np.deg2rad(inputs["tilt"]))
+        tilt = float(np.deg2rad(inputs["tilt"][0]))
 
         s_lss = inputs["s_lss"]
         D_lss = inputs["lss_diameter"]
         t_lss = inputs["lss_wall_thickness"]
 
-        s_mb1 = float(inputs["s_mb1"])
-        s_mb2 = float(inputs["s_mb2"])
+        s_mb1 = float(inputs["s_mb1"][0])
+        s_mb2 = float(inputs["s_mb2"][0])
 
         if self.options["direct_drive"]:
-            s_rotor = float(inputs["s_rotor"])
-            m_rotor = float(inputs["generator_rotor_mass"])
+            s_rotor = float(inputs["s_rotor"][0])
+            m_rotor = float(inputs["generator_rotor_mass"][0])
             I_rotor = inputs["generator_rotor_I"]
 
-            m_brake = float(inputs["brake_mass"])
+            m_brake = float(inputs["brake_mass"][0])
             I_brake = inputs["brake_I"]
         else:
-            m_gearbox = float(inputs["gearbox_mass"])
+            m_gearbox = float(inputs["gearbox_mass"][0])
             I_gearbox = inputs["gearbox_I"]
 
-            m_carrier = float(inputs["carrier_mass"])
+            m_carrier = float(inputs["carrier_mass"][0])
             I_carrier = inputs["carrier_I"]
 
-        rho = float(inputs["lss_rho"])
-        E = float(inputs["lss_E"])
-        G = float(inputs["lss_G"])
-        sigma_y = float(inputs["lss_Xy"])
+        rho = float(inputs["lss_rho"][0])
+        E = float(inputs["lss_E"][0])
+        G = float(inputs["lss_G"][0])
+        sigma_y = float(inputs["lss_Xy"][0])
         gamma_f = float(self.options["modeling_options"]["gamma_f"])
         gamma_m = float(self.options["modeling_options"]["gamma_m"])
         gamma_n = float(self.options["modeling_options"]["gamma_n"])
         gamma = gamma_f * gamma_m * gamma_n
 
-        m_hub = float(inputs["hub_system_mass"])
-        cm_hub = float(inputs["hub_system_cm"])
+        m_hub = float(inputs["hub_system_mass"][0])
+        cm_hub = float(inputs["hub_system_cm"][0])
         I_hub = inputs["hub_system_I"]
         F_hub = inputs["F_hub"]
         M_hub = inputs["M_hub"]
 
-        torq_defl_allow = float(inputs["shaft_deflection_allowable"])
-        torq_angle_allow = float(inputs["shaft_angle_allowable"])
+        torq_defl_allow = float(inputs["shaft_deflection_allowable"][0])
+        torq_angle_allow = float(inputs["shaft_angle_allowable"][0])
 
         # ------- node data ----------------
         n = len(s_lss)
@@ -482,30 +482,30 @@ class HSS_Frame(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         # Unpack inputs
-        tilt = float(np.deg2rad(inputs["tilt"]))
+        tilt = float(np.deg2rad(inputs["tilt"][0]))
 
         s_hss = inputs["s_hss"]
         D_hss = inputs["hss_diameter"]
         t_hss = inputs["hss_wall_thickness"]
 
-        s_generator = float(inputs["s_generator"])
-        m_generator = float(inputs["generator_mass"])
+        s_generator = float(inputs["s_generator"][0])
+        m_generator = float(inputs["generator_mass"][0])
         I_generator = inputs["generator_I"]
 
-        m_brake = float(inputs["brake_mass"])
+        m_brake = float(inputs["brake_mass"][0])
         I_brake = inputs["brake_I"]
 
-        rho = float(inputs["hss_rho"])
-        E = float(inputs["hss_E"])
-        G = float(inputs["hss_G"])
-        sigma_y = float(inputs["hss_Xy"])
+        rho = float(inputs["hss_rho"][0])
+        E = float(inputs["hss_E"][0])
+        G = float(inputs["hss_G"][0])
+        sigma_y = float(inputs["hss_Xy"][0])
         gamma_f = float(self.options["modeling_options"]["gamma_f"])
         gamma_m = float(self.options["modeling_options"]["gamma_m"])
         gamma_n = float(self.options["modeling_options"]["gamma_n"])
         gamma = gamma_f * gamma_m * gamma_n
 
         M_hub = inputs["M_hub"]
-        gear_ratio = float(inputs["gear_ratio"])
+        gear_ratio = float(inputs["gear_ratio"][0])
 
         # ------- node data ----------------
         n = len(s_hss)
@@ -799,7 +799,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         # Unpack inputs
         upwind = discrete_inputs["upwind"]
         Cup = -1.0 if upwind else 1.0
-        tiltD = float(inputs["tilt"])
+        tiltD = float(inputs["tilt"][0])
         tiltR = np.deg2rad(tiltD)
 
         x_c = inputs["x_bedplate"]
@@ -818,21 +818,21 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         x_nose *= Cup
         x_nose += x_c[-1]
 
-        s_mb1 = float(inputs["s_mb1"])
-        s_mb2 = float(inputs["s_mb2"])
-        m_mb1 = float(inputs["mb1_mass"])
-        m_mb2 = float(inputs["mb2_mass"])
+        s_mb1 = float(inputs["s_mb1"][0])
+        s_mb2 = float(inputs["s_mb2"][0])
+        m_mb1 = float(inputs["mb1_mass"][0])
+        m_mb2 = float(inputs["mb2_mass"][0])
         I_mb1 = inputs["mb1_I"]
         I_mb2 = inputs["mb2_I"]
 
-        s_stator = float(inputs["s_stator"])
-        m_stator = float(inputs["generator_stator_mass"])
+        s_stator = float(inputs["s_stator"][0])
+        m_stator = float(inputs["generator_stator_mass"][0])
         I_stator = inputs["generator_stator_I"]
 
-        rho = float(inputs["bedplate_rho"])
-        E = float(inputs["bedplate_E"])
-        G = float(inputs["bedplate_G"])
-        sigma_y = float(inputs["bedplate_Xy"])
+        rho = float(inputs["bedplate_rho"][0])
+        E = float(inputs["bedplate_E"][0])
+        G = float(inputs["bedplate_G"][0])
+        sigma_y = float(inputs["bedplate_Xy"][0])
         gamma_f = float(self.options["modeling_options"]["gamma_f"])
         gamma_m = float(self.options["modeling_options"]["gamma_m"])
         gamma_n = float(self.options["modeling_options"]["gamma_n"])
@@ -843,9 +843,9 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         M_mb1 = inputs["M_mb1"]
         M_mb2 = inputs["M_mb2"]
 
-        m_other = float(inputs["other_mass"])
-        stator_defl_allow = float(inputs["stator_deflection_allowable"])
-        stator_angle_allow = float(inputs["stator_angle_allowable"])
+        m_other = float(inputs["other_mass"][0])
+        stator_defl_allow = float(inputs["stator_deflection_allowable"][0])
+        stator_angle_allow = float(inputs["stator_angle_allowable"][0])
 
         # ------- node data ----------------
         n = len(x_c) + len(x_nose)
@@ -1032,7 +1032,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         outputs["constr_mb1_defl"] = np.abs(outputs["mb1_angle"] / inputs["mb1_max_defl_ang"])
         outputs["constr_mb2_defl"] = np.abs(outputs["mb2_angle"] / inputs["mb2_max_defl_ang"])
         outputs["stator_deflection"] = stator_deflection.max()
-        outputs["stator_angle"] = stator_angle.max()
+        outputs["stator_angle"] = np.abs(stator_angle).max()
         outputs["constr_stator_deflection"] = gamma * outputs["stator_deflection"] / stator_defl_allow
         outputs["constr_stator_angle"] = gamma * outputs["stator_angle"] / stator_angle_allow
 
@@ -1186,30 +1186,30 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         # Unpack inputs
         upwind = discrete_inputs["upwind"]
         Cup = -1.0 if upwind else 1.0
-        D_top = float(inputs["D_top"])
-        tiltD = float(inputs["tilt"])
+        D_top = float(inputs["D_top"][0])
+        tiltD = float(inputs["tilt"][0])
         tiltR = np.deg2rad(tiltD)
         s_drive = inputs["s_drive"]
 
-        s_gear = float(inputs["s_gearbox"])
-        s_gen = float(inputs["s_generator"])
+        s_gear = float(inputs["s_gearbox"][0])
+        s_gen = float(inputs["s_generator"][0])
 
-        s_mb1 = float(inputs["s_mb1"])
-        s_mb2 = float(inputs["s_mb2"])
-        m_mb1 = float(inputs["mb1_mass"])
-        m_mb2 = float(inputs["mb2_mass"])
+        s_mb1 = float(inputs["s_mb1"][0])
+        s_mb2 = float(inputs["s_mb2"][0])
+        m_mb1 = float(inputs["mb1_mass"][0])
+        m_mb2 = float(inputs["mb2_mass"][0])
         I_mb1 = inputs["mb1_I"]
         I_mb2 = inputs["mb2_I"]
 
-        bed_w_flange = float(inputs["bedplate_flange_width"])
-        bed_t_flange = float(inputs["bedplate_flange_thickness"])
-        bed_h_web = float(inputs["bedplate_web_height"])
-        bed_t_web = float(inputs["bedplate_web_thickness"])
+        bed_w_flange = float(inputs["bedplate_flange_width"][0])
+        bed_t_flange = float(inputs["bedplate_flange_thickness"][0])
+        bed_h_web = float(inputs["bedplate_web_height"][0])
+        bed_t_web = float(inputs["bedplate_web_thickness"][0])
 
-        rho = float(inputs["bedplate_rho"])
-        E = float(inputs["bedplate_E"])
-        G = float(inputs["bedplate_G"])
-        sigma_y = float(inputs["bedplate_Xy"])
+        rho = float(inputs["bedplate_rho"][0])
+        E = float(inputs["bedplate_E"][0])
+        G = float(inputs["bedplate_G"][0])
+        sigma_y = float(inputs["bedplate_Xy"][0])
         gamma_f = float(self.options["modeling_options"]["gamma_f"])
         gamma_m = float(self.options["modeling_options"]["gamma_m"])
         gamma_n = float(self.options["modeling_options"]["gamma_n"])
@@ -1224,9 +1224,9 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         M_gear = inputs["M_torq"]
         M_gen = inputs["M_generator"]
 
-        m_other = float(inputs["other_mass"])
-        stator_defl_allow = float(inputs["stator_deflection_allowable"])
-        stator_angle_allow = float(inputs["stator_angle_allowable"])
+        m_other = float(inputs["other_mass"][0])
+        stator_defl_allow = float(inputs["stator_deflection_allowable"][0])
+        stator_angle_allow = float(inputs["stator_angle_allowable"][0])
 
         # ------- node data ----------------
         n = len(s_drive)

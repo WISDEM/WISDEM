@@ -534,6 +534,12 @@ class MiscNacelleComponents(om.ExplicitComponent):
         component center of mass
     platform_I : numpy array[3], [m]
         component mass moments of inertia
+    cover_length : float, [m]
+        length of cover and outer nacelle
+    cover_height : float, [m]
+        height of cover and outer nacelle
+    cover_width : float, [m]
+        width of cover and outer nacelle
     cover_mass : float, [kg]
         component mass
     cover_cm : numpy array[3], [m]
@@ -565,6 +571,9 @@ class MiscNacelleComponents(om.ExplicitComponent):
         self.add_output("platform_mass", 0.0, units="kg")
         self.add_output("platform_cm", np.zeros(3), units="m")
         self.add_output("platform_I", np.zeros(3), units="m")
+        self.add_output("cover_length", 0.0, units="m")
+        self.add_output("cover_height", 0.0, units="m")
+        self.add_output("cover_width", 0.0, units="m")
         self.add_output("cover_mass", 0.0, units="kg")
         self.add_output("cover_cm", np.zeros(3), units="m")
         self.add_output("cover_I", np.zeros(3), units="m")
@@ -605,6 +614,9 @@ class MiscNacelleComponents(om.ExplicitComponent):
         )
         if upwind:
             cm_cover[0] *= -1.0
+        outputs["cover_length"] = L_cover
+        outputs["cover_height"] = H_cover
+        outputs["cover_width"] = W_cover
         outputs["cover_mass"] = m_cover
         outputs["cover_cm"] = cm_cover
         outputs["cover_I"] = I_cover
@@ -1020,6 +1032,8 @@ class RNA_Adder(om.ExplicitComponent):
         Mass of hub system (hub + spinner + pitch)
     nacelle_mass : float, [kg]
         Mass of nacelle system
+    blades_cm : float, [m]
+        Center of mass for all blades from blade attachment centerpoint in hub c.s.
     hub_system_cm : float, [m]
         Hub center of mass from hub flange in hub c.s.
     nacelle_cm : numpy array[3], [m]
@@ -1051,6 +1065,7 @@ class RNA_Adder(om.ExplicitComponent):
         self.add_input("blades_mass", 0.0, units="kg")
         self.add_input("hub_system_mass", 0.0, units="kg")
         self.add_input("nacelle_mass", 0.0, units="kg")
+        self.add_input("blades_cm", 0.0, units="m")
         self.add_input("hub_system_cm", 0.0, units="m")
         self.add_input("nacelle_cm", np.zeros(3), units="m")
         self.add_input("blades_I", np.zeros(6), units="kg*m**2")
@@ -1066,29 +1081,38 @@ class RNA_Adder(om.ExplicitComponent):
         Cup = -1.0 if discrete_inputs["upwind"] else 1.0
         tilt = float(np.deg2rad(inputs["tilt"]))
 
-        rotor_mass = inputs["blades_mass"] + inputs["hub_system_mass"]
+        hub_mass = inputs["hub_system_mass"]
+        blades_mass = inputs["blades_mass"]
         nac_mass = inputs["nacelle_mass"]
 
         # rna mass
-        outputs["rotor_mass"] = rotor_mass
+        outputs["rotor_mass"] = rotor_mass = hub_mass + blades_mass
         outputs["rna_mass"] = rotor_mass + nac_mass
 
         # rna cm
         shaft0 = inputs["shaft_start"]
-        hub_cm = inputs["hub_system_cm"]
+        hub_cm_in = inputs["hub_system_cm"]
+        blades_cm_in = inputs["blades_cm"]
         L_drive = inputs["L_drive"]
-        hub_cm = shaft0 + (L_drive + hub_cm) * np.array([Cup * np.cos(tilt), 0.0, np.sin(tilt)])
-        outputs["rna_cm"] = (rotor_mass * hub_cm + nac_mass * inputs["nacelle_cm"]) / outputs["rna_mass"]
+        cm_array = np.array([Cup * np.cos(tilt), 0.0, np.sin(tilt)])
+        hub_cm = shaft0 + (L_drive + hub_cm_in) * cm_array
+        blades_cm = shaft0 + (L_drive + hub_cm_in + blades_cm_in) * cm_array
+        outputs["rna_cm"] = (hub_mass * hub_cm +
+                             blades_mass * blades_cm + 
+                             nac_mass * inputs["nacelle_cm"]) / outputs["rna_mass"]
 
         # rna I
         hub_I = util.assembleI(util.rotateI(inputs["hub_system_I"], -Cup * tilt, axis="y"))
         blades_I = util.assembleI(util.rotateI(inputs["blades_I"], -Cup * tilt, axis="y"))
         nac_I_TT = util.assembleI(inputs["nacelle_I_TT"])
-        rotor_I = blades_I + hub_I
 
         R = hub_cm
-        rotor_I_TT = rotor_I + rotor_mass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
-        outputs["rna_I_TT"] = util.unassembleI(rotor_I_TT + nac_I_TT)
+        hub_I_TT = hub_I + hub_mass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+
+        R = blades_cm
+        blades_I_TT = blades_I + blades_mass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        
+        outputs["rna_I_TT"] = util.unassembleI(hub_I_TT + blades_I_TT + nac_I_TT)
 
 
 # --------------------------------------------

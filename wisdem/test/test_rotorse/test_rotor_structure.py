@@ -1,10 +1,7 @@
 import os
-import copy
-import time
 import unittest
 
 import numpy as np
-import openmdao.api as om
 import numpy.testing as npt
 
 import wisdem.rotorse.rotor_structure as rs
@@ -18,8 +15,6 @@ class TestRS(unittest.TestCase):
     def testBladeCurvature(self):
         inputs = {}
         outputs = {}
-        discrete_inputs = {}
-        discrete_outputs = {}
         npts = 101
         myzero = np.zeros(npts)
         myone = np.ones(npts)
@@ -35,11 +30,14 @@ class TestRS(unittest.TestCase):
         inputs["precurve"] = myzero
         inputs["presweep"] = myzero
         inputs["precone"] = 0.0
+        inputs["Rhub"] = 1.0
+        inputs["blade_span_cg"] = 0.5 * inputs["r"].max()
         myobj.compute(inputs, outputs)
         npt.assert_equal(outputs["3d_curv"], myzero)
         npt.assert_equal(outputs["x_az"], myzero)
         npt.assert_equal(outputs["y_az"], myzero)
         npt.assert_equal(outputs["z_az"], inputs["r"])
+        npt.assert_equal(outputs["blades_cg_hubcc"], 0.0)
 
         # Some coning: Z is 'r'
         inputs["precone"] = 3.0
@@ -48,6 +46,7 @@ class TestRS(unittest.TestCase):
         npt.assert_equal(outputs["x_az"], myzero)
         npt.assert_equal(outputs["y_az"], myzero)
         npt.assert_equal(outputs["z_az"], inputs["r"])
+        npt.assert_equal(outputs["blades_cg_hubcc"], 51*np.sin(np.deg2rad(3)))
 
         # Some curve: X is 'flap'
         inputs["precurve"] = np.linspace(0, 1, npts)
@@ -59,6 +58,7 @@ class TestRS(unittest.TestCase):
         npt.assert_equal(outputs["x_az"], inputs["precurve"])
         npt.assert_equal(outputs["y_az"], myzero)
         npt.assert_equal(outputs["z_az"], inputs["r"])
+        npt.assert_almost_equal(outputs["blades_cg_hubcc"], 51*np.sin(np.deg2rad(cone[50])))
 
         # Some curve: Y is 'edge'
         inputs["precurve"] = myzero
@@ -68,6 +68,7 @@ class TestRS(unittest.TestCase):
         npt.assert_equal(outputs["x_az"], myzero)
         npt.assert_equal(outputs["y_az"], inputs["presweep"])
         npt.assert_equal(outputs["z_az"], inputs["r"])
+        npt.assert_equal(outputs["blades_cg_hubcc"], np.zeros(3))
 
         # Some curve and sweep
         inputs["precurve"] = np.linspace(0, 2, npts)
@@ -80,12 +81,11 @@ class TestRS(unittest.TestCase):
         npt.assert_equal(outputs["x_az"], inputs["precurve"])
         npt.assert_equal(outputs["y_az"], inputs["presweep"])
         npt.assert_equal(outputs["z_az"], inputs["r"])
+        npt.assert_almost_equal(outputs["blades_cg_hubcc"], 51*np.sin(np.deg2rad(cone[50])))
 
     def testTotalLoads(self):
         inputs = {}
         outputs = {}
-        discrete_inputs = {}
-        discrete_outputs = {}
         npts = 101
         myzero = np.zeros(npts)
         myone = np.ones(npts)

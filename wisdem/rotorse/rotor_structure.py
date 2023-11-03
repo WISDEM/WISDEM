@@ -29,6 +29,8 @@ class BladeCurvature(ExplicitComponent):
         self.add_input("precurve", val=np.zeros(n_span), units="m", desc="location in blade x-coordinate")
         self.add_input("presweep", val=np.zeros(n_span), units="m", desc="location in blade y-coordinate")
         self.add_input("precone", val=0.0, units="deg", desc="precone angle")
+        self.add_input("Rhub", val=0.0, units="m", desc="hub radius")
+        self.add_input("blade_span_cg", val=0.0, units="m", desc="Distance along the blade span for its center of gravity")
 
         # Outputs
         self.add_output(
@@ -44,13 +46,16 @@ class BladeCurvature(ExplicitComponent):
             "z_az", val=np.zeros(n_span), units="m", desc="location of blade in azimuth z-coordinate system"
         )
         self.add_output("s", val=np.zeros(n_span), units="m", desc="cumulative path length along blade")
+        self.add_output("blades_cg_hubcc", val=0.0, units="m", desc="cg of all blades relative to hub along shaft axis. Distance is should be interpreted as negative for upwind and positive for downwind turbines")
 
     def compute(self, inputs, outputs):
         r = inputs["r"]
         precurve = inputs["precurve"]
         presweep = inputs["presweep"]
         precone = inputs["precone"]
-
+        r_cg = inputs["blade_span_cg"]
+        Rhub = inputs["Rhub"]
+        
         n = len(r)
         dx_dx = np.eye(3 * n)
 
@@ -66,6 +71,11 @@ class BladeCurvature(ExplicitComponent):
         outputs["y_az"] = y_az
         outputs["z_az"] = z_az
         outputs["s"] = s
+
+        # Compute cg location of all blades in hub coordinates
+        cone_cg = np.interp(r_cg, r, totalCone)
+        cg = (r_cg + Rhub) * np.sin(np.deg2rad(cone_cg))
+        outputs["blades_cg_hubcc"] = cg
 
 
 class TotalLoads(ExplicitComponent):
@@ -1305,7 +1315,6 @@ class BladeJointSizing(ExplicitComponent):
             val=False,
             desc="whether discrete calculation is allowed. Set to False if in optimization loop. [bool]",
         )  # (hardcoded) TODO could add as user input
-        self.add_input("blade_mass_re", val=0, units="kg", desc="blade mass")
         self.add_input(
             "joint_nonmaterial_cost",
             val=0.0,
@@ -1345,7 +1354,6 @@ class BladeJointSizing(ExplicitComponent):
         # self.add_output("layer_offset_y_bjs", val=np.zeros((n_layers, n_span)), units="m",
         #            desc="2D array of the offset along the y axis to set the position of a layer. Positive values move the layer towards the trailing edge, negative values towards the leading edge. The first dimension represents each layer, the second dimension represents each entry along blade span.")
 
-        self.add_output("blade_mass", val=0, units="kg", desc="blade mass")
         self.add_output(
             "joint_material_cost", val=0, units="USD", desc="cost of joint metallic parts (bolts, washers, and inserts)"
         )
@@ -1532,7 +1540,7 @@ class BladeJointSizing(ExplicitComponent):
         # 3- Calculate # bolts such that axial flap bolt forces > edge bolt forces
         # Loop through number of possible bolts per spar cap, and calculate the following. When the flap ultimate and fatigue loads both
         # dominate, that is the minimum # bolts. Units are force per bolt ONLY HERE.
-        for n_bolt_min in range(3, int(np.ceil(n_bolt_max) // 2 * 2 + 1), 2):
+        for n_bolt_min in range(3, np.min([5, int(np.ceil(n_bolt_max) // 2 * 2 + 1)]), 2):
             N = int(np.floor(n_bolt_min / 2))
             N_array = np.linspace(1, N, N)
             Fax_flap_ultimate_per_bolt = Mflap_ultimate / (d_b2b * n_bolt_min)
@@ -1772,7 +1780,6 @@ class BladeJointSizing(ExplicitComponent):
         t_reinf_ratio = t_req_reinf / t_reinf
         w_reinf_ratio = w_req_reinf / w_reinf
 
-        outputs["blade_mass"] = inputs["blade_mass_re"] + m_add
         # outputs['layer_offset_y_bjs'] = offset
         # outputs['layer_start_nd_bjs'] = layer_start_nd
         # outputs['layer_end_nd_bjs'] = layer_end_nd
@@ -1785,7 +1792,8 @@ class BladeJointSizing(ExplicitComponent):
         outputs["joint_material_cost"] = cost_joint_materials
         outputs["joint_total_cost"] = cost_joint_materials + inputs["joint_nonmaterial_cost"]
 
-
+    
+        
 class RotorStructure(Group):
     # OpenMDAO group to compute the blade elastic properties, deflections, and loading
     def initialize(self):
@@ -1835,11 +1843,11 @@ class RotorStructure(Group):
         # self.add_subsystem('aero_storm_1yr',    CCBladeLoads(modeling_options = modeling_options), promotes=promoteListAeroLoads)
         # self.add_subsystem('aero_storm_50yr',   CCBladeLoads(modeling_options = modeling_options), promotes=promoteListAeroLoads)
         # Add centrifugal and gravity loading to aero loading
-        promotes = ["tilt", "theta", "rhoA", "z", "totalCone", "z_az"]
+        #promotes = ["tilt", "theta", "rhoA", "z", "totalCone", "z_az"]
         self.add_subsystem(
             "curvature",
             BladeCurvature(modeling_options=modeling_options),
-            promotes=["r", "precone", "precurve", "presweep", "3d_curv", "x_az", "y_az", "z_az"],
+            promotes=["r", "precone", "precurve", "presweep", "Rhub", "blade_span_cg", "3d_curv", "x_az", "y_az", "z_az"],
         )
         promoteListTotalLoads = ["r", "theta", "tilt", "rhoA", "3d_curv", "z_az"]
         self.add_subsystem(

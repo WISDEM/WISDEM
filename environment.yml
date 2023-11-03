@@ -10,23 +10,23 @@ dependencies:
   - make
   - matplotlib
   - meson
+  - moorpy
   - mpi4py
   - ninja
   - nlopt
-  - numpy
+  - numpy>=1.26
   - numpydoc
-  - openmdao>=3.18
-  - openpyxl==3.1.0
+  - openmdao<3.28
+  - openpyxl
   - pandas
   - pip
   - pydoe2
   - pyoptsparse
   - pytest
   - pytest-cov
-  - python
   - python-benedict
   - pyyaml
-  - ruamel_yaml
+  - ruamel.yaml
   - scipy
   - setuptools
   - simpy
