@@ -37,6 +37,9 @@ class PoseOptimization(object):
             "NSGA2",
         ]
 
+        self.floating_solve_component = 'floatingse'
+        self.floating_period_solve_component = 'floatingse'
+
     def get_number_design_variables(self):
         # Determine the number of design variables
         n_DV = 0
@@ -1471,7 +1474,7 @@ class PoseOptimization(object):
         for modestr in ["surge", "sway", "heave", "roll", "pitch", "yaw"]:
             if float_constr[f"{modestr}_period"]["flag"]:
                 wt_opt.model.add_constraint(
-                    f"floatingse.{modestr}_period",
+                    f"{self.floating_period_solve_component}.{modestr}_period",
                     lower=float_constr[f"{modestr}_period"]["lower_bound"],
                     upper=float_constr[f"{modestr}_period"]["upper_bound"],
                 )
