@@ -461,7 +461,7 @@ class GeneratorMass(om.ExplicitComponent):
 
     Parameters
     ----------
-    machine_rating : float, [kW]
+    machine_rating : float, [MW]
         machine rating
     generator_mass_coeff : float
         k inthe generator mass equation: k*rated_power + b
@@ -476,7 +476,7 @@ class GeneratorMass(om.ExplicitComponent):
     """
 
     def setup(self):
-        self.add_input("machine_rating", 0.0, units="kW")
+        self.add_input("machine_rating", 0.0, units="MW")
         self.add_input("generator_mass_coeff", 2300.0)
         self.add_input("generator_mass_intercept", 3400.0)
 
@@ -488,7 +488,7 @@ class GeneratorMass(om.ExplicitComponent):
         generator_mass_intercept = inputs["generator_mass_intercept"]
 
         # calculate the generator mass
-        outputs["generator_mass"] = generator_mass_coeff * machine_rating / 1000.0 + generator_mass_intercept
+        outputs["generator_mass"] = generator_mass_coeff * machine_rating + generator_mass_intercept
 
 
 # --------------------------------------------------------------------
@@ -727,7 +727,7 @@ class TransformerMass(om.ExplicitComponent):
     """
 
     def setup(self):
-        self.add_input("machine_rating", 0.0, units="kW")
+        self.add_input("machine_rating", 0.0, units="MW")
         self.add_input("transformer_mass_coeff", 1915.0)
         self.add_input("transformer_mass_intercept", 1910.0)
 
@@ -739,7 +739,7 @@ class TransformerMass(om.ExplicitComponent):
         transformer_mass_intercept = inputs["transformer_mass_intercept"]
 
         # calculate the transformer mass
-        outputs["transformer_mass"] = transformer_mass_coeff * machine_rating / 1000.0 + transformer_mass_intercept
+        outputs["transformer_mass"] = transformer_mass_coeff * machine_rating + transformer_mass_intercept
 
 
 # --------------------------------------------------------------------
@@ -751,12 +751,12 @@ class TowerMass(om.ExplicitComponent):
 
     Parameters
     ----------
-    hub_height : float, [m]
-        hub height of wind turbine above ground / sea level
+    tower_length : float, [m]
+        This is the hub height of wind turbine above ground for onshore turbines.  For offshore, this should be entered as the length from transition piece to hub height.
     tower_mass_coeff : float
-        k inthe tower mass equation: k*hub_height^b
+        k in the tower mass equation: k*tower_length^b
     tower_mass_exp : float
-        b in the tower mass equation: k*hub_height^b
+        b in the tower mass equation: k*tower_length^b
 
     Returns
     -------
@@ -766,19 +766,19 @@ class TowerMass(om.ExplicitComponent):
     """
 
     def setup(self):
-        self.add_input("hub_height", 0.0, units="m")
+        self.add_input("tower_length", 0.0, units="m")
         self.add_input("tower_mass_coeff", 19.828)
         self.add_input("tower_mass_exp", 2.0282)
 
         self.add_output("tower_mass", 0.0, units="kg")
 
     def compute(self, inputs, outputs):
-        hub_height = inputs["hub_height"]
+        tower_length = inputs["tower_length"]
         tower_mass_coeff = inputs["tower_mass_coeff"]
         tower_mass_exp = inputs["tower_mass_exp"]
 
         # calculate the tower mass
-        outputs["tower_mass"] = tower_mass_coeff * hub_height**tower_mass_exp
+        outputs["tower_mass"] = tower_mass_coeff * tower_length**tower_mass_exp
 
 
 # Turbine mass adder

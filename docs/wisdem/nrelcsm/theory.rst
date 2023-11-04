@@ -241,7 +241,7 @@ To obtain the yaw system mass in kilograms and cost in USD from the rotor diamet
 .. math::
    m_{yaw} &= k_m D_{rotor}^b\\
    c_{yaw} &= k_c m_{yaw}\\
-   k_m &= 0.00135\\
+   k_m &= 0.0009\\
    b   &= 3.314\\
    k_c &= 8.3
 
@@ -344,7 +344,7 @@ For variable names access to override the default values see the :ref:`csmsource
 
 Nacelle Cover
 ~~~~~~~~~~~~~
-To obtain the nacelle cover mass in kilograms and cost in USD from the machine rating in megawatts,
+To obtain the nacelle cover mass in kilograms and cost in USD from the machine rating in kilowatts,
 
 .. math::
    m_{cover} &= k_m P_{turbine} + b\\
@@ -360,16 +360,16 @@ For variable names access to override the default values see the :ref:`csmsource
 
 Tower
 ~~~~~
-To obtain the tower mass in kilograms and cost in USD from the hub height in meters,
+To obtain the tower mass in kilograms and cost in USD from the tower length in meters,
 
 .. math::
-   m_{tower} &= k_m L_{hub}^b\\
+   m_{tower} &= k_m L_{tower}^b\\
    c_{tower} &= k_c m_{tower}\\
    k_m &= 19.828\\
    b   &= 2.0282\\
    k_c &= 2.9
 
-Where :math:`L_{hub}` is the hub height.
+Where :math:`L_{tower}` is the hub height for onshore turbines and the distance from transition piece to hub height offshore.
 
 For variable names access to override the default values see the :ref:`csmsource`.
 
