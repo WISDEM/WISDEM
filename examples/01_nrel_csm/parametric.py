@@ -81,7 +81,7 @@ for k in range(npts):
     prob["machine_rating"] = Rating[k]
     prob["rotor_diameter"] = Diameter[k]
     prob["blade_user_exp"] = Bladeexp[k]
-    prob["hub_height"] = hub_height = 0.5 * Diameter[k] + 30.0
+    prob["tower_length"] = hub_height = 0.5 * Diameter[k] + 30.0
 
     # Compute Turbine capital cost using the NREL CSM (2015) and store the result
     prob.run_model()

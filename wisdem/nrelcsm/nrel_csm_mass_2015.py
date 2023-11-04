@@ -256,7 +256,7 @@ class LowSpeedShaftMass(om.ExplicitComponent):
 
         # calculate the lss mass
         outputs["lss_mass"] = (
-            lss_mass_coeff * (blade_mass * machine_rating / 1000.0) ** lss_mass_exp + lss_mass_intercept
+            lss_mass_coeff * (blade_mass * machine_rating * 1e-3) ** lss_mass_exp + lss_mass_intercept
         )
 
 
@@ -321,7 +321,7 @@ class RotorTorque(om.ExplicitComponent):
     -------
     rated_rpm : float, [rpm]
         rpm of rotor at rated power
-    rotor_torque : float, [N*m]
+    rotor_torque : float, [MN*m]
         torque from rotor at rated power
 
     """
@@ -333,14 +333,14 @@ class RotorTorque(om.ExplicitComponent):
         self.add_input("max_efficiency", 0.0)
 
         self.add_output("rated_rpm", 0.0, units="rpm")
-        self.add_output("rotor_torque", 0.0, units="N*m")
+        self.add_output("rotor_torque", 0.0, units="kN*m")
 
     def compute(self, inputs, outputs):
         # Rotor force calculations for nacelle inputs
         maxTipSpd = inputs["max_tip_speed"]
         maxEfficiency = inputs["max_efficiency"]
 
-        ratedHubPower_W = inputs["machine_rating"] * 1000.0 / maxEfficiency
+        ratedHubPower_W = inputs["machine_rating"] / maxEfficiency
         rotorSpeed = maxTipSpd / (0.5 * inputs["rotor_diameter"])
         outputs["rated_rpm"] = rotorSpeed / (2 * np.pi) * 60.0
         outputs["rotor_torque"] = ratedHubPower_W / rotorSpeed
@@ -456,12 +456,12 @@ class HighSpeedShaftMass(om.ExplicitComponent):
 class GeneratorMass(om.ExplicitComponent):
     """
     Compute generator mass in the form of :math:`mass = k*power + b`.
-    Value of :math:`k` was updated in 2015 to be 2300.
+    Value of :math:`k` was updated in 2015 to be 2.3 (for rating in kW).
     Value of :math:`b` was updated in 2015 to be 3400.
 
     Parameters
     ----------
-    machine_rating : float, [MW]
+    machine_rating : float, [kW]
         machine rating
     generator_mass_coeff : float
         k inthe generator mass equation: k*rated_power + b
@@ -476,8 +476,8 @@ class GeneratorMass(om.ExplicitComponent):
     """
 
     def setup(self):
-        self.add_input("machine_rating", 0.0, units="MW")
-        self.add_input("generator_mass_coeff", 2300.0)
+        self.add_input("machine_rating", 0.0, units="kW")
+        self.add_input("generator_mass_coeff", 2.3)
         self.add_input("generator_mass_intercept", 3400.0)
 
         self.add_output("generator_mass", 0.0, units="kg")
@@ -707,7 +707,7 @@ class PlatformsMainframeMass(om.ExplicitComponent):
 class TransformerMass(om.ExplicitComponent):
     """
     Compute transformer mass in the form of :math:`mass = k*power + b`.
-    Value of :math:`k` was updated in 2015 to be 1915.
+    Value of :math:`k` was updated in 2015 to be 1.915 (for rating in kW).
     Value of :math:`b` was updated in 2015 to be 1910.
 
     Parameters
@@ -727,8 +727,8 @@ class TransformerMass(om.ExplicitComponent):
     """
 
     def setup(self):
-        self.add_input("machine_rating", 0.0, units="MW")
-        self.add_input("transformer_mass_coeff", 1915.0)
+        self.add_input("machine_rating", 0.0, units="kW")
+        self.add_input("transformer_mass_coeff", 1.9150)
         self.add_input("transformer_mass_intercept", 1910.0)
 
         self.add_output("transformer_mass", 0.0, units="kg")

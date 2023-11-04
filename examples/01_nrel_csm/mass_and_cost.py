@@ -17,7 +17,7 @@ prob.setup()
 prob["machine_rating"] = 5000.0
 prob["rotor_diameter"] = 126.0
 prob["turbine_class"] = 2
-prob["hub_height"] = 90.0
+prob["tower_length"] = 90.0
 prob["blade_number"] = 3
 prob["blade_has_carbon"] = False
 prob["max_tip_speed"] = 80.0

@@ -215,12 +215,12 @@ For variable names access to override the default values see the :ref:`csmsource
 
 Generator
 ~~~~~~~~~
-To obtain the generator mass in kilograms and cost in USD from the machine rating in megawatts,
+To obtain the generator mass in kilograms and cost in USD from the machine rating in kilowatts,
 
 .. math::
    m_{generator} &= k_m P_{turbine} + b\\
    c_{generator} &= k_c m_{generator}\\
-   k_m &= 2300\\
+   k_m &= 2.3\\
    b   &= 3400\\
    k_c &= 12.4
 
@@ -265,12 +265,12 @@ For variable names access to override the default values see the :ref:`csmsource
 
 Transformer
 ~~~~~~~~~~~
-To obtain the transformer mass in kilograms and cost in USD from the machine rating in megawatts,
+To obtain the transformer mass in kilograms and cost in USD from the machine rating in kilowatts,
 
 .. math::
    m_{transformer} &= k_m P_{rotor} + b\\
    c_{transformer} &= k_c m_{transformer}\\
-   k_m &= 1915\\
+   k_m &= 1.915\\
    b   &= 1910\\
    k_c &= 18.8
 
