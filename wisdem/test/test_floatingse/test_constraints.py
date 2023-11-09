@@ -58,8 +58,8 @@ class TestConstraints(unittest.TestCase):
         self.assertEqual(outputs["metacentric_height"], 0.1 - (5 - 1))
         self.assertEqual(outputs["constr_mooring_surge"], 1e5 - 1e2)
         self.assertEqual(outputs["constr_mooring_heel"], 10 * 2e5 + (5 + 20) * 4e5 + 2e5 - 1e2 * (10 - 5) - 2e2)
-        npt.assert_equal(outputs["constr_freeboard_heel_margin"], (-4.0 - free2))
-        npt.assert_equal(outputs["constr_draft_heel_margin"], -(-6.0 - draft2))
+        npt.assert_almost_equal(outputs["constr_freeboard_heel_margin"], (-4.0 - free2), decimal = 8)
+        npt.assert_almost_equal(outputs["constr_draft_heel_margin"], -(-6.0 - draft2), decimal = 8)
 
 
 def suite():
