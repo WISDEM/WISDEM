@@ -5,8 +5,8 @@ import wisdem.commonse.utilities as util
 from wisdem.commonse import gravity
 from wisdem.commonse.cylinder_member import NULL, MEMMAX
 
-NNODES_MAX = 200  # 1000
-NELEM_MAX = 200  # 1000
+NNODES_MAX = 500  # 1000
+NELEM_MAX = 500  # 1000
 RIGID = 1e30
 EPS = 1e-6
 
