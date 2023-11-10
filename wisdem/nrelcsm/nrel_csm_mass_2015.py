@@ -340,10 +340,10 @@ class RotorTorque(om.ExplicitComponent):
         maxTipSpd = inputs["max_tip_speed"]
         maxEfficiency = inputs["max_efficiency"]
 
-        ratedHubPower_W = inputs["machine_rating"] / maxEfficiency
+        ratedHubPower_kW = inputs["machine_rating"] / maxEfficiency
         rotorSpeed = maxTipSpd / (0.5 * inputs["rotor_diameter"])
         outputs["rated_rpm"] = rotorSpeed / (2 * np.pi) * 60.0
-        outputs["rotor_torque"] = ratedHubPower_W / rotorSpeed
+        outputs["rotor_torque"] = ratedHubPower_kW / rotorSpeed
 
 
 # --------------------------------------------------------------------
@@ -370,7 +370,7 @@ class GearboxMass(om.ExplicitComponent):
     """
 
     def setup(self):
-        self.add_input("rotor_torque", 0.0, units="N*m")
+        self.add_input("rotor_torque", 0.0, units="kN*m")
         self.add_input("gearbox_mass_coeff", 113.0)
         self.add_input("gearbox_mass_exp", 0.71)
 
@@ -382,7 +382,7 @@ class GearboxMass(om.ExplicitComponent):
         gearbox_mass_exp = inputs["gearbox_mass_exp"]
 
         # calculate the gearbox mass
-        outputs["gearbox_mass"] = gearbox_mass_coeff * (rotor_torque / 1000.0) ** gearbox_mass_exp
+        outputs["gearbox_mass"] = gearbox_mass_coeff * rotor_torque ** gearbox_mass_exp
 
 
 # --------------------------------------------------------------------

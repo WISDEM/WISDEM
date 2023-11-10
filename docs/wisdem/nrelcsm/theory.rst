@@ -170,12 +170,12 @@ To obtain the main bearings mass in kilograms and cost in USD from the rotor tor
    b   &= 0.71\\
    k_c &= 12.9
 
-Where :math:`Q_{rotor}` is the rotor torque and is approximated by,
+Where :math:`Q_{rotor}` is the rotor torque in kilo-Newton meters and is approximated by,
 
 .. math::
    Q_{rotor} = \frac{0.5 P_{turbine} D_{rotor}}{\eta V_{tip}}
 
-Where :math:`P_{turbine}` is the machine rating, :math:`D_{rotor}` is the rotor diameter, :math:`V_{tip}` is the max tip speed, and :math:`\eta` is the drivetrain efficiency.
+Where :math:`P_{turbine}` is the machine rating in kilowatts, :math:`D_{rotor}` is the rotor diameter in meters, :math:`V_{tip}` is the max tip speed in meters per second, and :math:`\eta` is the drivetrain efficiency (as a fraction between zero and one).
 
 For variable names access to override the default values see the :ref:`csmsource`.
 
@@ -268,7 +268,7 @@ Transformer
 To obtain the transformer mass in kilograms and cost in USD from the machine rating in kilowatts,
 
 .. math::
-   m_{transformer} &= k_m P_{rotor} + b\\
+   m_{transformer} &= k_m P_{turbine} + b\\
    c_{transformer} &= k_c m_{transformer}\\
    k_m &= 1.915\\
    b   &= 1910\\
@@ -287,7 +287,7 @@ Cabling and Electrical Connections
 To obtain the cabling and electrical connections cost in USD (there is no mass calculated) from the machine rating in megawatts,
 
 .. math::
-   c_{connect} &= k_c P_{rotor}\\
+   c_{connect} &= k_c P_{turbine}\\
    k_c &= 41850
 
 Where :math:`P_{turbine}` is the machine rating.
@@ -299,7 +299,7 @@ Control System
 To obtain the control system cost in USD (there is no mass calculated) from the machine rating in megawatts,
 
 .. math::
-   c_{control} &= k_c P_{rotor}\\
+   c_{control} &= k_c P_{turbine}\\
    k_c &= 21150
 
 Where :math:`P_{turbine}` is the machine rating.
