@@ -1922,31 +1922,19 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                         [0.0, 0.0],
                         ["suction", "pressure"],
                     )
-                    # if i == 0:
-                    #     print(
-                    #         "WARNING: The web "
-                    #         + web_name[j]
-                    #         + " is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition."
-                    #     )
-                    # if web_start_nd[j, i] < 0.0 or web_start_nd[j, i] > 1.0:
-                    #     print(
-                    #         "WARNING: Blade web "
-                    #         + web_name[j]
-                    #         + " at n.d. span position "
-                    #         + str(inputs["s"][i])
-                    #         + " has the n.d. start point outside the TE. Please check the yaml input file."
-                    #     )
-                    # if web_end_nd[j, i] < 0.0 or web_end_nd[j, i] > 1.0:
-                    #     print(
-                    #         "WARNING: Blade web "
-                    #         + web_name[j]
-                    #         + " at n.d. span position "
-                    #         + str(inputs["s"][i])
-                    #         + " has the n.d. end point outside the TE. Please check the yaml input file."
-                    #     )
                 elif discrete_inputs["definition_web"][j] == 3:
                     web_start_nd[j, i] = inputs["web_start_nd_yaml"][j, i]
                     web_end_nd[j, i] = inputs["web_end_nd_yaml"][j, i]
+                elif discrete_inputs["definition_web"][j] == 4:
+                    web_rotation[j, i] = -inputs["web_rotation_yaml"][j, i]
+                    web_rotation[j, i] -= inputs["twist"][i]
+                    web_start_nd[j, i], web_end_nd[j, i] = calc_axis_intersection(
+                        inputs["coord_xy_dim"][i, :, :],
+                        -web_rotation[j, i],
+                        outputs["web_offset_y_pa"][j, i],
+                        [0.0, 0.0],
+                        ["suction", "pressure"],
+                    )
                 else:
                     raise ValueError(
                         "Blade web " + web_name[j] + " not described correctly. Please check the yaml input file."
@@ -1958,12 +1946,17 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     layer_start_nd[j, i] = 0.0
                     layer_end_nd[j, i] = 1.0
                 elif (
-                    discrete_inputs["definition_layer"][j] == 2 or discrete_inputs["definition_layer"][j] == 3
+                    discrete_inputs["definition_layer"][j] == 2 
+                    or discrete_inputs["definition_layer"][j] == 3
+                    or discrete_inputs["definition_layer"][j] == 13
                 ):  # Midpoint and width
                     if discrete_inputs["definition_layer"][j] == 2:
                         layer_rotation[j, i] = -inputs["twist"][i]
+                    elif discrete_inputs["definition_layer"][j] == 3:
+                        layer_rotation[j, i] = -inputs["layer_rotation_yaml"][j, i]
                     else:
                         layer_rotation[j, i] = -inputs["layer_rotation_yaml"][j, i]
+                        layer_rotation[j, i] -= inputs["twist"][i]
                     midpoint = calc_axis_intersection(
                         inputs["coord_xy_dim"][i, :, :],
                         -layer_rotation[j, i],
@@ -1988,14 +1981,12 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                             'WARNING: Layer "%s" may be too large to fit within chord. "offset_y_pa" changed from %f to 0.0 and "width" changed from %f to %f at s=%f (i=%d)'
                             % (layer_name[j], offset, width_old, width, inputs["s"][i], i)
                         )
-                        # print(layer_resize_warning)
                     else:
                         outputs["layer_width"][j, i] = copy.copy(width)
                         outputs["layer_offset_y_pa"][j, i] = copy.copy(offset)
 
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = midpoint + width / arc_L_i / 2.0
-
                 elif discrete_inputs["definition_layer"][j] == 4:  # Midpoint and width
                     midpoint = 1.0
                     inputs["layer_midpoint_nd"][j, i] = midpoint
@@ -2003,17 +1994,6 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     outputs["layer_width"][j, i] = copy.copy(width)
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = width / arc_L_i / 2.0
-
-                    # # Geometry check to prevent overlap between SC and TE reinf
-                    # for k in range(self.n_layers):
-                    #     if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
-                    # if layer_end_nd[j, i] > layer_start_nd[k, i] or layer_start_nd[j, i] < layer_end_nd[k, i]:
-                    #     print(
-                    #         "WARNING: The trailing edge reinforcement extends above the spar caps at station "
-                    #         + str(i)
-                    #         + ". Please reduce its width."
-                    #     )
-
                 elif discrete_inputs["definition_layer"][j] == 5:  # Midpoint and width
                     midpoint = LE_loc
                     inputs["layer_midpoint_nd"][j, i] = midpoint
@@ -2021,33 +2001,8 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     outputs["layer_width"][j, i] = copy.copy(width)
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = midpoint + width / arc_L_i / 2.0
-                    # # Geometry check to prevent overlap between SC and LE reinf
-                    # for k in range(self.n_layers):
-                    #     if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
-                    #         if (
-                    #             discrete_inputs["layer_side"][k] == "suction"
-                    #             and layer_start_nd[j, i] < layer_end_nd[k, i]
-                    #         ):
-                    #             print(
-                    #                 "WARNING: The leading edge reinforcement extends above the spar caps at station "
-                    #                 + str(i)
-                    #                 + ". Please reduce its width."
-                    #             )
-                    #         elif (
-                    #             discrete_inputs["layer_side"][k] == "pressure"
-                    #             and layer_end_nd[j, i] > layer_start_nd[k, i]
-                    #         ):
-                    #             print(
-                    #                 "WARNING: The leading edge reinforcement extends above the spar caps at station "
-                    #                 + str(i)
-                    #                 + ". Please reduce its width."
-                    #             )
-                    #         else:
-                    #             pass
                 elif discrete_inputs["definition_layer"][j] == 6:  # Start and end locked to other element
-                    # if inputs['layer_start_nd'][j,i] > 1:
                     layer_start_nd[j, i] = layer_end_nd[int(discrete_inputs["index_layer_start"][j]), i]
-                    # if inputs['layer_end_nd'][j,i] > 1:
                     layer_end_nd[j, i] = layer_start_nd[int(discrete_inputs["index_layer_end"][j]), i]
                 elif discrete_inputs["definition_layer"][j] == 7:  # Start nd and width
                     width = inputs["layer_width_yaml"][j, i]
