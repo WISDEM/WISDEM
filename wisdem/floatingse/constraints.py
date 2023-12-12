@@ -69,8 +69,8 @@ class FloatingConstraints(om.ExplicitComponent):
             xyz = inputs[f"member{k}:nodes_xyz"]
             inodes = np.where(xyz[:, 0] == NULL)[0][0]
             xyz = xyz[:inodes, :]
-            xyz1 = xyz[0, :]
-            xyz2 = xyz[-1, :]
+            xyz1 = xyz[0, :]  # Should be the draft
+            xyz2 = xyz[-1, :] # Should be the freeboard
 
             # Get xp-zp coplanar coordinates relative to cg
             xp1 = np.sqrt(np.sum((xyz1[:2] - cg[:2]) ** 2))
@@ -78,22 +78,26 @@ class FloatingConstraints(om.ExplicitComponent):
             xp2 = np.sqrt(np.sum((xyz2[:2] - cg[:2]) ** 2))
             zp2 = xyz2[2] - cg[2]
 
+            # Only check this for partially submerged members
+            if xyz1[2] * xyz2[2] > 0:  # pos * neg
+                continue
+
+            # Simplify by making zp1 above zp2
+            if zp2 < zp1: # Our assumption that z1 is draft is incorrect
+                # Swap variables
+                zp1, zp2 = zp2, zp1
+                xp1, xp2 = xp2, xp1
+                xyz1, xyz2 = xyz2, xyz1
+
             # Coordinate transformation about CG and change in z-position
-            xp1_h, zp1_h = util.rotate(0.0, 0.0, xp1, zp1, max_heel)
-            xp2_h, zp2_h = util.rotate(0.0, 0.0, xp2, zp2, max_heel)
-            dz1 = np.abs((zp1 - zp1_h) / xyz1[2])
-            dz2 = np.abs((zp2 - zp2_h) / xyz2[2])
+            _, zp1_h = util.rotate(0.0, 0.0, xp1, zp1, max_heel)      # Bottom point, we care about it going up
+            _, zp2_h = util.rotate(0.0, 0.0, xp2, zp2, -max_heel)     # Top point, we care about it going down
+            
+            dz1 = zp1_h - zp1       # change in keel/draft
+            dz2 = zp2   - zp2_h     # change in freeboard
 
-            # See if change in z-coordinate is bigger than freeboard or draft, should be <1
-            if xyz1[2] > 0.0 and xyz1[2] > xyz2[2]:
-                freeboard_margin[k] = dz1
-            elif xyz2[2] > 0.0 and xyz2[2] > xyz1[2]:
-                freeboard_margin[k] = dz2
-
-            if xyz1[2] < 0.0 and xyz1[2] < xyz2[2]:
-                draft_margin[k] = dz1
-            elif xyz2[2] < 0.0 and xyz2[2] < xyz1[2]:
-                draft_margin[k] = dz2
+            draft_margin[k] = -dz1 / xyz1[2]  # Adding negative because assume xyz1[2] is negative below water
+            freeboard_margin[k] = dz2 / xyz2[2]
 
         # Ensure members have enough clearance from the waterline
         outputs["constr_freeboard_heel_margin"] = freeboard_margin
