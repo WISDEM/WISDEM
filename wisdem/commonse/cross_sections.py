@@ -240,30 +240,60 @@ class Square(CrossSectionBase):
 
 
 class Rectangle(CrossSectionBase):
+    """Rectangle section property calculation
+
+    reference: frame3DD documentation, note that the coordinate system is different from the online doc
+
+    Args:
+        CrossSectionBase (parent class)
+
+    Definition:
+
+             a
+        |---------------------|
+        |                     |
+      b |   |-------------|   |          ^ y
+        |   |             |   |          |
+        |   |             |   |          ---> x   
+        |   |-------------|   |
+        |         | t         |
+        |---------------------|
+
+    """
     def __init__(self, a, b, t, L=np.nan):
+        """Initialize rectangle
+
+        Args:
+            a (float): side_length parallel to y
+            b (float): side_length_b parallel to z
+            t (float): thickness of rectangular tube
+            L (float), optional): length of the section. Defaults to np.nan.
+        """
         self.a = a
         self.b = b
         self.t = t
         self.L = L * np.ones(np.size(a))
 
+        assert (np.minimum(self.a, self.b)>=2*self.t).any(), "Thickness exceeds the edge lengths."
+
     @property
-    def Area(self):  # Cross sectional area of tube
+    def Area(self):  # Cross sectional area of rectangle
         return self.a * self.b - (self.a - 2 * self.t) * (self.b - 2 * self.t)
 
     @property
-    def Ixx(self):  # 2nd area moment of inertia w.r.t. x-x axis running parallel to flange through CG
-        return (self.a * self.b**3 - (self.a - 2 * self.t) * (self.b - 2 * self.t) * 3) / 12.0
+    def Ixx(self):  # 2nd area moment of inertia w.r.t. x-x axis 
+        return (self.a * self.b**3 - (self.a - 2 * self.t) * (self.b - 2 * self.t)**3) / 12.0
 
     @property
-    def Iyy(self):  # 2nd area moment of inertia w.r.t. z-z running through center of web
-        return (self.b * self.a**3 - (self.b - 2 * self.t) * (self.a - 2 * self.t) * 3) / 12.0
+    def Iyy(self):  # 2nd area moment of inertia w.r.t. z-z 
+        return (self.b * self.a**3 - (self.b - 2 * self.t) * (self.a - 2 * self.t)**3) / 12.0
 
     @property
     def J0(self):  # polar moment of inertia w.r.t. z-z axis (torsional)
-        return 2 * self.t * (self.a - self.t) ** 2 * (self.b - self.t) ** 2 / (self.a + self.b - 2 * self.t)
+        return self.Ixx + self.Iyy
 
     @property
-    def Asx(self):  # Shear Area for tubular cross-section
+    def Asx(self):  # Shear Area for rectangle cross-section
         if self.a > self.b:
             return self.Area / (
                 0.93498
@@ -282,7 +312,7 @@ class Rectangle(CrossSectionBase):
             )
 
     @property
-    def Asy(self):  # Shear Area for tubular cross-section
+    def Asy(self):  # Shear Area for rectangular cross-section
         if self.a > self.b:
             return self.Area / (
                 1.63544
@@ -301,13 +331,13 @@ class Rectangle(CrossSectionBase):
             )
 
     @property
-    def BdgMxx(self):  # Bending modulus for tubular cross-section
+    def BdgMxx(self):  # Bending modulus for rectangular cross-section
         return 2 * self.Ixx / self.b
 
     @property
-    def BdgMyy(self):  # Bending modulus for tubular cross-section =BdgMxx
+    def BdgMyy(self):  # Bending modulus for rectangular cross-section =BdgMxx
         return 2 * self.Iyy / self.a
 
     @property
-    def TorsConst(self):  # Torsion shear constant for tubular cross-section
+    def TorsConst(self):  # Torsion shear constant for rectangular cross-section
         return 2 * self.t * (self.a - self.t) * (self.b - self.t)
