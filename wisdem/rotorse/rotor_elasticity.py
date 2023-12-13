@@ -281,6 +281,7 @@ class RunPreComp(ExplicitComponent):
 
         # Outputs - Overall beam properties
         self.add_output("blade_mass", val=0.0, units="kg", desc="mass of one blade")
+        self.add_output("blade_span_cg", val=0.0, units="m", desc="Distance along the blade span for its center of gravity")
         self.add_output(
             "blade_moment_of_inertia", val=0.0, units="kg*m**2", desc="mass moment of inertia of blade about hub"
         )
@@ -834,7 +835,8 @@ class RunPreComp(ExplicitComponent):
         outputs["yl_te"] = yl_te
 
         # Compute mass and inertia of blade and rotor
-        blade_mass = np.trapz(rhoA, inputs["r"])
+        blade_mass = np.trapz(rhoA_joint, inputs["r"])
+        blade_span_cg = np.trapz(rhoA_joint * inputs["r"], inputs["r"]) / blade_mass
         blade_moment_of_inertia = np.trapz(rhoA_joint * inputs["r"] ** 2.0, inputs["r"])
         tilt = inputs["uptilt"]
         n_blades = discrete_inputs["n_blades"]
@@ -849,6 +851,7 @@ class RunPreComp(ExplicitComponent):
         I_all_blades = np.r_[Ixx, Iyy, Izz, Ixy, Ixz, Iyz]
 
         outputs["blade_mass"] = blade_mass
+        outputs["blade_span_cg"] = blade_span_cg
         outputs["blade_moment_of_inertia"] = blade_moment_of_inertia
         outputs["mass_all_blades"] = mass_all_blades
         outputs["I_all_blades"] = I_all_blades
@@ -908,6 +911,11 @@ class RotorElasticity(Group):
                 "xl_te",
                 "yu_te",
                 "yl_te",
+                "blade_mass",
+                "blade_span_cg",
+                "blade_moment_of_inertia",
+                "mass_all_blades",
+                "I_all_blades",
             ],
         )
         # Check rail transportabiliy

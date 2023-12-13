@@ -162,8 +162,8 @@ def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
     # fig_name = 'interp_chord.png'
     # axc.legend()
     # # Planform
-    # le_init = wt_opt['blade.outer_shape_bem.pitch_axis']*wt_opt['blade.outer_shape_bem.chord']
-    # te_init = (1. - wt_opt['blade.outer_shape_bem.pitch_axis'])*wt_opt['blade.outer_shape_bem.chord']
+    # le_init = wt_opt['blade.outer_shape_bem.pitch_axis_yaml']*wt_opt['blade.outer_shape_bem.chord_yaml']
+    # te_init = (1. - wt_opt['blade.outer_shape_bem.pitch_axis_yaml'])*wt_opt['blade.outer_shape_bem.chord_yaml']
 
     # s_interp_le     = np.array([0.0, 0.5, 0.8, 1.0])
     # f_interp1       = interp1d(wt_opt['blade.outer_shape_bem.s_default'],le_init)
@@ -173,12 +173,11 @@ def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
 
     # fpl, axpl  = plt.subplots(1,1,figsize=(5.3, 4))
     # axpl.plot(wt_opt['blade.outer_shape_bem.s_default'], -le_init, c='k', label='LE init')
-    # axpl.plot(wt_opt['blade.outer_shape_bem.s_default'], -le_int2, c='b', label='LE smooth old pa')
     # axpl.plot(wt_opt['blade.outer_shape_bem.s_default'], te_init, c='k', label='TE init')
-    # axpl.plot(wt_opt['blade.outer_shape_bem.s_default'], wt_opt['blade.outer_shape_bem.chord'] - le_int2, c='b', label='TE smooth old pa')
     # axpl.set(xlabel='r/R' , ylabel='Planform (m)')
     # axpl.legend()
     # plt.show()
+    # # exit()
     # # np.savetxt('temp.txt', le_int2/wt_opt['blade.outer_shape_bem.chord'])
 
     # # # Twist
@@ -232,20 +231,26 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                         internal_structure_2d_fem["webs"][i]["rotation"]["grid"],
                         internal_structure_2d_fem["webs"][i]["rotation"]["values"],
                         extrapolate=False,
-                        # left=0.0,
-                        # right=0.0,
                     )(nd_span)
-                )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                )
                 definition_web[i] = 2
             web_offset_y_pa[i, :] = np.nan_to_num(
                 PchipInterpolator(
                     internal_structure_2d_fem["webs"][i]["offset_y_pa"]["grid"],
                     internal_structure_2d_fem["webs"][i]["offset_y_pa"]["values"],
                     extrapolate=False,
-                    # left=0.0,
-                    # right=0.0,
                 )(nd_span)
-            )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+            )
+        elif "offset_plane" in internal_structure_2d_fem["webs"][i]:
+            web_rotation[i, :] = np.ones_like(nd_span) * internal_structure_2d_fem["webs"][i]["offset_plane"]["blade_rotation"]
+            web_offset_y_pa[i, :] = -np.nan_to_num(
+                PchipInterpolator(
+                    internal_structure_2d_fem["webs"][i]["offset_plane"]["offset"]["grid"],
+                    internal_structure_2d_fem["webs"][i]["offset_plane"]["offset"]["values"],
+                    extrapolate=False,
+                )(nd_span)
+            )
+            definition_web[i] = 4
         elif (
             "start_nd_arc" in internal_structure_2d_fem["webs"][i]
             and "end_nd_arc" in internal_structure_2d_fem["webs"][i]
@@ -256,19 +261,15 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                     internal_structure_2d_fem["webs"][i]["start_nd_arc"]["grid"],
                     internal_structure_2d_fem["webs"][i]["start_nd_arc"]["values"],
                     extrapolate=False,
-                    # left=0.0,
-                    # right=0.0,
                 )(nd_span)
-            )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+            )
             web_end_nd[i, :] = np.nan_to_num(
                 PchipInterpolator(
                     internal_structure_2d_fem["webs"][i]["end_nd_arc"]["grid"],
                     internal_structure_2d_fem["webs"][i]["end_nd_arc"]["values"],
                     extrapolate=False,
-                    # left=0.0,
-                    # right=0.0,
                 )(nd_span)
-            )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+            )
         else:
             raise ValueError("Webs definition not supported. Please check the yaml input.")
 
@@ -298,19 +299,15 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                 internal_structure_2d_fem["layers"][i]["thickness"]["grid"],
                 internal_structure_2d_fem["layers"][i]["thickness"]["values"],
                 extrapolate=False,
-                # left=0.0,
-                # right=0.0,
             )(nd_span)
-        )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+        )
         orientation[i, :] = np.nan_to_num(
             PchipInterpolator(
                 internal_structure_2d_fem["layers"][i]["fiber_orientation"]["grid"],
                 internal_structure_2d_fem["layers"][i]["fiber_orientation"]["values"],
                 extrapolate=False,
-                # left=0.0,
-                # right=0.0,
             )(nd_span)
-        )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+        )
         if (
             "rotation" not in internal_structure_2d_fem["layers"][i]
             and "offset_y_pa" not in internal_structure_2d_fem["layers"][i]
@@ -318,6 +315,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
             and "start_nd_arc" not in internal_structure_2d_fem["layers"][i]
             and "end_nd_arc" not in internal_structure_2d_fem["layers"][i]
             and "web" not in internal_structure_2d_fem["layers"][i]
+            and "offset_plane" not in internal_structure_2d_fem["layers"][i]
         ):
             definition_layer[i] = 1
 
@@ -340,29 +338,23 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                         internal_structure_2d_fem["layers"][i]["rotation"]["grid"],
                         internal_structure_2d_fem["layers"][i]["rotation"]["values"],
                         extrapolate=False,
-                        # left=0.0,
-                        # right=0.0,
                     )(nd_span)
-                )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                )
                 definition_layer[i] = 3
             layer_offset_y_pa[i, :] = np.nan_to_num(
                 PchipInterpolator(
                     internal_structure_2d_fem["layers"][i]["offset_y_pa"]["grid"],
                     internal_structure_2d_fem["layers"][i]["offset_y_pa"]["values"],
                     extrapolate=False,
-                    # left=0.0,
-                    # right=0.0,
                 )(nd_span)
-            )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+            )
             layer_width[i, :] = np.nan_to_num(
                 PchipInterpolator(
                     internal_structure_2d_fem["layers"][i]["width"]["grid"],
                     internal_structure_2d_fem["layers"][i]["width"]["values"],
                     extrapolate=False,
-                    # left=0.0,
-                    # right=0.0,
                 )(nd_span)
-            )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+            )
             layer_side[i] = internal_structure_2d_fem["layers"][i]["side"]
         if (
             "midpoint_nd_arc" in internal_structure_2d_fem["layers"][i]
@@ -374,31 +366,25 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                     definition_layer[i] = 4
                 elif internal_structure_2d_fem["layers"][i]["midpoint_nd_arc"]["fixed"] == "LE":
                     definition_layer[i] = 5
-                    # layer_midpoint_nd[i,:] = -np.ones(n_span) # To be assigned later!
             else:
                 layer_midpoint_nd[i, :] = np.nan_to_num(
                     PchipInterpolator(
                         internal_structure_2d_fem["layers"][i]["midpoint_nd_arc"]["grid"],
                         internal_structure_2d_fem["layers"][i]["midpoint_nd_arc"]["values"],
                         extrapolate=False,
-                        # left=0.0,
-                        # right=0.0,
                     )(nd_span)
-                )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                )
             layer_width[i, :] = np.nan_to_num(
                 PchipInterpolator(
                     internal_structure_2d_fem["layers"][i]["width"]["grid"],
                     internal_structure_2d_fem["layers"][i]["width"]["values"],
                     extrapolate=False,
-                    # left=0.0,
-                    # right=0.0,
                 )(nd_span)
-            )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+            )
         if "start_nd_arc" in internal_structure_2d_fem["layers"][i] and definition_layer[i] == 0:
             if "fixed" in internal_structure_2d_fem["layers"][i]["start_nd_arc"].keys():
                 if internal_structure_2d_fem["layers"][i]["start_nd_arc"]["fixed"] == "TE":
                     layer_start_nd[i, :] = np.zeros(n_span)
-                    # raise ValueError('No need to fix element to TE, set it to 0.')
                 elif internal_structure_2d_fem["layers"][i]["start_nd_arc"]["fixed"] == "LE":
                     definition_layer[i] = 11
                 else:
@@ -423,10 +409,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                         internal_structure_2d_fem["layers"][i]["start_nd_arc"]["grid"],
                         internal_structure_2d_fem["layers"][i]["start_nd_arc"]["values"],
                         extrapolate=False,
-                        # left=0.0,
-                        # right=0.0,
                     )(nd_span)
-                )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                )
 
                 if np.min(layer_start_nd[i, :]) < 0.0 or np.max(layer_start_nd[i, :]) > 1.0:
                     raise Exception(
@@ -464,10 +448,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                         internal_structure_2d_fem["layers"][i]["width"]["grid"],
                         internal_structure_2d_fem["layers"][i]["width"]["values"],
                         extrapolate=False,
-                        # left=0.0,
-                        # right=0.0,
                     )(nd_span)
-                )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                )
 
         if "end_nd_arc" in internal_structure_2d_fem["layers"][i] and definition_layer[i] == 0:
             if "fixed" in internal_structure_2d_fem["layers"][i]["end_nd_arc"].keys():
@@ -492,10 +474,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                         internal_structure_2d_fem["layers"][i]["end_nd_arc"]["grid"],
                         internal_structure_2d_fem["layers"][i]["end_nd_arc"]["values"],
                         extrapolate=False,
-                        # left=0.0,
-                        # right=0.0,
                     )(nd_span)
-                )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                )
 
             if np.min(layer_end_nd[i, :]) < 0.0 or np.max(layer_end_nd[i, :]) > 1.0:
                 raise Exception(
@@ -511,10 +491,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                         internal_structure_2d_fem["layers"][i]["width"]["grid"],
                         internal_structure_2d_fem["layers"][i]["width"]["values"],
                         extrapolate=False,
-                        # left=0.0,
-                        # right=0.0,
                     )(nd_span)
-                )  # recreate np.interp(*, *, *, left= 0.0, right= 0.0)
+                )
             if "start_nd_arc" in internal_structure_2d_fem["layers"][i]:
                 definition_layer[i] = 9
 
@@ -526,6 +504,25 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                     break
             layer_web[i] = k
             definition_layer[i] = 10
+
+        if "offset_plane" in internal_structure_2d_fem["layers"][i]:
+            layer_rotation[i, :] = np.ones_like(nd_span) * internal_structure_2d_fem["layers"][i]["offset_plane"]["blade_rotation"]
+            layer_offset_y_pa[i, :] = -np.nan_to_num(
+                PchipInterpolator(
+                    internal_structure_2d_fem["layers"][i]["offset_plane"]["offset"]["grid"],
+                    internal_structure_2d_fem["layers"][i]["offset_plane"]["offset"]["values"],
+                    extrapolate=False,
+                )(nd_span)
+            )
+            layer_width[i, :] = np.nan_to_num(
+                PchipInterpolator(
+                    internal_structure_2d_fem["layers"][i]["width"]["grid"],
+                    internal_structure_2d_fem["layers"][i]["width"]["values"],
+                    extrapolate=False,
+                )(nd_span)
+            )
+            definition_layer[i] = 13
+            layer_side[i] = internal_structure_2d_fem["layers"][i]["side"]
 
         # Fatigue params
         if layer_name[i] == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"]:
@@ -1243,7 +1240,7 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
         or np.unique(wt_opt["mooring.line_stiffness_coeff"]).size > 1
         or np.unique(wt_opt["mooring.anchor_mass"]).size > 1
     ):
-        print(
+        logger.warning(
             "WARNING: Multiple mooring line or anchor types entered, but can only process symmetrical arrangements for now"
         )
 
@@ -1430,7 +1427,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=F
 
                 if abs(cl[i, 0, j, k] - cl[i, -1, j, k]) > 1.0e-5:
                     cl[i, 0, j, k] = cl[i, -1, j, k]
-                    print(
+                    logger.warning(
                         "WARNING: Airfoil "
                         + name[i]
                         + " has the lift coefficient at Re "
@@ -1439,7 +1436,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=F
                     )
                 if abs(cd[i, 0, j, k] - cd[i, -1, j, k]) > 1.0e-5:
                     cd[i, 0, j, k] = cd[i, -1, j, k]
-                    print(
+                    logger.warning(
                         "WARNING: Airfoil "
                         + name[i]
                         + " has the drag coefficient at Re "
@@ -1448,7 +1445,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=F
                     )
                 if abs(cm[i, 0, j, k] - cm[i, -1, j, k]) > 1.0e-5:
                     cm[i, 0, j, k] = cm[i, -1, j, k]
-                    print(
+                    logger.warning(
                         "WARNING: Airfoil "
                         + name[i]
                         + " has the moment coefficient at Re "
@@ -1561,8 +1558,8 @@ def assign_material_values(wt_opt, modeling_options, materials):
                 G[i, :] = (
                     np.ones(3) * materials[i]["E"] / (2 * (1 + materials[i]["nu"]))
                 )  # If G is not provided but the material is isotropic and we have E and nu we can just estimate it
-                # warning_shear_modulus_isotropic = 'WARNING: NO shear modulus, G, was provided for material "%s". The code assumes 2G*(1 + nu) = E, which is only valid for isotropic materials.'%name[i]
-                # print(warning_shear_modulus_isotropic)
+                warning_shear_modulus_isotropic = 'WARNING: NO shear modulus, G, was provided for material "%s". The code assumes 2G*(1 + nu) = E, which is only valid for isotropic materials.'%name[i]
+                logger.warning(warning_shear_modulus_isotropic)
             if "Xt" in materials[i]:
                 Xt[i, :] = np.ones(3) * materials[i]["Xt"]
             if "Xc" in materials[i]:

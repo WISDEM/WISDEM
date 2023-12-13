@@ -38,11 +38,11 @@ The core modules draw upon some utility packages, which are typically compiled c
 
 ## Installation
 
-Installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WISDEM&reg; requires [Anaconda 64-bit](https://www.anaconda.com/distribution/).  However, the `conda` command has begun to show its age and we now recommend the one-for-one replacement with `mamba` via the [Miniforge distribution](https://github.com/conda-forge/miniforge/releases), which is much more lightweight and more easily solves for the WISDEM package dependencies.
+Installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WISDEM&reg; requires [Anaconda 64-bit](https://www.anaconda.com/distribution/).  However, the `conda` command has begun to show its age and we now recommend the one-for-one replacement with the [Miniforge3 distribution](https://github.com/conda-forge/miniforge?tab=readme-ov-file#miniforge3), which is much more lightweight and more easily solves for the WISDEM package dependencies.
 
 ### Installation as a "library"
 
-To use WISDEM's modules as a library for incorporation into other scripts or tools, WISDEM is available via `mamba install wisdem` or `pip install wisdem`, assuming that you have already setup your python environment.  Note that on Windows platforms, we suggest using `conda/mamba` exclusively.
+To use WISDEM's modules as a library for incorporation into other scripts or tools, WISDEM is available via `conda install wisdem` or `pip install wisdem`, assuming that you have already setup your python environment.  Note that on Windows platforms, we suggest using `conda` exclusively.
 
 ### Installation for direct use
 
@@ -52,15 +52,15 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 1.  Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
 
-        mamba config --add channels conda-forge
-        mamba env create --name wisdem-env -f https://raw.githubusercontent.com/WISDEM/WISDEM/master/environment.yml python=3.10
-        mamba activate wisdem-env
+        conda config --add channels conda-forge
+        conda env create --name wisdem-env -f https://raw.githubusercontent.com/WISDEM/WISDEM/master/environment.yml python=3.10
+        conda activate wisdem-env
 
 2.  In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer / editable* mode using the instructions here.  If you really just want to use WISDEM as a library and lean on the documentation, you can always do `conda install wisdem` and be done.  Note the differences between Windows and Mac/Linux build systems. For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
 
-        mamba install -y petsc4py mpi4py                 # (Mac / Linux only)
-        mamba install -y gfortran                        # (Mac only without Homebrew or Macports compilers)
-        mamba install -y m2w64-toolchain libpython       # (Windows only)
+        conda install -y petsc4py mpi4py                 # (Mac / Linux only)
+        conda install -y gfortran                        # (Mac only without Homebrew or Macports compilers)
+        conda install -y m2w64-toolchain libpython       # (Windows only)
         git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
         python setup.py develop				 # Currently more reliable than: pip install -e

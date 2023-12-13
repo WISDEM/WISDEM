@@ -677,7 +677,7 @@ class NacelleCoverCost2015(om.ExplicitComponent):
 # ---------------------------------------------------------------------------------
 class ElecConnecCost2015(om.ExplicitComponent):
     """
-    Compute electrical connection cost in the form of :math:`cost = k*mass`.
+    Compute electrical connection cost in the form of :math:`cost = k*rating`.
     Value of :math:`k` was NOT updated in 2015 and remains the same as original CSM, $41.85 USD/kg.
     Cost includes materials and manufacturing costs.
 
@@ -711,7 +711,7 @@ class ElecConnecCost2015(om.ExplicitComponent):
 # ---------------------------------------------------------------------------------
 class ControlsCost2015(om.ExplicitComponent):
     """
-    Compute controls cost in the form of :math:`cost = k*mass`.
+    Compute controls cost in the form of :math:`cost = k*rating`.
     Value of :math:`k` was NOT updated in 2015 and remains the same as original CSM, $21.15 USD/kg.
     Cost includes materials and manufacturing costs.
 
