@@ -33,6 +33,16 @@ class TestRegression(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 94.1990688526057, 1)
         self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.5319886366, 1)
 
+    def test15MW_rectangular(self):
+        ## IEA 15MW
+        fname_wt_input = test_dir + "IEA-15-240-RWT_VolturnUS-S_rectangular.yaml"
+        wt_opt, modeling_options, opt_options = run_wisdem(
+            fname_wt_input, fname_modeling_options, fname_analysis_options
+        )
+
+        self.assertAlmostEqual(wt_opt["floatingse.blade_mass"][0], 68638.59685256994, 1) # new value: improved interpolation
+
+
 
 def suite():
     suite = unittest.TestSuite()

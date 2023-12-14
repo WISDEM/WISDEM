@@ -620,7 +620,12 @@ class WT_RNTA(om.Group):
             # Individual member connections
             for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
                 idx = modeling_options["floating"]["members"]["name2idx"][kname]
-                self.connect(f"floating.memgrid{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
+                if modeling_options["floating"]["members"]["name"]["outer_shape"]["shape"] == "circular":
+                    self.connect(f"floating.memgrid{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
+                elif modeling_options["floating"]["members"]["name"]["outer_shape"]["shape"] == "rectangular":
+                    print("setting up Turbine group receives rectangular parameters")
+                    self.connect(f"floating.memgrid{idx}.side_length_a", f"floatingse.member{k}.side_length_a_in")
+                    self.connect(f"floating.memgrid{idx}.side_length_b", f"floatingse.member{k}.side_length_b_in")
                 self.connect(f"floating.memgrid{idx}.layer_thickness", f"floatingse.member{k}.layer_thickness")
                 self.connect(f"floating.memgrp{idx}.outfitting_factor", f"floatingse.member{k}.outfitting_factor_in")
                 self.connect(f"floating.memgrp{idx}.s", f"floatingse.member{k}.s_in")

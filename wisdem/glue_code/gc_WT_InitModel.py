@@ -1078,6 +1078,7 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
             memname = kgrp["names"][0]
             idx2 = floating_init_options["members"]["name2idx"][memname]
             if idx == idx2:
+                # TODO: Need better ways to condition
                 if "diameter" in float_opt["members"]["groups"][j]:
                     if float_opt["members"]["groups"][j]["diameter"]["constant"]:
                         wt_opt[f"floating.memgrp{idx}.outer_diameter_in"] = floating["members"][i]["outer_shape"][
@@ -1088,12 +1089,43 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                             "outer_diameter"
                         ]["values"]
                     diameter_assigned = True
+                if "side_length_a" in float_opt["members"]["groups"][j]:
+                    print("Assign floating values receives rectangular parameters")
+                    if float_opt["members"]["groups"][j]["side_length_a"]["constant"]:
+                        wt_opt[f"floating.memgrp{idx}.side_length_a_in"] = floating["members"][i]["outer_shape"][
+                            "side_length_a"
+                        ]["values"][0]
+                    else:
+                        wt_opt[f"floating.memgrp{idx}.side_length_a_in"][:] = floating["members"][i]["outer_shape"][
+                            "side_length_a"
+                        ]["values"]
+                if "side_length_b" in float_opt["members"]["groups"][j]:
+                    if float_opt["members"]["groups"][j]["side_length_b"]["constant"]:
+                        wt_opt[f"floating.memgrp{idx}.side_length_b_in"] = floating["members"][i]["outer_shape"][
+                            "side_length_b"
+                        ]["values"][0]
+                    else:
+                        wt_opt[f"floating.memgrp{idx}.side_length_b_in"][:] = floating["members"][i]["outer_shape"][
+                            "side_length_b"
+                        ]["values"]
+                    diameter_assigned = True
 
         if not diameter_assigned:
-            wt_opt[f"floating.memgrp{idx}.outer_diameter_in"] = PchipInterpolator(
-                floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
-                floating["members"][i]["outer_shape"]["outer_diameter"]["values"],
-            )(grid_geom)
+            try:
+                wt_opt[f"floating.memgrp{idx}.outer_diameter_in"] = PchipInterpolator(
+                    floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
+                    floating["members"][i]["outer_shape"]["outer_diameter"]["values"],
+                )(grid_geom)
+            except:
+                wt_opt[f"floating.memgrp{idx}.side_length_a_in"] = PchipInterpolator(
+                    floating["members"][i]["outer_shape"]["side_length_a"]["grid"],
+                    floating["members"][i]["outer_shape"]["side_length_a"]["values"],
+                )(grid_geom)
+                wt_opt[f"floating.memgrp{idx}.side_length_b_in"] = PchipInterpolator(
+                    floating["members"][i]["outer_shape"]["side_length_b"]["grid"],
+                    floating["members"][i]["outer_shape"]["side_length_b"]["values"],
+                )(grid_geom)
+
 
         wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["internal_structure"][
             "outfitting_factor"

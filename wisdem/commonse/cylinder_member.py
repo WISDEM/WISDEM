@@ -21,19 +21,42 @@ NREFINE = 1
 
 class CrossSection(object):
     def __init__(
-        self, D=0.0, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, J0=0.0, E=0.0, G=0.0, rho=0.0, sigy=0.0
+        self, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, J0=0.0, E=0.0, G=0.0, rho=0.0, sigy=0.0
     ):
-        self.D, self.t = D, t  # Needed for OpenFAST
+        self.t = t  # Needed for OpenFAST
         self.A, self.Asx, self.Asy = A, Asx, Asy
         self.Ixx, self.Iyy, self.J0 = Ixx, Iyy, J0
         self.E, self.G, self.rho, self.sigy = E, G, rho, sigy
 
     def make_ghost(self):
-        self.D, self.t = 1e-2, 1e-2
+        self.t = 1e-2
         self.A, self.Asx, self.Asy = 1e-2, 1e-2, 1e-2
         self.Ixx, self.Iyy, self.J0 = 1e-2, 1e-2, 1e-2
         self.rho = 1e-2
         self.E, self.G, self.sigy = 1e2 * self.E, 1e2 * self.G, 1e2 * self.sigy
+
+class CircCrossSection(CrossSection):
+    def __init__(
+        self, D=0.0, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, J0=0.0, E=0.0, G=0.0, rho=0.0, sigy=0.0
+    ):
+        super().__init__(t, A, Asx, Asy, Ixx, Iyy, J0, E, G, rho, sigy)
+        self.D = D  # Needed for OpenFAST
+
+    def make_ghost(self):
+        super().make_ghost()
+        self.D = 1e-2
+
+class RectCrossSection(CrossSection):
+    def __init__(
+        self, a=0.0, b=0.0, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, J0=0.0, E=0.0, G=0.0, rho=0.0, sigy=0.0
+    ):
+        self.a, self.b = a, b  # Needed for OpenFAST , TODO: what does openfast need from rectangular member?
+        super().__init__(t, A, Asx, Asy, Ixx, Iyy, J0, E, G, rho, sigy)
+
+    def make_ghost(self):
+        super().make_ghost()
+        self.a = 1e-2
+        self.b = 1e-2
 
 
 def get_nfull(npts, nref=NREFINE):
@@ -76,6 +99,10 @@ class DiscretizationYAML(om.ExplicitComponent):
         constant entry of the member sections.
     outer_diameter_in : numpy array[n_height_tow], [m]
         cylinder diameter at corresponding locations
+    side_length_a_in : numpy array[n_height], [m]
+        side length a for rectangular members at corresponding locations
+    side_length_b_in : numpy array[n_height], [m]
+        side length b for rectangular members at corresponding locations
     material_names : list of strings
         1D array of names of materials.
     E_mat : numpy array[n_mat, 3], [Pa]
@@ -113,6 +140,10 @@ class DiscretizationYAML(om.ExplicitComponent):
         parameterized section heights along cylinder
     outer_diameter : numpy array[n_height], [m]
         cylinder diameter at corresponding locations
+    side_length_a : numpy array[n_height], [m]
+        side length a for rectangular members at corresponding locations
+    side_length_b : numpy array[n_height], [m]
+        side length b for rectangular members at corresponding locations
     wall_thickness : numpy array[n_height-1], [m]
         shell thickness at corresponding locations
     E : numpy array[n_height-1], [Pa]
@@ -144,6 +175,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.options.declare("options")
         self.options.declare("idx")
         self.options.declare("n_mat")
+        self.options.declare("shape")
 
     def setup(self):
         n_mat = self.options["n_mat"]
@@ -152,6 +184,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         n_height = opt["n_height"][idx]
         n_layers = opt["n_layers"][idx]
         n_ballast = opt["n_ballasts"][idx]
+        shape = self.options["shape"]
 
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
         self.add_input("s_in", val=np.zeros(n_height))
@@ -162,7 +195,13 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_discrete_input("layer_materials", val=n_layers * [""])
         self.add_discrete_input("ballast_materials", val=n_ballast * [""])
         self.add_input("layer_thickness", val=np.zeros((n_layers, n_height)), units="m")
-        self.add_input("outer_diameter_in", np.zeros(n_height), units="m")
+        if shape == "circular":
+            self.add_input("outer_diameter_in", np.zeros(n_height), units="m")
+        elif shape == "rectangular":
+            self.add_input("side_length_a_in", np.zeros(n_height), units="m")
+            self.add_input("side_length_b_in", np.zeros(n_height), units="m")
+        else:
+            raise Exception("Only circular and rectangular members are implemented.")
         self.add_discrete_input("material_names", val=n_mat * [""])
         self.add_input("E_mat", val=np.zeros([n_mat, 3]), units="Pa")
         self.add_input("E_user", val=0.0, units="Pa")
@@ -179,7 +218,11 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_output("s", val=np.zeros(n_height))
         self.add_output("height", val=0.0, units="m")
         self.add_output("section_height", val=np.zeros(n_height - 1), units="m")
-        self.add_output("outer_diameter", val=np.zeros(n_height), units="m")
+        if shape == "circular":
+            self.add_output("outer_diameter", val=np.zeros(n_height), units="m")
+        elif shape == "rectangular":
+            self.add_output("side_length_a", val=np.zeros(n_height), units="m")
+            self.add_output("side_length_b", val=np.zeros(n_height), units="m")
         self.add_output("wall_thickness", val=np.zeros(n_height - 1), units="m")
         self.add_output("E", val=np.zeros(n_height - 1), units="Pa")
         self.add_output("G", val=np.zeros(n_height - 1), units="Pa")
@@ -238,6 +281,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         idx = self.options["idx"]
         n_height = opt["n_height"][idx]
         n_ballast = opt["n_ballasts"][idx]
+        shape = self.options["shape"]
 
         # Unpack values
         xyz0 = inputs["joint1"]
@@ -263,7 +307,11 @@ class DiscretizationYAML(om.ExplicitComponent):
         outputs["height"] = h_col
         outputs["section_height"] = np.diff(h_col * s_param)
         outputs["wall_thickness"] = np.sum(lthick, axis=0)
-        outputs["outer_diameter"] = inputs["outer_diameter_in"]
+        if shape == "circurlar":
+            outputs["outer_diameter"] = inputs["outer_diameter_in"]
+        elif shape == "rectangular":
+            outputs["side_length_a"] = inputs["side_length_a_in"]
+            outputs["side_length_b"] = inputs["side_length_b_in"]
         outputs["outfitting_factor"] = f_outfit = inputs["outfitting_factor_in"] * np.ones(n_height - 1)
         twall = lthick
 
@@ -358,7 +406,8 @@ class DiscretizationYAML(om.ExplicitComponent):
         # Unpack for Elastodyn
         z_param = min(xyz0[2], xyz1[2]) + (h_col * s_param)
         z = 0.5 * (z_param[:-1] + z_param[1:])
-        D, _ = util.nodal2sectional(outputs["outer_diameter"])
+        if shape == "circular":
+            D, _ = util.nodal2sectional(outputs["outer_diameter"])
         itube = cs.Tube(D, outputs["wall_thickness"])
         Az, Ixx, Iyy, Jz = itube.Area, itube.Ixx, itube.Iyy, itube.J0
         outputs["z_param"] = z_param
@@ -465,14 +514,17 @@ class MemberDiscretization(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("n_height")
         self.options.declare("n_refine", default=NREFINE)
+        self.options.declare("member_shape_variables")
 
     def setup(self):
         n_height = self.options["n_height"]
         n_full = get_nfull(n_height, nref=self.options["n_refine"])
+        member_shape_variables = self.options["member_shape_variables"]
 
         self.add_input("s", val=np.zeros(n_height))
         self.add_input("height", val=0.0, units="m")
-        self.add_input("outer_diameter", np.zeros(n_height), units="m")
+        for dv in member_shape_variables:
+            self.add_input(dv, np.zeros(n_height), units="m")
         self.add_input("wall_thickness", np.zeros(n_height - 1), units="m")
         self.add_input("E", val=np.zeros(n_height - 1), units="Pa")
         self.add_input("G", val=np.zeros(n_height - 1), units="Pa")
@@ -485,7 +537,9 @@ class MemberDiscretization(om.ExplicitComponent):
 
         self.add_output("s_full", np.zeros(n_full), units="m")
         self.add_output("z_full", np.zeros(n_full), units="m")
-        self.add_output("d_full", np.zeros(n_full), units="m")
+        # self.add_output("d_full", np.zeros(n_full), units="m")
+        for dv in member_shape_variables:
+            self.add_input(dv+"_full", np.zeros(n_height), units="m")
         self.add_output("t_full", np.zeros(n_full - 1), units="m")
         self.add_output("E_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_output("G_full", val=np.zeros(n_full - 1), units="Pa")
@@ -504,6 +558,7 @@ class MemberDiscretization(om.ExplicitComponent):
         # Unpack inputs
         s_param = inputs["s"]
         n_refine = int(np.round(self.options["n_refine"]))
+        member_shape_variables = self.options["member_shape_variables"]
 
         # TODO: Put these somewhere
         # Create constraint output that draft is less than water depth
@@ -527,7 +582,8 @@ class MemberDiscretization(om.ExplicitComponent):
         # Account for intersections with ghost values
 
         # All other parameters
-        outputs["d_full"] = np.interp(s_full, s_param, inputs["outer_diameter"])
+        for dv in member_shape_variables:
+            outputs[dv+"_full"] = np.interp(s_full, s_param, inputs[dv])
         outputs["t_full"] = util.sectionalInterp(s_section, s_param, inputs["wall_thickness"])
         outputs["rho_full"] = util.sectionalInterp(s_section, s_param, inputs["rho"])
         outputs["E_full"] = util.sectionalInterp(s_section, s_param, inputs["E"])
@@ -648,7 +704,7 @@ class ShellMassCost(om.ExplicitComponent):
         mysections = []
         itube = cs.Tube(d_sec, t_full)
         for k in range(d_sec.size):
-            iprop = CrossSection(
+            iprop = CircCrossSection(
                 D=d_sec[k],
                 t=coeff[k] * t_full[k],
                 A=coeff[k] * itube.Area[k],
@@ -1143,7 +1199,7 @@ class MemberComplex(om.ExplicitComponent):
         # Add sections for structural analysis
         for k in range(len(s_full) - 1):
             itube = cs.Tube(d_sec[k], t_full[k])
-            iprop = CrossSection(
+            iprop = CircCrossSection(
                 D=d_sec[k],
                 t=coeff[k] * t_full[k] + t_eff[k],
                 A=coeff[k] * itube.Area + A_stiff,
@@ -1311,7 +1367,7 @@ class MemberComplex(om.ExplicitComponent):
             s1[-1] = s_ghost2
         for k in range(nbulk):
             itube = cs.Tube(2 * R_od_bulk[k], R_od_bulk[k])  # thickness=radius for solid disk
-            iprop = CrossSection(
+            iprop = CircCrossSection(
                 D=2 * R_od_bulk[k],
                 t=R_od_bulk[k],
                 A=itube.Area,
@@ -1462,7 +1518,7 @@ class MemberComplex(om.ExplicitComponent):
             Ak = coeff_stiff[k] * ishell.Area + iflange.Area + iweb.Area * web_frac
             # Find effective thickness for OpenFAST
             t_eff = R_od_stiff[k] - np.sqrt(R_od_stiff[k] ** 2 - Ak / np.pi)
-            iprop = CrossSection(
+            iprop = CircCrossSection(
                 D=2 * R_od_stiff[k],
                 t=t_eff,
                 A=Ak,

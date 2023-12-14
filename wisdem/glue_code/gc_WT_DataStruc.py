@@ -2442,35 +2442,58 @@ class NodeDVs(om.ExplicitComponent):
 
 
 # Component that interpolates the diameter/thickness nodes to all of the other points needed in the member discretization
+# TODO: This can be cleaned by generalizing the variables, set variables as options and loop all required variables to interpolate
 class MemberGrid(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("n_layers")
         self.options.declare("n_height")
         self.options.declare("n_geom")
+        self.options.declare("member_shape")
 
     def setup(self):
         n_layers = self.options["n_layers"]
         n_height = self.options["n_height"]
         n_geom = self.options["n_geom"]
+        member_shape = self.options["member_shape"]
 
         self.add_input("s_in", val=np.zeros(n_geom))
         self.add_input("s_grid", val=np.zeros(n_height))
-        self.add_input("outer_diameter_in", shape_by_conn=True, units="m")
+        if member_shape == "circular":
+            self.add_input("outer_diameter_in", shape_by_conn=True, units="m")
+        elif member_shape == "rectangular":
+            self.add_input("side_length_a_in", shape_by_conn=True, units="m")
+            self.add_input("side_length_b_in", shape_by_conn=True, units="m")
+
         self.add_input("layer_thickness_in", val=np.zeros((n_layers, n_geom)), units="m")
 
-        self.add_output("outer_diameter", val=np.zeros(n_height), units="m")
+        if member_shape == "circular":
+            self.add_output("outer_diameter", val=np.zeros(n_height), units="m")
+        elif member_shape == "rectangular":
+            self.add_output("side_length_a", val=np.zeros(n_height), units="m")
+            self.add_output("side_length_b", val=np.zeros(n_height), units="m")
+
         self.add_output("layer_thickness", val=np.zeros((n_layers, n_height)), units="m")
 
     def compute(self, inputs, outputs):
         n_layers = self.options["n_layers"]
+        member_shape = self.options["member_shape"]
 
         s_in = inputs["s_in"]
         s_grid = inputs["s_grid"]
 
-        if len(inputs["outer_diameter_in"]) > 1:
-            outputs["outer_diameter"] = PchipInterpolator(s_in, inputs["outer_diameter_in"])(s_grid)
-        else:
-            outputs["outer_diameter"][:] = inputs["outer_diameter_in"]
+        if member_shape == "circular":
+            if len(inputs["outer_diameter_in"]) > 1:
+                outputs["outer_diameter"] = PchipInterpolator(s_in, inputs["outer_diameter_in"])(s_grid)
+            else:
+                outputs["outer_diameter"][:] = inputs["outer_diameter_in"]
+        elif member_shape == "rectangular":
+            if len(inputs["side_length_a_in"]) > 1:
+                outputs["side_length_a"] = PchipInterpolator(s_in, inputs["side_length_a_in"])(s_grid)
+                outputs["side_length_b"] = PchipInterpolator(s_in, inputs["side_length_b_in"])(s_grid)
+            else:
+                outputs["side_length_a"][:] = inputs["side_length_a_in"]
+                outputs["side_length_b"][:] = inputs["side_length_b_in"]
+        
         for k in range(n_layers):
             outputs["layer_thickness"][k, :] = PchipInterpolator(s_in, inputs["layer_thickness_in"][k, :])(s_grid)
 
