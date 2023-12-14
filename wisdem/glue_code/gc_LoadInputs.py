@@ -943,7 +943,7 @@ class WindTurbineOntologyPython(object):
                 self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                     "values"
                 ] = wt_opt["blade.ps.layer_thickness_param"][i, :].tolist()
-                if wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] < 7:
+                if wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] != 10:
                     if (
                         "start_nd_arc"
                         not in self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]
@@ -968,6 +968,19 @@ class WindTurbineOntologyPython(object):
                     self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["end_nd_arc"][
                         "values"
                     ] = wt_opt["blade.internal_structure_2d_fem.layer_end_nd"][i, :].tolist()
+
+                    # Check for start and end nd layers outside the 0 to 1 range
+                    for j in range(len(self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                        "layers"][i]["start_nd_arc"]["grid"])):
+                        if self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                                "layers"][i]["start_nd_arc"]["values"][j] < 0.:
+                            self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                                "layers"][i]["start_nd_arc"]["values"][j] = 0.
+                        if self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                                "layers"][i]["end_nd_arc"]["values"][j] > 1.:
+                            self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                                "layers"][i]["end_nd_arc"]["values"][j] = 1.
+
                 if (
                     wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] > 1
                     and wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] < 6

@@ -93,3 +93,11 @@ else:
 prob.model.list_inputs(units=True)
 prob.model.list_outputs(units=True)
 # fio.save_data('DFIG', prob, npz_file=False, mat_file=False, xls_file=True)
+print("Efficiency table:")
+print(" rpm     converter  transformer  generator   ")
+print("-------------------------------------------")
+print(np.c_[prob["shaft_rpm"],
+            prob["converter_efficiency"],
+            prob["transformer_efficiency"],
+            prob["generator_efficiency"],
+            ])
