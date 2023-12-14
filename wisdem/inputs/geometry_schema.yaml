@@ -1586,26 +1586,60 @@ properties:
                                             - outer_diameter
                                     else:
                                         if:
-                                            # If shape == polygonal, then we need to specify the side lengths
+                                            # If shape == rectangular, then we need to specify the two side lengths
                                             properties:
                                                 shape:
-                                                    const: polygonal
+                                                    const: rectangular
                                         then:
                                             required:
-                                                - side_lengths1
-                                                - side_lengths2
-                                            optional:
-                                                - rotation
-                                                - angles
+                                                - side_length_a
+                                                - side_length_b
+                                            # TODO: Might add rotation in the future, ignore for now
+                                        else:
+                                            if:
+                                                # If shape == polygonal, then we need to specify the side lengths
+                                                properties:
+                                                    shape:
+                                                        const: polygonal
+                                            then:
+                                                required:
+                                                    - side_lengths1
+                                                    - side_lengths2
+                                                optional:
+                                                    - rotation
+                                                    - angles
                                     properties:
                                         shape:
                                             type: string
                                             description: Specifies cross-sectional shape of the member.  If circular, then the outer_diameter field is required.  If polygonal, then the side_lengths, angles, and rotation fields are required
                                             enum:
                                                 - circular
+                                                - rectangular
                                                 - polygonal
                                         outer_diameter:
                                             description: Gridded values describing diameter at non-dimensional axis from joint1 to joint2
+                                            type: object
+                                            required:
+                                                - grid
+                                                - values
+                                            properties:
+                                                grid:
+                                                    $ref: "#/definitions/distributed_data/grid_nd"
+                                                values:
+                                                    $ref: "#/definitions/distributed_data/length"
+                                        side_length_a:
+                                            description: Gridded values describing side length a for rectangular members at non-dimensional axis from joint1 to joint2
+                                            type: object
+                                            required:
+                                                - grid
+                                                - values
+                                            properties:
+                                                grid:
+                                                    $ref: "#/definitions/distributed_data/grid_nd"
+                                                values:
+                                                    $ref: "#/definitions/distributed_data/length"
+                                        side_length_b:
+                                            description: Gridded values describing side length b for rectangular members at non-dimensional axis from joint1 to joint2
                                             type: object
                                             required:
                                                 - grid
