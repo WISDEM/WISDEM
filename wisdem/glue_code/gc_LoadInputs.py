@@ -674,18 +674,18 @@ class WindTurbineOntologyPython(object):
                 blade_opt_options["aero_shape"]["chord"]["n_opt"],
             )
 
-        if not blade_opt_options["aero_shape"]["t/c"]["flag"]:
-            blade_opt_options["aero_shape"]["t/c"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
-        elif blade_opt_options["aero_shape"]["t/c"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
+        if not blade_opt_options["aero_shape"]["rthick"]["flag"]:
+            blade_opt_options["aero_shape"]["rthick"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        elif blade_opt_options["aero_shape"]["rthick"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
             raise ValueError("you are attempting to do an analysis using fewer analysis points than control points.")
-        elif blade_opt_options["aero_shape"]["t/c"]["n_opt"] < 4:
-            raise ValueError("Cannot optimize t/c with less than 4 control points along blade span")
-        elif blade_opt_options["aero_shape"]["t/c"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
+        elif blade_opt_options["aero_shape"]["rthick"]["n_opt"] < 4:
+            raise ValueError("Cannot optimize rthick with less than 4 control points along blade span")
+        elif blade_opt_options["aero_shape"]["rthick"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
             raise ValueError(
                 """Please set WISDEM->RotorSE->n_span in the modeling options yaml larger
-                than aero_shape->t/c->n_opt in the analysis options yaml. n_span and t/c n_opt are """,
+                than aero_shape->rthick->n_opt in the analysis options yaml. n_span and rthick n_opt are """,
                 self.modeling_options["WISDEM"]["RotorSE"]["n_span"],
-                blade_opt_options["aero_shape"]["t/c"]["n_opt"],
+                blade_opt_options["aero_shape"]["rthick"]["n_opt"],
             )
 
         if not blade_opt_options["aero_shape"]["L/D"]["flag"]:
@@ -854,10 +854,10 @@ class WindTurbineOntologyPython(object):
                 "blade.outer_shape_bem.pitch_axis"
             ].tolist()
             if self.modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
-                self.wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["grid"] = wt_opt[
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["grid"] = wt_opt[
                     "blade.outer_shape_bem.s"
                 ].tolist()
-                self.wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"] = wt_opt[
+                self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["values"] = wt_opt[
                     "blade.interp_airfoils.r_thick_interp"
                 ].tolist()
                 self.wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"] = wt_opt[

@@ -133,7 +133,10 @@ def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
     wt_opt["blade.outer_shape_bem.pitch_axis_yaml"] = PchipInterpolator(
         outer_shape_bem["pitch_axis"]["grid"], outer_shape_bem["pitch_axis"]["values"]
     )(nd_span)
-
+    if 'rthick' in outer_shape_bem:
+        wt_opt["blade.outer_shape_bem.r_thick_yaml"] = PchipInterpolator(
+            outer_shape_bem["rthick"]["grid"], outer_shape_bem["rthick"]["values"]
+        )(nd_span)
     wt_opt["blade.outer_shape_bem.ref_axis_yaml"][:, 0] = PchipInterpolator(
         outer_shape_bem["reference_axis"]["x"]["grid"], outer_shape_bem["reference_axis"]["x"]["values"]
     )(nd_span)
