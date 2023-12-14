@@ -307,7 +307,7 @@ class Mooring(om.ExplicitComponent):
             fbody = ms.mooringEq([surge, sway, 0, 0, 0, 0], DOFtype="coupled")
             Frestore[ia] = np.dot(fbody[:2], idir)
             for k in range(n_lines):
-                f = ms.lineList[0].getEndForce(endB=0)
+                f = ms.lineList[0].TB
                 Fa[k] = np.sqrt(np.sum(f**2))
 
             Tmax[ia] = np.abs(Fa).max()
