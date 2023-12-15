@@ -31,7 +31,8 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
 
     if modeling_options["flags"]["blade"]:
         blade = wt_init["components"]["blade"]
-        wt_opt = assign_blade_values(wt_opt, modeling_options, blade)
+        blade_DV = opt_options['design_variables']['blade']
+        wt_opt = assign_blade_values(wt_opt, modeling_options, blade_DV, blade)
     else:
         blade = {}
 
@@ -106,16 +107,17 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     return wt_opt
 
 
-def assign_blade_values(wt_opt, modeling_options, blade):
+def assign_blade_values(wt_opt, modeling_options, blade_DV, blade):
     # Function to assign values to the openmdao group Blade
-    wt_opt = assign_outer_shape_bem_values(wt_opt, modeling_options, blade["outer_shape_bem"])
+    blade_DV_aero = blade_DV['aero_shape']
+    wt_opt = assign_outer_shape_bem_values(wt_opt, modeling_options, blade_DV_aero, blade["outer_shape_bem"])
     wt_opt = assign_internal_structure_2d_fem_values(wt_opt, modeling_options, blade["internal_structure_2d_fem"])
     wt_opt = assign_te_flaps_values(wt_opt, modeling_options, blade)
 
     return wt_opt
 
 
-def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
+def assign_outer_shape_bem_values(wt_opt, modeling_options, blade_DV_aero, outer_shape_bem):
     # Function to assign values to the openmdao component Blade_Outer_Shape_BEM
 
     nd_span = modeling_options["WISDEM"]["RotorSE"]["nd_span"]
@@ -133,10 +135,16 @@ def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
     wt_opt["blade.outer_shape_bem.pitch_axis_yaml"] = PchipInterpolator(
         outer_shape_bem["pitch_axis"]["grid"], outer_shape_bem["pitch_axis"]["values"]
     )(nd_span)
-    if 'rthick' in outer_shape_bem:
+    af_opt_flag = blade_DV_aero['af_positions']['flag']
+    if 'rthick' in outer_shape_bem and af_opt_flag == False:
+        # If rthick is defined in input yaml and we are NOT optimizing airfoil positions
         wt_opt["blade.outer_shape_bem.r_thick_yaml"] = PchipInterpolator(
             outer_shape_bem["rthick"]["grid"], outer_shape_bem["rthick"]["values"]
         )(nd_span)
+    elif 'rthick' in outer_shape_bem and af_opt_flag == True:
+        logger.warning('rthick field in input geometry yaml is specified but neglected since you are optimizing airfoil positions')
+    else:
+        logger.warning('rthick field in input geometry yaml not specified. rthick is reconstructed from discrete airfoil positions')
     wt_opt["blade.outer_shape_bem.ref_axis_yaml"][:, 0] = PchipInterpolator(
         outer_shape_bem["reference_axis"]["x"]["grid"], outer_shape_bem["reference_axis"]["x"]["values"]
     )(nd_span)
