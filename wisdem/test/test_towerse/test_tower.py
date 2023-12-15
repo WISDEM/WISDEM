@@ -453,7 +453,7 @@ class TestTowerSE(unittest.TestCase):
         prob.run_model()
 
         npt.assert_almost_equal(prob["z_full"], [0.0, 14.6, 29.2, 43.8, 58.4, 73.0, 87.6])
-        npt.assert_almost_equal(prob["d_full"], [6.0, 5.645, 5.29, 4.935, 4.58, 4.225, 3.87])
+        npt.assert_almost_equal(prob["outer_diameter_full"], [6.0, 5.645, 5.29, 4.935, 4.58, 4.225, 3.87])
         npt.assert_almost_equal(prob["t_full"], [0.0325, 0.0325, 0.0325, 0.0273, 0.0273, 0.0273])
 
         npt.assert_almost_equal(prob["tower_mass"], [370541.14008246])
@@ -500,7 +500,7 @@ class TestTowerSE(unittest.TestCase):
         prob.run_model()
 
         npt.assert_almost_equal(prob["z_full"], [0.0, 14.6, 29.2, 43.8, 58.4, 73.0, 87.6])
-        npt.assert_almost_equal(prob["d_full"], [6.0, 5.645, 5.29, 4.935, 4.58, 4.225, 3.87])
+        npt.assert_almost_equal(prob["outer_diameter_full"], [6.0, 5.645, 5.29, 4.935, 4.58, 4.225, 3.87])
         npt.assert_almost_equal(prob["t_full"], [0.0325, 0.0325, 0.0325, 0.0273, 0.0273, 0.0273])
 
         npt.assert_almost_equal(prob["tower_mass"], [370541.14008246])

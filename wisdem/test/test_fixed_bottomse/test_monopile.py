@@ -71,7 +71,7 @@ class TestMass(unittest.TestCase):
         inputs["tower_mass"] = 30.0
         inputs["tower_cost"] = 300.0
         inputs["z_full"] = np.linspace(-30, 10, 5)
-        inputs["d_full"] = 10.0 * np.ones(5)
+        inputs["outer_diameter_full"] = 10.0 * np.ones(5)
 
         mydis = mon.MonopileMass(npts=5)
         mydis.compute(inputs, outputs)
@@ -527,7 +527,7 @@ class TestMonopileSE(unittest.TestCase):
         prob.run_model()
 
         npt.assert_almost_equal(prob["z_full"], [0.0, 10.0, 20.0, 30.0, 43.33333333, 56.66666667, 70.0])
-        npt.assert_almost_equal(prob["d_full"], [6.0, 6.0, 6.0, 6.0, 5.833333333, 5.6666667, 5.5])
+        npt.assert_almost_equal(prob["outer_diameter_full"], [6.0, 6.0, 6.0, 6.0, 5.833333333, 5.6666667, 5.5])
         npt.assert_almost_equal(prob["t_full"], [0.0325, 0.0325, 0.0325, 0.0273, 0.0273, 0.0273])
 
         npt.assert_almost_equal(prob["monopile_mass"], [344802.1109282])
@@ -577,7 +577,7 @@ class TestMonopileSE(unittest.TestCase):
         prob.run_model()
 
         npt.assert_almost_equal(prob["z_full"], [0.0, 10.0, 20.0, 30.0, 43.33333333, 56.66666667, 70.0])
-        npt.assert_almost_equal(prob["d_full"], [6.0, 6.0, 6.0, 6.0, 5.833333333, 5.6666667, 5.5])
+        npt.assert_almost_equal(prob["outer_diameter_full"], [6.0, 6.0, 6.0, 6.0, 5.833333333, 5.6666667, 5.5])
         npt.assert_almost_equal(prob["t_full"], [0.0325, 0.0325, 0.0325, 0.0273, 0.0273, 0.0273])
 
         npt.assert_almost_equal(prob["monopile_mass"], [344802.1109282])

@@ -305,7 +305,8 @@ class TowerModal(om.ExplicitComponent):
     ----------
     z_full : numpy array[npts], [m]
         location along cylinder. start at bottom and go to top
-    d_full : numpy array[npts], [m]
+    TODO: not needed?
+    outer_diameter_full : numpy array[npts], [m]
         effective cylinder diameter for section
     t_full : numpy array[npts-1], [m]
         effective shell thickness for section

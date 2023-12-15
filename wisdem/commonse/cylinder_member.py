@@ -307,7 +307,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         outputs["height"] = h_col
         outputs["section_height"] = np.diff(h_col * s_param)
         outputs["wall_thickness"] = np.sum(lthick, axis=0)
-        if shape == "circurlar":
+        if shape == "circular":
             outputs["outer_diameter"] = inputs["outer_diameter_in"]
         elif shape == "rectangular":
             outputs["side_length_a"] = inputs["side_length_a_in"]
@@ -465,8 +465,12 @@ class MemberDiscretization(om.ExplicitComponent):
     s : numpy array[n_height_tow]
         1D array of the non-dimensional grid defined along the member axis (0-member base,
         1-member top)
-    outer_diameter : numpy array[n_height], [m]
-        cylinder diameter at corresponding locations
+    member_shape_variables : list
+        A list of shape variables to discretize, can be
+        outer_diameter : numpy array[n_height], [m]
+            cylinder diameter at corresponding locations
+        side_length_a, b : numpy array[n_height], [m]
+            side lengths for rectangle shape at corresponding locations
     wall_thickness : numpy array[n_height-1], [m]
         shell thickness at corresponding locations
     E : numpy array[n_height-1], [Pa]
@@ -488,7 +492,11 @@ class MemberDiscretization(om.ExplicitComponent):
         non-dimensional locations along member
     z_full : numpy array[n_full], [m]
         dimensional locations along member axis
-    d_full : numpy array[n_full], [m]
+    Depending on the input
+    outer_diameter_full : numpy array[n_full], [m]
+        cylinder diameter at corresponding locations
+    OR
+    side_length_a/b_full : numpy array[n_full], [m]
         cylinder diameter at corresponding locations
     t_full : numpy array[n_full-1], [m]
         shell thickness at corresponding locations
@@ -539,7 +547,7 @@ class MemberDiscretization(om.ExplicitComponent):
         self.add_output("z_full", np.zeros(n_full), units="m")
         # self.add_output("d_full", np.zeros(n_full), units="m")
         for dv in member_shape_variables:
-            self.add_input(dv+"_full", np.zeros(n_height), units="m")
+            self.add_output(dv+"_full", np.zeros(n_full), units="m")
         self.add_output("t_full", np.zeros(n_full - 1), units="m")
         self.add_output("E_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_output("G_full", val=np.zeros(n_full - 1), units="Pa")
@@ -594,7 +602,12 @@ class MemberDiscretization(om.ExplicitComponent):
         outputs["nu_full"] = 0.5 * outputs["E_full"] / outputs["G_full"] - 1.0
 
         # Nodal output
-        outputs["nodes_r"] = 0.5 * outputs["d_full"]
+        # TODO: this nodes_r really should belong somewhere else, it does not fit into discretization purpose.
+        if "outer_diameter" in member_shape_variables:
+            outputs["nodes_r"] = 0.5 * outputs["outer_diameter_full"]
+        else:
+            # TODO: double check if using the longer side for rectangular is reasonble, although this likely is only used by tower and monopile so unlikely to be called
+            outputs["nodes_r"] = 0.5 * np.maximum(outputs["side_length_a_full"], outputs["side_length_b_full"])
         xyz0 = inputs["joint1"]
         xyz1 = inputs["joint2"]
         dxyz = xyz1 - xyz0
@@ -608,7 +621,7 @@ class ShellMassCost(om.ExplicitComponent):
 
     Parameters
     ----------
-    d_full : numpy array[n_full], [m]
+    outer_diameter_full : numpy array[n_full], [m]
         cylinder diameter at corresponding locations
     t_full : numpy array[n_full-1], [m]
         shell thickness at corresponding locations
@@ -657,7 +670,7 @@ class ShellMassCost(om.ExplicitComponent):
         self.add_input("s_full", np.zeros(n_full), units="m")
         self.add_input("s_ghost1", 0.0)
         self.add_input("s_ghost2", 1.0)
-        self.add_input("d_full", val=np.zeros(n_full), units="m")
+        self.add_input("outer_diameter_full", val=np.zeros(n_full), units="m")
         self.add_input("t_full", val=np.zeros(n_full - 1), units="m")
         self.add_input("z_full", val=np.zeros(n_full), units="m")
         self.add_input("E_full", val=np.zeros(n_full - 1), units="Pa")
@@ -692,14 +705,14 @@ class ShellMassCost(om.ExplicitComponent):
         s_full = inputs["s_full"]
         s_ghost1 = float(inputs["s_ghost1"])
         s_ghost2 = float(inputs["s_ghost2"])
-        d_full = inputs["d_full"]
+        outer_diameter_full = inputs["outer_diameter_full"]
         t_full = inputs["t_full"]
         rho = inputs["rho_full"]
         Emat = inputs["E_full"]
         Gmat = inputs["G_full"]
         sigymat = inputs["sigma_y_full"]
         coeff = inputs["outfitting_full"]
-        d_sec, _ = util.nodal2sectional(d_full)
+        d_sec, _ = util.nodal2sectional(outer_diameter_full)
 
         mysections = []
         itube = cs.Tube(d_sec, t_full)
@@ -748,7 +761,7 @@ class ShellMassCost(om.ExplicitComponent):
         # Shell mass properties with new interpolation in case ghost nodes were added
         s_grid = np.unique(np.r_[s_ghost1, s_full, s_ghost2])
         s_section = 0.5 * (s_grid[:-1] + s_grid[1:])
-        R = np.interp(s_grid, s_full, 0.5 * d_full)
+        R = np.interp(s_grid, s_full, 0.5 * outer_diameter_full)
         Rb = R[:-1]
         Rt = R[1:]
         zz = np.interp(s_grid, s_full, inputs["z_full"])
@@ -856,7 +869,7 @@ class MemberComplex(om.ExplicitComponent):
         non-dimensional locations along member
     z_full : numpy array[n_full], [m]
         dimensional locations along member axis
-    d_full : numpy array[n_full], [m]
+    outer_diameter_full : numpy array[n_full], [m]
         cylinder diameter at corresponding locations
     t_full : numpy array[n_full-1], [m]
         shell thickness at corresponding locations
@@ -1020,7 +1033,7 @@ class MemberComplex(om.ExplicitComponent):
         self.add_input("height", val=0.0, units="m")
         self.add_input("s_full", np.zeros(n_full), units="m")
         self.add_input("z_full", np.zeros(n_full), units="m")
-        self.add_input("d_full", np.zeros(n_full), units="m")
+        self.add_input("outer_diameter_full", np.zeros(n_full), units="m")
         self.add_input("t_full", np.zeros(n_full - 1), units="m")
         self.add_input("E_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_input("G_full", val=np.zeros(n_full - 1), units="Pa")
@@ -1160,7 +1173,7 @@ class MemberComplex(om.ExplicitComponent):
         # Unpack inputs
         s_full = inputs["s_full"]
         t_full = inputs["t_full"]
-        d_full = inputs["d_full"]
+        outer_diameter_full = inputs["outer_diameter_full"]
         rho = inputs["rho_full"]
         Emat = inputs["E_full"]
         Gmat = inputs["G_full"]
@@ -1179,7 +1192,7 @@ class MemberComplex(om.ExplicitComponent):
         n_stiff = 0 if th_stiffener == 0.0 else 2 * np.pi / th_stiffener
 
         # Outer and inner radius of web by section
-        d_sec, _ = util.nodal2sectional(d_full)
+        d_sec, _ = util.nodal2sectional(outer_diameter_full)
         R_wo = 0.5 * d_sec - t_full
         R_wi = R_wo - h_web
         R_w = 0.5 * (R_wo + R_wi)
@@ -1233,7 +1246,7 @@ class MemberComplex(om.ExplicitComponent):
         # Shell mass properties with new interpolation in case ghost nodes were added
         s_grid = np.array(list(self.sections.keys()))
         s_section = 0.5 * (s_grid[:-1] + s_grid[1:])
-        R = np.interp(s_grid, s_full, 0.5 * d_full)
+        R = np.interp(s_grid, s_full, 0.5 * outer_diameter_full)
         Rb = R[:-1]
         Rt = R[1:]
         zz = np.interp(s_grid, s_full, inputs["z_full"])
@@ -1326,7 +1339,7 @@ class MemberComplex(om.ExplicitComponent):
         # Unpack variables
         s_full = inputs["s_full"]
         z_full = inputs["z_full"]
-        R_od = 0.5 * inputs["d_full"]
+        R_od = 0.5 * inputs["outer_diameter_full"]
         twall = inputs["t_full"]
         rho = inputs["rho_full"]
         E = inputs["E_full"]
@@ -1436,7 +1449,7 @@ class MemberComplex(om.ExplicitComponent):
         s_full = inputs["s_full"]
         z_full = inputs["z_full"]
         L = inputs["height"]
-        R_od = 0.5 * inputs["d_full"]
+        R_od = 0.5 * inputs["outer_diameter_full"]
         twall = inputs["t_full"]
         rho = inputs["rho_full"]
         E = inputs["E_full"]
@@ -1598,7 +1611,7 @@ class MemberComplex(om.ExplicitComponent):
         # Unpack variables
         s_full = inputs["s_full"]
         z_full = inputs["z_full"]
-        R_od = 0.5 * inputs["d_full"]
+        R_od = 0.5 * inputs["outer_diameter_full"]
         twall = inputs["t_full"]
         s_ballast = inputs["ballast_grid"]
         rho_ballast = inputs["ballast_density"]
@@ -1726,7 +1739,7 @@ class MemberComplex(om.ExplicitComponent):
     def nodal_discretization(self, inputs, outputs):
         # Unpack inputs
         s_full = inputs["s_full"]
-        d_full = inputs["d_full"]
+        outer_diameter_full = inputs["outer_diameter_full"]
         z_full = inputs["z_full"]
         s_axial = inputs["grid_axial_joints"]
         xyz0 = inputs["joint1"]
@@ -1741,7 +1754,7 @@ class MemberComplex(om.ExplicitComponent):
         s_grid = np.array(list(self.sections.keys()))
         _, idx = np.unique(s_grid.round(6), return_index=True)  # Ensure no duplicates
         s_grid = s_grid[idx]
-        r_grid = 0.5 * np.interp(s_grid, s_full, d_full)
+        r_grid = 0.5 * np.interp(s_grid, s_full, outer_diameter_full)
         n_nodes = s_grid.size
         nodes = np.outer(s_grid, dxyz) + xyz0[np.newaxis, :]
 
@@ -1802,7 +1815,7 @@ class MemberHydro(om.ExplicitComponent):
         non-dimensional coordinates of section nodes
     z_full : numpy array[n_full], [m]
         z-coordinates of section nodes
-    d_full : numpy array[n_full], [m]
+    outer_diameter_full : numpy array[n_full], [m]
         outer diameter at each section node bottom to top (length = nsection + 1)
 
 
@@ -1842,7 +1855,7 @@ class MemberHydro(om.ExplicitComponent):
         self.add_input("rho_water", 0.0, units="kg/m**3")
         self.add_input("s_full", np.zeros(n_full), units="m")
         self.add_input("z_full", np.zeros(n_full), units="m")
-        self.add_input("d_full", np.zeros(n_full), units="m")
+        self.add_input("outer_diameter_full", np.zeros(n_full), units="m")
         self.add_input("s_ghost1", 0.0)
         self.add_input("s_ghost2", 1.0)
 
@@ -1863,7 +1876,7 @@ class MemberHydro(om.ExplicitComponent):
         s_ghost1 = float(inputs["s_ghost1"])
         s_ghost2 = float(inputs["s_ghost2"])
         z_full = inputs["z_full"]
-        R_od = 0.5 * inputs["d_full"]
+        R_od = 0.5 * inputs["outer_diameter_full"]
         rho_water = inputs["rho_water"]
 
         # Get coordinates at full nodes
@@ -1875,7 +1888,7 @@ class MemberHydro(om.ExplicitComponent):
         # Dimensions away from vertical
         tilt = np.arctan(dxyz[0] / (1e-8 + dxyz[2]))
         outputs["z_dim"] = xyz0[2] + s_full * dxyz[2]
-        outputs["d_eff"] = inputs["d_full"] / np.cos(tilt)
+        outputs["d_eff"] = inputs["outer_diameter_full"] / np.cos(tilt)
 
         # Compute volume of each section and mass of displaced water by section
         # Find the radius at the waterline so that we can compute the submerged volume as a sum of frustum sections
@@ -2129,7 +2142,7 @@ class CylinderPostFrame(om.ExplicitComponent):
     ----------
     z_full : numpy array[n_full], [m]
         location along tower. start at bottom and go to top
-    d_full : numpy array[n_full], [m]
+    outer_diameter_full : numpy array[n_full], [m]
         effective tower diameter for section
     t_full : numpy array[n_full-1], [m]
         effective shell thickness for section
@@ -2192,7 +2205,7 @@ class CylinderPostFrame(om.ExplicitComponent):
 
         # effective geometry -- used for handbook methods to estimate hoop stress, buckling, fatigue
         self.add_input("z_full", np.zeros(n_full), units="m")
-        self.add_input("d_full", np.zeros(n_full), units="m")
+        self.add_input("outer_diameter_full", np.zeros(n_full), units="m")
         self.add_input("t_full", np.zeros(n_full - 1), units="m")
         self.add_input("bending_height", 0.0, units="m")
 
@@ -2229,7 +2242,7 @@ class CylinderPostFrame(om.ExplicitComponent):
         G = np.tile(inputs["G_full"], (n_dlc, 1)).T
         z = np.tile(inputs["z_full"], (n_dlc, 1)).T
         t = np.tile(inputs["t_full"], (n_dlc, 1)).T
-        d = np.tile(inputs["d_full"], (n_dlc, 1)).T
+        d = np.tile(inputs["outer_diameter_full"], (n_dlc, 1)).T
         h = np.diff(z, axis=0)
         d_sec, _ = util.nodal2sectional(d)
         r_sec = 0.5 * d_sec
@@ -2333,17 +2346,19 @@ class MemberBase(om.Group):
         self.options.declare("n_mat")
         self.options.declare("n_refine")
         self.options.declare("memmax", default=False)
+        self.options.declare("member_shape", default="circular")
 
     def setup(self):
         opt = self.options["column_options"]
         idx = self.options["idx"]
         n_refine = self.options["n_refine"]
+        member_shape = self.options["member_shape"]
         n_height = opt["n_height"][idx]
         n_full = get_nfull(n_height, nref=n_refine)
 
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z
         self.add_subsystem(
-            "yaml", DiscretizationYAML(options=opt, idx=idx, n_mat=self.options["n_mat"]), promotes=["*"]
+            "yaml", DiscretizationYAML(options=opt, idx=idx, n_mat=self.options["n_mat"], shape = member_shape), promotes=["*"]
         )
 
         promlist = ["constr_taper", "constr_d_to_t", "slope"]
@@ -2357,7 +2372,12 @@ class MemberBase(om.Group):
         self.connect("outer_diameter", "gc.d")
         self.connect("wall_thickness", "gc.t")
 
-        self.add_subsystem("geom", MemberDiscretization(n_height=n_height, n_refine=n_refine), promotes=["*"])
+        if member_shape == "circular":
+            member_shape_variables = ["outer_diameter"]
+        elif member_shape == "rectangular":
+            member_shape_variables = ["side_length_a", "side_length_b"]
+
+        self.add_subsystem("geom", MemberDiscretization(n_height=n_height, n_refine=n_refine, member_shape_variables = member_shape_variables), promotes=["*"])
 
         self.add_subsystem("hydro", MemberHydro(n_full=n_full), promotes=["*"])
 
@@ -2368,19 +2388,21 @@ class MemberStandard(om.Group):
         self.options.declare("idx")
         self.options.declare("n_mat")
         self.options.declare("n_refine", default=1)
+        self.options.declare("member_shape", default="circular")
 
     def setup(self):
         opt = self.options["column_options"]
         idx = self.options["idx"]
         n_mat = self.options["n_mat"]
         n_refine = self.options["n_refine"]
+        member_shape = self.options["member_shape"]
         n_height = opt["n_height"][idx]
         n_full = get_nfull(n_height, nref=n_refine)
 
         self.add_subsystem(
             "base",
-            MemberBase(column_options=opt, idx=idx, n_mat=n_mat, n_refine=n_refine, memmax=False),
-            promotes=["*"],
+            MemberBase(column_options=opt, idx=idx, n_mat=n_mat, n_refine=n_refine, memmax=False, member_shape = member_shape),
+            promotes=["*"]
         )
 
         self.add_subsystem("comp", ShellMassCost(n_full=n_full), promotes=["*"])
@@ -2434,7 +2456,7 @@ class MemberLoads(om.Group):
             "mu_air",
             "yaw",
             ("z", "z_global"),
-            ("d", "d_full"),
+            ("d", "outer_diameter_full"),
         ]
         if hydro:
             prom += [

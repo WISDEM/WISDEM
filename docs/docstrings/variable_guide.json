@@ -7105,10 +7105,10 @@
       "Description": "constraint on tower frequency such that ratio of 3P/f is above or below gamma with constraint <= 0",
       "Name": "tcons.constr_tower_f_NPmargin"
     },
-    "d_full": {
+    "outer_diameter_full": {
       "Units": "m",
       "Description": "cylinder diameter at corresponding locations",
-      "Name": "tcons.d_full"
+      "Name": "tcons.outer_diameter_full"
     },
     "max_allowable_td_ratio": {
       "Units": "-",
@@ -7386,10 +7386,10 @@
       "Description": "None",
       "Name": "towerse.constr_taper"
     },
-    "d_full": {
+    "outer_diameter_full": {
       "Units": "m",
       "Description": "cylinder diameter at corresponding locations",
-      "Name": "towerse.d_full"
+      "Name": "towerse.outer_diameter_full"
     },
     "distLoads": {
       "Px": {

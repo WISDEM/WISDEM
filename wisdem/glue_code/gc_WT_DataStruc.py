@@ -2363,7 +2363,7 @@ class Floating(om.Group):
             ivc.add_output("s_in", val=np.zeros(n_geom))
             ivc.add_output("s", val=np.zeros(n_height))
 
-            diameter_assigned = False
+            member_shape_assigned = False
             for i, kgrp in enumerate(float_opt["members"]["groups"]):
                 memname = kgrp["names"][0]
                 idx = floating_init_options["members"]["name2idx"][memname]
@@ -2373,10 +2373,26 @@ class Floating(om.Group):
                             ivc.add_output("outer_diameter_in", val=0.0, units="m")
                         else:
                             ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
-                        diameter_assigned = True
+                        member_shape_assigned = True
+                    if "side_length_a" in float_opt["members"]["groups"][i]:
+                        if float_opt["members"]["groups"][i]["side_length_a"]["constant"]:
+                            ivc.add_output("side_length_a_in", val=0.0, units="m")
+                        else:
+                            ivc.add_output("side_length_a_in", val=np.zeros(n_geom), units="m")
+                        member_shape_assigned = True
+                    if "side_length_b" in float_opt["members"]["groups"][i]:
+                        if float_opt["members"]["groups"][i]["side_length_b"]["constant"]:
+                            ivc.add_output("side_length_b_in", val=0.0, units="m")
+                        else:
+                            ivc.add_output("side_length_b_in", val=np.zeros(n_geom), units="m")
+                        member_shape_assigned = True
 
-            if not diameter_assigned:
-                ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
+            if not member_shape_assigned:
+                if floating_init_options["members"]["outer_shape"][k] == "circular":
+                    ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
+                elif floating_init_options["members"]["outer_shape"][k] == "rectangular":
+                    ivc.add_output("side_length_a_in", val=np.zeros(n_geom), units="m")
+                    ivc.add_output("side_length_b_in", val=np.zeros(n_geom), units="m")
 
             ivc.add_discrete_output("layer_materials", val=[""] * n_layers)
             ivc.add_output("layer_thickness_in", val=np.zeros((n_layers, n_geom)), units="m")
@@ -2398,7 +2414,7 @@ class Floating(om.Group):
             ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_spacing", 0.0, units="rad")
 
-            self.add_subsystem(f"memgrid{k}", MemberGrid(n_height=n_height, n_geom=n_geom, n_layers=n_layers))
+            self.add_subsystem(f"memgrid{k}", MemberGrid(n_height=n_height, n_geom=n_geom, n_layers=n_layers, member_shape=floating_init_options["members"]["outer_shape"][k]))
             self.connect(f"memgrp{k}.s_in", f"memgrid{k}.s_in")
             self.connect(f"memgrp{k}.s", f"memgrid{k}.s_grid")
             self.connect(f"memgrp{k}.outer_diameter_in", f"memgrid{k}.outer_diameter_in")
@@ -2534,6 +2550,7 @@ class AggregateJoints(om.ExplicitComponent):
         n_joints = floating_init_options["joints"]["n_joints"]
         n_members = memopt["n_members"]
         name2idx = floating_init_options["joints"]["name2idx"]
+        n_joint_tot = len(name2idx)
         NULL = -9999.0
 
         # Unpack inputs
@@ -2548,15 +2565,15 @@ class AggregateJoints(om.ExplicitComponent):
         joints_xyz[:n_joints, :] = locations_xyz.copy()
 
         # Initial biggest radius at each node
-        node_r = np.zeros(joints_xyz.shape[0])
-        intersects = np.zeros(joints_xyz.shape[0])
+        node_r = np.zeros(n_joint_tot)
+        intersects = np.zeros(n_joint_tot)
 
         # Now add axial joints
         member_list = list(range(n_members))
         count = n_joints
-        n_joint_tot = len(name2idx)
         while count < n_joint_tot:
             for k in member_list[:]:
+                # Get the end joint locations for members and then compute the axial joint loc
                 joint1xyz = joints_xyz[name2idx[memopt["joint1"][k]], :]
                 joint2xyz = joints_xyz[name2idx[memopt["joint2"][k]], :]
 

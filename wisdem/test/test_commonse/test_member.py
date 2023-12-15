@@ -159,7 +159,7 @@ class TestFullDiscretization(unittest.TestCase):
     def testRefine2(self):
         self.mydis.compute(self.inputs, self.outputs)
         npt.assert_array_equal(self.outputs["z_full"], np.array([0.0, 0.5, 1.0, 2.0, 3.0, 4.5, 6.0, 8.0, 10.0]))
-        npt.assert_array_equal(self.outputs["d_full"], 5.0 * np.ones(9))
+        npt.assert_array_equal(self.outputs["outer_diameter_full"], 5.0 * np.ones(9))
         npt.assert_array_equal(self.outputs["t_full"], 0.05 * np.ones(8))
         npt.assert_array_equal(self.outputs["E_full"], 2e9 * np.ones(8))
         npt.assert_array_equal(self.outputs["G_full"], 2e7 * np.ones(8))
@@ -180,7 +180,7 @@ class TestFullDiscretization(unittest.TestCase):
         self.mydis.compute(self.inputs, self.outputs)
         npt.assert_almost_equal(self.outputs["s_full"], np.array([0.0, 0.05, 0.1, 0.2, 0.3, 0.45, 0.6, 0.8, 1.0]))
         npt.assert_array_equal(self.outputs["z_full"], np.array([0.0, 0.5, 1.0, 2.0, 3.0, 4.5, 6.0, 8.0, 10.0]))
-        npt.assert_array_equal(self.outputs["d_full"], np.array([5.0, 5.0, 5.0, 5.5, 6.0, 6.5, 7.0, 7.0, 7.0]))
+        npt.assert_array_equal(self.outputs["outer_diameter_full"], np.array([5.0, 5.0, 5.0, 5.5, 6.0, 6.5, 7.0, 7.0, 7.0]))
         npt.assert_array_equal(self.outputs["t_full"], 1e-2 * np.array([5.0, 5.0, 5.0, 5.0, 6.0, 6.0, 7.0, 7.0]))
         npt.assert_array_equal(self.outputs["E_full"], 2e9 * np.ones(8))
         npt.assert_array_equal(self.outputs["G_full"], 2e7 * np.ones(8))
@@ -200,7 +200,7 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["s_full"] = np.linspace(0, 1, NPTS)
         self.inputs["z_full"] = 100 * np.linspace(0, 1, NPTS)
         self.inputs["height"] = 100
-        self.inputs["d_full"] = 10.0 * myones
+        self.inputs["outer_diameter_full"] = 10.0 * myones
         self.inputs["t_full"] = 0.05 * secones
         self.inputs["rho_full"] = 1e3 * secones
         self.inputs["E_full"] = 1e6 * secones
@@ -833,7 +833,7 @@ class TestHydro(unittest.TestCase):
         npts = member.get_nfull(n_height)
         self.inputs["s_full"] = np.linspace(0, 1.0, npts)
         self.inputs["z_full"] = np.linspace(0, 50.0, npts)
-        self.inputs["d_full"] = 10.0 * np.ones(npts)
+        self.inputs["outer_diameter_full"] = 10.0 * np.ones(npts)
         self.inputs["s_all"] = np.linspace(0, 1.0, 2 * npts)
         self.inputs["nodes_xyz"] = np.c_[
             1 * np.ones(2 * npts), 2 * np.ones(2 * npts), np.linspace(0, 50.0, 2 * npts) - 75
@@ -863,7 +863,7 @@ class TestHydro(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
         npt.assert_equal(self.outputs["waterline_centroid"], [0.0, 0.0])
         npt.assert_almost_equal(self.outputs["z_dim"], np.linspace(0, 50.0, npts) - 75)
-        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["d_full"])
+        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["outer_diameter_full"])
 
         m_a = np.zeros(6)
         m_a[:2] = V_expect * rho_w
@@ -896,7 +896,7 @@ class TestHydro(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
         npt.assert_equal(self.outputs["waterline_centroid"], [1.0, 2.0])
         npt.assert_almost_equal(self.outputs["z_dim"], np.linspace(0, 50.0, npts) - 25)
-        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["d_full"])
+        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["outer_diameter_full"])
 
         m_a = np.zeros(6)
         m_a[:2] = V_expect * rho_w
@@ -925,7 +925,7 @@ class TestHydro(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
         npt.assert_almost_equal(self.outputs["waterline_centroid"], [0.0, 0.0])
         npt.assert_almost_equal(self.outputs["z_dim"], np.linspace(0, 50.0, npts) - 25)
-        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["d_full"] / np.cos(0.25 * np.pi))
+        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["outer_diameter_full"] / np.cos(0.25 * np.pi))
 
         m_a = np.zeros(6)
         m_a[:2] = V_expect * rho_w

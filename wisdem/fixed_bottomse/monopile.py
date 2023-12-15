@@ -106,7 +106,7 @@ class MonopileMass(om.ExplicitComponent):
         Extra mass of gravity foundation
     z_full : numpy array[nFull], [m]
         Parameterized locations along tower, linear lofting between
-    d_full : numpy array[nFull], [m]
+    outer_diameter_full : numpy array[nFull], [m]
         diameter along tower
 
     Returns
@@ -136,7 +136,7 @@ class MonopileMass(om.ExplicitComponent):
         self.add_input("transition_piece_cost", 0.0, units="USD")
         self.add_input("gravity_foundation_mass", 0.0, units="kg")
         self.add_input("z_full", val=np.zeros(npts), units="m")
-        self.add_input("d_full", val=np.zeros(npts), units="m")
+        self.add_input("outer_diameter_full", val=np.zeros(npts), units="m")
         self.add_input("tower_mass", val=0.0, units="kg")
         self.add_input("tower_cost", val=0.0, units="USD")
 
@@ -152,7 +152,7 @@ class MonopileMass(om.ExplicitComponent):
     def compute(self, inputs, outputs):
         # Unpack inputs
         z = inputs["z_full"]
-        d = inputs["d_full"]
+        d = inputs["outer_diameter_full"]
         m_trans = inputs["transition_piece_mass"]
         c_trans = inputs["transition_piece_cost"]
         m_grav = inputs["gravity_foundation_mass"]
@@ -188,7 +188,7 @@ class MonopileFrame(om.ExplicitComponent):
     ----------
     z_full : numpy array[npts], [m]
         location along cylinder. start at bottom and go to top
-    d_full : numpy array[npts], [m]
+    outer_diameter_full : numpy array[npts], [m]
         effective cylinder diameter for section
     t_full : numpy array[npts-1], [m]
         effective shell thickness for section
@@ -285,7 +285,7 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_input("section_E", np.zeros(n_full - 1), units="Pa")
         self.add_input("section_G", np.zeros(n_full - 1), units="Pa")
         self.add_output("section_L", np.zeros(n_full - 1 + ntow_sec), units="m")
-        self.add_input("d_full", np.zeros(n_full), units="m")
+        self.add_input("outer_diameter_full", np.zeros(n_full), units="m")
         self.add_input("t_full", np.zeros(n_full - 1), units="m")
         self.add_input("sigma_y_full", np.zeros(n_full -1), units="Pa")
         self.add_input("qdyn", np.zeros((n_full,nLC)), units="Pa")
@@ -302,7 +302,7 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_input("tower_rho", np.zeros(ntow_sec), units="kg/m**3")
         self.add_input("tower_E", np.zeros(ntow_sec), units="Pa")
         self.add_input("tower_G", np.zeros(ntow_sec), units="Pa")
-        self.add_input("tower_d_full", np.zeros(n_full_tow), units="m")
+        self.add_input("tower_outer_diameter_full", np.zeros(n_full_tow), units="m")
         self.add_input("tower_t_full", np.zeros(ntow_sec), units="m")
         self.add_input("tower_sigma_y_full", np.zeros(ntow_sec), units="Pa")
         self.add_input("tower_qdyn", np.zeros((n_full_tow,nLC)), units="Pa")
@@ -367,7 +367,7 @@ class MonopileFrame(om.ExplicitComponent):
 
         # Tower and monopile combined
         self.add_output("monopile_tower_z_full", val=np.zeros(n_full + n_full_tow - 1), units="m")
-        self.add_output("monopile_tower_d_full", val=np.zeros(n_full + n_full_tow - 1), units="m")
+        self.add_output("monopile_tower_outer_diameter_full", val=np.zeros(n_full + n_full_tow - 1), units="m")
         self.add_output("monopile_tower_t_full", val=np.zeros(n_full + ntow_sec - 1), units="m")
         self.add_output("monopile_tower_rho_full", val=np.zeros(n_full + ntow_sec -1), units="kg/m**3")
         self.add_output("monopile_tower_E_full", val=np.zeros(n_full + ntow_sec -1), units="Pa")
@@ -465,12 +465,12 @@ class MonopileFrame(om.ExplicitComponent):
             E = np.r_[inputs["section_E"], inputs["tower_E"]]
             G = np.r_[inputs["section_G"], inputs["tower_G"]]
             rho = np.r_[inputs["section_rho"], inputs["tower_rho"]]
-            d = np.r_[inputs["d_full"][:-1], inputs["tower_d_full"]]
+            d = np.r_[inputs["outer_diameter_full"][:-1], inputs["tower_outer_diameter_full"]]
             t = np.r_[inputs["t_full"], inputs["tower_t_full"]]
             sigma_y = np.r_[inputs["sigma_y_full"], inputs["tower_sigma_y_full"]]
 
             outputs["monopile_tower_z_full"] = z
-            outputs["monopile_tower_d_full"] = d
+            outputs["monopile_tower_outer_diameter_full"] = d
             outputs["monopile_tower_t_full"] = t
             outputs["monopile_tower_rho_full"] = rho
             outputs["monopile_tower_E_full"] = E
@@ -745,7 +745,7 @@ class MonopileSE(om.Group):
             "z_param",
             "z_full",
             "s_full",
-            "d_full",
+            "outer_diameter_full",
             "t_full",
             "rho_full",
             "E_full",
@@ -789,7 +789,7 @@ class MonopileSE(om.Group):
         temp_opt["n_ballasts"] = [0]
         self.add_subsystem(
             "member",
-            mem.MemberStandard(column_options=temp_opt, idx=0, n_mat=n_mat, n_refine=NREFINE),
+            mem.MemberStandard(column_options=temp_opt, idx=0, n_mat=n_mat, n_refine=NREFINE, member_shape = "circular"),
             promotes=promlist,
         )
 
@@ -801,7 +801,7 @@ class MonopileSE(om.Group):
                 "transition_piece_cost",
                 "gravity_foundation_mass",
                 "z_full",
-                "d_full",
+                "outer_diameter_full",
                 "tower_mass",
                 "tower_cost",
                 "monopile_mass",
@@ -826,7 +826,7 @@ class MonopileSE(om.Group):
                 TowerSoil(npts=NPTS_SOIL),
                 promotes=[("G", "G_soil"), ("nu", "nu_soil"), ("depth", "suctionpile_depth")],
             )
-            self.connect("d_full", "soil.d0", src_indices=[0])
+            self.connect("outer_diameter_full", "soil.d0", src_indices=[0])
 
         self.add_subsystem("loads", mem.MemberLoads(n_full=n_full, n_lc=nLC, wind=wind, hydro=True), promotes=["*"])
 
@@ -858,10 +858,10 @@ class MonopileSE(om.Group):
                 "section_rho",
                 "section_E",
                 "section_G",
-                "d_full",
+                "outer_diameter_full",
                 "t_full",
                 "sigma_y_full",
-                "tower_d_full",
+                "tower_outer_diameter_full",
                 "tower_t_full",
                 "tower_sigma_y_full",
                 "bending_height",
@@ -919,7 +919,7 @@ class MonopileSE(om.Group):
             mem.CylinderPostFrame(modeling_options=mod_opt, n_dlc=nLC, n_full = n_full),
             promotes=[
                 "z_full",
-                "d_full",
+                "outer_diameter_full",
                 "t_full",
                 "rho_full",
                 "E_full",
@@ -949,7 +949,7 @@ class MonopileSE(om.Group):
             )
 
             self.connect("monopile.monopile_tower_z_full", "post_monopile_tower.z_full")
-            self.connect("monopile.monopile_tower_d_full", "post_monopile_tower.d_full")
+            self.connect("monopile.monopile_tower_outer_diameter_full", "post_monopile_tower.outer_diameter_full")
             self.connect("monopile.monopile_tower_t_full", "post_monopile_tower.t_full")
             self.connect("monopile.monopile_tower_rho_full", "post_monopile_tower.rho_full")
             self.connect("monopile.monopile_tower_E_full", "post_monopile_tower.E_full")
