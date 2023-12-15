@@ -853,13 +853,14 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["blade"]["outer_shape_bem"]["pitch_axis"]["values"] = wt_opt[
                 "blade.outer_shape_bem.pitch_axis"
             ].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"] = {}
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["grid"] = wt_opt[
+                "blade.outer_shape_bem.s"
+            ].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["values"] = wt_opt[
+                "blade.interp_airfoils.r_thick_interp"
+            ].tolist()
             if self.modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
-                self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["grid"] = wt_opt[
-                    "blade.outer_shape_bem.s"
-                ].tolist()
-                self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["values"] = wt_opt[
-                    "blade.interp_airfoils.r_thick_interp"
-                ].tolist()
                 self.wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"] = wt_opt[
                     "blade.outer_shape_bem.s"
                 ].tolist()
