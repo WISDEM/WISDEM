@@ -3897,7 +3897,7 @@ class StandaloneBladeCost(om.Group):
             ),
         )
         self.connect("airfoils.name", "blade.interp_airfoils.name")
-        self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick")
+        self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick_discrete")
         self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
 
         self.add_subsystem(
