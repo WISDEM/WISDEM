@@ -31,7 +31,7 @@ class TestBC(unittest.TestCase):
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
-        wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init)
+        wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options)
         wt_opt.run_model()
 
         self.assertAlmostEqual(wt_opt["rc.total_labor_hours"][0], 944.1382619536412, places=accuracy)
@@ -68,7 +68,7 @@ class TestBC(unittest.TestCase):
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
-        wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init)
+        wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options)
         wt_opt.run_model()
 
         self.assertAlmostEqual(wt_opt["rc.total_labor_hours"][0], 2129.6348341745884, places=accuracy)
@@ -105,7 +105,7 @@ class TestBC(unittest.TestCase):
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
-        wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init)
+        wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options)
         wt_opt.run_model()
 
         self.assertAlmostEqual(wt_opt["rc.total_labor_hours"][0], 3132.3284960121646, places=accuracy)
@@ -141,7 +141,7 @@ class TestBC(unittest.TestCase):
         wt_opt.setup(derivatives=False)
         myopt = PoseOptimization(wt_init, modeling_options, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
-        wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init)
+        wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options)
         wt_opt.run_model()
 
         self.assertAlmostEqual(wt_opt["rc_in.total_labor_hours"][0], 1846.2238124083613, places=accuracy)
