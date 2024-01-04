@@ -56,6 +56,51 @@ def frustumVol(rb_0, rt_0, h, diamFlag=False):
         rb, rt = rb_0, rt_0
     return np.pi * (h / 3.0) * (rb * rb + rt * rt + rb * rt)
 
+def RectangularFrustumVol(ab, bb, at, bt, h):
+    """This function returns a frustum's volume with radii or diameter inputs.
+
+    INPUTS:
+    Parameters
+    ----------
+    ab : float (scalar/vector),  base side length a
+    bb : float (scalar/vector),  base side length b
+    at : float (scalar/vector),  top side length a
+    bt : float (scalar/vector),  top side length b
+    h  : float (scalar/vector),  height
+
+    OUTPUTs:
+    -------
+    vol : float (scalar/vector), volume
+    """
+
+    Atop = ab * bb
+    Abottom = at * bt
+
+    V = GeneralFrustumVol(Ab=Abottom, At=Atop, h=h)
+    
+    return V
+
+def GeneralFrustumVol(Ab, At, h):
+    """This function returns a frustum's volume with radii or diameter inputs.
+
+    INPUTS:
+    Parameters
+    ----------
+    Ab : float (scalar/vector),  base area
+    At : float (scalar/vector),  top area
+    h  : float (scalar/vector),  height
+
+    OUTPUTs:
+    -------
+    vol : float (scalar/vector), volume
+    """
+
+    Atop = At
+    Abottom = Ab
+
+    V = h / 3.0 * (Atop + Abottom + np.sqrt(Atop * Abottom))
+    
+    return V
 
 def frustumCG(rb_0, rt_0, h, diamFlag=False):
     """This function returns a frustum's center of mass/gravity (centroid) with radii or diameter inputs.
@@ -80,6 +125,47 @@ def frustumCG(rb_0, rt_0, h, diamFlag=False):
         rb, rt = rb_0, rt_0
     return 0.25 * h * (rb**2 + 2.0 * rb * rt + 3.0 * rt**2) / (rb**2 + rb * rt + rt**2)
 
+def RectangularFrustumCG(ab, bb, at, bt, h):
+    """This function returns a frustum's center of mass/gravity (centroid) with radii or diameter inputs.
+    NOTE: This is for a SOLID frustum, not a shell
+
+    INPUTS:
+    Parameters
+    ----------
+    ab : float (scalar/vector),  base side length a
+    bb : float (scalar/vector),  base side length b
+    at : float (scalar/vector),  top side length a
+    bt : float (scalar/vector),  top side length b
+    h  : float (scalar/vector),  height
+
+    OUTPUTs:
+    -------
+    cg : float (scalar/vector),  center of mass/gravity (centroid)
+    """
+    cg = GeneralFrustumCG(Ab = ab*bb, At = at*bt, h = h)
+
+    return cg
+
+
+def GeneralFrustumCG(Ab, At, h):
+    """This function returns a frustum's center of mass/gravity (centroid) with radii or diameter inputs.
+    NOTE: This is for a SOLID frustum, not a shell
+
+    INPUTS:
+    Parameters
+    ----------
+    Ab : float (scalar/vector),  base area
+    At : float (scalar/vector),  top area
+    h  : float (scalar/vector),  height
+    V  : float (scalar/vector),  Volume
+
+    OUTPUTs:
+    -------
+    cg : float (scalar/vector),  center of mass/gravity (centroid)
+    """
+    cg = h * (Ab + 2*np.sqrt(Ab*At) + 3*At) / (4 * (Ab + np.sqrt(Ab * At) + At))
+
+    return cg
 
 def frustumIzz(rb_0, rt_0, h, diamFlag=False):
     """This function returns a frustum's mass-moment of inertia (divided by density) about the
