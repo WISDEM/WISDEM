@@ -75,6 +75,19 @@ class TestRectangularFrustum(unittest.TestCase):
         self.assertEqual(f.RectangularFrustumCG(ab, bb, at, bt, h), CG)
         npt.assert_equal(f.RectangularFrustumCG(ab * myones, bb * myones, at * myones, bt * myones, h * myones), CG * myones)
 
+    def testRectangualrFrustumIzz_solid(self):
+    
+        # For rectangular cuboid
+        ab = 4.0
+        bb = 2.0
+        at = 4.0
+        bt = 2.0
+        Izz = 1/12 * (ab*bb*h) * (ab**2 + bb**2)
+
+        # Test volume- scalar and vector inputs
+        self.assertEqual(f.RectangularFrustumIzz(ab, bb, at, bt, h), Izz)
+        npt.assert_equal(f.RectangularFrustumIzz(ab * myones, bb * myones, at * myones, bt * myones, h * myones), Izz * myones)
+
     # def testRectangularFrustum_shell(self):
 
 def suite():

@@ -194,6 +194,34 @@ def frustumIzz(rb_0, rt_0, h, diamFlag=False):
     # Also equals (0.1*np.pi*h * (rt**5.0 - rb**5.0) / (rt - rb) )
     return 0.1 * np.pi * h * (rt**4.0 + rb * rt**3 + rb**2 * rt**2 + rb**3 * rt + rb**4.0)
 
+def RectangularFrustumIzz(ab, bb, at, bt, h):
+    """This function returns a frustum's mass-moment of inertia (divided by density) about the
+    central (axial) z-axis with radii or diameter inputs.
+    NOTE: This is for a SOLID frustum, not a shell
+
+    INPUTS:
+    Parameters
+    ----------
+    ab : float (scalar/vector),  base side length a
+    bb : float (scalar/vector),  base side length b
+    at : float (scalar/vector),  top side length a
+    bt : float (scalar/vector),  top side length b
+    h  : float (scalar/vector),  height
+
+    OUTPUTs:
+    -------
+    Izz : float (scalar/vector),  Moment of inertia about z-axis
+    """
+
+    # Use calculations from RAFT
+
+    x2 = (1/12) * ( (at-ab)**3*h*(bt/5 + bb/20) + (at-ab)**2*ab*h*(3*bt/4 + bb/4) + \
+                    (at-ab)*ab**2*h*(bt + bb/2) + ab**3*h*(bt/2 + bb/2) )
+
+    y2 = (1/12) * ( (bt-bb)**3*h*(at/5 + ab/20) + (bt-bb)**2*bb*h*(3*at/4 + ab/4) + \
+                        (bt-bb)*bb**2*h*(at + ab/2) + bb**3*h*(at/2 + ab/2) )
+    return x2+y2
+
 
 def frustumIxx(rb_0, rt_0, h, diamFlag=False):
     """This function returns a frustum's mass-moment of inertia (divided by density) about the
