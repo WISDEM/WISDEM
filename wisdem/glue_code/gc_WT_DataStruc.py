@@ -2417,7 +2417,11 @@ class Floating(om.Group):
             self.add_subsystem(f"memgrid{k}", MemberGrid(n_height=n_height, n_geom=n_geom, n_layers=n_layers, member_shape=floating_init_options["members"]["outer_shape"][k]))
             self.connect(f"memgrp{k}.s_in", f"memgrid{k}.s_in")
             self.connect(f"memgrp{k}.s", f"memgrid{k}.s_grid")
-            self.connect(f"memgrp{k}.outer_diameter_in", f"memgrid{k}.outer_diameter_in")
+            if floating_init_options["members"]["outer_shape"][k] == "circular":
+                self.connect(f"memgrp{k}.outer_diameter_in", f"memgrid{k}.outer_diameter_in")
+            elif floating_init_options["members"]["outer_shape"][k] == "rectangular":
+                self.connect(f"memgrp{k}.side_length_a_in", f"memgrid{k}.side_length_a_in")
+                self.connect(f"memgrp{k}.side_length_b_in", f"memgrid{k}.side_length_b_in")
             self.connect(f"memgrp{k}.layer_thickness_in", f"memgrid{k}.layer_thickness_in")
 
         self.add_subsystem("alljoints", AggregateJoints(floating_init_options=floating_init_options), promotes=["*"])
@@ -2426,7 +2430,13 @@ class Floating(om.Group):
             name_member = floating_init_options["members"]["name"][i]
             idx = floating_init_options["members"]["name2idx"][name_member]
             self.connect(f"memgrp{idx}.grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
-            self.connect(f"memgrid{idx}.outer_diameter", "member_" + name_member + ":outer_diameter")
+            if floating_init_options["members"]["outer_shape"][i] == "circular":
+                self.connect(f"memgrid{idx}.outer_diameter", "member_" + name_member + ":outer_diameter")
+            elif floating_init_options["members"]["outer_shape"][i] == "rectangular":
+                # TODO: AggregatedJoints hasn't included rectangular yet, so not connection now
+                print("WARNING: AggregatedJoints hasn't included rectangular yet")
+                # self.connect(f"memgrid{idx}.side_length_a", "member_" + name_member + ":side_length_a")
+                # self.connect(f"memgrid{idx}.side_length_b", "member_" + name_member + ":side_length_b")
             self.connect(f"memgrp{idx}.s", "member_" + name_member + ":s")
 
 

@@ -54,7 +54,9 @@ class PlatformLoads(om.ExplicitComponent):
             mem_qdyn, _ = util.nodal2sectional(inputs[f"member{k}:qdyn"][:n, :])
 
             # The loads should come in with length n+1
-            n -= 1
+            if n > 0:
+                # Avoid the case that has null starting from first element
+                n -= 1
             if k == 0:
                 elem_Px1 = inputs[f"member{k}:Px"][:n, :]
                 elem_Px2 = inputs[f"member{k}:Px"][1 : (n + 1), :]
@@ -646,6 +648,7 @@ class FloatingFrame(om.Group):
 
         for k in range(n_member):
             n_full = get_nfull(opt["floating"]["members"]["n_height"][k], nref=2)
+            shape = opt["floating"]["members"]["outer_shape"][k]
             self.add_subsystem(
                 f"memload{k}",
                 MemberLoads(

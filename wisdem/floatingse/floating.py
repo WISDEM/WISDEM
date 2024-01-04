@@ -38,6 +38,7 @@ class FloatingSE(om.Group):
                     n_mat=opt["materials"]["n_mat"],
                     memmax=True,
                     n_refine=2,
+                    member_shape=opt["floating"]["members"]["outer_shape"][k],
                 ),
                 promotes=mem_prom + [("joint1", f"member{k}:joint1"), ("joint2", f"member{k}:joint2")],
             )
@@ -99,5 +100,7 @@ class FloatingSE(om.Group):
             self.connect(f"member{k}.nodes_xyz_all", f"member{k}:nodes_xyz")
             self.connect(f"member{k}.nodes_r_all", f"member{k}:nodes_r")
 
-            for var in mem_load_vars:
-                self.connect(f"member{k}.{var}", f"memload{k}.{var}")
+            # Member loads hasn't included rectangular yet, so for now, just connect outer_diameter when it is circular
+            if opt["floating"]["members"]["outer_shape"][k] == "circular":
+                for var in mem_load_vars:
+                    self.connect(f"member{k}.{var}", f"memload{k}.{var}")

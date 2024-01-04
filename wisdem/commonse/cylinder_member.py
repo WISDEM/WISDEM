@@ -320,8 +320,10 @@ class DiscretizationYAML(om.ExplicitComponent):
             raise ValueError("Section height values must be greater than zero, " + str(outputs["section_height"]))
         if np.any(outputs["wall_thickness"] <= 0.0):
             raise ValueError("Wall thickness values must be greater than zero, " + str(outputs["wall_thickness"]))
-        if np.any(outputs["outer_diameter"] <= 0.0):
+        if (shape == "circular") and np.any(outputs["outer_diameter"] <= 0.0):
             raise ValueError("Diameter values must be greater than zero, " + str(outputs["outer_diameter"]))
+        if (shape == "rectangular") and (np.any(outputs["side_length_a"] <= 0.0) or np.any(outputs["side_length_b"] <= 0.0)):
+            raise ValueError("Rectangular lengths must be greater than zero, length a {}, length b{}".format(outputs["side_length_a"], outputs["side_length_b"]))
 
         # DETERMINE MATERIAL PROPERTIES IN EACH SECTION
         # Convert to isotropic material
@@ -408,8 +410,12 @@ class DiscretizationYAML(om.ExplicitComponent):
         z = 0.5 * (z_param[:-1] + z_param[1:])
         if shape == "circular":
             D, _ = util.nodal2sectional(outputs["outer_diameter"])
-        itube = cs.Tube(D, outputs["wall_thickness"])
-        Az, Ixx, Iyy, Jz = itube.Area, itube.Ixx, itube.Iyy, itube.J0
+            isection = cs.Tube(D, outputs["wall_thickness"])
+        elif shape == "rectangular":
+            a, _ = util.nodal2sectional(outputs["side_length_a"])
+            b, _ = util.nodal2sectional(outputs["side_length_b"])
+            isection = cs.Rectangle(a, b, outputs["wall_thickness"])
+        Az, Ixx, Iyy, Jz = isection.Area, isection.Ixx, isection.Iyy, isection.J0
         outputs["z_param"] = z_param
         outputs["sec_loc"] = 0.0 if len(z) == 1 else (z - z[0]) / (z[-1] - z[0])
         # Add outfitting mass to mass density and MofI, but not stiffness
@@ -424,12 +430,12 @@ class DiscretizationYAML(om.ExplicitComponent):
         # While the sections are simple, store cross section info for fatigue
         ax_load2stress = np.zeros([n_height - 1, 6])
         sh_load2stress = np.zeros([n_height - 1, 6])
-        ax_load2stress[:, 2] = 1.0 / itube.Area
-        ax_load2stress[:, 3] = 1.0 / itube.Sx
-        ax_load2stress[:, 4] = 1.0 / itube.Sy
-        sh_load2stress[:, 0] = 1.0 / itube.Asx
-        sh_load2stress[:, 1] = 1.0 / itube.Asy
-        sh_load2stress[:, 5] = 1.0 / itube.C
+        ax_load2stress[:, 2] = 1.0 / isection.Area
+        ax_load2stress[:, 3] = 1.0 / isection.Sx
+        ax_load2stress[:, 4] = 1.0 / isection.Sy
+        sh_load2stress[:, 0] = 1.0 / isection.Asx
+        sh_load2stress[:, 1] = 1.0 / isection.Asy
+        sh_load2stress[:, 5] = 1.0 / isection.C
         outputs["axial_load2stress"] = ax_load2stress
         outputs["shear_load2stress"] = sh_load2stress
 
@@ -1033,7 +1039,12 @@ class MemberComplex(om.ExplicitComponent):
         self.add_input("height", val=0.0, units="m")
         self.add_input("s_full", np.zeros(n_full), units="m")
         self.add_input("z_full", np.zeros(n_full), units="m")
-        self.add_input("outer_diameter_full", np.zeros(n_full), units="m")
+        self.shape = opt["outer_shape"][idx]
+        if self.shape == "circular":
+            self.add_input("outer_diameter_full", np.zeros(n_full), units="m")
+        elif self.shape == "rectangular":
+            self.add_input("side_length_a_full", np.zeros(n_full), units="m")
+            self.add_input("side_length_b_full", np.zeros(n_full), units="m")
         self.add_input("t_full", np.zeros(n_full - 1), units="m")
         self.add_input("E_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_input("G_full", val=np.zeros(n_full - 1), units="Pa")
@@ -1173,7 +1184,11 @@ class MemberComplex(om.ExplicitComponent):
         # Unpack inputs
         s_full = inputs["s_full"]
         t_full = inputs["t_full"]
-        outer_diameter_full = inputs["outer_diameter_full"]
+        if self.shape == "circular":
+            outer_diameter_full = inputs["outer_diameter_full"]
+        elif self.shape == "rectangular":
+            side_length_a_full = inputs["side_length_a_full"]
+            side_length_b_full = inputs["side_length_b_full"]
         rho = inputs["rho_full"]
         Emat = inputs["E_full"]
         Gmat = inputs["G_full"]
@@ -1192,41 +1207,72 @@ class MemberComplex(om.ExplicitComponent):
         n_stiff = 0 if th_stiffener == 0.0 else 2 * np.pi / th_stiffener
 
         # Outer and inner radius of web by section
-        d_sec, _ = util.nodal2sectional(outer_diameter_full)
-        R_wo = 0.5 * d_sec - t_full
-        R_wi = R_wo - h_web
-        R_w = 0.5 * (R_wo + R_wi)
+        if self.shape == "circular":
+            d_sec, _ = util.nodal2sectional(outer_diameter_full)
+            R_wo = 0.5 * d_sec - t_full
+            R_wi = R_wo - h_web
+            R_w = 0.5 * (R_wo + R_wi)
 
-        # Outer and inner radius of flange by section
-        R_fo = R_wi
-        R_fi = R_fo - t_flange
-        R_f = 0.5 * (R_fo + R_fi)
+            # Outer and inner radius of flange by section
+            R_fo = R_wi
+            R_fi = R_fo - t_flange
+            R_f = 0.5 * (R_fo + R_fi)
 
-        A_web = h_web * t_web
-        A_flange = w_flange * t_flange
-        A_stiff = n_stiff * (A_web + A_flange)
-        Ix_stiff = 0.5 * n_stiff * (A_web * R_w**2 + A_flange * R_f**2)
-        Iz_stiff = 2 * Ix_stiff
-        t_eff = A_stiff / (2 * np.pi * R_w)
+            A_web = h_web * t_web
+            A_flange = w_flange * t_flange
+            A_stiff = n_stiff * (A_web + A_flange)
+            Ix_stiff = 0.5 * n_stiff * (A_web * R_w**2 + A_flange * R_f**2)
+            Iz_stiff = 2 * Ix_stiff
+            t_eff = A_stiff / (2 * np.pi * R_w)
+        elif self.shape == "rectangular":
+            a_sec, _ = util.nodal2sectional(side_length_a_full)
+            b_sec, _ = util.nodal2sectional(side_length_b_full)
+            # NO Stiffeners for rectangular members for now
+            A_web = np.zeros_like(t_web)
+            A_flange = np.zeros_like(t_flange)
+            A_stiff = np.zeros_like(A_web)
+            Ix_stiff = np.zeros_like(a_sec)
+            Iz_stiff = np.zeros_like(a_sec)
+            t_eff = np.zeros_like(a_sec)
 
         # Add sections for structural analysis
-        for k in range(len(s_full) - 1):
-            itube = cs.Tube(d_sec[k], t_full[k])
-            iprop = CircCrossSection(
-                D=d_sec[k],
-                t=coeff[k] * t_full[k] + t_eff[k],
-                A=coeff[k] * itube.Area + A_stiff,
-                Ixx=coeff[k] * itube.Ixx + Ix_stiff[k],
-                Iyy=coeff[k] * itube.Iyy + Ix_stiff[k],
-                J0=coeff[k] * itube.J0 + Iz_stiff[k],
-                Asx=itube.Asx,
-                Asy=itube.Asy,
-                rho=rho[k],
-                E=Emat[k],
-                G=Gmat[k],
-                sigy=sigymat[k],
-            )
-            self.add_section(s_full[k], s_full[k + 1], iprop)
+        if self.shape == "circular":
+            for k in range(len(s_full) - 1):
+                itube = cs.Tube(d_sec[k], t_full[k])
+                iprop = CircCrossSection(
+                    D=d_sec[k],
+                    t=coeff[k] * t_full[k] + t_eff[k],
+                    A=coeff[k] * itube.Area + A_stiff,
+                    Ixx=coeff[k] * itube.Ixx + Ix_stiff[k],
+                    Iyy=coeff[k] * itube.Iyy + Ix_stiff[k],
+                    J0=coeff[k] * itube.J0 + Iz_stiff[k],
+                    Asx=itube.Asx,
+                    Asy=itube.Asy,
+                    rho=rho[k],
+                    E=Emat[k],
+                    G=Gmat[k],
+                    sigy=sigymat[k],
+                )
+                self.add_section(s_full[k], s_full[k + 1], iprop)
+        elif self.shape == "rectangular":
+            for k in range(len(s_full) - 1):
+                irect = cs.Rectangle(a_sec[k], b_sec[k], t_full[k])
+                iprop = RectCrossSection(
+                    a=a_sec[k],
+                    b=b_sec[k],
+                    t=coeff[k] * t_full[k] + t_eff[k],
+                    A=coeff[k] * irect.Area + A_stiff,
+                    Ixx=coeff[k] * irect.Ixx + Ix_stiff[k],
+                    Iyy=coeff[k] * irect.Iyy + Ix_stiff[k],
+                    J0=coeff[k] * irect.J0 + Iz_stiff[k],
+                    Asx=irect.Asx,
+                    Asy=irect.Asy,
+                    rho=rho[k],
+                    E=Emat[k],
+                    G=Gmat[k],
+                    sigy=sigymat[k],
+                )
+                self.add_section(s_full[k], s_full[k + 1], iprop)
 
         # Adjust for ghost sections
         if s_ghost1 > 0.0:
@@ -1244,23 +1290,26 @@ class MemberComplex(om.ExplicitComponent):
                 self.sections[s].make_ghost()
 
         # Shell mass properties with new interpolation in case ghost nodes were added
-        s_grid = np.array(list(self.sections.keys()))
-        s_section = 0.5 * (s_grid[:-1] + s_grid[1:])
-        R = np.interp(s_grid, s_full, 0.5 * outer_diameter_full)
-        Rb = R[:-1]
-        Rt = R[1:]
-        zz = np.interp(s_grid, s_full, inputs["z_full"])
-        H = np.diff(zz)
-        t_full = util.sectionalInterp(s_section, s_full, inputs["t_full"])
-        rho = util.sectionalInterp(s_section, s_full, inputs["rho_full"])
-        rho[s_section < s_ghost1] = 0.0
-        rho[s_section > s_ghost2] = 0.0
-        coeff = util.sectionalInterp(s_section, s_full, coeff)
-        k_m = util.sectionalInterp(s_section, s_full, inputs["unit_cost_full"])
-        R_w = 0.5 * (Rb + Rt) - t_full - 0.5 * h_web
-        R_f = 0.5 * (Rb + Rt) - t_full - h_web - 0.5 * t_flange
-        Ix_stiff = 0.5 * n_stiff * (A_web * R_w**2 + A_flange * R_f**2)
-        Iz_stiff = 2 * Ix_stiff
+        # Only limited to circular member for now.
+        if self.shape == "circular":
+            s_grid = np.array(list(self.sections.keys()))
+            s_section = 0.5 * (s_grid[:-1] + s_grid[1:])
+            R = np.interp(s_grid, s_full, 0.5 * outer_diameter_full)
+            Rb = R[:-1]
+            Rt = R[1:]
+            zz = np.interp(s_grid, s_full, inputs["z_full"])
+            H = np.diff(zz)
+            t_full = util.sectionalInterp(s_section, s_full, inputs["t_full"])
+            rho = util.sectionalInterp(s_section, s_full, inputs["rho_full"])
+            rho[s_section < s_ghost1] = 0.0
+            rho[s_section > s_ghost2] = 0.0
+            coeff = util.sectionalInterp(s_section, s_full, coeff)
+            k_m = util.sectionalInterp(s_section, s_full, inputs["unit_cost_full"])
+            R_w = 0.5 * (Rb + Rt) - t_full - 0.5 * h_web
+            R_f = 0.5 * (Rb + Rt) - t_full - h_web - 0.5 * t_flange
+            Ix_stiff = 0.5 * n_stiff * (A_web * R_w**2 + A_flange * R_f**2)
+            Iz_stiff = 2 * Ix_stiff
+
 
         # Total mass of cylinder
         V_shell = frustum.frustumShellVol(Rb, Rt, t_full, H)
@@ -2369,12 +2418,14 @@ class MemberBase(om.Group):
             util_con.GeometricConstraints(nPoints=n_height, diamFlag=True),
             promotes=promlist,
         )
-        self.connect("outer_diameter", "gc.d")
+        
         self.connect("wall_thickness", "gc.t")
 
         if member_shape == "circular":
             member_shape_variables = ["outer_diameter"]
+            self.connect("outer_diameter", "gc.d")
         elif member_shape == "rectangular":
+            # TODO: geometricconstraint hasn't considered rectangular member yet, so not connection
             member_shape_variables = ["side_length_a", "side_length_b"]
 
         self.add_subsystem("geom", MemberDiscretization(n_height=n_height, n_refine=n_refine, member_shape_variables = member_shape_variables), promotes=["*"])
@@ -2415,6 +2466,7 @@ class MemberDetailed(om.Group):
         self.options.declare("n_mat")
         self.options.declare("n_refine", default=1)
         self.options.declare("memmax", default=True)
+        self.options.declare("member_shape", default="circular")
 
     def setup(self):
         opt = self.options["column_options"]
@@ -2422,10 +2474,12 @@ class MemberDetailed(om.Group):
         n_mat = self.options["n_mat"]
         n_refine = self.options["n_refine"]
         memmax = self.options["memmax"]
+        member_shape = self.options["member_shape"]
+
 
         self.add_subsystem(
             "base",
-            MemberBase(column_options=opt, idx=idx, n_mat=n_mat, n_refine=n_refine, memmax=memmax),
+            MemberBase(column_options=opt, idx=idx, n_mat=n_mat, n_refine=n_refine, memmax=memmax, member_shape=member_shape),
             promotes=["*"],
         )
 

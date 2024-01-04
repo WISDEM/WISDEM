@@ -351,7 +351,7 @@ class WindTurbineOntologyPython(object):
                     grid_b = self.wt_init["components"]["floating_platform"]["members"][i]["outer_shape"]["side_length_b"][
                             "grid"
                         ][:]
-                    assert (grid == grid_b).all(), "Side length a and b don't have the same grid but they should."
+                    assert grid == grid_b, "Side length a and b don't have the same grid but they should."
                     
                 # Grid for just diameter / thickness design
                 geom_grid = grid[:]
