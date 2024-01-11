@@ -31,7 +31,8 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
 
     if modeling_options["flags"]["blade"]:
         blade = wt_init["components"]["blade"]
-        wt_opt = assign_blade_values(wt_opt, modeling_options, blade)
+        blade_DV = opt_options['design_variables']['blade']
+        wt_opt = assign_blade_values(wt_opt, modeling_options, blade_DV, blade)
     else:
         blade = {}
 
@@ -106,16 +107,17 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     return wt_opt
 
 
-def assign_blade_values(wt_opt, modeling_options, blade):
+def assign_blade_values(wt_opt, modeling_options, blade_DV, blade):
     # Function to assign values to the openmdao group Blade
-    wt_opt = assign_outer_shape_bem_values(wt_opt, modeling_options, blade["outer_shape_bem"])
+    blade_DV_aero = blade_DV['aero_shape']
+    wt_opt = assign_outer_shape_bem_values(wt_opt, modeling_options, blade_DV_aero, blade["outer_shape_bem"])
     wt_opt = assign_internal_structure_2d_fem_values(wt_opt, modeling_options, blade["internal_structure_2d_fem"])
     wt_opt = assign_te_flaps_values(wt_opt, modeling_options, blade)
 
     return wt_opt
 
 
-def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
+def assign_outer_shape_bem_values(wt_opt, modeling_options, blade_DV_aero, outer_shape_bem):
     # Function to assign values to the openmdao component Blade_Outer_Shape_BEM
 
     nd_span = modeling_options["WISDEM"]["RotorSE"]["nd_span"]
@@ -133,7 +135,16 @@ def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
     wt_opt["blade.outer_shape_bem.pitch_axis_yaml"] = PchipInterpolator(
         outer_shape_bem["pitch_axis"]["grid"], outer_shape_bem["pitch_axis"]["values"]
     )(nd_span)
-
+    af_opt_flag = blade_DV_aero['af_positions']['flag']
+    if 'rthick' in outer_shape_bem and af_opt_flag == False:
+        # If rthick is defined in input yaml and we are NOT optimizing airfoil positions
+        wt_opt["blade.outer_shape_bem.r_thick_yaml"] = PchipInterpolator(
+            outer_shape_bem["rthick"]["grid"], outer_shape_bem["rthick"]["values"]
+        )(nd_span)
+    elif 'rthick' in outer_shape_bem and af_opt_flag == True:
+        logger.warning('rthick field in input geometry yaml is specified but neglected since you are optimizing airfoil positions')
+    else:
+        logger.warning('rthick field in input geometry yaml not specified. rthick is reconstructed from discrete airfoil positions')
     wt_opt["blade.outer_shape_bem.ref_axis_yaml"][:, 0] = PchipInterpolator(
         outer_shape_bem["reference_axis"]["x"]["grid"], outer_shape_bem["reference_axis"]["x"]["values"]
     )(nd_span)
@@ -1398,7 +1409,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=F
         r_thick[i] = airfoils[i]["relative_thickness"]
         for j in range(len(airfoils[i]["polars"])):
             Re_all.append(airfoils[i]["polars"][j]["re"])
-    Re = np.array(sorted(np.unique(Re_all)))
+    Re = np.unique(Re_all)
 
     cl = np.zeros((n_af, n_aoa, n_Re, n_tab))
     cd = np.zeros((n_af, n_aoa, n_Re, n_tab))
@@ -1408,12 +1419,13 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=F
 
     # Interp cl-cd-cm along predefined grid of angle of attack
     for i in range(n_af):
-        n_Re_i = len(airfoils[i]["polars"])
+        Re_i = np.array( [airfoils[i]["polars"][j]["re"] for j in range(len(airfoils[i]["polars"]))] )
+        n_Re_i = len(np.unique(Re_i))
         Re_j = np.zeros(n_Re_i)
         j_Re = np.zeros(n_Re_i, dtype=int)
         for j in range(n_Re_i):
             Re_j[j] = airfoils[i]["polars"][j]["re"]
-            j_Re[j] = np.argmin(abs(Re - Re_j[j]))
+            j_Re[j] = np.argmin(np.abs(Re - Re_j[j]))
             for k in range(n_tab):
                 cl[i, :, j_Re[j], k] = PchipInterpolator(
                     airfoils[i]["polars"][j]["c_l"]["grid"], airfoils[i]["polars"][j]["c_l"]["values"]
@@ -1425,7 +1437,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=F
                     airfoils[i]["polars"][j]["c_m"]["grid"], airfoils[i]["polars"][j]["c_m"]["values"]
                 )(aoa)
 
-                if abs(cl[i, 0, j, k] - cl[i, -1, j, k]) > 1.0e-5:
+                if np.abs(cl[i, 0, j, k] - cl[i, -1, j, k]) > 1.0e-5:
                     cl[i, 0, j, k] = cl[i, -1, j, k]
                     logger.warning(
                         "WARNING: Airfoil "
@@ -1434,7 +1446,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=F
                         + str(Re_j[j])
                         + " different between + and - pi rad. This is fixed automatically, but please check the input data."
                     )
-                if abs(cd[i, 0, j, k] - cd[i, -1, j, k]) > 1.0e-5:
+                if np.abs(cd[i, 0, j, k] - cd[i, -1, j, k]) > 1.0e-5:
                     cd[i, 0, j, k] = cd[i, -1, j, k]
                     logger.warning(
                         "WARNING: Airfoil "
@@ -1443,7 +1455,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=F
                         + str(Re_j[j])
                         + " different between + and - pi rad. This is fixed automatically, but please check the input data."
                     )
-                if abs(cm[i, 0, j, k] - cm[i, -1, j, k]) > 1.0e-5:
+                if np.abs(cm[i, 0, j, k] - cm[i, -1, j, k]) > 1.0e-5:
                     cm[i, 0, j, k] = cm[i, -1, j, k]
                     logger.warning(
                         "WARNING: Airfoil "

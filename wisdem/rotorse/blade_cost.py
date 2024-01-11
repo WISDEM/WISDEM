@@ -3897,7 +3897,7 @@ class StandaloneBladeCost(om.Group):
             ),
         )
         self.connect("airfoils.name", "blade.interp_airfoils.name")
-        self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick")
+        self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick_discrete")
         self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
 
         self.add_subsystem(
@@ -4007,12 +4007,13 @@ class StandaloneBladeCost(om.Group):
             self.connect("rc.total_blade_cost", "total_bc.inner_blade_cost")
 
 
-def initialize_omdao_prob(wt_opt, modeling_options, wt_init):
+def initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options):
     materials = wt_init["materials"]
     wt_opt = assign_material_values(wt_opt, modeling_options, materials)
 
     blade = wt_init["components"]["blade"]
-    wt_opt = assign_blade_values(wt_opt, modeling_options, blade)
+    blade_DV = opt_options['design_variables']['blade']
+    wt_opt = assign_blade_values(wt_opt, modeling_options, blade_DV, blade)
 
     airfoils = wt_init["airfoils"]
     wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=True)
@@ -4035,5 +4036,5 @@ if __name__ == "__main__":
     wt_opt.setup(derivatives=False)
     myopt = PoseOptimization(wt_init, modeling_options, opt_options)
     wt_opt = myopt.set_initial(wt_opt, wt_init)
-    wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init)
+    wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options)
     wt_opt.run_model()
