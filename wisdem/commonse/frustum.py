@@ -57,7 +57,7 @@ def frustumVol(rb_0, rt_0, h, diamFlag=False):
     return np.pi * (h / 3.0) * (rb * rb + rt * rt + rb * rt)
 
 def RectangularFrustumVol(ab, bb, at, bt, h):
-    """This function returns a frustum's volume with radii or diameter inputs.
+    """This function returns a rectangular frustum's volume with side length inputs.
 
     INPUTS:
     Parameters
@@ -73,15 +73,15 @@ def RectangularFrustumVol(ab, bb, at, bt, h):
     vol : float (scalar/vector), volume
     """
 
-    Atop = ab * bb
-    Abottom = at * bt
+    Abottom = ab * bb
+    Atop = at * bt
 
     V = GeneralFrustumVol(Ab=Abottom, At=Atop, h=h)
     
     return V
 
 def GeneralFrustumVol(Ab, At, h):
-    """This function returns a frustum's volume with radii or diameter inputs.
+    """This function returns a frustum's volume with top and base areas, and height
 
     INPUTS:
     Parameters
@@ -126,7 +126,7 @@ def frustumCG(rb_0, rt_0, h, diamFlag=False):
     return 0.25 * h * (rb**2 + 2.0 * rb * rt + 3.0 * rt**2) / (rb**2 + rb * rt + rt**2)
 
 def RectangularFrustumCG(ab, bb, at, bt, h):
-    """This function returns a frustum's center of mass/gravity (centroid) with radii or diameter inputs.
+    """This function returns a rectangular frustum's center of mass/gravity (centroid) with side lengths and height
     NOTE: This is for a SOLID frustum, not a shell
 
     INPUTS:
@@ -195,8 +195,8 @@ def frustumIzz(rb_0, rt_0, h, diamFlag=False):
     return 0.1 * np.pi * h * (rt**4.0 + rb * rt**3 + rb**2 * rt**2 + rb**3 * rt + rb**4.0)
 
 def RectangularFrustumIzz(ab, bb, at, bt, h):
-    """This function returns a frustum's mass-moment of inertia (divided by density) about the
-    central (axial) z-axis with radii or diameter inputs.
+    """This function returns a rectangular frustum's mass-moment of inertia (divided by density) about the
+    central (axial) z-axis with side lengths and height
     NOTE: This is for a SOLID frustum, not a shell
 
     INPUTS:
@@ -260,8 +260,8 @@ def frustumIxx(rb_0, rt_0, h, diamFlag=False):
 
 
 def RectangularFrustumIxx(ab, bb, at, bt, h):
-    """This function returns a frustum's mass-moment of inertia (divided by density) about the
-    central (axial) z-axis with radii or diameter inputs.
+    """This function returns a rectangular frustum's mass-moment of inertia (divided by density) about the
+    central (axial) z-axis with side lengths and height
     NOTE: This is for a SOLID frustum, not a shell
 
     INPUTS:
@@ -288,8 +288,8 @@ def RectangularFrustumIxx(ab, bb, at, bt, h):
     return y2 + z2
 
 def RectangularFrustumIyy(ab, bb, at, bt, h):
-    """This function returns a frustum's mass-moment of inertia (divided by density) about the
-    central (axial) z-axis with radii or diameter inputs.
+    """This function returns a rectangular frustum's mass-moment of inertia (divided by density) about the
+    central (axial) z-axis with side lengths and height
     NOTE: This is for a SOLID frustum, not a shell
 
     INPUTS:
@@ -347,7 +347,7 @@ def frustumShellVol(rb_0, rt_0, t, h, diamFlag=False):
     return frustumVol(rb_o, rt_o, h) - frustumVol(rb_i, rt_i, h)
 
 def RectangularFrustumShellVol(ab, bb, at, bt, t, h):
-    """This function returns a frustum shell's volume (for computing mass with density) with side lengths.
+    """This function returns a rectangular frustum shell's volume (for computing mass with density) with side lengths.
     NOTE: This is for a frustum SHELL, not a solid
 
     INPUTS:
@@ -420,7 +420,7 @@ def frustumShellCG(rb_0, rt_0, t, h, diamFlag=False):
     return h * A / 4.0 / B
 
 def RectangularFrustumShellCG(ab, bb, at, bt, t, h):
-    """This function returns a frustum's center of mass/gravity (centroid) with radii or diameter inputs.
+    """This function returns a rectangular frustum's center of mass/gravity (centroid) with side lengths and height
     NOTE: This is for a frustum SHELL, not a solid
 
     INPUTS:
@@ -472,8 +472,8 @@ def frustumShellIzz(rb_0, rt_0, t, h, diamFlag=False):
     return frustumIzz(rb_o, rt_o, h) - frustumIzz(rb_i, rt_i, h)
 
 def RectangularFrustumShellIzz(ab, bb, at, bt, t, h):
-    """This function returns a frustum's mass-moment of inertia (divided by density) about the
-    central (axial) z-axis with radii or diameter inputs.
+    """This function returns a rectangular frustum's mass-moment of inertia (divided by density) about the
+    central (axial) z-axis with side lengths
     NOTE: This is for a frustum SHELL, not a solid
 
     INPUTS:
@@ -533,8 +533,8 @@ def frustumShellIxx(rb_0, rt_0, t, h, diamFlag=False):
     return frustumIxx(rb_o, rt_o, h) - frustumIxx(rb_i, rt_i, h)
 
 def RectangularFrustumShellIxx(ab, bb, at, bt, t, h):
-    """This function returns a frustum's mass-moment of inertia (divided by density) about the
-    central (axial) z-axis with radii or diameter inputs.
+    """This function returns a rectangular frustum's mass-moment of inertia (divided by density) about the
+    central (axial) z-axis with side lengths and height
     NOTE: This is for a frustum SHELL, not a solid
 
     INPUTS:
@@ -563,8 +563,8 @@ def RectangularFrustumShellIxx(ab, bb, at, bt, t, h):
     return RectangularFrustumIxx(ab_o, bb_o, at_o, bt_o, h) - RectangularFrustumIxx(ab_i, bb_i, at_i, bt_i, h)
 
 def RectangularFrustumShellIyy(ab, bb, at, bt, t, h):
-    """This function returns a frustum's mass-moment of inertia (divided by density) about the
-    central (axial) z-axis with radii or diameter inputs.
+    """This function returns a rectangular frustum's mass-moment of inertia (divided by density) about the
+    central (axial) z-axis with side lengths and height
     NOTE: This is for a frustum SHELL, not a solid
 
     INPUTS:

@@ -120,10 +120,12 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
 
         # Setup openmdao problem
         wt_opt.setup()
+        om.n2(wt_opt)
 
         # Load initial wind turbine data from wt_initial to the openmdao problem
         wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
+        print("Checking: ", wt_opt["floating.memgrp8.side_length_a_in"][0])
 
         # If the user provides values in this dict, they overwrite
         # whatever values have been set by the yaml files.
