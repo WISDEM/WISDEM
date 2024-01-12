@@ -1,5 +1,5 @@
 name: IEA 15MW Offshore Reference Turbine Scaled to 20MW
-assembly: {turbine_class: I, turbulence_class: B, drivetrain: direct_drive, rotor_orientation: Upwind, number_of_blades: 3, hub_height: 170.0, rotor_diameter: 241.94, rated_power: 20000000.0, lifetime: 25.0}
+assembly: {turbine_class: I, turbulence_class: B, drivetrain: direct_drive, rotor_orientation: Upwind, number_of_blades: 3, hub_height: 170.0, rotor_diameter: 279.71, rated_power: 20000000.0, lifetime: 25.0}
 components:
     blade:
         outer_shape_bem:
