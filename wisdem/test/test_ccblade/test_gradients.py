@@ -18,8 +18,7 @@ import unittest
 import numpy as np
 
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
-
-basepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../examples/_airfoil_files/")
+from wisdem.inputs.validation import load_geometry_yaml
 
 
 class TestGradients(unittest.TestCase):
@@ -97,18 +96,22 @@ class TestGradients(unittest.TestCase):
         self.rho = 1.225
         self.mu = 1.81206e-5
 
-        afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
-
-        # load all airfoils
-        airfoil_types = [0] * 8
-        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")[0]
-        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")[0]
-        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")[0]
-        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")[0]
-        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")[0]
-        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")[0]
-        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")[0]
-        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")[0]
+        baseyaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../examples/02_reference_turbines/nrel5mw.yaml")
+        data = load_geometry_yaml(baseyaml)
+        af = data['airfoils']
+        af_names = ["Cylinder", "Cylinder", "DU40_A17", "DU35_A17", "DU30_A17", "DU25_A17", "DU21_A17", "NACA64_A17"]
+        airfoil_types = [0] * len(af_names)
+        for i in range(len(af_names)):
+            for j in range(len(af)):
+                if af[j]["name"] == af_names[i]:
+                    polars = af[j]['polars'][0]
+                    airfoil_types[i] = CCAirfoil(
+                        np.rad2deg(polars["c_l"]["grid"]),
+                        [polars["re"]],
+                        polars["c_l"]["values"],
+                        polars["c_d"]["values"],
+                        polars["c_m"]["values"],
+                    )
 
         # place at appropriate radial stations
         af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
@@ -3631,18 +3634,22 @@ class TestGradientsNotRotating(unittest.TestCase):
         self.rho = 1.225
         self.mu = 1.81206e-5
 
-        afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
-
-        # load all airfoils
-        airfoil_types = [0] * 8
-        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")[0]
-        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")[0]
-        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")[0]
-        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")[0]
-        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")[0]
-        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")[0]
-        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")[0]
-        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")[0]
+        baseyaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../examples/02_reference_turbines/nrel5mw.yaml")
+        data = load_geometry_yaml(baseyaml)
+        af = data['airfoils']
+        af_names = ["Cylinder", "Cylinder", "DU40_A17", "DU35_A17", "DU30_A17", "DU25_A17", "DU21_A17", "NACA64_A17"]
+        airfoil_types = [0] * len(af_names)
+        for i in range(len(af_names)):
+            for j in range(len(af)):
+                if af[j]["name"] == af_names[i]:
+                    polars = af[j]['polars'][0]
+                    airfoil_types[i] = CCAirfoil(
+                        np.rad2deg(polars["c_l"]["grid"]),
+                        [polars["re"]],
+                        polars["c_l"]["values"],
+                        polars["c_d"]["values"],
+                        polars["c_m"]["values"],
+                    )
 
         # place at appropriate radial stations
         af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
@@ -4574,18 +4581,22 @@ class TestGradientsFreestreamArray(unittest.TestCase):
         self.rho = 1.225
         self.mu = 1.81206e-5
 
-        afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
-
-        # load all airfoils
-        airfoil_types = [0] * 8
-        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")[0]
-        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")[0]
-        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")[0]
-        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")[0]
-        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")[0]
-        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")[0]
-        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")[0]
-        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")[0]
+        baseyaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../examples/02_reference_turbines/nrel5mw.yaml")
+        data = load_geometry_yaml(baseyaml)
+        af = data['airfoils']
+        af_names = ["Cylinder", "Cylinder", "DU40_A17", "DU35_A17", "DU30_A17", "DU25_A17", "DU21_A17", "NACA64_A17"]
+        airfoil_types = [0] * len(af_names)
+        for i in range(len(af_names)):
+            for j in range(len(af)):
+                if af[j]["name"] == af_names[i]:
+                    polars = af[j]['polars'][0]
+                    airfoil_types[i] = CCAirfoil(
+                        np.rad2deg(polars["c_l"]["grid"]),
+                        [polars["re"]],
+                        polars["c_l"]["values"],
+                        polars["c_d"]["values"],
+                        polars["c_m"]["values"],
+                    )
 
         # place at appropriate radial stations
         af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
@@ -5033,18 +5044,22 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         self.rho = 1.225
         self.mu = 1.81206e-5
 
-        afinit = CCAirfoil.initFromAerodynFile  # just for shorthand
-
-        # load all airfoils
-        airfoil_types = [0] * 8
-        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")[0]
-        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")[0]
-        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")[0]
-        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")[0]
-        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")[0]
-        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")[0]
-        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")[0]
-        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")[0]
+        baseyaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../examples/02_reference_turbines/nrel5mw.yaml")
+        data = load_geometry_yaml(baseyaml)
+        af = data['airfoils']
+        af_names = ["Cylinder", "Cylinder", "DU40_A17", "DU35_A17", "DU30_A17", "DU25_A17", "DU21_A17", "NACA64_A17"]
+        airfoil_types = [0] * len(af_names)
+        for i in range(len(af_names)):
+            for j in range(len(af)):
+                if af[j]["name"] == af_names[i]:
+                    polars = af[j]['polars'][0]
+                    airfoil_types[i] = CCAirfoil(
+                        np.rad2deg(polars["c_l"]["grid"]),
+                        [polars["re"]],
+                        polars["c_l"]["values"],
+                        polars["c_d"]["values"],
+                        polars["c_m"]["values"],
+                    )
 
         # place at appropriate radial stations
         af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
