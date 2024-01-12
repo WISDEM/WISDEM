@@ -2493,12 +2493,14 @@ class MemberLoads(om.Group):
         self.options.declare("wind", default="Power")
         self.options.declare("hydro", default=True)
         self.options.declare("memmax", default=False)
+        self.options.declare("member_shape", default="circular")
 
     def setup(self):
         n_full = self.options["n_full"]
         nLC = self.options["n_lc"]
         hydro = self.options["hydro"]
         memmax = self.options["memmax"]
+        member_shape = self.options["member_shape"]
 
         prom = [
             ("zref", "wind_reference_height"),
@@ -2529,7 +2531,7 @@ class MemberLoads(om.Group):
 
             self.add_subsystem(
                 f"env{lc}",
-                CylinderEnvironment(nPoints=n_full, water_flag=hydro, wind=self.options["wind"]),
+                CylinderEnvironment(nPoints=n_full, water_flag=hydro, wind=self.options["wind"], member_shape=member_shape),
                 promotes=prom,
             )
             # self.connect("z_dim", "z")

@@ -656,6 +656,7 @@ class FloatingFrame(om.Group):
                     n_lc=nLC,
                     hydro=True,
                     memmax=True,
+                    member_shape=shape,
                 ),
                 promotes=mem_prom + U_prom + [("joint1", f"member{k}:joint1"), ("joint2", f"member{k}:joint2")],
             )
