@@ -73,7 +73,7 @@ properties:
             rotor_diameter:
                 type: number
                 default: 0
-                description: Diameter of the rotor, defined as two times the blade length plus the hub diameter
+                description: Diameter of the rotor, defined as two times the projected blade length plus the hub diameter
                 unit: m
                 minimum: 0
                 maximum: 1000
