@@ -101,14 +101,14 @@ class TestGradients(unittest.TestCase):
 
         # load all airfoils
         airfoil_types = [0] * 8
-        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")
-        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")
-        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")
-        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")
-        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")
-        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")
-        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")
-        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")
+        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")[0]
+        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")[0]
+        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")[0]
+        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")[0]
+        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")[0]
+        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")[0]
+        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")[0]
+        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")[0]
 
         # place at appropriate radial stations
         af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
@@ -3635,14 +3635,14 @@ class TestGradientsNotRotating(unittest.TestCase):
 
         # load all airfoils
         airfoil_types = [0] * 8
-        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")
-        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")
-        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")
-        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")
-        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")
-        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")
-        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")
-        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")
+        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")[0]
+        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")[0]
+        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")[0]
+        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")[0]
+        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")[0]
+        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")[0]
+        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")[0]
+        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")[0]
 
         # place at appropriate radial stations
         af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
@@ -4578,14 +4578,14 @@ class TestGradientsFreestreamArray(unittest.TestCase):
 
         # load all airfoils
         airfoil_types = [0] * 8
-        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")
-        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")
-        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")
-        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")
-        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")
-        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")
-        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")
-        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")
+        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")[0]
+        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")[0]
+        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")[0]
+        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")[0]
+        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")[0]
+        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")[0]
+        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")[0]
+        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")[0]
 
         # place at appropriate radial stations
         af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]
@@ -5037,14 +5037,14 @@ class TestGradients_RHub_Tip(unittest.TestCase):
 
         # load all airfoils
         airfoil_types = [0] * 8
-        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")
-        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")
-        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")
-        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")
-        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")
-        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")
-        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")
-        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")
+        airfoil_types[0] = afinit(basepath + os.sep + "Cylinder1.dat")[0]
+        airfoil_types[1] = afinit(basepath + os.sep + "Cylinder2.dat")[0]
+        airfoil_types[2] = afinit(basepath + os.sep + "DU40_A17.dat")[0]
+        airfoil_types[3] = afinit(basepath + os.sep + "DU35_A17.dat")[0]
+        airfoil_types[4] = afinit(basepath + os.sep + "DU30_A17.dat")[0]
+        airfoil_types[5] = afinit(basepath + os.sep + "DU25_A17.dat")[0]
+        airfoil_types[6] = afinit(basepath + os.sep + "DU21_A17.dat")[0]
+        airfoil_types[7] = afinit(basepath + os.sep + "NACA64_A17.dat")[0]
 
         # place at appropriate radial stations
         af_idx = [0, 0, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 7, 7, 7, 7, 7]

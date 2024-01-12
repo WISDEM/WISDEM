@@ -29,7 +29,7 @@ from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
 
 import wisdem.ccblade._bem as _bem
-from wisdem.airfoilprep import Airfoil
+from wisdem.ccblade.Polar import Polar
 
 # ------------------
 #  Airfoil Class
@@ -93,22 +93,83 @@ class CCAirfoil(object):
         if self.use_cm > 0:
             self.cm_spline = RectBivariateSpline(alpha, Re, cm, kx=kx, ky=ky, s=0.0001)
 
+    # @classmethod
+    # def initFromAerodynFile(cls, aerodynFile):
+    #     """convenience method for initializing with AeroDyn formatted files
+    #     Parameters
+    #     ----------
+    #     aerodynFile : str
+    #         location of AeroDyn style airfoiil file
+    #     Returns
+    #     -------
+    #     af : CCAirfoil
+    #         a constructed CCAirfoil object
+    #     """
+
+    #     af = Airfoil.initFromAerodynFile(aerodynFile)
+    #     alpha, Re, cl, cd, cm = af.createDataGrid()
+    #     return cls(alpha, Re, cl, cd, cm=cm)
+    
     @classmethod
     def initFromAerodynFile(cls, aerodynFile):
-        """convenience method for initializing with AeroDyn formatted files
+        """Construct Airfoil object from AeroDyn file
+
         Parameters
         ----------
         aerodynFile : str
-            location of AeroDyn style airfoiil file
+            path/name of a properly formatted Aerodyn file
+
         Returns
         -------
-        af : CCAirfoil
-            a constructed CCAirfoil object
-        """
+        obj : Airfoil
 
-        af = Airfoil.initFromAerodynFile(aerodynFile)
-        alpha, Re, cl, cd, cm = af.createDataGrid()
-        return cls(alpha, Re, cl, cd, cm=cm)
+        """
+        # initialize
+        polars = []
+
+        # open aerodyn file
+        f = open(aerodynFile, "r")
+
+        # skip through header
+        f.readline()
+        description = f.readline().rstrip()  # remove newline
+        f.readline()
+        numTables = int(f.readline().split()[0])
+
+        # loop through tables
+        for i in range(numTables):
+            # read Reynolds number
+            Re = float(f.readline().split()[0]) * 1e6
+
+            # read Aerodyn parameters
+            param = [0] * 8
+            for j in range(8):
+                param[j] = float(f.readline().split()[0])
+
+            alpha = []
+            cl = []
+            cd = []
+            cm = []
+
+            # read polar information line by line
+            while True:
+                line = f.readline()
+                if "EOT" in line:
+                    break
+                data = [float(s) for s in line.split()]
+                if len(data) < 4:
+                    raise ValueError(f"Error: Expected 4 columns of data but found, {data}")
+
+                alpha.append(data[0])
+                cl.append(data[1])
+                cd.append(data[2])
+                cm.append(data[3])
+
+            polars.append(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm)
+
+        f.close()
+
+        return polars
 
     def max_eff(self, Re):
         # Get the angle of attack, cl and cd at max airfoil efficiency. For a cylinder, set the angle of attack to 0
