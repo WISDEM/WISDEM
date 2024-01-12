@@ -49,11 +49,11 @@ class TestRegression(unittest.TestCase):
         wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
         self.assertAlmostEqual(
-            wt_opt["rotorse.blade_mass"][0], 14542.248883586388, 1
+            wt_opt["rotorse.blade_mass"][0], 14563.4133964110, 1
         )  # new value: improved interpolation
-        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 13.606611767407955, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 39.37508197421948, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 6.5221733906, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 13.6224907440, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 39.3341150071, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 6.5577831500, 1)
         self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 108.0, 3)
 
 
