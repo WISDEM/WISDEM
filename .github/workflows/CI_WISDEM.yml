@@ -56,8 +56,10 @@ jobs:
       # Install WISDEM with setup
       # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
       - name: Install WISDEM with setup
+        env:
+          MESON_ARGS: ""
         run: |
-          python -m pip install -e . -v
+          python -m pip install . -v
     
       # Debugging session
       #- name: Setup tmate session
@@ -99,7 +101,7 @@ jobs:
       fail-fast: False
       matrix:
         os: [ubuntu-latest] #, windows-latest, macos-latest, 
-        python-version: ["3.10"]
+        python-version: ["3.11"]
 
     steps:
       - name: Setup GNU Fortran
@@ -123,7 +125,7 @@ jobs:
         run: |
           '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip
           '${{ steps.cp.outputs.python-path }}' -m pip install meson-python meson numpy ninja wheel pytest
-          '${{ steps.cp.outputs.python-path }}' -m pip install -v .
+          '${{ steps.cp.outputs.python-path }}' -m pip install --no-build-isolation -e . -v
 
       # Run limited tests
       - name: Limited test
