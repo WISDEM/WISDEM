@@ -57,19 +57,7 @@ jobs:
       # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
       - name: Install WISDEM with setup
         run: |
-          pip install -e .
-
-      # Install WISDEM with pip
-      #- name: Install WISDEM with pip for Unix
-      #  if: false == contains( matrix.os, 'windows')
-      #  run: |
-      #    python install .
-
-      # Install WISDEM with pip
-      #- name: Install WISDEM with pip for Windows
-      #  if: contains( matrix.os, 'windows')
-      #  run: |
-      #      pip install .
+          python -m pip install -e . -v
     
       # Debugging session
       #- name: Setup tmate session
@@ -133,7 +121,8 @@ jobs:
       # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
       - name: Install WISDEM with setup
         run: |
-          '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip install pytest
+          '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip
+          '${{ steps.cp.outputs.python-path }}' -m pip install meson-python meson numpy ninja wheel pytest
           '${{ steps.cp.outputs.python-path }}' -m pip install -v .
 
       # Run limited tests
