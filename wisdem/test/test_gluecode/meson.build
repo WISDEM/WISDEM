@@ -15,10 +15,6 @@ py3.install_sources(
 
 
 data_files = [
-  'analysis_options_COBYLA.yaml',
-  'analysis_options_GA.yaml',
-  'analysis_options_LD_SLSQP.yaml',
-  'analysis_options_Nelder-Mead.yaml',
   'modified_modeling_options.yaml',
   ]
 
