@@ -9,11 +9,11 @@ py3.install_sources(
 )
 
 data_files = [
-  '12MW_generic.csv',
+  '12MW_generic.yaml',
   ]
 
-install_data(
-  sources: data_files,
-  install_dir: 'wisdem/test/test_orbit/data/library/turbines',
+py3.install_sources(
+  data_files,
+  subdir: 'wisdem/test/test_orbit/data/library/turbines',
 )
 

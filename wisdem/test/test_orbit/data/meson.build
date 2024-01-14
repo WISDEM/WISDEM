@@ -9,12 +9,12 @@ py3.install_sources(
 )
 
 data_files = [
-  'analysis_weather.csv',
+  'test_weather.csv',
   ]
 
-install_data(
-  sources: data_files,
-  install_dir: 'wisdem/test/test_orbit/data',
+py3.install_sources(
+  data_files,
+  subdir: 'wisdem/test/test_orbit/data',
 )
 
 subdir('library')

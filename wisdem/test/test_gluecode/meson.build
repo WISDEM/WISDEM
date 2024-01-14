@@ -22,8 +22,8 @@ data_files = [
   'modified_modeling_options.yaml',
   ]
 
-install_data(
-  sources: data_files,
-  install_dir: 'wisdem/test/test_gluecode',
+py3.install_sources(
+  data_files,
+  subdir: 'wisdem/test/test_gluecode',
 )
 

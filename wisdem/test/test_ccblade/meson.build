@@ -16,8 +16,8 @@ data_files = [
   'smaller_dataset.npz'
   ]
 
-install_data(
-  sources: data_files,
-  install_dir: 'wisdem/test/test_ccblade',
+py3.install_sources(
+  data_files,
+  subdir: 'wisdem/test/test_ccblade',
 )
 

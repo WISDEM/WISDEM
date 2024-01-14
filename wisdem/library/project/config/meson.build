@@ -18,7 +18,7 @@ data_files = [
   'example_custom_array_simple_distance_based.yaml',
   ]
 
-install_data(
-  sources: data_files,
-  install_dir: 'wisdem/library/project/config'
+py3.install_sources(
+  data_files,
+  subdir: 'wisdem/library/project/config'
 )

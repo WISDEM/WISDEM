@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools", "numpy", "ninja", "meson>=1.1", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["numpy", "ninja", "meson>=1.1", "meson-python", "wheel"]
+build-backend = "mesonpy"
 
 [project]
 name = "wisdem"
-version = "3.12.0"
+version = "3.13.0"
 description = "Wind-Plant Integrated System Design & Engineering Model"
 readme = "README.md"
 requires-python = ">=3.9"

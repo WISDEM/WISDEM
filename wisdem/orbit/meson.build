@@ -1,33 +1,18 @@
 
 python_sources = [
   '__init__.py',
-  'orbit/phases/install/$file.py',
+  '_version.py',
+  'config.py',
+  'manager.py',
+  'parametric.py',
+  'supply_chain.py',
 ]
 
 py3.install_sources(
   python_sources,
-  subdir: 'wisdem/install_phase.py'
+  subdir: 'wisdem/orbit.py'
 )
-__init__.py
-_version.py
-api
-config.py
-core
-correct_imports.sh
-manager.py
-meson.build
-parametric.py
-phases
-supply_chain.py
-__init__.py
-_version.py
-api
-config.py
-core
-correct_imports.sh
-manager.py
-meson.build
-meson.build-s
-parametric.py
-phases
-supply_chain.py
+
+subdir('api')
+subdir('core')
+subdir('phases')

@@ -12,7 +12,7 @@ data_files = [
   'project.yaml',
   ]
 
-install_data(
-  sources: data_files,
-  install_dir: 'wisdem/library/defaults'
+py3.install_sources(
+  data_files,
+  subdir: 'wisdem/library/defaults'
 )

@@ -22,9 +22,9 @@ data_files = [
   'regulation.npz',
   ]
 
-install_data(
-  sources: data_files,
-  install_dir: 'wisdem/test/test/test_rotorse',
+py3.install_sources(
+  data_files,
+  subdir: 'wisdem/test/test/test_rotorse',
 )
 
 

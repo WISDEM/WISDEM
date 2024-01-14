@@ -13,7 +13,7 @@ data_files = [
   'process_times.yaml',
   ]
 
-install_data(
-  sources: data_files,
-  install_dir: 'wisdem/orbit/core/defaults',
+py3.install_sources(
+  data_files,
+  subdir: 'wisdem/orbit/core/defaults',
 )

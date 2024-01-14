@@ -17,7 +17,7 @@ data_files = [
   'modeling_schema.yaml',
   ]
 
-install_data(
-  sources: data_files,
-  install_dir: 'wisdem/inputs',
+py3.install_sources(
+  data_files,
+  subdir: 'wisdem/inputs',
 )

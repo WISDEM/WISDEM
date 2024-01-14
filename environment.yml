@@ -10,6 +10,7 @@ dependencies:
   - make
   - matplotlib
   - meson
+  - meson-python
   - moorpy
   - mpi4py
   - ninja
@@ -28,7 +29,6 @@ dependencies:
   - pyyaml
   - ruamel.yaml
   - scipy
-  - setuptools
   - simpy
   - sortedcontainers
   - sphinx

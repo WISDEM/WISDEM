@@ -15,7 +15,7 @@ data_files = [
   'SWT_6MW_154m_110m.yaml',
   ]
 
-install_data(
-  sources: data_files,
-  install_dir: 'wisdem/library/turbines'
+py3.install_sources(
+  data_files,
+  subdir: 'wisdem/library/turbines'
 )

@@ -15,7 +15,7 @@ data_files = [
   'default_modeling_options.yaml',
   ]
 
-install_data(
-  sources: data_files,
-  install_dir: 'wisdem/postprocessing',
+py3.install_sources(
+  data_files,
+  subdir: 'wisdem/postprocessing',
 )
