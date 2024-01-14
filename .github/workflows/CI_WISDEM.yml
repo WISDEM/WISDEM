@@ -52,25 +52,24 @@ jobs:
         run: |
           conda list
           which -a gfortran
-          which pip
 
       # Install WISDEM with setup
       # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
       - name: Install WISDEM with setup
         run: |
-          python setup.py install
+          pip install -e .
 
       # Install WISDEM with pip
       #- name: Install WISDEM with pip for Unix
       #  if: false == contains( matrix.os, 'windows')
       #  run: |
-      #    python setup.py install
+      #    python install .
 
       # Install WISDEM with pip
       #- name: Install WISDEM with pip for Windows
       #  if: contains( matrix.os, 'windows')
       #  run: |
-      #      python setup.py install
+      #      pip install .
     
       # Debugging session
       #- name: Setup tmate session
@@ -135,7 +134,7 @@ jobs:
       - name: Install WISDEM with setup
         run: |
           '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip install pytest
-          '${{ steps.cp.outputs.python-path }}' -m pip install -vv .
+          '${{ steps.cp.outputs.python-path }}' -m pip install -v .
 
       # Run limited tests
       - name: Limited test

@@ -53,7 +53,7 @@ Finally, for all systems:
 
     git clone https://github.com/WISDEM/WISDEM.git
     cd WISDEM
-    python setup.py develop
+    pip install -e .
 
 Run Unit Tests
 ^^^^^^^^^^^^^^

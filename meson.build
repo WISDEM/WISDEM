@@ -5,7 +5,7 @@ project(
   'c',
 # unnecessary metadata commented out until Meson supports PEP517 and installation with pip
   license: 'Apache',
-  meson_version: '>= 0.60',
+  #meson_version: '>= 0.60',
   default_options: [
     'buildtype=debugoptimized',
     'c_std=c11',
@@ -28,15 +28,43 @@ endif
 # https://mesonbuild.com/Python-module.html
 # Here we differentiate from the python used by meson, py3_command, and that python target, py3_target. This is useful
 # when cross compiling like on conda-forge
-py_mod = import('python')
-if get_option('python_target') != ''
-  py3 = py_mod.find_installation(get_option('python_target'))
-else
-  py3 = py_mod.find_installation('python')
-endif
+py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
 
 message(py3.path())
 message(py3.get_install_dir())
 
 subdir('wisdem')
+LICENSE
+NOTICE
+README.md
+build
+dist
+docs
+environment.yml
+examples
+meson.build
+meson_build
+meson_options.txt
+pyproject.toml
+setup.py.old
+test
+wisdem
+wisdem.egg-info
+LICENSE
+NOTICE
+README.md
+build
+dist
+docs
+environment.yml
+examples
+meson.build
+meson.build-s
+meson_build
+meson_options.txt
+pyproject.toml
+setup.py.old
+test
+wisdem
+wisdem.egg-info

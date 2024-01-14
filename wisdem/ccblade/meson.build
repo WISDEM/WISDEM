@@ -14,3 +14,16 @@ py3.extension_module('_bem',
                 subdir: 'wisdem/ccblade',
 		link_language: 'fortran',
                 install : true)
+
+
+python_sources = [
+  '__init__.py',
+  'Polar.py',
+  'ccblade.py',
+  'ccblade_component.py',
+]
+
+py3.install_sources(
+  python_sources,
+  subdir: 'wisdem/ccblade'
+)
