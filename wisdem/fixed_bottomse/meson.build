@@ -7,5 +7,5 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  subdir: 'wisdem/fixed_bottom'
+  subdir: 'wisdem/fixed_bottomse'
 )
