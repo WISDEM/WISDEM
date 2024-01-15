@@ -10,7 +10,7 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  subdir: 'wisdem/test/test/test_gluecode'
+  subdir: 'wisdem/test/test_gluecode'
 )
 
 
