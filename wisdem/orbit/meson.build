@@ -10,7 +10,7 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  subdir: 'wisdem/orbit.py'
+  subdir: 'wisdem/orbit'
 )
 
 subdir('api')
