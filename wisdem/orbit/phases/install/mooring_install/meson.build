@@ -1,7 +1,6 @@
 
 python_sources = [
   '__init__.py',
-  'common.py',
   'mooring.py',
 ]
 
