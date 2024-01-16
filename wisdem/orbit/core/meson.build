@@ -15,3 +15,6 @@ py3.install_sources(
   python_sources,
   subdir: 'wisdem/orbit/core'
 )
+
+subdir('defaults')
+subdir('logic')
