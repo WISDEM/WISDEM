@@ -1,6 +1,6 @@
 name: BAR_USC
 description: BAR-USC - Upwind segmented design - Spar caps with industry baseline CFRP - last updated on April 23rd 2021 by Pietro Bortolotti
-assembly: {turbine_class: III, turbulence_class: A, drivetrain: Constant_eff, rotor_orientation: Upwind, number_of_blades: 3, rotor_diameter: 206.0, hub_height: 140.0, rated_power: 5000000.0, lifetime: 25.0}
+assembly: {turbine_class: III, turbulence_class: A, drivetrain: Constant_eff, rotor_orientation: Upwind, number_of_blades: 3, rotor_diameter: 205.9925356168168, hub_height: 140.0, rated_power: 5000000.0, lifetime: 25.0}
 components:
     blade:
         outer_shape_bem:
