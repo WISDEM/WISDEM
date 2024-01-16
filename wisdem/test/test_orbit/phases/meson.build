@@ -8,3 +8,6 @@ py3.install_sources(
   python_sources,
   subdir: 'wisdem/test/test_orbit/phases'
 )
+
+subdir('design')
+subdir('install')
