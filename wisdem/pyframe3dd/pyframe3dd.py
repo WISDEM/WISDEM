@@ -33,17 +33,17 @@ pyframe3dd_dir = os.path.dirname( os.path.abspath(__file__) )
 lib_opt = [os.path.join(pyframe3dd_dir, libname), # pip installs (regular and editable)
             os.path.join(os.path.dirname( os.path.dirname( pyframe3dd_dir )), "local", "lib", libname), # WEIS library
             os.path.join(os.path.dirname( sysconfig.get_path('stdlib') ), libname), # conda installs
-            os.path.join(os.path.dirname( sysconfig.get_path('stdlib') ), "pyframe3dd", libname), # conda installs
+            os.path.join(os.path.dirname( sysconfig.get_path('stdlib') ), "wisdem", "pyframe3dd", libname), # conda installs
             os.path.join(os.path.dirname( sysconfig.get_path('stdlib') ), "lib", libname), # conda installs
             os.path.join(os.path.dirname( sysconfig.get_path('stdlib') ), "Library", "lib", libname), # conda installs
-            os.path.join( sysconfig.get_path('platlib'), "pyframe3dd", libname), # system-wide pip installs
-            os.path.join( sysconfig.get_config_var("userbase"), "lib", "python", "site-packages", "pyframe3dd", libname), # system wide local
+            os.path.join( sysconfig.get_path('platlib'), "wisdem", "pyframe3dd", libname), # system-wide pip installs
+            os.path.join( sysconfig.get_config_var("userbase"), "lib", "python", "site-packages", "wisdem", "pyframe3dd", libname), # system wide local
             ]
 
 # For Meson's editable installs
 for p in sys.meta_path:
     if "_build_path" in p.__dict__:
-        lib_opt += [os.path.join(p._build_path, "pyframe3dd", libname)]
+        lib_opt += [os.path.join(p._build_path, "wisdem", "pyframe3dd", libname)]
 
 lib_path = None
 for p in lib_opt:
