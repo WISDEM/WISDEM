@@ -101,6 +101,7 @@ wisdem = "wisdem.main:wisdem_cmd"
 compare_designs = "wisdem.postprocessing.compare_designs:main"
 
 [tool.meson-python.args]
+setup = ['--python.install-env=auto']
 install = ['--tags=runtime,python-runtime,bin']
 
 [tool.black]

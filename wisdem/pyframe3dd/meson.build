@@ -23,7 +23,7 @@ shared_library('_pyframe3dd',
                sources,
                name_prefix: '',
                include_directories: 'src',
-               dependencies : py3_dep,
+               install_dir: py3.get_install_dir() / 'wisdem/pyframe3dd',
                install : true)
 
 
