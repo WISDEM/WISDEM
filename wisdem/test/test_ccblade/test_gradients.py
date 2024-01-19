@@ -96,7 +96,7 @@ class TestGradients(unittest.TestCase):
         self.rho = 1.225
         self.mu = 1.81206e-5
 
-        baseyaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../examples/02_reference_turbines/nrel5mw.yaml")
+        baseyaml = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))), "examples", "02_reference_turbines", "nrel5mw.yaml")
         data = load_geometry_yaml(baseyaml)
         af = data['airfoils']
         af_names = ["Cylinder", "Cylinder", "DU40_A17", "DU35_A17", "DU30_A17", "DU25_A17", "DU21_A17", "NACA64_A17"]
@@ -3634,7 +3634,7 @@ class TestGradientsNotRotating(unittest.TestCase):
         self.rho = 1.225
         self.mu = 1.81206e-5
 
-        baseyaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../examples/02_reference_turbines/nrel5mw.yaml")
+        baseyaml = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))), "examples", "02_reference_turbines", "nrel5mw.yaml")
         data = load_geometry_yaml(baseyaml)
         af = data['airfoils']
         af_names = ["Cylinder", "Cylinder", "DU40_A17", "DU35_A17", "DU30_A17", "DU25_A17", "DU21_A17", "NACA64_A17"]
@@ -4581,7 +4581,7 @@ class TestGradientsFreestreamArray(unittest.TestCase):
         self.rho = 1.225
         self.mu = 1.81206e-5
 
-        baseyaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../examples/02_reference_turbines/nrel5mw.yaml")
+        baseyaml = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))), "examples", "02_reference_turbines", "nrel5mw.yaml")
         data = load_geometry_yaml(baseyaml)
         af = data['airfoils']
         af_names = ["Cylinder", "Cylinder", "DU40_A17", "DU35_A17", "DU30_A17", "DU25_A17", "DU21_A17", "NACA64_A17"]
@@ -5044,7 +5044,7 @@ class TestGradients_RHub_Tip(unittest.TestCase):
         self.rho = 1.225
         self.mu = 1.81206e-5
 
-        baseyaml = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../examples/02_reference_turbines/nrel5mw.yaml")
+        baseyaml = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))), "examples", "02_reference_turbines", "nrel5mw.yaml")
         data = load_geometry_yaml(baseyaml)
         af = data['airfoils']
         af_names = ["Cylinder", "Cylinder", "DU40_A17", "DU35_A17", "DU30_A17", "DU25_A17", "DU21_A17", "NACA64_A17"]
