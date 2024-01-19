@@ -34,17 +34,28 @@ def steel_tube_cutgrind_time(theta, radius, thickness, angle):
 
 def steel_welding_time(theta, npieces, mtotal, length, thickness, coeff):
     # Length input as meters, thickness as mm
+    # Tw1
     time = np.sum(theta * np.sqrt(npieces * mtotal))
+    # Tw2+Tw3
     time += np.sum(1.3e-3 * coeff * (length) * (1e3 * thickness) ** 1.9358)
     return time
 
 
 def steel_butt_welding_time(theta, npieces, mtotal, length, thickness):
+    # FCAW-MC Metal Cored Arc Welding
     return steel_welding_time(theta, npieces, mtotal, length, thickness, 0.152)
 
 
-def steel_filett_welding_time(theta, npieces, mtotal, length, thickness):
-    return steel_welding_time(theta, npieces, mtotal, length, thickness, 0.3394)
+def steel_fillet_welding_time(theta, npieces, mtotal, length, thickness):
+    # Tw1
+    time = np.sum(theta * np.sqrt(npieces * mtotal))
+    # Tw2+Tw3
+    # coeff 0.2349 for SAW fillet weld
+    coeff = 0.2349
+    # SMAW fillet welds of size aw = 0.5t
+    aw = 0.5*thickness
+    time += np.sum(1.3e-3 * coeff * (length) * (1e3 * aw) ** 2)
+    return time
 
 
 def steel_tube_welding_time(theta, npieces, mtotal, length, thickness):

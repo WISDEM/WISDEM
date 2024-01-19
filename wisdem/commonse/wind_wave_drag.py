@@ -70,7 +70,7 @@ cd_AR_pt = [
 ]
 
 drag_spline = Akima(np.log10(Re_pt), cd_pt, delta_x=0.0)  # exact akima because control points do not change
-drag_AR_spline = Akima(AR_pt, cd_pt, delta_x=0.0)  # exact akima because control points do not change
+drag_AR_spline = Akima(AR_pt, cd_AR_pt, delta_x=0.0)  # exact akima because control points do not change
 
 
 def cylinderDrag(Re):
@@ -781,7 +781,7 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
         water density
     mu_water : float, [kg/(m*]
         dynamic viscosity of water
-    cm : float
+    cmx, cmy : float
         mass coefficient
     cd_usr : float
         User input drag coefficient to override Reynolds number based one
@@ -836,7 +836,7 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
         self.declare_partials("*", "rho_water", method="fd")
 
         arange = np.arange(nPoints)
-        self.declare_partials(["waveLoads_Px", "waveLoads_Py"], ["U", "a", "b", "cm", "cd_usr", "beta_wave"], method="fd")
+        self.declare_partials(["waveLoads_Px", "waveLoads_Py"], ["U", "a", "b", "cmx", "cmy", "cd_usr", "beta_wave"], method="fd")
         self.declare_partials("waveLoads_Px", "A", rows=arange, cols=arange)
 
         self.declare_partials("waveLoads_Py", "A", rows=arange, cols=arange)
@@ -1051,7 +1051,7 @@ class CylinderEnvironment(om.Group):
                 self.add_subsystem(
                     "waveLoads",
                     RectangularCylinderWaveDrag(nPoints=nPoints),
-                    promotes=["cm", "cd_usr", "beta_wave", "rho_water", "mu_water", "z", "a", "b"],
+                    promotes=["cmx", "cmy", "cd_usr", "beta_wave", "rho_water", "mu_water", "z", "a", "b"],
                 ) 
 
         # Combine all loads

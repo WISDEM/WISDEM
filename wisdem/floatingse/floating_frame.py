@@ -622,12 +622,11 @@ class FloatingFrame(om.Group):
 
         mem_vars = ["Px", "Py", "Pz", "qdyn"]
 
-        mem_prom = [
+        mem_prom_base = [
             "wind_reference_height",
             "z0",
             "shearExp",
             "cd_usr",
-            "cm",
             "rho_air",
             "rho_water",
             "mu_air",
@@ -641,6 +640,7 @@ class FloatingFrame(om.Group):
             "yaw",
         ]
 
+
         U_prom = []
         for iLC in range(nLC):
             lc = "" if nLC == 1 else str(iLC + 1)
@@ -649,6 +649,10 @@ class FloatingFrame(om.Group):
         for k in range(n_member):
             n_full = get_nfull(opt["floating"]["members"]["n_height"][k], nref=2)
             shape = opt["floating"]["members"]["outer_shape"][k]
+            if shape == "circular":
+                mem_prom = mem_prom_base + ["cm"]
+            elif shape == "rectangular":
+                mem_prom = mem_prom_base + ["cmx", "cmy"]
             self.add_subsystem(
                 f"memload{k}",
                 MemberLoads(

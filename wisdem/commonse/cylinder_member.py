@@ -1174,8 +1174,9 @@ class MemberComplex(om.ExplicitComponent):
         self.sections = SortedDict()
 
         self.add_main_sections(inputs, outputs)
-        self.add_bulkhead_sections(inputs, outputs)
-        self.add_ring_stiffener_sections(inputs, outputs)
+        if self.shape == "circular":
+            self.add_bulkhead_sections(inputs, outputs)
+            self.add_ring_stiffener_sections(inputs, outputs)
         self.add_ballast_sections(inputs, outputs)
         self.compute_mass_properties(inputs, outputs)
         self.nodal_discretization(inputs, outputs)
@@ -1232,6 +1233,7 @@ class MemberComplex(om.ExplicitComponent):
             A_flange = np.zeros_like(t_flange)
             A_stiff = np.zeros_like(A_web)
             Ix_stiff = np.zeros_like(a_sec)
+            Iy_stiff = np.zeros_like(a_sec)
             Iz_stiff = np.zeros_like(a_sec)
             t_eff = np.zeros_like(a_sec)
 
@@ -1289,54 +1291,107 @@ class MemberComplex(om.ExplicitComponent):
                     continue
                 self.sections[s].make_ghost()
 
+        # These are commonly used for circular and rectangular
+        s_grid = np.array(list(self.sections.keys()))
+        s_section = 0.5 * (s_grid[:-1] + s_grid[1:])
+        zz = np.interp(s_grid, s_full, inputs["z_full"])
+        H = np.diff(zz)
+        t_full = util.sectionalInterp(s_section, s_full, inputs["t_full"])
+        rho = util.sectionalInterp(s_section, s_full, inputs["rho_full"])
+        coeff = util.sectionalInterp(s_section, s_full, coeff)
+        k_m = util.sectionalInterp(s_section, s_full, inputs["unit_cost_full"])
+
         # Shell mass properties with new interpolation in case ghost nodes were added
         # Only limited to circular member for now.
         if self.shape == "circular":
-            s_grid = np.array(list(self.sections.keys()))
-            s_section = 0.5 * (s_grid[:-1] + s_grid[1:])
+
             R = np.interp(s_grid, s_full, 0.5 * outer_diameter_full)
             Rb = R[:-1]
             Rt = R[1:]
-            zz = np.interp(s_grid, s_full, inputs["z_full"])
-            H = np.diff(zz)
-            t_full = util.sectionalInterp(s_section, s_full, inputs["t_full"])
-            rho = util.sectionalInterp(s_section, s_full, inputs["rho_full"])
+
+            R_ave = 0.5 * (Rb + Rt)
+            taper = np.minimum(Rb / Rt, Rt / Rb)
+
             rho[s_section < s_ghost1] = 0.0
             rho[s_section > s_ghost2] = 0.0
-            coeff = util.sectionalInterp(s_section, s_full, coeff)
-            k_m = util.sectionalInterp(s_section, s_full, inputs["unit_cost_full"])
+
             R_w = 0.5 * (Rb + Rt) - t_full - 0.5 * h_web
             R_f = 0.5 * (Rb + Rt) - t_full - h_web - 0.5 * t_flange
             Ix_stiff = 0.5 * n_stiff * (A_web * R_w**2 + A_flange * R_f**2)
             Iz_stiff = 2 * Ix_stiff
 
-
         # Total mass of cylinder
-        V_shell = frustum.frustumShellVol(Rb, Rt, t_full, H)
-        mass = coeff * rho * (V_shell + A_stiff * H)
-        outputs["shell_mass"] = mass.sum()
+            V_shell = frustum.frustumShellVol(Rb, Rt, t_full, H) # Why is H discretized?
+            mass = coeff * rho * (V_shell + A_stiff * H)
+            outputs["shell_mass"] = mass.sum()
 
-        # Center of mass
-        cm_section = zz[:-1] + frustum.frustumShellCG(Rb, Rt, t_full, H)
-        outputs["shell_z_cg"] = np.dot(cm_section, mass) / mass.sum()
+            # Center of mass
+            cm_section = zz[:-1] + frustum.frustumShellCG(Rb, Rt, t_full, H)
+            outputs["shell_z_cg"] = np.dot(cm_section, mass) / mass.sum()
 
-        # Moments of inertia
-        J0_section = coeff * rho * (frustum.frustumShellIzz(Rb, Rt, t_full, H) + H * Iz_stiff)
-        Ixx_section = Iyy_section = coeff * rho * (frustum.frustumShellIxx(Rb, Rt, t_full, H) + H * Ix_stiff)
+            # Moments of inertia
+            J0_section = coeff * rho * (frustum.frustumShellIzz(Rb, Rt, t_full, H) + H * Iz_stiff)
+            Ixx_section = Iyy_section = coeff * rho * (frustum.frustumShellIxx(Rb, Rt, t_full, H) + H * Ix_stiff)
+
+            # Soem manufacture parameter
+            # Cost Step 1) Cutting flat plates for taper using plasma cutter
+            cutLengths = 2.0 * np.sqrt((Rt - Rb) ** 2.0 + H**2.0)  # Factor of 2 for both sides
+            # Cost Step 2) Rolling plates
+            # Cost Step 3) Welding rolled plates into shells (set difficulty factor based on tapering with logistic function)
+            theta_F = 4.0 - 3.0 / (1 + np.exp(-5.0 * (taper - 0.75)))
+            # Cost Step 4) Circumferential welds to join cans together
+            theta_A = 2.0
+
+            # Surface area for calculating painting
+            A_paint = 2 * np.pi * R_ave * H
+
+        elif self.shape == "rectangular":
+            side_length_a = np.interp(s_grid, s_full, side_length_a_full)
+            side_length_b = np.interp(s_grid, s_full, side_length_b_full)
+            ab = side_length_a[:-1]
+            at = side_length_a[1:]
+            bb = side_length_b[:-1]
+            bt = side_length_b[1:]
+            V_shell = frustum.RectangularFrustumShellVol(ab, bb, at, bt, t_full, H)
+            mass = coeff * rho * (V_shell + A_stiff * H)
+            outputs["shell_mass"] = mass.sum()
+
+            # Center of mass
+            cm_section = zz[:-1] + frustum.RectangularFrustumShellCG(ab, bb, at, bt, t_full, H)
+            outputs["shell_z_cg"] = np.dot(cm_section, mass) / mass.sum()
+
+            Ix_stiff = np.zeros_like(ab)
+            Iy_stiff = np.zeros_like(ab)
+            Iz_stiff = np.zeros_like(ab)
+
+            # Moments of inertia
+            J0_section = coeff * rho * (frustum.RectangularFrustumShellIzz(ab, bb, at, bt, t_full, H) + H * Iz_stiff)
+            Ixx_section = coeff * rho * (frustum.RectangularFrustumShellIxx(ab, bb, at, bt, t_full, H) + H * Ix_stiff)
+            Iyy_section = coeff * rho * (frustum.RectangularFrustumShellIyy(ab, bb, at, bt, t_full, H) + H * Iy_stiff)
+
+            # Cost Step 1) Cutting flat plates for taper using plasma cutter
+            cutLengths = 8.0 * np.sqrt(((ab-at)/2)**2+((bb-bt)/2)**2+H**2)  # Factor of 8 for both sides on four faces
+            # Cost Step 2) Welding plates into shells
+            # Cost Step 3) Circumferential welds to join cans together
+            theta_A = 2.0
+            theta_F = 0.0 # no rolling time
+            theta_fl = 3.0 # reference value from p208 in the book
+
+            # Surface area for calculating painting, approximate
+            A_paint = (at+ab+bt+bb) * np.sqrt(((ab-at)/2)**2+((bb-bt)/2)**2+H**2)
 
         # Sum up each cylinder section using parallel axis theorem
         I_base = np.zeros((3, 3))
         for k in range(J0_section.size):
-            R = np.array([0.0, 0.0, cm_section[k] - zz[0]])
+            dist = np.array([0.0, 0.0, cm_section[k] - zz[0]])
             Icg = util.assembleI([Ixx_section[k], Iyy_section[k], J0_section[k], 0.0, 0.0, 0.0])
 
-            I_base += Icg + mass[k] * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+            I_base += Icg + mass[k] * (np.dot(dist, dist) * np.eye(3) - np.outer(dist, dist))
 
         outputs["shell_I_base"] = util.unassembleI(I_base)
 
         # Compute costs based on "Optimum Design of Steel Structures" by Farkas and Jarmai
-        R_ave = 0.5 * (Rb + Rt)
-        taper = np.minimum(Rb / Rt, Rt / Rb)
+
         nsec = t_full.size
         mshell = rho * V_shell
         mshell_tot = np.sum(rho * V_shell)
@@ -1347,25 +1402,30 @@ class MemberComplex(om.ExplicitComponent):
         e_f = 15.9  # Electricity usage kWh/kg for steel
         e_fo = 26.9  # Electricity usage kWh/kg for stainless steel
 
-        # Cost Step 1) Cutting flat plates for taper using plasma cutter
-        cutLengths = 2.0 * np.sqrt((Rt - Rb) ** 2.0 + H**2.0)  # Factor of 2 for both sides
-        # Cost Step 2) Rolling plates
-        # Cost Step 3) Welding rolled plates into shells (set difficulty factor based on tapering with logistic function)
-        theta_F = 4.0 - 3.0 / (1 + np.exp(-5.0 * (taper - 0.75)))
-        # Cost Step 4) Circumferential welds to join cans together
-        theta_A = 2.0
 
         # Labor-based expenses
-        K_f = k_f * (
-            manufacture.steel_cutting_plasma_time(cutLengths, t_full)
-            + manufacture.steel_rolling_time(theta_F, R_ave, t_full)
-            + manufacture.steel_butt_welding_time(theta_A, nsec, mshell_tot, cutLengths, t_full)
-            + manufacture.steel_butt_welding_time(theta_A, nsec, mshell_tot, 2 * np.pi * Rb[1:], t_full[1:])
-        )
+        if self.shape == "circular":
+            K_f = k_f * (
+                manufacture.steel_cutting_plasma_time(cutLengths, t_full)
+                + manufacture.steel_rolling_time(theta_F, R_ave, t_full)
+                # weld the rolled plate for circular
+                + manufacture.steel_butt_welding_time(theta_A, nsec, mshell_tot, cutLengths, t_full)
+                # weld frustum sections together
+                + manufacture.steel_butt_welding_time(theta_A, nsec, mshell_tot, 2 * np.pi * Rb[1:], t_full[1:])
+            )
+        elif self.shape == "rectangular":
+            K_f = k_f * (
+                manufacture.steel_cutting_plasma_time(cutLengths, t_full)
+                # weld plates for rectangular
+                # factor of 2 for cutlengths because welding two sides
+                + manufacture.steel_fillet_welding_time(theta_fl, nsec, mshell_tot, 2*cutLengths, t_full)
+                # weld frustum sections together
+                + manufacture.steel_butt_welding_time(theta_A, nsec, mshell_tot, 2*(ab[1:]+bb[1:]) , t_full[1:])
+            )
 
         # Cost step 5) Painting- outside and inside
         theta_p = 2
-        K_p = k_p * theta_p * 2 * (2 * np.pi * R_ave * H).sum()
+        K_p = k_p * theta_p * 2 * A_paint.sum()
 
         # Cost step 6) Outfitting with electricity usage
         K_o = np.sum(1.5 * k_m * (coeff - 1.0) * mshell)
@@ -1479,7 +1539,7 @@ class MemberComplex(om.ExplicitComponent):
         # Labor-based expenses
         K_f = k_f * (
             manufacture.steel_cutting_plasma_time(cutLengths, t_bulk)
-            + manufacture.steel_filett_welding_time(theta_w, nbulk, m_bulk + m_shell, 2 * np.pi * R_id_bulk, t_bulk)
+            + manufacture.steel_fillet_welding_time(theta_w, nbulk, m_bulk + m_shell, 2 * np.pi * R_id_bulk, t_bulk)
         )
 
         # Cost Step 3) Painting (two sided)
@@ -1635,8 +1695,8 @@ class MemberComplex(om.ExplicitComponent):
         K_f = k_f * (
             manufacture.steel_cutting_plasma_time(cutLengths_w.sum(), t_web)
             + manufacture.steel_cutting_plasma_time(cutLengths_f.sum(), t_flange)
-            + manufacture.steel_filett_welding_time(theta_w, 1, m_ring, 2 * np.pi * R_fo, t_web)
-            + manufacture.steel_filett_welding_time(theta_w, 1, m_ring + m_shell, 2 * np.pi * R_wo, t_web)
+            + manufacture.steel_fillet_welding_time(theta_w, 1, m_ring, 2 * np.pi * R_fo, t_web)
+            + manufacture.steel_fillet_welding_time(theta_w, 1, m_ring + m_shell, 2 * np.pi * R_wo, t_web)
         )
 
         # Cost Step 4) Painting
@@ -2502,30 +2562,47 @@ class MemberLoads(om.Group):
         memmax = self.options["memmax"]
         member_shape = self.options["member_shape"]
 
-        prom = [
-            ("zref", "wind_reference_height"),
-            "shearExp",
-            "z0",
-            "cd_usr",
-            "beta_wind",
-            "rho_air",
-            "mu_air",
-            "yaw",
-            ("z", "z_global"),
-            ("d", "outer_diameter_full"),
-        ]
+        if member_shape == "circular":
+            prom = [
+                ("zref", "wind_reference_height"),
+                "shearExp",
+                "z0",
+                "cd_usr",
+                "beta_wind",
+                "rho_air",
+                "mu_air",
+                "yaw",
+                ("z", "z_global"),
+                ("d", "outer_diameter_full"),
+            ]
+        elif member_shape == "rectangular":
+            prom = [
+                ("zref", "wind_reference_height"),
+                "shearExp",
+                "z0",
+                "cd_usr",
+                "beta_wind",
+                "rho_air",
+                "mu_air",
+                "yaw",
+                ("z", "z_global"),
+                ("a", "side_length_a_full"),
+                ("b", "side_length_b_full"),
+            ]
         if hydro:
             prom += [
                 "rho_water",
                 "mu_water",
-                "cm",
                 "water_depth",
                 "beta_wave",
                 "Uc",
                 "Hsig_wave",
                 "Tsig_wave",
             ]
-
+            if member_shape == "circular":
+                prom += ["cm"]
+            elif member_shape == "rectangular":
+                prom += ["cmx", "cmy"]
         for iLC in range(nLC):
             lc = "" if nLC == 1 else str(iLC + 1)
 
