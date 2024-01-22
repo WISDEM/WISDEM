@@ -329,7 +329,7 @@ class RunPreComp(ExplicitComponent):
             materials,
             region_loc,
         ):
-            # Recieve start and end of composite sections chordwise, find which composites layers are in each
+            # Receive start and end of composite sections chordwise, find which composites layers are in each
             # chordwise regions, generate the precomp composite class instance
 
             # error handling to makes sure there were no numeric errors causing values very close too, but not exactly, 0 or 1
@@ -461,6 +461,8 @@ class RunPreComp(ExplicitComponent):
         lowerCS = [None] * self.n_span
         websCS = [None] * self.n_span
         profile = [None] * self.n_span
+        chord = inputs["chord"]
+        area = np.zeros_like(chord)
 
         # Check that the layer to be optimized actually exist
         te_ss_var_ok = False
@@ -579,6 +581,7 @@ class RunPreComp(ExplicitComponent):
             profile_i_arc = arc_length(profile_i_rot)
             arc_L = profile_i_arc[-1]
             profile_i_arc /= arc_L
+            arc_L_m = arc_L * chord[i]
 
             loc_LE = profile_i_arc[idx_le]
             len_PS = 1.0 - loc_LE
@@ -603,6 +606,9 @@ class RunPreComp(ExplicitComponent):
             for idx_sec in range(self.n_layers):
                 if discrete_inputs["definition_layer"][idx_sec] != 10:
                     if inputs["layer_thickness"][idx_sec, i] > 1.0e-6:
+                        area[i] += arc_L_m * (inputs["layer_end_nd"][idx_sec, i] - 
+                                              inputs["layer_start_nd"][idx_sec, i]) * (
+                                              inputs["layer_thickness"][idx_sec, i])
                         if inputs["layer_start_nd"][idx_sec, i] < loc_LE or inputs["layer_end_nd"][idx_sec, i] < loc_LE:
                             ss_idx.append(idx_sec)
                             if inputs["layer_start_nd"][idx_sec, i] < loc_LE:
@@ -660,11 +666,23 @@ class RunPreComp(ExplicitComponent):
                     if inputs["layer_thickness"][idx_sec, i] > 1.0e-6:
                         web_idx.append(idx_sec)
 
-                        start_nd_arc = float(spline_arc2xnd(inputs["web_start_nd"][int(target_idx), i]))
-                        end_nd_arc = float(spline_arc2xnd(inputs["web_end_nd"][int(target_idx), i]))
+                        web_start_nd = inputs["web_start_nd"][int(target_idx), i]
+                        web_end_nd = inputs["web_end_nd"][int(target_idx), i]
+
+                        start_nd_arc = float(spline_arc2xnd(web_start_nd))
+                        end_nd_arc = float(spline_arc2xnd(web_end_nd))
 
                         web_start_nd_arc.append(start_nd_arc)
                         web_end_nd_arc.append(end_nd_arc)
+
+                        # Compute height the webs along span
+                        id_start = np.argmin(abs(profile_i_arc - web_start_nd))
+                        id_end = np.argmin(abs(profile_i_arc - web_end_nd))
+                        web_height = np.sqrt((profile_i[id_start, 0] - profile_i[id_end, 0])**2 +
+                                             (profile_i[id_start, 1] - profile_i[id_end, 1])**2) * (
+                                             chord[i])
+
+                        area[i] += web_height * inputs["layer_thickness"][idx_sec, i]
 
             # time1 = time.time() - time1
             # print(time1)
@@ -755,7 +773,7 @@ class RunPreComp(ExplicitComponent):
             x_ec,
             y_ec,
             rhoA,
-            area,
+            _,
             rhoJ,
             Tw_iner,
             flap_iner,
