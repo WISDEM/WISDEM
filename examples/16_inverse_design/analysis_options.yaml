@@ -48,3 +48,4 @@ driver:
         solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         step_size: 1.e-6    # Step size for finite differencing
         form: forward       # Finite differencing mode, either forward or central
+        max_iter: 1          # Maximum number of iterations (SLSQP)

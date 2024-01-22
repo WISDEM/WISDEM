@@ -3151,11 +3151,11 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             outputs["blade_ref_axis"][:, 2] = (
                 inputs["blade_ref_axis_user"][:, 2]
                 * inputs["rotor_diameter_user"]
-                / ((arc_length(inputs["blade_ref_axis_user"])[-1] + inputs["hub_radius"]) * 2.0)
+                / ((inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0)
             )
         # If the user does not provide a rotor diameter, this is computed from the hub diameter and the blade length
         else:
-            outputs["rotor_diameter"] = (arc_length(inputs["blade_ref_axis_user"])[-1] + inputs["hub_radius"]) * 2.0
+            outputs["rotor_diameter"] = (inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0
             outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2]
         outputs["r_blade"] = outputs["blade_ref_axis"][:, 2] + inputs["hub_radius"]
         outputs["rotor_radius"] = outputs["r_blade"][-1]

@@ -24,8 +24,8 @@ class TestRC(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.t_reinf_ratio_joint"][0], 0.9899571827651443, places=accuracy)
         self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.w_reinf_ratio_joint"][0], 1.2087641190997038, places=accuracy)
         self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.n_joint_bolt"][0], 39.15127649699636, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_mass"][0], 443.3729959449936, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_material_cost"][0], 1911.118690248783, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_mass"][0], 444.68168566083517, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_material_cost"][0], 1916.7581235998593, places=accuracy)
 
 
 def suite():

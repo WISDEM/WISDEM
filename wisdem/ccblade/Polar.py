@@ -86,15 +86,15 @@ class Polar(object):
             cd    = df['Cd'].values
             cm    = df['Cm'].values
             if 'fs' in df.keys():
-                logger.warning('[INFO] Using separating function from input file.')
+                logger.debug('[INFO] Using separating function from input file.')
                 self.fs = df['fs'].values
                 self._fs_lock = True
             if 'Cl_fs' in df.keys():
-                logger.warning('[INFO] Using Cl fully separated from input file.')
+                logger.debug('[INFO] Using Cl fully separated from input file.')
                 self.cl_fs =df['Cl_fs'].values
                 self._cl_fs_lock = True
             if 'Cl_inv' in df.keys():
-                logger.warning('[INFO] Using Cl inviscid from input file.')
+                logger.debug('[INFO] Using Cl inviscid from input file.')
                 self.cl_inv = df['Cl_inv'].values
                 self._cl_inv_lock = True
                 # TODO we need a trigger if cl_inv provided, we should get alpha0 and slope from it
@@ -278,7 +278,7 @@ class Polar(object):
 
     @property
     def cl_lin(self): # TODO consider removing
-        logger.warning('[WARN] Polar: cl_lin is a bit of a weird property. Not sure if it will be kept')
+        logger.debug('[WARN] Polar: cl_lin is a bit of a weird property. Not sure if it will be kept')
         if self.cl_inv is None:
             self.cl_fully_separated() # computes cl_fs, cl_inv and fs
         return self.cl_inv
@@ -291,7 +291,7 @@ class Polar(object):
         """Constructor based on a filename
         # NOTE: this is legacy
         """
-        logger.warning('[WARN] Polar: "fromfile" is depreciated and will be removed in a future release')
+        logger.debug('[WARN] Polar: "fromfile" is depreciated and will be removed in a future release')
         return cls(filename, fformat=fformat, compute_params=compute_params, radians=to_radians)
 
     def correction3D(
@@ -666,7 +666,7 @@ class Polar(object):
             elif alpha[i] == -180:
                 cm_new = 0
             else:
-                logger.warning("Angle encountered for which there is no CM table value " "(near +/-180 deg). Program will stop.")
+                logger.debug("Angle encountered for which there is no CM table value " "(near +/-180 deg). Program will stop.")
         return cm_new
 
     def unsteadyParams(self, window_offset=None, nMin=720):
@@ -739,7 +739,7 @@ class Polar(object):
         try:
             alpha0cn = _find_alpha0(alpha, cn, window, direction='up', value_if_constant = 0.)
         except NoCrossingException:
-            logger.warning("[WARN] Polar: Cn unsteady, cannot find zero crossing with up direction, trying down direction")
+            logger.debug("[WARN] Polar: Cn unsteady, cannot find zero crossing with up direction, trying down direction")
             alpha0cn = _find_alpha0(alpha, cn, window, direction='down')
 
         # checks for inppropriate data (like cylinders)
@@ -753,7 +753,7 @@ class Polar(object):
         try:
             a_MaxUpp, cn_MaxUpp, a_MaxLow, cn_MaxLow = _find_max_points(alpha, cn, alpha0, method="inflections")
         except NoStallDetectedException:
-            logger.warning('[WARN] Polar: Cn unsteady, cannot find stall based on inflections, using min and max')
+            logger.debug('[WARN] Polar: Cn unsteady, cannot find stall based on inflections, using min and max')
             a_MaxUpp, cn_MaxUpp, a_MaxLow, cn_MaxLow = _find_max_points(alpha, cn, alpha0, method="minmax")
 
         # --- cn slope
@@ -792,7 +792,7 @@ class Polar(object):
             a_f07_Upp = xInter[2]
             a_f07_Low = xInter[0]
         else:
-            logger.warning('[WARN] Polar: Cn unsteady, cn_f does not intersect cn 3 times. Intersections:{}.'.format(xInter))
+            logger.debug('[WARN] Polar: Cn unsteady, cn_f does not intersect cn 3 times. Intersections:{}.'.format(xInter))
             a_f07_Upp =  abs(xInter[0]) 
             a_f07_Low = -abs(xInter[0])
 
@@ -852,7 +852,7 @@ class Polar(object):
         # --- Sanity checks performed by OpenFAST
         deltaAlpha = 5
         if alpha0<alpha2:
-            logger.warning('[WARN] Polar: alpha0<alpha2, changing alpha2..')
+            logger.debug('[WARN] Polar: alpha0<alpha2, changing alpha2..')
             alpha2 = alpha0 - deltaAlpha
             #raise Exception('alpha0 must be greater than alpha2')
 
@@ -1234,7 +1234,7 @@ def thicknessinterp_from_one_set(thickness, polarList, polarThickness):
 
         if ihigh == ilow:
             polars.append(polarList[ihigh])
-            logger.warning("[WARN] Using nearest polar for section {},   t={} , t_near={}".format(it, t, polarThickness[ihigh]))
+            logger.debug("[WARN] Using nearest polar for section {},   t={} , t_near={}".format(it, t, polarThickness[ihigh]))
         else:
             if (polarThickness[ilow] > t) or (polarThickness[ihigh] < t):
                 raise Exception("Implementation Error")
@@ -1293,8 +1293,8 @@ def _find_alpha0(alpha, coeff, window, direction='up', value_if_constant = np.na
     alpha_zc, i_zc, s_zc = _zero_crossings(x=alpha, y=coeff, direction=direction)
 
     if len(alpha_zc) > 1:
-        logger.warning('WARN: Cannot find alpha0, {} zero crossings of Coeff in the range of alpha values: [{} {}] '.format(len(alpha_zc),window[0],window[1]))
-        logger.warning('>>> Using second zero')
+        logger.debug('WARN: Cannot find alpha0, {} zero crossings of Coeff in the range of alpha values: [{} {}] '.format(len(alpha_zc),window[0],window[1]))
+        logger.debug('>>> Using second zero')
         alpha_zc=alpha_zc[1:]
         #raise Exception('Cannot find alpha0, {} zero crossings of Coeff in the range of alpha values: [{} {}] '.format(len(alpha_zc),window[0],window[1]))
     elif len(alpha_zc) == 0:
@@ -1610,7 +1610,7 @@ def cl_linear_slope(alpha, cl, window=None, method="max", nInterp=721, inputInRa
         slope_FD, off_FD = _find_slope(alpha, cl, xi=alpha0, window=window, method="finitediff_1c")
         if abs(slope - slope_FD) / slope_FD * 100 > 50:
             #raise Exception('Warning: More than 20% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.'.format(slope,slope_FD,window[0],window[-1]))
-            logger.warning('[WARN] More than 20% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.'.format(slope,slope_FD,window[0],window[-1]))
+            logger.debug('[WARN] More than 20% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.'.format(slope,slope_FD,window[0],window[-1]))
 #         print('slope ',slope,' Alpha range: {:.3f} {:.3f} - nLin {}  nMin {}  nMax {}'.format(alpha[iStart],alpha[iEnd],len(alpha[iStart:iEnd+1]),nMin,len(alpha)))
     return myret(slope, off)
 
@@ -1784,7 +1784,7 @@ def _zero_crossings(y, x=None, direction=None):
     deltas = x[1:] - x[0:-1]
     if np.any( deltas == 0.0):
         I=np.where(deltas==0)[0]
-        logger.warning("[WARN] Some x values are repeated at index {}. Removing them.".format(I))
+        logger.debug("[WARN] Some x values are repeated at index {}. Removing them.".format(I))
         x=np.delete(x,I)
         y=np.delete(x,I)
     if np.any(deltas<0):
@@ -1919,8 +1919,8 @@ def _intersections(x1, y1, x2, y2, plot=False, minDist=1e-6, verbose=False):
                 pointSkipped.append((p[0],p[1]))
         if verbose:
             if len(pointSkipped)>0:
-                logger.warning('Polar:Intersection:Point Kept    :', pointKept)
-                logger.warning('Polar:Intersection:Point Skipped:', pointSkipped)
+                logger.debug('Polar:Intersection:Point Kept    :', pointKept)
+                logger.debug('Polar:Intersection:Point Skipped:', pointSkipped)
 
         M = np.array(pointKept)
         x = M[:,0]
