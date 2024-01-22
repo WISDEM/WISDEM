@@ -3316,11 +3316,11 @@ class Airfoil3DCorrection(om.ExplicitComponent):
                 for j in range(self.n_Re):
                     for k in range(self.n_tab):
                         inn_polar = Polar(
-                            inputs["Re"][j],
-                            np.degrees(inputs["aoa"]),
-                            inputs["cl"][i, :, j, k],
-                            inputs["cd"][i, :, j, k],
-                            inputs["cm"][i, :, j, k],
+                            Re=inputs["Re"][j],
+                            alpha=np.degrees(inputs["aoa"]),
+                            cl=inputs["cl"][i, :, j, k],
+                            cd=inputs["cd"][i, :, j, k],
+                            cm=inputs["cm"][i, :, j, k],
                         )
                         polar3d = inn_polar.correction3D(
                             inputs["r_blade"][i] / inputs["rotor_radius"],
