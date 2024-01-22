@@ -856,7 +856,7 @@ class RunPreComp(ExplicitComponent):
         blade_mass = np.trapz(rhoA_joint, inputs["r"])
         blade_span_cg = np.trapz(rhoA_joint * inputs["r"], inputs["r"]) / blade_mass
         blade_moment_of_inertia = np.trapz(rhoA_joint * inputs["r"] ** 2.0, inputs["r"])
-        tilt = inputs["uptilt"]
+        # tilt = inputs["uptilt"]
         n_blades = discrete_inputs["n_blades"]
         mass_all_blades = n_blades * blade_mass
         Ibeam = n_blades * blade_moment_of_inertia

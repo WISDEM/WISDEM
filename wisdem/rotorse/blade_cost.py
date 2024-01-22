@@ -3377,7 +3377,9 @@ class BladeCost(om.ExplicitComponent):
             for j in range(self.n_webs):
                 id_start = np.argmin(abs(xy_arc_nd_i - web_start_nd[j, i]))
                 id_end = np.argmin(abs(xy_arc_nd_i - web_end_nd[j, i]))
-                web_height[j, i] = abs((xy_coord_i[id_end, 1] - xy_coord_i[id_start, 0]) * chord[i])
+                web_height[j, i] = np.sqrt((xy_coord_i[id_start, 0] - xy_coord_i[id_end, 0])**2 +
+                                             (xy_coord_i[id_start, 1] - xy_coord_i[id_end, 1])**2) * (
+                                             chord[i])
 
         # Compute materials from the yaml
         layer_volume_span_ss = np.zeros((self.n_layers, self.n_span))
