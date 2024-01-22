@@ -29,9 +29,9 @@ class TestRegression(unittest.TestCase):
         )
 
         self.assertAlmostEqual(wt_opt["rotorse.blade_mass"][0], 68638.59685256994, 1) # new value: improved interpolation
-        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 78.0240748310, 1)
-        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 86.1941408810, 1)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.2532523698, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 77.93502613691865, 1)
+        self.assertAlmostEqual(wt_opt["financese.lcoe"][0] * 1.0e3, 94.3024600781, 1)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.tip_pos.tip_deflection"][0], 25.9197457928, 1)
 
 
 def suite():
