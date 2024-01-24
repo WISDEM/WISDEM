@@ -364,18 +364,18 @@ class SitePreparationCost(CostModule):
         estimate_construction_time_output['material_needs'] = material_needs
 
         # join material needs with operational data to compute costs
-        operation_data = pd.merge(operation_data, material_needs, on=['Units']).dropna(thresh=3)
+        operation_data = pd.merge(operation_data, material_needs, on=['Units'], sort=True).dropna(thresh=3)
         operation_data = operation_data.where((operation_data['Daily output']).isnull() == False).dropna(thresh=4)
 
         # calculate operational parameters and estimate costs without weather delays
         operation_data['Number of days'] = operation_data['Quantity of material'] / operation_data['Daily output']
-        operation_data['Number of crews'] = np.ceil((operation_data['Number of days'] / 30) / estimate_construction_time_output['road_construction_time'])
+        operation_data['Number of crews'] = np.ceil((operation_data['Number of days'] / 30.) / estimate_construction_time_output['road_construction_time'])
         operation_data['Cost USD without weather delays'] = operation_data['Quantity of material'] * operation_data['Rate USD per unit']
 
         # if more than one crew needed to complete within construction duration then assume that all construction happens
         # within that window and use that time frame for weather delays; if not, use the number of days calculated
-        operation_data['time_construct_bool'] = operation_data['Number of days'] > estimate_construction_time_output['road_construction_time'] * 30
-        boolean_dictionary = {True: estimate_construction_time_output['road_construction_time'] * 30, False: np.NAN}
+        operation_data['time_construct_bool'] = operation_data['Number of days'] > estimate_construction_time_output['road_construction_time'] * 30.
+        boolean_dictionary = {True: estimate_construction_time_output['road_construction_time'] * 30., False: np.NAN}
         operation_data['time_construct_bool'] = operation_data['time_construct_bool'].map(boolean_dictionary)
         operation_data['Time construct days'] = operation_data[['time_construct_bool', 'Number of days']].min(axis=1)
         num_days = operation_data['Time construct days'].max()
@@ -384,7 +384,7 @@ class SitePreparationCost(CostModule):
         if estimate_construction_time_input['turbine_rating_MW'] >= 0.1:
             crew_cost = self.input_dict['crew_cost']
             crew = self.input_dict['crew'][self.input_dict['crew']['Crew type ID'].str.contains('M0')]
-            management_crew = pd.merge(crew_cost, crew, on=['Labor type ID'])
+            management_crew = pd.merge(crew_cost, crew, on=['Labor type ID'], sort=True)
             management_crew = management_crew.assign(per_diem_total=
                                                      management_crew['Per diem USD per day'] *
                                                      management_crew['Number of workers'] *
@@ -482,7 +482,7 @@ class SitePreparationCost(CostModule):
             [[material_name[0], calculate_cost_output_dict['material_volume_cubic_yards'], 'Loose cubic yard']],
             columns=['Material type ID', 'Quantity of material', 'Units'])
 
-        material_data = pd.merge(material_vol, calculate_cost_input_dict['material_price'], on=['Material type ID'])
+        material_data = pd.merge(material_vol, calculate_cost_input_dict['material_price'], on=['Material type ID'], sort=True)
         material_data['Cost USD'] = material_data['Quantity of material'] * pd.to_numeric(
             material_data['Material price USD per unit'])
 
@@ -510,32 +510,28 @@ class SitePreparationCost(CostModule):
         # check if wind_delay_fraction is greater than 1, which would mean weather delays are longer than they can possibily be for the input data
         if wind_delay_fraction > 1:
             raise ValueError('{}: Error: Wind delay greater than 100%'.format(type(self).__name__))
-        calculate_cost_output_dict['wind_multiplier'] = 1 / (
-                    1 - wind_delay_fraction)
+        calculate_cost_output_dict['wind_multiplier'] = 1. / (1. - wind_delay_fraction)
 
-        per_diem = operation_data['Number of workers'] * operation_data['Number of crews'] * (operation_data['Time construct days'] + np.ceil(operation_data['Time construct days'] / 7)) * calculate_cost_input_dict['rsmeans_per_diem']
+        per_diem = operation_data['Number of workers'] * operation_data['Number of crews'] * (operation_data['Time construct days'] + np.ceil(operation_data['Time construct days'] / 7.)) * calculate_cost_input_dict['rsmeans_per_diem']
         labor_per_diem = per_diem.dropna()
+
         # calculate_cost_output_dict['Total per diem (USD)'] = per_diem.sum()
-        labor_equip_data = pd.merge(operation_data[['Operation ID', 'Units', 'Quantity of material']], rsmeans, on=['Units', 'Operation ID'])
+        labor_equip_data = pd.merge(operation_data[['Operation ID', 'Units', 'Quantity of material']], rsmeans, on=['Units', 'Operation ID'], sort=True)
         # Calculating labor costs:
         if calculate_cost_input_dict['turbine_rating_MW'] >= 0.1:
             labor_equip_data['Calculated per diem'] = per_diem
             labor_data = labor_equip_data[labor_equip_data['Type of cost'] == 'Labor'].copy()
         else:
-            labor_equip_data['Calculated per diem'] = 0
+            labor_equip_data['Calculated per diem'] = 0.
             # labor_data = labor_equip_data[labor_equip_data['Type of cost'] == 'Labor'].copy()
             labor_data = labor_equip_data[labor_equip_data['Module'] == 'Small DW Roads'].copy()
 
-        quantity_material = material_data['Quantity of material']
-        labor_usd_per_unit = labor_data['Rate USD per unit']
         overtime_multiplier = calculate_cost_input_dict['overtime_multiplier']
         wind_multiplier = calculate_cost_output_dict['wind_multiplier']
 
-        labor_data['Cost USD'] = ((labor_data['Quantity of material'] *
-                                   labor_data['Rate USD per unit'] *
-                                   calculate_cost_input_dict['overtime_multiplier']) +
-                                  labor_per_diem
-                                  ) * calculate_cost_output_dict['wind_multiplier']
+        labor_data['Cost USD'] = ( ((labor_data['Quantity of material'] * labor_data['Rate USD per unit'] *
+                                     overtime_multiplier) + labor_per_diem) *
+                                   wind_multiplier)
 
         if calculate_cost_input_dict['road_distributed_wind'] and \
                 calculate_cost_input_dict['turbine_rating_MW'] >= 0.1:

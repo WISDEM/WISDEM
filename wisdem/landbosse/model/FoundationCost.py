@@ -490,7 +490,7 @@ class FoundationCost(CostModule):
                 thresh=4)
 
         #operation data for entire wind farm:
-        operation_data = pd.merge(material_needs_entire_farm, operation_data, on=['Material type ID'], how='outer')
+        operation_data = pd.merge(material_needs_entire_farm, operation_data, on=['Material type ID'], how='outer', sort=True)
         operation_data['Number of days'] = operation_data['Quantity of material'] / operation_data['Daily output']
         operation_data['Number of crews'] = np.ceil((operation_data['Number of days'] / 30) / foundation_construction_time)
 
@@ -512,7 +512,7 @@ class FoundationCost(CostModule):
         if construction_time_input_data['turbine_rating_MW'] > 0.1:
             crew_cost = self.input_dict['crew_cost']
             crew = self.input_dict['crew'][self.input_dict['crew']['Crew type ID'].str.contains('M0')]
-            management_crew = pd.merge(crew_cost, crew, on=['Labor type ID'])
+            management_crew = pd.merge(crew_cost, crew, on=['Labor type ID'], sort=True)
             management_crew = management_crew.assign(per_diem_total=management_crew['Per diem USD per day'] * management_crew['Number of workers'] * num_days)
             management_crew = management_crew.assign(hourly_costs_total=management_crew['Hourly rate USD per hour'] * self.input_dict['hour_day'][self.input_dict['time_construct']] * num_days)
             management_crew = management_crew.assign(total_crew_cost_before_wind_delay=management_crew['per_diem_total'] + management_crew['hourly_costs_total'])
@@ -596,7 +596,7 @@ class FoundationCost(CostModule):
         material_price = calculate_costs_input_dict['material_price']
 
 
-        material_data_entire_farm = pd.merge(material_vol_entire_farm, material_price, on=['Material type ID'])
+        material_data_entire_farm = pd.merge(material_vol_entire_farm, material_price, on=['Material type ID'], sort=True)
         material_data_entire_farm['Cost USD'] = material_data_entire_farm['Quantity of material'] * pd.to_numeric(material_data_entire_farm['Material price USD per unit'])     # material data on a total wind farm basis
 
 
@@ -617,7 +617,7 @@ class FoundationCost(CostModule):
         else:
             rsmeans = rsmeans.where(rsmeans['Module'] == 'Small DW Foundations').dropna(thresh=4)
 
-        labor_equip_data = pd.merge(material_vol_entire_farm, rsmeans, on=['Material type ID'])
+        labor_equip_data = pd.merge(material_vol_entire_farm, rsmeans, on=['Material type ID'], sort=True)
 
         # Create foundation cost dataframe
         foundation_cost = pd.DataFrame(columns=['Type of cost', 'Cost USD', 'Phase of construction'])
