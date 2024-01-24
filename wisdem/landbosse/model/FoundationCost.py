@@ -3,7 +3,6 @@ import math
 
 import pandas as pd
 import numpy as np
-import math
 from scipy.optimize import root_scalar
 
 from wisdem.landbosse.model.WeatherDelay import WeatherDelay as WD
@@ -347,7 +346,7 @@ class FoundationCost(CostModule):
                 v_1 = (foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete) + f_dead)
                 e = m_tot / v_1
                 return (e * 3 - x)
-            result = root_scalar(r_g, method='brentq', bracket=[0.9*r_overturn, 50], xtol=1e-4, maxiter=50)
+            result = root_scalar(r_g, method='brentq', bracket=[0.5*r_overturn, 50], xtol=1e-4, maxiter=50)
             r_gapping = result.root
             if not result.converged:
                 raise ValueError(f'Warning {self.project_name} calculate_foundation_load r_gapping solve failed, {result.flag}')
@@ -361,7 +360,13 @@ class FoundationCost(CostModule):
             e = m_tot / v_1
             a_eff = v_1 / bearing_pressure
             return (2 * (x ** 2 - e * (x ** 2 - e ** 2) ** 0.5) - a_eff)
-        result = root_scalar(r_b, method='brentq', bracket=[0.9*r_overturn, 50], xtol=1e-10, maxiter=50)
+
+        # Get minimum radius
+        foundation_vol = np.pi * r_test_bearing ** 2 * foundation_load_input_data['depth']
+        v_1 = (foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete) + f_dead)
+        min_r = m_tot / v_1
+
+        result = root_scalar(r_b, method='brentq', bracket=[min_r+1e-3, 50], xtol=1e-10, maxiter=50)
         r_bearing = result.root
 
         if not result.converged:
