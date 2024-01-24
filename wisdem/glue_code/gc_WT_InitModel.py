@@ -142,9 +142,9 @@ def assign_outer_shape_bem_values(wt_opt, modeling_options, blade_DV_aero, outer
             outer_shape_bem["rthick"]["grid"], outer_shape_bem["rthick"]["values"]
         )(nd_span)
     elif 'rthick' in outer_shape_bem and af_opt_flag == True:
-        logger.warning('rthick field in input geometry yaml is specified but neglected since you are optimizing airfoil positions')
+        logger.debug('rthick field in input geometry yaml is specified but neglected since you are optimizing airfoil positions')
     else:
-        logger.warning('rthick field in input geometry yaml not specified. rthick is reconstructed from discrete airfoil positions')
+        logger.debug('rthick field in input geometry yaml not specified. rthick is reconstructed from discrete airfoil positions')
     wt_opt["blade.outer_shape_bem.ref_axis_yaml"][:, 0] = PchipInterpolator(
         outer_shape_bem["reference_axis"]["x"]["grid"], outer_shape_bem["reference_axis"]["x"]["values"]
     )(nd_span)
@@ -1251,7 +1251,7 @@ def assign_mooring_values(wt_opt, modeling_options, mooring):
         or np.unique(wt_opt["mooring.line_stiffness_coeff"]).size > 1
         or np.unique(wt_opt["mooring.anchor_mass"]).size > 1
     ):
-        logger.warning(
+        logger.debug(
             "WARNING: Multiple mooring line or anchor types entered, but can only process symmetrical arrangements for now"
         )
 
@@ -1439,7 +1439,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=F
 
                 if np.abs(cl[i, 0, j, k] - cl[i, -1, j, k]) > 1.0e-5:
                     cl[i, 0, j, k] = cl[i, -1, j, k]
-                    logger.warning(
+                    logger.debug(
                         "WARNING: Airfoil "
                         + name[i]
                         + " has the lift coefficient at Re "
@@ -1448,7 +1448,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=F
                     )
                 if np.abs(cd[i, 0, j, k] - cd[i, -1, j, k]) > 1.0e-5:
                     cd[i, 0, j, k] = cd[i, -1, j, k]
-                    logger.warning(
+                    logger.debug(
                         "WARNING: Airfoil "
                         + name[i]
                         + " has the drag coefficient at Re "
@@ -1457,7 +1457,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=F
                     )
                 if np.abs(cm[i, 0, j, k] - cm[i, -1, j, k]) > 1.0e-5:
                     cm[i, 0, j, k] = cm[i, -1, j, k]
-                    logger.warning(
+                    logger.debug(
                         "WARNING: Airfoil "
                         + name[i]
                         + " has the moment coefficient at Re "
@@ -1571,7 +1571,7 @@ def assign_material_values(wt_opt, modeling_options, materials):
                     np.ones(3) * materials[i]["E"] / (2 * (1 + materials[i]["nu"]))
                 )  # If G is not provided but the material is isotropic and we have E and nu we can just estimate it
                 warning_shear_modulus_isotropic = 'WARNING: NO shear modulus, G, was provided for material "%s". The code assumes 2G*(1 + nu) = E, which is only valid for isotropic materials.'%name[i]
-                logger.warning(warning_shear_modulus_isotropic)
+                logger.debug(warning_shear_modulus_isotropic)
             if "Xt" in materials[i]:
                 Xt[i, :] = np.ones(3) * materials[i]["Xt"]
             if "Xc" in materials[i]:
@@ -1610,7 +1610,7 @@ def assign_material_values(wt_opt, modeling_options, materials):
         if "unit_cost" in materials[i]:
             unit_cost[i] = materials[i]["unit_cost"]
             if unit_cost[i] == 0.0:
-                logger.warning("The material " + name[i] + " has zero unit cost associated to it.")
+                logger.debug("The material " + name[i] + " has zero unit cost associated to it.")
         if "waste" in materials[i]:
             waste[i] = materials[i]["waste"]
         if "Xy" in materials[i]:
