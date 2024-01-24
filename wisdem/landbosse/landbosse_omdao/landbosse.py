@@ -420,7 +420,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         inputs_dict = {key: inputs[key][0] for key in inputs.keys()}
         discrete_inputs_dict = {key: value for key, value in discrete_inputs.items()}
         incomplete_input_dict = {**inputs_dict, **discrete_inputs_dict}
-        breakpoint()
+
         # Modify the default component data if needed and copy it into the
         # appropriate values of the input dictionary.
         modified_components = self.modify_component_lists(inputs, discrete_inputs)
