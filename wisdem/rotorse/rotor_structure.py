@@ -353,7 +353,9 @@ class RunFrame3DD(ExplicitComponent):
         Px_af = inputs["Px_af"]
         Py_af = inputs["Py_af"]
         Pz_af = inputs["Pz_af"]
-        # np.savez('nrel5mw_test.npz',r=r,x_az=x_az,y_az=y_az,z_az=z_az,theta=theta,x_ec=x_ec,y_ec=y_ec,A=A,rhoA=rhoA,rhoJ=rhoJ,GJ=GJ,EA=EA,EIxx=EIxx,EIyy=EIyy,EIxy=EIxy,Px_af=Px_af,Py_af=Py_af,Pz_af=Pz_af)
+        #np.savez('nrel5mw_test.npz',
+        #         r=r,x_az=x_az,y_az=y_az,z_az=z_az,theta=theta,x_ec=x_ec,y_ec=y_ec,A=A,rhoA=rhoA,
+        #         rhoJ=rhoJ,GJ=GJ,EA=EA,EIxx=EIxx,EIyy=EIyy,EIxy=EIxy,Px_af=Px_af,Py_af=Py_af,Pz_af=Pz_af)
 
         # Determine principal C.S. (with swap of x, y for profile c.s.)
         # Can get to Hansen's c.s. from Precomp's c.s. by rotating around z -90 deg, then y by 180 (swap x-y)
@@ -686,7 +688,9 @@ class ComputeStrains(ExplicitComponent):
         M2_principle = inputs["M2"]
         alpha = inputs["alpha"]
         n_sec = EA.size
-        # np.savez('nrel5mw_test2.npz',EA=EA,EI11=EI11,EI22=EI22,xu_spar=xu_spar,xl_spar=xl_spar,yu_spar=yu_spar,yl_spar=yl_spar,xu_te=xu_te,xl_te=xl_te,yu_te=yu_te,yl_te=yl_te, F3=F3, M1=M1, M2=M2, alpha=alpha)
+        #np.savez('nrel5mw_test2.npz',
+        #         EA=EA,EI11=EI11,EI22=EI22,xu_spar=xu_spar,xl_spar=xl_spar,yu_spar=yu_spar,yl_spar=yl_spar,
+        #         xu_te=xu_te,xl_te=xl_te,yu_te=yu_te,yl_te=yl_te, F3=F3_principle, M1=M1_principle, M2=M2_principle, alpha=alpha)
 
         ca = np.cos(np.deg2rad(alpha))
         sa = np.sin(np.deg2rad(alpha))

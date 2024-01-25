@@ -396,8 +396,8 @@ class DirectLayout(Layout):
 
         # ------- Nose, lss, and bearing properties ----------------
         # Now is a good time to set bearing diameters
-        outputs["D_bearing1"] = D_lss[-1] - t_lss[-1] - D_nose[0]
-        outputs["D_bearing2"] = D_lss[-1] - t_lss[-1] - D_nose[-1]
+        outputs["D_bearing1"] = 0.5 * D_lss[-1] - t_lss[-1] - 0.5 * D_nose[0]
+        outputs["D_bearing2"] = 0.5 * D_lss[-1] - t_lss[-1] - 0.5 * D_nose[-1]
 
         # Compute center of mass based on area
         m_nose, cm_nose, I_nose = rod_prop(s_nose, D_nose, t_nose, bedplate_rho)
