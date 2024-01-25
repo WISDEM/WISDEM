@@ -763,7 +763,7 @@ class ArraySystem(CostModule):
             # pull out management data
             crew_cost = self.input_dict['crew_cost']
             crew = self.input_dict['crew'][self.input_dict['crew']['Crew type ID'].str.contains('M0')]
-            management_crew = pd.merge(crew_cost, crew, on=['Labor type ID'])
+            management_crew = pd.merge(crew_cost, crew, on=['Labor type ID'], sort=True)
             management_crew = management_crew.assign(per_diem_total=management_crew['Per diem USD per day'] * management_crew['Number of workers'] * num_days)
             management_crew = management_crew.assign(hourly_costs_total=management_crew['Hourly rate USD per hour'] * self.input_dict['hour_day'][self.input_dict['time_construct']] * num_days)
             management_crew = management_crew.assign(total_crew_cost_before_wind_delay=management_crew['per_diem_total'] + management_crew['hourly_costs_total'])

@@ -634,14 +634,14 @@ class PoseOptimization(object):
                 upper=init_stall_opt[indices] + stall_options["max_increase"],
             )
 
-        t_c_options = blade_opt["aero_shape"]["t/c"]
+        t_c_options = blade_opt["aero_shape"]["rthick"]
         if t_c_options["flag"]:
             n_opt = t_c_options["n_opt"]
             indices = range(t_c_options["index_start"], t_c_options["index_end"])
             s_opt_t_c = np.linspace(0.0, 1.0, n_opt)
             t_c_interpolator = PchipInterpolator(
-                wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["grid"],
-                wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["values"],
             )
             init_t_c_opt = t_c_interpolator(s_opt_t_c)
 
@@ -1553,10 +1553,10 @@ class PoseOptimization(object):
             init_chord_opt = chord_interpolator(wt_opt["blade.opt_var.s_opt_chord"])
             wt_opt["blade.opt_var.chord_opt"] = init_chord_opt
             if self.modeling["WISDEM"]["RotorSE"]["inn_af"]:
-                wt_opt["inn_af.s_opt_r_thick"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["t/c"]["n_opt"])
+                wt_opt["inn_af.s_opt_r_thick"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["rthick"]["n_opt"])
                 r_thick_interpolator = PchipInterpolator(
-                    wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["grid"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["values"],
                 )
                 init_r_thick_opt = r_thick_interpolator(wt_opt["inn_af.s_opt_r_thick"])
                 wt_opt["inn_af.r_thick_opt"] = init_r_thick_opt

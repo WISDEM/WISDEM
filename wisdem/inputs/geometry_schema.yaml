@@ -73,7 +73,7 @@ properties:
             rotor_diameter:
                 type: number
                 default: 0
-                description: Diameter of the rotor, defined as two times the blade length plus the hub diameter
+                description: Diameter of the rotor, defined as two times the projected blade length plus the hub diameter
                 unit: m
                 minimum: 0
                 maximum: 1000
@@ -160,7 +160,7 @@ properties:
                                         $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
                                         $ref: "#/definitions/distributed_data/grid_nd"
-                            t/c:
+                            rthick:
                                 type: object
                                 required:
                                     - grid
@@ -205,17 +205,6 @@ properties:
                             # coordinates:
                                     # description: Coordinates expressed in the blade root coordinate system.
                                     # $ref: "#/definitions/distributed_data/coordinates"
-                            rthick:
-                                type: object
-                                required:
-                                    - grid
-                                    - values
-                                properties:
-                                    grid:
-                                        $ref: "#/definitions/distributed_data/grid_nd"
-                                    values:
-                                        $ref: "#/definitions/distributed_data/grid_nd"
-
                     elastic_properties_mb:
                         type: object
                         properties:
