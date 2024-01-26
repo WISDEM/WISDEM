@@ -18,11 +18,16 @@ class PlatformFrame(om.ExplicitComponent):
     def setup(self):
         opt = self.options["options"]
         n_member = opt["floating"]["members"]["n_members"]
+        shape = opt["floating"]["members"]["outer_shape"]
 
         for k in range(n_member):
             self.add_input(f"member{k}:nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
             self.add_input(f"member{k}:nodes_r", NULL * np.ones(MEMMAX), units="m")
-            self.add_input(f"member{k}:section_D", NULL * np.ones(MEMMAX), units="m")
+            if shape[k] == "circular":
+                self.add_input(f"member{k}:section_D", NULL * np.ones(MEMMAX), units="m")
+            elif shape[k] == "rectangular":
+                self.add_input(f"member{k}:section_a", NULL * np.ones(MEMMAX), units="m")
+                self.add_input(f"member{k}:section_b", NULL * np.ones(MEMMAX), units="m")
             self.add_input(f"member{k}:section_t", NULL * np.ones(MEMMAX), units="m")
             self.add_input(f"member{k}:section_A", NULL * np.ones(MEMMAX), units="m**2")
             self.add_input(f"member{k}:section_Asx", NULL * np.ones(MEMMAX), units="m**2")

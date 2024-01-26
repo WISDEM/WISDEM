@@ -61,7 +61,6 @@ class FloatingSE(om.Group):
 
         # Connect all input variables from all models
         mem_vars = [
-            "section_D",
             "section_t",
             "section_A",
             "section_Asx",
@@ -91,16 +90,28 @@ class FloatingSE(om.Group):
             "added_mass",
             "waterline_centroid",
         ]
-        mem_load_vars = ["z_global", "outer_diameter_full", "s_full", "s_all"]
+        mem_load_vars = ["z_global", "s_full", "s_all"]
 
         for k in range(n_member):
             for var in mem_vars:
                 self.connect(f"member{k}.{var}", f"member{k}:{var}")
 
             self.connect(f"member{k}.nodes_xyz_all", f"member{k}:nodes_xyz")
-            self.connect(f"member{k}.nodes_r_all", f"member{k}:nodes_r")
+
+            member_shape=opt["floating"]["members"]["outer_shape"][k]
+
+            if member_shape == "circular":
+                self.connect(f"member{k}.nodes_r_all", f"member{k}:nodes_r")
+                self.connect(f"member{k}.section_D", f"member{k}:section_D")
+                self.connect(f"member{k}.outer_diameter_full", f"memload{k}.outer_diameter_full")
+            elif member_shape == "rectangular":
+                # self.connect(f"member{k}.nodes_a_all", f"member{k}:nodes_a")
+                # self.connect(f"member{k}.nodes_b_all", f"member{k}:nodes_b")
+                self.connect(f"member{k}.section_a", f"member{k}:section_a") 
+                self.connect(f"member{k}.section_b", f"member{k}:section_b")
+                self.connect(f"member{k}.side_length_a_full", f"memload{k}.side_length_a_full")
+                self.connect(f"member{k}.side_length_b_full", f"memload{k}.side_length_b_full")
 
             # Member loads hasn't included rectangular yet, so for now, just connect outer_diameter when it is circular
-            if opt["floating"]["members"]["outer_shape"][k] == "circular":
-                for var in mem_load_vars:
-                    self.connect(f"member{k}.{var}", f"memload{k}.{var}")
+            for var in mem_load_vars:
+                self.connect(f"member{k}.{var}", f"memload{k}.{var}")
