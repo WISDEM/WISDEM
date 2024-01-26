@@ -1119,9 +1119,15 @@ class MemberComplex(om.ExplicitComponent):
 
         self.add_output("s_all", NULL * np.ones(MEMMAX))
         self.add_output("center_of_mass", np.zeros(3), units="m")
-        self.add_output("nodes_r_all", np.zeros(MEMMAX), units="m")
         self.add_output("nodes_xyz_all", NULL * np.ones((MEMMAX, 3)), units="m")
-        self.add_output("section_D", NULL * np.ones(MEMMAX), units="m")
+        if self.shape == "circular":
+            self.add_output("section_D", NULL * np.ones(MEMMAX), units="m")
+            self.add_output("nodes_r_all", np.zeros(MEMMAX), units="m")
+        elif self.shape == "rectangular":
+            self.add_output("section_a", NULL * np.ones(MEMMAX), units="m")
+            self.add_output("section_b", NULL * np.ones(MEMMAX), units="m")
+            self.add_output("nodes_a_all", np.zeros(MEMMAX), units="m")
+            self.add_output("nodes_b_all", np.zeros(MEMMAX), units="m")
         self.add_output("section_t", NULL * np.ones(MEMMAX), units="m")
         self.add_output("section_A", NULL * np.ones(MEMMAX), units="m**2")
         self.add_output("section_Asx", NULL * np.ones(MEMMAX), units="m**2")
@@ -1177,7 +1183,9 @@ class MemberComplex(om.ExplicitComponent):
         if self.shape == "circular":
             self.add_bulkhead_sections(inputs, outputs)
             self.add_ring_stiffener_sections(inputs, outputs)
-        self.add_ballast_sections(inputs, outputs)
+            self.add_circular_ballast_sections(inputs, outputs)
+        elif self.shape == "rectangular":
+            self.add_rectangular_ballast_sections(inputs, outputs)
         self.compute_mass_properties(inputs, outputs)
         self.nodal_discretization(inputs, outputs)
 
@@ -1716,13 +1724,13 @@ class MemberComplex(om.ExplicitComponent):
         c_ring = K_m + K_f + K_p
         outputs["stiffener_cost"] = c_ring
 
-    def add_ballast_sections(self, inputs, outputs):
+    def add_circular_ballast_sections(self, inputs, outputs):
         # Unpack variables
         s_full = inputs["s_full"]
         z_full = inputs["z_full"]
         R_od = 0.5 * inputs["outer_diameter_full"]
         twall = inputs["t_full"]
-        s_ballast = inputs["ballast_grid"]
+        s_ballast = inputs["ballast_grid"] # TODO: why do we want a separarate grid for ballast? because it might not overlap with the existing grid?
         rho_ballast = inputs["ballast_density"]
         V_ballast = inputs["ballast_volume"]
         km_ballast = inputs["ballast_unit_cost"]
@@ -1734,7 +1742,7 @@ class MemberComplex(om.ExplicitComponent):
 
         # Move away from ghost regions
         s_ballast += s_ghost1
-        s_ballast = np.minimum(s_ballast, s_ghost2)
+        s_ballast = np.minimum(s_ballast, s_ghost2) # TODO: what if s_ghost2 is smaller than s_ballat? Does it mean that we fill the whole member? Should raise warning or error?
 
         # Number of points for volume integration
         npts = 10
@@ -1781,7 +1789,95 @@ class MemberComplex(om.ExplicitComponent):
                 I_temp = np.zeros((3, 3))
                 for ii in range(npts - 1):
                     R = np.array([0.0, 0.0, cg_pts[ii]])
-                    Icg = util.assembleI([Ixx[ii], Iyy[ii], J0[ii], 0.0, 0.0, 0.0])
+                    Icg = util.assembleI([Ixx[ii], Iyy[ii], J0[ii], 0.0, 0.0, 0.0]) # TODO: does it assemble to a matrix for py3Dframe?
+                    I_temp += Icg + V_pts[ii] * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+                I_ballast += rho_ballast[k] * util.unassembleI(I_temp)
+            else:
+                outputs["variable_ballast_capacity"] = V_avail[k]
+                outputs["variable_ballast_Vpts"] = np.cumsum(np.r_[0, V_pts])
+                outputs["variable_ballast_spts"] = sinterp
+
+        # Save permanent ballast mass and variable height
+        outputs["ballast_mass"] = m_ballast.sum()
+        outputs["ballast_I_base"] = I_ballast
+        outputs["ballast_z_cg"] = np.dot(z_cg, m_ballast) / (m_ballast.sum() + eps)
+        outputs["ballast_cost"] = np.dot(km_ballast, m_ballast)
+        outputs["ballast_height"] = s_end - s_ballast[:, 0]
+        outputs["constr_ballast_capacity"] = V_ballast / V_avail
+
+    def add_rectangular_ballast_sections(self, inputs, outputs):
+        # TODO: we might need to consider ballast along the member in the future when the rectangular member is placed horizontally, which is most common case
+        # Unpack variables
+        s_full = inputs["s_full"]
+        z_full = inputs["z_full"]
+        a_out = inputs["side_length_a_full"]
+        b_out = inputs["side_length_b_full"]
+        twall = inputs["t_full"]
+        s_ballast = inputs["ballast_grid"] # TODO: why do we want a separarate grid for ballast? because it might not overlap with the existing grid?
+        rho_ballast = inputs["ballast_density"]
+        V_ballast = inputs["ballast_volume"]
+        km_ballast = inputs["ballast_unit_cost"]
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
+        n_ballast = len(V_ballast)
+        if n_ballast == 0:
+            return
+
+        # Move away from ghost regions
+        s_ballast += s_ghost1
+        s_ballast = np.minimum(s_ballast, s_ghost2) # TODO: what if s_ghost2 is smaller than s_ballat? Does it mean that we fill the whole member? Should raise warning or error?
+
+        # Number of points for volume integration
+        npts = 10
+        m_ballast = rho_ballast * V_ballast
+        I_ballast = np.zeros(6)
+        s_end = s_ballast[:, 0].copy()
+        z_cg = np.zeros(n_ballast)
+        V_avail = np.zeros(n_ballast)
+        for k in range(n_ballast):
+            # Find geometry of the ballast space
+            sinterp = np.linspace(s_ballast[k, 0], s_ballast[k, 1], npts)
+            zpts = np.interp(sinterp, s_full, z_full)
+            H = zpts[-1] - zpts[0]
+            a_out_pts = np.interp(sinterp, s_full, a_out)
+            b_out_pts = np.interp(sinterp, s_full, b_out)
+            twall_pts = util.sectionalInterp(sinterp, s_full, twall)
+            a_in_pts = a_out_pts - twall_pts
+            b_in_pts = b_out_pts - twall_pts
+
+            # Available volume in this ballast space
+            V_pts = frustum.RectangularFrustumVol(a_in_pts[:-1],b_in_pts[:-1], a_in_pts[1:], b_in_pts[1:], np.diff(zpts))
+            V_avail[k] = V_pts.sum()
+
+            # Augment density for these sections (should already be bulkheads at boundaries)
+            for s in self.sections:
+                if s >= s_ballast[k, 0] and s < s_ballast[k, 1]:
+                    self.sections[s].rho += m_ballast[k] / self.sections[s].A / H
+
+            # If permanent ballast, compute mass properties, but have to find where ballast extends to in cavity
+            if V_ballast[k] > 0.0:
+                s_end[k] = np.interp(V_ballast[k], np.cumsum(np.r_[0, V_pts]), sinterp)
+                z_end = np.interp(V_ballast[k], np.cumsum(np.r_[0, V_pts]), zpts)
+                zpts = np.linspace(zpts[0], z_end, npts)
+                H = np.diff(zpts)
+
+                a_out_pts = np.interp(zpts, z_full, a_out_pts)
+                b_out_pts = np.interp(zpts, z_full, b_out_pts)
+                twall_pts = util.sectionalInterp(zpts, z_full, twall)
+                a_in_pts = a_out_pts - twall_pts
+                b_in_pts = b_out_pts - twall_pts
+
+                V_pts = frustum.RectangularFrustumShellVol(a_in_pts[:-1], b_in_pts[:-1], a_in_pts[1:], b_in_pts[1:], H)
+                cg_pts = frustum.RectangularFrustumCG(a_in_pts[:-1], b_in_pts[:-1], a_in_pts[1:], b_in_pts[1:], H) + zpts[:-1]
+                z_cg[k] = np.dot(cg_pts, V_pts) / V_pts.sum()
+
+                Ixx = frustum.RectangularFrustumIxx(a_in_pts[:-1], b_in_pts[:-1], a_in_pts[1:], b_in_pts[1:], H)
+                Iyy = frustum.RectangularFrustumIyy(a_in_pts[:-1], b_in_pts[:-1], a_in_pts[1:], b_in_pts[1:], H)
+                J0 = frustum.RectangularFrustumIzz(a_in_pts[:-1], b_in_pts[:-1], a_in_pts[1:], b_in_pts[1:], H)
+                I_temp = np.zeros((3, 3))
+                for ii in range(npts - 1):
+                    R = np.array([0.0, 0.0, cg_pts[ii]])
+                    Icg = util.assembleI([Ixx[ii], Iyy[ii], J0[ii], 0.0, 0.0, 0.0]) # TODO: does it assemble to a matrix for py3Dframe?
                     I_temp += Icg + V_pts[ii] * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
                 I_ballast += rho_ballast[k] * util.unassembleI(I_temp)
             else:
@@ -1846,9 +1942,14 @@ class MemberComplex(om.ExplicitComponent):
         # outputs["cost_rate"] = c_total / m_total
 
     def nodal_discretization(self, inputs, outputs):
+        # This adds all nodal dicretization for all the added sections
         # Unpack inputs
         s_full = inputs["s_full"]
-        outer_diameter_full = inputs["outer_diameter_full"]
+        if self.shape == "circular":
+            outer_diameter_full = inputs["outer_diameter_full"]
+        elif self.shape == "rectangular":
+            side_length_a_full = inputs["side_length_a_full"]
+            side_length_b_full = inputs["side_length_b_full"]
         z_full = inputs["z_full"]
         s_axial = inputs["grid_axial_joints"]
         xyz0 = inputs["joint1"]
@@ -1863,18 +1964,19 @@ class MemberComplex(om.ExplicitComponent):
         s_grid = np.array(list(self.sections.keys()))
         _, idx = np.unique(s_grid.round(6), return_index=True)  # Ensure no duplicates
         s_grid = s_grid[idx]
-        r_grid = 0.5 * np.interp(s_grid, s_full, outer_diameter_full)
         n_nodes = s_grid.size
         nodes = np.outer(s_grid, dxyz) + xyz0[np.newaxis, :]
 
+        
+
+        
         # Convert axial to absolute
         outputs["center_of_mass"] = (outputs["z_cg"] / z_full[-1]) * dxyz + xyz0
 
         # Store all nodes and sections
         outputs["s_all"] = NULL * np.ones(MEMMAX)
-        outputs["nodes_r_all"] = NULL * np.ones(MEMMAX)
+        
         outputs["nodes_xyz_all"] = NULL * np.ones((MEMMAX, 3))
-        outputs["section_D"] = NULL * np.ones(MEMMAX)
         outputs["section_t"] = NULL * np.ones(MEMMAX)
         outputs["section_A"] = NULL * np.ones(MEMMAX)
         outputs["section_Asx"] = NULL * np.ones(MEMMAX)
@@ -1886,15 +1988,32 @@ class MemberComplex(om.ExplicitComponent):
         outputs["section_E"] = NULL * np.ones(MEMMAX)
         outputs["section_G"] = NULL * np.ones(MEMMAX)
         outputs["section_sigma_y"] = NULL * np.ones(MEMMAX)
-
         outputs["s_all"][:n_nodes] = s_grid
         outputs["nodes_xyz_all"][:n_nodes, :] = nodes
-        outputs["nodes_r_all"][:n_nodes] = r_grid
+
+        if self.shape == "circular":
+            outputs["nodes_r_all"] = NULL * np.ones(MEMMAX)
+            outputs["section_D"] = NULL * np.ones(MEMMAX)
+            r_grid = 0.5 * np.interp(s_grid, s_full, outer_diameter_full)
+            outputs["nodes_r_all"][:n_nodes] = r_grid # This nodes_r eventuallly passed to platformFrame
+        elif self.shape == "rectangular":
+            outputs["nodes_a_all"] = NULL * np.ones(MEMMAX)
+            outputs["nodes_b_all"] = NULL * np.ones(MEMMAX)
+            outputs["section_a"] = NULL * np.ones(MEMMAX)
+            outputs["section_b"] = NULL * np.ones(MEMMAX)
+            a_grid = np.interp(s_grid, s_full, side_length_a_full)
+            b_grid = np.interp(s_grid, s_full, side_length_b_full)
+            outputs["nodes_a_all"][:n_nodes] = a_grid
+            outputs["nodes_b_all"][:n_nodes] = b_grid
 
         for k, s in enumerate(s_grid):
             if s == s_grid[-1]:
                 continue
-            outputs["section_D"][k] = self.sections[s].D
+            if self.shape == "circular":
+                outputs["section_D"][k] = self.sections[s].D
+            elif self.shape == "rectangular":
+                outputs["section_a"][k] = self.sections[s].a
+                outputs["section_b"][k] = self.sections[s].b
             outputs["section_t"][k] = self.sections[s].t
             outputs["section_A"][k] = self.sections[s].A
             outputs["section_Asx"][k] = self.sections[s].Asx
