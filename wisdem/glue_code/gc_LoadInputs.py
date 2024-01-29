@@ -1504,10 +1504,6 @@ class WindTurbineOntologyPython(object):
                 self.wt_init["costs"]["bearing_mass_cost_coeff"] = float(
                     wt_opt["tcc.main_bearing_cost"] / wt_opt["tcc.main_bearing_mass"]
                 )
-            if float(wt_opt["tcc.gearbox_mass"]) > 0.0:
-                self.wt_init["costs"]["gearbox_mass_cost_coeff"] = float(
-                    wt_opt["tcc.gearbox_cost"] / wt_opt["tcc.gearbox_mass"]
-                )
             if float(wt_opt["tcc.hss_mass"]) > 0.0:
                 self.wt_init["costs"]["hss_mass_cost_coeff"] = float(wt_opt["tcc.hss_cost"] / wt_opt["tcc.hss_mass"])
             if float(wt_opt["tcc.generator_mass"]) > 0.0:

@@ -357,10 +357,8 @@ class GearboxMass(om.ExplicitComponent):
     ----------
     rotor_torque : float, [N*m]
         torque from rotor at rated power
-    gearbox_mass_coeff : float
-        k inthe gearbox mass equation: k*rotor_torque^b
-    gearbox_mass_exp : float
-        exp in the gearbox mass equation: k*rotor_torque^b
+    gearbox_torque_density : float, [N*m/kg]
+        In 2024, modern 5-7MW gearboxes are able to reach 200 Nm/kg
 
     Returns
     -------
@@ -371,18 +369,14 @@ class GearboxMass(om.ExplicitComponent):
 
     def setup(self):
         self.add_input("rotor_torque", 0.0, units="kN*m")
-        self.add_input("gearbox_mass_coeff", 113.0)
-        self.add_input("gearbox_mass_exp", 0.71)
+        self.add_input("gearbox_torque_density", 200.0, units='N*m/kg', desc='In 2024, modern 5-7MW gearboxes are able to reach 200 Nm/kg')
 
         self.add_output("gearbox_mass", 0.0, units="kg")
 
     def compute(self, inputs, outputs):
-        rotor_torque = inputs["rotor_torque"]
-        gearbox_mass_coeff = inputs["gearbox_mass_coeff"]
-        gearbox_mass_exp = inputs["gearbox_mass_exp"]
 
         # calculate the gearbox mass
-        outputs["gearbox_mass"] = gearbox_mass_coeff * rotor_torque ** gearbox_mass_exp
+        outputs["gearbox_mass"] = inputs["rotor_torque"] * 1.e+3 / inputs["gearbox_torque_density"]
 
 
 # --------------------------------------------------------------------

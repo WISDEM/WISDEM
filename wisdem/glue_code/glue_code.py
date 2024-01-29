@@ -726,7 +726,7 @@ class WT_RNTA(om.Group):
         self.connect("costs.spinner_mass_cost_coeff", "tcc.spinner_mass_cost_coeff")
         self.connect("costs.lss_mass_cost_coeff", "tcc.lss_mass_cost_coeff")
         self.connect("costs.bearing_mass_cost_coeff", "tcc.bearing_mass_cost_coeff")
-        self.connect("costs.gearbox_mass_cost_coeff", "tcc.gearbox_mass_cost_coeff")
+        self.connect("costs.gearbox_torque_cost", "tcc.gearbox_torque_cost")
         self.connect("costs.hss_mass_cost_coeff", "tcc.hss_mass_cost_coeff")
         self.connect("costs.generator_mass_cost_coeff", "tcc.generator_mass_cost_coeff")
         self.connect("costs.bedplate_mass_cost_coeff", "tcc.bedplate_mass_cost_coeff")

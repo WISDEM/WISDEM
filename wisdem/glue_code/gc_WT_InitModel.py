@@ -1364,7 +1364,7 @@ def assign_costs_values(wt_opt, costs):
     wt_opt["costs.spinner_mass_cost_coeff"] = costs["spinner_mass_cost_coeff"]
     wt_opt["costs.lss_mass_cost_coeff"] = costs["lss_mass_cost_coeff"]
     wt_opt["costs.bearing_mass_cost_coeff"] = costs["bearing_mass_cost_coeff"]
-    wt_opt["costs.gearbox_mass_cost_coeff"] = costs["gearbox_mass_cost_coeff"]
+    wt_opt["costs.gearbox_torque_cost"] = costs["gearbox_torque_cost"]
     wt_opt["costs.hss_mass_cost_coeff"] = costs["hss_mass_cost_coeff"]
     wt_opt["costs.generator_mass_cost_coeff"] = costs["generator_mass_cost_coeff"]
     wt_opt["costs.bedplate_mass_cost_coeff"] = costs["bedplate_mass_cost_coeff"]

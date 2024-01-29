@@ -585,7 +585,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             costs_ivc.add_output("spinner_mass_cost_coeff", units="USD/kg", val=11.1)
             costs_ivc.add_output("lss_mass_cost_coeff", units="USD/kg", val=11.9)
             costs_ivc.add_output("bearing_mass_cost_coeff", units="USD/kg", val=4.5)
-            costs_ivc.add_output("gearbox_mass_cost_coeff", units="USD/kg", val=12.9)
+            costs_ivc.add_output("gearbox_torque_cost", units="USD/kN/m", val=50.)
             costs_ivc.add_output("hss_mass_cost_coeff", units="USD/kg", val=6.8)
             costs_ivc.add_output("generator_mass_cost_coeff", units="USD/kg", val=12.4)
             costs_ivc.add_output("bedplate_mass_cost_coeff", units="USD/kg", val=2.9)
