@@ -248,6 +248,7 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_output("Ct_aero", val=np.zeros(self.n_pc), desc="rotor aerodynamic thrust coefficient")
         self.add_output("Cq_aero", val=np.zeros(self.n_pc), desc="rotor aerodynamic torque coefficient")
         self.add_output("Cm_aero", val=np.zeros(self.n_pc), desc="rotor aerodynamic moment coefficient")
+        self.add_output("ax_induct_rotor", val=np.zeros(self.n_pc), desc="rotor aerodynamic induction")
 
         self.add_output("V_R25", val=0.0, units="m/s", desc="region 2.5 transition wind speed")
         self.add_output("rated_V", val=0.0, units="m/s", desc="rated wind speed")
@@ -806,18 +807,21 @@ class ComputePowerCurve(ExplicitComponent):
         self.ccblade.induction_inflow = True
         tsr_vec = Omega_rpm / 30.0 * np.pi * R_tip / Uhub
         id_regII = np.argmin(abs(tsr_vec - inputs["tsr_operational"]))
-        loads, derivs = self.ccblade.distributedAeroLoads(Uhub[id_regII], Omega_rpm[id_regII], pitch[id_regII], 0.0)
-
-        # outputs
-        outputs["ax_induct_regII"] = loads["a"]
-        outputs["tang_induct_regII"] = loads["ap"]
-        outputs["aoa_regII"] = loads["alpha"]
-        outputs["cl_regII"] = loads["Cl"]
-        outputs["cd_regII"] = loads["Cd"]
-        outputs["L_D"] = loads["Cl"] / loads["Cd"]
-        outputs["Cp_regII"] = Cp_aero[id_regII]
-        outputs["Ct_regII"] = Ct_aero[id_regII]
-
+        ax_induct_rotor = np.zeros_like(Uhub)
+        for i in range(len(Uhub)):
+            loads, _ = self.ccblade.distributedAeroLoads(Uhub[i], Omega_rpm[i], pitch[i], 0.0)
+            ax_induct_rotor[i] = 2. / inputs["r"][-1]**2. * np.trapz(loads['a'] * inputs["r"], inputs["r"])
+            if i == id_regII:
+                # outputs
+                outputs["ax_induct_regII"] = loads["a"]
+                outputs["tang_induct_regII"] = loads["ap"]
+                outputs["aoa_regII"] = loads["alpha"]
+                outputs["cl_regII"] = loads["Cl"]
+                outputs["cd_regII"] = loads["Cd"]
+                outputs["L_D"] = loads["Cl"] / loads["Cd"]
+                outputs["Cp_regII"] = Cp_aero[i]
+                outputs["Ct_regII"] = Ct_aero[i]
+        outputs["ax_induct_rotor"] = ax_induct_rotor
 
 class ComputeSplines(ExplicitComponent):
     """
