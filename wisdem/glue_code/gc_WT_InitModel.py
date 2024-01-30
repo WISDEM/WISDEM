@@ -778,6 +778,7 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
             wt_opt["nacelle.bedplate_web_thickness"] = nacelle["drivetrain"]["bedplate_web_thickness"]
             wt_opt["nacelle.gear_configuration"] = nacelle["drivetrain"]["gear_configuration"].lower()
             wt_opt["nacelle.gearbox_mass_user"] = nacelle["drivetrain"]["gearbox_mass_user"]
+            wt_opt["nacelle.gearbox_torque_density"] = nacelle["drivetrain"]["gearbox_torque_density"]
             wt_opt["nacelle.gearbox_radius_user"] = nacelle["drivetrain"]["gearbox_radius_user"]
             wt_opt["nacelle.gearbox_length_user"] = nacelle["drivetrain"]["gearbox_length_user"]
             wt_opt["nacelle.planet_numbers"] = nacelle["drivetrain"]["planet_numbers"]
@@ -1364,7 +1365,7 @@ def assign_costs_values(wt_opt, costs):
     wt_opt["costs.spinner_mass_cost_coeff"] = costs["spinner_mass_cost_coeff"]
     wt_opt["costs.lss_mass_cost_coeff"] = costs["lss_mass_cost_coeff"]
     wt_opt["costs.bearing_mass_cost_coeff"] = costs["bearing_mass_cost_coeff"]
-    wt_opt["costs.gearbox_mass_cost_coeff"] = costs["gearbox_mass_cost_coeff"]
+    wt_opt["costs.gearbox_torque_cost"] = costs["gearbox_torque_cost"]
     wt_opt["costs.hss_mass_cost_coeff"] = costs["hss_mass_cost_coeff"]
     wt_opt["costs.generator_mass_cost_coeff"] = costs["generator_mass_cost_coeff"]
     wt_opt["costs.bedplate_mass_cost_coeff"] = costs["bedplate_mass_cost_coeff"]

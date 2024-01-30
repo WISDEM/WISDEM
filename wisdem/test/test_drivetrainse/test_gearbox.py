@@ -25,7 +25,7 @@ class TestGearbox(unittest.TestCase):
         self.inputs["gearbox_length_user"] = 0.0
         self.inputs["gearbox_radius_user"] = 0.0
 
-        self.myobj = gb.Gearbox(direct_drive=False)
+        self.myobj = gb.Gearbox(direct_drive=False, use_gb_torque_density=False)
 
     def testDirectDrive(self):
         self.myobj = gb.Gearbox(direct_drive=True)

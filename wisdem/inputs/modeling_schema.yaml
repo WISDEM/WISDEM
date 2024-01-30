@@ -215,6 +215,10 @@ properties:
                         maximum: 5.0
                         default: 1.0
                         unit: none
+                    use_gb_torque_density:
+                        type: boolean
+                        default: True
+                        description: Flag switching between running to gearbox sizing of DrivetrainSE (False) or the simple sizing given a value of torque density expressed in Nm/kg
                     hub:
                         type: object
                         default: {}

@@ -304,6 +304,7 @@ components:
             planet_numbers: [3, 3, 0]
             gear_configuration: eep
             gearbox_efficiency: 0.955
+            gearbox_torque_density: 200.
             damping_ratio: 0.01
             mb1Type: CARB
             mb2Type: SRB
@@ -704,7 +705,7 @@ costs:
     spinner_mass_cost_coeff: 11.1
     lss_mass_cost_coeff: 11.9
     bearing_mass_cost_coeff: 4.5
-    gearbox_mass_cost_coeff: 12.9
+    gearbox_torque_cost: 50.
     hss_mass_cost_coeff: 6.8
     generator_mass_cost_coeff: 12.4
     bedplate_mass_cost_coeff: 2.9

@@ -618,6 +618,13 @@ properties:
                                 minimum: 0.
                                 maximum: 1.e+9
                                 default: 0.0
+                            gearbox_torque_density:
+                                type: number
+                                minimum: 0.
+                                maximum: 1.e+4
+                                default: 200.
+                                units: N*m/kg
+                                desc: Torque density of the gearbox. This can be used to set gearbox mass with a top-down approach
                             gearbox_efficiency:
                                 type: number
                                 description: Efficiency of the gearbox system.
@@ -2869,13 +2876,13 @@ properties:
                 minimum: 0.0
                 maximum: 1.e+6
                 default: 4.5
-            gearbox_mass_cost_coeff:
+            gearbox_torque_cost:
                 type: number
-                description: Regression-based gearbox cost/mass ratio
-                unit: USD/kg
+                description: Regression-based cost of gearboxes based on torque, tuned in 2024
+                unit: USD/kNm
                 minimum: 0.0
-                maximum: 1.e+6
-                default: 12.9
+                maximum: 1.e+3
+                default: 50.
             hss_mass_cost_coeff:
                 type: number
                 description: Regression-based high speed side cost/mass ratio
