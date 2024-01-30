@@ -1507,10 +1507,11 @@ class WindTurbineOntologyPython(object):
                 self.wt_init["costs"]["bearing_mass_cost_coeff"] = float(
                     wt_opt["tcc.main_bearing_cost"] / wt_opt["tcc.main_bearing_mass"]
                 )
-            if float(wt_opt["drivese.gearbox_mass"]) > 0.:
-                self.wt_init["costs"]["gearbox_torque_cost"] = float(
-                    wt_opt["tcc.gearbox_cost"]/wt_opt["drivese.rated_torque"]*1.e+3
-                )
+            if self.modeling_options["flags"]["nacelle"]:
+                if float(wt_opt["drivese.gearbox_mass"]) > 0.:
+                    self.wt_init["costs"]["gearbox_torque_cost"] = float(
+                        wt_opt["tcc.gearbox_cost"]/wt_opt["drivese.rated_torque"]*1.e+3
+                    )
             if float(wt_opt["tcc.hss_mass"]) > 0.0:
                 self.wt_init["costs"]["hss_mass_cost_coeff"] = float(wt_opt["tcc.hss_cost"] / wt_opt["tcc.hss_mass"])
             if float(wt_opt["tcc.generator_mass"]) > 0.0:
