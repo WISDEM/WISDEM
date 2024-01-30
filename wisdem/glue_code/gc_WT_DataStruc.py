@@ -239,6 +239,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 "gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive"
             )
             nacelle_ivc.add_output("gearbox_mass_user", val=0.0, units="kg", desc="User override of gearbox mass.")
+            nacelle_ivc.add_output("gearbox_torque_density", val=0.0, units="N*m/kg", desc="Torque density of the gearbox.")
             nacelle_ivc.add_output(
                 "gearbox_radius_user",
                 val=0.0,
@@ -251,6 +252,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 units="m",
                 desc="User override of gearbox length (only used if gearbox_mass_user is > 0).",
             )
+
             nacelle_ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
             if modeling_options["flags"]["nacelle"]:
                 nacelle_ivc.add_output(

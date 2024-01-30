@@ -116,7 +116,6 @@ class Gearbox(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("direct_drive", default=True)
         self.options.declare("use_gb_torque_density", default=True)
-        self.options.declare("gearbox_torque_density", default=200.)
 
     def setup(self):
         self.add_discrete_input("gear_configuration", val="eep")
@@ -127,10 +126,9 @@ class Gearbox(om.ExplicitComponent):
         self.add_input("rated_torque", val=0.0, units="N*m")
         self.add_input("machine_rating", val=0.0, units="kW")
         self.add_input("gearbox_mass_user", val=0.0, units="kg")
+        self.add_input("gearbox_torque_density", val=0.0, units="N*m/kg")
         self.add_input("gearbox_radius_user", val=0.0, units="m")
         self.add_input("gearbox_length_user", val=0.0, units="m")
-        self.add_input("gearbox_torque_density", self.options["gearbox_torque_density"], 
-                       units='N*m/kg', desc='In 2024, modern 5-7MW gearboxes are able to reach 200 Nm/kg')
 
         self.add_output("stage_ratios", val=np.zeros(3))
         self.add_output("gearbox_mass", 0.0, units="kg")

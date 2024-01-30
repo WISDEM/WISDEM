@@ -347,6 +347,7 @@ class WT_RNTA(om.Group):
                 self.connect("nacelle.planet_numbers", "drivese.planet_numbers")
                 self.connect("nacelle.gear_configuration", "drivese.gear_configuration")
                 self.connect("nacelle.gearbox_mass_user", "drivese.gearbox_mass_user")
+                self.connect("nacelle.gearbox_torque_density", "drivese.gearbox_torque_density")
                 self.connect("nacelle.gearbox_radius_user", "drivese.gearbox_radius_user")
                 self.connect("nacelle.gearbox_length_user", "drivese.gearbox_length_user")
                 self.connect("nacelle.bedplate_flange_width", "drivese.bedplate_flange_width")

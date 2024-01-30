@@ -435,6 +435,7 @@ components:
             planet_numbers: [3, 3, 1]
             gear_configuration: eep
             gearbox_efficiency: 0.95
+            gearbox_torque_density: 200.
             mb1Type: CARB
             mb2Type: SRB
             uptower: true

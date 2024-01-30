@@ -618,6 +618,13 @@ properties:
                                 minimum: 0.
                                 maximum: 1.e+9
                                 default: 0.0
+                            gearbox_torque_density:
+                                type: number
+                                minimum: 0.
+                                maximum: 1.e+4
+                                default: 200.
+                                units: N*m/kg
+                                desc: Torque density of the gearbox. This can be used to set gearbox mass with a top-down approach
                             gearbox_efficiency:
                                 type: number
                                 description: Efficiency of the gearbox system.

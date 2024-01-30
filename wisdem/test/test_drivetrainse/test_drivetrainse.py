@@ -374,7 +374,6 @@ class TestGroup(unittest.TestCase):
         opt["WISDEM"]["DriveSE"] = {}
         opt["WISDEM"]["DriveSE"]["direct"] = False
         opt["WISDEM"]["DriveSE"]["use_gb_torque_density"] = False
-        opt["WISDEM"]["DriveSE"]["gearbox_torque_density"] = 0.
         opt["WISDEM"]["DriveSE"]["hub"] = {}
         opt["WISDEM"]["DriveSE"]["hub"]["hub_gamma"] = 2.0
         opt["WISDEM"]["DriveSE"]["hub"]["spinner_gamma"] = 1.5
