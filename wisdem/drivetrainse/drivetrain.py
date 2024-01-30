@@ -157,8 +157,12 @@ class DrivetrainSE(om.Group):
         opt = self.options["modeling_options"]["WISDEM"]["DriveSE"]
         n_dlcs = self.options["modeling_options"]["WISDEM"]["n_dlc"]
         direct = opt["direct"]
-        use_gb_torque_density = opt["use_gb_torque_density"]
-        gearbox_torque_density = opt["gearbox_torque_density"]
+        if direct:
+            use_gb_torque_density = False
+            gearbox_torque_density = 0.
+        else:
+            use_gb_torque_density = opt["use_gb_torque_density"]
+            gearbox_torque_density = opt["gearbox_torque_density"]
         dogen = self.options["modeling_options"]["flags"]["generator"]
         n_pc = self.options["modeling_options"]["WISDEM"]["RotorSE"]["n_pc"]
 
