@@ -260,8 +260,8 @@ class Gearbox(om.ExplicitComponent):
 
             # calculate mass properties
             D_rotor = inputs["rotor_diameter"]
-            L_gearbox = 0.012 * D_rotor
-            R_gearbox = 0.5 * 0.75 * 0.015 * D_rotor
+            L_gearbox = 0.015 * D_rotor # assumed to be 1.5% of wind turbine rotor diameter, regression from Jan 30th, 2024 
+            R_gearbox = 0.006 * D_rotor # assumed to be 0.6% of wind turbine rotor diameter, regression from Jan 30th, 2024 
         else:
             m_gearbox = inputs["gearbox_mass_user"]
             R_gearbox = inputs["gearbox_radius_user"]
