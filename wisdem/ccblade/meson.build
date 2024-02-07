@@ -19,6 +19,7 @@ python_sources = [
   'Polar.py',
   'ccblade.py',
   'ccblade_component.py',
+  'polar_file.py',
 ]
 
 py3.install_sources(

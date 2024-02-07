@@ -45,7 +45,6 @@ py3.install_sources(
   subdir: 'wisdem'
 )
 
-subdir('airfoilprep')
 subdir('ccblade')
 subdir('commonse')
 subdir('drivetrainse')
