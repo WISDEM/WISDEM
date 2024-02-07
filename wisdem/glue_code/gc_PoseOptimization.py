@@ -431,8 +431,12 @@ class PoseOptimization(object):
         return wt_opt
 
     def set_objective(self, wt_opt):
-        # Set merit figure. Each objective has its own scaling.
-        if self.opt["merit_figure"] == "AEP":
+        # Set merit figure. Each objective has its own scaling.  Check first for user override
+        if self.opt["merit_figure_user"]["variable"] != "":
+            wt_opt.model.add_objective(self.opt["merit_figure_user"]["variable"],
+                                       ref=self.opt["merit_figure_user"]["scaling"])
+
+        elif self.opt["merit_figure"] == "AEP":
             wt_opt.model.add_objective("rotorse.rp.AEP", ref=-1.0e6)
 
         elif self.opt["merit_figure"] == "blade_mass":
