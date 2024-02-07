@@ -436,6 +436,16 @@ class OrbitWisdem(om.ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         config = self.compile_orbit_config_file(inputs, outputs, discrete_inputs, discrete_outputs)
 
+        # Debug only
+        #import json
+
+        #fname = "orbit_dump.json"
+        #with open(fname, "w") as f:
+        #    f.write(json.dumps(config))
+
+        #with open(fname) as f:
+        #    config = json.loads(f.read())
+        
         project = ProjectManager(config)
         project.run()
 
