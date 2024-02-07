@@ -39,6 +39,7 @@ fortranobject_dep = declare_dependency(
 python_sources = [
   '__init__.py',
   'main.py',
+]
 
 py3.install_sources(
   python_sources,
