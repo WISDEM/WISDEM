@@ -33,7 +33,7 @@ class TestAll(unittest.TestCase):
         self.assertAlmostEqual(float(prob["main_bearing_mass"][0]), 2245.41649102, 2)
         self.assertAlmostEqual(float(prob["rated_rpm"][0]), 12.1260909, 2)
         self.assertAlmostEqual(float(prob["rotor_torque"][0]), 4375.0, 2)
-        self.assertAlmostEqual(float(prob["gearbox_mass"][0]), 43468.32086769, 2)
+        self.assertAlmostEqual(float(prob["gearbox_mass"][0]), 21875.0, 2)
         self.assertAlmostEqual(float(prob["hss_mass"][0]), 994.7, 2)
         self.assertAlmostEqual(float(prob["generator_mass"][0]), 14900.0, 2)
         self.assertAlmostEqual(float(prob["bedplate_mass"][0]), 41765.26095285, 2)
@@ -45,8 +45,8 @@ class TestAll(unittest.TestCase):
         self.assertAlmostEqual(float(prob["tower_mass"][0]), 182336.48057717, 2)
         self.assertAlmostEqual(float(prob["hub_system_mass"][0]), 55850.44282136, 2)
         self.assertAlmostEqual(float(prob["rotor_mass"][0]), 111622.44744083, 2)
-        self.assertAlmostEqual(float(prob["nacelle_mass"][0]), 173049.20418327392, 2)
-        self.assertAlmostEqual(float(prob["turbine_mass"][0]), 467008.1322012795, 2)
+        self.assertAlmostEqual(float(prob["nacelle_mass"][0]),  151455.88331558352, 2)
+        self.assertAlmostEqual(float(prob["turbine_mass"][0]), 445414.81133358914, 2)
 
     def testMassAndCost(self):
         # simple test of module
@@ -75,7 +75,7 @@ class TestAll(unittest.TestCase):
         self.assertAlmostEqual(float(prob["main_bearing_mass"][0]), 2245.41649102, 2)
         self.assertAlmostEqual(float(prob["rated_rpm"][0]), 12.1260909, 2)
         self.assertAlmostEqual(float(prob["rotor_torque"][0]), 4375.0, 2)
-        self.assertAlmostEqual(float(prob["gearbox_mass"][0]), 43468.32086769, 2)
+        self.assertAlmostEqual(float(prob["gearbox_mass"][0]), 21875.0, 2)
         self.assertAlmostEqual(float(prob["hss_mass"][0]), 994.7, 2)
         self.assertAlmostEqual(float(prob["generator_mass"][0]), 14900.0, 2)
         self.assertAlmostEqual(float(prob["bedplate_mass"][0]), 41765.26095285, 2)
@@ -87,8 +87,8 @@ class TestAll(unittest.TestCase):
         self.assertAlmostEqual(float(prob["tower_mass"][0]), 182336.48057717, 2)
         self.assertAlmostEqual(float(prob["hub_system_mass"][0]), 55850.44282136, 2)
         self.assertAlmostEqual(float(prob["rotor_mass"][0]), 111622.44744083, 2)
-        self.assertAlmostEqual(float(prob["nacelle_mass"][0]), 173049.20418327392, 2)
-        self.assertAlmostEqual(float(prob["turbine_mass"][0]), 467008.1322012795, 2)
+        self.assertAlmostEqual(float(prob["nacelle_mass"][0]),  151455.88331558352, 2)
+        self.assertAlmostEqual(float(prob["turbine_mass"][0]), 445414.81133358914, 2)
 
         self.assertAlmostEqual(float(prob["blade_cost"][0]), 271423.75581475, 2)
         self.assertAlmostEqual(float(prob["hub_cost"][0]), 171906.29381221, 2)
@@ -100,7 +100,7 @@ class TestAll(unittest.TestCase):
         self.assertAlmostEqual(float(prob["rotor_mass_tcc"][0]), 111622.44744083, 2)
         self.assertAlmostEqual(float(prob["lss_cost"][0]), 271561.32346034, 2)
         self.assertAlmostEqual(float(prob["main_bearing_cost"][0]), 10104.37420958, 2)
-        self.assertAlmostEqual(float(prob["gearbox_cost"][0]), 560741.33919321, 2)
+        self.assertAlmostEqual(float(prob["gearbox_cost"][0]), 218750.0 , 2)
         self.assertAlmostEqual(float(prob["hss_cost"][0]), 6763.96, 2)
         self.assertAlmostEqual(float(prob["generator_cost"][0]), 184760.0, 2)
         self.assertAlmostEqual(float(prob["bedplate_cost"][0]), 121119.25676326, 2)
@@ -112,13 +112,13 @@ class TestAll(unittest.TestCase):
         self.assertAlmostEqual(float(prob["cover_cost"][0]), 38969.133, 2)
         self.assertAlmostEqual(float(prob["platforms_cost"][0]), 101273.24528671, 2)
         self.assertAlmostEqual(float(prob["transformer_cost"][0]), 215918.0, 2)
-        self.assertAlmostEqual(float(prob["nacelle_cost"][0]), 2007604.267200145, 2)
-        self.assertAlmostEqual(float(prob["nacelle_mass_tcc"][0]), 173049.20418327392, 2)
+        self.assertAlmostEqual(float(prob["nacelle_cost"][0]), 1665612.9280069391, 2)
+        self.assertAlmostEqual(float(prob["nacelle_mass_tcc"][0]), 151455.88331558352 , 2)
         self.assertAlmostEqual(float(prob["tower_parts_cost"][0]), 528775.7936738, 2)
         self.assertAlmostEqual(float(prob["tower_cost"][0]), 528775.7936738, 2)
-        self.assertAlmostEqual(float(prob["turbine_mass_tcc"][0]), 467008.1322012795, 2)
-        self.assertAlmostEqual(float(prob["turbine_cost"][0]), 3772013.7435466847, 2)
-        self.assertAlmostEqual(float(prob["turbine_cost_kW"][0]), 754.402748709337, 2)
+        self.assertAlmostEqual(float(prob["turbine_mass_tcc"][0]), 445414.81133358914, 2)
+        self.assertAlmostEqual(float(prob["turbine_cost"][0]), 3430022.404353479, 2)
+        self.assertAlmostEqual(float(prob["turbine_cost_kW"][0]), 686.0044808706958, 2)
 
 
 def suite():

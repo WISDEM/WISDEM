@@ -29,7 +29,7 @@ from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
 
 import wisdem.ccblade._bem as _bem
-from wisdem.airfoilprep import Airfoil
+from wisdem.ccblade.Polar import Polar
 
 # ------------------
 #  Airfoil Class
@@ -92,23 +92,6 @@ class CCAirfoil(object):
 
         if self.use_cm > 0:
             self.cm_spline = RectBivariateSpline(alpha, Re, cm, kx=kx, ky=ky, s=0.0001)
-
-    @classmethod
-    def initFromAerodynFile(cls, aerodynFile):
-        """convenience method for initializing with AeroDyn formatted files
-        Parameters
-        ----------
-        aerodynFile : str
-            location of AeroDyn style airfoiil file
-        Returns
-        -------
-        af : CCAirfoil
-            a constructed CCAirfoil object
-        """
-
-        af = Airfoil.initFromAerodynFile(aerodynFile)
-        alpha, Re, cl, cd, cm = af.createDataGrid()
-        return cls(alpha, Re, cl, cd, cm=cm)
 
     def max_eff(self, Re):
         # Get the angle of attack, cl and cd at max airfoil efficiency. For a cylinder, set the angle of attack to 0

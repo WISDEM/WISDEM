@@ -121,7 +121,7 @@ properties:
                                         default: 4
                                         minimum: 1
                                         description: Index of airfoil where the optimization can start shifting airfoil position. The airfoil at blade tip is always locked.
-                            t/c:
+                            rthick:
                                 type: object
                                 default: {}
                                 description: Blade relative thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span. This requires the INN for airfoil design

@@ -16,7 +16,7 @@ def landbosse_costs_by_module_type_operation():
     prob.model = LandBOSSE()
     prob.setup()
     prob.run_model()
-    # prob.model.list_inputs(units=True)
+    #prob.model.list_inputs(units=True, desc=False)
     landbosse_costs_by_module_type_operation = prob["landbosse_costs_by_module_type_operation"]
     return landbosse_costs_by_module_type_operation
 
@@ -105,3 +105,5 @@ def test_landbosse(landbosse_costs_by_module_type_operation):
     )
 
     assert result
+
+    

@@ -6,14 +6,12 @@ precomp_source = custom_target('precompmodule.c',
                             )
 
 py3.extension_module('_precomp',
-                    'src/PreCompPy.f90',
-                    precomp_source,
-                    fortranobject_c,
-                    include_directories: inc_np,
-                    dependencies : py3_dep,
-                    subdir: 'wisdem/rotorse',
-		    link_language: 'fortran',
-                    install : true)
+                     'src/PreCompPy.f90',
+                     precomp_source,
+                     dependencies : fortranobject_dep,
+                     subdir: 'wisdem/rotorse',
+		     link_language: 'fortran',
+                     install : true)
 
 python_sources = [
   '__init__.py',
@@ -33,4 +31,3 @@ py3.install_sources(
 )
 
 subdir('geometry_tools')
-
