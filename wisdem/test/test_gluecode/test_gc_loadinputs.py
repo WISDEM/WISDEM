@@ -55,8 +55,7 @@ class TestLoadInputs(unittest.TestCase):
 
         self.myobj.analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"] = 500
         self.myobj.analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"] = 600
-        self.myobj.analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"] = 700
-        self.myobj.analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"] = 800
+        self.myobj.analysis_options["design_variables"]["blade"]["n_opt_struct"] = [700, 800]
         self.myobj.set_opt_flags()
         self.assertEqual(
             self.myobj.analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"],
@@ -67,11 +66,11 @@ class TestLoadInputs(unittest.TestCase):
             self.myobj.modeling_options["WISDEM"]["RotorSE"]["n_span"],
         )
         self.assertEqual(
-            self.myobj.analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"],
+            self.myobj.analysis_options["design_variables"]["blade"]["n_opt_struct"][0],
             self.myobj.modeling_options["WISDEM"]["RotorSE"]["n_span"],
         )
         self.assertEqual(
-            self.myobj.analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"],
+            self.myobj.analysis_options["design_variables"]["blade"]["n_opt_struct"][1],
             self.myobj.modeling_options["WISDEM"]["RotorSE"]["n_span"],
         )
 
