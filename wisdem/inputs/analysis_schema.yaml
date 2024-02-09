@@ -973,26 +973,46 @@ properties:
                         properties:
                             flap_3P: *flag
                             edge_3P: *flag
-                            first_flap:
+                            first_flap: &freq_constraint
+                                type: object
+                                description: Targeted blade natural frequency (useful for inverse design approaches)
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    target:
+                                        type: number
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 10.0
+                                        description: Value of the target natural frequency
+                                    acceptable_error:
+                                        type: number
+                                        default: 0.01
+                                        minimum: 1.e-6
+                                        maximum: 5.0
+                                        description: Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility.
+                            second_flap: *freq_constraint
+                            first_edge: *freq_constraint
+                            second_edge: *freq_constraint
+                            first_torsion: *freq_constraint
+                    mass:
+                        type: object
+                        description: Enforcing a target blade mass (useful for inverse design approaches)
+                        default: {}
+                        properties:
+                            flag: *flag
+                            target:
                                 type: number
                                 default: 0.0
-                                minimum: 0.0
-                                maximum: 5.0
-                            second_flap:
+                                minimum: 1.e+2
+                                maximum: 3.e+5
+                                description: Value of the target blade mass
+                            acceptable_error:
                                 type: number
-                                default: 0.0
-                                minimum: 0.0
-                                maximum: 10.0
-                            first_edge:
-                                type: number
-                                default: 0.0
-                                minimum: 0.0
-                                maximum: 5.0
-                            second_edge:
-                                type: number
-                                default: 0.0
-                                minimum: 0.0
-                                maximum: 10.0
+                                default: 0.01
+                                minimum: 1.e+2
+                                maximum: 5.e+4
+                                description: Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility.
                     moment_coefficient:
                         type: object
                         description: (EXPERIMENTAL) Targeted blade moment coefficient (useful for managing root flap loads or inverse design approaches that is not recommendend for general use)

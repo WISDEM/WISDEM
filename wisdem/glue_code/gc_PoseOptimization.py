@@ -1028,14 +1028,42 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("rotorse.rs.constr.constr_flap_f_margin", upper=0.0)
         if blade_constr["frequency"]["edge_3P"]:
             wt_opt.model.add_constraint("rotorse.rs.constr.constr_edge_f_margin", upper=0.0)
-        if blade_constr["frequency"]["first_flap"] > 0.:
-            wt_opt.model.add_constraint("rotorse.rs.frame.flap_mode_freqs", indices=[0], equals=blade_constr["frequency"]["first_flap"])
-        if blade_constr["frequency"]["second_flap"] > 0.:
-            wt_opt.model.add_constraint("rotorse.rs.frame.flap_mode_freqs", indices=[1], equals=blade_constr["frequency"]["second_flap"])
-        if blade_constr["frequency"]["first_edge"] > 0.:
-            wt_opt.model.add_constraint("rotorse.rs.frame.edge_mode_freqs", indices=[0], equals=blade_constr["frequency"]["first_edge"])
-        if blade_constr["frequency"]["second_edge"] > 0.:
-            wt_opt.model.add_constraint("rotorse.rs.frame.edge_mode_freqs", indices=[1], equals=blade_constr["frequency"]["second_edge"])
+        if blade_constr["frequency"]["first_flap"]["flag"]:
+            target = blade_constr["frequency"]["first_flap"]["target"]
+            error = blade_constr["frequency"]["first_flap"]["acceptable_error"]
+            upper_value = target + error
+            lower_value = target - error
+            wt_opt.model.add_constraint("rotorse.rs.frame.flap_mode_freqs", indices=[0], upper = upper_value, lower = lower_value, alias = '_1F')
+        if blade_constr["frequency"]["second_flap"]["flag"]:
+            target = blade_constr["frequency"]["second_flap"]["target"]
+            error = blade_constr["frequency"]["second_flap"]["acceptable_error"]
+            upper_value = target + error
+            lower_value = target - error
+            wt_opt.model.add_constraint("rotorse.rs.frame.flap_mode_freqs", indices=[1], upper = upper_value, lower = lower_value, alias = '_2F')
+        if blade_constr["frequency"]["first_edge"]["flag"]:
+            target = blade_constr["frequency"]["first_edge"]["target"]
+            error = blade_constr["frequency"]["first_edge"]["acceptable_error"]
+            upper_value = target + error
+            lower_value = target - error
+            wt_opt.model.add_constraint("rotorse.rs.frame.edge_mode_freqs", indices=[0], upper = upper_value, lower = lower_value, alias = '_1E')
+        if blade_constr["frequency"]["second_edge"]["flag"]:
+            target = blade_constr["frequency"]["second_edge"]["target"]
+            error = blade_constr["frequency"]["second_edge"]["acceptable_error"]
+            upper_value = target + error
+            lower_value = target - error
+            wt_opt.model.add_constraint("rotorse.rs.frame.edge_mode_freqs", indices=[1], upper = upper_value, lower = lower_value, alias = '_2E')
+        if blade_constr["frequency"]["first_torsion"]["flag"]:
+            target = blade_constr["frequency"]["first_torsion"]["target"]
+            error = blade_constr["frequency"]["first_torsion"]["acceptable_error"]
+            upper_value = target + error
+            lower_value = target - error
+            wt_opt.model.add_constraint("rotorse.rs.frame.tors_mode_freqs", indices=[0], upper = upper_value, lower = lower_value)
+        if blade_constr["mass"]["flag"]:
+            target = blade_constr["mass"]["target"]
+            error = blade_constr["mass"]["acceptable_error"]
+            upper_value = target + error
+            lower_value = target - error
+            wt_opt.model.add_constraint("rotorse.blade_mass", upper = upper_value, lower = lower_value, ref = 1.e+4)
         if blade_constr["rail_transport"]["8_axle"]:
             wt_opt.model.add_constraint("rotorse.re.rail.constr_LV_8axle_horiz", lower=0.8, upper=1.0)
             wt_opt.model.add_constraint("rotorse.re.rail.constr_strainPS", upper=1.0)
