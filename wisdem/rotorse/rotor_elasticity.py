@@ -463,38 +463,6 @@ class RunPreComp(ExplicitComponent):
         profile = [None] * self.n_span
         chord = inputs["chord"]
         area = np.zeros_like(chord)
-
-        # Check that the layer to be optimized actually exist
-        te_ss_var_ok = False
-        te_ps_var_ok = False
-        spar_cap_ss_var_ok = False
-        spar_cap_ps_var_ok = False
-        for i_layer in range(self.n_layers):
-            if layer_name[i_layer] == self.te_ss_var:
-                te_ss_var_ok = True
-            if layer_name[i_layer] == self.te_ps_var:
-                te_ps_var_ok = True
-            if layer_name[i_layer] == self.spar_cap_ss_var:
-                spar_cap_ss_var_ok = True
-            if layer_name[i_layer] == self.spar_cap_ps_var:
-                spar_cap_ps_var_ok = True
-        DV_options = self.options["opt_options"]["design_variables"]["blade"]["structure"]
-        if te_ss_var_ok == False and DV_options["te_ss"]["flag"]:
-            raise Exception(
-                "The layer at the trailing edge suction side is set to be optimized, but does not exist in the input yaml. Please check."
-            )
-        if te_ps_var_ok == False and DV_options["te_ps"]["flag"]:
-            raise Exception(
-                "The layer at the trailing edge pressure side is set to be optimized, but does not exist in the input yaml. Please check."
-            )
-        if spar_cap_ss_var_ok == False and DV_options["spar_cap_ss"]["flag"]:
-            raise Exception(
-                "The layer at the spar cap suction side is set to be optimized, but does not exist in the input yaml. Please check."
-            )
-        if spar_cap_ps_var_ok == False and DV_options["spar_cap_ps"]["flag"]:
-            raise Exception(
-                "The layer at the spar cap pressure side is set to be optimized, but does not exist in the input yaml. Please check."
-            )
         region_loc_vars = [self.te_ss_var, self.te_ps_var, self.spar_cap_ss_var, self.spar_cap_ps_var]
 
         region_loc_ss = {}  # track precomp regions for user selected composite layers
