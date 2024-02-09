@@ -991,9 +991,9 @@ properties:
                                         minimum: 1.e-6
                                         maximum: 5.0
                                         description: Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility.
-                            second_flap: *freq_constraint
+                            # second_flap: *freq_constraint
                             first_edge: *freq_constraint
-                            second_edge: *freq_constraint
+                            # second_edge: *freq_constraint
                             first_torsion: *freq_constraint
                     mass:
                         type: object
