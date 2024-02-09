@@ -996,21 +996,18 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint(
                     "rotorse.rs.constr.constr_max_strainL_te", indices=indices_strains_te_ps, upper=1.0
                 )
-
         if blade_constr["stall"]["flag"]:
             wt_opt.model.add_constraint("rotorse.stall_check.no_stall_constraint", upper=1.0)
             if not blade_opt["aero_shape"]["twist"]["flag"]:
                 print(
                     "WARNING: the margin to stall is set to be constrained, but twist is not an active design variable."
                 )
-
         if blade_constr["tip_deflection"]["flag"]:
             wt_opt.model.add_constraint("tcons.tip_deflection_ratio", upper=1.0)
         if blade_constr["t_sc_joint"]["flag"] and self.modeling["WISDEM"]["RotorSE"]["bjs"]:
             wt_opt.model.add_constraint(
                 "rotorse.rs.bjs.t_sc_ratio_joint", upper=1.0
             )
-
         if blade_constr["chord"]["flag"]:
             if blade_opt["aero_shape"]["chord"]["flag"]:
                 wt_opt.model.add_constraint("blade.pa.max_chord_constr", upper=1.0)
@@ -1018,7 +1015,6 @@ class PoseOptimization(object):
                 print(
                     "WARNING: the max chord is set to be constrained, but chord is not an active design variable. The constraint is not enforced."
                 )
-
         if blade_constr["root_circle_diameter"]["flag"]:
             if blade_opt["aero_shape"]["chord"]["flag"] and blade_opt["aero_shape"]["chord"]["index_start"] == 0.0:
                 wt_opt.model.add_constraint(
@@ -1028,13 +1024,18 @@ class PoseOptimization(object):
                 print(
                     "WARNING: the blade root size is set to be constrained, but chord at blade root is not an active design variable. The constraint is not enforced."
                 )
-
         if blade_constr["frequency"]["flap_3P"]:
             wt_opt.model.add_constraint("rotorse.rs.constr.constr_flap_f_margin", upper=0.0)
-
         if blade_constr["frequency"]["edge_3P"]:
             wt_opt.model.add_constraint("rotorse.rs.constr.constr_edge_f_margin", upper=0.0)
-
+        if blade_constr["frequency"]["first_flap"] > 0.:
+            wt_opt.model.add_constraint("rotorse.rs.frame.flap_mode_freqs", indices=[0], equals=blade_constr["frequency"]["first_flap"])
+        if blade_constr["frequency"]["second_flap"] > 0.:
+            wt_opt.model.add_constraint("rotorse.rs.frame.flap_mode_freqs", indices=[1], equals=blade_constr["frequency"]["second_flap"])
+        if blade_constr["frequency"]["first_edge"] > 0.:
+            wt_opt.model.add_constraint("rotorse.rs.frame.edge_mode_freqs", indices=[0], equals=blade_constr["frequency"]["first_edge"])
+        if blade_constr["frequency"]["second_edge"] > 0.:
+            wt_opt.model.add_constraint("rotorse.rs.frame.edge_mode_freqs", indices=[1], equals=blade_constr["frequency"]["second_edge"])
         if blade_constr["rail_transport"]["8_axle"]:
             wt_opt.model.add_constraint("rotorse.re.rail.constr_LV_8axle_horiz", lower=0.8, upper=1.0)
             wt_opt.model.add_constraint("rotorse.re.rail.constr_strainPS", upper=1.0)

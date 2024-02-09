@@ -968,11 +968,31 @@ properties:
                                 maximum: 10.0
                     frequency:
                         type: object
-                        description: Frequency separation constraint between blade fundamental frequency and blade passing (3P) frequency at rated conditions using gamma_freq margin. Can be activated for blade flap and/or edge modes.
+                        description: Constraints on blade natural frequencies. The constraints can drive the placement of frequencies above the blade passing (3P) frequency at rated conditions using gamma_freq margin. Can be activated for blade flap and/or edge modes. Equality constraints can also be activated to target specific first and/or second flap/edge modes.
                         default: {}
                         properties:
                             flap_3P: *flag
                             edge_3P: *flag
+                            first_flap:
+                                type: number
+                                default: 0.0
+                                minimum: 0.0
+                                maximum: 5.0
+                            second_flap:
+                                type: number
+                                default: 0.0
+                                minimum: 0.0
+                                maximum: 10.0
+                            first_edge:
+                                type: number
+                                default: 0.0
+                                minimum: 0.0
+                                maximum: 5.0
+                            second_edge:
+                                type: number
+                                default: 0.0
+                                minimum: 0.0
+                                maximum: 10.0
                     moment_coefficient:
                         type: object
                         description: (EXPERIMENTAL) Targeted blade moment coefficient (useful for managing root flap loads or inverse design approaches that is not recommendend for general use)
