@@ -677,7 +677,7 @@ class RunPreComp(ExplicitComponent):
 
             # cap layer starts and ends within 0 and 1
             ss_start_nd_arc = [max(0, min(1, value)) for value in ss_start_nd_arc]
-            ss_end_nd_arc = [max(0, min(1, value)) for value in ss_start_nd_arc]
+            ss_end_nd_arc = [max(0, min(1, value)) for value in ss_end_nd_arc]
             # generate the Precomp composite stacks for chordwise regions
             upperCS[i], region_loc_ss = region_stacking(
                 i,
