@@ -1446,6 +1446,10 @@ properties:
                 type: number
                 description: Approximate expected value of the user-defined objective function (just need the nearest order-of-magnitude) for scaling the objective function for optimization conditioning.  For example, if you expect values in the range of 6000, enter in 1000.
                 default: 1
+            max_flag:
+                type: boolean
+                default: False
+                description: If true, this maximizes the objective function.  If false, then minimize
         
     inverse_design:
         type: object
