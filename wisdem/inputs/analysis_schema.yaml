@@ -1003,14 +1003,14 @@ properties:
                             flag: *flag
                             target:
                                 type: number
-                                default: 0.0
-                                minimum: 1.e+2
+                                default: 0.
+                                minimum: 0.
                                 maximum: 3.e+5
                                 description: Value of the target blade mass
                             acceptable_error:
                                 type: number
-                                default: 0.01
-                                minimum: 1.e+2
+                                default: 0.
+                                minimum: 0.
                                 maximum: 5.e+4
                                 description: Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility.
                     moment_coefficient:
