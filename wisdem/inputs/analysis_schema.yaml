@@ -903,7 +903,37 @@ properties:
                             flag: *flag
                             lower_bound: *lboundm
                             upper_bound: *uboundm
-
+            user_defined:
+                type: array
+                description: List of user-defined design variables. These must be already listed as OpenMDAO indipendent cariable components. 
+                items:
+                    type: object
+                    description: OpenMDAO entries, taken from https://openmdao.org/newdocs/versions/latest/features/core_features/adding_desvars_cons_objs/adding_design_variables.html 
+                    default: {}
+                    properties:
+                        name: 
+                            type: string
+                            description: Promoted name of the design variable in the system.
+                        lower:
+                            type: array
+                            description: Array of lower bounds of this user-defined design variable
+                            items:
+                                type: number
+                        upper:
+                            type: array
+                            description: Array of upper bounds of this user-defined design variable
+                            items:
+                                type: number
+                        ref:
+                            type: array
+                            description: Value of design var that scales to 1.0 in the driver
+                            items:
+                                type: number
+                        indices:
+                            type: array
+                            description: If an input is an array, these indicate which entries are of interest for this particular design variable. These may be positive or negative integers
+                            items:
+                                type: number
     constraints:
         type: object
         default: {}

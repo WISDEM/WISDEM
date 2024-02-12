@@ -1118,6 +1118,35 @@ class PoseOptimization(object):
                 upper=mooring_opt["line_stiffness_coeff"]["upper_bound"],
             )
 
+        if "user_defined" in self.opt["design_variables"]:
+            user_defined = self.opt["design_variables"]["user_defined"]
+            for i in range(len(user_defined)):
+                name_i = user_defined[i]["name"]
+                
+                if "lower" in user_defined[i]:
+                    lower_i = user_defined[i]["lower"]
+                else:
+                    lower_i = None
+                if "upper" in user_defined[i]:
+                    upper_i = user_defined[i]["upper"]
+                else:
+                    upper_i = None
+                if "ref" in user_defined[i]:
+                    ref_i = user_defined[i]["ref"]
+                else:
+                    ref_i = None
+                if "indices" in user_defined[i]:
+                    indices_i = user_defined[i]["indices"]
+                else:
+                    indices_i = None
+                wt_opt.model.add_design_var(
+                    name_i,
+                    lower=lower_i,
+                    upper=upper_i,
+                    ref=ref_i,
+                    indices=indices_i,
+                )
+
         return wt_opt
 
     def set_constraints(self, wt_opt):
