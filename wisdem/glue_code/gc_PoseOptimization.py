@@ -517,7 +517,6 @@ class PoseOptimization(object):
         drive_opt = self.opt["design_variables"]["drivetrain"]
         float_opt = self.opt["design_variables"]["floating"]
         mooring_opt = self.opt["design_variables"]["mooring"]
-        user_defined = self.opt["design_variables"]["user_defined"]
 
         # -- Rotor & Blade --
         if rotorD_opt["flag"]:
@@ -1119,7 +1118,8 @@ class PoseOptimization(object):
                 upper=mooring_opt["line_stiffness_coeff"]["upper_bound"],
             )
 
-        if len(user_defined) > 0:
+        if "user_defined" in self.opt["design_variables"]:
+            user_defined = self.opt["design_variables"]["user_defined"]
             for i in range(len(user_defined)):
                 name_i = user_defined[i]["name"]
                 
