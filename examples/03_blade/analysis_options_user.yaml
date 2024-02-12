@@ -24,7 +24,7 @@ design_variables:
 # This will be ignored if there is a merit_figure_user entry
 merit_figure: AEP
 
-# See the list of potential outputs.
+# See the list of potential outputs.  Variable name is taken from the WISDEM namespace.
 merit_figure_user:
     variable: rotorse.rp.powercurve.rated_T
     scaling: 1e6
@@ -40,6 +40,11 @@ constraints:
         root_circle_diameter:
             flag: False # Constraint for the minimum blade root circle diameter
             max_ratio: 1.2 # The recommended value can be up to 20% larger than the actual
+    user:
+        # Create entries in a YAML list with variable name, lower_bound and/or upper_bound, and indices (optional)
+        # Variable name is taken from the WISDEM namespace
+        - variable: rotorse.blade_mass
+          upper_bound: 17000.00
 
 driver:
     optimization:

@@ -1517,6 +1517,35 @@ class PoseOptimization(object):
                     upper=float_constr[f"{modestr}_period"]["upper_bound"],
                 )
 
+        # User constraints
+        user_constr = self.opt["constraints"]["user"]
+        for k in range(len(user_constr)):
+            var_k = user_constr[k]["variable"]
+            
+            if "lower_bound" in user_constr[k]:
+                lower_k = user_constr[k]["lower_bound"]
+            elif "lower" in user_constr[k]:
+                lower_k = user_constr[k]["lower"]
+            else:
+                lower_k = None
+                
+            if "upper_bound" in user_constr[k]:
+                upper_k = user_constr[k]["upper_bound"]
+            elif "lower" in user_constr[k]:
+                lower_k = user_constr[k]["lower"]
+            else:
+                upper_k = None
+                
+            if "indices" in user_constr[k]:
+                idx_k = user_constr[k]["indices"]
+            else:
+                idx_k = None
+
+            if lower_k is None and upper_k is None:
+                raise Exception(f"Must include a lower_bound and/or an upper bound for {var_k}")
+            
+            wt_opt.model.add_constraint(var_k, lower=lower_k, upper=upper_k, indices=idx_k)
+        
         return wt_opt
 
     def set_recorders(self, wt_opt):
