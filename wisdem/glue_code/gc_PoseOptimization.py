@@ -517,6 +517,7 @@ class PoseOptimization(object):
         drive_opt = self.opt["design_variables"]["drivetrain"]
         float_opt = self.opt["design_variables"]["floating"]
         mooring_opt = self.opt["design_variables"]["mooring"]
+        user_defined = self.opt["design_variables"]["user_defined"]
 
         # -- Rotor & Blade --
         if rotorD_opt["flag"]:
@@ -1117,6 +1118,34 @@ class PoseOptimization(object):
                 lower=mooring_opt["line_stiffness_coeff"]["lower_bound"],
                 upper=mooring_opt["line_stiffness_coeff"]["upper_bound"],
             )
+
+        if len(user_defined) > 0:
+            for i in range(len(user_defined)):
+                name_i = user_defined[i]["name"]
+                
+                if "lower" in user_defined[i]:
+                    lower_i = user_defined[i]["lower"]
+                else:
+                    lower_i = None
+                if "upper" in user_defined[i]:
+                    upper_i = user_defined[i]["upper"]
+                else:
+                    upper_i = None
+                if "ref" in user_defined[i]:
+                    ref_i = user_defined[i]["ref"]
+                else:
+                    ref_i = None
+                if "indices" in user_defined[i]:
+                    indices_i = user_defined[i]["indices"]
+                else:
+                    indices_i = None
+                wt_opt.model.add_design_var(
+                    name_i,
+                    lower=lower_i,
+                    upper=upper_i,
+                    ref=ref_i,
+                    indices=indices_i,
+                )
 
         return wt_opt
 

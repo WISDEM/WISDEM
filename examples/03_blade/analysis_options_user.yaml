@@ -21,6 +21,14 @@ design_variables:
                 index_start: 0 # Start by optimizing chord at blade root
                 index_end: 3 # Lock chord at blade tip
 
+    # List of user-defined design variables. These must available among the the independent variable components, see gc_WT_DataStruc.py
+    user_defined:
+        - name: control.rated_pitch # in this example, constant pitch angle in region II is set as DV
+          lower: [-5] # lower bound, set as array to support design variables as arrays
+          upper: [25] # upper bound, set as array to support design variables as arrays
+          ref: [10.] # reference value to bring values close to 1, set as array to support design variables as arrays
+          # indices: only used for design variables as arrays
+
 # This will be ignored if there is a merit_figure_user entry
 merit_figure: AEP
 
