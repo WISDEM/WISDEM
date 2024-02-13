@@ -7,61 +7,61 @@ design_variables:
         aero_shape:
             twist:
                 flag: True             # Flag to optimize the twist
-                n_opt: 8               # Number of control points along blade span
+                n_opt: 4               # Number of control points along blade span
                 max_decrease: 0.08722222222222221 # Maximum decrease for the twist in [rad] at the n_opt locations
                 max_increase: 0.08722222222222221 # Maximum increase for the twist in [rad] at the n_opt locations
                 index_start: 2         # Lock the first two DVs from blade root
-                index_end: 8           # All DVs close to blade tip are active
+                index_end: 4           # All DVs close to blade tip are active
             chord:
                 flag: True             # Flag to optimize the chord
-                n_opt: 8               # Number of control points along blade span
+                n_opt: 4               # Number of control points along blade span
                 max_decrease: 0.3      # Minimum multiplicative gain on existing chord at the n_opt locations
                 max_increase: 3.       # Maximum multiplicative gain on existing chord at the n_opt locations
                 index_start: 2         # Lock the first two DVs from blade root
-                index_end: 8           # All DVs close to blade tip are active
+                index_end: 4           # All DVs close to blade tip are active
         structure:
             - layer_name: Shell_skin_outer
-              n_opt: 8               # Number of control points along blade span
+              n_opt: 4               # Number of control points along blade span. In a real run, change this to 8
               max_decrease: 0.2      # Maximum nondimensional decrease at the n_opt locations
               max_increase: 5.       # Maximum nondimensional increase at the n_opt locations
-              index_start: 3         # Lock the first DV from blade root
-              index_end: 8           # The last DV at blade tip is locked
-            - layer_name: Spar_cap_ss
-              n_opt: 8               # Number of control points along blade span
-              max_decrease: 0.2      # Maximum nondimensional decrease at the n_opt locations
-              max_increase: 5.       # Maximum nondimensional increase at the n_opt locations
-              index_start: 1         # Lock the first DV from blade root
-              index_end: 7           # The last DV at blade tip is locked
-            - layer_name: Spar_cap_ps
-              n_opt: 8               # Number of control points along blade span
-              max_decrease: 0.2      # Maximum nondimensional decrease at the n_opt locations
-              max_increase: 5.       # Maximum nondimensional increase at the n_opt locations
-              index_start: 1         # Lock the first DV from blade root
-              index_end: 7           # The last DV at blade tip is locked
-            - layer_name: LE_reinf
-              n_opt: 8               # Number of control points along blade span
-              max_decrease: 0.2      # Maximum nondimensional decrease at the n_opt locations
-              max_increase: 5.       # Maximum nondimensional increase at the n_opt locations
-              index_start: 1         # Lock the first DV from blade root
-              index_end: 7           # The last DV at blade tip is locked
-            - layer_name: TE_reinf_ss
-              n_opt: 8               # Number of control points along blade span
-              max_decrease: 0.2      # Maximum nondimensional decrease at the n_opt locations
-              max_increase: 5.       # Maximum nondimensional increase at the n_opt locations
-              index_start: 1         # Lock the first DV from blade root
-              index_end: 7           # The last DV at blade tip is locked
-            - layer_name: TE_reinf_ps
-              n_opt: 8               # Number of control points along blade span
-              max_decrease: 0.2      # Maximum nondimensional decrease at the n_opt locations
-              max_increase: 5.       # Maximum nondimensional increase at the n_opt locations
-              index_start: 1         # Lock the first DV from blade root
-              index_end: 7           # The last DV at blade tip is locked
-            - layer_name: Shell_skin_inner
-              n_opt: 8               # Number of control points along blade span
-              max_decrease: 0.2      # Maximum nondimensional decrease at the n_opt locations
-              max_increase: 5.       # Maximum nondimensional increase at the n_opt locations
-              index_start: 3         # Lock the first DV from blade root
-              index_end: 8           # The last DV at blade tip is locked
+              index_start: 2         # In a real run, change this to 2
+              index_end: 4           # In a real run, change this to 8
+            # - layer_name: Spar_cap_ss
+            #   n_opt: 8               # Number of control points along blade span
+            #   max_decrease: 0.2      # Maximum nondimensional decrease at the n_opt locations
+            #   max_increase: 5.       # Maximum nondimensional increase at the n_opt locations
+            #   index_start: 1         # Lock the first DV from blade root
+            #   index_end: 7           # The last DV at blade tip is locked
+            # - layer_name: Spar_cap_ps
+            #   n_opt: 8               # Number of control points along blade span
+            #   max_decrease: 0.2      # Maximum nondimensional decrease at the n_opt locations
+            #   max_increase: 5.       # Maximum nondimensional increase at the n_opt locations
+            #   index_start: 1         # Lock the first DV from blade root
+            #   index_end: 7           # The last DV at blade tip is locked
+            # - layer_name: LE_reinf
+            #   n_opt: 8               # Number of control points along blade span
+            #   max_decrease: 0.2      # Maximum nondimensional decrease at the n_opt locations
+            #   max_increase: 5.       # Maximum nondimensional increase at the n_opt locations
+            #   index_start: 1         # Lock the first DV from blade root
+            #   index_end: 7           # The last DV at blade tip is locked
+            # - layer_name: TE_reinf_ss
+            #   n_opt: 8               # Number of control points along blade span
+            #   max_decrease: 0.2      # Maximum nondimensional decrease at the n_opt locations
+            #   max_increase: 5.       # Maximum nondimensional increase at the n_opt locations
+            #   index_start: 1         # Lock the first DV from blade root
+            #   index_end: 7           # The last DV at blade tip is locked
+            # - layer_name: TE_reinf_ps
+            #   n_opt: 8               # Number of control points along blade span
+            #   max_decrease: 0.2      # Maximum nondimensional decrease at the n_opt locations
+            #   max_increase: 5.       # Maximum nondimensional increase at the n_opt locations
+            #   index_start: 1         # Lock the first DV from blade root
+            #   index_end: 7           # The last DV at blade tip is locked
+            # - layer_name: Shell_skin_inner
+            #   n_opt: 8               # Number of control points along blade span
+            #   max_decrease: 0.2      # Maximum nondimensional decrease at the n_opt locations
+            #   max_increase: 5.       # Maximum nondimensional increase at the n_opt locations
+            #   index_start: 3         # Lock the first DV from blade root
+            #   index_end: 8           # The last DV at blade tip is locked
 
 merit_figure: LCOE
 
