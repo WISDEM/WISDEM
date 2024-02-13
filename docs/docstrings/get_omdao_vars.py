@@ -65,8 +65,11 @@ for f in allpy:
 #    writer.writerows(parsed_args)
 
 # Now read in dumps from WISDEM
-wisdem_outputs = ["iea15mw_output.csv", "nrel5mw_output.csv"]
-master_guide = [["Variable", "Units", "Description"]]
+wisdem_outputs = ["iea15mw_float.csv",
+                  "iea15mw_mono.csv",
+                  "iea3p4mw_land.csv",
+                  "nrel5mw_jack.csv"]
+master_guide = [["Variable", "Type", "Units", "Description"]]
 temp_guide = []
 varlist = []
 for infile in wisdem_outputs:
@@ -77,17 +80,18 @@ for infile in wisdem_outputs:
 # Crude way of making unique vars
 temp_guide.sort(key=lambda r: r[0])
 for k in temp_guide:
-    if k[0] in varlist:
+    mykey = k[0]+"-"+k[1]
+    if mykey in varlist:
         continue
-    varlist.append(k[0])
-    master_guide.append([k[0], k[1], k[3]])
+    varlist.append(mykey)
+    master_guide.append([k[0], k[1], k[2], k[-1]])
 
 # Now fold in the doc strings
 for k in master_guide:
     var_name = k[0].split(".")[-1]
     if var_name in parsed_dict:
         idesc = parsed_dict[var_name]
-        k[2] += "" if idesc is None else idesc
+        k[-1] += "" if idesc is None else idesc
 
 # Write out these parsed args for later
 with open("variable_guide.csv", "w") as fw:

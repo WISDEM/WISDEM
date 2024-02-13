@@ -8,5 +8,9 @@ or :download:`JSON file <docstrings/variable_guide.json>`
 
 .. csv-table:: WISDEM Variable List
     :file: docstrings/variable_guide.csv
-    :widths: 17, 4, 40
+    :width: 100%
+    :widths: 17, 4, 4, 40
     :header-rows: 1
+    :class: datatable
+
+	    

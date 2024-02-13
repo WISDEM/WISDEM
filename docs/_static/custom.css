@@ -48,3 +48,7 @@ dl.attribute::before {
     margin-left: -30px;
     padding-bottom: 15px;
 }
+
+th, td {
+    font-size: 10px;
+  }

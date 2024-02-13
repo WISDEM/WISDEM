@@ -74,7 +74,7 @@ autodoc_default_options = {
 
 # html_theme = 'alabaster'
 html_theme = "sphinx_rtd_theme"
-html_static_path = ["_static/custom.css"]
+html_static_path = ["_static"]
 html_theme_options = {
     # "logo": "logo.png",
     # "logo_name": True,
@@ -99,6 +99,16 @@ html_theme_options = {
 # This is required for the alabaster theme
 # refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
 html_sidebars = {"**": ["about.html", "navigation.html", "searchbox.html"]}
+
+html_css_files = [
+    'https://cdn.datatables.net/1.10.23/css/jquery.dataTables.min.css',
+    "custom.css",
+]
+
+html_js_files = [
+    'https://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js',
+    'main.js',
+]
 
 # Bibtex configuration
 bibtex_bibfiles = ["references.bib"]

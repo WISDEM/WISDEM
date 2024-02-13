@@ -12,7 +12,13 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
 
     # Get all OpenMDAO inputs and outputs into a dictionary
     var_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, out_stream=None)
+    for k in range(len(var_dict)):
+        var_dict[k][1]["type"] = "input"
+
     out_dict = prob.model.list_outputs(prom_name=True, units=True, desc=True, out_stream=None)
+    for k in range(len(out_dict)):
+        out_dict[k][1]["type"] = "output"
+        
     var_dict.extend(out_dict)
 
     # Pickle the full archive so that we can load it back in if we need
@@ -60,6 +66,7 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
     if xls_file:
         data = {}
         data["variables"] = []
+        data["type"] = []
         data["units"] = []
         data["values"] = []
         data["description"] = []
@@ -69,10 +76,15 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
                 unit_str = ""
 
             iname = var_dict[k][1]["prom_name"]
+            itype = var_dict[k][1]["type"]
             if iname in data["variables"]:
+                iprev = data["variables"].index( iname )
+                if itype == "output":
+                    data["type"][iprev] = itype
                 continue
 
             data["variables"].append(iname)
+            data["type"].append(itype)
             data["units"].append(unit_str)
             data["values"].append(var_dict[k][1]["val"])
             data["description"].append(var_dict[k][1]["desc"])
