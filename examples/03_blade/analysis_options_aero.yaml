@@ -33,6 +33,9 @@ constraints:
         root_circle_diameter:
             flag: False # Constraint for the minimum blade root circle diameter
             max_ratio: 1.2 # The recommended value can be up to 20% larger than the actual
+        moment_coefficient:
+            flag: True    # Constraint on minimum stall margin
+            max: 0.16
 
 driver:
     optimization:

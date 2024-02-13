@@ -7,6 +7,8 @@ from scipy.interpolate import PchipInterpolator
 from wisdem.rotorse.precomp import PreComp, Profile, CompositeSection, Orthotropic2DMaterial
 from wisdem.commonse.utilities import rotate, arc_length
 from wisdem.rotorse.rail_transport import RailTransport
+import logging
+logger = logging.getLogger("wisdem/weis")
 
 
 class RunPreComp(ExplicitComponent):
@@ -463,38 +465,6 @@ class RunPreComp(ExplicitComponent):
         profile = [None] * self.n_span
         chord = inputs["chord"]
         area = np.zeros_like(chord)
-
-        # Check that the layer to be optimized actually exist
-        te_ss_var_ok = False
-        te_ps_var_ok = False
-        spar_cap_ss_var_ok = False
-        spar_cap_ps_var_ok = False
-        for i_layer in range(self.n_layers):
-            if layer_name[i_layer] == self.te_ss_var:
-                te_ss_var_ok = True
-            if layer_name[i_layer] == self.te_ps_var:
-                te_ps_var_ok = True
-            if layer_name[i_layer] == self.spar_cap_ss_var:
-                spar_cap_ss_var_ok = True
-            if layer_name[i_layer] == self.spar_cap_ps_var:
-                spar_cap_ps_var_ok = True
-        DV_options = self.options["opt_options"]["design_variables"]["blade"]["structure"]
-        if te_ss_var_ok == False and DV_options["te_ss"]["flag"]:
-            raise Exception(
-                "The layer at the trailing edge suction side is set to be optimized, but does not exist in the input yaml. Please check."
-            )
-        if te_ps_var_ok == False and DV_options["te_ps"]["flag"]:
-            raise Exception(
-                "The layer at the trailing edge pressure side is set to be optimized, but does not exist in the input yaml. Please check."
-            )
-        if spar_cap_ss_var_ok == False and DV_options["spar_cap_ss"]["flag"]:
-            raise Exception(
-                "The layer at the spar cap suction side is set to be optimized, but does not exist in the input yaml. Please check."
-            )
-        if spar_cap_ps_var_ok == False and DV_options["spar_cap_ps"]["flag"]:
-            raise Exception(
-                "The layer at the spar cap pressure side is set to be optimized, but does not exist in the input yaml. Please check."
-            )
         region_loc_vars = [self.te_ss_var, self.te_ps_var, self.spar_cap_ss_var, self.spar_cap_ps_var]
 
         region_loc_ss = {}  # track precomp regions for user selected composite layers
@@ -614,16 +584,34 @@ class RunPreComp(ExplicitComponent):
                             if inputs["layer_start_nd"][idx_sec, i] < loc_LE:
                                 # ss_start_nd_arc.append(sec['start_nd_arc']['values'][i])
                                 ss_end_nd_arc_temp = float(spline_arc2xnd(inputs["layer_start_nd"][idx_sec, i]))
-                                if ss_end_nd_arc_temp > 1 or ss_end_nd_arc_temp < 0:
-                                    raise ValueError(
+                                if ss_end_nd_arc_temp > 1:
+                                    logger.debug(
                                         "Error in the definition of material "
                                         + layer_name[idx_sec]
                                         + ". It cannot fit in the section number "
                                         + str(i)
                                         + " at span location "
                                         + str(inputs["r"][i] / inputs["r"][-1] * 100.0)
-                                        + " %."
+                                        + " %. Variable ss_end_nd_arc_temp was equal "
+                                        + " to "
+                                        + str(ss_end_nd_arc_temp)
+                                        + " and is not set to 1"
                                     )
+                                    ss_end_nd_arc_temp = 1.
+                                if ss_end_nd_arc_temp < 0:
+                                    logger.debug(
+                                        "Error in the definition of material "
+                                        + layer_name[idx_sec]
+                                        + ". It cannot fit in the section number "
+                                        + str(i)
+                                        + " at span location "
+                                        + str(inputs["r"][i] / inputs["r"][-1] * 100.0)
+                                        + " %. Variable ss_end_nd_arc_temp was equal "
+                                        + " to "
+                                        + str(ss_end_nd_arc_temp)
+                                        + " and is not set to 0"
+                                    )
+                                    ss_end_nd_arc_temp = 0.
                                 if ss_end_nd_arc_temp == profile_i_rot[0, 0] and profile_i_rot[0, 0] != 1.0:
                                     ss_end_nd_arc_temp = 1.0
                                 ss_end_nd_arc.append(ss_end_nd_arc_temp)
@@ -687,9 +675,10 @@ class RunPreComp(ExplicitComponent):
             # time1 = time.time() - time1
             # print(time1)
 
+            # cap layer starts and ends within 0 and 1
+            ss_start_nd_arc = [max(0, min(1, value)) for value in ss_start_nd_arc]
+            ss_end_nd_arc = [max(0, min(1, value)) for value in ss_end_nd_arc]
             # generate the Precomp composite stacks for chordwise regions
-            if np.min([ss_start_nd_arc, ss_end_nd_arc]) < 0 or np.max([ss_start_nd_arc, ss_end_nd_arc]) > 1:
-                raise ValueError("Error in the layer definition at station number " + str(i))
             upperCS[i], region_loc_ss = region_stacking(
                 i,
                 ss_idx,

@@ -22,3 +22,4 @@ All of these case studies below can be found in the `examples` directory.  For t
    examples/ccblade/tutorial
    examples/airfoilprep/tutorial
    examples/pyframe3dd/tutorial
+   examples/inverse_design/tutorial

@@ -202,75 +202,25 @@ properties:
                                         minimum: -1.e30
                                         maximum: 1.e30
                     structure:
-                        type: object
-                        default: {}
+                        type: array
                         description: Design variables associated with the internal blade structure
-                        properties:
-                            spar_cap_ss:
-                                type: object
-                                description: Blade suction-side spar cap thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
-                                default: {}
-                                properties:
-                                    flag: *flag
-                                    n_opt:
-                                        type: integer
-                                        default: 8
-                                        minimum: 4
-                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
-                                    max_decrease: *max_decrease
-                                    max_increase: *max_increase
-                                    index_start: *index_start
-                                    index_end: *index_end
-                            spar_cap_ps:
-                                type: object
-                                description: Blade pressure-side spar cap thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
-                                default: {}
-                                properties:
-                                    flag: *flag
-                                    equal_to_suction: &equalss
-                                        type: boolean
-                                        default: true
-                                        description: If the pressure side spar cap should be equal to the suction side layer
-                                    n_opt:
-                                        type: integer
-                                        default: 8
-                                        minimum: 4
-                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
-                                    max_decrease: *max_decrease
-                                    max_increase: *max_increase
-                                    index_start: *index_start
-                                    index_end: *index_end
-                            te_ss:
-                                type: object
-                                default: {}
-                                description: Blade suction-side trailing edge reinforcement thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
-                                properties:
-                                    flag: *flag
-                                    n_opt:
-                                        type: integer
-                                        default: 8
-                                        minimum: 4
-                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
-                                    max_decrease: *max_decrease
-                                    max_increase: *max_increase
-                                    index_start: *index_start
-                                    index_end: *index_end
-                            te_ps:
-                                type: object
-                                description: Blade pressure-side trailing edge reinforcement thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
-                                default: {}
-                                properties:
-                                    flag: *flag
-                                    equal_to_suction: *equalss
-                                    n_opt:
-                                        type: integer
-                                        default: 8
-                                        minimum: 4
-                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
-                                    max_decrease: *max_decrease
-                                    max_increase: *max_increase
-                                    index_start: *index_start
-                                    index_end: *index_end
+                        items:
+                            type: object
+                            description: Set the thickness of any blade layer as a design variable by scaling (multiplying) the initial value at spline control points along the span.
+                            default: {}
+                            properties:
+                                layer_name: 
+                                    type: string
+                                    description: Name of blade structural layer to be optimized
+                                n_opt:
+                                    type: integer
+                                    default: 8
+                                    minimum: 4
+                                    description: Number of equally-spaced control points of the spline parametrizing the thickness of the layer.
+                                max_decrease: *max_decrease
+                                max_increase: *max_increase
+                                index_start: *index_start
+                                index_end: *index_end
             control:
                 type: object
                 default: {}
@@ -1048,11 +998,51 @@ properties:
                                 maximum: 10.0
                     frequency:
                         type: object
-                        description: Frequency separation constraint between blade fundamental frequency and blade passing (3P) frequency at rated conditions using gamma_freq margin. Can be activated for blade flap and/or edge modes.
+                        description: Constraints on blade natural frequencies. The constraints can drive the placement of frequencies above the blade passing (3P) frequency at rated conditions using gamma_freq margin. Can be activated for blade flap and/or edge modes. Equality constraints can also be activated to target specific first and/or second flap/edge modes.
                         default: {}
                         properties:
                             flap_3P: *flag
                             edge_3P: *flag
+                            first_flap: &freq_constraint
+                                type: object
+                                description: Targeted blade natural frequency (useful for inverse design approaches)
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    target:
+                                        type: number
+                                        default: 0.0
+                                        minimum: 0.0
+                                        maximum: 10.0
+                                        description: Value of the target natural frequency
+                                    acceptable_error:
+                                        type: number
+                                        default: 0.01
+                                        minimum: 1.e-6
+                                        maximum: 5.0
+                                        description: Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility.
+                            # second_flap: *freq_constraint
+                            first_edge: *freq_constraint
+                            # second_edge: *freq_constraint
+                            first_torsion: *freq_constraint
+                    mass:
+                        type: object
+                        description: Enforcing a target blade mass (useful for inverse design approaches)
+                        default: {}
+                        properties:
+                            flag: *flag
+                            target:
+                                type: number
+                                default: 0.
+                                minimum: 0.
+                                maximum: 3.e+5
+                                description: Value of the target blade mass
+                            acceptable_error:
+                                type: number
+                                default: 0.
+                                minimum: 0.
+                                maximum: 5.e+4
+                                description: Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility.
                     moment_coefficient:
                         type: object
                         description: (EXPERIMENTAL) Targeted blade moment coefficient (useful for managing root flap loads or inverse design approaches that is not recommendend for general use)
