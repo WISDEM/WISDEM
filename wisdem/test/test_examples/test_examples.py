@@ -50,6 +50,7 @@ all_scripts = [
     "14_overridden_values/driver",
     "15_step_size_study/driver",
     "16_inverse_design/inverse_spar_design",
+    "16_inverse_design/inverse_rotor_design",
     "17_jacket/jacket_driver",
     "18_rotor_tower_monopile/design_run",
     "19_rotor_drivetrain_tower/wisdem_driver"
