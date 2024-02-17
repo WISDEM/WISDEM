@@ -25,6 +25,35 @@ def get_variable_list(prob):
     return input_dict, out_dict, var_dict
 
 
+def variable_dict2df(var_dict):
+    data = {}
+    data["variables"] = []
+    data["type"] = []
+    data["units"] = []
+    data["values"] = []
+    data["description"] = []
+    for k in range(len(var_dict)):
+        unit_str = var_dict[k][1]["units"]
+        if unit_str is None:
+            unit_str = ""
+
+        iname = var_dict[k][1]["prom_name"]
+        itype = var_dict[k][1]["type"]
+        if iname in data["variables"]:
+            iprev = data["variables"].index( iname )
+            if itype == "output":
+                data["type"][iprev] = itype
+            continue
+
+        data["variables"].append(iname)
+        data["type"].append(itype)
+        data["units"].append(unit_str)
+        data["values"].append(var_dict[k][1]["val"])
+        data["description"].append(var_dict[k][1]["desc"])
+        
+    return pd.DataFrame(data)
+
+
 def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
     # Get the variables
     _, _, var_dict = get_variable_list(prob)
@@ -75,31 +104,7 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
         sio.savemat(froot + ".mat", array_dict, long_field_names=True)
 
     if xls_file:
-        data = {}
-        data["variables"] = []
-        data["type"] = []
-        data["units"] = []
-        data["values"] = []
-        data["description"] = []
-        for k in range(len(var_dict)):
-            unit_str = var_dict[k][1]["units"]
-            if unit_str is None:
-                unit_str = ""
-
-            iname = var_dict[k][1]["prom_name"]
-            itype = var_dict[k][1]["type"]
-            if iname in data["variables"]:
-                iprev = data["variables"].index( iname )
-                if itype == "output":
-                    data["type"][iprev] = itype
-                continue
-
-            data["variables"].append(iname)
-            data["type"].append(itype)
-            data["units"].append(unit_str)
-            data["values"].append(var_dict[k][1]["val"])
-            data["description"].append(var_dict[k][1]["desc"])
-        df = pd.DataFrame(data)
+        df = variable_dict2df(var_dict)
         df.to_excel(froot + ".xlsx", index=False)
         df.to_csv(froot + ".csv", index=False)
 

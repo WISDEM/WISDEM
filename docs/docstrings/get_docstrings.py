@@ -7,8 +7,10 @@ https://gist.github.com/SpotlightKid/1548cb6c97f2a844f72d
 __all__ = ("get_docstrings", "print_docstrings")
 
 import ast
-from os.path import basename, splitext
+import os.path as osp
 from itertools import groupby
+from pathlib import Path
+from docstring_parser import parse
 
 NODE_TYPES = {ast.ClassDef: "Class", ast.FunctionDef: "Function/Method", ast.Module: "Module"}
 
@@ -54,7 +56,7 @@ def print_docstrings(source, module="<string>", print_flag=True):
     """
     if hasattr(source, "read"):
         filename = getattr(source, "name", module)
-        module = splitext(basename(filename))[0]
+        module = osp.splitext(osp.basename(filename))[0]
         source = source.read()
 
     docstrings = sorted(get_docstrings(source), key=lambda x: (NODE_TYPES.get(type(x[0])), x[1]))
@@ -73,6 +75,68 @@ def print_docstrings(source, module="<string>", print_flag=True):
 
     return grouped
 
+
+def get_all_docstrings():
+    source_dir = osp.dirname(osp.dirname(osp.dirname(osp.realpath(__file__))))
+    allpy = Path(source_dir).rglob("*.py") if osp.exists(source_dir) else []
+
+    parsed_args = [["File", "Class", "Var Name", "Var Type", "Var Units", "Var Desc"]]
+    parsed_dict = {}
+
+    for f in allpy:
+        if str(f).find("__init__") >= 0:
+            continue
+        froot = str(f).replace(str(source_dir), "")
+
+        try:
+            with open(f) as fp:
+                fgroup = print_docstrings(fp, print_flag=False)
+        except Exception:
+            print("Could not parse", str(f))
+            continue
+
+        for type_, group in fgroup:
+            if type_ != "Class":
+                continue
+
+            for node, name, lineno, docstring in group:
+                parsed_docs = parse(docstring)
+                if not hasattr(parsed_docs, "params"):
+                    continue
+                # print(str(f),len(parsed_docs.params))
+
+                for k in range(len(parsed_docs.params)):
+                    arg_name = parsed_docs.params[k].arg_name
+                    arg_description = parsed_docs.params[k].description
+
+                    type_name = parsed_docs.params[k].type_name
+                    if type_name is not None:
+                        tok = type_name.split(",")
+                        arg_type = tok[0]
+                        isize = arg_type.find("[")
+                        if isize > 0:
+                            arg_type = arg_type[:isize]
+                    else:
+                        arg_type = ""
+
+                    arg_units = "" if len(tok) <= 1 else tok[1]
+                    ibracket0 = arg_units.find("[")
+                    ibracket1 = arg_units.find("]")
+                    if ibracket0 >= 0 and ibracket1 >= 0:
+                        arg_units = arg_units[(ibracket0 + 1) : ibracket1]
+                    # print('args',parsed_docs.params[k].args)
+                    # print('default',parsed_docs.params[k].default)
+                    # print('is_optional',parsed_docs.params[k].is_optional)
+                    newentry = [froot, name, arg_name, arg_type, arg_units, arg_description]
+                    parsed_args.append(newentry)
+                    parsed_dict[arg_name] = arg_description
+
+    # Write out these parsed args for later
+    # with open('wisdem_docargs.csv','w') as fw:
+    #    writer = csv.writer(fw)
+    #    writer.writerows(parsed_args)
+
+    return parsed_dict
 
 if __name__ == "__main__":
     import sys

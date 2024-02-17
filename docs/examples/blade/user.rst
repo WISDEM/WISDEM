@@ -9,7 +9,7 @@ The prior example demonstrated that WISDEM has a menu of design variables, const
 User-Defined Design Variables
 ===============================
 
-The file, ``analysis_options_user.yaml``, specifies user-defined design variables, constraints, and an objective function.  The design variable must be one of the Independent Variable Components of the model, in the WISDEM namespace, which is OpenMDAO language for an input variable name that can be independently adjusted by an outer optimization loop.  The input variables available as design variables are listed *HERE!!!*.  In the ``analysis_options`` file, this appears in the design variable section as:
+The file, ``analysis_options_user.yaml``, specifies user-defined design variables, constraints, and an objective function.  The design variable must be one of the Independent Variable Components of the model, in the WISDEM namespace, which is OpenMDAO language for an input variable name that can be independently adjusted by an outer optimization loop.  The input variables available as design variables are listed at :ref:`wisdem_inputs_documentation`.  In the ``analysis_options`` file, this appears in the design variable section as:
 
 .. literalinclude:: /../examples/03_blade/analysis_options_user.yaml
     :language: yaml
@@ -36,7 +36,7 @@ There is no limit to the number of design variables a user can add.  Additional 
 User-Defined Objective Function
 ================================
 
-The same file, ``analysis_options_user.yaml``, provides a user-defined objective function as well.  A user-provided objective function in ``merit_figure_user`` always takes precedence over the traditional ``merit_figure:`` entry, so there is no conflict if both are given in the file.  An objective function must be an output from one of the many functions (OpenMDAO Components) that are used in WISDEM.  The list of available outputs is given *HERE!!!*.  In this example we see the user is conducting an optimization to minimize the rated thrust of the turbine:
+The same file, ``analysis_options_user.yaml``, provides a user-defined objective function as well.  A user-provided objective function in ``merit_figure_user`` always takes precedence over the traditional ``merit_figure:`` entry, so there is no conflict if both are given in the file.  An objective function must be an output from one of the many functions (OpenMDAO Components) that are used in WISDEM.  The list of available outputs is found at :ref:`wisdem_outputs_documentation`.  In this example we see the user is conducting an optimization to minimize the rated thrust of the turbine:
 
 .. literalinclude:: /../examples/03_blade/analysis_options_user.yaml
     :language: yaml
