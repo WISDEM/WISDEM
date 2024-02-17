@@ -1,12 +1,12 @@
 .. _blade_opt_tutorial-label:
 
-3. Blade Optimization Example
+3a. Blade Optimization Example
 -----------------------------
 
 This example walks through a blade optimization problem with increasing complexity.
 
 All of the iterations use the same geometry input file, ``BAR-USC.yaml``, which describes a baseline design from the NREL-Sandia Big Adaptive Rotor (BAR) project described in this GitHub [repository](https://github.com/NREL/BAR_Designs).
-This blade uses carbon fiber-reinforced polymer in the spar cap design.  The same ``modeling_options.yaml`` file is also common to all iterations and shows that all WISDEM modules are called. The file has dozens of optional inputs hidden. The full list of inputs is available among the `modeling-options`_.
+This blade uses carbon fiber-reinforced polymer in the spar cap design.  The same ``modeling_options.yaml`` file is also common to all iterations and shows that all WISDEM modules are called. The file has dozens of optional inputs hidden. The full list of inputs is available among the :ref:`modeling-options`.
 The example file runs four cases one after the other for testing purposes. To run the cases one by one, make sure to comment out all cases at lines 15-18 except the case that should run.
 
 
@@ -27,8 +27,8 @@ The file, ``analysis_options_aero.yaml``, is used to run a blade twist optimizat
 
 .. literalinclude:: /../examples/03_blade/analysis_options_aero.yaml
     :language: yaml
-    :start-after: blade:
-    :end-before: structure:
+    :start-after: design_variables:
+    :end-before: merit_figure:
 
 First, we must increase the number of the twist spline control points to 8. We also need to adjust the indices controlling which of these control points can be varied by the optimizer, and which are instead locked. In the twist section, let's set :code:`index_start` to 2 (this means that the first 2 of 8 spanwise control points sections are locked), whereas we let all other 6 spanwise control points in the hands of the optimizer. We do this by setting :code:`index_end` to 8. No need to adjust the maximum decrease and increase that the optimizer can apply to the twist in radians, nor to activate the :code:`inverse` flag.
 
@@ -45,7 +45,7 @@ To better guide the optimization, we activate a stall margin constraint using th
 .. literalinclude:: /../examples/03_blade/analysis_options_aero.yaml
     :language: yaml
     :start-after: constraints:
-    :end-before: tower:
+    :end-before: driver:
 
 The maximum iteration limit currently used in the file is 2, to keep the examples short.  However, if you want to see more progress in the optimization, change the following lines from:
 
@@ -108,7 +108,7 @@ AEP grows from 24.34872 to 24.64157 GW*h.
 
     Initial versus optimized induction profiles
 
-.. _fig_opt1_twist:
+.. _fig_opt1_twist_opt:
 .. figure:: /images/blade/twist_opt.png
     :height: 4in
     :align: center
@@ -130,8 +130,8 @@ To run this optimization problem, we can use the same geometry and modeling inpu
 
 .. literalinclude:: /../examples/03_blade/analysis_options_struct.yaml
     :language: yaml
-    :start-after: blade:
-    :end-before: structure:
+    :start-after: design_variables:
+    :end-before: merit_figure:
 
 Just increase :code:`n_opt` to 8 and :code:`index_end` for both suction- and pressure-side spar caps. The objective function is set to:
 
@@ -144,7 +144,7 @@ and the constraints are,
 .. literalinclude:: /../examples/03_blade/analysis_options_struct.yaml
     :language: yaml
     :start-after: constraints:
-    :end-before: tower:
+    :end-before: driver:
 
 To run the optimization, just be sure to increase :code:`max_iter` to 10 and pass in this new analysis options,
 
@@ -199,7 +199,7 @@ Finally, we will combine the previous two scenarios and use the levelized cost o
 .. literalinclude:: /../examples/03_blade/analysis_options_aerostruct.yaml
     :language: yaml
     :start-after: design_variables:
-    :end-before: te_ss:
+    :end-before: merit_figure:
 
 with rotor diameter, blade chord and twist, and spar caps thickness activated as a design variable.
 Again, increase the field :code:`n_opt` to 8 for chord, twist, and spar caps thickness. Also, set :code:`index_end` to 8 for twist (optimize twist all the way to the tip) and to 7 for chord and spar caps (lock the point at the tip). Do not forget to set :code:`index_end` to 7 also in the strain constraints.
@@ -245,7 +245,7 @@ and then do,
 
 We can then use the ``compare_designs`` command in the same way as above to plot the optimization results, two of which are shown in, :numref:`fig_opt3_induction` and :numref:`fig_opt3_twist`.  With more moving parts, it can be harder to interpret the results.  In the end, LCOE is increased marginally because the initial blade tip deflection constraint, which is set to 1.4175 in the analysis options yaml, is initially violated and the optimizer has to stiffen up and shorten the blade. The rotor diameter is reduced from 206 m to 202.7 and twist is simultaneously adjusted to keep performance up.
 
-.. fig_opt3_induction:
+.. _fig_opt3_induction:
 .. figure:: /images/blade/induction2.png
     :height: 4in
     :align: center

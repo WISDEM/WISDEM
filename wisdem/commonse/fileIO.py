@@ -5,21 +5,32 @@ import numpy as np
 import pandas as pd
 import scipy.io as sio
 
-
-def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
-    # Remove file extension
-    froot = os.path.splitext(fname)[0]
+def get_variable_list(prob):
 
     # Get all OpenMDAO inputs and outputs into a dictionary
-    var_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, out_stream=None)
-    for k in range(len(var_dict)):
-        var_dict[k][1]["type"] = "input"
+    input_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, is_indep_var=True, out_stream=None)
+    for k in range(len(input_dict)):
+        input_dict[k][1]["type"] = "input"
+
+    #var_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, out_stream=None)
+    #for k in range(len(var_dict)):
+    #    var_dict[k][1]["type"] = "output"
 
     out_dict = prob.model.list_outputs(prom_name=True, units=True, desc=True, out_stream=None)
     for k in range(len(out_dict)):
         out_dict[k][1]["type"] = "output"
         
+    var_dict = input_dict.copy()
     var_dict.extend(out_dict)
+    return input_dict, out_dict, var_dict
+
+
+def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
+    # Get the variables
+    _, _, var_dict = get_variable_list(prob)
+    
+    # Remove file extension
+    froot = os.path.splitext(fname)[0]
 
     # Pickle the full archive so that we can load it back in if we need
     with open(froot + ".pkl", "wb") as f:
@@ -108,11 +119,11 @@ def load_data(fname, prob):
         value = var_dict[k][1]["val"]
         try:
             prob.set_val(iname, value)
-        except:
+        except Exception:
             pass
         try:
             prob.set_val(iname2, value)
-        except:
+        except Exception:
             pass
 
     return prob

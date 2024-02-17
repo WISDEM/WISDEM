@@ -864,12 +864,12 @@ properties:
                         name: 
                             type: string
                             description: Promoted name of the design variable in the system.
-                        lower:
+                        lower_bound:
                             type: array
                             description: Array of lower bounds of this user-defined design variable
                             items:
                                 type: number
-                        upper:
+                        upper_bound:
                             type: array
                             description: Array of upper bounds of this user-defined design variable
                             items:
@@ -1091,10 +1091,10 @@ properties:
                         default: {}
                         properties:
                             flag: *flag
-                            lower:
+                            lower_bound:
                                 type: number
                                 minimum: 0.0
-                            upper:
+                            upper_bound:
                                 type: number
                                 minimum: 0.0
             tower: &towcon
@@ -1455,7 +1455,7 @@ properties:
                 items:
                     type: object
                     properties:
-                        variable:
+                        name:
                             type: string
                             description: User-specified constraint variable using full name in the WISDEM namespace
                         lower_bound:
@@ -1478,11 +1478,11 @@ properties:
         default: {}
         description: Provides mechanism for a user-specific objective function.  Overrides any entries in merit_figure.
         properties:
-            variable:
+            name:
                 type: string
                 description: User-specified objective function / merit figure using full variable name in the WISDEM namespace
                 default: ''
-            scaling:
+            ref:
                 type: number
                 description: Approximate expected value of the user-defined objective function (just need the nearest order-of-magnitude) for scaling the objective function for optimization conditioning.  For example, if you expect values in the range of 6000, enter in 1000.
                 default: 1

@@ -403,10 +403,10 @@ class PoseOptimization(object):
 
     def set_objective(self, wt_opt):
         # Set merit figure. Each objective has its own scaling.  Check first for user override
-        if self.opt["merit_figure_user"]["variable"] != "":
+        if self.opt["merit_figure_user"]["name"] != "":
             coeff = -1.0 if self.opt["merit_figure_user"]["max_flag"] else 1.0
-            wt_opt.model.add_objective(self.opt["merit_figure_user"]["variable"],
-                                       ref=coeff*np.abs(self.opt["merit_figure_user"]["scaling"]))
+            wt_opt.model.add_objective(self.opt["merit_figure_user"]["name"],
+                                       ref=coeff*np.abs(self.opt["merit_figure_user"]["ref"]))
 
         elif self.opt["merit_figure"] == "AEP":
             wt_opt.model.add_objective("rotorse.rp.AEP", ref=-1.0e6)
@@ -965,27 +965,35 @@ class PoseOptimization(object):
                 upper=mooring_opt["line_stiffness_coeff"]["upper_bound"],
             )
 
-        if "user_defined" in self.opt["design_variables"]:
-            user_defined = self.opt["design_variables"]["user_defined"]
+        if "user" in self.opt["design_variables"]:
+            user_defined = self.opt["design_variables"]["user"]
             for i in range(len(user_defined)):
                 name_i = user_defined[i]["name"]
                 
-                if "lower" in user_defined[i]:
+                if "lower_bound" in user_defined[i]:
+                    lower_i = user_defined[i]["lower_bound"]
+                elif "lower" in user_defined[i]:
                     lower_i = user_defined[i]["lower"]
                 else:
                     lower_i = None
-                if "upper" in user_defined[i]:
+                    
+                if "upper_bound" in user_defined[i]:
+                    upper_i = user_defined[i]["upper_bound"]
+                elif "upper" in user_defined[i]:
                     upper_i = user_defined[i]["upper"]
                 else:
                     upper_i = None
+                    
                 if "ref" in user_defined[i]:
                     ref_i = user_defined[i]["ref"]
                 else:
                     ref_i = None
+                    
                 if "indices" in user_defined[i]:
                     indices_i = user_defined[i]["indices"]
                 else:
                     indices_i = None
+                    
                 wt_opt.model.add_design_var(
                     name_i,
                     lower=lower_i,
@@ -1151,16 +1159,16 @@ class PoseOptimization(object):
 
         # to constrain C_T and forcibly design higher thrust turbines
         if blade_constr["thrust_coeff"]["flag"]:
-            if "lower" in blade_constr["thrust_coeff"]:
+            if "lower_bound" in blade_constr["thrust_coeff"]:
                 wt_opt.model.add_constraint(
-                    "rotorse.rp.powercurve.Ct_regII", lower=blade_constr["thrust_coeff"]["lower"]
+                    "rotorse.rp.powercurve.Ct_regII", lower=blade_constr["thrust_coeff"]["lower_bound"]
                 )
-            elif "upper" in blade_constr["thrust_coeff"]:
+            elif "upper_bound" in blade_constr["thrust_coeff"]:
                 wt_opt.model.add_constraint(
-                    "rotorse.rp.powercurve.Ct_regII", upper=blade_constr["thrust_coeff"]["upper"]
+                    "rotorse.rp.powercurve.Ct_regII", upper=blade_constr["thrust_coeff"]["upper_bound"]
                 )
             else:
-                raise Exception("thrust coefficient constraint requested but now upper or lower constraint found.")
+                raise Exception("thrust coefficient constraint requested but no upper or lower bound found.")
 
         # Tower and monopile contraints
         tower_constr = self.opt["constraints"]["tower"]
@@ -1369,7 +1377,7 @@ class PoseOptimization(object):
         # User constraints
         user_constr = self.opt["constraints"]["user"]
         for k in range(len(user_constr)):
-            var_k = user_constr[k]["variable"]
+            var_k = user_constr[k]["name"]
             
             if "lower_bound" in user_constr[k]:
                 lower_k = user_constr[k]["lower_bound"]

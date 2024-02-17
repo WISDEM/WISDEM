@@ -13,6 +13,7 @@ All of these case studies below can be found in the `examples` directory.  For t
    examples/nrelcsm/tutorial
    examples/refturb/tutorial
    examples/blade/tutorial
+   examples/blade/user
    examples/openmdao/tutorial
    examples/tower_mono/tutorial
    examples/drivetrain/tutorial
