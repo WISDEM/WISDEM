@@ -44,7 +44,6 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx_rtd_theme",
     "sphinx-jsonschema",
-    "sphinx_json_schema",
     # 'autoapi.extension',
     # 'embed-n2',
 ]
