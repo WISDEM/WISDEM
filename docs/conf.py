@@ -43,6 +43,8 @@ extensions = [
     "sphinxcontrib.bibtex",
     "sphinx.ext.intersphinx",
     "sphinx_rtd_theme",
+    "sphinx-jsonschema",
+    "sphinx_json_schema",
     # 'autoapi.extension',
     # 'embed-n2',
 ]
@@ -112,3 +114,9 @@ html_js_files = [
 
 # Bibtex configuration
 bibtex_bibfiles = ["references.bib"]
+
+jsonschema_options = {
+    'lift_title': True,
+    'lift_description': True,
+    'lift_definitions': True,
+}

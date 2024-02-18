@@ -1,0 +1,5 @@
+To update the documentation from the original schema files, do:
+yq -p yaml -o json ../../wisdem/inputs/analysis_schema.yaml >| analysis_schema.json
+yq -p yaml -o json ../../wisdem/inputs/modeling_schema.yaml >| modeling_schema.json
+
+Then change the first "properties" mention in the two .json files to "definitions"
