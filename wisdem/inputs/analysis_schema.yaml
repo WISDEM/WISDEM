@@ -853,7 +853,37 @@ properties:
                             flag: *flag
                             lower_bound: *lboundm
                             upper_bound: *uboundm
-
+            user_defined:
+                type: array
+                description: List of user-defined design variables. These must be already listed as OpenMDAO indipendent cariable components. 
+                items:
+                    type: object
+                    description: OpenMDAO entries, taken from https://openmdao.org/newdocs/versions/latest/features/core_features/adding_desvars_cons_objs/adding_design_variables.html 
+                    default: {}
+                    properties:
+                        name: 
+                            type: string
+                            description: Promoted name of the design variable in the system.
+                        lower_bound:
+                            type: array
+                            description: Array of lower bounds of this user-defined design variable
+                            items:
+                                type: number
+                        upper_bound:
+                            type: array
+                            description: Array of upper bounds of this user-defined design variable
+                            items:
+                                type: number
+                        ref:
+                            type: array
+                            description: Value of design var that scales to 1.0 in the driver
+                            items:
+                                type: number
+                        indices:
+                            type: array
+                            description: If an input is an array, these indicate which entries are of interest for this particular design variable. These may be positive or negative integers
+                            items:
+                                type: number
     constraints:
         type: object
         default: {}
@@ -1061,10 +1091,10 @@ properties:
                         default: {}
                         properties:
                             flag: *flag
-                            lower:
+                            lower_bound:
                                 type: number
                                 minimum: 0.0
-                            upper:
+                            upper_bound:
                                 type: number
                                 minimum: 0.0
             tower: &towcon
@@ -1417,12 +1447,50 @@ properties:
                     roll_period: *period
                     pitch_period: *period
                     yaw_period: *period
+                    
+            user:
+                type: array
+                description: User-defined constraints based on full variable name.  Must enter a lower_bound and/or an upper bound for each constraint
+                default: []
+                items:
+                    type: object
+                    properties:
+                        name:
+                            type: string
+                            description: User-specified constraint variable using full name in the WISDEM namespace
+                        lower_bound:
+                            type: number
+                            description: Variable must be greater than or equal to this value (entry must have lower_bound and/or upper_bound)
+                        upper_bound:
+                            type: number
+                            description: Variable must be less than or equal to this value (entry must have lower_bound and/or upper_bound)
+                        indices:
+                            type: string
+                            description: Optional string of python indices in a list (i.e. [0,1,2]) or slice (i.e. [:3])
 
     merit_figure:
         type: string
         description: Objective function / merit figure for optimization (not checked via schema, but in python).  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation, platform_mass- floating platform mass without variable ballast, inverse_design- custom inverse design used to match reference values of any arbitrary output
         default: LCOE
 
+    merit_figure_user:
+        type: object
+        default: {}
+        description: Provides mechanism for a user-specific objective function.  Overrides any entries in merit_figure.
+        properties:
+            name:
+                type: string
+                description: User-specified objective function / merit figure using full variable name in the WISDEM namespace
+                default: ''
+            ref:
+                type: number
+                description: Approximate expected value of the user-defined objective function (just need the nearest order-of-magnitude) for scaling the objective function for optimization conditioning.  For example, if you expect values in the range of 6000, enter in 1000.
+                default: 1
+            max_flag:
+                type: boolean
+                default: False
+                description: If true, this maximizes the objective function.  If false, then minimize
+        
     inverse_design:
         type: object
         description: For use with the inverse_design merit_figure. Specifies the reference output variable's 'prom_name' name and the desired value, accepts multiple variables. A normalized difference between the actual value and reference value is calculated for each variable. A Root Mean Square (RMS) is calculated with all variables and the optimizer minimizes the RMS. If the refernce output variable is an array, specify the element index number via "idx".

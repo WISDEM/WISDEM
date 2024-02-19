@@ -1,4 +1,4 @@
-.. inputs-documentation:
+.. _inputs-documentation:
 
 WISDEM Inputs
 ====================
@@ -15,6 +15,6 @@ WISDEM Inputs
    :maxdepth: 1
    :caption: Contents:
 
-   inputs/geometry_schema
-   inputs/modeling_schema
-   inputs/analysis_schema
+   geometry_schema
+   modeling_schema
+   analysis_schema
