@@ -9,7 +9,9 @@ version: 2
 build:
   os: ubuntu-22.04
   tools:
-    python: "miniconda-latest"
+    # This leads to "excessive memory use"
+    #python: "miniconda-latest"
+    python: "mambaforge-22.9"
   apt_packages:
       - snapd
   jobs:
