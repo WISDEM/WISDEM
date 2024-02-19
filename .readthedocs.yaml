@@ -21,9 +21,9 @@ build:
       - conda install sphinx_rtd_theme>=1.3
     pre_build:
       - pwd
-      - wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
-      - yq -p yaml -o json wisdem/inputs/analysis_schema.yaml >| docs/schema/analysis_schema.json
-      - yq -p yaml -o json wisdem/inputs/modeling_schema.yaml >| docs/schema/modeling_schema.json
+      - wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O yq && chmod +x yq
+      - ./yq -p yaml -o json wisdem/inputs/analysis_schema.yaml >| docs/schema/analysis_schema.json
+      - ./yq -p yaml -o json wisdem/inputs/modeling_schema.yaml >| docs/schema/modeling_schema.json
       - sed -i -s -e '/properties/{s//definitions/;:a' -e '$!N;$!ba' -e '}' docs/schema/modeling_schema.json
       - sed -i -s -e '/properties/{s//definitions/;:a' -e '$!N;$!ba' -e '}' docs/schema/analysis_schema.json
 
