@@ -1488,7 +1488,7 @@ class PoseOptimization(object):
                 init_opt = thick_interp(wt_opt["blade.opt_var.s_opt_layer_%d"%i])
                 wt_opt["blade.opt_var.layer_%d_opt"%i] = np.nan_to_num(init_opt, nan=0.)
             
-            if self.modeling["WISDEM"]["RotorSE"]["flag"]:
+            if self.modeling["flags"]["blade"]:
                 blade_constr = self.opt["constraints"]["blade"]
                 wt_opt["rotorse.rs.constr.max_strainU_spar"] = blade_constr["strains_spar_cap_ss"]["max"]
                 wt_opt["rotorse.rs.constr.max_strainL_spar"] = blade_constr["strains_spar_cap_ps"]["max"]
@@ -1500,7 +1500,8 @@ class PoseOptimization(object):
                 wt_opt["rotorse.rs.constr.max_strainU_te"] = blade_constr["strains_te_ss"]["max"]
                 wt_opt["rotorse.rs.constr.max_strainL_te"] = blade_constr["strains_te_ps"]["max"]
                 wt_opt["rotorse.stall_check.stall_margin"] = blade_constr["stall"]["margin"] * 180.0 / np.pi
-                wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
+                if self.modeling["flags"]["tower"]:
+                    wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
 
         if self.modeling["flags"]["nacelle"]:
             drive_constr = self.opt["constraints"]["drivetrain"]
