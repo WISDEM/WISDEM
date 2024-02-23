@@ -14,6 +14,6 @@ To ensure :math:`C^1` continuity, lift and drag coefficients are computed using 
 Additionally, analytic gradients for distributed loads, thrust, torque, and power are (optionally) provided.
 
 CCBlade is written in Python, but iteration-heavy sections are written in Fortran in order to improve performance.
-The Fortran code is called from Python as an extension module using `f2py <http://https://numpy.org/doc/1.17/f2py/index.html>`_.
-The module AirfoilPrep.py is also included with the source.
-Although not directly used by CCBlade, the airfoil preprocessing capabilities are often useful for this application.
+The Fortran code is called from Python as an extension module.
+
+The module `Polar.py` is also included with the source.  Although not directly used by CCBlade, the airfoil preprocessing capabilities are often useful for this application.

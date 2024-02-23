@@ -1,0 +1,12 @@
+To update the documentation from the original schema files, do:
+yq -p yaml -o json ../../wisdem/inputs/analysis_schema.yaml >| analysis_schema.json
+yq -p yaml -o json ../../wisdem/inputs/modeling_schema.yaml >| modeling_schema.json
+
+Note: yq can be installed in many ways.  See https://github.com/mikefarah/yq
+
+Then change the first "properties" mention in the two .json files to "definitions":
+sed -i -s -e '/properties/{s//definitions/;:a' -e '$!N;$!ba' -e '}' modeling_schema.json
+sed -i -s -e '/properties/{s//definitions/;:a' -e '$!N;$!ba' -e '}' analysis_schema.json
+
+This should be done automatically in the .readthedocs.yaml on every build, but good to document here
+

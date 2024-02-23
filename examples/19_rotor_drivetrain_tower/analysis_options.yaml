@@ -26,21 +26,18 @@ design_variables:
               index_start: 1
               index_end: 7
         structure:
-            spar_cap_ss:
-                flag: True 
-                n_opt: 8     
-                max_decrease: 0.2
-                max_increase: 2.0
-                index_start: 1
-                index_end: 7
-            spar_cap_ps:
-                flag: True
-                equal_to_suction: True 
-                n_opt: 8
-                max_decrease: 0.2
-                max_increase: 2.0
-                index_start: 1
-                index_end: 7
+            - layer_name: Spar_Cap_SS
+              n_opt: 8
+              max_decrease: 0.2
+              max_increase: 2.0
+              index_start: 1
+              index_end: 7
+            - layer_name: Spar_Cap_PS
+              n_opt: 8
+              max_decrease: 0.2
+              max_increase: 2.0
+              index_start: 1
+              index_end: 7
     drivetrain:
         lss_diameter:
             flag: True

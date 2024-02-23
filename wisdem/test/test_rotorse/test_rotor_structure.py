@@ -399,6 +399,7 @@ class TestRS(unittest.TestCase):
         inputs["rated_Omega"] = 10.0
         inputs["flap_mode_freqs"] = 0.6 * np.ones(3)
         inputs["edge_mode_freqs"] = 0.4 * np.ones(3)
+        inputs["tors_mode_freqs"] = 5. * np.ones(3)
         discrete_inputs["blade_number"] = 3
 
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)

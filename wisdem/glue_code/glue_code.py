@@ -153,10 +153,11 @@ class WT_RNTA(om.Group):
             ):
                 self.connect("blade.high_level_blade_props.blade_ref_axis", "rotorse.re.rail.blade_ref_axis")
             # Connections from blade struct parametrization to rotor load anlysis
-            self.connect("blade.opt_var.s_opt_spar_cap_ss", "rotorse.rs.constr.s_opt_spar_cap_ss")
-            self.connect("blade.opt_var.s_opt_spar_cap_ps", "rotorse.rs.constr.s_opt_spar_cap_ps")
-            self.connect("blade.opt_var.s_opt_te_ss", "rotorse.rs.constr.s_opt_te_ss")
-            self.connect("blade.opt_var.s_opt_te_ps", "rotorse.rs.constr.s_opt_te_ps")
+            spars_tereinf = modeling_options["WISDEM"]["RotorSE"]["spars_tereinf"]
+            self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[0], "rotorse.rs.constr.s_opt_spar_cap_ss")
+            self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[1], "rotorse.rs.constr.s_opt_spar_cap_ps")
+            self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[2], "rotorse.rs.constr.s_opt_te_ss")
+            self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[3], "rotorse.rs.constr.s_opt_te_ps")
 
             # Connections to RotorPower
             self.connect("control.V_in", "rotorse.rp.v_min")

@@ -664,42 +664,16 @@ class Blade(om.Group):
             val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
         opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
-        opt_var.add_output(
-            "s_opt_spar_cap_ss",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "s_opt_spar_cap_ps",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "spar_cap_ss_opt",
-            units="m",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "spar_cap_ps_opt",
-            units="m",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "s_opt_te_ss",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "s_opt_te_ps",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "te_ss_opt",
-            units="m",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "te_ps_opt",
-            units="m",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]),
-        )
+        for i in range(rotorse_options["n_layers"]):
+            opt_var.add_output(
+                "s_opt_layer_%d"%i,
+                val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
+            )
+            opt_var.add_output(
+                "layer_%d_opt"%i,
+                units="m",
+                val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
+            )
         self.add_subsystem("opt_var", opt_var)
 
         # Import outer shape BEM
@@ -791,15 +765,9 @@ class Blade(om.Group):
         )  # Parameterize struct (spar caps ss and ps)
 
         # Connections to blade struct parametrization
-        self.connect("opt_var.spar_cap_ss_opt", "ps.spar_cap_ss_opt")
-        self.connect("opt_var.s_opt_spar_cap_ss", "ps.s_opt_spar_cap_ss")
-        self.connect("opt_var.spar_cap_ps_opt", "ps.spar_cap_ps_opt")
-        self.connect("opt_var.s_opt_spar_cap_ps", "ps.s_opt_spar_cap_ps")
-
-        self.connect("opt_var.te_ss_opt", "ps.te_ss_opt")
-        self.connect("opt_var.s_opt_te_ss", "ps.s_opt_te_ss")
-        self.connect("opt_var.te_ps_opt", "ps.te_ps_opt")
-        self.connect("opt_var.s_opt_te_ps", "ps.s_opt_te_ps")
+        for i in range(rotorse_options["n_layers"]):
+            self.connect("opt_var.layer_%d_opt"%i, "ps.layer_%d_opt"%i)
+            self.connect("opt_var.s_opt_layer_%d"%i, "ps.s_opt_layer_%d"%i)
 
         self.connect("outer_shape_bem.s", "ps.s")
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
@@ -3211,9 +3179,11 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         modeling_options = self.options["modeling_options"]
+        if inputs["hub_height_user"][0] != 0.0:
+            outputs["hub_height"] = inputs["hub_height_user"]
+            
         if modeling_options["flags"]["tower"]:
-            if inputs["hub_height_user"] != 0.0:
-                outputs["hub_height"] = inputs["hub_height_user"]
+            if inputs["hub_height_user"][0] != 0.0:
                 z_base = inputs["tower_ref_axis_user"][0, 2]
                 z_current = inputs["tower_ref_axis_user"][:, 2] - z_base
                 h_needed = inputs["hub_height_user"] - inputs["distance_tt_hub"] - z_base
@@ -3223,6 +3193,9 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
                 outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]
 
+        if outputs["hub_height"][0] == 0.0:
+            raise Exception("The hub height cannot be set.  Please set it in the top level 'assembly' section in the yaml file and/or define the tower reference axis")
+        
         if modeling_options["flags"]["blade"] and inputs["rotor_diameter"] > 2.0 * outputs["hub_height"]:
             raise Exception(
                 "The rotor blade extends past the ground or water line. Please adjust hub height and/or rotor diameter."
