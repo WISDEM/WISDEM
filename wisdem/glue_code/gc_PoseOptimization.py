@@ -1488,7 +1488,7 @@ class PoseOptimization(object):
                 init_opt = thick_interp(wt_opt["blade.opt_var.s_opt_layer_%d"%i])
                 wt_opt["blade.opt_var.layer_%d_opt"%i] = np.nan_to_num(init_opt, nan=0.)
             
-            if self.modeling["flags"]["blade"]:
+            if self.modeling["WISDEM"]["RotorSE"]["flag"]:
                 blade_constr = self.opt["constraints"]["blade"]
                 wt_opt["rotorse.rs.constr.max_strainU_spar"] = blade_constr["strains_spar_cap_ss"]["max"]
                 wt_opt["rotorse.rs.constr.max_strainL_spar"] = blade_constr["strains_spar_cap_ps"]["max"]
