@@ -71,6 +71,7 @@ class FloatingSE(om.Group):
             "section_rho",
             "section_E",
             "section_G",
+            "section_TorsC",
             "section_sigma_y",
             "idx_cb",
             "variable_ballast_capacity",
@@ -112,6 +113,5 @@ class FloatingSE(om.Group):
                 self.connect(f"member{k}.side_length_a_full", f"memload{k}.side_length_a_full")
                 self.connect(f"member{k}.side_length_b_full", f"memload{k}.side_length_b_full")
 
-            # Member loads hasn't included rectangular yet, so for now, just connect outer_diameter when it is circular
             for var in mem_load_vars:
                 self.connect(f"member{k}.{var}", f"memload{k}.{var}")

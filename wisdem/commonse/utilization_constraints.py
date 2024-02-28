@@ -49,6 +49,7 @@ class GeometricConstraints(om.ExplicitComponent):
         Slope constraint, must be less than 1.0 to be feasible
 
     """
+    # TODO: What should be the geometric contraint for rectangular members?
 
     def initialize(self):
         self.options.declare("nPoints")
@@ -172,7 +173,7 @@ def fatigue(M_DEL, N_DEL, d, t, m=4, DC=80.0, eta=1.265, stress_factor=1.0, weld
     return damage
 
 
-def vonMisesStressUtilization(axial_stress, hoop_stress, shear_stress, gamma, sigma_y):
+def TubevonMisesStressUtilization(axial_stress, hoop_stress, shear_stress, gamma, sigma_y):
     """combine stress for von Mises"""
 
     # von mises stress

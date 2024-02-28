@@ -21,11 +21,11 @@ NREFINE = 1
 
 class CrossSection(object):
     def __init__(
-        self, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, J0=0.0, E=0.0, G=0.0, rho=0.0, sigy=0.0
+        self, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, J0=0.0, E=0.0, G=0.0, rho=0.0, TorsC=0.0, sigy=0.0
     ):
         self.t = t  # Needed for OpenFAST
         self.A, self.Asx, self.Asy = A, Asx, Asy
-        self.Ixx, self.Iyy, self.J0 = Ixx, Iyy, J0
+        self.Ixx, self.Iyy, self.J0, self.TorsC = Ixx, Iyy, J0, TorsC
         self.E, self.G, self.rho, self.sigy = E, G, rho, sigy
 
     def make_ghost(self):
@@ -37,9 +37,9 @@ class CrossSection(object):
 
 class CircCrossSection(CrossSection):
     def __init__(
-        self, D=0.0, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, J0=0.0, E=0.0, G=0.0, rho=0.0, sigy=0.0
+        self, D=0.0, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, J0=0.0, E=0.0, G=0.0, rho=0.0, TorsC=0.0, sigy=0.0
     ):
-        super().__init__(t, A, Asx, Asy, Ixx, Iyy, J0, E, G, rho, sigy)
+        super().__init__(t, A, Asx, Asy, Ixx, Iyy, J0, E, G, rho, TorsC, sigy)
         self.D = D  # Needed for OpenFAST
 
     def make_ghost(self):
@@ -48,10 +48,10 @@ class CircCrossSection(CrossSection):
 
 class RectCrossSection(CrossSection):
     def __init__(
-        self, a=0.0, b=0.0, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, J0=0.0, E=0.0, G=0.0, rho=0.0, sigy=0.0
+        self, a=0.0, b=0.0, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, J0=0.0, E=0.0, G=0.0, rho=0.0, TorsC=0.0, sigy=0.0
     ):
         self.a, self.b = a, b  # Needed for OpenFAST , TODO: what does openfast need from rectangular member?
-        super().__init__(t, A, Asx, Asy, Ixx, Iyy, J0, E, G, rho, sigy)
+        super().__init__(t, A, Asx, Asy, Ixx, Iyy, J0, E, G, rho, TorsC, sigy)
 
     def make_ghost(self):
         super().make_ghost()
@@ -1016,6 +1016,8 @@ class MemberComplex(om.ExplicitComponent):
         Cross-sectional shear modulus all member segments
     section_sigma_y : numpy array[npts-1], [Pa]
         Cross-sectional yield stress of all member segments
+    section_TorsC : numpy array[npts-1]
+        Cross-sectional Torsion constant
 
     """
 
@@ -1122,12 +1124,10 @@ class MemberComplex(om.ExplicitComponent):
         self.add_output("nodes_xyz_all", NULL * np.ones((MEMMAX, 3)), units="m")
         if self.shape == "circular":
             self.add_output("section_D", NULL * np.ones(MEMMAX), units="m")
-            self.add_output("nodes_r_all", np.zeros(MEMMAX), units="m")
         elif self.shape == "rectangular":
             self.add_output("section_a", NULL * np.ones(MEMMAX), units="m")
             self.add_output("section_b", NULL * np.ones(MEMMAX), units="m")
-            self.add_output("nodes_a_all", np.zeros(MEMMAX), units="m")
-            self.add_output("nodes_b_all", np.zeros(MEMMAX), units="m")
+        self.add_output("nodes_r_all", np.zeros(MEMMAX), units="m")
         self.add_output("section_t", NULL * np.ones(MEMMAX), units="m")
         self.add_output("section_A", NULL * np.ones(MEMMAX), units="m**2")
         self.add_output("section_Asx", NULL * np.ones(MEMMAX), units="m**2")
@@ -1138,6 +1138,7 @@ class MemberComplex(om.ExplicitComponent):
         self.add_output("section_rho", NULL * np.ones(MEMMAX), units="kg/m**3")
         self.add_output("section_E", NULL * np.ones(MEMMAX), units="Pa")
         self.add_output("section_G", NULL * np.ones(MEMMAX), units="Pa")
+        self.add_output("section_TorsC", NULL * np.ones(MEMMAX), units="m**3")
         self.add_output("section_sigma_y", NULL * np.ones(MEMMAX), units="Pa")
 
     def add_node(self, s_new):
@@ -1261,6 +1262,7 @@ class MemberComplex(om.ExplicitComponent):
                     rho=rho[k],
                     E=Emat[k],
                     G=Gmat[k],
+                    TorsC=itube.TorsConst,
                     sigy=sigymat[k],
                 )
                 self.add_section(s_full[k], s_full[k + 1], iprop)
@@ -1280,6 +1282,7 @@ class MemberComplex(om.ExplicitComponent):
                     rho=rho[k],
                     E=Emat[k],
                     G=Gmat[k],
+                    TorsC=irect.TorsConst,
                     sigy=sigymat[k],
                 )
                 self.add_section(s_full[k], s_full[k + 1], iprop)
@@ -1987,6 +1990,7 @@ class MemberComplex(om.ExplicitComponent):
         outputs["section_J0"] = NULL * np.ones(MEMMAX)
         outputs["section_E"] = NULL * np.ones(MEMMAX)
         outputs["section_G"] = NULL * np.ones(MEMMAX)
+        outputs["section_TorsC"] = NULL * np.ones(MEMMAX)
         outputs["section_sigma_y"] = NULL * np.ones(MEMMAX)
         outputs["s_all"][:n_nodes] = s_grid
         outputs["nodes_xyz_all"][:n_nodes, :] = nodes
@@ -1997,14 +2001,11 @@ class MemberComplex(om.ExplicitComponent):
             r_grid = 0.5 * np.interp(s_grid, s_full, outer_diameter_full)
             outputs["nodes_r_all"][:n_nodes] = r_grid # This nodes_r eventuallly passed to platformFrame
         elif self.shape == "rectangular":
-            outputs["nodes_a_all"] = NULL * np.ones(MEMMAX)
-            outputs["nodes_b_all"] = NULL * np.ones(MEMMAX)
             outputs["section_a"] = NULL * np.ones(MEMMAX)
             outputs["section_b"] = NULL * np.ones(MEMMAX)
             a_grid = np.interp(s_grid, s_full, side_length_a_full)
             b_grid = np.interp(s_grid, s_full, side_length_b_full)
-            outputs["nodes_a_all"][:n_nodes] = a_grid
-            outputs["nodes_b_all"][:n_nodes] = b_grid
+            outputs["nodes_r_all"][:n_nodes] = 0.5 * np.maximum(a_grid, b_grid) # This theorectically is used as rigid radii in frame3DD, approx using max(a,b)
 
         for k, s in enumerate(s_grid):
             if s == s_grid[-1]:
@@ -2024,6 +2025,7 @@ class MemberComplex(om.ExplicitComponent):
             outputs["section_J0"][k] = self.sections[s].J0
             outputs["section_E"][k] = self.sections[s].E
             outputs["section_G"][k] = self.sections[s].G
+            outputs["section_TorsC"][k] = self.sections[s].TorsC
             outputs["section_sigma_y"][k] = self.sections[s].sigy
 
 
@@ -2515,7 +2517,7 @@ class CylinderPostFrame(om.ExplicitComponent):
         outputs["axial_stress"] = axial_stress = Fz / Az + M * r_sec / Iyy
         outputs["shear_stress"] = shear_stress = np.abs(Mzz) / Jz * r_sec + V / Asx
         outputs["hoop_stress"] = hoop_stress = util_con.hoopStress(d_sec, t, qdyn)
-        outputs["constr_stress"] = util_con.vonMisesStressUtilization(
+        outputs["constr_stress"] = util_con.TubevonMisesStressUtilization(
             axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigma_y
         )
 
@@ -2592,15 +2594,16 @@ class MemberBase(om.Group):
         promlist = ["constr_taper", "constr_d_to_t", "slope"]
         if n_height > 2:
             promlist += ["thickness_slope"]
-        self.add_subsystem(
+
+
+        if member_shape == "circular":
+            self.add_subsystem(
             "gc",
             util_con.GeometricConstraints(nPoints=n_height, diamFlag=True),
             promotes=promlist,
         )
         
-        self.connect("wall_thickness", "gc.t")
-
-        if member_shape == "circular":
+            self.connect("wall_thickness", "gc.t")
             member_shape_variables = ["outer_diameter"]
             self.connect("outer_diameter", "gc.d")
         elif member_shape == "rectangular":
@@ -2608,7 +2611,7 @@ class MemberBase(om.Group):
             member_shape_variables = ["side_length_a", "side_length_b"]
 
         self.add_subsystem("geom", MemberDiscretization(n_height=n_height, n_refine=n_refine, member_shape_variables = member_shape_variables), promotes=["*"])
-
+        # TODO: Need MemberHydro for rectangular member. Now it gives nan in frustum calculation bc r for rectangular member are zeros
         self.add_subsystem("hydro", MemberHydro(n_full=n_full), promotes=["*"])
 
 

@@ -625,7 +625,7 @@ class JacketPost(om.ExplicitComponent):
         axial_stress = Fz / Az[:, np.newaxis] + M * (r / Iyy)[:, np.newaxis]
         shear_stress = np.abs(Mzz) / (Jz * r)[:, np.newaxis] + V / Asx[:, np.newaxis]
         hoop_stress = -qdyn * ((r - 0.5 * t) / t)[:, np.newaxis]  # util_con.hoopStress(d, t, qdyn)
-        outputs["constr_stress"] = util_con.vonMisesStressUtilization(
+        outputs["constr_stress"] = util_con.TubevonMisesStressUtilization(
             axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigy.reshape((-1, 1))
         )[:-n_legs]
 

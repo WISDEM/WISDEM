@@ -326,7 +326,7 @@ class CylinderBuckling:
 
     def utilization_global(self, _sigma_a, sigma_m, fak, gamma=1.45):
         """"""
-
+        # This is column buckling strength in DNVGL
         # Stresses
         sigma_a = np.abs(np.minimum(_sigma_a, 0.0))
         # sigma_h = np.abs(np.minimum(_sigma_h, 0.0))
