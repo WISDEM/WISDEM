@@ -16,8 +16,8 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu-latest, windows-latest] #macos-latest, 
-        python-version: ["3.9", "3.10", "3.11"]
+        os: [ubuntu-latest, macos-latest, windows-latest] #
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
       - name: checkout repository
@@ -52,25 +52,11 @@ jobs:
         run: |
           conda list
           which -a gfortran
-          which pip
 
-      # Install WISDEM with setup
       # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
       - name: Install WISDEM with setup
         run: |
-          python setup.py install
-
-      # Install WISDEM with pip
-      #- name: Install WISDEM with pip for Unix
-      #  if: false == contains( matrix.os, 'windows')
-      #  run: |
-      #    python setup.py install
-
-      # Install WISDEM with pip
-      #- name: Install WISDEM with pip for Windows
-      #  if: contains( matrix.os, 'windows')
-      #  run: |
-      #      python setup.py install
+          python -m pip install --no-build-isolation -e . -v
     
       # Debugging session
       #- name: Setup tmate session
@@ -78,20 +64,20 @@ jobs:
 
       # Run all tests
       - name: Run tests
-        if: false == contains( matrix.os, 'windows')
+        if: contains( matrix.os, 'ubuntu')
         run: |
           pytest -p no:warnings --disable-warnings --cov=wisdem
 
       # Run limited test on WINDOWS
       - name: Limited Windows test
-        if: contains( matrix.os, 'windows')
+        if: false == contains( matrix.os, 'ubuntu')
         run: |
           cd wisdem/test/test_gluecode
-          pytest  -p no:warnings --disable-warnings test_g*
+          pytest -p no:warnings --disable-warnings test_g*
 
       # Run coveralls
       - name: Run coveralls
-        if: contains( matrix.os, 'ubuntu') && contains( matrix.python-version, '3.10')
+        if: contains( matrix.os, 'ubuntu') && contains( matrix.python-version, '3.11')
         uses: coverallsapp/github-action@v2
         # This also works, https://github.com/AndreMiras/coveralls-python-action
         #uses: AndreMiras/coveralls-python-action@develop
@@ -112,7 +98,7 @@ jobs:
       fail-fast: False
       matrix:
         os: [ubuntu-latest] #, windows-latest, macos-latest, 
-        python-version: ["3.10"]
+        python-version: ["3.11"]
 
     steps:
       - name: Setup GNU Fortran
@@ -134,8 +120,9 @@ jobs:
       # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
       - name: Install WISDEM with setup
         run: |
-          '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip install pytest
-          '${{ steps.cp.outputs.python-path }}' -m pip install -vv .
+          '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip
+          '${{ steps.cp.outputs.python-path }}' -m pip install meson-python meson numpy ninja wheel pytest
+          '${{ steps.cp.outputs.python-path }}' -m pip install --no-build-isolation -e . -v
 
       # Run limited tests
       - name: Limited test

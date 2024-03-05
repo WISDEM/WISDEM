@@ -36,6 +36,31 @@ fortranobject_dep = declare_dependency(
   include_directories: [inc_np, inc_f2py],
 )
 
+python_sources = [
+  '__init__.py',
+  'main.py',
+]
+
+py3.install_sources(
+  python_sources,
+  subdir: 'wisdem'
+)
+
 subdir('ccblade')
+subdir('commonse')
+subdir('drivetrainse')
+subdir('fixed_bottomse')
+subdir('floatingse')
+subdir('glue_code')
+subdir('inputs')
+subdir('landbosse')
+subdir('library')
+subdir('nrelcsm')
+subdir('optimization_drivers')
+subdir('orbit')
+subdir('plant_financese')
+subdir('postprocessing')
 subdir('pyframe3dd')
 subdir('rotorse')
+subdir('test')
+subdir('towerse')

@@ -22,10 +22,20 @@ sources = [
 # We need to build a shared library NOT A PYTHON EXTENSION
 # The ctypes wrapper handles the extension part.
 # If the interface was done purely in C, then need the python extension.
-shared_library(
-  '_pyframe3dd',
-  sources,
-  name_prefix: '',
-  include_directories: ['src','src/microstran'],
-  install : true,
+shared_library('_pyframe3dd',
+               sources,
+               name_prefix: '',
+               include_directories: ['src','src/microstran'],
+               install_dir: py3.get_install_dir() / 'wisdem/pyframe3dd',
+               install : true)
+
+
+python_sources = [
+  '__init__.py',
+  'pyframe3dd.py',
+]
+
+py3.install_sources(
+  python_sources,
+  subdir: 'wisdem/pyframe3dd'
 )
