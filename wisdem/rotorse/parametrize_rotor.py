@@ -81,7 +81,6 @@ class ParametrizeBladeAero(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-
         spline = PchipInterpolator
         twist_spline = spline(inputs["s_opt_twist"], inputs["twist_opt"])
         outputs["twist_param"] = twist_spline(inputs["s"])
@@ -103,15 +102,6 @@ class ParametrizeBladeStruct(om.ExplicitComponent):
         self.opt_options = opt_options = self.options["opt_options"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_layers = n_layers = rotorse_options["n_layers"]
-        self.n_opt_spar_cap_ss = n_opt_spar_cap_ss = opt_options["design_variables"]["blade"]["structure"][
-            "spar_cap_ss"
-        ]["n_opt"]
-        self.n_opt_spar_cap_ps = n_opt_spar_cap_ps = opt_options["design_variables"]["blade"]["structure"][
-            "spar_cap_ps"
-        ]["n_opt"]
-        self.n_opt_te_ss = n_opt_te_ss = opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]
-        self.n_opt_te_ps = n_opt_te_ps = opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]
-
         # Inputs
         self.add_input(
             "s",
@@ -124,54 +114,17 @@ class ParametrizeBladeStruct(om.ExplicitComponent):
             units="m",
             desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
         )
-        # Blade spar suction side
-        self.add_input(
-            "s_opt_spar_cap_ss",
-            val=np.zeros(n_opt_spar_cap_ss),
-            desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side",
-        )
-        self.add_input(
-            "spar_cap_ss_opt",
-            val=np.ones(n_opt_spar_cap_ss),
-            units="m",
-            desc="1D array of the the blade spanwise distribution of the spar caps suction side being optimized",
-        )
-        # Blade spar suction side
-        self.add_input(
-            "s_opt_spar_cap_ps",
-            val=np.zeros(n_opt_spar_cap_ps),
-            desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap pressure side",
-        )
-        self.add_input(
-            "spar_cap_ps_opt",
-            val=np.ones(n_opt_spar_cap_ps),
-            units="m",
-            desc="1D array of the the blade spanwise distribution of the spar caps pressure side being optimized",
-        )
-        # Blade TE suction side
-        self.add_input(
-            "s_opt_te_ss",
-            val=np.zeros(n_opt_te_ss),
-            desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade trailing edge suction side",
-        )
-        self.add_input(
-            "te_ss_opt",
-            val=np.ones(n_opt_te_ss),
-            units="m",
-            desc="1D array of the the blade spanwise distribution of the trailing edges suction side being optimized",
-        )
-        # Blade TE suction side
-        self.add_input(
-            "s_opt_te_ps",
-            val=np.zeros(n_opt_te_ps),
-            desc="1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade trailing edge pressure side",
-        )
-        self.add_input(
-            "te_ps_opt",
-            val=np.ones(n_opt_te_ps),
-            units="m",
-            desc="1D array of the the blade spanwise distribution of the trailing edges pressure side being optimized",
-        )
+
+        for i in range(n_layers):
+            self.add_input(
+                "s_opt_layer_%d"%i,
+                val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
+            )
+            self.add_input(
+                "layer_%d_opt"%i,
+                units="m",
+                val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
+            )
 
         # Outputs
         self.add_output(
@@ -183,53 +136,9 @@ class ParametrizeBladeStruct(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
 
-        layer_name = self.options["rotorse_options"]["layer_name"]
-
-        spar_cap_ss_name = self.options["rotorse_options"]["spar_cap_ss"]
-        spar_cap_ps_name = self.options["rotorse_options"]["spar_cap_ps"]
-
-        ss_before_ps = False
-        opt_ss = self.opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["flag"]
-        opt_ps = self.opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["flag"]
         for i in range(self.n_layers):
-            if layer_name[i] == spar_cap_ss_name and opt_ss and opt_ps:
-                opt_m_interp = np.interp(inputs["s"], inputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt"])
-                ss_before_ps = True
-            elif layer_name[i] == spar_cap_ps_name and opt_ss and opt_ps:
-                if (
-                    self.opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
-                    == False
-                ) or ss_before_ps == False:
-                    opt_m_interp = np.interp(inputs["s"], inputs["s_opt_spar_cap_ps"], inputs["spar_cap_ps_opt"])
-                else:
-                    opt_m_interp = np.interp(inputs["s"], inputs["s_opt_spar_cap_ss"], inputs["spar_cap_ss_opt"])
-            else:
-                opt_m_interp = inputs["layer_thickness_original"][i, :]
-
+            opt_m_interp = PchipInterpolator(inputs["s_opt_layer_%d"%i], inputs["layer_%d_opt"%i])(inputs["s"])
             outputs["layer_thickness_param"][i, :] = opt_m_interp
-
-        te_ss_name = self.options["rotorse_options"]["te_ss"]
-        te_ps_name = self.options["rotorse_options"]["te_ps"]
-
-        ss_before_ps = False
-        opt_ss = self.opt_options["design_variables"]["blade"]["structure"]["te_ss"]["flag"]
-        opt_ps = self.opt_options["design_variables"]["blade"]["structure"]["te_ss"]["flag"]
-        for i in range(self.n_layers):
-            if layer_name[i] == te_ss_name and opt_ss and opt_ps:
-                opt_m_interp = np.interp(inputs["s"], inputs["s_opt_te_ss"], inputs["te_ss_opt"])
-                ss_before_ps = True
-            elif layer_name[i] == te_ps_name and opt_ss and opt_ps:
-                if (
-                    self.opt_options["design_variables"]["blade"]["structure"]["te_ps"]["equal_to_suction"] == False
-                ) or ss_before_ps == False:
-                    opt_m_interp = np.interp(inputs["s"], inputs["s_opt_te_ps"], inputs["te_ps_opt"])
-                else:
-                    opt_m_interp = np.interp(inputs["s"], inputs["s_opt_te_ss"], inputs["te_ss_opt"])
-            else:
-                opt_m_interp = outputs["layer_thickness_param"][i, :]
-
-            outputs["layer_thickness_param"][i, :] = opt_m_interp
-
 
 class ComputeReynolds(om.ExplicitComponent):
     def initialize(self):

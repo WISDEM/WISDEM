@@ -106,19 +106,19 @@ properties:
                     spar_cap_ss:
                         type: string
                         default: 'none'
-                        description: Composite layer modeling the spar cap on the suction side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable spar_cap_ss.
+                        description: Composite layer modeling the spar cap on the suction side in the geometry yaml. This entry is used to compute ultimate strains.
                     spar_cap_ps:
                         type: string
                         default: 'none'
-                        description: Composite layer modeling the spar cap on the pressure side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable spar_cap_ps.
+                        description: Composite layer modeling the spar cap on the pressure side in the geometry yaml. This entry is used to compute ultimate strains.
                     te_ss:
                         type: string
                         default: 'none'
-                        description: Composite layer modeling the trailing edge reinforcement on the suction side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable te_ss.
+                        description: Composite layer modeling the trailing edge reinforcement on the suction side in the geometry yaml. This entry is used to compute ultimate strains.
                     te_ps:
                         type: string
                         default: 'none'
-                        description: Composite layer modeling the trailing edge reinforcement on the pressure side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable te_ps.
+                        description: Composite layer modeling the trailing edge reinforcement on the pressure side in the geometry yaml. This entry is used to compute ultimate strains.
                     gamma_freq: &gamma_freq
                         type: number
                         description: Partial safety factor on modal frequencies
@@ -169,13 +169,13 @@ properties:
                         type: boolean
                         default: False
                         description: Flag switching on and off the inverted neural network for airfoil design
-                    inn_af_max_t/c:
+                    inn_af_max_rthick:
                         type: number
                         default: 0.4
                         minimum: 0.
                         maximum: 1.
                         description: Maximum airfoil thickness supported by the INN for airfoil design
-                    inn_af_min_t/c:
+                    inn_af_min_rthick:
                         type: number
                         default: 0.15
                         minimum: 0.
@@ -243,6 +243,10 @@ properties:
                         default: 1.0
                         unit: none
                     frame3dd: *frame3dd
+                    use_gb_torque_density:
+                        type: boolean
+                        default: True
+                        description: Flag switching between running to gearbox sizing of DrivetrainSE (False) or the simple sizing given a value of torque density expressed in Nm/kg
                     hub:
                         type: object
                         default: {}
@@ -251,7 +255,7 @@ properties:
                                 type: number
                                 description: Partial safety factor for hub sizing
                                 minimum: 1.0
-                                maximum: 5.0
+                                maximum: 7.0
                                 default: 2.0
                                 unit: none
                             spinner_gamma:

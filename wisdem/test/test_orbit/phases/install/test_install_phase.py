@@ -45,7 +45,6 @@ base_config = {"port": {"num_cranes": 1, "name": "TEST_PORT"}}
 
 
 def test_abstract_methods():
-
     with pytest.raises(TypeError):
         install = BadInstallPhase(base_config)
 
@@ -53,7 +52,6 @@ def test_abstract_methods():
 
 
 def test_run():
-
     sim = SampleInstallPhase(base_config)
     sim.run(until=10)
 

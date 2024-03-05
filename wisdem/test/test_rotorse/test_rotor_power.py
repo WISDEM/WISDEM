@@ -4,6 +4,7 @@ import unittest
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
+
 import wisdem.rotorse.rotor_power as rp
 
 # Load in airfoil and blade shape inputs for NREL 5MW
@@ -82,7 +83,7 @@ class TestServo(unittest.TestCase):
             self.assertTrue(True)
 
     def testRegulationTrajectory(self):
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         (n_span, n_aoa, n_Re, n_tab) = NPZFILE["airfoils_cl"].shape
         n_pc = 22
@@ -126,7 +127,7 @@ class TestServo(unittest.TestCase):
         npt.assert_array_almost_equal(prob["Cp"], prob["Cp_aero"] * 0.975 * 0.975)
         npt.assert_allclose(prob["Cp"], prob["Cp"][0])
         npt.assert_allclose(prob["Cp_aero"], prob["Cp_aero"][0])
-        myCp = prob["P"] / (0.5 * 1.225 * V_expect1 ** 3.0 * np.pi * 70 ** 2)
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
         npt.assert_allclose(myCp, myCp[0], rtol=1e-6)
         self.assertGreater(myCp[0], 0.4)
         self.assertGreater(0.5, myCp[0])
@@ -158,7 +159,7 @@ class TestServo(unittest.TestCase):
         self.assertAlmostEqual(prob["rated_V"], V_expect1[-1], 3)
         self.assertAlmostEqual(prob["rated_Omega"][0], 15.0)
         self.assertEqual(prob["rated_pitch"], 0.0)
-        myCp = prob["P"] / (0.5 * 1.225 * V_expect1 ** 3.0 * np.pi * 70 ** 2)
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
         npt.assert_allclose(myCp[:irated], myCp[0])
         npt.assert_allclose(myCp[:irated], prob["Cp"][:irated])
 
@@ -183,7 +184,7 @@ class TestServo(unittest.TestCase):
         self.assertEqual(prob["rated_V"], V_expect1[-1])
         self.assertAlmostEqual(prob["rated_Omega"][0], Omega_expect[-1])
         self.assertEqual(prob["rated_pitch"], 0.0)
-        myCp = prob["P"] / (0.5 * 1.225 * V_expect1 ** 3.0 * np.pi * 70 ** 2)
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
         npt.assert_allclose(myCp[:irated], myCp[0])
         npt.assert_allclose(myCp[:irated], prob["Cp"][:irated])
 
@@ -209,7 +210,7 @@ class TestServo(unittest.TestCase):
         # self.assertEqual(prob['rated_V'], V_expect1[-1])
         self.assertAlmostEqual(prob["rated_Omega"][0], Omega_expect[-1])
         self.assertEqual(prob["rated_pitch"], 0.0)
-        myCp = prob["P"] / (0.5 * 1.225 * V_expect1 ** 3.0 * np.pi * 70 ** 2)
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
         npt.assert_allclose(myCp[:irated], myCp[0])
         npt.assert_allclose(myCp[:irated], prob["Cp"][:irated])
 
@@ -234,7 +235,7 @@ class TestServo(unittest.TestCase):
         self.assertEqual(prob["rated_V"], V_expect1[-1])
         self.assertAlmostEqual(prob["rated_Omega"][0], 15.0)
         self.assertEqual(prob["rated_pitch"], 0.0)
-        myCp = prob["P"] / (0.5 * 1.225 * V_expect1 ** 3.0 * np.pi * 70 ** 2)
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
         npt.assert_allclose(myCp[Omega_expect == Omega_tsr], myCp[6])
         npt.assert_allclose(myCp[Omega_expect == Omega_tsr], prob["Cp"][Omega_expect == Omega_tsr])
 
@@ -261,12 +262,12 @@ class TestServo(unittest.TestCase):
         self.assertAlmostEqual(prob["rated_V"], V_expect1[-1], 3)
         self.assertAlmostEqual(prob["rated_Omega"][0], 15.0)
         self.assertEqual(prob["rated_pitch"], 5.0)
-        myCp = prob["P"] / (0.5 * 1.225 * V_expect1 ** 3.0 * np.pi * 70 ** 2)
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
         npt.assert_allclose(myCp[:irated], myCp[0])
         npt.assert_allclose(myCp[:irated], prob["Cp"][:irated])
 
     def testRegulationTrajectoryNoRegion3(self):
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         # Load in airfoil and blade shape inputs for NREL 5MW
         (n_span, n_aoa, n_Re, n_tab) = NPZFILE["airfoils_cl"].shape
@@ -311,7 +312,7 @@ class TestServo(unittest.TestCase):
         npt.assert_array_almost_equal(prob["Cp"], prob["Cp_aero"] * 0.975 * 0.975)
         npt.assert_allclose(prob["Cp"], prob["Cp"][0], rtol=1e-6)
         npt.assert_allclose(prob["Cp_aero"], prob["Cp_aero"][0])
-        myCp = prob["P"] / (0.5 * 1.225 * V_expect1 ** 3.0 * np.pi * 70 ** 2)
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
         npt.assert_allclose(myCp, myCp[0], rtol=1e-6)
         self.assertGreater(myCp[0], 0.4)
         self.assertGreater(0.5, myCp[0])
@@ -345,12 +346,12 @@ class TestServo(unittest.TestCase):
         # self.assertEqual(prob['rated_V'], V_expect1[-1])
         self.assertAlmostEqual(prob["rated_Omega"][0], Omega_expect[-1])
         self.assertEqual(prob["rated_pitch"], 0.0)
-        myCp = prob["P"] / (0.5 * 1.225 * V_expect1 ** 3.0 * np.pi * 70 ** 2)
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
         npt.assert_allclose(myCp[:irated], myCp[0])
         npt.assert_allclose(myCp[:irated], prob["Cp"][:irated])
 
     def testRegulationTrajectory_PeakShaving(self):
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         (n_span, n_aoa, n_Re, n_tab) = NPZFILE["airfoils_cl"].shape
         n_pc = 22
@@ -395,7 +396,7 @@ class TestServo(unittest.TestCase):
         npt.assert_array_almost_equal(prob["Cp"], prob["Cp_aero"] * 0.975 * 0.975)
         npt.assert_allclose(prob["Cp"], prob["Cp"][0], rtol=1e-6)
         npt.assert_allclose(prob["Cp_aero"], prob["Cp_aero"][0])
-        myCp = prob["P"] / (0.5 * 1.225 * V_expect1 ** 3.0 * np.pi * 70 ** 2)
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
         npt.assert_allclose(myCp, myCp[0], rtol=1e-6)
         self.assertGreater(myCp[0], 0.4)
         self.assertGreater(0.5, myCp[0])
@@ -427,7 +428,7 @@ class TestServo(unittest.TestCase):
         self.assertAlmostEqual(prob["rated_V"], V_expect1[-1], 3)
         self.assertAlmostEqual(prob["rated_Omega"][0], 15.0)
         self.assertEqual(prob["rated_pitch"], 0.0)
-        myCp = prob["P"] / (0.5 * 1.225 * V_expect1 ** 3.0 * np.pi * 70 ** 2)
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
         npt.assert_allclose(myCp[:irated], myCp[0])
         npt.assert_allclose(myCp[:irated], prob["Cp"][:irated])
 
@@ -452,7 +453,7 @@ class TestServo(unittest.TestCase):
         self.assertEqual(prob["rated_V"], V_expect1[-1])
         self.assertAlmostEqual(prob["rated_Omega"][0], Omega_expect[-1])
         self.assertEqual(prob["rated_pitch"], 0.0)
-        myCp = prob["P"] / (0.5 * 1.225 * V_expect1 ** 3.0 * np.pi * 70 ** 2)
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
         npt.assert_allclose(myCp[:irated], myCp[0])
         npt.assert_allclose(myCp[:irated], prob["Cp"][:irated])
 
@@ -475,12 +476,12 @@ class TestServo(unittest.TestCase):
         npt.assert_array_less(prob["T"], 0.8 * 880899)  # From print out in first test
         self.assertAlmostEqual(prob["rated_Omega"][0], Omega_expect[-1])
         self.assertGreater(prob["rated_pitch"], 0.0)
-        myCp = prob["P"] / (0.5 * 1.225 * V_expect1 ** 3.0 * np.pi * 70 ** 2)
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
         npt.assert_allclose(myCp[: (irated - 1)], myCp[0])
         npt.assert_allclose(myCp[: (irated - 1)], prob["Cp"][: (irated - 1)])
 
     def testRegulationTrajectory_reindex(self):
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         debug_archive = os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "debug.npz"
         debug_npz = np.load(debug_archive)

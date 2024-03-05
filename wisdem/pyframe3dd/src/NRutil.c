@@ -308,7 +308,7 @@ fcomplex *Cvector(int nl, int nh)
 }
 
 
-fcomplex **Cmatrix(int nrl, int nrh, int ncl, int nch)	
+fcomplex **Cmatrix(int nrl, int nrh, int ncl, int nch)
 /* allocate storage for a Complex matrix	*/
 {
 	int	i;
@@ -804,7 +804,7 @@ void show_matrix ( float **A, int m, int n )
 }
 
 /*
- * SHOW_DMATRIX  - display a matrix of dimension [1..m][1..n] 
+ * SHOW_DMATRIX  - display a matrix of dimension [1..m][1..n]
  */
 void show_dmatrix ( double **A, int m, int n )
 {
@@ -823,7 +823,7 @@ void show_dmatrix ( double **A, int m, int n )
 
 
 /*
- * SAVE_VECTOR  -  save a vector of dimension [1..n] to the named file 
+ * SAVE_VECTOR  -  save a vector of dimension [1..n] to the named file
  */
 void save_vector( char filename[], float *V, int nl, int nh, const char *mode )
 {
@@ -843,7 +843,7 @@ void save_vector( char filename[], float *V, int nl, int nh, const char *mode )
 	fprintf(fp_v,"%% columns: %d\n", nh-nl+1 );
 	for (i=nl; i <= nh; i++) {
 		if (V[i] != 0)	fprintf(fp_v,"%15.6e", V[i] );
-		else		fprintf(fp_v,"    0         ");         
+		else		fprintf(fp_v,"    0         ");
 		fprintf(fp_v,"\n");
 	}
 	fclose(fp_v);
@@ -851,7 +851,7 @@ void save_vector( char filename[], float *V, int nl, int nh, const char *mode )
 }
 
 /*
- * SAVE_DVECTOR  -  save a vector of dimension [1..n] to the named file 
+ * SAVE_DVECTOR  -  save a vector of dimension [1..n] to the named file
  */
 void save_dvector( char filename[], double *V, int nl, int nh, const char *mode )
 {
@@ -879,7 +879,7 @@ void save_dvector( char filename[], double *V, int nl, int nh, const char *mode 
 }
 
 /*
- * SAVE_IVECTOR  -  save an integer vector of dimension [1..n] to the named file 
+ * SAVE_IVECTOR  -  save an integer vector of dimension [1..n] to the named file
  */
 void save_ivector( char filename[], int *V, int nl, int nh, const char *mode )
 {
@@ -899,7 +899,7 @@ void save_ivector( char filename[], int *V, int nl, int nh, const char *mode )
 	fprintf(fp_v,"%% columns: %d\n", nh-nl+1 );
 	for (i=nl; i <= nh; i++) {
 		if (V[i] != 0)	fprintf(fp_v,"%15d", V[i] );
-		else		fprintf(fp_v,"   0         ");         
+		else		fprintf(fp_v,"   0         ");
 		fprintf(fp_v,"\n");
 	}
 	fclose(fp_v);
@@ -979,7 +979,7 @@ void save_dmatrix ( char filename[], double **A, int ml, int mh, int nl, int nh,
 		}
 		fprintf(fp_m,"\n");
 	    }
-	} else { 
+	} else {
 	    for (i=ml; i <= mh; i++) {
 		for (j=nl; j <= nh; j++) {
 			if (fabs(A[i][j]) > 1.e-99) fprintf(fp_m,"%21.12e", A[i][j] );
@@ -993,8 +993,8 @@ void save_dmatrix ( char filename[], double **A, int ml, int mh, int nl, int nh,
 }
 
 /*
- * SAVE_UT_MATRIX  - 						     23apr01 
- * save a symmetric matrix of dimension [1..n][1..n] to the named file 
+ * SAVE_UT_MATRIX  - 						     23apr01
+ * save a symmetric matrix of dimension [1..n][1..n] to the named file
  *  use only upper-triangular part
  */
 void save_ut_matrix ( char filename[], float **A, int n, const char *mode )
@@ -1031,7 +1031,7 @@ void save_ut_matrix ( char filename[], float **A, int n, const char *mode )
 
 /*
  * SAVE_UT_DMATRIX  - 						23apr01
- * save a symetric matrix of dimension [1..n][1..n] to the named file 
+ * save a symetric matrix of dimension [1..n][1..n] to the named file
  * use only upper-triangular part
  */
 void save_ut_dmatrix ( char filename[], double **A, int n, const char *mode )

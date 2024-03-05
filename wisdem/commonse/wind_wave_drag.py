@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 import openmdao.api as om
+
 from wisdem.commonse.akima import Akima
 from wisdem.commonse.csystem import DirectionVector
 from wisdem.commonse.utilities import cosd, sind  # , linspace_with_deriv, interp_with_deriv, hstack, vstack
@@ -267,7 +268,6 @@ class CylinderWindDrag(om.ExplicitComponent):
         self.declare_partials("windLoads_beta", "beta_wind", val=1.0)
 
     def compute(self, inputs, outputs):
-
         rho = inputs["rho_air"]
         U = inputs["U"]
         d = inputs["d"]
@@ -275,7 +275,7 @@ class CylinderWindDrag(om.ExplicitComponent):
         beta = inputs["beta_wind"]
 
         # dynamic pressure
-        q = 0.5 * rho * U ** 2
+        q = 0.5 * rho * U**2
 
         # Reynolds number and drag
         if float(inputs["cd_usr"]) < 0.0:
@@ -301,7 +301,6 @@ class CylinderWindDrag(om.ExplicitComponent):
         outputs["windLoads_beta"] = beta
 
     def compute_partials(self, inputs, J):
-
         # rename
         rho = inputs["rho_air"]
         U = inputs["U"]
@@ -310,7 +309,7 @@ class CylinderWindDrag(om.ExplicitComponent):
         beta = inputs["beta_wind"]
 
         # dynamic pressure
-        q = 0.5 * rho * U ** 2
+        q = 0.5 * rho * U**2
 
         # Reynolds number and drag
         if float(inputs["cd_usr"]) < 0.0:
@@ -430,7 +429,6 @@ class CylinderWaveDrag(om.ExplicitComponent):
         self.declare_partials("waveLoads_beta", "beta_wave", val=1.0)
 
     def compute(self, inputs, outputs):
-
         # wlevel = inputs['wlevel']
         # if wlevel > 0.0: wlevel *= -1.0
 
@@ -457,7 +455,7 @@ class CylinderWaveDrag(om.ExplicitComponent):
             dcd_dRe = 0.0
 
         # inertial and drag forces
-        Fi = rho * inputs["cm"] * math.pi / 4.0 * d ** 2 * inputs["A"]  # Morrison's equation
+        Fi = rho * inputs["cm"] * math.pi / 4.0 * d**2 * inputs["A"]  # Morrison's equation
         Fd = q * cd * d
         Fp = Fi + Fd
 
@@ -501,7 +499,6 @@ class CylinderWaveDrag(om.ExplicitComponent):
         outputs["waveLoads_beta"] = beta
 
     def compute_partials(self, inputs, J):
-
         # wlevel = inputs['wlevel']
         # if wlevel > 0.0: wlevel *= -1.0
 
@@ -515,7 +512,7 @@ class CylinderWaveDrag(om.ExplicitComponent):
         # beta0 = inputs['beta0']
 
         # dynamic pressure
-        q = 0.5 * rho * U ** 2
+        q = 0.5 * rho * U**2
         # q0= 0.5*rho*U0**2
 
         # Reynolds number and drag
@@ -537,7 +534,7 @@ class CylinderWaveDrag(om.ExplicitComponent):
         dPx_dd = const * cosd(beta)
         dPy_dd = const * sind(beta)
 
-        const = rho * inputs["cm"] * math.pi / 4.0 * d ** 2
+        const = rho * inputs["cm"] * math.pi / 4.0 * d**2
         dPx_dA = const * cosd(beta)
         dPy_dA = const * sind(beta)
 
@@ -655,7 +652,7 @@ def main():
 
     nPoints = len(z)
 
-    prob = om.Problem()
+    prob = om.Problem(reports=False)
 
     root = prob.model = om.Group()
 

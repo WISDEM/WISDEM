@@ -25,4 +25,3 @@ Improvements yet-to-be-implemented
 More complete documentation and comments throughout the code would be beneficial.
 
 Portions of the codebase were written before external packages existed and the codebase could be simplified to take advantage of some built-in Scipy and OpenMDAO features now.
-

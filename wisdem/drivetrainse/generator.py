@@ -228,8 +228,8 @@ class MofI(om.ExplicitComponent):
         len_s = inputs["len_s"]
 
         I = np.zeros(3)
-        I[0] = 0.50 * Mass * R_out ** 2
-        I[1] = I[2] = 0.5 * I[0] + Mass * len_s ** 2 / 12.0
+        I[0] = 0.50 * Mass * R_out**2
+        I[1] = I[2] = 0.5 * I[0] + Mass * len_s**2 / 12.0
         outputs["generator_I"] = I
         coeff = m_stator / Mass if m_stator > 0.0 else 0.5
         outputs["stator_I"] = coeff * I
@@ -271,7 +271,6 @@ class Cost(om.ExplicitComponent):
     """
 
     def setup(self):
-
         # Specific cost of material by type
         self.add_input("C_Cu", val=0.0, units="USD/kg")
         self.add_input("C_Fe", val=0.0, units="USD/kg")

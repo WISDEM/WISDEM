@@ -2,14 +2,7 @@ import os
 
 import numpy as np
 import jsonschema as json
-
-try:
-    import ruamel_yaml as ry
-except:
-    try:
-        import ruamel.yaml as ry
-    except:
-        raise ImportError("No module named ruamel.yaml or ruamel_yaml")
+import ruamel.yaml as ry
 
 
 fschema_geom = os.path.join(os.path.dirname(os.path.realpath(__file__)), "geometry_schema.yaml")

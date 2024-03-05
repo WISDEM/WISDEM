@@ -248,6 +248,7 @@ class ComputePowerCurve(ExplicitComponent):
         self.add_output("Ct_aero", val=np.zeros(self.n_pc), desc="rotor aerodynamic thrust coefficient")
         self.add_output("Cq_aero", val=np.zeros(self.n_pc), desc="rotor aerodynamic torque coefficient")
         self.add_output("Cm_aero", val=np.zeros(self.n_pc), desc="rotor aerodynamic moment coefficient")
+        self.add_output("ax_induct_rotor", val=np.zeros(self.n_pc), desc="rotor aerodynamic induction")
 
         self.add_output("V_R25", val=0.0, units="m/s", desc="region 2.5 transition wind speed")
         self.add_output("rated_V", val=0.0, units="m/s", desc="rated wind speed")
@@ -276,6 +277,7 @@ class ComputePowerCurve(ExplicitComponent):
             desc="Lift over drag distribution along blade span at cut-in wind speed",
         )
         self.add_output("Cp_regII", val=0.0, desc="power coefficient at cut-in wind speed")
+        self.add_output("Ct_regII", val=0.0, desc="thrust coefficient at cut-in wind speed")
         self.add_output(
             "cl_regII", val=np.zeros(n_span), desc="lift coefficient distribution along blade span at cut-in wind speed"
         )
@@ -392,9 +394,9 @@ class ComputePowerCurve(ExplicitComponent):
         pitch = np.zeros(Uhub.shape) + inputs["control_pitch"]
 
         # Unpack variables
-        P_rated = float(inputs["rated_power"])
-        R_tip = float(inputs["Rtip"])
-        tsr = float(inputs["tsr_operational"])
+        P_rated = float(inputs["rated_power"][0])
+        R_tip = float(inputs["Rtip"][0])
+        tsr = float(inputs["tsr_operational"][0])
         driveType = discrete_inputs["drivetrainType"]
 
         ## POWERCURVE PRELIMS ##
@@ -423,7 +425,7 @@ class ComputePowerCurve(ExplicitComponent):
             )
 
         # driveEta  = np.c_[lss_rpm, float(inputs['gearbox_efficiency'])*gen_eff]
-        driveEta = float(inputs["gearbox_efficiency"]) * gen_eff
+        driveEta = float(inputs["gearbox_efficiency"][0]) * gen_eff
 
         # Set baseline power production
         myout, derivs = self.ccblade.evaluate(Uhub, Omega_tsr * 30.0 / np.pi, pitch, coefficients=True)
@@ -468,7 +470,7 @@ class ComputePowerCurve(ExplicitComponent):
                 Omega_i = min([Uhub_i * tsr / R_tip, Omega_max])
                 Omega_i_rpm = Omega_i * 30.0 / np.pi
                 myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_i_rpm], [pitch_i], coefficients=False)
-                P_aero_i = float(myout["P"])
+                P_aero_i = float(myout["P"][0])
                 # P_i,_  = compute_P_and_eff(P_aero_i.flatten(), P_rated, Omega_i_rpm, driveType, driveEta)
                 eff_i = np.interp(Omega_i_rpm, lss_rpm, driveEta)
                 P_i = float(P_aero_i * eff_i)
@@ -527,7 +529,7 @@ class ComputePowerCurve(ExplicitComponent):
                 Ct_aero_rated,
                 Cq_aero_rated,
                 Cm_aero_rated,
-            ) = [float(myout[key]) for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]]
+            ) = [float(myout[key][0]) for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]]
             eff_rated = np.interp(Omega_rpm_rated, lss_rpm, driveEta)
             Cp_rated = Cp_aero_rated * eff_rated
             P_rated = P_rated
@@ -542,11 +544,11 @@ class ComputePowerCurve(ExplicitComponent):
                     Omega_i = min([Uhub_i * tsr / R_tip, Omega_max])
                     Omega_i_rpm = Omega_i * 30.0 / np.pi
                     myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_i_rpm], [pitch_i], coefficients=False)
-                    P_aero_i = float(myout["P"])
+                    P_aero_i = float(myout["P"][0])
                     # P_i,_  = compute_P_and_eff(P_aero_i.flatten(), P_rated, Omega_i_rpm, driveType, driveEta)
                     eff_i = np.interp(Omega_i_rpm, lss_rpm, driveEta)
                     P_i = float(P_aero_i * eff_i)
-                    T_i = float(myout["T"])
+                    T_i = float(myout["T"][0])
                     return 1e-4 * (P_i - P_rated), 1e-4 * (T_i - max_T)
 
                 # Have to search over both pitch and speed
@@ -579,7 +581,7 @@ class ComputePowerCurve(ExplicitComponent):
                     Ct_aero_rated,
                     Cq_aero_rated,
                     Cm_aero_rated,
-                ) = [float(myout[key]) for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]]
+                ) = [float(myout[key][0]) for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]]
                 eff_rated = np.interp(Omega_rpm_rated, lss_rpm, driveEta)
                 Cp_rated = Cp_aero_rated * eff_rated
                 P_rated = P_rated
@@ -639,15 +641,18 @@ class ComputePowerCurve(ExplicitComponent):
 
         def constr_Tmax(pitch_i, Uhub_i, Omega_rpm_i):
             myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_rpm_i], [pitch_i], coefficients=False)
-            return 1e-5 * (max_T - float(myout["T"]))
+            return 1e-5 * (max_T - float(myout["T"][0]))
 
         # Maximize power until rated
         for i in range(i_3):
             # No need to optimize if already doing well or if flag
             # fix_pitch_regI12, which locks pitch in region I 1/2, is on
+            # For the 1.04 value on thrust shaving, that is about the level of compliance we see for the Region 2.5
+            # points coming out of the optimization routines in the next block of code. This way, a Region 2 point that is
+            # at optimal TSR-rpm and 0-deg pitch but 1% over the thrust target can be allowed to stand.
             if (
                 ((Omega[i] == Omega_tsr[i]) and not self.peak_thrust_shaving)
-                or ((Omega[i] == Omega_tsr[i]) and self.peak_thrust_shaving and (T[i] <= max_T))
+                or ((Omega[i] == Omega_tsr[i]) and self.peak_thrust_shaving and (T[i]/max_T <= 1.04))
                 or ((Omega[i] == Omega_min) and self.fix_pitch_regI12)
                 or (found_rated and (i == i_rated))
             ):
@@ -802,17 +807,21 @@ class ComputePowerCurve(ExplicitComponent):
         self.ccblade.induction_inflow = True
         tsr_vec = Omega_rpm / 30.0 * np.pi * R_tip / Uhub
         id_regII = np.argmin(abs(tsr_vec - inputs["tsr_operational"]))
-        loads, derivs = self.ccblade.distributedAeroLoads(Uhub[id_regII], Omega_rpm[id_regII], pitch[id_regII], 0.0)
-
-        # outputs
-        outputs["ax_induct_regII"] = loads["a"]
-        outputs["tang_induct_regII"] = loads["ap"]
-        outputs["aoa_regII"] = loads["alpha"]
-        outputs["cl_regII"] = loads["Cl"]
-        outputs["cd_regII"] = loads["Cd"]
-        outputs["L_D"] = loads["Cl"] / loads["Cd"]
-        outputs["Cp_regII"] = Cp_aero[id_regII]
-
+        ax_induct_rotor = np.zeros_like(Uhub)
+        for i in range(len(Uhub)):
+            loads, _ = self.ccblade.distributedAeroLoads(Uhub[i], Omega_rpm[i], pitch[i], 0.0)
+            ax_induct_rotor[i] = 2. / inputs["r"][-1]**2. * np.trapz(loads['a'] * inputs["r"], inputs["r"])
+            if i == id_regII:
+                # outputs
+                outputs["ax_induct_regII"] = loads["a"]
+                outputs["tang_induct_regII"] = loads["ap"]
+                outputs["aoa_regII"] = loads["alpha"]
+                outputs["cl_regII"] = loads["Cl"]
+                outputs["cd_regII"] = loads["Cd"]
+                outputs["L_D"] = loads["Cl"] / loads["Cd"]
+                outputs["Cp_regII"] = Cp_aero[i]
+                outputs["Ct_regII"] = Ct_aero[i]
+        outputs["ax_induct_rotor"] = ax_induct_rotor
 
 class ComputeSplines(ExplicitComponent):
     """
@@ -873,11 +882,9 @@ class ComputeSplines(ExplicitComponent):
 # Class to define a constraint so that the blade cannot operate in stall conditions
 class NoStallConstraint(ExplicitComponent):
     def initialize(self):
-
         self.options.declare("modeling_options")
 
     def setup(self):
-
         modeling_options = self.options["modeling_options"]
         self.n_span = n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
         self.n_aoa = n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]  # Number of angle of attacks
@@ -913,7 +920,6 @@ class NoStallConstraint(ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-
         i_min = np.argmin(abs(inputs["min_s"] - inputs["s"]))
 
         for i in range(self.n_span):
@@ -942,7 +948,6 @@ class NoStallConstraint(ExplicitComponent):
 
 class AEP(ExplicitComponent):
     def initialize(self):
-
         self.options.declare("nspline")
 
     def setup(self):
@@ -967,7 +972,6 @@ class AEP(ExplicitComponent):
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs):
-
         lossFactor = inputs["lossFactor"]
         P = inputs["P"]
         CDF_V = inputs["CDF_V"]
@@ -991,7 +995,6 @@ class AEP(ExplicitComponent):
 
 
 def compute_P_and_eff(aeroPower, ratedPower, Omega_rpm, drivetrainType, drivetrainEff):
-
     if not np.any(drivetrainEff):
         drivetrainType = drivetrainType.upper()
         if drivetrainType == "GEARED":

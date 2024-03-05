@@ -2,7 +2,6 @@ import numpy as np
 from openmdao.api import ExplicitComponent
 from scipy.interpolate import PchipInterpolator
 
-import wisdem.ccblade._bem as _bem
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.csystem import DirectionVector
 
@@ -533,7 +532,6 @@ class CCBladeTwist(ExplicitComponent):
         self.declare_partials("*", "*", method="fd")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # Create Airfoil class instances
         af = [None] * self.n_span
         for i in range(self.n_span):

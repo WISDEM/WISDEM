@@ -37,19 +37,6 @@ len(Re)    degree of spline
 4+           cubic
 ========= =====================
 
-
-.. rubric:: Class Summary:
-
-.. autoclass:: CCAirfoil
-
-    .. rubric:: Methods
-    .. autosummary::
-        :nosignatures:
-
-        ~CCAirfoil.initFromAerodynFile
-        ~CCAirfoil.evaluate
-
-
 .. _ccblade-class-label:
 
 CCBlade Class
@@ -58,20 +45,13 @@ This class provides aerodynamic analysis of wind turbine rotor blades using BEM 
 It can compute distributed aerodynamic loads and integrated quantities such as power, thrust, and torque.
 An emphasis is placed on convergence robustness and differentiable output so that it can be used with gradient-based optimization.
 
-.. rubric:: Class Summary:
 
-.. autoclass:: CCBlade
+Polar Class
+^^^^^^^^^^^
+A Polar object is meant to represent the variation in lift, drag, and pitching moment coefficient with angle of attack at a fixed Reynolds number. Tools exist to read in two-dimensional (2-D) aerodynamic airfoil data (i.e., from wind tunnel data or numerical simulation), apply three-dimensional (3-D) rotation corrections for wind turbine applications, and extend the data to very large angles of attack.  Airfoil data can also be blended together to define intermediate sections between linearly lofted sections.
 
-    .. rubric:: Methods
-    .. autosummary::
-        :nosignatures:
+.. module:: wisdem.ccblade.Polar
 
-        ~CCBlade.distributedAeroLoads
-        ~CCBlade.evaluate
+.. autoclass:: wisdem.ccblae.Polar.Polar
 
-.. autogenerate
-    .. autosummary::
-        :toctree: generated
-
-        ~CCBlade.distributedAeroLoads
-        ~CCBlade.evaluate
+.. _polar-class-label:

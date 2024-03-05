@@ -48,3 +48,18 @@ dl.attribute::before {
     margin-left: -30px;
     padding-bottom: 15px;
 }
+
+
+.wy-nav-content {
+    max-width: 1100px !important;
+}
+
+.wy-table-responsive td,
+.wy-table-responsive th {
+    white-space: normal;
+}
+
+.wy-table-responsive table.word-wrap td,
+.wy-table-responsive table.word-wrap th {
+    white-space: inherit;
+}

@@ -1,5 +1,6 @@
 import numpy as np
 import openmdao.api as om
+
 import wisdem.commonse.fileIO as fio
 from wisdem.drivetrainse.generator import Generator
 
@@ -7,7 +8,7 @@ opt_flag = False
 n_pc = 20
 
 # Example optimization of a generator for costs on a 5 MW reference turbine
-prob = om.Problem()
+prob = om.Problem(reports=False)
 prob.model = Generator(design="pmsg_disc", n_pc=n_pc)
 
 if opt_flag:
@@ -110,3 +111,11 @@ else:
 prob.model.list_inputs(units=True)
 prob.model.list_outputs(units=True)
 # fio.save_data('PMSG_DISC', prob, npz_file=False, mat_file=False, xls_file=True)
+print("Efficiency table:")
+print(" rpm     converter  transformer  generator   ")
+print("-------------------------------------------")
+print(np.c_[prob["shaft_rpm"],
+            prob["converter_efficiency"],
+            prob["transformer_efficiency"],
+            prob["generator_efficiency"],
+            ])

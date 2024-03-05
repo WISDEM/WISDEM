@@ -1,12 +1,13 @@
 # 0 ---------- (marker for docs)
 import openmdao.api as om
+
 from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
 
 # 0 ---------- (marker for docs)
 
 # 1 ---------- (marker for docs)
 # OpenMDAO Problem instance
-prob = om.Problem()
+prob = om.Problem(reports=False)
 prob.model = Turbine_CostsSE_2015(verbosity=True)
 prob.setup()
 # 1 ---------- (marker for docs)
@@ -27,7 +28,7 @@ prob["pitch_system_mass"] = 9334.08947551
 prob["spinner_mass"] = 973.0
 prob["lss_mass"] = 20568.96284886
 prob["main_bearing_mass"] = 2245.41649102
-prob["gearbox_mass"] = 43468.32086769
+prob["gearbox_mass"] = 21875.0
 prob["hss_mass"] = 994.7
 prob["generator_mass"] = 14900.0
 prob["bedplate_mass"] = 41765.26095285

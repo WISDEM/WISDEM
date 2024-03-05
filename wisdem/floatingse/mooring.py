@@ -1,8 +1,8 @@
 import numpy as np
 import openmdao.api as om
 
-import wisdem.moorpy as mp
-import wisdem.moorpy.MoorProps as props
+import moorpy as mp
+import moorpy.MoorProps as props
 
 NLINES_MAX = 15
 NPTS_PLOT = 101
@@ -142,7 +142,6 @@ class Mooring(om.ExplicitComponent):
         self.add_output("constr_anchor_lateral", np.zeros(n_lines))
 
     def compute(self, inputs, outputs):
-
         # Write MAP input file and analyze the system at every angle
         self.evaluate_mooring(inputs, outputs)
 

@@ -62,33 +62,24 @@ Launching the GUI is simpler than launching the command line. Activate you envir
 
 The WISDEM GUI is laid out from left to right to edit the geometry, modeling, and analysis files. The upper part of the interface shows a status bar and at the right side there is a `Run WISDEM` button.
 
-When you start the WISDEM GUI, a window similar to the following will appear, depending on whether you are running macOS or Windows:
+When you start the WISDEM GUI, a window similar to the following will appear (there might be some differences depending on whether you are running Windows or macOS or Linux:
 
 .. figure:: /images/yaml/wisdem_gui_step_01.png
-.. figure:: /images/yaml/windows_wisdem_gui_step_01.png
 
-First, load a geometry file. The `nrel5mw.yaml` file is loaded in the following figure. Load this file by clicking the `Select geometry YAML` button and selecting your copy of `nrel5mw.yaml`.
+First, load a geometry file. By default, the WindIO description of the IEA Wind 15-MW reference turbine is loaded, but we will load in the NREL 5-MW reference turbine as a demonstration. The `nrel5mw.yaml` file can be found in the `examples` directory of WISDEM under the `02_reference_turbines` heading. Load this file by clicking the `Import YAML File` button under the `Geometry` tab for `WISDEM/WEIS YAML-Based Input Files`, and selecting your copy of `nrel5mw.yaml`.  If you expand the collapsible tree titled, `WindIO Geometry`, you can visually descend into the file contents and edit the entries.
 
 .. figure:: /images/yaml/wisdem_gui_step_02.png
-.. figure:: /images/yaml/windows_wisdem_gui_step_02.png
 
-Similarly, open your copies of the `modeling_options.yaml` as in the following figure:
+You can similarly load in modeling and analysis yaml-files, with defaults already loaded under the `Modeling` and `Analysis` tabs. You can edit the entries if you like:
 
 .. figure:: /images/yaml/wisdem_gui_step_03.png
-.. figure:: /images/yaml/windows_wisdem_gui_step_03.png
-
-Finally, open the `analysis_options.yaml` as seen in this figure:
-
 .. figure:: /images/yaml/wisdem_gui_step_04.png
-.. figure:: /images/yaml/windows_wisdem_gui_step_04.png
 
-In the GUI, click on the `Run WISDEM` button. The following dialog box will appear
+You are now ready to run WISDEM!  In the GUI, click on `Run WISDEM/WEIS` underneath the `Run` menu header. The GUI-specified entries will be written to files in the `Working directory` specified at the top of the GUI using the prefix string next to `Export Prefix`.  You can change these prior to running WISDEM if you like.  While running WISDEM in the background, the GUI will be inactive:
 
 .. figure:: /images/yaml/wisdem_gui_step_05.png
 
-When you see this dialog box, the GUI has written the YAML files. WISDEM may take a while to run, so you are asked to confirm that you want to execute the run of WISDEM. Click `OK` to continue. Once you click `OK`, the GUI will stop responding while WISDEM executes. Watch the command line window for messages as WISDEM executes. When WISDEM has finished, you will see the following message:
-
-.. figure:: /images/yaml/wisdem_gui_step_06.png
+Depending on whether you are running a design optimization or not, WISDEM may take a while to run.  The GUI will become active again once the run is complete.  Output files can be found in the `Working directory`.
 
 Working with Outputs Manually
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

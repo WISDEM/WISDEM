@@ -2,13 +2,14 @@ import unittest
 
 import numpy as np
 from openmdao.api import Problem
+
 from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
 
 
 class TestNewAssembly(unittest.TestCase):
     def setUp(self):
         turbine = Turbine_CostsSE_2015(verbosity=False)
-        self.prob = Problem(turbine)
+        self.prob = Problem(turbine, reports=False)
         self.prob.setup()
 
         self.prob["blade_mass"] = 17650.67  # inline with the windpact estimates
@@ -37,13 +38,12 @@ class TestNewAssembly(unittest.TestCase):
         self.prob["main_bearing_number"] = 2
 
     def test1(self):
-
         self.prob.run_model()
 
-        self.assertEqual(np.round(self.prob["rotor_cost"], 2), 1292397.85)
-        self.assertEqual(np.round(self.prob["generator_cost"], 2), 207078.14)
-        self.assertEqual(np.round(self.prob["transformer_cost"], 2), 18800.00)
-        self.assertEqual(np.round(self.prob["turbine_cost"], 2), 4404316.13)
+        self.assertEqual(np.round(self.prob["rotor_cost"][0], 2), 1292397.85)
+        self.assertEqual(np.round(self.prob["generator_cost"][0], 2), 207078.14)
+        self.assertEqual(np.round(self.prob["transformer_cost"][0], 2), 18800.00)
+        self.assertEqual(np.round(self.prob["turbine_cost"][0], 2), 4316627.09)
 
 
 def suite():

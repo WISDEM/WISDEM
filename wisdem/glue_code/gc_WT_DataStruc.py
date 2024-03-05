@@ -5,7 +5,7 @@ import numpy as np
 import openmdao.api as om
 from scipy.interpolate import PchipInterpolator, interp1d
 
-import wisdem.moorpy.MoorProps as mp
+import moorpy.MoorProps as mp
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAero, ParametrizeBladeStruct
@@ -93,11 +93,11 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
                 inn_af = om.IndepVarComp()
                 inn_af.add_output(
-                    "s_opt_r_thick", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["t/c"]["n_opt"])
+                    "s_opt_r_thick", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["rthick"]["n_opt"])
                 )
                 inn_af.add_output(
                     "r_thick_opt",
-                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["t/c"]["n_opt"]),
+                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["rthick"]["n_opt"]),
                 )
                 inn_af.add_output(
                     "s_opt_L_D", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["L/D"]["n_opt"])
@@ -197,7 +197,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 ),
             )
             self.connect("airfoils.name", "blade.interp_airfoils.name")
-            self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick")
+            self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick_discrete")
             self.connect("airfoils.ac", "blade.interp_airfoils.ac")
             self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
             self.connect("airfoils.aoa", "blade.interp_airfoils.aoa")
@@ -239,6 +239,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 "gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive"
             )
             nacelle_ivc.add_output("gearbox_mass_user", val=0.0, units="kg", desc="User override of gearbox mass.")
+            nacelle_ivc.add_output("gearbox_torque_density", val=0.0, units="N*m/kg", desc="Torque density of the gearbox.")
             nacelle_ivc.add_output(
                 "gearbox_radius_user",
                 val=0.0,
@@ -251,6 +252,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 units="m",
                 desc="User override of gearbox length (only used if gearbox_mass_user is > 0).",
             )
+
             nacelle_ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
             if modeling_options["flags"]["nacelle"]:
                 nacelle_ivc.add_output(
@@ -585,7 +587,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             costs_ivc.add_output("spinner_mass_cost_coeff", units="USD/kg", val=11.1)
             costs_ivc.add_output("lss_mass_cost_coeff", units="USD/kg", val=11.9)
             costs_ivc.add_output("bearing_mass_cost_coeff", units="USD/kg", val=4.5)
-            costs_ivc.add_output("gearbox_mass_cost_coeff", units="USD/kg", val=12.9)
+            costs_ivc.add_output("gearbox_torque_cost", units="USD/kN/m", val=50.)
             costs_ivc.add_output("hss_mass_cost_coeff", units="USD/kg", val=6.8)
             costs_ivc.add_output("generator_mass_cost_coeff", units="USD/kg", val=12.4)
             costs_ivc.add_output("bedplate_mass_cost_coeff", units="USD/kg", val=2.9)
@@ -621,7 +623,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("blade.interp_airfoils.cm_interp", "af_3d.cm")
             self.connect("blade.high_level_blade_props.rotor_radius", "af_3d.rotor_radius")
             self.connect("blade.high_level_blade_props.r_blade", "af_3d.r_blade")
-            self.connect("blade.interp_airfoils.r_thick_interp", "af_3d.r_thick_interp")
+            self.connect("blade.interp_airfoils.r_thick_interp", "af_3d.r_thick")
             self.connect("blade.pa.chord_param", "af_3d.chord")
             self.connect("control.rated_TSR", "af_3d.rated_TSR")
         if modeling_options["flags"]["tower"]:
@@ -662,42 +664,16 @@ class Blade(om.Group):
             val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
         opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
-        opt_var.add_output(
-            "s_opt_spar_cap_ss",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "s_opt_spar_cap_ps",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "spar_cap_ss_opt",
-            units="m",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "spar_cap_ps_opt",
-            units="m",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "s_opt_te_ss",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "s_opt_te_ps",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "te_ss_opt",
-            units="m",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "te_ps_opt",
-            units="m",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]),
-        )
+        for i in range(rotorse_options["n_layers"]):
+            opt_var.add_output(
+                "s_opt_layer_%d"%i,
+                val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
+            )
+            opt_var.add_output(
+                "layer_%d_opt"%i,
+                units="m",
+                val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
+            )
         self.add_subsystem("opt_var", opt_var)
 
         # Import outer shape BEM
@@ -722,6 +698,7 @@ class Blade(om.Group):
 
         # Connections from oute_shape_bem to interp_airfoils
         self.connect("outer_shape_bem.s", "interp_airfoils.s")
+        self.connect("outer_shape_bem.r_thick_yaml_interp", "interp_airfoils.r_thick_yaml")
         self.connect("pa.chord_param", ["interp_airfoils.chord", "compute_coord_xy_dim.chord"])
         self.connect("outer_shape_bem.pitch_axis", ["interp_airfoils.pitch_axis", "compute_coord_xy_dim.pitch_axis"])
         self.connect("opt_var.af_position", "interp_airfoils.af_position")
@@ -742,7 +719,7 @@ class Blade(om.Group):
             )
             self.connect("outer_shape_bem.s", "run_inn_af.s")
             self.connect("pa.chord_param", "run_inn_af.chord")
-            self.connect("interp_airfoils.r_thick_interp", "run_inn_af.r_thick_interp_yaml")
+            self.connect("interp_airfoils.r_thick_interp", "run_inn_af.r_thick")
             self.connect("interp_airfoils.cl_interp", "run_inn_af.cl_interp_yaml")
             self.connect("interp_airfoils.cd_interp", "run_inn_af.cd_interp_yaml")
             self.connect("interp_airfoils.cm_interp", "run_inn_af.cm_interp_yaml")
@@ -754,6 +731,8 @@ class Blade(om.Group):
             "compute_coord_xy_dim",
             Compute_Coord_XY_Dim(rotorse_options=rotorse_options),
         )
+        self.connect("pa.twist_param", "compute_coord_xy_dim.twist")
+        self.connect("high_level_blade_props.blade_ref_axis", "compute_coord_xy_dim.ref_axis")
 
         if rotorse_options["inn_af"]:
             self.connect("run_inn_af.coord_xy_interp", "compute_coord_xy_dim.coord_xy_interp")
@@ -766,9 +745,7 @@ class Blade(om.Group):
                 "blade_lofted",
                 Blade_Lofted_Shape(rotorse_options=rotorse_options),
             )
-            self.connect("compute_coord_xy_dim.coord_xy_dim", "blade_lofted.coord_xy_dim")
-            self.connect("pa.twist_param", "blade_lofted.twist")
-            self.connect("outer_shape_bem.s", "blade_lofted.s")
+            self.connect("compute_coord_xy_dim.coord_xy_dim_twisted", "blade_lofted.coord_xy_dim_twisted")
             self.connect("high_level_blade_props.blade_ref_axis", "blade_lofted.ref_axis")
 
         # Import blade internal structure data and remap composites on the outer blade shape
@@ -788,15 +765,9 @@ class Blade(om.Group):
         )  # Parameterize struct (spar caps ss and ps)
 
         # Connections to blade struct parametrization
-        self.connect("opt_var.spar_cap_ss_opt", "ps.spar_cap_ss_opt")
-        self.connect("opt_var.s_opt_spar_cap_ss", "ps.s_opt_spar_cap_ss")
-        self.connect("opt_var.spar_cap_ps_opt", "ps.spar_cap_ps_opt")
-        self.connect("opt_var.s_opt_spar_cap_ps", "ps.s_opt_spar_cap_ps")
-
-        self.connect("opt_var.te_ss_opt", "ps.te_ss_opt")
-        self.connect("opt_var.s_opt_te_ss", "ps.s_opt_te_ss")
-        self.connect("opt_var.te_ps_opt", "ps.te_ps_opt")
-        self.connect("opt_var.s_opt_te_ps", "ps.s_opt_te_ps")
+        for i in range(rotorse_options["n_layers"]):
+            self.connect("opt_var.layer_%d_opt"%i, "ps.layer_%d_opt"%i)
+            self.connect("opt_var.s_opt_layer_%d"%i, "ps.s_opt_layer_%d"%i)
 
         self.connect("outer_shape_bem.s", "ps.s")
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
@@ -860,6 +831,9 @@ class Blade_Outer_Shape_BEM(om.Group):
             units="m",
             desc="2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
         )
+        ivc.add_output(
+            "r_thick_yaml", val=np.zeros(n_span), desc="1D array of the relative thickness values defined along blade span."
+        )
 
         self.add_subsystem(
             "compute_blade_outer_shape_bem",
@@ -895,6 +869,11 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             val=np.zeros(n_span),
             units="rad",
             desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
+        )
+        self.add_input(
+            "r_thick_yaml",
+            val=np.zeros(n_span),
+            desc="1D array of the relative thickness values defined along blade span.",
         )
         self.add_input(
             "pitch_axis_yaml",
@@ -939,6 +918,11 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             desc="1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.",
         )
         self.add_output(
+            "r_thick_yaml_interp",
+            val=np.zeros(n_span),
+            desc="1D array of the relative thickness values defined along blade span.",
+        )
+        self.add_output(
             "ref_axis",
             val=np.zeros((n_span, 3)),
             units="m",
@@ -946,18 +930,18 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-
         # If devices are defined along span, manipulate the grid s to always have a grid point where it is needed, and reinterpolate the blade quantities, namely chord, twist, pitch axis, and reference axis
         if len(inputs["span_end"]) > 0:
             nd_span_orig = np.linspace(0.0, 1.0, self.n_span)
 
-            chord_orig = np.interp(nd_span_orig, inputs["s_default"], inputs["chord_yaml"])
-            twist_orig = np.interp(nd_span_orig, inputs["s_default"], inputs["twist_yaml"])
-            pitch_axis_orig = np.interp(nd_span_orig, inputs["s_default"], inputs["pitch_axis_yaml"])
+            chord_orig = PchipInterpolator(inputs["s_default"], inputs["chord_yaml"])(nd_span_orig)
+            twist_orig = PchipInterpolator(inputs["s_default"], inputs["twist_yaml"])(nd_span_orig)
+            pitch_axis_orig = PchipInterpolator(inputs["s_default"], inputs["pitch_axis_yaml"])(nd_span_orig)
+            r_thick_orig = PchipInterpolator(inputs["s_default"], inputs["r_thick_yaml"])(nd_span_orig)
             ref_axis_orig = np.zeros((self.n_span, 3))
-            ref_axis_orig[:, 0] = np.interp(nd_span_orig, inputs["s_default"], inputs["ref_axis_yaml"][:, 0])
-            ref_axis_orig[:, 1] = np.interp(nd_span_orig, inputs["s_default"], inputs["ref_axis_yaml"][:, 1])
-            ref_axis_orig[:, 2] = np.interp(nd_span_orig, inputs["s_default"], inputs["ref_axis_yaml"][:, 2])
+            ref_axis_orig[:, 0] = PchipInterpolator(inputs["s_default"], inputs["ref_axis_yaml"][:, 0])(nd_span_orig)
+            ref_axis_orig[:, 1] = PchipInterpolator(inputs["s_default"], inputs["ref_axis_yaml"][:, 1])(nd_span_orig)
+            ref_axis_orig[:, 2] = PchipInterpolator(inputs["s_default"], inputs["ref_axis_yaml"][:, 2])(nd_span_orig)
 
             outputs["s"] = copy.copy(nd_span_orig)
 
@@ -978,18 +962,19 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
                 idx_flap_end += 1
             outputs["s"][idx_flap_start] = flap_start
             outputs["s"][idx_flap_end] = flap_end
-            outputs["chord"] = np.interp(outputs["s"], nd_span_orig, chord_orig)
-            outputs["twist"] = np.interp(outputs["s"], nd_span_orig, twist_orig)
-            outputs["pitch_axis"] = np.interp(outputs["s"], nd_span_orig, pitch_axis_orig)
-
-            outputs["ref_axis"][:, 0] = np.interp(outputs["s"], nd_span_orig, ref_axis_orig[:, 0])
-            outputs["ref_axis"][:, 1] = np.interp(outputs["s"], nd_span_orig, ref_axis_orig[:, 1])
-            outputs["ref_axis"][:, 2] = np.interp(outputs["s"], nd_span_orig, ref_axis_orig[:, 2])
+            outputs["chord"] = PchipInterpolator(nd_span_orig, chord_orig)(outputs["s"])
+            outputs["twist"] = PchipInterpolator(nd_span_orig, twist_orig)(outputs["s"])
+            outputs["pitch_axis"] = PchipInterpolator(nd_span_orig, pitch_axis_orig)(outputs["s"])
+            outputs["r_thick_yaml_interp"] = PchipInterpolator(nd_span_orig, r_thick_orig)(outputs["s"])
+            outputs["ref_axis"][:, 0] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 0])(outputs["s"])
+            outputs["ref_axis"][:, 1] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 1])(outputs["s"])
+            outputs["ref_axis"][:, 2] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 2])(outputs["s"])
         else:
             outputs["s"] = inputs["s_default"]
             outputs["chord"] = inputs["chord_yaml"]
             outputs["twist"] = inputs["twist_yaml"]
             outputs["pitch_axis"] = inputs["pitch_axis_yaml"]
+            outputs["r_thick_yaml_interp"] = inputs["r_thick_yaml"]
             outputs["ref_axis"] = inputs["ref_axis_yaml"]
 
 
@@ -1034,7 +1019,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         # Airfoil properties
         self.add_discrete_input("name", val=n_af * [""], desc="1D array of names of airfoils.")
         self.add_input("ac", val=np.zeros(n_af), desc="1D array of the aerodynamic centers of each airfoil.")
-        self.add_input("r_thick", val=np.zeros(n_af), desc="1D array of the relative thicknesses of each airfoil.")
+        self.add_input("r_thick_discrete", val=np.zeros(n_af), desc="1D array of the relative thicknesses of each airfoil.")
         self.add_input(
             "aoa",
             val=np.zeros(n_aoa),
@@ -1062,6 +1047,11 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             "coord_xy",
             val=np.zeros((n_af, n_xy, 2)),
             desc="3D array of the x and y airfoil coordinates of the n_af airfoils.",
+        )
+        self.add_input(
+            "r_thick_yaml",
+            val=np.zeros(n_span),
+            desc="1D array of the relative thicknesses of the blade defined along span.",
         )
 
         # Polars and coordinates interpolated along span
@@ -1097,7 +1087,6 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # Reconstruct the blade relative thickness along span with a pchip
         r_thick_used = np.zeros(self.n_af_span)
         ac_used = np.zeros(self.n_af_span)
@@ -1113,7 +1102,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         for i in range(self.n_af_span):
             for j in range(self.n_af):
                 if self.af_used[i] == discrete_inputs["name"][j]:
-                    r_thick_used[i] = inputs["r_thick"][j]
+                    r_thick_used[i] = inputs["r_thick_discrete"][j]
                     ac_used[i] = inputs["ac"][j]
                     coord_xy_used[i, :, :] = inputs["coord_xy"][j]
                     cl_used[i, :, :, :] = inputs["cl"][j, :, :, :]
@@ -1126,7 +1115,12 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         spline = PchipInterpolator
         rthick_spline = spline(inputs["af_position"], r_thick_used)
         ac_spline = spline(inputs["af_position"], ac_used)
-        outputs["r_thick_interp"] = rthick_spline(inputs["s"])
+        if np.max(inputs["r_thick_yaml"]) < 1.e-6:
+            rthick_spline = spline(inputs["af_position"], r_thick_used)
+            outputs["r_thick_interp"] = rthick_spline(inputs["s"])
+        else:
+            outputs["r_thick_interp"] = inputs["r_thick_yaml"]
+        ac_spline = spline(inputs["af_position"], ac_used)
         outputs["ac_interp"] = ac_spline(inputs["s"])
 
         # Spanwise interpolation of the profile coordinates with a pchip
@@ -1180,9 +1174,21 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
             desc="1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.",
         )
         self.add_input(
+            "twist",
+            val=np.zeros(n_span),
+            units="rad",
+            desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
+        )
+        self.add_input(
             "coord_xy_interp",
             val=np.zeros((n_span, n_xy, 2)),
             desc="3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.",
+        )
+        self.add_input(
+            "ref_axis",
+            val=np.zeros((n_span, 3)),
+            units="m",
+            desc="2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
         )
 
         self.add_output(
@@ -1191,10 +1197,19 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
             units="m",
             desc="3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.",
         )
+        self.add_output(
+            "coord_xy_dim_twisted",
+            val=np.zeros((n_span, n_xy, 2)),
+            units="m",
+            desc="3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.",
+        )
+        self.add_output("wetted_area", val=0.0, units="m**2", desc="The wetted (painted) surface area of the blade")
+        self.add_output("projected_area", val=0.0, units="m**2", desc="The projected surface area of the blade")
 
     def compute(self, inputs, outputs):
         pitch_axis = inputs["pitch_axis"]
         chord = inputs["chord"]
+        twist = inputs["twist"]
         coord_xy_interp = inputs["coord_xy_interp"]
 
         coord_xy_dim = copy.copy(coord_xy_interp)
@@ -1203,6 +1218,21 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
 
         outputs["coord_xy_dim"] = coord_xy_dim
 
+        coord_xy_twist = copy.copy(coord_xy_interp)
+        x = coord_xy_dim[:, :, 0]
+        y = coord_xy_dim[:, :, 1]
+        coord_xy_twist[:, :, 0] = x * np.cos(twist[:,np.newaxis]) - y * np.sin(twist[:,np.newaxis])
+        coord_xy_twist[:, :, 1] = y * np.cos(twist[:,np.newaxis]) + x * np.sin(twist[:,np.newaxis])
+        outputs["coord_xy_dim_twisted"] = coord_xy_twist
+
+        # Integrate along span for surface area
+        wetted_chord = coord_xy_dim[:,:,1].max(axis=1) - coord_xy_dim[:,:,1].min(axis=1)
+        outputs["wetted_area"] = np.trapz(wetted_chord, inputs["ref_axis"][:,2])
+
+        projected_chord = coord_xy_twist[:,:,1].max(axis=1) - coord_xy_twist[:,:,1].min(axis=1)
+        outputs["projected_area"] = np.trapz(projected_chord, inputs["ref_axis"][:,2])
+        
+            
 
 class INN_Airfoils(om.ExplicitComponent):
     # Openmdao component to run the inverted neural network framework for airfoil design
@@ -1231,7 +1261,7 @@ class INN_Airfoils(om.ExplicitComponent):
             desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
         )
         self.add_input(
-            "r_thick_interp_yaml",
+            "r_thick",
             val=np.zeros(n_span),
             desc="1D array of the relative thicknesses of the blade defined along span.",
         )
@@ -1266,10 +1296,10 @@ class INN_Airfoils(om.ExplicitComponent):
             val=np.zeros((n_span, n_xy, 2)),
             desc="3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.",
         )
-        self.add_input("s_opt_r_thick", val=np.ones(aero_shape_opt_options["t/c"]["n_opt"]))
+        self.add_input("s_opt_r_thick", val=np.ones(aero_shape_opt_options["rthick"]["n_opt"]))
         self.add_input(
             "r_thick_opt",
-            val=np.ones(aero_shape_opt_options["t/c"]["n_opt"]),
+            val=np.ones(aero_shape_opt_options["rthick"]["n_opt"]),
         )
         self.add_input("s_opt_L_D", val=np.ones(aero_shape_opt_options["L/D"]["n_opt"]))
         self.add_input(
@@ -1337,7 +1367,7 @@ class INN_Airfoils(om.ExplicitComponent):
         self.inn = INN()
 
     def compute(self, inputs, outputs):
-        # Interpolate t/c and L/D from opt grid to full grid
+        # Interpolate rthick and L/D from opt grid to full grid
         spline = PchipInterpolator
         r_thick_spline = spline(inputs["s_opt_r_thick"], inputs["r_thick_opt"])
         r_thick = r_thick_spline(inputs["s"])
@@ -1349,8 +1379,8 @@ class INN_Airfoils(om.ExplicitComponent):
         stall_margin = stall_margin_spline(inputs["s"])
 
         # Find indices for start and end of the optimization
-        max_t_c = self.options["rotorse_options"]["inn_af_max_t/c"]
-        min_t_c = self.options["rotorse_options"]["inn_af_min_t/c"]
+        max_t_c = self.options["rotorse_options"]["inn_af_max_rthick"]
+        min_t_c = self.options["rotorse_options"]["inn_af_min_rthick"]
         indices = np.argwhere(np.logical_and(r_thick > min_t_c, r_thick < max_t_c))
         indices = list(np.squeeze(indices))
 
@@ -1430,8 +1460,8 @@ class INN_Airfoils(om.ExplicitComponent):
             cdmax = 1.5
             polar = inn_polar.extrapolate(cdmax)  # Extrapolate polars for alpha between -180 deg and 180 deg
 
-            cl_interp = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cl)
-            cd_interp = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cd)
+            cl_interp = PchipInterpolator(polar.alpha, polar.cl)(np.degrees(inputs["aoa"]))
+            cd_interp = PchipInterpolator(polar.alpha, polar.cd)(np.degrees(inputs["aoa"]))
 
             for j in range(self.n_Re):
                 outputs["cl_interp"][i, :, j, 0] = cl_interp
@@ -1451,17 +1481,6 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
 
         self.add_input(
-            "s",
-            val=np.zeros(n_span),
-            desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
-        )
-        self.add_input(
-            "twist",
-            val=np.zeros(n_span),
-            units="rad",
-            desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
-        )
-        self.add_input(
             "ref_axis",
             val=np.zeros((n_span, 3)),
             units="m",
@@ -1469,13 +1488,6 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
         )
 
         self.add_input(
-            "coord_xy_dim",
-            val=np.zeros((n_span, n_xy, 2)),
-            units="m",
-            desc="3D array of the dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The origin is placed at the pitch axis.",
-        )
-
-        self.add_output(
             "coord_xy_dim_twisted",
             val=np.zeros((n_span, n_xy, 2)),
             units="m",
@@ -1489,26 +1501,20 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-
-        for i in range(self.n_span):
-            x = inputs["coord_xy_dim"][i, :, 0]
-            y = inputs["coord_xy_dim"][i, :, 1]
-            outputs["coord_xy_dim_twisted"][i, :, 0] = x * np.cos(inputs["twist"][i]) - y * np.sin(inputs["twist"][i])
-            outputs["coord_xy_dim_twisted"][i, :, 1] = y * np.cos(inputs["twist"][i]) + x * np.sin(inputs["twist"][i])
-
         k = 0
         for i in range(self.n_span):
             for j in range(self.n_xy):
                 outputs["3D_shape"][k, :] = np.array(
-                    [k, outputs["coord_xy_dim_twisted"][i, j, 1], outputs["coord_xy_dim_twisted"][i, j, 0], 0.0]
+                    [k, inputs["coord_xy_dim_twisted"][i, j, 1], inputs["coord_xy_dim_twisted"][i, j, 0], 0.0]
                 ) + np.hstack([0, inputs["ref_axis"][i, :]])
                 k = k + 1
 
-        np.savetxt(
-            "3d_xyz_nrel5mw.dat",
-            outputs["3D_shape"],
-            header="\t point number [-]\t\t\t\t x [m] \t\t\t\t\t y [m]  \t\t\t\t z [m] \t\t\t\t The coordinate system follows the BeamDyn one.",
-        )
+        # Debug output
+            np.savetxt(
+                "3d_xyz_blade_lofted.dat",
+                outputs["3D_shape"],
+                header="\t point number [-]\t\t\t\t x [m] \t\t\t\t\t y [m]  \t\t\t\t z [m] \t\t\t\t The coordinate system follows the BeamDyn one.",
+            )
 
 
 class Blade_Internal_Structure_2D_FEM(om.Group):
@@ -1848,7 +1854,6 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
         # self.declare_partials('web_start_nd', ['coord_xy_dim', 'twist'], method='fd')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # Initialize temporary arrays for the outputs
         web_rotation = np.zeros((self.n_webs, self.n_span))
         layer_rotation = np.zeros((self.n_layers, self.n_span))
@@ -1877,7 +1882,6 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
 
             # Loop through the webs and compute non-dimensional start and end positions along the profile
             for j in range(self.n_webs):
-
                 offset = inputs["web_offset_y_pa_yaml"][j, i]
                 # Geometry checks on webs
                 if offset < ratio_Websmax * (-chord * p_le_i) or offset > ratio_Websmax * (chord * (1.0 - p_le_i)):
@@ -1914,31 +1918,19 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                         [0.0, 0.0],
                         ["suction", "pressure"],
                     )
-                    # if i == 0:
-                    #     print(
-                    #         "WARNING: The web "
-                    #         + web_name[j]
-                    #         + " is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition."
-                    #     )
-                    # if web_start_nd[j, i] < 0.0 or web_start_nd[j, i] > 1.0:
-                    #     print(
-                    #         "WARNING: Blade web "
-                    #         + web_name[j]
-                    #         + " at n.d. span position "
-                    #         + str(inputs["s"][i])
-                    #         + " has the n.d. start point outside the TE. Please check the yaml input file."
-                    #     )
-                    # if web_end_nd[j, i] < 0.0 or web_end_nd[j, i] > 1.0:
-                    #     print(
-                    #         "WARNING: Blade web "
-                    #         + web_name[j]
-                    #         + " at n.d. span position "
-                    #         + str(inputs["s"][i])
-                    #         + " has the n.d. end point outside the TE. Please check the yaml input file."
-                    #     )
                 elif discrete_inputs["definition_web"][j] == 3:
                     web_start_nd[j, i] = inputs["web_start_nd_yaml"][j, i]
                     web_end_nd[j, i] = inputs["web_end_nd_yaml"][j, i]
+                elif discrete_inputs["definition_web"][j] == 4:
+                    web_rotation[j, i] = -inputs["web_rotation_yaml"][j, i]
+                    web_rotation[j, i] -= inputs["twist"][i]
+                    web_start_nd[j, i], web_end_nd[j, i] = calc_axis_intersection(
+                        inputs["coord_xy_dim"][i, :, :],
+                        -web_rotation[j, i],
+                        outputs["web_offset_y_pa"][j, i],
+                        [0.0, 0.0],
+                        ["suction", "pressure"],
+                    )
                 else:
                     raise ValueError(
                         "Blade web " + web_name[j] + " not described correctly. Please check the yaml input file."
@@ -1950,12 +1942,17 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     layer_start_nd[j, i] = 0.0
                     layer_end_nd[j, i] = 1.0
                 elif (
-                    discrete_inputs["definition_layer"][j] == 2 or discrete_inputs["definition_layer"][j] == 3
+                    discrete_inputs["definition_layer"][j] == 2 
+                    or discrete_inputs["definition_layer"][j] == 3
+                    or discrete_inputs["definition_layer"][j] == 13
                 ):  # Midpoint and width
                     if discrete_inputs["definition_layer"][j] == 2:
                         layer_rotation[j, i] = -inputs["twist"][i]
+                    elif discrete_inputs["definition_layer"][j] == 3:
+                        layer_rotation[j, i] = -inputs["layer_rotation_yaml"][j, i]
                     else:
                         layer_rotation[j, i] = -inputs["layer_rotation_yaml"][j, i]
+                        layer_rotation[j, i] -= inputs["twist"][i]
                     midpoint = calc_axis_intersection(
                         inputs["coord_xy_dim"][i, :, :],
                         -layer_rotation[j, i],
@@ -1980,14 +1977,12 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                             'WARNING: Layer "%s" may be too large to fit within chord. "offset_y_pa" changed from %f to 0.0 and "width" changed from %f to %f at s=%f (i=%d)'
                             % (layer_name[j], offset, width_old, width, inputs["s"][i], i)
                         )
-                        # print(layer_resize_warning)
                     else:
                         outputs["layer_width"][j, i] = copy.copy(width)
                         outputs["layer_offset_y_pa"][j, i] = copy.copy(offset)
 
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = midpoint + width / arc_L_i / 2.0
-
                 elif discrete_inputs["definition_layer"][j] == 4:  # Midpoint and width
                     midpoint = 1.0
                     inputs["layer_midpoint_nd"][j, i] = midpoint
@@ -1995,17 +1990,6 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     outputs["layer_width"][j, i] = copy.copy(width)
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = width / arc_L_i / 2.0
-
-                    # # Geometry check to prevent overlap between SC and TE reinf
-                    # for k in range(self.n_layers):
-                    #     if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
-                    # if layer_end_nd[j, i] > layer_start_nd[k, i] or layer_start_nd[j, i] < layer_end_nd[k, i]:
-                    #     print(
-                    #         "WARNING: The trailing edge reinforcement extends above the spar caps at station "
-                    #         + str(i)
-                    #         + ". Please reduce its width."
-                    #     )
-
                 elif discrete_inputs["definition_layer"][j] == 5:  # Midpoint and width
                     midpoint = LE_loc
                     inputs["layer_midpoint_nd"][j, i] = midpoint
@@ -2013,33 +1997,8 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     outputs["layer_width"][j, i] = copy.copy(width)
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = midpoint + width / arc_L_i / 2.0
-                    # # Geometry check to prevent overlap between SC and LE reinf
-                    # for k in range(self.n_layers):
-                    #     if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
-                    #         if (
-                    #             discrete_inputs["layer_side"][k] == "suction"
-                    #             and layer_start_nd[j, i] < layer_end_nd[k, i]
-                    #         ):
-                    #             print(
-                    #                 "WARNING: The leading edge reinforcement extends above the spar caps at station "
-                    #                 + str(i)
-                    #                 + ". Please reduce its width."
-                    #             )
-                    #         elif (
-                    #             discrete_inputs["layer_side"][k] == "pressure"
-                    #             and layer_end_nd[j, i] > layer_start_nd[k, i]
-                    #         ):
-                    #             print(
-                    #                 "WARNING: The leading edge reinforcement extends above the spar caps at station "
-                    #                 + str(i)
-                    #                 + ". Please reduce its width."
-                    #             )
-                    #         else:
-                    #             pass
                 elif discrete_inputs["definition_layer"][j] == 6:  # Start and end locked to other element
-                    # if inputs['layer_start_nd'][j,i] > 1:
                     layer_start_nd[j, i] = layer_end_nd[int(discrete_inputs["index_layer_start"][j]), i]
-                    # if inputs['layer_end_nd'][j,i] > 1:
                     layer_end_nd[j, i] = layer_start_nd[int(discrete_inputs["index_layer_end"][j]), i]
                 elif discrete_inputs["definition_layer"][j] == 7:  # Start nd and width
                     width = inputs["layer_width_yaml"][j, i]
@@ -2505,11 +2464,11 @@ class MemberGrid(om.ExplicitComponent):
         s_grid = inputs["s_grid"]
 
         if len(inputs["outer_diameter_in"]) > 1:
-            outputs["outer_diameter"] = np.interp(s_grid, s_in, inputs["outer_diameter_in"])
+            outputs["outer_diameter"] = PchipInterpolator(s_in, inputs["outer_diameter_in"])(s_grid)
         else:
             outputs["outer_diameter"][:] = inputs["outer_diameter_in"]
         for k in range(n_layers):
-            outputs["layer_thickness"][k, :] = np.interp(s_grid, s_in, inputs["layer_thickness_in"][k, :])
+            outputs["layer_thickness"][k, :] = PchipInterpolator(s_in, inputs["layer_thickness_in"][k, :])(s_grid)
 
 
 class AggregateJoints(om.ExplicitComponent):
@@ -2607,7 +2566,7 @@ class AggregateJoints(om.ExplicitComponent):
                     s_axial = inputs["member_" + iname + ":grid_axial_joints"][a]
                     joints_xyz[count, :] = joint1xyz + s_axial * dxyz
 
-                    Ra = np.interp(s_axial, s, Rk)
+                    Ra = PchipInterpolator(s, Rk)(s_axial)
                     node_r[count] = max(node_r[count], Ra)
                     intersects[count] += 1
 
@@ -2841,7 +2800,6 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
         self.options.declare("composites", default=True)
 
     def setup(self):
-
         mat_init_options = self.options["mat_init_options"]
         self.n_mat = n_mat = mat_init_options["n_mat"]
 
@@ -2904,7 +2862,6 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         density_resin = 0.0
         for i in range(self.n_mat):
             if discrete_inputs["name"][i] == "resin":
@@ -2921,7 +2878,6 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
 
         for i in range(self.n_mat):
             if discrete_inputs["component_id"][i] > 1:  # It's a composite
-
                 # Formula to estimate the fiber volume fraction fvf from the laminate and the fiber densities
                 fvf[i] = (inputs["rho"][i] - density_resin) / (inputs["rho_fiber"][i] - density_resin)
                 if inputs["fvf_from_yaml"][i] > 0.0:
@@ -3187,11 +3143,11 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             outputs["blade_ref_axis"][:, 2] = (
                 inputs["blade_ref_axis_user"][:, 2]
                 * inputs["rotor_diameter_user"]
-                / ((arc_length(inputs["blade_ref_axis_user"])[-1] + inputs["hub_radius"]) * 2.0)
+                / ((inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0)
             )
         # If the user does not provide a rotor diameter, this is computed from the hub diameter and the blade length
         else:
-            outputs["rotor_diameter"] = (arc_length(inputs["blade_ref_axis_user"])[-1] + inputs["hub_radius"]) * 2.0
+            outputs["rotor_diameter"] = (inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0
             outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2]
         outputs["r_blade"] = outputs["blade_ref_axis"][:, 2] + inputs["hub_radius"]
         outputs["rotor_radius"] = outputs["r_blade"][-1]
@@ -3324,7 +3280,7 @@ class Airfoil3DCorrection(om.ExplicitComponent):
             desc="Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.",
         )
         self.add_input(
-            "r_thick_interp",
+            "r_thick",
             val=np.zeros(n_span),
             desc="1D array of the relative thicknesses of the blade defined along span.",
         )
@@ -3354,26 +3310,32 @@ class Airfoil3DCorrection(om.ExplicitComponent):
         cm_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
         for i in range(self.n_span):
             if (
-                inputs["r_thick_interp"][i] < 0.7 and self.af_correction
+                inputs["r_thick"][i] < 0.7 and self.af_correction
             ):  # Only apply 3D correction to airfoils thinner than 70% to avoid numerical problems at blade root
                 logger.info("3D correction applied to airfoil polars for section " + str(i))
                 for j in range(self.n_Re):
                     for k in range(self.n_tab):
                         inn_polar = Polar(
-                            inputs["Re"][j],
-                            np.degrees(inputs["aoa"]),
-                            inputs["cl"][i, :, j, k],
-                            inputs["cd"][i, :, j, k],
-                            inputs["cm"][i, :, j, k],
+                            Re=inputs["Re"][j],
+                            alpha=np.degrees(inputs["aoa"]),
+                            cl=inputs["cl"][i, :, j, k],
+                            cd=inputs["cd"][i, :, j, k],
+                            cm=inputs["cm"][i, :, j, k],
                         )
                         polar3d = inn_polar.correction3D(
                             inputs["r_blade"][i] / inputs["rotor_radius"],
                             inputs["chord"][i] / inputs["r_blade"][i],
                             inputs["rated_TSR"],
                         )
-                        cl_corrected[i, :, j, k] = np.interp(np.degrees(inputs["aoa"]), polar3d.alpha, polar3d.cl)
-                        cd_corrected[i, :, j, k] = np.interp(np.degrees(inputs["aoa"]), polar3d.alpha, polar3d.cd)
-                        cm_corrected[i, :, j, k] = np.interp(np.degrees(inputs["aoa"]), polar3d.alpha, polar3d.cm)
+                        cl_corrected[i, :, j, k] = PchipInterpolator(polar3d.alpha, polar3d.cl)(
+                            np.degrees(inputs["aoa"])
+                        )
+                        cd_corrected[i, :, j, k] = PchipInterpolator(polar3d.alpha, polar3d.cd)(
+                            np.degrees(inputs["aoa"])
+                        )
+                        cm_corrected[i, :, j, k] = PchipInterpolator(polar3d.alpha, polar3d.cm)(
+                            np.degrees(inputs["aoa"])
+                        )
             else:
                 cl_corrected[i, :, :, :] = inputs["cl"][i, :, :, :]
                 cd_corrected[i, :, :, :] = inputs["cd"][i, :, :, :]

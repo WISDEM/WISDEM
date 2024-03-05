@@ -7,6 +7,8 @@ from scipy.interpolate import PchipInterpolator
 from wisdem.rotorse.precomp import PreComp, Profile, CompositeSection, Orthotropic2DMaterial
 from wisdem.commonse.utilities import rotate, arc_length
 from wisdem.rotorse.rail_transport import RailTransport
+import logging
+logger = logging.getLogger("wisdem/weis")
 
 
 class RunPreComp(ExplicitComponent):
@@ -143,7 +145,7 @@ class RunPreComp(ExplicitComponent):
             val=0.0,
             desc="Spanwise position of the segmentation joint.",
         )
-        self.add_input("joint_mass", val=0.0, units='kg', desc="Mass of the joint.")
+        self.add_input("joint_mass", val=0.0, units="kg", desc="Mass of the joint.")
 
         # Outputs - Distributed beam properties
         self.add_output("z", val=np.zeros(n_span), units="m", desc="locations of properties along beam")
@@ -281,6 +283,7 @@ class RunPreComp(ExplicitComponent):
 
         # Outputs - Overall beam properties
         self.add_output("blade_mass", val=0.0, units="kg", desc="mass of one blade")
+        self.add_output("blade_span_cg", val=0.0, units="m", desc="Distance along the blade span for its center of gravity")
         self.add_output(
             "blade_moment_of_inertia", val=0.0, units="kg*m**2", desc="mass moment of inertia of blade about hub"
         )
@@ -314,7 +317,6 @@ class RunPreComp(ExplicitComponent):
         )
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         ##############################
         def region_stacking(
             i,
@@ -329,7 +331,7 @@ class RunPreComp(ExplicitComponent):
             materials,
             region_loc,
         ):
-            # Recieve start and end of composite sections chordwise, find which composites layers are in each
+            # Receive start and end of composite sections chordwise, find which composites layers are in each
             # chordwise regions, generate the precomp composite class instance
 
             # error handling to makes sure there were no numeric errors causing values very close too, but not exactly, 0 or 1
@@ -368,7 +370,6 @@ class RunPreComp(ExplicitComponent):
                 for i_sec, start_nd_arci, end_nd_arci in zip(idx, start_nd_arc, end_nd_arc):
                     name = layer_name[i_sec]
                     if start_nd_arci <= dp0 and end_nd_arci >= dp1:
-
                         if name in region_loc.keys():
                             if region_loc[name][i] == None:
                                 region_loc[name][i] = [i_reg]
@@ -462,38 +463,8 @@ class RunPreComp(ExplicitComponent):
         lowerCS = [None] * self.n_span
         websCS = [None] * self.n_span
         profile = [None] * self.n_span
-
-        # Check that the layer to be optimized actually exist
-        te_ss_var_ok = False
-        te_ps_var_ok = False
-        spar_cap_ss_var_ok = False
-        spar_cap_ps_var_ok = False
-        for i_layer in range(self.n_layers):
-            if layer_name[i_layer] == self.te_ss_var:
-                te_ss_var_ok = True
-            if layer_name[i_layer] == self.te_ps_var:
-                te_ps_var_ok = True
-            if layer_name[i_layer] == self.spar_cap_ss_var:
-                spar_cap_ss_var_ok = True
-            if layer_name[i_layer] == self.spar_cap_ps_var:
-                spar_cap_ps_var_ok = True
-        DV_options = self.options["opt_options"]["design_variables"]["blade"]["structure"]
-        if te_ss_var_ok == False and DV_options["te_ss"]["flag"]:
-            raise Exception(
-                "The layer at the trailing edge suction side is set to be optimized, but does not exist in the input yaml. Please check."
-            )
-        if te_ps_var_ok == False and DV_options["te_ps"]["flag"]:
-            raise Exception(
-                "The layer at the trailing edge pressure side is set to be optimized, but does not exist in the input yaml. Please check."
-            )
-        if spar_cap_ss_var_ok == False and DV_options["spar_cap_ss"]["flag"]:
-            raise Exception(
-                "The layer at the spar cap suction side is set to be optimized, but does not exist in the input yaml. Please check."
-            )
-        if spar_cap_ps_var_ok == False and DV_options["spar_cap_ps"]["flag"]:
-            raise Exception(
-                "The layer at the spar cap pressure side is set to be optimized, but does not exist in the input yaml. Please check."
-            )
+        chord = inputs["chord"]
+        area = np.zeros_like(chord)
         region_loc_vars = [self.te_ss_var, self.te_ps_var, self.spar_cap_ss_var, self.spar_cap_ps_var]
 
         region_loc_ss = {}  # track precomp regions for user selected composite layers
@@ -544,7 +515,6 @@ class RunPreComp(ExplicitComponent):
             idx_s = 0
             idx_le_precomp = np.argmax(profile_i_rot_precomp[:, 0])
             if idx_le_precomp != 0:
-
                 if profile_i_rot_precomp[0, 0] == profile_i_rot_precomp[-1, 0]:
                     idx_s = 1
                 profile_i_rot_precomp = np.row_stack(
@@ -581,6 +551,7 @@ class RunPreComp(ExplicitComponent):
             profile_i_arc = arc_length(profile_i_rot)
             arc_L = profile_i_arc[-1]
             profile_i_arc /= arc_L
+            arc_L_m = arc_L * chord[i]
 
             loc_LE = profile_i_arc[idx_le]
             len_PS = 1.0 - loc_LE
@@ -604,22 +575,43 @@ class RunPreComp(ExplicitComponent):
             # time1 = time.time()
             for idx_sec in range(self.n_layers):
                 if discrete_inputs["definition_layer"][idx_sec] != 10:
-                    if inputs["layer_thickness"][idx_sec, i] != 0.0:
+                    if inputs["layer_thickness"][idx_sec, i] > 1.0e-6:
+                        area[i] += arc_L_m * (inputs["layer_end_nd"][idx_sec, i] - 
+                                              inputs["layer_start_nd"][idx_sec, i]) * (
+                                              inputs["layer_thickness"][idx_sec, i])
                         if inputs["layer_start_nd"][idx_sec, i] < loc_LE or inputs["layer_end_nd"][idx_sec, i] < loc_LE:
                             ss_idx.append(idx_sec)
                             if inputs["layer_start_nd"][idx_sec, i] < loc_LE:
                                 # ss_start_nd_arc.append(sec['start_nd_arc']['values'][i])
                                 ss_end_nd_arc_temp = float(spline_arc2xnd(inputs["layer_start_nd"][idx_sec, i]))
-                                if ss_end_nd_arc_temp > 1 or ss_end_nd_arc_temp < 0:
-                                    raise ValueError(
+                                if ss_end_nd_arc_temp > 1:
+                                    logger.debug(
                                         "Error in the definition of material "
                                         + layer_name[idx_sec]
                                         + ". It cannot fit in the section number "
                                         + str(i)
                                         + " at span location "
                                         + str(inputs["r"][i] / inputs["r"][-1] * 100.0)
-                                        + " %."
+                                        + " %. Variable ss_end_nd_arc_temp was equal "
+                                        + " to "
+                                        + str(ss_end_nd_arc_temp)
+                                        + " and is not set to 1"
                                     )
+                                    ss_end_nd_arc_temp = 1.
+                                if ss_end_nd_arc_temp < 0:
+                                    logger.debug(
+                                        "Error in the definition of material "
+                                        + layer_name[idx_sec]
+                                        + ". It cannot fit in the section number "
+                                        + str(i)
+                                        + " at span location "
+                                        + str(inputs["r"][i] / inputs["r"][-1] * 100.0)
+                                        + " %. Variable ss_end_nd_arc_temp was equal "
+                                        + " to "
+                                        + str(ss_end_nd_arc_temp)
+                                        + " and is not set to 0"
+                                    )
+                                    ss_end_nd_arc_temp = 0.
                                 if ss_end_nd_arc_temp == profile_i_rot[0, 0] and profile_i_rot[0, 0] != 1.0:
                                     ss_end_nd_arc_temp = 1.0
                                 ss_end_nd_arc.append(ss_end_nd_arc_temp)
@@ -644,7 +636,12 @@ class RunPreComp(ExplicitComponent):
                                 ps_end_nd_arc.append(1.0)
                             else:
                                 ps_end_nd_arc_temp = float(spline_arc2xnd(inputs["layer_end_nd"][idx_sec, i]))
-                                if np.isclose(ps_end_nd_arc_temp, profile_i_rot[-1, 0]) and profile_i_rot[-1, 0] != 1.0:
+                                if (
+                                    np.isclose(ps_end_nd_arc_temp, profile_i_rot[-1, 0], atol=1.0e-2)
+                                    and profile_i_rot[-1, 0] != 1.0
+                                ):
+                                    ps_end_nd_arc_temp = 1.0
+                                if ps_end_nd_arc_temp > 1.0:
                                     ps_end_nd_arc_temp = 1.0
                                 ps_end_nd_arc.append(ps_end_nd_arc_temp)
                             if inputs["layer_start_nd"][idx_sec, i] < loc_LE:
@@ -654,21 +651,34 @@ class RunPreComp(ExplicitComponent):
                 else:
                     target_idx = inputs["layer_web"][idx_sec] - 1
 
-                    if inputs["layer_thickness"][idx_sec, i] != 0.0:
+                    if inputs["layer_thickness"][idx_sec, i] > 1.0e-6:
                         web_idx.append(idx_sec)
 
-                        start_nd_arc = float(spline_arc2xnd(inputs["web_start_nd"][int(target_idx), i]))
-                        end_nd_arc = float(spline_arc2xnd(inputs["web_end_nd"][int(target_idx), i]))
+                        web_start_nd = inputs["web_start_nd"][int(target_idx), i]
+                        web_end_nd = inputs["web_end_nd"][int(target_idx), i]
+
+                        start_nd_arc = float(spline_arc2xnd(web_start_nd))
+                        end_nd_arc = float(spline_arc2xnd(web_end_nd))
 
                         web_start_nd_arc.append(start_nd_arc)
                         web_end_nd_arc.append(end_nd_arc)
 
+                        # Compute height the webs along span
+                        id_start = np.argmin(abs(profile_i_arc - web_start_nd))
+                        id_end = np.argmin(abs(profile_i_arc - web_end_nd))
+                        web_height = np.sqrt((profile_i[id_start, 0] - profile_i[id_end, 0])**2 +
+                                             (profile_i[id_start, 1] - profile_i[id_end, 1])**2) * (
+                                             chord[i])
+
+                        area[i] += web_height * inputs["layer_thickness"][idx_sec, i]
+
             # time1 = time.time() - time1
             # print(time1)
 
+            # cap layer starts and ends within 0 and 1
+            ss_start_nd_arc = [max(0, min(1, value)) for value in ss_start_nd_arc]
+            ss_end_nd_arc = [max(0, min(1, value)) for value in ss_end_nd_arc]
             # generate the Precomp composite stacks for chordwise regions
-            if np.min([ss_start_nd_arc, ss_end_nd_arc]) < 0 or np.max([ss_start_nd_arc, ss_end_nd_arc]) > 1:
-                raise ValueError("Error in the layer definition at station number " + str(i))
             upperCS[i], region_loc_ss = region_stacking(
                 i,
                 ss_idx,
@@ -752,7 +762,7 @@ class RunPreComp(ExplicitComponent):
             x_ec,
             y_ec,
             rhoA,
-            area,
+            _,
             rhoJ,
             Tw_iner,
             flap_iner,
@@ -832,9 +842,10 @@ class RunPreComp(ExplicitComponent):
         outputs["yl_te"] = yl_te
 
         # Compute mass and inertia of blade and rotor
-        blade_mass = np.trapz(rhoA, inputs["r"])
+        blade_mass = np.trapz(rhoA_joint, inputs["r"])
+        blade_span_cg = np.trapz(rhoA_joint * inputs["r"], inputs["r"]) / blade_mass
         blade_moment_of_inertia = np.trapz(rhoA_joint * inputs["r"] ** 2.0, inputs["r"])
-        tilt = inputs["uptilt"]
+        # tilt = inputs["uptilt"]
         n_blades = discrete_inputs["n_blades"]
         mass_all_blades = n_blades * blade_mass
         Ibeam = n_blades * blade_moment_of_inertia
@@ -847,6 +858,7 @@ class RunPreComp(ExplicitComponent):
         I_all_blades = np.r_[Ixx, Iyy, Izz, Ixy, Ixz, Iyz]
 
         outputs["blade_mass"] = blade_mass
+        outputs["blade_span_cg"] = blade_span_cg
         outputs["blade_moment_of_inertia"] = blade_moment_of_inertia
         outputs["mass_all_blades"] = mass_all_blades
         outputs["I_all_blades"] = I_all_blades
@@ -906,6 +918,11 @@ class RotorElasticity(Group):
                 "xl_te",
                 "yu_te",
                 "yl_te",
+                "blade_mass",
+                "blade_span_cg",
+                "blade_moment_of_inertia",
+                "mass_all_blades",
+                "I_all_blades",
             ],
         )
         # Check rail transportabiliy

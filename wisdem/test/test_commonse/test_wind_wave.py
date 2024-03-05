@@ -3,8 +3,9 @@ import unittest
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
-import wisdem.commonse.wind_wave_drag as wwd
 from openmdao.utils.assert_utils import assert_check_partials
+
+import wisdem.commonse.wind_wave_drag as wwd
 
 npts = 100
 myones = np.ones((npts,))
@@ -76,7 +77,7 @@ class TestDrag(unittest.TestCase):
     def test_wave_derivs(self):
         nPoints = 5
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         comp = wwd.CylinderWaveDrag(nPoints=nPoints)
         prob.model.add_subsystem("comp", comp, promotes=["*"])
@@ -97,14 +98,14 @@ class TestDrag(unittest.TestCase):
 
         prob.run_model()
 
-        check = prob.check_partials(out_stream=None, compact_print=True, method="fd")
+        check = prob.check_partials(out_stream=None, compact_print=True, method="fd", step=1e-4)
 
         assert_check_partials(check, rtol=5e-5, atol=1e-1)
 
     def test_wind_derivs(self):
         nPoints = 5
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         comp = wwd.CylinderWindDrag(nPoints=nPoints)
         prob.model.add_subsystem("comp", comp, promotes=["*"])
@@ -122,7 +123,7 @@ class TestDrag(unittest.TestCase):
 
         prob.run_model()
 
-        check = prob.check_partials(out_stream=None, compact_print=True, method="fd")
+        check = prob.check_partials(out_stream=None, compact_print=True, method="fd", step=1e-4)
 
         assert_check_partials(check, rtol=5e-5, atol=1e-1)
 

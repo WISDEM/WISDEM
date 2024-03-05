@@ -1,0 +1,70 @@
+general:
+    folder_output: outputs_aero
+    fname_output: blade_out
+
+design_variables:
+    blade:
+        aero_shape:
+            twist:
+                flag: True  # Flag to optimize the twist
+                inverse: False # Flag to determine twist from the user-defined desired margin to stall (defined in constraints)
+                n_opt: 4     # Number of control points along blade span
+                max_decrease: 0.08722222222222221 # Maximum decrease for the twist in [rad] at the n_opt locations
+                max_increase: 0.08722222222222221 # Maximum increase for the twist in [rad] at the n_opt locations
+                index_start: 2 # Lock the first two DVs from blade root
+                index_end: 4 # All DVs close to blade tip are active
+            chord:
+                flag: False  # Flag to optimize the chord
+                n_opt: 4     # Number of control points along blade span
+                max_decrease: 0.3 # Minimum multiplicative gain on existing chord at the n_opt locations
+                max_increase: 3. # Maximum multiplicative gain on existing chord at the n_opt locations
+                index_start: 0 # Start by optimizing chord at blade root
+                index_end: 3 # Lock chord at blade tip
+
+    # List of user-defined design variables. These must available among the the independent variable components, see gc_WT_DataStruc.py
+    user:
+        - name: control.rated_pitch # in this example, constant pitch angle in region II is set as DV
+          lower_bound: [-5] # lower bound, set as array to support design variables as arrays
+          upper_bound: [25] # upper bound, set as array to support design variables as arrays
+          ref: [10.] # reference value to bring values close to 1, set as array to support design variables as arrays
+          # indices: only used for design variables as arrays
+
+# This will be ignored if there is a merit_figure_user entry
+merit_figure: AEP
+
+# See the list of potential outputs.  Variable name is taken from the WISDEM namespace.
+merit_figure_user:
+    name: rotorse.rp.powercurve.rated_T
+    ref: 1e6
+    max_flag: False
+    
+constraints:
+    blade:
+        stall:
+            flag: True     # Constraint on minimum stall margin
+            margin: 0.087 # Value of minimum stall margin in [rad]
+        chord:
+            flag: False # Constraint max chord to its default value (4.75 m)
+        root_circle_diameter:
+            flag: False # Constraint for the minimum blade root circle diameter
+            max_ratio: 1.2 # The recommended value can be up to 20% larger than the actual
+    user:
+        # Create entries in a YAML list with variable name, lower_bound and/or upper_bound, and indices (optional)
+        # Variable name is taken from the WISDEM namespace
+        - name: rotorse.blade_mass
+          upper_bound: 17000.00
+
+driver:
+    optimization:
+        flag: True         # Flag to enable optimization
+        tol: 1.e-3          # Optimality tolerance
+        # max_major_iter: 10  # Maximum number of major design iterations (SNOPT)
+        # max_minor_iter: 100 # Maximum number of minor design iterations (SNOPT)
+        max_iter: 1         # Maximum number of iterations (SLSQP)
+        solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        step_size: 1.e-3    # Step size for finite differencing
+        form: forward       # Finite differencing mode, either forward or central
+
+recorder:
+    flag: False              # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql  # Name of OpenMDAO recorder

@@ -40,7 +40,6 @@ def pmt(rate, nper, pv, fv=0, when="end"):
 
 class blade_bom(object):
     def compute_consumables(self):
-
         # Consumables
         consumables = {}
         # # LE Erosion Tape
@@ -330,7 +329,6 @@ class blade_bom(object):
 
 class blade_labor_ct(object):
     def __init__(self, blade_specs, mat_dictionary, metallic_parts):
-
         # # Blade input parameters
         # # Material inputs
         self.materials = mat_dictionary
@@ -521,7 +519,6 @@ class blade_labor_ct(object):
         self.shipping_prep["n_bolts"] = self.cut_drill["n_bolts"]  # Number of root bolts
 
     def execute_blade_labor_ct(self, root):
-
         # Run all manufacturing steps to estimate labor and cycle time
         verbosity = 0
 
@@ -597,10 +594,10 @@ class blade_labor_ct(object):
         operation[5 + self.n_webs] = "Lp skin"
 
         # Set gating cycle time. If blades are longer than 30 m, use 24 hrs, if shorter, use 12 hr
-        if self.lp_skin_parameters["blade_length"] > 30.:
-            gating_time_target = 24.
+        if self.lp_skin_parameters["blade_length"] > 30.0:
+            gating_time_target = 24.0
         else:
-            gating_time_target = 12.
+            gating_time_target = 12.0
 
         def labor_ct_lp_skin(team_size):
             lp_skin = lphp_skin_labor(self.lp_skin_parameters, team_size)
@@ -616,7 +613,7 @@ class blade_labor_ct(object):
 
         def min_ct_lp_skin(team_size, gating_time_target):
             _, ct = labor_ct_lp_skin(team_size)
-            return ct - (gating_time_target-1.e-4 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
+            return ct - (gating_time_target - 1.0e-4 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
 
         try:
             team_size = brentq(lambda x: min_ct_lp_skin(x, gating_time_target), 0.01, 100.0, xtol=1e-4, disp=False)
@@ -646,7 +643,7 @@ class blade_labor_ct(object):
         def min_ct_hp_skin(team_size, gating_time_target):
             _, ct = labor_ct_hp_skin(team_size)
 
-            return ct - (gating_time_target-1.e-4 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
+            return ct - (gating_time_target - 1.0e-4 - skin_mold_gating_ct[8 + self.n_webs]) * 0.7
 
         try:
             team_size = brentq(lambda x: min_ct_hp_skin(x, gating_time_target), 0.01, 100.0, xtol=1e-4)
@@ -676,7 +673,12 @@ class blade_labor_ct(object):
         def min_ct_assembly(team_size, gating_time_target):
             _, ct = labor_ct_assembly(team_size)
 
-            return ct - (gating_time_target-1.e-4 - skin_mold_gating_ct[5 + self.n_webs] - skin_mold_gating_ct[8 + self.n_webs])
+            return ct - (
+                gating_time_target
+                - 1.0e-4
+                - skin_mold_gating_ct[5 + self.n_webs]
+                - skin_mold_gating_ct[8 + self.n_webs]
+            )
 
         try:
             team_size = brentq(lambda x: min_ct_assembly(x, gating_time_target), 0.01, 100.0, xtol=1e-4)
@@ -774,7 +776,6 @@ class blade_labor_ct(object):
 
 class material_cutting_process(object):
     def material_cutting_steps(self):
-
         self.load_roll["labor_per_mat"] = []
         self.load_roll["ct_per_mat"] = []
         self.cutting["labor_per_mat"] = []
@@ -798,7 +799,6 @@ class material_cutting_process(object):
         self.materials["n_rolls"] = np.zeros(len(mat_names))
 
         for i_mat in range(len(mat_names)):
-
             if (
                 self.materials["orth"][i_mat] == 1
                 and self.materials["component_id"][i_mat] > 1
@@ -861,7 +861,6 @@ class material_cutting_process(object):
 
 class material_cutting_labor(material_cutting_process):
     def __init__(self, material_parameters, process={}):
-
         # # Material cutting - process parameters
         self.load_roll = {}
         self.cutting = {}
@@ -1024,7 +1023,6 @@ class infusion_process(object):
 
 class root_preform_labor(infusion_process):
     def __init__(self, component_parameters, process={}):
-
         # Manufacturing process labor input data for a root preform
         self.tool_prep = {}
         self.lay_up = {}
@@ -1121,7 +1119,6 @@ class root_preform_labor(infusion_process):
 
 class shearweb_labor(infusion_process):
     def __init__(self, component_parameters, i_web, process={}):
-
         # Manufacturing process labor input data for shear webs
         self.tool_prep = {}
         self.lay_up = {}
@@ -1223,7 +1220,6 @@ class shearweb_labor(infusion_process):
 
 class sparcaps_infusion_labor(infusion_process):
     def __init__(self, component_parameters, process={}):
-
         # Manufacturing process labor input data for the spar caps
         self.tool_prep = {}
         self.lay_up = {}
@@ -1316,7 +1312,6 @@ class sparcaps_infusion_labor(infusion_process):
 
 class sparcaps_pultrusion_labor(object):
     def manufacturing_steps(self, max_n_plies_sc, process={}):
-
         # Load coil	into position
         self.load_coil = {}
         self.load_coil["n_pers"] = 4  # Time size constant across operations
@@ -1348,7 +1343,6 @@ class sparcaps_pultrusion_labor(object):
 
 class lphp_skin_labor(infusion_process):
     def __init__(self, component_parameters, team_size, process={}):
-
         # Manufacturing process labor input data for the low pressure and high pressure skins
         self.tool_prep = {}
         self.lay_up = {}
@@ -1655,7 +1649,6 @@ class assembly_labor(assembly_process):
 
 class demold_process(object):
     def demold_steps(self):
-
         # Cool-down period
         self.cool_down["ct"] = self.cool_down["time"]
         self.cool_down["labor"] = self.cool_down["ct"] * self.cool_down["n_pers"]
@@ -1720,7 +1713,6 @@ class demold_labor(demold_process):
 
 class trim_process(object):
     def trim_steps(self):
-
         # Move blade into trim booth
         self.move2trim["ct"] = self.move2trim["time"]
         self.move2trim["labor"] = self.move2trim["ct"] * self.move2trim["n_pers"]
@@ -1757,7 +1749,6 @@ class trim_labor(trim_process):
 
 class overlay_process(object):
     def overlay_steps(self):
-
         # Move blade to station
         self.move2station["ct"] = self.move2station["time"]
         self.move2station["labor"] = self.move2station["ct"] * self.move2station["n_pers"]
@@ -1850,7 +1841,6 @@ class overlay_labor(overlay_process):
 
 class post_cure_process(object):
     def post_cure_steps(self):
-
         # Place blade in oven carts
         if self.move2cart["length"] <= 40.0:
             self.move2cart["ct"] = self.move2cart["time"]
@@ -1904,7 +1894,6 @@ class post_cure_labor(post_cure_process):
 
 class cut_drill_process(object):
     def cut_drill_steps(self):
-
         # Move blade / place in saddles
         if self.move2saddles["length"] <= 40.0:
             self.move2saddles["ct"] = self.move2saddles["time"]
@@ -1969,7 +1958,6 @@ class cut_drill_labor(cut_drill_process):
 
 class root_install_process(object):
     def root_install_steps(self):
-
         # Move blade and place it in carts
         if self.move2cart["length"] <= 40.0:
             self.move2cart["ct"] = self.move2cart["time"]
@@ -2011,7 +1999,6 @@ class root_install_labor(root_install_process):
 
 class surface_prep_process(object):
     def surface_prep_steps(self):
-
         # Move blade carts to surface preparation area
         self.move2area["ct"] = self.move2area["time"]
         self.move2area["labor"] = self.move2area["ct"] * self.move2area["n_pers"]
@@ -2040,7 +2027,6 @@ class surface_prep_labor(surface_prep_process):
 
 class paint_process(object):
     def paint_steps(self):
-
         # Move blade carts to painting area
         self.move2area["ct"] = self.move2area["time"]
         self.move2area["labor"] = self.move2area["ct"] * self.move2area["n_pers"]
@@ -2091,7 +2077,6 @@ class paint_labor(paint_process):
 
 class surface_finish_process(object):
     def surface_finish_steps(self):
-
         # Move blade carts to surface finishing area
         self.move2area["ct"] = self.move2area["time"]
         self.move2area["labor"] = self.move2area["ct"] * self.move2area["n_pers"]
@@ -2120,7 +2105,6 @@ class surface_finish_labor(surface_finish_process):
 
 class weight_balance_process(object):
     def weight_balance_steps(self):
-
         # Move blade / place in saddles
         if self.move2saddles["length"] <= 40.0:
             self.move2saddles["ct"] = self.move2saddles["time"]
@@ -2183,7 +2167,6 @@ class weight_balance_labor(weight_balance_process):
 
 class inspection_process(object):
     def inspection_steps(self):
-
         # Move blade and place it in shipping saddles
         if self.move2saddles["length"] <= 40.0:
             self.move2saddles["ct"] = self.move2saddles["time"]
@@ -2219,7 +2202,6 @@ class inspection_labor(inspection_process):
 
 class shipping_prep_process(object):
     def shipping_prep_steps(self):
-
         # Install final root bolts
         self.root_bolts["labor"] = self.root_bolts["n_bolts"] / self.root_bolts["rate"]
         self.root_bolts["ct"] = self.root_bolts["labor"] / self.root_bolts["n_pers"]
@@ -2300,7 +2282,6 @@ def compute_labor_ct(n_workers, action, rate, time, flag):
 
 
 def compute_total_labor_ct(data_struct, name, verbose, no_contribution2ct=[]):
-
     process = data_struct.__dict__.keys()
     labor_total_per_process = 0.0
     ct_total_per_process = 0.0
@@ -2315,7 +2296,6 @@ def compute_total_labor_ct(data_struct, name, verbose, no_contribution2ct=[]):
 
 class virtual_factory(object):
     def __init__(self, blade_specs, operation, gating_ct, non_gating_ct):
-
         # Blade inputs
         self.n_webs = blade_specs["n_webs"]
 
@@ -2619,7 +2599,6 @@ class virtual_factory(object):
         )  # [$] Equipment for shipping preparation is assumed at 8000 $ per meter of root diameter
 
     def execute_direct_labor_cost(self, operation, labor_hours):
-
         verbosity = 0
 
         direct_labor_cost_per_blade = np.zeros(len(operation))  # [$]
@@ -2641,7 +2620,6 @@ class virtual_factory(object):
         return total_direct_labor_cost_per_blade, total_labor_overhead_per_blade
 
     def execute_utility_cost(self, operation, ct):
-
         verbosity = 0
 
         utility_cost_per_blade = np.zeros(len(operation))  # [$]
@@ -2661,7 +2639,6 @@ class virtual_factory(object):
         return total_utility_cost_per_blade
 
     def execute_fixed_cost(self, operation, ct, blade_variable_cost_w_overhead):
-
         verbosity = 0
 
         building_cost_per_blade = np.zeros(len(operation))  # [$]
@@ -2759,7 +2736,6 @@ class virtual_factory(object):
 
 
 def compute_direct_labor_cost(self, labor_hours, operation, cum_rejr, verbosity):
-
     cost_per_blade = (
         (self.wage * (1.0 + self.beni / 100.0) * labor_hours) / (1.0 - self.avg_dt / 100.0) / (1.0 - cum_rejr)
     )
@@ -2776,7 +2752,6 @@ def compute_direct_labor_cost(self, labor_hours, operation, cum_rejr, verbosity)
 
 
 def compute_utility_cost(self, ct, power_consumpt, operation, cum_rejr, verbosity):
-
     cost_per_blade = (self.electr * power_consumpt * ct) / (1.0 - self.avg_dt / 100.0) / (1.0 - cum_rejr)
     cost_per_year = cost_per_blade * self.n_blades
 
@@ -2792,7 +2767,6 @@ def compute_utility_cost(self, ct, power_consumpt, operation, cum_rejr, verbosit
 
 
 def compute_cost_annuity(self, operation, investment, life, verbosity):
-
     cost_per_year = investment / life
     cost_per_blade = cost_per_year / self.n_blades
     annuity = pmt(self.crr / 100.0 / 12.0, life * 12.0, -investment) * 12.0
@@ -2838,8 +2812,8 @@ class BladeSplit(om.ExplicitComponent):
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
         self.layer_mat = rotorse_options["layer_mat"]
         self.layer_name = rotorse_options["layer_name"]
-        self.spar_cap_ss = rotorse_options["spar_cap_ss"]
-        self.spar_cap_ps = rotorse_options["spar_cap_ps"]
+        self.spar_cap_ss = rotorse_options["spar_cap_ss"].lower()
+        self.spar_cap_ps = rotorse_options["spar_cap_ps"].lower()
         self.id_joint_position = id_joint_position = rotorse_options["id_joint_position"]
 
         # Inputs - Whole blade
@@ -2958,7 +2932,6 @@ class BladeSplit(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-
         outputs["blade_length_inner"] = inputs["blade_length"] * inputs["joint_position"]
         inner_grid = inputs["s"][: self.id_joint_position + 1]
         outputs["s_inner"] = (inner_grid - inner_grid[0]) / (inner_grid[-1] - inner_grid[0])
@@ -3032,8 +3005,8 @@ class BladeCost(om.ExplicitComponent):
         self.n_xy = n_xy = rotorse_options["n_xy"]  # Number of coordinate points to describe the airfoil geometry
         self.layer_mat = rotorse_options["layer_mat"]
         self.layer_name = rotorse_options["layer_name"]
-        self.spar_cap_ss = rotorse_options["spar_cap_ss"]
-        self.spar_cap_ps = rotorse_options["spar_cap_ps"]
+        self.spar_cap_ss = rotorse_options["spar_cap_ss"].lower()
+        self.spar_cap_ps = rotorse_options["spar_cap_ps"].lower()
         mat_init_options = self.options["mod_options"]["materials"]
         self.n_mat = n_mat = mat_init_options["n_mat"]
 
@@ -3342,7 +3315,6 @@ class BladeCost(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # Inputs
         s = inputs["s"]
         blade_length = inputs["blade_length"]
@@ -3405,7 +3377,9 @@ class BladeCost(om.ExplicitComponent):
             for j in range(self.n_webs):
                 id_start = np.argmin(abs(xy_arc_nd_i - web_start_nd[j, i]))
                 id_end = np.argmin(abs(xy_arc_nd_i - web_end_nd[j, i]))
-                web_height[j, i] = abs((xy_coord_i[id_end, 1] - xy_coord_i[id_start, 0]) * chord[i])
+                web_height[j, i] = np.sqrt((xy_coord_i[id_start, 0] - xy_coord_i[id_end, 0])**2 +
+                                             (xy_coord_i[id_start, 1] - xy_coord_i[id_end, 1])**2) * (
+                                             chord[i])
 
         # Compute materials from the yaml
         layer_volume_span_ss = np.zeros((self.n_layers, self.n_span))
@@ -3455,7 +3429,6 @@ class BladeCost(om.ExplicitComponent):
         mass_shell_ps = 0.0
         tol_LE = 1.0e-5
         for i_lay in range(self.n_layers):
-
             if np.max(layer_thickness[i_lay, :]) > 0.0:
                 imin, imax = np.nonzero(layer_thickness[i_lay, :])[0][[0, -1]]
 
@@ -3539,12 +3512,12 @@ class BladeCost(om.ExplicitComponent):
                     layer_volume_span_interp_ss = np.interp(root_preform_length, s, layer_volume_span_ss[i_lay, :])
                     layer_volume_span_interp_ps = np.interp(root_preform_length, s, layer_volume_span_ps[i_lay, :])
                     add_volume_ss = np.trapz(
-                        [layer_volume_span_ss[i_lay, 0], layer_volume_span_interp_ss],
-                        [0, blade_length * root_preform_length],
+                        np.r_[layer_volume_span_ss[i_lay, 0], layer_volume_span_interp_ss],
+                        np.r_[0, blade_length * root_preform_length],
                     )
                     add_volume_ps = np.trapz(
-                        [layer_volume_span_ps[i_lay, 0], layer_volume_span_interp_ps],
-                        [0, blade_length * root_preform_length],
+                        np.r_[layer_volume_span_ps[i_lay, 0], layer_volume_span_interp_ps],
+                        np.r_[0, blade_length * root_preform_length],
                     )
                     volume_root_preform_ss += add_volume_ss
                     volume_root_preform_ps += add_volume_ps
@@ -3552,8 +3525,12 @@ class BladeCost(om.ExplicitComponent):
                     mass_root_preform_ps += add_volume_ps * rho_mat[i_mat]
                     width_ss_interp = np.interp(root_preform_length, s, width_ss)
                     width_ps_interp = np.interp(root_preform_length, s, width_ps)
-                    area_root_ss = np.trapz([width_ss[0], width_ss_interp], [0, blade_length * root_preform_length])
-                    area_root_ps = np.trapz([width_ps[0], width_ps_interp], [0, blade_length * root_preform_length])
+                    area_root_ss = np.trapz(
+                        np.r_[width_ss[0], width_ss_interp], np.r_[0, blade_length * root_preform_length]
+                    )
+                    area_root_ps = np.trapz(
+                        np.r_[width_ps[0], width_ps_interp], np.r_[0, blade_length * root_preform_length]
+                    )
 
                 # Fabric shear webs
                 if layer_web[i_lay] != 0:
@@ -3564,7 +3541,7 @@ class BladeCost(om.ExplicitComponent):
                         fabric2lay_webs[layer_web[i_lay] - 1] += add_volume / ply_t[i_mat]
 
                 # Spar caps
-                elif self.layer_name[i_lay] == self.spar_cap_ss:
+                elif self.layer_name[i_lay].lower() == self.spar_cap_ss:
                     spar_cap_width_ss[imin:imax] = width[imin:imax]
                     spar_cap_length_ss = (s[imax] - s[imin]) * blade_length
                     width_sc_start_ss = width[imin]
@@ -3581,7 +3558,7 @@ class BladeCost(om.ExplicitComponent):
                         )
                     else:
                         pultruded_spar_caps = False
-                elif self.layer_name[i_lay] == self.spar_cap_ps:
+                elif self.layer_name[i_lay].lower() == self.spar_cap_ps:
                     spar_cap_width_ps[imin:imax] = width[imin:imax]
                     spar_cap_length_ps = (s[imax] - s[imin]) * blade_length
                     width_sc_start_ps = width[imin]
@@ -3706,11 +3683,11 @@ class BladeCost(om.ExplicitComponent):
         spar_cap_ps_area = np.trapz(spar_cap_width_ps, blade_length * s)
         sect_perimeter_ss_interp = np.interp(root_preform_length, s, sect_perimeter_ss)
         ss_area_root = np.trapz(
-            [sect_perimeter_ss[0], sect_perimeter_ss_interp], [0, blade_length * root_preform_length]
+            np.r_[sect_perimeter_ss[0], sect_perimeter_ss_interp], np.r_[0, blade_length * root_preform_length]
         )
         sect_perimeter_ps_interp = np.interp(root_preform_length, s, sect_perimeter_ps)
         ps_area_root = np.trapz(
-            [sect_perimeter_ps[0], sect_perimeter_ps_interp], [0, blade_length * root_preform_length]
+            np.r_[sect_perimeter_ps[0], sect_perimeter_ps_interp], np.r_[0, blade_length * root_preform_length]
         )
         bom.blade_specs = {}
         bom.blade_specs["area_webs_w_flanges"] = web_area_w_flanges
@@ -3922,7 +3899,7 @@ class StandaloneBladeCost(om.Group):
             ),
         )
         self.connect("airfoils.name", "blade.interp_airfoils.name")
-        self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick")
+        self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick_discrete")
         self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
 
         self.add_subsystem(
@@ -4032,13 +4009,13 @@ class StandaloneBladeCost(om.Group):
             self.connect("rc.total_blade_cost", "total_bc.inner_blade_cost")
 
 
-def initialize_omdao_prob(wt_opt, modeling_options, wt_init):
-
+def initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options):
     materials = wt_init["materials"]
     wt_opt = assign_material_values(wt_opt, modeling_options, materials)
 
     blade = wt_init["components"]["blade"]
-    wt_opt = assign_blade_values(wt_opt, modeling_options, blade)
+    blade_DV = opt_options['design_variables']['blade']
+    wt_opt = assign_blade_values(wt_opt, modeling_options, blade_DV, blade)
 
     airfoils = wt_init["airfoils"]
     wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=True)
@@ -4047,7 +4024,6 @@ def initialize_omdao_prob(wt_opt, modeling_options, wt_init):
 
 
 if __name__ == "__main__":
-
     wisdem_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     example_dir = os.path.join(wisdem_dir, "examples", "02_reference_turbines")  # get path example 03_blade
     fname_wt_input = os.path.join(example_dir, "IEA-3p4-130-RWT.yaml")
@@ -4056,9 +4032,11 @@ if __name__ == "__main__":
     wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
     modeling_options["WISDEM"]["RotorSE"]["flag"] = False
-    wt_opt = om.Problem(model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options))
+    wt_opt = om.Problem(
+        model=StandaloneBladeCost(modeling_options=modeling_options, opt_options=opt_options), reports=False
+    )
     wt_opt.setup(derivatives=False)
     myopt = PoseOptimization(wt_init, modeling_options, opt_options)
     wt_opt = myopt.set_initial(wt_opt, wt_init)
-    wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init)
+    wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options)
     wt_opt.run_model()

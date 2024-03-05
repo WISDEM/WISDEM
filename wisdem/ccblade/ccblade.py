@@ -29,7 +29,6 @@ from scipy.optimize import brentq
 from scipy.interpolate import RectBivariateSpline, bisplev
 
 import wisdem.ccblade._bem as _bem
-from wisdem.airfoilprep import Airfoil
 
 # ------------------
 #  Airfoil Class
@@ -92,23 +91,6 @@ class CCAirfoil(object):
 
         if self.use_cm > 0:
             self.cm_spline = RectBivariateSpline(alpha, Re, cm, kx=kx, ky=ky, s=0.0001)
-
-    @classmethod
-    def initFromAerodynFile(cls, aerodynFile):
-        """convenience method for initializing with AeroDyn formatted files
-        Parameters
-        ----------
-        aerodynFile : str
-            location of AeroDyn style airfoiil file
-        Returns
-        -------
-        af : CCAirfoil
-            a constructed CCAirfoil object
-        """
-
-        af = Airfoil.initFromAerodynFile(aerodynFile)
-        alpha, Re, cl, cd, cm = af.createDataGrid()
-        return cls(alpha, Re, cl, cd, cm=cm)
 
     def max_eff(self, Re):
         # Get the angle of attack, cl and cd at max airfoil efficiency. For a cylinder, set the angle of attack to 0
@@ -206,7 +188,6 @@ class CCAirfoil(object):
             return cl, cd
 
     def derivatives(self, alpha, Re):
-
         # note: direct call to bisplev will be unnecessary with latest scipy update (add derivative method)
         tck_cl = self.cl_spline.tck[:3] + self.cl_spline.degrees  # concatenate lists
         tck_cd = self.cd_spline.tck[:3] + self.cd_spline.degrees
@@ -621,7 +602,6 @@ class CCBlade(object):
         ap = 0.0
 
         for i in range(self.iterRe):
-
             alpha, W, Re = _bem.relativewind(phi, a, ap, Vx, Vy, self.pitch, chord, theta, self.rho, self.mu)
             cl, cd = af.evaluate(alpha, Re)
 
@@ -646,7 +626,6 @@ class CCBlade(object):
         a = 0.0
         ap = 0.0
         for i in range(self.iterRe):
-
             fzero, a, ap = _bem.inductionfactors(
                 r, chord, self.Rhub, self.Rtip, phi, cl, cd, self.B, Vx, Vy, **self.bemoptions
             )
@@ -717,7 +696,6 @@ class CCBlade(object):
     def __loads(self, phi, rotating, r, chord, theta, af, Vx, Vy):
         """normal and tangential loads at one section (and optionally derivatives)"""
         if Vx != 0.0 and Vy != 0.0:
-
             cphi = np.cos(phi)
             sphi = np.sin(phi)
 
@@ -741,7 +719,6 @@ class CCBlade(object):
             alpha_deg = np.rad2deg(alpha_rad)
 
             if self.derivatives:
-
                 # derivative of residual function
                 if rotating:
                     dR_dx, da_dx, dap_dx = self.__residualDerivatives(phi, r, chord, theta, af, Vx, Vy)
@@ -961,7 +938,6 @@ class CCBlade(object):
 
         # ---------------- loop across blade ------------------
         for i in range(n):
-
             # index dependent arguments
             if self.inverse_analysis == True:
                 args = (self.r[i], self.chord[i], self.cl[i], self.cd[i], self.af[i], Vx[i], Vy[i])
@@ -969,11 +945,9 @@ class CCBlade(object):
                 args = (self.r[i], self.chord[i], self.theta[i], self.af[i], Vx[i], Vy[i])
 
             if not rotating:  # non-rotating
-
                 phi_star = np.pi / 2.0
 
             else:
-
                 # ------ BEM solution method see (Ning, doi:10.1002/we.1636) ------
 
                 # set standard limits
@@ -982,7 +956,6 @@ class CCBlade(object):
                 phi_upper = np.pi / 2
 
                 if errf(phi_lower, *args) * errf(phi_upper, *args) > 0:  # an uncommon but possible case
-
                     if errf(-np.pi / 4, *args) < 0 and errf(-epsilon, *args) > 0:
                         phi_lower = -np.pi / 4
                         phi_upper = -epsilon
@@ -994,7 +967,6 @@ class CCBlade(object):
                     phi_star = brentq(errf, phi_lower, phi_upper, args=args, disp=False)
 
                 except ValueError:
-
                     warnings.warn("error.  check input values.")
                     phi_star = 0.0
 
@@ -1061,7 +1033,6 @@ class CCBlade(object):
 
         derivs = {}
         if self.derivatives:
-
             # chain rule
             dNp_dw = dNp_dVx * dVx_dw + dNp_dVy * dVy_dw
             dTp_dw = dTp_dVx * dVx_dw + dTp_dVy * dVy_dw
@@ -1269,7 +1240,6 @@ class CCBlade(object):
 
         azimuth_angles = np.linspace(0.0, 2 * np.pi, nsec + 1)[:-1]
         for i in range(npts):  # iterate across conditions
-
             for azimuth in azimuth_angles:  # integrate across azimuth
                 ca = np.cos(azimuth)
                 sa = np.sin(azimuth)
@@ -1370,7 +1340,6 @@ class CCBlade(object):
             CMb = Mb / (q * self.rotorR * A)
 
             if self.derivatives:
-
                 # s = [precone, tilt, hubHt, Rhub, Rtip, precurvetip, presweeptip, yaw, shear, Uinf, Omega, pitch]
 
                 dR_ds = np.r_[
@@ -1753,7 +1722,6 @@ class CCBlade(object):
         dP_dv,
         npts,
     ):
-
         # pack derivatives into dictionary
         dT = {}
         dY = {}

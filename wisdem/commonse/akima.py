@@ -35,7 +35,7 @@ def abs_smooth_dv(x, x_deriv, delta_x):
 
     else:
         y_deriv = 2.0 * x * x_deriv / (2.0 * delta_x)
-        y = x ** 2 / (2.0 * delta_x) + delta_x / 2.0
+        y = x**2 / (2.0 * delta_x) + delta_x / 2.0
 
     return y, y_deriv
 
@@ -89,13 +89,12 @@ class Akima(object):
         yptd = np.vstack([np.zeros((ncp, ncp), dtype=ypt.dtype), np.eye(ncp, dtype=ypt.dtype)])
 
         dx = xpt[1:] - xpt[:-1]
-        dx2 = dx ** 2
+        dx2 = dx**2
         dxd = xptd[:, 1:] - xptd[:, :-1]
 
         p0 = ypt[:, :-1]
 
         for jj in range(vec_size):
-
             ypt_jj = ypt[jj, :]
 
             # Compute segment slopes
@@ -179,7 +178,7 @@ class Akima(object):
             temp = (td[:, :-1] + td[:, 1:] - 2.0 * md[:, 2 : ncp + 1]) * dx2 - (
                 t1 + t2 - 2.0 * m[2 : ncp + 1]
             ) * 2 * dx * dxd
-            p3d[jj, ...] = np.divide(temp, dx2 ** 2, out=np.zeros_like(p3d[jj, ...]), where=dx2 != 0.0)
+            p3d[jj, ...] = np.divide(temp, dx2**2, out=np.zeros_like(p3d[jj, ...]), where=dx2 != 0.0)
 
         self.xpt = xpt
 
@@ -201,7 +200,6 @@ class Akima(object):
         return self.interp(x)
 
     def interp(self, x):
-
         xcp = self.xpt
         ncp = np.size(xcp)
         n = np.size(x)
@@ -215,7 +213,6 @@ class Akima(object):
         # All vectorized points uses same grid, so find these once.
         j_idx = np.zeros(n, dtype=np.int_)
         for i in range(n):
-
             # Find location in array (use end segments if out of bounds)
             if x[i] < xcp[0]:
                 j = 0

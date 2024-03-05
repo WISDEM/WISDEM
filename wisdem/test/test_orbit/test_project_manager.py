@@ -10,6 +10,7 @@ import pandas as pd
 import pytest
 
 from wisdem.orbit import ProjectManager
+from wisdem.orbit.phases import DesignPhase, InstallPhase
 from wisdem.orbit.manager import ProjectProgress
 from wisdem.orbit.core.library import extract_library_specs
 from wisdem.test.test_orbit.data import test_weather
@@ -20,10 +21,10 @@ weather_df = pd.DataFrame(test_weather).set_index("datetime")
 config = extract_library_specs("config", "project_manager")
 complete_project = extract_library_specs("config", "complete_project")
 
+
 ### Top Level
 @pytest.mark.parametrize("weather", (None, weather_df))
 def test_complete_run(weather):
-
     project = ProjectManager(config, weather=weather)
     project.run()
 
@@ -41,11 +42,9 @@ def test_for_required_phase_structure():
     """
 
     for p in ProjectManager._install_phases:
-
         assert isinstance(p.expected_config, dict)
 
     for p in ProjectManager._design_phases:
-
         assert isinstance(p.expected_config, dict)
         assert isinstance(p.output_config, dict)
 
@@ -103,11 +102,11 @@ def test_expected_config_merging():
 
 
 def test_find_key_match():
-    class SpecificTurbineInstallation:
+    class SpecificTurbineInstallation(InstallPhase):
         expected_config = {}
 
     TestProjectManager = deepcopy(ProjectManager)
-    TestProjectManager._install_phases.append(SpecificTurbineInstallation)
+    TestProjectManager.register_install_phase(SpecificTurbineInstallation)
 
     phase_dict = TestProjectManager.phase_dict()
     assert "SpecificTurbineInstallation" in phase_dict.keys()
@@ -124,7 +123,6 @@ def test_find_key_match():
     ]
 
     for test in tests:
-
         i, expected = test
         response = TestProjectManager.find_key_match(i)
 
@@ -137,13 +135,11 @@ def test_find_key_match():
     ]
 
     for f in fails:
-
         assert TestProjectManager.find_key_match(f) is None
 
 
 ### Overlapping Install Phases
 def test_install_phase_start_parsing():
-
     config_mixed_starts = deepcopy(config)
     config_mixed_starts["install_phases"] = {
         "MonopileInstallation": 0,
@@ -161,7 +157,6 @@ def test_install_phase_start_parsing():
 
 
 def test_chained_dependencies():
-
     config_chained = deepcopy(config)
     config_chained["spi_vessel"] = "test_scour_protection_vessel"
     config_chained["scour_protection"] = {
@@ -223,7 +218,6 @@ def test_index_starts(m_start, t_start):
     ],
 )
 def test_start_dates_with_weather(m_start, t_start, expected):
-
     config_with_defined_starts = deepcopy(config)
     config_with_defined_starts["install_phases"] = {
         "MonopileInstallation": m_start,
@@ -266,9 +260,82 @@ def test_duplicate_phase_definitions():
     assert df.loc[("TurbineInstallation", "Attach Tower Section")] == 10
 
 
+def test_custom_install_phases():
+    # Not a subclass
+    class CustomInstallPhase:
+        pass
+
+    with pytest.raises(ValueError):
+        ProjectManager.register_design_phase(CustomInstallPhase)
+
+    # Wrong subclass
+    class CustomDesignPhase(DesignPhase):
+        pass
+
+    with pytest.raises(ValueError):
+        ProjectManager.register_install_phase(CustomDesignPhase)
+
+    # Name already taken
+    class MonopileInstallation(InstallPhase):
+        pass
+
+    with pytest.raises(ValueError):
+        ProjectManager.register_install_phase(MonopileInstallation)
+
+    # Bad name format
+    class MonopileInstallation_Custom(InstallPhase):
+        pass
+
+    with pytest.raises(ValueError):
+        ProjectManager.register_install_phase(MonopileInstallation_Custom)
+
+    # Successful registration
+    class CustomInstallPhase(InstallPhase):
+        pass
+
+    ProjectManager.register_install_phase(CustomInstallPhase)
+    assert ProjectManager.find_key_match("CustomInstallPhase") == CustomInstallPhase
+
+
+def test_custom_design_phases():
+    # Not a subclass
+    class CustomDesignPhase:
+        pass
+
+    with pytest.raises(ValueError):
+        ProjectManager.register_design_phase(CustomDesignPhase)
+
+    # Wrong subclass
+    class CustomInstallPhase(InstallPhase):
+        pass
+
+    with pytest.raises(ValueError):
+        ProjectManager.register_design_phase(CustomInstallPhase)
+
+    # Name already taken
+    class MonopileDesign(DesignPhase):
+        pass
+
+    with pytest.raises(ValueError):
+        ProjectManager.register_install_phase(MonopileDesign)
+
+    # Bad name format
+    class MonopileDesign_Custom(DesignPhase):
+        pass
+
+    with pytest.raises(ValueError):
+        ProjectManager.register_install_phase(MonopileDesign_Custom)
+
+    # Successful registration
+    class CustomDesignPhase(DesignPhase):
+        pass
+
+    ProjectManager.register_design_phase(CustomDesignPhase)
+    assert ProjectManager.find_key_match("CustomDesignPhase") == CustomDesignPhase
+
+
 ### Design Phase Interactions
 def test_design_phases():
-
     config_with_design = deepcopy(config)
 
     # Add MonopileDesign
@@ -293,7 +360,6 @@ def test_design_phases():
 
 ### Outputs
 def test_resolve_project_capacity():
-
     # Missing turbine rating
     config1 = {"plant": {"capacity": 600, "num_turbines": 40}}
 
@@ -356,7 +422,6 @@ def test_resolve_project_capacity():
 
 ### Exceptions
 def test_incomplete_config():
-
     incomplete_config = deepcopy(config)
     _ = incomplete_config["site"].pop("depth")
 
@@ -366,7 +431,6 @@ def test_incomplete_config():
 
 
 def test_wrong_phases():
-
     wrong_phases = deepcopy(config)
     wrong_phases["install_phases"].append("IncorrectPhaseName")
 
@@ -376,7 +440,6 @@ def test_wrong_phases():
 
 
 def test_bad_dates():
-
     bad_dates = deepcopy(config)
     bad_dates["install_phases"] = {
         "MonopileInstallation": "03/01/2015",
@@ -389,7 +452,6 @@ def test_bad_dates():
 
 
 def test_no_defined_start():
-
     missing_start = deepcopy(config)
     missing_start["install_phases"] = {
         "MonopileInstallation": ("TurbineInstallation", 0.1),
@@ -402,7 +464,6 @@ def test_no_defined_start():
 
 
 def test_circular_dependencies():
-
     circular_deps = deepcopy(config)
     circular_deps["spi_vessel"] = "test_scour_protection_vessel"
     circular_deps["scour_protection"] = {
@@ -421,7 +482,6 @@ def test_circular_dependencies():
 
 
 def test_dependent_phase_ordering():
-
     wrong_order = deepcopy(config)
     wrong_order["spi_vessel"] = "test_scour_protection_vessel"
     wrong_order["scour_protection"] = {
@@ -441,7 +501,6 @@ def test_dependent_phase_ordering():
 
 
 def test_ProjectProgress():
-
     data = [
         ("Export System", 10),
         ("Offshore Substation", 20),
@@ -481,7 +540,6 @@ def test_ProjectProgress():
 
 
 def test_ProjectProgress_with_incomplete_project():
-
     project = ProjectManager(config)
     project.run()
 
@@ -496,7 +554,6 @@ def test_ProjectProgress_with_incomplete_project():
 
 
 def test_ProjectProgress_with_complete_project():
-
     project = ProjectManager(complete_project)
     project.run()
 
@@ -522,7 +579,6 @@ def test_ProjectProgress_with_complete_project():
 
 
 def test_monthly_expenses():
-
     project = ProjectManager(complete_project)
     project.run()
     _ = project.monthly_expenses
@@ -538,7 +594,6 @@ def test_monthly_expenses():
 
 
 def test_monthly_revenue():
-
     project = ProjectManager(complete_project)
     project.run()
     _ = project.monthly_revenue
@@ -555,7 +610,6 @@ def test_monthly_revenue():
 
 
 def test_cash_flow():
-
     project = ProjectManager(complete_project)
     project.run()
     _ = project.cash_flow
@@ -573,7 +627,6 @@ def test_cash_flow():
 
 
 def test_npv():
-
     project = ProjectManager(complete_project)
     project.run()
     baseline = project.npv
@@ -610,7 +663,6 @@ def test_npv():
 
 
 def test_soft_costs():
-
     project = ProjectManager(complete_project)
     baseline = project.soft_capex
 
@@ -646,7 +698,6 @@ def test_soft_costs():
 
 
 def test_project_costs():
-
     project = ProjectManager(complete_project)
     baseline = project.project_capex
 
@@ -672,7 +723,6 @@ def test_project_costs():
 
 
 def test_capex_categories():
-
     project = ProjectManager(complete_project)
     project.run()
     baseline = project.capex_breakdown

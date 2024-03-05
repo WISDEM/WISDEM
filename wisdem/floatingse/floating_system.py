@@ -5,8 +5,8 @@ import wisdem.commonse.utilities as util
 from wisdem.commonse import gravity
 from wisdem.commonse.cylinder_member import NULL, MEMMAX
 
-NNODES_MAX = 200  # 1000
-NELEM_MAX = 200  # 1000
+NNODES_MAX = 500  # 1000
+NELEM_MAX = 500  # 1000
 RIGID = 1e30
 EPS = 1e-6
 
@@ -380,7 +380,6 @@ class PlatformTurbineSystem(om.ExplicitComponent):
         self.add_output("platform_I_total", np.zeros(6), units="kg*m**2")
 
     def compute(self, inputs, outputs):
-
         # Mass summaries
         m_platform = inputs["platform_hull_mass"] + inputs["platform_ballast_mass"]
         cg_platform = inputs["platform_hull_center_of_mass"]

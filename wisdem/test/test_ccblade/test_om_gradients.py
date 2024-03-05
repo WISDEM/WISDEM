@@ -4,6 +4,7 @@ import unittest
 import numpy as np
 import openmdao.api as om
 from openmdao.utils.assert_utils import assert_check_partials
+
 from wisdem.ccblade.ccblade_component import CCBladeLoads, CCBladeTwist, CCBladeEvaluate, CCBladeGeometry
 
 np.random.seed(314)
@@ -13,7 +14,7 @@ class Test(unittest.TestCase):
     def test_ccblade_geometry(self):
         n_span = 10
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         comp = CCBladeGeometry(n_span=n_span)
         prob.model.add_subsystem("comp", comp, promotes=["*"])
@@ -32,7 +33,7 @@ class Test(unittest.TestCase):
         assert_check_partials(check)
 
     def test_ccblade_loads(self):
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         # Load in airfoil and blade shape inputs for NREL 5MW
         npzfile = np.load(
@@ -106,7 +107,7 @@ class Test(unittest.TestCase):
         new_check = {}
         for comp_name in check:
             new_check[comp_name] = {}
-            for (output_name, input_name) in check[comp_name]:
+            for output_name, input_name in check[comp_name]:
                 if "airfoil" not in input_name and "rho" not in input_name and "mu" not in input_name:
                     new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
 
@@ -119,7 +120,7 @@ class Test(unittest.TestCase):
         However, it ensures that we have the derivatives set up in the component
         to actually be finite differenced.
         """
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         # Add some arbitrary inputs
         # Load in airfoil and blade shape inputs for NREL 5MW
@@ -202,7 +203,7 @@ class Test(unittest.TestCase):
         new_check = {}
         for comp_name in check:
             new_check[comp_name] = {}
-            for (output_name, input_name) in check[comp_name]:
+            for output_name, input_name in check[comp_name]:
                 if not input_name in ["airfoil", "rho", "mu"]:
                     new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
 
@@ -210,7 +211,7 @@ class Test(unittest.TestCase):
 
     def test_ccblade_standalone(self):
         """"""
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         # Add some arbitrary inputs
         # Load in airfoil and blade shape inputs for NREL 5MW
@@ -287,7 +288,7 @@ class Test(unittest.TestCase):
         new_check = {}
         for comp_name in check:
             new_check[comp_name] = {}
-            for (output_name, input_name) in check[comp_name]:
+            for output_name, input_name in check[comp_name]:
                 if "airfoil" not in input_name and "rho" not in input_name and "mu" not in input_name:
                     new_check[comp_name][(output_name, input_name)] = check[comp_name][(output_name, input_name)]
 

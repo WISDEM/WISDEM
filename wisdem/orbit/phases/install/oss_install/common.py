@@ -135,7 +135,6 @@ def install_topside(vessel, topside, **kwargs):
         yield bolt_transition_piece(vessel, **kwargs)
 
     elif connection == "grouted":
-
         yield pump_transition_piece_grout(vessel, **kwargs)
         yield cure_transition_piece_grout(vessel, **kwargs)
 

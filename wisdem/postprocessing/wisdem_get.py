@@ -38,6 +38,13 @@ def get_transition_height(prob):
     return prob["towerse.foundation_height"]
 
 
+def get_tower_outfitting(prob):
+    if is_monopile(prob):
+        return np.r_[prob["fixedse.member.outfitting_factor"], prob["towerse.member.outfitting_factor"][1:]]
+    else:
+        return prob["towerse.member.outfitting_factor"]
+
+
 def get_tower_E(prob):
     if is_monopile(prob):
         return np.r_[prob["fixedse.member.E"], prob["towerse.member.E"][1:]]

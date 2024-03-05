@@ -1,14 +1,15 @@
 # 0 ---------- (marker for docs)
 import numpy as np
 import openmdao.api as om
-from wisdem.nrelcsm.nrel_csm_mass_2015 import nrel_csm_2015
+
 from wisdem.nrelcsm.nrel_csm_orig import aep_csm
+from wisdem.nrelcsm.nrel_csm_mass_2015 import nrel_csm_2015
 
 # 0 ---------- (marker for docs)
 
 # 1 ---------- (marker for docs)
 # OpenMDAO Problem instance
-prob = om.Problem()
+prob = om.Problem(reports=False)
 prob.model = nrel_csm_2015()
 prob.setup()
 
@@ -76,12 +77,11 @@ aep = np.zeros(Rating.shape)
 npts = Rating.size
 print("Running, ", npts, " points in the parametric study")
 for k in range(npts):
-
     # Populate remaining NREL CSM inputs for this iteration
     prob["machine_rating"] = Rating[k]
     prob["rotor_diameter"] = Diameter[k]
     prob["blade_user_exp"] = Bladeexp[k]
-    prob["hub_height"] = hub_height = 0.5 * Diameter[k] + 30.0
+    prob["tower_length"] = hub_height = 0.5 * Diameter[k] + 30.0
 
     # Compute Turbine capital cost using the NREL CSM (2015) and store the result
     prob.run_model()

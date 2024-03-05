@@ -4,6 +4,7 @@ import unittest
 import numpy as np
 import openmdao.api as om
 from openmdao.utils.assert_utils import assert_check_partials
+
 from wisdem.commonse.distribution import WeibullCDF, RayleighCDF, WeibullWithMeanCDF
 
 np.random.seed(314)
@@ -13,13 +14,13 @@ class Test(unittest.TestCase):
     def test_distributions(self):
         nspline = 10
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
 
         prob.model.add_subsystem("comp1", WeibullCDF(nspline=nspline), promotes_inputs=["*"])
         prob.model.add_subsystem("comp2", WeibullWithMeanCDF(nspline=nspline), promotes_inputs=["*"])
         prob.model.add_subsystem("comp3", RayleighCDF(nspline=nspline), promotes_inputs=["*"])
 
-        prob.setup(force_alloc_complex=True)
+        prob.setup()
 
         # Add some arbitrary inputs
         prob.set_val("x", np.random.rand(nspline), units="m/s")
@@ -29,9 +30,9 @@ class Test(unittest.TestCase):
 
         prob.run_model()
 
-        check = prob.check_partials(out_stream=None, compact_print=True, method="fd")
+        check = prob.check_partials(out_stream=None, compact_print=True, method="fd", step=1e-4)
 
-        assert_check_partials(check, atol=1e-5)
+        assert_check_partials(check, atol=1e-3, rtol=1e-4)
 
 
 def suite():

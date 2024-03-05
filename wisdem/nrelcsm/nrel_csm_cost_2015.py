@@ -2,9 +2,8 @@
 Copyright (c) NREL. All rights reserved.
 """
 
-import openmdao.api as om
-
 import numpy as np
+import openmdao.api as om
 
 
 ###### Rotor
@@ -372,8 +371,10 @@ class GearboxCost2015(om.ExplicitComponent):
     ----------
     gearbox_mass : float, [kg]
         component mass
-    gearbox_mass_cost_coeff : float, [USD/kg]
-        gearbox mass-cost coeff
+    gearbox_torque_density : float, [N*m/kg]
+        In 2024, modern 5-7MW gearboxes are able to reach 200 Nm/kg
+    gearbox_torque_cost : float, [USD/kN/m]
+        In 2024, modern 5-7MW gearboxes cost approx $50/kNm
 
     Returns
     -------
@@ -384,15 +385,14 @@ class GearboxCost2015(om.ExplicitComponent):
 
     def setup(self):
         self.add_input("gearbox_mass", 0.0, units="kg")
-        self.add_input("gearbox_mass_cost_coeff", 12.9, units="USD/kg")
+        self.add_input("gearbox_torque_density", 200.0, units='N*m/kg', desc='In 2024, modern 5-7MW gearboxes are able to reach 200 Nm/kg')
+        self.add_input("gearbox_torque_cost", 50.0, units='USD/kN/m', desc='In 2024, modern 5-7MW gearboxes cost approx $50/kNm')
 
         self.add_output("gearbox_cost", 0.0, units="USD")
 
     def compute(self, inputs, outputs):
-        gearbox_mass = inputs["gearbox_mass"]
-        gearbox_mass_cost_coeff = inputs["gearbox_mass_cost_coeff"]
 
-        outputs["gearbox_cost"] = gearbox_mass_cost_coeff * gearbox_mass
+        outputs["gearbox_cost"] = inputs["gearbox_mass"] * inputs["gearbox_torque_density"] * inputs["gearbox_torque_cost"] * 1e-3
 
 
 # -------------------------------------------------------------------------------
@@ -678,7 +678,7 @@ class NacelleCoverCost2015(om.ExplicitComponent):
 # ---------------------------------------------------------------------------------
 class ElecConnecCost2015(om.ExplicitComponent):
     """
-    Compute electrical connection cost in the form of :math:`cost = k*mass`.
+    Compute electrical connection cost in the form of :math:`cost = k*rating`.
     Value of :math:`k` was NOT updated in 2015 and remains the same as original CSM, $41.85 USD/kg.
     Cost includes materials and manufacturing costs.
 
@@ -712,7 +712,7 @@ class ElecConnecCost2015(om.ExplicitComponent):
 # ---------------------------------------------------------------------------------
 class ControlsCost2015(om.ExplicitComponent):
     """
-    Compute controls cost in the form of :math:`cost = k*mass`.
+    Compute controls cost in the form of :math:`cost = k*rating`.
     Value of :math:`k` was NOT updated in 2015 and remains the same as original CSM, $21.15 USD/kg.
     Cost includes materials and manufacturing costs.
 
@@ -1343,7 +1343,6 @@ class Outputs2Screen(om.ExplicitComponent):
         self.options.declare("verbosity", default=False)
 
     def setup(self):
-
         self.add_input("blade_cost", 0.0, units="USD")
         self.add_input("blade_mass", 0.0, units="kg")
         self.add_input("hub_cost", 0.0, units="USD")
@@ -1390,7 +1389,6 @@ class Outputs2Screen(om.ExplicitComponent):
         self.add_input("turbine_mass_tcc", 0.0, units="kg")
 
     def compute(self, inputs, outputs):
-
         if self.options["verbosity"] == True:
             print("################################################")
             print("Computation of costs of the main turbine components from TurbineCostSE")
@@ -1506,7 +1504,8 @@ class Turbine_CostsSE_2015(om.Group):
         self.set_input_defaults("spinner_mass_cost_coeff", units="USD/kg", val=11.1)
         self.set_input_defaults("lss_mass_cost_coeff", units="USD/kg", val=11.9)
         self.set_input_defaults("bearing_mass_cost_coeff", units="USD/kg", val=4.5)
-        self.set_input_defaults("gearbox_mass_cost_coeff", units="USD/kg", val=12.9)
+        self.set_input_defaults("gearbox_torque_density", units="N*m/kg", val=200.)
+        self.set_input_defaults("gearbox_torque_cost", units="USD/kN/m", val=50.)
         self.set_input_defaults("hss_mass_cost_coeff", units="USD/kg", val=6.8)
         self.set_input_defaults("brake_mass_cost_coeff", units="USD/kg", val=3.6254)
         self.set_input_defaults("generator_mass_cost_coeff", units="USD/kg", val=12.4)

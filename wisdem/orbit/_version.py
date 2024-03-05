@@ -41,8 +41,8 @@ def get_config():
     cfg.VCS = "git"
     cfg.style = "pep440"
     cfg.tag_prefix = ""
-    cfg.parentdir_prefix = "ORBIT-"
-    cfg.versionfile_source = "ORBIT/_version.py"
+    cfg.parentdir_prefix = "orbit-"
+    cfg.versionfile_source = "orbit/_version.py"
     cfg.verbose = False
     return cfg
 

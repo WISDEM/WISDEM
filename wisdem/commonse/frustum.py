@@ -78,7 +78,7 @@ def frustumCG(rb_0, rt_0, h, diamFlag=False):
         rb, rt = 0.5 * rb_0, 0.5 * rt_0
     else:
         rb, rt = rb_0, rt_0
-    return 0.25 * h * (rb ** 2 + 2.0 * rb * rt + 3.0 * rt ** 2) / (rb ** 2 + rb * rt + rt ** 2)
+    return 0.25 * h * (rb**2 + 2.0 * rb * rt + 3.0 * rt**2) / (rb**2 + rb * rt + rt**2)
 
 
 def frustumIzz(rb_0, rt_0, h, diamFlag=False):
@@ -106,7 +106,7 @@ def frustumIzz(rb_0, rt_0, h, diamFlag=False):
     # Integrate 2*pi*r*r^2 dr dz from r=0 to r(z), z=0 to h
     # Also equals 0.3*Vol * (rt**5.0 - rb**5.0) / (rt**3.0 - rb**3.0)
     # Also equals (0.1*np.pi*h * (rt**5.0 - rb**5.0) / (rt - rb) )
-    return 0.1 * np.pi * h * (rt ** 4.0 + rb * rt ** 3 + rb ** 2 * rt ** 2 + rb ** 3 * rt + rb ** 4.0)
+    return 0.1 * np.pi * h * (rt**4.0 + rb * rt**3 + rb**2 * rt**2 + rb**3 * rt + rb**4.0)
 
 
 def frustumIxx(rb_0, rt_0, h, diamFlag=False):
@@ -135,11 +135,11 @@ def frustumIxx(rb_0, rt_0, h, diamFlag=False):
     A = 0.5 * frustumIzz(rb_0, rt_0, h)
     B = (
         np.pi
-        * h ** 3
+        * h**3
         / 80.0
         * (
-            (rb ** 4 + 4.0 * rb ** 3 * rt + 10.0 * rb ** 2 * rt ** 2 + 4.0 * rb * rt ** 3 + rt ** 4)
-            / (rb ** 2 + rb * rt + rt ** 2)
+            (rb**4 + 4.0 * rb**3 * rt + 10.0 * rb**2 * rt**2 + 4.0 * rb * rt**3 + rt**4)
+            / (rb**2 + rb * rt + rt**2)
         )
     )
     return A + B
@@ -203,8 +203,8 @@ def frustumShellCG(rb_0, rt_0, t, h, diamFlag=False):
     rb_i = rb - t
     rt_o = rt
     rt_i = rt - t
-    A = (rb_o ** 2 + 2.0 * rb_o * rt_o + 3.0 * rt_o ** 2) - (rb_i ** 2 + 2.0 * rb_i * rt_i + 3.0 * rt_i ** 2)
-    B = (rb_o ** 2 + rb_o * rt_o + rt_o ** 2) - (rb_i ** 2 + rb_i * rt_i + rt_i ** 2)
+    A = (rb_o**2 + 2.0 * rb_o * rt_o + 3.0 * rt_o**2) - (rb_i**2 + 2.0 * rb_i * rt_i + 3.0 * rt_i**2)
+    B = (rb_o**2 + rb_o * rt_o + rt_o**2) - (rb_i**2 + rb_i * rt_i + rt_i**2)
     return h * A / 4.0 / B
 
 

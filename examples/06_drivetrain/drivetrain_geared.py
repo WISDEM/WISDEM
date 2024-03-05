@@ -15,6 +15,7 @@ opt["WISDEM"] = {}
 opt["WISDEM"]["n_dlc"] = 1
 opt["WISDEM"]["DriveSE"] = {}
 opt["WISDEM"]["DriveSE"]["direct"] = False
+opt["WISDEM"]["DriveSE"]["use_gb_torque_density"] = False
 opt["WISDEM"]["DriveSE"]["hub"] = {}
 opt["WISDEM"]["DriveSE"]["hub"]["hub_gamma"] = 2.0
 opt["WISDEM"]["DriveSE"]["hub"]["spinner_gamma"] = 1.5
@@ -30,7 +31,7 @@ opt["flags"]["generator"] = False
 # ---
 
 # Initialize OpenMDAO problem
-prob = om.Problem()
+prob = om.Problem(reports=False)
 prob.model = DrivetrainSE(modeling_options=opt)
 # ---
 
@@ -39,7 +40,8 @@ if opt_flag:
     # Choose the optimizer to use
     prob.driver = om.ScipyOptimizeDriver()
     prob.driver.options["optimizer"] = "SLSQP"
-    prob.driver.options["tol"] = 1e-5
+    prob.driver.options["tol"] = 1e-2
+    prob.driver.options["maxiter"] = 5
 
     # Add objective
     prob.model.add_objective("nacelle_mass", scaler=1e-6)
@@ -129,7 +131,7 @@ prob["gear_ratio"] = 96.0
 
 myones = np.ones(2)
 prob["lss_diameter"] = 1.0 * myones
-prob["hss_diameter"] = 0.288 * myones
+prob["hss_diameter"] = 0.5 * myones
 prob["lss_wall_thickness"] = 0.288 * myones
 prob["hss_wall_thickness"] = 0.1 * myones
 prob["bedplate_web_thickness"] = 0.1

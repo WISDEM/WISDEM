@@ -274,7 +274,6 @@ def transfer_gbf_substructures_from_storage(group, feed, distance, queue, towing
     transit_time = distance / group.transit_speed
 
     while True:
-
         start = group.env.now
         assembly = yield feed.get()
         delay = group.env.now - start
@@ -330,7 +329,6 @@ def install_gravity_base_foundations(vessel, queue, distance, substructures, sta
     n = 0
     while n < substructures:
         if queue.vessel:
-
             start = vessel.env.now
             if n == 0:
                 vessel.mobilize()
@@ -371,6 +369,7 @@ def install_gravity_base_foundations(vessel, queue, distance, substructures, sta
                 num_vessels=station_keeping_vessels,
             )
             yield queue.vessel.release.succeed()
+            vessel.submit_debug_log(progress="Substructure")
             n += 1
 
         else:

@@ -2,6 +2,7 @@ import unittest
 from math import pi
 
 import numpy as np
+
 from wisdem.ccblade.Polar import Polar, blend
 
 
@@ -117,7 +118,7 @@ class TestBlend(unittest.TestCase):
         ]
         Re = 1
 
-        self.polar1 = Polar(Re, alpha, cl, cd, cm)
+        self.polar1 = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm)
 
         alpha = [
             -3.04,
@@ -240,10 +241,9 @@ class TestBlend(unittest.TestCase):
             -0.0633,
         ]
 
-        self.polar2 = Polar(Re, alpha, cl, cd, cm)
+        self.polar2 = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm)
 
     def test_blend1(self):
-
         polar3 = blend(self.polar1, self.polar2, 0.5)
 
         alpha_blend = [
@@ -366,7 +366,6 @@ class TestBlend(unittest.TestCase):
         np.testing.assert_allclose(cm3, cm_blend, atol=1e-3)
 
     def test_blend2(self):
-
         polar3 = blend(self.polar1, self.polar2, 0.7)
 
         alpha_blend = [
@@ -489,7 +488,6 @@ class TestBlend(unittest.TestCase):
         np.testing.assert_allclose(cm3, cm_blend, atol=1e-3)
 
     def test_blend3(self):
-
         polar3 = blend(self.polar1, self.polar2, 0.2)
 
         alpha_blend = [
@@ -757,8 +755,8 @@ class Test3DStall(unittest.TestCase):
         cm_zeros = np.zeros(len(cm))
         Re = 1
 
-        self.polar = Polar(Re, alpha, cl, cd, cm)
-        self.polar2 = Polar(Re, alpha, cl, cd, cm_zeros)
+        self.polar = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm)
+        self.polar2 = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm_zeros)
 
     def test_stall1(self):
         R = 2.4
@@ -772,17 +770,76 @@ class Test3DStall(unittest.TestCase):
             r / R, chord / r, tsr, alpha_max_corr=30, alpha_linear_min=-4, alpha_linear_max=4
         )
 
-        cl_3d = [-0.84628298, -0.75228154, -0.64170322, -0.53398298, -0.43026406,
-       -0.32825998, -0.22739914, -0.12996799, -0.04053948,  0.06203622,
-        0.21891545,  0.33235184,  0.4337843 ,  0.55007878,  0.67551912,
-        0.73636683,  0.81036171,  0.89750377,  0.98121612,  1.06378525,
-        1.14521114,  1.20948854,  1.26804979,  1.32832588,  1.328     ,
-        1.132     ,  1.061     ,  1.043     ,  1.043     ,  1.048     ,
-        0.9595    ,  0.8195    ,  0.7]
-        cd_3d = [0.027, 0.025, 0.024, 0.023, 0.022, 0.022, 0.023, 0.025, 0.027,
-       0.028, 0.024, 0.019, 0.017, 0.015, 0.017, 0.019, 0.021, 0.024,
-       0.027, 0.031, 0.037, 0.046, 0.058, 0.074, 0.088, 0.101, 0.114,
-       0.128, 0.142, 0.155, 0.321, 0.525, 0.742]
+        cl_3d = [
+            -0.84628298,
+            -0.75228154,
+            -0.64170322,
+            -0.53398298,
+            -0.43026406,
+            -0.32825998,
+            -0.22739914,
+            -0.12996799,
+            -0.04053948,
+            0.06203622,
+            0.21891545,
+            0.33235184,
+            0.4337843,
+            0.55007878,
+            0.67551912,
+            0.73636683,
+            0.81036171,
+            0.89750377,
+            0.98121612,
+            1.06378525,
+            1.14521114,
+            1.20948854,
+            1.26804979,
+            1.32832588,
+            1.328,
+            1.132,
+            1.061,
+            1.043,
+            1.043,
+            1.048,
+            0.9595,
+            0.8195,
+            0.7,
+        ]
+        cd_3d = [
+            0.027,
+            0.025,
+            0.024,
+            0.023,
+            0.022,
+            0.022,
+            0.023,
+            0.025,
+            0.027,
+            0.028,
+            0.024,
+            0.019,
+            0.017,
+            0.015,
+            0.017,
+            0.019,
+            0.021,
+            0.024,
+            0.027,
+            0.031,
+            0.037,
+            0.046,
+            0.058,
+            0.074,
+            0.088,
+            0.101,
+            0.114,
+            0.128,
+            0.142,
+            0.155,
+            0.321,
+            0.525,
+            0.742,
+        ]
         # test equality
         np.testing.assert_allclose(newpolar.cl, cl_3d, atol=1e-3, rtol=1e-3)
         np.testing.assert_allclose(newpolar.cd, cd_3d, atol=1e-3, rtol=1e-3)
@@ -799,17 +856,76 @@ class Test3DStall(unittest.TestCase):
             r / R, chord / r, tsr, alpha_max_corr=30, alpha_linear_min=-4, alpha_linear_max=4
         )
 
-        cl_3d = [-0.81312305, -0.72885733, -0.61871207, -0.5130288 , -0.41359231,
-       -0.31683302, -0.22185852, -0.13223842, -0.05511188,  0.04253981,
-        0.22496931,  0.33957657,  0.43544346,  0.5545127 ,  0.68786031,
-        0.72036695,  0.77339873,  0.84695567,  0.91515823,  0.98157599,
-        1.04620895,  1.08406997,  1.113007  ,  1.14462124,  1.15214072,
-        0.98921218,  0.93783339,  0.9337517 ,  0.94573318,  0.96217664,
-        0.9595    ,  0.8195    ,  0.7]
-        cd_3d = [0.027, 0.025, 0.024, 0.023, 0.022, 0.022, 0.023, 0.025, 0.027,
-       0.028, 0.024, 0.019, 0.017, 0.015, 0.017, 0.019, 0.021, 0.024,
-       0.027, 0.031, 0.037, 0.046, 0.058, 0.074, 0.088, 0.101, 0.114,
-       0.128, 0.142, 0.155, 0.321, 0.525, 0.742]
+        cl_3d = [
+            -0.81312305,
+            -0.72885733,
+            -0.61871207,
+            -0.5130288,
+            -0.41359231,
+            -0.31683302,
+            -0.22185852,
+            -0.13223842,
+            -0.05511188,
+            0.04253981,
+            0.22496931,
+            0.33957657,
+            0.43544346,
+            0.5545127,
+            0.68786031,
+            0.72036695,
+            0.77339873,
+            0.84695567,
+            0.91515823,
+            0.98157599,
+            1.04620895,
+            1.08406997,
+            1.113007,
+            1.14462124,
+            1.15214072,
+            0.98921218,
+            0.93783339,
+            0.9337517,
+            0.94573318,
+            0.96217664,
+            0.9595,
+            0.8195,
+            0.7,
+        ]
+        cd_3d = [
+            0.027,
+            0.025,
+            0.024,
+            0.023,
+            0.022,
+            0.022,
+            0.023,
+            0.025,
+            0.027,
+            0.028,
+            0.024,
+            0.019,
+            0.017,
+            0.015,
+            0.017,
+            0.019,
+            0.021,
+            0.024,
+            0.027,
+            0.031,
+            0.037,
+            0.046,
+            0.058,
+            0.074,
+            0.088,
+            0.101,
+            0.114,
+            0.128,
+            0.142,
+            0.155,
+            0.321,
+            0.525,
+            0.742,
+        ]
 
         # test equality
         np.testing.assert_allclose(newpolar.cl, cl_3d, atol=1e-3)
@@ -827,17 +943,76 @@ class Test3DStall(unittest.TestCase):
             r / R, chord / r, tsr, alpha_max_corr=30, alpha_linear_min=-4, alpha_linear_max=4
         )
 
-        cl_3d = [-0.82374342, -0.73635957, -0.62607561, -0.51973994, -0.41893189,
-       -0.32049281, -0.22363306, -0.13151125, -0.05044467,  0.04878406,
-        0.2230304 ,  0.33726265,  0.43491207,  0.55309262,  0.68390771,
-        0.72549134,  0.78523713,  0.86314507,  0.93631506,  1.00790573,
-        1.07791708,  1.12423867,  1.16266366,  1.20345763,  1.22293081,
-        1.09157913,  1.05893482,  1.043     ,  1.043     ,  1.048     ,
-        0.9595    ,  0.8195    ,  0.7]
-        cd_3d = [0.027, 0.025, 0.024, 0.023, 0.022, 0.022, 0.023, 0.025, 0.027,
-       0.028, 0.024, 0.019, 0.017, 0.015, 0.017, 0.019, 0.021, 0.024,
-       0.027, 0.031, 0.037, 0.046, 0.058, 0.074, 0.088, 0.101, 0.114,
-       0.128, 0.142, 0.155, 0.321, 0.525, 0.742 ]
+        cl_3d = [
+            -0.82374342,
+            -0.73635957,
+            -0.62607561,
+            -0.51973994,
+            -0.41893189,
+            -0.32049281,
+            -0.22363306,
+            -0.13151125,
+            -0.05044467,
+            0.04878406,
+            0.2230304,
+            0.33726265,
+            0.43491207,
+            0.55309262,
+            0.68390771,
+            0.72549134,
+            0.78523713,
+            0.86314507,
+            0.93631506,
+            1.00790573,
+            1.07791708,
+            1.12423867,
+            1.16266366,
+            1.20345763,
+            1.22293081,
+            1.09157913,
+            1.05893482,
+            1.043,
+            1.043,
+            1.048,
+            0.9595,
+            0.8195,
+            0.7,
+        ]
+        cd_3d = [
+            0.027,
+            0.025,
+            0.024,
+            0.023,
+            0.022,
+            0.022,
+            0.023,
+            0.025,
+            0.027,
+            0.028,
+            0.024,
+            0.019,
+            0.017,
+            0.015,
+            0.017,
+            0.019,
+            0.021,
+            0.024,
+            0.027,
+            0.031,
+            0.037,
+            0.046,
+            0.058,
+            0.074,
+            0.088,
+            0.101,
+            0.114,
+            0.128,
+            0.142,
+            0.155,
+            0.321,
+            0.525,
+            0.742,
+        ]
 
         # test equality
         np.testing.assert_allclose(newpolar.cl, cl_3d, atol=1e-3)
@@ -855,17 +1030,76 @@ class Test3DStall(unittest.TestCase):
             r / R, chord / r, tsr, alpha_max_corr=30, alpha_linear_min=-4, alpha_linear_max=4
         )
 
-        cl_3d = [-0.82374342, -0.73635957, -0.62607561, -0.51973994, -0.41893189,
-       -0.32049281, -0.22363306, -0.13151125, -0.05044467,  0.04878406,
-        0.2230304 ,  0.33726265,  0.43491207,  0.55309262,  0.68390771,
-        0.72549134,  0.78523713,  0.86314507,  0.93631506,  1.00790573,
-        1.07791708,  1.12423867,  1.16266366,  1.20345763,  1.22293081,
-        1.09157913,  1.05893482,  1.043     ,  1.043     ,  1.048     ,
-        0.9595    ,  0.8195    ,  0.7]
-        cd_3d = [0.027, 0.025, 0.024, 0.023, 0.022, 0.022, 0.023, 0.025, 0.027,
-       0.028, 0.024, 0.019, 0.017, 0.015, 0.017, 0.019, 0.021, 0.024,
-       0.027, 0.031, 0.037, 0.046, 0.058, 0.074, 0.088, 0.101, 0.114,
-       0.128, 0.142, 0.155, 0.321, 0.525, 0.742]
+        cl_3d = [
+            -0.82374342,
+            -0.73635957,
+            -0.62607561,
+            -0.51973994,
+            -0.41893189,
+            -0.32049281,
+            -0.22363306,
+            -0.13151125,
+            -0.05044467,
+            0.04878406,
+            0.2230304,
+            0.33726265,
+            0.43491207,
+            0.55309262,
+            0.68390771,
+            0.72549134,
+            0.78523713,
+            0.86314507,
+            0.93631506,
+            1.00790573,
+            1.07791708,
+            1.12423867,
+            1.16266366,
+            1.20345763,
+            1.22293081,
+            1.09157913,
+            1.05893482,
+            1.043,
+            1.043,
+            1.048,
+            0.9595,
+            0.8195,
+            0.7,
+        ]
+        cd_3d = [
+            0.027,
+            0.025,
+            0.024,
+            0.023,
+            0.022,
+            0.022,
+            0.023,
+            0.025,
+            0.027,
+            0.028,
+            0.024,
+            0.019,
+            0.017,
+            0.015,
+            0.017,
+            0.019,
+            0.021,
+            0.024,
+            0.027,
+            0.031,
+            0.037,
+            0.046,
+            0.058,
+            0.074,
+            0.088,
+            0.101,
+            0.114,
+            0.128,
+            0.142,
+            0.155,
+            0.321,
+            0.525,
+            0.742,
+        ]
         cm_zeros = np.zeros(len(cd_3d))
 
         # test equality
@@ -876,7 +1110,6 @@ class Test3DStall(unittest.TestCase):
 
 class TestExtrap(unittest.TestCase):
     def setUp(self):
-
         alpha = [
             -10.1,
             -8.2,
@@ -971,11 +1204,10 @@ class TestExtrap(unittest.TestCase):
         ]
         cm_zeros = np.zeros(len(cm))
         Re = 1
-        self.polar = Polar(Re, alpha, cl, cd, cm)
-        self.polar2 = Polar(Re, alpha, cl, cd, cm_zeros)
+        self.polar = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm)
+        self.polar2 = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm_zeros)
 
     def test_extrap1(self):
-
         cdmax = 1.29
         newpolar = self.polar.extrapolate(cdmax=cdmax)
 
@@ -1215,7 +1447,6 @@ class TestExtrap(unittest.TestCase):
         np.testing.assert_allclose(cm, cm_extrap, atol=5e-3)
 
     def test_extrap2(self):
-
         cdmax = 1.0
         newpolar = self.polar.extrapolate(cdmax=cdmax)
 
@@ -1455,7 +1686,6 @@ class TestExtrap(unittest.TestCase):
         np.testing.assert_allclose(cm, cm_extrap, atol=5e-3)
 
     def test_extrap3(self):
-
         cdmax = 1.5
         newpolar = self.polar.extrapolate(cdmax)
 
@@ -1697,7 +1927,6 @@ class TestExtrap(unittest.TestCase):
 
 class TestMisc(unittest.TestCase):
     def setUp(self):
-
         alpha = [
             -10.1,
             -8.2,
@@ -1792,94 +2021,55 @@ class TestMisc(unittest.TestCase):
         ]
         cm_zeros = np.zeros(len(cm))
         Re = 1
-        self.polar = Polar(Re, alpha, cl, cd, cm)
-        self.polar2 = Polar(Re, alpha, cl, cd, cm_zeros)
+        self.polar = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm)
+        self.polar2 = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm_zeros)
 
     def test_unsteady(self):
-
         alpha0, alpha1, alpha2, cnSlope, cn1, cn2, cd0, cm0 = self.polar.unsteadyParams()
 
         np.testing.assert_allclose(alpha0, -0.32307692307692304)
-        np.testing.assert_allclose(alpha1, 9.260783831245934)
-        np.testing.assert_allclose(alpha2, -6.779334979177289)
-        np.testing.assert_allclose(cnSlope, 6.4380618436681765)
+        np.testing.assert_allclose(alpha1, 9.552811766400268)
+        np.testing.assert_allclose(alpha2, -6.897960464135163)
+        np.testing.assert_allclose(cnSlope, 6.274086123213817)
         np.testing.assert_allclose(cn1, 0.9201540372961516)
         np.testing.assert_allclose(cn2, -0.6377683435797556)
         np.testing.assert_allclose(cd0, 0.012142307692307694)
         np.testing.assert_allclose(cm0, -0.03336923076923077)
 
     def test_fully_separated(self):
-
         cl_fs, f_st = self.polar.cl_fully_separated()
 
         cl_fs_ref = np.array(
-            [
-                -0.63,
-                -0.42017185,
-                -0.35815607,
-                -0.23440711,
-                -0.11213462,
-                0.02669872,
-                0.15,
-                0.2815297,
-                0.41432191,
-                0.51685242,
-                0.60852946,
-                0.6464375,
-                0.68202361,
-                0.7299095,
-                0.76769179,
-                0.8037866,
-                0.82370687,
-                0.81723832,
-                0.78926905,
-                0.69419819,
-                0.65999953,
-            ]
+            [-0.63      , -0.42013103, -0.35811382, -0.23437943, -0.11212114,
+            0.02669551,  0.15      ,  0.28149555,  0.41427177,  0.51679214,
+            0.60846331,  0.64637075,  0.68195446,  0.72983731,  0.76761824,
+            0.80371291,  0.82363622,  0.81717562,  0.78922118,  0.69418166,
+            0.65999935]
         )
         f_st_ref = np.array(
-            [
-                0.00000000e00,
-                2.34199688e-01,
-                7.26644559e-01,
-                7.32580663e-01,
-                8.34063987e-01,
-                8.34063987e-01,
-                1.00000000e00,
-                8.92315821e-01,
-                8.77625013e-01,
-                6.71133852e-01,
-                4.28392660e-01,
-                3.20122429e-01,
-                2.90558283e-01,
-                2.55881726e-01,
-                2.18728235e-01,
-                1.78134763e-01,
-                1.33254382e-01,
-                8.56818538e-02,
-                3.81986876e-02,
-                3.19820908e-03,
-                2.39632149e-07,
-            ]
+            [0.00000000e+00, 2.34317543e-01, 7.26903695e-01, 7.32841344e-01,
+            8.34350734e-01, 8.34350730e-01, 1.00000000e+00, 8.92617271e-01,
+            8.77922772e-01, 6.71378429e-01, 4.28570375e-01, 3.20267816e-01,
+            2.90694427e-01, 2.56006735e-01, 2.18840884e-01, 1.78233263e-01,
+            1.33336160e-01, 8.57439565e-02, 3.82370360e-02, 3.20802118e-03,
+            3.26735755e-07]
         )
 
         np.testing.assert_allclose(cl_fs, cl_fs_ref)
         np.testing.assert_allclose(f_st, f_st_ref)
 
     def test_cl_max(self):
-
         cl_max, alpha_cl_max = self.polar.cl_max()
 
         np.testing.assert_allclose(cl_max, 1.02)
         np.testing.assert_allclose(alpha_cl_max, 15.3)
 
     def test_linear_region(self):
-
         alpha_linear_region, cl_linear_region, slope, alpha0 = self.polar.linear_region()
 
-        np.testing.assert_allclose(alpha_linear_region, np.array([-3.36474623,  5.96375]))
-        np.testing.assert_allclose(cl_linear_region, np.array([-0.39279835,  0.811875]))
-        np.testing.assert_allclose(slope, 0.1291390728476821)
+        np.testing.assert_allclose(alpha_linear_region, np.array([-6.17381944,  7.43986639]))
+        np.testing.assert_allclose(cl_linear_region, np.array([-0.68718783,  0.91178174]))
+        np.testing.assert_allclose(slope, 0.11745309755638363)
         np.testing.assert_allclose(alpha0, -0.32307692307692304)
 
 

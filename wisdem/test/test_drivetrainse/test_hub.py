@@ -2,6 +2,7 @@ import unittest
 
 import numpy as np
 import openmdao.api as om
+
 import wisdem.drivetrainse.hub as hub
 
 
@@ -20,7 +21,6 @@ class TestHub(unittest.TestCase):
         self.assertAlmostEqual(outputs["max_torque"], 1e4 * np.pi / 30.0 / 5.0)
 
     def testPitch(self):
-
         pitch = hub.PitchSystem()
         inputs = {}
         outputs = {}
@@ -40,8 +40,8 @@ class TestHub(unittest.TestCase):
         inputs["BRFM"] = (
             (3.06 * np.pi / 8)
             * AirDensity
-            * (RatedWindSpeed ** 2)
-            * (Solidity * (rotor_diameter ** 3))
+            * (RatedWindSpeed**2)
+            * (Solidity * (rotor_diameter**3))
             / discrete_inputs["n_blades"]
         )
 
@@ -57,7 +57,7 @@ class TestHub(unittest.TestCase):
         opt = {}
         opt["hub_gamma"] = 2.0
         opt["spinner_gamma"] = 1.5
-        hub_prob = om.Problem(model=hub.Hub_System(modeling_options=opt))
+        hub_prob = om.Problem(reports=False, model=hub.Hub_System(modeling_options=opt))
         hub_prob.setup()
 
         hub_prob["blades_I"] = 1e3 * np.ones(6)

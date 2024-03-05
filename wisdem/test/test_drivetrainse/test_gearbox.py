@@ -25,7 +25,7 @@ class TestGearbox(unittest.TestCase):
         self.inputs["gearbox_length_user"] = 0.0
         self.inputs["gearbox_radius_user"] = 0.0
 
-        self.myobj = gb.Gearbox(direct_drive=False)
+        self.myobj = gb.Gearbox(direct_drive=False, use_gb_torque_density=False)
 
     def testDirectDrive(self):
         self.myobj = gb.Gearbox(direct_drive=True)
@@ -52,8 +52,8 @@ class TestGearbox(unittest.TestCase):
             * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
             / 12.0,
         )
-        self.assertEqual(self.outputs["L_gearbox"], 0.012 * 126.0)
-        self.assertEqual(self.outputs["D_gearbox"], 0.75 * 0.015 * 126.0)
+        self.assertEqual(self.outputs["L_gearbox"], 0.015 * 126.0)
+        self.assertEqual(self.outputs["D_gearbox"], 0.012 * 126.0)
 
     def testEEP3(self):
         self.discrete_inputs["gear_configuration"] = "eep_3"
@@ -72,8 +72,8 @@ class TestGearbox(unittest.TestCase):
             * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
             / 12.0,
         )
-        self.assertEqual(self.outputs["L_gearbox"], 0.012 * 126.0)
-        self.assertEqual(self.outputs["D_gearbox"], 0.75 * 0.015 * 126.0)
+        self.assertEqual(self.outputs["L_gearbox"], 0.015 * 126.0)
+        self.assertEqual(self.outputs["D_gearbox"], 0.012 * 126.0)
 
     def testEEP2(self):
         self.discrete_inputs["gear_configuration"] = "eep_2"
@@ -92,8 +92,8 @@ class TestGearbox(unittest.TestCase):
             * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
             / 12.0,
         )
-        self.assertEqual(self.outputs["L_gearbox"], 0.012 * 126.0)
-        self.assertEqual(self.outputs["D_gearbox"], 0.75 * 0.015 * 126.0)
+        self.assertEqual(self.outputs["L_gearbox"], 0.015 * 126.0)
+        self.assertEqual(self.outputs["D_gearbox"], 0.012 * 126.0)
 
     def testEEP_planet4_1(self):
         self.discrete_inputs["gear_configuration"] = "eep"
@@ -112,8 +112,8 @@ class TestGearbox(unittest.TestCase):
             * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
             / 12.0,
         )
-        self.assertEqual(self.outputs["L_gearbox"], 0.012 * 126.0)
-        self.assertEqual(self.outputs["D_gearbox"], 0.75 * 0.015 * 126.0)
+        self.assertEqual(self.outputs["L_gearbox"], 0.015 * 126.0)
+        self.assertEqual(self.outputs["D_gearbox"], 0.012 * 126.0)
 
     def testEEP_planet4_2(self):
         self.discrete_inputs["gear_configuration"] = "eep"
@@ -132,8 +132,8 @@ class TestGearbox(unittest.TestCase):
             * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
             / 12.0,
         )
-        self.assertEqual(self.outputs["L_gearbox"], 0.012 * 126.0)
-        self.assertEqual(self.outputs["D_gearbox"], 0.75 * 0.015 * 126.0)
+        self.assertEqual(self.outputs["L_gearbox"], 0.015 * 126.0)
+        self.assertEqual(self.outputs["D_gearbox"], 0.012 * 126.0)
 
     def testEPP(self):
         self.discrete_inputs["gear_configuration"] = "epp"
@@ -151,8 +151,8 @@ class TestGearbox(unittest.TestCase):
             * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
             / 12.0,
         )
-        self.assertEqual(self.outputs["L_gearbox"], 0.012 * 126.0)
-        self.assertEqual(self.outputs["D_gearbox"], 0.75 * 0.015 * 126.0)
+        self.assertEqual(self.outputs["L_gearbox"], 0.015 * 126.0)
+        self.assertEqual(self.outputs["D_gearbox"], 0.012 * 126.0)
 
     def testLargeMachine(self):
         self.inputs["gear_ratio"] = 200.0
@@ -172,8 +172,8 @@ class TestGearbox(unittest.TestCase):
             * (0.75 * self.outputs["D_gearbox"] ** 2 + self.outputs["L_gearbox"] ** 2)
             / 12.0,
         )
-        self.assertEqual(self.outputs["L_gearbox"], 0.012 * 200.0)
-        self.assertEqual(self.outputs["D_gearbox"], 0.75 * 0.015 * 200.0)
+        self.assertEqual(self.outputs["L_gearbox"], 0.015 * 200.0)
+        self.assertEqual(self.outputs["D_gearbox"], 0.012 * 200.0)
 
     def testUserOverride(self):
         self.inputs["gear_ratio"] = 200.0

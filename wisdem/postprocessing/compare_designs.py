@@ -760,7 +760,6 @@ def print_results_to_screen(list_of_sims, list_of_labels, values_to_print):
         size_of_variable = len(value_sizer)
 
         for idx in range(size_of_variable):
-
             if size_of_variable > 1:
                 augmented_key = f"{key}_{idx}"
             else:
@@ -803,7 +802,6 @@ def save_lcoe_data_to_file(list_of_sims, folder_output):
 
 
 def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
-
     # These are options for the plotting and saving
     show_plots = False  # if True, print plots to screen in addition to saving files
     font_size = 12
@@ -826,7 +824,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "Rated pitch": ["control.rated_pitch", "deg"],
         "Rated thrust": ["rotorse.rp.powercurve.rated_T", "kN"],
         "Rated torque": ["rotorse.rp.powercurve.rated_Q", "kN*m"],
-        "Blade mass": ["rotorse.rs.bjs.blade_mass", "kg"],
+        "Blade mass": ["rotorse.blade_mass", "kg"],
         "Blade cost": ["rotorse.re.precomp.total_blade_cost", "USD"],
         "Tip defl": ["tcons.tip_deflection", "m"],
         "Tip defl ratio": ["tcons.tip_deflection_ratio", None],

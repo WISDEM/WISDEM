@@ -3,8 +3,8 @@ Copyright (c) NREL. All rights reserved.
 """
 
 from __future__ import print_function
-import numpy as np
 
+import numpy as np
 import openmdao.api as om
 
 from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
@@ -256,7 +256,7 @@ class LowSpeedShaftMass(om.ExplicitComponent):
 
         # calculate the lss mass
         outputs["lss_mass"] = (
-            lss_mass_coeff * (blade_mass * machine_rating / 1000.0) ** lss_mass_exp + lss_mass_intercept
+            lss_mass_coeff * (blade_mass * machine_rating * 1e-3) ** lss_mass_exp + lss_mass_intercept
         )
 
 
@@ -297,7 +297,7 @@ class BearingMass(om.ExplicitComponent):
         bearing_mass_exp = inputs["bearing_mass_exp"]
 
         # calculates the mass of a SINGLE bearing
-        outputs["main_bearing_mass"] = bearing_mass_coeff * rotor_diameter ** bearing_mass_exp
+        outputs["main_bearing_mass"] = bearing_mass_coeff * rotor_diameter**bearing_mass_exp
 
 
 # --------------------------------------------------------------------
@@ -321,7 +321,7 @@ class RotorTorque(om.ExplicitComponent):
     -------
     rated_rpm : float, [rpm]
         rpm of rotor at rated power
-    rotor_torque : float, [N*m]
+    rotor_torque : float, [MN*m]
         torque from rotor at rated power
 
     """
@@ -333,17 +333,17 @@ class RotorTorque(om.ExplicitComponent):
         self.add_input("max_efficiency", 0.0)
 
         self.add_output("rated_rpm", 0.0, units="rpm")
-        self.add_output("rotor_torque", 0.0, units="N*m")
+        self.add_output("rotor_torque", 0.0, units="kN*m")
 
     def compute(self, inputs, outputs):
         # Rotor force calculations for nacelle inputs
         maxTipSpd = inputs["max_tip_speed"]
         maxEfficiency = inputs["max_efficiency"]
 
-        ratedHubPower_W = inputs["machine_rating"] * 1000.0 / maxEfficiency
+        ratedHubPower_kW = inputs["machine_rating"] / maxEfficiency
         rotorSpeed = maxTipSpd / (0.5 * inputs["rotor_diameter"])
         outputs["rated_rpm"] = rotorSpeed / (2 * np.pi) * 60.0
-        outputs["rotor_torque"] = ratedHubPower_W / rotorSpeed
+        outputs["rotor_torque"] = ratedHubPower_kW / rotorSpeed
 
 
 # --------------------------------------------------------------------
@@ -357,10 +357,8 @@ class GearboxMass(om.ExplicitComponent):
     ----------
     rotor_torque : float, [N*m]
         torque from rotor at rated power
-    gearbox_mass_coeff : float
-        k inthe gearbox mass equation: k*rotor_torque^b
-    gearbox_mass_exp : float
-        exp in the gearbox mass equation: k*rotor_torque^b
+    gearbox_torque_density : float, [N*m/kg]
+        In 2024, modern 5-7MW gearboxes are able to reach 200 Nm/kg
 
     Returns
     -------
@@ -370,19 +368,15 @@ class GearboxMass(om.ExplicitComponent):
     """
 
     def setup(self):
-        self.add_input("rotor_torque", 0.0, units="N*m")
-        self.add_input("gearbox_mass_coeff", 113.0)
-        self.add_input("gearbox_mass_exp", 0.71)
+        self.add_input("rotor_torque", 0.0, units="kN*m")
+        self.add_input("gearbox_torque_density", 200.0, units='N*m/kg', desc='In 2024, modern 5-7MW gearboxes are able to reach 200 Nm/kg')
 
         self.add_output("gearbox_mass", 0.0, units="kg")
 
     def compute(self, inputs, outputs):
-        rotor_torque = inputs["rotor_torque"]
-        gearbox_mass_coeff = inputs["gearbox_mass_coeff"]
-        gearbox_mass_exp = inputs["gearbox_mass_exp"]
 
         # calculate the gearbox mass
-        outputs["gearbox_mass"] = gearbox_mass_coeff * (rotor_torque / 1000.0) ** gearbox_mass_exp
+        outputs["gearbox_mass"] = inputs["rotor_torque"] * 1.e+3 / inputs["gearbox_torque_density"]
 
 
 # --------------------------------------------------------------------
@@ -411,7 +405,6 @@ class BrakeMass(om.ExplicitComponent):
         self.add_output("brake_mass", 0.0, units="kg")
 
     def compute(self, inputs, outputs):
-
         # Unpack inputs
         rotor_torque = float(inputs["rotor_torque"])
         coeff = float(inputs["brake_mass_coeff"])
@@ -457,7 +450,7 @@ class HighSpeedShaftMass(om.ExplicitComponent):
 class GeneratorMass(om.ExplicitComponent):
     """
     Compute generator mass in the form of :math:`mass = k*power + b`.
-    Value of :math:`k` was updated in 2015 to be 2300.
+    Value of :math:`k` was updated in 2015 to be 2.3 (for rating in kW).
     Value of :math:`b` was updated in 2015 to be 3400.
 
     Parameters
@@ -478,7 +471,7 @@ class GeneratorMass(om.ExplicitComponent):
 
     def setup(self):
         self.add_input("machine_rating", 0.0, units="kW")
-        self.add_input("generator_mass_coeff", 2300.0)
+        self.add_input("generator_mass_coeff", 2.3)
         self.add_input("generator_mass_intercept", 3400.0)
 
         self.add_output("generator_mass", 0.0, units="kg")
@@ -489,7 +482,7 @@ class GeneratorMass(om.ExplicitComponent):
         generator_mass_intercept = inputs["generator_mass_intercept"]
 
         # calculate the generator mass
-        outputs["generator_mass"] = generator_mass_coeff * machine_rating / 1000.0 + generator_mass_intercept
+        outputs["generator_mass"] = generator_mass_coeff * machine_rating + generator_mass_intercept
 
 
 # --------------------------------------------------------------------
@@ -523,7 +516,7 @@ class BedplateMass(om.ExplicitComponent):
         bedplate_mass_exp = inputs["bedplate_mass_exp"]
 
         # calculate the bedplate mass
-        outputs["bedplate_mass"] = rotor_diameter ** bedplate_mass_exp
+        outputs["bedplate_mass"] = rotor_diameter**bedplate_mass_exp
 
 
 # --------------------------------------------------------------------
@@ -564,11 +557,12 @@ class YawSystemMass(om.ExplicitComponent):
 
         # calculate yaw system mass #TODO - 50% adder for non-bearing mass
         outputs["yaw_mass"] = 1.5 * (
-            yaw_mass_coeff * rotor_diameter ** yaw_mass_exp
+            yaw_mass_coeff * rotor_diameter**yaw_mass_exp
         )  # JMF do we really want to expose all these?
 
 
 # TODO: no variable speed mass; ignore for now
+
 
 # --------------------------------------------------------------------
 class HydraulicCoolingMass(om.ExplicitComponent):
@@ -647,6 +641,7 @@ class NacelleCoverMass(om.ExplicitComponent):
 
 # TODO: ignoring controls and electronics mass for now
 
+
 # --------------------------------------------------------------------
 class PlatformsMainframeMass(om.ExplicitComponent):
     """
@@ -706,7 +701,7 @@ class PlatformsMainframeMass(om.ExplicitComponent):
 class TransformerMass(om.ExplicitComponent):
     """
     Compute transformer mass in the form of :math:`mass = k*power + b`.
-    Value of :math:`k` was updated in 2015 to be 1915.
+    Value of :math:`k` was updated in 2015 to be 1.915 (for rating in kW).
     Value of :math:`b` was updated in 2015 to be 1910.
 
     Parameters
@@ -727,7 +722,7 @@ class TransformerMass(om.ExplicitComponent):
 
     def setup(self):
         self.add_input("machine_rating", 0.0, units="kW")
-        self.add_input("transformer_mass_coeff", 1915.0)
+        self.add_input("transformer_mass_coeff", 1.9150)
         self.add_input("transformer_mass_intercept", 1910.0)
 
         self.add_output("transformer_mass", 0.0, units="kg")
@@ -738,7 +733,7 @@ class TransformerMass(om.ExplicitComponent):
         transformer_mass_intercept = inputs["transformer_mass_intercept"]
 
         # calculate the transformer mass
-        outputs["transformer_mass"] = transformer_mass_coeff * machine_rating / 1000.0 + transformer_mass_intercept
+        outputs["transformer_mass"] = transformer_mass_coeff * machine_rating + transformer_mass_intercept
 
 
 # --------------------------------------------------------------------
@@ -750,12 +745,12 @@ class TowerMass(om.ExplicitComponent):
 
     Parameters
     ----------
-    hub_height : float, [m]
-        hub height of wind turbine above ground / sea level
+    tower_length : float, [m]
+        This is the hub height of wind turbine above ground for onshore turbines.  For offshore, this should be entered as the length from transition piece to hub height.
     tower_mass_coeff : float
-        k inthe tower mass equation: k*hub_height^b
+        k in the tower mass equation: k*tower_length^b
     tower_mass_exp : float
-        b in the tower mass equation: k*hub_height^b
+        b in the tower mass equation: k*tower_length^b
 
     Returns
     -------
@@ -765,19 +760,19 @@ class TowerMass(om.ExplicitComponent):
     """
 
     def setup(self):
-        self.add_input("hub_height", 0.0, units="m")
+        self.add_input("tower_length", 0.0, units="m")
         self.add_input("tower_mass_coeff", 19.828)
         self.add_input("tower_mass_exp", 2.0282)
 
         self.add_output("tower_mass", 0.0, units="kg")
 
     def compute(self, inputs, outputs):
-        hub_height = inputs["hub_height"]
+        tower_length = inputs["tower_length"]
         tower_mass_coeff = inputs["tower_mass_coeff"]
         tower_mass_exp = inputs["tower_mass_exp"]
 
         # calculate the tower mass
-        outputs["tower_mass"] = tower_mass_coeff * hub_height ** tower_mass_exp
+        outputs["tower_mass"] = tower_mass_coeff * tower_length**tower_mass_exp
 
 
 # Turbine mass adder

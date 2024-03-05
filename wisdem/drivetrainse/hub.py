@@ -1,8 +1,11 @@
-import openmdao.api as om
-import numpy as np
-import wisdem.commonse.utilities as util
 import sys
 
+import numpy as np
+import openmdao.api as om
+
+import wisdem.commonse.utilities as util
+import logging
+logger = logging.getLogger("wisdem/weis")
 
 class FindMaxTorque(om.ExplicitComponent):
     """
@@ -80,10 +83,9 @@ class HubShell(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare("gamma", default=1.0)
+        self.options.declare("gamma", default=2.0)
 
     def setup(self):
-
         # Inputs
         self.add_input("flange_t2shell_t", val=0.0)
         self.add_input("flange_OD2hub_D", val=0.0)
@@ -106,7 +108,6 @@ class HubShell(om.ExplicitComponent):
         self.add_output("constr_hub_diameter", val=0.0, units="m")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # User diameter
         dsgn_hub_diam = inputs["hub_diameter"]
 
@@ -124,14 +125,14 @@ class HubShell(om.ExplicitComponent):
         # Size shell thickness, assuming max torsional stress from torque can not exceed design allowable stress, and solving, torsional stress (t=Tr/J), and polar moment of inertia (J=PI/32(Do^4-Di^4), for thickness.
         sph_hub_shell_thick = (
             (
-                (dsgn_hub_diam ** 4.0 - 32.0 / np.pi * inputs["max_torque"] * dsgn_hub_rad / stress_allow_pa)
+                (dsgn_hub_diam**4.0 - 32.0 / np.pi * inputs["max_torque"] * dsgn_hub_rad / stress_allow_pa)
                 ** (1.0 / 4.0)
             )
             - dsgn_hub_diam
         ) / (-2.0)
 
         # Compute volume and mass of the shell
-        sph_hub_vol = 4.0 / 3.0 * np.pi * (dsgn_hub_rad ** 3.0 - (dsgn_hub_rad - sph_hub_shell_thick) ** 3.0)
+        sph_hub_vol = 4.0 / 3.0 * np.pi * (dsgn_hub_rad**3.0 - (dsgn_hub_rad - sph_hub_shell_thick) ** 3.0)
         sph_hub_mass = sph_hub_vol * inputs["rho"]
 
         # Assume outer (OD) and inner diameter (ID) of the flanges based on hub diameter
@@ -217,10 +218,9 @@ class Spinner(om.ExplicitComponent):
     """
 
     def initialize(self):
-        self.options.declare("gamma", default=False)
+        self.options.declare("gamma", default=1.5)
 
     def setup(self):
-
         # Inputs
         self.add_discrete_input("n_blades", val=0)
         self.add_discrete_input("n_front_brackets", val=0)
@@ -269,37 +269,42 @@ class Spinner(om.ExplicitComponent):
         # Estimate thickness of the shell of the spinner. Stress equation for a flat plate with simply supported edges, with a load equal to the extreme gust pressure load.
         # The equation is [Stress=(.75*P*b^2)/(t^2*(1.61*(b/a)^3 +1)).  See Roarks for reference.  Shell is curved and not flat but simplifying for calculation purposes.
         spin_shell_thickness = np.sqrt(
-            (0.75 * extr_gust_dsgn_pressure * spin_panel_width ** 2.0)
+            (0.75 * extr_gust_dsgn_pressure * spin_panel_width**2.0)
             / (allow_tensile_strength * (1.61 * (spin_panel_width / sph_spin_diam) ** 3.0 + 1.0))
         )
 
         # Compute volume and mass of the spinner shell
         spin_shell_volume = (
-            (4.0 / 3.0) * np.pi * (sph_spin_rad ** 3.0 - ((sph_spin_diam - 2.0 * spin_shell_thickness) / 2.0) ** 3.0)
+            (4.0 / 3.0) * np.pi * (sph_spin_rad**3.0 - ((sph_spin_diam - 2.0 * spin_shell_thickness) / 2.0) ** 3.0)
         )
         spin_shell_mass = spin_shell_volume * inputs["composite_rho"]
 
         # Estimate area, volume, and mass of the spherical caps that are removed because of blade access
-        sph_cap_area = (
-            2.0
-            * np.pi
-            * sph_spin_rad
-            * (sph_spin_rad - np.sqrt(sph_spin_rad ** 2.0 - (spin_acc_hole_diam / 2.0) ** 2.0))
-        )
+        # if condition to avoid error
+        if spin_acc_hole_diam / 2.0 < sph_spin_rad:
+            sph_cap_area = (
+                2.0
+                * np.pi
+                * sph_spin_rad
+                * (sph_spin_rad - np.sqrt(sph_spin_rad**2.0 - (spin_acc_hole_diam / 2.0) ** 2.0))
+            )
+        else:
+            sph_cap_area = 0. 
+            logger.warning('Blade root chord is excessive! Please reduce it, or alternatively increase the hub diameter.')
         sph_caps_volume = discrete_inputs["n_blades"] * sph_cap_area * spin_shell_thickness
         sph_caps_mass = sph_caps_volume * inputs["composite_rho"]
 
         # Estimate main flange diameter, area, volume, and mass
         main_flange_diam = 0.6 * inputs["hub_diameter"]
         main_flange_area = (
-            2.0 * np.pi * sph_spin_rad * (sph_spin_rad - np.sqrt(sph_spin_rad ** 2.0 - (main_flange_diam / 2.0) ** 2.0))
+            2.0 * np.pi * sph_spin_rad * (sph_spin_rad - np.sqrt(sph_spin_rad**2.0 - (main_flange_diam / 2.0) ** 2.0))
         )
         main_flange_volume = main_flange_area * spin_shell_thickness
         main_flange_mass = main_flange_volume * inputs["composite_rho"]
         spin_shell_mass = spin_shell_mass - sph_caps_mass - main_flange_mass
 
         # Compute frontal area of spherical spinner
-        spin_frontal_area = np.pi * (sph_spin_diam ** 2.0) / 4.0
+        spin_frontal_area = np.pi * (sph_spin_diam**2.0) / 4.0
 
         # Compute load given frontal area
         frontal_gust_load = spin_frontal_area * extr_gust_dsgn_pressure
@@ -378,7 +383,6 @@ class PitchSystem(om.ExplicitComponent):
         self.options.declare("verbosity", default=False)
 
     def setup(self):
-
         # Inputs
         self.add_discrete_input("n_blades", val=0)
         self.add_input("blade_mass", val=0.0, units="kg")
@@ -393,13 +397,12 @@ class PitchSystem(om.ExplicitComponent):
         self.add_output("pitch_I", val=np.zeros(6), units="kg*m**2")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         mass = inputs["pitch_system_scaling_factor"] * (
             0.22 * inputs["blade_mass"] * discrete_inputs["n_blades"]
             + 12.6 * np.abs(inputs["BRFM"]) * inputs["rho"] / inputs["Xy"]
         )
         r_hub = 0.5 * inputs["hub_diameter"]
-        I = np.r_[mass * r_hub ** 2 * np.array([1.0, 0.5, 0.5]), np.zeros(3)]
+        I = np.r_[mass * r_hub**2 * np.array([1.0, 0.5, 0.5]), np.zeros(3)]
 
         outputs["pitch_mass"] = mass
         outputs["pitch_cost"] = 0.0
@@ -593,8 +596,7 @@ class Hub_System(om.Group):
 
 
 if __name__ == "__main__":
-
-    hub_prob = om.Problem(model=Hub_System())
+    hub_prob = om.Problem(model=Hub_System(), reports=False)
     hub_prob.setup()
 
     hub_prob["n_blades"] = 3

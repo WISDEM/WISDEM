@@ -170,12 +170,12 @@ To obtain the main bearings mass in kilograms and cost in USD from the rotor tor
    b   &= 0.71\\
    k_c &= 12.9
 
-Where :math:`Q_{rotor}` is the rotor torque and is approximated by,
+Where :math:`Q_{rotor}` is the rotor torque in kilo-Newton meters and is approximated by,
 
 .. math::
    Q_{rotor} = \frac{0.5 P_{turbine} D_{rotor}}{\eta V_{tip}}
 
-Where :math:`P_{turbine}` is the machine rating, :math:`D_{rotor}` is the rotor diameter, :math:`V_{tip}` is the max tip speed, and :math:`\eta` is the drivetrain efficiency.
+Where :math:`P_{turbine}` is the machine rating in kilowatts, :math:`D_{rotor}` is the rotor diameter in meters, :math:`V_{tip}` is the max tip speed in meters per second, and :math:`\eta` is the drivetrain efficiency (as a fraction between zero and one).
 
 For variable names access to override the default values see the :ref:`csmsource`.
 
@@ -215,12 +215,12 @@ For variable names access to override the default values see the :ref:`csmsource
 
 Generator
 ~~~~~~~~~
-To obtain the generator mass in kilograms and cost in USD from the machine rating in megawatts,
+To obtain the generator mass in kilograms and cost in USD from the machine rating in kilowatts,
 
 .. math::
    m_{generator} &= k_m P_{turbine} + b\\
    c_{generator} &= k_c m_{generator}\\
-   k_m &= 2300\\
+   k_m &= 2.3\\
    b   &= 3400\\
    k_c &= 12.4
 
@@ -241,7 +241,7 @@ To obtain the yaw system mass in kilograms and cost in USD from the rotor diamet
 .. math::
    m_{yaw} &= k_m D_{rotor}^b\\
    c_{yaw} &= k_c m_{yaw}\\
-   k_m &= 0.00135\\
+   k_m &= 0.0009\\
    b   &= 3.314\\
    k_c &= 8.3
 
@@ -265,12 +265,12 @@ For variable names access to override the default values see the :ref:`csmsource
 
 Transformer
 ~~~~~~~~~~~
-To obtain the transformer mass in kilograms and cost in USD from the machine rating in megawatts,
+To obtain the transformer mass in kilograms and cost in USD from the machine rating in kilowatts,
 
 .. math::
-   m_{transformer} &= k_m P_{rotor} + b\\
+   m_{transformer} &= k_m P_{turbine} + b\\
    c_{transformer} &= k_c m_{transformer}\\
-   k_m &= 1915\\
+   k_m &= 1.915\\
    b   &= 1910\\
    k_c &= 18.8
 
@@ -287,7 +287,7 @@ Cabling and Electrical Connections
 To obtain the cabling and electrical connections cost in USD (there is no mass calculated) from the machine rating in megawatts,
 
 .. math::
-   c_{connect} &= k_c P_{rotor}\\
+   c_{connect} &= k_c P_{turbine}\\
    k_c &= 41850
 
 Where :math:`P_{turbine}` is the machine rating.
@@ -299,7 +299,7 @@ Control System
 To obtain the control system cost in USD (there is no mass calculated) from the machine rating in megawatts,
 
 .. math::
-   c_{control} &= k_c P_{rotor}\\
+   c_{control} &= k_c P_{turbine}\\
    k_c &= 21150
 
 Where :math:`P_{turbine}` is the machine rating.
@@ -344,7 +344,7 @@ For variable names access to override the default values see the :ref:`csmsource
 
 Nacelle Cover
 ~~~~~~~~~~~~~
-To obtain the nacelle cover mass in kilograms and cost in USD from the machine rating in megawatts,
+To obtain the nacelle cover mass in kilograms and cost in USD from the machine rating in kilowatts,
 
 .. math::
    m_{cover} &= k_m P_{turbine} + b\\
@@ -360,16 +360,16 @@ For variable names access to override the default values see the :ref:`csmsource
 
 Tower
 ~~~~~
-To obtain the tower mass in kilograms and cost in USD from the hub height in meters,
+To obtain the tower mass in kilograms and cost in USD from the tower length in meters,
 
 .. math::
-   m_{tower} &= k_m L_{hub}^b\\
+   m_{tower} &= k_m L_{tower}^b\\
    c_{tower} &= k_c m_{tower}\\
    k_m &= 19.828\\
    b   &= 2.0282\\
    k_c &= 2.9
 
-Where :math:`L_{hub}` is the hub height.
+Where :math:`L_{tower}` is the hub height for onshore turbines and the distance from transition piece to hub height offshore.
 
 For variable names access to override the default values see the :ref:`csmsource`.
 

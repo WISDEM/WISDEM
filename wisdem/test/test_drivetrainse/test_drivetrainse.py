@@ -5,6 +5,7 @@ import traceback
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
+
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
 
 npts = 12
@@ -34,7 +35,9 @@ def set_common(prob, opt):
     ] = "steel"
     prob["material_names"] = ["steel"]
 
-    prob["blade_mass"] = 17000.0
+    prob["blade_mass"] = 170.0
+    prob["blades_mass"] = 3*prob["blade_mass"]
+    prob["blades_cm"] = 2.0
     prob["pitch_system.BRFM"] = 1.0e6
     prob["pitch_system_scaling_factor"] = 0.54
 
@@ -66,7 +69,6 @@ def set_common(prob, opt):
 
 class TestGroup(unittest.TestCase):
     def testDirectDrive_withGen(self):
-
         opt = {}
         opt["WISDEM"] = {}
         opt["WISDEM"]["n_dlc"] = 1
@@ -87,7 +89,7 @@ class TestGroup(unittest.TestCase):
         opt["flags"] = {}
         opt["flags"]["generator"] = True
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = DrivetrainSE(modeling_options=opt)
         prob.setup()
         prob = set_common(prob, opt)
@@ -170,7 +172,6 @@ class TestGroup(unittest.TestCase):
         self.assertGreater(prob["drivetrain_damping_coefficient"], 1e7)
 
     def testDirectDrive_withSimpleGen(self):
-
         opt = {}
         opt["WISDEM"] = {}
         opt["WISDEM"]["n_dlc"] = 1
@@ -189,7 +190,7 @@ class TestGroup(unittest.TestCase):
         opt["flags"] = {}
         opt["flags"]["generator"] = False
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = DrivetrainSE(modeling_options=opt)
         prob.setup()
         prob = set_common(prob, opt)
@@ -238,12 +239,13 @@ class TestGroup(unittest.TestCase):
         self.assertGreater(prob["drivetrain_damping_coefficient"], 1e7)
 
     def testGeared_withGen(self):
-
         opt = {}
         opt["WISDEM"] = {}
         opt["WISDEM"]["n_dlc"] = 1
         opt["WISDEM"]["DriveSE"] = {}
         opt["WISDEM"]["DriveSE"]["direct"] = False
+        opt["WISDEM"]["DriveSE"]["use_gb_torque_density"] = False
+        opt["WISDEM"]["DriveSE"]["gearbox_torque_density"] = 0.
         opt["WISDEM"]["DriveSE"]["hub"] = {}
         opt["WISDEM"]["DriveSE"]["hub"]["hub_gamma"] = 2.0
         opt["WISDEM"]["DriveSE"]["hub"]["spinner_gamma"] = 1.5
@@ -259,7 +261,7 @@ class TestGroup(unittest.TestCase):
         opt["flags"] = {}
         opt["flags"]["generator"] = True
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = DrivetrainSE(modeling_options=opt)
         prob.setup()
         prob = set_common(prob, opt)
@@ -366,12 +368,12 @@ class TestGroup(unittest.TestCase):
         self.assertGreater(prob["drivetrain_damping_coefficient"], 1e7)
 
     def testGeared_withSimpleGen(self):
-
         opt = {}
         opt["WISDEM"] = {}
         opt["WISDEM"]["n_dlc"] = 1
         opt["WISDEM"]["DriveSE"] = {}
         opt["WISDEM"]["DriveSE"]["direct"] = False
+        opt["WISDEM"]["DriveSE"]["use_gb_torque_density"] = False
         opt["WISDEM"]["DriveSE"]["hub"] = {}
         opt["WISDEM"]["DriveSE"]["hub"]["hub_gamma"] = 2.0
         opt["WISDEM"]["DriveSE"]["hub"]["spinner_gamma"] = 1.5
@@ -385,7 +387,7 @@ class TestGroup(unittest.TestCase):
         opt["materials"] = {}
         opt["materials"]["n_mat"] = 1
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         prob.model = DrivetrainSE(modeling_options=opt)
         prob.setup()
         prob = set_common(prob, opt)

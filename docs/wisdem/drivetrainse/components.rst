@@ -287,5 +287,3 @@ To aid in the tower structural analysis, the total mass and moment of inertia of
    I_{nac} &= \sum_i \left[ R(\gamma) I_i R^T(\gamma) + m_i \left( \vec{r}_i \cdot \vec{r}_i E_3 - \vec{r}_i \otimes \vec{r}_i \right)\right]
 
 Where :math:`m_i` is the component mass, :math:`\vec{r}_i` is the vector from the tower top coordinate system origin to the component center of mass, :math:`I_i` is the component moment of inertia tensor, :math:`R(\gamma)` is the 3-D rotation matrix about the y-axis for the tilt angle, :math:`E_3` is the 3x3 identity matrix, :math:`\cdot` denotes the inner (dot) product, and :math:`\otimes` denotes the outer product.
-
-   
