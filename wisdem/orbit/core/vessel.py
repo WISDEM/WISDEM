@@ -11,6 +11,7 @@ from collections import Counter, namedtuple
 import numpy as np
 from marmot import Agent, le, process
 from marmot._exceptions import StateExhausted, WindowNotFound, AgentNotRegistered
+
 from wisdem.orbit.core.components import (
     Crane,
     JackingSys,

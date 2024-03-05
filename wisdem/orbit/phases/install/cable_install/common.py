@@ -7,6 +7,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 
 from marmot import process
+
 from wisdem.orbit.core.logic import position_onsite
 from wisdem.orbit.core.defaults import process_times as pt
 

@@ -7,6 +7,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 
 import openmdao.api as om
+
 from wisdem.orbit import ProjectManager
 
 
@@ -14,6 +15,7 @@ class Orbit(om.Group):
     def initialize(self):
         self.options.declare("floating", default=False)
         self.options.declare("jacket", default=False)
+        self.options.declare("jacket_legs", default=0)
 
     def setup(self):
 
@@ -44,7 +46,13 @@ class Orbit(om.Group):
         self.set_input_defaults("boem_review_cost", 0.0, units="USD")
 
         self.add_subsystem(
-            "orbit", OrbitWisdem(floating=self.options["floating"], jacket=self.options["jacket"]), promotes=["*"]
+            "orbit",
+            OrbitWisdem(
+                floating=self.options["floating"],
+                jacket=self.options["jacket"],
+                jacket_legs=self.options["jacket_legs"],
+            ),
+            promotes=["*"],
         )
 
 
@@ -54,6 +62,7 @@ class OrbitWisdem(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("floating", default=False)
         self.options.declare("jacket", default=False)
+        self.options.declare("jacket_legs", default=0)
 
     def setup(self):
         """"""
@@ -113,14 +122,14 @@ class OrbitWisdem(om.ExplicitComponent):
         self.add_input("tower_length", 100.0, units="m", desc="Total length of the tower.")
         self.add_input(
             "tower_deck_space",
-            0.0,
+            25.0,
             units="m**2",
             desc="Deck space required to transport the tower. Defaults to 0 in order to not be a constraint on installation.",
         )
         self.add_input("nacelle_mass", 500.0, units="t", desc="mass of the rotor nacelle assembly (RNA).")
         self.add_input(
             "nacelle_deck_space",
-            0.0,
+            25.0,
             units="m**2",
             desc="Deck space required to transport the rotor nacelle assembly (RNA). Defaults to 0 in order to not be a constraint on installation.",
         )
@@ -128,7 +137,7 @@ class OrbitWisdem(om.ExplicitComponent):
         self.add_input("blade_mass", 50.0, units="t", desc="mass of an individual blade.")
         self.add_input(
             "blade_deck_space",
-            0.0,
+            100.0,
             units="m**2",
             desc="Deck space required to transport a blade. Defaults to 0 in order to not be a constraint on installation.",
         )
@@ -165,30 +174,18 @@ class OrbitWisdem(om.ExplicitComponent):
         self.add_input("monopile_diameter", 7.0, units="m", desc="Diameter of monopile.")
         self.add_input("monopile_mass", 900.0, units="t", desc="mass of an individual monopile.")
         self.add_input("monopile_cost", 4e6, units="USD", desc="Monopile unit cost.")
-        self.add_input(
-            "monopile_deck_space",
-            0.0,
-            units="m**2",
-            desc="Deck space required to transport a monopile. Defaults to 0 in order to not be a constraint on installation.",
-        )
 
         # Jacket
         self.add_input("jacket_length", 65.0, units="m", desc="Length/height of jacket (including pile/buckets).")
-        self.add_discrete_input("jacket_num_legs", 3, desc="Number of legs in the jacket")
         self.add_input("jacket_mass", 900.0, units="t", desc="mass of an individual jacket.")
         self.add_input("jacket_cost", 4e6, units="USD", desc="Jacket unit cost.")
-        self.add_input(
-            "jacket_deck_space",
-            0.0,
-            units="m**2",
-            desc="Deck space required to transport a jacket. Defaults to 0 in order to not be a constraint on installation.",
-        )
+        self.add_input("jacket_r_foot", 10.0, units="m", desc="Radius of jacket legs at base from centeroid.")
 
         # Generic fixed-bottom
         self.add_input("transition_piece_mass", 250.0, units="t", desc="mass of an individual transition piece.")
         self.add_input(
             "transition_piece_deck_space",
-            0.0,
+            25.0,
             units="m**2",
             desc="Deck space required to transport a transition piece. Defaults to 0 in order to not be a constraint on installation.",
         )
@@ -341,6 +338,11 @@ class OrbitWisdem(om.ExplicitComponent):
         else:
             fixedStr = "JacketInstallation" if jacket_flag else "MonopileInstallation"
 
+            if jacket_flag:
+                monopile = config.get("monopile", {})
+                monopile["diameter"] = 10
+                config["monopile"] = monopile
+
             config["design_phases"] += ["ScourProtectionDesign"]
             config["install_phases"] = {
                 "ExportCableInstallation": 0,
@@ -414,8 +416,8 @@ class OrbitWisdem(om.ExplicitComponent):
                 config["jacket"] = {
                     "type": "Jacket",
                     "height": float(inputs["jacket_length"]),
-                    "num_legs": int(discrete_inputs["jacket_num_legs"]),
-                    "deck_space": float(inputs["jacket_deck_space"]),
+                    "num_legs": int(self.options["jacket_legs"]),
+                    "deck_space": 4 * float(inputs["jacket_r_foot"]) ** 2,
                     "mass": float(inputs["jacket_mass"]),
                     "unit_cost": float(inputs["jacket_cost"]),
                 }
@@ -424,7 +426,7 @@ class OrbitWisdem(om.ExplicitComponent):
                     "type": "Monopile",
                     "length": float(inputs["monopile_length"]),
                     "diameter": float(inputs["monopile_diameter"]),
-                    "deck_space": float(inputs["monopile_deck_space"]),
+                    "deck_space": 0.25 * float(inputs["monopile_diameter"] * inputs["monopile_length"]),
                     "mass": float(inputs["monopile_mass"]),
                     "unit_cost": float(inputs["monopile_cost"]),
                 }

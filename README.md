@@ -40,25 +40,23 @@ The core modules draw upon some utility packages, which are typically compiled c
 
 Installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WISDEM&reg; requires [Anaconda 64-bit](https://www.anaconda.com/distribution/).
 
-The installation instructions below use the environment name, "wisdem-env," but any name is acceptable.
+The installation instructions below use the environment name, "wisdem-env," but any name is acceptable.  For those working behind company firewalls, you may have to change the conda authentication with `conda config --set ssl_verify no`.  Proxy servers can also be set with `conda config --set proxy_servers.http http://id:pw@address:port` and `conda config --set proxy_servers.https https://id:pw@address:port`.
 
 1.  Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
 
         conda config --add channels conda-forge
-        conda create -y --name wisdem-env python=3.8
+        conda create -y --name wisdem-env  -f https://raw.githubusercontent.com/WISDEM/WISDEM/develop/environment.yml python=3.9
         conda activate wisdem-env
 
 2.  In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer / editable* mode using the instructions here.  If you really just want to use WISDEM as a library and lean on the documentation, you can always do `conda install wisdem` and be done.  Note the differences between Windows and Mac/Linux build systems. For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
 
-        conda install -y cython git jsonschema make matplotlib nlopt numpy openmdao openpyxl pandas pip pyside2 pytest python-benedict pyyaml ruamel_yaml scipy setuptools simpy sortedcontainers statsmodels swig
-        conda install -y pyoptsparse                 # (Linux only)
-        conda install -y compilers pyoptsparse       # (Mac only)
-        conda install -y m2w64-toolchain libpython   # (Windows only)
-        pip install marmot-agents
+        conda install -y petsc4py mpi4py                 # (Mac / Linux only)
+        conda install -y gfortran                        # (Mac only without Homebrew or Macports compilers)
+        conda install -y m2w64-toolchain libpython       # (Windows only)
         git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
-        git checkout develop                         # If you want to switch WISDEM branches
-        python setup.py develop
+        git checkout develop                             # If you want to switch WISDEM branches
+        pip install -e .
 
 
 **NOTE:** To use WISDEM again after installation is complete, you will always need to activate the conda environment first with `conda activate wisdem-env`

@@ -13,11 +13,9 @@
 import os
 import sys
 
-cwd = os.getcwd()
-wisdempath = os.path.dirname(cwd)
-sys.path.insert(0, wisdempath)
 sys.path.insert(0, os.path.abspath("./_exts"))
-
+sys.path.append(os.path.abspath("../.."))
+sys.path.append(os.path.abspath(".."))
 
 # -- Project information -----------------------------------------------------
 

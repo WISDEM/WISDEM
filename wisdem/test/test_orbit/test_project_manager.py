@@ -8,6 +8,7 @@ from copy import deepcopy
 
 import pandas as pd
 import pytest
+
 from wisdem.orbit import ProjectManager
 from wisdem.orbit.manager import ProjectProgress
 from wisdem.orbit.core.library import extract_library_specs

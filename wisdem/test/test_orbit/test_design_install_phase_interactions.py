@@ -6,8 +6,9 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 from copy import deepcopy
 
-from wisdem.orbit import ProjectManager
 from numpy.testing import assert_almost_equal
+
+from wisdem.orbit import ProjectManager
 from wisdem.orbit.core.library import extract_library_specs
 
 fixed = extract_library_specs("config", "complete_project")

@@ -4,34 +4,30 @@ general:
 design_variables:
 
     jacket:
-        r_foot:
+        foot_head_ratio:
             flag: True
-            lower_bound: 8.
-            upper_bound: 16.
-        d_l:
+            lower_bound: 1.1
+            upper_bound: 5.0
+        r_head:
+            flag: True
+            lower_bound: 2.
+            upper_bound: 6.
+        leg_thickness:
+            flag: True
+            lower_bound: 0.05
+            upper_bound: 0.1
+        leg_diameter:
             flag: True
             lower_bound: 0.9
             upper_bound: 5.
-        beta_b:
+        brace_diameters:
             flag: True
             lower_bound: 0.5
-            upper_bound: 0.9
-        beta_t:
+            upper_bound: 2.
+        brace_thicknesses:
             flag: True
-            lower_bound: 0.4
-            upper_bound: 0.9
-        gamma_b:
-            flag: True
-            lower_bound: 4.
-            upper_bound: 5.
-        gamma_t:
-            flag: True
-            lower_bound: 6.
-            upper_bound: 20.
-        q:
-            flag: True
-            lower_bound: 0.8
-            upper_bound: 0.9
+            lower_bound: 0.05
+            upper_bound: 0.5
 
 merit_figure: jacket_mass
 
@@ -42,6 +38,12 @@ constraints:
         global_buckling:
             flag: False
         shell_buckling:
+            flag: True
+        frequency_1:
+            flag: False #True
+            lower_bound: 0.13
+            upper_bound: 0.40
+        tower_diameter_coupling:
             flag: True
 
 driver:
@@ -54,6 +56,7 @@ driver:
         solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         step_size: 1.e-6      # Step size for finite differencing
         form: forward         # Finite differencing mode, either forward or central
+        debug_print: False
 
 recorder:
     flag: False                            # Flag to activate OpenMDAO recorder

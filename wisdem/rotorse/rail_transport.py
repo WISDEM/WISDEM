@@ -400,7 +400,15 @@ class RailTransport(ExplicitComponent):
         result = minimize(lambda x: -np.sum(np.abs(x)), x0, method="slsqp", bounds=bounds, tol=1e-3, constraints=const)
 
         # Now rotate blade at optimized angle
+        # x_rot1, z_rot1 = util.rotate(r_curveH, 0.0, r_curveH + x_ref, z_ref, result.x[0])
+        # nodes1 = pyframe3dd.NodeData(inode, x_rot1, y_ref, z_rot1, rad)
 
+        # Node location starting points when curving towards PS
+        # (towards the RIGHT with LE pointed down and standing at the root looking at tip)
+        # x_rot2, z_rot2 = util.rotate(-r_curveH, 0.0, -r_curveH + x_ref, z_ref, result.x[1])
+        # print('Angle: ', np.rad2deg(result.x[1]))
+        # x_rot2, z_rot2 = util.rotate(-r_curveH, 0.0, -r_curveH + x_ref, z_ref, np.deg2rad(-20))
+        # nodes2 = pyframe3dd.NodeData(inode, x_rot2, y_ref, z_rot2, rad)
 
 
         x_rail_inner  = np.linspace(0., 2.*r_envelopeH.min(), 10000)
@@ -408,21 +416,26 @@ class RailTransport(ExplicitComponent):
         x_rail_outer  = np.linspace(0., 2.*r_envelopeH.max(), 10000)
         y_rail_outer  = np.sqrt(r_envelopeH.max()**2. - (x_rail_outer-r_envelopeH.max())**2.)
 
-        # Undeflected transport
+        # # # # Undeflected transport
         # import matplotlib.pyplot as plt
-        # fig, ax = plt.subplots(1, 1, figsize=(4,8))
+        # fig, ax = plt.subplots(1, 1, figsize=(3.5,8))
         # ax.plot(x_rail_inner+2*lateral_clearance, y_rail_inner, "k:", label='Lateral clearance')
         # ax.plot(x_rail_outer, y_rail_outer, "k:")
         # # ax.plot(x_rot1+x_rot1[0]+lateral_clearance, z_rot1, label='rot1')
         # ax.plot(x_rot2-x_rot2[0]+lateral_clearance + yss, z_rot2, color="tab:red", label='Blade')
         # ax.plot(x_rot2-x_rot2[0]+lateral_clearance - yps, z_rot2, color="tab:red")
         # ax.set_xlim([0,50])
+        # ax.set_ylim([-0,110])
+        # ax.set_xlabel('m', weight='bold')
+        # ax.set_ylabel('m', weight='bold')
         # # ax.axis('equal')
         # plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-        # plt.subplots_adjust(bottom = 0.15, left = 0.15)
+        # plt.subplots_adjust(bottom = 0.15, left = 0.2)
         # ax.legend()
+        # plt.savefig('/Users/pbortolo/work/9_Presentations/FY22/BAR/RailReview/23deg_violate.pdf')
+        # # plt.savefig('/Users/pbortolo/work/9_Presentations/FY22/BAR/RailReview/23deg.pdf')
         # plt.show()
-
+        # exit()
 
         
 
@@ -519,7 +532,7 @@ class RailTransport(ExplicitComponent):
                 #     print("Undeflected blade length: ", util.arc_length(np.vstack((blade.nx, blade.nz)).T)[-1])
                 #     print("Corrected blade length: ", util.arc_length(np.vstack((x_defl, z_defl)).T)[-1])
                 #     # Deflected transport
-                #     fig, ax = plt.subplots(1, 1, figsize=(4,6))
+                #     fig, ax = plt.subplots(1, 1, figsize=(3.5,8))
                 #     ax.plot(x_rail_inner+2*lateral_clearance, y_rail_inner, "k:", label='Lateral clearance')
                 #     ax.plot(x_rail_outer, y_rail_outer, "k:")
                 #     # ax.plot(x_rot1+x_rot1[0]+lateral_clearance, z_rot1, label='rot1')
@@ -527,12 +540,16 @@ class RailTransport(ExplicitComponent):
                 #     ax.plot(x_defl - yps - blade.nx[0] + lateral_clearance, z_defl, color="tab:red")
                 #     ax.plot(blade.nx+ yss - blade.nx[0] + lateral_clearance, blade.nz, color="tab:blue", label='Undeflected blade')
                 #     ax.plot(blade.nx- yps - blade.nx[0] + lateral_clearance, blade.nz, color="tab:blue")
-                #     #ax.set_xlim([0,50])
-                #     ax.axis('equal')
+                #     ax.set_xlim([0,50])
+                #     ax.set_ylim([-0,110])
+                #     ax.set_xlabel('m', weight='bold')
+                #     ax.set_ylabel('m', weight='bold')
                 #     plt.grid(color=[0.8,0.8,0.8], linestyle='--')
-                #     plt.subplots_adjust(bottom = 0.15, left = 0.15)
+                #     plt.subplots_adjust(bottom = 0.15, left = 0.2)
                 #     ax.legend()
+                #     plt.savefig('/Users/pbortolo/work/9_Presentations/FY22/BAR/RailReview/13deg_85m.pdf')
                 #     plt.show()
+                #     exit()
 
                 # Derailing reaction force on root node
                 #  - Lateral force on wheels (multiply by 0.5 for 2 wheel sets)
@@ -599,7 +616,7 @@ class RailTransport(ExplicitComponent):
 
         print("Rail transport module convergence: ", result.success)
         # Evaluate optimized solution
-        RF_derailH, strainPS, strainSS = run_hcurve(result.x, optFlag=False, final=False)
+        RF_derailH, strainPS, strainSS = run_hcurve(result.x, optFlag=False, final=True)
 
         # Express derailing force as a constraint
         if _8axle:

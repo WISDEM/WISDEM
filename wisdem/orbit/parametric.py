@@ -16,6 +16,7 @@ import pandas as pd
 import statsmodels.api as sm
 from yaml import Loader
 from benedict import benedict
+
 from wisdem.orbit import ProjectManager
 
 

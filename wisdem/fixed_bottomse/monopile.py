@@ -1,6 +1,6 @@
+import numpy as np
 import openmdao.api as om
 
-import numpy as np
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.cylinder_member as mem
@@ -169,8 +169,8 @@ class MonopileMass(om.ExplicitComponent):
         # Mass properties for transition piece and gravity foundation
         r_trans = 0.5 * d[-1]
         r_grav = 0.5 * d[0]
-        I_trans = m_trans * r_trans ** 2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]  # shell
-        I_grav = m_grav * r_grav ** 2.0 * np.r_[0.25, 0.25, 0.5, np.zeros(3)]  # disk
+        I_trans = m_trans * r_trans**2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]  # shell
+        I_grav = m_grav * r_grav**2.0 * np.r_[0.25, 0.25, 0.5, np.zeros(3)]  # disk
         outputs["transition_piece_I"] = I_trans
         outputs["gravity_foundation_I"] = I_grav
 
@@ -298,10 +298,6 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_input("tower_E", np.zeros(ntow_sec), units="Pa")
         self.add_input("tower_G", np.zeros(ntow_sec), units="Pa")
 
-        self.add_input("rna_mass", val=0.0, units="kg")
-        self.add_input("rna_I", np.zeros(6), units="kg*m**2")
-        self.add_input("rna_cg", np.zeros(3), units="m")
-
         # point loads
         self.add_input("rna_F", np.zeros((3, nLC)), units="N")
         self.add_input("rna_M", np.zeros((3, nLC)), units="N*m")
@@ -313,11 +309,15 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_input("gravity_foundation_I", np.zeros(6), units="kg*m**2")
         self.add_input("transition_piece_height", 0.0, units="m")
         self.add_input("suctionpile_depth", 0.0, units="m")
+        self.add_input("water_depth", val=0.0, units="m")
 
         # For modal analysis only (loads captured in turbine_F & turbine_M)
         self.add_input("turbine_mass", val=0.0, units="kg")
         self.add_input("turbine_cg", val=np.zeros(3), units="m")
         self.add_input("turbine_I", np.zeros(6), units="kg*m**2")
+        self.add_input("rna_mass", val=0.0, units="kg")
+        self.add_input("rna_I", np.zeros(6), units="kg*m**2")
+        self.add_input("rna_cg", np.zeros(3), units="m")
 
         # combined wind-water distributed loads
         self.add_input("Px", val=np.zeros((n_full, nLC)), units="N/m")
@@ -381,6 +381,7 @@ class MonopileFrame(om.ExplicitComponent):
             if self.options["soil_springs"]:
                 z_soil = inputs["z_soil"]
                 k_soil = inputs["k_soil"]
+                depth = float(inputs["water_depth"])
                 z_pile = z[z <= (z[0] + 1e-1 + np.abs(z_soil[0]))]
                 if z_pile.size != NREFINE + 1:
                     print(z)
@@ -389,15 +390,15 @@ class MonopileFrame(om.ExplicitComponent):
                     raise ValueError("Please use only one section for submerged pile for now")
                 k_mono = np.zeros((z_pile.size, 6))
                 for k in range(6):
-                    k_mono[:, k] = np.interp(z_pile + np.abs(z_soil[0]), z_soil, k_soil[:, k])
+                    k_mono[:, k] = np.interp(z_pile + np.abs(depth), z_soil, k_soil[:, k])
                 kidx = np.arange(len(z_pile), dtype=np.int_)
-                kx = np.array([k_mono[:, 0]])
-                ky = np.array([k_mono[:, 2]])
+                kx = k_mono[:, 0]
+                ky = k_mono[:, 2]
                 kz = np.zeros(k_mono.shape[0])
-                kz[0] = np.array([k_mono[0, 4]])
-                ktx = np.array([k_mono[:, 1]])
-                kty = np.array([k_mono[:, 3]])
-                ktz = np.array([k_mono[:, 5]])
+                kz[0] = k_mono[0, 4]
+                ktx = k_mono[:, 1]
+                kty = k_mono[:, 3]
+                ktz = k_mono[:, 5]
 
             else:
                 z_pile = z[z <= (z[0] + 1e-1 + inputs["suctionpile_depth"])]
@@ -596,7 +597,7 @@ class MonopileFrame(om.ExplicitComponent):
             modal.ympf,
             modal.zmpf,
             idx0=NREFINE,
-            base_slope0=False,
+            base_slope0=(not self.options["soil_springs"]),
         )
         outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
         outputs["side_side_freqs"] = freq_y[:NFREQ2]
@@ -622,7 +623,7 @@ class MonopileFrame(om.ExplicitComponent):
             outputs["tower_torsion_modes"] = mshapes_z[:NFREQ2, :]
 
         # deflections due to loading (from cylinder top and wind/wave loads)
-        outputs["monopile_deflection"] = np.sqrt(displacements.dx ** 2 + displacements.dy ** 2).T
+        outputs["monopile_deflection"] = np.sqrt(displacements.dx**2 + displacements.dy**2).T
         outputs["top_deflection"] = outputs["monopile_deflection"][-1, :]
 
         # Record total forces and moments
@@ -688,6 +689,7 @@ class MonopileSE(om.Group):
             "material_names",
             "painting_cost_rate",
             "labor_cost_rate",
+            "z_global",
             "z_param",
             "z_full",
             "s_full",
@@ -831,6 +833,8 @@ class MonopileSE(om.Group):
                 "turbine_mass",
                 "turbine_cg",
                 "turbine_I",
+                "turbine_F",
+                "turbine_M",
                 "rna_mass",
                 "rna_cg",
                 "rna_I",

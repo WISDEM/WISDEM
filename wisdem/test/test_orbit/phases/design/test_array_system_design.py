@@ -10,6 +10,7 @@ from copy import deepcopy
 
 import numpy as np
 import pytest
+
 from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.phases.design import ArraySystemDesign, CustomArraySystemDesign
 from wisdem.orbit.core.exceptions import LibraryItemNotFoundError

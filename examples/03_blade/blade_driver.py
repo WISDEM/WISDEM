@@ -5,7 +5,7 @@ from wisdem.commonse.mpi_tools import MPI
 from wisdem.postprocessing.compare_designs import run
 
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
-fname_wt_input = mydir + os.sep + "BAR0.yaml"
+fname_wt_input = mydir + os.sep + "BAR_USC.yaml"
 fname_modeling_options = mydir + os.sep + "modeling_options.yaml"
 fname_analysis_options_no_opt = mydir + os.sep + "analysis_options_no_opt.yaml"
 fname_analysis_options_aero = mydir + os.sep + "analysis_options_aero.yaml"

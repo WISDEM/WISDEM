@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import brentq, minimize_scalar
+
 from wisdem.commonse.constants import gravity
 
 
@@ -29,9 +30,9 @@ def _TBeamProperties(h_web, t_web, w_flange, t_flange):
     y_cg = ((h_web + 0.5 * t_flange) * area_flange + 0.5 * h_web * area_web) / area
     # Moments of inertia: y-axis runs through base (spinning top),
     # x-axis runs parallel to flange through cg
-    Iyy = (area_web * t_web ** 2 + area_flange * w_flange ** 2) / 12.0
+    Iyy = (area_web * t_web**2 + area_flange * w_flange**2) / 12.0
     Ixx = (
-        (area_web * h_web ** 2 + area_flange * t_flange ** 2) / 12.0
+        (area_web * h_web**2 + area_flange * t_flange**2) / 12.0
         + area_web * (y_cg - 0.5 * h_web) ** 2
         + area_flange * (h_web + 0.5 * t_flange - y_cg) ** 2
     )
@@ -129,16 +130,16 @@ def _compute_stiffener_factors(
     # Compute hoop stress modifiers accounting for stiffener rings
     # This has to be done at midpoint between stiffeners and at stiffener location itself
     # Compute beta (just a local term used here)
-    D = E * t_wall ** 3 / (12.0 * (1 - nu * nu))
-    beta = (0.25 * E * t_wall / R_od ** 2 / D) ** 0.25
+    D = E * t_wall**3 / (12.0 * (1 - nu * nu))
+    beta = (0.25 * E * t_wall / R_od**2 / D) ** 0.25
     # Compute psi-factor (just a local term used here)
     u = np.minimum(0.5 * beta * L_stiffener, 30.0)
     psi_k = 2.0 * (np.sin(u) * np.cosh(u) + np.cos(u) * np.sinh(u)) / (np.sinh(2 * u) + np.sin(2 * u))
 
     # Compute a couple of other local terms
     u = np.minimum(beta * L_stiffener, 30.0)
-    k_t = 8 * beta ** 3 * D * (np.cosh(u) - np.cos(u)) / (np.sinh(u) + np.sin(u))
-    k_d = E * t_stiff * (R_od ** 2 - R_flange ** 2) / R_od / ((1 + nu) * R_od ** 2 + (1 - nu) * R_flange ** 2)
+    k_t = 8 * beta**3 * D * (np.cosh(u) - np.cos(u)) / (np.sinh(u) + np.sin(u))
+    k_d = E * t_stiff * (R_od**2 - R_flange**2) / R_od / ((1 + nu) * R_od**2 + (1 - nu) * R_flange**2)
 
     # Pressure from axial load
     pressure_sigma = pressure - nu * axial_stress * t_wall / R_od
@@ -178,14 +179,14 @@ def _compute_elastic_stress_limits(
     # 1. Local shell mode buckling from axial loads
     # Compute a few parameters that define the curvature of the geometry
     m_x = L_stiffener / np.sqrt(R * t_wall)
-    z_x = m_x ** 2 * np.sqrt(1 - nu ** 2)
-    z_m = 12.0 * z_x ** 2 / np.pi ** 4
+    z_x = m_x**2 * np.sqrt(1 - nu**2)
+    z_m = 12.0 * z_x**2 / np.pi**4
     # Imperfection factor- empirical fit that converts theory to reality
     a_xL = 9.0 * (300.0 + (2 * R / t_wall)) ** (-0.4)
     # Calculate buckling coefficient
-    C_xL = np.sqrt(1 + 150.0 * a_xL ** 2 * m_x ** 4 / (2 * R / t_wall))
+    C_xL = np.sqrt(1 + 150.0 * a_xL**2 * m_x**4 / (2 * R / t_wall))
     # Calculate elastic and inelastic final limits
-    elastic_axial_local_FxeL = C_xL * np.pi ** 2 * E * (t_wall / L_stiffener) ** 2 / 12.0 / (1 - nu ** 2)
+    elastic_axial_local_FxeL = C_xL * np.pi**2 * E * (t_wall / L_stiffener) ** 2 / 12.0 / (1 - nu**2)
 
     # 2. Local shell mode buckling from external (pressure) loads
     # Imperfection factor- empirical fit that converts theory to reality
@@ -198,17 +199,17 @@ def _compute_elastic_stress_limits(
         c = L_stiffener[k] / np.pi / R[k]
         myfun = lambda x: ((c * x) ** 2 * (1 + (c * x) ** 2) ** 4 / (2 + 3 * (c * x) ** 2) - z_m[k])
         try:
-            n[k] = brentq(myfun, 0, maxn)
+            n[k] = brentq(myfun, 0, maxn, disp=False)
         except:
             n[k] = maxn
     # Calculate beta (local term)
     beta = np.round(n) * L_stiffener / np.pi / R
     # Calculate buckling coefficient
     C_thL = a_thL * (
-        (1 + beta ** 2) ** 2 / (0.5 + beta ** 2) + 0.112 * m_x ** 4 / (1 + beta ** 2) ** 2 / (0.5 + beta ** 2)
+        (1 + beta**2) ** 2 / (0.5 + beta**2) + 0.112 * m_x**4 / (1 + beta**2) ** 2 / (0.5 + beta**2)
     )
     # Calculate elastic and inelastic final limits
-    elastic_extern_local_FreL = C_thL * np.pi ** 2 * E * (t_wall / L_stiffener) ** 2 / 12.0 / (1 - nu ** 2)
+    elastic_extern_local_FreL = C_thL * np.pi**2 * E * (t_wall / L_stiffener) ** 2 / 12.0 / (1 - nu**2)
 
     # 3. General instability buckling from axial loads
     # Compute imperfection factor
@@ -234,8 +235,8 @@ def _compute_elastic_stress_limits(
     # Compute effective shell moment of inertia based on Ir - I of stiffener
     Ier = (
         Ixx
-        + area_stiff * z_r ** 2 * L_shell_effective * t_wall / (area_stiff + L_shell_effective * t_wall)
-        + L_shell_effective * t_wall ** 3 / 12.0
+        + area_stiff * z_r**2 * L_shell_effective * t_wall / (area_stiff + L_shell_effective * t_wall)
+        + L_shell_effective * t_wall**3 / 12.0
     )
     # Lambda- a local constant
     lambda_G = np.pi * R / h_section
@@ -250,11 +251,11 @@ def _compute_elastic_stress_limits(
             * lambda_G[k] ** 4
             * t_wall[k]
             / R[k]
-            / (x ** 2 + 0.0 * lambda_G[k] ** 2 - 1)
-            / (x ** 2 + lambda_G[k] ** 2) ** 2
-            + E[k] * Ier[k] * (x ** 2 - 1) / L_stiffener[k] / Rc[k] ** 2 / R_od[k]
+            / (x**2 + 0.0 * lambda_G[k] ** 2 - 1)
+            / (x**2 + lambda_G[k] ** 2) ** 2
+            + E[k] * Ier[k] * (x**2 - 1) / L_stiffener[k] / Rc[k] ** 2 / R_od[k]
         )
-        minout = minimize_scalar(peG, bounds=(2.0, 15.0), method="bounded")
+        minout = minimize_scalar(peG, bounds=(2.0, 15.0), method="bounded", options={"disp": False})
         n[k] = minout.x
         pressure_failure_peG[k] = peG(n[k])
     # Calculate elastic and inelastic final limits
@@ -277,7 +278,7 @@ def _plasticityRF(Felastic, yield_stress):
     Finelastic   : float (scalar/vector),  modified (in)elastic stress
     """
     Fratio = np.array(yield_stress / Felastic)
-    eta = Fratio * (1.0 + 3.75 * Fratio ** 2) ** (-0.25)
+    eta = Fratio * (1.0 + 3.75 * Fratio**2) ** (-0.25)
     Finelastic = np.array(Felastic)
     Finelastic[Felastic > 0.5 * yield_stress] *= eta[Felastic > 0.5 * yield_stress]
     return Finelastic
@@ -363,6 +364,7 @@ def shellBuckling_withStiffeners(
                     0,
                     Fxci[k] + Frci[k],
                     maxiter=20,
+                    disp=False,
                 )
             except:
                 Fthci[k] = Fxci[k] + Frci[k]

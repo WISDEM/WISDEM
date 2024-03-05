@@ -9,6 +9,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 from copy import deepcopy
 
 import pytest
+
 from wisdem.orbit.phases.design import MooringSystemDesign
 
 base = {

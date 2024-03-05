@@ -10,6 +10,7 @@ from math import ceil
 
 import simpy
 from marmot import process
+
 from wisdem.orbit.core import Vessel
 from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import InstallPhase

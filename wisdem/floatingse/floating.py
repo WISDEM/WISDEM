@@ -1,6 +1,7 @@
 import openmdao.api as om
+
 from wisdem.floatingse.mooring import Mooring
-from wisdem.floatingse.constraints import FloatingConstraints
+from wisdem.floatingse.constraints import RigidModes, FloatingConstraints
 from wisdem.commonse.cylinder_member import MemberDetailed
 from wisdem.floatingse.floating_frame import FloatingFrame
 from wisdem.floatingse.floating_system import FloatingSystem
@@ -54,6 +55,9 @@ class FloatingSE(om.Group):
         # Evaluate system constraints
         self.add_subsystem("cons", FloatingConstraints(modeling_options=opt), promotes=["*"])
 
+        # Evaluate system constraints
+        self.add_subsystem("modal", RigidModes(), promotes=["*"])
+
         # Connect all input variables from all models
         mem_vars = [
             "section_D",
@@ -86,7 +90,7 @@ class FloatingSE(om.Group):
             "added_mass",
             "waterline_centroid",
         ]
-        mem_load_vars = ["z_full", "d_full", "s_full", "s_all"]
+        mem_load_vars = ["z_global", "d_full", "s_full", "s_all"]
 
         for k in range(n_member):
             for var in mem_vars:

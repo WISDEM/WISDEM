@@ -210,8 +210,8 @@ components:
             diameter: 3.0
             uptilt: 0.08726
             distance_tt_hub: 2.3
-            distance_hub2mb: 1.912
-            distance_mb2mb: 0.368
+            distance_hub_mb: 1.912
+            distance_mb_mb: 0.368
             overhang: 5.
             lss_diameter: [0.577, 0.577]
             lss_wall_thickness: [0.288, 0.288]
@@ -510,6 +510,7 @@ materials:
       S: 0
       Xy: 345.e+6
       m: 3
+      A: 3.5534648443719767e10 #DOI 10.1016/j.proeng.2013.12.061 eqn 5
       unit_cost: 0.7
    -  name: steel_drive
       description: Steel of the drivetrain ASTM 4140 40Cr1Mo28
@@ -528,6 +529,7 @@ materials:
       S: 0
       Xy: 485.e+6
       m: 3
+      A: 3.5534648443719767e10 #DOI 10.1016/j.proeng.2013.12.061 eqn 5
       unit_cost: 0.9
    -  name: cast_iron
       description: TODO Steel of the drivetrain ASTM 4140 40Cr1Mo28

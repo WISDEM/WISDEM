@@ -22,6 +22,7 @@ import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
+
 import wisdem.postprocessing.wisdem_get as getter
 from wisdem.glue_code.runWISDEM import run_wisdem, load_wisdem
 
@@ -499,7 +500,7 @@ def create_all_plots(
     if zs.min() < -5.0:
         ax2.plot(vx, np.zeros(2), color="b", linestyle="--")
         ax2.plot(vx, -water_depth * np.ones(2), color=brown, linestyle="--")
-        ax2.plot(vx, 20 * np.ones(2), color="g", linestyle="--")
+        ax2.plot(vx, h_trans * np.ones(2), color="g", linestyle="--")
     ax2.set_xlim(vx)
     if mult_flag:
         ax2.legend(fontsize=font_size)
@@ -825,7 +826,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "Rated pitch": ["control.rated_pitch", "deg"],
         "Rated thrust": ["rotorse.rp.powercurve.rated_T", "kN"],
         "Rated torque": ["rotorse.rp.powercurve.rated_Q", "kN*m"],
-        "Blade mass": ["rotorse.re.precomp.blade_mass", "kg"],
+        "Blade mass": ["rotorse.rs.bjs.blade_mass", "kg"],
         "Blade cost": ["rotorse.re.precomp.total_blade_cost", "USD"],
         "Tip defl": ["tcons.tip_deflection", "m"],
         "Tip defl ratio": ["tcons.tip_deflection_ratio", None],
@@ -843,7 +844,8 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "Floating Tower cost": ["floatingse.tower_cost", "USD"],
         "Monopile mass": ["towerse.monopile_mass", "kg"],
         "Monopile cost": ["towerse.monopile_cost", "USD"],
-        "Tower-Monopile freqs": ["towerse.tower.structural_frequencies", "Hz"],
+        "Tower freqs": ["towerse.tower.structural_frequencies", "Hz"],
+        "Monopile/jacket freqs": ["fixedse.structural_frequencies", "Hz"],
         "Floating Tower freqs": ["floatingse.tower_freqs", "Hz"],
     }
 

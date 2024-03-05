@@ -9,9 +9,8 @@ from __future__ import print_function
 
 import copy
 
-from scipy.linalg import solve_banded
-
 import numpy as np
+from scipy.linalg import solve_banded
 
 # from scipy.optimize import curve_fit
 
@@ -204,11 +203,6 @@ def get_xyz_mode_shapes(
             mshapes_z[i, :] = zpolys[freqs > 1e-1, :][z_polyidx, :]
             freq_z[i] = freqs_dyn[z_polyidx]
             used_freq_idx = record_used_freqs(z_polyidx, i, used_freq_idx)
-
-    if rank_and_file:
-        print("modes here")
-        print(mshapes_x[:2, :])
-        print(mshapes_y[:2, :])
 
     return freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z
 

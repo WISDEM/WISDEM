@@ -8,6 +8,7 @@ __email__ = "robert.hammond@nrel.gov"
 from copy import deepcopy
 
 import pytest
+
 from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.phases.design import ExportSystemDesign
 

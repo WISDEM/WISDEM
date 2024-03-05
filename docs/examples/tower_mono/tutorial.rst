@@ -251,7 +251,7 @@ The :code:`environment` section must also be updated with the offshore propertie
     :start-after: air_speed_sound
     :end-before: costs:
 
-The ``modeling_options.yaml`` file already contains a section for the monopile, with entries identical to the tower section.  The input :code:`loading` scenarios are also the same. The ``analysis_options.yaml`` file, however, is different and activates the design variables and constraints associated with the monopile.  Note also that the objective function now says :code:`structural_mass`, to capture the combined mass of both the tower and monopile,
+The ``modeling_options_monopile.yaml`` file already contains a section for the monopile, with entries identical to the tower section.  The input :code:`loading` scenarios are also the same. The ``analysis_options.yaml`` file, however, is different and activates the design variables and constraints associated with the monopile.  Note also that the objective function now says :code:`structural_mass`, to capture the combined mass of both the tower and monopile,
 
 .. literalinclude:: ../../../examples/05_tower_monopile/analysis_options_monopile.yaml
     :language: yaml
@@ -260,7 +260,7 @@ The yaml files can be called directly from the command line, or via a python scr
 
 .. code-block:: bash
 
-    $ wisdem nrel5mw_monopile.yaml modeling_options.yaml analysis_options_monopile.yaml
+    $ wisdem nrel5mw_monopile.yaml modeling_options_monopile.yaml analysis_options_monopile.yaml
 
 or
 

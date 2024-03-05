@@ -12,8 +12,14 @@ WISDEM:
         flag: True
     TowerSE:
         flag: True
+        frame3dd:
+            shear: True
+            geom: True
     FixedBottomSE:
         flag: True
-        soil_springs: True
+        soil_springs: False # Setting this True crashes the eigenvalue solver on Github actions
+        frame3dd:
+            shear: True
+            geom: True
     BOS:
         flag: True

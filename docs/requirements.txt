@@ -4,14 +4,19 @@
 matplotlib
 numpy
 scipy
-openmdao>=2.0
+openmdao
 simpy
 marmot-agents
+cython
+jsonschema
+make
+openpyxl
+swig
+compilers
 
 # docs
-sphinx>2.0
+sphinx
 numpydoc
-numpydoc
-sphinxcontrib.bibtex<2.0.0
+sphinxcontrib.bibtex
 sphinx-rtd-theme
 # sphinx-autoapi
