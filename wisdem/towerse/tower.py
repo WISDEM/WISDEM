@@ -378,53 +378,55 @@ class TowerFrame(om.ExplicitComponent):
         # self.frame.write('tower_debug.3dd')
         # -----------------------------------
         # run the analysis
-        displacements, forces, reactions, internalForces, mass, modal = self.frame.run()
+        if frame3dd_opt['flag']:
+            displacements, forces, reactions, internalForces, mass, modal = self.frame.run()
 
-        # natural frequncies
-        outputs["f1"] = modal.freq[0]
-        outputs["f2"] = modal.freq[1]
-        outputs["structural_frequencies"] = modal.freq[:NFREQ]
+            # natural frequncies
+            outputs["f1"] = modal.freq[0]
+            outputs["f2"] = modal.freq[1]
+            outputs["structural_frequencies"] = modal.freq[:NFREQ]
 
-        # Get all mode shapes in batch
-        NFREQ2 = int(NFREQ / 2)
-        freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
-            xyz[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
-        )
-        outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
-        outputs["side_side_freqs"] = freq_y[:NFREQ2]
-        outputs["torsion_freqs"] = freq_z[:NFREQ2]
-        outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
-        outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
-        outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
+            # Get all mode shapes in batch
+            NFREQ2 = int(NFREQ / 2)
+            freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
+                xyz[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
+            )
+            outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
+            outputs["side_side_freqs"] = freq_y[:NFREQ2]
+            outputs["torsion_freqs"] = freq_z[:NFREQ2]
+            outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
+            outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
+            outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
+            
 
-        # deflections due to loading (from cylinder top and wind/wave loads)
-        outputs["tower_deflection"] = np.sqrt(displacements.dx ** 2 + displacements.dy ** 2).T
-        outputs["top_deflection"] = outputs["tower_deflection"][-1, :]
+            # deflections due to loading (from cylinder top and wind/wave loads)
+            outputs["tower_deflection"] = np.sqrt(displacements.dx ** 2 + displacements.dy ** 2).T
+            outputs["top_deflection"] = outputs["tower_deflection"][-1, :]
 
-        # Record total forces and moments at base
-        outputs["turbine_F"] = -np.c_[reactions.Fx[:, 0], reactions.Fy[:, 0], reactions.Fz[:, 0]].T
-        outputs["turbine_M"] = -np.c_[reactions.Mxx[:, 0], reactions.Myy[:, 0], reactions.Mzz[:, 0]].T
+            # Record total forces and moments at base
+            outputs["turbine_F"] = -np.c_[reactions.Fx[:, 0], reactions.Fy[:, 0], reactions.Fz[:, 0]].T
+            outputs["turbine_M"] = -np.c_[reactions.Mxx[:, 0], reactions.Myy[:, 0], reactions.Mzz[:, 0]].T
 
-        Fz = np.zeros((len(forces.Nx[0, 1::2]), nLC))
-        Vx = np.zeros(Fz.shape)
-        Vy = np.zeros(Fz.shape)
-        Mxx = np.zeros(Fz.shape)
-        Myy = np.zeros(Fz.shape)
-        Mzz = np.zeros(Fz.shape)
-        for ic in range(nLC):
-            # Forces and moments along the structure
-            Fz[:, ic] = forces.Nx[ic, 1::2]
-            Vx[:, ic] = -forces.Vz[ic, 1::2]
-            Vy[:, ic] = forces.Vy[ic, 1::2]
-            Mxx[:, ic] = -forces.Mzz[ic, 1::2]
-            Myy[:, ic] = forces.Myy[ic, 1::2]
-            Mzz[:, ic] = forces.Txx[ic, 1::2]
-        outputs["tower_Fz"] = Fz
-        outputs["tower_Vx"] = Vx
-        outputs["tower_Vy"] = Vy
-        outputs["tower_Mxx"] = Mxx
-        outputs["tower_Myy"] = Myy
-        outputs["tower_Mzz"] = Mzz
+            Fz = np.zeros((len(forces.Nx[0, 1::2]), nLC))
+            Vx = np.zeros(Fz.shape)
+            Vy = np.zeros(Fz.shape)
+            Mxx = np.zeros(Fz.shape)
+            Myy = np.zeros(Fz.shape)
+            Mzz = np.zeros(Fz.shape)
+            for ic in range(nLC):
+                # Forces and moments along the structure
+                Fz[:, ic] = forces.Nx[ic, 1::2]
+                Vx[:, ic] = -forces.Vz[ic, 1::2]
+                Vy[:, ic] = forces.Vy[ic, 1::2]
+                Mxx[:, ic] = -forces.Mzz[ic, 1::2]
+                Myy[:, ic] = forces.Myy[ic, 1::2]
+                Mzz[:, ic] = forces.Txx[ic, 1::2]
+            outputs["tower_Fz"] = Fz
+            outputs["tower_Vx"] = Vx
+            outputs["tower_Vy"] = Vy
+            outputs["tower_Mxx"] = Mxx
+            outputs["tower_Myy"] = Myy
+            outputs["tower_Mzz"] = Mzz
 
 
 class TowerSE(om.Group):

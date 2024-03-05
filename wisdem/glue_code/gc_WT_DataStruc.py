@@ -2550,6 +2550,20 @@ class AggregateJoints(om.ExplicitComponent):
         locations_xyz = locations.copy()
         locations_xyz[icyl, 0] = locations[icyl, 0] * np.cos(locations[icyl, 1])
         locations_xyz[icyl, 1] = locations[icyl, 0] * np.sin(locations[icyl, 1])
+
+        # Handle relative joints, there is probably a more elegant solution
+        joint_names = floating_init_options['joints']['name']
+        for i_joint in range(floating_init_options['joints']['n_joints']):
+            rel_joint = floating_init_options['joints']['relative'][i_joint]
+            if rel_joint != 'origin':  # is a relative joint
+                if rel_joint not in joint_names:
+                    raise Exception(f'The relative joint {joint_names[i_joint]} is not relative to an existing joint.  Relative joint provided: {rel_joint}')
+                
+                rel_joint_location = locations_xyz[name2idx[rel_joint]]
+                relative_dimensions = np.array(floating_init_options['joints']['relative_dims'][i_joint])  # These joints are relative
+                locations_xyz[i_joint][relative_dimensions] += rel_joint_location[relative_dimensions]
+
+
         joints_xyz[:n_joints, :] = locations_xyz.copy()
 
         # Initial biggest radius at each node
@@ -2603,12 +2617,14 @@ class AggregateJoints(om.ExplicitComponent):
             outputs["member_" + iname + ":joint2"] = joint2xyz
             outputs["member_" + iname + ":height"] = hk
 
-            # Largest radius at connection points for this member
-            Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
-            node_r[joint1id] = max(node_r[joint1id], Rk[0])
-            node_r[joint2id] = max(node_r[joint2id], Rk[-1])
-            intersects[joint1id] += 1
-            intersects[joint2id] += 1
+            # Largest radius at connection points for this member,
+            # Don't check radius if members are paralell, it's a flag for now, but can probably check if orthogonal in the future
+            if not floating_init_options['members']['no_intersect'][k]:
+                Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
+                node_r[joint1id] = max(node_r[joint1id], Rk[0])
+                node_r[joint2id] = max(node_r[joint2id], Rk[-1])
+                intersects[joint1id] += 1
+                intersects[joint2id] += 1
 
         # Store the ghost node non-dimensional locations
         for k in range(n_members):
@@ -2774,6 +2790,9 @@ class MooringJoints(om.ExplicitComponent):
         node_loc = inputs["nodes_location"]
         joints_loc = inputs["joints_xyz"]
         idx_map = self.options["options"]["floating"]["joints"]["name2idx"]
+        
+        # Find mooring nodes
+        # Use mooring node name that correpsonds to floating joint location
         for k in range(n_nodes):
             if node_joints[k] == "":
                 continue
@@ -2781,25 +2800,28 @@ class MooringJoints(om.ExplicitComponent):
             node_loc[k, :] = joints_loc[idx, :]
         outputs["mooring_nodes"] = node_loc
 
-        node_loc = np.unique(node_loc, axis=0)
-        tol = 0.5
-        z_fair = node_loc[:, 2].max()
-        z_anch = node_loc[:, 2].min()
-        ifair = np.where(np.abs(node_loc[:, 2] - z_fair) < tol)[0]
-        ianch = np.where(np.abs(node_loc[:, 2] - z_anch) < tol)[0]
+        # node_loc = np.unique(node_loc, axis=0)      # this step re-orders!  I'm not sure how there would be duplicates, unless there were duplicate mooring nodes
+        depth = np.abs(node_loc[:, 2].min())
+        
+        ifair = np.where(np.array(mooring_init_options['node_type']) == 'vessel')[0]
+        ianch = np.where(np.array(mooring_init_options['node_type']) == 'fixed')[0]
+        
+        z_fair = node_loc[ifair, 2].mean()
+        z_anch = node_loc[ianch, 2].mean()
 
         node_fair = node_loc[ifair, :]
         node_anch = node_loc[ianch, :]
         ang_fair = np.arctan2(node_fair[:, 1], node_fair[:, 0])
         ang_anch = np.arctan2(node_anch[:, 1], node_anch[:, 0])
-        node_fair = node_fair[np.argsort(ang_fair), :]
-        node_anch = node_anch[np.argsort(ang_anch), :]
+        node_fair = np.unique(node_fair[np.argsort(ang_fair), :], axis=0)
+        node_anch = np.unique(node_anch[np.argsort(ang_anch), :], axis=0)
 
         outputs["fairlead_nodes"] = node_fair
         outputs["anchor_nodes"] = node_anch
         outputs["fairlead"] = -z_fair  # Positive is defined below the waterline here
-        outputs["fairlead_radius"] = np.sqrt(np.sum(node_loc[ifair, :2] ** 2, axis=1))
-        outputs["anchor_radius"] = np.sqrt(np.sum(node_loc[ianch, :2] ** 2, axis=1))
+        outputs["fairlead_radius"] = np.sqrt(np.sum(node_fair[:,:2] ** 2, axis=1))
+        outputs["anchor_radius"] = np.sqrt(np.sum(node_anch[:,:2] ** 2, axis=1))
+
 
 
 class ComputeMaterialsProperties(om.ExplicitComponent):
@@ -3210,17 +3232,25 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
         modeling_options = self.options["modeling_options"]
         if modeling_options["flags"]["tower"]:
             if inputs["hub_height_user"] != 0.0:
+                # Rescale tower axis based on hub height from user
                 outputs["hub_height"] = inputs["hub_height_user"]
                 z_base = inputs["tower_ref_axis_user"][0, 2]
                 z_current = inputs["tower_ref_axis_user"][:, 2] - z_base
-                h_needed = inputs["hub_height_user"] - inputs["distance_tt_hub"] - z_base
+                if modeling_options['flags']['marine_hydro']:  #hub height negative
+                    print('here')
+                    h_needed = inputs["hub_height_user"] + inputs["distance_tt_hub"] - z_base
+                else:
+                    h_needed = inputs["hub_height_user"] - inputs["distance_tt_hub"] - z_base
                 z_new = z_current * h_needed / z_current[-1]
                 outputs["tower_ref_axis"][:, 2] = z_new + z_base
+                outputs["tower_ref_axis"][:, 2] = inputs["tower_ref_axis_user"][:, 2]
             else:
                 outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]
+        else:
+            outputs["hub_height"] = inputs["hub_height_user"]
 
-        if modeling_options["flags"]["blade"] and inputs["rotor_diameter"] > 2.0 * outputs["hub_height"]:
+        if modeling_options["flags"]["blade"] and inputs["rotor_diameter"] > 2.0 * np.abs(outputs["hub_height"]):
             raise Exception(
                 "The rotor blade extends past the ground or water line. Please adjust hub height and/or rotor diameter."
             )

@@ -377,7 +377,7 @@ class LinearWaves(WaveBase):
         omega = 2.0 * np.pi / inputs["Tsig_wave"]
 
         # compute wave number from dispersion relationship
-        k = brentq(lambda k: omega ** 2 - gravity * k * np.tanh(d * k), 0, 1e3 * omega ** 2 / gravity)
+        k = brentq(lambda k: omega**2 - gravity * k * np.tanh(d * k), 0, 1e3 * omega**2 / gravity, disp=False)
         self.k = k
         outputs["phase_speed"] = omega / k
 

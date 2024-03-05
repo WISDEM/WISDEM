@@ -135,7 +135,11 @@ class TipDeflectionConstraint(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack variables
+        modeling_options = self.options["modeling_options"]
         z_tower = inputs["ref_axis_tower"][:, 2]
+        # flip tower coords if MHK
+        if modeling_options['flags']['marine_hydro']:
+            z_tower *= -1
         d_tower = inputs["d_full"]
         overhang = inputs["overhang"]
         tt2hub = overhang * np.sin(inputs["tilt"] / 180.0 * np.pi)

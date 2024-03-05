@@ -1216,6 +1216,9 @@ def assign_configuration_values(wt_opt, assembly, opt_options):
         raise Exception(
             "ERROR: you activated the rotor diameter as design variable, but you have not specified the rotor diameter in the geometry yaml."
         )
+    
+    if assembly["hub_height"] < 0 and not assembly["marine_hydro"]:
+        raise Exception("ERROR: a negative hub_height was selected, but the marine_hydro assembly flag is not true.")
 
     return wt_opt
 

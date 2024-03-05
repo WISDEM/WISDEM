@@ -52,6 +52,11 @@ class WindTurbineOntologyPython(object):
             or self.modeling_options["flags"]["jacket"]
         )
 
+        # MHK flag
+        self.modeling_options["flags"]["marine_hydro"] = self.wt_init["assembly"]["marine_hydro"]
+        if self.modeling_options["flags"]["marine_hydro"]:
+            self.modeling_options["flags"]["offshore"] = True
+
         # Put in some logic about what needs to be in there
         flags = self.modeling_options["flags"]
 
@@ -271,6 +276,9 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["floating"]["joints"]["name"] = [""] * n_joints
             self.modeling_options["floating"]["joints"]["transition"] = [False] * n_joints
             self.modeling_options["floating"]["joints"]["cylindrical"] = [False] * n_joints
+            self.modeling_options["floating"]["joints"]["relative"] = ['origin'] * n_joints
+            self.modeling_options["floating"]["joints"]["relative_dims"] = [[True,True,True]] * n_joints
+            self.modeling_options["floating"]["joints"]["axial_coeffs"] = [{}]* n_joints
             for i in range(n_joints):
                 self.modeling_options["floating"]["joints"]["name"][i] = self.wt_init["components"][
                     "floating_platform"
@@ -281,6 +289,17 @@ class WindTurbineOntologyPython(object):
                 self.modeling_options["floating"]["joints"]["cylindrical"][i] = self.wt_init["components"][
                     "floating_platform"
                 ]["joints"][i]["cylindrical"]
+                self.modeling_options["floating"]["joints"]["relative"][i] = self.wt_init["components"][
+                    "floating_platform"
+                ]["joints"][i]["relative"]
+                self.modeling_options["floating"]["joints"]["relative_dims"][i] = self.wt_init["components"][
+                    "floating_platform"
+                ]["joints"][i]["relative_dims"]
+                # Axial coefficients: pass through for now.  If we want them to be a DV someday, will need to make part openmdao glue code
+                self.modeling_options["floating"]["joints"]["axial_coeffs"][i] = self.wt_init["components"][
+                    "floating_platform"
+                ]["joints"][i]["axial_coeffs"]
+                
 
             # Create name->index dictionary for joint names, will add on axial joints later
             name2idx = dict(zip(self.modeling_options["floating"]["joints"]["name"], range(n_joints)))
@@ -307,6 +326,7 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["floating"]["members"]["n_ballasts"] = np.zeros(n_members, dtype=int)
             self.modeling_options["floating"]["members"]["n_bulkheads"] = np.zeros(n_members, dtype=int)
             self.modeling_options["floating"]["members"]["n_axial_joints"] = np.zeros(n_members, dtype=int)
+            self.modeling_options["floating"]["members"]["no_intersect"] = np.full(n_members, fill_value=False)
             ballast_types = []
             for i in range(n_members):
                 self.modeling_options["floating"]["members"]["name"][i] = self.wt_init["components"][
@@ -464,6 +484,8 @@ class WindTurbineOntologyPython(object):
                         ] = len(name2idx)
                 else:
                     self.modeling_options["floating"]["members"]["n_axial_joints"][i] = 0
+
+                self.modeling_options['floating']['members']['no_intersect'][i] = self.wt_init['components']['floating_platform']['members'][i]['no_intersect']
 
                 final_grid = np.unique(grid)
                 final_geom_grid = np.unique(geom_grid)

@@ -465,48 +465,49 @@ class RunFrame3DD(ExplicitComponent):
         # Debugging
         # blade.write('blade.3dd')
 
-        # run the analysis
-        displacements, forces, reactions, internalForces, mass, modal = blade.run()
+        # run the analysis, if frame3dd flag enabled (default is true)
+        if self.options['modeling_options']['WISDEM']['RotorSE']['frame3dd']['flag']:
+            displacements, forces, reactions, internalForces, mass, modal = blade.run()
 
-        # For now, just 1 load case and blade
-        iCase = 0
+            # For now, just 1 load case and blade
+            iCase = 0
 
-        # Mode shapes and frequencies
-        n_freq2 = int(self.n_freq / 2)
-        freq_x, freq_y, _, mshapes_x, mshapes_y, _ = util.get_xyz_mode_shapes(
-            r, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
-        )
-        freq_x = freq_x[:n_freq2]
-        freq_y = freq_y[:n_freq2]
-        mshapes_x = mshapes_x[:n_freq2, :]
-        mshapes_y = mshapes_y[:n_freq2, :]
+            # Mode shapes and frequencies
+            n_freq2 = int(self.n_freq / 2)
+            freq_x, freq_y, _, mshapes_x, mshapes_y, _ = util.get_xyz_mode_shapes(
+                r, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
+            )
+            freq_x = freq_x[:n_freq2]
+            freq_y = freq_y[:n_freq2]
+            mshapes_x = mshapes_x[:n_freq2, :]
+            mshapes_y = mshapes_y[:n_freq2, :]
 
-        # shear and bending w.r.t. principal axes
-        F3 = np.r_[-forces.Nx[iCase, 0], forces.Nx[iCase, 1::2]]
-        M1 = np.r_[-forces.Myy[iCase, 0], forces.Myy[iCase, 1::2]]
-        M2 = np.r_[-forces.Mzz[iCase, 0], forces.Mzz[iCase, 1::2]]
+            # shear and bending w.r.t. principal axes
+            F3 = np.r_[-forces.Nx[iCase, 0], forces.Nx[iCase, 1::2]]
+            M1 = np.r_[-forces.Myy[iCase, 0], forces.Myy[iCase, 1::2]]
+            M2 = np.r_[-forces.Mzz[iCase, 0], forces.Mzz[iCase, 1::2]]
 
-        # Store outputs
-        outputs["root_F"] = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
-        outputs["root_M"] = -1.0 * np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
-        outputs["freqs"] = modal.freq[: self.n_freq]
-        outputs["edge_mode_shapes"] = mshapes_y
-        outputs["flap_mode_shapes"] = mshapes_x
-        # Dense numpy command that interleaves and alternates flap and edge modes
-        outputs["all_mode_shapes"] = np.c_[mshapes_x, mshapes_y].flatten().reshape((self.n_freq, 5))
-        outputs["edge_mode_freqs"] = freq_y
-        outputs["flap_mode_freqs"] = freq_x
-        outputs["freq_distance"] = freq_y[0] / freq_x[0]
-        # Displacements in global (blade) c.s.
-        outputs["dx"] = -displacements.dx[iCase, :]
-        outputs["dy"] = displacements.dy[iCase, :]
-        outputs["dz"] = -displacements.dz[iCase, :]
-        outputs["EI11"] = EI11
-        outputs["EI22"] = EI22
-        outputs["M1"] = M1
-        outputs["M2"] = M2
-        outputs["F3"] = F3
-        outputs["alpha"] = alpha
+            # Store outputs
+            outputs["root_F"] = -1.0 * np.array([reactions.Fx.sum(), reactions.Fy.sum(), reactions.Fz.sum()])
+            outputs["root_M"] = -1.0 * np.array([reactions.Mxx.sum(), reactions.Myy.sum(), reactions.Mzz.sum()])
+            outputs["freqs"] = modal.freq[: self.n_freq]
+            outputs["edge_mode_shapes"] = mshapes_y
+            outputs["flap_mode_shapes"] = mshapes_x
+            # Dense numpy command that interleaves and alternates flap and edge modes
+            outputs["all_mode_shapes"] = np.c_[mshapes_x, mshapes_y].flatten().reshape((self.n_freq, 5))
+            outputs["edge_mode_freqs"] = freq_y
+            outputs["flap_mode_freqs"] = freq_x
+            outputs["freq_distance"] = freq_y[0] / freq_x[0]
+            # Displacements in global (blade) c.s.
+            outputs["dx"] = -displacements.dx[iCase, :]
+            outputs["dy"] = displacements.dy[iCase, :]
+            outputs["dz"] = -displacements.dz[iCase, :]
+            outputs["EI11"] = EI11
+            outputs["EI22"] = EI22
+            outputs["M1"] = M1
+            outputs["M2"] = M2
+            outputs["F3"] = F3
+            outputs["alpha"] = alpha
 
 
 class ComputeStrains(ExplicitComponent):

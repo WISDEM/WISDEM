@@ -107,7 +107,10 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["control"]:
                 self.connect("control.rated_pitch", "rotorse.pitch")
             self.connect("control.rated_TSR", "rotorse.tsr")
-            self.connect("env.rho_air", "rotorse.rho_air")
+            if modeling_options["flags"]["marine_hydro"]:
+                self.connect("env.rho_water", "rotorse.rho_air")
+            else:
+                self.connect("env.rho_air", "rotorse.rho_air")
             self.connect("env.mu_air", "rotorse.mu_air")
             self.connect("env.shear_exp", "rotorse.shearExp")
             self.connect(

@@ -185,6 +185,33 @@ properties:
                         type: boolean
                         default: False
                         description: Flag switching on and off the rail transport module of RotorSE
+                    frame3dd: &frame3dd # adding first frame3dd option here
+                        type: object
+                        description: Set of Frame3DD options used for structural analysis
+                        default: {}
+                        properties:
+                            flag: 
+                                <<: *flag
+                                default: True   # Normal flag default is false, but default in WISDEM is to run frame3dd
+                            shear:
+                                type: boolean
+                                default: True
+                                description: Inclusion of shear area for symmetric sections
+                            geom:
+                                type: boolean
+                                default: True
+                                description: Inclusion of shear stiffening through axial loading
+                            modal_method:
+                                type: number
+                                enum: [1, 2]
+                                default: 1
+                                description: Eigenvalue solver 1=Subspace-Jacobi iteration, 2=Stodola (matrix iteration)
+                            tol:
+                                type: number
+                                minimum: 1e-12
+                                maximum: 1e-1
+                                default: 1e-9
+                                description: Convergence tolerance for modal eigenvalue solution
             DriveSE:
                 type: object
                 default: {}
@@ -215,6 +242,7 @@ properties:
                         maximum: 5.0
                         default: 1.0
                         unit: none
+                    frame3dd: *frame3dd
                     hub:
                         type: object
                         default: {}
@@ -273,30 +301,7 @@ properties:
                         maximum: 100.0
                         default: 10.0
                         unit: m
-                    frame3dd: &frame3dd
-                        type: object
-                        description: Set of Frame3DD options used for tower analysis
-                        default: {}
-                        properties:
-                            shear:
-                                type: boolean
-                                default: True
-                                description: Inclusion of shear area for symmetric sections
-                            geom:
-                                type: boolean
-                                default: True
-                                description: Inclusion of shear stiffening through axial loading
-                            modal_method:
-                                type: number
-                                enum: [1, 2]
-                                default: 1
-                                description: Eigenvalue solver 1=Subspace-Jacobi iteration, 2=Stodola (matrix iteration)
-                            tol:
-                                type: number
-                                minimum: 1e-12
-                                maximum: 1e-1
-                                default: 1e-9
-                                description: Convergence tolerance for modal eigenvalue solution
+                    frame3dd: *frame3dd
                     n_refine: &nref
                         type: integer
                         default: 3
@@ -364,6 +369,9 @@ properties:
                         description: Set of Frame3DD options used for floating tower analysis
                         default: {}
                         properties:
+                            flag:
+                                <<: *flag
+                                default: True  # Default is to run frame3dd
                             shear:
                                 type: boolean
                                 default: False

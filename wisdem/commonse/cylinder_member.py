@@ -1680,6 +1680,8 @@ class MemberComplex(om.ExplicitComponent):
 
         # Convert non-dimensional to dimensional
         s_grid = np.array(list(self.sections.keys()))
+        _, idx = np.unique(s_grid.round(6), return_index=True)  # Ensure no duplicates
+        s_grid = s_grid[idx]
         r_grid = 0.5 * np.interp(s_grid, s_full, d_full)
         n_nodes = s_grid.size
         nodes = np.outer(s_grid, dxyz) + xyz0[np.newaxis, :]
