@@ -1501,7 +1501,8 @@ class PoseOptimization(object):
                 wt_opt["rotorse.rs.constr.max_strainU_te"] = blade_constr["strains_te_ss"]["max"]
                 wt_opt["rotorse.rs.constr.max_strainL_te"] = blade_constr["strains_te_ps"]["max"]
                 wt_opt["rotorse.stall_check.stall_margin"] = blade_constr["stall"]["margin"] * 180.0 / np.pi
-                wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
+                if self.modeling["flags"]["tower"]:
+                    wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
 
         if self.modeling["flags"]["nacelle"]:
             drive_constr = self.opt["constraints"]["drivetrain"]

@@ -3201,8 +3201,11 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         modeling_options = self.options["modeling_options"]
+        if inputs["hub_height_user"][0] != 0.0:
+            outputs["hub_height"] = inputs["hub_height_user"]
+            
         if modeling_options["flags"]["tower"]:
-            if inputs["hub_height_user"] != 0.0:
+            if inputs["hub_height_user"][0] != 0.0:
                 # Rescale tower axis based on hub height from user
                 outputs["hub_height"] = inputs["hub_height_user"]
                 z_base = inputs["tower_ref_axis_user"][0, 2]
@@ -3221,6 +3224,9 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
         else:
             outputs["hub_height"] = inputs["hub_height_user"]
 
+        if outputs["hub_height"][0] == 0.0:
+            raise Exception("The hub height cannot be set.  Please set it in the top level 'assembly' section in the yaml file and/or define the tower reference axis")
+        
         if modeling_options["flags"]["blade"] and inputs["rotor_diameter"] > 2.0 * np.abs(outputs["hub_height"]):
             raise Exception(
                 "The rotor blade extends past the ground or water line. Please adjust hub height and/or rotor diameter."
