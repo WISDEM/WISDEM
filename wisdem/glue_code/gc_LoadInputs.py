@@ -636,8 +636,8 @@ class WindTurbineOntologyPython(object):
         # The user can provide `opt_flag` in analysis_options.yaml,
         # but if it's not provided, we check the individual opt flags
         # from analysis_options.yaml and set a global `opt_flag`
-        if "opt_flag" in self.analysis_options["driver"]:
-            self.analysis_options["opt_flag"] = self.analysis_options["driver"]["opt_flag"]
+        if "flag" in self.analysis_options["driver"]["optimization"]:
+            self.analysis_options["opt_flag"] = self.analysis_options["driver"]["optimization"]["flag"]
         else:
             self.analysis_options["opt_flag"] = recursive_flag(self.analysis_options["design_variables"])
 
