@@ -80,6 +80,8 @@ class TestGroup(unittest.TestCase):
         opt["WISDEM"]["DriveSE"]["gamma_f"] = 1.35
         opt["WISDEM"]["DriveSE"]["gamma_m"] = 1.3
         opt["WISDEM"]["DriveSE"]["gamma_n"] = 1.0
+        opt["WISDEM"]["DriveSE"]["frame3dd"] = {}
+        opt["WISDEM"]["DriveSE"]["frame3dd"]['flag'] = True
         opt["WISDEM"]["RotorSE"] = {}
         opt["WISDEM"]["RotorSE"]["n_pc"] = 20
         opt["materials"] = {}
@@ -185,6 +187,8 @@ class TestGroup(unittest.TestCase):
         opt["WISDEM"]["DriveSE"]["gamma_n"] = 1.0
         opt["WISDEM"]["RotorSE"] = {}
         opt["WISDEM"]["RotorSE"]["n_pc"] = 20
+        opt["WISDEM"]["DriveSE"]["frame3dd"] = {}
+        opt["WISDEM"]["DriveSE"]["frame3dd"]['flag'] = True
         opt["materials"] = {}
         opt["materials"]["n_mat"] = 1
         opt["flags"] = {}
@@ -252,6 +256,8 @@ class TestGroup(unittest.TestCase):
         opt["WISDEM"]["DriveSE"]["gamma_f"] = 1.35
         opt["WISDEM"]["DriveSE"]["gamma_m"] = 1.3
         opt["WISDEM"]["DriveSE"]["gamma_n"] = 1.0
+        opt["WISDEM"]["DriveSE"]["frame3dd"] = {}
+        opt["WISDEM"]["DriveSE"]["frame3dd"]['flag'] = True
         opt["WISDEM"]["GeneratorSE"] = {}
         opt["WISDEM"]["GeneratorSE"]["type"] = "dfig"
         opt["WISDEM"]["RotorSE"] = {}
@@ -380,6 +386,8 @@ class TestGroup(unittest.TestCase):
         opt["WISDEM"]["DriveSE"]["gamma_f"] = 1.35
         opt["WISDEM"]["DriveSE"]["gamma_m"] = 1.3
         opt["WISDEM"]["DriveSE"]["gamma_n"] = 1.0
+        opt["WISDEM"]["DriveSE"]["frame3dd"] = {}
+        opt["WISDEM"]["DriveSE"]["frame3dd"]['flag'] = True
         opt["flags"] = {}
         opt["flags"]["generator"] = False
         opt["WISDEM"]["RotorSE"] = {}
