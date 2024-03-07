@@ -486,7 +486,7 @@ class ComputePowerCurve(ExplicitComponent):
                 const["type"] = "eq"
                 const["fun"] = const_Urated
                 params_rated = minimize(
-                    lambda x: x[1], x0, method="slsqp", bounds=bnds, constraints=const, tol=TOL, options={"disp": False}
+                    lambda x: x[1], x0, method="slsqp", bounds=bnds, constraints=const, tol=TOL, options={"maxiter": 20, "disp": False}
                 )
 
                 if params_rated.success and not np.isnan(params_rated.x[1]):
@@ -558,7 +558,7 @@ class ComputePowerCurve(ExplicitComponent):
                 const["type"] = "eq"
                 const["fun"] = const_Urated_Tpeak
                 params_rated = minimize(
-                    lambda x: x[1], x0, method="slsqp", bounds=bnds, constraints=const, tol=TOL, options={"disp": False}
+                    lambda x: x[1], x0, method="slsqp", bounds=bnds, constraints=const, tol=TOL, options={"maxiter": 20, "disp": False}
                 )
 
                 if params_rated.success and not np.isnan(params_rated.x[1]):
@@ -635,13 +635,13 @@ class ComputePowerCurve(ExplicitComponent):
 
         ## REGION II ##
         # Functions to be used inside of power maximization until Region 3
-        def maximizePower(pitch_i, Uhub_i, Omega_rpm_i):
+        def maximizePower(pitch_i, Uhub_i, Omega_rpm_i, scaling_power):
             myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_rpm_i], [pitch_i], coefficients=False)
-            return -myout["P"] * 1e-6
+            return -myout["P"] / scaling_power
 
-        def constr_Tmax(pitch_i, Uhub_i, Omega_rpm_i):
+        def constr_Tmax(pitch_i, Uhub_i, Omega_rpm_i, scaling_thrust):
             myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_rpm_i], [pitch_i], coefficients=False)
-            return 1e-5 * (max_T - float(myout["T"][0]))
+            return (max_T - float(myout["T"][0])) / scaling_thrust
 
         # Maximize power until rated
         for i in range(i_3):
@@ -661,13 +661,17 @@ class ComputePowerCurve(ExplicitComponent):
             # Find pitch value that gives highest power rating
             pitch0 = pitch[i] if i == 0 else pitch[i - 1]
             bnds = [pitch0 - 10.0, pitch0 + 10.0]
+            # For a successfull minimization, find the initial power value to nondimensionalize power and bring the figure of merit close to 1
+            myout, _ = self.ccblade.evaluate(Uhub[i], Omega_rpm[i], pitch0, coefficients=False)
+            scaling_power = myout["P"]
+            scaling_thrust = myout["T"]
             if self.peak_thrust_shaving and found_rated:
                 # Have to constrain thrust
                 const = {}
                 const["type"] = "ineq"
-                const["fun"] = lambda x: constr_Tmax(x, Uhub[i], Omega_rpm[i])
+                const["fun"] = lambda x: constr_Tmax(x, Uhub[i], Omega_rpm[i], scaling_thrust)
                 params = minimize(
-                    lambda x: maximizePower(x, Uhub[i], Omega_rpm[i]),
+                    lambda x: maximizePower(x, Uhub[i], Omega_rpm[i], scaling_power),
                     pitch0,
                     method="slsqp",  # "cobyla",
                     bounds=[bnds],
@@ -679,7 +683,7 @@ class ComputePowerCurve(ExplicitComponent):
             else:
                 # Only adjust pitch
                 pitch[i] = minimize_scalar(
-                    lambda x: maximizePower(x, Uhub[i], Omega_rpm[i]),
+                    lambda x: maximizePower(x, Uhub[i], Omega_rpm[i], scaling_power),
                     bounds=bnds,
                     method="bounded",
                     options={"disp": False, "xatol": TOL, "maxiter": 40},
@@ -741,9 +745,11 @@ class ComputePowerCurve(ExplicitComponent):
 
                     # If we are thrust shaving, then check if this is a point that must be modified
                     if self.peak_thrust_shaving and T[i] >= max_T:
+                        myout, _ = self.ccblade.evaluate(Uhub[i], Omega_rpm[i], pitch0, coefficients=False)
+                        scaling_thrust = myout["T"]
                         const = {}
                         const["type"] = "ineq"
-                        const["fun"] = lambda x: constr_Tmax(x, Uhub[i], Omega_rpm[i])
+                        const["fun"] = lambda x: constr_Tmax(x, Uhub[i], Omega_rpm[i], scaling_thrust)
                         params = minimize(
                             lambda x: np.abs(rated_power_dist(x, Uhub[i], Omega_rpm[i])),
                             pitch0,
@@ -751,7 +757,7 @@ class ComputePowerCurve(ExplicitComponent):
                             bounds=bnds,
                             constraints=const,
                             tol=TOL,
-                            options={"disp": False},
+                            options={"maxiter": 20, "disp": False},
                         )
                         if params.success and not np.isnan(params.x[0]):
                             pitch[i] = params.x[0]
