@@ -383,7 +383,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
                     sigma_y,
                 )
             outputs["torq_deflection"] = rotor_gearbox_deflection.max()
-            outputs["torq_angle"] = rotor_gearbox_angle.max()
+            outputs["torq_angle"] = rotor_gearbox_rotation.max()
             outputs["constr_shaft_deflection"] = gamma * outputs["torq_deflection"] / torq_defl_allow
             outputs["constr_shaft_angle"] = gamma * outputs["torq_angle"] / torq_angle_allow
 
