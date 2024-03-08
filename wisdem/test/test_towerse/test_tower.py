@@ -81,6 +81,7 @@ class TestTowerSE(unittest.TestCase):
 
         # Simplified the options available to the user
         self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"] = {}
+        self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["flag"] = True
         self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["shear"] = True
         self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["geom"] = True
         self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["modal_method"] = 1
