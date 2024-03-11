@@ -408,13 +408,13 @@ class PoseOptimization(object):
             wt_opt.model.add_objective(self.opt["merit_figure_user"]["name"],
                                        ref=coeff*np.abs(self.opt["merit_figure_user"]["ref"]))
 
-        elif self.opt["merit_figure"] == "AEP":
+        elif self.opt["merit_figure"].lower() == "aep":
             wt_opt.model.add_objective("rotorse.rp.AEP", ref=-1.0e6)
 
         elif self.opt["merit_figure"] == "blade_mass":
             wt_opt.model.add_objective("rotorse.blade_mass", ref=1.0e4)
 
-        elif self.opt["merit_figure"] == "LCOE":
+        elif self.opt["merit_figure"].lower() == "lcoe":
             wt_opt.model.add_objective("financese.lcoe", ref=0.1)
 
         elif self.opt["merit_figure"] == "blade_tip_deflection":
@@ -924,7 +924,7 @@ class PoseOptimization(object):
                                 tryidx = mem_axial_names.index(iname)
                                 aidx.append(tryidx)
                                 break
-                            except:
+                            except Exception:
                                 continue
                         if tryidx is None:
                             raise ValueError(
