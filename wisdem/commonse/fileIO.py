@@ -43,10 +43,7 @@ def variable_dict2df(var_dict):
             unit_str = ""
 
         iname = var_dict[k][1]["prom_name"]
-        try:
-            itype = var_dict[k][1]["type"]
-        except Exception:
-            breakpoint()
+        itype = var_dict[k][1]["type"]
         if iname in data["variables"]:
             iprev = data["variables"].index( iname )
             if itype == "output":
