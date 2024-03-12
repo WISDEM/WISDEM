@@ -615,44 +615,46 @@ class FloatingPost(om.ExplicitComponent):
         circ_idx = np.nonzero(d)[0]
         rect_idx = np.nonzero(a)[0]
 
-        # First do caculation for circular members
-        circ_axial_stress = Fz[circ_idx] / Az[circ_idx].reshape(-1,1) + M[circ_idx] * (r[circ_idx] / Iyy[circ_idx]).reshape(-1,1)
-        circ_shear_stress = np.abs(Mzz[circ_idx]) / (Jz[circ_idx] * r[circ_idx]).reshape(-1,1) + V[circ_idx] / Asx[circ_idx].reshape(-1,1)
-        hoop_stress = -qdyn[circ_idx] * ((r[circ_idx] - 0.5 * t[circ_idx]) / t[circ_idx]).reshape(-1,1)  # util_con.hoopStress(d, t, qdyn)
-        outputs["constr_platform_stress"][[circ_idx], :] = util_con.TubevonMisesStressUtilization(
-            circ_axial_stress, hoop_stress, circ_shear_stress, gamma_f * gamma_m * gamma_n, sigy[circ_idx].reshape((-1, 1))
-        )
-
-        # Use DNV-GL CP202 Method
-        circ_check = util_dnvgl.CylinderBuckling(h[circ_idx], d[circ_idx], t[circ_idx], E=E[circ_idx], G=G[circ_idx], sigma_y=sigy[circ_idx], gamma=gamma_f * gamma_b)
-        for k in range(n_dlc):
-            results = circ_check.run_buckling_checks(
-                Fz[k, :], M[k, :], circ_axial_stress[k, :], hoop_stress[k, :], circ_shear_stress[k, :]
+        if circ_idx.any():
+            # First do caculation for circular members
+            circ_axial_stress = Fz[circ_idx] / Az[circ_idx].reshape(-1,1) + M[circ_idx] * (r[circ_idx] / Iyy[circ_idx]).reshape(-1,1)
+            circ_shear_stress = np.abs(Mzz[circ_idx]) / (Jz[circ_idx] * r[circ_idx]).reshape(-1,1) + V[circ_idx] / Asx[circ_idx].reshape(-1,1)
+            hoop_stress = -qdyn[circ_idx] * ((r[circ_idx] - 0.5 * t[circ_idx]) / t[circ_idx]).reshape(-1,1)  # util_con.hoopStress(d, t, qdyn)
+            outputs["constr_platform_stress"][[circ_idx], :] = util_con.TubevonMisesStressUtilization(
+                circ_axial_stress, hoop_stress, circ_shear_stress, gamma_f * gamma_m * gamma_n, sigy[circ_idx].reshape((-1, 1))
             )
 
-            outputs["constr_platform_shell_buckling"][[circ_idx], k] = results["Shell"]
-            outputs["constr_platform_global_buckling"][[circ_idx], k] = results["Global"]
+            # Use DNV-GL CP202 Method
+            circ_check = util_dnvgl.CylinderBuckling(h[circ_idx], d[circ_idx], t[circ_idx], E=E[circ_idx], G=G[circ_idx], sigma_y=sigy[circ_idx], gamma=gamma_f * gamma_b)
+            for k in range(n_dlc):
+                results = circ_check.run_buckling_checks(
+                    Fz[k, :], M[k, :], circ_axial_stress[k, :], hoop_stress[k, :], circ_shear_stress[k, :]
+                )
+
+                outputs["constr_platform_shell_buckling"][[circ_idx], k] = results["Shell"]
+                outputs["constr_platform_global_buckling"][[circ_idx], k] = results["Global"]
 
         # Do calculation for rectangular members
         # Assuming a linear summation of bending on axial stress
-        rect_axial_stress = Fz[rect_idx] / Az[rect_idx, np.newaxis] + np.abs(Mxx[rect_idx]) * (a[rect_idx] / Ixx[rect_idx])[:, np.newaxis] + np.abs(Myy[rect_idx]) * (b[rect_idx] / Iyy[rect_idx])[:, np.newaxis]
-        rect_shear_stress_x = np.abs(Mzz[rect_idx]) / TorsC[rect_idx][:, np.newaxis] + Vx[rect_idx] / Asx[rect_idx, np.newaxis]
-        rect_shear_stress_y = np.abs(Mzz[rect_idx]) / TorsC[rect_idx][:, np.newaxis] + Vy[rect_idx] / Asy[rect_idx, np.newaxis]
-        rect_shear_stress = np.sqrt(rect_shear_stress_x**2+rect_shear_stress_y**2)
-        # Pick the maximum from sigma_y and sigma_z as the transverse sigma
-        rect_transverse_stress = np.minimum(-qdyn[rect_idx,0]*a[rect_idx]/2*t[rect_idx], -qdyn[rect_idx,0]*b[rect_idx]/2*t[rect_idx]).reshape(-1,1)
-        outputs["constr_platform_stress"][rect_idx, :] = util_euro.YieldCriterionEurocode(
-            rect_axial_stress, rect_transverse_stress, rect_shear_stress, gamma_f * gamma_m * gamma_n, sigy[rect_idx].reshape((-1, 1))
-        )
+        if rect_idx.any():
+            rect_axial_stress = Fz[rect_idx] / Az[rect_idx, np.newaxis] + np.abs(Mxx[rect_idx]) * (a[rect_idx] / Ixx[rect_idx])[:, np.newaxis] + np.abs(Myy[rect_idx]) * (b[rect_idx] / Iyy[rect_idx])[:, np.newaxis]
+            rect_shear_stress_x = np.abs(Mzz[rect_idx]) / TorsC[rect_idx][:, np.newaxis] + Vx[rect_idx] / Asx[rect_idx, np.newaxis]
+            rect_shear_stress_y = np.abs(Mzz[rect_idx]) / TorsC[rect_idx][:, np.newaxis] + Vy[rect_idx] / Asy[rect_idx, np.newaxis]
+            rect_shear_stress = np.sqrt(rect_shear_stress_x**2+rect_shear_stress_y**2)
+            # Pick the maximum from sigma_y and sigma_z as the transverse sigma
+            rect_transverse_stress = np.minimum(-qdyn[rect_idx,0]*a[rect_idx]/2*t[rect_idx], -qdyn[rect_idx,0]*b[rect_idx]/2*t[rect_idx]).reshape(-1,1)
+            outputs["constr_platform_stress"][rect_idx, :] = util_euro.YieldCriterionEurocode(
+                rect_axial_stress, rect_transverse_stress, rect_shear_stress, gamma_f * gamma_m * gamma_n, sigy[rect_idx].reshape((-1, 1))
+            )
 
-        # Use Eurocode Method
-        rect_check = util_euro.memberBuckling(a[rect_idx], b[rect_idx], h[rect_idx], Az[rect_idx], Ixx[rect_idx], Iyy[rect_idx], Fz[rect_idx,0],
-                                              Mxx[rect_idx,0], Myy[rect_idx,0], I_T=TorsC[rect_idx], E=E[rect_idx], G=G[rect_idx], sigma_y=sigy[rect_idx], gamma_m=gamma_m)
-        for k in range(n_dlc):
-            results = rect_check.run_buckling_checks(
-                Fz[k, :], Mxx[k, :], Myy[k, :])
-            # No shell buckling for rectangular members
-            outputs["constr_platform_global_buckling"][[rect_idx], k] = results        
+            # Use Eurocode Method
+            rect_check = util_euro.memberBuckling(a[rect_idx], b[rect_idx], h[rect_idx], Az[rect_idx], Ixx[rect_idx], Iyy[rect_idx], Fz[rect_idx,0],
+                                                Mxx[rect_idx,0], Myy[rect_idx,0], I_T=TorsC[rect_idx], E=E[rect_idx], G=G[rect_idx], sigma_y=sigy[rect_idx], gamma_m=gamma_m)
+            for k in range(n_dlc):
+                results = rect_check.run_buckling_checks(
+                    Fz[k, :], Mxx[k, :], Myy[k, :])
+                # No shell buckling for rectangular members
+                outputs["constr_platform_global_buckling"][[rect_idx], k] = results        
 
 
 class FloatingFrame(om.Group):
