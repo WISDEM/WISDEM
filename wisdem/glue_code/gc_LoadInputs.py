@@ -1402,8 +1402,8 @@ class WindTurbineOntologyPython(object):
                         d_in2 = d_in * np.ones(len(s_in))
                         yaml_out["members"][i]["outer_shape"]["outer_diameter"]["values"] = d_in2.tolist()
                 elif member_shape == "rectangular":
-                    yaml_out["members"][i]["outer_shape"]["side_legnth_a"]["grid"] = s_in
-                    yaml_out["members"][i]["outer_shape"]["side_legnth_b"]["grid"] = s_in
+                    yaml_out["members"][i]["outer_shape"]["side_length_a"]["grid"] = s_in
+                    yaml_out["members"][i]["outer_shape"]["side_length_b"]["grid"] = s_in
                     length_a_in = wt_opt[f"floating.memgrp{idx}.side_length_a_in"]
                     length_b_in = wt_opt[f"floating.memgrp{idx}.side_length_b_in"]
                     if len(length_a_in) == len(s_in):

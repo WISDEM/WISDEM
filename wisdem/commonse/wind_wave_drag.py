@@ -99,7 +99,7 @@ def cylinderDrag(Re):
     return cd, dcd_dRe
 
 def rectangular_cylinderDrag(AR):
-    """Drag coefficient for a smooth circular cylinder.
+    """Drag coefficient for a rectangular cylinder.
 
     Parameters
     ----------
@@ -871,14 +871,13 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
         if float(inputs["cd_usr"]) < 0.0:
             ARx = b/a
             ARy = a/b
-            cdx, dcdx_dRe = rectangular_cylinderDrag(ARx)
-            cdy, dcdy_dRe = rectangular_cylinderDrag(ARy)
+            cdx, dcdx_dARx = rectangular_cylinderDrag(ARx)
+            cdy, dcdy_dARy = rectangular_cylinderDrag(ARy)
         else:
-            cd = inputs["cd_usr"]
+            cdx = inputs["cdx_usr"]
+            cdy = inputs["cdy_usr"]
             ARx = 1.0
             ARy = 1.0
-            dcdx_dARx = 0.0
-            dcdy_dARy = 0.0
 
         # inertial and drag forces
         Fix = rho * inputs["cmx"] * a * b * inputs["A"] * cosd(beta)  # Morrison's equation
@@ -931,10 +930,12 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
             dARx_db = 1/a
             dARy_da = 1/b
             dARy_db = -1/b**2
-            cdx, dcdx_dRe = rectangular_cylinderDrag(ARx)
-            cdy, dcdy_dRe = rectangular_cylinderDrag(ARy)
+            cdx, dcdx_dARx = rectangular_cylinderDrag(ARx)
+            cdy, dcdy_dARy = rectangular_cylinderDrag(ARy)
         else:
-            cd = inputs["cd_usr"]
+            # 
+            cdx = inputs["cdx_usr"]
+            cdy = inputs["cdy_usr"]
             ARx = 1.0
             ARy = 1.0
             dcdx_dARx = 0.0

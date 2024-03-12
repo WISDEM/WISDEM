@@ -13,11 +13,63 @@ import wisdem.commonse.utilization_eurocode as util_euro
 import wisdem.commonse.utilization_constraints as util_con
 from wisdem.commonse import eps, gravity
 from wisdem.commonse.wind_wave_drag import CylinderEnvironment
+from wisdem.commonse.akima import Akima
 
 NULL = -9999
 MEMMAX = 200
 NREFINE = 1
 
+# For rectangular
+# This assumes that the Ca only depends on the aspect ratio
+# Reference Brennen An internet bool on fluid dynamics
+AR_pt = [
+    0,
+    0.025,
+    0.111,
+    0.298,
+    0.676,
+    1.478,
+    3.555,
+    9.007,
+    40.03
+]
+
+ca_AR_pt = [
+    1.0,
+    1.05,
+    1.16,
+    1.29,
+    1.42,
+    1.65,
+    2.0,
+    2.5,
+    3.5
+]
+
+ca_AR_spline = Akima(AR_pt, ca_AR_pt, delta_x=0.0)  # exact akima because control points do not change
+
+
+def rectangular_Ca(AR):
+    """Drag coefficient for a rectangular cylinder.
+
+    Parameters
+    ----------
+    AR : array_like
+        Aspect ratio
+
+    Returns
+    -------
+    ca : array_like
+        drag coefficient (normalized by frontal project area)
+
+    """
+
+    ca = np.zeros_like(AR)
+    dca_dAR = np.zeros_like(AR)
+    idx = AR > 0
+    ca[idx], dca_dAR[idx], _, _ = ca_AR_spline.interp(AR)
+
+    return ca, dca_dAR
 
 class CrossSection(object):
     def __init__(
@@ -2062,7 +2114,7 @@ class MemberHydro(om.ExplicitComponent):
     Awater : float, [m**2]
         Area of waterplace cross section
     Iwater : float, [m**4]
-        Second moment of area of waterplace cross section
+        Second moment of area of waterplane cross section
     added_mass : numpy array[6], [kg]
         hydrodynamic added mass matrix diagonal
     waterline_centroid : numpy array[2], [m]
@@ -2094,7 +2146,8 @@ class MemberHydro(om.ExplicitComponent):
         self.add_output("buoyancy_force", 0.0, units="N")
         self.add_output("idx_cb", 0)
         self.add_output("Awater", 0.0, units="m**2")
-        self.add_output("Iwater", 0.0, units="m**4")
+        self.add_output("Iwaterx", 0.0, units="m**4")
+        self.add_output("Iwatery", 0.0, units="m**4")
         self.add_output("added_mass", np.zeros(6), units="kg")
         self.add_output("waterline_centroid", np.zeros(2), units="m")
         self.add_output("z_dim", np.zeros(n_full), units="m")
@@ -2118,7 +2171,7 @@ class MemberHydro(om.ExplicitComponent):
         # Dimensions away from vertical
         tilt = np.arctan(dxyz[0] / (1e-8 + dxyz[2]))
         outputs["z_dim"] = xyz0[2] + s_full * dxyz[2]
-        outputs["d_eff"] = inputs["outer_diameter_full"] / np.cos(tilt)
+        outputs["d_eff"] = inputs["outer_diameter_full"] / np.cos(tilt) # Is this d_eff used anywhere?
 
         # Compute volume of each section and mass of displaced water by section
         # Find the radius at the waterline so that we can compute the submerged volume as a sum of frustum sections
@@ -2167,7 +2220,8 @@ class MemberHydro(om.ExplicitComponent):
         # 2nd moment of area for circular cross section
         # Note: Assuming Iwater here depends on "water displacement" cross-section
         # and not actual moment of inertia type of cross section (thin hoop)
-        outputs["Iwater"] = 0.25 * np.pi * r_waterline**4.0
+        outputs["Iwaterx"] = 0.25 * np.pi * r_waterline**4.0
+        outputs["Iwatery"] = 0.25 * np.pi * r_waterline**4.0
         outputs["Awater"] = np.pi * r_waterline**2.0
 
         # Calculate diagonal entries of added mass matrix
@@ -2187,6 +2241,187 @@ class MemberHydro(om.ExplicitComponent):
         m_a[5] = 0.0  # A66 yaw
         outputs["added_mass"] = m_a
 
+class RectangularMemberHydro(om.ExplicitComponent):
+    """
+    Compute rectangular member substructure elements in floating offshore wind turbines.
+
+    Parameters
+    ----------
+    joint1 : numpy array[3], [m]
+        Global dimensional coordinates (x-y-z) for bottom node of member
+    joint2 : numpy array[3], [m]
+        Global dimensional coordinates (x-y-z) for top node of member
+    rho_water : float, [kg/m**3]
+        density of water
+    s_full : numpy array[n_full], [m]
+        non-dimensional coordinates of section nodes
+    z_full : numpy array[n_full], [m]
+        z-coordinates of section nodes
+    side_length_a_full : numpy array[n_full], [m]
+        side length a at each section node bottom to top (length = nsection + 1)
+    side_length_b_full : numpy array[n_full], [m]
+        side length b at each section node bottom to top (length = nsection + 1)
+
+
+    Returns
+    -------
+    center_of_buoyancy : numpy array[3], [m]
+        z-position CofB of member
+    displacement : float, [m**3]
+        Volume of water displaced by member
+    buoyancy_force : float, [N]
+        Net z-force from buoyancy on member
+    idx_cb : int
+        Index of closest node to center of buoyancy
+    Awater : float, [m**2]
+        Area of waterplace cross section
+    Iwaterx, Iwatery : float, [m**4]
+        Second moment of area of waterplane cross section
+    added_mass : numpy array[6], [kg]
+        hydrodynamic added mass matrix diagonal
+    waterline_centroid : numpy array[2], [m]
+        x-y center of waterplane crossing for this member
+
+    """
+
+    def initialize(self):
+        self.options.declare("n_full")
+
+    def setup(self):
+        n_full = self.options["n_full"]
+
+        # Variables local to the class and not OpenMDAO
+        self.ibox = None
+
+        self.add_input("joint1", val=np.zeros(3), units="m")
+        self.add_input("joint2", val=np.zeros(3), units="m")
+        self.add_input("nodes_xyz", np.zeros((n_full, 3)), units="m")
+        self.add_input("rho_water", 0.0, units="kg/m**3")
+        self.add_input("s_full", np.zeros(n_full), units="m")
+        self.add_input("z_full", np.zeros(n_full), units="m")
+        self.add_input("side_length_a_full", np.zeros(n_full), units="m")
+        self.add_input("side_length_b_full", np.zeros(n_full), units="m")
+        self.add_input("s_ghost1", 0.0)
+        self.add_input("s_ghost2", 1.0)
+
+        self.add_output("center_of_buoyancy", np.zeros(3), units="m")
+        self.add_output("displacement", 0.0, units="m**3")
+        self.add_output("buoyancy_force", 0.0, units="N")
+        self.add_output("idx_cb", 0)
+        self.add_output("Awater", 0.0, units="m**2")
+        self.add_output("Iwaterx", 0.0, units="m**4")
+        self.add_output("Iwatery", 0.0, units="m**4")
+        self.add_output("added_mass", np.zeros(6), units="kg")
+        self.add_output("waterline_centroid", np.zeros(2), units="m")
+        self.add_output("z_dim", np.zeros(n_full), units="m")
+
+    def compute(self, inputs, outputs):
+        # Unpack variables
+        s_full = inputs["s_full"]
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
+        z_full = inputs["z_full"]
+        a = inputs["side_length_a_full"]
+        b = inputs["side_length_b_full"]
+        ARx = a/b
+        ARy = b/a
+        rho_water = inputs["rho_water"]
+
+        # Get coordinates at full nodes
+        xyz0 = inputs["joint1"]
+        xyz1 = inputs["joint2"]
+        dxyz = xyz1 - xyz0
+        xyz = inputs["nodes_xyz"]
+
+        # Dimensions away from vertical
+        tilt = np.arctan(dxyz[0] / (1e-8 + dxyz[2]))
+        outputs["z_dim"] = xyz0[2] + s_full * dxyz[2]
+        # outputs["d_eff"] = inputs["outer_diameter_full"] / np.cos(tilt) # Is this d_eff used anywhere?
+
+        # Compute volume of each section and mass of displaced water by section
+        # Find the radius at the waterline so that we can compute the submerged volume as a sum of frustum sections
+        if xyz[:, 2].min() < 0.0 and xyz[:, 2].max() > 0.0:
+            s_waterline = np.interp(0.0, xyz[:, 2], s_full)
+            ind = np.where(xyz[:, 2] < 0.0)[0]
+            s_under = np.r_[s_full[ind], s_waterline]
+            waterline = True
+            outputs["waterline_centroid"] = (xyz0 + s_waterline * dxyz)[:2]
+        elif xyz[:, 2].max() < 0.0:
+            s_under = s_full
+            waterline = False
+            a_waterline = 0.0
+            b_waterline = 0.0
+            outputs["waterline_centroid"] = np.zeros(2)
+        else:
+            return
+
+        # Make sure we account for overlaps
+        if s_under[0] < s_ghost1:
+            s_under = np.unique(np.r_[s_ghost1, np.maximum(s_ghost1, s_under)])
+        if s_under[-1] > s_ghost2:
+            s_under = np.unique(np.r_[np.minimum(s_ghost2, s_under), s_ghost2])
+
+        # Get geometry of valid sections
+        z_under = np.interp(s_under, s_full, z_full)
+        a_under = np.interp(s_under, s_full, a)
+        b_under = np.interp(s_under, s_full, b)
+        if waterline:
+            a_waterline = a_under[-1]
+            b_waterline = b_under[-1]
+
+        # Submerged volume (with zero-padding)
+        dz = np.diff(z_under)
+        V_under = frustum.RectangularFrustumVol(a_under[:-1], b_under[:-1], a_under[1:], b_under[1:], dz)
+        V_under_tot = V_under.sum()
+        outputs["displacement"] = V_under_tot
+        outputs["buoyancy_force"] = rho_water * outputs["displacement"] * gravity
+
+        # Compute Center of Buoyancy in z-coordinates (0=waterline)
+        # First get z-coordinates of CG of all frustums
+        z_cg_under = frustum.RectangularFrustumCG(a_under[:-1], b_under[:-1], a_under[1:], b_under[1:], dz) + z_under[:-1]
+        z_cb = np.dot(z_cg_under, V_under) / V_under_tot
+        s_cb = np.interp(z_cb, z_under, s_under)
+        cb = xyz0 + s_cb * dxyz
+        outputs["center_of_buoyancy"] = cb
+        outputs["idx_cb"] = util.closest_node(xyz, cb)
+
+        # 2nd moment of area for rectangular cross section
+        # Note: Assuming Iwater here depends on "water displacement" cross-section
+        # and not actual moment of inertia type of cross section (thin hoop)
+        outputs["Iwaterx"] =a_waterline*b_waterline**3/12
+        outputs["Iwatery"] =b_waterline*a_waterline**3/12
+        outputs["Awater"] = a_waterline * b_waterline
+
+        # Calculate diagonal entries of added mass matrix
+        temp = np.linspace(z_under[0], z_under[-1], 200)
+        a_under = np.interp(temp, z_under, a_under)
+        b_under = np.interp(temp, z_under, b_under)
+        ARx_under = np.interp(temp, z_under, ARx)
+        ARy_under = np.interp(temp, z_under, ARy)
+        z_under = temp
+        dz_under = np.diff(z_under)
+        m_a = np.zeros(6)
+
+        cax, dcax_dARx = rectangular_Ca(ARx_under)
+        cay, dcay_dARx = rectangular_Ca(ARy_under)
+
+        ma_x = (0.5*(cax[:-1]+cax[1:]))*0.25*np.pi*(0.5*(b_under[:-1]+b_under[1:]))**2*dz_under
+        ma_y = (0.5*(cay[:-1]+cay[1:]))*0.25*np.pi*(0.5*(b_under[:-1]+b_under[1:]))**2*dz_under
+
+        m_a[0] = np.sum(ma_x)
+        m_a[1] = np.sum(ma_y)
+
+        # Lxy = np.maximum(Lxy, D)
+        m_a[2] = 0  # Axial added mass? A33 heave * Lxy *
+        # TODO: to be finished
+        m_a[3:5] = (
+            rho_water * np.trapz((z_under - z_cb) ** 2.0 * a_under * b_under, z_under)
+        )  # A44 roll, A55 pitch
+        # Borrow idea from Reference: https://www.orcina.com/webhelp/OrcaFlex/Content/html/6Dbuoys,Hydrodynamicpropertiesofarectangularbox.htm
+        # Make an equivalent elliptical cylinder
+        # yaw added mass per unit length
+        m_a[5] = np.trapz(1.0/8.0*rho_water*np.pi*(a_under**2-b_under**2)**2,z_under) # A66 yaw
+        outputs["added_mass"] = m_a
 
 class Global2MemberLoads(om.ExplicitComponent):
     """
@@ -2612,7 +2847,11 @@ class MemberBase(om.Group):
 
         self.add_subsystem("geom", MemberDiscretization(n_height=n_height, n_refine=n_refine, member_shape_variables = member_shape_variables), promotes=["*"])
         # TODO: Need MemberHydro for rectangular member. Now it gives nan in frustum calculation bc r for rectangular member are zeros
-        self.add_subsystem("hydro", MemberHydro(n_full=n_full), promotes=["*"])
+
+        if member_shape == "circular":
+            self.add_subsystem("hydro", MemberHydro(n_full=n_full), promotes=["*"])
+        elif member_shape == "rectangular":
+            self.add_subsystem("hydro", RectangularMemberHydro(n_full=n_full), promotes=["*"])     
 
 
 class MemberStandard(om.Group):

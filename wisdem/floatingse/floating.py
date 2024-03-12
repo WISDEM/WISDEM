@@ -87,7 +87,8 @@ class FloatingSE(om.Group):
             "total_cost",
             "I_total",
             "Awater",
-            "Iwater",
+            "Iwaterx",
+            "Iwatery",
             "added_mass",
             "waterline_centroid",
         ]

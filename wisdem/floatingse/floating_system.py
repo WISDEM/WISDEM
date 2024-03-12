@@ -28,6 +28,8 @@ class PlatformFrame(om.ExplicitComponent):
             elif self.shape[k] == "rectangular":
                 self.add_input(f"member{k}:section_a", NULL * np.ones(MEMMAX), units="m")
                 self.add_input(f"member{k}:section_b", NULL * np.ones(MEMMAX), units="m")
+            self.add_input(f"member{k}:Iwaterx", 0.0, units="m**4")
+            self.add_input(f"member{k}:Iwatery", 0.0, units="m**4")
             self.add_input(f"member{k}:section_t", NULL * np.ones(MEMMAX), units="m")
             self.add_input(f"member{k}:section_A", NULL * np.ones(MEMMAX), units="m**2")
             self.add_input(f"member{k}:section_Asx", NULL * np.ones(MEMMAX), units="m**2")
@@ -50,7 +52,6 @@ class PlatformFrame(om.ExplicitComponent):
             self.add_input(f"member{k}:total_cost", 0.0, units="USD")
             self.add_input(f"member{k}:I_total", np.zeros(6), units="kg*m**2")
             self.add_input(f"member{k}:Awater", 0.0, units="m**2")
-            self.add_input(f"member{k}:Iwater", 0.0, units="m**4")
             self.add_input(f"member{k}:added_mass", np.zeros(6), units="kg")
             self.add_input(f"member{k}:waterline_centroid", np.zeros(2), units="m")
             self.add_input(f"member{k}:variable_ballast_capacity", val=0.0, units="m**3")
@@ -92,7 +93,9 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_I_hull", np.zeros(6), units="kg*m**2")
         self.add_output("platform_cost", 0.0, units="USD")
         self.add_output("platform_Awater", 0.0, units="m**2")
-        self.add_output("platform_Iwater", 0.0, units="m**4")
+        # self.add_output("platform_Iwater", 0.0, units="m**4")
+        self.add_output("platform_Iwaterx", 0.0, units="m**4")
+        self.add_output("platform_Iwatery", 0.0, units="m**4")
         self.add_output("platform_added_mass", np.zeros(6), units="kg")
         self.add_output("platform_variable_capacity", np.zeros(n_member), units="m**3")
 
@@ -218,7 +221,9 @@ class PlatformFrame(om.ExplicitComponent):
         cost = 0.0
         volume = 0.0
         Awater = 0.0
-        Iwater = 0.0
+        # Iwater = 0.0
+        Iwaterx = 0.0
+        Iwatery = 0.0
         cg_plat = np.zeros(3)
         cb_plat = np.zeros(3)
         centroid = outputs["platform_centroid"][:2]
@@ -259,9 +264,12 @@ class PlatformFrame(om.ExplicitComponent):
             m_ball += inputs[f"member{k}:ballast_mass"]
             Awater_k = inputs[f"member{k}:Awater"]
             Awater += Awater_k
-            # Just the y-coordinate because the waterplane area is used for metacentric height, which is based on Iwater_x
-            Rwater = inputs[f"member{k}:waterline_centroid"][1] - centroid[1]
-            Iwater += inputs[f"member{k}:Iwater"] + Awater_k * Rwater**2
+            # y-coordinate for roll metacentric height
+            # x-coordinate for pitch meracentric height
+            Rwaterx = inputs[f"member{k}:waterline_centroid"][1] - centroid[1]
+            Rwatery = inputs[f"member{k}:waterline_centroid"][0] - centroid[0]
+            Iwaterx += inputs[f"member{k}:Iwaterx"] + Awater_k * Rwaterx**2
+            Iwatery += inputs[f"member{k}:Iwatery"] + Awater_k * Rwatery**2
             variable_capacity[k] = inputs[f"member{k}:variable_ballast_capacity"]
 
             # Center of mass / buoyancy tallies
@@ -356,7 +364,8 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_center_of_buoyancy"] = cb_plat
         outputs["platform_I_hull"] = util.unassembleI(I_hull)
         outputs["platform_Awater"] = Awater
-        outputs["platform_Iwater"] = Iwater
+        outputs["platform_Iwaterx"] = Iwaterx
+        outputs["platform_Iwatery"] = Iwatery
         outputs["platform_added_mass"] = m_added
         outputs["platform_variable_capacity"] = variable_capacity
 
