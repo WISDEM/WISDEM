@@ -1662,17 +1662,19 @@ def _find_slope(x, y, xi=None, x0=None, window=None, method="max", opts=None, nI
 
 
     if method == "max":
-        if xi is not None:
+        if xi is not None and not np.isnan(xi):
             I = np.nonzero(x - xi)
             yi = np.interp(xi, x, y)
             a = max((y[I] - yi) / (x[I] - xi))
             x0 = xi - yi / a
         else:
-            raise Exception("For now xi needs to be set to find a slope with the max method")
+            a=np.inf
+            x0 = xi
+            logger.debug("For now xi needs to be set to find a slope with the max method")
 
     elif method == "finitediff_1c":
         # First order centered finite difference
-        if xi is not None:
+        if xi is not None and not np.isnan(xi):
             # First point strictly before xi
             im = np.where(x < xi)[0][-1]
             dx = x[im + 1] - x[im - 1]
@@ -1701,7 +1703,9 @@ def _find_slope(x, y, xi=None, x0=None, window=None, method="max", opts=None, nI
             #print('x0',x0)
             #print('yi',yi)
         else:
-            raise Exception("For now xi needs to be set to find a slope with the finite diff method")
+            a=np.inf
+            x0 = xi
+            logger.debug("For now xi needs to be set to find a slope with the finite diff method")
 
     elif method == "leastsquare":
         if x0 is not None:
