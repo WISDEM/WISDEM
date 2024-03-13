@@ -1047,11 +1047,8 @@ def eval_unsteady(alpha, cl, cd, cm):
 
     unsteady = {}
     Re = 1e6  # Does not factor into any calculations
-    try:
-        mypolar = Polar(Re, alpha, cl, cd, cm, compute_params=True, radians=False)
-        (alpha0, alpha1, alpha2, cnSlope, cn1, cn2, cd0, cm0) = mypolar.unsteadyParams()
-    except:
-        alpha0 = alpha1 = alpha2 = cnSlope = cn1 = cn2 = cd0 = cm0 = 0.0
+    mypolar = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm, compute_params=True, radians=False)
+    (alpha0, alpha1, alpha2, cnSlope, cn1, cn2, cd0, cm0) = mypolar.unsteadyParams()
     unsteady["alpha0"] = alpha0
     unsteady["alpha1"] = alpha1
     unsteady["alpha2"] = alpha2

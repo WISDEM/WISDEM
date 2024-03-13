@@ -1608,10 +1608,11 @@ def cl_linear_slope(alpha, cl, window=None, method="max", nInterp=721, inputInRa
     if len(cl) > 10:
         # Looking at slope around alpha 0 to see if we are too far off
         slope_FD, off_FD = _find_slope(alpha, cl, xi=alpha0, window=window, method="finitediff_1c")
-        if abs(slope - slope_FD) / slope_FD * 100 > 50:
-            #raise Exception('Warning: More than 20% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.'.format(slope,slope_FD,window[0],window[-1]))
-            logger.debug('[WARN] More than 20% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.'.format(slope,slope_FD,window[0],window[-1]))
-#         print('slope ',slope,' Alpha range: {:.3f} {:.3f} - nLin {}  nMin {}  nMax {}'.format(alpha[iStart],alpha[iEnd],len(alpha[iStart:iEnd+1]),nMin,len(alpha)))
+        if slope_FD != 0.:
+            if abs(slope - slope_FD) / slope_FD * 100 > 50:
+                #raise Exception('Warning: More than 20% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.'.format(slope,slope_FD,window[0],window[-1]))
+                logger.debug('[WARN] More than 20% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.'.format(slope,slope_FD,window[0],window[-1]))
+    #         print('slope ',slope,' Alpha range: {:.3f} {:.3f} - nLin {}  nMin {}  nMax {}'.format(alpha[iStart],alpha[iEnd],len(alpha[iStart:iEnd+1]),nMin,len(alpha)))
     return myret(slope, off)
 
 # --------------------------------------------------------------------------------}
@@ -1688,8 +1689,11 @@ def _find_slope(x, y, xi=None, x0=None, window=None, method="max", opts=None, nI
             dx=(x[im+1]-x[im])
             if np.abs(dx)>1e-7:
                 a = ( y[im+1] - y[im] ) / dx
-                yi = np.interp(xi,x,y)
-                x0 = xi - yi/a
+                if a != 0.:
+                    yi = np.interp(xi,x,y)
+                    x0 = xi - yi/a
+                else:
+                    x0 = xi
             else:
                 a=np.inf
                 x0 = xi
