@@ -927,8 +927,9 @@ class NoStallConstraint(ExplicitComponent):
 
     def compute(self, inputs, outputs):
         i_min = np.argmin(abs(inputs["min_s"] - inputs["s"]))
+        n_span = len(inputs["s"])
 
-        for i in range(self.n_span):
+        for i in range(n_span):
             unsteady = eval_unsteady(
                 inputs["airfoils_aoa"],
                 inputs["airfoils_cl"][i, :, 0, 0],
@@ -939,7 +940,7 @@ class NoStallConstraint(ExplicitComponent):
             if outputs["stall_angle_along_span"][i] == 0:
                 outputs["stall_angle_along_span"][i] = 1e-6  # To avoid nan
 
-        for i in range(i_min, self.n_span):
+        for i in range(i_min, n_span):
             outputs["no_stall_constraint"][i] = (inputs["aoa_along_span"][i] + inputs["stall_margin"]) / outputs[
                 "stall_angle_along_span"
             ][i]
