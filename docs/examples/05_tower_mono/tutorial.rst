@@ -30,7 +30,7 @@ To run just the tower analysis from the YAML input files, we just need to includ
 .. literalinclude:: ../../../examples/05_tower_monopile/nrel5mw_tower.yaml
     :language: yaml
 
-The ``modeling_options.yaml`` file is also limited to just the sections we need.  Note that even though the :code:`monopile` options are included here, since there was no specification of a monopile in the geometry inputs, this will be ignored.  One new section is added here, a :code:`loading` section that specifies the load scenarios that are applied to the tower.  Since there is no rotor simulation to generate the loads, they must be specified by the user directly.  Note that two load cases are specified.  This creates a set of constraints for both of them.
+The ``modeling_options.yaml`` file is also limited to just the sections we need.  Note that even though the :code:`monopile` options are included here, since there was no specification of a monopile in the geometry inputs, this will be ignored.  One new section is added here, a :code:`loading` section that specifies the load scenarios that are applied to the tower.  *All forces, moments, and inertia properties are taken about the tower top centerline, in the yaw-aligned coordinate system*.  Since there is no rotor simulation to generate the loads, they must be specified by the user directly.  Note that two load cases are specified.  This creates a set of constraints for both of them.
 
 .. literalinclude:: ../../../examples/05_tower_monopile/modeling_options.yaml
     :language: yaml
@@ -108,8 +108,7 @@ Once :code:`setup()` has been called, we can access the problem values or modify
 
 Now that we've set up the tower problem, we set values for tower, soil, and RNA assembly properties.
 For the soil, shear and modulus properties for the soil can be defined, but in this example we assume that all directions are rigid (3 translation and 3 rotation).
-The center of mass locations are defined relative to the tower top in the yaw-aligned coordinate system.
-Blade and hub moments of inertia should be defined about the hub center, nacelle moments of inertia are defined about the center of mass of the nacelle.
+As mentioned above, all forces, moments, and inertia properties are taken about the tower top centerline, in the yaw-aligned coordinate system.
 
 .. literalinclude:: ../../../examples/05_tower_monopile/tower_direct.py
     :language: python
