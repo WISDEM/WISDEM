@@ -106,19 +106,19 @@ properties:
                     spar_cap_ss:
                         type: string
                         default: 'none'
-                        description: Composite layer modeling the spar cap on the suction side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable spar_cap_ss.
+                        description: Composite layer modeling the spar cap on the suction side in the geometry yaml. This entry is used to compute ultimate strains.
                     spar_cap_ps:
                         type: string
                         default: 'none'
-                        description: Composite layer modeling the spar cap on the pressure side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable spar_cap_ps.
+                        description: Composite layer modeling the spar cap on the pressure side in the geometry yaml. This entry is used to compute ultimate strains.
                     te_ss:
                         type: string
                         default: 'none'
-                        description: Composite layer modeling the trailing edge reinforcement on the suction side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable te_ss.
+                        description: Composite layer modeling the trailing edge reinforcement on the suction side in the geometry yaml. This entry is used to compute ultimate strains.
                     te_ps:
                         type: string
                         default: 'none'
-                        description: Composite layer modeling the trailing edge reinforcement on the pressure side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable te_ps.
+                        description: Composite layer modeling the trailing edge reinforcement on the pressure side in the geometry yaml. This entry is used to compute ultimate strains.
                     gamma_freq: &gamma_freq
                         type: number
                         description: Partial safety factor on modal frequencies
@@ -215,6 +215,10 @@ properties:
                         maximum: 5.0
                         default: 1.0
                         unit: none
+                    use_gb_torque_density:
+                        type: boolean
+                        default: True
+                        description: Flag switching between running to gearbox sizing of DrivetrainSE (False) or the simple sizing given a value of torque density expressed in Nm/kg
                     hub:
                         type: object
                         default: {}

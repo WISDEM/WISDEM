@@ -23,6 +23,7 @@ class TestBC(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
         modeling_options["WISDEM"]["DriveSE"]["flag"] = False
         modeling_options["WISDEM"]["TowerSE"]["flag"] = False
+        modeling_options["flags"]["blade"] = True
         modeling_options["flags"]["nacelle"] = False
         modeling_options["flags"]["tower"] = False
         wt_opt = om.Problem(
@@ -60,6 +61,7 @@ class TestBC(unittest.TestCase):
         modeling_options["WISDEM"]["DriveSE"]["direct"] = False
         modeling_options["WISDEM"]["DriveSE"]["flag"] = False
         modeling_options["WISDEM"]["TowerSE"]["flag"] = False
+        modeling_options["flags"]["blade"] = True
         modeling_options["flags"]["nacelle"] = False
         modeling_options["flags"]["tower"] = False
         wt_opt = om.Problem(
@@ -97,6 +99,7 @@ class TestBC(unittest.TestCase):
         modeling_options["WISDEM"]["DriveSE"]["direct"] = False
         modeling_options["WISDEM"]["DriveSE"]["flag"] = False
         modeling_options["WISDEM"]["TowerSE"]["flag"] = False
+        modeling_options["flags"]["blade"] = True
         modeling_options["flags"]["nacelle"] = False
         modeling_options["flags"]["tower"] = False
         wt_opt = om.Problem(
@@ -133,6 +136,7 @@ class TestBC(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["flag"] = False
         modeling_options["WISDEM"]["DriveSE"]["flag"] = False
         modeling_options["WISDEM"]["TowerSE"]["flag"] = False
+        modeling_options["flags"]["blade"] = True
         modeling_options["flags"]["nacelle"] = False
         modeling_options["flags"]["tower"] = False
         wt_opt = om.Problem(
@@ -181,12 +185,11 @@ class TestBC(unittest.TestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestBC))
+    suite.addTest(TestBC())
     return suite
 
-
-if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
+if __name__ == '__main__':
+    result = unittest.main()
 
     if result.wasSuccessful():
         exit(0)

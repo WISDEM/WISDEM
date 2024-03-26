@@ -153,10 +153,11 @@ class WT_RNTA(om.Group):
             ):
                 self.connect("blade.high_level_blade_props.blade_ref_axis", "rotorse.re.rail.blade_ref_axis")
             # Connections from blade struct parametrization to rotor load anlysis
-            self.connect("blade.opt_var.s_opt_spar_cap_ss", "rotorse.rs.constr.s_opt_spar_cap_ss")
-            self.connect("blade.opt_var.s_opt_spar_cap_ps", "rotorse.rs.constr.s_opt_spar_cap_ps")
-            self.connect("blade.opt_var.s_opt_te_ss", "rotorse.rs.constr.s_opt_te_ss")
-            self.connect("blade.opt_var.s_opt_te_ps", "rotorse.rs.constr.s_opt_te_ps")
+            spars_tereinf = modeling_options["WISDEM"]["RotorSE"]["spars_tereinf"]
+            self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[0], "rotorse.rs.constr.s_opt_spar_cap_ss")
+            self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[1], "rotorse.rs.constr.s_opt_spar_cap_ps")
+            self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[2], "rotorse.rs.constr.s_opt_te_ss")
+            self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[3], "rotorse.rs.constr.s_opt_te_ps")
 
             # Connections to RotorPower
             self.connect("control.V_in", "rotorse.rp.v_min")
@@ -347,6 +348,7 @@ class WT_RNTA(om.Group):
                 self.connect("nacelle.planet_numbers", "drivese.planet_numbers")
                 self.connect("nacelle.gear_configuration", "drivese.gear_configuration")
                 self.connect("nacelle.gearbox_mass_user", "drivese.gearbox_mass_user")
+                self.connect("nacelle.gearbox_torque_density", "drivese.gearbox_torque_density")
                 self.connect("nacelle.gearbox_radius_user", "drivese.gearbox_radius_user")
                 self.connect("nacelle.gearbox_length_user", "drivese.gearbox_length_user")
                 self.connect("nacelle.bedplate_flange_width", "drivese.bedplate_flange_width")
@@ -726,7 +728,7 @@ class WT_RNTA(om.Group):
         self.connect("costs.spinner_mass_cost_coeff", "tcc.spinner_mass_cost_coeff")
         self.connect("costs.lss_mass_cost_coeff", "tcc.lss_mass_cost_coeff")
         self.connect("costs.bearing_mass_cost_coeff", "tcc.bearing_mass_cost_coeff")
-        self.connect("costs.gearbox_mass_cost_coeff", "tcc.gearbox_mass_cost_coeff")
+        self.connect("costs.gearbox_torque_cost", "tcc.gearbox_torque_cost")
         self.connect("costs.hss_mass_cost_coeff", "tcc.hss_mass_cost_coeff")
         self.connect("costs.generator_mass_cost_coeff", "tcc.generator_mass_cost_coeff")
         self.connect("costs.bedplate_mass_cost_coeff", "tcc.bedplate_mass_cost_coeff")

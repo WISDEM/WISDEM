@@ -2,7 +2,6 @@ import numpy as np
 from openmdao.api import ExplicitComponent
 from scipy.interpolate import PchipInterpolator
 
-import wisdem.ccblade._bem as _bem
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.csystem import DirectionVector
 
