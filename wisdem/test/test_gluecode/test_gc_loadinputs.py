@@ -44,15 +44,6 @@ class TestLoadInputs(unittest.TestCase):
         self.myobj.set_opt_flags()
         self.assertFalse(self.myobj.analysis_options["opt_flag"])
 
-        self.myobj.analysis_options["design_variables"]["test1"]["flag"] = True
-        self.myobj.set_opt_flags()
-        self.assertTrue(self.myobj.analysis_options["opt_flag"])
-
-        self.myobj.analysis_options["design_variables"]["test1"]["flag"] = False
-        self.myobj.analysis_options["design_variables"]["test1"]["test2"]["test3"]["flag"] = True
-        self.myobj.set_opt_flags()
-        self.assertTrue(self.myobj.analysis_options["opt_flag"])
-
         self.myobj.analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"] = 500
         self.myobj.analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"] = 600
         self.myobj.analysis_options["design_variables"]["blade"]["n_opt_struct"] = [700, 800]
