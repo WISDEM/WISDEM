@@ -2519,10 +2519,10 @@ class AggregateJoints(om.ExplicitComponent):
         locations_xyz[icyl, 0] = locations[icyl, 0] * np.cos(locations[icyl, 1])
         locations_xyz[icyl, 1] = locations[icyl, 0] * np.sin(locations[icyl, 1])
 
-        # Handle relative joints, there is probably a more elegant solution
+        # Handle relative joints
         joint_names = floating_init_options['joints']['name']
         for i_joint in range(floating_init_options['joints']['n_joints']):
-            rel_joint = floating_init_options['joints']['relative'][i_joint]
+            rel_joint = floating_init_options['joints']['relative'][i_joint]    # name of joint relative to this joint
             if rel_joint != 'origin':  # is a relative joint
                 if rel_joint not in joint_names:
                     raise Exception(f'The relative joint {joint_names[i_joint]} is not relative to an existing joint.  Relative joint provided: {rel_joint}')
@@ -3211,7 +3211,6 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
                 z_base = inputs["tower_ref_axis_user"][0, 2]
                 z_current = inputs["tower_ref_axis_user"][:, 2] - z_base
                 if modeling_options['flags']['marine_hydro']:  #hub height negative
-                    print('here')
                     h_needed = inputs["hub_height_user"] + inputs["distance_tt_hub"] - z_base
                 else:
                     h_needed = inputs["hub_height_user"] - inputs["distance_tt_hub"] - z_base
