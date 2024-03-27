@@ -727,7 +727,7 @@ class Polar(object):
             cn = cl * np.cos(alpha * np.pi / 180) + cd * np.sin(alpha * np.pi / 180)
 
         # --- Zero lift
-        alpha0 = self.alpha0()
+        alpha0 = float(self.alpha0())
         cd0 = self.cd_interp(alpha0)
         cm0 = self.cm_interp(alpha0)
 
@@ -743,8 +743,8 @@ class Polar(object):
             alpha0cn = _find_alpha0(alpha, cn, window, direction='down')
 
         # checks for inppropriate data (like cylinders)
-        if len(np.unique(cl)) == 1:
-            return (alpha0, 0.0, 0.0, 0.0, 0.0, 0.0, cd0, cm0)
+        if np.all(np.isclose(cl, cl[0], atol=1e-9)):
+            return (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
         # --- cn "inflection" or "Max" points
         # These point are detected from slope changes of cn, positive of negative inflections
@@ -1292,15 +1292,19 @@ def _find_alpha0(alpha, coeff, window, direction='up', value_if_constant = np.na
     coeff = coeff[iwindow]
     alpha_zc, i_zc, s_zc = _zero_crossings(x=alpha, y=coeff, direction=direction)
 
-    if len(alpha_zc) > 1:
+    if len(alpha_zc) == 1:
+        alpha0 = alpha_zc
+    
+    elif len(alpha_zc) > 1:
         logger.debug('WARN: Cannot find alpha0, {} zero crossings of Coeff in the range of alpha values: [{} {}] '.format(len(alpha_zc),window[0],window[1]))
         logger.debug('>>> Using second zero')
         alpha_zc=alpha_zc[1:]
+        alpha0 = alpha_zc[0]
         #raise Exception('Cannot find alpha0, {} zero crossings of Coeff in the range of alpha values: [{} {}] '.format(len(alpha_zc),window[0],window[1]))
     elif len(alpha_zc) == 0:
-        raise NoCrossingException('Cannot find alpha0, no zero crossing of Coeff in the range of alpha values: [{} {}] '.format(window[0],window[1]))
+        alpha0 = 0.
+        logger.debug('Cannot find alpha0, no zero crossing of Coeff in the range of alpha values: [{} {}] '.format(window[0],window[1]))
 
-    alpha0 = alpha_zc[0]
     return alpha0
 
 
@@ -1608,10 +1612,11 @@ def cl_linear_slope(alpha, cl, window=None, method="max", nInterp=721, inputInRa
     if len(cl) > 10:
         # Looking at slope around alpha 0 to see if we are too far off
         slope_FD, off_FD = _find_slope(alpha, cl, xi=alpha0, window=window, method="finitediff_1c")
-        if abs(slope - slope_FD) / slope_FD * 100 > 50:
-            #raise Exception('Warning: More than 20% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.'.format(slope,slope_FD,window[0],window[-1]))
-            logger.debug('[WARN] More than 20% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.'.format(slope,slope_FD,window[0],window[-1]))
-#         print('slope ',slope,' Alpha range: {:.3f} {:.3f} - nLin {}  nMin {}  nMax {}'.format(alpha[iStart],alpha[iEnd],len(alpha[iStart:iEnd+1]),nMin,len(alpha)))
+        if slope_FD != 0.:
+            if abs(slope - slope_FD) / slope_FD * 100 > 50:
+                #raise Exception('Warning: More than 20% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.'.format(slope,slope_FD,window[0],window[-1]))
+                logger.debug('[WARN] More than 20% error between estimated slope ({:.4f}) and the slope around alpha0 ({:.4f}). The window for the slope search ([{} {}]) is likely wrong.'.format(slope,slope_FD,window[0],window[-1]))
+    #         print('slope ',slope,' Alpha range: {:.3f} {:.3f} - nLin {}  nMin {}  nMax {}'.format(alpha[iStart],alpha[iEnd],len(alpha[iStart:iEnd+1]),nMin,len(alpha)))
     return myret(slope, off)
 
 # --------------------------------------------------------------------------------}
@@ -1661,17 +1666,19 @@ def _find_slope(x, y, xi=None, x0=None, window=None, method="max", opts=None, nI
 
 
     if method == "max":
-        if xi is not None:
+        if xi is not None and not np.isnan(xi):
             I = np.nonzero(x - xi)
             yi = np.interp(xi, x, y)
             a = max((y[I] - yi) / (x[I] - xi))
             x0 = xi - yi / a
         else:
-            raise Exception("For now xi needs to be set to find a slope with the max method")
+            a=np.inf
+            x0 = xi
+            logger.debug("For now xi needs to be set to find a slope with the max method")
 
     elif method == "finitediff_1c":
         # First order centered finite difference
-        if xi is not None:
+        if xi is not None and not np.isnan(xi):
             # First point strictly before xi
             im = np.where(x < xi)[0][-1]
             dx = x[im + 1] - x[im - 1]
@@ -1688,8 +1695,11 @@ def _find_slope(x, y, xi=None, x0=None, window=None, method="max", opts=None, nI
             dx=(x[im+1]-x[im])
             if np.abs(dx)>1e-7:
                 a = ( y[im+1] - y[im] ) / dx
-                yi = np.interp(xi,x,y)
-                x0 = xi - yi/a
+                if a != 0.:
+                    yi = np.interp(xi,x,y)
+                    x0 = xi - yi/a
+                else:
+                    x0 = xi
             else:
                 a=np.inf
                 x0 = xi
@@ -1697,7 +1707,9 @@ def _find_slope(x, y, xi=None, x0=None, window=None, method="max", opts=None, nI
             #print('x0',x0)
             #print('yi',yi)
         else:
-            raise Exception("For now xi needs to be set to find a slope with the finite diff method")
+            a=np.inf
+            x0 = xi
+            logger.debug("For now xi needs to be set to find a slope with the finite diff method")
 
     elif method == "leastsquare":
         if x0 is not None:
