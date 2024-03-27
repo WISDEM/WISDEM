@@ -57,6 +57,7 @@ modeling_options["WISDEM"]["FixedBottomSE"]["gamma_fatigue"] = 1.35 * 1.3 * 1.0
 
 # Frame3DD options
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"] = {}
+modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["flag"] = True
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["shear"] = True
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["geom"] = True
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["tol"] = 1e-7
