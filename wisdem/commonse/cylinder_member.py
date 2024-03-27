@@ -1238,6 +1238,7 @@ class MemberComplex(om.ExplicitComponent):
             self.add_ring_stiffener_sections(inputs, outputs)
             self.add_circular_ballast_sections(inputs, outputs)
         elif self.shape == "rectangular":
+            self.add_bulkhead_sections(inputs, outputs)
             self.add_rectangular_ballast_sections(inputs, outputs)
         self.compute_mass_properties(inputs, outputs)
         self.nodal_discretization(inputs, outputs)
@@ -1511,7 +1512,11 @@ class MemberComplex(om.ExplicitComponent):
         # Unpack variables
         s_full = inputs["s_full"]
         z_full = inputs["z_full"]
-        R_od = 0.5 * inputs["outer_diameter_full"]
+        if self.shape == "circular":
+            R_od = 0.5 * inputs["outer_diameter_full"]
+        elif self.shape == "rectangular":
+            a = inputs["side_length_a_full"]
+            b = inputs["side_length_b_full"]
         twall = inputs["t_full"]
         rho = inputs["rho_full"]
         E = inputs["E_full"]
@@ -1538,8 +1543,14 @@ class MemberComplex(om.ExplicitComponent):
         G_bulk = util.sectionalInterp(s_bulk, s_full, G)
         sigy_bulk = util.sectionalInterp(s_bulk, s_full, sigy)
         coeff_bulk = util.sectionalInterp(s_bulk, s_full, coeff)
-        R_od_bulk = np.interp(s_bulk, s_full, R_od)
-        R_id_bulk = R_od_bulk - twall_bulk
+        if self.shape == "circular":
+            R_od_bulk = np.interp(s_bulk, s_full, R_od)
+            R_id_bulk = R_od_bulk - twall_bulk
+        elif self.shape == "rectangular":
+            a_bulk = np.interp(s_bulk, s_full, a)
+            b_bulk = np.interp(s_bulk, s_full, b)
+            a_in_bulk = a_bulk-2*twall_bulk
+            b_in_bulk = b_bulk-2*twall_bulk
 
         # Add bulkhead sections: assumes bulkhead and shell are made of same material!
         s0 = s_bulk - 0.5 * t_bulk / L
@@ -1550,26 +1561,52 @@ class MemberComplex(om.ExplicitComponent):
         if s1[-1] > s_ghost2:
             s0[-1] = s_ghost2 - t_bulk[-1] / L
             s1[-1] = s_ghost2
-        for k in range(nbulk):
-            itube = cs.Tube(2 * R_od_bulk[k], R_od_bulk[k])  # thickness=radius for solid disk
-            iprop = CircCrossSection(
-                D=2 * R_od_bulk[k],
-                t=R_od_bulk[k],
-                A=itube.Area,
-                Ixx=itube.Ixx,
-                Iyy=itube.Iyy,
-                J0=itube.J0,
-                Asx=itube.Asx,
-                Asy=itube.Asy,
-                rho=coeff_bulk[k] * rho_bulk[k],
-                E=E_bulk[k],
-                G=G_bulk[k],
-                sigy=sigy_bulk[k],
-            )
-            self.insert_section(s0[k], s1[k], iprop)
+
+        if self.shape == "circular":
+            for k in range(nbulk):
+                itube = cs.Tube(2 * R_od_bulk[k], R_od_bulk[k])  # thickness=radius for solid disk
+                iprop = CircCrossSection(
+                    D=2 * R_od_bulk[k],
+                    t=R_od_bulk[k],
+                    A=itube.Area,
+                    Ixx=itube.Ixx,
+                    Iyy=itube.Iyy,
+                    J0=itube.J0,
+                    Asx=itube.Asx,
+                    Asy=itube.Asy,
+                    rho=coeff_bulk[k] * rho_bulk[k],
+                    E=E_bulk[k],
+                    G=G_bulk[k],
+                    sigy=sigy_bulk[k],
+                )
+                self.insert_section(s0[k], s1[k], iprop)
+        elif self.shape == "rectangular":
+            for k in range(len(s_full) - 1):
+                irect = cs.Rectangle(a_bulk[k], b_bulk[k], 0.5*np.minimum(a_bulk[k], b_bulk[k])) 
+                iprop = RectCrossSection(
+                    a=a_bulk[k],
+                    b=b_bulk[k],
+                    t=np.minimum(a_bulk[k], b_bulk[k]), # This value does not make sense for filled rectangular disk
+                    A=irect.Area,
+                    Ixx=irect.Ixx,
+                    Iyy=irect.Iyy,
+                    J0=irect.J0,
+                    Asx=irect.Asx,
+                    Asy=irect.Asy,
+                    rho=rho[k],
+                    E=E_bulk[k],
+                    G=G_bulk[k],
+                    TorsC=irect.TorsConst,
+                    sigy=sigy_bulk[k],
+                )
+                self.add_section(s_full[k], s_full[k + 1], iprop)
 
         # Compute bulkhead mass independent of shell
-        m_bulk = coeff_bulk * rho_bulk * np.pi * R_id_bulk**2 * t_bulk
+        if self.shape == "circular":
+            A_bulk = np.pi * R_id_bulk**2
+        elif self.shape == "rectangular":
+            A_bulk = a_in_bulk * b_in_bulk 
+        m_bulk = coeff_bulk * rho_bulk * A_bulk * t_bulk
         outputs["bulkhead_mass"] = m_bulk.sum()
 
         z_cg = 0.0 if outputs["bulkhead_mass"] == 0.0 else np.dot(z_bulk, m_bulk) / m_bulk.sum()
@@ -1577,8 +1614,13 @@ class MemberComplex(om.ExplicitComponent):
 
         # Compute moments of inertia at keel
         # Assume bulkheads are just simple thin discs with radius R_od-t_wall and mass already computed
-        J0 = 0.5 * m_bulk * R_id_bulk**2
-        Ixx = Iyy = 0.5 * J0
+        if self.shape == "circular":
+            J0 = 0.5 * m_bulk * R_id_bulk**2
+            Ixx = Iyy = 0.5 * J0
+        elif self.shape == "rectangular":
+            Ixx = m_bulk/12*a_in_bulk**2
+            Iyy = m_bulk/12*b_in_bulk**2
+            J0 = Ixx+Iyy
         dz = z_bulk - z_full[0]
         I_keel = np.zeros((3, 3))
         for k in range(nbulk):
@@ -1595,19 +1637,22 @@ class MemberComplex(om.ExplicitComponent):
         m_shell = outputs["shell_mass"]
 
         # Cost Step 1) Cutting flat plates using plasma cutter
-        cutLengths = 2.0 * np.pi * R_id_bulk
+        if self.shape == "circular":
+            cutLengths = 2.0 * np.pi * R_id_bulk
+        elif self.shape == "rectangular":
+            cutLengths = 2 * (a_in_bulk+b_in_bulk)
         # Cost Step 2) Fillet welds with GMAW-C (gas metal arc welding with CO2) of bulkheads to shell
         theta_w = 3.0  # Difficulty factor
 
         # Labor-based expenses
         K_f = k_f * (
             manufacture.steel_cutting_plasma_time(cutLengths, t_bulk)
-            + manufacture.steel_fillet_welding_time(theta_w, nbulk, m_bulk + m_shell, 2 * np.pi * R_id_bulk, t_bulk)
+            + manufacture.steel_fillet_welding_time(theta_w, nbulk, m_bulk + m_shell, cutLengths, t_bulk)
         )
 
         # Cost Step 3) Painting (two sided)
         theta_p = 1.0
-        K_p = k_p * theta_p * 2 * (np.pi * R_id_bulk**2.0).sum()
+        K_p = k_p * theta_p * 2 * A_bulk.sum()
 
         # Material cost, without outfitting
         K_m = np.sum(k_m * m_bulk)
