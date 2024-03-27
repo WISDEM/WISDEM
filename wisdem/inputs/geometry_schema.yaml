@@ -2655,10 +2655,10 @@ properties:
                 default: 2.
             air_speed_sound:
                 type: number
-                description: Speed of sound in air.
+                description: Speed of sound in working fluid.
                 unit: m/s
                 minimum: 330.
-                maximum: 350.
+                maximum: 1600.
                 default: 340.
             shear_exp:
                 type: number
