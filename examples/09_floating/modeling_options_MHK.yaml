@@ -1,0 +1,30 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+WISDEM:
+    RotorSE:
+        flag: True
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+        frame3dd:
+            flag: False
+    TowerSE:
+        flag: True
+        frame3dd:
+            flag: False
+    DriveSE:
+        flag: True
+        frame3dd:
+            flag: False
+    FloatingSE:
+        flag: True
+        rank_and_file: True
+        symmetric_moorings: False
+        frame3dd:
+            flag: False
+    BOS:
+        flag: False
+    
+
+
