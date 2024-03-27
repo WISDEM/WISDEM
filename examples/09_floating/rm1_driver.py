@@ -7,7 +7,6 @@ from wisdem.glue_code.runWISDEM import run_wisdem
 
 ## File management
 run_dir                 = os.path.dirname( os.path.realpath(__file__) )
-wisdem_examples         = os.path.join(os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ), "WISDEM", "examples")
 fname_wt_input          = run_dir + os.sep + 'RM1.yaml'
 fname_modeling_options  = run_dir + os.sep + 'modeling_options_MHK.yaml'
 fname_analysis_options  = run_dir + os.sep + 'analysis_options.yaml'
