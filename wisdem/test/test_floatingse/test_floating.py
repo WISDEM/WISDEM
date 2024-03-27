@@ -28,6 +28,7 @@ class TestOC3Mass(unittest.TestCase):
         opt["floating"]["members"]["n_ballasts"] = [0]
         opt["floating"]["members"]["n_axial_joints"] = [1]
         opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["flag"] = True
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = False
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = False
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["tol"] = 1e-8

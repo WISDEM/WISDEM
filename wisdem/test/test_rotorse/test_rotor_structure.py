@@ -22,6 +22,8 @@ class TestRS(unittest.TestCase):
         options["WISDEM"] = {}
         options["WISDEM"]["RotorSE"] = {}
         options["WISDEM"]["RotorSE"]["n_span"] = npts
+        options["WISDEM"]["RotorSE"]["frame3dd"] = {}
+        options["WISDEM"]["RotorSE"]["frame3dd"]['flag'] = True
 
         myobj = rs.BladeCurvature(modeling_options=options)
 
@@ -93,6 +95,8 @@ class TestRS(unittest.TestCase):
         options["WISDEM"] = {}
         options["WISDEM"]["RotorSE"] = {}
         options["WISDEM"]["RotorSE"]["n_span"] = npts
+        options["WISDEM"]["RotorSE"]["frame3dd"] = {}
+        options["WISDEM"]["RotorSE"]["frame3dd"]['flag'] = True
 
         myobj = rs.TotalLoads(modeling_options=options)
 
@@ -168,6 +172,8 @@ class TestRS(unittest.TestCase):
         options["WISDEM"]["RotorSE"] = {}
         options["WISDEM"]["RotorSE"]["n_span"] = npts
         options["WISDEM"]["RotorSE"]["n_freq"] = nfreq
+        options["WISDEM"]["RotorSE"]["frame3dd"] = {}
+        options["WISDEM"]["RotorSE"]["frame3dd"]['flag'] = True
 
         myobj = rs.RunFrame3DD(modeling_options=options)
         myobj.n_span = npts
@@ -227,6 +233,8 @@ class TestRS(unittest.TestCase):
         options["WISDEM"] = {}
         options["WISDEM"]["RotorSE"] = {}
         options["WISDEM"]["RotorSE"]["n_span"] = npts
+        options["WISDEM"]["RotorSE"]["frame3dd"] = {}
+        options["WISDEM"]["RotorSE"]["frame3dd"]['flag'] = True
 
         myobj = rs.ComputeStrains(modeling_options=options)
         myobj.n_span = npts
@@ -369,6 +377,8 @@ class TestRS(unittest.TestCase):
         options["WISDEM"]["RotorSE"]["n_span"] = npts
         options["WISDEM"]["RotorSE"]["n_freq"] = 6
         options["WISDEM"]["RotorSE"]["gamma_freq"] = 1.1
+        options["WISDEM"]["RotorSE"]["frame3dd"] = {}
+        options["WISDEM"]["RotorSE"]["frame3dd"]['flag'] = True
 
         myopt = {}
         myopt["design_variables"] = {}
