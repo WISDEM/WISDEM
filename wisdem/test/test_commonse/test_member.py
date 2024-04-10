@@ -48,10 +48,11 @@ class TestInputs(unittest.TestCase):
         self.opt["n_height"] = [5]
         self.opt["n_layers"] = [1]
         self.opt["n_ballasts"] = [3]
+        self.shape = "circular"
 
     def testDiscYAML_1Material(self):
         outputs = {}
-        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=2)
+        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=2, shape=self.shape)
         myobj.compute(self.inputs, outputs, self.discrete_inputs, self.discrete_outputs)
 
         myones = np.ones(4)
@@ -101,7 +102,7 @@ class TestInputs(unittest.TestCase):
         self.inputs["unit_cost_mat"] = np.array([1e1, 2e1, 2e1])
         self.discrete_inputs["material_names"] = ["steel", "slurry", "other"]
         self.opt["n_layers"] = [2]
-        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=3)
+        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=3, shape=self.shape)
         myobj.compute(self.inputs, outputs, self.discrete_inputs, self.discrete_outputs)
 
         # Define mixtures
@@ -128,7 +129,7 @@ class TestInputs(unittest.TestCase):
     def test_sconst(self):
         outputs = {}
         self.inputs["s_const1"] = 0.1
-        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=2)
+        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=2, shape=self.shape)
         myobj.compute(self.inputs, outputs, self.discrete_inputs, self.discrete_outputs)
 
         npt.assert_equal(outputs["s"], np.array([0.0, 0.1, 0.5, 0.75, 1.0]))
@@ -141,6 +142,7 @@ class TestFullDiscretization(unittest.TestCase):
 
         self.inputs["s"] = np.array([0.0, 0.1, 0.3, 0.6, 1.0])
         self.inputs["height"] = 1e1
+        self.member_shape_variables = ["outer_diameter"]
         self.inputs["outer_diameter"] = 5.0 * np.ones(5)
         self.inputs["wall_thickness"] = 0.05 * np.ones(4)
         self.inputs["unit_cost"] = 1.0 * np.ones(4)
@@ -154,7 +156,7 @@ class TestFullDiscretization(unittest.TestCase):
         self.inputs["joint1"] = np.zeros(3)
         self.inputs["joint2"] = np.r_[np.zeros(2), 1e2]
 
-        self.mydis = member.MemberDiscretization(n_height=5, n_refine=2)
+        self.mydis = member.MemberDiscretization(n_height=5, n_refine=2, member_shape_variables=self.member_shape_variables)
 
     def testRefine2(self):
         self.mydis.compute(self.inputs, self.outputs)
@@ -244,7 +246,9 @@ class TestMemberComponent(unittest.TestCase):
         opt["n_ballasts"] = [3]
         opt["n_bulkheads"] = [nbulk]
         opt["n_axial_joints"] = [3]
+        opt["outer_shape"] = ["circular"]
         self.mem = member.MemberComplex(options=opt, idx=0)
+        self.mem.setup()
         self.mem.sections = member.SortedDict()
 
     def testSortedDict(self):
@@ -665,7 +669,7 @@ class TestMemberComponent(unittest.TestCase):
 
     def testBallast(self):
         self.mem.add_main_sections(self.inputs, self.outputs)
-        self.mem.add_ballast_sections(self.inputs, self.outputs)
+        self.mem.add_circular_ballast_sections(self.inputs, self.outputs)
 
         area = 0.25 * np.pi * 9.9**2
         h = 10 * np.pi / area
@@ -694,7 +698,7 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["s_ghost1"] = 0.1
         self.inputs["s_ghost2"] = 1.0
         self.mem.add_main_sections(self.inputs, self.outputs)
-        self.mem.add_ballast_sections(self.inputs, self.outputs)
+        self.mem.add_circular_ballast_sections(self.inputs, self.outputs)
 
         area = 0.25 * np.pi * 9.9**2
         h = 10 * np.pi / area
@@ -722,7 +726,7 @@ class TestMemberComponent(unittest.TestCase):
         self.mem.add_main_sections(self.inputs, self.outputs)
         self.mem.add_bulkhead_sections(self.inputs, self.outputs)
         self.mem.add_ring_stiffener_sections(self.inputs, self.outputs)
-        self.mem.add_ballast_sections(self.inputs, self.outputs)
+        self.mem.add_circular_ballast_sections(self.inputs, self.outputs)
         self.mem.compute_mass_properties(self.inputs, self.outputs)
 
         m_shell = np.pi * 0.25 * (10.0**2 - 9.9**2) * 1e3 * 1.1 * 100.0
@@ -859,7 +863,7 @@ class TestHydro(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["buoyancy_force"], V_expect * rho_w * g)
         npt.assert_almost_equal(self.outputs["center_of_buoyancy"], cb_expect)
         self.assertEqual(self.outputs["idx_cb"], npts - 1)  # Halfway node point
-        self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
+        self.assertAlmostEqual(self.outputs["Iwaterx"], Ixx)
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
         npt.assert_equal(self.outputs["waterline_centroid"], [0.0, 0.0])
         npt.assert_almost_equal(self.outputs["z_dim"], np.linspace(0, 50.0, npts) - 75)
@@ -892,7 +896,7 @@ class TestHydro(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["buoyancy_force"], V_expect * rho_w * g)
         npt.assert_almost_equal(self.outputs["center_of_buoyancy"], cb_expect)
         self.assertEqual(self.outputs["idx_cb"], int(0.5 * npts - 1))
-        self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
+        self.assertAlmostEqual(self.outputs["Iwaterx"], Ixx)
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
         npt.assert_equal(self.outputs["waterline_centroid"], [1.0, 2.0])
         npt.assert_almost_equal(self.outputs["z_dim"], np.linspace(0, 50.0, npts) - 25)
@@ -921,7 +925,7 @@ class TestHydro(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["buoyancy_force"], V_expect * rho_w * g)
         npt.assert_almost_equal(self.outputs["center_of_buoyancy"], cb_expect)
         self.assertEqual(self.outputs["idx_cb"], int(0.5 * npts - 1))
-        self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
+        self.assertAlmostEqual(self.outputs["Iwaterx"], Ixx)
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
         npt.assert_almost_equal(self.outputs["waterline_centroid"], [0.0, 0.0])
         npt.assert_almost_equal(self.outputs["z_dim"], np.linspace(0, 50.0, npts) - 25)
@@ -1083,6 +1087,7 @@ class TestGroup(unittest.TestCase):
         opt["n_bulkheads"] = nbulk = [4]
         opt["n_ballasts"] = [2]
         opt["n_axial_joints"] = [3]
+        opt["outer_shape"] = ["circular"]
 
         prob = om.Problem(reports=False)
 
