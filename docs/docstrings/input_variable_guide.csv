@@ -1,0 +1,938 @@
+Variable,Units,Description
+materials.rho_fiber,kg/m**3,1D array of the density of the fibers of the materials.
+materials.rho,kg/m**3,"1D array of the density of the materials. For composites, this is the density of the laminate."
+materials.rho_area_dry,kg/m**2,1D array of the dry aerial density of the composite fabrics. Non-composite materials are kept at 0.
+materials.ply_t_from_yaml,m,1D array of the ply thicknesses of the materials. Non-composite materials are kept at 0.
+materials.fvf_from_yaml,,1D array of the non-dimensional fiber volume fraction of the composite materials. Non-composite materials are kept at 0.
+materials.fwf_from_yaml,,1D array of the non-dimensional fiber weight- fraction of the composite materials. Non-composite materials are kept at 0.
+materials.name,Unavailable,1D array of names of materials.
+materials.component_id,Unavailable,"1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE/LE reinf."
+hub.diameter,m,
+blade.outer_shape_bem.s_default,,"1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)"
+blade.outer_shape_bem.chord_yaml,m,1D array of the chord values defined along blade span.
+blade.outer_shape_bem.twist_yaml,rad,1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).
+blade.outer_shape_bem.r_thick_yaml,,1D array of the relative thickness values defined along blade span.
+blade.outer_shape_bem.pitch_axis_yaml,,"1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span."
+blade.outer_shape_bem.ref_axis_yaml,m,"2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values."
+blade.outer_shape_bem.span_end,,1D array of the positions along blade span where something (a DAC device?) starts and we want a grid point. Only values between 0 and 1 are meaningful.
+blade.outer_shape_bem.span_ext,,1D array of the extensions along blade span where something (a DAC device?) lives and we want a grid point. Only values between 0 and 1 are meaningful.
+blade.pa.s_opt_twist,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade twist angle
+blade.pa.twist_opt,rad,1D array of the twist angle being optimized at the n_opt locations.
+blade.pa.s_opt_chord,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade chord
+blade.pa.chord_opt,m,1D array of the chord being optimized at the n_opt locations.
+blade.interp_airfoils.af_position,,1D array of the non dimensional positions of the airfoils af_used defined along blade span.
+blade.interp_airfoils.ac,,1D array of the aerodynamic centers of each airfoil.
+blade.interp_airfoils.r_thick_discrete,,1D array of the relative thicknesses of each airfoil.
+blade.interp_airfoils.aoa,rad,1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.
+blade.interp_airfoils.cl,,"4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap."
+blade.interp_airfoils.cd,,"4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap."
+blade.interp_airfoils.cm,,"4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap."
+blade.interp_airfoils.coord_xy,,3D array of the x and y airfoil coordinates of the n_af airfoils.
+blade.interp_airfoils.name,Unavailable,1D array of names of airfoils.
+blade.high_level_blade_props.rotor_diameter_user,m,Diameter of the rotor specified by the user. It is defined as two times the blade length plus the hub diameter.
+blade.compute_reynolds.rho,kg/m**3,
+blade.compute_reynolds.mu,kg/m/s,Dynamic viscosity of air
+blade.internal_structure_2d_fem.web_rotation_yaml,rad,"2D array of the rotation angle of the shear webs in respect to the chord line. The first dimension represents each shear web, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the web is built straight."
+blade.internal_structure_2d_fem.web_offset_y_pa_yaml,m,"2D array of the offset along the y axis to set the position of the shear webs. Positive values move the web towards the trailing edge, negative values towards the leading edge. The first dimension represents each shear web, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.web_start_nd_yaml,,"2D array of the non-dimensional start point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.web_end_nd_yaml,,"2D array of the non-dimensional end point defined along the outer profile of a web. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each web, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_web,,"1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to zero."
+blade.internal_structure_2d_fem.layer_thickness,m,"2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_orientation,rad,"Fiber orientation of the composite layer with 0-value meaning alignment with reference axis. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_rotation_yaml,rad,"2D array of the rotation angle of a layer in respect to the chord line. The first dimension represents each layer, the second dimension represents each entry along blade span. If the rotation is equal to negative twist +- a constant, then the layer is built straight."
+blade.internal_structure_2d_fem.layer_offset_y_pa_yaml,m,"2D array of the offset along the y axis to set the position of a layer. Positive values move the layer towards the trailing edge, negative values towards the leading edge. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_width_yaml,m,"2D array of the width along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_midpoint_nd,,"2D array of the non-dimensional midpoint defined along the outer profile of a layer. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_start_nd_yaml,,"2D array of the non-dimensional start point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_end_nd_yaml,,"2D array of the non-dimensional end point defined along the outer profile of a layer. The TE suction side is 0, the TE pressure side is 1. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.internal_structure_2d_fem.layer_side,Unavailable,1D array setting whether the layer is on the suction or pressure side. This entry is only used if definition_layer is equal to 1 or 2.
+blade.internal_structure_2d_fem.definition_web,Unavailable,1D array of flags identifying how webs are specified in the yaml. 1) offset+rotation=twist 2) offset+rotation
+blade.internal_structure_2d_fem.definition_layer,Unavailable,"1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer"
+blade.internal_structure_2d_fem.index_layer_start,Unavailable,Index used to fix a layer to another
+blade.internal_structure_2d_fem.index_layer_end,Unavailable,Index used to fix a layer to another
+blade.ps.layer_thickness_original,m,"2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span."
+blade.ps.s_opt_layer_0,,
+blade.ps.layer_0_opt,m,
+blade.ps.s_opt_layer_1,,
+blade.ps.layer_1_opt,m,
+blade.ps.s_opt_layer_2,,
+blade.ps.layer_2_opt,m,
+blade.ps.s_opt_layer_3,,
+blade.ps.layer_3_opt,m,
+blade.ps.s_opt_layer_4,,
+blade.ps.layer_4_opt,m,
+blade.ps.s_opt_layer_5,,
+blade.ps.layer_5_opt,m,
+blade.ps.s_opt_layer_6,,
+blade.ps.layer_6_opt,m,
+blade.ps.s_opt_layer_7,,
+blade.ps.layer_7_opt,m,
+blade.ps.s_opt_layer_8,,
+blade.ps.layer_8_opt,m,
+blade.ps.s_opt_layer_9,,
+blade.ps.layer_9_opt,m,
+blade.ps.s_opt_layer_10,,
+blade.ps.layer_10_opt,m,
+blade.ps.s_opt_layer_11,,
+blade.ps.layer_11_opt,m,
+blade.ps.s_opt_layer_12,,
+blade.ps.layer_12_opt,m,
+blade.ps.s_opt_layer_13,,
+blade.ps.layer_13_opt,m,
+blade.ps.s_opt_layer_14,,
+blade.ps.layer_14_opt,m,
+blade.ps.s_opt_layer_15,,
+blade.ps.layer_15_opt,m,
+blade.ps.s_opt_layer_16,,
+blade.ps.layer_16_opt,m,
+blade.ps.s_opt_layer_17,,
+blade.ps.layer_17_opt,m,
+monopile.ref_axis,m,"2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values."
+high_level_tower_props.tower_ref_axis_user,m,"2D array of the coordinates (x,y,z) of the tower reference axis. The coordinate system is the global coordinate system of OpenFAST: it is placed at tower base with x pointing downwind, y pointing on the side and z pointing vertically upwards. A standard tower configuration will have zero x and y values and positive z values."
+high_level_tower_props.distance_tt_hub,m,Vertical distance from tower top to hub center.
+high_level_tower_props.hub_height_user,m,Height of the hub specified by the user.
+af_3d.aoa,rad,1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.
+af_3d.Re,,1D array of the Reynolds numbers used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.
+af_3d.rated_TSR,,Constant tip speed ratio in region II.
+rotorse.ccblade.Uhub,m/s,Undisturbed wind speed
+rotorse.tsr,,Tip speed ratio
+rotorse.pitch,deg,Pitch angle
+rotorse.ccblade.s_opt_chord,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade chord
+rotorse.ccblade.s_opt_theta,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade twist
+rotorse.ccblade.aoa_op,rad,1D array with the operational angles of attack for the airfoils along blade span.
+rotorse.airfoils_aoa,deg,angle of attack grid for polars
+rotorse.airfoils_Re,,Reynolds numbers of polars
+rotorse.precone,deg,precone angle
+rotorse.tilt,deg,shaft tilt
+rotorse.yaw,deg,yaw error
+rotorse.rho_air,kg/m**3,density of air
+rotorse.mu_air,kg/m/s,dynamic viscosity of air
+rotorse.shearExp,,shear exponent
+rotorse.nBlades,Unavailable,number of blades
+rotorse.nSector,Unavailable,number of sectors to divide rotor face into in computing thrust and power
+rotorse.tiploss,Unavailable,include Prandtl tip loss model
+rotorse.hubloss,Unavailable,include Prandtl hub loss model
+rotorse.wakerotation,Unavailable,"include effect of wake rotation (i.e., tangential induction factor is nonzero)"
+rotorse.usecd,Unavailable,use drag coefficient in computing induction factors
+rotorse.wt_class.V_mean_overwrite,,
+rotorse.wt_class.V_extreme50_overwrite,,
+rotorse.wt_class.turbine_class,Unavailable,
+rotorse.re.precomp.uptilt,deg,Nacelle uptilt angle. A standard machine has positive values.
+rotorse.re.precomp.layer_web,,"1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to 0."
+rotorse.re.precomp.fiber_orientation,deg,"2D array of the orientation of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span."
+rotorse.re.precomp.E,Pa,"2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33."
+rotorse.re.precomp.G,Pa,"2D array of the shear moduli of the materials. Each row represents a material, the three columns represent G12, G13 and G23."
+rotorse.re.precomp.nu,,"2D array of the Poisson ratio of the materials. Each row represents a material, the three columns represent nu12, nu13 and nu23."
+rotorse.re.precomp.rho,kg/m**3,"1D array of the density of the materials. For composites, this is the density of the laminate."
+rotorse.re.precomp.joint_position,,Spanwise position of the segmentation joint.
+rotorse.re.precomp.joint_mass,kg,Mass of the joint.
+rotorse.re.precomp.n_blades,Unavailable,Number of blades of the rotor.
+rotorse.re.precomp.definition_layer,Unavailable,"1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer"
+rotorse.re.precomp.mat_name,Unavailable,1D array of names of materials.
+rotorse.re.precomp.orth,Unavailable,1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.
+rotorse.rp.v_min,m/s,cut-in wind speed
+rotorse.rp.v_max,m/s,cut-out wind speed
+rotorse.rp.rated_power,W,electrical rated power
+rotorse.rp.omega_min,rpm,minimum allowed rotor rotation speed
+rotorse.rp.omega_max,rpm,maximum allowed rotor rotation speed
+rotorse.rp.control_maxTS,m/s,maximum allowed blade tip speed
+rotorse.rp.powercurve.gearbox_efficiency,,
+rotorse.rp.drivetrainType,Unavailable,
+rotorse.rp.gust.turbulence_class,Unavailable,IEC turbulence class
+rotorse.rp.cdf.k,,shape or form factor
+rotorse.rp.aep.lossFactor,,"multiplicative factor for availability and other losses (soiling, array, etc.)"
+rotorse.stall_check.stall_margin,deg,Minimum margin from the stall angle
+rotorse.stall_check.min_s,,Minimum nondimensional coordinate along blade span where to define the constraint (blade root typically stalls)
+rotorse.rs.aero_gust.azimuth_load,deg,
+rotorse.rs.tot_loads_gust.aeroloads_azimuth,deg,azimuthal angle
+rotorse.rs.tot_loads_gust.dynamicFactor,,a dynamic amplification factor to adjust the static deflection calculation
+rotorse.rs.tip_pos.dynamicFactor,,a dynamic amplification factor to adjust the static deflection calculation
+rotorse.rs.aero_hub_loads.nSector,Unavailable,
+rotorse.rs.constr.max_strainU_spar,,maximum strain in spar cap suction side
+rotorse.rs.constr.max_strainL_spar,,maximum strain in spar cap pressure side
+rotorse.rs.constr.max_strainU_te,,maximum strain in spar cap suction side
+rotorse.rs.constr.max_strainL_te,,maximum strain in spar cap pressure side
+rotorse.rs.constr.s_opt_spar_cap_ss,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap suction side
+rotorse.rs.constr.s_opt_spar_cap_ps,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade spar cap pressure side
+rotorse.rs.constr.s_opt_te_ss,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade trailing edge suction side
+rotorse.rs.constr.s_opt_te_ps,,1D array of the non-dimensional spanwise grid defined along blade axis to optimize the blade trailing edge pressure side
+rotorse.rs.constr.blade_number,Unavailable,
+rotorse.rs.brs.s_f,,Safety factor
+rotorse.rs.brs.d_f,m,Diameter of the fastener
+rotorse.rs.brs.sigma_max,Pa,Max stress on bolt
+rotorse.rc.layer_web,,"1D array of the web id the layer is associated to. If the layer is on the outer profile, this entry can simply stay equal to 0."
+rotorse.rc.rho,kg/m**3,"1D array of the density of the materials. For composites, this is the density of the laminate."
+rotorse.rc.unit_cost,USD/kg,1D array of the unit costs of the materials.
+rotorse.rc.waste,,1D array of the non-dimensional waste fraction of the materials.
+rotorse.rc.rho_fiber,kg/m**3,1D array of the density of the fibers of the materials.
+rotorse.rc.roll_mass,kg,1D array of the roll mass of the composite fabrics. Non-composite materials are kept at 0.
+rotorse.rc.flange_adhesive_squeezed,,Extra width of the adhesive once squeezed
+rotorse.rc.flange_thick,m,Average thickness of adhesive
+rotorse.rc.flange_width,m,Average width of adhesive lines
+rotorse.rc.t_bolt_unit_cost,USD,Cost of one t-bolt
+rotorse.rc.t_bolt_unit_mass,kg,Mass of one t-bolt
+rotorse.rc.t_bolt_spacing,m,Spacing of t-bolts along blade root circumference
+rotorse.rc.barrel_nut_unit_cost,USD,Cost of one barrel nut
+rotorse.rc.barrel_nut_unit_mass,kg,Mass of one barrel nut
+rotorse.rc.LPS_unit_mass,kg/m,Unit mass of the lightining protection system. Linear scaling based on the weight of 150 lbs for the 61.5 m NREL 5MW blade
+rotorse.rc.LPS_unit_cost,USD/m,Unit cost of the lightining protection system. Linear scaling based on the cost of 2500$ for the 61.5 m NREL 5MW blade
+rotorse.rc.root_preform_length,,Percentage of blade length starting from blade root that is preformed and later inserted into the mold
+rotorse.rc.definition_layer,Unavailable,"1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer"
+rotorse.rc.mat_name,Unavailable,1D array of names of materials.
+rotorse.rc.orth,Unavailable,1D array of flags to set whether a material is isotropic (0) or orthtropic (1). Each entry represents a material.
+rotorse.rc.component_id,Unavailable,"1D array of flags to set whether a material is used in a blade: 0 - coating, 1 - sandwich filler , 2 - shell skin, 3 - shear webs, 4 - spar caps, 5 - TE/LE reinf."
+rotorse.total_bc.joint_cost,USD,Total blade joint cost
+rotorse.total_bc.outer_blade_cost,USD,Total cost (variable and fixed) for the blade outer portion.
+drivese.E_mat,Pa,
+drivese.G_mat,Pa,
+drivese.Xt_mat,Pa,
+drivese.Xy_mat,Pa,
+drivese.wohler_exp_mat,,
+drivese.wohler_A_mat,,
+drivese.rho_mat,kg/m**3,
+drivese.unit_cost_mat,USD/kg,
+drivese.material_names,Unavailable,
+drivese.lss_material,Unavailable,
+drivese.hss_material,Unavailable,
+drivese.hub_material,Unavailable,
+drivese.spinner_material,Unavailable,
+drivese.bedplate_material,Unavailable,
+drivese.stop_time,s,
+drivese.flange_t2shell_t,,
+drivese.flange_OD2hub_D,,
+drivese.flange_ID2flange_OD,,
+drivese.hub_stress_concentration,,
+drivese.hub_diameter,m,
+drivese.hub_in2out_circ,,
+drivese.hub_shell.n_blades,Unavailable,
+drivese.clearance_hub_spinner,m,
+drivese.spin_hole_incr,,
+drivese.n_blades,Unavailable,
+drivese.n_front_brackets,Unavailable,
+drivese.n_rear_brackets,Unavailable,
+drivese.pitch_system_scaling_factor,,
+drivese.gear_ratio,,
+drivese.machine_rating,kW,
+drivese.gearbox_mass_user,kg,
+drivese.gearbox_torque_density,N*m/kg,
+drivese.gearbox_radius_user,m,
+drivese.gearbox_length_user,m,
+drivese.gear_configuration,Unavailable,
+drivese.planet_numbers,Unavailable,
+drivese.L_12,m,
+drivese.L_h1,m,
+drivese.L_generator,m,
+drivese.overhang,m,
+drivese.drive_height,m,
+drivese.tilt,deg,
+drivese.lss_diameter,m,
+drivese.lss_wall_thickness,m,
+drivese.D_top,m,
+drivese.access_diameter,m,
+drivese.nose_diameter,m,
+drivese.nose_wall_thickness,m,
+drivese.bedplate_wall_thickness,m,
+drivese.upwind,Unavailable,
+drivese.bear1.D_shaft,m,
+drivese.bear1.bearing_type,Unavailable,
+drivese.bear2.D_shaft,m,
+drivese.bear2.bearing_type,Unavailable,
+drivese.brake_mass_user,kg,
+drivese.converter_mass_user,kg,
+drivese.transformer_mass_user,kg,
+drivese.minimum_rpm,rpm,
+drivese.generator.B_r,T,
+drivese.generator.P_Fe0e,W/kg,
+drivese.generator.P_Fe0h,W/kg,
+drivese.generator.S_N,,
+drivese.generator.alpha_p,,
+drivese.generator.b_r_tau_r,,
+drivese.generator.b_ro,m,
+drivese.generator.b_s_tau_s,,
+drivese.generator.b_so,m,
+drivese.generator.cofi,,
+drivese.generator.freq,Hz,
+drivese.generator.h_i,m,
+drivese.generator.h_sy0,,
+drivese.generator.h_w,m,
+drivese.generator.k_fes,,
+drivese.generator.k_fillr,,
+drivese.generator.k_fills,,
+drivese.generator.k_s,,
+drivese.generator.mu_0,m*kg/s**2/A**2,
+drivese.generator.mu_r,m*kg/s**2/A**2,
+drivese.generator.p,,
+drivese.generator.phi,rad,
+drivese.generator.ratio_mw2pp,,
+drivese.generator.resist_Cu,ohm/m,
+drivese.generator.sigma,Pa,
+drivese.generator.y_tau_p,,
+drivese.generator.y_tau_pr,,
+drivese.generator.I_0,A,
+drivese.generator.d_r,m,
+drivese.generator.h_m,m,
+drivese.generator.h_0,m,
+drivese.generator.h_s,m,
+drivese.generator.len_s,m,
+drivese.generator.n_r,,
+drivese.generator.rad_ag,m,
+drivese.generator.t_wr,m,
+drivese.generator.n_s,,
+drivese.generator.b_st,m,
+drivese.generator.d_s,m,
+drivese.generator.t_ws,m,
+drivese.generator.D_shaft,m,
+drivese.generator.rho_Copper,kg/m**3,
+drivese.generator.rho_Fe,kg/m**3,
+drivese.generator.rho_Fes,kg/m**3,
+drivese.generator.rho_PM,kg/m**3,
+drivese.generator.N_c,,
+drivese.generator.b,,
+drivese.generator.c,,
+drivese.generator.E_p,V,
+drivese.generator.h_yr,m,
+drivese.generator.h_ys,m,
+drivese.generator.h_sr,m,
+drivese.generator.h_ss,m,
+drivese.generator.t_r,m,
+drivese.generator.t_s,m,
+drivese.generator.D_nose,m,
+drivese.generator.u_allow_pcent,,
+drivese.generator.y_allow_pcent,,
+drivese.generator.z_allow_deg,deg,
+drivese.generator.B_tmax,T,
+drivese.generator.m,Unavailable,
+drivese.generator.q1,Unavailable,
+drivese.generator.q2,Unavailable,
+drivese.generator.C_Cu,USD/kg,
+drivese.generator.C_Fe,USD/kg,
+drivese.generator.C_Fes,USD/kg,
+drivese.generator.C_PM,USD/kg,
+drivese.generator.b_arm,m,
+drivese.generator.K_rad_LL,,
+drivese.generator.K_rad_UL,,
+drivese.generator.D_ratio_LL,,
+drivese.generator.D_ratio_UL,,
+drivese.hvac_mass_coeff,kg/kW/m,
+drivese.uptower,Unavailable,
+drivese.shaft_deflection_allowable,m,
+drivese.shaft_angle_allowable,rad,
+drivese.stator_deflection_allowable,m,
+drivese.stator_angle_allowable,rad,
+drivese.hss_spring_constant,N*m/rad,
+drivese.damping_ratio,,
+towerse.member.s_const1,,
+towerse.member.s_const2,,
+towerse.tower_layer_thickness,m,
+towerse.tower_outer_diameter_in,m,
+towerse.E_mat,Pa,
+towerse.E_user,Pa,
+towerse.G_mat,Pa,
+towerse.sigma_y_mat,Pa,
+towerse.sigma_ult_mat,Pa,
+towerse.wohler_exp_mat,,
+towerse.wohler_A_mat,,
+towerse.rho_mat,kg/m**3,
+towerse.unit_cost_mat,USD/kg,
+towerse.outfitting_factor_in,,
+towerse.rho_water,kg/m**3,
+towerse.tower_layer_materials,Unavailable,
+towerse.member.ballast_materials,Unavailable,
+towerse.material_names,Unavailable,
+towerse.member.s_ghost1,,
+towerse.member.s_ghost2,,
+towerse.labor_cost_rate,USD/min,
+towerse.painting_cost_rate,USD/m**2,
+towerse.z0,m,
+towerse.shearExp,,
+towerse.beta_wind,deg,
+towerse.rho_air,kg/m**3,
+towerse.mu_air,kg/m/s,
+towerse.cd_usr,,
+towerse.env.distLoads.waveLoads_Px,N/m,
+towerse.env.distLoads.waveLoads_Py,N/m,
+towerse.env.distLoads.waveLoads_Pz,N/m,
+towerse.env.distLoads.waveLoads_qdyn,N/m**2,
+towerse.env.distLoads.waveLoads_z,m,
+towerse.env.distLoads.waveLoads_beta,deg,
+towerse.yaw,deg,
+towerse.s_all,,
+fixedse.tower_base_diameter,m,
+fixedse.monopile_top_diameter,m,
+fixedse.water_depth,m,
+fixedse.s_const2,,
+fixedse.monopile_layer_thickness,m,
+fixedse.monopile_outer_diameter_in,m,
+fixedse.E_mat,Pa,
+fixedse.E_user,Pa,
+fixedse.G_mat,Pa,
+fixedse.sigma_y_mat,Pa,
+fixedse.sigma_ult_mat,Pa,
+fixedse.wohler_exp_mat,,
+fixedse.wohler_A_mat,,
+fixedse.rho_mat,kg/m**3,
+fixedse.unit_cost_mat,USD/kg,
+fixedse.outfitting_factor_in,,
+fixedse.rho_water,kg/m**3,
+fixedse.monopile_layer_materials,Unavailable,
+fixedse.member.ballast_materials,Unavailable,
+fixedse.material_names,Unavailable,
+fixedse.member.s_ghost1,,
+fixedse.member.s_ghost2,,
+fixedse.labor_cost_rate,USD/min,
+fixedse.painting_cost_rate,USD/m**2,
+fixedse.transition_piece_mass,kg,
+fixedse.transition_piece_cost,USD,
+fixedse.gravity_foundation_mass,kg,
+fixedse.G_soil,Pa,
+fixedse.nu_soil,,
+fixedse.soil.k_usr,N/m,
+fixedse.z0,m,
+fixedse.shearExp,,
+fixedse.beta_wind,deg,
+fixedse.rho_air,kg/m**3,
+fixedse.mu_air,kg/m/s,
+fixedse.cd_usr,,
+fixedse.Uc,m/s,mean current speed
+fixedse.Hsig_wave,m,
+fixedse.Tsig_wave,s,
+fixedse.beta_wave,deg,
+fixedse.mu_water,kg/m/s,
+fixedse.cm,,
+fixedse.yaw,deg,
+fixedse.s_all,,
+tcons.blade_number,Unavailable,
+tcons.precone,deg,
+tcons.tilt,deg,
+tcons.overhang,m,
+tcons.d_full,m,
+tcons.max_allowable_td_ratio,,
+tcons.rotor_orientation,Unavailable,
+tcc.blade_mass_cost_coeff,USD/kg,
+tcc.hub_mass_cost_coeff,USD/kg,
+tcc.pitch_system_mass_cost_coeff,USD/kg,
+tcc.spinner_mass_cost_coeff,USD/kg,
+tcc.hub_assemblyCostMultiplier,,
+tcc.hub_overheadCostMultiplier,,
+tcc.hub_profitMultiplier,,
+tcc.hub_transportMultiplier,,
+tcc.blade_number,Unavailable,
+tcc.lss_mass_cost_coeff,USD/kg,
+tcc.bearing_mass_cost_coeff,USD/kg,
+tcc.gearbox_torque_density,N*m/kg,"In 2024, modern 5-7MW gearboxes are able to reach 200 Nm/kg"
+tcc.gearbox_torque_cost,USD/kN/m,"In 2024, modern 5-7MW gearboxes cost approx $50/kNm"
+tcc.hss_mass_cost_coeff,USD/kg,
+tcc.brake_mass_cost_coeff,USD/kg,
+tcc.generator_mass_cost_coeff,USD/kg,
+tcc.bedplate_mass_cost_coeff,USD/kg,
+tcc.yaw_mass_cost_coeff,USD/kg,
+tcc.hvac_mass_cost_coeff,USD/kg,
+tcc.machine_rating,kW,
+tcc.controls_machine_rating_cost_coeff,USD/kW,
+tcc.converter_mass_cost_coeff,USD/kg,
+tcc.elec_connec_machine_rating_cost_coeff,USD/kW,
+tcc.cover_mass_cost_coeff,USD/kg,
+tcc.platforms_mass_cost_coeff,USD/kg,
+tcc.crane_cost,USD,
+tcc.crane,Unavailable,
+tcc.transformer_mass_cost_coeff,USD/kg,
+tcc.nacelle_assemblyCostMultiplier,,
+tcc.nacelle_overheadCostMultiplier,,
+tcc.nacelle_profitMultiplier,,
+tcc.nacelle_transportMultiplier,,
+tcc.main_bearing_number,Unavailable,
+tcc.tower_mass_cost_coeff,USD/kg,
+tcc.tower_assemblyCostMultiplier,,
+tcc.tower_overheadCostMultiplier,,
+tcc.tower_profitMultiplier,,
+tcc.tower_transportMultiplier,,
+tcc.turbine_assemblyCostMultiplier,,
+tcc.turbine_overheadCostMultiplier,,
+tcc.turbine_profitMultiplier,,
+tcc.turbine_transportMultiplier,,
+orbit.site_depth,m,Site depth.
+orbit.site_distance,km,Distance from site to installation port.
+orbit.site_distance_to_landfall,km,Distance from site to landfall for export cable.
+orbit.interconnection_distance,km,Distance from landfall to interconnection.
+orbit.plant_turbine_spacing,,Turbine spacing in rotor diameters.
+orbit.plant_row_spacing,,Row spacing in rotor diameters. Not used in ring layouts.
+orbit.plant_substation_distance,km,Distance from first turbine in string to substation.
+orbit.turbine_rating,MW,Rated capacity of a turbine.
+orbit.tower_deck_space,m**2,Deck space required to transport the tower. Defaults to 0 in order to not be a constraint on installation.
+orbit.nacelle_deck_space,m**2,Deck space required to transport the rotor nacelle assembly (RNA). Defaults to 0 in order to not be a constraint on installation.
+orbit.blade_deck_space,m**2,Deck space required to transport a blade. Defaults to 0 in order to not be a constraint on installation.
+orbit.mooring_line_mass,kg,Total mass of a mooring line
+orbit.mooring_line_diameter,m,Cross-sectional diameter of a mooring line
+orbit.mooring_line_length,m,Unstretched mooring line length
+orbit.anchor_mass,kg,Total mass of an anchor
+orbit.mooring_line_cost,USD,Mooring line unit cost.
+orbit.mooring_anchor_cost,USD,Mooring line unit cost.
+orbit.port_cost_per_month,USD/mo,Monthly port costs.
+orbit.takt_time,h,Substructure assembly cycle time when doing assembly at the port.
+orbit.floating_substructure_cost,USD,Floating substructure unit cost.
+orbit.monopile_diameter,m,Diameter of monopile.
+orbit.jacket_length,m,Length/height of jacket (including pile/buckets).
+orbit.jacket_mass,t,mass of an individual jacket.
+orbit.jacket_cost,USD,Jacket unit cost.
+orbit.jacket_r_foot,m,Radius of jacket legs at base from centeroid.
+orbit.transition_piece_mass,t,mass of an individual transition piece.
+orbit.transition_piece_deck_space,m**2,Deck space required to transport a transition piece. Defaults to 0 in order to not be a constraint on installation.
+orbit.transition_piece_cost,USD,Transition piece unit cost.
+orbit.site_auction_price,USD,Cost to secure site lease
+orbit.site_assessment_plan_cost,USD,Cost to do engineering plan for site assessment
+orbit.site_assessment_cost,USD,Cost to execute site assessment
+orbit.construction_operations_plan_cost,USD,Cost to do construction planning
+orbit.boem_review_cost,USD,Cost for additional review by U.S. Dept of Interior Bureau of Ocean Energy Management (BOEM)
+orbit.design_install_plan_cost,USD,Cost to do installation planning
+orbit.commissioning_pct,,Commissioning percent.
+orbit.decommissioning_pct,,Decommissioning percent.
+orbit.wtiv,Unavailable,Vessel configuration to use for installation of foundations and turbines.
+orbit.feeder,Unavailable,Vessel configuration to use for (optional) feeder barges.
+orbit.num_feeders,Unavailable,Number of feeder barges to use for installation of foundations and turbines.
+orbit.num_towing,Unavailable,Number of towing vessels to use for floating platforms that are assembled at port (with or without the turbine).
+orbit.num_station_keeping,Unavailable,Number of station keeping vessels that attach to floating platforms under tow-out.
+orbit.oss_install_vessel,Unavailable,Vessel configuration to use for installation of offshore substations.
+orbit.number_of_turbines,Unavailable,Number of turbines.
+orbit.number_of_blades,Unavailable,Number of blades per turbine.
+orbit.num_mooring_lines,Unavailable,Number of mooring lines per platform.
+orbit.anchor_type,Unavailable,Number of mooring lines per platform.
+orbit.num_assembly_lines,Unavailable,Number of assembly lines used when assembly occurs at the port.
+orbit.num_port_cranes,Unavailable,Number of cranes used at the port to load feeders / WTIVS when assembly occurs on-site or assembly cranes when assembling at port.
+financese.machine_rating,kW,
+financese.offset_tcc_per_kW,USD/kW,
+financese.opex_per_kW,USD/kW/year,
+financese.plant_aep_in,kW*h,
+financese.wake_loss_factor,,
+financese.fixed_charge_rate,,
+financese.electricity_price,USD/kW/h,
+financese.reserve_margin_price,USD/kW/year,
+financese.capacity_credit,,
+financese.benchmark_price,USD/kW/h,
+financese.turbine_number,Unavailable,
+outputs_2_screen.My_std,N*m,
+outputs_2_screen.flp1_std,deg,
+outputs_2_screen.PC_omega,rad/s,
+outputs_2_screen.PC_zeta,,
+outputs_2_screen.VS_omega,rad/s,
+outputs_2_screen.VS_zeta,,
+outputs_2_screen.Flp_omega,rad/s,
+outputs_2_screen.Flp_zeta,,
+drivese.L_hss,m,
+drivese.hss_diameter,m,
+drivese.hss_wall_thickness,m,
+drivese.bedplate_flange_width,m,
+drivese.bedplate_flange_thickness,m,
+drivese.bedplate_web_thickness,m,
+drivese.bear1.D_bearing,m,
+drivese.bear2.D_bearing,m,
+drivese.s_rotor,m,
+drivese.generator.S_Nmax,,
+drivese.generator.B_symax,T,
+drivese.generator_stator_mass,kg,
+drivese.generator_rotor_mass,kg,
+drivese.generator.B_smax,T,
+drivese.nose_mass,kg,
+drivese.nose_cm,m,
+drivese.nose_I,kg*m**2,
+drivese.x_bedplate,m,
+landbosse.blade_drag_coefficient,,
+landbosse.blade_lever_arm,m,
+landbosse.blade_install_cycle_time,h,
+landbosse.blade_offload_hook_height,m,
+landbosse.blade_offload_cycle_time,h,
+landbosse.blade_drag_multiplier,,
+landbosse.tower_section_length_m,m,
+landbosse.crane_breakdown_fraction,,0 means the crane is never broken down. 1 means it is broken down every turbine.
+landbosse.construct_duration,,Total project construction time (months)
+landbosse.wind_shear_exponent,,Wind shear exponent
+landbosse.turbine_rating_MW,MW,Turbine rating MW
+landbosse.fuel_cost_usd_per_gal,,Fuel cost USD/gal
+landbosse.breakpoint_between_base_and_topping_percent,,Breakpoint between base and topping (percent)
+landbosse.turbine_spacing_rotor_diameters,,Turbine spacing (times rotor diameter)
+landbosse.depth,m,Foundation depth m
+landbosse.bearing_pressure_n_m2,,Bearing Pressure (n/m2)
+landbosse.road_length_adder_m,m,Road length adder (m)
+landbosse.fraction_new_roads,,Percent of roads that will be constructed (0.0 - 1.0)
+landbosse.road_quality,,Road Quality (0-1)
+landbosse.line_frequency_hz,Hz,Line Frequency (Hz)
+landbosse.row_spacing_rotor_diameters,,Row spacing (times rotor diameter)
+landbosse.trench_len_to_substation_km,km,Combined Homerun Trench Length to Substation (km)
+landbosse.distance_to_interconnect_mi,mi,Distance to interconnect (miles)
+landbosse.interconnect_voltage_kV,kV,Interconnect Voltage (kV)
+landbosse.critical_speed_non_erection_wind_delays_m_per_s,m/s,Non-Erection Wind Delay Critical Speed (m/s)
+landbosse.critical_height_non_erection_wind_delays_m,m,Non-Erection Wind Delay Critical Height (m)
+landbosse.road_width_ft,ft,Road width (ft)
+landbosse.road_thickness,,Road thickness (in)
+landbosse.crane_width,m,Crane width (m)
+landbosse.overtime_multiplier,,Overtime multiplier
+landbosse.markup_contingency,,Markup contingency
+landbosse.markup_warranty_management,,Markup warranty management
+landbosse.markup_sales_and_use_tax,,Markup sales and use tax
+landbosse.markup_overhead,,Markup overhead
+landbosse.markup_profit_margin,,Markup profit margin
+landbosse.Mass tonne,t,
+landbosse.development_labor_cost_usd,USD,The cost of labor in the development phase
+landbosse.labor_cost_multiplier,,Labor cost multiplier
+landbosse.commissioning_pct,,
+landbosse.decommissioning_pct,,
+landbosse.road_distributed_winnd,Unavailable,
+landbosse.num_turbines,Unavailable,Number of turbines in project
+landbosse.number_of_blades,Unavailable,Number of blades on the rotor
+landbosse.user_defined_home_run_trench,Unavailable,Flag for user-defined home run trench length (0 = no; 1 = yes)
+landbosse.allow_same_flag,Unavailable,Allow same crane for base and topping (True or False)
+landbosse.hour_day,Unavailable,"Dictionary of normal and long hours for construction in a day in the form of {'long': 24, 'normal': 10}"
+landbosse.time_construct,Unavailable,One of the keys in the hour_day dictionary to specify how many hours per day construction happens.
+landbosse.user_defined_distance_to_grid_connection,Unavailable,Flag for user-defined home run trench length (True or False)
+landbosse.rate_of_deliveries,Unavailable,Rate of deliveries (turbines per week)
+landbosse.new_switchyard,Unavailable,New Switchyard (True or False)
+landbosse.num_hwy_permits,Unavailable,Number of highway permits
+landbosse.num_access_roads,Unavailable,Number of access roads
+landbosse.site_facility_building_area_df,Unavailable,site_facility_building_area DataFrame
+landbosse.components,Unavailable,"Dataframe of components for tower, blade, nacelle"
+landbosse.crane_specs,Unavailable,Dataframe of specifications of cranes
+landbosse.weather_window,Unavailable,Dataframe of wind toolkit data
+landbosse.crew,Unavailable,Dataframe of crew configurations
+landbosse.crew_price,Unavailable,Dataframe of costs per hour for each type of worker.
+landbosse.equip,Unavailable,Collections of equipment to perform erection operations.
+landbosse.equip_price,Unavailable,Prices for various type of equipment.
+landbosse.rsmeans,Unavailable,RSMeans price data
+landbosse.cable_specs,Unavailable,cable specs for collection system
+landbosse.material_price,Unavailable,Prices of materials for foundations and roads
+landbosse.project_data,Unavailable,Dictionary of all dataframes of data
+floating.location_in,m,
+floating.memgrid0.s_in,,
+floating.memgrid0.s_grid,,
+floating.memgrid0.outer_diameter_in,m,
+floating.memgrid0.layer_thickness_in,m,
+floating.memgrid1.s_in,,
+floating.memgrid1.s_grid,,
+floating.memgrid1.outer_diameter_in,m,
+floating.memgrid1.layer_thickness_in,m,
+floating.memgrid2.s_in,,
+floating.memgrid2.s_grid,,
+floating.memgrid2.outer_diameter_in,m,
+floating.memgrid2.layer_thickness_in,m,
+floating.memgrid3.s_in,,
+floating.memgrid3.s_grid,,
+floating.memgrid3.outer_diameter_in,m,
+floating.memgrid3.layer_thickness_in,m,
+floating.memgrid4.s_in,,
+floating.memgrid4.s_grid,,
+floating.memgrid4.outer_diameter_in,m,
+floating.memgrid4.layer_thickness_in,m,
+floating.memgrid5.s_in,,
+floating.memgrid5.s_grid,,
+floating.memgrid5.outer_diameter_in,m,
+floating.memgrid5.layer_thickness_in,m,
+floating.memgrid6.s_in,,
+floating.memgrid6.s_grid,,
+floating.memgrid6.outer_diameter_in,m,
+floating.memgrid6.layer_thickness_in,m,
+floating.memgrid7.s_in,,
+floating.memgrid7.s_grid,,
+floating.memgrid7.outer_diameter_in,m,
+floating.memgrid7.layer_thickness_in,m,
+floating.memgrid8.s_in,,
+floating.memgrid8.s_grid,,
+floating.memgrid8.outer_diameter_in,m,
+floating.memgrid8.layer_thickness_in,m,
+floating.memgrid9.s_in,,
+floating.memgrid9.s_grid,,
+floating.memgrid9.outer_diameter_in,m,
+floating.memgrid9.layer_thickness_in,m,
+floating.member_main_column:s,,
+floating.member_main_column:grid_axial_joints,,
+floating.member_column1:s,,
+floating.member_column1:grid_axial_joints,,
+floating.member_column2:s,,
+floating.member_column2:grid_axial_joints,,
+floating.member_column3:s,,
+floating.member_column3:grid_axial_joints,,
+floating.member_Y_pontoon_upper1:s,,
+floating.member_Y_pontoon_upper1:grid_axial_joints,,
+floating.member_Y_pontoon_upper2:s,,
+floating.member_Y_pontoon_upper2:grid_axial_joints,,
+floating.member_Y_pontoon_upper3:s,,
+floating.member_Y_pontoon_upper3:grid_axial_joints,,
+floating.member_Y_pontoon_lower1:s,,
+floating.member_Y_pontoon_lower1:grid_axial_joints,,
+floating.member_Y_pontoon_lower2:s,,
+floating.member_Y_pontoon_lower2:grid_axial_joints,,
+floating.member_Y_pontoon_lower3:s,,
+floating.member_Y_pontoon_lower3:grid_axial_joints,,
+mooring.unstretched_length_in,m,
+mooring.line_diameter_in,m,
+mooring.line_mass_density_coeff,kg/m**3,
+mooring.line_stiffness_coeff,N/m**2,
+mooring.line_breaking_load_coeff,N/m**2,
+mooring.line_cost_rate_coeff,USD/m**3,
+mooring.line_transverse_added_mass_coeff,kg/m**3,
+mooring.line_tangential_added_mass_coeff,kg/m**3,
+mooring.line_transverse_drag_coeff,N/m**2,
+mooring.line_tangential_drag_coeff,N/m**2,
+mooring.nodes_location,m,
+mooring.nodes_joint_name,Unavailable,
+floatingse.member0.s_in,,
+floatingse.member0.s_const1,,
+floatingse.member0.s_const2,,
+floatingse.E_mat,Pa,
+floatingse.member0.E_user,Pa,
+floatingse.G_mat,Pa,
+floatingse.sigma_y_mat,Pa,
+floatingse.sigma_ult_mat,Pa,
+floatingse.wohler_exp_mat,,
+floatingse.wohler_A_mat,,
+floatingse.rho_mat,kg/m**3,
+floatingse.unit_cost_mat,USD/kg,
+floatingse.member0.outfitting_factor_in,,
+floatingse.rho_water,kg/m**3,
+floatingse.member0.layer_materials,Unavailable,
+floatingse.member0.ballast_materials,Unavailable,
+floatingse.material_names,Unavailable,
+floatingse.labor_cost_rate,USD/min,
+floatingse.painting_cost_rate,USD/m**2,
+floatingse.member0.grid_axial_joints,,
+floatingse.member0.bulkhead_grid,,
+floatingse.member0.bulkhead_thickness,m,
+floatingse.member0.ring_stiffener_web_height,m,
+floatingse.member0.ring_stiffener_web_thickness,m,
+floatingse.member0.ring_stiffener_flange_width,m,
+floatingse.member0.ring_stiffener_flange_thickness,m,
+floatingse.member0.ring_stiffener_spacing,,
+floatingse.member0.axial_stiffener_web_height,m,
+floatingse.member0.axial_stiffener_web_thickness,m,
+floatingse.member0.axial_stiffener_flange_width,m,
+floatingse.member0.axial_stiffener_flange_thickness,m,
+floatingse.member0.axial_stiffener_spacing,rad,
+floatingse.member0.ballast_grid,,
+floatingse.member0.ballast_volume,m**3,
+floatingse.member1.s_in,,
+floatingse.member1.s_const1,,
+floatingse.member1.s_const2,,
+floatingse.member1.E_user,Pa,
+floatingse.member1.outfitting_factor_in,,
+floatingse.member1.layer_materials,Unavailable,
+floatingse.member1.ballast_materials,Unavailable,
+floatingse.member1.grid_axial_joints,,
+floatingse.member1.bulkhead_grid,,
+floatingse.member1.bulkhead_thickness,m,
+floatingse.member1.ring_stiffener_web_height,m,
+floatingse.member1.ring_stiffener_web_thickness,m,
+floatingse.member1.ring_stiffener_flange_width,m,
+floatingse.member1.ring_stiffener_flange_thickness,m,
+floatingse.member1.ring_stiffener_spacing,,
+floatingse.member1.axial_stiffener_web_height,m,
+floatingse.member1.axial_stiffener_web_thickness,m,
+floatingse.member1.axial_stiffener_flange_width,m,
+floatingse.member1.axial_stiffener_flange_thickness,m,
+floatingse.member1.axial_stiffener_spacing,rad,
+floatingse.member1.ballast_grid,,
+floatingse.member1.ballast_volume,m**3,
+floatingse.member2.s_in,,
+floatingse.member2.s_const1,,
+floatingse.member2.s_const2,,
+floatingse.member2.E_user,Pa,
+floatingse.member2.outfitting_factor_in,,
+floatingse.member2.layer_materials,Unavailable,
+floatingse.member2.ballast_materials,Unavailable,
+floatingse.member2.grid_axial_joints,,
+floatingse.member2.bulkhead_grid,,
+floatingse.member2.bulkhead_thickness,m,
+floatingse.member2.ring_stiffener_web_height,m,
+floatingse.member2.ring_stiffener_web_thickness,m,
+floatingse.member2.ring_stiffener_flange_width,m,
+floatingse.member2.ring_stiffener_flange_thickness,m,
+floatingse.member2.ring_stiffener_spacing,,
+floatingse.member2.axial_stiffener_web_height,m,
+floatingse.member2.axial_stiffener_web_thickness,m,
+floatingse.member2.axial_stiffener_flange_width,m,
+floatingse.member2.axial_stiffener_flange_thickness,m,
+floatingse.member2.axial_stiffener_spacing,rad,
+floatingse.member2.ballast_grid,,
+floatingse.member2.ballast_volume,m**3,
+floatingse.member3.s_in,,
+floatingse.member3.s_const1,,
+floatingse.member3.s_const2,,
+floatingse.member3.E_user,Pa,
+floatingse.member3.outfitting_factor_in,,
+floatingse.member3.layer_materials,Unavailable,
+floatingse.member3.ballast_materials,Unavailable,
+floatingse.member3.grid_axial_joints,,
+floatingse.member3.bulkhead_grid,,
+floatingse.member3.bulkhead_thickness,m,
+floatingse.member3.ring_stiffener_web_height,m,
+floatingse.member3.ring_stiffener_web_thickness,m,
+floatingse.member3.ring_stiffener_flange_width,m,
+floatingse.member3.ring_stiffener_flange_thickness,m,
+floatingse.member3.ring_stiffener_spacing,,
+floatingse.member3.axial_stiffener_web_height,m,
+floatingse.member3.axial_stiffener_web_thickness,m,
+floatingse.member3.axial_stiffener_flange_width,m,
+floatingse.member3.axial_stiffener_flange_thickness,m,
+floatingse.member3.axial_stiffener_spacing,rad,
+floatingse.member3.ballast_grid,,
+floatingse.member3.ballast_volume,m**3,
+floatingse.member4.s_in,,
+floatingse.member4.s_const1,,
+floatingse.member4.s_const2,,
+floatingse.member4.E_user,Pa,
+floatingse.member4.outfitting_factor_in,,
+floatingse.member4.layer_materials,Unavailable,
+floatingse.member4.ballast_materials,Unavailable,
+floatingse.member4.grid_axial_joints,,
+floatingse.member4.bulkhead_grid,,
+floatingse.member4.bulkhead_thickness,m,
+floatingse.member4.ring_stiffener_web_height,m,
+floatingse.member4.ring_stiffener_web_thickness,m,
+floatingse.member4.ring_stiffener_flange_width,m,
+floatingse.member4.ring_stiffener_flange_thickness,m,
+floatingse.member4.ring_stiffener_spacing,,
+floatingse.member4.axial_stiffener_web_height,m,
+floatingse.member4.axial_stiffener_web_thickness,m,
+floatingse.member4.axial_stiffener_flange_width,m,
+floatingse.member4.axial_stiffener_flange_thickness,m,
+floatingse.member4.axial_stiffener_spacing,rad,
+floatingse.member4.ballast_grid,,
+floatingse.member4.ballast_volume,m**3,
+floatingse.member5.s_in,,
+floatingse.member5.s_const1,,
+floatingse.member5.s_const2,,
+floatingse.member5.E_user,Pa,
+floatingse.member5.outfitting_factor_in,,
+floatingse.member5.layer_materials,Unavailable,
+floatingse.member5.ballast_materials,Unavailable,
+floatingse.member5.grid_axial_joints,,
+floatingse.member5.bulkhead_grid,,
+floatingse.member5.bulkhead_thickness,m,
+floatingse.member5.ring_stiffener_web_height,m,
+floatingse.member5.ring_stiffener_web_thickness,m,
+floatingse.member5.ring_stiffener_flange_width,m,
+floatingse.member5.ring_stiffener_flange_thickness,m,
+floatingse.member5.ring_stiffener_spacing,,
+floatingse.member5.axial_stiffener_web_height,m,
+floatingse.member5.axial_stiffener_web_thickness,m,
+floatingse.member5.axial_stiffener_flange_width,m,
+floatingse.member5.axial_stiffener_flange_thickness,m,
+floatingse.member5.axial_stiffener_spacing,rad,
+floatingse.member5.ballast_grid,,
+floatingse.member5.ballast_volume,m**3,
+floatingse.member6.s_in,,
+floatingse.member6.s_const1,,
+floatingse.member6.s_const2,,
+floatingse.member6.E_user,Pa,
+floatingse.member6.outfitting_factor_in,,
+floatingse.member6.layer_materials,Unavailable,
+floatingse.member6.ballast_materials,Unavailable,
+floatingse.member6.grid_axial_joints,,
+floatingse.member6.bulkhead_grid,,
+floatingse.member6.bulkhead_thickness,m,
+floatingse.member6.ring_stiffener_web_height,m,
+floatingse.member6.ring_stiffener_web_thickness,m,
+floatingse.member6.ring_stiffener_flange_width,m,
+floatingse.member6.ring_stiffener_flange_thickness,m,
+floatingse.member6.ring_stiffener_spacing,,
+floatingse.member6.axial_stiffener_web_height,m,
+floatingse.member6.axial_stiffener_web_thickness,m,
+floatingse.member6.axial_stiffener_flange_width,m,
+floatingse.member6.axial_stiffener_flange_thickness,m,
+floatingse.member6.axial_stiffener_spacing,rad,
+floatingse.member6.ballast_grid,,
+floatingse.member6.ballast_volume,m**3,
+floatingse.member7.s_in,,
+floatingse.member7.s_const1,,
+floatingse.member7.s_const2,,
+floatingse.member7.E_user,Pa,
+floatingse.member7.outfitting_factor_in,,
+floatingse.member7.layer_materials,Unavailable,
+floatingse.member7.ballast_materials,Unavailable,
+floatingse.member7.grid_axial_joints,,
+floatingse.member7.bulkhead_grid,,
+floatingse.member7.bulkhead_thickness,m,
+floatingse.member7.ring_stiffener_web_height,m,
+floatingse.member7.ring_stiffener_web_thickness,m,
+floatingse.member7.ring_stiffener_flange_width,m,
+floatingse.member7.ring_stiffener_flange_thickness,m,
+floatingse.member7.ring_stiffener_spacing,,
+floatingse.member7.axial_stiffener_web_height,m,
+floatingse.member7.axial_stiffener_web_thickness,m,
+floatingse.member7.axial_stiffener_flange_width,m,
+floatingse.member7.axial_stiffener_flange_thickness,m,
+floatingse.member7.axial_stiffener_spacing,rad,
+floatingse.member7.ballast_grid,,
+floatingse.member7.ballast_volume,m**3,
+floatingse.member8.s_in,,
+floatingse.member8.s_const1,,
+floatingse.member8.s_const2,,
+floatingse.member8.E_user,Pa,
+floatingse.member8.outfitting_factor_in,,
+floatingse.member8.layer_materials,Unavailable,
+floatingse.member8.ballast_materials,Unavailable,
+floatingse.member8.grid_axial_joints,,
+floatingse.member8.bulkhead_grid,,
+floatingse.member8.bulkhead_thickness,m,
+floatingse.member8.ring_stiffener_web_height,m,
+floatingse.member8.ring_stiffener_web_thickness,m,
+floatingse.member8.ring_stiffener_flange_width,m,
+floatingse.member8.ring_stiffener_flange_thickness,m,
+floatingse.member8.ring_stiffener_spacing,,
+floatingse.member8.axial_stiffener_web_height,m,
+floatingse.member8.axial_stiffener_web_thickness,m,
+floatingse.member8.axial_stiffener_flange_width,m,
+floatingse.member8.axial_stiffener_flange_thickness,m,
+floatingse.member8.axial_stiffener_spacing,rad,
+floatingse.member8.ballast_grid,,
+floatingse.member8.ballast_volume,m**3,
+floatingse.member9.s_in,,
+floatingse.member9.s_const1,,
+floatingse.member9.s_const2,,
+floatingse.member9.E_user,Pa,
+floatingse.member9.outfitting_factor_in,,
+floatingse.member9.layer_materials,Unavailable,
+floatingse.member9.ballast_materials,Unavailable,
+floatingse.member9.grid_axial_joints,,
+floatingse.member9.bulkhead_grid,,
+floatingse.member9.bulkhead_thickness,m,
+floatingse.member9.ring_stiffener_web_height,m,
+floatingse.member9.ring_stiffener_web_thickness,m,
+floatingse.member9.ring_stiffener_flange_width,m,
+floatingse.member9.ring_stiffener_flange_thickness,m,
+floatingse.member9.ring_stiffener_spacing,,
+floatingse.member9.axial_stiffener_web_height,m,
+floatingse.member9.axial_stiffener_web_thickness,m,
+floatingse.member9.axial_stiffener_flange_width,m,
+floatingse.member9.axial_stiffener_flange_thickness,m,
+floatingse.member9.axial_stiffener_spacing,rad,
+floatingse.member9.ballast_grid,,
+floatingse.member9.ballast_volume,m**3,
+floatingse.transition_node,m,
+floatingse.transition_piece_mass,kg,
+floatingse.transition_piece_cost,USD,
+floatingse.water_depth,m,
+floatingse.anchor_mass,kg,
+floatingse.anchor_cost,USD,
+floatingse.anchor_max_vertical_load,N,
+floatingse.anchor_max_lateral_load,N,
+floatingse.line_mass_density_coeff,kg/m**3,
+floatingse.line_stiffness_coeff,N/m**2,
+floatingse.line_breaking_load_coeff,N/m**2,
+floatingse.line_cost_rate_coeff,USD/m**3,
+floatingse.max_surge_fraction,,
+floatingse.operational_heel,rad,
+floatingse.survival_heel,rad,
+floatingse.z0,m,
+floatingse.shearExp,,
+floatingse.beta_wind,deg,
+floatingse.rho_air,kg/m**3,
+floatingse.mu_air,kg/m/s,
+floatingse.cd_usr,,
+floatingse.Uc,m/s,mean current speed
+floatingse.Hsig_wave,m,
+floatingse.Tsig_wave,s,
+floatingse.beta_wave,deg,
+floatingse.mu_water,kg/m/s,
+floatingse.cm,,
+floatingse.yaw,deg,
+floatingse.mooring_fairlead_joints,m,
+orbit.monopile_length,m,Length of monopile (including pile).
+orbit.monopile_mass,t,mass of an individual monopile.
+orbit.monopile_cost,USD,Monopile unit cost.

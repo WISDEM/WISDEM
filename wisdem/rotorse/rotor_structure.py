@@ -254,6 +254,11 @@ class RunFrame3DD(ExplicitComponent):
             desc="6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)",
         )
         self.add_output(
+            "tors_mode_shapes",
+            np.zeros((n_freq2, 5)),
+            desc="6-degree polynomial coefficients of mode shapes in the torsional direction (x^2..x^6, no linear or constant term)",
+        )
+        self.add_output(
             "all_mode_shapes",
             np.zeros((n_freq, 5)),
             desc="6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)",
@@ -269,6 +274,12 @@ class RunFrame3DD(ExplicitComponent):
             np.zeros(n_freq2),
             units="Hz",
             desc="Frequencies associated with mode shapes in the edge direction",
+        )
+        self.add_output(
+            "tors_mode_freqs",
+            np.zeros(n_freq2),
+            units="Hz",
+            desc="Frequencies associated with mode shapes in the torsional direction",
         )
         self.add_output(
             "freqs",
@@ -353,7 +364,9 @@ class RunFrame3DD(ExplicitComponent):
         Px_af = inputs["Px_af"]
         Py_af = inputs["Py_af"]
         Pz_af = inputs["Pz_af"]
-        # np.savez('nrel5mw_test.npz',r=r,x_az=x_az,y_az=y_az,z_az=z_az,theta=theta,x_ec=x_ec,y_ec=y_ec,A=A,rhoA=rhoA,rhoJ=rhoJ,GJ=GJ,EA=EA,EIxx=EIxx,EIyy=EIyy,EIxy=EIxy,Px_af=Px_af,Py_af=Py_af,Pz_af=Pz_af)
+        #np.savez('nrel5mw_test.npz',
+        #         r=r,x_az=x_az,y_az=y_az,z_az=z_az,theta=theta,x_ec=x_ec,y_ec=y_ec,A=A,rhoA=rhoA,
+        #         rhoJ=rhoJ,GJ=GJ,EA=EA,EIxx=EIxx,EIyy=EIyy,EIxy=EIxy,Px_af=Px_af,Py_af=Py_af,Pz_af=Pz_af)
 
         # Determine principal C.S. (with swap of x, y for profile c.s.)
         # Can get to Hansen's c.s. from Precomp's c.s. by rotating around z -90 deg, then y by 180 (swap x-y)
@@ -493,13 +506,15 @@ class RunFrame3DD(ExplicitComponent):
 
         # Mode shapes and frequencies
         n_freq2 = int(self.n_freq / 2)
-        freq_x, freq_y, _, mshapes_x, mshapes_y, _ = util.get_xyz_mode_shapes(
+        freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
             r, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
         )
         freq_x = freq_x[:n_freq2]
         freq_y = freq_y[:n_freq2]
+        freq_z = freq_z[:n_freq2]
         mshapes_x = mshapes_x[:n_freq2, :]
         mshapes_y = mshapes_y[:n_freq2, :]
+        mshapes_z = mshapes_z[:n_freq2, :]
 
         # shear and bending w.r.t. principal axes
         F2 = np.r_[-forces.Vz[iCase, 0], forces.Vz[iCase, 1::2]]  # TODO verify if this is correct
@@ -513,10 +528,12 @@ class RunFrame3DD(ExplicitComponent):
         outputs["freqs"] = modal.freq[: self.n_freq]
         outputs["edge_mode_shapes"] = mshapes_y
         outputs["flap_mode_shapes"] = mshapes_x
+        outputs["tors_mode_shapes"] = mshapes_z
         # Dense numpy command that interleaves and alternates flap and edge modes
         outputs["all_mode_shapes"] = np.c_[mshapes_x, mshapes_y].flatten().reshape((self.n_freq, 5))
         outputs["edge_mode_freqs"] = freq_y
         outputs["flap_mode_freqs"] = freq_x
+        outputs["tors_mode_freqs"] = freq_z
         outputs["freq_distance"] = freq_y[0] / freq_x[0]
         # Displacements in global (blade) c.s.
         outputs["dx"] = -displacements.dx[iCase, :]
@@ -686,7 +703,9 @@ class ComputeStrains(ExplicitComponent):
         M2_principle = inputs["M2"]
         alpha = inputs["alpha"]
         n_sec = EA.size
-        # np.savez('nrel5mw_test2.npz',EA=EA,EI11=EI11,EI22=EI22,xu_spar=xu_spar,xl_spar=xl_spar,yu_spar=yu_spar,yl_spar=yl_spar,xu_te=xu_te,xl_te=xl_te,yu_te=yu_te,yl_te=yl_te, F3=F3, M1=M1, M2=M2, alpha=alpha)
+        #np.savez('nrel5mw_test2.npz',
+        #         EA=EA,EI11=EI11,EI22=EI22,xu_spar=xu_spar,xl_spar=xl_spar,yu_spar=yu_spar,yl_spar=yl_spar,
+        #         xu_te=xu_te,xl_te=xl_te,yu_te=yu_te,yl_te=yl_te, F3=F3_principle, M1=M1_principle, M2=M2_principle, alpha=alpha)
 
         ca = np.cos(np.deg2rad(alpha))
         sa = np.sin(np.deg2rad(alpha))
@@ -821,10 +840,11 @@ class DesignConstraints(ExplicitComponent):
         n_freq = rotorse_options["n_freq"]
         n_freq2 = int(n_freq / 2)
         opt_options = self.options["opt_options"]
-        n_opt_spar_cap_ss = opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]
-        n_opt_spar_cap_ps = opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]
-        n_opt_te_ss = opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]
-        n_opt_te_ps = opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]
+        spars_tereinf = rotorse_options["spars_tereinf"]
+        n_opt_spar_cap_ss = opt_options["design_variables"]["blade"]["n_opt_struct"][spars_tereinf[0]]
+        n_opt_spar_cap_ps = opt_options["design_variables"]["blade"]["n_opt_struct"][spars_tereinf[1]]
+        n_opt_te_ss = opt_options["design_variables"]["blade"]["n_opt_struct"][spars_tereinf[2]]
+        n_opt_te_ps = opt_options["design_variables"]["blade"]["n_opt_struct"][spars_tereinf[3]]
 
         # Inputs strains
         self.add_input(
@@ -895,6 +915,12 @@ class DesignConstraints(ExplicitComponent):
             units="Hz",
             desc="Frequencies associated with mode shapes in the edge direction",
         )
+        self.add_input(
+            "tors_mode_freqs",
+            np.zeros(n_freq2),
+            units="Hz",
+            desc="Frequencies associated with mode shapes in the torsional direction",
+        )
 
         self.add_discrete_input("blade_number", 3)
 
@@ -961,6 +987,7 @@ class DesignConstraints(ExplicitComponent):
         threeP = discrete_inputs["blade_number"] * inputs["rated_Omega"] / 60.0
         flap_f = inputs["flap_mode_freqs"]
         edge_f = inputs["edge_mode_freqs"]
+        tors_f = inputs["tors_mode_freqs"]
         gamma = self.options["modeling_options"]["WISDEM"]["RotorSE"]["gamma_freq"]
         outputs["constr_flap_f_margin"] = np.array(
             [min([threeP - (2 - gamma) * f, gamma * f - threeP]) for f in flap_f]
@@ -1951,6 +1978,7 @@ class RotorStructure(Group):
         self.connect("strains.strainL_te", "constr.strainL_te")
         self.connect("frame.flap_mode_freqs", "constr.flap_mode_freqs")
         self.connect("frame.edge_mode_freqs", "constr.edge_mode_freqs")
+        self.connect("frame.tors_mode_freqs", "constr.tors_mode_freqs")
 
         # Blade root moment to blade root sizing
         self.connect("frame.root_M", "brs.root_M")

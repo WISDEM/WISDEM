@@ -35,8 +35,8 @@ Documentation Outline
    how_wisdem_works
    first_steps
    what_wisdem_can_do
-   inputs
-   outputs
+   schema/yaml_inputs
+   docstrings/wisdem_namespace
    examples
    modules
    publications

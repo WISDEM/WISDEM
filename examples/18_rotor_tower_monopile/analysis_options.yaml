@@ -21,21 +21,18 @@ design_variables:
                 index_start: 1         # Lock the first DV at blade root
                 index_end: 5           # The last DV at blade tip is locked
         structure:
-            spar_cap_ss:
-                flag: True             # Flag to optimize the spar cap thickness on the suction side
-                n_opt: 6               # Number of control points along blade span
-                max_decrease: 0.8      # Maximum nondimensional decrease at the n_opt locations
-                max_increase: 2.0      # Maximum nondimensional increase at the n_opt locations
-                index_start: 1         # Lock the first DV from blade root
-                index_end: 5           # The last DV at blade tip is locked
-            spar_cap_ps:
-                flag: True             # Flag to optimize the spar cap thickness on the pressure side
-                equal_to_suction: True # Flag to impose the spar cap thickness on pressure and suction sides equal
-                n_opt: 6               # Number of control points along blade span
-                max_decrease: 0.8      # Maximum nondimensional decrease at the n_opt locations
-                max_increase: 2.0      # Maximum nondimensional increase at the n_opt locations
-                index_start: 1         # Lock the first DV from blade root
-                index_end: 5           # The last DV at blade tip is locked
+            - layer_name: Spar_cap_ss
+              n_opt: 6
+              max_decrease: 0.8
+              max_increase: 2.0
+              index_start: 1
+              index_end: 5
+            - layer_name: Spar_cap_ps
+              n_opt: 6
+              max_decrease: 0.8
+              max_increase: 2.0
+              index_start: 1
+              index_end: 5
     tower:
         outer_diameter:
             flag: True

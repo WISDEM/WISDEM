@@ -1,0 +1,3927 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "WISDEM_optimization_options_schema_v00",
+  "title": "WISDEM wind turbine optimization options schema",
+  "description": "Schema that describes the analysis and optimization options for WISDEM",
+  "type": "object",
+  "definitions": {
+    "general": {
+      "type": "object",
+      "default": {},
+      "properties": {
+        "folder_output": {
+          "type": "string",
+          "default": "output",
+          "description": "Name of folder to dump output files"
+        },
+        "fname_output": {
+          "type": "string",
+          "default": "output",
+          "description": "File prefix for output files"
+        }
+      }
+    },
+    "design_variables": {
+      "type": "object",
+      "default": {},
+      "description": "Sets the design variables in a design optimization and analysis",
+      "properties": {
+        "rotor_diameter": {
+          "type": "object",
+          "default": {},
+          "description": "Adjust the rotor diameter by changing the blade length (all blade properties constant with respect to non-dimensional span coordinates)",
+          "properties": {
+            "flag": {
+              "type": "boolean",
+              "default": false,
+              "description": "Activates as a design variable or constraint"
+            },
+            "minimum": {
+              "type": "number",
+              "default": 0,
+              "minimum": 0,
+              "maximum": 1000,
+              "unit": "m"
+            },
+            "maximum": {
+              "type": "number",
+              "default": 0,
+              "minimum": 0,
+              "maximum": 1000,
+              "unit": "m"
+            }
+          }
+        },
+        "blade": {
+          "type": "object",
+          "default": {},
+          "description": "Design variables associated with the wind turbine blades",
+          "properties": {
+            "aero_shape": {
+              "type": "object",
+              "default": {},
+              "description": "Design variables associated with the blade aerodynamic shape",
+              "properties": {
+                "twist": {
+                  "type": "object",
+                  "default": {},
+                  "description": "Blade twist as a design variable by adding or subtracting radians from the initial value at spline control points along the span.",
+                  "properties": {
+                    "flag": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Activates as a design variable or constraint"
+                    },
+                    "inverse": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Words TODO?"
+                    },
+                    "n_opt": {
+                      "type": "integer",
+                      "default": 8,
+                      "minimum": 4,
+                      "description": "Number of equally-spaced control points of the spline parametrizing the twist distribution along blade span."
+                    },
+                    "max_decrease": {
+                      "type": "number",
+                      "description": "Maximum allowable decrease of twist at each DV location along blade span.",
+                      "default": 0.1,
+                      "unit": "rad"
+                    },
+                    "max_increase": {
+                      "type": "number",
+                      "description": "Maximum allowable increase of twist at each DV location along blade span.",
+                      "default": 0.1,
+                      "unit": "rad"
+                    },
+                    "index_start": {
+                      "type": "integer",
+                      "default": 0,
+                      "minimum": 0,
+                      "unit": "none",
+                      "description": "First index of the array of design variables/constraints that is optimized/constrained"
+                    },
+                    "index_end": {
+                      "type": "integer",
+                      "default": 8,
+                      "minimum": 0,
+                      "unit": "none",
+                      "description": "Last index of the array of design variables/constraints that is optimized/constrained"
+                    }
+                  }
+                },
+                "chord": {
+                  "type": "object",
+                  "default": {},
+                  "description": "Blade chord as a design variable by scaling (multiplying) the initial value at spline control points along the span.",
+                  "properties": {
+                    "flag": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Activates as a design variable or constraint"
+                    },
+                    "n_opt": {
+                      "type": "integer",
+                      "default": 8,
+                      "minimum": 4,
+                      "description": "Number of equally-spaced control points of the spline parametrizing the chord distribution along blade span."
+                    },
+                    "max_decrease": {
+                      "type": "number",
+                      "description": "Maximum nondimensional decrease at each optimization location",
+                      "default": 0.5
+                    },
+                    "max_increase": {
+                      "type": "number",
+                      "description": "Maximum nondimensional increase at each optimization location",
+                      "default": 1.5
+                    },
+                    "index_start": {
+                      "type": "integer",
+                      "default": 0,
+                      "minimum": 0,
+                      "unit": "none",
+                      "description": "First index of the array of design variables/constraints that is optimized/constrained"
+                    },
+                    "index_end": {
+                      "type": "integer",
+                      "default": 8,
+                      "minimum": 0,
+                      "unit": "none",
+                      "description": "Last index of the array of design variables/constraints that is optimized/constrained"
+                    }
+                  }
+                },
+                "af_positions": {
+                  "type": "object",
+                  "default": {},
+                  "description": "Adjust airfoil positions along the blade span.",
+                  "properties": {
+                    "flag": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Activates as a design variable or constraint"
+                    },
+                    "af_start": {
+                      "type": "integer",
+                      "default": 4,
+                      "minimum": 1,
+                      "description": "Index of airfoil where the optimization can start shifting airfoil position. The airfoil at blade tip is always locked."
+                    }
+                  }
+                },
+                "rthick": {
+                  "type": "object",
+                  "default": {},
+                  "description": "Blade relative thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span. This requires the INN for airfoil design",
+                  "properties": {
+                    "flag": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Activates as a design variable or constraint"
+                    },
+                    "n_opt": {
+                      "type": "integer",
+                      "default": 8,
+                      "minimum": 4,
+                      "description": "Number of equally-spaced control points of the spline parametrizing the relative thickness distribution along blade span."
+                    },
+                    "max_decrease": {
+                      "type": "number",
+                      "description": "Maximum nondimensional decrease at each optimization location",
+                      "default": 0.5
+                    },
+                    "max_increase": {
+                      "type": "number",
+                      "description": "Maximum nondimensional increase at each optimization location",
+                      "default": 1.5
+                    },
+                    "index_start": {
+                      "type": "integer",
+                      "default": 0,
+                      "minimum": 0,
+                      "unit": "none",
+                      "description": "First index of the array of design variables/constraints that is optimized/constrained"
+                    },
+                    "index_end": {
+                      "type": "integer",
+                      "default": 8,
+                      "minimum": 0,
+                      "unit": "none",
+                      "description": "Last index of the array of design variables/constraints that is optimized/constrained"
+                    }
+                  }
+                },
+                "L/D": {
+                  "type": "object",
+                  "default": {},
+                  "description": "Lift to drag ratio as a design variable by scaling (multiplying) the initial value at spline control points along the span. This requires the INN for airfoil design",
+                  "properties": {
+                    "flag": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Activates as a design variable or constraint"
+                    },
+                    "n_opt": {
+                      "type": "integer",
+                      "default": 8,
+                      "minimum": 4,
+                      "description": "Number of equally-spaced control points of the spline parametrizing the lift to drag ratio distribution along blade span."
+                    },
+                    "max_decrease": {
+                      "type": "number",
+                      "description": "Maximum nondimensional decrease at each optimization location",
+                      "default": 0.5
+                    },
+                    "max_increase": {
+                      "type": "number",
+                      "description": "Maximum nondimensional increase at each optimization location",
+                      "default": 1.5
+                    },
+                    "index_start": {
+                      "type": "integer",
+                      "default": 0,
+                      "minimum": 0,
+                      "unit": "none",
+                      "description": "First index of the array of design variables/constraints that is optimized/constrained"
+                    },
+                    "index_end": {
+                      "type": "integer",
+                      "default": 8,
+                      "minimum": 0,
+                      "unit": "none",
+                      "description": "Last index of the array of design variables/constraints that is optimized/constrained"
+                    }
+                  }
+                },
+                "c_d": {
+                  "type": "object",
+                  "default": {},
+                  "description": "Drag coefficient at rated conditions as a design variable by scaling (multiplying) the initial value at spline control points along the span. This requires the INN for airfoil design",
+                  "properties": {
+                    "flag": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Activates as a design variable or constraint"
+                    },
+                    "n_opt": {
+                      "type": "integer",
+                      "default": 8,
+                      "minimum": 4,
+                      "description": "Number of equally-spaced control points of the spline parametrizing the drag coefficient distribution along blade span."
+                    },
+                    "max_decrease": {
+                      "type": "number",
+                      "description": "Maximum nondimensional decrease at each optimization location",
+                      "default": 0.5
+                    },
+                    "max_increase": {
+                      "type": "number",
+                      "description": "Maximum nondimensional increase at each optimization location",
+                      "default": 1.5
+                    },
+                    "index_start": {
+                      "type": "integer",
+                      "default": 0,
+                      "minimum": 0,
+                      "unit": "none",
+                      "description": "First index of the array of design variables/constraints that is optimized/constrained"
+                    },
+                    "index_end": {
+                      "type": "integer",
+                      "default": 8,
+                      "minimum": 0,
+                      "unit": "none",
+                      "description": "Last index of the array of design variables/constraints that is optimized/constrained"
+                    }
+                  }
+                },
+                "stall_margin": {
+                  "type": "object",
+                  "default": {},
+                  "description": "Stall margin at rated conditions as a design variable by scaling (multiplying) the initial value at spline control points along the span. This requires the INN for airfoil design",
+                  "properties": {
+                    "flag": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Activates as a design variable or constraint"
+                    },
+                    "n_opt": {
+                      "type": "integer",
+                      "default": 8,
+                      "minimum": 4,
+                      "description": "Number of equally-spaced control points of the spline parametrizing the stall margin distribution along blade span."
+                    },
+                    "max_decrease": {
+                      "type": "number",
+                      "description": "Maximum nondimensional decrease at each optimization location",
+                      "default": 0.5
+                    },
+                    "max_increase": {
+                      "type": "number",
+                      "description": "Maximum nondimensional increase at each optimization location",
+                      "default": 1.5
+                    },
+                    "index_start": {
+                      "type": "integer",
+                      "default": 0,
+                      "minimum": 0,
+                      "unit": "none",
+                      "description": "First index of the array of design variables/constraints that is optimized/constrained"
+                    },
+                    "index_end": {
+                      "type": "integer",
+                      "default": 8,
+                      "minimum": 0,
+                      "unit": "none",
+                      "description": "Last index of the array of design variables/constraints that is optimized/constrained"
+                    }
+                  }
+                },
+                "z": {
+                  "type": "object",
+                  "default": {},
+                  "description": "INN design parameter z",
+                  "properties": {
+                    "flag": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Activates as a design variable or constraint"
+                    },
+                    "n_opt": {
+                      "type": "integer",
+                      "default": 3,
+                      "description": "z design parameter count"
+                    },
+                    "lower_bound": {
+                      "type": "number",
+                      "default": -1,
+                      "minimum": -1e+30,
+                      "maximum": 1e+30
+                    },
+                    "upper_bound": {
+                      "type": "number",
+                      "default": 1,
+                      "minimum": -1e+30,
+                      "maximum": 1e+30
+                    }
+                  }
+                }
+              }
+            },
+            "structure": {
+              "type": "array",
+              "description": "Design variables associated with the internal blade structure",
+              "items": {
+                "type": "object",
+                "description": "Set the thickness of any blade layer as a design variable by scaling (multiplying) the initial value at spline control points along the span.",
+                "default": {},
+                "properties": {
+                  "layer_name": {
+                    "type": "string",
+                    "description": "Name of blade structural layer to be optimized"
+                  },
+                  "n_opt": {
+                    "type": "integer",
+                    "default": 8,
+                    "minimum": 4,
+                    "description": "Number of equally-spaced control points of the spline parametrizing the thickness of the layer."
+                  },
+                  "max_decrease": {
+                    "type": "number",
+                    "description": "Maximum nondimensional decrease at each optimization location",
+                    "default": 0.5
+                  },
+                  "max_increase": {
+                    "type": "number",
+                    "description": "Maximum nondimensional increase at each optimization location",
+                    "default": 1.5
+                  },
+                  "index_start": {
+                    "type": "integer",
+                    "default": 0,
+                    "minimum": 0,
+                    "unit": "none",
+                    "description": "First index of the array of design variables/constraints that is optimized/constrained"
+                  },
+                  "index_end": {
+                    "type": "integer",
+                    "default": 8,
+                    "minimum": 0,
+                    "unit": "none",
+                    "description": "Last index of the array of design variables/constraints that is optimized/constrained"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "control": {
+          "type": "object",
+          "default": {},
+          "description": "Design variables associated with the control of the wind turbine",
+          "properties": {
+            "tsr": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the tip-speed ratio (ratio between blade tip velocity and steady hub-height wind speed)",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "minimum": {
+                  "type": "number",
+                  "default": 0,
+                  "minimum": 0,
+                  "maximum": 30,
+                  "unit": "none",
+                  "description": "Minimum allowable value"
+                },
+                "maximum": {
+                  "type": "number",
+                  "default": 0,
+                  "minimum": 0,
+                  "maximum": 30,
+                  "unit": "none",
+                  "description": "Maximum allowable value"
+                }
+              }
+            }
+          }
+        },
+        "hub": {
+          "type": "object",
+          "default": {},
+          "description": "Design variables associated with the hub",
+          "properties": {
+            "cone": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the blade attachment coning angle (positive values are always away from the tower whether upwind or downwind)",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 0.5235987756,
+                  "default": 0,
+                  "unit": "rad",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 0.5235987756,
+                  "default": 0,
+                  "unit": "rad",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "hub_diameter": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the rotor hub diameter",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 30,
+                  "default": 0,
+                  "unit": "m",
+                  "description": "Lowest value allowable for hub diameter"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 30,
+                  "default": 30,
+                  "unit": "m",
+                  "description": "Highest value allowable for hub diameter"
+                }
+              }
+            }
+          }
+        },
+        "drivetrain": {
+          "type": "object",
+          "default": {},
+          "description": "Design variables associated with the drivetrain",
+          "properties": {
+            "uptilt": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the drive shaft tilt angle (positive values tilt away from the tower whether upwind or downwind)",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 0.5235987756,
+                  "default": 0,
+                  "unit": "rad",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 0.5235987756,
+                  "default": 0,
+                  "unit": "rad",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "overhang": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the x-distance, parallel to the ground or still water line, from the tower top center to the rotor apex.",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Lowest value allowable for design variable"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Highest value allowable for design variable"
+                }
+              }
+            },
+            "distance_tt_hub": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the z-dimension height from the tower top to the rotor apex",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Lowest value allowable for design variable"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Highest value allowable for design variable"
+                }
+              }
+            },
+            "distance_hub_mb": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the distance along the drive staft from the hub flange to the first main bearing",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Lowest value allowable for design variable"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Highest value allowable for design variable"
+                }
+              }
+            },
+            "distance_mb_mb": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the distance along the drive staft from the first to the second main bearing",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Lowest value allowable for design variable"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Highest value allowable for design variable"
+                }
+              }
+            },
+            "generator_length": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the distance along the drive staft between the generator rotor drive shaft attachment to the stator bedplate attachment",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Lowest value allowable for design variable"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Highest value allowable for design variable"
+                }
+              }
+            },
+            "gear_ratio": {
+              "type": "object",
+              "default": {},
+              "description": "For geared configurations only, adjust the gear ratio of the gearbox that multiplies the shaft speed and divides the torque",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 500,
+                  "default": 1,
+                  "unit": "none"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 1000,
+                  "default": 150,
+                  "unit": "none"
+                }
+              }
+            },
+            "lss_diameter": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the diameter at the beginning and end of the low speed shaft (assumes a linear taper)",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Lowest value allowable for design variable"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Highest value allowable for design variable"
+                }
+              }
+            },
+            "hss_diameter": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the diameter at the beginning and end of the high speed shaft (assumes a linear taper)",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Lowest value allowable for design variable"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Highest value allowable for design variable"
+                }
+              }
+            },
+            "nose_diameter": {
+              "type": "object",
+              "default": {},
+              "description": "For direct-drive configurations only, adjust the diameter at the beginning and end of the nose/turret (assumes a linear taper)",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Lowest value allowable for design variable"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 30,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Highest value allowable for design variable"
+                }
+              }
+            },
+            "lss_wall_thickness": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the thickness at the beginning and end of the low speed shaft (assumes a linear taper)",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 3,
+                  "default": 0.001,
+                  "unit": "m"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.01,
+                  "maximum": 5,
+                  "default": 1,
+                  "unit": "m"
+                }
+              }
+            },
+            "hss_wall_thickness": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the thickness at the beginning and end of the high speed shaft (assumes a linear taper)",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 3,
+                  "default": 0.001,
+                  "unit": "m"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.01,
+                  "maximum": 5,
+                  "default": 1,
+                  "unit": "m"
+                }
+              }
+            },
+            "nose_wall_thickness": {
+              "type": "object",
+              "default": {},
+              "description": "For direct-drive configurations only, adjust the thickness at the beginning and end of the nose/turret (assumes a linear taper)",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 3,
+                  "default": 0.001,
+                  "unit": "m"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.01,
+                  "maximum": 5,
+                  "default": 1,
+                  "unit": "m"
+                }
+              }
+            },
+            "bedplate_wall_thickness": {
+              "type": "object",
+              "default": {},
+              "description": "For direct-drive configurations only, adjust the wall thickness along the elliptical bedplate",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 3,
+                  "default": 0.001,
+                  "unit": "m"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.01,
+                  "maximum": 5,
+                  "default": 1,
+                  "unit": "m"
+                }
+              }
+            },
+            "bedplate_web_thickness": {
+              "type": "object",
+              "default": {},
+              "description": "For geared configurations only, adjust the I-beam web thickness of the bedplate",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 3,
+                  "default": 0.001,
+                  "unit": "m"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.01,
+                  "maximum": 5,
+                  "default": 1,
+                  "unit": "m"
+                }
+              }
+            },
+            "bedplate_flange_thickness": {
+              "type": "object",
+              "default": {},
+              "description": "For geared configurations only, adjust the I-beam flange thickness of the bedplate",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 3,
+                  "default": 0.001,
+                  "unit": "m"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.01,
+                  "maximum": 5,
+                  "default": 1,
+                  "unit": "m"
+                }
+              }
+            },
+            "bedplate_flange_width": {
+              "type": "object",
+              "default": {},
+              "description": "For geared configurations only, adjust the I-beam flange width of the bedplate",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 3,
+                  "default": 0.001,
+                  "unit": "m"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.01,
+                  "maximum": 5,
+                  "default": 1,
+                  "unit": "m"
+                }
+              }
+            }
+          }
+        },
+        "tower": {
+          "type": "object",
+          "description": "Design variables associated with the tower or monopile",
+          "default": {},
+          "properties": {
+            "outer_diameter": {
+              "type": "object",
+              "description": "Adjust the outer diamter of the cylindrical column at nodes along the height.  Linear tapering is assumed between the nodes, creating conical frustums in each section",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 100,
+                  "default": 5,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 100,
+                  "default": 5,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "layer_thickness": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the layer thickness of each section in the column",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.00001,
+                  "maximum": 1,
+                  "default": 0.01,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.00001,
+                  "maximum": 1,
+                  "default": 0.01,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "section_height": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the height of each conical section",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 100,
+                  "default": 5,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 100,
+                  "default": 5,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "E": {
+              "type": "object",
+              "default": {},
+              "description": "Isotropic Young's modulus",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 1000000000000,
+                  "default": 200000000000,
+                  "unit": "Pa",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 1000000000000,
+                  "default": 200000000000,
+                  "unit": "Pa",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "rho": {
+              "type": "object",
+              "default": {},
+              "description": "Material density of the tower",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 100000,
+                  "default": 7800,
+                  "unit": "kg/m**3",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 100000,
+                  "default": 7800,
+                  "unit": "kg/m**3",
+                  "description": "Design variable bound"
+                }
+              }
+            }
+          }
+        },
+        "monopile": {
+          "type": "object",
+          "description": "Design variables associated with the tower or monopile",
+          "default": {},
+          "properties": {
+            "outer_diameter": {
+              "type": "object",
+              "description": "Adjust the outer diamter of the cylindrical column at nodes along the height.  Linear tapering is assumed between the nodes, creating conical frustums in each section",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 100,
+                  "default": 5,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 100,
+                  "default": 5,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "layer_thickness": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the layer thickness of each section in the column",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.00001,
+                  "maximum": 1,
+                  "default": 0.01,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.00001,
+                  "maximum": 1,
+                  "default": 0.01,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "section_height": {
+              "type": "object",
+              "default": {},
+              "description": "Adjust the height of each conical section",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 100,
+                  "default": 5,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 100,
+                  "default": 5,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "E": {
+              "type": "object",
+              "default": {},
+              "description": "Isotropic Young's modulus",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 1000000000000,
+                  "default": 200000000000,
+                  "unit": "Pa",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 1000000000000,
+                  "default": 200000000000,
+                  "unit": "Pa",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "rho": {
+              "type": "object",
+              "default": {},
+              "description": "Material density of the tower",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 100000,
+                  "default": 7800,
+                  "unit": "kg/m**3",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 100000,
+                  "default": 7800,
+                  "unit": "kg/m**3",
+                  "description": "Design variable bound"
+                }
+              }
+            }
+          }
+        },
+        "jacket": {
+          "type": "object",
+          "description": "Design variables associated with the jacket",
+          "default": {},
+          "properties": {
+            "foot_head_ratio": {
+              "type": "object",
+              "description": "Adjust the ratio of the jacket foot (bottom) radius to that of the head (top)",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 100,
+                  "default": 1.5,
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 100,
+                  "default": 1.5,
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "r_head": {
+              "type": "object",
+              "description": "Adjust the radius of the jacket head.",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 100,
+                  "default": 5,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 100,
+                  "default": 5,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "leg_diameter": {
+              "type": "object",
+              "description": "Adjust the diameter of the jacket legs.",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 10,
+                  "default": 1.5,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 10,
+                  "default": 1.5,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "height": {
+              "type": "object",
+              "description": "Overall jacket height, meters.",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 1000,
+                  "default": 70,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 1000,
+                  "default": 70,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "leg_thickness": {
+              "type": "object",
+              "description": "Adjust the leg thicknesses of the jacket.",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 10,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 10,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "brace_diameters": {
+              "type": "object",
+              "description": "Adjust the brace diameters of the jacket.",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 10,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 10,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "brace_thicknesses": {
+              "type": "object",
+              "description": "Adjust the brace thicknesses of the jacket.",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 10,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 10,
+                  "default": 0.1,
+                  "unit": "m",
+                  "description": "Design variable bound"
+                }
+              }
+            },
+            "bay_spacing": {
+              "type": "object",
+              "description": "Jacket bay nodal spacing.",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "default": 0.1,
+                  "description": "Design variable bound"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "default": 0.1,
+                  "description": "Design variable bound"
+                }
+              }
+            }
+          }
+        },
+        "floating": {
+          "type": "object",
+          "description": "Design variables associated with the floating platform",
+          "default": {},
+          "properties": {
+            "joints": {
+              "type": "object",
+              "description": "Design variables associated with the node/joint locations used in the floating platform",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "z_coordinate": {
+                  "type": "array",
+                  "description": "List of joints or members by name sets that should be adjusted. A single entry for an independent joint/member or a list of names for joints/members that are linked by symmetry",
+                  "default": [],
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "names": {
+                        "type": "array",
+                        "description": "Joint or member names of those that are linked",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "lower_bound": {
+                        "type": "number",
+                        "unit": "m",
+                        "description": "Design variable bound"
+                      },
+                      "upper_bound": {
+                        "type": "number",
+                        "unit": "m",
+                        "description": "Design variable bound"
+                      }
+                    }
+                  }
+                },
+                "r_coordinate": {
+                  "type": "array",
+                  "description": "List of joints or members by name sets that should be adjusted. A single entry for an independent joint/member or a list of names for joints/members that are linked by symmetry",
+                  "default": [],
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "names": {
+                        "type": "array",
+                        "description": "Joint or member names of those that are linked",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "lower_bound": {
+                        "type": "number",
+                        "unit": "m",
+                        "description": "Design variable bound"
+                      },
+                      "upper_bound": {
+                        "type": "number",
+                        "unit": "m",
+                        "description": "Design variable bound"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "members": {
+              "type": "object",
+              "description": "Design variables associated with the members used in the floating platform",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "groups": {
+                  "type": "array",
+                  "description": "Sets of members that share the same design",
+                  "default": [],
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "names": {
+                        "type": "array",
+                        "description": "Joint or member names of those that are linked",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "diameter": {
+                        "type": "object",
+                        "description": "Diameter optimization of member group",
+                        "properties": {
+                          "lower_bound": {
+                            "type": "number",
+                            "minimum": 0.1,
+                            "maximum": 100,
+                            "default": 5,
+                            "unit": "m",
+                            "description": "Design variable bound"
+                          },
+                          "upper_bound": {
+                            "type": "number",
+                            "minimum": 0.1,
+                            "maximum": 100,
+                            "default": 5,
+                            "unit": "m",
+                            "description": "Design variable bound"
+                          },
+                          "constant": {
+                            "type": "boolean",
+                            "description": "Should the diameters be constant",
+                            "default": false
+                          }
+                        }
+                      },
+                      "thickness": {
+                        "type": "object",
+                        "description": "Thickness optimization of member group",
+                        "properties": {
+                          "lower_bound": {
+                            "type": "number",
+                            "minimum": 0.00001,
+                            "maximum": 1,
+                            "default": 0.01,
+                            "unit": "m",
+                            "description": "Design variable bound"
+                          },
+                          "upper_bound": {
+                            "type": "number",
+                            "minimum": 0.00001,
+                            "maximum": 1,
+                            "default": 0.01,
+                            "unit": "m",
+                            "description": "Design variable bound"
+                          }
+                        }
+                      },
+                      "ballast": {
+                        "type": "object",
+                        "description": "Ballast volume optimization of member group",
+                        "properties": {
+                          "lower_bound": {
+                            "type": "number",
+                            "unit": "m^3",
+                            "description": "Design variable bound",
+                            "default": 0,
+                            "minimum": 0
+                          },
+                          "upper_bound": {
+                            "type": "number",
+                            "unit": "m^3",
+                            "description": "Design variable bound",
+                            "minimum": 0,
+                            "default": 100000
+                          }
+                        }
+                      },
+                      "axial_joints": {
+                        "type": "array",
+                        "description": "List of axial joint sets in this member group that are optimized as one",
+                        "items": {
+                          "type": "object",
+                          "default": {},
+                          "properties": {
+                            "names": {
+                              "type": "array",
+                              "description": "Joint or member names of those that are linked",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "lower_bound": {
+                              "type": "number",
+                              "description": "Design variable bound",
+                              "default": 0,
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            "upper_bound": {
+                              "type": "number",
+                              "description": "Design variable bound",
+                              "minimum": 0,
+                              "maximum": 1,
+                              "default": 1
+                            }
+                          }
+                        }
+                      },
+                      "stiffeners": {
+                        "type": "object",
+                        "description": "Stiffener optimization of member group",
+                        "properties": {
+                          "ring": {
+                            "type": "object",
+                            "description": "Ring stiffener optimization of member group",
+                            "properties": {
+                              "size": {
+                                "type": "object",
+                                "description": "Ring stiffener sizing multiplier on T-shape",
+                                "properties": {
+                                  "min_gain": {
+                                    "type": "number",
+                                    "default": 0.5,
+                                    "unit": "none",
+                                    "description": "Lower bound on scalar multiplier that will be applied to value at control points"
+                                  },
+                                  "max_gain": {
+                                    "type": "number",
+                                    "default": 1.5,
+                                    "unit": "none"
+                                  }
+                                }
+                              },
+                              "spacing": {
+                                "type": "object",
+                                "description": "Ring stiffener spacing along member axis",
+                                "properties": {
+                                  "lower_bound": {
+                                    "type": "number",
+                                    "unit": "none",
+                                    "description": "Design variable bound",
+                                    "default": 0,
+                                    "minimum": 0
+                                  },
+                                  "upper_bound": {
+                                    "type": "number",
+                                    "unit": "none",
+                                    "description": "Design variable bound",
+                                    "default": 0.1,
+                                    "minimum": 0
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "longitudinal": {
+                            "type": "object",
+                            "description": "Longitudinal stiffener optimization of member group",
+                            "properties": {
+                              "size": {
+                                "type": "object",
+                                "description": "Longitudinal stiffener sizing multiplier on T-shape",
+                                "properties": {
+                                  "min_gain": {
+                                    "type": "number",
+                                    "default": 0.5,
+                                    "unit": "none",
+                                    "description": "Lower bound on scalar multiplier that will be applied to value at control points"
+                                  },
+                                  "max_gain": {
+                                    "type": "number",
+                                    "default": 1.5,
+                                    "unit": "none"
+                                  }
+                                }
+                              },
+                              "spacing": {
+                                "type": "object",
+                                "description": "Longitudinal stiffener spacing around member annulus",
+                                "properties": {
+                                  "lower_bound": {
+                                    "type": "number",
+                                    "unit": "rad",
+                                    "description": "Design variable bound",
+                                    "default": 0,
+                                    "minimum": 0,
+                                    "maximum": 3.141592653589793
+                                  },
+                                  "upper_bound": {
+                                    "type": "number",
+                                    "unit": "rad",
+                                    "description": "Design variable bound",
+                                    "default": 0.1,
+                                    "minimum": 0,
+                                    "maximum": 3.141592653589793
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "mooring": {
+          "type": "object",
+          "description": "Design variables associated with the mooring system",
+          "default": {},
+          "properties": {
+            "line_length": {
+              "type": "object",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "unit": "m",
+                  "description": "Design variable bound",
+                  "default": 0,
+                  "minimum": 0
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "unit": "m",
+                  "description": "Design variable bound",
+                  "minimum": 0
+                }
+              }
+            },
+            "line_diameter": {
+              "type": "object",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "unit": "m",
+                  "description": "Design variable bound",
+                  "default": 0,
+                  "minimum": 0
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "unit": "m",
+                  "description": "Design variable bound",
+                  "minimum": 0
+                }
+              }
+            },
+            "line_mass_density_coeff": {
+              "type": "object",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "unit": "m",
+                  "description": "Design variable bound",
+                  "default": 0,
+                  "minimum": 0
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "unit": "m",
+                  "description": "Design variable bound",
+                  "minimum": 0
+                }
+              }
+            },
+            "line_stiffness_coeff": {
+              "type": "object",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "unit": "m",
+                  "description": "Design variable bound",
+                  "default": 0,
+                  "minimum": 0
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "unit": "m",
+                  "description": "Design variable bound",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        "user_defined": {
+          "type": "array",
+          "description": "List of user-defined design variables. These must be already listed as OpenMDAO indipendent cariable components.",
+          "items": {
+            "type": "object",
+            "description": "OpenMDAO entries, taken from https://openmdao.org/newdocs/versions/latest/features/core_features/adding_desvars_cons_objs/adding_design_variables.html",
+            "default": {},
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Promoted name of the design variable in the system."
+              },
+              "lower_bound": {
+                "type": "array",
+                "description": "Array of lower bounds of this user-defined design variable",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "upper_bound": {
+                "type": "array",
+                "description": "Array of upper bounds of this user-defined design variable",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "ref": {
+                "type": "array",
+                "description": "Value of design var that scales to 1.0 in the driver",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "indices": {
+                "type": "array",
+                "description": "If an input is an array, these indicate which entries are of interest for this particular design variable. These may be positive or negative integers",
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "default": {},
+      "description": "Activate the constraints that are applied to a design optimization",
+      "properties": {
+        "blade": {
+          "type": "object",
+          "default": {},
+          "description": "Constraints associated with the blade design",
+          "properties": {
+            "strains_spar_cap_ss": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a maximum allowable strain in the suction-side spar caps",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "max": {
+                  "type": "number",
+                  "description": "Maximum allowable strain value",
+                  "default": 0.004,
+                  "minimum": 1e-08,
+                  "maximum": 0.1
+                },
+                "index_start": {
+                  "type": "integer",
+                  "default": 0,
+                  "minimum": 0,
+                  "unit": "none",
+                  "description": "First index of the array of design variables/constraints that is optimized/constrained"
+                },
+                "index_end": {
+                  "type": "integer",
+                  "default": 8,
+                  "minimum": 0,
+                  "unit": "none",
+                  "description": "Last index of the array of design variables/constraints that is optimized/constrained"
+                }
+              }
+            },
+            "strains_spar_cap_ps": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a maximum allowable strain in the pressure-side spar caps",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "max": {
+                  "type": "number",
+                  "description": "Maximum allowable strain value",
+                  "default": 0.004,
+                  "minimum": 1e-08,
+                  "maximum": 0.1
+                },
+                "index_start": {
+                  "type": "integer",
+                  "default": 0,
+                  "minimum": 0,
+                  "unit": "none",
+                  "description": "First index of the array of design variables/constraints that is optimized/constrained"
+                },
+                "index_end": {
+                  "type": "integer",
+                  "default": 8,
+                  "minimum": 0,
+                  "unit": "none",
+                  "description": "Last index of the array of design variables/constraints that is optimized/constrained"
+                }
+              }
+            },
+            "strains_te_ss": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a maximum allowable strain in the suction-side trailing edge reinforcements",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "max": {
+                  "type": "number",
+                  "description": "Maximum allowable strain value",
+                  "default": 0.004,
+                  "minimum": 1e-08,
+                  "maximum": 0.1
+                },
+                "index_start": {
+                  "type": "integer",
+                  "default": 0,
+                  "minimum": 0,
+                  "unit": "none",
+                  "description": "First index of the array of design variables/constraints that is optimized/constrained"
+                },
+                "index_end": {
+                  "type": "integer",
+                  "default": 8,
+                  "minimum": 0,
+                  "unit": "none",
+                  "description": "Last index of the array of design variables/constraints that is optimized/constrained"
+                }
+              }
+            },
+            "strains_te_ps": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a maximum allowable strain in the pressure-side trailing edge reinforcements",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "max": {
+                  "type": "number",
+                  "description": "Maximum allowable strain value",
+                  "default": 0.004,
+                  "minimum": 1e-08,
+                  "maximum": 0.1
+                },
+                "index_start": {
+                  "type": "integer",
+                  "default": 0,
+                  "minimum": 0,
+                  "unit": "none",
+                  "description": "First index of the array of design variables/constraints that is optimized/constrained"
+                },
+                "index_end": {
+                  "type": "integer",
+                  "default": 8,
+                  "minimum": 0,
+                  "unit": "none",
+                  "description": "Last index of the array of design variables/constraints that is optimized/constrained"
+                }
+              }
+            },
+            "tip_deflection": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a maximum allowable blade tip deflection towards the tower expressed as a safety factor on the parked margin.  Meaning a parked distance to the tower of 30m and a constraint value here of 1.5 would mean that 30/1.5=20m of deflection is the maximum allowable",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "margin": {
+                  "type": "number",
+                  "default": 1.4175,
+                  "minimum": 1,
+                  "maximum": 10
+                }
+              }
+            },
+            "t_sc_joint": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a maximum allowable spar cap thickness, expressed as the ratio of the required spar cap thickness at the joint location to the nominal spar cap thickness.",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "rail_transport": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce sufficient blade flexibility such that they can be transported on rail cars without exceeding maximum blade strains or derailment.  User can activate either 8-axle flatcars or 4-axle",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "8_axle": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "4_axle": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "stall": {
+              "type": "object",
+              "description": "Ensuring blade angles of attacks do not approach the stall point. Margin is expressed in radians from stall.",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "margin": {
+                  "type": "number",
+                  "default": 0.05233,
+                  "minimum": 0,
+                  "maximum": 0.5,
+                  "unit": "radians"
+                }
+              }
+            },
+            "chord": {
+              "type": "object",
+              "description": "Enforcing the maximum chord length limit at all points along blade span.",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "max": {
+                  "type": "number",
+                  "default": 4.75,
+                  "minimum": 0.1,
+                  "maximum": 20,
+                  "unit": "meter"
+                }
+              }
+            },
+            "root_circle_diameter": {
+              "type": "object",
+              "description": "Enforcing the minimum blade root circle diameter.",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "max_ratio": {
+                  "type": "number",
+                  "description": "Maximum ratio between the recommended root circle diameter and the actual chord at blade root. The optimizer will make sure that the ratio stays below this value.",
+                  "default": 1,
+                  "minimum": 0.01,
+                  "maximum": 10
+                }
+              }
+            },
+            "frequency": {
+              "type": "object",
+              "description": "Constraints on blade natural frequencies. The constraints can drive the placement of frequencies above the blade passing (3P) frequency at rated conditions using gamma_freq margin. Can be activated for blade flap and/or edge modes. Equality constraints can also be activated to target specific first and/or second flap/edge modes.",
+              "default": {},
+              "properties": {
+                "flap_3P": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "edge_3P": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "first_flap": {
+                  "type": "object",
+                  "description": "Targeted blade natural frequency (useful for inverse design approaches)",
+                  "default": {},
+                  "properties": {
+                    "flag": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Activates as a design variable or constraint"
+                    },
+                    "target": {
+                      "type": "number",
+                      "default": 0,
+                      "minimum": 0,
+                      "maximum": 10,
+                      "description": "Value of the target natural frequency"
+                    },
+                    "acceptable_error": {
+                      "type": "number",
+                      "default": 0.01,
+                      "minimum": 0.000001,
+                      "maximum": 5,
+                      "description": "Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility."
+                    }
+                  }
+                },
+                "first_edge": {
+                  "type": "object",
+                  "description": "Targeted blade natural frequency (useful for inverse design approaches)",
+                  "default": {},
+                  "properties": {
+                    "flag": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Activates as a design variable or constraint"
+                    },
+                    "target": {
+                      "type": "number",
+                      "default": 0,
+                      "minimum": 0,
+                      "maximum": 10,
+                      "description": "Value of the target natural frequency"
+                    },
+                    "acceptable_error": {
+                      "type": "number",
+                      "default": 0.01,
+                      "minimum": 0.000001,
+                      "maximum": 5,
+                      "description": "Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility."
+                    }
+                  }
+                },
+                "first_torsion": {
+                  "type": "object",
+                  "description": "Targeted blade natural frequency (useful for inverse design approaches)",
+                  "default": {},
+                  "properties": {
+                    "flag": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Activates as a design variable or constraint"
+                    },
+                    "target": {
+                      "type": "number",
+                      "default": 0,
+                      "minimum": 0,
+                      "maximum": 10,
+                      "description": "Value of the target natural frequency"
+                    },
+                    "acceptable_error": {
+                      "type": "number",
+                      "default": 0.01,
+                      "minimum": 0.000001,
+                      "maximum": 5,
+                      "description": "Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility."
+                    }
+                  }
+                }
+              }
+            },
+            "mass": {
+              "type": "object",
+              "description": "Enforcing a target blade mass (useful for inverse design approaches)",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "target": {
+                  "type": "number",
+                  "default": 0,
+                  "minimum": 0,
+                  "maximum": 300000,
+                  "description": "Value of the target blade mass"
+                },
+                "acceptable_error": {
+                  "type": "number",
+                  "default": 0,
+                  "minimum": 0,
+                  "maximum": 50000,
+                  "description": "Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility."
+                }
+              }
+            },
+            "moment_coefficient": {
+              "type": "object",
+              "description": "(EXPERIMENTAL) Targeted blade moment coefficient (useful for managing root flap loads or inverse design approaches that is not recommendend for general use)",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "min": {
+                  "type": "number",
+                  "default": 0.15,
+                  "minimum": 0.01,
+                  "maximum": 5
+                },
+                "max": {
+                  "type": "number",
+                  "default": 0.15,
+                  "minimum": 0.01,
+                  "maximum": 5
+                }
+              }
+            },
+            "match_cl_cd": {
+              "type": "object",
+              "description": "(EXPERIMENTAL) Targeted airfoil cl/cd ratio (useful for inverse design approaches that is not recommendend for general use)",
+              "default": {},
+              "properties": {
+                "flag_cl": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "flag_cd": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "filename": {
+                  "type": "string",
+                  "description": "file path to constraint data",
+                  "default": ""
+                }
+              }
+            },
+            "match_L_D": {
+              "type": "object",
+              "description": "(EXPERIMENTAL) Targeted blade moment coefficient (useful for managing root flap loads or inverse design approaches that is not recommendend for general use)",
+              "default": {},
+              "properties": {
+                "flag_L": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "flag_D": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "filename": {
+                  "type": "string",
+                  "description": "file path to constraint data",
+                  "default": ""
+                }
+              }
+            },
+            "AEP": {
+              "type": "object",
+              "description": "Set a minimum bound on AEP in kWh when optimizing the blade and rotor parameters",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "min": {
+                  "type": "number",
+                  "units": "kWh",
+                  "default": 1,
+                  "minimum": 1
+                }
+              }
+            },
+            "thrust_coeff": {
+              "type": "object",
+              "description": "(EXPERIMENTAL) Bound the ccblade thrust coefficient away from unconstrained optimal when optimizing for power, for highly-loaded rotors",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        "tower": {
+          "type": "object",
+          "default": {},
+          "description": "Constraints associated with the tower design",
+          "properties": {
+            "height_constraint": {
+              "type": "object",
+              "description": "Double-sided constraint to ensure total tower height meets target hub height when adjusting section heights",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.000001,
+                  "maximum": 10,
+                  "default": 0.01,
+                  "unit": "m"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 0.000001,
+                  "maximum": 10,
+                  "default": 0.01,
+                  "unit": "m"
+                }
+              }
+            },
+            "stress": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "global_buckling": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a global buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "shell_buckling": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a shell buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "slope": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the diameter moving up the tower at any node is always equal or less than the diameter of the node preceding it",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "thickness_slope": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the thickness moving up the tower at any node is always equal or less than the thickness of the section preceding it",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "d_to_t": {
+              "type": "object",
+              "description": "Double-sided constraint to ensure target diameter to thickness ratio for manufacturing and structural objectives",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 2000,
+                  "default": 50,
+                  "unit": "none"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 2000,
+                  "default": 50,
+                  "unit": "none"
+                }
+              }
+            },
+            "taper": {
+              "type": "object",
+              "description": "Enforcing a max allowable conical frustum taper ratio per section",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 1,
+                  "default": 0.5,
+                  "unit": "none"
+                }
+              }
+            },
+            "frequency": {
+              "type": "object",
+              "description": "Frequency separation constraint between all tower modal frequencies and blade period (1P) and passing (3P) frequencies at rated conditions using gamma_freq margin.",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "frequency_1": {
+              "type": "object",
+              "description": "Targeted range for tower first frequency constraint.  Since first and second frequencies are generally the same for the tower, this usually governs the second frequency as well (both fore-aft and side-side first frequency)",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "default": 0.1,
+                  "minimum": 0.01,
+                  "maximum": 5,
+                  "unit": "Hz"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "default": 0.1,
+                  "minimum": 0.01,
+                  "maximum": 5,
+                  "unit": "Hz"
+                }
+              }
+            }
+          }
+        },
+        "monopile": {
+          "type": "object",
+          "default": {},
+          "description": "Constraints associated with the monopile design",
+          "properties": {
+            "stress": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "global_buckling": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a global buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "shell_buckling": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a shell buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "slope": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the diameter moving up the tower at any node is always equal or less than the diameter of the node preceding it",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "thickness_slope": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the thickness moving up the tower at any node is always equal or less than the thickness of the section preceding it",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "d_to_t": {
+              "type": "object",
+              "description": "Double-sided constraint to ensure target diameter to thickness ratio for manufacturing and structural objectives",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 2000,
+                  "default": 50,
+                  "unit": "none"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 2000,
+                  "default": 50,
+                  "unit": "none"
+                }
+              }
+            },
+            "taper": {
+              "type": "object",
+              "description": "Enforcing a max allowable conical frustum taper ratio per section",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 1,
+                  "default": 0.5,
+                  "unit": "none"
+                }
+              }
+            },
+            "frequency_1": {
+              "type": "object",
+              "description": "Targeted range for tower first frequency constraint.  Since first and second frequencies are generally the same for the tower, this usually governs the second frequency as well (both fore-aft and side-side first frequency)",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "default": 0.1,
+                  "minimum": 0.01,
+                  "maximum": 5,
+                  "unit": "Hz"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "default": 0.1,
+                  "minimum": 0.01,
+                  "maximum": 5,
+                  "unit": "Hz"
+                }
+              }
+            },
+            "pile_depth": {
+              "type": "object",
+              "description": "Ensures that the submerged suction pile depth meets a minimum value",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 200,
+                  "default": 0,
+                  "unit": "m"
+                }
+              }
+            },
+            "tower_diameter_coupling": {
+              "type": "object",
+              "description": "Ensures that the top diameter of the monopile is the same or larger than the base diameter of the tower",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            }
+          }
+        },
+        "jacket": {
+          "type": "object",
+          "default": {},
+          "description": "Constraints associated with the monopile design",
+          "properties": {
+            "stress": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "global_buckling": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a global buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "shell_buckling": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a shell buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "slope": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the diameter moving up the tower at any node is always equal or less than the diameter of the node preceding it",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "thickness_slope": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the thickness moving up the tower at any node is always equal or less than the thickness of the section preceding it",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "d_to_t": {
+              "type": "object",
+              "description": "Double-sided constraint to ensure target diameter to thickness ratio for manufacturing and structural objectives",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 2000,
+                  "default": 50,
+                  "unit": "none"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "minimum": 1,
+                  "maximum": 2000,
+                  "default": 50,
+                  "unit": "none"
+                }
+              }
+            },
+            "taper": {
+              "type": "object",
+              "description": "Enforcing a max allowable conical frustum taper ratio per section",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0.001,
+                  "maximum": 1,
+                  "default": 0.5,
+                  "unit": "none"
+                }
+              }
+            },
+            "frequency_1": {
+              "type": "object",
+              "description": "Targeted range for tower first frequency constraint.  Since first and second frequencies are generally the same for the tower, this usually governs the second frequency as well (both fore-aft and side-side first frequency)",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "default": 0.1,
+                  "minimum": 0.01,
+                  "maximum": 5,
+                  "unit": "Hz"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "default": 0.1,
+                  "minimum": 0.01,
+                  "maximum": 5,
+                  "unit": "Hz"
+                }
+              }
+            },
+            "pile_depth": {
+              "type": "object",
+              "description": "Ensures that the submerged suction pile depth meets a minimum value",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 200,
+                  "default": 0,
+                  "unit": "m"
+                }
+              }
+            },
+            "tower_diameter_coupling": {
+              "type": "object",
+              "description": "Ensures that the top diameter of the monopile is the same or larger than the base diameter of the tower",
+              "default": {},
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            }
+          }
+        },
+        "hub": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "hub_diameter": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the diameter of the hub is sufficient to accommodate the number of blades and blade root diameter",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            }
+          }
+        },
+        "drivetrain": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "lss": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "hss": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "bedplate": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "mb1": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the angular deflection at this meain bearing does not exceed the maximum allowable deflection for the bearing type",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "mb2": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the angular deflection at this meain bearing does not exceed the maximum allowable deflection for the bearing type",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "length": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the bedplate length is sufficient to meet desired overhang value",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "height": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the bedplate height is sufficient to meet desired nacelle height value",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "access": {
+              "type": "object",
+              "default": {},
+              "description": "For direct-drive configurations only, ensure that the inner diameter of the nose/turret is big enough to allow human access",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "default": 2,
+                  "minimum": 0.1,
+                  "maximum": 5,
+                  "unit": "meter",
+                  "description": "Minimum size to ensure human maintenance access"
+                }
+              }
+            },
+            "shaft_deflection": {
+              "type": "object",
+              "default": {},
+              "description": "Allowable non-torque deflection of the shaft, in meters, at the generator rotor attachment for direct drive or gearbox attachment for geared drive",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "default": 0.0001,
+                  "minimum": 0.000001,
+                  "maximum": 1,
+                  "unit": "meter",
+                  "description": "Upper limit of deflection"
+                }
+              }
+            },
+            "shaft_angle": {
+              "type": "object",
+              "default": {},
+              "description": "Allowable non-torque angular deflection of the shaft, in radians, at the generator rotor attachment for direct drive or gearbox attachment for geared drive",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "default": 0.001,
+                  "minimum": 0.00001,
+                  "maximum": 1,
+                  "unit": "radian",
+                  "description": "Upper limit of angular deflection"
+                }
+              }
+            },
+            "stator_deflection": {
+              "type": "object",
+              "default": {},
+              "description": "Allowable deflection of the nose or bedplate, in meters, at the generator stator attachment",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "default": 0.0001,
+                  "minimum": 0.000001,
+                  "maximum": 1,
+                  "unit": "meter",
+                  "description": "Upper limit of deflection"
+                }
+              }
+            },
+            "stator_angle": {
+              "type": "object",
+              "default": {},
+              "description": "Allowable non-torque angular deflection of the nose or bedplate, in radians, at the generator stator attachment",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "default": 0.001,
+                  "minimum": 0.00001,
+                  "maximum": 1,
+                  "unit": "radian",
+                  "description": "Upper limit of angular deflection"
+                }
+              }
+            },
+            "ecc": {
+              "type": "object",
+              "default": {},
+              "description": "For direct-drive configurations only, ensure that the elliptical bedplate length is greater than its height",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            }
+          }
+        },
+        "floating": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "operational_heel": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the mooring system has enough restoring force to keep the heel/pitch angle below this limit",
+              "properties": {
+                "upper_bound": {
+                  "type": "number",
+                  "default": 0.17453292519943295,
+                  "minimum": 0.017453292519943295,
+                  "maximum": 0.7853981633974483,
+                  "unit": "rad"
+                }
+              }
+            },
+            "survival_heel": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the mooring system has enough restoring force to keep the heel/pitch angle below this limit",
+              "properties": {
+                "upper_bound": {
+                  "type": "number",
+                  "default": 0.17453292519943295,
+                  "minimum": 0.017453292519943295,
+                  "maximum": 0.7853981633974483,
+                  "unit": "rad"
+                }
+              }
+            },
+            "max_surge": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the mooring system has enough restoring force so that this surge distance, expressed as a fraction of water depth, is not exceeded",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "default": 0.1,
+                  "minimum": 0.01,
+                  "maximum": 1,
+                  "unit": "none"
+                }
+              }
+            },
+            "buoyancy": {
+              "type": "object",
+              "default": {},
+              "description": "Ensures that the platform displacement is sufficient to support the weight of the turbine system",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "fixed_ballast_capacity": {
+              "type": "object",
+              "default": {},
+              "description": "Ensures that there is sufficient volume to hold the specified fixed (permanent) ballast",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "variable_ballast_capacity": {
+              "type": "object",
+              "default": {},
+              "description": "Ensures that there is sufficient volume to hold the needed water (variable) ballast to achieve neutral buoyancy",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "metacentric_height": {
+              "type": "object",
+              "default": {},
+              "description": "Ensures hydrostatic stability with a positive metacentric height",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "default": 10,
+                  "minimum": 0,
+                  "unit": "meter"
+                }
+              }
+            },
+            "freeboard_margin": {
+              "type": "object",
+              "default": {},
+              "description": "Ensures that the freeboard (top points of structure) of floating platform stays above the waterline at the survival heel offset",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "draft_margin": {
+              "type": "object",
+              "default": {},
+              "description": "Ensures that the draft (bottom points of structure) of floating platform stays beneath the waterline at the survival heel offset",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "fairlead_depth": {
+              "type": "object",
+              "default": {},
+              "description": "Ensures that the mooring line attachment depth (fairlead) is sufficiently beneath the water line that it is not exposed at the significant wave height",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "mooring_surge": {
+              "type": "object",
+              "default": {},
+              "description": "Ensures that the mooring lines have sufficient restoring force to overcome rotor thrust at the max surge offset",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "mooring_heel": {
+              "type": "object",
+              "default": {},
+              "description": "Ensures that the mooring lines have sufficient restoring force to overcome rotor thrust at the max heel offset",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "mooring_tension": {
+              "type": "object",
+              "default": {},
+              "description": "Keep the mooring line tension below its breaking point",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "mooring_length": {
+              "type": "object",
+              "default": {},
+              "description": "Keep the mooring line length within the bounds for catenary hang or TLP tension",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "anchor_vertical": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the maximum vertical force on the anchor does not exceed limit",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "anchor_lateral": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the maximum lateral force on the anchor does not exceed limit",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "stress": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "global_buckling": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a global buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "shell_buckling": {
+              "type": "object",
+              "default": {},
+              "description": "Enforce a shell buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                }
+              }
+            },
+            "surge_period": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the rigid body period stays within bounds",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "default": 1,
+                  "minimum": 0.01,
+                  "unit": "s"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "default": 1,
+                  "minimum": 0.01,
+                  "unit": "s"
+                }
+              }
+            },
+            "sway_period": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the rigid body period stays within bounds",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "default": 1,
+                  "minimum": 0.01,
+                  "unit": "s"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "default": 1,
+                  "minimum": 0.01,
+                  "unit": "s"
+                }
+              }
+            },
+            "heave_period": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the rigid body period stays within bounds",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "default": 1,
+                  "minimum": 0.01,
+                  "unit": "s"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "default": 1,
+                  "minimum": 0.01,
+                  "unit": "s"
+                }
+              }
+            },
+            "roll_period": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the rigid body period stays within bounds",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "default": 1,
+                  "minimum": 0.01,
+                  "unit": "s"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "default": 1,
+                  "minimum": 0.01,
+                  "unit": "s"
+                }
+              }
+            },
+            "pitch_period": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the rigid body period stays within bounds",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "default": 1,
+                  "minimum": 0.01,
+                  "unit": "s"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "default": 1,
+                  "minimum": 0.01,
+                  "unit": "s"
+                }
+              }
+            },
+            "yaw_period": {
+              "type": "object",
+              "default": {},
+              "description": "Ensure that the rigid body period stays within bounds",
+              "properties": {
+                "flag": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Activates as a design variable or constraint"
+                },
+                "lower_bound": {
+                  "type": "number",
+                  "default": 1,
+                  "minimum": 0.01,
+                  "unit": "s"
+                },
+                "upper_bound": {
+                  "type": "number",
+                  "default": 1,
+                  "minimum": 0.01,
+                  "unit": "s"
+                }
+              }
+            }
+          }
+        },
+        "user": {
+          "type": "array",
+          "description": "User-defined constraints based on full variable name.  Must enter a lower_bound and/or an upper bound for each constraint",
+          "default": [],
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "User-specified constraint variable using full name in the WISDEM namespace"
+              },
+              "lower_bound": {
+                "type": "number",
+                "description": "Variable must be greater than or equal to this value (entry must have lower_bound and/or upper_bound)"
+              },
+              "upper_bound": {
+                "type": "number",
+                "description": "Variable must be less than or equal to this value (entry must have lower_bound and/or upper_bound)"
+              },
+              "indices": {
+                "type": "string",
+                "description": "Optional string of python indices in a list (i.e. [0,1,2]) or slice (i.e. [:3])"
+              }
+            }
+          }
+        }
+      }
+    },
+    "merit_figure": {
+      "type": "string",
+      "description": "Objective function / merit figure for optimization (not checked via schema, but in python).  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation, platform_mass- floating platform mass without variable ballast, inverse_design- custom inverse design used to match reference values of any arbitrary output",
+      "default": "LCOE"
+    },
+    "merit_figure_user": {
+      "type": "object",
+      "default": {},
+      "description": "Provides mechanism for a user-specific objective function.  Overrides any entries in merit_figure.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "User-specified objective function / merit figure using full variable name in the WISDEM namespace",
+          "default": ""
+        },
+        "ref": {
+          "type": "number",
+          "description": "Approximate expected value of the user-defined objective function (just need the nearest order-of-magnitude) for scaling the objective function for optimization conditioning.  For example, if you expect values in the range of 6000, enter in 1000.",
+          "default": 1
+        },
+        "max_flag": {
+          "type": "boolean",
+          "default": false,
+          "description": "If true, this maximizes the objective function.  If false, then minimize"
+        }
+      }
+    },
+    "inverse_design": {
+      "type": "object",
+      "description": "For use with the inverse_design merit_figure. Specifies the reference output variable's 'prom_name' name and the desired value, accepts multiple variables. A normalized difference between the actual value and reference value is calculated for each variable. A Root Mean Square (RMS) is calculated with all variables and the optimizer minimizes the RMS. If the refernce output variable is an array, specify the element index number via \"idx\".",
+      "default": {},
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "ref_value"
+        ],
+        "optional": [
+          "indices",
+          "units"
+        ],
+        "properties": {
+          "ref_value": {
+            "type": [
+              "number",
+              "array"
+            ]
+          },
+          "indices": {
+            "type": "array",
+            "default": [
+              0
+            ]
+          },
+          "units": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "driver": {
+      "type": "object",
+      "default": {},
+      "properties": {
+        "optimization": {
+          "type": "object",
+          "description": "Specification of the optimization driver (optimization algorithm) parameters",
+          "default": {},
+          "properties": {
+            "flag": {
+              "type": "boolean",
+              "default": false,
+              "description": "Activates as a design variable or constraint"
+            },
+            "tol": {
+              "type": "number",
+              "description": "Convergence tolerance (relative)",
+              "default": 0.000001,
+              "minimum": 1e-12,
+              "maximum": 1,
+              "unit": "none"
+            },
+            "max_iter": {
+              "type": "integer",
+              "description": "Max number of optimization iterations",
+              "default": 100,
+              "minimum": 0,
+              "maximum": 100000
+            },
+            "max_major_iter": {
+              "type": "integer",
+              "description": "Max number of major optimization iterations of SNOPT",
+              "default": 10,
+              "minimum": 0,
+              "maximum": 100000
+            },
+            "max_minor_iter": {
+              "type": "integer",
+              "description": "Max number of minor optimization iterations of SNOPT",
+              "default": 100,
+              "minimum": 0,
+              "maximum": 100000
+            },
+            "time_limit": {
+              "type": "integer",
+              "description": "Max seconds of major iteration runtime for SNOPT",
+              "default": 0,
+              "minimum": 0
+            },
+            "max_function_calls": {
+              "type": "integer",
+              "description": "Max number of calls to objective function evaluation",
+              "default": 100000,
+              "minimum": 0,
+              "maximum": 100000000
+            },
+            "solver": {
+              "type": "string",
+              "description": "Optimization driver.",
+              "default": "SLSQP",
+              "enum": [
+                "SLSQP",
+                "CONMIN",
+                "COBYLA",
+                "SNOPT",
+                "Nelder-Mead",
+                "GA",
+                "GN_DIRECT",
+                "GN_DIRECT_L",
+                "GN_DIRECT_L_NOSCAL",
+                "GN_ORIG_DIRECT",
+                "GN_ORIG_DIRECT_L",
+                "GN_AGS",
+                "GN_ISRES",
+                "LN_COBYLA",
+                "LD_MMA",
+                "LD_CCSAQ",
+                "LD_SLSQP",
+                "NSGA2"
+              ]
+            },
+            "step_size": {
+              "type": "number",
+              "description": "Maximum step size for finite difference approximation",
+              "default": 0.001,
+              "minimum": 1e-10,
+              "maximum": 100
+            },
+            "form": {
+              "type": "string",
+              "description": "Finite difference calculation mode",
+              "default": "central",
+              "enum": [
+                "central",
+                "forward",
+                "complex"
+              ]
+            },
+            "step_calc": {
+              "type": "string",
+              "description": "Step type for computing the size of the finite difference step.",
+              "default": "None",
+              "enum": [
+                "None",
+                "abs",
+                "rel_avg",
+                "rel_element",
+                "rel_legacy"
+              ]
+            },
+            "debug_print": {
+              "type": "boolean",
+              "default": false,
+              "description": "Toggle driver debug printing"
+            }
+          }
+        },
+        "design_of_experiments": {
+          "type": "object",
+          "description": "Specification of the design of experiments driver parameters",
+          "default": {},
+          "properties": {
+            "flag": {
+              "type": "boolean",
+              "default": false,
+              "description": "Activates as a design variable or constraint"
+            },
+            "run_parallel": {
+              "type": "boolean",
+              "default": true,
+              "description": "Toggle parallel model runs"
+            },
+            "generator": {
+              "type": "string",
+              "description": "Type of model input generator.",
+              "default": "Uniform",
+              "enum": [
+                "Uniform",
+                "FullFact",
+                "PlackettBurman",
+                "BoxBehnken",
+                "LatinHypercube"
+              ]
+            },
+            "num_samples": {
+              "type": "integer",
+              "description": "Number of samples to evaluate model at (Uniform and LatinHypercube only)",
+              "default": 5,
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "seed": {
+              "type": "integer",
+              "description": "Random seed to use if design is randomized",
+              "default": 2,
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "levels": {
+              "type": "integer",
+              "description": "Number of evenly spaced levels between each design variable lower and upper bound (FullFactorial only)",
+              "default": 2,
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "criterion": {
+              "type": "string",
+              "description": "Descriptor of sampling method for LatinHypercube generator",
+              "default": "center",
+              "enum": [
+                "None",
+                "center",
+                "c",
+                "maximin",
+                "m",
+                "centermaximin",
+                "cm",
+                "correelation",
+                "corr"
+              ]
+            },
+            "iterations": {
+              "type": "integer",
+              "description": "Number of iterations in maximin and correlations algorithms (LatinHypercube only)",
+              "default": 2,
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "debug_print": {
+              "type": "boolean",
+              "default": false,
+              "description": "Toggle driver debug printing"
+            }
+          }
+        },
+        "step_size_study": {
+          "type": "object",
+          "description": "Specification of the step size study parameters",
+          "default": {},
+          "properties": {
+            "flag": {
+              "type": "boolean",
+              "default": false,
+              "description": "Activates as a design variable or constraint"
+            },
+            "step_sizes": {
+              "type": "array",
+              "default": [
+                0.01,
+                0.005,
+                0.001,
+                0.0005,
+                0.0001,
+                0.00005,
+                0.00001,
+                0.000005,
+                0.000001,
+                5e-07,
+                1e-07,
+                5e-08,
+                1e-08
+              ],
+              "description": "List of step size values to use for the study"
+            },
+            "form": {
+              "type": "string",
+              "description": "Finite difference calculation mode",
+              "default": "central",
+              "enum": [
+                "central",
+                "forward",
+                "complex"
+              ]
+            },
+            "of": {
+              "type": "array",
+              "description": "Functions of interest for which we'll compute total derivatives",
+              "default": []
+            },
+            "wrt": {
+              "type": "array",
+              "description": "Design variables we'll perturb for the step size study",
+              "default": []
+            },
+            "driver_scaling": {
+              "type": "boolean",
+              "description": "When True, return derivatives that are scaled according to either the adder and scaler or the ref and ref0 values that were specified when add_design_var, add_objective, and add_constraint were called on the model.",
+              "default": false
+            }
+          }
+        }
+      }
+    },
+    "recorder": {
+      "type": "object",
+      "default": {},
+      "description": "Optimization iteration recording via OpenMDAO",
+      "properties": {
+        "flag": {
+          "type": "boolean",
+          "default": false,
+          "description": "Activates as a design variable or constraint"
+        },
+        "file_name": {
+          "type": "string",
+          "description": "OpenMDAO recorder output SQL database file",
+          "default": "log_opt.sql"
+        },
+        "just_dvs": {
+          "type": "boolean",
+          "description": "If true, only record design variables.",
+          "default": false
+        },
+        "includes": {
+          "type": "array",
+          "description": "List of variables to include in recorder",
+          "default": []
+        }
+      }
+    }
+  }
+}

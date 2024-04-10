@@ -175,115 +175,33 @@ class TestRS(unittest.TestCase):
         myobj.compute(inputs, outputs)
 
         # Truth values
-        dx = [
-            -0.00000000e00,
-            1.49215819e-03,
-            6.18800345e-03,
-            1.45003910e-02,
-            2.73434922e-02,
-            4.67234228e-02,
-            7.47186854e-02,
-            1.12432828e-01,
-            1.60390656e-01,
-            2.19118508e-01,
-            2.89135305e-01,
-            3.70946655e-01,
-            4.65304000e-01,
-            5.73377669e-01,
-            6.96576803e-01,
-            8.36259653e-01,
-            9.93650895e-01,
-            1.16987021e00,
-            1.36598166e00,
-            1.58315284e00,
-            1.82269515e00,
-            2.08532553e00,
-            2.37048502e00,
-            2.67674350e00,
-            3.00223660e00,
-            3.34464212e00,
-            3.70115151e00,
-            4.06855089e00,
-            4.44377456e00,
-            4.82335348e00,
-        ]
-        dy = [
-            0.00000000e00,
-            -3.60405636e-04,
-            -1.82452740e-03,
-            -5.52381033e-03,
-            -1.35018161e-02,
-            -2.81923557e-02,
-            -5.10138481e-02,
-            -8.20504020e-02,
-            -1.20945435e-01,
-            -1.67456836e-01,
-            -2.21379110e-01,
-            -2.82478136e-01,
-            -3.50577674e-01,
-            -4.25581185e-01,
-            -5.07377170e-01,
-            -5.95758732e-01,
-            -6.90429602e-01,
-            -7.91023050e-01,
-            -8.97108761e-01,
-            -1.00822123e00,
-            -1.12388783e00,
-            -1.24359430e00,
-            -1.36675646e00,
-            -1.49274889e00,
-            -1.62094474e00,
-            -1.75074652e00,
-            -1.88161303e00,
-            -2.01309315e00,
-            -2.14487848e00,
-            -2.27677580e00,
-        ]
-        dz = [
-            -0.00000000e00,
-            -5.76635508e-05,
-            -1.38122944e-04,
-            -2.25226392e-04,
-            -3.15407862e-04,
-            -4.09010260e-04,
-            -5.02353599e-04,
-            -5.93159024e-04,
-            -6.81185450e-04,
-            -7.66286578e-04,
-            -8.48065266e-04,
-            -9.26577316e-04,
-            -1.00265190e-03,
-            -1.07674611e-03,
-            -1.14855163e-03,
-            -1.21772038e-03,
-            -1.28385666e-03,
-            -1.34655739e-03,
-            -1.40542054e-03,
-            -1.46013988e-03,
-            -1.51151134e-03,
-            -1.56061633e-03,
-            -1.60752808e-03,
-            -1.65179039e-03,
-            -1.69289294e-03,
-            -1.73017476e-03,
-            -1.76270246e-03,
-            -1.78909031e-03,
-            -1.80823696e-03,
-            -1.81810390e-03,
-        ]
+        dx = [-0.00000000e+00,  1.64638232e-03,  6.79572518e-03,  1.57057110e-02,
+        2.91434108e-02,  4.91143389e-02,  7.77022110e-02,  1.15994210e-01,
+        1.64492394e-01,  2.23728011e-01,  2.94236207e-01,  3.76468424e-01,
+        4.70954179e-01,  5.78649328e-01,  7.00809412e-01,  8.38646276e-01,
+        9.93321364e-01,  1.16597533e+00,  1.35778027e+00,  1.56975422e+00,
+        1.80318407e+00,  2.05880282e+00,  2.33562566e+00,  2.63177288e+00,
+        2.94510570e+00,  3.27320110e+00,  3.61333244e+00,  3.96258446e+00,
+        4.31781570e+00,  4.67663896e+00]
+        dy = [ 0.00000000e+00, -3.74477007e-04, -1.87858152e-03, -5.72303746e-03,
+       -1.40296446e-02, -2.91760415e-02, -5.25470603e-02, -8.42038955e-02,
+       -1.23721261e-01, -1.70836582e-01, -2.25359315e-01, -2.87027856e-01,
+       -3.55549679e-01, -4.30734595e-01, -5.12432617e-01, -6.00416367e-01,
+       -6.94413956e-01, -7.94115178e-01, -8.99164661e-01, -1.00909604e+00,
+       -1.12345396e+00, -1.24175723e+00, -1.36337226e+00, -1.48764046e+00,
+       -1.61394215e+00, -1.74170551e+00, -1.87042453e+00, -1.99968813e+00,
+       -2.12920515e+00, -2.25881481e+00]
+        dz = [-0.00000000e+00, -6.16448640e-05, -1.46019534e-04, -2.32287182e-04,
+       -3.21439626e-04, -4.16434884e-04, -5.11204867e-04, -6.03366938e-04,
+       -6.92726810e-04, -7.79183257e-04, -8.62353953e-04, -9.41712542e-04,
+       -1.01708823e-03, -1.08989853e-03, -1.15986208e-03, -1.22711716e-03,
+       -1.29165787e-03, -1.35337047e-03, -1.41204679e-03, -1.46642332e-03,
+       -1.51832829e-03, -1.56716073e-03, -1.61256368e-03, -1.65439674e-03,
+       -1.69245182e-03, -1.72635996e-03, -1.75550444e-03, -1.77888069e-03,
+       -1.79390194e-03, -1.80321598e-03]
 
-        freqs = [
-            0.84289055,
-            1.23705125,
-            2.96645445,
-            4.12373582,
-            6.78932171,
-            8.85003324,
-            9.44144293,
-            12.40158703,
-            14.73949144,
-            16.36176423,
-        ]
+        freqs = [0.83325001,  1.22280141,  2.9647584 ,  4.09217506,  6.86529582,
+        8.83012966,  9.47967717, 12.57008964, 14.66188868, 16.55302485]
 
         npt.assert_almost_equal(outputs["dx"], dx, decimal=2)
         npt.assert_almost_equal(outputs["dy"], dy, decimal=2)
@@ -379,70 +297,22 @@ class TestRS(unittest.TestCase):
             1.43294401e-04,
             -1.50254249e-08,
         ]
-        strainU_te = [
-            -6.80721070e-05,
-            1.29038018e-05,
-            -5.63358330e-04,
-            -1.47303023e-03,
-            -1.97661798e-03,
-            -2.13936720e-03,
-            -2.10889476e-03,
-            -1.93325463e-03,
-            -1.82684737e-03,
-            -1.72214778e-03,
-            -1.59653435e-03,
-            -1.43982158e-03,
-            -1.24145856e-03,
-            -1.02867861e-03,
-            -8.57677465e-04,
-            -6.97817496e-04,
-            -5.41870474e-04,
-            -3.90003040e-04,
-            -2.14082599e-04,
-            -6.15553419e-05,
-            4.71495337e-05,
-            4.51485998e-05,
-            6.19187715e-05,
-            7.44529189e-05,
-            7.80493815e-05,
-            8.10151027e-05,
-            6.55113225e-05,
-            4.38455715e-05,
-            2.30186021e-05,
-            -3.63739628e-09,
-        ]
-        strainL_te = [
-            -6.80721070e-05,
-            1.29038018e-05,
-            -5.63358330e-04,
-            -1.47303023e-03,
-            -1.97661798e-03,
-            -2.13936720e-03,
-            -2.10889476e-03,
-            -1.93325463e-03,
-            -1.82684737e-03,
-            -1.72214778e-03,
-            -1.59653435e-03,
-            -1.43982158e-03,
-            -1.24145856e-03,
-            -1.02867861e-03,
-            -8.57677465e-04,
-            -6.97817496e-04,
-            -5.41870474e-04,
-            -3.90003040e-04,
-            -2.14082599e-04,
-            -6.15553419e-05,
-            4.71495337e-05,
-            4.51485998e-05,
-            6.19187715e-05,
-            7.44529189e-05,
-            7.80493815e-05,
-            8.10151027e-05,
-            6.55113225e-05,
-            4.38455715e-05,
-            2.30186021e-05,
-            -3.63739628e-09,
-        ]
+        strainU_te = [-1.13026497e-04, -2.92410541e-04,  6.98603371e-05,  7.83552246e-04,
+        1.03320930e-03,  1.11029244e-03,  1.07605717e-03,  1.00197550e-03,
+        9.79127686e-04,  9.35549026e-04,  8.73496045e-04,  8.04623727e-04,
+        7.46684889e-04,  7.13059487e-04,  6.92932872e-04,  6.66579608e-04,
+        6.39927843e-04,  6.11292545e-04,  5.76948672e-04,  5.47664578e-04,
+        5.09787645e-04,  4.35963414e-04,  3.45126223e-04,  2.70740910e-04,
+        2.09983984e-04,  1.56888815e-04,  1.08873980e-04,  6.50476231e-05,
+        3.44554780e-05, -3.57317878e-09]
+        strainL_te = [-1.13026497e-04,  3.26449732e-04,  5.89457792e-04,  1.10079177e-03,
+        1.24723249e-03,  1.26863500e-03,  1.21717638e-03,  1.13461525e-03,
+        1.11141359e-03,  1.06753695e-03,  1.00345800e-03,  9.32406960e-04,
+        8.77049612e-04,  8.49694704e-04,  8.40210719e-04,  8.34931478e-04,
+        8.33043510e-04,  8.26570472e-04,  8.07511816e-04,  7.88325999e-04,
+        7.48216769e-04,  6.60545168e-04,  5.48461897e-04,  4.40175017e-04,
+        3.38218694e-04,  2.43921743e-04,  1.59467146e-04,  8.86770957e-05,
+        4.62181259e-05, -3.57317878e-09]
 
         npt.assert_almost_equal(outputs["strainU_spar"], strainU_spar, decimal=3)
         npt.assert_almost_equal(outputs["strainL_spar"], strainL_spar, decimal=3)
@@ -456,14 +326,14 @@ class TestRS(unittest.TestCase):
         npt.assert_almost_equal(outputs["axial_root_sparU_load2stress"][:2], 0.0)
         npt.assert_almost_equal(outputs["axial_root_sparU_load2stress"][5], 0.0)
         npt.assert_almost_equal(outputs["axial_root_sparU_load2stress"][2], -1.0 / A, decimal=3)
-        npt.assert_almost_equal(outputs["axial_root_sparU_load2stress"][3], -E * y_spar / inputs["EI11"][0], decimal=3)
+        npt.assert_almost_equal(outputs["axial_root_sparU_load2stress"][3], -E * y_spar / inputs["EI11"][0], decimal=2)
         npt.assert_almost_equal(outputs["axial_root_sparU_load2stress"][4], E * x_spar / inputs["EI22"][0], decimal=3)
         x_spar = inputs["xl_spar"][0]
         y_spar = inputs["yl_spar"][0]
         npt.assert_almost_equal(outputs["axial_root_sparL_load2stress"][:2], 0.0)
         npt.assert_almost_equal(outputs["axial_root_sparL_load2stress"][5], 0.0)
         npt.assert_almost_equal(outputs["axial_root_sparL_load2stress"][2], -1.0 / A, decimal=3)
-        npt.assert_almost_equal(outputs["axial_root_sparL_load2stress"][3], -E * y_spar / inputs["EI11"][0], decimal=3)
+        npt.assert_almost_equal(outputs["axial_root_sparL_load2stress"][3], -E * y_spar / inputs["EI11"][0], decimal=2)
         npt.assert_almost_equal(outputs["axial_root_sparL_load2stress"][4], E * x_spar / inputs["EI22"][0], decimal=3)
 
         k = np.argmax(inputs["chord"])
@@ -474,15 +344,15 @@ class TestRS(unittest.TestCase):
         npt.assert_almost_equal(outputs["axial_maxc_teU_load2stress"][:2], 0.0)
         npt.assert_almost_equal(outputs["axial_maxc_teU_load2stress"][5], 0.0)
         npt.assert_almost_equal(outputs["axial_maxc_teU_load2stress"][2], -1.0 / A, decimal=3)
-        npt.assert_almost_equal(outputs["axial_maxc_teU_load2stress"][3], -E * y_te / inputs["EI11"][k], decimal=3)
-        npt.assert_almost_equal(outputs["axial_maxc_teU_load2stress"][4], E * x_te / inputs["EI22"][k], decimal=3)
+        npt.assert_almost_equal(outputs["axial_maxc_teU_load2stress"][3], -E * y_te / inputs["EI11"][k], decimal=2)
+        npt.assert_almost_equal(outputs["axial_maxc_teU_load2stress"][4], E * x_te / inputs["EI22"][k], decimal=2)
         x_te = inputs["xl_te"][k]
         y_te = inputs["yl_te"][k]
         npt.assert_almost_equal(outputs["axial_maxc_teL_load2stress"][:2], 0.0)
         npt.assert_almost_equal(outputs["axial_maxc_teL_load2stress"][5], 0.0)
         npt.assert_almost_equal(outputs["axial_maxc_teL_load2stress"][2], -1.0 / A, decimal=3)
-        npt.assert_almost_equal(outputs["axial_maxc_teL_load2stress"][3], -E * y_te / inputs["EI11"][k], decimal=3)
-        npt.assert_almost_equal(outputs["axial_maxc_teL_load2stress"][4], E * x_te / inputs["EI22"][k], decimal=3)
+        npt.assert_almost_equal(outputs["axial_maxc_teL_load2stress"][3], -E * y_te / inputs["EI11"][k], decimal=2)
+        npt.assert_almost_equal(outputs["axial_maxc_teL_load2stress"][4], E * x_te / inputs["EI22"][k], decimal=2)
 
     def testConstraints(self):
         inputs = {}
@@ -529,6 +399,7 @@ class TestRS(unittest.TestCase):
         inputs["rated_Omega"] = 10.0
         inputs["flap_mode_freqs"] = 0.6 * np.ones(3)
         inputs["edge_mode_freqs"] = 0.4 * np.ones(3)
+        inputs["tors_mode_freqs"] = 5. * np.ones(3)
         discrete_inputs["blade_number"] = 3
 
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)

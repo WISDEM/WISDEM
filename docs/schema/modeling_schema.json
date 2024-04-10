@@ -1,0 +1,805 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "WISDEM_model_options_schema_v00",
+  "title": "WISDEM wind turbine modeling options schema",
+  "description": "Scehma that describes the modeling options for WISDEM",
+  "type": "object",
+  "definitions": {
+    "General": {
+      "type": "object",
+      "default": {},
+      "properties": {
+        "verbosity": {
+          "type": "boolean",
+          "default": false,
+          "description": "Prints additional outputs to screen (and to a file log in the future)"
+        },
+        "solver_maxiter": {
+          "type": "integer",
+          "default": 5,
+          "description": "Number of iterations for the top-level coupling solver"
+        }
+      }
+    },
+    "WISDEM": {
+      "type": "object",
+      "default": {},
+      "properties": {
+        "n_dlc": {
+          "type": "integer",
+          "default": 1,
+          "description": "Number of load cases",
+          "minimum": 0
+        },
+        "RotorSE": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "flag": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether or not to run this module"
+            },
+            "n_aoa": {
+              "type": "integer",
+              "default": 200,
+              "description": "Number of angles of attack in a common grid to define polars"
+            },
+            "n_xy": {
+              "type": "integer",
+              "default": 200,
+              "description": "Number of coordinate point used to define airfoils"
+            },
+            "n_span": {
+              "type": "integer",
+              "default": 30,
+              "description": "Number of spanwise stations in a common grid used to define blade properties"
+            },
+            "n_pc": {
+              "type": "integer",
+              "default": 20,
+              "description": "Number of wind speeds to compute the power curve"
+            },
+            "n_pc_spline": {
+              "type": "integer",
+              "default": 200,
+              "description": "Number of wind speeds to spline the power curve"
+            },
+            "n_pitch_perf_surfaces": {
+              "type": "integer",
+              "default": 20,
+              "description": "Number of pitch angles to determine the Cp-Ct-Cq-surfaces"
+            },
+            "min_pitch_perf_surfaces": {
+              "type": "number",
+              "default": -5,
+              "description": "Min pitch angle of the Cp-Ct-Cq-surfaces"
+            },
+            "max_pitch_perf_surfaces": {
+              "type": "number",
+              "default": 30,
+              "description": "Max pitch angle of the Cp-Ct-Cq-surfaces"
+            },
+            "n_tsr_perf_surfaces": {
+              "type": "integer",
+              "default": 20,
+              "description": "Number of tsr values to determine the Cp-Ct-Cq-surfaces"
+            },
+            "min_tsr_perf_surfaces": {
+              "type": "number",
+              "default": 2,
+              "description": "Min TSR of the Cp-Ct-Cq-surfaces"
+            },
+            "max_tsr_perf_surfaces": {
+              "type": "number",
+              "default": 12,
+              "description": "Max TSR of the Cp-Ct-Cq-surfaces"
+            },
+            "n_U_perf_surfaces": {
+              "type": "integer",
+              "default": 1,
+              "description": "Number of wind speeds to determine the Cp-Ct-Cq-surfaces"
+            },
+            "regulation_reg_III": {
+              "type": "boolean",
+              "default": true,
+              "description": "Flag to derive the regulation trajectory in region III in terms of pitch and TSR"
+            },
+            "peak_thrust_shaving": {
+              "type": "boolean",
+              "default": false,
+              "description": "If True, apply peak thrust shaving within RotorSE."
+            },
+            "thrust_shaving_coeff": {
+              "type": "number",
+              "default": 1,
+              "description": "Scalar applied to the max torque within RotorSE for peak thrust shaving. Only used if `peak_thrust_shaving` is True."
+            },
+            "fix_pitch_regI12": {
+              "type": "boolean",
+              "default": false,
+              "description": "If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced."
+            },
+            "spar_cap_ss": {
+              "type": "string",
+              "default": "none",
+              "description": "Composite layer modeling the spar cap on the suction side in the geometry yaml. This entry is used to compute ultimate strains."
+            },
+            "spar_cap_ps": {
+              "type": "string",
+              "default": "none",
+              "description": "Composite layer modeling the spar cap on the pressure side in the geometry yaml. This entry is used to compute ultimate strains."
+            },
+            "te_ss": {
+              "type": "string",
+              "default": "none",
+              "description": "Composite layer modeling the trailing edge reinforcement on the suction side in the geometry yaml. This entry is used to compute ultimate strains."
+            },
+            "te_ps": {
+              "type": "string",
+              "default": "none",
+              "description": "Composite layer modeling the trailing edge reinforcement on the pressure side in the geometry yaml. This entry is used to compute ultimate strains."
+            },
+            "gamma_freq": {
+              "type": "number",
+              "description": "Partial safety factor on modal frequencies",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.1,
+              "unit": "none"
+            },
+            "gust_std": {
+              "type": "number",
+              "description": "Number of standard deviations for strength of gust",
+              "minimum": 0,
+              "maximum": 15,
+              "default": 3,
+              "unit": "none"
+            },
+            "root_fastener_s_f": {
+              "type": "number",
+              "default": 2.5,
+              "minimum": 0.1,
+              "maximum": 100,
+              "description": "Safety factor for the max stress of blade root fasteners"
+            },
+            "hubloss": {
+              "type": "boolean",
+              "default": true,
+              "description": "Include Prandtl hub loss model in CCBlade calls"
+            },
+            "tiploss": {
+              "type": "boolean",
+              "default": true,
+              "description": "Include Prandtl tip loss model in CCBlade calls"
+            },
+            "wakerotation": {
+              "type": "boolean",
+              "default": true,
+              "description": "Include effect of wake rotation (i.e., tangential induction factor is nonzero) in CCBlade calls"
+            },
+            "usecd": {
+              "type": "boolean",
+              "default": true,
+              "description": "Use drag coefficient in computing induction factors in CCBlade calls"
+            },
+            "n_sector": {
+              "type": "integer",
+              "default": 4,
+              "minimum": 1,
+              "maximum": 10,
+              "description": "Number of sectors to divide rotor face into in computing thrust and power."
+            },
+            "3d_af_correction": {
+              "type": "boolean",
+              "default": true,
+              "description": "Flag switching on and off the 3d DU-Selig airfoil correction implemented in Polar.py"
+            },
+            "inn_af": {
+              "type": "boolean",
+              "default": false,
+              "description": "Flag switching on and off the inverted neural network for airfoil design"
+            },
+            "inn_af_max_rthick": {
+              "type": "number",
+              "default": 0.4,
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Maximum airfoil thickness supported by the INN for airfoil design"
+            },
+            "inn_af_min_rthick": {
+              "type": "number",
+              "default": 0.15,
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Minimum airfoil thickness supported by the INN for airfoil design"
+            },
+            "rail_transport": {
+              "type": "boolean",
+              "default": false,
+              "description": "Flag switching on and off the rail transport module of RotorSE"
+            }
+          }
+        },
+        "DriveSE": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "flag": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether or not to run this module"
+            },
+            "model_generator": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether or not to do detailed generator modeling using tools formerly in GeneratorSE"
+            },
+            "gamma_f": {
+              "type": "number",
+              "description": "Partial safety factor on loads",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.35,
+              "unit": "none"
+            },
+            "gamma_m": {
+              "type": "number",
+              "description": "Partial safety factor for materials",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.3,
+              "unit": "none"
+            },
+            "gamma_n": {
+              "type": "number",
+              "description": "Partial safety factor for consequence of failure",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1,
+              "unit": "none"
+            },
+            "use_gb_torque_density": {
+              "type": "boolean",
+              "default": true,
+              "description": "Flag switching between running to gearbox sizing of DrivetrainSE (False) or the simple sizing given a value of torque density expressed in Nm/kg"
+            },
+            "hub": {
+              "type": "object",
+              "default": {},
+              "properties": {
+                "hub_gamma": {
+                  "type": "number",
+                  "description": "Partial safety factor for hub sizing",
+                  "minimum": 1,
+                  "maximum": 7,
+                  "default": 2,
+                  "unit": "none"
+                },
+                "spinner_gamma": {
+                  "type": "number",
+                  "description": "Partial safety factor for spinner sizing",
+                  "minimum": 1,
+                  "maximum": 5,
+                  "default": 1.5,
+                  "unit": "none"
+                }
+              }
+            }
+          }
+        },
+        "TowerSE": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "flag": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether or not to run this module"
+            },
+            "wind": {
+              "type": "string",
+              "enum": [
+                "PowerWind",
+                "LogisticWind"
+              ],
+              "default": "PowerWind",
+              "description": "Wind scaling relationship with height"
+            },
+            "gamma_f": {
+              "type": "number",
+              "description": "Partial safety factor on loads",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.35,
+              "unit": "none"
+            },
+            "gamma_m": {
+              "type": "number",
+              "description": "Partial safety factor for materials",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.3,
+              "unit": "none"
+            },
+            "gamma_n": {
+              "type": "number",
+              "description": "Partial safety factor for consequence of failure",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1,
+              "unit": "none"
+            },
+            "gamma_b": {
+              "type": "number",
+              "description": "Partial safety factor for buckling",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.1,
+              "unit": "none"
+            },
+            "gamma_freq": {
+              "type": "number",
+              "description": "Partial safety factor on modal frequencies",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.1,
+              "unit": "none"
+            },
+            "gamma_fatigue": {
+              "type": "number",
+              "description": "Partial safety factor for fatigue failure",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1,
+              "unit": "none"
+            },
+            "buckling_method": {
+              "type": "string",
+              "enum": [
+                "Eurocode",
+                "Euro-code",
+                "eurocode",
+                "euro-code",
+                "DNVGL",
+                "dnvgl",
+                "DNV-GL",
+                "dnv-gl"
+              ],
+              "description": "Buckling utilization calculation method- Eurocode 1994 or DNVGL RP-C202",
+              "default": "dnvgl"
+            },
+            "buckling_length": {
+              "type": "number",
+              "description": "Buckling length factor in Eurocode safety check",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "unit": "m"
+            },
+            "frame3dd": {
+              "type": "object",
+              "description": "Set of Frame3DD options used for tower analysis",
+              "default": {},
+              "properties": {
+                "shear": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Inclusion of shear area for symmetric sections"
+                },
+                "geom": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Inclusion of shear stiffening through axial loading"
+                },
+                "modal_method": {
+                  "type": "number",
+                  "enum": [
+                    1,
+                    2
+                  ],
+                  "default": 1,
+                  "description": "Eigenvalue solver 1=Subspace-Jacobi iteration, 2=Stodola (matrix iteration)"
+                },
+                "tol": {
+                  "type": "number",
+                  "minimum": 1e-12,
+                  "maximum": 0.1,
+                  "default": 1e-09,
+                  "description": "Convergence tolerance for modal eigenvalue solution"
+                }
+              }
+            },
+            "n_refine": {
+              "type": "integer",
+              "default": 3,
+              "description": "Number of Frame3DD element refinements for every specified section along tower/member"
+            }
+          }
+        },
+        "FixedBottomSE": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "type": {
+              "type": "string",
+              "default": "monopile",
+              "description": "Can be `monopile` or `jacket`."
+            },
+            "flag": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether or not to run this module"
+            },
+            "wind": {
+              "type": "string",
+              "enum": [
+                "PowerWind",
+                "LogisticWind"
+              ],
+              "default": "PowerWind",
+              "description": "Wind scaling relationship with height"
+            },
+            "gamma_f": {
+              "type": "number",
+              "description": "Partial safety factor on loads",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.35,
+              "unit": "none"
+            },
+            "gamma_m": {
+              "type": "number",
+              "description": "Partial safety factor for materials",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.3,
+              "unit": "none"
+            },
+            "gamma_n": {
+              "type": "number",
+              "description": "Partial safety factor for consequence of failure",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1,
+              "unit": "none"
+            },
+            "gamma_b": {
+              "type": "number",
+              "description": "Partial safety factor for buckling",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.1,
+              "unit": "none"
+            },
+            "gamma_freq": {
+              "type": "number",
+              "description": "Partial safety factor on modal frequencies",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.1,
+              "unit": "none"
+            },
+            "gamma_fatigue": {
+              "type": "number",
+              "description": "Partial safety factor for fatigue failure",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1,
+              "unit": "none"
+            },
+            "buckling_method": {
+              "type": "string",
+              "enum": [
+                "Eurocode",
+                "Euro-code",
+                "eurocode",
+                "euro-code",
+                "DNVGL",
+                "dnvgl",
+                "DNV-GL",
+                "dnv-gl"
+              ],
+              "description": "Buckling utilization calculation method- Eurocode 1994 or DNVGL RP-C202",
+              "default": "dnvgl"
+            },
+            "buckling_length": {
+              "type": "number",
+              "description": "Buckling length factor in Eurocode safety check",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
+              "unit": "m"
+            },
+            "frame3dd": {
+              "type": "object",
+              "description": "Set of Frame3DD options used for tower analysis",
+              "default": {},
+              "properties": {
+                "shear": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Inclusion of shear area for symmetric sections"
+                },
+                "geom": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "Inclusion of shear stiffening through axial loading"
+                },
+                "modal_method": {
+                  "type": "number",
+                  "enum": [
+                    1,
+                    2
+                  ],
+                  "default": 1,
+                  "description": "Eigenvalue solver 1=Subspace-Jacobi iteration, 2=Stodola (matrix iteration)"
+                },
+                "tol": {
+                  "type": "number",
+                  "minimum": 1e-12,
+                  "maximum": 0.1,
+                  "default": 1e-09,
+                  "description": "Convergence tolerance for modal eigenvalue solution"
+                }
+              }
+            },
+            "soil_springs": {
+              "type": "boolean",
+              "default": false,
+              "description": "If False, then a monopile is modeled with a perfectly clamped foundation.  If True, then spring-stiffness equivalents are computed from soil properties for all DOF."
+            },
+            "gravity_foundation": {
+              "type": "boolean",
+              "default": false,
+              "description": "Model the monopile base as a gravity-based foundation with no pile embedment"
+            },
+            "n_refine": {
+              "type": "integer",
+              "default": 3,
+              "description": "Number of Frame3DD element refinements for every specified section along tower/member"
+            },
+            "n_legs": {
+              "type": "integer",
+              "default": 4,
+              "description": "Number of legs for the jacket. Only used if `type`==`jacket`."
+            },
+            "n_bays": {
+              "type": "integer",
+              "default": 3,
+              "description": "Number of bays for the jacket, or x-joints per tower leg pair. Only used if `type`==`jacket`."
+            },
+            "mud_brace": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, add a mud brace at the bottom of each jacket leg. Only used if `type`==`jacket`."
+            },
+            "save_truss_figures": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, save .pngs of the jacket truss during analysis or optimization. Jacket only."
+            }
+          }
+        },
+        "BOS": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "flag": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether or not to run this module"
+            }
+          }
+        },
+        "FloatingSE": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "flag": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether or not to run this module"
+            },
+            "n_refine": {
+              "type": "integer",
+              "default": 1,
+              "description": "Number of Frame3DD element refinements for every specified section along tower/member"
+            },
+            "frame3dd": {
+              "type": "object",
+              "description": "Set of Frame3DD options used for floating tower analysis",
+              "default": {},
+              "properties": {
+                "shear": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Inclusion of shear area for symmetric sections"
+                },
+                "geom": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Inclusion of shear stiffening through axial loading"
+                },
+                "modal_method": {
+                  "type": "number",
+                  "enum": [
+                    1,
+                    2
+                  ],
+                  "default": 2,
+                  "description": "Eigenvalue solver 1=Subspace-Jacobi iteration, 2=Stodola (matrix iteration)"
+                },
+                "shift": {
+                  "type": "number",
+                  "default": 10,
+                  "description": "Numerical matrix diagonal adder for eigenvalue solve of unrestrained structure"
+                },
+                "tol": {
+                  "type": "number",
+                  "minimum": 1e-12,
+                  "maximum": 0.1,
+                  "default": 1e-08,
+                  "description": "Convergence tolerance for modal eigenvalue solution"
+                }
+              }
+            },
+            "gamma_f": {
+              "type": "number",
+              "description": "Partial safety factor on loads",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.35,
+              "unit": "none"
+            },
+            "gamma_m": {
+              "type": "number",
+              "description": "Partial safety factor for materials",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.3,
+              "unit": "none"
+            },
+            "gamma_n": {
+              "type": "number",
+              "description": "Partial safety factor for consequence of failure",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1,
+              "unit": "none"
+            },
+            "gamma_b": {
+              "type": "number",
+              "description": "Partial safety factor for buckling",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.1,
+              "unit": "none"
+            },
+            "gamma_freq": {
+              "type": "number",
+              "description": "Partial safety factor on modal frequencies",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1.1,
+              "unit": "none"
+            },
+            "gamma_fatigue": {
+              "type": "number",
+              "description": "Partial safety factor for fatigue failure",
+              "minimum": 1,
+              "maximum": 5,
+              "default": 1,
+              "unit": "none"
+            },
+            "symmetric_moorings": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether or not to assume a symmetric mooring system"
+            },
+            "rank_and_file": {
+              "type": "boolean",
+              "default": false,
+              "description": "Use the rank-and-file method of identifying mode shapes that guarantees modeshape numbers in all directions, but will reuse the same modeshape for multiple directions"
+            }
+          }
+        },
+        "Loading": {
+          "type": "object",
+          "description": "This is only used if not running the full WISDEM turbine Group and you need to input the mass properties, forces, and moments for a tower-only or nacelle-only analysis",
+          "properties": {
+            "mass": {
+              "type": "number",
+              "default": 0,
+              "units": "kilogram",
+              "description": "Mass at external boundary of the system.  For the tower, this would be the RNA mass."
+            },
+            "center_of_mass": {
+              "type": "array",
+              "default": [
+                0,
+                0,
+                0
+              ],
+              "items": {
+                "type": "number",
+                "unit": "meter",
+                "minItems": 3,
+                "maxItems": 3,
+                "uniqueItems": false
+              },
+              "description": "Distance from system boundary to center of mass of the applied load.  For the tower, this would be the RNA center of mass in tower-top coordinates."
+            },
+            "moment_of_inertia": {
+              "type": "array",
+              "default": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "items": {
+                "type": "number",
+                "unit": "kg*m^2",
+                "minItems": 6,
+                "maxItems": 6,
+                "uniqueItems": false
+              },
+              "description": "Moment of inertia of external mass in coordinate system at the system boundary.  For the tower, this would be the RNA MoI in tower-top coordinates."
+            },
+            "loads": {
+              "type": "array",
+              "default": {},
+              "description": "The loading scenarios associated with the applied mass.  For the tower, this would be operating, parked, etc.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "force": {
+                    "type": "array",
+                    "default": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "description": "Force vector applied at system boundary",
+                    "items": {
+                      "type": "number",
+                      "unit": "Newton",
+                      "minItems": 3,
+                      "maxItems": 3,
+                      "uniqueItems": false
+                    }
+                  },
+                  "moment": {
+                    "type": "array",
+                    "default": [
+                      0,
+                      0,
+                      0
+                    ],
+                    "description": "Force vector applied at system boundary",
+                    "items": {
+                      "type": "number",
+                      "unit": "N*m",
+                      "minItems": 3,
+                      "maxItems": 3,
+                      "uniqueItems": false
+                    }
+                  },
+                  "velocity": {
+                    "type": "number",
+                    "description": "Applied wind reference velocity, if necessary",
+                    "default": 0,
+                    "unit": "meter"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

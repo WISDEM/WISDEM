@@ -44,3 +44,14 @@ CCBlade Class
 This class provides aerodynamic analysis of wind turbine rotor blades using BEM theory.
 It can compute distributed aerodynamic loads and integrated quantities such as power, thrust, and torque.
 An emphasis is placed on convergence robustness and differentiable output so that it can be used with gradient-based optimization.
+
+
+Polar Class
+^^^^^^^^^^^
+A Polar object is meant to represent the variation in lift, drag, and pitching moment coefficient with angle of attack at a fixed Reynolds number. Tools exist to read in two-dimensional (2-D) aerodynamic airfoil data (i.e., from wind tunnel data or numerical simulation), apply three-dimensional (3-D) rotation corrections for wind turbine applications, and extend the data to very large angles of attack.  Airfoil data can also be blended together to define intermediate sections between linearly lofted sections.
+
+.. module:: wisdem.ccblade.Polar
+
+.. autoclass:: wisdem.ccblae.Polar.Polar
+
+.. _polar-class-label:
