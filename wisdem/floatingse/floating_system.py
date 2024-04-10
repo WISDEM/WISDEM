@@ -197,6 +197,7 @@ class PlatformFrame(om.ExplicitComponent):
         # Load in number of members
         opt = self.options["options"]
         n_member = opt["floating"]["members"]["n_members"]
+        self.shape = opt["floating"]["members"]["outer_shape"]
 
         # Initialize running lists across all members
         elem_D = np.array([])
