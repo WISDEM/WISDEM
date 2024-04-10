@@ -1408,6 +1408,7 @@ class WindTurbineOntologyPython(object):
                     length_b_in = wt_opt[f"floating.memgrp{idx}.side_length_b_in"]
                     if len(length_a_in) == len(s_in):
                         yaml_out["members"][i]["outer_shape"]["side_length_a"]["values"] = length_a_in.tolist()
+                        yaml_out["members"][i]["outer_shape"]["side_length_b"]["values"] = length_b_in.tolist()
                     else:
                         length_a_in2 = length_a_in * np.ones(len(s_in))
                         length_b_in2 = length_b_in * np.ones(len(s_in))

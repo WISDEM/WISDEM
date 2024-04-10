@@ -1562,8 +1562,10 @@ properties:
                                 # TODO: Move these to the modeling file?
                                 - hydrodynamic_approach
                                 - Ca
+                                - Cay
                                 - Cp
                                 - Cd
+                                - Cdy
                             properties:
                                 name:
                                     description: Name of the member
@@ -1834,19 +1836,25 @@ properties:
                                                 maximum: 1.0
                                                 description: Non-dimensional value along member axis
                                 Ca: &ca
-                                    description: User-defined added mass coefficient
+                                    description: User-defined added mass coefficient if axi-symmetric or user-defined added mass coefficient in x-direction
                                     type: number
                                     default: 0.0
                                     minimum: 0.0
+                                Cay:
+                                    <<: *ca
+                                    description: User-defined added mass coefficient in y-direction
                                 Cp: &cp
                                     description: User-defined pressure coefficient
                                     type: number
                                     default: 0.0
                                 Cd: &cd
-                                    description: User-defined drag coefficient
+                                    description: User-defined drag coefficient if axi-symmetric or user-defined drag coefficient in x-direction
                                     type: number
                                     default: 0.0
                                     minimum: 0.0
+                                Cdy:
+                                    <<: *cd
+                                    description: User-defined drag coefficient in y-direction
                     rigid_bodies:
                         type: array
                         descriptions: Additional point masses at joints with user-customized properties
