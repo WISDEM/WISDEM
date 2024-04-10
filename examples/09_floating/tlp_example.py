@@ -23,6 +23,7 @@ opt["floating"]["members"]["n_bulkheads"] = [4, 2, 2, 2]
 opt["floating"]["members"]["n_layers"] = [1, 1, 1, 1]
 opt["floating"]["members"]["n_ballasts"] = [2, 0, 0, 0]
 opt["floating"]["members"]["n_axial_joints"] = [0, 0, 0, 0]
+opt["floating"]["members"]["outer_shape"] = 4 * ["circular"]
 opt["WISDEM"] = {}
 opt["WISDEM"]["n_dlc"] = 1
 opt["WISDEM"]["TowerSE"] = {}
