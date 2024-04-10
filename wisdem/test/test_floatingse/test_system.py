@@ -22,6 +22,7 @@ class TestPlatform(unittest.TestCase):
         self.opt["WISDEM"]["FloatingSE"] = {}
         self.opt["floating"]["members"] = {}
         self.opt["floating"]["members"]["n_members"] = n_member = 6
+        self.opt["floating"]["members"]["outer_shape"] = n_member * ["circular"]
         self.opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
         self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = True
         self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = True
@@ -51,6 +52,7 @@ class TestPlatform(unittest.TestCase):
             "rho",
             "E",
             "G",
+            "TorsC",
             "sigma_y",
         ]:
             for k in range(n_member):
@@ -76,6 +78,7 @@ class TestPlatform(unittest.TestCase):
             self.inputs[f"member{k}:section_rho"][:1] = 1e3 / (0.5 * k * np.ones(1) + 1) / L
             self.inputs[f"member{k}:section_E"][:1] = 3 * k * np.ones(1) + 1
             self.inputs[f"member{k}:section_G"][:1] = 4 * k * np.ones(1) + 1
+            self.inputs[f"member{k}:section_TorsC"][:1] = 4 * k * np.ones(1) + 1
             self.inputs[f"member{k}:section_sigma_y"][:1] = 5 * k * np.ones(1) + 1
             self.inputs[f"member{k}:idx_cb"] = 0
             self.inputs[f"member{k}:buoyancy_force"] = 1e2
@@ -86,7 +89,8 @@ class TestPlatform(unittest.TestCase):
             self.inputs[f"member{k}:total_cost"] = 2e3
             self.inputs[f"member{k}:I_total"] = 1e2 + np.arange(6)
             self.inputs[f"member{k}:Awater"] = 5.0
-            self.inputs[f"member{k}:Iwater"] = 15.0
+            self.inputs[f"member{k}:Iwaterx"] = 15.0
+            self.inputs[f"member{k}:Iwatery"] = 15.0
             self.inputs[f"member{k}:added_mass"] = np.arange(6)
             self.inputs[f"member{k}:ballast_mass"] = 1e2
             self.inputs[f"member{k}:variable_ballast_capacity"] = 10 + k
@@ -176,7 +180,8 @@ class TestPlatform(unittest.TestCase):
         self.assertEqual(self.outputs["platform_hull_mass"], 6e3 + 1e3 - 6e2)
         self.assertEqual(self.outputs["platform_cost"], 6 * 2e3 + 3e3)
         self.assertEqual(self.outputs["platform_Awater"], 30)
-        self.assertEqual(self.outputs["platform_Iwater"], 6 * 15 + 5 * np.sum(R[:, 1] ** 2))
+        self.assertEqual(self.outputs["platform_Iwaterx"], 6 * 15 + 5 * np.sum(R[:, 1] ** 2))
+        self.assertEqual(self.outputs["platform_Iwatery"], 6 * 15 + 5 * np.sum(R[:, 0] ** 2))
         npt.assert_equal(self.outputs["platform_added_mass"], 6 * np.arange(6))
         npt.assert_equal(self.outputs["platform_variable_capacity"], 10 + np.arange(6))
         npt.assert_equal(self.outputs["transition_piece_I"], 1e3 * 0.5**2 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
@@ -244,6 +249,7 @@ class TestGroup(unittest.TestCase):
         opt["floating"]["members"]["n_layers"] = [1]
         opt["floating"]["members"]["n_ballasts"] = [0]
         opt["floating"]["members"]["n_axial_joints"] = [1]
+        opt["floating"]["members"]["outer_shape"] = n_member * ["circular"]
         opt["mooring"] = {}
         opt["mooring"]["n_attach"] = 3
         opt["mooring"]["n_anchors"] = 3
@@ -275,6 +281,7 @@ class TestGroup(unittest.TestCase):
             prob[f"member{k}:section_rho"][:1] = 1e3 / (0.5 * k * np.ones(1) + 1) / L
             prob[f"member{k}:section_E"][:1] = 3 * k * np.ones(1) + 1
             prob[f"member{k}:section_G"][:1] = 4 * k * np.ones(1) + 1
+            prob[f"member{k}:section_TorsC"][:1] = 4 * k * np.ones(1) + 1
             prob[f"member{k}:section_sigma_y"][:1] = 5 * k * np.ones(1) + 1
             prob[f"member{k}:idx_cb"] = 0
             prob[f"member{k}:buoyancy_force"] = 1e2
@@ -284,7 +291,8 @@ class TestGroup(unittest.TestCase):
             prob[f"member{k}:total_mass"] = 1e3
             prob[f"member{k}:total_cost"] = 2e3
             prob[f"member{k}:Awater"] = 5.0
-            prob[f"member{k}:Iwater"] = 15.0
+            prob[f"member{k}:Iwaterx"] = 15.0
+            prob[f"member{k}:Iwatery"] = 15.0
             prob[f"member{k}:added_mass"] = np.arange(6)
 
         # Set environment to that used in OC3 testing campaign
