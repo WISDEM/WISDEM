@@ -99,6 +99,7 @@ def create_all_plots(
         plt.subplots_adjust(bottom=0.15, left=0.15)
         fig_name = "twist_opt" + extension
         ftw.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+        plt.close()
     except KeyError:
         pass
 
@@ -146,110 +147,37 @@ def create_all_plots(
         plt.subplots_adjust(bottom=0.15, left=0.15)
         fig_name = "chord" + extension
         fc.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+        plt.close()
     except KeyError:
         pass
 
-    # Spar caps
-    try:
-        n_layers = modeling_options["WISDEM"]["RotorSE"]["n_layers"]
-        layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"]
-        spars_tereinf = np.ones(4, dtype=int) * -1
-        for i in range(n_layers):
-            if layer_name[i].lower() == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"].lower():
-                spars_tereinf[0] = i
-            if layer_name[i].lower() == modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"].lower():
-                spars_tereinf[1] = i
-            if layer_name[i].lower() == modeling_options["WISDEM"]["RotorSE"]["te_ss"].lower():
-                spars_tereinf[2] = i
-            if layer_name[i].lower() == modeling_options["WISDEM"]["RotorSE"]["te_ps"].lower():
-                spars_tereinf[3] = i
-
-        if spars_tereinf[0] >= 0 and spars_tereinf[1] >=0:
-            fsc, axsc = plt.subplots(1, 1, figsize=(5.3, 4))
+    # Struct Layers Blade
+    n_layers = modeling_options["WISDEM"]["RotorSE"]["n_layers"]
+    layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"]
+    for i in range(n_layers):
+        try:
+            f, ax = plt.subplots(1, 1, figsize=(5.3, 4))
             for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
-                axsc.plot(
+                ax.plot(
                     yaml_data["blade.outer_shape_bem.s"],
-                    yaml_data["blade.ps.layer_thickness_param"][spars_tereinf[0], :] * 1e3,
+                    yaml_data["blade.ps.layer_thickness_param"][i, :] * 1e3,
                     "-",
                     color=colors[idx],
-                    label=label + ' suction side',
-                )
-                axsc.plot(
-                    yaml_data["blade.outer_shape_bem.s"],
-                    yaml_data["blade.ps.layer_thickness_param"][spars_tereinf[1], :] * 1e3,
-                    "-",
-                    color=colors[idx],
-                    label=label + ' pressure side',
+                    label=label + ' %s'%layer_name[i],
                 )
             if mult_flag:
-                axsc.legend(fontsize=font_size)
+                ax.legend(fontsize=font_size)
             plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
-            plt.ylabel("Spar Caps Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
+            plt.ylabel("Layer Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
             plt.xticks(fontsize=font_size)
             plt.yticks(fontsize=font_size)
             plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
             plt.subplots_adjust(bottom=0.15, left=0.15)
-            fig_name = "sc_opt" + extension
-            fsc.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
-    except KeyError:
-        pass
-
-    # Trailing edge reinforcements
-    try:
-        if spars_tereinf[2] >= 0 and spars_tereinf[3] >=0:
-            fte, axte = plt.subplots(1, 1, figsize=(5.3, 4))
-            for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
-                axte.plot(
-                    yaml_data["blade.outer_shape_bem.s"],
-                    yaml_data["blade.ps.layer_thickness_param"][spars_tereinf[2], :] * 1e3,
-                    "-",
-                    color=colors[idx],
-                    label=label + ' suction side',
-                )
-                axte.plot(
-                    yaml_data["blade.outer_shape_bem.s"],
-                    yaml_data["blade.ps.layer_thickness_param"][spars_tereinf[3], :] * 1e3,
-                    "-",
-                    color=colors[idx],
-                    label=label + ' pressure side',
-                )
-            if mult_flag:
-                axte.legend(fontsize=font_size)
-            plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
-            plt.ylabel("TE Reinforcement Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
-            plt.xticks(fontsize=font_size)
-            plt.yticks(fontsize=font_size)
-            plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
-            plt.subplots_adjust(bottom=0.15, left=0.15)
-            fig_name = "te_opt" + extension
-            fte.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
-    except KeyError:
-        pass
-
-    # Skins
-    try:
-        f, ax = plt.subplots(1, 1, figsize=(5.3, 4))
-        for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
-            ax.plot(
-                yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["blade.internal_structure_2d_fem.layer_thickness"][1, :] * 1e3,
-                "-",
-                color=colors[idx],
-                label=label,
-            )
-        if mult_flag:
-            ax.legend(fontsize=font_size)
-        # plt.ylim([0., 120])
-        plt.xlabel("Blade Nondimensional Span [-]", fontsize=font_size + 2, fontweight="bold")
-        plt.ylabel("Outer Shell Skin Thickness [mm]", fontsize=font_size + 2, fontweight="bold")
-        plt.xticks(fontsize=font_size)
-        plt.yticks(fontsize=font_size)
-        plt.grid(color=[0.8, 0.8, 0.8], linestyle="--")
-        plt.subplots_adjust(bottom=0.15, left=0.15)
-        fig_name = "skin_opt" + extension
-        f.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
-    except KeyError:
-        pass
+            fig_name = "blade_layer_%d_thick"%i + extension
+            f.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+            plt.close()
+        except KeyError:
+            pass
 
     # Strains spar caps
     try:
@@ -280,6 +208,7 @@ def create_all_plots(
         plt.subplots_adjust(bottom=0.15, left=0.2)
         fig_name = "strains_sc_opt" + extension
         feps.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+        plt.close()
     except KeyError:
         pass
 
@@ -312,6 +241,7 @@ def create_all_plots(
         plt.subplots_adjust(bottom=0.15, left=0.2)
         fig_name = "strains_te_opt" + extension
         fete.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+        plt.close()
     except KeyError:
         pass
 
@@ -344,6 +274,7 @@ def create_all_plots(
         plt.subplots_adjust(bottom=0.15, left=0.15)
         fig_name = "aoa" + extension
         faoa.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+        plt.close()
     except KeyError:
         pass
 
@@ -368,6 +299,7 @@ def create_all_plots(
         plt.subplots_adjust(bottom=0.15, left=0.15)
         fig_name = "af_efficiency" + extension
         feff.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+        plt.close()
     except KeyError:
         pass
 
@@ -392,6 +324,7 @@ def create_all_plots(
         plt.subplots_adjust(bottom=0.15, left=0.15)
         fig_name = "prebend" + extension
         fbend.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+        plt.close()
 
         fsweep, axsweep = plt.subplots(1, 1, figsize=(5.3, 4))
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
@@ -412,6 +345,7 @@ def create_all_plots(
         plt.subplots_adjust(bottom=0.15, left=0.15)
         fig_name = "sweep" + extension
         fsweep.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+        plt.close()
     except KeyError:
         pass
 
@@ -473,6 +407,7 @@ def create_all_plots(
     fig_name = "tower-monopile_geometry" + extension
     ftow.subplots_adjust(hspace=0.02, wspace=0.02, bottom=0.15, left=0.15)
     ftow.savefig(os.path.join(folder_output, fig_name), pad_inches=0.1, bbox_inches="tight")
+    plt.close()
     # except KeyError:
     #    pass
 
