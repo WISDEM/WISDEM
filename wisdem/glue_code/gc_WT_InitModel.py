@@ -1128,6 +1128,10 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                     floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
                     floating["members"][i]["outer_shape"]["outer_diameter"]["values"],
                 )(grid_geom)
+                wt_opt[f"floating.memgrp{idx}.ca_usr"] = PchipInterpolator(
+                    floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
+                    floating["members"][i]["outer_shape"]["outer_diameter"]["values"],
+                )(grid_geom)
             except:
                 wt_opt[f"floating.memgrp{idx}.side_length_a_in"] = PchipInterpolator(
                     floating["members"][i]["outer_shape"]["side_length_a"]["grid"],

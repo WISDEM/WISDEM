@@ -2973,6 +2973,7 @@ class MemberLoads(om.Group):
                 ("zref", "wind_reference_height"),
                 "shearExp",
                 "z0",
+                "ca_usr",
                 "cd_usr",
                 "beta_wind",
                 "rho_air",
@@ -2986,6 +2987,8 @@ class MemberLoads(om.Group):
                 ("zref", "wind_reference_height"),
                 "shearExp",
                 "z0",
+                "ca_usr",
+                "cay_usr",
                 "cd_usr",
                 "beta_wind",
                 "rho_air",
@@ -3006,9 +3009,9 @@ class MemberLoads(om.Group):
                 "Tsig_wave",
             ]
             if member_shape == "circular":
-                prom += ["cm"]
+                prom += ["ca_usr"]
             elif member_shape == "rectangular":
-                prom += ["cmx", "cmy"]
+                prom += ["ca_usr", "cay_usr"]
         for iLC in range(nLC):
             lc = "" if nLC == 1 else str(iLC + 1)
 

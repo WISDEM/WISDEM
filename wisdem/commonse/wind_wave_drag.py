@@ -282,6 +282,7 @@ class CylinderWindDrag(om.ExplicitComponent):
         self.add_input("rho_air", 0.0, units="kg/m**3")
         self.add_input("mu_air", 0.0, units="kg/(m*s)")
         self.add_input("cd_usr", -1.0)
+        self.add_input("ca_usr", -1.0)
 
         self.add_output("windLoads_Px", np.zeros(nPoints), units="N/m")
         self.add_output("windLoads_Py", np.zeros(nPoints), units="N/m")
@@ -431,6 +432,7 @@ class RectangularCylinderWindDrag(om.ExplicitComponent):
         self.add_input("rho_air", 0.0, units="kg/m**3")
         self.add_input("mu_air", 0.0, units="kg/(m*s)")
         self.add_input("cd_usr", -1.0)
+        self.add_input("ca_usr", -1.0)
 
         self.add_output("windLoads_Px", np.zeros(nPoints), units="N/m")
         self.add_output("windLoads_Py", np.zeros(nPoints), units="N/m")
@@ -577,8 +579,8 @@ class CylinderWaveDrag(om.ExplicitComponent):
         water density
     mu_water : float, [kg/(m*]
         dynamic viscosity of water
-    cm : float
-        mass coefficient
+    ca : float
+        added mass coefficient
     cd_usr : float
         User input drag coefficient to override Reynolds number based one
 
@@ -616,7 +618,7 @@ class CylinderWaveDrag(om.ExplicitComponent):
         self.add_input("beta_wave", 0.0, units="deg")
         self.add_input("rho_water", 0.0, units="kg/m**3")
         self.add_input("mu_water", 0.0, units="kg/(m*s)")
-        self.add_input("cm", 0.0)
+        self.add_input("ca_usr", -1.0)
         self.add_input("cd_usr", -1.0)
 
         self.add_output("waveLoads_Px", np.zeros(nPoints), units="N/m")
@@ -630,7 +632,7 @@ class CylinderWaveDrag(om.ExplicitComponent):
         self.declare_partials("*", "rho_water", method="fd")
 
         arange = np.arange(nPoints)
-        self.declare_partials(["waveLoads_Px", "waveLoads_Py"], ["U", "d", "cm", "cd_usr", "beta_wave"], method="fd")
+        self.declare_partials(["waveLoads_Px", "waveLoads_Py"], ["U", "d", "ca_usr", "cd_usr", "beta_wave"], method="fd")
         self.declare_partials("waveLoads_Px", "A", rows=arange, cols=arange)
 
         self.declare_partials("waveLoads_Py", "A", rows=arange, cols=arange)
@@ -668,7 +670,7 @@ class CylinderWaveDrag(om.ExplicitComponent):
             dcd_dRe = 0.0
 
         # inertial and drag forces
-        Fi = rho * inputs["cm"] * math.pi / 4.0 * d**2 * inputs["A"]  # Morrison's equation
+        Fi = rho * inputs["ca"] * math.pi / 4.0 * d**2 * inputs["A"]  # Morrison's equation
         Fd = q * cd * d
         Fp = Fi + Fd
 
@@ -737,17 +739,22 @@ class CylinderWaveDrag(om.ExplicitComponent):
             Re = rho * U * d / mu
             cd, dcd_dRe = cylinderDrag(Re)
 
+        if float(inputs["ca_usr"]) < 0.0:
+            ca = 1.0
+        else:
+            ca = inputs["ca_usr"]
+
         # derivatives
         dq_dU = rho * U
         const = (dq_dU * cd + q * dcd_dRe * rho * d / mu) * d
         dPx_dU = const * cosd(beta)
         dPy_dU = const * sind(beta)
 
-        const = (cd + dcd_dRe * Re) * q + rho * inputs["cm"] * math.pi / 4.0 * 2 * d * inputs["A"]
+        const = (cd + dcd_dRe * Re) * q + rho * ca * math.pi / 4.0 * 2 * d * inputs["A"]
         dPx_dd = const * cosd(beta)
         dPy_dd = const * sind(beta)
 
-        const = rho * inputs["cm"] * math.pi / 4.0 * d**2
+        const = rho * ca * math.pi / 4.0 * d**2
         dPx_dA = const * cosd(beta)
         dPy_dA = const * sind(beta)
 
@@ -781,7 +788,7 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
         water density
     mu_water : float, [kg/(m*]
         dynamic viscosity of water
-    cmx, cmy : float
+    cax, cay : float
         mass coefficient
     cd_usr : float
         User input drag coefficient to override Reynolds number based one
@@ -821,9 +828,10 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
         self.add_input("beta_wave", 0.0, units="deg")
         self.add_input("rho_water", 0.0, units="kg/m**3")
         self.add_input("mu_water", 0.0, units="kg/(m*s)")
-        self.add_input("cmx", 0.0)
-        self.add_input("cmy", 0.0)
+        self.add_input("ca_usr", -1.0)
+        self.add_input("cay_usr", -1.0)
         self.add_input("cd_usr", -1.0)
+        self.add_input("cdy_usr", -1.0)
 
         self.add_output("waveLoads_Px", np.zeros(nPoints), units="N/m")
         self.add_output("waveLoads_Py", np.zeros(nPoints), units="N/m")
@@ -836,7 +844,7 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
         self.declare_partials("*", "rho_water", method="fd")
 
         arange = np.arange(nPoints)
-        self.declare_partials(["waveLoads_Px", "waveLoads_Py"], ["U", "a", "b", "cmx", "cmy", "cd_usr", "beta_wave"], method="fd")
+        self.declare_partials(["waveLoads_Px", "waveLoads_Py"], ["U", "a", "b", "ca_usr", "cay_usr", "cd_usr", "cdy_usr", "beta_wave"], method="fd")
         self.declare_partials("waveLoads_Px", "A", rows=arange, cols=arange)
 
         self.declare_partials("waveLoads_Py", "A", rows=arange, cols=arange)
@@ -874,14 +882,22 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
             cdx, dcdx_dARx = rectangular_cylinderDrag(ARx)
             cdy, dcdy_dARy = rectangular_cylinderDrag(ARy)
         else:
-            cdx = inputs["cdx_usr"]
+            cdx = inputs["cd_usr"]
             cdy = inputs["cdy_usr"]
-            ARx = 1.0
-            ARy = 1.0
+
+
+        if float(inputs["ca_usr"]) < 0.0:
+            # TODO: add the correct internal calculation
+            cax = 2.0
+            cay = 2.0
+        else:
+            cax = inputs["ca_usr"]
+            cay = inputs["cay_usr"]
+
 
         # inertial and drag forces
-        Fix = rho * inputs["cmx"] * a * b * inputs["A"] * cosd(beta)  # Morrison's equation
-        Fiy = rho * inputs["cmy"] * a * b * inputs["A"] * sind(beta) # Morrison's equation
+        Fix = rho * cax * a * b * inputs["A"] * cosd(beta)  # Morrison's equation
+        Fiy = rho * cay * a * b * inputs["A"] * sind(beta) # Morrison's equation
         
 
         # components of distributed loads
@@ -934,12 +950,20 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
             cdy, dcdy_dARy = rectangular_cylinderDrag(ARy)
         else:
             # 
-            cdx = inputs["cdx_usr"]
+            cdx = inputs["cd_usr"]
             cdy = inputs["cdy_usr"]
             ARx = 1.0
             ARy = 1.0
             dcdx_dARx = 0.0
             dcdy_dARy = 0.0
+
+        if float(inputs["ca_usr"]) < 0.0:
+        # TODO: add the correct internal calculation
+            cax = 2.0
+            cay = 2.0
+        else:
+            cax = inputs["ca_usr"]
+            cay = inputs["cay_usr"]
 
         # inertial and drag forces
         # Fix = rho * inputs["cmx"] * a * b * inputs["A"] * cosd(beta)  # Morrison's equation
@@ -951,10 +975,10 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
         # Py =  qy * cdy * b + Fiy
         # Pz = 0.0 * q
             
-        dFix_da = rho * inputs["cmx"] * b * inputs["A"] * cosd(beta)
-        dFix_db = rho * inputs["cmx"] * a * inputs["A"] * cosd(beta)
-        dFiy_da = rho * inputs["cmy"] * b * inputs["A"] * sind(beta)
-        dFiy_db = rho * inputs["cmy"] * a * inputs["A"] * sind(beta)
+        dFix_da = rho * cax * b * inputs["A"] * cosd(beta)
+        dFix_db = rho * cax * a * inputs["A"] * cosd(beta)
+        dFiy_da = rho * cay * b * inputs["A"] * sind(beta)
+        dFiy_db = rho * cay * a * inputs["A"] * sind(beta)
 
         dPx_dU = dqx_dU * cdx * b
         dPy_dU = dqy_dU * cdy * a
@@ -964,8 +988,8 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
         dPy_da = q * b * (dcdy_dARy * dARy_da) + dFiy_da
         dPy_db = q * b * (dcdy_dARy * dARy_db) + dFiy_db
 
-        dPx_dA = rho * inputs["cmx"] * a * b * cosd(beta)
-        dPy_dA = rho * inputs["cmy"] * a * b * cosd(beta)
+        dPx_dA = rho * cax * a * b * cosd(beta)
+        dPy_dA = rho * cay * a * b * cosd(beta)
 
         J["waveLoads_Px", "A"] = dPx_dA
         J["waveLoads_Py", "A"] = dPy_dA
@@ -1017,13 +1041,13 @@ class CylinderEnvironment(om.Group):
             self.add_subsystem(
                 "windLoads",
                 CylinderWindDrag(nPoints=nPoints),
-                promotes=["cd_usr", "beta_wind", "rho_air", "mu_air", "z", "d"],
+                promotes=["ca_usr", "cd_usr", "beta_wind", "rho_air", "mu_air", "z", "d"],
             )
         elif member_shape == "rectangular":
             self.add_subsystem(
                 "windLoads",
                 RectangularCylinderWindDrag(nPoints=nPoints),
-                promotes=["cd_usr", "beta_wind", "rho_air", "mu_air", "z", "a", "b"],
+                promotes=["ca_usr", "cay_usr", "cd_usr", "cdy_usr", "beta_wind", "rho_air", "mu_air", "z", "a", "b"],
             )
 
         # Wave profile and loads
@@ -1046,13 +1070,13 @@ class CylinderEnvironment(om.Group):
                 self.add_subsystem(
                     "waveLoads",
                     CylinderWaveDrag(nPoints=nPoints),
-                    promotes=["cm", "cd_usr", "beta_wave", "rho_water", "mu_water", "z", "d"],
+                    promotes=["ca_usr", "cd_usr", "beta_wave", "rho_water", "mu_water", "z", "d"],
                 )
             elif member_shape == "rectangular":
                 self.add_subsystem(
                     "waveLoads",
                     RectangularCylinderWaveDrag(nPoints=nPoints),
-                    promotes=["cmx", "cmy", "cd_usr", "beta_wave", "rho_water", "mu_water", "z", "a", "b"],
+                    promotes=["ca_usr", "cay_usr", "cd_usr", "cdy_usr", "beta_wave", "rho_water", "mu_water", "z", "a", "b"],
                 ) 
 
         # Combine all loads
