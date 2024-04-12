@@ -641,7 +641,10 @@ class WindTurbineOntologyPython(object):
         else:
             self.analysis_options["opt_flag"] = recursive_flag(self.analysis_options["design_variables"])
 
-        if self.analysis_options["opt_flag"] == False and self.analysis_options["driver"]["step_size_study"]["flag"] == True:
+        if self.analysis_options["opt_flag"] == False and (
+            self.analysis_options["driver"]["step_size_study"]["flag"] == True or 
+            self.analysis_options["driver"]["design_of_experiments"]["flag"] == True
+            ):
             self.analysis_options["opt_flag"] = True
 
         # Blade design variables
