@@ -2384,9 +2384,10 @@ class Floating(om.Group):
                         member_shape_assigned = True
 
             if not member_shape_assigned:
-                if floating_init_options["members"]["outer_shape"][k] == "circular":
+                # Use the memidx to query the correct member_shape
+                if floating_init_options["members"]["outer_shape"][memidx] == "circular":
                     ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
-                elif floating_init_options["members"]["outer_shape"][k] == "rectangular":
+                elif floating_init_options["members"]["outer_shape"][memidx] == "rectangular":
                     ivc.add_output("side_length_a_in", val=np.zeros(n_geom), units="m")
                     ivc.add_output("side_length_b_in", val=np.zeros(n_geom), units="m")
 
@@ -2410,12 +2411,14 @@ class Floating(om.Group):
             ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_spacing", 0.0, units="rad")
 
-            self.add_subsystem(f"memgrid{k}", MemberGrid(n_height=n_height, n_geom=n_geom, n_layers=n_layers, member_shape=floating_init_options["members"]["outer_shape"][k]))
+            # Use the memidx to query the correct member_shape
+            self.add_subsystem(f"memgrid{k}", MemberGrid(n_height=n_height, n_geom=n_geom, n_layers=n_layers, member_shape=floating_init_options["members"]["outer_shape"][memidx]))
             self.connect(f"memgrp{k}.s_in", f"memgrid{k}.s_in")
             self.connect(f"memgrp{k}.s", f"memgrid{k}.s_grid")
-            if floating_init_options["members"]["outer_shape"][k] == "circular":
+            # Here looping all dv member groups
+            if floating_init_options["members"]["outer_shape"][memidx] == "circular":
                 self.connect(f"memgrp{k}.outer_diameter_in", f"memgrid{k}.outer_diameter_in")
-            elif floating_init_options["members"]["outer_shape"][k] == "rectangular":
+            elif floating_init_options["members"]["outer_shape"][memidx] == "rectangular":
                 self.connect(f"memgrp{k}.side_length_a_in", f"memgrid{k}.side_length_a_in")
                 self.connect(f"memgrp{k}.side_length_b_in", f"memgrid{k}.side_length_b_in")
             self.connect(f"memgrp{k}.layer_thickness_in", f"memgrid{k}.layer_thickness_in")

@@ -625,7 +625,6 @@ class WT_RNTA(om.Group):
                 if modeling_options["floating"]["members"]["outer_shape"][k] == "circular":
                     self.connect(f"floating.memgrid{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
                 elif modeling_options["floating"]["members"]["outer_shape"][k] == "rectangular":
-                    print("setting up Turbine group receives rectangular parameters")
                     self.connect(f"floating.memgrid{idx}.side_length_a", f"floatingse.member{k}.side_length_a_in")
                     self.connect(f"floating.memgrid{idx}.side_length_b", f"floatingse.member{k}.side_length_b_in")
                 self.connect(f"floating.memgrid{idx}.layer_thickness", f"floatingse.member{k}.layer_thickness")
