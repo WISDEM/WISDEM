@@ -1388,8 +1388,8 @@ class PoseOptimization(object):
                 
             if "upper_bound" in user_constr[k]:
                 upper_k = user_constr[k]["upper_bound"]
-            elif "lower" in user_constr[k]:
-                lower_k = user_constr[k]["lower"]
+            elif "upper" in user_constr[k]:
+                upper_k = user_constr[k]["upper"]
             else:
                 upper_k = None
                 
