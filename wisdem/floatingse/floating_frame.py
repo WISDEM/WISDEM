@@ -596,7 +596,9 @@ class FloatingPost(om.ExplicitComponent):
         )
 
         # Use DNV-GL CP202 Method
-        check = util_dnvgl.CylinderBuckling(h, d, t, E=E, G=G, sigma_y=sigy, gamma=gamma_f * gamma_b)
+        check = util_dnvgl.CylinderBuckling(h, d, t, E=E, G=G,
+                                            sigma_y=sigy, gamma=gamma_f * gamma_b,
+                                            A=Az, I=Iyy)
         for k in range(n_dlc):
             results = check.run_buckling_checks(
                 Fz[k, :], M[k, :], axial_stress[k, :], hoop_stress[k, :], shear_stress[k, :]
