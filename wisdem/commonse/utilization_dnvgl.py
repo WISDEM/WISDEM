@@ -69,6 +69,7 @@ class CylinderBuckling:
         self.mod_length = mod_length
 
         self.A = kwargs.get("A", np.zeros(len(self.t)))
+        self.I = kwargs.get("I", np.zeros(len(self.t)))
 
         self._ring = ring_stiffeners
         self._long = num_longitudinal
@@ -111,8 +112,16 @@ class CylinderBuckling:
     @property
     def Ac(self):
         """Cross sectional area of complete cylinder section"""
+        Ac = np.pi * self.d * self.te
+        Ac[self.A>0] = self.A
+        return Ac
 
-        return np.pi * self.d * self.te
+    @property
+    def Ic(self):
+        """Cross sectional area of complete cylinder section"""
+        Ic = np.pi * self.r**3 * self.te
+        Ic[self.I>0] = self.I
+        return Ic
 
     @property
     def s(self):
@@ -203,7 +212,7 @@ class CylinderBuckling:
             raise ValueError("Cylinder is not longitudinally stiffened. Incorrect use of this equation.")
 
         psi = 5.34 + 4 * (self.s / self.l) ** 2
-        xi = 0.856 * np.sqrt(self.s / self.l) * self.Z**3 / 4
+        xi = 0.856 * np.sqrt(self.s / self.l) * self.Z**0.75
         rho = 0.6
         return psi * np.sqrt(1 + (rho * xi / psi) ** 2)
 
@@ -276,11 +285,9 @@ class CylinderBuckling:
         sigma_t :
         """
 
-        I = np.pi * self.r**3 * self.te
-
         # Axial stress contributions
         sigma_a = Fz / (2 * np.pi * self.r * self.te)
-        sigma_m = M * self.r / I
+        sigma_m = M * self.r / self.Ic
 
         shell_utilization, material_factors = self.utilization_shell(sigma_a, sigma_m, sigma_h, sigma_t)
         fak = self.get_fak(sigma_a, sigma_m, sigma_h, sigma_t)
@@ -293,19 +300,18 @@ class CylinderBuckling:
         axial = np.abs(np.minimum(_axial, 0.0))
         bending = np.abs(np.minimum(_bending, 0.0))
         hoop = np.abs(np.minimum(_hoop, 0.0))
-        shear = np.abs(np.minimum(_shear, 0.0))
+        shear = np.abs(_shear)
 
         eps = 1e-7
         vm = self.von_mises(axial, hoop, shear) + eps
 
-        lambda_ss = ((self.sigma_y / vm) * ((axial + bending) / self.fea + shear / self.fet + hoop / self.feh)) ** 2
-        lambda_s = np.sqrt(lambda_ss)
+        lambda_s = np.sqrt((self.sigma_y / vm) * ((axial + bending) / self.fea + shear / self.fet + hoop / self.feh))
 
         gamma_m = 0.85 + 0.6 * lambda_s
         gamma_m[lambda_s < 0.5] = 1.15
         gamma_m[lambda_s >= 1.0] = 1.45
 
-        fks = self.sigma_y / np.sqrt(1 + lambda_ss)
+        fks = self.sigma_y / np.sqrt(1 + lambda_s**4.0)
         fksd = fks / np.array(gamma_m)
 
         shell_util = vm / fksd
@@ -324,7 +330,7 @@ class CylinderBuckling:
 
         return util - 1
 
-    def utilization_global(self, _sigma_a, sigma_m, fak, gamma=1.45):
+    def utilization_global(self, _sigma_a, sigma_m, fak):
         """"""
 
         # Stresses
@@ -335,17 +341,22 @@ class CylinderBuckling:
         k = 2.0  # Fixed-free
         L = self._l.sum() - self.mod_length
 
-        I = np.pi * self.r**3 * self.te
-        fE = (np.pi**2 * self.E * I) / ((k * L) ** 2 * self.Ac)
-
-        # fak
-        fakd = fak / gamma
+        fE = (np.pi**2 * self.E * self.Ic) / ((k * L) ** 2 * self.Ac)
 
         # ls
-        lambda_s = k * L / (np.pi * np.sqrt(I / self.Ac)) * np.sqrt(fak / self.E)
+        lambda_s = k * L / (np.pi * np.sqrt(self.Ic / self.Ac)) * np.sqrt(fak / self.E)
 
-        fkcd = (1 - 0.28 * lambda_s**2) * fak / 1.45
-        fkcd[lambda_s > 1.34] = 0.9 / (lambda_s[lambda_s > 1.34] ** 2) * fak / 1.45
+        gamma_m = 0.85 + 0.6 * lambda_s
+        gamma_m[lambda_s < 0.5] = 1.15
+        gamma_m[lambda_s >= 1.0] = 1.45
 
-        util = sigma_a / np.array(fkcd) + 1 / fakd * (sigma_m / (1 - sigma_a / fE))
+        # fak
+        fakd = fak / gamma_m
+
+        fkc = (1 - 0.28 * lambda_s**2)
+        fkc[lambda_s > 1.34] = 0.9 / (lambda_s[lambda_s > 1.34] ** 2)
+        fkc = fkc * fak
+        fkcd = np.array(fkc / gamma_m)
+
+        util = sigma_a / fkcd + 1 / fakd * (sigma_m / (1 - sigma_a / fE))
         return util
