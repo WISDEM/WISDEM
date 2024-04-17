@@ -12,6 +12,10 @@ def get_variable_list(prob):
     for k in range(len(input_dict)):
         input_dict[k][1]["type"] = "input"
 
+    inter_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, is_indep_var=False, out_stream=None)
+    for k in range(len(inter_dict)):
+        inter_dict[k][1]["type"] = "intermediate"
+
     #var_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, out_stream=None)
     #for k in range(len(var_dict)):
     #    var_dict[k][1]["type"] = "output"
@@ -21,6 +25,7 @@ def get_variable_list(prob):
         out_dict[k][1]["type"] = "output"
         
     var_dict = input_dict.copy()
+    var_dict.extend(inter_dict)
     var_dict.extend(out_dict)
     return input_dict, out_dict, var_dict
 
