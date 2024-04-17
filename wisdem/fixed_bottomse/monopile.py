@@ -369,9 +369,15 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_output("monopile_tower_z_full", val=np.zeros(n_full + n_full_tow - 1), units="m")
         self.add_output("monopile_tower_d_full", val=np.zeros(n_full + n_full_tow - 1), units="m")
         self.add_output("monopile_tower_t_full", val=np.zeros(n_full + ntow_sec - 1), units="m")
-        self.add_output("monopile_tower_rho_full", val=np.zeros(n_full + ntow_sec -1), units="kg/m**3")
-        self.add_output("monopile_tower_E_full", val=np.zeros(n_full + ntow_sec -1), units="Pa")
-        self.add_output("monopile_tower_G_full", val=np.zeros(n_full + ntow_sec -1), units="Pa")
+        self.add_output("monopile_tower_rho_sec", val=np.zeros(n_full + ntow_sec -1), units="kg/m**3")
+        self.add_output("monopile_tower_E_sec", val=np.zeros(n_full + ntow_sec -1), units="Pa")
+        self.add_output("monopile_tower_G_sec", val=np.zeros(n_full + ntow_sec -1), units="Pa")
+        self.add_output("monopile_tower_A_sec", val=np.zeros(n_full + ntow_sec -1), units="m*m")
+        self.add_output("monopile_tower_Asx_sec", val=np.zeros(n_full + ntow_sec -1), units="m*m")
+        self.add_output("monopile_tower_Asy_sec", val=np.zeros(n_full + ntow_sec -1), units="m*m")
+        self.add_output("monopile_tower_J0_sec", val=np.zeros(n_full + ntow_sec -1), units="kg*m*m")
+        self.add_output("monopile_tower_Ixx_sec", val=np.zeros(n_full + ntow_sec -1), units="kg*m*m")
+        self.add_output("monopile_tower_Iyy_sec", val=np.zeros(n_full + ntow_sec -1), units="kg*m*m")
         self.add_output("monopile_tower_sigma_y_full", val=np.zeros(n_full + ntow_sec -1), units="Pa")
         self.add_output("monopile_tower_bending_height", val=0.0, units="m")
         self.add_output("monopile_tower_qdyn", val=np.zeros((n_full + n_full_tow - 1, nLC)), units="Pa")
@@ -472,9 +478,15 @@ class MonopileFrame(om.ExplicitComponent):
             outputs["monopile_tower_z_full"] = z
             outputs["monopile_tower_d_full"] = d
             outputs["monopile_tower_t_full"] = t
-            outputs["monopile_tower_rho_full"] = rho
-            outputs["monopile_tower_E_full"] = E
-            outputs["monopile_tower_G_full"] = G
+            outputs["monopile_tower_A_sec"] = Area
+            outputs["monopile_tower_Asx_sec"] = Asx
+            outputs["monopile_tower_Asy_sec"] = Asy
+            outputs["monopile_tower_J0_sec"] = J0
+            outputs["monopile_tower_Ixx_sec"] = Ixx
+            outputs["monopile_tower_Iyy_sec"] = Iyy
+            outputs["monopile_tower_rho_sec"] = rho
+            outputs["monopile_tower_E_sec"] = E
+            outputs["monopile_tower_G_sec"] = G
             outputs["monopile_tower_sigma_y_full"] = sigma_y
             outputs["monopile_tower_bending_height"] = inputs['bending_height'] + inputs['tower_bending_height']
             for ic in range(nLC):
@@ -960,10 +972,16 @@ class MonopileSE(om.Group):
             self.connect("monopile.monopile_tower_z_full", "post_monopile_tower.z_full")
             self.connect("monopile.monopile_tower_d_full", "post_monopile_tower.d_full")
             self.connect("monopile.monopile_tower_t_full", "post_monopile_tower.t_full")
-            self.connect("monopile.monopile_tower_rho_full", "post_monopile_tower.rho_full")
-            self.connect("monopile.monopile_tower_E_full", "post_monopile_tower.E_full")
-            self.connect("monopile.monopile_tower_G_full", "post_monopile_tower.G_full")
+            self.connect("monopile.monopile_tower_rho_sec", "post_monopile_tower.rho_full")
+            self.connect("monopile.monopile_tower_E_sec", "post_monopile_tower.E_full")
+            self.connect("monopile.monopile_tower_G_sec", "post_monopile_tower.G_full")
             self.connect("monopile.monopile_tower_sigma_y_full", "post_monopile_tower.sigma_y_full")
+            self.connect("monopile.monopile_tower_A_sec", "post_monopile_tower.section_A")
+            self.connect("monopile.monopile_tower_Asx_sec", "post_monopile_tower.section_Asx")
+            self.connect("monopile.monopile_tower_Asy_sec", "post_monopile_tower.section_Asy")
+            self.connect("monopile.monopile_tower_J0_sec", "post_monopile_tower.section_J0")
+            self.connect("monopile.monopile_tower_Ixx_sec", "post_monopile_tower.section_Ixx")
+            self.connect("monopile.monopile_tower_Iyy_sec", "post_monopile_tower.section_Iyy")
             self.connect("monopile.monopile_tower_bending_height", "post_monopile_tower.bending_height")
             self.connect("monopile.monopile_tower_qdyn", "post_monopile_tower.qdyn")
             self.connect("monopile.monopile_tower_Fz", "post_monopile_tower.cylinder_Fz")

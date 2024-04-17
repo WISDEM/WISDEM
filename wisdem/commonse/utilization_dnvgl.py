@@ -113,14 +113,14 @@ class CylinderBuckling:
     def Ac(self):
         """Cross sectional area of complete cylinder section"""
         Ac = np.pi * self.d * self.te
-        Ac[self.A>0] = self.A
+        Ac[self.A>0] = self.A[self.A>0]
         return Ac
 
     @property
     def Ic(self):
         """Cross sectional area of complete cylinder section"""
         Ic = np.pi * self.r**3 * self.te
-        Ic[self.I>0] = self.I
+        Ic[self.I>0] = self.I[self.I>0]
         return Ic
 
     @property
