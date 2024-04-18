@@ -112,14 +112,14 @@ class CylinderBuckling:
     @property
     def Ac(self):
         """Cross sectional area of complete cylinder section"""
-        Ac = np.pi * self.d * self.te
+        Ac = (self.d**2 - (self.d - 2 * self.te) ** 2) * np.pi / 4.0
         Ac[self.A>0] = self.A[self.A>0]
         return Ac
 
     @property
     def Ic(self):
         """Cross sectional area of complete cylinder section"""
-        Ic = np.pi * self.r**3 * self.te
+        Ic = (self.d**4 - (self.d - 2 * self.te) ** 4) * np.pi / 64.0
         Ic[self.I>0] = self.I[self.I>0]
         return Ic
 
@@ -202,7 +202,7 @@ class CylinderBuckling:
 
         psi = 4
         xi = 0.702 * self.Z
-        rho = 0.5 * (1 + self.r / (300 * self.t)) ** -0.5
+        rho = 0.5 * (1 + self.r / (150.0 * self.t)) ** -0.5
         return psi * np.sqrt(1 + (rho * xi / psi) ** 2)
 
     def _C_shear_longitudinal(self):
@@ -222,7 +222,7 @@ class CylinderBuckling:
         if self.s is False:
             raise ValueError("Cylinder is not longitudinally stiffened. Incorrect use of this equation.")
 
-        psi = 1 + (self.s / self.l) ** 2
+        psi = (1 + (self.s / self.l) ** 2) ** 2
         xi = 1.04 * (self.s / self.l) * np.sqrt(self.Z)
         rho = 0.6
         return psi * np.sqrt(1 + (rho * xi / psi) ** 2)
