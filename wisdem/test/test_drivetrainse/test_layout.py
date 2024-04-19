@@ -282,6 +282,44 @@ class TestDirectLayout(unittest.TestCase):
             self.outputs["nose_I"][1], (1 / 12) * m_nose * (3 * (1.5**2 + 1.45**2) + self.outputs["L_nose"] ** 2)
         )
 
+    def testMassValuesDownwind(self):
+        self.discrete_inputs["upwind"] = False
+        self.inputs["tilt"] = 0.0
+        self.inputs["drive_height"] = 5.0
+        self.inputs["D_top"] = 3.0
+        self.inputs["overhang"] = 4.5 + 3.5 + 0.5 * 3.0 + 2
+        myones = np.ones(5)
+        self.inputs["lss_diameter"] = 2.0 * myones
+        self.inputs["nose_diameter"] = 3.0 * myones
+        self.inputs["lss_wall_thickness"] = 0.05 * myones
+        self.inputs["nose_wall_thickness"] = 0.05 * myones
+        self.inputs["bedplate_wall_thickness"] = 0.05 * np.ones(npts)
+        myobj = lay.DirectLayout()
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+
+        rho = self.inputs["lss_rho"]
+        m_bedplate = 5 * 0.5 * np.pi * np.pi * (1.5**2 - (1.5 - 0.05) ** 2) * rho
+        self.assertAlmostEqual(self.outputs["bedplate_mass"], m_bedplate)
+        self.assertAlmostEqual(self.outputs["bedplate_cm"][0], np.mean(self.outputs["x_bedplate"]), 0)
+        self.assertAlmostEqual(self.outputs["bedplate_cm"][1], 0.0)
+        self.assertAlmostEqual(self.outputs["bedplate_cm"][2], np.mean(self.outputs["z_bedplate"]), 0)
+
+        m_lss = rho * np.pi * (1**2 - 0.95**2) * self.outputs["L_lss"]
+        self.assertAlmostEqual(self.outputs["lss_mass"], m_lss)
+        self.assertAlmostEqual(self.outputs["lss_cm"], 0.5 * (self.outputs["s_lss"][0] + self.outputs["s_lss"][-1]))
+        self.assertAlmostEqual(self.outputs["lss_I"][0], 0.5 * m_lss * (1**2 + 0.95**2))
+        self.assertAlmostEqual(
+            self.outputs["lss_I"][1], (1 / 12) * m_lss * (3 * (1**2 + 0.95**2) + self.outputs["L_lss"] ** 2)
+        )
+
+        m_nose = rho * np.pi * (1.5**2 - 1.45**2) * self.outputs["L_nose"]
+        self.assertAlmostEqual(self.outputs["nose_mass"], m_nose)
+        self.assertAlmostEqual(self.outputs["nose_cm"], 0.5 * (self.outputs["s_nose"][0] + self.outputs["s_nose"][-1]))
+        self.assertAlmostEqual(self.outputs["nose_I"][0], 0.5 * m_nose * (1.5**2 + 1.45**2))
+        self.assertAlmostEqual(
+            self.outputs["nose_I"][1], (1 / 12) * m_nose * (3 * (1.5**2 + 1.45**2) + self.outputs["L_nose"] ** 2)
+        )
+
 
 class TestGearedLayout(unittest.TestCase):
     def setUp(self):

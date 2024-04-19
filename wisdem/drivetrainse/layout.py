@@ -307,8 +307,10 @@ class DirectLayout(Layout):
         n_points = 12
         if upwind:
             rad = np.linspace(0.0, 0.5 * np.pi, n_points)
+            dw = 1
         else:
             rad = np.linspace(np.pi, 0.5 * np.pi, n_points)
+            dw = -1
 
         # Make sure we have the right number of bedplate thickness points
         t_bed = np.interp(rad, np.linspace(rad[0], rad[-1], len(t_bed)), t_bed)
@@ -332,7 +334,7 @@ class DirectLayout(Layout):
         A_bed = np.pi * (r_bed_o**2 - r_bed_i**2)
 
         # This finds the central angle (rad2) given the parametric angle (rad)
-        rad2 = np.arctan(L_bedplate / H_bedplate * np.tan(rad))
+        rad2 = np.arctan2(z_c/H_bedplate, dw * x_c/L_bedplate)
 
         # arc length from eccentricity of the centroidal ellipse using incomplete elliptic integral of the second kind
         if L_bedplate >= H_bedplate:
