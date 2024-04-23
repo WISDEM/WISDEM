@@ -251,7 +251,30 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
         q11yt_l = 0.0
         q11zt_l = 0.0
         
-        # Loop over laminates
+        # Vectorized
+        t = tlam[ks, idsec, :]       # thickness
+        thp = tht_lam[ks, idsec, :]  # ply angle
+        mat = mat_id[ks, idsec, :]   # material no.
+        tbar = np.cumsum(np.r_[0, t[:-1]]) + (t / 2.0) # Just need half of the current increment
+        y0 = ysg - ((-1.0) ** (ks+1)) * tbar * sths
+        z0 = zsg + ((-1.0) ** (ks+1)) * tbar * cths
+        
+        qbar11, qbar22, qbar12, qbar16, qbar26, qbar66 = q_bars(thp, q11[mat], q22[mat], q12[mat], q66[mat])
+        qtil = q_tildas(qbar11, qbar22, qbar12, qbar16, qbar26, qbar66)
+        
+        qtil11t = np.squeeze(qtil[0, 0, :] * t)
+        q11t = np.sum(qtil11t)
+
+        if iseg < nseg_u:
+            q11yt_u = np.sum(qtil11t * y0)
+            q11zt_u = np.sum(qtil11t * z0)
+        else:
+            q11yt_l = np.sum(qtil11t * y0)
+            q11zt_l = np.sum(qtil11t * z0)
+
+        tbar = t.sum() # Now need the full thing
+        '''
+        # Original python port with inner loop
         for ilam in range(nlam):
             t = tlam[ks, idsec, ilam]       # thickness
             thp = tht_lam[ks, idsec, ilam]  # ply angle
@@ -263,7 +286,7 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
 
             # Call function q_bars and q_tildas
             qbar11, qbar22, qbar12, qbar16, qbar26, qbar66 = q_bars(thp, q11[mat], q22[mat], q12[mat], q66[mat])
-            qtil = q_tildas(qbar11, qbar22, qbar12, qbar16, qbar26, qbar66, mat)
+            qtil = q_tildas(qbar11, qbar22, qbar12, qbar16, qbar26, qbar66)
 
             qtil11t = qtil[0, 0] * t
             q11t = q11t + qtil11t
@@ -276,6 +299,7 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
                 q11zt_l = q11zt_l + qtil11t * z0
 
             tbar = tbar + t / 2.0
+        '''
 
         # add seg contributions (sc)
         sigma = sigma + w * np.abs(zsg + ((-1.0) ** (ks+1)) * 0.5 * tbar * cths) * cths
@@ -342,7 +366,77 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
         rhozsqt = 0.0
         rhoyzt = 0.0
 
+        # Vectorized
+        if ks >= 0:
+            t = tlam[ks, idsec, :]       # thickness
+            thp = tht_lam[ks, idsec, :]  # ply angle
+            mat = mat_id[ks, idsec, :]   # material no.
+            tbar = np.cumsum(np.r_[0, t[:-1]]) + (t / 2.0) # Just need half of the current increment
+            y0 = ysg - ((-1.0) ** (ks+1)) * tbar * sths - y_sc
+            z0 = zsg + ((-1.0) ** (ks+1)) * tbar * cths - z_sc
+        else:
+            t = twlam[idsec, :]
+            thp = tht_wlam[idsec, :]
+            mat = wmat_id[idsec, :]
+            tbar = np.cumsum(np.r_[0, t[:-1]]) + (t / 2.0) # Just need half of the current increment
+            y0 = ysg - tbar / 2.0 - y_sc
+            z0 = zsg - z_sc
+
+        y0sq = y0 * y0
+        z0sq = z0 * z0
+
+        qbar11, qbar22, qbar12, qbar16, qbar26, qbar66 = q_bars(thp, q11[mat], q22[mat], q12[mat], q66[mat])
+        qtil = q_tildas(qbar11, qbar22, qbar12, qbar16, qbar26, qbar66)
+
+        ieta1 = (t ** 2) / 12.0
+        izeta1 = (w ** 2) / 12.0
+        iepz = 0.5 * (ieta1 + izeta1)
+        iemz = 0.5 * (ieta1 - izeta1)
+        ipp = iepz + iemz * c2ths
+        iqq = iepz - iemz * c2ths
+        ipq = iemz * s2ths
+        qtil11t = np.squeeze(qtil[0, 0, :] * t)
+        rot = density[mat] * t
+
+        if ks >= 0:
+            qtil12t = np.squeeze(qtil[0, 1, :]) * t
+            qtil22t = np.squeeze(qtil[1, 1, :]) * t
+
+            q11t = np.sum(qtil11t)
+            q11yt = np.sum(qtil11t * y0)
+            q11zt = np.sum(qtil11t * z0)
+            dtbar = np.sum(qtil12t * (y0sq + z0sq) * tphip * t)
+            q2bar = np.sum(qtil22t)
+            zbart = np.sum(z0 * qtil12t)
+            ybart = np.sum(y0 * qtil12t)
+            tbart = np.sum(qtil12t)
+            q11ysqt = np.sum(qtil11t * (y0sq + iqq))
+            q11zsqt = np.sum(qtil11t * (z0sq + ipp))
+            q11yzt = np.sum(qtil11t * (y0 * z0 + ipq))
+            rhot = np.sum(rot)
+            rhoyt = np.sum(rot * y0)
+            rhozt = np.sum(rot * z0)
+            rhoysqt = np.sum(rot * (y0sq + iqq))
+            rhozsqt = np.sum(rot * (z0sq + ipp))
+            rhoyzt = np.sum(rot * (y0 * z0 + ipq))
+        else:
+            q11t = np.sum(qtil11t)
+            q11yt = np.sum(qtil11t * y0)
+            q11zt = np.sum(qtil11t * z0)
+            q11ysqt = np.sum(qtil11t * (y0sq + iqq))
+            q11zsqt = np.sum(qtil11t * (z0sq + ipp))
+            q11yzt = np.sum(qtil11t * (y0 * z0 + ipq))
+            rhot = np.sum(rot)
+            rhoyt = np.sum(rot * y0)
+            rhozt = np.sum(rot * z0)
+            rhoysqt = np.sum(rot * (y0sq + iqq))
+            rhozsqt = np.sum(rot * (z0sq + ipp))
+            rhoyzt = np.sum(rot * (y0 * z0 + ipq))
+            
+        tbar = t.sum() # Now need the full thing
+
         # Loop over laminates
+        '''
         for ilam in range(nlam):
             if ks >= 0:
                 t = tlam[ks, idsec, ilam]
@@ -364,7 +458,7 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
 
             # Call function q_bars and q_tildas
             qbar11, qbar22, qbar12, qbar16, qbar26, qbar66 = q_bars(thp, q11[mat], q22[mat], q12[mat], q66[mat])
-            qtil = q_tildas(qbar11, qbar22, qbar12, qbar16, qbar26, qbar66, mat)
+            qtil = q_tildas(qbar11, qbar22, qbar12, qbar16, qbar26, qbar66)
 
             ieta1 = (t ** 2) / 12.0
             izeta1 = (w ** 2) / 12.0
@@ -412,155 +506,7 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
                 rhoyzt = rhoyzt + rot * (y0 * z0 + ipq)
 
             tbar = tbar + t / 2.0
-
-        eabar = eabar + q11t * w
-        q11ya = q11ya + q11yt * w
-        q11za = q11za + q11zt * w
-        q11ysqa = q11ysqa + q11ysqt * w
-        q11zsqa = q11zsqa + q11zsqt * w
-        q11yza = q11yza + q11yzt * w
-
-        if ks >= 0:
-            wdq2bar = w / q2bar
-            ap = ap + wdq2bar
-            bp = bp + wdq2bar * tbart
-            cp = cp + wdq2bar * dtbar
-            dp = dp + wdq2bar * zbart
-            ep = ep + wdq2bar * ybart
-
-        area = area + w
-        mass = mass + rhot * w
-        rhoya = rhoya + rhoyt * w
-        rhoza = rhoza + rhozt * w
-        rhoysqa = rhoysqa + rhoysqt * w
-        rhozsqa = rhozsqa + rhozsqt * w
-        rhoyza = rhoyza + rhoyzt * w
-
-    y_tc = q11ya / eabar
-    z_tc = q11za / eabar
-    eabar = 0.0
-    q11ya = 0.0
-    q11za = 0.0
-    ap = 0.0
-    bp = 0.0
-    cp = 0.0
-    dp = 0.0
-    ep = 0.0
-    q11ysqa = 0.0
-    q11zsqa = 0.0
-    q11yza = 0.0
-    mass = 0.0
-    area = 0.0
-    rhoya = 0.0
-    rhoza = 0.0
-    rhoysqa = 0.0
-    rhozsqa = 0.0
-    rhoyza = 0.0
-
-    for iseg in range(nseg):
-        ks = isur[iseg]
-        idsec = idsect[iseg]
-        ysg = yseg[iseg]
-        zsg = zseg[iseg]
-        w = wseg[iseg]
-        sths = sthseg[iseg]
-        cths = cthseg[iseg]
-        s2ths = s2thseg[iseg]
-        c2ths = c2thseg[iseg]
-
-        if ks >= 0:
-            nlam = n_laminas[ks, idsec]
-        else:
-            iweb = idsec
-            nlam = n_weblams[iweb]
-
-        tbar = 0.0
-        q11t = 0.0
-        q11yt = 0.0
-        q11zt = 0.0
-        dtbar = 0.0
-        q2bar = 0.0
-        zbart = 0.0
-        ybart = 0.0
-        tbart = 0.0
-        q11ysqt = 0.0
-        q11zsqt = 0.0
-        q11yzt = 0.0
-        rhot = 0.0
-        rhoyt = 0.0
-        rhozt = 0.0
-        rhoysqt = 0.0
-        rhozsqt = 0.0
-        rhoyzt = 0.0
-
-        for ilam in range(nlam):
-            if ks >= 0:
-                t = tlam[ks, idsec, ilam]
-                thp = tht_lam[ks, idsec, ilam]
-                mat = mat_id[ks, idsec, ilam]
-                tbar = tbar + t / 2.0
-                y0 = ysg - ((-1.0) ** (ks+1)) * tbar * sths - y_sc
-                z0 = zsg + ((-1.0) ** (ks+1)) * tbar * cths - z_sc
-            else:
-                t = twlam[iweb, ilam]
-                thp = tht_wlam[iweb, ilam]
-                mat = wmat_id[iweb, ilam]
-                tbar = tbar + t / 2.0
-                y0 = ysg - tbar / 2.0 - y_sc
-                z0 = zsg - z_sc
-
-            y0sq = y0 * y0
-            z0sq = z0 * z0
-
-            qbar11, qbar22, qbar12, qbar16, qbar26, qbar66 = q_bars(thp, q11[mat], q22[mat], q12[mat], q66[mat])
-            qtil = q_tildas(qbar11, qbar22, qbar12, qbar16, qbar26, qbar66, mat)
-
-            ieta1 = (t ** 2) / 12.0
-            izeta1 = (w ** 2) / 12.0
-            iepz = 0.5 * (ieta1 + izeta1)
-            iemz = 0.5 * (ieta1 - izeta1)
-            ipp = iepz + iemz * c2ths
-            iqq = iepz - iemz * c2ths
-            ipq = iemz * s2ths
-            qtil11t = qtil[0, 0] * t
-            rot = density[mat] * t
-
-            if ks >= 0:
-                qtil12t = qtil[0, 1] * t
-                qtil22t = qtil[1, 1] * t
-
-                q11t = q11t + qtil11t
-                q11yt = q11yt + qtil11t * y0
-                q11zt = q11zt + qtil11t * z0
-                dtbar = dtbar + qtil12t * (y0sq + z0sq) * tphip * t
-                q2bar = q2bar + qtil22t
-                zbart = zbart + z0 * qtil12t
-                ybart = ybart + y0 * qtil12t
-                tbart = tbart + qtil12t
-                q11ysqt = q11ysqt + qtil11t * (y0sq + iqq)
-                q11zsqt = q11zsqt + qtil11t * (z0sq + ipp)
-                q11yzt = q11yzt + qtil11t * (y0 * z0 + ipq)
-                rhot = rhot + rot
-                rhoyt = rhoyt + rot * y0
-                rhozt = rhozt + rot * z0
-                rhoysqt = rhoysqt + rot * (y0sq + iqq)
-                rhozsqt = rhozsqt + rot * (z0sq + ipp)
-                rhoyzt = rhoyzt + rot * (y0 * z0 + ipq)
-            else:
-                q11t = q11t + qtil11t
-                q11yt = q11yt + qtil11t * y0
-                q11zt = q11zt + qtil11t * z0
-                q11ysqt = q11ysqt + qtil11t * (y0sq + iqq)
-                q11zsqt = q11zsqt + qtil11t * (z0sq + ipp)
-                q11yzt = q11yzt + qtil11t * (y0 * z0 + ipq)
-                rhot = rhot + rot
-                rhoyt = rhoyt + rot * y0
-                rhozt = rhozt + rot * z0
-                rhoysqt = rhoysqt + rot * (y0sq + iqq)
-                rhozsqt = rhozsqt + rot * (z0sq + ipp)
-                rhoyzt = rhoyzt + rot * (y0 * z0 + ipq)
-
-            tbar = tbar + t / 2.0
+        '''
 
         eabar = eabar + q11t * w
         q11ya = q11ya + q11yt * w
@@ -719,13 +665,53 @@ def seg_info(ch, rle, nseg, nseg_u, nseg_p, xnode_u, ynode_u, xnode_l, ynode_l, 
     # real(dbp), dimension(2, nsecnode) :: xsec_node  # x coord of sect-i lhs on 's' surf
 
     # outputs
+    '''
+    isur = -1 * np.ones(nseg, dtype=np.int_)  # surf id
+    thseg = -np.pi / 2.0 * np.ones(nseg)
+
+    # Vectorized
+    iseg = np.arange(nseg, dtype=np.int_)
+    isur[iseg < nseg_p] = 1 # Do this first
+    isur[iseg < nseg_u] = 0
+    nd_a = np.zeros(nseg, dtype=np.int_)
+    nd_a[iseg < nseg_p] = ndl1 + iseg[iseg < nseg_p] - nseg_u
+    nd_a[iseg < nseg_u] = ndu1 + iseg[iseg < nseg_u]
+    xa = xnode_u[nd_a]
+    ya = ynode_u[nd_a]
+    xb = xnode_u[nd_a + 1]
+    yb = ynode_u[nd_a + 1]
+    
+    iweb = iseg[iseg >= nseg_p] - nseg_p
+    xa[iseg >= nseg_p] = loc_web[iweb]
+    xb[iseg >= nseg_p] = xa[iseg >= nseg_p]
+    ya[iseg >= nseg_p] = weby_u[iweb]
+    yb[iseg >= nseg_p] = weby_l[iweb]
+
+    xba = xb - xa
+    yba = ya - yb
+    yseg = ch * (2. * rle - xa - xb) / 2.0  # yref coord of mid-seg pt (in r-frame)
+    zseg = ch * (ya + yb) / 2.0  # zref coord of mid-seg pt (in r-frame)
+    wseg = ch * np.sqrt(xba ** 2 + yba ** 2)
+
+    thseg[isur >= 0] = np.arctan(yba[isur >= 0] / xba[isur >= 0])  # thseg +ve in new y-z ref frame
+    
+    idsect = np.zeros(nseg, dtype=np.int_)  # associated sect or web number
+    idsect[iseg >= nseg_p] = iweb
+    for iseg in range(nseg_p):  # seg numbering from le clockwise
+        ks = isur[iseg]
+        for i in range(n_scts[ks]):
+            if xa[iseg] > (xsec_node[ks, i] - eps) and xb[iseg] < (xsec_node[ks, i + 1] + eps):
+                idsect[iseg] = i
+                break
+
+    '''
     isur = np.zeros(nseg, dtype=np.int_)  # surf id
+    thseg = np.zeros(nseg)
     idsect = np.zeros(nseg, dtype=np.int_)  # associated sect or web number
     yseg = np.zeros(nseg)  # y-ref of mid-seg point
     zseg = np.zeros(nseg)  # z-ref of mid-seg point
     wseg = np.zeros(nseg)  # seg width
-    thseg = np.zeros(nseg)
-
+    
     for iseg in range(nseg):  # seg numbering from le clockwise
         ks = -2
         if iseg < nseg_u:  # upper surface segs
@@ -780,10 +766,10 @@ def seg_info(ch, rle, nseg, nseg_u, nseg_p, xnode_u, ynode_u, xnode_l, ynode_l, 
         else:
             thseg[iseg] = -np.pi / 2.0
 
-        sthseg = np.sin(thseg)
-        cthseg = np.cos(thseg)
-        s2thseg = np.sin(2.0 * thseg)
-        c2thseg = np.cos(2.0 * thseg)
+    sthseg = np.sin(thseg)
+    cthseg = np.cos(thseg)
+    s2thseg = np.sin(2.0 * thseg)
+    c2thseg = np.cos(2.0 * thseg)
 
     return isur, idsect, yseg, zseg, wseg, sthseg, cthseg, s2thseg, c2thseg
 
@@ -841,14 +827,12 @@ def q_bars(thp, q11, q22, q12, q66):
     return qbar11, qbar22, qbar12, qbar16, qbar26, qbar66
 
 
-def q_tildas(qbar11, qbar22, qbar12, qbar16, qbar26, qbar66, mat):
-    qtil = np.zeros((2, 2))
+def q_tildas(qbar11, qbar22, qbar12, qbar16, qbar26, qbar66):
+    n = qbar11.size if isinstance(qbar11, type(np.array([]))) else 1        
+    qtil = np.zeros((2, 2, n))
 
-    qtil[0, 0] = qbar11 - qbar12**2 / qbar22
-    if qtil[0, 0] < 0:
-        print(f'**ERROR: check material no {mat} properties; these are not physically realizable.')
-
-    qtil[0, 1] = qbar16 - qbar12 * qbar26 / qbar22
-    qtil[1, 1] = qbar66 - qbar26**2 / qbar22
-
-    return qtil
+    qtil[0, 0, :] = qbar11 - qbar12**2 / qbar22
+    qtil[0, 1, :] = qbar16 - qbar12 * qbar26 / qbar22
+    qtil[1, 1, :] = qbar66 - qbar26**2 / qbar22
+    
+    return np.squeeze(qtil)
