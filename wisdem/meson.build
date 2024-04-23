@@ -38,4 +38,4 @@ fortranobject_dep = declare_dependency(
 
 subdir('ccblade')
 subdir('pyframe3dd')
-subdir('precomp')
+#subdir('precomp')

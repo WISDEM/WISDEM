@@ -10,7 +10,7 @@ Copyright (c)  NREL. All rights reserved.
 import os
 import numpy as np
 
-from wisdem.precomp._precomp import precomp as _precomp
+#from wisdem.precomp._precomp import precomp as _precomp
 import wisdem.precomp.properties as properties
 
 
@@ -178,11 +178,48 @@ class PreComp:
                 thetaW = [0]
                 mat_idxW = [0]
 
+            #(eifbar,eilbar,gjbar,eabar,eiflbar,
+            # sfbar,slbar,sftbar,sltbar,satbar,
+            # z_sc,y_sc,ztc_ref,ytc_ref,
+            # mass,area,iflap_eta,ilag_zeta,tw_iner,
+            # zcm_ref,ycm_ref) = _precomp.properties(
+            #    self.chord[i],
+            #    self.theta[i],
+            #    self.th_prime[i],
+            #    self.leLoc[i],
+            #    xnode,
+            #    ynode,
+            #    E1,
+            #    E2,
+            #    G12,
+            #    nu12,
+            #    rho,
+            #    locU,
+            #    n_laminaU,
+            #    n_pliesU,
+            #    tU,
+            #    thetaU,
+            #    mat_idxU,
+            #    locL,
+            #    n_laminaL,
+            #    n_pliesL,
+            #    tL,
+            #    thetaL,
+            #    mat_idxL,
+            #    nwebs,
+            #    locW,
+            #    n_laminaW,
+            #    n_pliesW,
+            #    tW,
+            #    thetaW,
+            #    mat_idxW,
+            #)
+
             (eifbar,eilbar,gjbar,eabar,eiflbar,
              sfbar,slbar,sftbar,sltbar,satbar,
              z_sc,y_sc,ztc_ref,ytc_ref,
              mass,area,iflap_eta,ilag_zeta,tw_iner,
-             zcm_ref,ycm_ref) = _precomp.properties(
+             zcm_ref,ycm_ref) = properties.properties(
                 self.chord[i],
                 self.theta[i],
                 self.th_prime[i],
@@ -214,7 +251,7 @@ class PreComp:
                 thetaW,
                 mat_idxW,
             )
-
+            
             beam_EIxx[i] = eilbar  # EIedge
             beam_EIyy[i] = eifbar  # EIflat
             beam_GJ[i] = gjbar

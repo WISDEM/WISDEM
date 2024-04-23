@@ -4,16 +4,27 @@ eps = 1e-10
 
 def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, anu12, density, xsec_nodeU, n_laminaU, n_pliesU, t_lamU, tht_lamU, mat_lamU, xsec_nodeL, n_laminaL, n_pliesL, t_lamL, tht_lamL, mat_lamL, nweb, loc_web, n_laminaW, n_pliesW, t_lamW, tht_lamW, mat_lamW):
 
-    max_sectors = np.int_(np.max([n_laminaU.size, n_laminaL.size, n_laminaW.size]))
-    max_laminates = np.int_(np.max([n_laminaU.max(), n_laminaL.max(), n_laminaW.max()]))
-
-    n_materials = len(e1)
-    n_af_nodes = len(xnode)
-    n_sctU = len(n_laminaU)
-    n_sctL = len(n_laminaL)
+    chord = np.array(chord)
+    tw_aero_d = np.array(tw_aero_d)
+    tw_prime_d = np.array(tw_prime_d)
+    le_loc = np.array(le_loc)
+    xnode = np.array(xnode)
+    ynode = np.array(ynode)
+    e1 = np.array(e1)
+    e2 = np.array(e2)
+    g12 = np.array(g12)
+    anu12 = np.array(anu12)
+    density = np.array(density)
+    xsec_nodeU = np.array(xsec_nodeU)
+    t_lamU = np.array(t_lamU)
+    tht_lamU = np.array(tht_lamU)
+    xsec_nodeL = np.array(xsec_nodeL)
+    t_lamL = np.array(t_lamL)
+    tht_lamL = np.array(tht_lamL)
+    loc_web = np.array(loc_web)
+    t_lamW = np.array(t_lamW)
+    tht_lamW = np.array(tht_lamW)
     
-    r2d = 180.0 / np.pi
-
     n_laminaU = np.array(n_laminaU, dtype=np.int_)
     n_pliesU = np.array(n_pliesU, dtype=np.int_)
     mat_lamU = np.array(mat_lamU, dtype=np.int_)
@@ -23,6 +34,16 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
     n_laminaW = np.array(n_laminaW, dtype=np.int_)
     n_pliesW = np.array(n_pliesW, dtype=np.int_)
     mat_lamW = np.array(mat_lamW, dtype=np.int_)
+
+    max_sectors = np.int_(np.max([n_laminaU.size, n_laminaL.size, n_laminaW.size]))
+    max_laminates = np.int_(np.max([n_laminaU.max(), n_laminaL.max(), n_laminaW.max()]))
+
+    n_materials = len(e1)
+    n_af_nodes = len(xnode)
+    n_sctU = len(n_laminaU)
+    n_sctL = len(n_laminaL)
+    
+    r2d = 180.0 / np.pi
 
     webs_exist = nweb > 0
 
@@ -91,9 +112,10 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
         raise ValueError(' ERROR** no of sectors not positive')
     if np.any(xsec_node[:, 0] < 0.0):
         raise ValueError(' ERROR** sector node x-location not positive')
-    if np.any(np.diff(xsec_node, axis=1) <= 0.0):
-        raise ValueError(' ERROR** sector nodal x-locations not in ascending order')
-
+    if np.any(np.diff(xsec_nodeU) <= 0.0):
+        raise ValueError(' ERROR** upper sector nodal x-locations not in ascending order')
+    if np.any(np.diff(xsec_nodeL) <= 0.0):
+        raise ValueError(' ERROR** lower sector nodal x-locations not in ascending order')
 
     n_weblams = n_laminaW    
     n_laminas = np.zeros((2, max_sectors), dtype=np.int_)
@@ -112,7 +134,7 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
         for j in range(n_laminaU[i]):
             tlam[0, i, j] = n_pliesU[k] * t_lamU[k]
             tht_lam[0, i, j] = tht_lamU[k] / r2d
-            mat_id[0, i, j] = mat_lamU[k]
+            mat_id[0, i, j] = mat_lamU[k] - 1 # Input is 1-based indexing for Fortran
             k += 1
 
     k = 0
@@ -120,7 +142,7 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
         for j in range(n_laminaL[i]):
             tlam[1, i, j] = n_pliesL[k] * t_lamL[k]
             tht_lam[1, i, j] = tht_lamL[k] / r2d
-            mat_id[1, i, j] = mat_lamL[k]
+            mat_id[1, i, j] = mat_lamL[k] - 1 # Input is 1-based indexing for Fortran
             k += 1
 
     k = 0
@@ -128,7 +150,7 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
         for j in range(n_laminaW[i]):
             twlam[i, j] = n_pliesW[k] * t_lamW[k]
             tht_wlam[i, j] = tht_lamW[k] / r2d
-            wmat_id[i, j] = mat_lamW[k]
+            wmat_id[i, j] = mat_lamW[k] - 1 # Input is 1-based indexing for Fortran
             k += 1
 
     xu1 = xsec_node[0, 0]
@@ -141,21 +163,21 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
         raise ValueError(f' ERROR** lower-surf last sector node out of bounds {xl2} {xnode_l[-1]}')
             
     # Vectorize the embed
-    nnode_u = xnode_u.size
     yinterp_u = np.interp(xsec_nodeU, xnode_u, ynode_u)
     xnode_u, idx = np.unique(np.r_[xnode_u, xsec_nodeU], return_index=True)
+    ynode_u = (np.r_[ynode_u, yinterp_u])[idx]
     yu1 = yinterp_u[0]
     yu2 = yinterp_u[-1]
-    ndu1 = idx[nnode_u]
-    ndu2 = idx[-1]
+    ndu1 = np.searchsorted(xnode_u, xu1)
+    ndu2 = np.searchsorted(xnode_u, xu2)
 
-    nnode_l = xnode_l.size
     yinterp_l = np.interp(xsec_nodeL, xnode_l, ynode_l)
     xnode_l, idx = np.unique(np.r_[xnode_l, xsec_nodeL], return_index=True)
+    ynode_l = (np.r_[ynode_l, yinterp_l])[idx]
     yl1 = yinterp_l[0]
     yl2 = yinterp_l[-1]
-    ndl1 = idx[nnode_l]
-    ndl2 = idx[-1]
+    ndl1 = np.searchsorted(xnode_l, xl1)
+    ndl2 = np.searchsorted(xnode_l, xl2)
 
     nseg_u = ndu2 - ndu1
     nseg_l = ndl2 - ndl1
