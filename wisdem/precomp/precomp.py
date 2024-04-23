@@ -11,6 +11,7 @@ import os
 import numpy as np
 
 from wisdem.precomp._precomp import precomp as _precomp
+import wisdem.precomp.properties as properties
 
 
 def web_loc(r, chord, le, ib_idx, ob_idx, ib_webc, ob_webc):
@@ -96,7 +97,8 @@ class PreComp:
         self.sector_idx_strain_te_ss = sector_idx_strain_te_ss
 
         # twist rate
-        self.th_prime = _precomp.tw_rate(self.r, self.theta)
+        #self.th_prime = _precomp.tw_rate(self.r, self.theta)
+        self.th_prime = properties.tw_rate(self.r, self.theta)
 
     def sectionProperties(self):
         """see meth:`SectionStrucInterface.sectionProperties`"""
@@ -176,7 +178,11 @@ class PreComp:
                 thetaW = [0]
                 mat_idxW = [0]
 
-            results = _precomp.properties(
+            (eifbar,eilbar,gjbar,eabar,eiflbar,
+             sfbar,slbar,sftbar,sltbar,satbar,
+             z_sc,y_sc,ztc_ref,ytc_ref,
+             mass,area,iflap_eta,ilag_zeta,tw_iner,
+             zcm_ref,ycm_ref) = _precomp.properties(
                 self.chord[i],
                 self.theta[i],
                 self.th_prime[i],
@@ -209,30 +215,31 @@ class PreComp:
                 mat_idxW,
             )
 
-            beam_EIxx[i] = results[1]  # EIedge
-            beam_EIyy[i] = results[0]  # EIflat
-            beam_GJ[i] = results[2]
-            beam_EA[i] = results[3]
-            beam_EIxy[i] = results[4]  # EIflapedge
-            beam_x_sc[i] = results[10]
-            beam_y_sc[i] = results[11]
-            beam_x_tc[i] = results[12]
-            beam_y_tc[i] = results[13]
-            beam_x_ec[i] = results[12] - results[10]
-            beam_y_ec[i] = results[13] - results[11]
-            beam_rhoA[i] = results[14]
-            beam_A[i] = results[15]
-            beam_rhoJ[i] = results[16] + results[17]  # perpendicular axis theorem
-            beam_Tw_iner[i] = results[18]
-            beam_x_cg[i] = results[19]
-            beam_y_cg[i] = results[20]
+            beam_EIxx[i] = eilbar  # EIedge
+            beam_EIyy[i] = eifbar  # EIflat
+            beam_GJ[i] = gjbar
+            beam_EA[i] = eabar
+            beam_EIxy[i] = eiflbar
+            beam_x_sc[i] = z_sc
+            beam_y_sc[i] = y_sc
+            beam_x_tc[i] = ztc_ref
+            beam_y_tc[i] = ytc_ref
+            beam_rhoA[i] = mass
+            beam_A[i] = area
+            beam_Tw_iner[i] = tw_iner
+            beam_x_cg[i] = zcm_ref
+            beam_y_cg[i] = ycm_ref
 
-            beam_flap_iner[i] = results[16]
-            beam_edge_iner[i] = results[17]
+            beam_flap_iner[i] = iflap_eta
+            beam_edge_iner[i] = ilag_zeta
 
-            self.x_ec_nose[i] = results[13] + self.leLoc[i] * self.chord[i]
-            self.y_ec_nose[i] = results[12]  # switch b.c of coordinate system used
+        beam_rhoJ = beam_flap_iner + beam_edge_iner  # perpendicular axis theorem
+        beam_x_ec = beam_x_tc - beam_x_sc
+        beam_y_ec = beam_y_tc - beam_y_sc
 
+        self.x_ec_nose = beam_y_tc + self.leLoc * self.chord
+        self.y_ec_nose = beam_x_tc  # switch b.c of coordinate system used
+            
         return (
             beam_EIxx,
             beam_EIyy,
