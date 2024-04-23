@@ -82,10 +82,10 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["constr_length"], 5 - 0.5 * 6.5)
         self.assertAlmostEqual(self.outputs["constr_height"], self.outputs["H_bedplate"])
 
-        self.assertAlmostEqual(self.outputs["s_rotor"], 2 + 1.5 + 0.5)
-        self.assertAlmostEqual(self.outputs["s_stator"], 0.75)
-        self.assertAlmostEqual(self.outputs["s_mb1"], 1.5 + 2.0)
-        self.assertAlmostEqual(self.outputs["s_mb2"], 1.5)
+        self.assertAlmostEqual(self.outputs["s_rotor"], self.outputs["L_bedplate"] + 2 + 1.5 + 0.5)
+        self.assertAlmostEqual(self.outputs["s_stator"], self.outputs["L_bedplate"] + 0.75)
+        self.assertAlmostEqual(self.outputs["s_mb1"], self.outputs["L_bedplate"] + 1.5 + 2.0)
+        self.assertAlmostEqual(self.outputs["s_mb2"], self.outputs["L_bedplate"] + 1.5)
 
         self.assertAlmostEqual(self.outputs["x_bedplate"][-1], -5.0)
         self.assertAlmostEqual(self.outputs["x_bedplate_inner"][-1], -5.0)
@@ -130,10 +130,10 @@ class TestDirectLayout(unittest.TestCase):
         )
         self.assertAlmostEqual(self.outputs["constr_height"], self.outputs["H_bedplate"])
 
-        self.assertAlmostEqual(self.outputs["s_rotor"], 2 + 1.5 + 0.5)
-        self.assertAlmostEqual(self.outputs["s_stator"], 0.75)
-        self.assertAlmostEqual(self.outputs["s_mb1"], 1.5 + 2.0)
-        self.assertAlmostEqual(self.outputs["s_mb2"], 1.5)
+        self.assertAlmostEqual(self.outputs["s_rotor"], self.outputs["L_bedplate"] + 2 + 1.5 + 0.5)
+        self.assertAlmostEqual(self.outputs["s_stator"], self.outputs["L_bedplate"] + 0.75)
+        self.assertAlmostEqual(self.outputs["s_mb1"], self.outputs["L_bedplate"] + 1.5 + 2.0)
+        self.assertAlmostEqual(self.outputs["s_mb2"], self.outputs["L_bedplate"] + 1.5)
 
         self.assertAlmostEqual(self.outputs["x_bedplate"][-1], -5.0)
         self.assertAlmostEqual(self.outputs["x_bedplate_inner"][-1], -5.0)
@@ -172,10 +172,10 @@ class TestDirectLayout(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["constr_length"], 5 - 0.5 * 6.5)
         self.assertAlmostEqual(self.outputs["constr_height"], self.outputs["H_bedplate"])
 
-        self.assertAlmostEqual(self.outputs["s_rotor"], 2 + 1.5 + 0.5)
-        self.assertAlmostEqual(self.outputs["s_stator"], 0.75)
-        self.assertAlmostEqual(self.outputs["s_mb1"], 1.5 + 2.0)
-        self.assertAlmostEqual(self.outputs["s_mb2"], 1.5)
+        self.assertAlmostEqual(self.outputs["s_rotor"], self.outputs["L_bedplate"] + 2 + 1.5 + 0.5)
+        self.assertAlmostEqual(self.outputs["s_stator"], self.outputs["L_bedplate"] + 0.75)
+        self.assertAlmostEqual(self.outputs["s_mb1"], self.outputs["L_bedplate"] + 1.5 + 2.0)
+        self.assertAlmostEqual(self.outputs["s_mb2"], self.outputs["L_bedplate"] + 1.5)
 
         self.assertAlmostEqual(self.outputs["x_bedplate"][-1], 5.0)
         self.assertAlmostEqual(self.outputs["x_bedplate_inner"][-1], 5.0)
@@ -221,10 +221,10 @@ class TestDirectLayout(unittest.TestCase):
         )
         self.assertAlmostEqual(self.outputs["constr_height"], self.outputs["H_bedplate"])
 
-        self.assertAlmostEqual(self.outputs["s_rotor"], 2 + 1.5 + 0.5)
-        self.assertAlmostEqual(self.outputs["s_stator"], 0.75)
-        self.assertAlmostEqual(self.outputs["s_mb1"], 1.5 + 2.0)
-        self.assertAlmostEqual(self.outputs["s_mb2"], 1.5)
+        self.assertAlmostEqual(self.outputs["s_rotor"], self.outputs["L_bedplate"] + 2 + 1.5 + 0.5)
+        self.assertAlmostEqual(self.outputs["s_stator"], self.outputs["L_bedplate"] + 0.75)
+        self.assertAlmostEqual(self.outputs["s_mb1"], self.outputs["L_bedplate"] + 1.5 + 2.0)
+        self.assertAlmostEqual(self.outputs["s_mb2"], self.outputs["L_bedplate"] + 1.5)
 
         self.assertAlmostEqual(self.outputs["x_bedplate"][-1], 5.0)
         self.assertAlmostEqual(self.outputs["x_bedplate_inner"][-1], 5.0)

@@ -282,6 +282,7 @@ class DirectLayout(Layout):
         outputs["H_bedplate"] = H_bedplate
 
         # Discretize the drivetrain from bedplate to hub
+        s_drive += L_bedplate
         s_mb1 = s_drive[4]
         s_mb2 = s_drive[2]
         s_rotor = s_drive[-2]
