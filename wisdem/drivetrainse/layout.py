@@ -281,7 +281,8 @@ class DirectLayout(Layout):
         outputs["L_bedplate"] = L_bedplate
         outputs["H_bedplate"] = H_bedplate
 
-        # Discretize the drivetrain from bedplate to hub
+        # Discretize the drivetrain from bedplate end to hub
+        # Note that the offset from the bedplate to the tower center line is taken into account in drive_components by "shaft0"
         s_mb1 = s_drive[4]
         s_mb2 = s_drive[2]
         s_rotor = s_drive[-2]

@@ -1007,6 +1007,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         self._mass_table["MoI_TT_xz"] = I_TT_list[:, 4]
         self._mass_table["MoI_TT_yz"] = I_TT_list[:, 5]
         self._mass_table.set_index("Component", inplace=True)
+        #print(self._mass_table[["Mass","CoM_TT_x"]])
 
 
 # --------------------------------------------
