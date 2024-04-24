@@ -2369,8 +2369,8 @@ class Floating(om.Group):
                             ivc.add_output("outer_diameter_in", val=0.0, units="m")
                         else:
                             ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
-                        ivc.add_output("ca_usr", val=np.zeros(n_geom))
-                        ivc.add_output("cd_usr", val=np.zeros(n_geom))
+                        ivc.add_output("ca_usr", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("cd_usr", val=-1.0*np.ones(n_geom))
                         member_shape_assigned = True
                     if "side_length_a" in float_opt["members"]["groups"][i]:
                         if float_opt["members"]["groups"][i]["side_length_a"]["constant"]:
@@ -2378,30 +2378,30 @@ class Floating(om.Group):
                         else:
                             ivc.add_output("side_length_a_in", val=np.zeros(n_geom), units="m")
                         member_shape_assigned = True
-                        ivc.add_output("ca_usr", val=np.zeros(n_geom))
-                        ivc.add_output("cd_usr", val=np.zeros(n_geom))
+                        ivc.add_output("ca_usr", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("cd_usr", val=-1.0*np.ones(n_geom))
                     if "side_length_b" in float_opt["members"]["groups"][i]:
                         if float_opt["members"]["groups"][i]["side_length_b"]["constant"]:
                             ivc.add_output("side_length_b_in", val=0.0, units="m")
                         else:
                             ivc.add_output("side_length_b_in", val=np.zeros(n_geom), units="m")
-                        ivc.add_output("cay_usr", val=np.zeros(n_geom))
-                        ivc.add_output("cdy_usr", val=np.zeros(n_geom))
+                        ivc.add_output("cay_usr", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("cdy_usr", val=-1.0*np.ones(n_geom))
                         member_shape_assigned = True
 
             if not member_shape_assigned:
                 # Use the memidx to query the correct member_shape
                 if floating_init_options["members"]["outer_shape"][memidx] == "circular":
                     ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
-                    ivc.add_output("ca_usr", val=np.zeros(n_geom))
-                    ivc.add_output("cd_usr", val=np.zeros(n_geom))
+                    ivc.add_output("ca_usr", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cd_usr", val=-1.0*np.ones(n_geom))
                 elif floating_init_options["members"]["outer_shape"][memidx] == "rectangular":
                     ivc.add_output("side_length_a_in", val=np.zeros(n_geom), units="m")
                     ivc.add_output("side_length_b_in", val=np.zeros(n_geom), units="m")
-                    ivc.add_output("ca_usr", val=np.zeros(n_geom))
-                    ivc.add_output("cd_usr", val=np.zeros(n_geom))
-                    ivc.add_output("cay_usr", val=np.zeros(n_geom))
-                    ivc.add_output("cdy_usr", val=np.zeros(n_geom))
+                    ivc.add_output("ca_usr", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cd_usr", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cay_usr", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cdy_usr", val=-1.0*np.ones(n_geom))
 
             ivc.add_discrete_output("layer_materials", val=[""] * n_layers)
             ivc.add_output("layer_thickness_in", val=np.zeros((n_layers, n_geom)), units="m")

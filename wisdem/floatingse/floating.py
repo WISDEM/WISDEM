@@ -105,7 +105,7 @@ class FloatingSE(om.Group):
             if member_shape == "circular":
                 self.connect(f"member{k}.nodes_r_all", f"member{k}:nodes_r")
                 self.connect(f"member{k}.section_D", f"member{k}:section_D")
-                self.connect(f"member{k}.ca", f"memload{k}:ca_usr")
+                # self.connect(f"member{k}.ca", f"memload{k}:ca_usr")
                 # self.connect(f"member{k}.cd", f"member{k}:cd_usr")
                 self.connect(f"member{k}.outer_diameter_full", f"memload{k}.outer_diameter_full")
             elif member_shape == "rectangular":
@@ -113,10 +113,10 @@ class FloatingSE(om.Group):
                 # self.connect(f"member{k}.nodes_b_all", f"member{k}:nodes_b")
                 self.connect(f"member{k}.section_a", f"member{k}:section_a") 
                 self.connect(f"member{k}.section_b", f"member{k}:section_b")
-                self.connect(f"member{k}.ca", f"memload{k}.ca_usr")
-                self.connect(f"member{k}.cay", f"memload{k}.cay_usr")
-                self.connect(f"member{k}.cd", f"memload{k}.cd_usr")
-                self.connect(f"member{k}.cdy", f"memload{k}.cdy_usr")
+                # self.connect(f"member{k}.ca", f"memload{k}.ca_usr")
+                # self.connect(f"member{k}.cay", f"memload{k}.cay_usr")
+                # self.connect(f"member{k}.cd", f"memload{k}.cd_usr")
+                # self.connect(f"member{k}.cdy", f"memload{k}.cdy_usr")
                 self.connect(f"member{k}.side_length_a_full", f"memload{k}.side_length_a_full")
                 self.connect(f"member{k}.side_length_b_full", f"memload{k}.side_length_b_full")
 

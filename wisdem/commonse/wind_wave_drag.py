@@ -282,7 +282,7 @@ class CylinderWindDrag(om.ExplicitComponent):
         self.add_input("rho_air", 0.0, units="kg/m**3")
         self.add_input("mu_air", 0.0, units="kg/(m*s)")
         self.add_input("cd_usr", -1.0)
-        self.add_input("ca_usr", -1.0)
+        # self.add_input("ca_usr", -1.0)
 
         self.add_output("windLoads_Px", np.zeros(nPoints), units="N/m")
         self.add_output("windLoads_Py", np.zeros(nPoints), units="N/m")
@@ -432,7 +432,7 @@ class RectangularCylinderWindDrag(om.ExplicitComponent):
         self.add_input("rho_air", 0.0, units="kg/m**3")
         self.add_input("mu_air", 0.0, units="kg/(m*s)")
         self.add_input("cd_usr", -1.0)
-        self.add_input("ca_usr", -1.0)
+        self.add_input("cdy_usr", -1.0)
 
         self.add_output("windLoads_Px", np.zeros(nPoints), units="N/m")
         self.add_output("windLoads_Py", np.zeros(nPoints), units="N/m")
@@ -471,17 +471,21 @@ class RectangularCylinderWindDrag(om.ExplicitComponent):
         qy = q* (sind(beta)**2)
 
 
-        # Reynolds number and drag
+        # Aspect ratio and drag
         if float(inputs["cd_usr"]) < 0.0:
             ARx = b/a
-            ARy = a/b
             cdx, dcdx_dARx = rectangular_cylinderDrag(ARx)
+        else:
+            cdx = inputs["cd_usr"]
+            ARx = 1.0
+            dcdx_dARx = 0.0
+
+        if float(inputs["cdy_usr"]) < 0.0:
+            ARy = a/b
             cdy, dcdy_dARy = rectangular_cylinderDrag(ARy)
         else:
-            cd = inputs["cd_usr"]
-            ARx = 1.0
+            cdy = inputs["cdy_usr"]
             ARy = 1.0
-            dcdx_dARx = 0.0
             dcdy_dARy = 0.0
 
         # components of distributed loads
@@ -511,21 +515,25 @@ class RectangularCylinderWindDrag(om.ExplicitComponent):
         dqx_dU = dq_dU* (cosd(beta)**2)
         dqy_dU = dq_dU* (sind(beta)**2)
 
-        # Reynolds number and drag
+        # Aspect ratio and drag
         if float(inputs["cd_usr"]) < 0.0:
             ARx = b/a
-            ARy = a/b
             dARx_da = -1/a**2
             dARx_db = 1/a
+            cdx, dcdx_dARx = rectangular_cylinderDrag(ARx)
+        else:
+            cdx = inputs["cd_usr"]
+            ARx = 1.0
+            dcdx_dARx = 0.0
+
+        if float(inputs["cdy_usr"]) < 0.0:
+            ARy = a/b
             dARy_da = 1/b
             dARy_db = -1/b**2
-            cdx, dcdx_dARx = rectangular_cylinderDrag(ARx)
             cdy, dcdy_dARy = rectangular_cylinderDrag(ARy)
         else:
-            cd = inputs["cd_usr"]
-            ARx = 1.0
+            cdy = inputs["cdy_usr"]
             ARy = 1.0
-            dcdx_dARx = 0.0
             dcdy_dARy = 0.0
             
         # components of distributed loads
@@ -579,7 +587,7 @@ class CylinderWaveDrag(om.ExplicitComponent):
         water density
     mu_water : float, [kg/(m*]
         dynamic viscosity of water
-    ca : float
+    ca_usr : float
         added mass coefficient
     cd_usr : float
         User input drag coefficient to override Reynolds number based one
@@ -669,8 +677,13 @@ class CylinderWaveDrag(om.ExplicitComponent):
             Re = 1.0
             dcd_dRe = 0.0
 
+        if float(inputs["ca_usr"]) < 0.0:
+            ca = 1.0
+        else:
+            ca = inputs["ca_usr"]
+
         # inertial and drag forces
-        Fi = rho * inputs["ca"] * math.pi / 4.0 * d**2 * inputs["A"]  # Morrison's equation
+        Fi = rho * ca * math.pi / 4.0 * d**2 * inputs["A"]  # Morrison's equation
         Fd = q * cd * d
         Fp = Fi + Fd
 
@@ -875,23 +888,30 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
         qy = q * sind(beta) * np.abs(sind(beta))
         # q0= 0.5*rho*U0**2
 
-        # Reynolds number and drag
+        # Aspect ratio and drag
         if float(inputs["cd_usr"]) < 0.0:
             ARx = b/a
-            ARy = a/b
             cdx, dcdx_dARx = rectangular_cylinderDrag(ARx)
-            cdy, dcdy_dARy = rectangular_cylinderDrag(ARy)
         else:
             cdx = inputs["cd_usr"]
+
+        if float(inputs["cdy_usr"]) < 0.0:
+            ARy = a/b
+            cdy, dcdy_dARy = rectangular_cylinderDrag(ARy)
+        else:
             cdy = inputs["cdy_usr"]
 
 
         if float(inputs["ca_usr"]) < 0.0:
             # TODO: add the correct internal calculation
             cax = 2.0
-            cay = 2.0
         else:
             cax = inputs["ca_usr"]
+
+        if float(inputs["ca_usr"]) < 0.0:
+            # TODO: add the correct internal calculation
+            cay = 2.0
+        else:
             cay = inputs["cay_usr"]
 
 
@@ -938,31 +958,39 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
         dqx_dU = dq_dU * cosd(beta) * np.abs(cosd(beta))
         dqy_dU = dq_dU * sind(beta) * np.abs(sind(beta))
 
-        # Reynolds number and drag
+        # Aspect ratio and drag
         if float(inputs["cd_usr"]) < 0.0:
             ARx = b/a
-            ARy = a/b
             dARx_da = -1/a**2
             dARx_db = 1/a
+            cdx, dcdx_dARx = rectangular_cylinderDrag(ARx)
+        else:
+            # 
+            cdy = inputs["cdy_usr"]
+            ARy = 1.0
+            dcdy_dARy = 0.0
+
+        if float(inputs["cdy_usr"]) < 0.0:
+            ARy = a/b
             dARy_da = 1/b
             dARy_db = -1/b**2
-            cdx, dcdx_dARx = rectangular_cylinderDrag(ARx)
             cdy, dcdy_dARy = rectangular_cylinderDrag(ARy)
         else:
             # 
-            cdx = inputs["cd_usr"]
             cdy = inputs["cdy_usr"]
-            ARx = 1.0
             ARy = 1.0
-            dcdx_dARx = 0.0
             dcdy_dARy = 0.0
 
         if float(inputs["ca_usr"]) < 0.0:
         # TODO: add the correct internal calculation
             cax = 2.0
-            cay = 2.0
         else:
             cax = inputs["ca_usr"]
+
+        if float(inputs["cay_usr"]) < 0.0:
+        # TODO: add the correct internal calculation
+            cay = 2.0
+        else:
             cay = inputs["cay_usr"]
 
         # inertial and drag forces
@@ -1041,13 +1069,13 @@ class CylinderEnvironment(om.Group):
             self.add_subsystem(
                 "windLoads",
                 CylinderWindDrag(nPoints=nPoints),
-                promotes=["ca_usr", "cd_usr", "beta_wind", "rho_air", "mu_air", "z", "d"],
+                promotes=["cd_usr", "beta_wind", "rho_air", "mu_air", "z", "d"],
             )
         elif member_shape == "rectangular":
             self.add_subsystem(
                 "windLoads",
                 RectangularCylinderWindDrag(nPoints=nPoints),
-                promotes=["ca_usr", "cay_usr", "cd_usr", "cdy_usr", "beta_wind", "rho_air", "mu_air", "z", "a", "b"],
+                promotes=["cd_usr", "cdy_usr", "beta_wind", "rho_air", "mu_air", "z", "a", "b"],
             )
 
         # Wave profile and loads
