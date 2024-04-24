@@ -21,7 +21,7 @@ class TestDrag(unittest.TestCase):
         self.params["U"] = 2.0 * myones
         self.params["A"] = 4.0 * myones
         self.params["p"] = 3.0 * myones
-        self.params["cm"] = 1.0
+        self.params["ca_usr"] = 1.0
         self.params["d"] = 10.0 * myones
         self.params["rho_water"] = 0.5
         self.params["mu_water"] = 1e-3
@@ -93,7 +93,7 @@ class TestDrag(unittest.TestCase):
         prob.set_val("beta_wave", 1.2, units="deg")
         prob.set_val("rho_water", 1.0, units="kg/m**3")
         prob.set_val("mu_water", 0.001, units="kg/(m*s)")
-        prob.set_val("cm", 10.0)
+        prob.set_val("ca_usr", 10.0)
         prob.set_val("cd_usr", 0.01)
 
         prob.run_model()
