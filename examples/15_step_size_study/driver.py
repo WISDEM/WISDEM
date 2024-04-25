@@ -49,5 +49,5 @@ try:
     plt.gca().invert_xaxis()
 
     plt.show()
-except:
+except Exception:
     pass
