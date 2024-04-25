@@ -52,7 +52,7 @@ dependencies = [
   "openmdao>=3.31",
   "openpyxl",
   "pandas",
-  "pydoe2",
+  "pydoe3",
   "python-benedict",
   "pyyaml",
   "ruamel.yaml",
