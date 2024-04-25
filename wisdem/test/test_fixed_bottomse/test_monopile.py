@@ -171,6 +171,7 @@ class TestMonopileSE(unittest.TestCase):
         prob["nu_soil"] = 0.5
         prob["wind_reference_height"] = 80.0
         prob["z0"] = 0.0
+        prob["ca_usr"] = 0.0
         prob["cd_usr"] = -1.0
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
@@ -366,6 +367,7 @@ class TestMonopileSE(unittest.TestCase):
         # prob["nu_soil"] = 0.5
         prob["wind_reference_height"] = 80.0
         prob["z0"] = 0.0
+        prob["ca_usr"] = 0.0
         prob["cd_usr"] = -1.0
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
@@ -509,6 +511,7 @@ class TestMonopileSE(unittest.TestCase):
             prob["wind_reference_height"] = wind_zref
             prob["z0"] = wind_z0
             prob["cd_usr"] = cd_usr
+            prob["ca_usr"] = 0.0 # Default was zero before, but now the default is -1
             prob["rho_air"] = 1.225
             prob["mu_air"] = 1.7934e-5
 
