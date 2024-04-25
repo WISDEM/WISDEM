@@ -11,7 +11,6 @@ dependencies:
   - matplotlib
   - meson
   - moorpy
-  - mpi4py
   - ninja
   - nlopt
   - numpy>=1.26
@@ -41,3 +40,4 @@ dependencies:
 #  - libpython # [win]
 #  - compilers # [not win]
 #  - petsc4py # [not win]
+#  - mpi4py (only needed if local system has mpi built and is used)
