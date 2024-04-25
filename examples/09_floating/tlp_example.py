@@ -136,7 +136,7 @@ prob["water_depth"] = 320.0  # Distance to sea floor [m]
 prob["Hsig_wave"] = 10.8  # Significant wave height [m]
 prob["Tsig_wave"] = 9.8  # Wave period [s]
 prob["shearExp"] = 0.11  # Shear exponent in wind power law
-prob["cm"] = 2.0  # Added mass coefficient
+prob["ca_usr"] = 2.0  # Added mass coefficient
 prob["Uc"] = 0.0  # Mean current speed
 prob["beta_wind"] = prob["beta_wave"] = 0.0
 prob["cd_usr"] = -1.0  # Compute drag coefficient

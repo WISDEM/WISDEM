@@ -908,7 +908,7 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
         else:
             cax = inputs["ca_usr"]
 
-        if float(inputs["ca_usr"]) < 0.0:
+        if float(inputs["cay_usr"]) < 0.0:
             # TODO: add the correct internal calculation
             cay = 2.0
         else:
@@ -966,9 +966,9 @@ class RectangularCylinderWaveDrag(om.ExplicitComponent):
             cdx, dcdx_dARx = rectangular_cylinderDrag(ARx)
         else:
             # 
-            cdy = inputs["cdy_usr"]
-            ARy = 1.0
-            dcdy_dARy = 0.0
+            cdx = inputs["cd_usr"]
+            ARx = 1.0
+            dcdx_dARx = 0.0
 
         if float(inputs["cdy_usr"]) < 0.0:
             ARy = a/b
