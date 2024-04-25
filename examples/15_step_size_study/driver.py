@@ -22,7 +22,7 @@ wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_modelin
 all_derivs = np.load("total_derivs.npy", allow_pickle=True)[()]
 
 # Select a key of interest; an (of, wrt) pair
-key = ("wt.towerse.post.constr_stress", "wt.wt_init.tower.diameter")
+key = ("towerse.post.constr_stress", "tower.diameter")
 
 # Collect data to plot later
 step_sizes = []
