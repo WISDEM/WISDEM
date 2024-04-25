@@ -367,7 +367,7 @@ class ManagementCost:
         df = self.input_dict['site_facility_building_area_df']
         project_size_megawatts = self.input_dict['project_size_megawatts']
         row = df[(df['Size Max (MW)'] > project_size_megawatts) & (df['Size Min (MW)'] <= project_size_megawatts)]
-        building_area_sq_ft = float(row['Building area (sq. ft.)'])
+        building_area_sq_ft = float(row['Building area (sq. ft.)'].iloc[0])
 
         construction_building_cost = building_area_sq_ft * 125 + 176125
 

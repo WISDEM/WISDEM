@@ -26,7 +26,10 @@ class TestConstraints(unittest.TestCase):
         for k in range(n_member):
             inputs[f"member{k}:nodes_xyz"] = NULL * np.ones((MEMMAX, 3))
             inputs[f"member{k}:constr_ballast_capacity"] = np.array([0.6])
-            inputs[f"member{k}:nodes_xyz"][:2, :] = np.array([[0, 0, -1], [0, 0, 1]])
+            # semi-like members with 2m spacing
+            x = 2 * np.cos(k*(2*np.pi)/n_member)
+            y = 2 * np.sin(k*(2*np.pi)/n_member)
+            inputs[f"member{k}:nodes_xyz"][:2, :] = np.array([[x, y, -1], [x, y, 1]])
 
         inputs["Hsig_wave"] = 10.0
         inputs["variable_ballast_mass"] = 3.0
@@ -48,15 +51,15 @@ class TestConstraints(unittest.TestCase):
         myobj = cons.FloatingConstraints(modeling_options=opt)
 
         myobj.compute(inputs, outputs)
-        _, free2 = util.rotate(0.0, 0.0, 0.0, -4.0, np.deg2rad(20))
-        _, draft2 = util.rotate(0.0, 0.0, 0.0, -6.0, np.deg2rad(20))
+        _, free2 = util.rotate(0.0, 0.0, 2.0, -4.0, -np.deg2rad(20))   # need to check when freeboard goes below surface, opposite direction
+        _, draft2 = util.rotate(0.0, 0.0, 2.0, -6.0, np.deg2rad(20))
         npt.assert_equal(outputs["constr_fixed_margin"], 0.6 * np.ones(6))
         self.assertEqual(outputs["constr_fairlead_wave"], 1.1 * 0.5)
         self.assertEqual(outputs["metacentric_height"], 0.1 - (5 - 1))
         self.assertEqual(outputs["constr_mooring_surge"], 1e5 - 1e2)
         self.assertEqual(outputs["constr_mooring_heel"], 10 * 2e5 + (5 + 20) * 4e5 + 2e5 - 1e2 * (10 - 5) - 2e2)
-        npt.assert_equal(outputs["constr_freeboard_heel_margin"], -(-4.0 - free2))
-        npt.assert_equal(outputs["constr_draft_heel_margin"], -(-6.0 - draft2))
+        npt.assert_almost_equal(outputs["constr_freeboard_heel_margin"], (-4.0 - free2), decimal = 8)
+        npt.assert_almost_equal(outputs["constr_draft_heel_margin"], -(-6.0 - draft2), decimal = 8)
 
 
 def suite():

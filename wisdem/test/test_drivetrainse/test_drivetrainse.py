@@ -35,7 +35,9 @@ def set_common(prob, opt):
     ] = "steel"
     prob["material_names"] = ["steel"]
 
-    prob["blade_mass"] = 17000.0
+    prob["blade_mass"] = 170.0
+    prob["blades_mass"] = 3*prob["blade_mass"]
+    prob["blades_cm"] = 2.0
     prob["pitch_system.BRFM"] = 1.0e6
     prob["pitch_system_scaling_factor"] = 0.54
 
@@ -242,6 +244,8 @@ class TestGroup(unittest.TestCase):
         opt["WISDEM"]["n_dlc"] = 1
         opt["WISDEM"]["DriveSE"] = {}
         opt["WISDEM"]["DriveSE"]["direct"] = False
+        opt["WISDEM"]["DriveSE"]["use_gb_torque_density"] = False
+        opt["WISDEM"]["DriveSE"]["gearbox_torque_density"] = 0.
         opt["WISDEM"]["DriveSE"]["hub"] = {}
         opt["WISDEM"]["DriveSE"]["hub"]["hub_gamma"] = 2.0
         opt["WISDEM"]["DriveSE"]["hub"]["spinner_gamma"] = 1.5
@@ -369,6 +373,7 @@ class TestGroup(unittest.TestCase):
         opt["WISDEM"]["n_dlc"] = 1
         opt["WISDEM"]["DriveSE"] = {}
         opt["WISDEM"]["DriveSE"]["direct"] = False
+        opt["WISDEM"]["DriveSE"]["use_gb_torque_density"] = False
         opt["WISDEM"]["DriveSE"]["hub"] = {}
         opt["WISDEM"]["DriveSE"]["hub"]["hub_gamma"] = 2.0
         opt["WISDEM"]["DriveSE"]["hub"]["spinner_gamma"] = 1.5

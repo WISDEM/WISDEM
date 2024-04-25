@@ -613,6 +613,7 @@ class ShellMassCost(om.ExplicitComponent):
         self.add_input("labor_cost_rate", 0.0, units="USD/min")
         self.add_input("painting_cost_rate", 0.0, units="USD/m/m")
 
+        self.add_output("labor_hours", val=0.0, units="h")
         self.add_output("shell_cost", val=0.0, units="USD")
         self.add_output("shell_mass", val=0.0, units="kg")
         self.add_output("shell_z_cg", val=0.0, units="m")
@@ -747,14 +748,18 @@ class ShellMassCost(om.ExplicitComponent):
         # Cost Step 4) Circumferential welds to join cans together
         theta_A = 2.0
 
-        # Labor-based expenses
-        K_f = k_f * (
+        # Labor hours
+        labor_minutes = (
             manufacture.steel_cutting_plasma_time(cutLengths, t_full)
             + manufacture.steel_rolling_time(theta_F, R_ave, t_full)
             + manufacture.steel_butt_welding_time(theta_A, nsec, mshell_tot, cutLengths, t_full)
             + manufacture.steel_butt_welding_time(theta_A, nsec, mshell_tot, 2 * np.pi * Rb[1:], t_full[1:])
         )
-
+        outputs["labor_hours"] = labor_minutes / 60.0
+        
+        # Labor-based expenses
+        K_f = k_f * labor_minutes
+        
         # Cost step 5) Painting- outside and inside
         theta_p = 2
         K_p = k_p * theta_p * 2 * (2 * np.pi * R_ave * H).sum()
@@ -2141,6 +2146,17 @@ class CylinderPostFrame(om.ExplicitComponent):
         self.add_input("rho_full", np.zeros(n_full - 1), units="kg/m**3")
         self.add_input("sigma_y_full", np.zeros(n_full - 1), units="Pa")
 
+        self.add_input("section_A", np.zeros(n_full - 1), units="m**2")
+        self.add_input("section_Asx", np.zeros(n_full - 1), units="m**2")
+        self.add_input("section_Asy", np.zeros(n_full - 1), units="m**2")
+        self.add_input("section_Ixx", np.zeros(n_full - 1), units="kg*m**2")
+        self.add_input("section_Iyy", np.zeros(n_full - 1), units="kg*m**2")
+        self.add_input("section_J0", np.zeros(n_full - 1), units="kg*m**2")
+        self.add_input("section_rho", np.zeros(n_full - 1), units="kg/m**3")
+        self.add_input("section_E", np.zeros(n_full - 1), units="Pa")
+        self.add_input("section_G", np.zeros(n_full - 1), units="Pa")
+        self.add_input("section_L", np.zeros(n_full - 1), units="m")
+
         # Processed Frame3DD/OpenFAST outputs
         self.add_input("cylinder_Fz", val=np.zeros((n_full - 1, n_dlc)), units="N")
         self.add_input("cylinder_Vx", val=np.zeros((n_full - 1, n_dlc)), units="N")
@@ -2172,7 +2188,15 @@ class CylinderPostFrame(om.ExplicitComponent):
         h = np.diff(z, axis=0)
         d_sec, _ = util.nodal2sectional(d)
         r_sec = 0.5 * d_sec
-        itube = cs.Tube(d_sec, t)
+
+        # Geom properties
+        #itube = cs.Tube(d_sec, t)
+        Az = np.tile(inputs["section_A"], (n_dlc, 1)).T
+        Asx = np.tile(inputs["section_Asx"], (n_dlc, 1)).T
+        Asy = np.tile(inputs["section_Asy"], (n_dlc, 1)).T
+        Jz = np.tile(inputs["section_J0"], (n_dlc, 1)).T
+        Ixx = np.tile(inputs["section_Ixx"], (n_dlc, 1)).T
+        Iyy = np.tile(inputs["section_Iyy"], (n_dlc, 1)).T
 
         L_buckling = self.options["modeling_options"]["buckling_length"]
         gamma_f = self.options["modeling_options"]["gamma_f"]
@@ -2200,14 +2224,6 @@ class CylinderPostFrame(om.ExplicitComponent):
 
         M = np.sqrt(Mxx**2 + Myy**2)
         V = np.sqrt(Vx**2 + Vy**2)
-
-        # Geom properties
-        Az = itube.Area
-        Asx = itube.Asx
-        Asy = itube.Asy
-        Jz = itube.J0
-        Ixx = itube.Ixx
-        Iyy = itube.Iyy
 
         # See http://svn.code.sourceforge.net/p/frame3dd/code/trunk/doc/Frame3DD-manual.html#structuralmodeling
         outputs["axial_stress"] = axial_stress = Fz / Az + M * r_sec / Iyy
@@ -2252,6 +2268,8 @@ class CylinderPostFrame(om.ExplicitComponent):
                 G=G[:, 0],
                 sigma_y=sigma_y[:, 0],
                 gamma=gamma_f * gamma_b,
+                A=Az[:,0],
+                I=Ixx[:,0],
             )
 
             for k in range(n_dlc):

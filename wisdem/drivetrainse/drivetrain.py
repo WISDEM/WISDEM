@@ -157,6 +157,10 @@ class DrivetrainSE(om.Group):
         opt = self.options["modeling_options"]["WISDEM"]["DriveSE"]
         n_dlcs = self.options["modeling_options"]["WISDEM"]["n_dlc"]
         direct = opt["direct"]
+        if direct:
+            use_gb_torque_density = False
+        else:
+            use_gb_torque_density = opt["use_gb_torque_density"]
         dogen = self.options["modeling_options"]["flags"]["generator"]
         n_pc = self.options["modeling_options"]["WISDEM"]["RotorSE"]["n_pc"]
 
@@ -179,7 +183,7 @@ class DrivetrainSE(om.Group):
 
         # Need to do these first, before the layout
         self.add_subsystem("hub", Hub_System(modeling_options=opt["hub"]), promotes=["*"])
-        self.add_subsystem("gear", Gearbox(direct_drive=direct), promotes=["*"])
+        self.add_subsystem("gear", Gearbox(direct_drive=direct, use_gb_torque_density=use_gb_torque_density), promotes=["*"])
 
         # Layout and mass for the big items
         if direct:

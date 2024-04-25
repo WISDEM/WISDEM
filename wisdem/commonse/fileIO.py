@@ -5,15 +5,66 @@ import numpy as np
 import pandas as pd
 import scipy.io as sio
 
-
-def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
-    # Remove file extension
-    froot = os.path.splitext(fname)[0]
+def get_variable_list(prob):
 
     # Get all OpenMDAO inputs and outputs into a dictionary
-    var_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, out_stream=None)
+    input_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, is_indep_var=True, out_stream=None)
+    for k in range(len(input_dict)):
+        input_dict[k][1]["type"] = "input"
+
+    inter_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, is_indep_var=False, out_stream=None)
+    for k in range(len(inter_dict)):
+        inter_dict[k][1]["type"] = "intermediate"
+
+    #var_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, out_stream=None)
+    #for k in range(len(var_dict)):
+    #    var_dict[k][1]["type"] = "output"
+
     out_dict = prob.model.list_outputs(prom_name=True, units=True, desc=True, out_stream=None)
+    for k in range(len(out_dict)):
+        out_dict[k][1]["type"] = "output"
+        
+    var_dict = input_dict.copy()
+    var_dict.extend(inter_dict)
     var_dict.extend(out_dict)
+    return input_dict, out_dict, var_dict
+
+
+def variable_dict2df(var_dict):
+    data = {}
+    data["variables"] = []
+    data["type"] = []
+    data["units"] = []
+    data["values"] = []
+    data["description"] = []
+    for k in range(len(var_dict)):
+        unit_str = var_dict[k][1]["units"]
+        if unit_str is None:
+            unit_str = ""
+
+        iname = var_dict[k][1]["prom_name"]
+        itype = var_dict[k][1]["type"]
+        if iname in data["variables"]:
+            iprev = data["variables"].index( iname )
+            if itype == "output":
+                data["type"][iprev] = itype
+            continue
+
+        data["variables"].append(iname)
+        data["type"].append(itype)
+        data["units"].append(unit_str)
+        data["values"].append(var_dict[k][1]["val"])
+        data["description"].append(var_dict[k][1]["desc"])
+        
+    return pd.DataFrame(data)
+
+
+def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
+    # Get the variables
+    _, _, var_dict = get_variable_list(prob)
+    
+    # Remove file extension
+    froot = os.path.splitext(fname)[0]
 
     # Pickle the full archive so that we can load it back in if we need
     with open(froot + ".pkl", "wb") as f:
@@ -58,25 +109,7 @@ def save_data(fname, prob, npz_file=True, mat_file=True, xls_file=True):
         sio.savemat(froot + ".mat", array_dict, long_field_names=True)
 
     if xls_file:
-        data = {}
-        data["variables"] = []
-        data["units"] = []
-        data["values"] = []
-        data["description"] = []
-        for k in range(len(var_dict)):
-            unit_str = var_dict[k][1]["units"]
-            if unit_str is None:
-                unit_str = ""
-
-            iname = var_dict[k][1]["prom_name"]
-            if iname in data["variables"]:
-                continue
-
-            data["variables"].append(iname)
-            data["units"].append(unit_str)
-            data["values"].append(var_dict[k][1]["val"])
-            data["description"].append(var_dict[k][1]["desc"])
-        df = pd.DataFrame(data)
+        df = variable_dict2df(var_dict)
         df.to_excel(froot + ".xlsx", index=False)
         df.to_csv(froot + ".csv", index=False)
 
@@ -96,11 +129,11 @@ def load_data(fname, prob):
         value = var_dict[k][1]["val"]
         try:
             prob.set_val(iname, value)
-        except:
+        except Exception:
             pass
         try:
             prob.set_val(iname2, value)
-        except:
+        except Exception:
             pass
 
     return prob

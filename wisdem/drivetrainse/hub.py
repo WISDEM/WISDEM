@@ -4,7 +4,8 @@ import numpy as np
 import openmdao.api as om
 
 import wisdem.commonse.utilities as util
-
+import logging
+logger = logging.getLogger("wisdem/weis")
 
 class FindMaxTorque(om.ExplicitComponent):
     """
@@ -279,12 +280,17 @@ class Spinner(om.ExplicitComponent):
         spin_shell_mass = spin_shell_volume * inputs["composite_rho"]
 
         # Estimate area, volume, and mass of the spherical caps that are removed because of blade access
-        sph_cap_area = (
-            2.0
-            * np.pi
-            * sph_spin_rad
-            * (sph_spin_rad - np.sqrt(sph_spin_rad**2.0 - (spin_acc_hole_diam / 2.0) ** 2.0))
-        )
+        # if condition to avoid error
+        if spin_acc_hole_diam / 2.0 < sph_spin_rad:
+            sph_cap_area = (
+                2.0
+                * np.pi
+                * sph_spin_rad
+                * (sph_spin_rad - np.sqrt(sph_spin_rad**2.0 - (spin_acc_hole_diam / 2.0) ** 2.0))
+            )
+        else:
+            sph_cap_area = 0. 
+            logger.warning('Blade root chord is excessive! Please reduce it, or alternatively increase the hub diameter.')
         sph_caps_volume = discrete_inputs["n_blades"] * sph_cap_area * spin_shell_thickness
         sph_caps_mass = sph_caps_volume * inputs["composite_rho"]
 

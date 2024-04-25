@@ -636,13 +636,21 @@ class WindTurbineOntologyPython(object):
         # The user can provide `opt_flag` in analysis_options.yaml,
         # but if it's not provided, we check the individual opt flags
         # from analysis_options.yaml and set a global `opt_flag`
-        if "opt_flag" in self.analysis_options["driver"]:
-            self.analysis_options["opt_flag"] = self.analysis_options["driver"]["opt_flag"]
+        if "flag" in self.analysis_options["driver"]["optimization"]:
+            self.analysis_options["opt_flag"] = self.analysis_options["driver"]["optimization"]["flag"]
         else:
             self.analysis_options["opt_flag"] = recursive_flag(self.analysis_options["design_variables"])
 
+        if self.analysis_options["opt_flag"] == False and (
+            self.analysis_options["driver"]["step_size_study"]["flag"] == True or 
+            self.analysis_options["driver"]["design_of_experiments"]["flag"] == True
+            ):
+            self.analysis_options["opt_flag"] = True
+
+        # Blade design variables
         # If not an optimization DV, then the number of points should be same as the discretization
         blade_opt_options = self.analysis_options["design_variables"]["blade"]
+        # Blade aero design variables
         if (
             not blade_opt_options["aero_shape"]["twist"]["flag"]
             and not blade_opt_options["aero_shape"]["twist"]["inverse"]
@@ -674,18 +682,18 @@ class WindTurbineOntologyPython(object):
                 blade_opt_options["aero_shape"]["chord"]["n_opt"],
             )
 
-        if not blade_opt_options["aero_shape"]["t/c"]["flag"]:
-            blade_opt_options["aero_shape"]["t/c"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
-        elif blade_opt_options["aero_shape"]["t/c"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
+        if not blade_opt_options["aero_shape"]["rthick"]["flag"]:
+            blade_opt_options["aero_shape"]["rthick"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        elif blade_opt_options["aero_shape"]["rthick"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
             raise ValueError("you are attempting to do an analysis using fewer analysis points than control points.")
-        elif blade_opt_options["aero_shape"]["t/c"]["n_opt"] < 4:
-            raise ValueError("Cannot optimize t/c with less than 4 control points along blade span")
-        elif blade_opt_options["aero_shape"]["t/c"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
+        elif blade_opt_options["aero_shape"]["rthick"]["n_opt"] < 4:
+            raise ValueError("Cannot optimize rthick with less than 4 control points along blade span")
+        elif blade_opt_options["aero_shape"]["rthick"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
             raise ValueError(
                 """Please set WISDEM->RotorSE->n_span in the modeling options yaml larger
-                than aero_shape->t/c->n_opt in the analysis options yaml. n_span and t/c n_opt are """,
+                than aero_shape->rthick->n_opt in the analysis options yaml. n_span and rthick n_opt are """,
                 self.modeling_options["WISDEM"]["RotorSE"]["n_span"],
-                blade_opt_options["aero_shape"]["t/c"]["n_opt"],
+                blade_opt_options["aero_shape"]["rthick"]["n_opt"],
             )
 
         if not blade_opt_options["aero_shape"]["L/D"]["flag"]:
@@ -701,82 +709,44 @@ class WindTurbineOntologyPython(object):
                 self.modeling_options["WISDEM"]["RotorSE"]["n_span"],
                 blade_opt_options["aero_shape"]["L/D"]["n_opt"],
             )
+        # # Blade structural design variables
+        if self.modeling_options["WISDEM"]["RotorSE"]["flag"] and self.modeling_options["flags"]["blade"]:
+            n_layers = self.modeling_options["WISDEM"]["RotorSE"]["n_layers"]
+            layer_name = self.modeling_options["WISDEM"]["RotorSE"]["layer_name"]
+            spars_tereinf = np.zeros(4, dtype=int)
+            blade_opt_options["n_opt_struct"] = np.ones(n_layers, dtype=int)
+            if "structure" in blade_opt_options:
+                n_layers_opt = len(blade_opt_options["structure"])
+                blade_opt_options["layer_index_opt"] = np.ones(n_layers_opt, dtype=int)
+                for i in range(n_layers):
+                    foundit = False
+                    for j in range(n_layers_opt):
+                        if blade_opt_options["structure"][j]["layer_name"] == layer_name[i]:
+                            blade_opt_options["n_opt_struct"][i] = blade_opt_options["structure"][j]["n_opt"]
+                            blade_opt_options["layer_index_opt"][j] = i
+                            foundit = True
+                            break
+                    if not foundit:
+                        blade_opt_options["n_opt_struct"][i] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
+                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"]:
+                        spars_tereinf[0] = i
+                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["spar_cap_ps"]:
+                        spars_tereinf[1] = i
+                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["te_ss"]:
+                        spars_tereinf[2] = i
+                    if layer_name[i] == self.modeling_options["WISDEM"]["RotorSE"]["te_ps"]:
+                        spars_tereinf[3] = i
+            else:
+                blade_opt_options["structure"] = []
+                blade_opt_options["n_opt_struct"] *= self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
+            self.modeling_options["WISDEM"]["RotorSE"]["spars_tereinf"] = spars_tereinf
+            
+            if any(blade_opt_options["n_opt_struct"]>self.modeling_options["WISDEM"]["RotorSE"]["n_span"]):
+                raise ValueError("You are attempting to do a blade structural design optimization with more DVs than spanwise stations.")
+            blade_opt_options["n_opt_struct"] = blade_opt_options["n_opt_struct"].tolist()
+            if "layer_index_opt" in blade_opt_options:
+                blade_opt_options["layer_index_opt"] = blade_opt_options["layer_index_opt"].tolist()
 
-        if not blade_opt_options["structure"]["spar_cap_ss"]["flag"]:
-            blade_opt_options["structure"]["spar_cap_ss"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"][
-                "n_span"
-            ]
-        elif (
-            blade_opt_options["structure"]["spar_cap_ss"]["n_opt"]
-            > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
-        ):
-            raise ValueError("you are attempting to do an analysis using fewer analysis points than control points.")
-        elif blade_opt_options["structure"]["spar_cap_ss"]["n_opt"] < 4:
-            raise ValueError("Cannot optimize spar cap suction side with less than 4 control points along blade span")
-        elif (
-            blade_opt_options["structure"]["spar_cap_ss"]["n_opt"]
-            > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
-        ):
-            raise ValueError(
-                """Please set WISDEM->RotorSE->n_span in the modeling options yaml larger
-                than structure->spar_cap_ss->n_opt in the analysis options yaml. n_span and spar_cap_ss n_opt are """,
-                self.modeling_options["WISDEM"]["RotorSE"]["n_span"],
-                blade_opt_options["structure"]["spar_cap_ss"]["n_opt"],
-            )
-
-        if not blade_opt_options["structure"]["spar_cap_ps"]["flag"]:
-            blade_opt_options["structure"]["spar_cap_ps"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"][
-                "n_span"
-            ]
-        elif (
-            blade_opt_options["structure"]["spar_cap_ps"]["n_opt"]
-            > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
-        ):
-            raise ValueError("you are attempting to do an analysis using fewer analysis points than control points.")
-        elif blade_opt_options["structure"]["spar_cap_ps"]["n_opt"] < 4:
-            raise ValueError("Cannot optimize spar cap pressure side with less than 4 control points along blade span")
-        elif (
-            blade_opt_options["structure"]["spar_cap_ps"]["n_opt"]
-            > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
-        ):
-            raise ValueError(
-                """Please set WISDEM->RotorSE->n_span in the modeling options yaml larger
-                than structure->spar_cap_ps->n_opt in the analysis options yaml. n_span and spar_cap_ps n_opt are """,
-                self.modeling_options["WISDEM"]["RotorSE"]["n_span"],
-                blade_opt_options["structure"]["spar_cap_ps"]["n_opt"],
-            )
-
-        if not blade_opt_options["structure"]["te_ss"]["flag"]:
-            blade_opt_options["structure"]["te_ss"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
-        elif blade_opt_options["structure"]["te_ss"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
-            raise ValueError("you are attempting to do an analysis using fewer analysis points than control points.")
-        elif blade_opt_options["structure"]["te_ss"]["n_opt"] < 4:
-            raise ValueError(
-                "Cannot optimize trailing edge suction side with less than 4 control points along blade span"
-            )
-        elif blade_opt_options["structure"]["te_ss"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
-            raise ValueError(
-                """Please set WISDEM->RotorSE->n_span in the modeling options yaml larger
-                than structure->te_ss->n_opt in the analysis options yaml. n_span and te_ss n_opt are """,
-                self.modeling_options["WISDEM"]["RotorSE"]["n_span"],
-                blade_opt_options["structure"]["te_ss"]["n_opt"],
-            )
-
-        if not blade_opt_options["structure"]["te_ps"]["flag"]:
-            blade_opt_options["structure"]["te_ps"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
-        elif blade_opt_options["structure"]["te_ps"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
-            raise ValueError("you are attempting to do an analysis using fewer analysis points than control points.")
-        elif blade_opt_options["structure"]["te_ps"]["n_opt"] < 4:
-            raise ValueError(
-                "Cannot optimize trailing edge pressure side with less than 4 control points along blade span"
-            )
-        elif blade_opt_options["structure"]["te_ps"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
-            raise ValueError(
-                """Please set WISDEM->RotorSE->n_span in the modeling options yaml larger
-                than structure->te_ps->n_opt in the analysis options yaml. n_span and te_ps n_opt are """,
-                self.modeling_options["WISDEM"]["RotorSE"]["n_span"],
-                blade_opt_options["structure"]["te_ps"]["n_opt"],
-            )
 
         # Handle linked joints and members in floating platform
         if self.modeling_options["flags"]["floating"]:
@@ -853,13 +823,14 @@ class WindTurbineOntologyPython(object):
             self.wt_init["components"]["blade"]["outer_shape_bem"]["pitch_axis"]["values"] = wt_opt[
                 "blade.outer_shape_bem.pitch_axis"
             ].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"] = {}
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["grid"] = wt_opt[
+                "blade.outer_shape_bem.s"
+            ].tolist()
+            self.wt_init["components"]["blade"]["outer_shape_bem"]["rthick"]["values"] = wt_opt[
+                "blade.interp_airfoils.r_thick_interp"
+            ].tolist()
             if self.modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
-                self.wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["grid"] = wt_opt[
-                    "blade.outer_shape_bem.s"
-                ].tolist()
-                self.wt_init["components"]["blade"]["outer_shape_bem"]["t/c"]["values"] = wt_opt[
-                    "blade.interp_airfoils.r_thick_interp"
-                ].tolist()
                 self.wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"] = wt_opt[
                     "blade.outer_shape_bem.s"
                 ].tolist()
@@ -943,7 +914,7 @@ class WindTurbineOntologyPython(object):
                 self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                     "values"
                 ] = wt_opt["blade.ps.layer_thickness_param"][i, :].tolist()
-                if wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] < 7:
+                if wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] != 10:
                     if (
                         "start_nd_arc"
                         not in self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]
@@ -968,6 +939,19 @@ class WindTurbineOntologyPython(object):
                     self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["end_nd_arc"][
                         "values"
                     ] = wt_opt["blade.internal_structure_2d_fem.layer_end_nd"][i, :].tolist()
+
+                    # Check for start and end nd layers outside the 0 to 1 range
+                    for j in range(len(self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                        "layers"][i]["start_nd_arc"]["grid"])):
+                        if self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                                "layers"][i]["start_nd_arc"]["values"][j] < 0.:
+                            self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                                "layers"][i]["start_nd_arc"]["values"][j] = 0.
+                        if self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                                "layers"][i]["end_nd_arc"]["values"][j] > 1.:
+                            self.wt_init["components"]["blade"]["internal_structure_2d_fem"][
+                                "layers"][i]["end_nd_arc"]["values"][j] = 1.
+
                 if (
                     wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] > 1
                     and wt_opt["blade.internal_structure_2d_fem.definition_layer"][i] < 6
@@ -1175,6 +1159,9 @@ class WindTurbineOntologyPython(object):
                 self.wt_init["components"]["nacelle"]["drivetrain"]["gear_configuration"] = wt_opt[
                     "nacelle.gear_configuration"
                 ]
+                self.wt_init["components"]["nacelle"]["drivetrain"]["gearbox_torque_density"] = float(
+                    wt_opt["drivese.rated_torque"]/wt_opt["drivese.gearbox_mass"]
+                )
                 self.wt_init["components"]["nacelle"]["drivetrain"]["planet_numbers"] = wt_opt["nacelle.planet_numbers"]
                 self.wt_init["components"]["nacelle"]["drivetrain"]["hss_material"] = wt_opt["nacelle.hss_material"]
 
@@ -1490,10 +1477,11 @@ class WindTurbineOntologyPython(object):
                 self.wt_init["costs"]["bearing_mass_cost_coeff"] = float(
                     wt_opt["tcc.main_bearing_cost"] / wt_opt["tcc.main_bearing_mass"]
                 )
-            if float(wt_opt["tcc.gearbox_mass"]) > 0.0:
-                self.wt_init["costs"]["gearbox_mass_cost_coeff"] = float(
-                    wt_opt["tcc.gearbox_cost"] / wt_opt["tcc.gearbox_mass"]
-                )
+            if self.modeling_options["flags"]["nacelle"]:
+                if float(wt_opt["drivese.gearbox_mass"]) > 0.:
+                    self.wt_init["costs"]["gearbox_torque_cost"] = float(
+                        wt_opt["tcc.gearbox_cost"]/wt_opt["drivese.rated_torque"]*1.e+3
+                    )
             if float(wt_opt["tcc.hss_mass"]) > 0.0:
                 self.wt_init["costs"]["hss_mass_cost_coeff"] = float(wt_opt["tcc.hss_cost"] / wt_opt["tcc.hss_mass"])
             if float(wt_opt["tcc.generator_mass"]) > 0.0:

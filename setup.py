@@ -48,8 +48,8 @@ def run_meson_build(staging_dir):
 
     meson_call = [meson_path, "setup", staging_dir, "--wipe",
                   f"--prefix={prefix}", f"-Dpython.purelibdir={purelibdir}",
-                  f"-Dpython.platlibdir={purelibdir}", meson_args]
-    meson_call = [m for m in meson_call if m != ""]
+                  f"-Dpython.platlibdir={purelibdir}"] + meson_args.split()
+    meson_call = [m for m in meson_call if m.strip() != ""]
     print(meson_call)
     p1 = subprocess.run(meson_call, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     os.makedirs(staging_dir, exist_ok=True)

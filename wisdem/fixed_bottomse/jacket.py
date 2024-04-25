@@ -675,6 +675,7 @@ class JacketCost(om.ExplicitComponent):
         self.add_input("tower_cost", val=0.0, units="USD")
         self.add_input("transition_piece_cost", 0.0, units="USD")
 
+        self.add_output("labor_hours", 0.0, units="h")
         self.add_output("jacket_cost", 0.0, units="USD")
         self.add_output("structural_cost", val=0.0, units="USD")
 
@@ -737,7 +738,8 @@ class JacketCost(om.ExplicitComponent):
         t_weld = manu.steel_tube_welding_time(theta, n_pieces, m_total, weld_L, t)
         t_manufacture = t_cut + t_weld
         K_f = k_f * t_manufacture
-
+        outputs["labor_hours"] = t_manufacture / 60.0
+        
         # Cost step 5) Painting by surface area
         theta_p = 2
         K_p = k_p * theta_p * np.pi * np.sum(D[:-n_legs] * L[:-n_legs])

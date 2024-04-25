@@ -98,7 +98,7 @@ class TestDrag(unittest.TestCase):
 
         prob.run_model()
 
-        check = prob.check_partials(out_stream=None, compact_print=True, method="fd")
+        check = prob.check_partials(out_stream=None, compact_print=True, method="fd", step=1e-4)
 
         assert_check_partials(check, rtol=5e-5, atol=1e-1)
 
@@ -123,7 +123,7 @@ class TestDrag(unittest.TestCase):
 
         prob.run_model()
 
-        check = prob.check_partials(out_stream=None, compact_print=True, method="fd")
+        check = prob.check_partials(out_stream=None, compact_print=True, method="fd", step=1e-4)
 
         assert_check_partials(check, rtol=5e-5, atol=1e-1)
 

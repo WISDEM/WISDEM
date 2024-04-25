@@ -7,7 +7,7 @@ The tower class can be used to model a wind turbine tower or a tower/monopile co
 No distinction is made between the tower and foundation, and so the term tower will be used throughout to refer to the entire structure.
 The current implementation assumes that the tower has cylindrical shell sections.
 The underlying analysis has the capability to handle general sections should such be desired.
-Dynamics for floating turbines are not included in TowerSE.
+Dynamics for floating turbines are not included in TowerSE, but are instead included within WISDEM's floating module, FloatingSE.
 
 Theory for the finite element code is available at the website: `Frame3DD <http://frame3dd.sourceforge.net/>`_.
 The RNA (rotor/nacelle/assembly) affects the stiffness of the structure and top loads.

@@ -281,7 +281,8 @@ class DirectLayout(Layout):
         outputs["L_bedplate"] = L_bedplate
         outputs["H_bedplate"] = H_bedplate
 
-        # Discretize the drivetrain from bedplate to hub
+        # Discretize the drivetrain from bedplate end to hub
+        # Note that the offset from the bedplate to the tower center line is taken into account in drive_components by "shaft0"
         s_mb1 = s_drive[4]
         s_mb2 = s_drive[2]
         s_rotor = s_drive[-2]
@@ -307,8 +308,10 @@ class DirectLayout(Layout):
         n_points = 12
         if upwind:
             rad = np.linspace(0.0, 0.5 * np.pi, n_points)
+            dw = 1
         else:
             rad = np.linspace(np.pi, 0.5 * np.pi, n_points)
+            dw = -1
 
         # Make sure we have the right number of bedplate thickness points
         t_bed = np.interp(rad, np.linspace(rad[0], rad[-1], len(t_bed)), t_bed)
@@ -332,7 +335,7 @@ class DirectLayout(Layout):
         A_bed = np.pi * (r_bed_o**2 - r_bed_i**2)
 
         # This finds the central angle (rad2) given the parametric angle (rad)
-        rad2 = np.arctan(L_bedplate / H_bedplate * np.tan(rad))
+        rad2 = np.arctan2(z_c/H_bedplate, dw * x_c/L_bedplate)
 
         # arc length from eccentricity of the centroidal ellipse using incomplete elliptic integral of the second kind
         if L_bedplate >= H_bedplate:
@@ -396,8 +399,8 @@ class DirectLayout(Layout):
 
         # ------- Nose, lss, and bearing properties ----------------
         # Now is a good time to set bearing diameters
-        outputs["D_bearing1"] = D_lss[-1] - t_lss[-1] - D_nose[0]
-        outputs["D_bearing2"] = D_lss[-1] - t_lss[-1] - D_nose[-1]
+        outputs["D_bearing1"] = 0.5 * D_lss[-1] - t_lss[-1] - 0.5 * D_nose[0]
+        outputs["D_bearing2"] = 0.5 * D_lss[-1] - t_lss[-1] - 0.5 * D_nose[-1]
 
         # Compute center of mass based on area
         m_nose, cm_nose, I_nose = rod_prop(s_nose, D_nose, t_nose, bedplate_rho)
