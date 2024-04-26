@@ -100,7 +100,7 @@ class TestServo(unittest.TestCase):
         r_tip = NPZFILE["r"][-1]
         inputs["s"] = (r - r_hub) / (r_tip - r_hub)
         inputs["aoa_along_span"] = 7. * np.ones(len(r))
-        inputs["stall_margin"] = 3.
+        inputs["stall_margin"] = np.array([ 3. ])
 
         modeling_options = {}
         modeling_options["WISDEM"] = {}
