@@ -742,7 +742,7 @@ class RunPreComp(ExplicitComponent):
         beam = PreComp(
             inputs["r"],
             inputs["chord"],
-            np.zeros_like(inputs["r"]),
+            inputs["theta"],
             inputs["pitch_axis"],
             inputs["precurve"],
             inputs["presweep"],
