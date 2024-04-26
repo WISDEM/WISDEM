@@ -408,16 +408,5 @@ class TestGenerators(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["Current_ratio"][-1], 0.17760183748148742)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestGenerators))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

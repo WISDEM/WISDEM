@@ -116,16 +116,5 @@ class TestHub(unittest.TestCase):
         self.assertAlmostEqual(hub_prob["adder.hub_system_I"][0], 587071.4472964063)  # 589792.50695335)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestHub))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

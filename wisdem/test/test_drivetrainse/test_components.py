@@ -498,16 +498,5 @@ class TestComponents(unittest.TestCase):
         self.assertAlmostEqual(outputs["drivetrain_damping_coefficient"], np.sqrt(50 * 150.0 / (2 + 75)))
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestComponents))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

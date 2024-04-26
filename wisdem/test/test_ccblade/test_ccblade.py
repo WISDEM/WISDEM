@@ -290,16 +290,5 @@ class TestNREL5MW(unittest.TestCase):
         np.testing.assert_allclose(T[idx] / 1e6, Tref[idx] / 1e3, atol=0.15)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestNREL5MW))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

@@ -191,16 +191,5 @@ class TestGearbox(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["gearbox_I"][1:], 10 * (0.75 * 4**2 + 3**2) / 12.0)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestGearbox))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

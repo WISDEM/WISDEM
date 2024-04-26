@@ -1,11 +1,10 @@
-import copy
 import unittest
 
 import numpy as np
 import openmdao.api as om
-import numpy.testing as npt
+#import numpy.testing as npt
 
-from wisdem.commonse import gravity as g
+#from wisdem.commonse import gravity as g
 from wisdem.fixed_bottomse.jacket import JacketSE
 
 
@@ -43,16 +42,5 @@ class Test(unittest.TestCase):
         prob.run_model()
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(Test))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

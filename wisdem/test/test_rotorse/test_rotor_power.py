@@ -576,9 +576,10 @@ class TestServo(unittest.TestCase):
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestServo))
-    return suite
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestServo),
+    ]
+    return unittest.TestSuite(suite)
 
 
 if __name__ == "__main__":

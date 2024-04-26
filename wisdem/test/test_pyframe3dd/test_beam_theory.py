@@ -243,11 +243,6 @@ class FrameTestEXA(unittest.TestCase):
         npt.assert_array_less(1e3, ratios[6:11])
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(FrameTestEXA))
-    return suite
-
-
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    unittest.main()
+

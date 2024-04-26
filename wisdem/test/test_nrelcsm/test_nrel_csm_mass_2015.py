@@ -121,16 +121,5 @@ class TestAll(unittest.TestCase):
         self.assertAlmostEqual(float(prob["turbine_cost_kW"][0]), 686.0044808706958, 2)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestAll))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

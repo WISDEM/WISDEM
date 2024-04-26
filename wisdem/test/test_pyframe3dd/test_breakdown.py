@@ -439,16 +439,5 @@ class TestBreakdown(unittest.TestCase):
         npt.assert_almost_equal(rxns_mass.Mzz, rxns_force.Mzz)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestBreakdown))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

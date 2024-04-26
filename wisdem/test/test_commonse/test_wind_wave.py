@@ -21,13 +21,15 @@ class TestDrag(unittest.TestCase):
         self.params["U"] = 2.0 * myones
         self.params["A"] = 4.0 * myones
         self.params["p"] = 3.0 * myones
-        self.params["cm"] = 1.0
         self.params["d"] = 10.0 * myones
+        self.params["z"] = -100.0 * myones
+        self.params["cm"] = 1.0
         self.params["rho_water"] = 0.5
         self.params["mu_water"] = 1e-3
-        self.params["z"] = -100.0 * myones
         self.params["beta_wave"] = 0.0
         self.params["cd_usr"] = -1.0
+        for k in self.params:
+            self.params[k] = np.array( [self.params[k]] )
 
         self.wave = wwd.CylinderWaveDrag(nPoints=npts)
 
@@ -59,7 +61,7 @@ class TestDrag(unittest.TestCase):
         npt.assert_equal(self.unknowns["waveLoads_beta"], 0.0)
 
     def testCDset(self):
-        self.params["cd_usr"] = 2.0
+        self.params["cd_usr"] = np.array([ 2.0 ])
         U = 2.0
         A = 4.0
         r = 5.0
@@ -128,16 +130,5 @@ class TestDrag(unittest.TestCase):
         assert_check_partials(check, rtol=5e-5, atol=1e-1)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestDrag))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()
