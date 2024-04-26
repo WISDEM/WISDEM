@@ -496,9 +496,12 @@ class RunPreComp(ExplicitComponent):
             ## Profiles
             # rotate
             profile_i = inputs["coord_xy_interp"][i, :, :]
-            profile_i_rot = np.column_stack(
-                rotate(inputs["pitch_axis"][i], 0.0, profile_i[:, 0], profile_i[:, 1], np.radians(inputs["theta"][i]))
-            )
+            profile_i_rot = profile_i
+            # Trying to ensure all shear webs are in perpendicular orientation,
+            # but this probably doesn't work as robustly as hoped.
+            #profile_i_rot = np.column_stack(
+            #    rotate(inputs["pitch_axis"][i], 0.0, profile_i[:, 0], profile_i[:, 1], np.radians(inputs["theta"][i]))
+            #)
 
             # import matplotlib.pyplot as plt
             # plt.plot(profile_i[:,0], profile_i[:,1])
