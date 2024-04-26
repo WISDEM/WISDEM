@@ -1,4 +1,5 @@
 import unittest
+import os
 
 import numpy as np
 import numpy.testing as npt
@@ -11,9 +12,10 @@ try:
 except Exception:
    import pickle
 
+mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
 # https://stackoverflow.com/questions/20716812/saving-and-loading-multiple-objects-in-pickle-file
 def loadall(filename):
-    with open(filename, "rb") as f:
+    with open(os.path.join(mydir, filename), "rb") as f:
         while True:
             try:
                 yield pickle.load(f)
