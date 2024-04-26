@@ -414,7 +414,7 @@ class MonopileFrame(om.ExplicitComponent):
             if self.options["soil_springs"]:
                 z_soil = inputs["z_soil"]
                 k_soil = inputs["k_soil"]
-                depth = float(inputs["water_depth"])
+                depth = float(inputs["water_depth"][0])
                 z_pile = z[z <= (z[0] + 1e-1 + np.abs(z_soil[0]))]
                 if z_pile.size != NREFINE + 1:
                     print(z)
@@ -587,17 +587,17 @@ class MonopileFrame(om.ExplicitComponent):
         # ------ add extra mass ------------
         # Prepare transition piece, and gravity foundation (if any applicable) for "extra node mass"
         # Turbine mass added for modal analysis only- gravity loads accounted for in point force
-        m_trans = float(inputs["transition_piece_mass"])
+        m_trans = float(inputs["transition_piece_mass"][0])
         I_trans = inputs["transition_piece_I"].flatten()
 
-        m_grav = float(inputs["gravity_foundation_mass"])
+        m_grav = float(inputs["gravity_foundation_mass"][0])
         I_grav = inputs["gravity_foundation_I"].flatten()
 
-        m_turb = float(inputs["turbine_mass"])
+        m_turb = float(inputs["turbine_mass"][0])
         cg_turb = inputs["turbine_cg"].flatten()
         I_turb = inputs["turbine_I"].flatten()
 
-        m_rna = float(inputs["rna_mass"])
+        m_rna = float(inputs["rna_mass"][0])
         cg_rna = inputs["rna_cg"].flatten()
         I_rna = inputs["rna_I"].flatten()
 

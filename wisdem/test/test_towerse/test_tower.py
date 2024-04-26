@@ -17,9 +17,9 @@ class TestPreDiscretization(unittest.TestCase):
     def testAll(self):
         inputs = {}
         outputs = {}
-        inputs["hub_height"] = 125.0
-        inputs["tower_height"] = 100.0
-        inputs["foundation_height"] = 10.0
+        inputs["hub_height"] = np.array([ 125.0 ])
+        inputs["tower_height"] = np.array([ 100.0 ])
+        inputs["foundation_height"] = np.array([ 10.0 ])
 
         mydis = tow.PreDiscretization()
         mydis.compute(inputs, outputs)
@@ -35,10 +35,10 @@ class TestMass(unittest.TestCase):
         inputs = {}
         outputs = {}
         inputs["joint2"] = np.array([0.0, 0.0, 125.0])
-        inputs["rna_mass"] = 1000.0
+        inputs["rna_mass"] = np.array([ 1000.0 ])
         inputs["rna_I"] = 3e4 * np.ones(6)
         inputs["rna_cg"] = 20.0 * np.ones(3)
-        inputs["tower_mass"] = 3000.0
+        inputs["tower_mass"] = np.array([ 3000.0 ])
         inputs["tower_center_of_mass"] = 0.5 * inputs["joint2"][-1]
         inputs["tower_I_base"] = 2e4 * np.ones(6)
 

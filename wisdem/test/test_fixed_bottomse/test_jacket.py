@@ -34,7 +34,7 @@ class Test(unittest.TestCase):
         prob.setup()
 
         prob["material_names"] = ["steel"]
-        prob["E_mat"] = 1e9 * np.ones((1, 3))
+        prob["E_mat"] = 1e10 * np.ones((1, 3))
         prob["G_mat"] = 1e8 * np.ones((1, 3))
         prob["rho_mat"] = 1e4
         prob["sigma_y_mat"] = 1e8
