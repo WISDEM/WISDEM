@@ -54,6 +54,8 @@ class TestGenerators(unittest.TestCase):
         self.inputs["v"] = 0.3
         self.inputs["y_tau_p"] = 1.0
         self.inputs["y_tau_pr"] = 10.0 / 12
+        for k in self.inputs:
+            self.inputs[k] = np.array( [self.inputs[k]] )
 
     def testConstraints(self):
         pass
@@ -63,11 +65,11 @@ class TestGenerators(unittest.TestCase):
         outputs = {}
         myobj = gen.MofI()
 
-        inputs["R_out"] = 3.0
-        inputs["stator_mass"] = 60.0
-        inputs["rotor_mass"] = 40.0
-        inputs["generator_mass"] = 100.0
-        inputs["len_s"] = 2.0
+        inputs["R_out"] = np.array([ 3.0 ])
+        inputs["stator_mass"] = np.array([ 60.0 ])
+        inputs["rotor_mass"] = np.array([ 40.0 ])
+        inputs["generator_mass"] = np.array([ 100.0 ])
+        inputs["len_s"] = np.array([ 2.0 ])
         myobj.compute(inputs, outputs)
         npt.assert_equal(outputs["generator_I"], np.r_[50.0 * 9, 25.0 * 9 + 100.0 / 3.0, 25.0 * 9 + 100.0 / 3.0])
         npt.assert_almost_equal(outputs["rotor_I"], 0.4 * outputs["generator_I"])
@@ -78,45 +80,45 @@ class TestGenerators(unittest.TestCase):
         outputs = {}
         myobj = gen.Cost()
 
-        inputs["C_Cu"] = 2.0
-        inputs["C_Fe"] = 0.5
-        inputs["C_Fes"] = 4.0
-        inputs["C_PM"] = 3.0
+        inputs["C_Cu"] = np.array([ 2.0 ])
+        inputs["C_Fe"] = np.array([ 0.5 ])
+        inputs["C_Fes"] = np.array([ 4.0 ])
+        inputs["C_PM"] = np.array([ 3.0 ])
 
-        inputs["Copper"] = 10.0
-        inputs["Iron"] = 0.0
-        inputs["mass_PM"] = 0.0
-        inputs["Structural_mass"] = 0.0
+        inputs["Copper"] = np.array([ 10.0 ])
+        inputs["Iron"] = np.array([ 0.0 ])
+        inputs["mass_PM"] = np.array([ 0.0 ])
+        inputs["Structural_mass"] = np.array([ 0.0 ])
         myobj.compute(inputs, outputs)
-        self.assertAlmostEqual(outputs["generator_cost"], (1.26 * 2.0 * 10 + 96.2 * 0.064 * 10.0) / 0.619)
+        npt.assert_almost_equal(outputs["generator_cost"], (1.26 * 2.0 * 10 + 96.2 * 0.064 * 10.0) / 0.619)
+ 
+        inputs["Copper"] = np.array([ 0.0 ])
+        inputs["Iron"] = np.array([ 10.0 ])
+        inputs["mass_PM"] = np.array([ 0.0 ])
+        inputs["Structural_mass"] = np.array([ 0.0 ])
+        myobj.compute(inputs, outputs)
+        npt.assert_almost_equal(outputs["generator_cost"], (1.21 * 0.5 * 10 + 26.9 * 0.064 * 10.0) / 0.684)
 
-        inputs["Copper"] = 0.0
-        inputs["Iron"] = 10.0
-        inputs["mass_PM"] = 0.0
-        inputs["Structural_mass"] = 0.0
+        inputs["Copper"] = np.array([ 0.0 ])
+        inputs["Iron"] = np.array([ 0.0 ])
+        inputs["mass_PM"] = np.array([ 10.0 ])
+        inputs["Structural_mass"] = np.array([ 0.0 ])
         myobj.compute(inputs, outputs)
-        self.assertAlmostEqual(outputs["generator_cost"], (1.21 * 0.5 * 10 + 26.9 * 0.064 * 10.0) / 0.684)
+        npt.assert_almost_equal(outputs["generator_cost"], (1.0 * 3.0 * 10 + 79.0 * 0.064 * 10.0) / 0.619)
 
-        inputs["Copper"] = 0.0
-        inputs["Iron"] = 0.0
-        inputs["mass_PM"] = 10.0
-        inputs["Structural_mass"] = 0.0
+        inputs["Copper"] = np.array([ 0.0 ])
+        inputs["Iron"] = np.array([ 0.0 ])
+        inputs["mass_PM"] = np.array([ 0.0 ])
+        inputs["Structural_mass"] = np.array([ 10.0 ])
         myobj.compute(inputs, outputs)
-        self.assertAlmostEqual(outputs["generator_cost"], (1.0 * 3.0 * 10 + 79.0 * 0.064 * 10.0) / 0.619)
-
-        inputs["Copper"] = 0.0
-        inputs["Iron"] = 0.0
-        inputs["mass_PM"] = 0.0
-        inputs["Structural_mass"] = 10.0
-        myobj.compute(inputs, outputs)
-        self.assertAlmostEqual(outputs["generator_cost"], (1.21 * 4.0 * 10 + 15.9 * 0.064 * 10.0) / 0.684)
+        npt.assert_almost_equal(outputs["generator_cost"], (1.21 * 4.0 * 10 + 15.9 * 0.064 * 10.0) / 0.684)
 
     def testEff(self):
         inputs = {}
         outputs = {}
         myobj = gen.PowerElectronicsEff()
 
-        inputs["machine_rating"] = 2e6
+        inputs["machine_rating"] = np.array([ 2e6 ])
         inputs["shaft_rpm"] = np.arange(10.1)
         inputs["shaft_rpm"][0] = 0.1
         inputs["eandm_efficiency"] = np.ones(inputs["shaft_rpm"].shape)
