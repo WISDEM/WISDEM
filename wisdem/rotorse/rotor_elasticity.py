@@ -175,7 +175,7 @@ class RunPreComp(ExplicitComponent):
         self.add_output(
             "Tw_iner",
             val=np.zeros(n_span),
-            units="m",
+            units="deg",
             desc="Orientation of the section principal inertia axes with respect the blade reference plane",
         )
         self.add_output(

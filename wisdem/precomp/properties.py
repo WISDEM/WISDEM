@@ -261,7 +261,7 @@ def properties(chord, tw_aero_d, tw_prime_d, le_loc, xnode, ynode, e1, e2, g12, 
         
         qbar11, qbar22, qbar12, qbar16, qbar26, qbar66 = q_bars(thp, q11[mat], q22[mat], q12[mat], q66[mat])
         qtil = q_tildas(qbar11, qbar22, qbar12, qbar16, qbar26, qbar66)
-        
+
         qtil11t = np.squeeze(qtil[0, 0, :] * t)
         q11t = np.sum(qtil11t)
 
@@ -835,4 +835,4 @@ def q_tildas(qbar11, qbar22, qbar12, qbar16, qbar26, qbar66):
     qtil[0, 1, :] = qbar16 - qbar12 * qbar26 / qbar22
     qtil[1, 1, :] = qbar66 - qbar26**2 / qbar22
     
-    return np.squeeze(qtil)
+    return qtil
