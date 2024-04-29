@@ -4,6 +4,7 @@ python_sources = [
   'test_BladeJointSizing.py',
   'test_blade_cost.py',
   'test_rail_transport.py',
+  'test_rotor_elasticity.py',
   'test_rotor_power.py',
   'test_rotor_structure.py',
 ]
