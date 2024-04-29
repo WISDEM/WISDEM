@@ -14,8 +14,8 @@ class TestHub(unittest.TestCase):
 
         inputs["blades_I"] = np.ones(6)
         inputs["blades_I"][0] = 1e3
-        inputs["rated_rpm"] = 10.0
-        inputs["stop_time"] = 5.0
+        inputs["rated_rpm"] = np.array([ 10.0 ])
+        inputs["stop_time"] = np.array([ 5.0 ])
 
         torq.compute(inputs, outputs)
         self.assertAlmostEqual(outputs["max_torque"], 1e4 * np.pi / 30.0 / 5.0)
@@ -27,11 +27,11 @@ class TestHub(unittest.TestCase):
         discrete_inputs = {}
         discrete_outputs = {}
 
-        inputs["blade_mass"] = 17740.0  # kg
+        inputs["blade_mass"] = np.array([ 17740.0 ])  # kg
         discrete_inputs["n_blades"] = 3
-        inputs["hub_diameter"] = 4.0
-        inputs["rho"] = 7850.0
-        inputs["Xy"] = 250e6
+        inputs["hub_diameter"] = np.array([ 4.0 ])
+        inputs["rho"] = np.array([ 7850.0 ])
+        inputs["Xy"] = np.array([ 250e6 ])
 
         AirDensity = 1.225  # kg/(m^3)
         Solidity = 0.0517
@@ -116,16 +116,5 @@ class TestHub(unittest.TestCase):
         self.assertAlmostEqual(hub_prob["adder.hub_system_I"][0], 587071.4472964063)  # 589792.50695335)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestHub))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

@@ -808,7 +808,7 @@ class RunPreComp(ExplicitComponent):
                     inputs["r"][id_station + 1] - inputs["r"][id_station],
                 ]
             )
-            rhoA_joint[id_station] += inputs["joint_mass"] / span
+            rhoA_joint[id_station] += inputs["joint_mass"][0] / span
 
         outputs["z"] = inputs["r"]
         outputs["EIxx"] = EIxx

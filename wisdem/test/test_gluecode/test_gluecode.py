@@ -57,16 +57,5 @@ class TestRegression(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["towerse.z_param"][-1], 108.0, 3)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestRegression))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

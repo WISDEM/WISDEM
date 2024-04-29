@@ -2074,12 +2074,13 @@ class TestMisc(unittest.TestCase):
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestBlend))
-    suite.addTest(unittest.makeSuite(Test3DStall))
-    suite.addTest(unittest.makeSuite(TestExtrap))
-    suite.addTest(unittest.makeSuite(TestMisc))
-    return suite
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestBlend),
+        unittest.TestLoader().loadTestsFromTestCase(Test3DStall),
+        unittest.TestLoader().loadTestsFromTestCase(TestExtrap),
+        unittest.TestLoader().loadTestsFromTestCase(TestMisc),
+    ]
+    return unittest.TestSuite(suite)
 
 
 if __name__ == "__main__":

@@ -623,11 +623,12 @@ class TestMonopileSE(unittest.TestCase):
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestPreDiscretization))
-    suite.addTest(unittest.makeSuite(TestMass))
-    suite.addTest(unittest.makeSuite(TestMonopileSE))
-    return suite
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestPreDiscretization),
+        unittest.TestLoader().loadTestsFromTestCase(TestMass),
+        unittest.TestLoader().loadTestsFromTestCase(TestMonopileSE),
+    ]
+    return unittest.TestSuite(suite)
 
 
 if __name__ == "__main__":
