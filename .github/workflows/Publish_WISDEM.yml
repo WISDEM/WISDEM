@@ -5,6 +5,9 @@ name: Build and upload to PyPI
 #on: [push, pull_request]
 # Alternatively, to publish when a (published) GitHub Release is created, use the following:
 on:
+  push:
+    branches:
+      - master
   release:
     types:
       - published
