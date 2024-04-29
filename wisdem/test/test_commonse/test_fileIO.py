@@ -112,16 +112,5 @@ class TestFileIO(unittest.TestCase):
         npt.assert_equal(npzdat["list_out"], ["full"] * 3)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestFileIO))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

@@ -28,16 +28,5 @@ class TestRC(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_material_cost"][0], 1862.0053389354628, places=accuracy)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestRC))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

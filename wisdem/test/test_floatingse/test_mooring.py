@@ -89,16 +89,5 @@ class TestMooring(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["mooring_cost"], 6 * 270 * 514.415)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestMooring))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

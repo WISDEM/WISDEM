@@ -410,7 +410,7 @@ class RunFrame3DD(ExplicitComponent):
         # Pinned at root
         rnode = np.array([1])
         rigid = np.array([1e16])
-        reactions = pyframe3dd.ReactionData(rnode, rigid, rigid, rigid, rigid, rigid, rigid, float(rigid))
+        reactions = pyframe3dd.ReactionData(rnode, rigid, rigid, rigid, rigid, rigid, rigid, float(rigid[0]))
         # -----------------------------------
 
         # ------ frame element data ------------
@@ -1503,7 +1503,7 @@ class BladeJointSizing(ExplicitComponent):
         w_layer = inputs["layer_width"]
         layer_start_nd = inputs["layer_start_nd"]
         layer_end_nd = inputs["layer_end_nd"]
-        bolt_spacing_dia = inputs["bolt_spacing_dia"]
+        bolt_spacing_dia = inputs["bolt_spacing_dia"][0]
         ply_drop_slope = inputs["ply_drop_slope"]
         t_adhesive = inputs["t_adhesive"]
         t_max = inputs["t_max"]
@@ -1533,9 +1533,9 @@ class BladeJointSizing(ExplicitComponent):
         w_reinf = w_layer[ss_layer_i, i_span]
 
         # Loads
-        Mflap_ultimate = abs(inputs["M1"][i_span]) * load_factor
-        Medge_ultimate = abs(inputs["M2"][i_span]) * load_factor
-        Fflap_ultimate = abs(inputs["F2"][i_span]) * load_factor
+        Mflap_ultimate = np.abs(inputs["M1"][i_span]) * load_factor
+        Medge_ultimate = np.abs(inputs["M2"][i_span]) * load_factor
+        Fflap_ultimate = np.abs(inputs["F2"][i_span]) * load_factor
 
         # Fatigue factors
         a = inputs["a"]
@@ -1549,7 +1549,7 @@ class BladeJointSizing(ExplicitComponent):
         Medge_fatigue = Medge_ultimate * kp
 
         # Other
-        itermax = int(inputs["itermax"])
+        itermax = int(inputs["itermax"][0])
         discrete = inputs["discrete"]
 
         """ Loading calculations begin"""

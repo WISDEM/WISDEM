@@ -1151,14 +1151,15 @@ class TestGroup(unittest.TestCase):
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestInputs))
-    suite.addTest(unittest.makeSuite(TestFullDiscretization))
-    suite.addTest(unittest.makeSuite(TestMemberComponent))
-    suite.addTest(unittest.makeSuite(TestHydro))
-    suite.addTest(unittest.makeSuite(TestGlobal2Member))
-    suite.addTest(unittest.makeSuite(TestGroup))
-    return suite
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestInputs),
+        unittest.TestLoader().loadTestsFromTestCase(TestFullDiscretization),
+        unittest.TestLoader().loadTestsFromTestCase(TestMemberComponent),
+        unittest.TestLoader().loadTestsFromTestCase(TestHydro),
+        unittest.TestLoader().loadTestsFromTestCase(TestGlobal2Member),
+        unittest.TestLoader().loadTestsFromTestCase(TestGroup),
+    ]
+    return unittest.TestSuite(suite)
 
 
 if __name__ == "__main__":
