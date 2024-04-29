@@ -9,7 +9,7 @@ import numpy as np
 import openmdao
 import openmdao.utils.coloring as coloring_mod
 from openmdao.core.driver import Driver, RecordingDebugging
-from openmdao.utils.general_utils import issue_warning
+from openmdao.utils.om_warnings import issue_warning
 
 try:
     from openmdao.utils.class_util import weak_method_wrapper as weak_method_wrapper

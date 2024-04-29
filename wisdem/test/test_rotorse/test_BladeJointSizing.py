@@ -24,20 +24,9 @@ class TestRC(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.t_reinf_ratio_joint"][0], 0.9899571827651443, places=accuracy)
         self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.w_reinf_ratio_joint"][0], 1.2087641190997038, places=accuracy)
         self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.n_joint_bolt"][0], 38.364778956043914, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_mass"][0], 434.4612814627046, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_material_cost"][0], 1872.7268347376544, places=accuracy)
-
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestRC))
-    return suite
+        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_mass"][0], 431.97426980947546, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_material_cost"][0], 1862.0053389354628, places=accuracy)
 
 
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

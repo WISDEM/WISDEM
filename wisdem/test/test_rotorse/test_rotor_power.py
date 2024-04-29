@@ -82,6 +82,60 @@ class TestServo(unittest.TestCase):
         except ValueError:
             self.assertTrue(True)
 
+    def testStall(self):
+        inputs = {}
+        outputs = {}
+
+        myobj = rp.NoStallConstraint()
+
+        (n_span, n_aoa, n_Re, n_tab) = NPZFILE["airfoils_cl"].shape
+
+        inputs["airfoils_cl"] = NPZFILE["airfoils_cl"]
+        inputs["airfoils_cd"] = NPZFILE["airfoils_cd"]
+        inputs["airfoils_cm"] = NPZFILE["airfoils_cm"]
+        inputs["airfoils_aoa"] = NPZFILE["airfoils_aoa"]
+        inputs["min_s"] = 0.25
+        r = NPZFILE["r"]
+        r_hub = NPZFILE["r"][0]
+        r_tip = NPZFILE["r"][-1]
+        inputs["s"] = (r - r_hub) / (r_tip - r_hub)
+        inputs["aoa_along_span"] = 7. * np.ones(len(r))
+        inputs["stall_margin"] = np.array([ 3. ])
+
+        modeling_options = {}
+        modeling_options["WISDEM"] = {}
+        modeling_options["WISDEM"]["RotorSE"] = {}
+        modeling_options["WISDEM"]["RotorSE"]["n_span"] = n_span
+        modeling_options["WISDEM"]["RotorSE"]["n_aoa"] = n_aoa
+        modeling_options["WISDEM"]["RotorSE"]["n_Re"] = n_Re
+        modeling_options["WISDEM"]["RotorSE"]["n_tab"] = n_tab
+
+        outputs["stall_angle_along_span"] = np.zeros(len(r))
+        outputs["no_stall_constraint"] = np.zeros(len(r))
+
+        myobj.compute(inputs, outputs)
+
+        ref_no_stall_constraint = np.array([0.        , 0.        ,
+                             0.        , 0.        , 0.        ,
+            0.        , 0.        , 0.77009342, 0.80530567, 0.83153911,
+            0.85911535, 0.89343367, 0.97975052, 1.07592565, 1.11609355,
+            1.13403252, 1.14891246, 1.14568097, 1.14014398, 1.12239983,
+            1.07454375, 1.07115146, 1.07115146, 1.07115146, 1.07115146,
+            1.07115146, 1.07115146, 1.07115146, 1.07115146, 1.07115146])
+        
+        ref_stall_angle_along_span = np.array([1.00000000e-06, 6.24217266e+01, 
+                                               3.04993295e+00, 3.86108996e+01,
+                2.45945626e+01, 1.84737813e+01, 1.35576462e+01, 1.29854375e+01,
+                1.24176450e+01, 1.20258925e+01, 1.16398805e+01, 1.11927727e+01,
+                1.02066799e+01, 9.29432250e+00, 8.95982239e+00, 8.81808929e+00,
+                8.70388331e+00, 8.72843333e+00, 8.77082210e+00, 8.90948100e+00,
+                9.30627534e+00, 9.33574791e+00, 9.33574791e+00, 9.33574791e+00,
+                9.33574791e+00, 9.33574791e+00, 9.33574791e+00, 9.33574791e+00,
+                9.33574791e+00, 9.33574791e+00])
+
+        npt.assert_almost_equal(outputs["no_stall_constraint"], ref_no_stall_constraint)
+        npt.assert_almost_equal(outputs["stall_angle_along_span"], ref_stall_angle_along_span)
+
     def testRegulationTrajectory(self):
         prob = om.Problem(reports=False)
 
@@ -522,9 +576,10 @@ class TestServo(unittest.TestCase):
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestServo))
-    return suite
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestServo),
+    ]
+    return unittest.TestSuite(suite)
 
 
 if __name__ == "__main__":

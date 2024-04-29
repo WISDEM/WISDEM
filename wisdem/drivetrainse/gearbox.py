@@ -141,13 +141,13 @@ class Gearbox(om.ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         if self.options["direct_drive"]:
             outputs["stage_ratios"] = np.zeros(3)
-            outputs["gearbox_mass"] = outputs["D_gearbox"] = outputs["L_gearbox"] = 0.0
+            outputs["gearbox_mass"] = outputs["D_gearbox"] = outputs["L_gearbox"] = np.zeros(1)
             outputs["gearbox_I"] = np.zeros(3)
             return
         elif inputs["gearbox_mass_user"] == 0.0:
             if self.options["use_gb_torque_density"]:
                 m_gearbox = inputs["rated_torque"] / inputs["gearbox_torque_density"]
-                outputs["carrier_mass"]
+                outputs["carrier_mass"] = 0.0
             else:
                 # Unpack inputs
                 config = discrete_inputs["gear_configuration"]
@@ -259,13 +259,13 @@ class Gearbox(om.ExplicitComponent):
                 outputs["carrier_mass"] = m_shrink_disc + m_carrier
 
             # calculate mass properties
-            D_rotor = inputs["rotor_diameter"]
+            D_rotor = float(inputs["rotor_diameter"][0])
             L_gearbox = 0.015 * D_rotor # assumed to be 1.5% of wind turbine rotor diameter, regression from Jan 30th, 2024 
             R_gearbox = 0.006 * D_rotor # assumed to be 0.6% of wind turbine rotor diameter, regression from Jan 30th, 2024 
         else:
-            m_gearbox = inputs["gearbox_mass_user"]
-            R_gearbox = inputs["gearbox_radius_user"]
-            L_gearbox = inputs["gearbox_length_user"]
+            m_gearbox = float(inputs["gearbox_mass_user"][0])
+            R_gearbox = float(inputs["gearbox_radius_user"][0])
+            L_gearbox = float(inputs["gearbox_length_user"][0])
             outputs["carrier_mass"] = 0.
 
 

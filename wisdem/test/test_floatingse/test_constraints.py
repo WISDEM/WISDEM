@@ -62,16 +62,5 @@ class TestConstraints(unittest.TestCase):
         npt.assert_almost_equal(outputs["constr_draft_heel_margin"], -(-6.0 - draft2), decimal = 8)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestConstraints))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

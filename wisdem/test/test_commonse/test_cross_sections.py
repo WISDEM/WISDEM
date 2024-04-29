@@ -32,16 +32,5 @@ class TestTube(unittest.TestCase):
         npt.assert_almost_equal(T.C, np.pi * 369.0 / 2.0 / 5.0)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestTube))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

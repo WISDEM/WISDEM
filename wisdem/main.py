@@ -11,7 +11,8 @@ from wisdem.inputs.gui import run as guirun
 from wisdem.glue_code.runWISDEM import run_wisdem
 
 warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
-
+warnings.simplefilter("ignore", RuntimeWarning, lineno=175)
+warnings.simplefilter("ignore", RuntimeWarning, lineno=177)
 
 def read_master_file(fyaml):
     if os.path.exists(fyaml):

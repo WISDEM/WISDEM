@@ -154,11 +154,11 @@ class Brake(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         # Unpack inputs
-        D_rotor = float(inputs["rotor_diameter"])
-        Q_rotor = float(inputs["rated_torque"])
-        m_brake = float(inputs["brake_mass_user"])
-        s_rotor = float(inputs["s_rotor"])
-        s_gearbox = float(inputs["s_gearbox"])
+        D_rotor = float(inputs["rotor_diameter"][0])
+        Q_rotor = float(inputs["rated_torque"][0])
+        m_brake = float(inputs["brake_mass_user"][0])
+        s_rotor = float(inputs["s_rotor"][0])
+        s_gearbox = float(inputs["s_gearbox"][0])
 
         # Regression based sizing derived by J.Keller under FOA 1981 support project
         if m_brake == 0.0:
@@ -214,9 +214,9 @@ class RPM_Input(om.ExplicitComponent):
         self.add_output("hss_rpm", val=np.zeros(n_pc), units="rpm")
 
     def compute(self, inputs, outputs):
-        min_rpm = np.maximum(0.1, float(inputs["minimum_rpm"]))
-        max_rpm = float(inputs["rated_rpm"])
-        ratio = float(inputs["gear_ratio"])
+        min_rpm = np.maximum(0.1, float(inputs["minimum_rpm"][0]))
+        max_rpm = float(inputs["rated_rpm"][0])
+        ratio = float(inputs["gear_ratio"][0])
         rpm_full = np.linspace(min_rpm, max_rpm, self.options["n_pc"])
         outputs["lss_rpm"] = rpm_full
         outputs["hss_rpm"] = ratio * rpm_full
@@ -290,13 +290,13 @@ class GeneratorSimple(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         # Unpack inputs
-        rating = float(inputs["machine_rating"])
-        D_rotor = float(inputs["rotor_diameter"])
-        Q_rotor = float(inputs["rated_torque"])
-        R_generator = float(inputs["generator_radius_user"])
-        mass = float(inputs["generator_mass_user"])
+        rating = float(inputs["machine_rating"][0])
+        D_rotor = float(inputs["rotor_diameter"][0])
+        Q_rotor = float(inputs["rated_torque"][0])
+        R_generator = float(inputs["generator_radius_user"][0])
+        mass = float(inputs["generator_mass_user"][0])
         eff_user = inputs["generator_efficiency_user"]
-        length = float(inputs["L_generator"])
+        length = float(inputs["L_generator"][0])
 
         if mass == 0.0:
             if self.options["direct_drive"]:
@@ -398,11 +398,11 @@ class Electronics(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         # Unpack inputs
-        rating = float(inputs["machine_rating"])
-        D_rotor = float(inputs["rotor_diameter"])
-        D_top = float(inputs["D_top"])
-        m_conv_usr = float(inputs["converter_mass_user"])
-        m_trans_usr = float(inputs["transformer_mass_user"])
+        rating = float(inputs["machine_rating"][0])
+        D_rotor = float(inputs["rotor_diameter"][0])
+        D_top = float(inputs["D_top"][0])
+        m_conv_usr = float(inputs["converter_mass_user"][0])
+        m_trans_usr = float(inputs["transformer_mass_user"][0])
 
         # Correlation based trends, assume box
         m_converter = (
@@ -467,9 +467,9 @@ class YawSystem(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         # Unpack inputs
-        D_rotor = float(inputs["rotor_diameter"])
-        D_top = float(inputs["D_top"])
-        rho = float(inputs["rho"])
+        D_rotor = float(inputs["rotor_diameter"][0])
+        D_top = float(inputs["D_top"][0])
+        rho = float(inputs["rho"][0])
 
         # Estimate the number of yaw motors (borrowed from old DriveSE utilities)
         n_motors = 2 * np.ceil(D_rotor / 30.0) - 2
@@ -582,16 +582,16 @@ class MiscNacelleComponents(om.ExplicitComponent):
         # Unpack inputs
         direct = self.options["direct_drive"]
         upwind = discrete_inputs["upwind"]
-        rating = float(inputs["machine_rating"])
-        coeff = float(inputs["hvac_mass_coeff"])
-        H_bedplate = float(inputs["H_bedplate"])
-        D_top = float(inputs["D_top"])
-        L_bedplate = float(inputs["L_bedplate"])
-        R_generator = float(inputs["R_generator"])
-        overhang = float(inputs["overhang"])
-        s_generator = float(inputs["generator_cm"])
-        rho_fiberglass = float(inputs["rho_fiberglass"])
-        rho_castiron = float(inputs["rho_castiron"])
+        rating = float(inputs["machine_rating"][0])
+        coeff = float(inputs["hvac_mass_coeff"][0])
+        H_bedplate = float(inputs["H_bedplate"][0])
+        D_top = float(inputs["D_top"][0])
+        L_bedplate = float(inputs["L_bedplate"][0])
+        R_generator = float(inputs["R_generator"][0])
+        overhang = float(inputs["overhang"][0])
+        s_generator = float(inputs["generator_cm"][0])
+        rho_fiberglass = float(inputs["rho_fiberglass"][0])
+        rho_castiron = float(inputs["rho_castiron"][0])
 
         # For the nacelle cover, imagine a box from the bedplate to the hub in length and around the generator in width, height, with 10% margin in each dim
         L_cover = 1.1 * L_bedplate if direct else 1.1 * (overhang + D_top)
@@ -858,7 +858,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         Cup = -1.0 if discrete_inputs["upwind"] else 1.0
-        tilt = float(np.deg2rad(inputs["tilt"]))
+        tilt = float(np.deg2rad(inputs["tilt"][0]))
 
         components = [
             "mb1",
@@ -883,7 +883,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         m_nac = 0.0
         cm_nac = np.zeros(3)
         shaft0 = np.zeros(3)
-        shaft0[-1] += inputs["constr_height"]
+        shaft0[-1] += inputs["constr_height"][0]
         if self.options["direct_drive"]:
             shaft0[0] += inputs["x_bedplate"][-1]
         outputs["shaft_start"] = shaft0
@@ -911,7 +911,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         I_cm_list = np.zeros((len(components) + 3, 6))
         I_TT_list = np.zeros((len(components) + 3, 6))
         for ic, c in enumerate(components):
-            m_i = inputs[c + "_mass"]
+            m_i = float(inputs[c + "_mass"][0])
             cm_i = inputs["generator_cm"] if c.find("generator") >= 0 else inputs[c + "_cm"]
             I_i = inputs[c + "_I"]
 
@@ -975,16 +975,16 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
 
         # Wrap up nacelle mass table
         components.append("Above_yaw")
-        m_list[-3] = outputs["above_yaw_mass"]
-        cm_list[-3, :] = outputs["above_yaw_cm"]
-        I_cm_list[-3, :] = outputs["above_yaw_I"]
-        I_TT_list[-3, :] = outputs["above_yaw_I_TT"]
+        m_list[-3] = outputs["above_yaw_mass"][0]
+        cm_list[-3, :] = outputs["above_yaw_cm"][0]
+        I_cm_list[-3, :] = outputs["above_yaw_I"][0]
+        I_TT_list[-3, :] = outputs["above_yaw_I_TT"][0]
         components.append("yaw")
-        m_list[-2] = inputs["yaw_mass"]
-        cm_list[-2, :] = inputs["yaw_cm"]
+        m_list[-2] = inputs["yaw_mass"][0]
+        cm_list[-2, :] = inputs["yaw_cm"][0]
         I_cm_list[-2, :] = I_TT_list[-2, :] = np.r_[inputs["yaw_I"], np.zeros(3)]
         components.append("nacelle")
-        m_list[-1] = m_nac
+        m_list[-1] = m_nac[0]
         cm_list[-1, :] = cm_nac
         I_cm_list[-1, :] = I_nac
         I_TT_list[-1, :] = outputs["nacelle_I_TT"]
@@ -1007,6 +1007,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         self._mass_table["MoI_TT_xz"] = I_TT_list[:, 4]
         self._mass_table["MoI_TT_yz"] = I_TT_list[:, 5]
         self._mass_table.set_index("Component", inplace=True)
+        #print(self._mass_table[["Mass","CoM_TT_x"]])
 
 
 # --------------------------------------------
@@ -1079,7 +1080,7 @@ class RNA_Adder(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         Cup = -1.0 if discrete_inputs["upwind"] else 1.0
-        tilt = float(np.deg2rad(inputs["tilt"]))
+        tilt = float(np.deg2rad(inputs["tilt"][0]))
 
         hub_mass = inputs["hub_system_mass"]
         blades_mass = inputs["blades_mass"]

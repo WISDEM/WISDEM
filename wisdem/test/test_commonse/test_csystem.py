@@ -132,16 +132,5 @@ class TestCSystem(unittest.TestCase):
         npt.assert_almost_equal(F.toArray(), new_F.toArray())
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestCSystem))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

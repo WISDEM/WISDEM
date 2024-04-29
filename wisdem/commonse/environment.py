@@ -161,8 +161,8 @@ class PowerWind(WindBase):
         z = inputs["z"]
         if isinstance(z, float) or isinstance(z, np.float_):
             z = np.array([z])
-        zref = float(inputs["zref"])
-        z0 = float(inputs["z0"])
+        zref = float(inputs["zref"][0])
+        z0 = float(inputs["z0"][0])
 
         # velocity
         idx = z > z0
@@ -264,9 +264,9 @@ class LogWind(WindBase):
         z = inputs["z"]
         if isinstance(z, float) or isinstance(z, np.float_):
             z = np.array([z])
-        zref = float(inputs["zref"])
-        z0 = float(inputs["z0"])
-        z_roughness = float(inputs["z_roughness"]) / 1e3  # convert to m
+        zref = float(inputs["zref"][0])
+        z0 = float(inputs["z0"][0])
+        z_roughness = float(inputs["z_roughness"][0]) / 1e3  # convert to m
 
         # find velocity
         idx = np.where(z - z0 > z_roughness)[0]
@@ -278,10 +278,10 @@ class LogWind(WindBase):
         z = inputs["z"]
         if isinstance(z, float) or isinstance(z, np.float_):
             z = np.array([z])
-        zref = float(inputs["zref"])
-        z0 = float(inputs["z0"])
-        z_roughness = float(inputs["z_roughness"]) / 1e3
-        Uref = float(inputs["Uref"])
+        zref = float(inputs["zref"][0])
+        z0 = float(inputs["z0"][0])
+        z_roughness = float(inputs["z_roughness"][0]) / 1e3
+        Uref = float(inputs["Uref"][0])
         npts = self.options["nPoints"]
 
         dU_dUref = np.zeros(npts)
@@ -510,11 +510,11 @@ class TowerSoil(om.ExplicitComponent):
         self.declare_partials("k", ["d0", "depth"])
 
     def compute(self, inputs, outputs):
-        G = float(inputs["G"])
-        nu = float(inputs["nu"])
-        depth = float(inputs["depth"])
+        G = float(inputs["G"][0])
+        nu = float(inputs["nu"][0])
+        depth = float(inputs["depth"][0])
         h = np.linspace(depth, 0.0, self.options["npts"])
-        r0 = 0.5 * float(inputs["d0"])
+        r0 = 0.5 * float(inputs["d0"][0])
         # vertical
         eta = 1.0 + 0.6 * (1.0 - nu) * h / r0
         k_z = 4 * G * r0 * eta / (1.0 - nu)

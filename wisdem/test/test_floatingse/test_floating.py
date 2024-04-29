@@ -157,16 +157,5 @@ class TestOC3Mass(unittest.TestCase):
         npt.assert_allclose(ansys_I, prob["member0.I_total"], rtol=0.02)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestOC3Mass))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

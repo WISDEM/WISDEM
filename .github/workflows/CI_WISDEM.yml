@@ -78,13 +78,11 @@ jobs:
       # Run coveralls
       - name: Run coveralls
         if: contains( matrix.os, 'ubuntu') && contains( matrix.python-version, '3.11')
-        uses: coverallsapp/github-action@v2
-        # This also works, https://github.com/AndreMiras/coveralls-python-action
-        #uses: AndreMiras/coveralls-python-action@develop
-        #env:
-        #  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        #run: |
-        #  coveralls --service=github
+        #uses: coverallsapp/github-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          coveralls --service=github
           
   build_pip:
     name: Pip Build-Test (${{ matrix.os }} Python ${{ matrix.python-version }})

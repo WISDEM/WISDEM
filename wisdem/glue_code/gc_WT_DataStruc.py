@@ -256,13 +256,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             nacelle_ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
             if modeling_options["flags"]["nacelle"]:
                 nacelle_ivc.add_output(
-                    "distance_hub2mb",
+                    "distance_hub_mb",
                     val=0.0,
                     units="m",
                     desc="Distance from hub flange to first main bearing along shaft",
                 )
                 nacelle_ivc.add_output(
-                    "distance_mb2mb", val=0.0, units="m", desc="Distance from first to second main bearing along shaft"
+                    "distance_mb_mb", val=0.0, units="m", desc="Distance from first to second main bearing along shaft"
                 )
                 nacelle_ivc.add_output("L_generator", val=0.0, units="m", desc="Generator length along shaft")
                 nacelle_ivc.add_output("lss_diameter", val=np.zeros(2), units="m", desc="Diameter of low speed shaft")
