@@ -35,8 +35,8 @@ class FindMaxTorque(om.ExplicitComponent):
         self.add_output("max_torque", val=0.0, units="N*m")
 
     def compute(self, inputs, outputs):
-        omega = float(inputs["rated_rpm"]) * np.pi / 30.0
-        outputs["max_torque"] = float(inputs["blades_I"][0]) * omega / float(inputs["stop_time"])
+        omega = float(inputs["rated_rpm"][0]) * np.pi / 30.0
+        outputs["max_torque"] = float(inputs["blades_I"][0]) * omega / float(inputs["stop_time"][0])
 
 
 class HubShell(om.ExplicitComponent):
@@ -411,7 +411,7 @@ class PitchSystem(om.ExplicitComponent):
         if self.options["verbosity"]:
             sys.stderr.write(
                 "PitchSystem IN : blade mass {:.1f} kg rbmy {:.1f} Nm\n".format(
-                    float(inputs["blade_mass"]), float(inputs["BRFM"])
+                    float(inputs["blade_mass"][0]), float(inputs["BRFM"][0])
                 )
             )
             sys.stderr.write("PitchSystem OUT: mass {:.1f} kg\n".format(float(mass)))
@@ -481,11 +481,11 @@ class Hub_Adder(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         # Unpack inputs
-        m_pitch = float(inputs["pitch_mass"])
-        m_hub = float(inputs["hub_mass"])
-        m_spin = float(inputs["spinner_mass"])
-        cm_hub = float(inputs["hub_cm"])
-        cm_spin = float(inputs["spinner_cm"])
+        m_pitch = float(inputs["pitch_mass"][0])
+        m_hub = float(inputs["hub_mass"][0])
+        m_spin = float(inputs["spinner_mass"][0])
+        cm_hub = float(inputs["hub_cm"][0])
+        cm_spin = float(inputs["spinner_cm"][0])
 
         # Mass and cost totals
         m_total = m_pitch + m_hub + m_spin

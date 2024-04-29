@@ -47,16 +47,5 @@ class TestFrustum(unittest.TestCase):
         self.assertAlmostEqual(f.frustumShellIxx(2 * rt, 2 * rt, rt - eps, h, True), f.frustumIxx(rt, rt, h, False))
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestFrustum))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

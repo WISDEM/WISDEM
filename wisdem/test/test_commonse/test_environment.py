@@ -22,6 +22,9 @@ class TestPowerWind(unittest.TestCase):
         self.params["Uref"] = 5.0
         self.params["zref"] = 3.0
         self.params["z0"] = 0.0
+        for k in self.params:
+            self.params[k] = np.array( [self.params[k]] )
+        
         self.params["z"] = 9.0 * myones
 
         self.wind = env.PowerWind(nPoints=npts)
@@ -39,7 +42,7 @@ class TestPowerWind(unittest.TestCase):
         npt.assert_equal(self.unknowns["U"], expect)
 
     def testZ0(self):
-        self.params["z0"] = 10.0
+        self.params["z0"] = np.array([ 10.0 ])
         self.params["z"] += 10.0
         self.params["zref"] += 10.0
         self.wind.compute(self.params, self.unknowns)
@@ -58,6 +61,8 @@ class TestLinearWaves(unittest.TestCase):
         self.params["Uc"] = 5.0
         self.params["z_floor"] = -30.0
         self.params["z_surface"] = 0.0
+        for k in self.params:
+            self.params[k] = np.array( [self.params[k]] )
         self.params["z"] = -2.0 * myones
 
         self.wave = env.LinearWaves(nPoints=npts)
@@ -78,23 +83,23 @@ class TestLinearWaves(unittest.TestCase):
         A_exp = omega * omega * a * np.cosh(k * (z + D)) / np.sinh(k * D)
         p_exp = -rho * g * (z - a * np.cosh(k * (z + D)) / np.cosh(k * D))
 
-        npt.assert_almost_equal(self.unknowns["U"], U_exp)
-        npt.assert_almost_equal(self.unknowns["W"], W_exp)
-        npt.assert_almost_equal(self.unknowns["V"], V_exp)
-        npt.assert_almost_equal(self.unknowns["A"], A_exp)
-        npt.assert_almost_equal(self.unknowns["p"], p_exp)
+        npt.assert_almost_equal(self.unknowns["U"], U_exp[0])
+        npt.assert_almost_equal(self.unknowns["W"], W_exp[0])
+        npt.assert_almost_equal(self.unknowns["V"], V_exp[0])
+        npt.assert_almost_equal(self.unknowns["A"], A_exp[0])
+        npt.assert_almost_equal(self.unknowns["p"], p_exp[0])
 
         # Positive depth input
-        self.params["z_floor"] = 30.0
+        self.params["z_floor"] = np.array([ 30.0 ])
         self.wave.compute(self.params, self.unknowns)
-        npt.assert_almost_equal(self.unknowns["U"], U_exp)
-        npt.assert_almost_equal(self.unknowns["W"], W_exp)
-        npt.assert_almost_equal(self.unknowns["V"], V_exp)
-        npt.assert_almost_equal(self.unknowns["A"], A_exp)
-        npt.assert_almost_equal(self.unknowns["p"], p_exp)
+        npt.assert_almost_equal(self.unknowns["U"], U_exp[0])
+        npt.assert_almost_equal(self.unknowns["W"], W_exp[0])
+        npt.assert_almost_equal(self.unknowns["V"], V_exp[0])
+        npt.assert_almost_equal(self.unknowns["A"], A_exp[0])
+        npt.assert_almost_equal(self.unknowns["p"], p_exp[0])
 
     def testPositiveZ(self):
-        self.params["Tsig_wave"] = 2.0
+        self.params["Tsig_wave"] = np.array([ 2.0 ])
         self.params["z"] = 2.0 * myones
         self.wave.compute(self.params, self.unknowns)
         npt.assert_equal(self.unknowns["U"], 0.0)
@@ -104,8 +109,8 @@ class TestLinearWaves(unittest.TestCase):
         npt.assert_equal(self.unknowns["p"], 0.0)
 
     def testQuiet(self):
-        self.params["Hsig_wave"] = 0.0
-        self.params["Tsig_wave"] = 2.0
+        self.params["Hsig_wave"] = np.array([ 0.0 ])
+        self.params["Tsig_wave"] = np.array([ 2.0 ])
         self.wave.compute(self.params, self.unknowns)
         p_exp = 2e3 * g
         npt.assert_equal(self.unknowns["U"], 5.0)
@@ -218,12 +223,13 @@ class TestLogWindGradients(unittest.TestCase):
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestPowerWind))
-    suite.addTest(unittest.makeSuite(TestLinearWaves))
-    suite.addTest(unittest.makeSuite(TestPowerWindGradients))
-    suite.addTest(unittest.makeSuite(TestLogWindGradients))
-    return suite
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestPowerWind),
+        unittest.TestLoader().loadTestsFromTestCase(TestLinearWaves),
+        unittest.TestLoader().loadTestsFromTestCase(TestPowerWindGradients),
+        unittest.TestLoader().loadTestsFromTestCase(TestLogWindGradients),
+    ]
+    return unittest.TestSuite(suite)
 
 
 if __name__ == "__main__":

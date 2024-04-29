@@ -236,23 +236,23 @@ class DirectLayout(Layout):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
-        L_12 = float(inputs["L_12"])
-        L_h1 = float(inputs["L_h1"])
-        L_generator = float(inputs["L_generator"])
-        L_overhang = float(inputs["overhang"])
-        H_drive = float(inputs["drive_height"])
-        tilt = float(np.deg2rad(inputs["tilt"]))
-        D_access = float(inputs["access_diameter"])
+        L_12 = float(inputs["L_12"][0])
+        L_h1 = float(inputs["L_h1"][0])
+        L_generator = float(inputs["L_generator"][0])
+        L_overhang = float(inputs["overhang"][0])
+        H_drive = float(inputs["drive_height"][0])
+        tilt = float(np.deg2rad(inputs["tilt"][0]))
+        D_access = float(inputs["access_diameter"][0])
         D_nose = inputs["nose_diameter"]
         D_lss = inputs["lss_diameter"]
-        D_top = float(inputs["D_top"])
-        D_hub = float(inputs["hub_diameter"])
+        D_top = float(inputs["D_top"][0])
+        D_hub = float(inputs["hub_diameter"][0])
         t_nose = inputs["nose_wall_thickness"]
         t_lss = inputs["lss_wall_thickness"]
         t_bed = inputs["bedplate_wall_thickness"]
         upwind = discrete_inputs["upwind"]
-        lss_rho = float(inputs["lss_rho"])
-        bedplate_rho = float(inputs["bedplate_rho"])
+        lss_rho = float(inputs["lss_rho"][0])
+        bedplate_rho = float(inputs["bedplate_rho"][0])
 
         # ------- Discretization ----------------
         L_grs = 0.5 * L_h1
@@ -281,7 +281,8 @@ class DirectLayout(Layout):
         outputs["L_bedplate"] = L_bedplate
         outputs["H_bedplate"] = H_bedplate
 
-        # Discretize the drivetrain from bedplate to hub
+        # Discretize the drivetrain from bedplate end to hub
+        # Note that the offset from the bedplate to the tower center line is taken into account in drive_components by "shaft0"
         s_mb1 = s_drive[4]
         s_mb2 = s_drive[2]
         s_rotor = s_drive[-2]
@@ -482,32 +483,32 @@ class GearedLayout(Layout):
         upwind = discrete_inputs["upwind"]
         Cup = -1.0 if upwind else 1.0
 
-        L_12 = float(inputs["L_12"])
-        L_h1 = float(inputs["L_h1"])
-        L_hss = float(inputs["L_hss"])
-        L_gearbox = float(inputs["L_gearbox"])
-        L_generator = float(inputs["L_generator"])
-        L_overhang = float(inputs["overhang"])
-        H_drive = float(inputs["drive_height"])
+        L_12 = float(inputs["L_12"][0])
+        L_h1 = float(inputs["L_h1"][0])
+        L_hss = float(inputs["L_hss"][0])
+        L_gearbox = float(inputs["L_gearbox"][0])
+        L_generator = float(inputs["L_generator"][0])
+        L_overhang = float(inputs["overhang"][0])
+        H_drive = float(inputs["drive_height"][0])
 
-        tilt = float(np.deg2rad(inputs["tilt"]))
+        tilt = float(np.deg2rad(inputs["tilt"][0]))
 
         D_lss = inputs["lss_diameter"]
         t_lss = inputs["lss_wall_thickness"]
         D_hss = inputs["hss_diameter"]
         t_hss = inputs["hss_wall_thickness"]
 
-        D_top = float(inputs["D_top"])
-        D_hub = float(inputs["hub_diameter"])
+        D_top = float(inputs["D_top"][0])
+        D_hub = float(inputs["hub_diameter"][0])
 
-        bed_w_flange = float(inputs["bedplate_flange_width"])
-        bed_t_flange = float(inputs["bedplate_flange_thickness"])
-        # bed_h_web    = float(inputs['bedplate_web_height'])
-        bed_t_web = float(inputs["bedplate_web_thickness"])
+        bed_w_flange = float(inputs["bedplate_flange_width"][0])
+        bed_t_flange = float(inputs["bedplate_flange_thickness"][0])
+        # bed_h_web    = float(inputs['bedplate_web_height'][0])
+        bed_t_web = float(inputs["bedplate_web_thickness"][0])
 
-        lss_rho = float(inputs["lss_rho"])
-        hss_rho = float(inputs["hss_rho"])
-        bedplate_rho = float(inputs["bedplate_rho"])
+        lss_rho = float(inputs["lss_rho"][0])
+        hss_rho = float(inputs["hss_rho"][0])
+        bedplate_rho = float(inputs["bedplate_rho"][0])
 
         # ------- Discretization ----------------
         # Length of lss and drivetrain length
