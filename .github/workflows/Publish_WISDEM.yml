@@ -39,6 +39,7 @@ jobs:
         uses: awvwgk/setup-fortran@v1
 
       - name: Install compiler
+        id: install_cc
         uses: rlalik/setup-cpp-compiler@master
         with:
           compiler: clang
@@ -49,9 +50,11 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.17.0
         env:
+          CC: ${{ steps.install_cc.outputs.cc }}
+          CXX: ${{ steps.install_cc.outputs.cxx }}
           CIBW_SKIP: pp* cp36-* cp37-* cp38-* *-musllinux*
-          CIBW_ARCHS: ${{ matrix.architecture }}
-
+          #CIBW_ARCHS: ${{ matrix.architecture }}
+          
       - uses: actions/upload-artifact@v4
         with:
           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
