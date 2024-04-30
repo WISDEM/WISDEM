@@ -64,12 +64,15 @@ def distfunc(dinp, ival=1):
 
 
 def tanhdist(delta1=None, delta2=None, _len=None, i1=None, i2=None):
+    if isinstance(delta1, type(np.array([]))):
+        delta1 = float(delta1[0])
+        delta2 = float(delta1[0])
+    ni = i2 - i1
+    fdist = np.zeros(ni + 1)
     if i2 == i1:
         return fdist
     delta1 = delta1 / _len
     delta2 = delta2 / _len
-    ni = i2 - i1
-    fdist = np.zeros(ni + 1)
     if delta1 <= 0.0 and 1.0 / delta2 < ni:
         delta1 = 1 / (ni**2 * delta2 * 1.02)
     else:
@@ -108,11 +111,15 @@ def tanhdist(delta1=None, delta2=None, _len=None, i1=None, i2=None):
 
 
 def sinhdist(delta1=None, delta2=None, _len=None, i1=None, i2=None):
+    if isinstance(delta1, type(np.array([]))):
+        delta1 = float(delta1[0])
+        delta2 = float(delta1[0])
+    ni = i2 - i1
+    fdist = np.zeros(ni + 1)
     if i2 == i1:
         return fdist
     delta1 = delta1 / _len
     delta2 = delta2 / _len
-    ni = i2 - i1
     if (delta1 <= 0.0) and ((1 / delta2) < ni):
         delta1 = 1 / (ni**2 * delta2 * 1.02)
     else:

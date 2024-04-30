@@ -314,7 +314,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         # Add leg members.
         for jdx in range(n_bays + 1):
-            itube = cs.Tube(float(inputs["leg_diameter"]), float(inputs["leg_thickness"]))
+            itube = cs.Tube(float(inputs["leg_diameter"][0]), float(inputs["leg_thickness"][0]))
             for idx in range(n_legs):
                 add_element(leg_nodes, leg_indices, bay_nodes, bay_indices, itube, idx, jdx, idx, jdx)
                 add_element(bay_nodes, bay_indices, leg_nodes, leg_indices, itube, idx, jdx, idx, jdx + 1)
@@ -479,11 +479,11 @@ class ComputeFrame3DD(om.ExplicitComponent):
         # ------ add extra mass ------------
         # Prepare transition piece, and gravity foundation (if any applicable) for "extra node mass"
         # Turbine mass added for modal analysis only- gravity loads accounted for in point force
-        m_trans = float(inputs["transition_piece_mass"])
+        m_trans = float(inputs["transition_piece_mass"][0])
         I_trans = inputs["transition_piece_I"].flatten()
-        m_grav = float(inputs["gravity_foundation_mass"])
+        m_grav = float(inputs["gravity_foundation_mass"][0])
         I_grav = inputs["gravity_foundation_I"].flatten()
-        m_turb = float(inputs["turbine_mass"])
+        m_turb = float(inputs["turbine_mass"][0])
         cg_turb = inputs["turbine_cg"].flatten()
         I_turb = inputs["turbine_I"].flatten()
         # Note, need len()-1 because Frame3DD crashes if mass add at end

@@ -369,9 +369,15 @@ class MonopileFrame(om.ExplicitComponent):
         self.add_output("monopile_tower_z_full", val=np.zeros(n_full + n_full_tow - 1), units="m")
         self.add_output("monopile_tower_outer_diameter_full", val=np.zeros(n_full + n_full_tow - 1), units="m")
         self.add_output("monopile_tower_t_full", val=np.zeros(n_full + ntow_sec - 1), units="m")
-        self.add_output("monopile_tower_rho_full", val=np.zeros(n_full + ntow_sec -1), units="kg/m**3")
-        self.add_output("monopile_tower_E_full", val=np.zeros(n_full + ntow_sec -1), units="Pa")
-        self.add_output("monopile_tower_G_full", val=np.zeros(n_full + ntow_sec -1), units="Pa")
+        self.add_output("monopile_tower_rho_sec", val=np.zeros(n_full + ntow_sec -1), units="kg/m**3")
+        self.add_output("monopile_tower_E_sec", val=np.zeros(n_full + ntow_sec -1), units="Pa")
+        self.add_output("monopile_tower_G_sec", val=np.zeros(n_full + ntow_sec -1), units="Pa")
+        self.add_output("monopile_tower_A_sec", val=np.zeros(n_full + ntow_sec -1), units="m*m")
+        self.add_output("monopile_tower_Asx_sec", val=np.zeros(n_full + ntow_sec -1), units="m*m")
+        self.add_output("monopile_tower_Asy_sec", val=np.zeros(n_full + ntow_sec -1), units="m*m")
+        self.add_output("monopile_tower_J0_sec", val=np.zeros(n_full + ntow_sec -1), units="kg*m*m")
+        self.add_output("monopile_tower_Ixx_sec", val=np.zeros(n_full + ntow_sec -1), units="kg*m*m")
+        self.add_output("monopile_tower_Iyy_sec", val=np.zeros(n_full + ntow_sec -1), units="kg*m*m")
         self.add_output("monopile_tower_sigma_y_full", val=np.zeros(n_full + ntow_sec -1), units="Pa")
         self.add_output("monopile_tower_bending_height", val=0.0, units="m")
         self.add_output("monopile_tower_qdyn", val=np.zeros((n_full + n_full_tow - 1, nLC)), units="Pa")
@@ -408,7 +414,7 @@ class MonopileFrame(om.ExplicitComponent):
             if self.options["soil_springs"]:
                 z_soil = inputs["z_soil"]
                 k_soil = inputs["k_soil"]
-                depth = float(inputs["water_depth"])
+                depth = float(inputs["water_depth"][0])
                 z_pile = z[z <= (z[0] + 1e-1 + np.abs(z_soil[0]))]
                 if z_pile.size != NREFINE + 1:
                     print(z)
@@ -472,9 +478,15 @@ class MonopileFrame(om.ExplicitComponent):
             outputs["monopile_tower_z_full"] = z
             outputs["monopile_tower_outer_diameter_full"] = d
             outputs["monopile_tower_t_full"] = t
-            outputs["monopile_tower_rho_full"] = rho
-            outputs["monopile_tower_E_full"] = E
-            outputs["monopile_tower_G_full"] = G
+            outputs["monopile_tower_A_sec"] = Area
+            outputs["monopile_tower_Asx_sec"] = Asx
+            outputs["monopile_tower_Asy_sec"] = Asy
+            outputs["monopile_tower_J0_sec"] = J0
+            outputs["monopile_tower_Ixx_sec"] = Ixx
+            outputs["monopile_tower_Iyy_sec"] = Iyy
+            outputs["monopile_tower_rho_sec"] = rho
+            outputs["monopile_tower_E_sec"] = E
+            outputs["monopile_tower_G_sec"] = G
             outputs["monopile_tower_sigma_y_full"] = sigma_y
             outputs["monopile_tower_bending_height"] = inputs['bending_height'] + inputs['tower_bending_height']
             for ic in range(nLC):
@@ -575,17 +587,17 @@ class MonopileFrame(om.ExplicitComponent):
         # ------ add extra mass ------------
         # Prepare transition piece, and gravity foundation (if any applicable) for "extra node mass"
         # Turbine mass added for modal analysis only- gravity loads accounted for in point force
-        m_trans = float(inputs["transition_piece_mass"])
+        m_trans = float(inputs["transition_piece_mass"][0])
         I_trans = inputs["transition_piece_I"].flatten()
 
-        m_grav = float(inputs["gravity_foundation_mass"])
+        m_grav = float(inputs["gravity_foundation_mass"][0])
         I_grav = inputs["gravity_foundation_I"].flatten()
 
-        m_turb = float(inputs["turbine_mass"])
+        m_turb = float(inputs["turbine_mass"][0])
         cg_turb = inputs["turbine_cg"].flatten()
         I_turb = inputs["turbine_I"].flatten()
 
-        m_rna = float(inputs["rna_mass"])
+        m_rna = float(inputs["rna_mass"][0])
         cg_rna = inputs["rna_cg"].flatten()
         I_rna = inputs["rna_I"].flatten()
 
@@ -926,6 +938,15 @@ class MonopileSE(om.Group):
                 "G_full",
                 "sigma_y_full",
                 "bending_height",
+                "section_A",
+                "section_Asx",
+                "section_Asy",
+                "section_Ixx",
+                "section_Iyy",
+                "section_J0",
+                "section_rho",
+                "section_E",
+                "section_G",
                 "qdyn",
             ],
         )
@@ -951,10 +972,16 @@ class MonopileSE(om.Group):
             self.connect("monopile.monopile_tower_z_full", "post_monopile_tower.z_full")
             self.connect("monopile.monopile_tower_outer_diameter_full", "post_monopile_tower.outer_diameter_full")
             self.connect("monopile.monopile_tower_t_full", "post_monopile_tower.t_full")
-            self.connect("monopile.monopile_tower_rho_full", "post_monopile_tower.rho_full")
-            self.connect("monopile.monopile_tower_E_full", "post_monopile_tower.E_full")
-            self.connect("monopile.monopile_tower_G_full", "post_monopile_tower.G_full")
+            self.connect("monopile.monopile_tower_rho_sec", "post_monopile_tower.rho_full")
+            self.connect("monopile.monopile_tower_E_sec", "post_monopile_tower.E_full")
+            self.connect("monopile.monopile_tower_G_sec", "post_monopile_tower.G_full")
             self.connect("monopile.monopile_tower_sigma_y_full", "post_monopile_tower.sigma_y_full")
+            self.connect("monopile.monopile_tower_A_sec", "post_monopile_tower.section_A")
+            self.connect("monopile.monopile_tower_Asx_sec", "post_monopile_tower.section_Asx")
+            self.connect("monopile.monopile_tower_Asy_sec", "post_monopile_tower.section_Asy")
+            self.connect("monopile.monopile_tower_J0_sec", "post_monopile_tower.section_J0")
+            self.connect("monopile.monopile_tower_Ixx_sec", "post_monopile_tower.section_Ixx")
+            self.connect("monopile.monopile_tower_Iyy_sec", "post_monopile_tower.section_Iyy")
             self.connect("monopile.monopile_tower_bending_height", "post_monopile_tower.bending_height")
             self.connect("monopile.monopile_tower_qdyn", "post_monopile_tower.qdyn")
             self.connect("monopile.monopile_tower_Fz", "post_monopile_tower.cylinder_Fz")

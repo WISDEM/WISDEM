@@ -132,17 +132,8 @@ class TestRectangularFrustum(unittest.TestCase):
         npt.assert_almost_equal(f.RectangularFrustumShellCG(ab * myones, bb * myones, at * myones, bt * myones, t * myones, h * myones), h/2 * myones)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestFrustum))
-    suite.addTest(unittest.makeSuite(TestRectangularFrustum))
-    return suite
+
 
 
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

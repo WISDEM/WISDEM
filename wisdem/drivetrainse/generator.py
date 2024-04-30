@@ -221,11 +221,11 @@ class MofI(om.ExplicitComponent):
         self.add_output("stator_I", val=np.zeros(3), units="kg*m**2")
 
     def compute(self, inputs, outputs):
-        R_out = inputs["R_out"]
-        Mass = inputs["generator_mass"]
-        m_stator = inputs["stator_mass"]
-        m_rotor = inputs["rotor_mass"]
-        len_s = inputs["len_s"]
+        R_out = float(inputs["R_out"][0])
+        Mass = float(inputs["generator_mass"][0])
+        m_stator = float(inputs["stator_mass"][0])
+        m_rotor = float(inputs["rotor_mass"][0])
+        len_s = float(inputs["len_s"][0])
 
         I = np.zeros(3)
         I[0] = 0.50 * Mass * R_out**2

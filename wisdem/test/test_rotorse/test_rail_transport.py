@@ -83,9 +83,10 @@ class TestRT(unittest.TestCase):
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestRT))
-    return suite
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestRT),
+    ]
+    return unittest.TestSuite(suite)
 
 
 if __name__ == "__main__":

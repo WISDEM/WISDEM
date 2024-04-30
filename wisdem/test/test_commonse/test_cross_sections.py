@@ -63,17 +63,7 @@ class TestRectangle(unittest.TestCase):
         npt.assert_almost_equal(R.BdgMyy, 2.41666667)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestTube))
-    suite.addTest(unittest.makeSuite(TestRectangle))
-    return suite
 
 
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

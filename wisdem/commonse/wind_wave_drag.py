@@ -316,7 +316,7 @@ class CylinderWindDrag(om.ExplicitComponent):
         q = 0.5 * rho * U**2
 
         # Reynolds number and drag
-        if float(inputs["cd_usr"]) < 0.0:
+        if float(inputs["cd_usr"][0]) < 0.0:
             Re = rho * U * d / mu
             cd, dcd_dRe = cylinderDrag(Re)
         else:
@@ -350,7 +350,7 @@ class CylinderWindDrag(om.ExplicitComponent):
         q = 0.5 * rho * U**2
 
         # Reynolds number and drag
-        if float(inputs["cd_usr"]) < 0.0:
+        if float(inputs["cd_usr"][0]) < 0.0:
             Re = rho * U * d / mu
             cd, dcd_dRe = cylinderDrag(Re)
         else:
@@ -669,7 +669,7 @@ class CylinderWaveDrag(om.ExplicitComponent):
         # q0= 0.5*rho*U0**2
 
         # Reynolds number and drag
-        if float(inputs["cd_usr"]) < 0.0:
+        if float(inputs["cd_usr"][0]) < 0.0:
             Re = rho * U * d / mu
             cd, dcd_dRe = cylinderDrag(Re)
         else:
@@ -744,7 +744,7 @@ class CylinderWaveDrag(om.ExplicitComponent):
         # q0= 0.5*rho*U0**2
 
         # Reynolds number and drag
-        if float(inputs["cd_usr"]) < 0.0:
+        if float(inputs["cd_usr"][0]) < 0.0:
             cd = inputs["cd_usr"] * np.ones_like(d)
             Re = 1.0
             dcd_dRe = 0.0

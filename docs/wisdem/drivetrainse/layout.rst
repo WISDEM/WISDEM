@@ -51,7 +51,7 @@ In addition to the user-defined dimensions, the other values are derived in the 
    L_{nose}	&= L_{12} + L_{2n}\\
    L_{drive}    &= L_{h1} + L_{12} + L_{2n}\\
    L_{bedplate} &= L_{overhang} - L_{drive}\cos \gamma\\
-   H_{bedplate} &= H_{htt} - L_{drive}\sin \gamma
+   H_{bedplate} &= H_{htt} - (L_{drive} + D_{hub}/2)\sin \gamma
 
 Here the length from the hub flange to the generator rotor attachment, :math:`L_{grs}`, is assumed to be at the halfway point between the flange and the first main bearing, :math:`L_{h1}`.  Similarly, the distance between the second main bearing and the nose/turret interface with the bedplate, :math:`L_{2n}`, is twice the distance as that from the same interface to the generator stator attachment, :math:`L_{gsn}`.  After adding up the total length of the low speed shaft and nose/turret, the total drivetrain length from bedplate to hub can be determined.  Then, the bedplate dimensions are determined in order to meet the target overhang and hub-to-tower top height. To ensure that these layout dimensions are adequately satisfied during a design optimization, a constraint is enforced such that :math:`L_{bed} \geq 0.5 D_{top}`.
 
@@ -104,6 +104,6 @@ In addition to the user-defined dimensions, the other values are derived in the 
    L_{lss}      &= L_{12} + L_{h1} + \delta\\
    L_{drive}    &= L_{lss} + L_{gearbox} + L_{hss} + L_{generator}\\
    L_{bedplate} &= L_{drive} \cos \gamma \\
-   H_{bedplate} &= H_{htt} - L_{drive} \sin \gamma
+   H_{bedplate} &= H_{htt} - (L_{drive} + D_{hub}/2) \sin \gamma
 
 The dimension, :math:`\delta` is the space between the second main bearing and the gearbox attachment where the shrink disk lies.  This is assumed to be 0.1 meters.  The bedplate height is sized to ensure that the desired height from tower top to hub is obtained.  To achieve the desired overhang distance, the tower is centered at the exact overhang distance from the hub and a constraint is enforced such that the drivetrain length is sufficient to extend past the tower, :math:`L_{drive} \cos \gamma - L_{overhang} \geq 0.5 D_{top}`.

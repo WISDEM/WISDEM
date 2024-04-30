@@ -2,7 +2,11 @@ import os
 import re
 from typing import Any, Dict, List, Union
 
-import dearpygui.dearpygui as dpg
+try:
+    import dearpygui.dearpygui as dpg
+    GUI_AVAIL = True
+except ImportError:
+    GUI_AVAIL = False
 
 import wisdem.inputs.validation as val
 from wisdem.glue_code.runWISDEM import run_wisdem
@@ -467,17 +471,19 @@ class GUI_Master(object):
 
 
 def run():
-    dpg.create_context()
-    dpg.create_viewport(title="NREL's WISDEM/WEIS Input/Output GUI", width=600, height=600)
+    if GUI_AVAIL:
+        dpg.create_context()
+        dpg.create_viewport(title="NREL's WISDEM/WEIS Input/Output GUI", width=600, height=600)
 
-    mygui = GUI_Master()
-    mygui.show_gui()
+        mygui = GUI_Master()
+        mygui.show_gui()
 
-    dpg.setup_dearpygui()
-    dpg.show_viewport()
-    dpg.start_dearpygui()
-    dpg.destroy_context()
-
+        dpg.setup_dearpygui()
+        dpg.show_viewport()
+        dpg.start_dearpygui()
+        dpg.destroy_context()
+    else:
+        print("GUI is not available")
 
 if __name__ == "__main__":
     run()

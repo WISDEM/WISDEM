@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wisdem"
-version = "3.14.0"
+version = "3.15.2"
 description = "Wind-Plant Integrated System Design & Engineering Model"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -49,10 +49,10 @@ dependencies = [
   "moorpy",
   "nlopt",
   "numpy>=1.26",
-  "openmdao<3.28",
+  "openmdao>=3.31",
   "openpyxl",
   "pandas",
-  "pydoe2",
+  "pydoe3",
   "python-benedict",
   "pyyaml",
   "ruamel.yaml",

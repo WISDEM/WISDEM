@@ -625,7 +625,9 @@ class FloatingPost(om.ExplicitComponent):
             )
 
             # Use DNV-GL CP202 Method
-            circ_check = util_dnvgl.CylinderBuckling(h[circ_idx], d[circ_idx], t[circ_idx], E=E[circ_idx], G=G[circ_idx], sigma_y=sigy[circ_idx], gamma=gamma_f * gamma_b)
+            circ_check = util_dnvgl.CylinderBuckling(h[circ_idx], d[circ_idx], t[circ_idx], E=E[circ_idx], G=G[circ_idx],
+                                            sigma_y=sigy[circ_idx], gamma=gamma_f * gamma_b,
+                                            A=Az, I=Iyy)
             for k in range(n_dlc):
                 results = circ_check.run_buckling_checks(
                     Fz[k, :], M[k, :], circ_axial_stress[k, :], hoop_stress[k, :], circ_shear_stress[k, :]
