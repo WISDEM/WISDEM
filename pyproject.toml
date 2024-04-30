@@ -4,7 +4,7 @@ build-backend = "mesonpy"
 
 [project]
 name = "wisdem"
-version = "3.15.0"
+version = "3.15.2"
 description = "Wind-Plant Integrated System Design & Engineering Model"
 readme = "README.md"
 requires-python = ">=3.9"

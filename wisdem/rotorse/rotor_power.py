@@ -663,8 +663,9 @@ class ComputePowerCurve(ExplicitComponent):
             bnds = [pitch0 - 10.0, pitch0 + 10.0]
             # For a successfull minimization, find the initial power value to nondimensionalize power and bring the figure of merit close to 1
             myout, _ = self.ccblade.evaluate(Uhub[i], Omega_rpm[i], pitch0, coefficients=False)
-            scaling_power = myout["P"]
-            scaling_thrust = myout["T"]
+            # For better conditioning near cut-in, use rated values
+            scaling_power = P_rated #myout["P"]
+            scaling_thrust = T_rated #myout["T"]
             if self.peak_thrust_shaving and found_rated:
                 # Have to constrain thrust
                 const = {}
