@@ -34,8 +34,10 @@ jobs:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
           CIBW_SKIP: pp* cp36-* cp37-* cp38-* *-musllinux*
-          CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
+          #CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
+          CIBW_BUILD_FRONTEND: "build; args: -w -n -x"
           #CIBW_ARCHS: ${{ matrix.architecture }}
+          CIBW_BEFORE_BUILD: pip install numpy ninja meson meson-python
           
       - uses: actions/upload-artifact@v4
         with:
