@@ -20,19 +20,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13, macos-14]
-        #include:
-        #  - os: ubuntu
-        #    architecture: x86_64
-        #  - os: ubuntu
-        #    architecture: aarch64
-        #  - os: macos
-        #    architecture: x86_64
-        #  - os: macos
-        #    architecture: arm64
-        #  - os: windows
-        #    architecture: x86
-        #  - os: windows
-        #    architecture: AMD64
 
     steps:
       - name: Setup GNU Fortran
@@ -53,6 +40,8 @@ jobs:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
           CIBW_SKIP: pp* cp36-* cp37-* cp38-* *-musllinux*
+          CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
+          CIBW_PRERELEASE_PYTHONS: True
           #CIBW_ARCHS: ${{ matrix.architecture }}
           
       - uses: actions/upload-artifact@v4
