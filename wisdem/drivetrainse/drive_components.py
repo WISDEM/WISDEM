@@ -976,12 +976,12 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         # Wrap up nacelle mass table
         components.append("Above_yaw")
         m_list[-3] = outputs["above_yaw_mass"][0]
-        cm_list[-3, :] = outputs["above_yaw_cm"][0]
-        I_cm_list[-3, :] = outputs["above_yaw_I"][0]
-        I_TT_list[-3, :] = outputs["above_yaw_I_TT"][0]
+        cm_list[-3, :] = outputs["above_yaw_cm"]
+        I_cm_list[-3, :] = outputs["above_yaw_I"]
+        I_TT_list[-3, :] = outputs["above_yaw_I_TT"]
         components.append("yaw")
         m_list[-2] = inputs["yaw_mass"][0]
-        cm_list[-2, :] = inputs["yaw_cm"][0]
+        cm_list[-2, :] = inputs["yaw_cm"]
         I_cm_list[-2, :] = I_TT_list[-2, :] = np.r_[inputs["yaw_I"], np.zeros(3)]
         components.append("nacelle")
         m_list[-1] = m_nac[0]
