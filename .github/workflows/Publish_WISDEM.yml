@@ -12,6 +12,10 @@ jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    #strategy:
+    #  fail-fast: false
+    #  matrix:
+    #    os: [ubuntu-latest, windows-latest, macos-13, macos-14]
     strategy:
       fail-fast: false
       matrix:
@@ -71,31 +75,50 @@ jobs:
           - os: windows-2019
             python: 312
             platform: win_amd64
-    #strategy:
-    #  fail-fast: false
-    #  matrix:
-    #    os: [ubuntu-latest, windows-latest, macos-13, macos-14]
 
     steps:
       - name: Setup GNU Fortran
+        if: false == contains( matrix.os, 'windows')
         uses: awvwgk/setup-fortran@v1
 
       - name: Install compiler
+        if: false == contains( matrix.os, 'windows')
         id: install_cc
         uses: rlalik/setup-cpp-compiler@master
         with:
           compiler: clang
+          
+      - name: Install mingw-w64 on Windows
+        if: contains( matrix.os, 'windows')
+        uses: msys2/setup-msys2@v2
+        with:
+          path-type: inherit
+          install: |
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-gcc-fortran
             
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Build wheels
+        if: false == contains( matrix.os, 'windows')
         uses: pypa/cibuildwheel@v2.17.0
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
           CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform }}
-          #CIBW_SKIP: pp* cp36-* cp37-* cp38-* *-musllinux*
+          #CIBW_SKIP: pp* cp36-* cp37-* cp38-* *-musllinux* *-win32 *-win_arm64
+          #CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
+          CIBW_BUILD_FRONTEND: "build; args: -w -n -x"
+          #CIBW_ARCHS: ${{ matrix.architecture }}
+          CIBW_BEFORE_BUILD: pip install numpy ninja meson meson-python
+
+      - name: Build wheels
+        if: contains( matrix.os, 'windows')
+        uses: pypa/cibuildwheel@v2.17.0
+        env:
+          CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform }}
+          #CIBW_SKIP: pp* cp36-* cp37-* cp38-* *-musllinux* *-win32 *-win_arm64
           #CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
           CIBW_BUILD_FRONTEND: "build; args: -w -n -x"
           #CIBW_ARCHS: ${{ matrix.architecture }}
