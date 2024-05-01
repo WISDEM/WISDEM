@@ -143,6 +143,9 @@ atomic = true
 source = ["wisdem"]
 omit = ["wisdem/test/*", "wisdem/floating/visualize.py"]
 
+[tool.cibuildwheel]
+build-verbosity = "3"
+
 # https://github.com/pdfo/pdfo
 [[tool.cibuildwheel.overrides]]
 select = "*-win_amd64"
