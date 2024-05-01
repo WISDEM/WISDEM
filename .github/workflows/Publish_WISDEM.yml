@@ -16,63 +16,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-13, macos-14]
-      #matrix:
-      #  include:
-      #    # 64-bit Linux
-      #    - os: ubuntu-latest
-      #      python: 39
-      #      platform: manylinux_x86_64
-      #    - os: ubuntu-latest
-      #      python: 310
-      #      platform: manylinux_x86_64
-      #    - os: ubuntu-latest
-      #      python: 311
-      #      platform: manylinux_x86_64
-      #    - os: ubuntu-latest
-      #      python: 312
-      #      platform: manylinux_x86_64
-      #
-      #    # 64-bit macOS (x86_64)
-      #    - os: macos-13
-      #      python: 39
-      #      platform: macosx_x86_64
-      #    - os: macos-13
-      #      python: 310
-      #      platform: macosx_x86_64
-      #    - os: macos-13
-      #      python: 311
-      #      platform: macosx_x86_64
-      #    - os: macos-13
-      #      python: 312
-      #      platform: macosx_x86_64
-      #
-      #    # 64-bit macOS (arm64)
-      #    - os: macos-14
-      #      python: 39
-      #      platform: macosx_arm64
-      #    - os: macos-14
-      #      python: 310
-      #      platform: macosx_arm64
-      #    - os: macos-14
-      #      python: 311
-      #      platform: macosx_arm64
-      #    - os: macos-14
-      #      python: 312
-      #      platform: macosx_arm64
-      #
-      #    # 64-bit Windows
-      #    - os: windows-2019
-      #      python: 39
-      #      platform: win_amd64
-      #    - os: windows-2019
-      #      python: 310
-      #      platform: win_amd64
-      #    - os: windows-2019
-      #      python: 311
-      #      platform: win_amd64
-      #    - os: windows-2019
-      #      python: 312
-      #      platform: win_amd64
 
     steps:
       - name: Setup GNU Fortran
@@ -98,7 +41,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build wheels
+      - name: Build wheels mac and linux
         if: false == contains( matrix.os, 'windows')
         uses: pypa/cibuildwheel@v2.17.0
         env:
@@ -108,10 +51,9 @@ jobs:
           CIBW_SKIP: pp* cp36-* cp37-* cp38-* *-musllinux* *-win32 *-win_arm64
           #CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
           CIBW_BUILD_FRONTEND: "build; args: -w -n -x"
-          #CIBW_ARCHS: ${{ matrix.architecture }}
           CIBW_BEFORE_BUILD: pip install numpy ninja meson meson-python
 
-      - name: Build wheels
+      - name: Build wheels windows
         if: contains( matrix.os, 'windows')
         uses: pypa/cibuildwheel@v2.17.0
         env:
@@ -119,8 +61,8 @@ jobs:
           CIBW_SKIP: pp* cp36-* cp37-* cp38-* *-musllinux* *-win32 *-win_arm64
           #CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
           CIBW_BUILD_FRONTEND: "build; args: -w -n -x"
-          #CIBW_ARCHS: ${{ matrix.architecture }}
           CIBW_BEFORE_BUILD: pip install numpy ninja meson meson-python
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "bash .github/tools/cibw_repair_wheel_command_windows.sh {wheel} {dest_dir}"
           
       - uses: actions/upload-artifact@v4
         with:
