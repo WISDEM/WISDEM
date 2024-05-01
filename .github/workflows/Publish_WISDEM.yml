@@ -6,6 +6,8 @@ name: Build and upload to PyPI
 # Alternatively, to publish when a (published) GitHub Release is created, use the following:
 on: [push, pull_request, release]
 
+# Best comparable example: https://github.com/pdfo/pdfo
+
 jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
