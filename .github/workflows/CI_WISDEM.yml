@@ -54,23 +54,9 @@ jobs:
           which -a gfortran
           which pip
 
-      # Install WISDEM with setup
-      # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
       - name: Install WISDEM with setup
         run: |
           pip install --no-build-isolation --no-deps -e . -v
-
-      # Install WISDEM with pip
-      #- name: Install WISDEM with pip for Unix
-      #  if: false == contains( matrix.os, 'windows')
-      #  run: |
-      #    python setup.py install
-
-      # Install WISDEM with pip
-      #- name: Install WISDEM with pip for Windows
-      #  if: contains( matrix.os, 'windows')
-      #  run: |
-      #      python setup.py install
     
       # Debugging session
       #- name: Setup tmate session
@@ -136,12 +122,6 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v4
 
-      - name: Set compilers
-        if: false == contains( matrix.os, 'windows')
-        run: |
-            echo "CC=${{ steps.install_cc.outputs.cc }}" >> $GITHUB_ENV
-            echo "CXX=${{ steps.install_cc.outputs.cxx }}" >> $GITHUB_ENV
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         id: cp
@@ -149,14 +129,19 @@ jobs:
             python-version: ${{ matrix.python-version }}
             update-environment: true
 
-      # Install WISDEM with setup
-      # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
+      - name: Set compilers
+        if: false == contains( matrix.os, 'windows')
+        run: |
+            echo "CC=${{ steps.install_cc.outputs.cc }}" >> $GITHUB_ENV
+            echo "CXX=${{ steps.install_cc.outputs.cxx }}" >> $GITHUB_ENV
+
       - name: Install WISDEM with setup
+        env:
+            MESON_ARGS: "-Dpython_target=${{ steps.cp.outputs.python-path }} $MESON_ARGS"
         run: |
           '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip install pytest numpy
           '${{ steps.cp.outputs.python-path }}' -m pip install -v .
 
-      # Run limited tests
       - name: Limited test
         run: |
           cd wisdem/test/test_gluecode
