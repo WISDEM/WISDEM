@@ -2444,7 +2444,7 @@ class Floating(om.Group):
             if floating_init_options["members"]["outer_shape"][i] == "circular":
                 self.connect(f"memgrid{idx}.outer_diameter", "member_" + name_member + ":outer_diameter")
             elif floating_init_options["members"]["outer_shape"][i] == "rectangular":
-                # TODO: AggregatedJoints hasn't included rectangular yet, so not connection now
+                # TODO: AggregatedJoints hasn't included rectangular yet, so no connection now
                 print("WARNING: AggregatedJoints hasn't included rectangular yet")
                 # self.connect(f"memgrid{idx}.side_length_a", "member_" + name_member + ":side_length_a")
                 # self.connect(f"memgrid{idx}.side_length_b", "member_" + name_member + ":side_length_b")

@@ -1830,7 +1830,7 @@ class MemberComplex(om.ExplicitComponent):
         z_full = inputs["z_full"]
         R_od = 0.5 * inputs["outer_diameter_full"]
         twall = inputs["t_full"]
-        s_ballast = inputs["ballast_grid"] # TODO: why do we want a separarate grid for ballast? because it might not overlap with the existing grid?
+        s_ballast = inputs["ballast_grid"]
         rho_ballast = inputs["ballast_density"]
         V_ballast = inputs["ballast_volume"]
         km_ballast = inputs["ballast_unit_cost"]
@@ -1913,7 +1913,7 @@ class MemberComplex(om.ExplicitComponent):
         a_out = inputs["side_length_a_full"]
         b_out = inputs["side_length_b_full"]
         twall = inputs["t_full"]
-        s_ballast = inputs["ballast_grid"] # TODO: why do we want a separarate grid for ballast? because it might not overlap with the existing grid?
+        s_ballast = inputs["ballast_grid"]
         rho_ballast = inputs["ballast_density"]
         V_ballast = inputs["ballast_volume"]
         km_ballast = inputs["ballast_unit_cost"]
@@ -2458,7 +2458,7 @@ class RectangularMemberHydro(om.ExplicitComponent):
 
         # Lxy = np.maximum(Lxy, D)
         m_a[2] = 0  # Axial added mass? A33 heave * Lxy *
-        # TODO: to be finished
+        # TODO: Axial added mass needs better calculation
         m_a[3:5] = (
             rho_water * np.trapz((z_under - z_cb) ** 2.0 * a_under * b_under, z_under)
         )  # A44 roll, A55 pitch
@@ -2900,11 +2900,10 @@ class MemberBase(om.Group):
             member_shape_variables = ["outer_diameter"]
             self.connect("outer_diameter", "gc.d")
         elif member_shape == "rectangular":
-            # TODO: geometricconstraint hasn't considered rectangular member yet, so not connection
+            # TODO: geometricconstraint hasn't considered rectangular member yet, so no connection
             member_shape_variables = ["side_length_a", "side_length_b"]
 
         self.add_subsystem("geom", MemberDiscretization(n_height=n_height, n_refine=n_refine, member_shape_variables = member_shape_variables), promotes=["*"])
-        # TODO: Need MemberHydro for rectangular member. Now it gives nan in frustum calculation bc r for rectangular member are zeros
 
         if member_shape == "circular":
             self.add_subsystem("hydro", MemberHydro(n_full=n_full), promotes=["*"])
