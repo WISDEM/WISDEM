@@ -16,8 +16,8 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu-latest, windows-latest] #macos-latest, 
-        python-version: ["3.9", "3.10", "3.11"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
       - name: checkout repository
@@ -58,7 +58,7 @@ jobs:
       # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
       - name: Install WISDEM with setup
         run: |
-          python setup.py install
+          pip install -e . -v
 
       # Install WISDEM with pip
       #- name: Install WISDEM with pip for Unix
@@ -109,20 +109,35 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu-latest] #, windows-latest, macos-latest, 
-        python-version: ["3.10"]
+        os: [ubuntu-latest, windows-latest, macos-latest, 
+        python-version: ["3.11"]
 
     steps:
       - name: Setup GNU Fortran
+        if: false == contains( matrix.os, 'windows')
         uses: awvwgk/setup-fortran@v1
-        #with:
-        #    compiler: intel-classic
+
+      - name: Install compiler
+        if: false == contains( matrix.os, 'windows')
+        id: install_cc
+        uses: rlalik/setup-cpp-compiler@master
+        with:
+          compiler: clang
+          
+      - name: Install mingw-w64 on Windows
+        if: contains( matrix.os, 'windows')
+        uses: msys2/setup-msys2@v2
+        with:
+          path-type: inherit
+          install: |
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-gcc-fortran
             
       - name: checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         id: cp
         with:
             python-version: ${{ matrix.python-version }}
