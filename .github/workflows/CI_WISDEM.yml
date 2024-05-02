@@ -58,7 +58,7 @@ jobs:
       # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
       - name: Install WISDEM with setup
         run: |
-          pip install -e . -v
+          pip install --no-build-isolation --no-deps -e . -v
 
       # Install WISDEM with pip
       #- name: Install WISDEM with pip for Unix
@@ -91,7 +91,7 @@ jobs:
 
       # Run coveralls
       - name: Run coveralls
-        if: contains( matrix.os, 'ubuntu') && contains( matrix.python-version, '3.10')
+        if: contains( matrix.os, 'ubuntu') && contains( matrix.python-version, '3.11')
         #uses: coverallsapp/github-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -136,6 +136,12 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v4
 
+      - name: Set compilers
+        if: false == contains( matrix.os, 'windows')
+        run: |
+            echo "CC=${{ steps.install_cc.outputs.cc }}" >> $GITHUB_ENV
+            echo "CXX=${{ steps.install_cc.outputs.cxx }}" >> $GITHUB_ENV
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         id: cp
@@ -148,7 +154,7 @@ jobs:
       - name: Install WISDEM with setup
         run: |
           '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip install pytest
-          '${{ steps.cp.outputs.python-path }}' -m pip install -vv .
+          '${{ steps.cp.outputs.python-path }}' -m pip install -v --no-build-isolation .
 
       # Run limited tests
       - name: Limited test
