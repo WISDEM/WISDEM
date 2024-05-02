@@ -154,7 +154,7 @@ jobs:
       - name: Install WISDEM with setup
         run: |
           '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip install pytest
-          '${{ steps.cp.outputs.python-path }}' -m pip install -v --no-build-isolation .
+          '${{ steps.cp.outputs.python-path }}' -m pip install -v .
 
       # Run limited tests
       - name: Limited test
