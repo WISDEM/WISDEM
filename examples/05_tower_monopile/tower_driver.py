@@ -13,7 +13,7 @@ wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_modelin
 # print results from the analysis or optimization
 z = 0.5 * (wt_opt["towerse.z_full"][:-1] + wt_opt["towerse.z_full"][1:])
 print("zs =", wt_opt["towerse.z_full"])
-print("ds =", wt_opt["towerse.d_full"])
+print("ds =", wt_opt["towerse.outer_diameter_full"])
 print("ts =", wt_opt["towerse.t_full"])
 print("mass (kg) =", wt_opt["towerse.tower_mass"])
 print("cg (m) =", wt_opt["towerse.tower_center_of_mass"])

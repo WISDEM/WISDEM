@@ -97,7 +97,7 @@ class TipDeflectionConstraint(om.ExplicitComponent):
         with x pointing downwind, y pointing on the side and z pointing vertically
         upwards. A standard tower configuration will have zero x and y values and
         positive z values.
-    d_full : numpy array[n_height_tow], [m]
+    outer_diameter_full : numpy array[n_height_tow], [m]
         Diameter of tower at fine-section nodes
     max_allowable_td_ratio : float
         Safety factor of the tip deflection to stay within the tower clearance
@@ -128,7 +128,7 @@ class TipDeflectionConstraint(om.ExplicitComponent):
         self.add_input("tilt", val=0.0, units="deg")
         self.add_input("overhang", val=0.0, units="m")
         self.add_input("ref_axis_tower", val=np.zeros((n_height_tow, 3)), units="m")
-        self.add_input("d_full", val=np.zeros(n_height_tow), units="m")
+        self.add_input("outer_diameter_full", val=np.zeros(n_height_tow), units="m")
         self.add_input("max_allowable_td_ratio", val=1.35 * 1.05)
 
         self.add_output("tip_deflection_ratio", val=0.0)
@@ -137,7 +137,7 @@ class TipDeflectionConstraint(om.ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack variables
         z_tower = inputs["ref_axis_tower"][:, 2]
-        d_tower = inputs["d_full"]
+        d_tower = inputs["outer_diameter_full"]
         overhang = inputs["overhang"]
         tt2hub = overhang * np.sin(inputs["tilt"] / 180.0 * np.pi)
         precone = inputs["precone"]

@@ -25,7 +25,7 @@ First, define the geometry and atmospheric properties.
     :end-before: # 1 ---
 
 Airfoil aerodynamic data is specified using the :class:`CCAirfoil` class.
-Rather than use the default constructor, this example uses the special constructor designed to read AeroDyn files directly :meth:`CCAirfoil.initFromAerodynFile`.
+The airfoil data is pulled directly from the geometry-yaml file.
 
 .. literalinclude:: ../../../examples/10_ccblade/example.py
     :start-after: # 2 ---

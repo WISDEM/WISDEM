@@ -1,12 +1,9 @@
 name: Build and upload to PyPI
 # https://github.com/pypa/cibuildwheel/blob/main/examples/github-deploy.yml
-
-# Build on every branch push, tag push, and pull request change:
-#on: [push, pull_request]
-# Alternatively, to publish when a (published) GitHub Release is created, use the following:
-on: [push, pull_request, release]
-
 # Best comparable example: https://github.com/pdfo/pdfo
+
+# Build on every pull request (no need for every push) and release change:
+on: [pull_request, release]
 
 jobs:
   build_wheels:
@@ -47,22 +44,10 @@ jobs:
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
-          #CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform }}
-          CIBW_SKIP: pp* cp36-* cp37-* cp38-* *-musllinux* *-win32 *-win_arm64
-          #CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
-          CIBW_BUILD_FRONTEND: "build; args: -w -n -x"
-          CIBW_BEFORE_BUILD: pip install numpy ninja meson meson-python
 
       - name: Build wheels windows
         if: contains( matrix.os, 'windows')
         uses: pypa/cibuildwheel@v2.17.0
-        env:
-          #CIBW_BUILD: cp${{ matrix.python }}-${{ matrix.platform }}
-          CIBW_SKIP: pp* cp36-* cp37-* cp38-* *-musllinux* *-win32 *-win_arm64
-          #CIBW_BUILD_FRONTEND: "pip; args: --no-build-isolation"
-          CIBW_BUILD_FRONTEND: "build; args: -w -n -x"
-          CIBW_BEFORE_BUILD: pip install numpy ninja meson meson-python
-          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "bash .github/tools/cibw_repair_wheel_command_windows.sh {wheel} {dest_dir}"
           
       - uses: actions/upload-artifact@v4
         with:

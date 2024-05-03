@@ -27,6 +27,7 @@ class TestOC3Mass(unittest.TestCase):
         opt["floating"]["members"]["n_layers"] = [1]
         opt["floating"]["members"]["n_ballasts"] = [0]
         opt["floating"]["members"]["n_axial_joints"] = [1]
+        opt["floating"]["members"]["outer_shape"] = ["circular"]
         opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = False
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = False
@@ -120,7 +121,7 @@ class TestOC3Mass(unittest.TestCase):
         prob["Hsig_wave"] = 1.0  # Significant wave height [m]
         prob["Tsig_wave"] = 1e3  # Wave period [s]
         prob["shearExp"] = 0.11  # Shear exponent in wind power law
-        prob["cm"] = 2.0  # Added mass coefficient
+        prob["ca_usr"] = 2.0  # Added mass coefficient
         prob["Uc"] = 0.0  # Mean current speed
         prob["beta_wind"] = prob["beta_wave"] = 0.0
         prob["cd_usr"] = -1.0  # Compute drag coefficient

@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest] #
+        os: [ubuntu-latest, macos-13, windows-latest]
         python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
@@ -53,23 +53,20 @@ jobs:
           conda list
           which -a gfortran
 
-      # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
-      - name: Install WISDEM with setup
+      - name: Install WISDEM
         run: |
-          python -m pip install --no-build-isolation -e . -v
+         python -m  pip install --no-build-isolation --no-deps -e . -v
     
       # Debugging session
       #- name: Setup tmate session
       #  uses: mxschmitt/action-tmate@v3
 
-      # Run all tests
-      - name: Run tests
+      - name: Run all tests
         if: contains( matrix.os, 'ubuntu')
         run: |
           pytest -p no:warnings --disable-warnings --cov=wisdem
 
-      # Run limited test on WINDOWS
-      - name: Limited Windows test
+      - name: Limited test for non Linux
         if: false == contains( matrix.os, 'ubuntu')
         run: |
           cd wisdem/test/test_gluecode
@@ -95,34 +92,54 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu-latest] #, windows-latest, macos-latest, 
+        os: [ubuntu-latest, windows-latest, macos-13] #mac-13 intel, mac-latest is arm
         python-version: ["3.11"]
 
     steps:
       - name: Setup GNU Fortran
+        if: false == contains( matrix.os, 'windows')
         uses: awvwgk/setup-fortran@v1
-        #with:
-        #    compiler: intel-classic
+
+      - name: Install compiler
+        if: false == contains( matrix.os, 'windows')
+        id: install_cc
+        uses: rlalik/setup-cpp-compiler@master
+        with:
+          compiler: clang
+          
+      - name: Install mingw-w64 on Windows
+        if: contains( matrix.os, 'windows')
+        uses: msys2/setup-msys2@v2
+        with:
+          path-type: inherit
+          install: |
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-gcc-fortran
             
       - name: checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         id: cp
         with:
             python-version: ${{ matrix.python-version }}
             update-environment: true
 
-      # Install WISDEM with setup
-      # Note: For some reason, pip --no-deps doesn't find conda packages and downloads everything
+      - name: Set compilers
+        if: false == contains( matrix.os, 'windows')
+        run: |
+            echo "CC=${{ steps.install_cc.outputs.cc }}" >> $GITHUB_ENV
+            echo "CXX=${{ steps.install_cc.outputs.cxx }}" >> $GITHUB_ENV
+
       - name: Install WISDEM with setup
+        env:
+            MESON_ARGS: "-Dpython_target=${{ steps.cp.outputs.python-path }}"
         run: |
           '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip
           '${{ steps.cp.outputs.python-path }}' -m pip install meson-python meson numpy ninja wheel pytest
-          '${{ steps.cp.outputs.python-path }}' -m pip install --no-build-isolation -e . -v
+          '${{ steps.cp.outputs.python-path }}' -m pip install --no-build-isolation . -v
 
-      # Run limited tests
       - name: Limited test
         run: |
           cd wisdem/test/test_gluecode
