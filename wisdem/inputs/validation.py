@@ -1,8 +1,10 @@
 import os
-
+import copy
 import numpy as np
 import jsonschema as json
 import ruamel.yaml as ry
+from functools import reduce
+import operator
 
 
 fschema_geom = os.path.join(os.path.dirname(os.path.realpath(__file__)), "geometry_schema.yaml")
@@ -20,6 +22,8 @@ def load_yaml(fname_input):
 
 # ---------------------
 def write_yaml(instance, foutput):
+    instance = remove_numpy(instance)
+
     # Write yaml with updated values
     yaml = ry.YAML()
     yaml.default_flow_style = None
@@ -166,6 +170,41 @@ def write_analysis_yaml(instance, foutput):
         foutput = foutput[-4:]
     sfx_str = "-analysis.yaml"
     write_yaml(instance, foutput + sfx_str)
+
+def remove_numpy(fst_vt):
+    # recursively move through nested dictionary, remove numpy data types
+    # for formatting dictionaries before writing to yaml files
+
+    def get_dict(vartree, branch):
+        return reduce(operator.getitem, branch, vartree)
+
+    def loop_dict(vartree, branch):
+        if type(vartree) is not dict:
+            return fst_vt
+        for var in vartree.keys():
+            branch_i = copy.copy(branch)
+            branch_i.append(var)
+            if type(vartree[var]) is dict:
+                loop_dict(vartree[var], branch_i)
+            else:
+                data_type = type(get_dict(fst_vt, branch_i[:-1])[branch_i[-1]])
+
+                if data_type in [np.int_, np.intc, np.intp, np.int8, np.int16, np.int32, np.int64, np.uint8, np.uint16, np.uint32, np.uint64]:
+                    get_dict(fst_vt, branch_i[:-1])[branch_i[-1]] = int(get_dict(fst_vt, branch_i[:-1])[branch_i[-1]])
+                elif data_type in [np.single, np.double, np.longdouble, np.csingle, np.cdouble, np.float_, np.float16, np.float32, np.float64, np.complex64, np.complex128]:
+                    get_dict(fst_vt, branch_i[:-1])[branch_i[-1]] = float(get_dict(fst_vt, branch_i[:-1])[branch_i[-1]])
+                elif data_type in [np.bool_]:
+                    get_dict(fst_vt, branch_i[:-1])[branch_i[-1]] = bool(get_dict(fst_vt, branch_i[:-1])[branch_i[-1]])
+                elif data_type in [np.ndarray]:
+                    get_dict(fst_vt, branch_i[:-1])[branch_i[-1]] = get_dict(fst_vt, branch_i[:-1])[branch_i[-1]].tolist()
+                elif data_type in [list,tuple]:
+                    for item in get_dict(fst_vt, branch_i[:-1])[branch_i[-1]]:
+                        remove_numpy(item)
+
+    # set fast variables to update values
+    loop_dict(fst_vt, [])
+
+    return fst_vt
 
 
 if __name__ == "__main__":
