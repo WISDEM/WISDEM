@@ -138,7 +138,7 @@ jobs:
         run: |
           '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip
           '${{ steps.cp.outputs.python-path }}' -m pip install meson-python meson numpy ninja wheel pytest
-          '${{ steps.cp.outputs.python-path }}' -m pip install --no-build-isolation . -v
+          '${{ steps.cp.outputs.python-path }}' -m pip install . -v
 
       - name: Limited test
         run: |
