@@ -1,4 +1,3 @@
-import os
 import unittest
 
 import numpy as np
@@ -35,16 +34,5 @@ class Test(unittest.TestCase):
         assert_check_partials(check, atol=1e-3, rtol=1e-4)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(Test))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

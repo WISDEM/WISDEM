@@ -62,6 +62,11 @@ contains
         real(dbp), intent(in) :: tw_prime_d   ! derivative of section twist angle w.r.t. span location (deg/m)
         real(dbp), intent(in) :: le_loc       ! leading edge location relative to reference axis (normalized by chord)
 
+        ! implicitly assigned inputs (length of arrays)
+        integer, intent(in) :: n_af_nodes, n_materials  ! number of airfoil nodes, materials
+        integer, intent(in) :: n_sctU, n_sctL, nwebin  ! number of sectors on upper/lower, number of webs
+        integer, intent(in) :: n_laminaTotalU, n_laminaTotalL, n_laminaTotalW ! total number of lamina on upper/lower/webs
+
         ! airfoil
         real(dbp), intent(in), dimension(n_af_nodes)  :: xnode, ynode  ! x, y airfoil coordinates starting at leading edge traversing upper surface and back around lower surface
 
@@ -87,11 +92,6 @@ contains
         integer, intent(in), dimension(n_laminaTotalW) :: n_pliesW, mat_lamW
         real(dbp), intent(in), dimension(n_laminaTotalW) :: t_lamW, tht_lamW
         ! -------------
-
-        ! implicitly assigned inputs (length of arrays)
-        integer, intent(in) :: n_af_nodes, n_materials  ! number of airfoil nodes, materials
-        integer, intent(in) :: n_sctU, n_sctL, nwebin  ! number of sectors on upper/lower, number of webs
-        integer, intent(in) :: n_laminaTotalU, n_laminaTotalL, n_laminaTotalW ! total number of lamina on upper/lower/webs
 
 
         ! outputs
@@ -402,7 +402,6 @@ contains
                 weby_l(i) = ynd
             end do
         end if
-
         ! ----------------------------------------------
 
 
@@ -649,7 +648,6 @@ contains
     !       s2ths = s2thseg(iseg)
     !       c2ths = c2thseg(iseg)  ! commented out
 
-
             nlam = n_laminas(is,idsec)    ! for sector seg
 
             !     initialization for seg (sc)
@@ -697,7 +695,6 @@ contains
             eabar = eabar + q11t*w
             q11ya = q11ya + (q11yt_u+q11yt_l)*w
             q11za = q11za + (q11zt_u+q11zt_l)*w
-
 
         enddo           !end af_periph segment loop (sc)
 
@@ -1243,25 +1240,22 @@ contains
                 xb = xnode_u(nd_a+1)
                 yb = ynode_u(nd_a+1)
                 is = 1
+            else if(iseg .le. nseg_p) then   ! lower surface segs
+               nd_a = ndl1+iseg-nseg_u-1
+               xa = xnode_l(nd_a)        !xref of node toward le (in a/f ref frame)
+               ya = ynode_l(nd_a)        !yref of node toward le (in new ref frame)
+               xb = xnode_l(nd_a+1)      !xref of node toward te (in a/f ref frame)
+               yb = ynode_l(nd_a+1)      !yref of node toward te (in new ref frame)
+               is = 2
             else
-                if(iseg .le. nseg_p) then   ! lower surface segs
-                    nd_a = ndl1+iseg-nseg_u-1
-                    xa = xnode_l(nd_a)        !xref of node toward le (in a/f ref frame)
-                    ya = ynode_l(nd_a)        !yref of node toward le (in new ref frame)
-                    xb = xnode_l(nd_a+1)      !xref of node toward te (in a/f ref frame)
-                    yb = ynode_l(nd_a+1)      !yref of node toward te (in new ref frame)
-                    is = 2
-                endif
-
-                if(iseg .gt. nseg_p ) then  ! web segs
-                    iweb = iseg-nseg_p
-                    xa = loc_web(iweb)
-                    xb = xa
-                    ya = weby_u(iweb)
-                    yb = weby_l(iweb)
-                    is = 0
-                endif
-
+               !if(iseg .gt. nseg_p ) then  ! web segs
+               iweb = iseg-nseg_p
+               xa = loc_web(iweb)
+               xb = xa
+               ya = weby_u(iweb)
+               yb = weby_l(iweb)
+               is = 0
+               !endif
             endif  ! end seg group identification
 
 

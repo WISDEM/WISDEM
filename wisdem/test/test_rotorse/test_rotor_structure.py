@@ -422,9 +422,10 @@ class TestRS(unittest.TestCase):
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestRS))
-    return suite
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestRS),
+    ]
+    return unittest.TestSuite(suite)
 
 
 if __name__ == "__main__":

@@ -823,7 +823,7 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["x"], 7.16667, 1e-6)
         assert_near_equal(prob["y"], -7.833334, 1e-6)
 
-        self.assertEqual(prob.driver._obj_and_nlcons, ["comp.f_xy"])
+        self.assertEqual(prob.driver._obj_and_nlcons, ["f_xy"])
 
     def test_simple_paraboloid_equality_linear(self):
         prob = om.Problem(reports=False)
@@ -898,19 +898,19 @@ class TestNLoptDriver(unittest.TestCase):
             "Should be more than one objective header printed",
         )
         self.assertTrue(
-            len([s for s in output if s.startswith("{'p1.x")]) > 1,
+            len([s for s in output if s.startswith("{'x")]) > 1,
             "Should be more than one p1.x printed",
         )
         self.assertTrue(
-            len([s for s in output if "'p2.y'" in s]) > 1,
+            len([s for s in output if "'y'" in s]) > 1,
             "Should be more than one p2.y printed",
         )
         self.assertTrue(
-            len([s for s in output if s.startswith("{'con.c")]) > 1,
+            len([s for s in output if s.startswith("{'c")]) > 1,
             "Should be more than one con.c printed",
         )
         self.assertTrue(
-            len([s for s in output if s.startswith("{'comp.f_xy")]) > 1,
+            len([s for s in output if s.startswith("{'f_xy")]) > 1,
             "Should be more than one comp.f_xy printed",
         )
 

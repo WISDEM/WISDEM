@@ -315,8 +315,8 @@ class WT_RNTA(om.Group):
             self.connect("rotorse.mass_all_blades", "drivese.blades_mass")
             self.connect("rotorse.I_all_blades", "drivese.blades_I")
 
-            self.connect("nacelle.distance_hub2mb", "drivese.L_h1")
-            self.connect("nacelle.distance_mb2mb", "drivese.L_12")
+            self.connect("nacelle.distance_hub_mb", "drivese.L_h1")
+            self.connect("nacelle.distance_mb_mb", "drivese.L_12")
             self.connect("nacelle.L_generator", "drivese.L_generator")
             self.connect("nacelle.overhang", "drivese.overhang")
             self.connect("nacelle.distance_tt_hub", "drivese.drive_height")

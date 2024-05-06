@@ -18,6 +18,8 @@ def under_mpirun():
             or name == "MPIEXEC_HOSTNAME"
             or name.startswith("MPIR_")
             or name.startswith("MPICH_")
+            or name.startswith("INTEL_ONEAPI_MPI_")
+            or name.startswith("I_MPI_")
         ):
             return True
     return False

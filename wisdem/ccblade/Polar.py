@@ -1684,8 +1684,11 @@ def _find_slope(x, y, xi=None, x0=None, window=None, method="max", opts=None, nI
             dx = x[im + 1] - x[im - 1]
             if np.abs(dx) > 1e-7:
                 a = (y[im + 1] - y[im - 1]) / dx
-                yi = np.interp(xi, x, y)
-                x0 = xi - yi / a
+                if a != 0.:
+                    yi = np.interp(xi, x, y)
+                    x0 = xi - yi / a
+                else:
+                    x0 = xi
             else:
                 a = np.inf
                 x0 = xi

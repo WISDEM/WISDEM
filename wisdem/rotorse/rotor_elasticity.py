@@ -4,7 +4,7 @@ import numpy as np
 from openmdao.api import Group, ExplicitComponent
 from scipy.interpolate import PchipInterpolator
 
-from wisdem.rotorse.precomp import PreComp, Profile, CompositeSection, Orthotropic2DMaterial
+from wisdem.precomp import PreComp, Profile, CompositeSection, Orthotropic2DMaterial
 from wisdem.commonse.utilities import rotate, arc_length
 from wisdem.rotorse.rail_transport import RailTransport
 import logging
@@ -175,7 +175,7 @@ class RunPreComp(ExplicitComponent):
         self.add_output(
             "Tw_iner",
             val=np.zeros(n_span),
-            units="m",
+            units="deg",
             desc="Orientation of the section principal inertia axes with respect the blade reference plane",
         )
         self.add_output(
@@ -496,9 +496,12 @@ class RunPreComp(ExplicitComponent):
             ## Profiles
             # rotate
             profile_i = inputs["coord_xy_interp"][i, :, :]
-            profile_i_rot = np.column_stack(
-                rotate(inputs["pitch_axis"][i], 0.0, profile_i[:, 0], profile_i[:, 1], np.radians(inputs["theta"][i]))
-            )
+            profile_i_rot = profile_i
+            # Trying to ensure all shear webs are in perpendicular orientation,
+            # but this probably doesn't work as robustly as hoped.
+            #profile_i_rot = np.column_stack(
+            #    rotate(inputs["pitch_axis"][i], 0.0, profile_i[:, 0], profile_i[:, 1], np.radians(inputs["theta"][i]))
+            #)
 
             # import matplotlib.pyplot as plt
             # plt.plot(profile_i[:,0], profile_i[:,1])
@@ -739,7 +742,7 @@ class RunPreComp(ExplicitComponent):
         beam = PreComp(
             inputs["r"],
             inputs["chord"],
-            np.zeros_like(inputs["r"]),
+            inputs["theta"],
             inputs["pitch_axis"],
             inputs["precurve"],
             inputs["presweep"],
@@ -808,7 +811,7 @@ class RunPreComp(ExplicitComponent):
                     inputs["r"][id_station + 1] - inputs["r"][id_station],
                 ]
             )
-            rhoA_joint[id_station] += inputs["joint_mass"] / span
+            rhoA_joint[id_station] += inputs["joint_mass"][0] / span
 
         outputs["z"] = inputs["r"]
         outputs["EIxx"] = EIxx

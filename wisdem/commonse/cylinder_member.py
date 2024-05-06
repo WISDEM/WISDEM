@@ -2146,6 +2146,17 @@ class CylinderPostFrame(om.ExplicitComponent):
         self.add_input("rho_full", np.zeros(n_full - 1), units="kg/m**3")
         self.add_input("sigma_y_full", np.zeros(n_full - 1), units="Pa")
 
+        self.add_input("section_A", np.zeros(n_full - 1), units="m**2")
+        self.add_input("section_Asx", np.zeros(n_full - 1), units="m**2")
+        self.add_input("section_Asy", np.zeros(n_full - 1), units="m**2")
+        self.add_input("section_Ixx", np.zeros(n_full - 1), units="kg*m**2")
+        self.add_input("section_Iyy", np.zeros(n_full - 1), units="kg*m**2")
+        self.add_input("section_J0", np.zeros(n_full - 1), units="kg*m**2")
+        self.add_input("section_rho", np.zeros(n_full - 1), units="kg/m**3")
+        self.add_input("section_E", np.zeros(n_full - 1), units="Pa")
+        self.add_input("section_G", np.zeros(n_full - 1), units="Pa")
+        self.add_input("section_L", np.zeros(n_full - 1), units="m")
+
         # Processed Frame3DD/OpenFAST outputs
         self.add_input("cylinder_Fz", val=np.zeros((n_full - 1, n_dlc)), units="N")
         self.add_input("cylinder_Vx", val=np.zeros((n_full - 1, n_dlc)), units="N")
@@ -2177,7 +2188,15 @@ class CylinderPostFrame(om.ExplicitComponent):
         h = np.diff(z, axis=0)
         d_sec, _ = util.nodal2sectional(d)
         r_sec = 0.5 * d_sec
-        itube = cs.Tube(d_sec, t)
+
+        # Geom properties
+        #itube = cs.Tube(d_sec, t)
+        Az = np.tile(inputs["section_A"], (n_dlc, 1)).T
+        Asx = np.tile(inputs["section_Asx"], (n_dlc, 1)).T
+        Asy = np.tile(inputs["section_Asy"], (n_dlc, 1)).T
+        Jz = np.tile(inputs["section_J0"], (n_dlc, 1)).T
+        Ixx = np.tile(inputs["section_Ixx"], (n_dlc, 1)).T
+        Iyy = np.tile(inputs["section_Iyy"], (n_dlc, 1)).T
 
         L_buckling = self.options["modeling_options"]["buckling_length"]
         gamma_f = self.options["modeling_options"]["gamma_f"]
@@ -2205,14 +2224,6 @@ class CylinderPostFrame(om.ExplicitComponent):
 
         M = np.sqrt(Mxx**2 + Myy**2)
         V = np.sqrt(Vx**2 + Vy**2)
-
-        # Geom properties
-        Az = itube.Area
-        Asx = itube.Asx
-        Asy = itube.Asy
-        Jz = itube.J0
-        Ixx = itube.Ixx
-        Iyy = itube.Iyy
 
         # See http://svn.code.sourceforge.net/p/frame3dd/code/trunk/doc/Frame3DD-manual.html#structuralmodeling
         outputs["axial_stress"] = axial_stress = Fz / Az + M * r_sec / Iyy
@@ -2257,6 +2268,8 @@ class CylinderPostFrame(om.ExplicitComponent):
                 G=G[:, 0],
                 sigma_y=sigma_y[:, 0],
                 gamma=gamma_f * gamma_b,
+                A=Az[:,0],
+                I=Ixx[:,0],
             )
 
             for k in range(n_dlc):

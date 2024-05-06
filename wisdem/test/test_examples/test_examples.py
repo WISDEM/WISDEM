@@ -88,14 +88,15 @@ class TestExamples(unittest.TestCase):
                 try:
                     execute_script(s)
                     self.assertTrue(True)
-                except:
+                except Exception:
                     self.assertEqual(s, "Success")
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestExamples))
-    return suite
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestExamples),
+    ]
+    return unittest.TestSuite(suite)
 
 
 if __name__ == "__main__":

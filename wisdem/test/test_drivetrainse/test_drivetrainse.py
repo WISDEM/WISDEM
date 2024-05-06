@@ -455,16 +455,5 @@ class TestGroup(unittest.TestCase):
         self.assertGreater(prob["drivetrain_damping_coefficient"], 1e7)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestGroup))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()
