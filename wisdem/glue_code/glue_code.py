@@ -553,7 +553,7 @@ class WT_RNTA(om.Group):
             self.connect("monopile.gravity_foundation_mass", "fixedse.gravity_foundation_mass")
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.nodes_xyz", "fixedse.tower_xyz")
-                self.connect("towerse.d_full", "fixedse.tower_d_full")
+                self.connect("towerse.outer_diameter_full", "fixedse.tower_outer_diameter_full")
                 self.connect("towerse.t_full", "fixedse.tower_t_full")
                 self.connect("towerse.sigma_y_full", "fixedse.tower_sigma_y_full")
                 self.connect("towerse.qdyn", "fixedse.tower_qdyn")
@@ -625,7 +625,11 @@ class WT_RNTA(om.Group):
             # Individual member connections
             for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
                 idx = modeling_options["floating"]["members"]["name2idx"][kname]
-                self.connect(f"floating.memgrid{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
+                if modeling_options["floating"]["members"]["outer_shape"][k] == "circular":
+                    self.connect(f"floating.memgrid{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
+                elif modeling_options["floating"]["members"]["outer_shape"][k] == "rectangular":
+                    self.connect(f"floating.memgrid{idx}.side_length_a", f"floatingse.member{k}.side_length_a_in")
+                    self.connect(f"floating.memgrid{idx}.side_length_b", f"floatingse.member{k}.side_length_b_in")
                 self.connect(f"floating.memgrid{idx}.layer_thickness", f"floatingse.member{k}.layer_thickness")
                 self.connect(f"floating.memgrp{idx}.outfitting_factor", f"floatingse.member{k}.outfitting_factor_in")
                 self.connect(f"floating.memgrp{idx}.s", f"floatingse.member{k}.s_in")
@@ -685,7 +689,7 @@ class WT_RNTA(om.Group):
             self.connect("nacelle.uptilt", "tcons.tilt")
             self.connect("nacelle.overhang", "tcons.overhang")
             self.connect("high_level_tower_props.tower_ref_axis", "tcons.ref_axis_tower")
-            self.connect("tower.diameter", "tcons.d_full")
+            self.connect("tower.diameter", "tcons.outer_diameter_full")
             if modeling_options["flags"]["floating"]:
                 self.connect("floatingse.structural_frequencies", "tcons.tower_freq", src_indices=[0])
             else:

@@ -240,74 +240,112 @@ class Square(CrossSectionBase):
 
 
 class Rectangle(CrossSectionBase):
+    """Rectangle section property calculation
+
+    reference: frame3DD documentation, note that the coordinate system is different from the online doc
+
+    Args:
+        CrossSectionBase (parent class)
+
+    Definition:
+
+             a
+        |---------------------|
+        |                     |
+      b |   |-------------|   |          ^ y
+        |   |             |   |          |
+        |   |             |   |          ---> x   
+        |   |-------------|   |
+        |         | t         |
+        |---------------------|
+
+    """
     def __init__(self, a, b, t, L=np.nan):
+        """Initialize rectangle
+
+        Args:
+            a (float): side_length parallel to y
+            b (float): side_length_b parallel to z
+            t (float): thickness of rectangular tube
+            L (float), optional): length of the section. Defaults to np.nan.
+        """
         self.a = a
         self.b = b
         self.t = t
         self.L = L * np.ones(np.size(a))
 
+        assert (np.minimum(self.a, self.b)>=2*self.t).any(), "Thickness exceeds the edge lengths."
+
     @property
-    def Area(self):  # Cross sectional area of tube
+    def Area(self):  # Cross sectional area of rectangle
         return self.a * self.b - (self.a - 2 * self.t) * (self.b - 2 * self.t)
 
     @property
-    def Ixx(self):  # 2nd area moment of inertia w.r.t. x-x axis running parallel to flange through CG
-        return (self.a * self.b**3 - (self.a - 2 * self.t) * (self.b - 2 * self.t) * 3) / 12.0
+    def Ixx(self):  # 2nd area moment of inertia w.r.t. x-x axis 
+        return (self.a * self.b**3 - (self.a - 2 * self.t) * (self.b - 2 * self.t)**3) / 12.0
 
     @property
-    def Iyy(self):  # 2nd area moment of inertia w.r.t. z-z running through center of web
-        return (self.b * self.a**3 - (self.b - 2 * self.t) * (self.a - 2 * self.t) * 3) / 12.0
+    def Iyy(self):  # 2nd area moment of inertia w.r.t. z-z 
+        return (self.b * self.a**3 - (self.b - 2 * self.t) * (self.a - 2 * self.t)**3) / 12.0
 
     @property
     def J0(self):  # polar moment of inertia w.r.t. z-z axis (torsional)
-        return 2 * self.t * (self.a - self.t) ** 2 * (self.b - self.t) ** 2 / (self.a + self.b - 2 * self.t)
+        return self.Ixx + self.Iyy
 
     @property
-    def Asx(self):  # Shear Area for tubular cross-section
-        if self.a > self.b:
-            return self.Area / (
-                0.93498
-                - 1.28084 * (self.t / self.b)
-                + 1.36441 * (self.b / self.a)
-                + 0.00295 * (self.a / self.b) ** 2
-                + 0.25797 * (self.t * self.a / self.b**2)
-            )
+    def Asx(self):  # Shear Area for rectangle cross-section
+        if np.minimum(self.a, self.b)>2*self.t:
+            if self.a > self.b:
+                return self.Area / (
+                    0.93498
+                    - 1.28084 * (self.t / self.b)
+                    + 1.36441 * (self.b / self.a)
+                    + 0.00295 * (self.a / self.b) ** 2
+                    + 0.25797 * (self.t * self.a / self.b**2)
+                )
+            else:
+                return self.Area / (
+                    1.63544
+                    - 8.34935 * (self.t / self.a)
+                    + 0.60125 * (self.b / self.a)
+                    + 0.41403 * (self.b / self.a) ** 2
+                    + 4.95373 * (self.t * self.b / self.a**2)
+                )
         else:
-            return self.Area / (
-                1.63544
-                - 8.34935 * (self.t / self.a)
-                + 0.60125 * (self.b / self.a)
-                + 0.41403 * (self.b / self.a) ** 2
-                + 4.95373 * (self.t * self.b / self.a**2)
-            )
-
+            # Asx = Asy = Ax (5+5v)/(6+5v), v is poisson ratio
+            # This assumes an poisson ratio of 0.3, be careful of using this
+            return self.Area*(5+5*0.3)/(6+5*0.3)
+        
     @property
-    def Asy(self):  # Shear Area for tubular cross-section
-        if self.a > self.b:
-            return self.Area / (
-                1.63544
-                - 8.34935 * (self.t / self.b)
-                + 0.60125 * (self.a / self.b)
-                + 0.41403 * (self.a / self.b) ** 2
-                + 4.95373 * (self.t * self.a / self.b**2)
-            )
+    def Asy(self):  # Shear Area for rectangular cross-section
+        if np.minimum(self.a, self.b)>2*self.t:
+            if self.a > self.b:
+                return self.Area / (
+                    1.63544
+                    - 8.34935 * (self.t / self.b)
+                    + 0.60125 * (self.a / self.b)
+                    + 0.41403 * (self.a / self.b) ** 2
+                    + 4.95373 * (self.t * self.a / self.b**2)
+                )
+            else:
+                return self.Area / (
+                    0.93498
+                    - 1.28084 * (self.t / self.a)
+                    + 1.36441 * (self.a / self.b)
+                    + 0.00295 * (self.b / self.a) ** 2
+                    + 0.25797 * (self.t * self.b / self.a**2)
+                )
         else:
-            return self.Area / (
-                0.93498
-                - 1.28084 * (self.t / self.a)
-                + 1.36441 * (self.a / self.b)
-                + 0.00295 * (self.b / self.a) ** 2
-                + 0.25797 * (self.t * self.b / self.a**2)
-            )
+            return self.Asx
 
     @property
-    def BdgMxx(self):  # Bending modulus for tubular cross-section
+    def BdgMxx(self):  # Bending modulus for rectangular cross-section
         return 2 * self.Ixx / self.b
 
     @property
-    def BdgMyy(self):  # Bending modulus for tubular cross-section =BdgMxx
+    def BdgMyy(self):  # Bending modulus for rectangular cross-section =BdgMxx
         return 2 * self.Iyy / self.a
 
     @property
-    def TorsConst(self):  # Torsion shear constant for tubular cross-section
+    def TorsConst(self):  # Torsion shear constant for rectangular cross-section
         return 2 * self.t * (self.a - self.t) * (self.b - self.t)

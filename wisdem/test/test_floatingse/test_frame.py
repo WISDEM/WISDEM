@@ -23,6 +23,7 @@ class TestFrame(unittest.TestCase):
         opt["WISDEM"]["FloatingSE"] = {}
         opt["floating"]["members"] = {}
         opt["floating"]["members"]["n_members"] = n_member = 6
+        opt["floating"]["members"]["outer_shape"] = n_member * ["circular"]
         opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["flag"] = True
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = True
@@ -78,6 +79,7 @@ class TestFrame(unittest.TestCase):
         opt["WISDEM"]["FloatingSE"] = {}
         opt["floating"]["members"] = {}
         opt["floating"]["members"]["n_members"] = n_member = 6
+        opt["floating"]["members"]["outer_shape"] = n_member * ["circular"]
         opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["flag"] = True
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = True
@@ -110,6 +112,7 @@ class TestFrame(unittest.TestCase):
             "rho",
             "E",
             "G",
+            "TorsC",
             "sigma_y",
             "Px",
             "Py",
@@ -143,6 +146,7 @@ class TestFrame(unittest.TestCase):
             inputs[f"member{k}:section_rho"][:1] = 1e3 / (0.5 * k * np.ones(1) + 1) / L
             inputs[f"member{k}:section_E"][:1] = 3 * k * np.ones(1) + 1
             inputs[f"member{k}:section_G"][:1] = 4 * k * np.ones(1) + 1
+            inputs[f"member{k}:section_TorsC"][:1] = 4 * k * np.ones(1) + 1
             inputs[f"member{k}:section_sigma_y"][:1] = 5 * k * np.ones(1) + 1
             inputs[f"member{k}:idx_cb"] = 0
             inputs[f"member{k}:buoyancy_force"] = 1e2
@@ -153,7 +157,8 @@ class TestFrame(unittest.TestCase):
             inputs[f"member{k}:total_cost"] = 2e3
             inputs[f"member{k}:I_total"] = 1e2 + np.arange(6)
             inputs[f"member{k}:Awater"] = 5.0
-            inputs[f"member{k}:Iwater"] = 15.0
+            inputs[f"member{k}:Iwaterx"] = 15.0
+            inputs[f"member{k}:Iwatery"] = 15.0
             inputs[f"member{k}:added_mass"] = np.arange(6)
             inputs[f"member{k}:ballast_mass"] = 1e2
             inputs[f"member{k}:variable_ballast_capacity"] = 10 + k

@@ -359,10 +359,20 @@ class WindTurbineOntologyPython(object):
                 ]["members"][i]["outer_shape"]["shape"]
 
                 # Master grid for all bulkheads, internal joints, ballasts, geometry changes, etc
-                grid = self.wt_init["components"]["floating_platform"]["members"][i]["outer_shape"]["outer_diameter"][
-                    "grid"
-                ][:]
-
+                member_shape = self.wt_init["components"]["floating_platform"]["members"][i]["outer_shape"]["shape"]
+                if member_shape == "circular":
+                    grid = self.wt_init["components"]["floating_platform"]["members"][i]["outer_shape"]["outer_diameter"][
+                        "grid"
+                    ][:]
+                elif member_shape == "rectangular":
+                    grid = self.wt_init["components"]["floating_platform"]["members"][i]["outer_shape"]["side_length_a"][
+                            "grid"
+                        ][:]
+                    grid_b = self.wt_init["components"]["floating_platform"]["members"][i]["outer_shape"]["side_length_b"][
+                            "grid"
+                        ][:]
+                    assert grid == grid_b, "Side length a and b don't have the same grid but they should."
+                    
                 # Grid for just diameter / thickness design
                 geom_grid = grid[:]
 
@@ -1376,15 +1386,30 @@ class WindTurbineOntologyPython(object):
             for i in range(n_members):
                 name_member = self.modeling_options["floating"]["members"]["name"][i]
                 idx = self.modeling_options["floating"]["members"]["name2idx"][name_member]
+                member_shape = yaml_out["members"][i]["outer_shape"]["shape"]
 
                 s_in = wt_opt[f"floating.memgrp{idx}.s_in"].tolist()
-                yaml_out["members"][i]["outer_shape"]["outer_diameter"]["grid"] = s_in
-                d_in = wt_opt[f"floating.memgrp{idx}.outer_diameter_in"]
-                if len(d_in) == len(s_in):
-                    yaml_out["members"][i]["outer_shape"]["outer_diameter"]["values"] = d_in.tolist()
-                else:
-                    d_in2 = d_in * np.ones(len(s_in))
-                    yaml_out["members"][i]["outer_shape"]["outer_diameter"]["values"] = d_in2.tolist()
+                if member_shape == "circular":
+                    yaml_out["members"][i]["outer_shape"]["outer_diameter"]["grid"] = s_in
+                    d_in = wt_opt[f"floating.memgrp{idx}.outer_diameter_in"]
+                    if len(d_in) == len(s_in):
+                        yaml_out["members"][i]["outer_shape"]["outer_diameter"]["values"] = d_in.tolist()
+                    else:
+                        d_in2 = d_in * np.ones(len(s_in))
+                        yaml_out["members"][i]["outer_shape"]["outer_diameter"]["values"] = d_in2.tolist()
+                elif member_shape == "rectangular":
+                    yaml_out["members"][i]["outer_shape"]["side_length_a"]["grid"] = s_in
+                    yaml_out["members"][i]["outer_shape"]["side_length_b"]["grid"] = s_in
+                    length_a_in = wt_opt[f"floating.memgrp{idx}.side_length_a_in"]
+                    length_b_in = wt_opt[f"floating.memgrp{idx}.side_length_b_in"]
+                    if len(length_a_in) == len(s_in):
+                        yaml_out["members"][i]["outer_shape"]["side_length_a"]["values"] = length_a_in.tolist()
+                        yaml_out["members"][i]["outer_shape"]["side_length_b"]["values"] = length_b_in.tolist()
+                    else:
+                        length_a_in2 = length_a_in * np.ones(len(s_in))
+                        length_b_in2 = length_b_in * np.ones(len(s_in))
+                        yaml_out["members"][i]["outer_shape"]["side_length_a"]["values"] = length_a_in2.tolist()
+                        yaml_out["members"][i]["outer_shape"]["side_length_b"]["values"] = length_b_in2.tolist()
 
                 istruct = yaml_out["members"][i]["internal_structure"]
 

@@ -9,7 +9,7 @@ from wisdem.commonse import gravity
 from wisdem.commonse.csystem import DirectionVector
 from wisdem.commonse.utilities import find_nearest, nodal2sectional
 from wisdem.commonse.cross_sections import Tube, IBeam
-from wisdem.commonse.utilization_constraints import vonMisesStressUtilization
+from wisdem.commonse.utilization_constraints import TubevonMisesStressUtilization
 
 RIGID = 1
 FREE = 0
@@ -330,7 +330,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
 
             # Loop over DLCs and append to outputs
             rotor_gearbox_deflection = np.zeros(n_dlcs)
-            rotor_gearbox_rotation = np.zeros(n_dlcs)
+            rotor_gearbox_angle = np.zeros(n_dlcs)
             outputs["F_mb1"] = np.zeros((3, n_dlcs))
             outputs["F_mb2"] = np.zeros((3, n_dlcs))
             outputs["F_torq"] = np.zeros((3, n_dlcs))
@@ -347,7 +347,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
                     + displacements.dy[k, itorq - 1] ** 2
                     + displacements.dz[k, itorq - 1] ** 2
                 )
-                rotor_gearbox_rotation[k] = (
+                rotor_gearbox_angle[k] = (
                     displacements.dxrot[k, itorq - 1]
                     + displacements.dyrot[k, itorq - 1]
                     + displacements.dzrot[k, itorq - 1]
@@ -379,7 +379,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
                     outputs["lss_axial_stress"][:, k],
                     hoop,
                     outputs["lss_shear_stress"][:, k],
-                    gamma_f * gamma_m * gamma_n,
+                    gamma,
                     sigma_y,
                 )
             outputs["torq_deflection"] = rotor_gearbox_deflection.max()
@@ -620,7 +620,7 @@ class HSS_Frame(om.ExplicitComponent):
             outputs["hss_shear_stress"][:, k] = 2.0 * F / As + np.abs(Mxx) / C
             hoop = np.zeros(F.shape)
 
-            outputs["constr_hss_vonmises"][:, k] = vonMisesStressUtilization(
+            outputs["constr_hss_vonmises"][:, k] = TubevonMisesStressUtilization(
                 outputs["hss_axial_stress"][:, k],
                 hoop,
                 outputs["hss_shear_stress"][:, k],
@@ -1021,7 +1021,7 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
             # Bending_stress_inner = M[:(inose-1)] * nodal2sectional( (R_n-Ri) / (A_bed*e_cn*Ri) )[0]
             outputs["bedplate_nose_bending_stress"][: (inose - 1), k] = Bending_stress_outer
 
-            outputs["constr_bedplate_vonmises"][:, k] = vonMisesStressUtilization(
+            outputs["constr_bedplate_vonmises"][:, k] = TubevonMisesStressUtilization(
                 outputs["bedplate_nose_axial_stress"][:, k],
                 outputs["bedplate_nose_bending_stress"][:, k],
                 outputs["bedplate_nose_shear_stress"][:, k],
@@ -1414,7 +1414,7 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
                     outputs["bedplate_axial_stress"][:, k],
                     hoop,
                     outputs["bedplate_shear_stress"][:, k],
-                    gamma_f * gamma_m * gamma_n,
+                    gamma,
                     sigma_y,
                 )
 

@@ -18,11 +18,18 @@ class PlatformFrame(om.ExplicitComponent):
     def setup(self):
         opt = self.options["options"]
         n_member = opt["floating"]["members"]["n_members"]
+        self.shape = opt["floating"]["members"]["outer_shape"]
 
         for k in range(n_member):
             self.add_input(f"member{k}:nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
             self.add_input(f"member{k}:nodes_r", NULL * np.ones(MEMMAX), units="m")
-            self.add_input(f"member{k}:section_D", NULL * np.ones(MEMMAX), units="m")
+            if self.shape[k] == "circular":
+                self.add_input(f"member{k}:section_D", NULL * np.ones(MEMMAX), units="m")
+            elif self.shape[k] == "rectangular":
+                self.add_input(f"member{k}:section_a", NULL * np.ones(MEMMAX), units="m")
+                self.add_input(f"member{k}:section_b", NULL * np.ones(MEMMAX), units="m")
+            self.add_input(f"member{k}:Iwaterx", 0.0, units="m**4")
+            self.add_input(f"member{k}:Iwatery", 0.0, units="m**4")
             self.add_input(f"member{k}:section_t", NULL * np.ones(MEMMAX), units="m")
             self.add_input(f"member{k}:section_A", NULL * np.ones(MEMMAX), units="m**2")
             self.add_input(f"member{k}:section_Asx", NULL * np.ones(MEMMAX), units="m**2")
@@ -33,6 +40,7 @@ class PlatformFrame(om.ExplicitComponent):
             self.add_input(f"member{k}:section_rho", NULL * np.ones(MEMMAX), units="kg/m**3")
             self.add_input(f"member{k}:section_E", NULL * np.ones(MEMMAX), units="Pa")
             self.add_input(f"member{k}:section_G", NULL * np.ones(MEMMAX), units="Pa")
+            self.add_input(f"member{k}:section_TorsC", NULL * np.ones(MEMMAX), units="m**3")
             self.add_input(f"member{k}:section_sigma_y", NULL * np.ones(MEMMAX), units="Pa")
             self.add_input(f"member{k}:idx_cb", 0)
             self.add_input(f"member{k}:buoyancy_force", 0.0, units="N")
@@ -44,7 +52,6 @@ class PlatformFrame(om.ExplicitComponent):
             self.add_input(f"member{k}:total_cost", 0.0, units="USD")
             self.add_input(f"member{k}:I_total", np.zeros(6), units="kg*m**2")
             self.add_input(f"member{k}:Awater", 0.0, units="m**2")
-            self.add_input(f"member{k}:Iwater", 0.0, units="m**4")
             self.add_input(f"member{k}:added_mass", np.zeros(6), units="kg")
             self.add_input(f"member{k}:waterline_centroid", np.zeros(2), units="m")
             self.add_input(f"member{k}:variable_ballast_capacity", val=0.0, units="m**3")
@@ -61,7 +68,9 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
         self.add_output("platform_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
         self.add_output("platform_elem_L", NULL * np.ones(NELEM_MAX), units="m")
-        self.add_output("platform_elem_D", NULL * np.ones(NELEM_MAX), units="m")
+        self.add_output("platform_elem_D", NULL * np.ones(NELEM_MAX), units="m") # elem_D, a, b are added for both circular and rectangular
+        self.add_output("platform_elem_a", NULL * np.ones(NELEM_MAX), units="m") # zeros when not the corresponding type
+        self.add_output("platform_elem_b", NULL * np.ones(NELEM_MAX), units="m")
         self.add_output("platform_elem_t", NULL * np.ones(NELEM_MAX), units="m")
         self.add_output("platform_elem_A", NULL * np.ones(NELEM_MAX), units="m**2")
         self.add_output("platform_elem_Asx", NULL * np.ones(NELEM_MAX), units="m**2")
@@ -72,6 +81,7 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
         self.add_output("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_output("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_output("platform_elem_TorsC", NULL * np.ones(NELEM_MAX), units="m**3")
         self.add_output("platform_elem_sigma_y", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_discrete_output("platform_elem_memid", [-1] * NELEM_MAX)
         self.add_output("platform_displacement", 0.0, units="m**3")
@@ -83,7 +93,9 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_I_hull", np.zeros(6), units="kg*m**2")
         self.add_output("platform_cost", 0.0, units="USD")
         self.add_output("platform_Awater", 0.0, units="m**2")
-        self.add_output("platform_Iwater", 0.0, units="m**4")
+        # self.add_output("platform_Iwater", 0.0, units="m**4")
+        self.add_output("platform_Iwaterx", 0.0, units="m**4")
+        self.add_output("platform_Iwatery", 0.0, units="m**4")
         self.add_output("platform_added_mass", np.zeros(6), units="kg")
         self.add_output("platform_variable_capacity", np.zeros(n_member), units="m**3")
 
@@ -185,9 +197,12 @@ class PlatformFrame(om.ExplicitComponent):
         # Load in number of members
         opt = self.options["options"]
         n_member = opt["floating"]["members"]["n_members"]
+        self.shape = opt["floating"]["members"]["outer_shape"]
 
         # Initialize running lists across all members
         elem_D = np.array([])
+        elem_a = np.array([])
+        elem_b = np.array([])
         elem_t = np.array([])
         elem_A = np.array([])
         elem_Asx = np.array([])
@@ -198,6 +213,7 @@ class PlatformFrame(om.ExplicitComponent):
         elem_rho = np.array([])
         elem_E = np.array([])
         elem_G = np.array([])
+        elem_TorsC = np.array([])
         elem_sigy = np.array([])
         elem_memid = np.array([], dtype=np.int_)
 
@@ -206,7 +222,9 @@ class PlatformFrame(om.ExplicitComponent):
         cost = 0.0
         volume = 0.0
         Awater = 0.0
-        Iwater = 0.0
+        # Iwater = 0.0
+        Iwaterx = 0.0
+        Iwatery = 0.0
         cg_plat = np.zeros(3)
         cb_plat = np.zeros(3)
         centroid = outputs["platform_centroid"][:2]
@@ -215,7 +233,14 @@ class PlatformFrame(om.ExplicitComponent):
         # Append all member data
         for k in range(n_member):
             n = np.where(inputs[f"member{k}:section_A"] == NULL)[0][0]
-            elem_D = np.append(elem_D, inputs[f"member{k}:section_D"][:n])
+            if self.shape[k] == "circular":
+                elem_D = np.append(elem_D, inputs[f"member{k}:section_D"][:n])
+                elem_a = np.append(elem_a, np.zeros(n))
+                elem_b = np.append(elem_b, np.zeros(n))
+            elif self.shape[k] == "rectangular":
+                elem_D = np.append(elem_D, np.zeros(n))
+                elem_a = np.append(elem_a, inputs[f"member{k}:section_a"][:n])
+                elem_b = np.append(elem_b, inputs[f"member{k}:section_b"][:n])
             elem_t = np.append(elem_t, inputs[f"member{k}:section_t"][:n])
             elem_A = np.append(elem_A, inputs[f"member{k}:section_A"][:n])
             elem_Asx = np.append(elem_Asx, inputs[f"member{k}:section_Asx"][:n])
@@ -226,6 +251,7 @@ class PlatformFrame(om.ExplicitComponent):
             elem_rho = np.append(elem_rho, inputs[f"member{k}:section_rho"][:n])
             elem_E = np.append(elem_E, inputs[f"member{k}:section_E"][:n])
             elem_G = np.append(elem_G, inputs[f"member{k}:section_G"][:n])
+            elem_TorsC = np.append(elem_TorsC, inputs[f"member{k}:section_TorsC"][:n])
             elem_sigy = np.append(elem_sigy, inputs[f"member{k}:section_sigma_y"][:n])
             elem_memid = np.append(elem_memid, k * np.ones(n, dtype=np.int_))
 
@@ -239,9 +265,12 @@ class PlatformFrame(om.ExplicitComponent):
             m_ball += inputs[f"member{k}:ballast_mass"]
             Awater_k = inputs[f"member{k}:Awater"]
             Awater += Awater_k
-            # Just the y-coordinate because the waterplane area is used for metacentric height, which is based on Iwater_x
-            Rwater = inputs[f"member{k}:waterline_centroid"][1] - centroid[1]
-            Iwater += inputs[f"member{k}:Iwater"] + Awater_k * Rwater**2
+            # y-coordinate for roll metacentric height
+            # x-coordinate for pitch meracentric height
+            Rwaterx = inputs[f"member{k}:waterline_centroid"][1] - centroid[1]
+            Rwatery = inputs[f"member{k}:waterline_centroid"][0] - centroid[0]
+            Iwaterx += inputs[f"member{k}:Iwaterx"] + Awater_k * Rwaterx**2
+            Iwatery += inputs[f"member{k}:Iwatery"] + Awater_k * Rwatery**2
             variable_capacity[k] = inputs[f"member{k}:variable_ballast_capacity"]
 
             # Center of mass / buoyancy tallies
@@ -296,6 +325,8 @@ class PlatformFrame(om.ExplicitComponent):
         # Store outputs
         nelem = elem_A.size
         outputs["platform_elem_D"] = NULL * np.ones(NELEM_MAX)
+        outputs["platform_elem_a"] = NULL * np.ones(NELEM_MAX)
+        outputs["platform_elem_b"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_t"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_A"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_Asx"] = NULL * np.ones(NELEM_MAX)
@@ -306,9 +337,12 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_elem_rho"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_E"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_G"] = NULL * np.ones(NELEM_MAX)
+        outputs["platform_elem_TorsC"] = NULL * np.ones(NELEM_MAX)
         outputs["platform_elem_sigma_y"] = NULL * np.ones(NELEM_MAX)
 
         outputs["platform_elem_D"][:nelem] = elem_D
+        outputs["platform_elem_a"][:nelem] = elem_a
+        outputs["platform_elem_b"][:nelem] = elem_b
         outputs["platform_elem_t"][:nelem] = elem_t
         outputs["platform_elem_A"][:nelem] = elem_A
         outputs["platform_elem_Asx"][:nelem] = elem_Asx
@@ -319,6 +353,7 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_elem_rho"][:nelem] = elem_rho
         outputs["platform_elem_E"][:nelem] = elem_E
         outputs["platform_elem_G"][:nelem] = elem_G
+        outputs["platform_elem_TorsC"][:nelem] = elem_TorsC
         outputs["platform_elem_sigma_y"][:nelem] = elem_sigy
         discrete_outputs["platform_elem_memid"] = elem_memid
 
@@ -330,7 +365,8 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_center_of_buoyancy"] = cb_plat
         outputs["platform_I_hull"] = util.unassembleI(I_hull)
         outputs["platform_Awater"] = Awater
-        outputs["platform_Iwater"] = Iwater
+        outputs["platform_Iwaterx"] = Iwaterx
+        outputs["platform_Iwatery"] = Iwatery
         outputs["platform_added_mass"] = m_added
         outputs["platform_variable_capacity"] = variable_capacity
 

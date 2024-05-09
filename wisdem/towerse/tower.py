@@ -128,7 +128,7 @@ class TowerFrame(om.ExplicitComponent):
     ----------
     z_full : numpy array[npts], [m]
         location along cylinder. start at bottom and go to top
-    d_full : numpy array[npts], [m]
+    outer_diameter_full : numpy array[npts], [m]
         effective cylinder diameter for section
     t_full : numpy array[npts-1], [m]
         effective shell thickness for section
@@ -469,7 +469,7 @@ class TowerSE(om.Group):
             "z_param",
             "z_full",
             "s_full",
-            "d_full",
+            "outer_diameter_full",
             "t_full",
             "rho_full",
             "E_full",
@@ -515,8 +515,8 @@ class TowerSE(om.Group):
         temp_opt["n_ballasts"] = [0]
         self.add_subsystem(
             "member",
-            mem.MemberStandard(column_options=temp_opt, idx=0, n_mat=n_mat, n_refine=mod_opt["n_refine"]),
-            promotes=promlist,
+            mem.MemberStandard(column_options=temp_opt, idx=0, n_mat=n_mat, n_refine=mod_opt["n_refine"], member_shape = "circular"),
+            promotes=promlist
         )
 
         self.add_subsystem("turb", TurbineMass(), promotes=["*"])
@@ -551,7 +551,7 @@ class TowerSE(om.Group):
             mem.CylinderPostFrame(modeling_options=mod_opt, n_dlc=nLC, n_full = n_full),
             promotes=[
                 "z_full",
-                "d_full",
+                "outer_diameter_full",
                 "t_full",
                 "rho_full",
                 "E_full",

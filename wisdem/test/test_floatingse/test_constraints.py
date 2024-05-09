@@ -37,7 +37,8 @@ class TestConstraints(unittest.TestCase):
         inputs["fairlead_radius"] = 10.0
         inputs["operational_heel"] = np.deg2rad(5.0)
         inputs["survival_heel"] = np.deg2rad(20.0)
-        inputs["platform_Iwater"] = 1e4
+        inputs["platform_Iwaterx"] = 1e4
+        inputs["platform_Iwatery"] = 1e4
         inputs["platform_displacement"] = 1e5
         inputs["platform_center_of_buoyancy"] = np.ones(3)
         inputs["system_center_of_mass"] = np.array([0.0, 0.0, 5.0])
@@ -55,7 +56,8 @@ class TestConstraints(unittest.TestCase):
         _, draft2 = util.rotate(0.0, 0.0, 2.0, -6.0, np.deg2rad(20))
         npt.assert_equal(outputs["constr_fixed_margin"], 0.6 * np.ones(6))
         self.assertEqual(outputs["constr_fairlead_wave"], 1.1 * 0.5)
-        self.assertEqual(outputs["metacentric_height"], 0.1 - (5 - 1))
+        self.assertEqual(outputs["metacentric_height_roll"], 0.1 - (5 - 1))
+        self.assertEqual(outputs["metacentric_height_pitch"], 0.1 - (5 - 1))
         self.assertEqual(outputs["constr_mooring_surge"], 1e5 - 1e2)
         self.assertEqual(outputs["constr_mooring_heel"], 10 * 2e5 + (5 + 20) * 4e5 + 2e5 - 1e2 * (10 - 5) - 2e2)
         npt.assert_almost_equal(outputs["constr_freeboard_heel_margin"], (-4.0 - free2), decimal = 8)
