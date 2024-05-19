@@ -2897,11 +2897,11 @@ class MemberBase(om.Group):
         )
         
             self.connect("wall_thickness", "gc.t")
-            member_shape_variables = ["outer_diameter"]
+            member_shape_variables = ["outer_diameter", "ca_usr_grid", "cd_usr_grid"]
             self.connect("outer_diameter", "gc.d")
         elif member_shape == "rectangular":
             # TODO: geometricconstraint hasn't considered rectangular member yet, so no connection
-            member_shape_variables = ["side_length_a", "side_length_b"]
+            member_shape_variables = ["side_length_a", "side_length_b", "ca_usr_grid", "cd_usr_grid", "cay_usr_grid", "cdy_usr_grid"]
 
         self.add_subsystem("geom", MemberDiscretization(n_height=n_height, n_refine=n_refine, member_shape_variables = member_shape_variables), promotes=["*"])
 
