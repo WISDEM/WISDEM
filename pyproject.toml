@@ -160,7 +160,7 @@ omit = ["wisdem/test/*", "wisdem/floating/visualize.py"]
 [tool.cibuildwheel]
 skip = ["pp*", "cp36-*", "cp37-*", "cp38-*", "*-win32", "*-win_arm64"] #, "*-musllinux*"]
 build-frontend = { name = "build", args = ["-w","-n"] }
-before-build = "pip install numpy ninja meson meson-python setuptools"
+before-build = "pip install numpy ninja meson meson-python setuptools wheel"
 build-verbosity = "3"
 
 # https://github.com/pdfo/pdfo
