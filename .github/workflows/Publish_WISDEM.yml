@@ -16,6 +16,12 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-13, macos-14]
 
     steps:
+      - name: Set up QEMU
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+        
       - name: Setup GNU Fortran
         if: false == contains( matrix.os, 'windows')
         uses: awvwgk/setup-fortran@v1
@@ -41,14 +47,16 @@ jobs:
 
       - name: Build wheels mac and linux
         if: false == contains( matrix.os, 'windows')
-        uses: pypa/cibuildwheel@v2.17.0
+        uses: pypa/cibuildwheel@v2.18.1
+        # configure cibuildwheel to build native archs ('auto'), and some emulated ones
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
+          CIBW_ARCHS_LINUX: auto aarch64 ppc64le s390x
 
       - name: Build wheels windows
         if: contains( matrix.os, 'windows')
-        uses: pypa/cibuildwheel@v2.17.0
+        uses: pypa/cibuildwheel@v2.18.1
           
       - uses: actions/upload-artifact@v4
         with:
