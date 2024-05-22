@@ -168,5 +168,9 @@ build-verbosity = "3"
 select = "*-win_amd64"
 environment = { PKG_CONFIG_PATH="c:/opt/64/lib/pkgconfig" }
 
+# On an Linux Intel runner with qemu installed, build Intel and ARM wheels (aarch64) for Docker.  Ignoring: ppc64le s390x
+[tool.cibuildwheel.linux]
+archs = ["auto", "aarch64"]
+
 [tool.cibuildwheel.windows]
 repair-wheel-command = "bash .github/tools/cibw_repair_wheel_command_windows.sh {wheel} {dest_dir}"
