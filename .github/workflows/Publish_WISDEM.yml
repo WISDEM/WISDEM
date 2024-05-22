@@ -53,7 +53,7 @@ jobs:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
           CIBW_ARCHS_LINUX: auto aarch64
-          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET="10.13"
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET="13.0"
 
       - name: Build wheels windows
         if: contains( matrix.os, 'windows')
