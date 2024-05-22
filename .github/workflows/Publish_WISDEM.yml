@@ -48,11 +48,12 @@ jobs:
       - name: Build wheels mac and linux
         if: false == contains( matrix.os, 'windows')
         uses: pypa/cibuildwheel@v2.18.1
-        # configure cibuildwheel to build native archs ('auto'), and some emulated ones
+        # configure cibuildwheel to build native archs ('auto'), and aarch64 for Docker.  Ignoring: ppc64le s390x
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
-          CIBW_ARCHS_LINUX: auto aarch64 ppc64le s390x
+          CIBW_ARCHS_LINUX: auto aarch64
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET="10.13"
 
       - name: Build wheels windows
         if: contains( matrix.os, 'windows')
