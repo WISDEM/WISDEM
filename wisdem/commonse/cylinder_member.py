@@ -590,7 +590,10 @@ class MemberDiscretization(om.ExplicitComponent):
         self.add_input("s", val=np.zeros(n_height))
         self.add_input("height", val=0.0, units="m")
         for dv in member_shape_variables:
-            self.add_input(dv, np.zeros(n_height), units="m")
+            if "diameter" in dv or "length" in dv:
+                self.add_input(dv, np.zeros(n_height), units="m")
+            else:
+                self.add_input(dv, np.zeros(n_height))
         self.add_input("wall_thickness", np.zeros(n_height - 1), units="m")
         self.add_input("E", val=np.zeros(n_height - 1), units="Pa")
         self.add_input("G", val=np.zeros(n_height - 1), units="Pa")
@@ -605,7 +608,10 @@ class MemberDiscretization(om.ExplicitComponent):
         self.add_output("z_full", np.zeros(n_full), units="m")
         # self.add_output("d_full", np.zeros(n_full), units="m")
         for dv in member_shape_variables:
-            self.add_output(dv+"_full", np.zeros(n_full), units="m")
+            if "diameter" in dv or "length" in dv:
+                self.add_output(dv+"_full", np.zeros(n_full), units="m")
+            else:
+                self.add_output(dv+"_full", np.zeros(n_full))
         self.add_output("t_full", np.zeros(n_full - 1), units="m")
         self.add_output("E_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_output("G_full", val=np.zeros(n_full - 1), units="Pa")
