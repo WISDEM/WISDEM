@@ -128,6 +128,26 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 )
                 self.add_subsystem("inn_af", inn_af)
 
+        # Environment inputs
+        if modeling_options["flags"]["environment"]:
+            env_ivc = self.add_subsystem("env", om.IndepVarComp())
+            env_ivc.add_output("rho_air", val=1.225, units="kg/m**3", desc="Density of air")
+            env_ivc.add_output("mu_air", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
+            env_ivc.add_output("shear_exp", val=0.2, desc="Shear exponent of the wind.")
+            env_ivc.add_output("speed_sound_air", val=340.0, units="m/s", desc="Speed of sound in air.")
+            env_ivc.add_output(
+                "weibull_k", val=2.0, desc="Shape parameter of the Weibull probability density function of the wind."
+            )
+            env_ivc.add_output("rho_water", val=1025.0, units="kg/m**3", desc="Density of ocean water")
+            env_ivc.add_output("mu_water", val=1.3351e-3, units="kg/(m*s)", desc="Dynamic viscosity of ocean water")
+            env_ivc.add_output(
+                "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
+            )
+            env_ivc.add_output("Hsig_wave", val=0.0, units="m", desc="Significant wave height")
+            env_ivc.add_output("Tsig_wave", val=0.0, units="s", desc="Significant wave period")
+            env_ivc.add_output("G_soil", val=140e6, units="N/m**2", desc="Shear stress of soil")
+            env_ivc.add_output("nu_soil", val=0.4, desc="Poisson ratio of soil")
+
         # Wind turbine configuration inputs
         conf_ivc = self.add_subsystem("configuration", om.IndepVarComp())
         conf_ivc.add_discrete_output(
@@ -524,26 +544,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             )
             self.add_subsystem("mooring", Mooring(options=modeling_options))
             self.connect("floating.joints_xyz", "mooring.joints_xyz")
-
-        # Environment inputs
-        if modeling_options["flags"]["environment"]:
-            env_ivc = self.add_subsystem("env", om.IndepVarComp())
-            env_ivc.add_output("rho_air", val=1.225, units="kg/m**3", desc="Density of air")
-            env_ivc.add_output("mu_air", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
-            env_ivc.add_output("shear_exp", val=0.2, desc="Shear exponent of the wind.")
-            env_ivc.add_output("speed_sound_air", val=340.0, units="m/s", desc="Speed of sound in air.")
-            env_ivc.add_output(
-                "weibull_k", val=2.0, desc="Shape parameter of the Weibull probability density function of the wind."
-            )
-            env_ivc.add_output("rho_water", val=1025.0, units="kg/m**3", desc="Density of ocean water")
-            env_ivc.add_output("mu_water", val=1.3351e-3, units="kg/(m*s)", desc="Dynamic viscosity of ocean water")
-            env_ivc.add_output(
-                "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
-            )
-            env_ivc.add_output("Hsig_wave", val=0.0, units="m", desc="Significant wave height")
-            env_ivc.add_output("Tsig_wave", val=0.0, units="s", desc="Significant wave period")
-            env_ivc.add_output("G_soil", val=140e6, units="N/m**2", desc="Shear stress of soil")
-            env_ivc.add_output("nu_soil", val=0.4, desc="Poisson ratio of soil")
 
         # Balance of station inputs
         if modeling_options["flags"]["bos"]:
