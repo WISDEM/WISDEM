@@ -68,7 +68,6 @@ class FloatingSEProp(om.Group):
             "variable_ballast_capacity",
             "variable_ballast_Vpts",
             "variable_ballast_spts",
-            "constr_ballast_capacity",
             "buoyancy_force",
             "displacement",
             "center_of_buoyancy",
@@ -120,27 +119,6 @@ class FloatingSEPerf(om.Group):
         # Evaluate system constraints
         self.add_subsystem("modal", RigidModes(), promotes=["*"])
 
-        # Connect all input variables from all models
-        mem_load_vars = ["z_global", "s_full", "s_all"]
-
-        for k in range(n_member):
-            member_shape=opt["floating"]["members"]["outer_shape"][k]
-
-            if member_shape == "circular":
-                self.connect(f"member{k}.ca_usr_grid_full", f"memload{k}.ca_usr")
-                self.connect(f"member{k}.cd_usr_grid_full", f"memload{k}.cd_usr")
-                self.connect(f"member{k}.outer_diameter_full", f"memload{k}.outer_diameter_full")
-            elif member_shape == "rectangular":
-                self.connect(f"member{k}.ca_usr_grid_full", f"memload{k}.ca_usr")
-                self.connect(f"member{k}.cay_usr_grid_full", f"memload{k}.cay_usr")
-                self.connect(f"member{k}.cd_usr_grid_full", f"memload{k}.cd_usr")
-                self.connect(f"member{k}.cdy_usr_grid_full", f"memload{k}.cdy_usr")
-                self.connect(f"member{k}.side_length_a_full", f"memload{k}.side_length_a_full")
-                self.connect(f"member{k}.side_length_b_full", f"memload{k}.side_length_b_full")
-
-            for var in mem_load_vars:
-                self.connect(f"member{k}.{var}", f"memload{k}.{var}")
-
                 
 class FloatingSE(om.Group):
     def initialize(self):
@@ -157,6 +135,9 @@ class FloatingSE(om.Group):
         for k in range(n_member):
             member_shape = opt["floating"]["members"]["outer_shape"][k]
 
+            self.connect(f"member{k}.nodes_xyz_all", f"member{k}:nodes_xyz")
+            self.connect(f"member{k}.constr_ballast_capacity", f"member{k}:constr_ballast_capacity")
+            
             if member_shape == "circular":
                 self.connect(f"member{k}.ca_usr_grid_full", f"memload{k}.ca_usr")
                 self.connect(f"member{k}.cd_usr_grid_full", f"memload{k}.cd_usr")

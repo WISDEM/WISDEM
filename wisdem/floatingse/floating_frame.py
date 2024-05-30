@@ -160,9 +160,9 @@ class FrameAnalysis(om.ExplicitComponent):
         n_attach = opt["mooring"]["n_attach"]
         n_dlc = opt["WISDEM"]["n_dlc"]
 
-        m_trans = float(inputs["transition_piece_mass"])
+        m_trans = float(inputs["transition_piece_mass"][0])
         I_trans = inputs["transition_piece_I"]
-        m_variable = float(inputs["variable_ballast_mass"])
+        m_variable = float(inputs["variable_ballast_mass"][0])
         cg_variable = inputs["variable_center_of_mass"]
         I_variable = inputs["variable_I"]
 

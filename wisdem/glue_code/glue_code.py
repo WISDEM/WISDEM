@@ -78,6 +78,7 @@ class WT_RNA(om.Group):
 
         if modeling_options["flags"]["nacelle"]:
             self.add_subsystem("drivese", DrivetrainSE(modeling_options=modeling_options))
+
             
 class WT_RNTA(om.Group):
     # Openmdao group to run the analysis of the wind turbine
@@ -93,7 +94,9 @@ class WT_RNTA(om.Group):
 
         # Analysis components
         self.add_subsystem("wt_prop", WT_RNTA_Prop(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
-        self.add_subsystem("wt_rna", WT_RNA(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
+        
+        if modeling_options["flags"]["blade"] or modeling_options["flags"]["nacelle"]:
+            self.add_subsystem("wt_rna", WT_RNA(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
 
         if modeling_options["flags"]["tower"]:
             self.add_subsystem("towerse", TowerSEPerf(modeling_options=modeling_options))
