@@ -673,6 +673,9 @@ class WT_RNTA(om.Group):
             for k in range(n_member):
                 member_shape = modeling_options["floating"]["members"]["outer_shape"][k]
 
+                self.connect(f"member{k}.nodes_xyz_all", f"member{k}:nodes_xyz")
+                self.connect(f"member{k}.constr_ballast_capacity", f"member{k}:constr_ballast_capacity")
+                
                 if member_shape == "circular":
                     self.connect(f"floatingse.member{k}.ca_usr_grid_full", f"floatingse.memload{k}.ca_usr")
                     self.connect(f"floatingse.member{k}.cd_usr_grid_full", f"floatingse.memload{k}.cd_usr")
