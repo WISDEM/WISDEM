@@ -21,7 +21,7 @@ except ImportError:
 
 
 class WT_RNTA_Prop(om.Group):
-    # Openmdao group to run the analysis of the wind turbine
+    # Openmdao group to compute most of the mass properties of the components
 
     def initialize(self):
         self.options.declare("modeling_options")
@@ -30,14 +30,6 @@ class WT_RNTA_Prop(om.Group):
     def setup(self):
         modeling_options = self.options["modeling_options"]
         opt_options = self.options["opt_options"]
-
-        if modeling_options["flags"]["blade"] and modeling_options["flags"]["nacelle"]:
-            self.linear_solver = lbgs = om.LinearBlockGS()
-            self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
-            nlbgs.options["maxiter"] = modeling_options["General"]["solver_maxiter"]
-            nlbgs.options["atol"] = 1e-2
-            nlbgs.options["rtol"] = 1e-8
-            nlbgs.options["iprint"] = 2
 
         # Analysis components
         self.add_subsystem(
@@ -61,6 +53,32 @@ class WT_RNTA_Prop(om.Group):
         elif modeling_options["flags"]["floating"]:
             self.add_subsystem("floatingse", FloatingSEProp(modeling_options=modeling_options))
 
+
+class WT_RNA(om.Group):
+    # Openmdao group to iterate on the rated torque - turbine efficiency
+
+    def initialize(self):
+        self.options.declare("modeling_options")
+        self.options.declare("opt_options")
+
+    def setup(self):
+        modeling_options = self.options["modeling_options"]
+        opt_options = self.options["opt_options"]
+
+        if modeling_options["flags"]["blade"] and modeling_options["flags"]["nacelle"]:
+            self.linear_solver = lbgs = om.LinearBlockGS()
+            self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
+            nlbgs.options["maxiter"] = modeling_options["General"]["solver_maxiter"]
+            nlbgs.options["atol"] = 1e-2
+            nlbgs.options["rtol"] = 1e-8
+            nlbgs.options["iprint"] = 2
+
+        if modeling_options["flags"]["blade"]:
+            self.add_subsystem("rotorse", RotorSEPerf(modeling_options=modeling_options, opt_options=opt_options))
+
+        if modeling_options["flags"]["nacelle"]:
+            self.add_subsystem("drivese", DrivetrainSE(modeling_options=modeling_options))
+            
 class WT_RNTA(om.Group):
     # Openmdao group to run the analysis of the wind turbine
 
@@ -73,25 +91,15 @@ class WT_RNTA(om.Group):
         nLC = modeling_options["WISDEM"]["n_dlc"]
         opt_options = self.options["opt_options"]
 
-        if modeling_options["flags"]["blade"] and modeling_options["flags"]["nacelle"]:
-            self.linear_solver = lbgs = om.LinearBlockGS()
-            self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
-            nlbgs.options["maxiter"] = modeling_options["General"]["solver_maxiter"]
-            nlbgs.options["atol"] = 1e-2
-            nlbgs.options["rtol"] = 1e-8
-            nlbgs.options["iprint"] = 2
-
         # Analysis components
         self.add_subsystem("wt_prop", WT_RNTA_Prop(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
-
-        if modeling_options["flags"]["blade"]:
-            self.add_subsystem("rotorse", RotorSEPerf(modeling_options=modeling_options, opt_options=opt_options))
-
-        if modeling_options["flags"]["nacelle"]:
-            self.add_subsystem("drivese", DrivetrainSE(modeling_options=modeling_options))
+        self.add_subsystem("wt_rna", WT_RNA(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
 
         if modeling_options["flags"]["tower"]:
             self.add_subsystem("towerse", TowerSEPerf(modeling_options=modeling_options))
+
+        if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
+            self.add_subsystem("tcons", TurbineConstraints(modeling_options=modeling_options))
 
         if modeling_options["flags"]["monopile"]:
             self.add_subsystem("fixedse", MonopileSEPerf(modeling_options=modeling_options))
@@ -101,9 +109,6 @@ class WT_RNTA(om.Group):
 
         elif modeling_options["flags"]["floating"]:
             self.add_subsystem("floatingse", FloatingSEPerf(modeling_options=modeling_options))
-
-        if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
-            self.add_subsystem("tcons", TurbineConstraints(modeling_options=modeling_options))
 
         self.add_subsystem("tcc", Turbine_CostsSE_2015(verbosity=modeling_options["General"]["verbosity"]))
 
@@ -550,9 +555,9 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.tower_mass", "fixedse.tower_mass")
                 self.connect("towerse.tower_cost", "fixedse.tower_cost")
-                self.connect("towerse.turbine_mass", "fixedse.turbine_mass")
-                self.connect("towerse.turbine_center_of_mass", "fixedse.turbine_cg")
-                self.connect("towerse.turbine_I_base", "fixedse.turbine_I")
+                self.connect("tcons.turbine_mass", "fixedse.turbine_mass")
+                self.connect("tcons.turbine_center_of_mass", "fixedse.turbine_cg")
+                self.connect("tcons.turbine_I_base", "fixedse.turbine_I")
                 self.connect("towerse.tower.turbine_F", "fixedse.turbine_F")
                 self.connect("towerse.tower.turbine_M", "fixedse.turbine_M")
                 self.connect("tower.diameter", "fixedse.tower_base_diameter", src_indices=[0])
@@ -647,9 +652,9 @@ class WT_RNTA(om.Group):
             self.connect("floating.transition_piece_mass", "floatingse.transition_piece_mass")
             self.connect("floating.transition_piece_cost", "floatingse.transition_piece_cost")
             if modeling_options["flags"]["tower"]:
-                self.connect("towerse.turbine_mass", "floatingse.turbine_mass")
-                self.connect("towerse.turbine_center_of_mass", "floatingse.turbine_cg")
-                self.connect("towerse.turbine_I_base", "floatingse.turbine_I")
+                self.connect("tcons.turbine_mass", "floatingse.turbine_mass")
+                self.connect("tcons.turbine_center_of_mass", "floatingse.turbine_cg")
+                self.connect("tcons.turbine_I_base", "floatingse.turbine_I")
                 self.connect("towerse.tower.turbine_F", "floatingse.turbine_F")
                 self.connect("towerse.tower.turbine_M", "floatingse.turbine_M")
                 self.connect("towerse.nodes_xyz", "floatingse.tower_xyz")
@@ -744,6 +749,11 @@ class WT_RNTA(om.Group):
 
         # Connections to turbine constraints
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
+            self.connect("drivese.rna_I_TT", "tcons.rna_I")
+            self.connect("drivese.rna_cm", "tcons.rna_cg")
+            self.connect("drivese.rna_mass", "tcons.rna_mass")
+            for k in ["joint2", "tower_mass", "tower_center_of_mass", "tower_I_base"]:
+                self.connect(f"towerse.{k}", f"tcons.{k}")
             self.connect("configuration.rotor_orientation", "tcons.rotor_orientation")
             self.connect("rotorse.rs.tip_pos.tip_deflection", "tcons.tip_deflection")
             self.connect("blade.high_level_blade_props.rotor_radius", "tcons.Rtip")
