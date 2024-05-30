@@ -73,7 +73,6 @@ class WT_RNTA(om.Group):
         if modeling_options["flags"]["blade"]:
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
 
-            self.connect("rotorse.ccblade.local_airfoil_velocities", "blade.compute_reynolds.local_airfoil_velocities")
             self.connect("blade.pa.chord_param", "blade.compute_reynolds.chord")
             self.connect("env.rho_air", "blade.compute_reynolds.rho")
             self.connect("env.mu_air", "blade.compute_reynolds.mu")

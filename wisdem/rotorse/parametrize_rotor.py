@@ -149,11 +149,28 @@ class ComputeReynolds(om.ExplicitComponent):
 
         self.add_input("rho", val=0.0, units="kg/m**3")
         self.add_input("mu", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
-        self.add_input("local_airfoil_velocities", val=np.zeros((n_span)), units="m/s")
         self.add_input("chord", val=np.zeros((n_span)), units="m")
-        self.add_output("Re", val=np.zeros((n_span)), ref=1.0e6)
+        self.add_input("r_blade", val=np.zeros(n_span), units="m",
+            desc="1D array of the dimensional spanwise grid defined along the rotor (hub radius to blade tip projected on the plane)",
+        )
+        self.add_input("rotor_radius", val=0.0, units="m",
+            desc="Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.",
+        )
+        self.add_input("maxOmega", val=0.0, units="rad/s", desc="Maximum allowed rotor speed.")
+        self.add_input("max_TS", val=0.0, units="m/s", desc="Maximum allowed blade tip speed.")
+        self.add_input("V_out", val=0.0, units="m/s", desc="Cut out wind speed. This is the wind speed where region III ends.")
 
+        self.add_output("Re", val=np.zeros((n_span)), ref=1.0e6)
+        
     def compute(self, inputs, outputs):
+        # Note that we used to use ccblade outputs of local wind speed at the rated condition
+        # This is more accurate, of course, but creates an implicit feedback loop in the code
+        # This way gets an order-of-magnitude estimate for Reynolds number, which is really all that is needed
+        max_local_TS = inputs["max_TS"] / inputs["rotor_radius"] * inputs["r_blade"]
+        if np.all(max_local_TS == 0.0):
+            max_local_TS = inputs["maxOmega"] * inputs["r_blade"]
+
+        max_local_V = np.sqrt(inputs["V_out"]**2 + max_local_TS**2)
         outputs["Re"] = np.nan_to_num(
-            inputs["rho"] * inputs["local_airfoil_velocities"] * inputs["chord"] / inputs["mu"]
+            inputs["rho"] * max_local_V * inputs["chord"] / inputs["mu"]
         )

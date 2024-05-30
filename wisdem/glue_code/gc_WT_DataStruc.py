@@ -37,6 +37,26 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             Materials(mat_init_options=modeling_options["materials"], composites=modeling_options["flags"]["blade"]),
         )
 
+        # Environment inputs
+        if modeling_options["flags"]["environment"]:
+            env_ivc = self.add_subsystem("env", om.IndepVarComp())
+            env_ivc.add_output("rho_air", val=1.225, units="kg/m**3", desc="Density of air")
+            env_ivc.add_output("mu_air", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
+            env_ivc.add_output("shear_exp", val=0.2, desc="Shear exponent of the wind.")
+            env_ivc.add_output("speed_sound_air", val=340.0, units="m/s", desc="Speed of sound in air.")
+            env_ivc.add_output(
+                "weibull_k", val=2.0, desc="Shape parameter of the Weibull probability density function of the wind."
+            )
+            env_ivc.add_output("rho_water", val=1025.0, units="kg/m**3", desc="Density of ocean water")
+            env_ivc.add_output("mu_water", val=1.3351e-3, units="kg/(m*s)", desc="Dynamic viscosity of ocean water")
+            env_ivc.add_output(
+                "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
+            )
+            env_ivc.add_output("Hsig_wave", val=0.0, units="m", desc="Significant wave height")
+            env_ivc.add_output("Tsig_wave", val=0.0, units="s", desc="Significant wave period")
+            env_ivc.add_output("G_soil", val=140e6, units="N/m**2", desc="Shear stress of soil")
+            env_ivc.add_output("nu_soil", val=0.4, desc="Poisson ratio of soil")
+        
         # Airfoil dictionary inputs
         if modeling_options["flags"]["airfoils"]:
             airfoils = om.IndepVarComp()
@@ -525,26 +545,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem("mooring", Mooring(options=modeling_options))
             self.connect("floating.joints_xyz", "mooring.joints_xyz")
 
-        # Environment inputs
-        if modeling_options["flags"]["environment"]:
-            env_ivc = self.add_subsystem("env", om.IndepVarComp())
-            env_ivc.add_output("rho_air", val=1.225, units="kg/m**3", desc="Density of air")
-            env_ivc.add_output("mu_air", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
-            env_ivc.add_output("shear_exp", val=0.2, desc="Shear exponent of the wind.")
-            env_ivc.add_output("speed_sound_air", val=340.0, units="m/s", desc="Speed of sound in air.")
-            env_ivc.add_output(
-                "weibull_k", val=2.0, desc="Shape parameter of the Weibull probability density function of the wind."
-            )
-            env_ivc.add_output("rho_water", val=1025.0, units="kg/m**3", desc="Density of ocean water")
-            env_ivc.add_output("mu_water", val=1.3351e-3, units="kg/(m*s)", desc="Dynamic viscosity of ocean water")
-            env_ivc.add_output(
-                "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
-            )
-            env_ivc.add_output("Hsig_wave", val=0.0, units="m", desc="Significant wave height")
-            env_ivc.add_output("Tsig_wave", val=0.0, units="s", desc="Significant wave period")
-            env_ivc.add_output("G_soil", val=140e6, units="N/m**2", desc="Shear stress of soil")
-            env_ivc.add_output("nu_soil", val=0.4, desc="Poisson ratio of soil")
-
         # Balance of station inputs
         if modeling_options["flags"]["bos"]:
             bos_ivc = self.add_subsystem("bos", om.IndepVarComp())
@@ -626,6 +626,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("blade.interp_airfoils.r_thick_interp", "af_3d.r_thick")
             self.connect("blade.pa.chord_param", "af_3d.chord")
             self.connect("control.rated_TSR", "af_3d.rated_TSR")
+            self.connect("control.maxOmega", "blade.compute_reynolds.maxOmega")
+            self.connect("control.max_TS", "blade.compute_reynolds.max_TS")
+            self.connect("control.V_out", "blade.compute_reynolds.V_out")
         if modeling_options["flags"]["tower"]:
             self.connect("tower.ref_axis", "high_level_tower_props.tower_ref_axis_user")
             self.add_subsystem("tower_grid", Compute_Grid(n_height=n_height_tower))
@@ -708,7 +711,9 @@ class Blade(om.Group):
 
         # TODO : Compute Reynolds here
         self.add_subsystem("compute_reynolds", ComputeReynolds(n_span=rotorse_options["n_span"]))
-
+        self.connect("high_level_blade_props.r_blade", "compute_reynolds.r_blade")
+        self.connect("high_level_blade_props.rotor_radius", "compute_reynolds.rotor_radius")
+        
         if rotorse_options["inn_af"]:
             self.add_subsystem(
                 "run_inn_af",
