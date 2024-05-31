@@ -558,9 +558,9 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.tower_mass", "fixedse.tower_mass")
                 self.connect("towerse.tower_cost", "fixedse.tower_cost")
-                self.connect("tcons.turbine_mass", "fixedse.turbine_mass")
-                self.connect("tcons.turbine_center_of_mass", "fixedse.turbine_cg")
-                self.connect("tcons.turbine_I_base", "fixedse.turbine_I")
+                self.connect("towerse.turbine_mass", "fixedse.turbine_mass")
+                self.connect("towerse.turbine_center_of_mass", "fixedse.turbine_cg")
+                self.connect("towerse.turbine_I_base", "fixedse.turbine_I")
                 self.connect("towerse.tower.turbine_F", "fixedse.turbine_F")
                 self.connect("towerse.tower.turbine_M", "fixedse.turbine_M")
                 self.connect("tower.diameter", "fixedse.tower_base_diameter", src_indices=[0])
@@ -655,9 +655,9 @@ class WT_RNTA(om.Group):
             self.connect("floating.transition_piece_mass", "floatingse.transition_piece_mass")
             self.connect("floating.transition_piece_cost", "floatingse.transition_piece_cost")
             if modeling_options["flags"]["tower"]:
-                self.connect("tcons.turbine_mass", "floatingse.turbine_mass")
-                self.connect("tcons.turbine_center_of_mass", "floatingse.turbine_cg")
-                self.connect("tcons.turbine_I_base", "floatingse.turbine_I")
+                self.connect("towerse.turbine_mass", "floatingse.turbine_mass")
+                self.connect("towerse.turbine_center_of_mass", "floatingse.turbine_cg")
+                self.connect("towerse.turbine_I_base", "floatingse.turbine_I")
                 self.connect("towerse.tower.turbine_F", "floatingse.turbine_F")
                 self.connect("towerse.tower.turbine_M", "floatingse.turbine_M")
                 self.connect("towerse.nodes_xyz", "floatingse.tower_xyz")
@@ -755,11 +755,6 @@ class WT_RNTA(om.Group):
 
         # Connections to turbine constraints
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
-            self.connect("drivese.rna_I_TT", "tcons.rna_I")
-            self.connect("drivese.rna_cm", "tcons.rna_cg")
-            self.connect("drivese.rna_mass", "tcons.rna_mass")
-            for k in ["joint2", "tower_mass", "tower_center_of_mass", "tower_I_base"]:
-                self.connect(f"towerse.{k}", f"tcons.{k}")
             self.connect("configuration.rotor_orientation", "tcons.rotor_orientation")
             self.connect("rotorse.rs.tip_pos.tip_deflection", "tcons.tip_deflection")
             self.connect("blade.high_level_blade_props.rotor_radius", "tcons.Rtip")

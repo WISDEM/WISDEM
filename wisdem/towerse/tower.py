@@ -58,6 +58,69 @@ class PreDiscretization(om.ExplicitComponent):
         outputs["height_constraint"] = inputs["hub_height"] - outputs["joint2"][-1]
 
 
+
+class TurbineMass(om.ExplicitComponent):
+    """
+    Compute the turbine mass, center of mass, and mass moment of inertia.
+
+    Parameters
+    ----------
+    hub_height : float, [m]
+        Hub-height
+    rna_mass : float, [kg]
+        Total tower mass
+    rna_I : numpy array[6], [kg*m**2]
+        Mass moment of inertia of RNA about tower top [xx yy zz xy xz yz]
+    rna_cg : numpy array[3], [m]
+        xyz-location of RNA cg relative to tower top
+    tower_mass : float, [kg]
+        Total tower mass
+    tower_center_of_mass : float, [m]
+        z-position of center of mass of tower
+    tower_I_base : numpy array[6], [kg*m**2]
+        Mass moment of inertia of tower about base [xx yy zz xy xz yz]
+
+    Returns
+    -------
+    turbine_mass : float, [kg]
+        Total mass of tower+rna
+    turbine_center_of_mass : numpy array[3], [m]
+        xyz-position of tower+rna center of mass
+    turbine_I_base : numpy array[6], [kg*m**2]
+        mass moment of inertia of tower about base [xx yy zz xy xz yz]
+
+    """
+
+    def setup(self):
+        self.add_input("joint2", val=np.zeros(3), units="m")
+        self.add_input("rna_mass", val=0.0, units="kg")
+        self.add_input("rna_I", np.zeros(6), units="kg*m**2")
+        self.add_input("rna_cg", np.zeros(3), units="m")
+        self.add_input("tower_mass", val=0.0, units="kg")
+        self.add_input("tower_center_of_mass", val=0.0, units="m")
+        self.add_input("tower_I_base", np.zeros(6), units="kg*m**2")
+
+        self.add_output("turbine_mass", val=0.0, units="kg")
+        self.add_output("turbine_center_of_mass", val=np.zeros(3), units="m")
+        self.add_output("turbine_I_base", np.zeros(6), units="kg*m**2")
+
+    def compute(self, inputs, outputs):
+        # Unpack variables
+        m_rna = inputs["rna_mass"]
+        m_tow = inputs["tower_mass"]
+
+        outputs["turbine_mass"] = m_turb = m_rna + m_tow
+
+        cg_rna = inputs["rna_cg"] + inputs["joint2"]
+        cg_tower = np.r_[0.0, 0.0, inputs["tower_center_of_mass"]]
+        outputs["turbine_center_of_mass"] = (m_rna * cg_rna + m_tow * cg_tower) / m_turb
+
+        R = inputs["joint2"]  # rna_I is already at tower top, so R goes to tower top, not rna_cg
+        I_tower = util.assembleI(inputs["tower_I_base"])
+        I_rna = util.assembleI(inputs["rna_I"]) + m_rna * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        outputs["turbine_I_base"] = util.unassembleI(I_tower + I_rna)
+        
+
 class TowerFrame(om.ExplicitComponent):
     """
     Run Frame3DD on the tower
@@ -474,6 +537,8 @@ class TowerSEPerf(om.Group):
             n_height = mod_opt["n_height"] = n_height_tow
         n_full = mem.get_nfull(n_height, nref=mod_opt["n_refine"])
 
+        self.add_subsystem("turb", TurbineMass(), promotes=["*"])
+        
         self.add_subsystem("loads", mem.MemberLoads(n_full=n_full, n_lc=nLC, wind=wind, hydro=False), promotes=["*"])
 
         self.add_subsystem(
