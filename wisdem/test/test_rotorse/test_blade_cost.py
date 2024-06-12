@@ -182,16 +182,5 @@ class TestBC(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rc_out.total_blade_cost"][0], 67983.84942298864, places=accuracy)
         self.assertAlmostEqual(wt_opt["total_bc.total_blade_cost"][0], 593683.3863702328, places=accuracy)
 
-
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(TestBC())
-    return suite
-
 if __name__ == '__main__':
-    result = unittest.main()
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

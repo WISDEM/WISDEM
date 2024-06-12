@@ -8516,12 +8516,13 @@ class TestGradients_RHub_Tip(unittest.TestCase):
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestGradients))
-    suite.addTest(unittest.makeSuite(TestGradientsNotRotating))
-    suite.addTest(unittest.makeSuite(TestGradientsFreestreamArray))
-    suite.addTest(unittest.makeSuite(TestGradients_RHub_Tip))
-    return suite
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestGradients),
+        unittest.TestLoader().loadTestsFromTestCase(TestGradientsNotRotating),
+        unittest.TestLoader().loadTestsFromTestCase(TestGradientsFreestreamArray),
+        unittest.TestLoader().loadTestsFromTestCase(TestGradients_RHub_Tip),
+    ]
+    return unittest.TestSuite(suite)
 
 
 if __name__ == "__main__":

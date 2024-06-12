@@ -18,6 +18,7 @@ warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
 
 # Suppress the maxfev warnings is scipy _minpack_py, line:175
 warnings.simplefilter("ignore", RuntimeWarning, lineno=175)
+warnings.simplefilter("ignore", RuntimeWarning, lineno=177)
 
 if MPI:
     # from openmdao.api import PetscImpl as impl

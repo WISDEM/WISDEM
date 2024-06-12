@@ -355,7 +355,7 @@ class TowerFrame(om.ExplicitComponent):
 
         # Add mass for modal analysis only (loads are captured in rna_F & rna_M)
         mID = np.array([n], dtype=np.int_)  # Cannot add at top node due to bug
-        m_add = float(inputs["rna_mass"])
+        m_add = float(inputs["rna_mass"][0])
         cg_add = inputs["rna_cg"].reshape((-1, 1))
         I_add = inputs["rna_I"].reshape((-1, 1))
         add_gravity = False
@@ -555,6 +555,15 @@ class TowerSE(om.Group):
                 "E_full",
                 "G_full",
                 "sigma_y_full",
+                "section_A",
+                "section_Asx",
+                "section_Asy",
+                "section_Ixx",
+                "section_Iyy",
+                "section_J0",
+                "section_rho",
+                "section_E",
+                "section_G",
                 "qdyn",
                 ("bending_height", "tower_height"),
             ],

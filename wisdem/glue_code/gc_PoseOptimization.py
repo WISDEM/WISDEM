@@ -341,6 +341,26 @@ class PoseOptimization(object):
                 ]
                 wt_opt = self._set_optimizer_properties(wt_opt, options_keys)
 
+            elif opt_options["solver"] == "DE":
+                wt_opt.driver = om.DifferentialEvolutionDriver()
+                # wt_opt.driver.options["optimizer"] = opt_options["solver"]
+                options_keys = [
+                    "F", # differential rate
+                    "Pc", # crossover probability
+                    "debug_type", # what driver variables to print at each iteration
+                    "invalid_desvar_behavior", # behavior of driver if initial DV violated bounds
+                    "max_gen", # number of generations before termination
+                    "multi_obj_exponent", # weighting exponent for multiobjective
+                    "multi_obj_weights", # weights of objectives for multiobjective optimization (abs name -> weight dict)
+                    "penalty_exponent", # penalty function exponent
+                    "penalty_parameter", # penalty function parameter
+                    "pop_size", # number of points in the GA (default to 20x inputs if 0)
+                    "procs_per_model", # processors to give each model under mpi
+                    "run_parallel", # true -> execut points in a generation in parallel
+                ]
+                mapped_keys = {"debug_print": "debug_type"}
+                wt_opt = self._set_optimizer_properties(wt_opt, options_keys, mapped_keys=mapped_keys)
+
             elif opt_options["solver"] in self.nlopt_methods:
                 try:
                     from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
@@ -655,7 +675,7 @@ class PoseOptimization(object):
                     upper=init_layer_opt[indices_i] * blade_opt["structure"][i]["max_increase"],
                     ref=1.0e-2,
                 )
-        
+
         # -- Tower --
         if tower_opt["outer_diameter"]["flag"]:
             wt_opt.model.add_design_var(
@@ -969,31 +989,31 @@ class PoseOptimization(object):
             user_defined = self.opt["design_variables"]["user"]
             for i in range(len(user_defined)):
                 name_i = user_defined[i]["name"]
-                
+
                 if "lower_bound" in user_defined[i]:
                     lower_i = user_defined[i]["lower_bound"]
                 elif "lower" in user_defined[i]:
                     lower_i = user_defined[i]["lower"]
                 else:
                     lower_i = None
-                    
+
                 if "upper_bound" in user_defined[i]:
                     upper_i = user_defined[i]["upper_bound"]
                 elif "upper" in user_defined[i]:
                     upper_i = user_defined[i]["upper"]
                 else:
                     upper_i = None
-                    
+
                 if "ref" in user_defined[i]:
                     ref_i = user_defined[i]["ref"]
                 else:
                     ref_i = None
-                    
+
                 if "indices" in user_defined[i]:
                     indices_i = user_defined[i]["indices"]
                 else:
                     indices_i = None
-                    
+
                 wt_opt.model.add_design_var(
                     name_i,
                     lower=lower_i,
@@ -1173,7 +1193,7 @@ class PoseOptimization(object):
         # Tower and monopile contraints
         tower_constr = self.opt["constraints"]["tower"]
         monopile_constr = self.opt["constraints"]["monopile"]
-        
+
         if tower_constr["height_constraint"]["flag"]:
             wt_opt.model.add_constraint(
                 "towerse.height_constraint",
@@ -1378,21 +1398,21 @@ class PoseOptimization(object):
         user_constr = self.opt["constraints"]["user"]
         for k in range(len(user_constr)):
             var_k = user_constr[k]["name"]
-            
+
             if "lower_bound" in user_constr[k]:
                 lower_k = user_constr[k]["lower_bound"]
             elif "lower" in user_constr[k]:
                 lower_k = user_constr[k]["lower"]
             else:
                 lower_k = None
-                
+
             if "upper_bound" in user_constr[k]:
                 upper_k = user_constr[k]["upper_bound"]
-            elif "lower" in user_constr[k]:
-                lower_k = user_constr[k]["lower"]
+            elif "upper" in user_constr[k]:
+                upper_k = user_constr[k]["upper"]
             else:
                 upper_k = None
-                
+
             if "indices" in user_constr[k]:
                 idx_k = user_constr[k]["indices"]
             else:
@@ -1400,9 +1420,9 @@ class PoseOptimization(object):
 
             if lower_k is None and upper_k is None:
                 raise Exception(f"Must include a lower_bound and/or an upper bound for {var_k}")
-            
+
             wt_opt.model.add_constraint(var_k, lower=lower_k, upper=upper_k, indices=idx_k)
-        
+
         return wt_opt
 
     def set_recorders(self, wt_opt):
@@ -1487,7 +1507,7 @@ class PoseOptimization(object):
                             extrapolate=False)
                 init_opt = thick_interp(wt_opt["blade.opt_var.s_opt_layer_%d"%i])
                 wt_opt["blade.opt_var.layer_%d_opt"%i] = np.nan_to_num(init_opt, nan=0.)
-            
+
             if self.modeling["WISDEM"]["RotorSE"]["flag"]:
                 blade_constr = self.opt["constraints"]["blade"]
                 wt_opt["rotorse.rs.constr.max_strainU_spar"] = blade_constr["strains_spar_cap_ss"]["max"]

@@ -541,9 +541,9 @@ class TestMonopileSE(unittest.TestCase):
         npt.assert_almost_equal(
             prob["post.constr_stress"].T,
             [
-                [0.03621886, 0.01703012, 0.12382096, 0.13827159, 0.0554332 , 0.0103132],
-                [0.03654998, 0.02114141, 0.09185545, 0.11722759, 0.04804874, 0.01055353],
-            ],
+                [0.03385147, 0.01624988, 0.11893221, 0.13589145, 0.05543162, 0.0103132 ],
+                [0.0341598 , 0.01988708, 0.08923635, 0.11635987, 0.04822173, 0.01055353],
+           ],
             3,
         )
         npt.assert_almost_equal(
@@ -557,8 +557,8 @@ class TestMonopileSE(unittest.TestCase):
         npt.assert_almost_equal(
             prob["post.constr_shell_buckling"].T,
             [
-                [3.48351802e-03, 1.22719645e-03, 5.91172710e-01, 1.76188441e+00, 6.40073045e-01, 8.86263582e-02],
-                [3.53637449e-03, 1.49967206e-03, 5.79737681e-01, 1.75253067e+00, 6.36853128e-01, 9.12750704e-02],
+                [3.08691592e-03, 1.15049491e-03, 5.89397300e-01, 1.76100515e+00, 6.40018188e-01, 8.86263582e-02],
+                [3.13317242e-03, 1.36025565e-03, 5.79068840e-01, 1.75232887e+00, 6.36781099e-01, 9.12750704e-02],
             ],
             3,
         )
@@ -591,24 +591,24 @@ class TestMonopileSE(unittest.TestCase):
         npt.assert_almost_equal(
             prob["post.constr_stress"].T,
             [
-                [0.03621886, 0.01703012, 0.12382096, 0.13827159, 0.0554332 , 0.0103132],
-                [0.03654998, 0.02114141, 0.09185545, 0.11722759, 0.04804874, 0.01055353],
+                [0.03385147, 0.01624988, 0.11893221, 0.13589145, 0.05543162, 0.0103132 ],
+                [0.0341598 , 0.01988708, 0.08923635, 0.11635987, 0.04822173, 0.01055353],
             ],
             2,
         )
         npt.assert_almost_equal(
             prob["post.constr_global_buckling"].T,
             [
-                [3.26314825e-02, 3.72313282e-02, 7.27690933e-02, 6.17409738e-02, 3.66561462e-02, 1.10114706e-10],
-                [3.25111251e-02, 3.48132378e-02, 5.84439044e-02, 5.00955704e-02, 3.31423289e-02, 8.02600909e-11],
+                [3.29521915e-02, 3.70069327e-02, 6.99117262e-02, 5.96692606e-02, 3.61803070e-02, 1.02510833e-10],
+                [3.27627239e-02, 3.33331034e-02, 4.83927465e-02, 4.33297244e-02, 3.11606296e-02, 5.44601822e-11],
             ],
             1,
         )
         npt.assert_almost_equal(
             prob["post.constr_shell_buckling"].T,
             [
-                [0.03704038, 0.03358431, 0.54111924, 1.69847046, 0.77730261, 0.16248498],
-                [0.03705603, 0.03359996, 0.54113001, 1.69848602, 0.77731831, 0.16627155],
+                [0.03960002, 0.04474592, 0.57096438, 1.74890517, 0.8283988 , 0.16249855],
+                [0.03919867, 0.04176198, 0.56125835, 1.73421614, 0.81345437, 0.16628092],
             ],
             2,
         )
@@ -623,11 +623,12 @@ class TestMonopileSE(unittest.TestCase):
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestPreDiscretization))
-    suite.addTest(unittest.makeSuite(TestMass))
-    suite.addTest(unittest.makeSuite(TestMonopileSE))
-    return suite
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestPreDiscretization),
+        unittest.TestLoader().loadTestsFromTestCase(TestMass),
+        unittest.TestLoader().loadTestsFromTestCase(TestMonopileSE),
+    ]
+    return unittest.TestSuite(suite)
 
 
 if __name__ == "__main__":

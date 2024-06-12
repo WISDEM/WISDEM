@@ -354,21 +354,21 @@ class ComputePowerCurve(ExplicitComponent):
             inputs["chord"],
             inputs["theta"],
             af,
-            inputs["Rhub"],
-            inputs["Rtip"],
+            inputs["Rhub"][0],
+            inputs["Rtip"][0],
             discrete_inputs["nBlades"],
-            inputs["rho"],
-            inputs["mu"],
-            inputs["precone"],
-            inputs["tilt"],
-            inputs["yaw"],
-            inputs["shearExp"],
-            inputs["hub_height"],
+            inputs["rho"][0],
+            inputs["mu"][0],
+            inputs["precone"][0],
+            inputs["tilt"][0],
+            inputs["yaw"][0],
+            inputs["shearExp"][0],
+            inputs["hub_height"][0],
             discrete_inputs["nSector"],
             inputs["precurve"],
-            inputs["precurveTip"],
+            inputs["precurveTip"][0],
             inputs["presweep"],
-            inputs["presweepTip"],
+            inputs["presweepTip"][0],
             discrete_inputs["tiploss"],
             discrete_inputs["hubloss"],
             discrete_inputs["wakerotation"],
@@ -663,8 +663,9 @@ class ComputePowerCurve(ExplicitComponent):
             bnds = [pitch0 - 10.0, pitch0 + 10.0]
             # For a successfull minimization, find the initial power value to nondimensionalize power and bring the figure of merit close to 1
             myout, _ = self.ccblade.evaluate(Uhub[i], Omega_rpm[i], pitch0, coefficients=False)
-            scaling_power = myout["P"]
-            scaling_thrust = myout["T"]
+            # For better conditioning near cut-in, use rated values
+            scaling_power = P_rated #myout["P"]
+            scaling_thrust = T_rated #myout["T"]
             if self.peak_thrust_shaving and found_rated:
                 # Have to constrain thrust
                 const = {}
@@ -926,7 +927,7 @@ class NoStallConstraint(ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-        i_min = np.argmin(abs(inputs["min_s"] - inputs["s"]))
+        i_min = np.argmin(np.abs(inputs["min_s"] - inputs["s"]))
         n_span = len(inputs["s"])
 
         for i in range(n_span):
@@ -941,7 +942,7 @@ class NoStallConstraint(ExplicitComponent):
                 outputs["stall_angle_along_span"][i] = 1e-6  # To avoid nan
 
         for i in range(i_min, n_span):
-            outputs["no_stall_constraint"][i] = (inputs["aoa_along_span"][i] + inputs["stall_margin"]) / outputs[
+            outputs["no_stall_constraint"][i] = (inputs["aoa_along_span"][i] + inputs["stall_margin"][0]) / outputs[
                 "stall_angle_along_span"
             ][i]
 
