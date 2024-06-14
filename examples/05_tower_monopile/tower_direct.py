@@ -174,7 +174,7 @@ save_data(os.path.join("outputs", "tower_example"), prob)
 # print results from the analysis or optimization
 z = 0.5 * (prob["z_full"][:-1] + prob["z_full"][1:])
 print("zs =", prob["z_full"])
-print("ds =", prob["d_full"])
+print("ds =", prob["outer_diameter_full"])
 print("ts =", prob["t_full"])
 print("mass (kg) =", prob["tower_mass"])
 print("cg (m) =", prob["tower_center_of_mass"])

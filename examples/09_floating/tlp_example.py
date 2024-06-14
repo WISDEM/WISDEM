@@ -23,6 +23,7 @@ opt["floating"]["members"]["n_bulkheads"] = [4, 2, 2, 2]
 opt["floating"]["members"]["n_layers"] = [1, 1, 1, 1]
 opt["floating"]["members"]["n_ballasts"] = [2, 0, 0, 0]
 opt["floating"]["members"]["n_axial_joints"] = [0, 0, 0, 0]
+opt["floating"]["members"]["outer_shape"] = 4 * ["circular"]
 opt["WISDEM"] = {}
 opt["WISDEM"]["n_dlc"] = 1
 opt["WISDEM"]["TowerSE"] = {}
@@ -96,6 +97,8 @@ for k in range(1, 4):
     prob["member" + str(k) + ".grid_axial_joints"] = []
     prob["member" + str(k) + ".s_in"] = np.array([0.0, 0.5, 1.0])
     prob["member" + str(k) + ".outer_diameter_in"] = 5 * np.ones(3)
+    prob["member" + str(k) + ".ca_usr_grid"] = 2.0*np.ones(3)  # Added mass coefficient
+    prob["member" + str(k) + ".cd_usr_grid"] = -1.0*np.ones(3)  # drag coefficient
     prob["member" + str(k) + ".layer_thickness"] = 0.05 * np.ones((1, 3))
     prob["member" + str(k) + ".layer_materials"] = ["steel"]
     prob["member" + str(k) + ".ballast_materials"] = []
@@ -135,10 +138,8 @@ prob["water_depth"] = 320.0  # Distance to sea floor [m]
 prob["Hsig_wave"] = 10.8  # Significant wave height [m]
 prob["Tsig_wave"] = 9.8  # Wave period [s]
 prob["shearExp"] = 0.11  # Shear exponent in wind power law
-prob["cm"] = 2.0  # Added mass coefficient
 prob["Uc"] = 0.0  # Mean current speed
 prob["beta_wind"] = prob["beta_wave"] = 0.0
-prob["cd_usr"] = -1.0  # Compute drag coefficient
 prob["env.Uref"] = 11.0
 prob["wind_reference_height"] = 119.0
 

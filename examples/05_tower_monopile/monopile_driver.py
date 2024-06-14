@@ -14,7 +14,7 @@ wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_modelin
 # print results from the analysis or optimization
 z = 0.5 * (wt_opt["fixedse.z_full"][:-1] + wt_opt["fixedse.z_full"][1:])
 print("zs =", wt_opt["fixedse.z_full"])
-print("ds =", wt_opt["fixedse.d_full"])
+print("ds =", wt_opt["fixedse.outer_diameter_full"])
 print("ts =", wt_opt["fixedse.t_full"])
 print("mass (kg) =", wt_opt["fixedse.monopile_mass"])
 print("cg (m) =", wt_opt["fixedse.monopile_z_cg"])
