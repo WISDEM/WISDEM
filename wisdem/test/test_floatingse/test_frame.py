@@ -25,6 +25,7 @@ class TestFrame(unittest.TestCase):
         opt["floating"]["members"]["n_members"] = n_member = 6
         opt["floating"]["members"]["outer_shape"] = n_member * ["circular"]
         opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["flag"] = True
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = True
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = True
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["tol"] = 1e-8
@@ -80,6 +81,7 @@ class TestFrame(unittest.TestCase):
         opt["floating"]["members"]["n_members"] = n_member = 6
         opt["floating"]["members"]["outer_shape"] = n_member * ["circular"]
         opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["flag"] = True
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = True
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = True
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["tol"] = 1e-8

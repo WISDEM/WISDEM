@@ -47,6 +47,7 @@ modeling_options["WISDEM"]["TowerSE"]["gamma_fatigue"] = 1.35 * 1.3 * 1.0
 
 # Frame3DD options
 modeling_options["WISDEM"]["TowerSE"]["frame3dd"] = {}
+modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["flag"] = True
 modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["shear"] = True
 modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["geom"] = True
 modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["tol"] = 1e-9
