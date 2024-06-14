@@ -62,7 +62,7 @@ def integrate_defaults(instance, defaults, yaml_schema):
     for e in errors:
         if e.validator == "required":
             for k in e.validator_value:
-                if not k in e.instance.keys():
+                if k not in e.instance.keys():
                     mypath = e.absolute_path.copy()
                     mypath.append(k)
                     v = nested_get(defaults, mypath)
@@ -82,14 +82,22 @@ def simple_types(indict):
     for k in rv.keys():
         if type(rv[k]) == type(np.array([])):
             rv[k] = rv[k].tolist()
-        elif isinstance(rv[k], (float, int, list, dict, bool, str)):
+        elif isinstance(rv[k], (float, int, dict, bool, str)):
             pass
+        # simple_types iterates through dictionaries, but skips lists and tuples, which may have numpy objects within
+        elif isinstance(rv[k], (list, tuple)):
+            for l in rv[k]:
+                try:
+                    simple_types(l)
+                except:
+                    # Will error out if there its already a simple type and there are no keys
+                    continue
         else:
             rv[k] = ""
 
         try:
             simple_types(rv[k])
-        except:
+        except Exception:
             continue
     return rv
 
@@ -112,36 +120,31 @@ def extend_with_default(validator_class):
 
 DefaultValidatingDraft7Validator = extend_with_default(json.Draft7Validator)
 
-
-def validate_without_defaults(finput, fschema):
-    yaml_schema = load_yaml(fschema) if type(fschema) == type("") else fschema
-    myobj = load_yaml(finput) if type(finput) == type("") else finput
-    json.Draft7Validator(yaml_schema).validate(myobj)
-    return myobj
-
-
-def validate_with_defaults(finput, fschema):
-    yaml_schema = load_yaml(fschema) if type(fschema) == type("") else fschema
-    myobj = load_yaml(finput) if type(finput) == type("") else finput
-    DefaultValidatingDraft7Validator(yaml_schema).validate(myobj)
-    return myobj
+def _validate(finput, fschema, defaults=True):
+    schema_dict = fschema if isinstance(fschema, dict) else load_yaml(fschema)
+    input_dict = finput if isinstance(finput, dict) else load_yaml(finput)
+    if defaults:
+        DefaultValidatingDraft7Validator(schema_dict).validate(input_dict)
+    else:
+        json.Draft7Validator(schema_dict).validate(input_dict)
+    return input_dict
 
 
 # ---------------------
 def load_geometry_yaml(finput):
-    return validate_with_defaults(finput, fschema_geom)
+    return _validate(finput, fschema_geom)
 
 
 def load_modeling_yaml(finput):
-    return validate_with_defaults(finput, fschema_model)
+    return _validate(finput, fschema_model)
 
 
 def load_analysis_yaml(finput):
-    return validate_with_defaults(finput, fschema_opt)
+    return _validate(finput, fschema_opt)
 
 
 def write_geometry_yaml(instance, foutput):
-    validate_without_defaults(instance, fschema_geom)
+    _validate(instance, fschema_geom, defaults=False)
     sfx_str = ".yaml"
     if foutput[-5:] == sfx_str:
         sfx_str = ""
@@ -149,7 +152,7 @@ def write_geometry_yaml(instance, foutput):
 
 
 def write_modeling_yaml(instance, foutput):
-    validate_without_defaults(instance, fschema_model)
+    _validate(instance, fschema_model, defaults=False)
     sfx_str = ".yaml"
     if foutput[-5:] == sfx_str:
         foutput = foutput[-5:]
@@ -162,7 +165,7 @@ def write_modeling_yaml(instance, foutput):
 
 
 def write_analysis_yaml(instance, foutput):
-    validate_without_defaults(instance, fschema_opt)
+    _validate(instance, fschema_opt, defaults=False)
     sfx_str = ".yaml"
     if foutput[-5:] == sfx_str:
         foutput = foutput[-5:]
@@ -179,12 +182,12 @@ def remove_numpy(fst_vt):
         return reduce(operator.getitem, branch, vartree)
 
     def loop_dict(vartree, branch):
-        if type(vartree) is not dict:
+        if not isinstance(vartree, dict):
             return fst_vt
         for var in vartree.keys():
             branch_i = copy.copy(branch)
             branch_i.append(var)
-            if type(vartree[var]) is dict:
+            if isinstance(vartree[var], dict):
                 loop_dict(vartree[var], branch_i)
             else:
                 data_type = type(get_dict(fst_vt, branch_i[:-1])[branch_i[-1]])

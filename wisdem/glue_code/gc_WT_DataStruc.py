@@ -2369,8 +2369,8 @@ class Floating(om.Group):
                             ivc.add_output("outer_diameter_in", val=0.0, units="m")
                         else:
                             ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
-                        ivc.add_output("ca_usr", val=-1.0*np.ones(n_geom))
-                        ivc.add_output("cd_usr", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("ca_usr_geom", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("cd_usr_geom", val=-1.0*np.ones(n_geom))
                         member_shape_assigned = True
                     if "side_length_a" in float_opt["members"]["groups"][i]:
                         if float_opt["members"]["groups"][i]["side_length_a"]["constant"]:
@@ -2378,30 +2378,30 @@ class Floating(om.Group):
                         else:
                             ivc.add_output("side_length_a_in", val=np.zeros(n_geom), units="m")
                         member_shape_assigned = True
-                        ivc.add_output("ca_usr", val=-1.0*np.ones(n_geom))
-                        ivc.add_output("cd_usr", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("ca_usr_geom", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("cd_usr_geom", val=-1.0*np.ones(n_geom))
                     if "side_length_b" in float_opt["members"]["groups"][i]:
                         if float_opt["members"]["groups"][i]["side_length_b"]["constant"]:
                             ivc.add_output("side_length_b_in", val=0.0, units="m")
                         else:
                             ivc.add_output("side_length_b_in", val=np.zeros(n_geom), units="m")
-                        ivc.add_output("cay_usr", val=-1.0*np.ones(n_geom))
-                        ivc.add_output("cdy_usr", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("cay_usr_geom", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("cdy_usr_geom", val=-1.0*np.ones(n_geom))
                         member_shape_assigned = True
 
             if not member_shape_assigned:
                 # Use the memidx to query the correct member_shape
                 if floating_init_options["members"]["outer_shape"][memidx] == "circular":
                     ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
-                    ivc.add_output("ca_usr", val=-1.0*np.ones(n_geom))
-                    ivc.add_output("cd_usr", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("ca_usr_geom", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cd_usr_geom", val=-1.0*np.ones(n_geom))
                 elif floating_init_options["members"]["outer_shape"][memidx] == "rectangular":
                     ivc.add_output("side_length_a_in", val=np.zeros(n_geom), units="m")
                     ivc.add_output("side_length_b_in", val=np.zeros(n_geom), units="m")
-                    ivc.add_output("ca_usr", val=-1.0*np.ones(n_geom))
-                    ivc.add_output("cd_usr", val=-1.0*np.ones(n_geom))
-                    ivc.add_output("cay_usr", val=-1.0*np.ones(n_geom))
-                    ivc.add_output("cdy_usr", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("ca_usr_geom", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cd_usr_geom", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cay_usr_geom", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cdy_usr_geom", val=-1.0*np.ones(n_geom))
 
             ivc.add_discrete_output("layer_materials", val=[""] * n_layers)
             ivc.add_output("layer_thickness_in", val=np.zeros((n_layers, n_geom)), units="m")
@@ -2430,9 +2430,16 @@ class Floating(om.Group):
             # Here looping all dv member groups
             if floating_init_options["members"]["outer_shape"][memidx] == "circular":
                 self.connect(f"memgrp{k}.outer_diameter_in", f"memgrid{k}.outer_diameter_in")
+                self.connect(f"memgrp{k}.ca_usr_geom", f"memgrid{k}.ca_usr_geom")
+                self.connect(f"memgrp{k}.cd_usr_geom", f"memgrid{k}.cd_usr_geom")
             elif floating_init_options["members"]["outer_shape"][memidx] == "rectangular":
                 self.connect(f"memgrp{k}.side_length_a_in", f"memgrid{k}.side_length_a_in")
                 self.connect(f"memgrp{k}.side_length_b_in", f"memgrid{k}.side_length_b_in")
+                self.connect(f"memgrp{k}.ca_usr_geom", f"memgrid{k}.ca_usr_geom")
+                self.connect(f"memgrp{k}.cd_usr_geom", f"memgrid{k}.cd_usr_geom")
+                self.connect(f"memgrp{k}.cay_usr_geom", f"memgrid{k}.cay_usr_geom")
+                self.connect(f"memgrp{k}.cdy_usr_geom", f"memgrid{k}.cdy_usr_geom")
+
             self.connect(f"memgrp{k}.layer_thickness_in", f"memgrid{k}.layer_thickness_in")
 
         self.add_subsystem("alljoints", AggregateJoints(floating_init_options=floating_init_options), promotes=["*"])
@@ -2497,17 +2504,29 @@ class MemberGrid(om.ExplicitComponent):
         self.add_input("s_grid", val=np.zeros(n_height))
         if member_shape == "circular":
             self.add_input("outer_diameter_in", shape_by_conn=True, units="m")
+            self.add_input("ca_usr_geom", shape_by_conn=True)  
+            self.add_input("cd_usr_geom", shape_by_conn=True)            
         elif member_shape == "rectangular":
             self.add_input("side_length_a_in", shape_by_conn=True, units="m")
             self.add_input("side_length_b_in", shape_by_conn=True, units="m")
+            self.add_input("ca_usr_geom", shape_by_conn=True)  
+            self.add_input("cd_usr_geom", shape_by_conn=True)    
+            self.add_input("cay_usr_geom", shape_by_conn=True)  
+            self.add_input("cdy_usr_geom", shape_by_conn=True)    
 
         self.add_input("layer_thickness_in", val=np.zeros((n_layers, n_geom)), units="m")
 
         if member_shape == "circular":
             self.add_output("outer_diameter", val=np.zeros(n_height), units="m")
+            self.add_output("ca_usr_grid", val=-1.0*np.ones(n_height))
+            self.add_output("cd_usr_grid", val=-1.0*np.ones(n_height))
         elif member_shape == "rectangular":
             self.add_output("side_length_a", val=np.zeros(n_height), units="m")
             self.add_output("side_length_b", val=np.zeros(n_height), units="m")
+            self.add_output("ca_usr_grid", val=-1.0*np.ones(n_height))
+            self.add_output("cd_usr_grid", val=-1.0*np.ones(n_height))
+            self.add_output("cay_usr_grid", val=-1.0*np.ones(n_height))
+            self.add_output("cdy_usr_grid", val=-1.0*np.ones(n_height))
 
         self.add_output("layer_thickness", val=np.zeros((n_layers, n_height)), units="m")
 
@@ -2523,6 +2542,8 @@ class MemberGrid(om.ExplicitComponent):
                 outputs["outer_diameter"] = PchipInterpolator(s_in, inputs["outer_diameter_in"])(s_grid)
             else:
                 outputs["outer_diameter"][:] = inputs["outer_diameter_in"]
+            outputs["ca_usr_grid"] = PchipInterpolator(s_in, inputs["ca_usr_geom"])(s_grid)
+            outputs["cd_usr_grid"] = PchipInterpolator(s_in, inputs["cd_usr_geom"])(s_grid)
         elif member_shape == "rectangular":
             if len(inputs["side_length_a_in"]) > 1:
                 outputs["side_length_a"] = PchipInterpolator(s_in, inputs["side_length_a_in"])(s_grid)
@@ -2530,6 +2551,10 @@ class MemberGrid(om.ExplicitComponent):
             else:
                 outputs["side_length_a"][:] = inputs["side_length_a_in"]
                 outputs["side_length_b"][:] = inputs["side_length_b_in"]
+            outputs["ca_usr_grid"] = PchipInterpolator(s_in, inputs["ca_usr_geom"])(s_grid)
+            outputs["cd_usr_grid"] = PchipInterpolator(s_in, inputs["cd_usr_geom"])(s_grid)
+            outputs["cay_usr_grid"] = PchipInterpolator(s_in, inputs["cay_usr_geom"])(s_grid)
+            outputs["cdy_usr_grid"] = PchipInterpolator(s_in, inputs["cdy_usr_geom"])(s_grid)
         
         for k in range(n_layers):
             outputs["layer_thickness"][k, :] = PchipInterpolator(s_in, inputs["layer_thickness_in"][k, :])(s_grid)

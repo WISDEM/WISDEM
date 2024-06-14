@@ -627,7 +627,7 @@ class FloatingPost(om.ExplicitComponent):
             # Use DNV-GL CP202 Method
             circ_check = util_dnvgl.CylinderBuckling(h[circ_idx], d[circ_idx], t[circ_idx], E=E[circ_idx], G=G[circ_idx],
                                             sigma_y=sigy[circ_idx], gamma=gamma_f * gamma_b,
-                                            A=Az, I=Iyy)
+                                            A=Az[circ_idx], I=Iyy[circ_idx])
             for k in range(n_dlc):
                 results = circ_check.run_buckling_checks(
                     Fz[k, :], M[k, :], circ_axial_stress[k, :], hoop_stress[k, :], circ_shear_stress[k, :]
@@ -676,7 +676,6 @@ class FloatingFrame(om.Group):
             "wind_reference_height",
             "z0",
             "shearExp",
-            "cd_usr",
             "rho_air",
             "rho_water",
             "mu_air",
@@ -700,9 +699,9 @@ class FloatingFrame(om.Group):
             n_full = get_nfull(opt["floating"]["members"]["n_height"][k], nref=2)
             shape = opt["floating"]["members"]["outer_shape"][k]
             if shape == "circular":
-                mem_prom = mem_prom_base + ["ca_usr"]
+                mem_prom = mem_prom_base + [("cd_usr", f"memload{k}.cd_usr"), ("ca_usr", f"memload{k}.ca_usr")]
             elif shape == "rectangular":
-                mem_prom = mem_prom_base + ["cdy_usr", "ca_usr", "cay_usr"]
+                mem_prom = mem_prom_base + [("cd_usr", f"memload{k}.cd_usr"), ("cdy_usr", f"memload{k}.cdy_usr"), ("ca_usr", f"memload{k}.ca_usr"), ("cay_usr", f"memload{k}.cay_usr")]
             self.add_subsystem(
                 f"memload{k}",
                 MemberLoads(

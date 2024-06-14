@@ -590,7 +590,10 @@ class MemberDiscretization(om.ExplicitComponent):
         self.add_input("s", val=np.zeros(n_height))
         self.add_input("height", val=0.0, units="m")
         for dv in member_shape_variables:
-            self.add_input(dv, np.zeros(n_height), units="m")
+            if "diameter" in dv or "length" in dv:
+                self.add_input(dv, np.zeros(n_height), units="m")
+            else:
+                self.add_input(dv, np.zeros(n_height))
         self.add_input("wall_thickness", np.zeros(n_height - 1), units="m")
         self.add_input("E", val=np.zeros(n_height - 1), units="Pa")
         self.add_input("G", val=np.zeros(n_height - 1), units="Pa")
@@ -605,7 +608,10 @@ class MemberDiscretization(om.ExplicitComponent):
         self.add_output("z_full", np.zeros(n_full), units="m")
         # self.add_output("d_full", np.zeros(n_full), units="m")
         for dv in member_shape_variables:
-            self.add_output(dv+"_full", np.zeros(n_full), units="m")
+            if "diameter" in dv or "length" in dv:
+                self.add_output(dv+"_full", np.zeros(n_full), units="m")
+            else:
+                self.add_output(dv+"_full", np.zeros(n_full))
         self.add_output("t_full", np.zeros(n_full - 1), units="m")
         self.add_output("E_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_output("G_full", val=np.zeros(n_full - 1), units="Pa")
@@ -2897,11 +2903,11 @@ class MemberBase(om.Group):
         )
         
             self.connect("wall_thickness", "gc.t")
-            member_shape_variables = ["outer_diameter"]
+            member_shape_variables = ["outer_diameter", "ca_usr_grid", "cd_usr_grid"]
             self.connect("outer_diameter", "gc.d")
         elif member_shape == "rectangular":
             # TODO: geometricconstraint hasn't considered rectangular member yet, so no connection
-            member_shape_variables = ["side_length_a", "side_length_b"]
+            member_shape_variables = ["side_length_a", "side_length_b", "ca_usr_grid", "cd_usr_grid", "cay_usr_grid", "cdy_usr_grid"]
 
         self.add_subsystem("geom", MemberDiscretization(n_height=n_height, n_refine=n_refine, member_shape_variables = member_shape_variables), promotes=["*"])
 
