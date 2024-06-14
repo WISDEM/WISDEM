@@ -82,8 +82,16 @@ def simple_types(indict):
     for k in rv.keys():
         if type(rv[k]) == type(np.array([])):
             rv[k] = rv[k].tolist()
-        elif isinstance(rv[k], (float, int, list, dict, bool, str)):
+        elif isinstance(rv[k], (float, int, dict, bool, str)):
             pass
+        # simple_types iterates through dictionaries, but skips lists and tuples, which may have numpy objects within
+        elif isinstance(rv[k], (list, tuple)):
+            for l in rv[k]:
+                try:
+                    simple_types(l)
+                except:
+                    # Will error out if there its already a simple type and there are no keys
+                    continue
         else:
             rv[k] = ""
 
