@@ -65,7 +65,18 @@ def nested_set(indict, keylist, val):
         rv = rv[k] if i != len(keylist) - 1 else val
 
 
-def integrate_defaults(instance, defaults, yaml_schema):
+def integrate_defaults(instance : dict, defaults : dict, yaml_schema : dict) -> dict:
+    """
+    Integrates default values from a dictionary into another dictionary.
+
+    Args:
+        instance (dict): Dictionary to be updated with default values.
+        defaults (dict): Dictionary containing default values.
+        yaml_schema (dict): Dictionary containing the schema of the YAML file.
+
+    Returns:
+        dict: Updated dictionary with default values integrated.
+    """
     # Prep iterative validator
     # json.validate(self.wt_init, yaml_schema)
     validator = json.Draft7Validator(yaml_schema)
