@@ -100,28 +100,30 @@ def integrate_defaults(instance : dict, defaults : dict, yaml_schema : dict) -> 
     return instance
 
 
-def simple_types(indict):
-    rv = indict
-    for k in rv.keys():
-        if type(rv[k]) == type(np.array([])):
-            rv[k] = rv[k].tolist()
-        elif isinstance(rv[k], (float, int, dict, bool, str)):
-            pass
-        # simple_types iterates through dictionaries, but skips lists and tuples, which may have numpy objects within
-        elif isinstance(rv[k], (list, tuple)):
-            for l in rv[k]:
-                try:
-                    simple_types(l)
-                except:
-                    # Will error out if there its already a simple type and there are no keys
-                    continue
-        else:
-            rv[k] = ""
+def simple_types(indict : dict) -> dict:
+    """
+    Recursively converts numpy array elements within a nested dictionary to lists and ensures
+    all values are simple types (float, int, dict, bool, str).
 
-        try:
-            simple_types(rv[k])
-        except Exception:
-            continue
+    Args:
+        indict (dict): The dictionary to process.
+
+    Returns:
+        dict: The processed dictionary with numpy arrays converted to lists and unsupported types to empty strings.
+    """
+    def convert(value):
+        if isinstance(value, np.ndarray):
+            return value.tolist()
+        elif isinstance(value, dict):
+            return simple_types(value)
+        elif isinstance(value, (list, tuple)):
+            return [convert(item) for item in value]
+        elif isinstance(value, (float, int, bool, str)):
+            return value
+        else:
+            return ""
+
+    rv = {k: convert(v) for k, v in indict.items()}
     return rv
 
 
