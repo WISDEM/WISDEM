@@ -12,16 +12,32 @@ fschema_model = os.path.join(os.path.dirname(os.path.realpath(__file__)), "model
 fschema_opt = os.path.join(os.path.dirname(os.path.realpath(__file__)), "analysis_schema.yaml")
 
 
-# ---------------------
-def load_yaml(fname_input):
+def load_yaml(fname_input : str) -> dict:
+    """
+    Reads and parses a YAML file in a safe mode using the ruamel.yaml library.
+
+    Args:
+        fname_input (str): Path to the YAML file to be loaded.
+
+    Returns:
+        dict: Parsed YAML content as a dictionary.
+    """
     reader = ry.YAML(typ="safe", pure=True)
     with open(fname_input, "r", encoding="utf-8") as f:
         input_yaml = reader.load(f)
     return input_yaml
 
+def write_yaml(instance : dict, foutput : str) -> None:
+    """
+    Writes a dictionary to a YAML file using the ruamel.yaml library.
 
-# ---------------------
-def write_yaml(instance, foutput):
+    Args:
+        instance (dict): Dictionary to be written to the YAML file.
+        foutput (str): Path to the output YAML file.
+
+    Returns:
+        None
+    """
     instance = remove_numpy(instance)
 
     # Write yaml with updated values
