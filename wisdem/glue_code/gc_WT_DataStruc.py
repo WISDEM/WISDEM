@@ -294,6 +294,18 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     units="kg",
                     desc="Override regular regression-based calculation of transformer mass with this value",
                 )
+                nacelle_ivc.add_output(
+                    "mb1_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override regular regression-based calculation of first main bearing mass with this value",
+                )
+                nacelle_ivc.add_output(
+                    "mb2_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override regular regression-based calculation of second main bearing mass with this value",
+                )
                 nacelle_ivc.add_discrete_output(
                     "mb1Type", val="CARB", desc="Type of main bearing: CARB / CRB / SRB / TRB"
                 )
@@ -311,6 +323,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 )
                 nacelle_ivc.add_discrete_output(
                     "bedplate_material", val="steel", desc="Material name identifier for the bedplate"
+                )
+                nacelle_ivc.add_output(
+                    "bedplate_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override bottom-up calculation of bedplate mass with this value",
                 )
 
                 if modeling_options["WISDEM"]["DriveSE"]["direct"]:
@@ -498,6 +516,11 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 "outfitting_factor",
                 val=0.0,
                 desc="Multiplier that accounts for secondary structure mass inside of tower",
+            )
+            ivc.add_output(
+                "tower_mass_user",
+                val=0.0,
+                desc="Override bottom-up calculation of total tower mass with this value",
             )
             ivc.add_discrete_output(
                 "layer_name", val=[], desc="1D array of the names of the layers modeled in the tower structure."
@@ -2128,6 +2151,9 @@ class Hub(om.Group):
             ivc.add_output("hub_in2out_circ", val=1.2)
             ivc.add_discrete_output("hub_material", val="steel")
             ivc.add_discrete_output("spinner_material", val="carbon")
+            ivc.add_output("hub_shell_mass_user", val=0.0)
+            ivc.add_output("spinner_mass_user", val=0.0)
+            ivc.add_output("pitch_system_mass_user", val=0.0)
 
         exec_comp = om.ExecComp(
             "radius = 0.5 * diameter",
@@ -2253,6 +2279,7 @@ class Monopile(om.Group):
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
+        ivc.add_output("monopile_mass_user", val=0.0, desc="Override bottom-up calculation of total monopile mass with this value")
 
         self.add_subsystem("compute_monopile_grid", Compute_Grid(n_height=n_height), promotes=["*"])
 
@@ -2319,6 +2346,7 @@ class Jacket(om.Group):
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
+        ivc.add_output("jacket_mass_user", val=0.0, desc="Override bottom-up calculation of total jacket mass with this value")
 
 
 class Floating(om.Group):
@@ -2422,6 +2450,7 @@ class Floating(om.Group):
             ivc.add_output("axial_stiffener_flange_width", 0.0, units="m")
             ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_spacing", 0.0, units="rad")
+            ivc.add_output("member_mass_user", 0.0, units="kg", desc="Override bottom-up calculation of total member mass with this value")
 
             # Use the memidx to query the correct member_shape
             self.add_subsystem(f"memgrid{k}", MemberGrid(n_height=n_height, n_geom=n_geom, n_layers=n_layers, member_shape=floating_init_options["members"]["outer_shape"][memidx]))

@@ -289,6 +289,9 @@ class WT_RNTA(om.Group):
             self.connect("hub.clearance_hub_spinner", "drivese.clearance_hub_spinner")
             self.connect("hub.spin_hole_incr", "drivese.spin_hole_incr")
             self.connect("hub.pitch_system_scaling_factor", "drivese.pitch_system_scaling_factor")
+            self.connect("hub.pitch_system_mass_user", "drivese.pitch_system_mass_user")
+            self.connect("hub.hub_shell_mass_user", "drivese.hub_shell_mass_user")
+            self.connect("hub.spinner_mass_user", "drivese.spinner_mass_user")
             self.connect("rotorse.wt_class.V_extreme50", "drivese.spinner_gust_ws")
 
             self.connect("configuration.n_blades", "drivese.n_blades")
@@ -332,6 +335,9 @@ class WT_RNTA(om.Group):
                 self.connect("nacelle.lss_diameter", "drivese.bear2.D_shaft", src_indices=[-1])
             self.connect("nacelle.uptower", "drivese.uptower")
             self.connect("nacelle.brake_mass_user", "drivese.brake_mass_user")
+            self.connect("nacelle.bedplate_mass_user", "drivese.bedplate_mass_user")
+            self.connect("nacelle.mb1_mass_user", "drivese.bear1.mb_mass_user")
+            self.connect("nacelle.mb2_mass_user", "drivese.bear2.mb_mass_user")
             self.connect("nacelle.hvac_mass_coeff", "drivese.hvac_mass_coeff")
             self.connect("nacelle.converter_mass_user", "drivese.converter_mass_user")
             self.connect("nacelle.transformer_mass_user", "drivese.transformer_mass_user")
@@ -486,6 +492,7 @@ class WT_RNTA(om.Group):
             self.connect("tower_grid.s", "towerse.tower_s")
             self.connect("tower.layer_thickness", "towerse.tower_layer_thickness")
             self.connect("tower.outfitting_factor", "towerse.outfitting_factor_in")
+            self.connect("tower.tower_mass_user", "towerse.tower_mass_user")
             self.connect("tower.layer_mat", "towerse.tower_layer_materials")
             self.connect("materials.name", "towerse.material_names")
             self.connect("materials.E", "towerse.E_mat")
@@ -548,6 +555,7 @@ class WT_RNTA(om.Group):
             self.connect("monopile.transition_piece_cost", "fixedse.transition_piece_cost")
             self.connect("monopile.transition_piece_mass", "fixedse.transition_piece_mass")
             self.connect("monopile.gravity_foundation_mass", "fixedse.gravity_foundation_mass")
+            self.connect("monopile.monopile_mass_user", "fixedse.monopile_mass_user")
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.nodes_xyz", "fixedse.tower_xyz")
                 self.connect("towerse.outer_diameter_full", "fixedse.tower_outer_diameter_full")
@@ -578,6 +586,7 @@ class WT_RNTA(om.Group):
             self.connect("jacket.brace_diameters", "fixedse.brace_diameters")
             self.connect("jacket.brace_thicknesses", "fixedse.brace_thicknesses")
             self.connect("jacket.bay_spacing", "fixedse.bay_spacing")
+            self.connect("jacket.jacket_mass_user", "fixedse.jacket_mass_user")
 
         if modeling_options["flags"]["floating"]:
             self.connect("env.rho_water", "floatingse.rho_water")
@@ -655,6 +664,7 @@ class WT_RNTA(om.Group):
                     "axial_stiffener_flange_width",
                     "axial_stiffener_flange_thickness",
                     "axial_stiffener_spacing",
+                    "member_mass_user",
                 ]:
                     self.connect(f"floating.memgrp{idx}.{var}", f"floatingse.member{k}.{var}")
 

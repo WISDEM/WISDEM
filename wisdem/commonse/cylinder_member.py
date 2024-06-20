@@ -709,18 +709,18 @@ class ShellMassCost(om.ExplicitComponent):
         Labor cost rate
     painting_cost_rate : float, [USD/m/m]
         Painting / surface finishing cost rate
+    shell_mass_user : float [kg]
+        User override of total cylinder mass
 
     Returns
     -------
-    cost : float, [USD]
+    shell_cost : float, [USD]
         Total cylinder cost
-    mass : numpy array[n_full-1], [kg]
+    shell_mass : numpy array[n_full-1], [kg]
         Total cylinder mass
-    center_of_mass : float, [m]
+    shell_z_cg : float, [m]
         z-position of center of mass of cylinder
-    section_center_of_mass : numpy array[n_full-1], [m]
-        z position of center of mass of each can in the cylinder
-    I_base : numpy array[6], [kg*m**2]
+    shell_I_base : numpy array[6], [kg*m**2]
         mass moment of inertia of cylinder about base [xx yy zz xy xz yz]
 
     """
@@ -745,6 +745,7 @@ class ShellMassCost(om.ExplicitComponent):
         self.add_input("unit_cost_full", val=np.zeros(n_full - 1), units="USD/kg")
         self.add_input("labor_cost_rate", 0.0, units="USD/min")
         self.add_input("painting_cost_rate", 0.0, units="USD/m/m")
+        self.add_input("shell_mass_user", val=0.0, units="kg")        
 
         self.add_output("labor_hours", val=0.0, units="h")
         self.add_output("shell_cost", val=0.0, units="USD")
@@ -777,6 +778,7 @@ class ShellMassCost(om.ExplicitComponent):
         sigymat = inputs["sigma_y_full"]
         coeff = inputs["outfitting_full"]
         d_sec, _ = util.nodal2sectional(outer_diameter_full)
+        mass_user = float(inputs["shell_mass_user"][0])
 
         mysections = []
         itube = cs.Tube(d_sec, t_full)
@@ -840,6 +842,8 @@ class ShellMassCost(om.ExplicitComponent):
         # Total mass of cylinder
         V_shell = frustum.frustumShellVol(Rb, Rt, t_full, H)
         mass = coeff * rho * V_shell
+        coeff_user = 1.0 if mass_user == 0.0 else mass_user/mass.sum()
+        mass *= coeff_user
         outputs["shell_mass"] = mass.sum()
 
         # Center of mass
@@ -847,8 +851,8 @@ class ShellMassCost(om.ExplicitComponent):
         outputs["shell_z_cg"] = np.dot(cm_section, mass) / mass.sum()
 
         # Moments of inertia
-        J0_section = coeff * rho * frustum.frustumShellIzz(Rb, Rt, t_full, H)
-        Ixx_section = Iyy_section = coeff * rho * frustum.frustumShellIxx(Rb, Rt, t_full, H)
+        J0_section = coeff_user * coeff * rho * frustum.frustumShellIzz(Rb, Rt, t_full, H)
+        Ixx_section = Iyy_section = coeff_user * coeff * rho * frustum.frustumShellIxx(Rb, Rt, t_full, H)
 
         # Sum up each cylinder section using parallel axis theorem
         I_base = np.zeros((3, 3))
@@ -983,6 +987,8 @@ class MemberComplex(om.ExplicitComponent):
         Volume of ballast segments.  Should be non-zero for permanent ballast, zero for variable ballast
     ballast_unit_cost : numpy array[n_ballast], [USD/kg]
         Cost per unit mass of ballast
+    total_mass_user : float [kg]
+        User override of total cylinder mass
 
     Returns
     -------
@@ -1140,6 +1146,8 @@ class MemberComplex(om.ExplicitComponent):
         self.add_input("s_ghost1", 0.0)
         self.add_input("s_ghost2", 1.0)
 
+        self.add_input("total_mass_user", val=0.0, units="kg")        
+        
         # Outputs
         self.add_output("shell_cost", val=0.0, units="USD")
         self.add_output("shell_mass", val=0.0, units="kg")
@@ -1390,7 +1398,7 @@ class MemberComplex(om.ExplicitComponent):
             Ix_stiff = 0.5 * n_stiff * (A_web * R_w**2 + A_flange * R_f**2)
             Iz_stiff = 2 * Ix_stiff
 
-        # Total mass of cylinder
+            # Total mass of cylinder
             V_shell = frustum.frustumShellVol(Rb, Rt, t_full, H) # Why is H discretized?
             mass = coeff * rho * (V_shell + A_stiff * H)
             outputs["shell_mass"] = mass.sum()
@@ -2038,6 +2046,12 @@ class MemberComplex(om.ExplicitComponent):
         # Move moments of inertia from keel to cg
         I_total -= m_total * ((z_cg - z_full[0]) ** 2.0) * np.r_[1.0, 1.0, np.zeros(4)]
 
+        # User override options
+        mass_user = float(inputs["total_mass_user"][0])
+        coeff_user = 1.0 if mass_user == 0.0 else mass_user/m_total
+        m_total *= coeff_user
+        I_total *= coeff_user
+        
         # Store outputs addressed so far
         outputs["total_mass"] = m_total
         outputs["structural_mass"] = m_total - m_ballast
@@ -2072,10 +2086,7 @@ class MemberComplex(om.ExplicitComponent):
         s_grid = s_grid[idx]
         n_nodes = s_grid.size
         nodes = np.outer(s_grid, dxyz) + xyz0[np.newaxis, :]
-
-        
-
-        
+  
         # Convert axial to absolute
         outputs["center_of_mass"] = (outputs["z_cg"] / z_full[-1]) * dxyz + xyz0
 
