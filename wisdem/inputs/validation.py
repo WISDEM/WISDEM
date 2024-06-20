@@ -61,11 +61,8 @@ def nested_get(indict, keylist):
 
 def nested_set(indict, keylist, val):
     rv = indict
-    for k in keylist:
-        if k == keylist[-1]:
-            rv[k] = val
-        else:
-            rv = rv[k]
+    for i, k in enumerate(keylist):
+        rv = rv[k] if i != len(keylist) - 1 else val
 
 
 def integrate_defaults(instance, defaults, yaml_schema):
