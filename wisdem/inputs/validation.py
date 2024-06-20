@@ -146,12 +146,21 @@ def extend_with_default(validator_class):
 DefaultValidatingDraft7Validator = extend_with_default(json.Draft7Validator)
 
 def _validate(finput, fschema, defaults=True):
+    """
+    Validates a dictionary against a schema and returns the validated dictionary.
+
+    Args:
+        finput (dict or str): Dictionary or path to the YAML file to be validated.
+        fschema (dict or str): Dictionary or path to the schema file to validate against.
+        defaults (bool): Flag to indicate if default values should be integrated.
+
+    Returns:
+        dict: Validated dictionary.
+    """
     schema_dict = fschema if isinstance(fschema, dict) else load_yaml(fschema)
     input_dict = finput if isinstance(finput, dict) else load_yaml(finput)
-    if defaults:
-        DefaultValidatingDraft7Validator(schema_dict).validate(input_dict)
-    else:
-        json.Draft7Validator(schema_dict).validate(input_dict)
+    validator = DefaultValidatingDraft7Validator if defaults else json.Draft7Validator
+    validator(schema_dict).validate(input_dict)
     return input_dict
 
 
