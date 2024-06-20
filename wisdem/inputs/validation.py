@@ -211,12 +211,48 @@ def write_analysis_yaml(instance : dict, foutput : str) -> None:
     sfx_str = "-analysis.yaml"
     write_yaml(instance, foutput + sfx_str)
 
-def remove_numpy(fst_vt):
-    # recursively move through nested dictionary, remove numpy data types
-    # for formatting dictionaries before writing to yaml files
+def remove_numpy(fst_vt : dict) -> dict:
+    """
+    Recursively converts numpy array elements within a nested dictionary to lists and ensures
+    all values are simple types (float, int, dict, bool, str) for writing to a YAML file.
+
+    Args:
+        fst_vt (dict): The dictionary to process.
+
+    Returns:
+        dict: The processed dictionary with numpy arrays converted to lists and unsupported types to simple types.
+    """
 
     def get_dict(vartree, branch):
         return reduce(operator.getitem, branch, vartree)
+
+    # Define conversion dictionary for numpy types
+    conversions = {
+        np.int_: int,
+        np.intc: int,
+        np.intp: int,
+        np.int8: int,
+        np.int16: int,
+        np.int32: int,
+        np.int64: int,
+        np.uint8: int,
+        np.uint16: int,
+        np.uint32: int,
+        np.uint64: int,
+        np.single: float,
+        np.double: float,
+        np.longdouble: float,
+        np.csingle: float,
+        np.cdouble: float,
+        np.float_: float,
+        np.float16: float,
+        np.float32: float,
+        np.float64: float,
+        np.complex64: float,
+        np.complex128: float,
+        np.bool_: bool,
+        np.ndarray: lambda x: x.tolist(),
+    }
 
     def loop_dict(vartree, branch):
         if not isinstance(vartree, dict):
@@ -227,23 +263,16 @@ def remove_numpy(fst_vt):
             if isinstance(vartree[var], dict):
                 loop_dict(vartree[var], branch_i)
             else:
-                data_type = type(get_dict(fst_vt, branch_i[:-1])[branch_i[-1]])
-
-                if data_type in [np.int_, np.intc, np.intp, np.int8, np.int16, np.int32, np.int64, np.uint8, np.uint16, np.uint32, np.uint64]:
-                    get_dict(fst_vt, branch_i[:-1])[branch_i[-1]] = int(get_dict(fst_vt, branch_i[:-1])[branch_i[-1]])
-                elif data_type in [np.single, np.double, np.longdouble, np.csingle, np.cdouble, np.float_, np.float16, np.float32, np.float64, np.complex64, np.complex128]:
-                    get_dict(fst_vt, branch_i[:-1])[branch_i[-1]] = float(get_dict(fst_vt, branch_i[:-1])[branch_i[-1]])
-                elif data_type in [np.bool_]:
-                    get_dict(fst_vt, branch_i[:-1])[branch_i[-1]] = bool(get_dict(fst_vt, branch_i[:-1])[branch_i[-1]])
-                elif data_type in [np.ndarray]:
-                    get_dict(fst_vt, branch_i[:-1])[branch_i[-1]] = get_dict(fst_vt, branch_i[:-1])[branch_i[-1]].tolist()
-                elif data_type in [list,tuple]:
-                    for item in get_dict(fst_vt, branch_i[:-1])[branch_i[-1]]:
-                        remove_numpy(item)
+                current_value = get_dict(fst_vt, branch_i[:-1])[branch_i[-1]]
+                data_type = type(current_value)
+                if data_type in conversions:
+                    get_dict(fst_vt, branch_i[:-1])[branch_i[-1]] = conversions[data_type](current_value)
+                elif isinstance(current_value, (list, tuple)):
+                    for i, item in enumerate(current_value):
+                        current_value[i] = remove_numpy(item)
 
     # set fast variables to update values
     loop_dict(fst_vt, [])
-
     return fst_vt
 
 
