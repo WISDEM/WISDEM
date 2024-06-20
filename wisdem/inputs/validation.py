@@ -177,34 +177,37 @@ def load_analysis_yaml(finput):
     return _validate(finput, fschema_opt)
 
 
-def write_geometry_yaml(instance, foutput):
+def write_geometry_yaml(instance : dict, foutput : str) -> None:
     _validate(instance, fschema_geom, defaults=False)
-    sfx_str = ".yaml"
-    if foutput[-5:] == sfx_str:
-        sfx_str = ""
-    write_yaml(instance, foutput + sfx_str)
+    # Ensure the file output has a .yaml suffix
+    if not foutput.endswith(".yaml"):
+        foutput += ".yaml"
+    write_yaml(instance, foutput)
 
 
-def write_modeling_yaml(instance, foutput):
+def write_modeling_yaml(instance : dict, foutput : str) -> None:
     _validate(instance, fschema_model, defaults=False)
-    sfx_str = ".yaml"
-    if foutput[-5:] == sfx_str:
-        foutput = foutput[-5:]
-    elif foutput[-4:] == ".yml":
-        foutput = foutput[-4:]
+
+    # Ensure the output filename does not end with .yaml or .yml
+    if foutput.endswith(".yaml"):
+        foutput = foutput[:-5]
+    elif foutput.endswith(".yml"):
+        foutput = foutput[:-4]
     sfx_str = "-modeling.yaml"
 
     instance2 = simple_types(instance)
     write_yaml(instance2, foutput + sfx_str)
 
 
-def write_analysis_yaml(instance, foutput):
+def write_analysis_yaml(instance : dict, foutput : str) -> None:
     _validate(instance, fschema_opt, defaults=False)
-    sfx_str = ".yaml"
-    if foutput[-5:] == sfx_str:
-        foutput = foutput[-5:]
-    elif foutput[-4:] == ".yml":
-        foutput = foutput[-4:]
+
+    # Ensure the output filename does not end with .yaml or .yml
+    if foutput.endswith(".yaml"):
+        foutput = foutput[:-5]
+    elif foutput.endswith(".yml"):
+        foutput = foutput[:-4]
+
     sfx_str = "-analysis.yaml"
     write_yaml(instance, foutput + sfx_str)
 
