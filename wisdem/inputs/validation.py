@@ -84,6 +84,7 @@ def integrate_defaults(instance : dict, defaults : dict, yaml_schema : dict) -> 
 
     # Loop over errors
     for e in errors:
+        # If the error is due to a missing required value, try to set it to the default
         if e.validator == "required":
             for k in e.validator_value:
                 if k not in e.instance.keys():
@@ -93,11 +94,9 @@ def integrate_defaults(instance : dict, defaults : dict, yaml_schema : dict) -> 
                     if isinstance(v, dict) or isinstance(v, list) or v in ["name", "material"]:
                         # Too complicated to just copy over default, so give it back to the user
                         raise (e)
-                    else:
-                        print("WARNING: Missing value,", list(mypath), ", so setting to:", v)
-                        nested_set(instance, mypath, v)
-        else:
-            raise (e)
+                    print("WARNING: Missing value,", list(mypath), ", so setting to:", v)
+                    nested_set(instance, mypath, v)
+        raise (e)
     return instance
 
 
