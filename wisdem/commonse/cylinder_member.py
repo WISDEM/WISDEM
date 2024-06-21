@@ -2418,6 +2418,9 @@ class RectangularMemberHydro(om.ExplicitComponent):
         z_under = np.interp(s_under, s_full, z_full)
         a_under = np.interp(s_under, s_full, a)
         b_under = np.interp(s_under, s_full, b)
+        ARx_under = np.interp(s_under, s_full, ARx)
+        ARy_under = np.interp(s_under, s_full, ARy)
+
         if waterline:
             a_waterline = a_under[-1]
             b_waterline = b_under[-1]
@@ -2449,8 +2452,8 @@ class RectangularMemberHydro(om.ExplicitComponent):
         temp = np.linspace(z_under[0], z_under[-1], 200)
         a_under = np.interp(temp, z_under, a_under)
         b_under = np.interp(temp, z_under, b_under)
-        ARx_under = np.interp(temp, z_under, ARx)
-        ARy_under = np.interp(temp, z_under, ARy)
+        ARx_under = np.interp(temp, z_under, ARx_under)
+        ARy_under = np.interp(temp, z_under, ARy_under)
         z_under = temp
         dz_under = np.diff(z_under)
         m_a = np.zeros(6)
