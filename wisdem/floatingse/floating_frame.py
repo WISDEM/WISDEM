@@ -350,7 +350,7 @@ class TowerModal(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("n_full")
         self.options.declare("frame3dd_opt")
-        self.options.declare("rank_and_file", default=False)
+        self.options.declare("rank_and_file", default=True)
 
     def setup(self):
         n_full = self.options["n_full"]
@@ -514,7 +514,7 @@ class TowerModal(om.ExplicitComponent):
                 outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
                 outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
                 outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
-        except:
+        except Exception:
             pass
 
 
