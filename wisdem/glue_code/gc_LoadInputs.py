@@ -870,13 +870,13 @@ class WindTurbineOntologyPython(object):
                 "blade.outer_shape_bem.s"
             ].tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["x"]["values"] = wt_opt[
-                "blade.outer_shape_bem.ref_axis"
+                "blade.high_level_blade_props.blade_ref_axis"
             ][:, 0].tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["y"]["values"] = wt_opt[
-                "blade.outer_shape_bem.ref_axis"
+                "blade.high_level_blade_props.blade_ref_axis"
             ][:, 1].tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["z"]["values"] = wt_opt[
-                "blade.outer_shape_bem.ref_axis"
+                "blade.high_level_blade_props.blade_ref_axis"
             ][:, 2].tolist()
 
             # Update blade structure
