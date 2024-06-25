@@ -673,19 +673,8 @@ class MonopileFrame(om.ExplicitComponent):
                                     mshapes_z[:NFREQ2, :]) )
             cmat_low = np.zeros((3*NFREQ2, 2))
             ymat = np.polynomial.polynomial.polyval(zn, np.hstack((cmat_low, cmat_high)).T)
+            p6 = util.get_modal_coefficients(zn, ymat.T, base_slope0=False)
 
-            # Fit new polynomial to just these points, removing linear component
-            xn = (zn - zn[0]) / (zn[-1] - zn[0])
-            dy = np.gradient(ymat, xn, axis=1, edge_order=2)
-            ymat = ymat - np.outer(dy[:, 0], xn)
-            p6 = np.polynomial.polynomial.polyfit(xn, ymat.T, [2, 3, 4, 5, 6])
-
-            # Clean up and assign
-            p6 = p6[2:, :]
-            tempsum = np.sum(p6, axis=0) + 1e-16  # Avoid divide by 0
-            normval = np.maximum(np.abs(tempsum), 1e-5)
-            normval *= np.sign(tempsum)
-            p6 /= normval[np.newaxis, :]
             outputs["tower_fore_aft_modes"] = p6[:, :NFREQ2].T
             outputs["tower_side_side_modes"] = p6[:, NFREQ2:(2*NFREQ2)].T
             outputs["tower_torsion_modes"] = p6[:, (2*NFREQ2):].T
