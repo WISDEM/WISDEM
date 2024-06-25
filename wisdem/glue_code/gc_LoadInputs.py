@@ -756,7 +756,8 @@ class WindTurbineOntologyPython(object):
             blade_opt_options["n_opt_struct"] = blade_opt_options["n_opt_struct"].tolist()
             if "layer_index_opt" in blade_opt_options:
                 blade_opt_options["layer_index_opt"] = blade_opt_options["layer_index_opt"].tolist()
-
+        else:
+            blade_opt_options["structure"] = []
 
         # Handle linked joints and members in floating platform
         if self.modeling_options["flags"]["floating"]:
