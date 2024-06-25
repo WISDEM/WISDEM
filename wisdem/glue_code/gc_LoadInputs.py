@@ -757,7 +757,6 @@ class WindTurbineOntologyPython(object):
             if "layer_index_opt" in blade_opt_options:
                 blade_opt_options["layer_index_opt"] = blade_opt_options["layer_index_opt"].tolist()
 
-
         # Handle linked joints and members in floating platform
         if self.modeling_options["flags"]["floating"]:
             float_opt_options = self.analysis_options["design_variables"]["floating"]
@@ -870,13 +869,13 @@ class WindTurbineOntologyPython(object):
                 "blade.outer_shape_bem.s"
             ].tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["x"]["values"] = wt_opt[
-                "blade.outer_shape_bem.ref_axis"
+                "blade.high_level_blade_props.blade_ref_axis"
             ][:, 0].tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["y"]["values"] = wt_opt[
-                "blade.outer_shape_bem.ref_axis"
+                "blade.high_level_blade_props.blade_ref_axis"
             ][:, 1].tolist()
             self.wt_init["components"]["blade"]["outer_shape_bem"]["reference_axis"]["z"]["values"] = wt_opt[
-                "blade.outer_shape_bem.ref_axis"
+                "blade.high_level_blade_props.blade_ref_axis"
             ][:, 2].tolist()
 
             # Update blade structure
