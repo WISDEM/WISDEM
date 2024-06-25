@@ -259,6 +259,7 @@ class MonopileFrame(om.ExplicitComponent):
         self.options.declare("n_full_tow")
         self.options.declare("nLC")
         self.options.declare("frame3dd_opt")
+        self.options.declare("rank_and_file")
         self.options.declare("soil_springs", default=False)
         self.options.declare("gravity_foundation", default=False)
 
@@ -390,8 +391,9 @@ class MonopileFrame(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         frame3dd_opt = self.options["frame3dd_opt"]
-        nLC = self.options["nLC"]
-        tower_flag = self.options["n_full_tow"] > 0
+        rankfile     = self.options["rank_and_file"]
+        nLC          = self.options["nLC"]
+        tower_flag   = self.options["n_full_tow"] > 0
 
         # ------- node data ----------------
         if tower_flag:
@@ -654,6 +656,7 @@ class MonopileFrame(om.ExplicitComponent):
             modal.zmpf,
             idx0=NREFINE,
             base_slope0=(not self.options["soil_springs"]),
+            rank_and_file=rankfile,
         )
         outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
         outputs["side_side_freqs"] = freq_y[:NFREQ2]
@@ -663,20 +666,18 @@ class MonopileFrame(om.ExplicitComponent):
         outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
 
         if tower_flag:
-            freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
-                z[-n_tow:],
-                modal.freq,
-                modal.xdsp[:, -n_tow:],
-                modal.ydsp[:, -n_tow:],
-                modal.zdsp[:, -n_tow:],
-                modal.xmpf,
-                modal.ympf,
-                modal.zmpf,
-                base_slope0=False,
-            )
-            outputs["tower_fore_aft_modes"] = mshapes_x[:NFREQ2, :]
-            outputs["tower_side_side_modes"] = mshapes_y[:NFREQ2, :]
-            outputs["tower_torsion_modes"] = mshapes_z[:NFREQ2, :]
+            # Evaluate full mode shape coefficients at tower points only
+            zn = z[-n_tow:] / (z[-1] - z[0])
+            cmat_high = np.vstack( (mshapes_x[:NFREQ2, :],
+                                    mshapes_y[:NFREQ2, :],
+                                    mshapes_z[:NFREQ2, :]) )
+            cmat_low = np.zeros((3*NFREQ2, 2))
+            ymat = np.polynomial.polynomial.polyval(zn, np.hstack((cmat_low, cmat_high)).T)
+            p6 = util.get_modal_coefficients(zn, ymat.T, base_slope0=False)
+
+            outputs["tower_fore_aft_modes"] = p6[:, :NFREQ2].T
+            outputs["tower_side_side_modes"] = p6[:, NFREQ2:(2*NFREQ2)].T
+            outputs["tower_torsion_modes"] = p6[:, (2*NFREQ2):].T
 
         # deflections due to loading (from cylinder top and wind/wave loads)
         outputs["monopile_deflection"] = np.sqrt(displacements.dx**2 + displacements.dy**2).T
@@ -729,6 +730,7 @@ class MonopileSEProp(om.Group):
     def setup(self):
         mod_opt = self.options["modeling_options"]["WISDEM"]["FixedBottomSE"]
         n_mat = self.options["modeling_options"]["materials"]["n_mat"]
+
         if "n_height" in mod_opt:
             n_height = mod_opt["n_height"]
         else:
@@ -853,6 +855,7 @@ class MonopileSEPerf(om.Group):
         nLC = self.options["modeling_options"]["WISDEM"]["n_dlc"]
         wind = mod_opt["wind"]  # not yet supported
         frame3dd_opt = mod_opt["frame3dd"]
+        rankfile_opt = mod_opt["rank_and_file"]
         if "n_height" in mod_opt:
             n_height = mod_opt["n_height"]
         else:
@@ -877,6 +880,7 @@ class MonopileSEPerf(om.Group):
                 soil_springs=mod_opt["soil_springs"],
                 gravity_foundation=mod_opt["gravity_foundation"],
                 nLC=nLC,
+                rank_and_file=rankfile_opt,
             ),
             promotes=[
                 "nodes_xyz",

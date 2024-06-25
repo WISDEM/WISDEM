@@ -205,6 +205,7 @@ class TowerFrame(om.ExplicitComponent):
         self.options.declare("n_full")
         self.options.declare("nLC")
         self.options.declare("frame3dd_opt")
+        self.options.declare("rank_and_file")
 
     def setup(self):
         n_full = self.options["n_full"]
@@ -261,6 +262,7 @@ class TowerFrame(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         frame3dd_opt = self.options["frame3dd_opt"]
+        rankfile     = self.options["rank_and_file"]
         nLC = self.options["nLC"]
 
         # ------- node data ----------------
@@ -389,7 +391,8 @@ class TowerFrame(om.ExplicitComponent):
         # Get all mode shapes in batch
         NFREQ2 = int(NFREQ / 2)
         freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
-            xyz[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
+            xyz[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf,
+            rank_and_file=rankfile,
         )
         outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
         outputs["side_side_freqs"] = freq_y[:NFREQ2]
@@ -440,6 +443,7 @@ class TowerSEProp(om.Group):
     def setup(self):
         mod_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
         n_mat = self.options["modeling_options"]["materials"]["n_mat"]
+
         if "n_height" in mod_opt:
             n_height = mod_opt["n_height"]
         else:
@@ -530,6 +534,7 @@ class TowerSEPerf(om.Group):
         nLC = self.options["modeling_options"]["WISDEM"]["n_dlc"]
         wind = mod_opt["wind"]  # not yet supported
         frame3dd_opt = mod_opt["frame3dd"]
+        rankfile_opt = mod_opt["rank_and_file"]
         if "n_height" in mod_opt:
             n_height = mod_opt["n_height"]
         else:
@@ -543,7 +548,7 @@ class TowerSEPerf(om.Group):
 
         self.add_subsystem(
             "tower",
-            TowerFrame(n_full=n_full, frame3dd_opt=frame3dd_opt, nLC=nLC),
+            TowerFrame(n_full=n_full, frame3dd_opt=frame3dd_opt, nLC=nLC, rank_and_file=rankfile_opt),
             promotes=[
                 "nodes_xyz",
                 "section_A",

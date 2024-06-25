@@ -1,4 +1,5 @@
 import unittest
+import time
 
 import numpy as np
 import numpy.testing as npt
@@ -208,10 +209,12 @@ class TestAny(unittest.TestCase):
         ym = np.random.random(n)
         zm = np.random.random(n)
 
+        #t0 = time.time()
         freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
             r, freqs, dx, dy, dz, xm, ym, zm, rank_and_file=True
         )
-
+        #print(time.time() - t0)
+        
         # Ensure each mode shape's coefficients sum to 1
         npt.assert_almost_equal(np.sum(mshapes_x, axis=1), np.ones(n2))
         npt.assert_almost_equal(np.sum(mshapes_y, axis=1), np.ones(n2))
