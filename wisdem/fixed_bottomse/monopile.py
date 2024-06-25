@@ -666,21 +666,29 @@ class MonopileFrame(om.ExplicitComponent):
         outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
 
         if tower_flag:
-            freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
-                z[-n_tow:],
-                modal.freq,
-                modal.xdsp[:, -n_tow:],
-                modal.ydsp[:, -n_tow:],
-                modal.zdsp[:, -n_tow:],
-                modal.xmpf,
-                modal.ympf,
-                modal.zmpf,
-                base_slope0=False,
-                rank_and_file=rankfile,
-            )
-            outputs["tower_fore_aft_modes"] = mshapes_x[:NFREQ2, :]
-            outputs["tower_side_side_modes"] = mshapes_y[:NFREQ2, :]
-            outputs["tower_torsion_modes"] = mshapes_z[:NFREQ2, :]
+            # Evaluate full mode shape coefficients at tower points only
+            zn = z[-n_tow:] / (z[-1] - z[0])
+            cmat_high = np.vstack( (mshapes_x[:NFREQ2, :],
+                                    mshapes_y[:NFREQ2, :],
+                                    mshapes_z[:NFREQ2, :]) )
+            cmat_low = np.zeros((3*NFREQ2, 2))
+            ymat = np.polynomial.polynomial.polyval(zn, np.hstack((cmat_low, cmat_high)).T)
+
+            # Fit new polynomial to just these points, removing linear component
+            xn = (zn - zn[0]) / (zn[-1] - zn[0])
+            dy = np.gradient(ymat, xn, axis=1, edge_order=2)
+            ymat = ymat - np.outer(dy[:, 0], xn)
+            p6 = np.polynomial.polynomial.polyfit(xn, ymat.T, [2, 3, 4, 5, 6])
+
+            # Clean up and assign
+            p6 = p6[2:, :]
+            tempsum = np.sum(p6, axis=0) + 1e-16  # Avoid divide by 0
+            normval = np.maximum(np.abs(tempsum), 1e-5)
+            normval *= np.sign(tempsum)
+            p6 /= normval[np.newaxis, :]
+            outputs["tower_fore_aft_modes"] = p6[:, :NFREQ2].T
+            outputs["tower_side_side_modes"] = p6[:, NFREQ2:(2*NFREQ2)].T
+            outputs["tower_torsion_modes"] = p6[:, (2*NFREQ2):].T
 
         # deflections due to loading (from cylinder top and wind/wave loads)
         outputs["monopile_deflection"] = np.sqrt(displacements.dx**2 + displacements.dy**2).T
