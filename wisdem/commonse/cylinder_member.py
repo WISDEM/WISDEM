@@ -1587,7 +1587,7 @@ class MemberComplex(om.ExplicitComponent):
                 )
                 self.insert_section(s0[k], s1[k], iprop)
         elif self.shape == "rectangular":
-            for k in range(len(s_full) - 1):
+            for k in range(nbulk):
                 irect = cs.Rectangle(a_bulk[k], b_bulk[k], 0.5*np.minimum(a_bulk[k], b_bulk[k])) 
                 iprop = RectCrossSection(
                     a=a_bulk[k],
@@ -1605,7 +1605,7 @@ class MemberComplex(om.ExplicitComponent):
                     TorsC=irect.TorsConst,
                     sigy=sigy_bulk[k],
                 )
-                self.add_section(s_full[k], s_full[k + 1], iprop)
+                self.insert_section(s0[k], s1[k], iprop)
 
         # Compute bulkhead mass independent of shell
         if self.shape == "circular":
@@ -1967,13 +1967,15 @@ class MemberComplex(om.ExplicitComponent):
                 zpts = np.linspace(zpts[0], z_end, npts)
                 H = np.diff(zpts)
 
-                a_out_pts = np.interp(zpts, z_full, a_out_pts)
-                b_out_pts = np.interp(zpts, z_full, b_out_pts)
+                a_out_pts = np.interp(zpts, z_full, a_out)
+                b_out_pts = np.interp(zpts, z_full, b_out)
                 twall_pts = util.sectionalInterp(zpts, z_full, twall)
                 a_in_pts = a_out_pts - twall_pts
                 b_in_pts = b_out_pts - twall_pts
 
-                V_pts = frustum.RectangularFrustumShellVol(a_in_pts[:-1], b_in_pts[:-1], a_in_pts[1:], b_in_pts[1:], H)
+                twall_sec, _ = util.nodal2sectional(twall_pts)
+
+                V_pts = frustum.RectangularFrustumShellVol(a_in_pts[:-1], b_in_pts[:-1], a_in_pts[1:], b_in_pts[1:], twall_sec, H)
                 cg_pts = frustum.RectangularFrustumCG(a_in_pts[:-1], b_in_pts[:-1], a_in_pts[1:], b_in_pts[1:], H) + zpts[:-1]
                 z_cg[k] = np.dot(cg_pts, V_pts) / V_pts.sum()
 
@@ -2416,6 +2418,9 @@ class RectangularMemberHydro(om.ExplicitComponent):
         z_under = np.interp(s_under, s_full, z_full)
         a_under = np.interp(s_under, s_full, a)
         b_under = np.interp(s_under, s_full, b)
+        ARx_under = np.interp(s_under, s_full, ARx)
+        ARy_under = np.interp(s_under, s_full, ARy)
+
         if waterline:
             a_waterline = a_under[-1]
             b_waterline = b_under[-1]
@@ -2447,8 +2452,8 @@ class RectangularMemberHydro(om.ExplicitComponent):
         temp = np.linspace(z_under[0], z_under[-1], 200)
         a_under = np.interp(temp, z_under, a_under)
         b_under = np.interp(temp, z_under, b_under)
-        ARx_under = np.interp(temp, z_under, ARx)
-        ARy_under = np.interp(temp, z_under, ARy)
+        ARx_under = np.interp(temp, z_under, ARx_under)
+        ARy_under = np.interp(temp, z_under, ARy_under)
         z_under = temp
         dz_under = np.diff(z_under)
         m_a = np.zeros(6)
