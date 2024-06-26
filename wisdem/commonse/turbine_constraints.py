@@ -1,10 +1,10 @@
 import numpy as np
 import openmdao.api as om
 
-from wisdem.commonse import NFREQ
+from wisdem.commonse.csystem import DirectionVector
+import wisdem.commonse.utilities as util
 
-from .csystem import DirectionVector
-from .utilities import interp_with_deriv
+
 
 
 class TowerModes(om.ExplicitComponent):
@@ -170,7 +170,7 @@ class TipDeflectionConstraint(om.ExplicitComponent):
             )
             r_interp = 0.0
         else:
-            d_interp, ddinterp_dzinterp, ddinterp_dtowerz, ddinterp_dtowerd = interp_with_deriv(
+            d_interp, ddinterp_dzinterp, ddinterp_dtowerz, ddinterp_dtowerd = util.interp_with_deriv(
                 z_interp, z_tower, d_tower
             )
             r_interp = 0.5 * d_interp
