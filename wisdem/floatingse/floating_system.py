@@ -176,13 +176,13 @@ class PlatformFrame(om.ExplicitComponent):
         # Find forces on nodes
         Fnode = np.zeros((nnode, 3))
         for k in range(n_member):
-            icb = int(inputs[f"member{k}:idx_cb"])
+            icb = int(inputs[f"member{k}:idx_cb"][0])
             iglob = self.node_mem2glob[(k, icb)]
-            Fnode[iglob, 2] += inputs[f"member{k}:buoyancy_force"]
+            Fnode[iglob, 2] += inputs[f"member{k}:buoyancy_force"][0]
 
         # Get transition piece inertial properties
         itrans_platform = util.closest_node(node_platform, inputs["transition_node"])
-        m_trans = float(inputs["transition_piece_mass"])
+        m_trans = float(inputs["transition_piece_mass"][0])
         r_trans = Rnode[itrans_platform]
         I_trans = m_trans * r_trans**2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
         outputs["transition_piece_I"] = I_trans
@@ -271,7 +271,7 @@ class PlatformFrame(om.ExplicitComponent):
             Rwatery = inputs[f"member{k}:waterline_centroid"][0] - centroid[0]
             Iwaterx += inputs[f"member{k}:Iwaterx"] + Awater_k * Rwaterx**2
             Iwatery += inputs[f"member{k}:Iwatery"] + Awater_k * Rwatery**2
-            variable_capacity[k] = inputs[f"member{k}:variable_ballast_capacity"]
+            variable_capacity[k] = inputs[f"member{k}:variable_ballast_capacity"][0]
 
             # Center of mass / buoyancy tallies
             cg_plat += imass * inputs[f"member{k}:center_of_mass"]

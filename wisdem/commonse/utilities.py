@@ -5,9 +5,8 @@ Created by Andrew Ning on 2013-05-31.
 Copyright (c) NREL. All rights reserved.
 """
 
-from __future__ import print_function
-
-import copy
+import logging
+logger = logging.getLogger("wisdem/weis")
 
 import numpy as np
 from scipy.linalg import solve_banded
@@ -174,7 +173,7 @@ def get_xyz_mode_shapes(
         def record_used_freqs(polyidx, i, used_freq_idx):
             directions = ["x", "y", "z"]
             if polyidx in used_freq_idx and i < 3:
-                print(
+                logger.debug(
                     f"WARNING: Frequency index {polyidx} has been used again for i={i} in the {directions[i]}-direction"
                 )
             used_freq_idx.append(polyidx)

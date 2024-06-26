@@ -98,7 +98,7 @@ def winding_factor(Sin, b, c, p, m):
 
     R = S if S % 2 == 0 else S + 1
 
-    windings_df = (pd.DataFrame(index=Seq_f.index, columns=Seq_f.columns[1:R])).fillna(0)
+    windings_df = pd.DataFrame(index=Seq_f.index, columns=Seq_f.columns[1:R], data=np.zeros((len(Seq_f), R-1)))
     windings_idx = list(windings_df.loc[0])
     windings_arrange = list(windings_df.loc[1])
 

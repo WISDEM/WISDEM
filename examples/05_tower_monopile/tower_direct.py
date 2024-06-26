@@ -51,6 +51,7 @@ modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["shear"] = True
 modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["geom"] = True
 modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["tol"] = 1e-9
 modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["modal_method"] = 1
+modeling_options["WISDEM"]["TowerSE"]["rank_and_file"] = True
 
 modeling_options["WISDEM"]["TowerSE"]["n_height"] = n_control_points
 modeling_options["WISDEM"]["TowerSE"]["n_layers"] = 1
