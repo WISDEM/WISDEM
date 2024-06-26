@@ -36,6 +36,7 @@ The ``merit_figure`` of the study is LCOE. While LCOE is not always the right me
     :end-before: # constraints
 
 The field ``constraints`` lists several constraints, the ones marked with ``flag: True`` are active. The active ones limit 
+
 - maximum strains along the length of the spar caps
 - ultimate blade tip deflection not violating minimum tower clearance, with a standard safety factor of 1.35 * 1.05 = 1.4175
 - minimum margin to stall of 5 degrees (0.087 rad)
@@ -69,6 +70,7 @@ In this example we setup an optimization problem to redesign a floating spar. Th
     :end-before: # figure of merit
 
 In this optimization problem, we set the optimizer to minimize the difference between certain outputs and their target values. WISDEM allows to do that by setting ``inverse_design`` as the ``merit_figure`` and then by setting a user-defined list of outputs under ``inverse_design``. In this example, these outputs are:
+
 - the mass of the platform hull
 - the mass of the mooring system
 - the location of the center of mass of the floating spar
