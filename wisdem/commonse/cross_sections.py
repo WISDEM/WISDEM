@@ -294,49 +294,104 @@ class Rectangle(CrossSectionBase):
 
     @property
     def Asx(self):  # Shear Area for rectangle cross-section
-        if np.minimum(self.a, self.b)>2*self.t:
-            if self.a > self.b:
-                return self.Area / (
-                    0.93498
-                    - 1.28084 * (self.t / self.b)
-                    + 1.36441 * (self.b / self.a)
-                    + 0.00295 * (self.a / self.b) ** 2
-                    + 0.25797 * (self.t * self.a / self.b**2)
-                )
+        try:
+            # sectional properties are single values
+            if np.minimum(self.a, self.b)>2*self.t:
+                if self.a > self.b:
+                    return self.Area / (
+                        0.93498
+                        - 1.28084 * (self.t / self.b)
+                        + 1.36441 * (self.b / self.a)
+                        + 0.00295 * (self.a / self.b) ** 2
+                        + 0.25797 * (self.t * self.a / self.b**2)
+                    )
+                else:
+                    return self.Area / (
+                        1.63544
+                        - 8.34935 * (self.t / self.a)
+                        + 0.60125 * (self.b / self.a)
+                        + 0.41403 * (self.b / self.a) ** 2
+                        + 4.95373 * (self.t * self.b / self.a**2)
+                    )
             else:
-                return self.Area / (
-                    1.63544
-                    - 8.34935 * (self.t / self.a)
-                    + 0.60125 * (self.b / self.a)
-                    + 0.41403 * (self.b / self.a) ** 2
-                    + 4.95373 * (self.t * self.b / self.a**2)
-                )
-        else:
-            # Asx = Asy = Ax (5+5v)/(6+5v), v is poisson ratio
-            # This assumes an poisson ratio of 0.3, be careful of using this
-            return self.Area*(5+5*0.3)/(6+5*0.3)
+                # Asx = Asy = Ax (5+5v)/(6+5v), v is poisson ratio
+                # This assumes an poisson ratio of 0.3, be careful of using this
+                return self.Area*(5+5*0.3)/(6+5*0.3)
+        except:
+            # sectional properties are arrays
+            Shear_area_x = np.zeros(len(self.a))
+            for i in range(len(self.a)):
+                if np.minimum(self.a[i], self.b[i])>2*self.t[i]:
+                    if self.a[i] > self.b[i]:
+                        Shear_area_x[i] =  self.Area[i] / (
+                            0.93498
+                            - 1.28084 * (self.t[i] / self.b[i])
+                            + 1.36441 * (self.b[i] / self.a[i])
+                            + 0.00295 * (self.a[i] / self.b[i]) ** 2
+                            + 0.25797 * (self.t[i] * self.a[i] / self.b[i]**2)
+                        )
+                    else:
+                        Shear_area_x[i] =  self.Area[i] / (
+                                1.63544
+                                - 8.34935 * (self.t[i] / self.a[i])
+                                + 0.60125 * (self.b[i] / self.a[i])
+                                + 0.41403 * (self.b[i] / self.a[i]) ** 2
+                                + 4.95373 * (self.t[i] * self.b[i] / self.a[i]**2)
+                            )
+                else:
+                    # Asx = Asy = Ax (5+5v)/(6+5v), v is poisson ratio
+                    # This assumes an poisson ratio of 0.3, be careful of using this
+                    Shear_area_x[i] =  self.Area*(5+5*0.3)/(6+5*0.3)
+                    
+            return Shear_area_x
         
     @property
     def Asy(self):  # Shear Area for rectangular cross-section
-        if np.minimum(self.a, self.b)>2*self.t:
-            if self.a > self.b:
-                return self.Area / (
-                    1.63544
-                    - 8.34935 * (self.t / self.b)
-                    + 0.60125 * (self.a / self.b)
-                    + 0.41403 * (self.a / self.b) ** 2
-                    + 4.95373 * (self.t * self.a / self.b**2)
-                )
+        try:
+            # sectional properties are single values
+            if np.minimum(self.a, self.b)>2*self.t:
+                if self.a > self.b:
+                    return self.Area / (
+                        1.63544
+                        - 8.34935 * (self.t / self.b)
+                        + 0.60125 * (self.a / self.b)
+                        + 0.41403 * (self.a / self.b) ** 2
+                        + 4.95373 * (self.t * self.a / self.b**2)
+                    )
+                else:
+                    return self.Area / (
+                        0.93498
+                        - 1.28084 * (self.t / self.a)
+                        + 1.36441 * (self.a / self.b)
+                        + 0.00295 * (self.b / self.a) ** 2
+                        + 0.25797 * (self.t * self.b / self.a**2)
+                    )
             else:
-                return self.Area / (
-                    0.93498
-                    - 1.28084 * (self.t / self.a)
-                    + 1.36441 * (self.a / self.b)
-                    + 0.00295 * (self.b / self.a) ** 2
-                    + 0.25797 * (self.t * self.b / self.a**2)
-                )
-        else:
-            return self.Asx
+                return self.Asx
+        except:
+            # sectional properties are arrays
+            Shear_area_y = np.zeros(len(self.a))
+            for i in range(len(self.a)):
+                if np.minimum(self.a[i], self.b[i])>2*self.t[i]:
+                    if self.a[i] > self.b[i]:
+                        Shear_area_y[i] = self.Area[i] / (
+                            1.63544
+                            - 8.34935 * (self.t[i] / self.b[i])
+                            + 0.60125 * (self.a[i] / self.b[i])
+                            + 0.41403 * (self.a[i] / self.b[i]) ** 2
+                            + 4.95373 * (self.t[i] * self.a[i] / self.b[i]**2)
+                        )
+                    else:
+                        Shear_area_y[i] = self.Area[i] / (
+                            0.93498
+                            + 1.36441 * (self.a[i] / self.b[i])
+                            + 0.00295 * (self.b[i] / self.a[i]) ** 2
+                            + 0.25797 * (self.t[i] * self.b[i] / self.a[i]**2)
+                        )
+                else:
+                    Shear_area_y[i] = self.Asx[i]
+
+            return Shear_area_y
 
     @property
     def BdgMxx(self):  # Bending modulus for rectangular cross-section
