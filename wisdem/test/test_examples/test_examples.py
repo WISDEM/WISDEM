@@ -46,6 +46,7 @@ all_scripts = [
     "10_ccblade/example",
     "10_ccblade/gradients",
     "10_ccblade/precurve",
+    "11_user_custom/user_custom_opt",
     "12_pyframe3dd/exB",
     "13_design_of_experiments/doe_driver",
     "14_overridden_values/driver",

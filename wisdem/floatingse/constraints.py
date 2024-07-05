@@ -26,7 +26,8 @@ class FloatingConstraints(om.ExplicitComponent):
             self.add_input(f"member{k}:nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
             self.add_input(f"member{k}:constr_ballast_capacity", np.zeros(n_ball))
             tot_ball += n_ball
-        self.add_input("platform_Iwater", 0.0, units="m**4")
+        self.add_input("platform_Iwaterx", 0.0, units="m**4")
+        self.add_input("platform_Iwatery", 0.0, units="m**4")
         self.add_input("platform_displacement", 0.0, units="m**3")
         self.add_input("platform_center_of_buoyancy", np.zeros(3), units="m")
         self.add_input("system_center_of_mass", np.zeros(3), units="m")
@@ -44,17 +45,18 @@ class FloatingConstraints(om.ExplicitComponent):
         self.add_output("constr_fairlead_wave", 0.0)
         self.add_output("constr_mooring_surge", 0.0)
         self.add_output("constr_mooring_heel", 0.0)
-        self.add_output("metacentric_height", 0.0, units="m")
+        self.add_output("metacentric_height_roll", 0.0, units="m")
+        self.add_output("metacentric_height_pitch", 0.0, units="m")
 
     def compute(self, inputs, outputs):
         opt = self.options["modeling_options"]
         n_member = opt["floating"]["members"]["n_members"]
 
         # Unpack inputs
-        Hsig = float(inputs["Hsig_wave"])
-        fairlead = np.abs(float(inputs["fairlead"]))
-        R_fairlead = float(inputs["fairlead_radius"])
-        max_heel = float(inputs["survival_heel"])
+        Hsig = float(inputs["Hsig_wave"][0])
+        fairlead = np.abs(float(inputs["fairlead"][0]))
+        R_fairlead = float(inputs["fairlead_radius"][0])
+        max_heel = float(inputs["survival_heel"][0])
         cg = inputs["system_center_of_mass"]
         gamma = 1.1
 
@@ -117,11 +119,14 @@ class FloatingConstraints(om.ExplicitComponent):
         # Measure static stability:
         # 1. Center of buoyancy should be above CG (difference should be positive)
         # 2. Metacentric height should be positive
-        Iwater_total = inputs["platform_Iwater"]
+        Iwaterx_total = inputs["platform_Iwaterx"]
+        Iwatery_total = inputs["platform_Iwatery"]
         V_platform = inputs["platform_displacement"]
         z_cb = inputs["platform_center_of_buoyancy"][2]
-        buoyancy2metacentre_BM = Iwater_total / V_platform
-        outputs["metacentric_height"] = buoyancy2metacentre_BM - (cg[2] - z_cb)
+        buoyancy2metacentre_BM_roll = Iwaterx_total / V_platform
+        buoyancy2metacentre_BM_pitch = Iwatery_total / V_platform
+        outputs["metacentric_height_roll"] = buoyancy2metacentre_BM_roll - (cg[2] - z_cb)
+        outputs["metacentric_height_pitch"] = buoyancy2metacentre_BM_pitch - (cg[2] - z_cb)
 
         # Mooring strength checks
         F_turb = inputs["turbine_F"].max(axis=1)
@@ -144,7 +149,8 @@ class RigidModes(om.ExplicitComponent):
         self.add_input("system_I", np.zeros(6), units="kg*m**2")
         self.add_input("rho_water", 0.0, units="kg/m**3")
         self.add_input("platform_displacement", 0.0, units="m**3")
-        self.add_input("metacentric_height", 0.0, units="m")
+        self.add_input("metacentric_height_roll", 0.0, units="m")
+        self.add_input("metacentric_height_pitch", 0.0, units="m")
         self.add_input("mooring_stiffness", np.zeros((6, 6)), units="N/m")
 
         self.add_output(
@@ -163,14 +169,15 @@ class RigidModes(om.ExplicitComponent):
         nDOF = 6
 
         # Unpack variables
-        rhoWater = inputs["rho_water"]
-        m_system = inputs["system_mass"]
+        rhoWater = float(inputs["rho_water"][0])
+        m_system = float(inputs["system_mass"][0])
         I_system = inputs["system_I"]
-        z_cg = inputs["system_center_of_mass"][-1]
+        z_cg = float(inputs["system_center_of_mass"][-1])
         A_mat = inputs["platform_added_mass"]
-        V_system = inputs["platform_displacement"]
-        h_metacenter = inputs["metacentric_height"]
-        Awater = inputs["platform_Awater"]
+        V_system = float(inputs["platform_displacement"][0])
+        h_metacentric_roll = float(inputs["metacentric_height_roll"][0])
+        h_metacentric_pitch = float(inputs["metacentric_height_pitch"][0])
+        Awater = float(inputs["platform_Awater"][0])
         K_moor = np.diag(inputs["mooring_stiffness"])
 
         # Compute elements on mass matrix diagonal
@@ -186,7 +193,10 @@ class RigidModes(om.ExplicitComponent):
         # See DNV-RP-H103: Modeling and Analyis of Marine Operations
         K_hydro = np.zeros(nDOF)
         K_hydro[2] = rhoWater * gravity * Awater
-        K_hydro[3:5] = rhoWater * gravity * V_system * h_metacenter
+        # Roll
+        K_hydro[3] = rhoWater * gravity * V_system * h_metacentric_roll
+        # Pitch
+        K_hydro[4] = rhoWater * gravity * V_system * h_metacentric_pitch
         outputs["hydrostatic_stiffness"] = K_hydro
 
         # Now compute all six natural periods at once

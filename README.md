@@ -53,7 +53,10 @@ The installation instructions below use the environment name, "wisdem-env," but 
 1.  Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
 
         conda config --add channels conda-forge
-        conda env create --name wisdem-env -f https://raw.githubusercontent.com/WISDEM/WISDEM/master/environment.yml
+        conda install git
+        git clone https://github.com/WISDEM/WISDEM.git
+        cd WISDEM
+        conda env create --name wisdem-env -f environment.yml
         conda activate wisdem-env
 
 2.  In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer / editable* mode using the instructions here.  If you really just want to use WISDEM as a library and lean on the documentation, you can always do `conda install wisdem` and be done.  Note the differences between Windows and Mac/Linux build systems. For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
@@ -61,13 +64,12 @@ The installation instructions below use the environment name, "wisdem-env," but 
         conda install -y petsc4py mpi4py                 # (Mac / Linux only)
         conda install -y gfortran                        # (Mac only without Homebrew or Macports compilers)
         conda install -y m2w64-toolchain libpython       # (Windows only)
-        git clone https://github.com/WISDEM/WISDEM.git
-        cd WISDEM
         pip install --no-deps -e . -v
 
 
 **NOTE:** To use WISDEM again after installation is complete, you will always need to activate the conda environment first with `conda activate wisdem-env`
 
+For Windows users, we recommend installing `git` and the `m2w64` packages in separate environments as some of the libraries appear to conflict such that WISDEM cannot be successfully built from source.  The `git` package is best installed in the `base` environment.
 
 ## Run Unit Tests
 

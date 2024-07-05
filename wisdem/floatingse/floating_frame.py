@@ -5,6 +5,7 @@ import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.utilization_dnvgl as util_dnvgl
 import wisdem.commonse.utilization_constraints as util_con
+import wisdem.commonse.utilization_eurocode as util_euro
 from wisdem.commonse import NFREQ, gravity
 from wisdem.commonse.cylinder_member import NULL, MEMMAX, MemberLoads, get_nfull
 from wisdem.floatingse.floating_system import RIGID, NELEM_MAX, NNODES_MAX
@@ -54,7 +55,9 @@ class PlatformLoads(om.ExplicitComponent):
             mem_qdyn, _ = util.nodal2sectional(inputs[f"member{k}:qdyn"][:n, :])
 
             # The loads should come in with length n+1
-            n -= 1
+            if n > 0:
+                # Avoid the case that has null starting from first element
+                n -= 1
             if k == 0:
                 elem_Px1 = inputs[f"member{k}:Px"][:n, :]
                 elem_Px2 = inputs[f"member{k}:Px"][1 : (n + 1), :]
@@ -109,7 +112,7 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("platform_Rnode", NULL * np.ones(NNODES_MAX), units="m")
         self.add_input("platform_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
         self.add_input("platform_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
-        self.add_input("platform_elem_D", NULL * np.ones(NELEM_MAX), units="m")
+        # self.add_input("platform_elem_D", NULL * np.ones(NELEM_MAX), units="m") # Not used
         self.add_input("platform_elem_t", NULL * np.ones(NELEM_MAX), units="m")
         self.add_input("platform_elem_L", NULL * np.ones(NELEM_MAX), units="m")
         self.add_input("platform_elem_A", NULL * np.ones(NELEM_MAX), units="m**2")
@@ -121,6 +124,7 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
         self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("platform_elem_TorsC", NULL * np.ones(NELEM_MAX), units="m**3")
 
         self.add_input("platform_elem_Px1", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
         self.add_input("platform_elem_Px2", NULL * np.ones((NELEM_MAX, n_dlc)), units="N/m")
@@ -156,9 +160,9 @@ class FrameAnalysis(om.ExplicitComponent):
         n_attach = opt["mooring"]["n_attach"]
         n_dlc = opt["WISDEM"]["n_dlc"]
 
-        m_trans = float(inputs["transition_piece_mass"])
+        m_trans = float(inputs["transition_piece_mass"][0])
         I_trans = inputs["transition_piece_I"]
-        m_variable = float(inputs["variable_ballast_mass"])
+        m_variable = float(inputs["variable_ballast_mass"][0])
         cg_variable = inputs["variable_center_of_mass"]
         I_variable = inputs["variable_I"]
 
@@ -187,6 +191,7 @@ class FrameAnalysis(om.ExplicitComponent):
         rho = inputs["platform_elem_rho"][:nelem]
         E = inputs["platform_elem_E"][:nelem]
         G = inputs["platform_elem_G"][:nelem]
+        TorsC = inputs["platform_elem_TorsC"][:nelem]
         roll = np.zeros(nelem)
         L = inputs["platform_elem_L"][:nelem]  # np.sqrt(np.sum((nodes[N2, :] - nodes[N1, :]) ** 2, axis=1))
 
@@ -305,7 +310,8 @@ class TowerModal(om.ExplicitComponent):
     ----------
     z_full : numpy array[npts], [m]
         location along cylinder. start at bottom and go to top
-    d_full : numpy array[npts], [m]
+    TODO: not needed?
+    outer_diameter_full : numpy array[npts], [m]
         effective cylinder diameter for section
     t_full : numpy array[npts-1], [m]
         effective shell thickness for section
@@ -344,7 +350,7 @@ class TowerModal(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("n_full")
         self.options.declare("frame3dd_opt")
-        self.options.declare("rank_and_file", default=False)
+        self.options.declare("rank_and_file", default=True)
 
     def setup(self):
         n_full = self.options["n_full"]
@@ -508,13 +514,18 @@ class TowerModal(om.ExplicitComponent):
                 outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
                 outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
                 outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
-        except:
+        except Exception:
             pass
 
 
 class FloatingPost(om.ExplicitComponent):
+    # Perform post structural design checks for the floating platform frame (all members)
+    # Mainly vonMises stress criteria and buckling check
+    # Every member has diameter and side lengths (a and b) variables but circular members have zeros for side-lengths
+    # and rectangular have zeros for diameters.
     def initialize(self):
         self.options.declare("options")
+        self.options.declare("shape")
         self.options.declare("n_dlc")
 
     def setup(self):
@@ -522,6 +533,8 @@ class FloatingPost(om.ExplicitComponent):
 
         self.add_input("platform_elem_L", NULL * np.ones(NELEM_MAX), units="m")
         self.add_input("platform_elem_D", NULL * np.ones(NELEM_MAX), units="m")
+        self.add_input("platform_elem_a", NULL * np.ones(NELEM_MAX), units="m")
+        self.add_input("platform_elem_b", NULL * np.ones(NELEM_MAX), units="m")
         self.add_input("platform_elem_t", NULL * np.ones(NELEM_MAX), units="m")
         self.add_input("platform_elem_A", NULL * np.ones(NELEM_MAX), units="m**2")
         self.add_input("platform_elem_Asx", NULL * np.ones(NELEM_MAX), units="m**2")
@@ -531,6 +544,7 @@ class FloatingPost(om.ExplicitComponent):
         self.add_input("platform_elem_J0", NULL * np.ones(NELEM_MAX), units="kg*m**2")
         self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("platform_elem_TorsC", NULL * np.ones(NELEM_MAX), units="m**3")
         self.add_input("platform_elem_sigma_y", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_qdyn", NULL * np.ones((NELEM_MAX, n_dlc)), units="Pa")
 
@@ -550,23 +564,31 @@ class FloatingPost(om.ExplicitComponent):
         # Unpack some variables
         opt = self.options["options"]
         n_dlc = self.options["n_dlc"]
+        shape = self.options["shape"]
         gamma_f = opt["gamma_f"]
         gamma_m = opt["gamma_m"]
         gamma_n = opt["gamma_n"]
         gamma_b = opt["gamma_b"]
 
         d = inputs["platform_elem_D"]
+        a = inputs["platform_elem_a"]
+        b = inputs["platform_elem_b"]
         nelem = np.where(d == NULL)[0][0]
         d = d[:nelem]
+        a = a[:nelem]
+        b = b[:nelem]
         t = inputs["platform_elem_t"][:nelem]
         h = inputs["platform_elem_L"][:nelem]
         Az = inputs["platform_elem_A"][:nelem]
         Asx = inputs["platform_elem_Asx"][:nelem]
+        Asy = inputs["platform_elem_Asy"][:nelem]
         Jz = inputs["platform_elem_J0"][:nelem]
+        Ixx = inputs["platform_elem_Ixx"][:nelem]
         Iyy = inputs["platform_elem_Iyy"][:nelem]
         sigy = inputs["platform_elem_sigma_y"][:nelem]
         E = inputs["platform_elem_E"][:nelem]
         G = inputs["platform_elem_G"][:nelem]
+        TorsC = inputs["platform_elem_TorsC"][:nelem]
         qdyn = inputs["platform_elem_qdyn"][:nelem, :]
         r = 0.5 * d
 
@@ -588,24 +610,53 @@ class FloatingPost(om.ExplicitComponent):
 
         # See http://svn.code.sourceforge.net/p/frame3dd/code/trunk/doc/Frame3DD-manual.html#structuralmodeling
         # print(Fz.shape, Az.shape, M.shape, r.shape, Iyy.shape)
-        axial_stress = Fz / Az[:, np.newaxis] + M * (r / Iyy)[:, np.newaxis]
-        shear_stress = np.abs(Mzz) / (Jz * r)[:, np.newaxis] + V / Asx[:, np.newaxis]
-        hoop_stress = -qdyn * ((r - 0.5 * t) / t)[:, np.newaxis]  # util_con.hoopStress(d, t, qdyn)
-        outputs["constr_platform_stress"][:nelem, :] = util_con.vonMisesStressUtilization(
-            axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigy.reshape((-1, 1))
-        )
+                # Change to element-wise calculation
+        # Get indices for circular member
+        circ_idx = np.nonzero(d)[0]
+        rect_idx = np.nonzero(a)[0]
 
-        # Use DNV-GL CP202 Method
-        check = util_dnvgl.CylinderBuckling(h, d, t, E=E, G=G,
-                                            sigma_y=sigy, gamma=gamma_f * gamma_b,
-                                            A=Az, I=Iyy)
-        for k in range(n_dlc):
-            results = check.run_buckling_checks(
-                Fz[k, :], M[k, :], axial_stress[k, :], hoop_stress[k, :], shear_stress[k, :]
+        if circ_idx.any():
+            # First do caculation for circular members
+            circ_axial_stress = Fz[circ_idx] / Az[circ_idx].reshape(-1,1) + M[circ_idx] * (r[circ_idx] / Iyy[circ_idx]).reshape(-1,1)
+            circ_shear_stress = np.abs(Mzz[circ_idx]) / (Jz[circ_idx] * r[circ_idx]).reshape(-1,1) + V[circ_idx] / Asx[circ_idx].reshape(-1,1)
+            hoop_stress = -qdyn[circ_idx] * ((r[circ_idx] - 0.5 * t[circ_idx]) / t[circ_idx]).reshape(-1,1)  # util_con.hoopStress(d, t, qdyn)
+            outputs["constr_platform_stress"][[circ_idx], :] = util_con.TubevonMisesStressUtilization(
+                circ_axial_stress, hoop_stress, circ_shear_stress, gamma_f * gamma_m * gamma_n, sigy[circ_idx].reshape((-1, 1))
             )
 
-            outputs["constr_platform_shell_buckling"][:nelem, k] = results["Shell"]
-            outputs["constr_platform_global_buckling"][:nelem, k] = results["Global"]
+            # Use DNV-GL CP202 Method
+            circ_check = util_dnvgl.CylinderBuckling(h[circ_idx], d[circ_idx], t[circ_idx], E=E[circ_idx], G=G[circ_idx],
+                                            sigma_y=sigy[circ_idx], gamma=gamma_f * gamma_b,
+                                            A=Az[circ_idx], I=Iyy[circ_idx])
+            for k in range(n_dlc):
+                results = circ_check.run_buckling_checks(
+                    Fz[k, :], M[k, :], circ_axial_stress[k, :], hoop_stress[k, :], circ_shear_stress[k, :]
+                )
+
+                outputs["constr_platform_shell_buckling"][[circ_idx], k] = results["Shell"]
+                outputs["constr_platform_global_buckling"][[circ_idx], k] = results["Global"]
+
+        # Do calculation for rectangular members
+        # Assuming a linear summation of bending on axial stress
+        if rect_idx.any():
+            rect_axial_stress = Fz[rect_idx] / Az[rect_idx, np.newaxis] + np.abs(Mxx[rect_idx]) * (a[rect_idx] / Ixx[rect_idx])[:, np.newaxis] + np.abs(Myy[rect_idx]) * (b[rect_idx] / Iyy[rect_idx])[:, np.newaxis]
+            rect_shear_stress_x = np.abs(Mzz[rect_idx]) / TorsC[rect_idx][:, np.newaxis] + Vx[rect_idx] / Asx[rect_idx, np.newaxis]
+            rect_shear_stress_y = np.abs(Mzz[rect_idx]) / TorsC[rect_idx][:, np.newaxis] + Vy[rect_idx] / Asy[rect_idx, np.newaxis]
+            rect_shear_stress = np.sqrt(rect_shear_stress_x**2+rect_shear_stress_y**2)
+            # Pick the maximum from sigma_y and sigma_z as the transverse sigma
+            rect_transverse_stress = np.minimum(-qdyn[rect_idx,0]*a[rect_idx]/2*t[rect_idx], -qdyn[rect_idx,0]*b[rect_idx]/2*t[rect_idx]).reshape(-1,1)
+            outputs["constr_platform_stress"][rect_idx, :] = util_euro.YieldCriterionEurocode(
+                rect_axial_stress, rect_transverse_stress, rect_shear_stress, gamma_f * gamma_m * gamma_n, sigy[rect_idx].reshape((-1, 1))
+            )
+
+            # Use Eurocode Method
+            rect_check = util_euro.memberBuckling(a[rect_idx], b[rect_idx], h[rect_idx], Az[rect_idx], Ixx[rect_idx], Iyy[rect_idx], Fz[rect_idx,0],
+                                                Mxx[rect_idx,0], Myy[rect_idx,0], I_T=TorsC[rect_idx], E=E[rect_idx], G=G[rect_idx], sigma_y=sigy[rect_idx], gamma_m=gamma_m)
+            for k in range(n_dlc):
+                results = rect_check.run_buckling_checks(
+                    Fz[k, :], Mxx[k, :], Myy[k, :])
+                # No shell buckling for rectangular members
+                outputs["constr_platform_global_buckling"][[rect_idx], k] = results        
 
 
 class FloatingFrame(om.Group):
@@ -621,12 +672,10 @@ class FloatingFrame(om.Group):
 
         mem_vars = ["Px", "Py", "Pz", "qdyn"]
 
-        mem_prom = [
+        mem_prom_base = [
             "wind_reference_height",
             "z0",
             "shearExp",
-            "cd_usr",
-            "cm",
             "rho_air",
             "rho_water",
             "mu_air",
@@ -640,6 +689,7 @@ class FloatingFrame(om.Group):
             "yaw",
         ]
 
+
         U_prom = []
         for iLC in range(nLC):
             lc = "" if nLC == 1 else str(iLC + 1)
@@ -647,6 +697,11 @@ class FloatingFrame(om.Group):
 
         for k in range(n_member):
             n_full = get_nfull(opt["floating"]["members"]["n_height"][k], nref=2)
+            shape = opt["floating"]["members"]["outer_shape"][k]
+            if shape == "circular":
+                mem_prom = mem_prom_base + [("cd_usr", f"memload{k}.cd_usr"), ("ca_usr", f"memload{k}.ca_usr")]
+            elif shape == "rectangular":
+                mem_prom = mem_prom_base + [("cd_usr", f"memload{k}.cd_usr"), ("cdy_usr", f"memload{k}.cdy_usr"), ("ca_usr", f"memload{k}.ca_usr"), ("cay_usr", f"memload{k}.cay_usr")]
             self.add_subsystem(
                 f"memload{k}",
                 MemberLoads(
@@ -654,6 +709,7 @@ class FloatingFrame(om.Group):
                     n_lc=nLC,
                     hydro=True,
                     memmax=True,
+                    member_shape=shape,
                 ),
                 promotes=mem_prom + U_prom + [("joint1", f"member{k}:joint1"), ("joint2", f"member{k}:joint2")],
             )
@@ -672,7 +728,7 @@ class FloatingFrame(om.Group):
                 promotes=["*"],
             )
 
-        self.add_subsystem("post", FloatingPost(options=opt["WISDEM"]["FloatingSE"], n_dlc=nLC), promotes=["*"])
+        self.add_subsystem("post", FloatingPost(options=opt["WISDEM"]["FloatingSE"], shape = opt["floating"]["members"]["outer_shape"], n_dlc=nLC), promotes=["*"])
 
         for k in range(n_member):
             for var in mem_vars:

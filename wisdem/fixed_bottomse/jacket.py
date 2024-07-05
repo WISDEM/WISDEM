@@ -625,7 +625,7 @@ class JacketPost(om.ExplicitComponent):
         axial_stress = Fz / Az[:, np.newaxis] + M * (r / Iyy)[:, np.newaxis]
         shear_stress = np.abs(Mzz) / (Jz * r)[:, np.newaxis] + V / Asx[:, np.newaxis]
         hoop_stress = -qdyn * ((r - 0.5 * t) / t)[:, np.newaxis]  # util_con.hoopStress(d, t, qdyn)
-        outputs["constr_stress"] = util_con.vonMisesStressUtilization(
+        outputs["constr_stress"] = util_con.TubevonMisesStressUtilization(
             axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigy.reshape((-1, 1))
         )[:-n_legs]
 
@@ -761,7 +761,7 @@ class JacketCost(om.ExplicitComponent):
 
 
 # Assemble the system together in an OpenMDAO Group
-class JacketSE(om.Group):
+class JacketSEProp(om.Group):
     """
     Group to contain all subsystems needed for jacket analysis and design.
     Can be used as a standalone or within the larger WISDEM stack.
@@ -775,6 +775,37 @@ class JacketSE(om.Group):
 
         self.add_subsystem("pre", PreDiscretization(), promotes=["*"])
         self.add_subsystem("nodes", ComputeJacketNodes(modeling_options=modeling_options), promotes=["*"])
+        self.add_subsystem("cost", JacketCost(modeling_options=modeling_options), promotes=["*"])
+
+
+class JacketSEPerf(om.Group):
+    """
+    Group to contain all subsystems needed for jacket analysis and design.
+    Can be used as a standalone or within the larger WISDEM stack.
+    """
+
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        modeling_options = self.options["modeling_options"]
+
         self.add_subsystem("frame3dd", ComputeFrame3DD(modeling_options=modeling_options), promotes=["*"])
         self.add_subsystem("post", JacketPost(modeling_options=modeling_options), promotes=["*"])
-        self.add_subsystem("cost", JacketCost(modeling_options=modeling_options), promotes=["*"])
+
+
+class JacketSE(om.Group):
+    """
+    Group to contain all subsystems needed for jacket analysis and design.
+    Can be used as a standalone or within the larger WISDEM stack.
+    """
+
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        modeling_options = self.options["modeling_options"]
+
+        self.add_subsystem("prop", JacketSEProp(modeling_options=modeling_options), promotes=["*"])
+        self.add_subsystem("perf", JacketSEPerf(modeling_options=modeling_options), promotes=["*"])
+

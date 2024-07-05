@@ -78,18 +78,19 @@ class PoseOptimization(object):
                 - blade_opt["aero_shape"]["af_positions"]["af_start"]
                 - 1
             )
-        if len(blade_opt["structure"])>0:
-            for i in range(len(blade_opt["structure"])):
-                if blade_opt["structure"][i]["index_end"] > blade_opt["structure"][i]["n_opt"]:
-                    raise Exception(
-                        "Check the analysis options yaml, the index_end of a blade layer is higher than the number of DVs n_opt"
+        if "structure" in blade_opt:
+            if len(blade_opt["structure"])>0:
+                for i in range(len(blade_opt["structure"])):
+                    if blade_opt["structure"][i]["index_end"] > blade_opt["structure"][i]["n_opt"]:
+                        raise Exception(
+                            "Check the analysis options yaml, the index_end of a blade layer is higher than the number of DVs n_opt"
+                        )
+                    elif blade_opt["structure"][i]["index_end"] == 0:
+                        blade_opt["structure"][i]["index_end"] = blade_opt["structure"][i]["n_opt"]
+                    n_DV += (
+                        blade_opt["structure"][i]["index_end"]
+                        - blade_opt["structure"][i]["index_start"]
                     )
-                elif blade_opt["structure"][i]["index_end"] == 0:
-                    blade_opt["structure"][i]["index_end"] = blade_opt["structure"][i]["n_opt"]
-                n_DV += (
-                    blade_opt["structure"][i]["index_end"]
-                    - blade_opt["structure"][i]["index_start"]
-                )
         if self.opt["design_variables"]["control"]["tsr"]["flag"]:
             n_DV += 1
 
@@ -889,6 +890,17 @@ class PoseOptimization(object):
                         f"floating.memgrp{idx}.outer_diameter_in",
                         lower=kgrp["diameter"]["lower_bound"],
                         upper=kgrp["diameter"]["upper_bound"],
+                    )
+                if "side_length_a" in kgrp:
+                    wt_opt.model.add_design_var(
+                        f"floating.memgrp{idx}.side_length_a_in",
+                        lower=kgrp["side_length_a"]["lower_bound"],
+                        upper=kgrp["side_length_a"]["upper_bound"],
+                    )
+                    wt_opt.model.add_design_var(
+                        f"floating.memgrp{idx}.side_length_b_in",
+                        lower=kgrp["side_length_b"]["lower_bound"],
+                        upper=kgrp["side_length_b"]["upper_bound"],
                     )
                 if "thickness" in kgrp:
                     wt_opt.model.add_design_var(
