@@ -69,7 +69,7 @@ The installation instructions below use the environment name, "wisdem-env," but 
 
 **NOTE:** To use WISDEM again after installation is complete, you will always need to activate the conda environment first with `conda activate wisdem-env`
 
-For Windows users, we recommend installing `git` and the `m264` packages in separate environments as some of the libraries appear to conflict such that WISDEM cannot be successfully built from source.  The `git` package is best installed in the `base` environment.
+For Windows users, we recommend installing `git` and the `m2w64` packages in separate environments as some of the libraries appear to conflict such that WISDEM cannot be successfully built from source.  The `git` package is best installed in the `base` environment.
 
 ## Run Unit Tests
 
