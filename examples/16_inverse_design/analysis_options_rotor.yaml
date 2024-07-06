@@ -2,6 +2,7 @@ general:
     folder_output: inverse
     fname_output: BAR_USC_inverse
 
+# design variables
 design_variables:
     blade:
         aero_shape:
@@ -63,8 +64,10 @@ design_variables:
             #   index_start: 3         # Lock the first DV from blade root
             #   index_end: 8           # The last DV at blade tip is locked
 
+# figure of merit
 merit_figure: LCOE
 
+# constraints
 constraints:
     blade:
         strains_spar_cap_ss:
@@ -122,6 +125,7 @@ constraints:
             target: 35000.
             acceptable_error: 500.
 
+# driver
 driver:
     optimization:
         flag: True         # Flag to enable optimization

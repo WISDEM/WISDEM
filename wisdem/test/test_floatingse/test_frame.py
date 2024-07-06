@@ -146,20 +146,20 @@ class TestFrame(unittest.TestCase):
             inputs[f"member{k}:section_G"][:1] = 4 * k * np.ones(1) + 1
             inputs[f"member{k}:section_TorsC"][:1] = 4 * k * np.ones(1) + 1
             inputs[f"member{k}:section_sigma_y"][:1] = 5 * k * np.ones(1) + 1
-            inputs[f"member{k}:idx_cb"] = 0
-            inputs[f"member{k}:buoyancy_force"] = 1e2
-            inputs[f"member{k}:displacement"] = 1e1
+            inputs[f"member{k}:idx_cb"] = np.array([ 0 ], dtype=np.int_)
+            inputs[f"member{k}:buoyancy_force"] = np.array([ 1e2 ])
+            inputs[f"member{k}:displacement"] = np.array([ 1e1 ])
             inputs[f"member{k}:center_of_buoyancy"] = inputs[f"member{k}:nodes_xyz"][:2, :].mean(axis=0)
             inputs[f"member{k}:center_of_mass"] = inputs[f"member{k}:nodes_xyz"][:2, :].mean(axis=0)
-            inputs[f"member{k}:total_mass"] = 1e3
-            inputs[f"member{k}:total_cost"] = 2e3
+            inputs[f"member{k}:total_mass"] = np.array([ 1e3 ])
+            inputs[f"member{k}:total_cost"] = np.array([ 2e3 ])
             inputs[f"member{k}:I_total"] = 1e2 + np.arange(6)
-            inputs[f"member{k}:Awater"] = 5.0
-            inputs[f"member{k}:Iwaterx"] = 15.0
-            inputs[f"member{k}:Iwatery"] = 15.0
+            inputs[f"member{k}:Awater"] = np.array([ 5.0 ])
+            inputs[f"member{k}:Iwaterx"] = np.array([ 15.0 ])
+            inputs[f"member{k}:Iwatery"] = np.array([ 15.0 ])
             inputs[f"member{k}:added_mass"] = np.arange(6)
-            inputs[f"member{k}:ballast_mass"] = 1e2
-            inputs[f"member{k}:variable_ballast_capacity"] = 10 + k
+            inputs[f"member{k}:ballast_mass"] = np.array([ 1e2 ])
+            inputs[f"member{k}:variable_ballast_capacity"] = np.array([ 10 + k ])
             inputs[f"member{k}:variable_ballast_spts"] = np.linspace(0, 0.5, 10)
             inputs[f"member{k}:variable_ballast_Vpts"] = np.arange(10)
             inputs[f"member{k}:waterline_centroid"] = inputs[f"member{k}:nodes_xyz"][:2, :2].mean(axis=0)
@@ -175,12 +175,12 @@ class TestFrame(unittest.TestCase):
         inputs["mooring_fairlead_joints"] = np.array([[0.0, 0.0, 0.0], [0.5, 1.0, 0.0], [1.0, 0.0, 0.0]])
         inputs["mooring_stiffness"] = 5 * np.eye(6)
         inputs["transition_node"] = inputs["member0:nodes_xyz"][1, :]
-        inputs["turbine_mass"] = 1e4
+        inputs["turbine_mass"] = np.array([ 1e4 ])
         inputs["turbine_cg"] = np.array([0, 0, 50])
         inputs["turbine_I"] = 1e6 * np.ones(6)
-        inputs["transition_piece_mass"] = 1e3
-        inputs["transition_piece_cost"] = 3e3
-        inputs["rho_water"] = 1e3
+        inputs["transition_piece_mass"] = np.array([ 1e3 ])
+        inputs["transition_piece_cost"] = np.array([ 3e3 ])
+        inputs["rho_water"] = np.array([ 1e3 ])
 
         inputs["turbine_F"] = 1e3 * np.ones((3, 1))
         inputs["turbine_M"] = 1e4 * np.ones((3, 1))

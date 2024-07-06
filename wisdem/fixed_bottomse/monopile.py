@@ -718,7 +718,7 @@ class MonopileFrame(om.ExplicitComponent):
         outputs["monopile_tower_Mzz"] = Mzz
 
 
-class MonopileSE(om.Group):
+class MonopileSEProp(om.Group):
     """
     This is the main MonopileSE group that performs analysis of the monopile.
 
@@ -730,10 +730,7 @@ class MonopileSE(om.Group):
     def setup(self):
         mod_opt = self.options["modeling_options"]["WISDEM"]["FixedBottomSE"]
         n_mat = self.options["modeling_options"]["materials"]["n_mat"]
-        nLC = self.options["modeling_options"]["WISDEM"]["n_dlc"]
-        wind = mod_opt["wind"]  # not yet supported
-        frame3dd_opt = mod_opt["frame3dd"]
-        rankfile_opt = mod_opt["rank_and_file"]
+
         if "n_height" in mod_opt:
             n_height = mod_opt["n_height"]
         else:
@@ -842,6 +839,30 @@ class MonopileSE(om.Group):
                 promotes=[("G", "G_soil"), ("nu", "nu_soil"), ("depth", "suctionpile_depth")],
             )
             self.connect("outer_diameter_full", "soil.d0", src_indices=[0])
+
+
+
+class MonopileSEPerf(om.Group):
+    """
+    This is the main MonopileSE group that performs analysis of the monopile.
+
+    """
+
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        mod_opt = self.options["modeling_options"]["WISDEM"]["FixedBottomSE"]
+        nLC = self.options["modeling_options"]["WISDEM"]["n_dlc"]
+        wind = mod_opt["wind"]  # not yet supported
+        frame3dd_opt = mod_opt["frame3dd"]
+        rankfile_opt = mod_opt["rank_and_file"]
+        if "n_height" in mod_opt:
+            n_height = mod_opt["n_height"]
+        else:
+            n_height_mono = mod_opt["n_height_monopile"]
+            n_height = mod_opt["n_height"] = n_height_mono
+        n_full = mem.get_nfull(n_height, nref=mod_opt["n_refine"])
 
         self.add_subsystem("loads", mem.MemberLoads(n_full=n_full, n_lc=nLC, wind=wind, hydro=True), promotes=["*"])
 
@@ -955,10 +976,6 @@ class MonopileSE(om.Group):
             ],
         )
 
-        if mod_opt["soil_springs"]:
-            self.connect("soil.z_k", "monopile.z_soil")
-            self.connect("soil.k", "monopile.k_soil")
-
         self.connect("monopile.monopile_Fz", "post.cylinder_Fz")
         self.connect("monopile.monopile_Vx", "post.cylinder_Vx")
         self.connect("monopile.monopile_Vy", "post.cylinder_Vy")
@@ -994,3 +1011,25 @@ class MonopileSE(om.Group):
             self.connect("monopile.monopile_tower_Mxx", "post_monopile_tower.cylinder_Mxx")
             self.connect("monopile.monopile_tower_Myy", "post_monopile_tower.cylinder_Myy")
             self.connect("monopile.monopile_tower_Mzz", "post_monopile_tower.cylinder_Mzz")
+
+
+
+class MonopileSE(om.Group):
+    """
+    This is the main MonopileSE group that performs analysis of the monopile.
+
+    """
+
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        mod_opt = self.options["modeling_options"]["WISDEM"]["FixedBottomSE"]
+
+        self.add_subsystem("prop", MonopileSEProp(modeling_options=self.options["modeling_options"]), promotes=["*"])
+        self.add_subsystem("perf", MonopileSEPerf(modeling_options=self.options["modeling_options"]), promotes=["*"])
+
+        if mod_opt["soil_springs"]:
+            self.connect("soil.z_k", "monopile.z_soil")
+            self.connect("soil.k", "monopile.k_soil")
+            
