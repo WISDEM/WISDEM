@@ -148,7 +148,7 @@ class HubShell(om.ExplicitComponent):
         main_flange_mass = main_flange_vol * inputs["rho"]
 
         # Sum masses flange and hub
-        hub_mass_user = float(inputs["hub_mass_user"][0])
+        hub_mass_user = float(inputs["hub_shell_mass_user"][0])
         hub_mass = main_flange_mass + sph_hub_mass if hub_mass_user == 0.0 else hub_mass_user
 
         # Compute cost
@@ -552,6 +552,7 @@ class Hub_System(om.Group):
                 "hub_stress_concentration",
                 "max_torque",
                 "constr_hub_diameter",
+                "hub_shell_mass_user",
             ],
         )
         self.add_subsystem(
@@ -561,6 +562,7 @@ class Hub_System(om.Group):
                 "n_blades",
                 "hub_diameter",
                 "spinner_mass",
+                "spinner_mass_user",
                 "spinner_cost",
                 "spinner_cm",
                 "spinner_I",
@@ -583,6 +585,7 @@ class Hub_System(om.Group):
                 "pitch_I",
                 "blade_mass",
                 "pitch_system_scaling_factor",
+                "pitch_system_mass_user",
             ],
         )
         self.add_subsystem(

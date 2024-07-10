@@ -1259,6 +1259,9 @@ properties:
                 required:
                     - outer_shape_bem
                     - internal_structure_2d_fem
+                optional:
+                    - tower_mass_user
+                    - elastic_properties_mb
                 properties:
                     outer_shape_bem:
                         type: object
@@ -1266,8 +1269,6 @@ properties:
                             - reference_axis
                             - outer_diameter
                             - drag_coefficient
-                        optional:
-                            - tower_mass_user                            
                         properties:
                             reference_axis:
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
@@ -1281,12 +1282,6 @@ properties:
                                         $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
                                         $ref: "#/definitions/distributed_data/length"
-                            tower_mass_user:
-                                type: number
-                                default: 0.0
-                                units: kg
-                                description: Override bottom-up calculation of total tower mass with this value
-                                minimum: 0.0
                             drag_coefficient:
                                 type: object
                                 required:
@@ -1306,6 +1301,12 @@ properties:
                                 $ref: "#/definitions/beam/cp_lambda_beam"
                             six_x_six:
                                 $ref: "#/definitions/beam/six_x_six"
+                    tower_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total tower mass with this value
+                        minimum: 0.0
                     internal_structure_2d_fem:
                         type: object
                         required:

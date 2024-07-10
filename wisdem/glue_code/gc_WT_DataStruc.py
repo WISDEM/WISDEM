@@ -540,6 +540,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             ivc.add_output(
                 "tower_mass_user",
                 val=0.0,
+                units="kg",
                 desc="Override bottom-up calculation of total tower mass with this value",
             )
             ivc.add_discrete_output(
@@ -2156,9 +2157,9 @@ class Hub(om.Group):
             ivc.add_output("hub_in2out_circ", val=1.2)
             ivc.add_discrete_output("hub_material", val="steel")
             ivc.add_discrete_output("spinner_material", val="carbon")
-            ivc.add_output("hub_shell_mass_user", val=0.0)
-            ivc.add_output("spinner_mass_user", val=0.0)
-            ivc.add_output("pitch_system_mass_user", val=0.0)
+            ivc.add_output("hub_shell_mass_user", val=0.0, units="kg")
+            ivc.add_output("spinner_mass_user", val=0.0, units="kg")
+            ivc.add_output("pitch_system_mass_user", val=0.0, units="kg")
 
         exec_comp = om.ExecComp(
             "radius = 0.5 * diameter",
@@ -2284,7 +2285,7 @@ class Monopile(om.Group):
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
-        ivc.add_output("monopile_mass_user", val=0.0, desc="Override bottom-up calculation of total monopile mass with this value")
+        ivc.add_output("monopile_mass_user", val=0.0, units="kg", desc="Override bottom-up calculation of total monopile mass with this value")
 
         self.add_subsystem("compute_monopile_grid", Compute_Grid(n_height=n_height), promotes=["*"])
 
