@@ -735,10 +735,11 @@ class WT_RNTA(om.Group):
                     "axial_stiffener_flange_width",
                     "axial_stiffener_flange_thickness",
                     "axial_stiffener_spacing",
-                    "member_mass_user",
                 ]:
                     self.connect(f"floating.memgrp{idx}.{var}", f"floatingse.member{k}.{var}")
 
+                self.connect(f"floating.memgrp{idx}.member_mass_user", f"floatingse.member{k}:mass_user")
+                    
                 for var in ["joint1", "joint2"]:
                     self.connect(f"floating.member_{kname}:{var}", f"floatingse.member{k}:{var}")
 

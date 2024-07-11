@@ -42,7 +42,7 @@ class FloatingSEProp(om.Group):
                 ),
                 promotes=mem_prom + [("joint1", f"member{k}:joint1"),
                                      ("joint2", f"member{k}:joint2"),
-                                     ("total_mass_user", "member_mass_user")],
+                                     ("total_mass_user", f"member{k}:mass_user")],
             )
 
         # Combine all members and tower into single system
