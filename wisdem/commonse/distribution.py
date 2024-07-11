@@ -1,4 +1,4 @@
-from math import gamma
+from scipy.special import gamma
 
 import numpy as np
 import openmdao.api as om
