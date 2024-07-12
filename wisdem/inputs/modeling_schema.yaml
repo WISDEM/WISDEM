@@ -301,10 +301,6 @@ properties:
                                 maximum: 1e-1
                                 default: 1e-9
                                 description: Convergence tolerance for modal eigenvalue solution
-                    rank_and_file: &rank
-                        type: boolean
-                        default: True
-                        description: Use the rank-and-file method of identifying mode shapes that guarantees modeshape numbers in all directions, but will reuse the same modeshape for multiple directions
                     n_refine: &nref
                         type: integer
                         default: 3
@@ -328,7 +324,6 @@ properties:
                     buckling_method: *buck_meth
                     buckling_length: *buck_L
                     frame3dd: *frame3dd
-                    rank_and_file: *rank
                     soil_springs:
                         type: boolean
                         default: False
@@ -406,7 +401,6 @@ properties:
                         type: boolean
                         default: True
                         description: Whether or not to assume a symmetric mooring system
-                    rank_and_file: *rank
 
             Loading:
                 type: object
