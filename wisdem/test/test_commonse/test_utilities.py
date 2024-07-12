@@ -36,13 +36,13 @@ class TestAny(unittest.TestCase):
         x = np.linspace(0, 1)
         y = np.polynomial.polynomial.polyval(x, p)
 
-        pp = util.get_modal_coefficients(x, y)
+        pp, _ = util.get_modal_coefficients(x, y)
         npt.assert_almost_equal(p[2:] / p[2:].sum(), pp)
 
         # Test without removing the 0th and 1st modes
         p = p0.copy()
         y = np.polynomial.polynomial.polyval(x, p)
-        pp = util.get_modal_coefficients(x, y, base_slope0=False)
+        pp, _ = util.get_modal_coefficients(x, y, base_slope0=False)
         npt.assert_almost_equal(p[2:] / p[2:].sum(), pp, 2)
 
         # Test more complex and ensure get the same answer as curve fit
@@ -50,7 +50,7 @@ class TestAny(unittest.TestCase):
         p[:2] = 0.0
         y = np.polynomial.polynomial.polyval(x, p)
 
-        pp = util.get_modal_coefficients(x, y)
+        pp, _ = util.get_modal_coefficients(x, y)
         cc, _ = curve_fit(util.mode_fit, x, y)
         cc /= cc.sum()
         npt.assert_almost_equal(pp, cc, 4)
@@ -164,7 +164,7 @@ class TestAny(unittest.TestCase):
             ]
         )
 
-        pp = util.get_modal_coefficients(z[i_tow:], xdsp[i_tow:], base_slope0=False)
+        pp, _ = util.get_modal_coefficients(z[i_tow:], xdsp[i_tow:], base_slope0=False)
         sheet_pp = np.flipud([-1.3658, 3.1931, -2.7443, 1.3054, 0.6116])
 
         xx = np.linspace(0, 1)
@@ -191,6 +191,7 @@ class TestAny(unittest.TestCase):
         npt.assert_array_equal(freq_y, np.r_[1, 4, 7, np.zeros(n2 - 3)])
         npt.assert_array_equal(freq_z, np.r_[2, 5, 8, np.zeros(n2 - 3)])
 
+    @unittest.skip("Did away with rank_and_file")
     def testGetXYModes_rank_and_file(self):
         np.random.seed(314)
         r = np.linspace(0, 1, 20)
@@ -211,7 +212,7 @@ class TestAny(unittest.TestCase):
 
         #t0 = time.time()
         freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
-            r, freqs, dx, dy, dz, xm, ym, zm, rank_and_file=True
+            r, freqs, dx, dy, dz, xm, ym, zm, 
         )
         #print(time.time() - t0)
         

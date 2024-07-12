@@ -85,7 +85,6 @@ class TestTowerSE(unittest.TestCase):
         self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["geom"] = True
         self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["modal_method"] = 1
         self.modeling_options["WISDEM"]["TowerSE"]["frame3dd"]["tol"] = 1e-9
-        self.modeling_options["WISDEM"]["TowerSE"]["rank_and_file"] = False
 
     def testProblemLand(self):
         prob = om.Problem(reports=False)
