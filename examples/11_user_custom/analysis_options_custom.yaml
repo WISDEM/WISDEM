@@ -1,0 +1,44 @@
+general:
+    folder_output: user_custom
+    fname_output: BAR_USC_user_custom
+
+# design variables
+design_variables:
+    user:
+      - name: configuration.rated_power
+        lower_bound: 4.e+6
+        upper_bound: 6.e+6
+        ref: 5.e+6
+        # indices:
+        
+
+# figure of merit
+merit_figure_user: 
+    name: financese.lvoe
+    max_flag: False
+    ref: 1.e-2
+
+
+# constraints
+constraints:
+    user:
+      - name: tcc.turbine_cost_kW
+        lower: 1.e+3
+        upper: 1.5e+3
+        # indices: 
+
+# driver
+driver:
+    optimization:
+        flag: True         # Flag to enable optimization
+        tol: 1.e-5          # Optimality tolerance
+        # max_major_iter: 10  # Maximum number of major design iterations (SNOPT)
+        # max_minor_iter: 100 # Maximum number of minor design iterations (SNOPT)
+        max_iter: 1         # Maximum number of iterations (SLSQP)
+        solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        step_size: 1.e-3    # Step size for finite differencing
+        form: central       # Finite differencing mode, either forward or central
+
+recorder:
+    flag: True             # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql # Name of OpenMDAO recorder

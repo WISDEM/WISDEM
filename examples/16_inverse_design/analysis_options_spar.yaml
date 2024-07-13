@@ -2,6 +2,7 @@ general:
     folder_output: outputs
     fname_output: refturb_output
 
+# design variables
 design_variables:
     floating:
         joints:
@@ -27,8 +28,10 @@ design_variables:
             lower_bound: 100.0
             upper_bound: 1000.0
 
+# figure of merit
 merit_figure: inverse_design
 
+# constraints
 inverse_design:
     floatingse.platform_hull_mass:
         ref_value: 2.5e6
@@ -41,6 +44,7 @@ inverse_design:
         indices: [1, 2]
         units: m
 
+# driver
 driver:
     optimization:
         flag: True         # Flag to enable optimization

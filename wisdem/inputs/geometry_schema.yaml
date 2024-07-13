@@ -3039,7 +3039,7 @@ properties:
                 description: Capacity credit used to compute value in beyond lcoe metrics
                 minimum: 0.
                 maximum: 1.
-                default: 0.
+                default: 1.
             benchmark_price:
                 type: number
                 description: Benchmark price used to nondimensionalize value in beyond lcoe metrics

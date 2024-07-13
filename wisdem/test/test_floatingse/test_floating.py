@@ -39,7 +39,6 @@ class TestOC3Mass(unittest.TestCase):
         opt["WISDEM"]["FloatingSE"]["gamma_n"] = 1.0  # Safety factor on consequence of failure
         opt["WISDEM"]["FloatingSE"]["gamma_b"] = 1.1  # Safety factor on buckling
         opt["WISDEM"]["FloatingSE"]["gamma_fatigue"] = 1.755  # Not used
-        opt["WISDEM"]["FloatingSE"]["rank_and_file"] = False
         opt["mooring"] = {}
         opt["mooring"]["n_attach"] = 3
         opt["mooring"]["n_anchors"] = 3

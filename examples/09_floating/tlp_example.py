@@ -80,8 +80,8 @@ prob["member0.outer_diameter_in"] = 14 * np.ones(npts)
 prob["member0.layer_thickness"] = 0.05 * np.ones((1, npts))
 prob["member0.layer_materials"] = ["steel"]
 prob["member0.ballast_materials"] = ["slurry", "seawater"]
-prob["member0.joint1"] = np.array([0.0, 0.0, 8.0 - h.sum()])
-prob["member0.joint2"] = np.array([0.0, 0.0, 8.0])  # Freeboard=10
+prob["member0:joint1"] = np.array([0.0, 0.0, 8.0 - h.sum()])
+prob["member0:joint2"] = np.array([0.0, 0.0, 8.0])  # Freeboard=10
 prob["member0.bulkhead_thickness"] = 0.05 * np.ones(4)  # Locations of internal bulkheads
 prob["member0.bulkhead_grid"] = np.array([0.0, 0.25, 0.5, 1.0])
 prob["member0.ring_stiffener_web_height"] = 0.10
@@ -102,8 +102,8 @@ for k in range(1, 4):
     prob["member" + str(k) + ".layer_thickness"] = 0.05 * np.ones((1, 3))
     prob["member" + str(k) + ".layer_materials"] = ["steel"]
     prob["member" + str(k) + ".ballast_materials"] = []
-    prob["member" + str(k) + ".joint1"] = np.array([30.0 * np.cos(angs[k - 1]), 30.0 * np.sin(angs[k - 1]), -40.0])
-    prob["member" + str(k) + ".joint2"] = np.array([0.0, 0.0, -40.0])  # Freeboard=10
+    prob["member" + str(k) + ":joint1"] = np.array([30.0 * np.cos(angs[k - 1]), 30.0 * np.sin(angs[k - 1]), -40.0])
+    prob["member" + str(k) + ":joint2"] = np.array([0.0, 0.0, -40.0])  # Freeboard=10
     prob["member" + str(k) + ".bulkhead_thickness"] = 0.05 * np.ones(2)  # Locations of internal bulkheads
     prob["member" + str(k) + ".bulkhead_grid"] = np.array([0.0, 1.0])
     prob["member" + str(k) + ".ring_stiffener_web_height"] = 0.10
@@ -143,7 +143,7 @@ prob["beta_wind"] = prob["beta_wave"] = 0.0
 prob["env.Uref"] = 11.0
 prob["wind_reference_height"] = 119.0
 
-prob["transition_node"] = prob["member0.joint2"]
+prob["transition_node"] = prob["member0:joint2"]
 
 # Properties of rotor-nacelle-assembly (RNA)
 prob["turbine_mass"] = 350e3

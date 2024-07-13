@@ -160,9 +160,9 @@ class FrameAnalysis(om.ExplicitComponent):
         n_attach = opt["mooring"]["n_attach"]
         n_dlc = opt["WISDEM"]["n_dlc"]
 
-        m_trans = float(inputs["transition_piece_mass"])
+        m_trans = float(inputs["transition_piece_mass"][0])
         I_trans = inputs["transition_piece_I"]
-        m_variable = float(inputs["variable_ballast_mass"])
+        m_variable = float(inputs["variable_ballast_mass"][0])
         cg_variable = inputs["variable_center_of_mass"]
         I_variable = inputs["variable_I"]
 
@@ -350,7 +350,6 @@ class TowerModal(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("n_full")
         self.options.declare("frame3dd_opt")
-        self.options.declare("rank_and_file", default=False)
 
     def setup(self):
         n_full = self.options["n_full"]
@@ -505,7 +504,6 @@ class TowerModal(om.ExplicitComponent):
                     modal.ympf,
                     modal.zmpf,
                     base_slope0=False,
-                    rank_and_file=self.options["rank_and_file"],
                 )
 
                 outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
@@ -514,7 +512,7 @@ class TowerModal(om.ExplicitComponent):
                 outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
                 outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
                 outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
-        except:
+        except Exception:
             pass
 
 
@@ -668,7 +666,6 @@ class FloatingFrame(om.Group):
         nLC = opt["WISDEM"]["n_dlc"]
         n_member = opt["floating"]["members"]["n_members"]
         frame3dd_opt = opt["WISDEM"]["FloatingSE"]["frame3dd"]
-        rank_and_file = opt["WISDEM"]["FloatingSE"]["rank_and_file"]
 
         mem_vars = ["Px", "Py", "Pz", "qdyn"]
 
@@ -724,7 +721,7 @@ class FloatingFrame(om.Group):
             n_full_tow = get_nfull(n_height, nref=tow_opt["n_refine"])
             self.add_subsystem(
                 "tower",
-                TowerModal(n_full=n_full_tow, frame3dd_opt=frame3dd_opt, rank_and_file=rank_and_file),
+                TowerModal(n_full=n_full_tow, frame3dd_opt=frame3dd_opt),
                 promotes=["*"],
             )
 

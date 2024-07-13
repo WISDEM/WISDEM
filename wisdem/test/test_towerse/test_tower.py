@@ -50,7 +50,7 @@ class TestMass(unittest.TestCase):
         npt.assert_equal(outputs["turbine_center_of_mass"], (1e3 * (inputs["rna_cg"] + h) + 3e3 * 0.5 * h) / 4e3)
         # npt.assert_array_less(5e4, np.abs(outputs["turbine_I_base"]))
 
-
+        
 class TestTowerSE(unittest.TestCase):
     def setUp(self):
         self.inputs = {}
@@ -135,21 +135,21 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob["tower_center_of_mass"], 40.0)
         npt.assert_almost_equal(prob["tower_mass"], mass_dens * 80.0)
 
-        npt.assert_equal(prob.model.tower.frame.rnode, np.array([1], dtype=np.int_))
-        npt.assert_equal(prob.model.tower.frame.rKx, np.array([RIGID]))
-        npt.assert_equal(prob.model.tower.frame.rKy, np.array([RIGID]))
-        npt.assert_equal(prob.model.tower.frame.rKz, np.array([RIGID]))
-        npt.assert_equal(prob.model.tower.frame.rKtx, np.array([RIGID]))
-        npt.assert_equal(prob.model.tower.frame.rKty, np.array([RIGID]))
-        npt.assert_equal(prob.model.tower.frame.rKtz, np.array([RIGID]))
+        npt.assert_equal(prob.model.perf.tower.frame.rnode, np.array([1], dtype=np.int_))
+        npt.assert_equal(prob.model.perf.tower.frame.rKx, np.array([RIGID]))
+        npt.assert_equal(prob.model.perf.tower.frame.rKy, np.array([RIGID]))
+        npt.assert_equal(prob.model.perf.tower.frame.rKz, np.array([RIGID]))
+        npt.assert_equal(prob.model.perf.tower.frame.rKtx, np.array([RIGID]))
+        npt.assert_equal(prob.model.perf.tower.frame.rKty, np.array([RIGID]))
+        npt.assert_equal(prob.model.perf.tower.frame.rKtz, np.array([RIGID]))
 
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].NF, np.array([7]))
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].Fx, np.array([2e3]))
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].Fy, np.array([3e3]))
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].Fz, np.array([4e3]))
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].Mxx, np.array([2e4]))
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].Myy, np.array([3e4]))
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].Mzz, np.array([4e4]))
+        npt.assert_equal(prob.model.perf.tower.frame.loadCases[0].NF, np.array([7]))
+        npt.assert_equal(prob.model.perf.tower.frame.loadCases[0].Fx, np.array([2e3]))
+        npt.assert_equal(prob.model.perf.tower.frame.loadCases[0].Fy, np.array([3e3]))
+        npt.assert_equal(prob.model.perf.tower.frame.loadCases[0].Fz, np.array([4e3]))
+        npt.assert_equal(prob.model.perf.tower.frame.loadCases[0].Mxx, np.array([2e4]))
+        npt.assert_equal(prob.model.perf.tower.frame.loadCases[0].Myy, np.array([3e4]))
+        npt.assert_equal(prob.model.perf.tower.frame.loadCases[0].Mzz, np.array([4e4]))
 
     def testAddedMassForces(self):
         self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 3

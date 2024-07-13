@@ -58,6 +58,7 @@ class PreDiscretization(om.ExplicitComponent):
         outputs["height_constraint"] = inputs["hub_height"] - outputs["joint2"][-1]
 
 
+
 class TurbineMass(om.ExplicitComponent):
     """
     Compute the turbine mass, center of mass, and mass moment of inertia.
@@ -118,7 +119,7 @@ class TurbineMass(om.ExplicitComponent):
         I_tower = util.assembleI(inputs["tower_I_base"])
         I_rna = util.assembleI(inputs["rna_I"]) + m_rna * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
         outputs["turbine_I_base"] = util.unassembleI(I_tower + I_rna)
-
+        
 
 class TowerFrame(om.ExplicitComponent):
     """
@@ -388,7 +389,7 @@ class TowerFrame(om.ExplicitComponent):
         # Get all mode shapes in batch
         NFREQ2 = int(NFREQ / 2)
         freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
-            xyz[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
+            xyz[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf,
         )
         outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
         outputs["side_side_freqs"] = freq_y[:NFREQ2]
@@ -427,7 +428,7 @@ class TowerFrame(om.ExplicitComponent):
         outputs["tower_Mzz"] = Mzz
 
 
-class TowerSE(om.Group):
+class TowerSEProp(om.Group):
     """
     This is the main TowerSE group that performs analysis of the tower.
 
@@ -439,15 +440,12 @@ class TowerSE(om.Group):
     def setup(self):
         mod_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
         n_mat = self.options["modeling_options"]["materials"]["n_mat"]
-        nLC = self.options["modeling_options"]["WISDEM"]["n_dlc"]
-        wind = mod_opt["wind"]  # not yet supported
-        frame3dd_opt = mod_opt["frame3dd"]
+
         if "n_height" in mod_opt:
             n_height = mod_opt["n_height"]
         else:
             n_height_tow = mod_opt["n_height_tower"]
             n_height = mod_opt["n_height"] = n_height_tow
-        n_full = mem.get_nfull(n_height, nref=mod_opt["n_refine"])
 
         self.add_subsystem("predis", PreDiscretization(), promotes=["*"])
 
@@ -517,8 +515,31 @@ class TowerSE(om.Group):
             promotes=promlist
         )
 
-        self.add_subsystem("turb", TurbineMass(), promotes=["*"])
 
+
+class TowerSEPerf(om.Group):
+    """
+    This is the main TowerSE group that performs analysis of the tower.
+
+    """
+
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        mod_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
+        nLC = self.options["modeling_options"]["WISDEM"]["n_dlc"]
+        wind = mod_opt["wind"]  # not yet supported
+        frame3dd_opt = mod_opt["frame3dd"]
+        if "n_height" in mod_opt:
+            n_height = mod_opt["n_height"]
+        else:
+            n_height_tow = mod_opt["n_height_tower"]
+            n_height = mod_opt["n_height"] = n_height_tow
+        n_full = mem.get_nfull(n_height, nref=mod_opt["n_refine"])
+
+        self.add_subsystem("turb", TurbineMass(), promotes=["*"])
+        
         self.add_subsystem("loads", mem.MemberLoads(n_full=n_full, n_lc=nLC, wind=wind, hydro=False), promotes=["*"])
 
         self.add_subsystem(
@@ -535,6 +556,7 @@ class TowerSE(om.Group):
                 "section_rho",
                 "section_E",
                 "section_G",
+                "section_L",
                 "Px",
                 "Py",
                 "Pz",
@@ -564,6 +586,7 @@ class TowerSE(om.Group):
                 "section_rho",
                 "section_E",
                 "section_G",
+                "section_L",
                 "qdyn",
                 ("bending_height", "tower_height"),
             ],
@@ -575,3 +598,22 @@ class TowerSE(om.Group):
         self.connect("tower.tower_Mxx", "post.cylinder_Mxx")
         self.connect("tower.tower_Myy", "post.cylinder_Myy")
         self.connect("tower.tower_Mzz", "post.cylinder_Mzz")
+
+
+class TowerSE(om.Group):
+    """
+    This is the main TowerSE group that performs analysis of the tower.
+
+    """
+
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        self.add_subsystem("props", TowerSEProp(modeling_options=self.options["modeling_options"]), promotes=["*"])
+        self.add_subsystem("perf", TowerSEPerf(modeling_options=self.options["modeling_options"]), promotes=["*"])
+
+
+        
+        
+        

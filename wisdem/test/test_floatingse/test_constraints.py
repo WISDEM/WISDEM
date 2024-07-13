@@ -31,21 +31,21 @@ class TestConstraints(unittest.TestCase):
             y = 2 * np.sin(k*(2*np.pi)/n_member)
             inputs[f"member{k}:nodes_xyz"][:2, :] = np.array([[x, y, -1], [x, y, 1]])
 
-        inputs["Hsig_wave"] = 10.0
-        inputs["variable_ballast_mass"] = 3.0
-        inputs["fairlead"] = 20.0
-        inputs["fairlead_radius"] = 10.0
-        inputs["operational_heel"] = np.deg2rad(5.0)
-        inputs["survival_heel"] = np.deg2rad(20.0)
-        inputs["platform_Iwaterx"] = 1e4
-        inputs["platform_Iwatery"] = 1e4
-        inputs["platform_displacement"] = 1e5
+        inputs["Hsig_wave"] = np.array([ 10.0 ])
+        inputs["variable_ballast_mass"] = np.array([ 3.0 ])
+        inputs["fairlead"] = np.array([ 20.0 ])
+        inputs["fairlead_radius"] = np.array([ 10.0 ])
+        inputs["operational_heel"] = np.array([ np.deg2rad(5.0) ])
+        inputs["survival_heel"] = np.array([ np.deg2rad(20.0) ])
+        inputs["platform_Iwaterx"] = np.array([ 1e4 ])
+        inputs["platform_Iwatery"] = np.array([ 1e4 ])
+        inputs["platform_displacement"] = np.array([ 1e5 ])
         inputs["platform_center_of_buoyancy"] = np.ones(3)
         inputs["system_center_of_mass"] = np.array([0.0, 0.0, 5.0])
         inputs["transition_node"] = np.array([0.0, 0.0, 10.0])
         inputs["turbine_F"] = np.array([1e2, 1e1, 0.0]).reshape((-1, 1))
         inputs["turbine_M"] = np.array([2e1, 2e2, 0.0]).reshape((-1, 1))
-        inputs["max_surge_restoring_force"] = 1e5
+        inputs["max_surge_restoring_force"] = np.array([ 1e5 ])
         inputs["operational_heel_restoring_force"] = 2e5 * np.ones(6)
         inputs["survival_heel_restoring_force"] = 3e5 * np.ones(6)
 

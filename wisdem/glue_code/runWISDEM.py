@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import warnings
+import time
 
 import numpy as np
 import openmdao.api as om
@@ -28,6 +29,8 @@ if MPI:
 
 
 def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overridden_values=None, run_only=False):
+    t0 = time.time()
+    
     # Load all yaml inputs and validate (also fills in defaults)
     wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
@@ -189,6 +192,9 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)
 
+    t1 = time.time()
+    print("Completed in,", t1-t0, "seconds")
+    
     if rank == 0:
         return wt_opt, modeling_options, opt_options
     else:

@@ -401,10 +401,6 @@ properties:
                         type: boolean
                         default: True
                         description: Whether or not to assume a symmetric mooring system
-                    rank_and_file:
-                        type: boolean
-                        default: False
-                        description: Use the rank-and-file method of identifying mode shapes that guarantees modeshape numbers in all directions, but will reuse the same modeshape for multiple directions
 
             Loading:
                 type: object

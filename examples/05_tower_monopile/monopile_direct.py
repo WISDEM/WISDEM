@@ -61,6 +61,7 @@ modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["shear"] = True
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["geom"] = True
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["tol"] = 1e-7
 modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["modal_method"] = 1
+modeling_options["WISDEM"]["FixedBottomSE"]["rank_and_file"] = True
 
 modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = n_control_points
 modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"] = 1
@@ -115,6 +116,8 @@ prob["monopile_s"] = np.cumsum(np.r_[0.0, h_paramM]) / h_paramM.sum()
 prob["monopile_outer_diameter_in"] = d_paramM
 prob["monopile_layer_thickness"] = t_paramM.reshape((1, -1))
 prob["outfitting_factor_in"] = 1.07
+prob["tower_base_diameter"] = 6.0
+prob["monopile_top_diameter"] = 8.0
 
 prob["yaw"] = 0.0
 
@@ -157,8 +160,8 @@ if modeling_options["WISDEM"]["FixedBottomSE"]["wind"] == "PowerWind":
 # --- loading case 1: max Thrust ---
 prob["env1.Uref"] = 11.73732
 prob["env2.Uref"] = 70.0
-prob["monopile.turbine_F"] = np.c_[[1.28474420e06, 0.0, -1.05294614e07], [9.30198601e05, 0.0, -1.13508479e07]]
-prob["monopile.turbine_M"] = np.c_[
+prob["turbine_F"] = np.c_[[1.28474420e06, 0.0, -1.05294614e07], [9.30198601e05, 0.0, -1.13508479e07]]
+prob["turbine_M"] = np.c_[
     [4009825.86806202, 92078894.58132489, -346781.68192839], [-1704977.30124085, 65817554.0892837, 147301.97023764]
 ]
 # ---------------

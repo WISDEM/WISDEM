@@ -1670,7 +1670,10 @@ def _find_slope(x, y, xi=None, x0=None, window=None, method="max", opts=None, nI
             I = np.nonzero(x - xi)
             yi = np.interp(xi, x, y)
             a = max((y[I] - yi) / (x[I] - xi))
-            x0 = xi - yi / a
+            if a != 0:
+                x0 = xi - yi / a
+            else:
+                x0 = xi
         else:
             a=np.inf
             x0 = xi
