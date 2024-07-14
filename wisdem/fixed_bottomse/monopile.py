@@ -653,7 +653,7 @@ class MonopileFrame(om.ExplicitComponent):
             modal.ympf,
             modal.zmpf,
             idx0=NREFINE,
-            base_slope0=(not self.options["soil_springs"]),
+            #base_slope0=(not self.options["soil_springs"]),
         )
         outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
         outputs["side_side_freqs"] = freq_y[:NFREQ2]
