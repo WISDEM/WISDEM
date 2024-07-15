@@ -46,6 +46,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs["bedplate_flange_thickness"] = np.array([0.05])
         # self.inputs['bedplate_web_height'] = np.array([1.0])
         self.inputs["bedplate_web_thickness"] = np.array([0.05])
+        self.inputs["bedplate_mass_user"] = np.array([0.0])
 
         self.inputs["D_top"] = np.array([6.5])
         self.inputs["hub_diameter"] = np.array([4.0])
