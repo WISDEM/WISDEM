@@ -38,42 +38,47 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None, base_slope0=Tru
             y = y - dy[idx0] * xn
 
     # Get coefficients to 2-6th order polynomial
-    p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
+    p6_0 = np.polynomial.polynomial.polyfit(xn, y, deg)
 
     # Normalize for Elastodyn
     # The normalization shouldn't be less than 1e-5 otherwise OpenFAST has trouble in single prec
     if y.ndim > 1:
-        p6 = p6[2:, :]
+        p6 = p6_0[2:, :]
         tempsum = np.sum(p6, axis=0) + 1e-16  # Avoid divide by 0
         normval = np.maximum(np.abs(tempsum), 1e-5)
         normval *= np.sign(tempsum)
         p6 /= normval[np.newaxis, :]
     else:
-        p6 = p6[2:]
+        p6 = p6_0[2:]
         tempsum = p6.sum() + 1e-16  # Avoid divide by 0
         normval = np.maximum(np.abs(tempsum), 1e-5)
         normval *= np.sign(tempsum)
         p6 /= normval
 
-    return p6
+    return p6, p6_0
 
 
-def get_xyz_mode_shapes(
-    r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None, base_slope0=True, expect_all=True, rank_and_file=False
-):
+def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None, base_slope0=True, expect_all=True):
     # Number of frequencies and modes
     nfreq = len(freqs)
 
     # Get mode shapes in batch
     mpfs = np.abs(np.c_[xmpf, ympf, zmpf])
     displacements = np.vstack((xdsp, ydsp, zdsp)).T
-    polys = get_modal_coefficients(r, displacements, idx0=idx0, base_slope0=base_slope0)
+    polys, polys_raw = get_modal_coefficients(r, displacements, idx0=idx0, base_slope0=base_slope0)
+    poly_d1 = np.polynomial.polynomial.polyder(polys_raw, m=1, axis=0)
+
+    # Count the roots of the first derivative of the mode shape- First mode has zero, second has one, etc.
+    xx = np.linspace(0.05, 1-1e-4, 1000) # BC at 0 can mess with root counting
+    val_d1 = np.polynomial.polynomial.polyval(xx, poly_d1)
+    nroot_d1 = np.count_nonzero(np.diff(np.sign(val_d1), axis=1), axis=1)
+    
     xpolys = polys[:, :nfreq].T
     ypolys = polys[:, nfreq : (2 * nfreq)].T
     zpolys = polys[:, (2 * nfreq) :].T
-    ix = 0
-    iy = 0
-    iz = 0
+    xroot1 = nroot_d1[:nfreq]
+    yroot1 = nroot_d1[nfreq : (2 * nfreq)]
+    #zroot1 = nroot_d1[(2 * nfreq) :]
 
     # Containers and counters for the mode shapes
     nfreq2 = int(nfreq / 2)
@@ -84,43 +89,53 @@ def get_xyz_mode_shapes(
     freq_x = np.zeros(mysize)
     freq_y = np.zeros(mysize)
     freq_z = np.zeros(mysize)
+    ix = 0
+    iy = 0
+    iz = 0
 
-    # Filter the modeshapes by their mpfs
-    #   - guarauntees that no modeshapes are calculated at the same frequency,
-    #   - does not guarantee a modeshape in every direction
-    #   - does not guarantee exact modeshape orders
-    if not rank_and_file:
-        # Identify which mode is which and whether it is a valid mode
-        imode = np.argmax(mpfs, axis=1)
-        mpfs_ratio = np.abs(mpfs.max(axis=1) / (1e-16 + mpfs.min(axis=1)))  # Avoid divide by 0
+    # Identify which mode is which and whether it is a valid mode
+    idir = np.argmax(mpfs, axis=1)
+    mpfs_ratio = np.abs(mpfs.max(axis=1) / (1e-16 + mpfs.min(axis=1)))  # Avoid divide by 0
 
-        for m in range(nfreq):
-            if np.isnan(freqs[m]) or (freqs[m] < 1e-1) or (mpfs_ratio[m] < 1e3) or (mpfs[m, :].max() < 1e-13):
+    for m in range(nfreq):
+        if np.isnan(freqs[m]) or (freqs[m] < 1e-1) or (mpfs_ratio[m] < 1e3) or (mpfs[m, :].max() < 1e-13):
+            continue
+        
+        if idir[m] == 0:
+            if expect_all and ix >= nfreq2:
                 continue
-            if imode[m] == 0:
-                if expect_all and ix >= nfreq2:
-                    continue
-                mshapes_x[ix, :] = xpolys[m, :]
-                freq_x[ix] = freqs[m]
-                ix += 1
-            elif imode[m] == 1:
-                if expect_all and iy >= nfreq2:
-                    continue
-                mshapes_y[iy, :] = ypolys[m, :]
-                freq_y[iy] = freqs[m]
-                iy += 1
-            elif imode[m] == 2:
-                if expect_all and iz >= nfreq2:
-                    continue
-                mshapes_z[iz, :] = zpolys[m, :]
-                freq_z[iz] = freqs[m]
-                iz += 1
+            imode = xroot1[m]
+            if imode != ix and ix<2:
+                logger.debug(f"WARNING: Freq no. {m}, x-dir: Mode numbder identified as {imode+1} going into slot {ix+1}")
+            mshapes_x[ix, :] = xpolys[m, :]
+            freq_x[ix] = freqs[m]
+            ix += 1
+        elif idir[m] == 1:
+            if expect_all and iy >= nfreq2:
+                continue
+            imode = yroot1[m]
+            if imode != iy and iy<2:
+                logger.debug(f"WARNING: Freq no. {m}, y-dir: Mode numbder identified as {imode+1} going into slot {iy+1}")
+            mshapes_y[iy, :] = ypolys[m, :]
+            freq_y[iy] = freqs[m]
+            iy += 1
+        elif idir[m] == 2:
+            if expect_all and iz >= nfreq2:
+                continue
+            # Torsional modes are not well captured by Frame3DD
+            #imode = zroot1[m]
+            #if imode != iz and iz<2:
+            #    logger.debug(f"WARNING: Freq no. {m}, z-dir: Mode numbder identified as {imode+1} going into slot {iz+1}")
+            mshapes_z[iz, :] = zpolys[m, :]
+            freq_z[iz] = freqs[m]
+            iz += 1
+    '''
     # "Rank and file" the modeshapes by their mpfs and order
     # Filter the modeshapes by their mpfs
     #   - does guarauntees that modeshapes are calculated at different frequencies,
     #   - guarantees a modeshape in every direction
     #   - guarantees exact modeshape orders
-    else:
+    if rank_and_file:
         idyn = np.where(freqs > 1e-1)[0]
         freqs_dyn = freqs[idyn]
         ndyn = freqs_dyn.size
@@ -225,6 +240,7 @@ def get_xyz_mode_shapes(
             mshapes_z[i, :] = zpolys_dyn[z_polyidx, :]
             freq_z[i] = freqs_dyn[z_polyidx]
             used_freq_idx = record_used_freqs(z_polyidx, i, used_freq_idx)
+    '''
 
     return freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z
 

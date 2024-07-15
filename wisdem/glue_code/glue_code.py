@@ -50,10 +50,7 @@ class WT_RNTA_Prop(om.Group):
         elif modeling_options["flags"]["jacket"]:
             self.add_subsystem("fixedse", JacketSEProp(modeling_options=modeling_options))
 
-        elif modeling_options["flags"]["floating"]:
-            self.add_subsystem("floatingse", FloatingSEProp(modeling_options=modeling_options))
-
-
+            
 class WT_RNA(om.Group):
     # Openmdao group to iterate on the rated torque - turbine efficiency
 
@@ -111,7 +108,7 @@ class WT_RNTA(om.Group):
             self.add_subsystem("fixedse", JacketSEPerf(modeling_options=modeling_options))
 
         elif modeling_options["flags"]["floating"]:
-            self.add_subsystem("floatingse", FloatingSEPerf(modeling_options=modeling_options))
+            self.add_subsystem("floatingse", FloatingSE(modeling_options=modeling_options))
 
         self.add_subsystem("tcc", Turbine_CostsSE_2015(verbosity=modeling_options["General"]["verbosity"]))
 

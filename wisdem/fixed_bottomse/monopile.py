@@ -259,7 +259,6 @@ class MonopileFrame(om.ExplicitComponent):
         self.options.declare("n_full_tow")
         self.options.declare("nLC")
         self.options.declare("frame3dd_opt")
-        self.options.declare("rank_and_file")
         self.options.declare("soil_springs", default=False)
         self.options.declare("gravity_foundation", default=False)
 
@@ -391,7 +390,6 @@ class MonopileFrame(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         frame3dd_opt = self.options["frame3dd_opt"]
-        rankfile     = self.options["rank_and_file"]
         nLC          = self.options["nLC"]
         tower_flag   = self.options["n_full_tow"] > 0
 
@@ -656,7 +654,6 @@ class MonopileFrame(om.ExplicitComponent):
             modal.zmpf,
             idx0=NREFINE,
             base_slope0=(not self.options["soil_springs"]),
-            rank_and_file=rankfile,
         )
         outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
         outputs["side_side_freqs"] = freq_y[:NFREQ2]
@@ -673,7 +670,7 @@ class MonopileFrame(om.ExplicitComponent):
                                     mshapes_z[:NFREQ2, :]) )
             cmat_low = np.zeros((3*NFREQ2, 2))
             ymat = np.polynomial.polynomial.polyval(zn, np.hstack((cmat_low, cmat_high)).T)
-            p6 = util.get_modal_coefficients(zn, ymat.T, base_slope0=False)
+            p6, _ = util.get_modal_coefficients(zn, ymat.T, base_slope0=False)
 
             outputs["tower_fore_aft_modes"] = p6[:, :NFREQ2].T
             outputs["tower_side_side_modes"] = p6[:, NFREQ2:(2*NFREQ2)].T
@@ -856,7 +853,6 @@ class MonopileSEPerf(om.Group):
         nLC = self.options["modeling_options"]["WISDEM"]["n_dlc"]
         wind = mod_opt["wind"]  # not yet supported
         frame3dd_opt = mod_opt["frame3dd"]
-        rankfile_opt = mod_opt["rank_and_file"]
         if "n_height" in mod_opt:
             n_height = mod_opt["n_height"]
         else:
@@ -881,7 +877,6 @@ class MonopileSEPerf(om.Group):
                 soil_springs=mod_opt["soil_springs"],
                 gravity_foundation=mod_opt["gravity_foundation"],
                 nLC=nLC,
-                rank_and_file=rankfile_opt,
             ),
             promotes=[
                 "nodes_xyz",

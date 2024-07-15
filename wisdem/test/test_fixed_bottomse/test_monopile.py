@@ -127,7 +127,6 @@ class TestMonopileSE(unittest.TestCase):
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["geom"] = True
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["modal_method"] = 1
         self.modeling_options["WISDEM"]["FixedBottomSE"]["frame3dd"]["tol"] = 1e-9
-        self.modeling_options["WISDEM"]["FixedBottomSE"]["rank_and_file"] = False
 
         self.modeling_options["flags"] = {}
         self.modeling_options["flags"]["tower"] = False

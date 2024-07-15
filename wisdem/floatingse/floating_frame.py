@@ -350,7 +350,6 @@ class TowerModal(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("n_full")
         self.options.declare("frame3dd_opt")
-        self.options.declare("rank_and_file", default=True)
 
     def setup(self):
         n_full = self.options["n_full"]
@@ -495,6 +494,7 @@ class TowerModal(om.ExplicitComponent):
 
                 # Get all mode shapes in batch
                 NFREQ2 = int(NFREQ / 2)
+                myzmpf = 1e-7*modal.zmpf # zmpf is buggy here, so suppressing it
                 freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
                     xyz[:, 2],
                     modal.freq,
@@ -503,9 +503,8 @@ class TowerModal(om.ExplicitComponent):
                     modal.zdsp,
                     modal.xmpf,
                     modal.ympf,
-                    modal.zmpf,
+                    myzmpf, #modal.zmpf,
                     base_slope0=False,
-                    rank_and_file=self.options["rank_and_file"],
                 )
 
                 outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
@@ -668,7 +667,6 @@ class FloatingFrame(om.Group):
         nLC = opt["WISDEM"]["n_dlc"]
         n_member = opt["floating"]["members"]["n_members"]
         frame3dd_opt = opt["WISDEM"]["FloatingSE"]["frame3dd"]
-        rank_and_file = opt["WISDEM"]["FloatingSE"]["rank_and_file"]
 
         mem_vars = ["Px", "Py", "Pz", "qdyn"]
 
@@ -724,7 +722,7 @@ class FloatingFrame(om.Group):
             n_full_tow = get_nfull(n_height, nref=tow_opt["n_refine"])
             self.add_subsystem(
                 "tower",
-                TowerModal(n_full=n_full_tow, frame3dd_opt=frame3dd_opt, rank_and_file=rank_and_file),
+                TowerModal(n_full=n_full_tow, frame3dd_opt=frame3dd_opt),
                 promotes=["*"],
             )
 
