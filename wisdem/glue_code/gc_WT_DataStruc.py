@@ -2352,7 +2352,7 @@ class Jacket(om.Group):
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
-        ivc.add_output("jacket_mass_user", val=0.0, desc="Override bottom-up calculation of total jacket mass with this value")
+        ivc.add_output("jacket_mass_user", val=0.0, units="kg", desc="Override bottom-up calculation of total jacket mass with this value")
 
 
 class Floating(om.Group):
