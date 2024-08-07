@@ -1359,7 +1359,10 @@ class PoseOptimization(object):
 
         if float_constr["metacentric_height"]["flag"]:
             wt_opt.model.add_constraint(
-                "floatingse.metacentric_height", lower=float_constr["metacentric_height"]["lower_bound"]
+                "floatingse.metacentric_height_roll", lower=float_constr["metacentric_height"]["lower_bound"]
+            )
+            wt_opt.model.add_constraint(
+                "floatingse.metacentric_height_pitch", lower=float_constr["metacentric_height"]["lower_bound"]
             )
 
         if float_constr["freeboard_margin"]["flag"]:
