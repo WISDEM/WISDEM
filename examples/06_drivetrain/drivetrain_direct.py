@@ -87,8 +87,9 @@ prob["minimum_rpm"] = 5.0
 prob["rated_rpm"] = 7.56
 
 # Loading from rotor
-prob["F_hub"] = np.array([2517580.0, -27669.0, 3204.0]).reshape((3, 1))
-prob["M_hub"] = np.array([21030561.0, 7414045.0, 1450946.0]).reshape((3, 1))
+prob["F_aero_hub"] = np.array([2517580.0, -27669.0, 3204.0]).reshape((3, 1))
+prob["M_aero_hub"] = np.array([21030561.0, 7414045.0, 1450946.0]).reshape((3, 1))
+# prob["blades_mass"] = 0.
 # ---
 
 # Blade properties and hub design options
