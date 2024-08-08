@@ -52,10 +52,12 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         Hub system center of mass distance from hub flange
     hub_system_I : numpy array[6], [kg*m**2]
         Hub system moment of inertia
-    F_hub : numpy array[3, n_dlcs], [N]
-        Force vector applied to the hub (WITH WEIGHT???)
-    M_hub : numpy array[3, n_dlcs], [N*m]
-        Moment vector applied to the hub
+    F_aero_hub : numpy array[3, n_dlcs], [N]
+        Aero-only force vector applied to the hub
+    M_aero_hub : numpy array[3, n_dlcs], [N*m]
+        Aero-only moment vector applied to the hub
+    blades_mass : float, [kg]
+        Mass of all blades
     s_mb1 : float, [m]
         Bearing 1 s-coordinate along drivetrain, measured from bedplate (direct) or tower center (geared)
     s_mb2 : float, [m]
@@ -130,8 +132,9 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         self.add_input("hub_system_mass", 0.0, units="kg")
         self.add_input("hub_system_cm", 0.0, units="m")
         self.add_input("hub_system_I", np.zeros(6), units="kg*m**2")
-        self.add_input("F_hub", val=np.zeros((3, n_dlcs)), units="N")
-        self.add_input("M_hub", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_input("F_aero_hub", val=np.zeros((3, n_dlcs)), units="N")
+        self.add_input("M_aero_hub", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_input("blades_mass", 0.0, units="kg")
         self.add_input("s_mb1", val=0.0, units="m")
         self.add_input("s_mb2", val=0.0, units="m")
         self.add_input("s_rotor", val=0.0, units="m")
@@ -207,8 +210,12 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         m_hub = float(inputs["hub_system_mass"][0])
         cm_hub = float(inputs["hub_system_cm"][0])
         I_hub = inputs["hub_system_I"]
-        F_hub = inputs["F_hub"]
-        M_hub = inputs["M_hub"]
+        F_aero_hub = inputs["F_aero_hub"]
+        M_aero_hub = inputs["M_aero_hub"]
+        blades_mass = inputs['blades_mass']
+        F_hub = F_aero_hub
+        F_hub[2] -= blades_mass * gravity
+        M_hub = M_aero_hub
 
         torq_defl_allow = float(inputs["shaft_deflection_allowable"][0])
         torq_angle_allow = float(inputs["shaft_angle_allowable"][0])
@@ -413,8 +420,8 @@ class HSS_Frame(om.ExplicitComponent):
         Lss discretized diameter values at coordinates
     hss_wall_thickness : numpy array[2], [m]
         Lss discretized thickness values at coordinates
-    M_hub : numpy array[3, n_dlcs], [N*m]
-        Moment vector applied to the hub
+    M_aero_hub : numpy array[3, n_dlcs], [N*m]
+        Aero-only moment vector applied to the hub
     m_generator : float, [kg]
         Gearbox rotor mass
     cm_generator : float, [kg]
@@ -460,7 +467,7 @@ class HSS_Frame(om.ExplicitComponent):
         self.add_input("s_hss", val=np.zeros(3), units="m")
         self.add_input("hss_diameter", val=np.zeros(2), units="m")
         self.add_input("hss_wall_thickness", val=np.zeros(2), units="m")
-        self.add_input("M_hub", val=np.zeros((3, n_dlcs)), units="N*m")
+        self.add_input("M_aero_hub", val=np.zeros((3, n_dlcs)), units="N*m")
         self.add_input("gear_ratio", val=1.0)
         self.add_input("s_generator", val=0.0, units="m")
         self.add_input("generator_mass", val=0.0, units="kg")
@@ -504,7 +511,7 @@ class HSS_Frame(om.ExplicitComponent):
         gamma_n = float(self.options["modeling_options"]["gamma_n"])
         gamma = gamma_f * gamma_m * gamma_n
 
-        M_hub = inputs["M_hub"]
+        M_hub = inputs["M_aero_hub"]
         gear_ratio = float(inputs["gear_ratio"][0])
 
         # ------- node data ----------------

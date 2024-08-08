@@ -346,8 +346,8 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["tower"]:
                 self.connect("tower.diameter", "drivese.D_top", src_indices=[-1])
 
-            self.connect("rotorse.rs.aero_hub_loads.Fhub", "drivese.F_hub")
-            self.connect("rotorse.rs.aero_hub_loads.Mhub", "drivese.M_hub")
+            self.connect("rotorse.rs.aero_hub_loads.Fhub", "drivese.F_aero_hub")
+            self.connect("rotorse.rs.aero_hub_loads.Mhub", "drivese.M_aero_hub")
             self.connect("rotorse.rs.frame.root_M", "drivese.pitch_system.BRFM", src_indices=[1])
 
             self.connect("blade.pa.chord_param", "drivese.blade_root_diameter", src_indices=[0])

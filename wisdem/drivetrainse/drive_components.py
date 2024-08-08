@@ -1028,7 +1028,7 @@ class RNA_Adder(om.ExplicitComponent):
     shaft_start : numpy array[3], [m]
         coordinate of start of shaft relative to tower top
     blades_mass : float, [kg]
-        Mass of all bladea
+        Mass of all blades
     hub_system_mass : float, [kg]
         Mass of hub system (hub + spinner + pitch)
     nacelle_mass : float, [kg]
