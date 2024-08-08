@@ -78,8 +78,9 @@ class BladeCurvature(ExplicitComponent):
         outputs["blades_cg_hubcc"] = cg
 
 
-class TotalLoads(ExplicitComponent):
-    # OpenMDAO component that takes as input the rotor configuration (tilt, cone), the blade twist and mass distributions, and the blade aerodynamic loading, and computes the total loading including gravity and centrifugal forces
+class TotalBladeLoads(ExplicitComponent):
+    # OpenMDAO component that takes as input the rotor configuration (tilt, cone), the blade twist and mass distributions, 
+    # and the blade aerodynamic loading, and computes the blade loading including gravity and centrifugal forces
     def initialize(self):
         self.options.declare("modeling_options")
 
@@ -1876,13 +1877,13 @@ class RotorStructure(Group):
             BladeCurvature(modeling_options=modeling_options),
             promotes=["r", "precone", "precurve", "presweep", "Rhub", "blade_span_cg", "3d_curv", "x_az", "y_az", "z_az"],
         )
-        promoteListTotalLoads = ["r", "theta", "tilt", "rhoA", "3d_curv", "z_az"]
+        promoteListTotalBladeLoads = ["r", "theta", "tilt", "rhoA", "3d_curv", "z_az"]
         self.add_subsystem(
-            "tot_loads_gust", TotalLoads(modeling_options=modeling_options), promotes=promoteListTotalLoads
+            "tot_loads_gust", TotalBladeLoads(modeling_options=modeling_options), promotes=promoteListTotalBladeLoads
         )
-        # self.add_subsystem('tot_loads_rated',       TotalLoads(modeling_options = modeling_options),      promotes=promoteListTotalLoads)
-        # self.add_subsystem('tot_loads_storm_1yr',   TotalLoads(modeling_options = modeling_options),      promotes=promoteListTotalLoads)
-        # self.add_subsystem('tot_loads_storm_50yr',  TotalLoads(modeling_options = modeling_options),      promotes=promoteListTotalLoads)
+        # self.add_subsystem('tot_loads_rated',       TotalBladeLoads(modeling_options = modeling_options),      promotes=promoteListTotalBladeLoads)
+        # self.add_subsystem('tot_loads_storm_1yr',   TotalBladeLoads(modeling_options = modeling_options),      promotes=promoteListTotalBladeLoads)
+        # self.add_subsystem('tot_loads_storm_50yr',  TotalBladeLoads(modeling_options = modeling_options),      promotes=promoteListTotalBladeLoads)
         promoteListFrame3DD = [
             "x_az",
             "y_az",

@@ -83,7 +83,7 @@ class TestRS(unittest.TestCase):
         npt.assert_equal(outputs["z_az"], inputs["r"])
         npt.assert_almost_equal(outputs["blades_cg_hubcc"], 51*np.sin(np.deg2rad(cone[50])))
 
-    def testTotalLoads(self):
+    def testTotalBladeLoads(self):
         inputs = {}
         outputs = {}
         npts = 101
@@ -94,7 +94,7 @@ class TestRS(unittest.TestCase):
         options["WISDEM"]["RotorSE"] = {}
         options["WISDEM"]["RotorSE"]["n_span"] = npts
 
-        myobj = rs.TotalLoads(modeling_options=options)
+        myobj = rs.TotalBladeLoads(modeling_options=options)
 
         # Pass through
         inputs["r"] = np.linspace(0, 100, npts)

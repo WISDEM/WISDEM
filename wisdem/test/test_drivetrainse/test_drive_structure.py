@@ -92,8 +92,9 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs["hub_system_mass"] = np.array([100e3])
         self.inputs["hub_system_cm"] = np.array([2.0])
         self.inputs["hub_system_I"] = np.array([2409.750e3, -1716.429e3, 74.3529e3, 0.0, 0.0, 0.0])
-        self.inputs["F_hub"] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3, 1))
-        self.inputs["M_hub"] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3, 1))
+        self.inputs["F_aero_hub"] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3, 1))
+        self.inputs['blades_mass'] = 0.
+        self.inputs["M_aero_hub"] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3, 1))
 
         self.inputs["lss_E"] = self.inputs["hss_E"] = self.inputs["bedplate_E"] = 210e9
         self.inputs["lss_G"] = self.inputs["hss_G"] = self.inputs["bedplate_G"] = 80.8e9
@@ -370,8 +371,8 @@ class TestDirectStructure(unittest.TestCase):
 
     def testRunRotatingDirect_noTilt(self):
         self.inputs["tilt"] = np.array([0.0])
-        self.inputs["F_hub"] = np.zeros(3).reshape((3, 1))
-        self.inputs["M_hub"] = np.zeros(3).reshape((3, 1))
+        self.inputs["F_aero_hub"] = np.zeros(3).reshape((3, 1))
+        self.inputs["M_aero_hub"] = np.zeros(3).reshape((3, 1))
         self.compute_layout()
         myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, modeling_options=self.opt, direct_drive=True)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
@@ -390,8 +391,8 @@ class TestDirectStructure(unittest.TestCase):
         )
 
         g = np.array([30e2, 40e2, 50e2])
-        self.inputs["F_hub"] = g.reshape((3, 1))
-        self.inputs["M_hub"] = 2 * g.reshape((3, 1))
+        self.inputs["F_aero_hub"] = g.reshape((3, 1))
+        self.inputs["M_aero_hub"] = 2 * g.reshape((3, 1))
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs["F_mb1"].flatten(), g + F0, decimal=2)
         npt.assert_almost_equal(self.outputs["F_mb2"], 0.0, decimal=2)
@@ -418,8 +419,8 @@ class TestDirectStructure(unittest.TestCase):
 
     def testRunRotatingDirect_withTilt(self):
         self.inputs["tilt"] = np.array([5.0])
-        self.inputs["F_hub"] = np.zeros(3).reshape((3, 1))
-        self.inputs["M_hub"] = np.zeros(3).reshape((3, 1))
+        self.inputs["F_aero_hub"] = np.zeros(3).reshape((3, 1))
+        self.inputs["M_aero_hub"] = np.zeros(3).reshape((3, 1))
         self.compute_layout()
         myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, modeling_options=self.opt, direct_drive=True)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
@@ -439,8 +440,8 @@ class TestDirectStructure(unittest.TestCase):
         )
 
         g = np.array([30e2, 40e2, 50e2])
-        self.inputs["F_hub"] = g.reshape((3, 1))
-        self.inputs["M_hub"] = 2 * g.reshape((3, 1))
+        self.inputs["F_aero_hub"] = g.reshape((3, 1))
+        self.inputs["M_aero_hub"] = 2 * g.reshape((3, 1))
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs["F_mb1"].flatten(), g + F0, decimal=2)
         npt.assert_almost_equal(self.outputs["F_mb2"], 0.0, decimal=2)
@@ -468,8 +469,8 @@ class TestDirectStructure(unittest.TestCase):
     def testRunRotatingGeared_noTilt(self):
         self.inputs["tilt"] = np.array([0.0])
         self.inputs["gear_ratio"] = np.array([50.0])
-        self.inputs["F_hub"] = np.zeros(3).reshape((3, 1))
-        self.inputs["M_hub"] = np.zeros(3).reshape((3, 1))
+        self.inputs["F_aero_hub"] = np.zeros(3).reshape((3, 1))
+        self.inputs["M_aero_hub"] = np.zeros(3).reshape((3, 1))
         self.compute_layout(False)
         myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, modeling_options=self.opt, direct_drive=False)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
@@ -488,8 +489,8 @@ class TestDirectStructure(unittest.TestCase):
         )
 
         g = np.array([30e2, 40e2, 50e2])
-        self.inputs["F_hub"] = g.reshape((3, 1))
-        self.inputs["M_hub"] = 2 * g.reshape((3, 1))
+        self.inputs["F_aero_hub"] = g.reshape((3, 1))
+        self.inputs["M_aero_hub"] = 2 * g.reshape((3, 1))
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs["F_mb1"].flatten(), g + F0, decimal=2)
         npt.assert_almost_equal(self.outputs["F_mb2"], 0.0, decimal=2)
@@ -517,8 +518,8 @@ class TestDirectStructure(unittest.TestCase):
     def testRunRotatingGeared_withTilt(self):
         self.inputs["tilt"] = np.array([5.0])
         self.inputs["gear_ratio"] = np.array([50.0])
-        self.inputs["F_hub"] = np.zeros(3).reshape((3, 1))
-        self.inputs["M_hub"] = np.zeros(3).reshape((3, 1))
+        self.inputs["F_aero_hub"] = np.zeros(3).reshape((3, 1))
+        self.inputs["M_aero_hub"] = np.zeros(3).reshape((3, 1))
         self.compute_layout(False)
         myobj = ds.Hub_Rotor_LSS_Frame(n_dlcs=1, modeling_options=self.opt, direct_drive=False)
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
@@ -538,8 +539,8 @@ class TestDirectStructure(unittest.TestCase):
         )
 
         g = np.array([30e2, 40e2, 50e2])
-        self.inputs["F_hub"] = g.reshape((3, 1))
-        self.inputs["M_hub"] = 2 * g.reshape((3, 1))
+        self.inputs["F_aero_hub"] = g.reshape((3, 1))
+        self.inputs["M_aero_hub"] = 2 * g.reshape((3, 1))
         myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
         npt.assert_almost_equal(self.outputs["F_mb1"].flatten(), g + F0, decimal=2)
         npt.assert_almost_equal(self.outputs["F_mb2"], 0.0, decimal=2)
@@ -567,8 +568,8 @@ class TestDirectStructure(unittest.TestCase):
     def testHSS_noTilt(self):
         self.inputs["tilt"] = np.array([0.0])
         self.inputs["gear_ratio"] = np.array([50.0])
-        self.inputs["F_hub"] = np.zeros(3).reshape((3, 1))
-        self.inputs["M_hub"] = np.zeros(3).reshape((3, 1))
+        self.inputs["F_aero_hub"] = np.zeros(3).reshape((3, 1))
+        self.inputs["M_aero_hub"] = np.zeros(3).reshape((3, 1))
         self.compute_layout(False)
         myobj = ds.HSS_Frame(modeling_options=self.opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs)
@@ -580,8 +581,8 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_generator"].flatten()[[0, 2]], 0.0, decimal=2)
 
         g = np.array([30e2, 40e2, 50e2])
-        self.inputs["F_hub"] = g.reshape((3, 1))
-        self.inputs["M_hub"] = 2 * g.reshape((3, 1))
+        self.inputs["F_aero_hub"] = g.reshape((3, 1))
+        self.inputs["M_aero_hub"] = 2 * g.reshape((3, 1))
         self.compute_layout(False)
         myobj = ds.HSS_Frame(modeling_options=self.opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs)
@@ -591,8 +592,8 @@ class TestDirectStructure(unittest.TestCase):
     def testHSS_withTilt(self):
         self.inputs["tilt"] = np.array([5.0])
         self.inputs["gear_ratio"] = np.array([50.0])
-        self.inputs["F_hub"] = np.zeros(3).reshape((3, 1))
-        self.inputs["M_hub"] = np.zeros(3).reshape((3, 1))
+        self.inputs["F_aero_hub"] = np.zeros(3).reshape((3, 1))
+        self.inputs["M_aero_hub"] = np.zeros(3).reshape((3, 1))
         self.compute_layout(False)
         myobj = ds.HSS_Frame(modeling_options=self.opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs)
@@ -605,8 +606,8 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_generator"].flatten()[[0, 2]], 0.0, decimal=2)
 
         g = np.array([30e2, 40e2, 50e2])
-        self.inputs["F_hub"] = g.reshape((3, 1))
-        self.inputs["M_hub"] = 2 * g.reshape((3, 1))
+        self.inputs["F_aero_hub"] = g.reshape((3, 1))
+        self.inputs["M_aero_hub"] = 2 * g.reshape((3, 1))
         self.compute_layout(False)
         myobj = ds.HSS_Frame(modeling_options=self.opt, n_dlcs=1)
         myobj.compute(self.inputs, self.outputs)
@@ -616,8 +617,8 @@ class TestDirectStructure(unittest.TestCase):
     def testShaftTheoryLSS(self):
         # https://www.engineersedge.com/calculators/torsional-stress-calculator.htm
         self.inputs["tilt"] = np.array([0.0])
-        self.inputs["F_hub"] = np.zeros(3).reshape((3, 1))
-        self.inputs["M_hub"] = np.array([1e5, 0.0, 0.0]).reshape((3, 1))
+        self.inputs["F_aero_hub"] = np.zeros(3).reshape((3, 1))
+        self.inputs["M_aero_hub"] = np.array([1e5, 0.0, 0.0]).reshape((3, 1))
         self.inputs["brake_mass"] = np.array([0.0])
         self.inputs["brake_I"] = np.zeros(3)
         self.inputs["generator_rotor_mass"] = np.array([0.0])
@@ -644,7 +645,7 @@ class TestDirectStructure(unittest.TestCase):
         self.inputs["tilt"] = np.array([0.0])
         self.inputs["gear_ratio"] = np.array([50.0])
         self.inputs["s_hss"] = np.array([0.0, 0.5, 1.0])
-        self.inputs["M_hub"] = np.array([1e5, 0.0, 0.0]).reshape((3, 1))
+        self.inputs["M_aero_hub"] = np.array([1e5, 0.0, 0.0]).reshape((3, 1))
         self.inputs["s_generator"] = np.array([0.0])
         self.inputs["generator_mass"] = np.array([0.0])
         self.inputs["generator_I"] = np.zeros(3)

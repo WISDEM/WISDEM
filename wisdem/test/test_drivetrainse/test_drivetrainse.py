@@ -19,8 +19,8 @@ def set_common(prob, opt):
     prob["rated_torque"] = 10.25e6  # rev 1 9.94718e6
     prob["damping_ratio"] = 0.01
 
-    prob["F_hub"] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3, 1))
-    prob["M_hub"] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3, 1))
+    prob["F_aero_hub"] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3, 1))
+    prob["M_aero_hub"] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3, 1))
 
     prob["E_mat"] = 210e9 * np.ones((1, 3))
     prob["G_mat"] = 80.8e9 * np.ones((1, 3))
