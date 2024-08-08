@@ -33,6 +33,7 @@ properties:
         type: object
         default: {}
         optional:
+            - turbine_type
             - turbine_class
             - turbulence_class
             - drivetrain
@@ -43,6 +44,11 @@ properties:
             - rated_power
             - lifetime
         properties:
+            turbine_type:
+                type: string
+                default: Horizontal
+                description: Wind turbine type, including horizontrol and vertical axial turbines
+                enum: [Horizontal, horizontal, Vertical, vertical]
             turbine_class:
                 type: string
                 default: I
@@ -95,6 +101,7 @@ properties:
                 unit: years
                 minimum: 0
                 default: 25.0
+
     components:
         type: object
         default: {}
@@ -119,6 +126,7 @@ properties:
                             - twist
                             - pitch_axis
                             - reference_axis
+                            - blade_mount_point
                         properties:
                             airfoil_position:
                                 type: object
@@ -202,6 +210,21 @@ properties:
                                         $ref: "#/definitions/distributed_data/angle"
                             reference_axis:
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
+                            blade_mount_point:
+                                type: number
+                                default: 0.5
+                                description: Blade mount point ratio, 0.5 is the blade half chord is perpendicular with the axis of rotation, 0.25 is the quarter chord, etc
+                            blade_radius:
+                                type: number
+                                required:
+                                    - grid
+                                    - values
+                                description: Radius distribution along the blade height direction.
+                            blade_height:
+                                type: number
+                                default: 0
+                                description: Blade height for verical axial turbines
+                            
                             # coordinates:
                                     # description: Coordinates expressed in the blade root coordinate system.
                                     # $ref: "#/definitions/distributed_data/coordinates"
@@ -1223,6 +1246,8 @@ properties:
                 required:
                     - outer_shape_bem
                     - internal_structure_2d_fem
+                optional:
+                    - tower_height
                 properties:
                     outer_shape_bem:
                         type: object
@@ -1306,6 +1331,11 @@ properties:
                                                     $ref: "#/definitions/distributed_data/grid_nd"
                                                 values:
                                                     $ref: "#/definitions/distributed_data/length"
+                    tower_height:
+                        type: number
+                        default: 0
+                        description: Tower extension height below blades for vertical axis turbines
+                        
             monopile:
                 type: object
                 required:
