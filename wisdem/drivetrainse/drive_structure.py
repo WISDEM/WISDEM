@@ -135,6 +135,8 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         self.add_input("F_aero_hub", val=np.zeros((3, n_dlcs)), units="N")
         self.add_input("M_aero_hub", val=np.zeros((3, n_dlcs)), units="N*m")
         self.add_input("blades_mass", 0.0, units="kg")
+        self.add_input("blades_cm", 0.0, units="m")
+        self.add_input("blades_I", np.zeros(6), units="kg*m**2")
         self.add_input("s_mb1", val=0.0, units="m")
         self.add_input("s_mb2", val=0.0, units="m")
         self.add_input("s_rotor", val=0.0, units="m")
@@ -210,12 +212,14 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         m_hub = float(inputs["hub_system_mass"][0])
         cm_hub = float(inputs["hub_system_cm"][0])
         I_hub = inputs["hub_system_I"]
-        F_aero_hub = inputs["F_aero_hub"]
-        M_aero_hub = inputs["M_aero_hub"]
-        blades_mass = inputs['blades_mass']
-        F_hub = F_aero_hub
-        F_hub[2] -= blades_mass * gravity
-        M_hub = M_aero_hub
+        m_blades = float(inputs['blades_mass'][0])
+        cm_blades = float(inputs["blades_cm"][0])
+        I_blades = inputs["blades_I"]
+        m_blades_hub = m_blades + m_hub + 1e-10
+        cm_blades_hub = (m_blades*cm_blades + m_hub*cm_hub) / m_blades_hub
+        I_blades_hub = I_blades[:3] + I_hub[:3]
+        F_hub = inputs["M_aero_hub"]
+        M_hub = inputs["F_aero_hub"]
 
         torq_defl_allow = float(inputs["shaft_deflection_allowable"][0])
         torq_angle_allow = float(inputs["shaft_angle_allowable"][0])
@@ -294,14 +298,14 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         three0 = np.zeros(3).tolist()
         myframe.changeExtraNodeMass(
             np.r_[inode[-1], itorq, iadd],
-            [m_hub, m_torq, m_add],
-            [I_hub[0], I_torq[0], I_add[0]],
-            [I_hub[1], I_torq[1], I_add[1]],
-            [I_hub[2], I_torq[2], I_add[2]],
+            [m_blades_hub, m_torq, m_add],
+            [I_blades_hub[0], I_torq[0], I_add[0]],
+            [I_blades_hub[1], I_torq[1], I_add[1]],
+            [I_blades_hub[2], I_torq[2], I_add[2]],
             three0,
             three0,
             three0,
-            [cm_hub, 0.0, 0.0],
+            [cm_blades_hub, 0.0, 0.0],
             three0,
             three0,
             True,
