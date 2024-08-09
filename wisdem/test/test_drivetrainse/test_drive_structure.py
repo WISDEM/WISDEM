@@ -515,6 +515,24 @@ class TestDirectStructure(unittest.TestCase):
         npt.assert_almost_equal(self.outputs["M_mb1"], 0.0, decimal=2)
         npt.assert_almost_equal(self.outputs["M_torq"], 0.0, decimal=2)
 
+        self.inputs["hub_system_mass"] = np.array([0.0])
+        self.inputs["hub_system_cm"] = np.array([0.0])
+        self.inputs["hub_system_I"] = np.zeros(6)
+        self.inputs["blades_mass"] = 1e3*np.array([100.0])
+        self.inputs["blades_cm"] = np.array([2.0])
+        self.inputs["blades_I"] = 1e3*np.array([1., 2., 3.])
+        myobj.compute(self.inputs, self.outputs, self.discrete_inputs, self.discrete_outputs)
+        F1 = self.outputs["F_mb1"].flatten()
+        M1 = self.outputs["M_mb2"].flatten()
+        npt.assert_almost_equal(F0[:2], F1[:2], decimal=2)
+        npt.assert_almost_equal(F0[2] - 100e3*9.801, F1[2], decimal=-4)
+        npt.assert_almost_equal(M0[[0,2]], M1[[0,2]], decimal=2)
+        npt.assert_almost_equal(M0[1] - (2+1)*100e3*9.801, M1[1], decimal=-4) #Lh1=1
+        npt.assert_almost_equal(self.outputs["F_mb2"], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs["F_torq"], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs["M_mb1"], 0.0, decimal=2)
+        npt.assert_almost_equal(self.outputs["M_torq"], 0.0, decimal=2)
+
     def testRunRotatingGeared_noTilt(self):
         self.inputs["tilt"] = np.array([0.0])
         self.inputs["gear_ratio"] = np.array([50.0])
