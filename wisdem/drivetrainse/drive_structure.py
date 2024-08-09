@@ -210,16 +210,16 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         gamma = gamma_f * gamma_m * gamma_n
 
         m_hub = float(inputs["hub_system_mass"][0])
-        cm_hub = float(inputs["hub_system_cm"][0])
+        cm_hub = Cup*float(inputs["hub_system_cm"][0])
         I_hub = inputs["hub_system_I"]
         m_blades = float(inputs['blades_mass'][0])
-        cm_blades = float(inputs["blades_cm"][0])
+        cm_blades = Cup*float(inputs["blades_cm"][0])
         I_blades = inputs["blades_I"]
         m_blades_hub = m_blades + m_hub + 1e-10
         cm_blades_hub = (m_blades*cm_blades + m_hub*cm_hub) / m_blades_hub
         I_blades_hub = I_blades[:3] + I_hub[:3]
-        F_hub = inputs["M_aero_hub"]
-        M_hub = inputs["F_aero_hub"]
+        F_hub = inputs["F_aero_hub"]
+        M_hub = inputs["M_aero_hub"]
 
         torq_defl_allow = float(inputs["shaft_deflection_allowable"][0])
         torq_angle_allow = float(inputs["shaft_angle_allowable"][0])
