@@ -35,9 +35,9 @@ class MyComp(om.ExplicitComponent):
         outputs["float_out"] = inputs["float_in"] + 1
         outputs["fraction_out"] = inputs["fraction_in"] + 0.1
         outputs["array_out"] = inputs["array_in"] + 1
-        discrete_outputs["int_out"] = 1
-        discrete_outputs["string_out"] = "full"
-        discrete_outputs["list_out"] = ["full"] * 3
+        discrete_outputs["int_out"] = discrete_inputs["int_in"] + 1
+        discrete_outputs["string_out"] = discrete_inputs["string_in"] + "_full"
+        discrete_outputs["list_out"] = discrete_inputs["list_in"] + ["full"] * 3
 
 
 class MyGroup(om.Group):
@@ -92,9 +92,9 @@ class TestFileIO(unittest.TestCase):
         self.assertEqual(self.prob["int_in"], 0)
         self.assertEqual(self.prob["int_out"], 1)
         self.assertEqual(self.prob["string_in"], "empty")
-        self.assertEqual(self.prob["string_out"], "full")
+        self.assertEqual(self.prob["string_out"], "empty_full")
         self.assertEqual(self.prob["list_in"], ["empty"] * 3)
-        self.assertEqual(self.prob["list_out"], ["full"] * 3)
+        self.assertEqual(self.prob["list_out"], ["empty"] * 3 + ["full"] * 3)
 
         # Check numpy file
         npzdat = np.load("test.npz", allow_pickle=True)
@@ -107,9 +107,9 @@ class TestFileIO(unittest.TestCase):
         self.assertEqual(npzdat["int_in"], 0)
         self.assertEqual(npzdat["int_out"], 1)
         self.assertEqual(npzdat["string_in"], "empty")
-        self.assertEqual(npzdat["string_out"], "full")
+        self.assertEqual(npzdat["string_out"], "empty_full")
         npt.assert_equal(npzdat["list_in"], ["empty"] * 3)
-        npt.assert_equal(npzdat["list_out"], ["full"] * 3)
+        npt.assert_equal(npzdat["list_out"], ["empty"] * 3 + ["full"] * 3)
 
 
 if __name__ == "__main__":
