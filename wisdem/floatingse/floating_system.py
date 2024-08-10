@@ -355,7 +355,7 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_elem_G"][:nelem] = elem_G
         outputs["platform_elem_TorsC"][:nelem] = elem_TorsC
         outputs["platform_elem_sigma_y"][:nelem] = elem_sigy
-        discrete_outputs["platform_elem_memid"] = elem_memid
+        opt['floating']['members']['platform_elem_memid'] = elem_memid  # converted from discrete_output to modeling option
 
         outputs["platform_ballast_mass"] = m_ball
         outputs["platform_hull_mass"] = mass - m_ball
