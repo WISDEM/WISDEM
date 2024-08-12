@@ -15,5 +15,5 @@ wt_opt, analysis_options, opt_options = run_wisdem(fname_wt_input, fname_modelin
 print("blade mass:", wt_opt["wt.tcc.blade_mass"])
 print("blade moments of inertia:", wt_opt["wt.drivese.blades_I"])
 print("BRFM:", wt_opt["wt.drivese.pitch_system.BRFM"])
-print("hub forces:", wt_opt["wt.drivese.F_hub"])
-print("hub moments:", wt_opt["wt.drivese.M_hub"])
+print("hub forces:", wt_opt["wt.drivese.F_aero_hub"])
+print("hub moments:", wt_opt["wt.drivese.M_aero_hub"])
