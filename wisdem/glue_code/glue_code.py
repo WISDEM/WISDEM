@@ -419,6 +419,7 @@ class WT_RNTA(om.Group):
             self.connect("materials.wohler_intercept", "drivese.wohler_A_mat")
             self.connect("materials.unit_cost", "drivese.unit_cost_mat")
 
+            self.connect("generator.generator_mass_user", "drivese.generator_mass_user")
             if modeling_options["flags"]["generator"]:
                 self.connect("generator.B_r", "drivese.generator.B_r")
                 self.connect("generator.P_Fe0e", "drivese.generator.P_Fe0e")
@@ -512,7 +513,6 @@ class WT_RNTA(om.Group):
 
             else:
                 self.connect("generator.generator_radius_user", "drivese.generator_radius_user")
-                self.connect("generator.generator_mass_user", "drivese.generator_mass_user")
                 self.connect("generator.generator_efficiency_user", "drivese.generator_efficiency_user")
 
         # Connections to TowerSE

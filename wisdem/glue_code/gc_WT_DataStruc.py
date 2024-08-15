@@ -410,6 +410,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
             # Generator inputs
             generator_ivc = om.IndepVarComp()
+            generator_ivc.add_output("generator_mass_user", val=0.0, units="kg")
             if modeling_options["flags"]["generator"]:
                 generator_ivc.add_output("B_r", val=1.2, units="T")
                 generator_ivc.add_output("P_Fe0e", val=1.0, units="W/kg")
@@ -498,7 +499,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 # If using simple (regression) generator scaling, this is an optional input to override default values
                 n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
                 generator_ivc.add_output("generator_radius_user", val=0.0, units="m")
-                generator_ivc.add_output("generator_mass_user", val=0.0, units="kg")
                 generator_ivc.add_output("generator_efficiency_user", val=np.zeros((n_pc, 2)))
 
             self.add_subsystem("generator", generator_ivc)

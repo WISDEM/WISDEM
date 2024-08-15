@@ -790,9 +790,9 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
             wt_opt["nacelle.planet_numbers"] = nacelle["drivetrain"]["planet_numbers"]
             wt_opt["nacelle.hss_material"] = nacelle["drivetrain"]["hss_material"]
 
+        wt_opt["generator.generator_mass_user"] = nacelle["drivetrain"]["generator_mass_user"]
         if not modeling_options["flags"]["generator"]:
             wt_opt["generator.generator_radius_user"] = nacelle["drivetrain"]["generator_radius_user"]
-            wt_opt["generator.generator_mass_user"] = nacelle["drivetrain"]["generator_mass_user"]
 
             eff_user = np.c_[
                 nacelle["drivetrain"]["generator_rpm_efficiency_user"]["grid"],
@@ -811,6 +811,8 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
 
 
 def assign_generator_values(wt_opt, modeling_options, nacelle):
+    if "generator_mass_user" in nacelle["generator"]:
+        wt_opt["generator.generator_mass_user"] = nacelle["generator"]["generator_mass_user"]
     wt_opt["generator.B_r"] = nacelle["generator"]["B_r"]
     wt_opt["generator.P_Fe0e"] = nacelle["generator"]["P_Fe0e"]
     wt_opt["generator.P_Fe0h"] = nacelle["generator"]["P_Fe0h"]
