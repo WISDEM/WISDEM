@@ -28,7 +28,7 @@ class WindTurbineOntologyPython(object):
             if m in self.modeling_options:
                 self.modeling_options["WISDEM"][m].update(self.modeling_options[m])
 
-        for k in ["blade", "hub", "nacelle", "tower", "monopile", "jacket", "floating_platform", "mooring", "RNA"]:
+        for k in ["blade", "hub", "nacelle", "tower", "monopile", "jacket", "floating_platform", "mooring", "RNA", "struts"]:
             self.modeling_options["flags"][k] = k in self.wt_init["components"]
 
         for k in ["assembly", "components", "airfoils", "materials", "control", "environment", "bos", "costs"]:
@@ -52,16 +52,21 @@ class WindTurbineOntologyPython(object):
             or self.modeling_options["flags"]["jacket"]
         )
 
+        # VAWT flag
+        self.modeling_options["flags"]["vertical"] = (self.wt_init["turbine_type"] == "vertical")
+
         # Put in some logic about what needs to be in there
         flags = self.modeling_options["flags"]
 
         # Even if the block is in the inputs, the user can turn off via modeling options
         if flags["bos"]:
             flags["bos"] = self.modeling_options["WISDEM"]["BOS"]["flag"]
-        if flags["blade"]:
-            flags["blade"] = self.modeling_options["WISDEM"]["RotorSE"]["flag"]
+        if flags["blade"]: # TODO-YL: only use RotorSE for horizoncal axis for now??
+            if not self.modeling_options["flags"]["vertical"]:
+                flags["blade"] = self.modeling_options["WISDEM"]["RotorSE"]["flag"]
         if flags["tower"]:
-            flags["tower"] = self.modeling_options["WISDEM"]["TowerSE"]["flag"]
+            if not self.modeling_options["flags"]["vertical"]: # TODO-YL: Do we want to use towerSE for owens?
+                flags["tower"] = self.modeling_options["WISDEM"]["TowerSE"]["flag"]
         if flags["monopile"]:
             flags["monopile"] = self.modeling_options["WISDEM"]["FixedBottomSE"]["flag"]
         if flags["jacket"]:
@@ -106,6 +111,10 @@ class WindTurbineOntologyPython(object):
         if "water_depth" in self.wt_init["environment"]:
             if self.wt_init["environment"]["water_depth"] <= 0.0 and flags["offshore"]:
                 raise ValueError("Water depth must be > 0 to do fixed-bottom or floating analysis")
+            
+        # VAWT flags check
+        if self.modeling_options["flags"]["vertical"] and not self.modeling_options["flags"]["struts"]:
+            raise ValueError("Vertical axis turbine is modeled but no struts is provided.")
 
     def set_openmdao_vectors(self):
         # Class instance to determine all the parameters used to initialize the openmdao arrays, i.e. number of airfoils, number of angles of attack, number of blade spanwise stations, etc
@@ -165,7 +174,7 @@ class WindTurbineOntologyPython(object):
 
         # Blade
         self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = False
-        if self.modeling_options["flags"]["blade"]:
+        if self.modeling_options["flags"]["blade"] and not self.modeling_options["flags"]["vertical"]:
             self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] = np.linspace(
                 0.0, 1.0, self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
             )  # Equally spaced non-dimensional spanwise grid
@@ -233,7 +242,7 @@ class WindTurbineOntologyPython(object):
             ]
 
         # Tower
-        if self.modeling_options["flags"]["tower"]:
+        if self.modeling_options["flags"]["tower"] and not self.modeling_options["flags"]["vertical"]:
             self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = len(
                 self.wt_init["components"]["tower"]["outer_shape_bem"]["outer_diameter"]["grid"]
             )

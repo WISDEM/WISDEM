@@ -201,6 +201,27 @@ properties:
                                         default: 1.0
                                         minimum: -1.e30
                                         maximum: 1.e30
+                            x:
+                                type: object
+                                default: {}
+                                description: Blade radius as a design variable by scaling (multiplying) the initial value at spline control points along the span, for VAWT only!
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 3
+                                        description: x_scale design parameter count
+                                    lower_bound:
+                                        type: number
+                                        default: -1.0
+                                        minimum: -1.e30
+                                        maximum: 1.e30
+                                    upper_bound:
+                                        type: number
+                                        default: 1.0
+                                        minimum: -1.e30
+                                        maximum: 1.e30
+      
                     structure:
                         type: array
                         description: Design variables associated with the internal blade structure

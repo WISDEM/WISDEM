@@ -657,6 +657,9 @@ class Blade(om.Group):
             "s_opt_chord", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
         )
         opt_var.add_output(
+            "s_opt_x", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["x"]["n_opt"])
+        )
+        opt_var.add_output(
             "twist_opt",
             val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
             units="rad",
@@ -665,6 +668,11 @@ class Blade(om.Group):
             "chord_opt",
             units="m",
             val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
+        )
+        opt_var.add_output(
+            "x_opt",
+            units="m",
+            val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["x"]["n_opt"]),
         )
         opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
         for i in range(rotorse_options["n_layers"]):
@@ -689,8 +697,10 @@ class Blade(om.Group):
         # Connections to blade aero parametrization
         self.connect("opt_var.s_opt_twist", "pa.s_opt_twist")
         self.connect("opt_var.s_opt_chord", "pa.s_opt_chord")
+        self.connect("opt_var.s_opt_x", "pa.s_opt_x")
         self.connect("opt_var.twist_opt", "pa.twist_opt")
         self.connect("opt_var.chord_opt", "pa.chord_opt")
+        self.connect("opt_var.x_opt", "pa.x_opt")
         self.connect("outer_shape_bem.s", "pa.s")
 
         # Interpolate airfoil profiles and coordinates
