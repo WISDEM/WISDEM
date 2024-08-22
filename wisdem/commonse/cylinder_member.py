@@ -2082,6 +2082,7 @@ class MemberComplex(om.ExplicitComponent):
         I_total *= coeff_user
         
         # Store outputs addressed so far
+        print("comm", m_total)
         outputs["total_mass"] = m_total
         outputs["structural_mass"] = m_total - m_ballast
         outputs["z_cg"] = z_cg
