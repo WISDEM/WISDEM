@@ -45,7 +45,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         # Extract the number of cores available
         max_cores = MPI.COMM_WORLD.Get_size()
 
-        if max_cores > n_DV:
+        if max_cores > n_DV and opt_options["opt_flag"] and not run_only:
             raise ValueError(
                 "ERROR: please reduce the number of cores, currently set to "
                 + str(max_cores)
