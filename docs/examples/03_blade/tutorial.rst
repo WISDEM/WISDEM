@@ -88,21 +88,14 @@ Once the optimization terminates, type in the terminal:
     $ compare_designs BAR_USC.yaml outputs_aero/blade_out.yaml --labels Init Opt
 
 This script compares the initial and optimized designs.
-Some screen output is generated, as well as plots (contained in the `outputs` folder), such as in :numref:`fig_opt1_induction` and :numref:`fig_opt1_twist_opt`.
+Some screen output is generated, as well as plots (contained in the `outputs` folder), such as in :numref:`_fig_opt1_chord`.
 
-.. _fig_opt1_induction:
-.. figure:: /images/blade/induction.png
+.. _fig_opt1_chord:
+.. figure:: /images/blade/chord.png
     :height: 4in
     :align: center
 
-    Initial versus optimized induction profiles
-
-.. _fig_opt1_twist_opt:
-.. figure:: /images/blade/twist_opt.png
-    :height: 4in
-    :align: center
-
-    Initial versus optimized twist profiles
+    Initial versus optimized chord profiles
 
 
 Simple Structural Optimization

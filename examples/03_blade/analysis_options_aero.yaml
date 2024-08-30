@@ -9,7 +9,7 @@ design_variables:
                 flag: False # Flag to assign design variables to the blade twist 
                 inverse: True # Flag to determine twist from a desired angle of attack. 
                 # Only used if flag is set to False
-                inverse_target: 'max_efficiency' # Twist generates angles of attack 
+                inverse_target: 'stall_margin' # Twist generates angles of attack 
                 # corresponding to max airfoil efficiency along span. The alternative is 'stall_margin'
                 n_opt: 8 # Number of control points along blade span. During inverse design, 
                 # twist is smoothened with a spline with these
@@ -31,7 +31,7 @@ constraints:
     blade:
         stall:
             flag: False # Constraint on minimum stall margin
-            margin: 0.087 # Value of minimum stall margin in [rad]
+            margin: 0.13955555555555557 # Value of minimum stall margin in [rad]
         chord:
             flag: True # Constraint max chord to its default value (4.75 m)
             max: 4.75 # Max chord value
