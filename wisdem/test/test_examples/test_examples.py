@@ -20,6 +20,7 @@ all_scripts = [
     "02_reference_turbines/iea10mw_driver",
     "02_reference_turbines/iea3p4mw_driver",
     "03_blade/blade_driver",
+    "03_blade/load_log",
     "04_openmdao/betz_limit",
     "04_openmdao/sellar",
     "05_tower_monopile/monopile_direct",

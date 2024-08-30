@@ -400,7 +400,7 @@ class CCBladeTwist(ExplicitComponent):
         n_opt_twist = opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
 
         # Inputs
-        self.add_input("Uhub", val=9.0, units="m/s", desc="Undisturbed wind speed")
+        self.add_input("Uhub", val=5.0, units="m/s", desc="Undisturbed wind speed")
 
         self.add_input("tsr", val=0.0, desc="Tip speed ratio")
         self.add_input("pitch", val=0.0, units="deg", desc="Pitch angle")

@@ -23,46 +23,37 @@ Whenever conducting a design optimization, it is helpful to first run the starti
 Simple Aerodynamic Optimization
 ===============================
 
-The file, ``analysis_options_aero.yaml``, is used to run a blade twist optimization. This is activated by turning on the appropriate design variable flags in the file,
+The file, ``analysis_options_aero.yaml``, is used to run a blade twist and chord optimization. 
+This is activated by turning on the appropriate design variable flags in the file,
 
 .. literalinclude:: /../examples/03_blade/analysis_options_aero.yaml
     :language: yaml
     :start-after: design_variables:
     :end-before: merit_figure:
 
-First, we must increase the number of the twist spline control points to 8. We also need to adjust the indices controlling which of these control points can be varied by the optimizer, and which are instead locked. In the twist section, let's set :code:`index_start` to 2 (this means that the first 2 of 8 spanwise control points sections are locked), whereas we let all other 6 spanwise control points in the hands of the optimizer. We do this by setting :code:`index_end` to 8. No need to adjust the maximum decrease and increase that the optimizer can apply to the twist in radians, nor to activate the :code:`inverse` flag.
+WISDEM can optimize blade twist either by assigning design variables to it, or in an inverse approach by setting a desired angle of attack. In the first case, we set :code:`flag` to True. In the latter case, we set :code:`flag` to False and we set :code:`inverse` to True. Here we pick the latter approach. In either case we should increase the number of the twist spline control points to 8. In the first case these points would be assigned to design variables and we should also adjust the indices controlling which of these control points can be varied by the optimizer, and which are instead locked. In the twist section, we would set :code:`index_start` to 2 (this means that the first 2 of 8 spanwise control points sections are locked), whereas we would let all other 6 spanwise control points in the hands of the optimizer. We do this by setting :code:`index_end` to 8. You can also adjust the maximum decrease and increase that the optimizer can apply to the twist in radians. If we activated the :code:`inverse` flag, :code:`n_opt` will be used to smoothened the twist distribution with a spline with this number of points along span to mimick manufacturability constraints.
 
-For chord, we leave the :code:`flag` to False.
+For chord, we set the :code:`flag` to True. Again, adjust :code:`n_opt`, :code:`index_start`, and :code:`index_end`. The chord bounds are set to be multiplicative starting from the initial chord. We don't optimize chord at blade tip (BEM isn't good at it), so set :code:`n_opt` to 8 and :code:`index_end` to 7.
 
-AEP is the quantity that we maximize,
+AEP is the quantity that we maximize. An alternative is power coefficient. In that case use :code:`Cp`
 
 .. code-block:: yaml
 
     merit_figure: AEP
 
-To better guide the optimization, we activate a stall margin constraint using the same *flag* type of setting, with a value of :math:`5^{\circ} deg \approx 0.087 rad`. If we were to optimize chord, we might also like to constrain chord to a maximum and set a constrain guiding the diameter of the blade root bolt circle.
+To better guide the optimization, we activate a stall margin constraint using the same *flag* type of setting, with a value of :math:`5^{\circ} deg \approx 0.087 rad`. We also often like to constrain chord to a maximum and set a constrain guiding the diameter of the blade root bolt circle (use this only if :code:`index_start` is set to 0 for the chord). The blade root moment coefficient can also constrained to design low induction rotors, look at DOI [10.1088/1742-6596/1618/4/042016](https://doi.org/10.1088/1742-6596/1618/4/042016) to learn more.
 
 .. literalinclude:: /../examples/03_blade/analysis_options_aero.yaml
     :language: yaml
     :start-after: constraints:
     :end-before: driver:
 
-The maximum iteration limit currently used in the file is 2, to keep the examples short.  However, if you want to see more progress in the optimization, change the following lines from:
+The maximum iteration limit currently used in the file is 2, to keep the examples short.  However, if you want to see more progress in the optimization, change :code:`max_iter` to 20.
 
 .. literalinclude:: /../examples/03_blade/analysis_options_aero.yaml
     :language: yaml
     :start-after: driver:
-    :end-before: form:
-
-to:
-
-.. code-block:: yaml
-
-    tol: 1.e-3            # Optimality tolerance
-    max_iter: 10          # Maximum number of minor design iterations
-    solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
-    step_size: 1.e-3      # Step size for finite differencing
-
+    :end-before: recorder:
 
 Now to run the optimization we do,
 
@@ -70,26 +61,26 @@ Now to run the optimization we do,
 
     $ wisdem BAR-USC.yaml modeling_options.yaml analysis_options_aero.yaml
 
-or we comment out lines 16, 17, and 18 in blade_driver.py and we do:
+or adjust the list of analysis options yaml files in blade_driver.py and run:
 
 .. code-block:: bash
 
     $ python blade_driver.py
 
-or to run in parallel using multiple CPU cores (Mac or Linux only):
+or to run in parallel using multiple CPU cores (Mac or Linux only). 
+We have 8 chord design variables and we use forward finite differencing, so use up to 8 cores.
 
 .. code-block:: bash
 
-    $ mpirun -np 4 python blade_driver.py
+    $ mpirun -np 7 python blade_driver.py
 
 where the ``blade_driver.py`` script is:
 
 .. literalinclude:: /../examples/03_blade/blade_driver.py
     :language: python
 
-The CPU run time is approximately 5 minutes. As the script runs, you will see some
+When run with mpi, the CPU run time is approximately 3 minutes. As the script runs, you will see some
 output to your terminal, such as performance metrics and some analysis warnings.
-The optimizer might report that it has failed, but we have artificially limited the number of steps it can take during optimization, so that is expected.
 Once the optimization terminates, type in the terminal:
 
 .. code-block:: bash
@@ -98,8 +89,6 @@ Once the optimization terminates, type in the terminal:
 
 This script compares the initial and optimized designs.
 Some screen output is generated, as well as plots (contained in the `outputs` folder), such as in :numref:`fig_opt1_induction` and :numref:`fig_opt1_twist_opt`.
-The twist optimization did not have to satisfy a previous constrain for low induction rotors, and after 10 design iterations
-AEP grows from 24.34872 to 24.64157 GW*h.
 
 .. _fig_opt1_induction:
 .. figure:: /images/blade/induction.png

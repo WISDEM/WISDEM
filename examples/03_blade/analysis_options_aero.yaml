@@ -6,41 +6,46 @@ design_variables:
     blade:
         aero_shape:
             twist:
-                flag: True  # Flag to optimize the twist
-                inverse: False # Flag to determine twist from the user-defined desired margin to stall (defined in constraints)
-                n_opt: 4     # Number of control points along blade span
-                max_decrease: 0.08722222222222221 # Maximum decrease for the twist in [rad] at the n_opt locations
-                max_increase: 0.08722222222222221 # Maximum increase for the twist in [rad] at the n_opt locations
-                index_start: 2 # Lock the first two DVs from blade root
-                index_end: 4 # All DVs close to blade tip are active
+                flag: False # Flag to assign design variables to the blade twist 
+                inverse: True # Flag to determine twist from a desired angle of attack. 
+                # Only used if flag is set to False
+                inverse_target: 'max_efficiency' # Twist generates angles of attack 
+                # corresponding to max airfoil efficiency along span. The alternative is 'stall_margin'
+                n_opt: 8 # Number of control points along blade span. During inverse design, 
+                # twist is smoothened with a spline with these
+                # max_decrease: 0.08722222222222221 # Maximum decrease for the twist 
+                # in [rad] at the n_opt locations. Only used if flag is set to True
+                # max_increase: 0.08722222222222221 # Maximum increase for the twist 
+                # in [rad] at the n_opt locations. Only used if flag is set to True
             chord:
-                flag: False  # Flag to optimize the chord
-                n_opt: 4     # Number of control points along blade span
+                flag: True  # Flag to optimize the chord
+                n_opt: 8     # Number of control points along blade span
                 max_decrease: 0.3 # Minimum multiplicative gain on existing chord at the n_opt locations
                 max_increase: 3. # Maximum multiplicative gain on existing chord at the n_opt locations
                 index_start: 0 # Start by optimizing chord at blade root
-                index_end: 3 # Lock chord at blade tip
+                index_end: 7 # Lock chord at blade tip
 
-merit_figure: AEP
+merit_figure: Cp
 
 constraints:
     blade:
         stall:
-            flag: True     # Constraint on minimum stall margin
+            flag: False # Constraint on minimum stall margin
             margin: 0.087 # Value of minimum stall margin in [rad]
         chord:
-            flag: False # Constraint max chord to its default value (4.75 m)
+            flag: True # Constraint max chord to its default value (4.75 m)
+            max: 4.75 # Max chord value
         root_circle_diameter:
-            flag: False # Constraint for the minimum blade root circle diameter
+            flag: True # Constraint for the minimum blade root circle diameter
             max_ratio: 1.2 # The recommended value can be up to 20% larger than the actual
         moment_coefficient:
-            flag: True    # Constraint on minimum stall margin
-            max: 0.16
+            flag: True # Constraint on maximum blade root flapwise moment coefficient
+            max: 0.20 # Lowering this value will lead to low induction rotors
 
 driver:
     optimization:
         flag: True         # Flag to enable optimization
-        tol: 1.e-3          # Optimality tolerance
+        tol: 1.e-6          # Optimality tolerance
         # max_major_iter: 10  # Maximum number of major design iterations (SNOPT)
         # max_minor_iter: 100 # Maximum number of minor design iterations (SNOPT)
         max_iter: 1         # Maximum number of iterations (SLSQP)
@@ -49,5 +54,5 @@ driver:
         form: forward       # Finite differencing mode, either forward or central
 
 recorder:
-    flag: False              # Flag to activate OpenMDAO recorder
+    flag: True              # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder
