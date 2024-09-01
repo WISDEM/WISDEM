@@ -2380,12 +2380,12 @@ class virtual_factory(object):
             )  # [m2] Infusion webs
         self.floor_space[3 + self.n_webs] = (
             self.parallel_proc[3 + self.n_webs]
-            * (delta + blade_specs["length_sc_lp"][0])
+            * (delta + blade_specs["length_sc_lp"])
             * (delta + blade_specs["width_sc_start_lp"])
         )  # [m2] Infusion spar caps
         self.floor_space[4 + self.n_webs] = (
             self.parallel_proc[4 + self.n_webs]
-            * (delta + blade_specs["length_sc_hp"][0])
+            * (delta + blade_specs["length_sc_hp"])
             * (delta + blade_specs["width_sc_start_hp"])
         )  # [m2] Infusion spar caps
         self.floor_space[5 + self.n_webs] = (
@@ -2541,14 +2541,14 @@ class virtual_factory(object):
             )  # [$] Equipment for webs infusion is assumed at 1700 $ per meter of web length
         if not blade_specs["pultruded_spar_caps"]:
             self.equipm_investment[3 + self.n_webs] = (
-                1700.0 * self.parallel_proc[3 + self.n_webs] * blade_specs["length_sc_lp"][0]
+                1700.0 * self.parallel_proc[3 + self.n_webs] * blade_specs["length_sc_lp"]
             )  # [$] Equipment for spar caps infusion is assumed at 1700 $ per meter of spar cap length
             self.equipm_investment[4 + self.n_webs] = (
-                1700.0 * self.parallel_proc[4 + self.n_webs] * blade_specs["length_sc_hp"][0]
+                1700.0 * self.parallel_proc[4 + self.n_webs] * blade_specs["length_sc_hp"]
             )  # [$] Equipment for spar caps infusion is assumed at 1700 $ per meter of spar cap length
         else:
             cutting_chamfering_unit = 2.0e5  # Assume one pultrusion cutting and chamfering unit costs $200k
-            max_sc_length = np.max([blade_specs["length_sc_lp"][0], blade_specs["length_sc_hp"][0]])
+            max_sc_length = np.max([blade_specs["length_sc_lp"], blade_specs["length_sc_hp"]])
             stacking_table = 100.0 * max_sc_length  # Assume a table to stack the SC planks will cost $100 per meter
             fixture_unit = 200.0 * max_sc_length  # Assume a SC fixture will cost $200 per meter
             self.equipm_investment[3 + self.n_webs] = (
@@ -3432,6 +3432,19 @@ class BladeCost(om.ExplicitComponent):
         mass_shell_ss = 0.0
         mass_shell_ps = 0.0
         tol_LE = 1.0e-5
+        pultruded_spar_caps = False
+        area_sc_ss = 0.
+        volume2lay_sc_ss = 0.
+        fabric2lay_sc_ss = 0.
+        mass_sc_ss = 0.
+        max_n_plies_sc_ss = 0.
+        area_sc_ps = 0.
+        volume2lay_sc_ps = 0.
+        fabric2lay_sc_ps = 0.
+        mass_sc_ps = 0.
+        max_n_plies_sc_ps = 0.
+
+
         for i_lay in range(self.n_layers):
             if np.max(layer_thickness[i_lay, :]) > 0.0:
                 imin, imax = np.nonzero(layer_thickness[i_lay, :])[0][[0, -1]]
