@@ -227,6 +227,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
             self.connect("hub.radius", "blade.high_level_blade_props.hub_radius")
             self.connect("configuration.rotor_diameter_user", "blade.high_level_blade_props.rotor_diameter_user")
+            self.connect("configuration.n_blades", "blade.high_level_blade_props.n_blades")
 
             if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
                 self.connect("airfoils.aoa", "blade.run_inn_af.aoa")
@@ -708,6 +709,7 @@ class Blade(om.Group):
 
         self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options))
         self.connect("outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
+        self.connect("pa.chord_param", "high_level_blade_props.chord")
 
         # TODO : Compute Reynolds here
         self.add_subsystem("compute_reynolds", ComputeReynolds(n_span=rotorse_options["n_span"]))
@@ -1237,7 +1239,6 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
         projected_chord = coord_xy_twist[:,:,1].max(axis=1) - coord_xy_twist[:,:,1].min(axis=1)
         outputs["projected_area"] = np.trapz(projected_chord, inputs["ref_axis"][:,2])
         
-            
 
 class INN_Airfoils(om.ExplicitComponent):
     # Openmdao component to run the inverted neural network framework for airfoil design
@@ -3171,6 +3172,10 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             units="m",
             desc="Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.",
         )
+        self.add_input(
+            "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
+        )
+        self.add_discrete_input("n_blades", val=3, desc="Number of blades of the rotor.")
 
         self.add_output(
             "rotor_diameter",
@@ -3206,8 +3211,10 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             units="m",
             desc="Scalar of the 3D blade length computed along its axis, scaled based on the user defined rotor diameter.",
         )
+        self.add_output("blade_solidity", val=0.0, desc="Blade solidity")
+        self.add_output("rotor_solidity", val=0.0, desc="Rotor solidity")
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs,  discrete_outputs):
         outputs["blade_ref_axis"][:, 0] = inputs["blade_ref_axis_user"][:, 0]
         outputs["blade_ref_axis"][:, 1] = inputs["blade_ref_axis_user"][:, 1]
         # Scale z if the blade length provided by the user does not match the rotor diameter. D = (blade length + hub radius) * 2
@@ -3229,6 +3236,8 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
         outputs["prebendTip"] = outputs["blade_ref_axis"][-1, 0]
         outputs["presweep"] = outputs["blade_ref_axis"][:, 1]
         outputs["presweepTip"] = outputs["blade_ref_axis"][-1, 1]
+        outputs['blade_solidity'] = np.trapz(inputs['chord'], outputs["r_blade"]) / (np.pi * outputs["rotor_radius"]**2.)
+        outputs['rotor_solidity'] = outputs['blade_solidity'] * discrete_inputs['n_blades']
 
 
 class ComputeHighLevelTowerProperties(om.ExplicitComponent):

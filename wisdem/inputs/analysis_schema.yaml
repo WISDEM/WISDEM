@@ -989,6 +989,12 @@ properties:
                                 minimum: 0.1
                                 maximum: 20.0
                                 unit: meter
+                    chord_slope:
+                        type: object
+                        description: Constraint to enforce monothonically decreasing chord after max chord
+                        default: {}
+                        properties:
+                            flag: *flag
                     root_circle_diameter:
                         type: object
                         description: Enforcing the minimum blade root circle diameter.
