@@ -204,6 +204,7 @@ properties:
                     structure:
                         type: array
                         description: Design variables associated with the internal blade structure
+                        default: []
                         items:
                             type: object
                             description: Set the thickness of any blade layer as a design variable by scaling (multiplying) the initial value at spline control points along the span.

@@ -276,8 +276,7 @@ class PlatformFrame(om.ExplicitComponent):
             # Center of mass / buoyancy tallies
             cg_plat += imass * inputs[f"member{k}:center_of_mass"]
             cb_plat += ivol * inputs[f"member{k}:center_of_buoyancy"]
-            print(imass)
-            print(m_ball)
+
 
         # Add transition piece
         m_trans = inputs["transition_piece_mass"]

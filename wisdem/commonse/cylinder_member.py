@@ -2080,9 +2080,19 @@ class MemberComplex(om.ExplicitComponent):
         coeff_user = 1.0 if mass_user == 0.0 else mass_user/m_total
         m_total *= coeff_user
         I_total *= coeff_user
+        m_ballast *= coeff_user
+
+        outputs["shell_mass"] *= coeff_user
+        outputs["ballast_mass"] *= coeff_user
+        outputs["bulkhead_mass"] *= coeff_user
+        outputs["stiffener_mass"] *= coeff_user
+
+        outputs["shell_I_base"] *= coeff_user
+        outputs["ballast_I_base"] *= coeff_user
+        outputs["bulkhead_I_base"] *= coeff_user
+        outputs["stiffener_I_base"] *= coeff_user
         
         # Store outputs addressed so far
-        print("comm", m_total)
         outputs["total_mass"] = m_total
         outputs["structural_mass"] = m_total - m_ballast
         outputs["z_cg"] = z_cg
