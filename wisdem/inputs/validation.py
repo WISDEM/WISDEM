@@ -113,18 +113,18 @@ def simple_types(indict : dict) -> dict:
     """
     def convert(value):
         if isinstance(value, np.ndarray):
-            return value.tolist()
+            return convert(value.tolist())
         elif isinstance(value, dict):
-            return simple_types(value)
-        elif isinstance(value, (list, tuple)):
-            return [convert(item) for item in value]
+            return {key: convert(value) for key, value in value.items()}
+        elif isinstance(value, (list, tuple, set)):
+            return [convert(item) for item in value]  # treat all as list
+        elif isinstance(value, (np.generic)):
+            return value.item()  # convert numpy primatives to python primative underlying
         elif isinstance(value, (float, int, bool, str)):
-            return value
+            return value  # this should be the end case
         else:
             return ""
-
-    rv = {k: convert(v) for k, v in indict.items()}
-    return rv
+    return convert(indict)
 
 
 # ---------------------
