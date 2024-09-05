@@ -1,0 +1,348 @@
+general:
+    folder_output: outputs
+    fname_output: refturb_output
+design_variables:
+    blade:
+        aero_shape:
+            twist:
+                flag: False    # Flag to optimize the twist
+                inverse: False # Flag to determine twist from the user-defined desired margin to stall (defined in constraints)
+                n_opt: 8         # Number of control points along blade span
+                lower_bound: [0.3490658503988659, 0.08726646259971647, 0.08726646259971647, 0., -0.08726646259971647, -0.08726646259971647, -0.08726646259971647, -0.08726646259971647]                    # Lower bounds for the twist in [rad] at the n_opt locations
+                upper_bound: [0.4363323129985824, 0.3490658503988659, 0.3490658503988659, 0.2617993877991494, 0.2617993877991494, 0.17453292519943295, 0.17453292519943295, 0.08726646259971647] # Upper bounds for the twist in [rad] at the n_opt locations
+            chord:
+                flag: False         # Flag to optimize the chord
+                n_opt: 8                # Number of control points along blade span
+                min_gain: 0.2     # Nondimensional lower bound at the n_opt locations
+                max_gain: 2.0     # Nondimensional upper bound at the n_opt locations
+            af_positions:
+                flag: False         # Flag to optimize the airfoil positions
+                af_start: 4         # Index of the first airfoil from blade root that can have the location optimized. First airfoil is number 0. Last airfoil is always locked at blade tip.
+        dac:
+            te_flap_ext:
+                flag: False
+                min_ext: 0.0
+                max_ext: 0.3
+            te_flap_end:
+                flag: False
+                min_end: 0.3
+                max_end: 1.0
+    control:
+        tsr:
+            flag: False         # Flag to optimize the rotor tip speed ratio
+            min_gain: 0.9     # Nondimensional lower bound
+            max_gain: 1.1     # Nondimensional upper bound
+
+    tower:
+        outer_diameter:
+            flag: False
+            lower_bound: 3.87
+            upper_bound: 10.0
+        layer_thickness:
+            flag: False
+            lower_bound: 4.e-3
+            upper_bound: 2.e-1
+
+    floating:
+        joints:
+            draft:
+                # Adjusts the z-coordinate of the listed joints
+                linked_joints:
+                    # This will set the same z-value for all of the joints listed in the same names entry
+                    - names: [col1_keel, col2_keel, col3_keel]
+                      flag: False
+                      lower_bound: -100.0
+                      upper_bound: -5.0
+                independent_joints:
+                    # This will adjust the z-coordinate of the joints separately
+                    - name: maincol_keel
+                      flag: False
+                      lower_bound: -100.0
+                      upper_bound: -5.0
+            column_spacing:
+                # Adjusts the x/y-coordinate of the listed joints to be a desired radius from (0,0)
+                linked_joints:
+                    # This will set the x,y-value for all of the joints listed in the same names entry at constant angle relative to (0,0)
+                    - names: [col1_keel, col1_freeboard, col1_fairlead, col2_keel, col2_freeboard, col2_fairlead, col3_keel, col3_freeboard, col3_fairlead]
+                      flag: False
+                      lower_bound: 5.0
+                      upper_bound: 75.0
+            fairlead_depth:
+                # Adjusts the z-coordinate of the listed joints
+                linked_joints:
+                    # This will set the same z-value for all of the joints listed in the same names entry.
+                    # Instead of operating in absolute z-space, the coordinate value is non-dimensional along the member axis (0=joint1)
+                    - names: [col1_fairlead, col2_fairlead, col3_fairlead]
+                      flag: False
+                      lower_bound: 0.0
+                      upper_bound: 1.0
+            pontoon_depth:
+                # Adjusts the z-coordinate of the listed joints
+                linked_joints:
+                    # This will set the same z-value for all of the joints listed in the same names entry.
+                    # Instead of operating in absolute z-space, the coordinate value is non-dimensional along the member axis (0=joint1)
+                    - names: [col1_pontoon_lower, col2_pontoon_lower, col3_pontoon_lower]
+                      flag: False
+                      lower_bound: 0.0
+                      upper_bound: 1.0
+                    - names: [col1_pontoon_upper, col2_pontoon_upper, col3_pontoon_upper]
+                      flag: False
+                      lower_bound: 0.0
+                      upper_bound: 1.0
+    members:
+            diameter:
+                linked_members:
+                    # This will set the same diameter profile for all of the members listed in the same names entry
+                    - names: [col1, col2, col3]
+                      flag: False
+                      lower_bound: 1.0
+                      upper_bound: 20.0
+                    - names: [pontoon_lower12, pontoon_lower23, pontoon_lower31]
+                      flag: False
+                      lower_bound: 1.0
+                      upper_bound: 5.0
+                    - names: [pontoon_upper12, pontoon_upper23, pontoon_upper31]
+                      flag: False
+                      lower_bound: 1.0
+                      upper_bound: 5.0
+                independent_members:
+                    # This will set the same ballast for all of the members listed in the same names entry
+                    - name: main_col
+                      flag: False
+                      lower_bound: 1.0
+                      upper_bound: 20.0
+            thickness:
+                linked_members:
+                    # This will set the same thickness profile for all of the members listed in the same names entry
+                    - names: [col1, col2, col3]
+                      flag: False
+                      lower_bound: 1.0
+                      upper_bound: 20.0
+                    - names: [pontoon_lower12, pontoon_lower23, pontoon_lower31]
+                      flag: False
+                      lower_bound: 1.0
+                      upper_bound: 5.0
+                    - names: [pontoon_upper12, pontoon_upper23, pontoon_upper31]
+                      flag: False
+                      lower_bound: 1.0
+                      upper_bound: 5.0
+                independent_members:
+                    # This will set the same ballast for all of the members listed in the same names entry
+                    - name: main_col
+                      flag: False
+                      lower_bound: 1.0
+                      upper_bound: 20.0
+            ballast:
+                linked_members:
+                    # This will set the same ballast for all of the members listed in the same names entry
+                    - names: [col1, col2, col3]
+                      flag: False
+                      lower_bound: 1.0
+                      upper_bound: 1.e+6
+                independent_members:
+                    # This will set the same ballast for all of the members listed in the same names entry
+                    - name: main_col
+                      flag: False
+                      lower_bound: 1.0
+                      upper_bound: 1.e+6
+    mooring:
+            anchor_radius:
+                # This adjusts the radius of all anchor nodes from (0,0)
+                flag: False
+                lower_bound: 10.0
+                upper_bound: 1000.0
+            line_length:
+                # Adjust the unstretched line length of the mooring segments
+                linked_lines:
+                    # This will set the same line length for all segments listed in the same names entry
+                    - names: [line1, line2, line3]
+                      flag: False
+                      lower_bound: 100.0
+                      upper_bound: 2000.0
+                    - names: [bridle11, bridle12, bridle21, bridle22, bridle31, bridle32]
+                      flag: False
+                      lower_bound: 100.0
+                      upper_bound: 2000.0
+            line_diameter:
+                # Adjust the diameter of the mooring segments
+                linked_lines:
+                    # This will set the same diameter for all segments listed in the same names entry
+                    - names: [line1, line2, line3]
+                      flag: False
+                      lower_bound: 0.1
+                      upper_bound: 2.0
+                    - names: [bridle11, bridle12, bridle21, bridle22, bridle31, bridle32]
+                      flag: False
+                      lower_bound: 0.1
+                      upper_bound: 2.0
+    hub:
+        cone:
+            flag: False
+            lower_bound: 0.0
+            upper_bound: 0.5235987756 # 30 deg
+        hub_diameter:
+            flag: False
+            lower_bound: 3.0
+            upper_bound: 15.0
+
+    drivetrain:
+        uptilt:
+            flag: False
+            lower_bound: 0.0
+            upper_bound: 0.5235987756 # 30 deg
+        overhang:
+            flag: False
+            lower_bound: 5.0
+            upper_bound: 20.0
+        distance_tt_hub:
+            flag: False
+            lower_bound: 1.0
+            upper_bound: 10.0
+        distance_hub_mb:
+            flag: False
+            lower_bound: 0.1
+            upper_bound: 5.0
+        distance_mb_mb:
+            flag: False
+            lower_bound: 0.1
+            upper_bound: 5.0
+        generator_length:
+            flag: False
+            lower_bound: 1.0
+            upper_bound: 5.0
+        gear_ratio:
+            flag: False
+            lower_bound: 50.0
+            upper_bound: 150.0
+        lss_diameter:
+            flag: False
+            lower_bound: 1.0
+            upper_bound: 6.0
+        hss_diameter:
+            flag: False
+            lower_bound: 1.0
+            upper_bound: 6.0
+        nose_diameter:
+            flag: False
+            lower_bound: 1.0
+            upper_bound: 6.0
+        lss_wall_thickness:
+            flag: False
+            lower_bound: 0.004
+            upper_bound: 0.5
+        hss_wall_thickness:
+            flag: False
+            lower_bound: 0.004
+            upper_bound: 0.5
+        nose_wall_thickness:
+            flag: False
+            lower_bound: 0.004
+            upper_bound: 0.5
+        bedplate_wall_thickness:
+            flag: False
+            lower_bound: 0.004
+            upper_bound: 0.5
+
+merit_figure: LCOE
+
+constraints:
+    blade:
+        strains_spar_cap_ss:
+            flag: False         # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade suction side
+            max:    3500.e-6    # Value of maximum strains [-]
+        strains_spar_cap_ps:
+            flag: False         # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade pressure side
+            max:    3500.e-6    # Value of maximum strains [-]
+        tip_deflection:
+            flag: False         # Constraint that maximum tip deflection cannot exceed 70% of tower clearance. Only for upwind rotors
+        rail_transport:
+            flag: False
+            8_axle: False
+            4_axle: False
+        stall:
+            flag: False         # Constraint on minimum stall margin
+            margin: 0.05233 # Value of minimum stall margin in [rad]
+        chord:
+            flag: False # Constraint on maximum chord
+            max: 4.75     # Value of maximum chord in [m]
+        frequency:
+            flap_3P: False
+            edge_3P: False
+        moment_coefficient:
+            flag: False
+            max: 0.15 #0.16333
+            min: 0.13
+        match_cl_cd:
+            flag_cl: False
+            flag_cd: False
+            filename: /path2file.txt
+        match_L_D:
+            flag_L: False
+            flag_D: False
+            filename: /path2file.txt
+    tower:
+        height_constraint:
+            flag: False
+            lower_bound: 1.e-2
+            upper_bound: 1.e-2
+        stress:
+            flag: False
+        global_buckling:
+            flag: False
+        shell_buckling:
+            flag: False
+        constr_d_to_t:
+            flag: False
+        constr_taper:
+            flag: False
+        slope:
+            flag: False
+        frequency:
+            flag: False
+        frequency_1:
+            flag: False
+            lower_bound: 0.13
+            upper_bound: 0.40
+    hub:
+        hub_diameter:
+            flag: False
+    drivetrain:
+        lss:
+            flag: False
+        hss:
+            flag: False
+        bedplate:
+            flag: False
+        mb1:
+            flag: False
+        mb2:
+            flag: False
+        length:
+            flag: False
+        height:
+            flag: False
+        access:
+            flag: False
+            lower_bound: 2.0
+        ecc:
+            flag: False
+
+driver:
+    optimization:
+        flag: False         # Flag to enable optimization
+        tol: 1.e-2          # Optimality tolerance
+        max_major_iter: 10  # Maximum number of major design iterations (SNOPT)
+        max_minor_iter: 100 # Maximum number of minor design iterations (SNOPT)
+        max_iter: 1         # Maximum number of iterations (SLSQP)
+        solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        step_size: 1.e-3    # Step size for finite differencing
+        form: central       # Finite differencing mode, either forward or central
+    design_of_experiments:
+        flag: False           # Flag to enable design of experiments
+        run_parallel: True    # Flag to run using parallel processing
+        generator: Uniform    # Type of input generator. (Uniform)
+        num_samples: 5        # number of samples for (Uniform only)
+
+recorder:
+    flag: False                            # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql    # Name of OpenMDAO recorder
