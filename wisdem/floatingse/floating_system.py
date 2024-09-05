@@ -277,6 +277,7 @@ class PlatformFrame(om.ExplicitComponent):
             cg_plat += imass * inputs[f"member{k}:center_of_mass"]
             cb_plat += ivol * inputs[f"member{k}:center_of_buoyancy"]
 
+
         # Add transition piece
         m_trans = inputs["transition_piece_mass"]
         cg_trans = inputs["transition_node"]

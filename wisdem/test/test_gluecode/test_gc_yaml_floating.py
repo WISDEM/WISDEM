@@ -8,22 +8,19 @@ import unittest
 
 from wisdem.glue_code.runWISDEM import run_wisdem
 
-test_dir = (
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
-    + os.sep
-    + "examples"
-    + os.sep
-    + "09_floating"
-    + os.sep
+test_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))),
+    "examples",
+    "09_floating"
 )
-fname_analysis_options = test_dir + "analysis_options.yaml"
-fname_modeling_options = test_dir + "modeling_options.yaml"
+fname_analysis_options = os.path.join(test_dir, "analysis_options.yaml")
+fname_modeling_options = os.path.join(test_dir, "modeling_options.yaml")
 
 
 class TestRegression(unittest.TestCase):
     def test15MW(self):
         ## IEA 15MW
-        fname_wt_input = test_dir + "IEA-15-240-RWT_VolturnUS-S.yaml"
+        fname_wt_input = os.path.join(test_dir, "IEA-15-240-RWT_VolturnUS-S.yaml")
         wt_opt, modeling_options, opt_options = run_wisdem(
             fname_wt_input, fname_modeling_options, fname_analysis_options
         )

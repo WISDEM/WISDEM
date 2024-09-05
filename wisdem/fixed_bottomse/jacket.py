@@ -168,6 +168,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.add_input("gravity_foundation_mass", 0.0, units="kg")
         self.add_input("gravity_foundation_I", np.zeros(6), units="kg*m**2")
         self.add_input("tower_mass", val=0.0, units="kg")
+        self.add_input("jacket_mass_user", val=0.0, units="kg")
 
         # For modal analysis only (loads captured in turbine_F & turbine_M)
         self.add_input("turbine_mass", val=0.0, units="kg")
@@ -412,7 +413,9 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         # Populate mass and cost outputs
         # TODO: Is there an "outfitting" factor for jackets.  Seems like it would be much smaller than monopiles
-        outputs["jacket_mass"] = np.sum(Area[:-n_legs] * rho[:-n_legs] * L[:-n_legs])
+        m_jack_user = float(inputs["jacket_mass_user"][0])
+        m_jack = np.sum(Area[:-n_legs] * rho[:-n_legs] * L[:-n_legs])
+        outputs["jacket_mass"] = m_jack_user if m_jack_user > 0.0 else m_jack
         outputs["structural_mass"] = outputs["jacket_mass"] + inputs["tower_mass"]
 
         # ------ options ------------
@@ -775,7 +778,6 @@ class JacketSEProp(om.Group):
 
         self.add_subsystem("pre", PreDiscretization(), promotes=["*"])
         self.add_subsystem("nodes", ComputeJacketNodes(modeling_options=modeling_options), promotes=["*"])
-        self.add_subsystem("cost", JacketCost(modeling_options=modeling_options), promotes=["*"])
 
 
 class JacketSEPerf(om.Group):
@@ -792,6 +794,7 @@ class JacketSEPerf(om.Group):
 
         self.add_subsystem("frame3dd", ComputeFrame3DD(modeling_options=modeling_options), promotes=["*"])
         self.add_subsystem("post", JacketPost(modeling_options=modeling_options), promotes=["*"])
+        self.add_subsystem("cost", JacketCost(modeling_options=modeling_options), promotes=["*"])
 
 
 class JacketSE(om.Group):

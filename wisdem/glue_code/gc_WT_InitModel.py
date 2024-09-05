@@ -721,6 +721,9 @@ def assign_hub_values(wt_opt, hub, flags):
         wt_opt["hub.pitch_system_scaling_factor"] = hub["pitch_system_scaling_factor"]
         wt_opt["hub.hub_material"] = hub["hub_material"]
         wt_opt["hub.spinner_material"] = hub["spinner_material"]
+        wt_opt["hub.spinner_mass_user"] = hub["spinner_mass_user"]
+        wt_opt["hub.pitch_system_mass_user"] = hub["pitch_system_mass_user"]
+        wt_opt["hub.hub_shell_mass_user"] = hub["hub_shell_mass_user"]
 
     return wt_opt
 
@@ -742,7 +745,10 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
         wt_opt["nacelle.uptower"] = nacelle["drivetrain"]["uptower"]
         wt_opt["nacelle.lss_material"] = nacelle["drivetrain"]["lss_material"]
         wt_opt["nacelle.bedplate_material"] = nacelle["drivetrain"]["bedplate_material"]
+        wt_opt["nacelle.bedplate_mass_user"] = nacelle["drivetrain"]["bedplate_mass_user"]
         wt_opt["nacelle.brake_mass_user"] = nacelle["drivetrain"]["brake_mass_user"]
+        wt_opt["nacelle.mb1_mass_user"] = nacelle["drivetrain"]["mb1_mass_user"]
+        wt_opt["nacelle.mb2_mass_user"] = nacelle["drivetrain"]["mb2_mass_user"]
         wt_opt["nacelle.hvac_mass_coeff"] = nacelle["drivetrain"]["hvac_mass_coefficient"]
         wt_opt["nacelle.converter_mass_user"] = nacelle["drivetrain"]["converter_mass_user"]
         wt_opt["nacelle.transformer_mass_user"] = nacelle["drivetrain"]["transformer_mass_user"]
@@ -784,9 +790,9 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
             wt_opt["nacelle.planet_numbers"] = nacelle["drivetrain"]["planet_numbers"]
             wt_opt["nacelle.hss_material"] = nacelle["drivetrain"]["hss_material"]
 
+        wt_opt["generator.generator_mass_user"] = nacelle["drivetrain"]["generator_mass_user"]
         if not modeling_options["flags"]["generator"]:
             wt_opt["generator.generator_radius_user"] = nacelle["drivetrain"]["generator_radius_user"]
-            wt_opt["generator.generator_mass_user"] = nacelle["drivetrain"]["generator_mass_user"]
 
             eff_user = np.c_[
                 nacelle["drivetrain"]["generator_rpm_efficiency_user"]["grid"],
@@ -805,6 +811,8 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
 
 
 def assign_generator_values(wt_opt, modeling_options, nacelle):
+    if "generator_mass_user" in nacelle["generator"]:
+        wt_opt["generator.generator_mass_user"] = nacelle["generator"]["generator_mass_user"]
     wt_opt["generator.B_r"] = nacelle["generator"]["B_r"]
     wt_opt["generator.P_Fe0e"] = nacelle["generator"]["P_Fe0e"]
     wt_opt["generator.P_Fe0h"] = nacelle["generator"]["P_Fe0h"]
@@ -943,6 +951,7 @@ def assign_tower_values(wt_opt, modeling_options, tower):
     wt_opt["tower.layer_thickness"] = thickness
 
     wt_opt["tower.outfitting_factor"] = tower["internal_structure_2d_fem"]["outfitting_factor"]
+    wt_opt["tower.tower_mass_user"] = tower["tower_mass_user"]
 
     if "Loading" in modeling_options["WISDEM"]:
         F = []
@@ -1028,6 +1037,7 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
     wt_opt["monopile.transition_piece_mass"] = monopile["transition_piece_mass"]
     wt_opt["monopile.transition_piece_cost"] = monopile["transition_piece_cost"]
     wt_opt["monopile.gravity_foundation_mass"] = monopile["gravity_foundation_mass"]
+    wt_opt["monopile.monopile_mass_user"] = monopile["monopile_mass_user"]
 
     return wt_opt
 
@@ -1045,6 +1055,7 @@ def assign_jacket_values(wt_opt, modeling_options, jacket):
     wt_opt["jacket.brace_diameters"] = jacket["brace_diameters"]
     wt_opt["jacket.brace_thicknesses"] = jacket["brace_thicknesses"]
     wt_opt["jacket.bay_spacing"] = jacket["bay_spacing"]
+    wt_opt["jacket.jacket_mass_user"] = jacket["jacket_mass_user"]
 
     return wt_opt
 
@@ -1237,6 +1248,8 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                 ballast_mat[j] = "seawater"
         wt_opt[f"floating.memgrp{idx}.ballast_materials"] = ballast_mat
 
+        wt_opt[f"floating.memgrp{idx}.member_mass_user"] = floating["members"][i]["member_mass_user"]
+        
         if floating_init_options["members"]["n_axial_joints"][i] > 0:
             for j in range(floating_init_options["members"]["n_axial_joints"][i]):
                 wt_opt[f"floating.memgrp{idx}.grid_axial_joints"][j] = floating["members"][i]["axial_joints"][j]["grid"]

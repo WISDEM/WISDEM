@@ -657,7 +657,7 @@ class PoseOptimization(object):
                 upper=z_options["upper_bound"],
             )
 
-        if "structure" in blade_opt:
+        if "structure" in blade_opt and len(blade_opt["structure"]) > 0:
             layers = wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
             for i in range(len(blade_opt["structure"])):
                 k = blade_opt["layer_index_opt"][i]
