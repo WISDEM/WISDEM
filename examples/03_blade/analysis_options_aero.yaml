@@ -3,6 +3,11 @@ general:
     fname_output: blade_out
 
 design_variables:
+    control:
+        tsr:
+            flag: True
+            minimum: 8
+            maximum: 11
     blade:
         aero_shape:
             twist:
@@ -10,38 +15,50 @@ design_variables:
                 inverse: True # Flag to determine twist from a desired angle of attack. 
                 # Only used if flag is set to False
                 inverse_target: 'stall_margin' # Twist generates angles of attack 
-                # corresponding to max airfoil efficiency along span. The alternative is 'stall_margin'
+                # corresponding to 'max_efficiency' or 'stall_margin'
                 n_opt: 8 # Number of control points along blade span. During inverse design, 
                 # twist is smoothened with a spline with these
                 # max_decrease: 0.08722222222222221 # Maximum decrease for the twist 
                 # in [rad] at the n_opt locations. Only used if flag is set to True
                 # max_increase: 0.08722222222222221 # Maximum increase for the twist 
                 # in [rad] at the n_opt locations. Only used if flag is set to True
+                # index_start: 2 # Lock the first two DVs from blade root
+                # index_end: 8 # All DVs close to blade tip are active
             chord:
                 flag: True  # Flag to optimize the chord
-                n_opt: 8     # Number of control points along blade span
-                max_decrease: 0.3 # Minimum multiplicative gain on existing chord at the n_opt locations
-                max_increase: 3. # Maximum multiplicative gain on existing chord at the n_opt locations
-                index_start: 0 # Start by optimizing chord at blade root
-                index_end: 7 # Lock chord at blade tip
+                n_opt: 4     # Number of control points along blade span
+                max_decrease: 0.4 # Minimum multiplicative gain on existing chord at the n_opt locations
+                max_increase: 2. # Maximum multiplicative gain on existing chord at the n_opt locations
+                index_start: 1 # Lock the first DVs from blade root
+                index_end: 3 # Lock the last DV at blade tip
 
+# figure of merit
 merit_figure: Cp
 
+# constraints
 constraints:
     blade:
         stall:
             flag: False # Constraint on minimum stall margin
-            margin: 0.13955555555555557 # Value of minimum stall margin in [rad]
+            margin: 0.1 # Value of minimum stall margin in [rad]
         chord:
             flag: True # Constraint max chord to its default value (4.75 m)
             max: 4.75 # Max chord value
         root_circle_diameter:
-            flag: True # Constraint for the minimum blade root circle diameter
+            flag: False # Constraint for the minimum blade root circle diameter
             max_ratio: 1.2 # The recommended value can be up to 20% larger than the actual
+        chord_slope:
+            flag: True # Constraint to enforce monothonically decreasing chord after max chord
         moment_coefficient:
-            flag: True # Constraint on maximum blade root flapwise moment coefficient
+            flag: False # Constraint on maximum blade root flapwise moment coefficient
             max: 0.20 # Lowering this value will lead to low induction rotors
+    # user:
+    #   - name: blade.high_level_blade_props.rotor_solidity
+    #     lower: 0.04
 
+            
+
+# driver
 driver:
     optimization:
         flag: True         # Flag to enable optimization
