@@ -638,13 +638,8 @@ class CCBladeTwist(ExplicitComponent):
         else:
             ccblade.theta = inputs["theta_in"]
 
-        # Smooth out twist profile if we're doing inverse and inn_af design
-        if (
-            (self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"] and
-             self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse_target"] == 'max_efficiency')
-             or (self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"] and
-             self.options["modeling_options"]["WISDEM"]["RotorSE"]["inn_af"])
-        ):
+        # Smooth out twist profile if we're doing inverse design for twist
+        if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
             training_theta = ccblade.theta
             s = (inputs["r"] - inputs["r"][0]) / (inputs["r"][-1] - inputs["r"][0])
 
