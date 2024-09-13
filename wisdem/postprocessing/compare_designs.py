@@ -59,7 +59,7 @@ def create_all_plots(
             twist_opt = yaml_data["blade.opt_var.twist_opt"]
             axtw.plot(
                 yaml_data["blade.outer_shape_bem.s"],
-                np.rad2deg(yaml_data["blade.pa.twist_param"]),
+                np.rad2deg(yaml_data["rotorse.theta"]),
                 "-",
                 color=colors[idx],
                 label=label,

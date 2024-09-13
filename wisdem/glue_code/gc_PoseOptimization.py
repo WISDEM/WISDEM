@@ -1089,6 +1089,14 @@ class PoseOptimization(object):
                 print(
                     "WARNING: the max chord is set to be constrained, but chord is not an active design variable. The constraint is not enforced."
                 )
+        if blade_constr["chord_slope"]["flag"]:
+            if blade_opt["aero_shape"]["chord"]["flag"]:
+                wt_opt.model.add_constraint("blade.pa.slope_chord_constr", upper=0.0)
+            else:
+                print(
+                    "WARNING: the slope of the chord is set to be constrained, but chord is not an active design variable. The constraint is not enforced."
+                )
+
         if blade_constr["root_circle_diameter"]["flag"]:
             if blade_opt["aero_shape"]["chord"]["flag"] and blade_opt["aero_shape"]["chord"]["index_start"] == 0.0:
                 wt_opt.model.add_constraint(
