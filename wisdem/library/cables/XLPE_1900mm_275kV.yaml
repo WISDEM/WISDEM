@@ -1,0 +1,10 @@
+ac_resistance: 0.020    # ohm/km
+capacitance: 224        # nF/km
+conductor_size: 1900    # mm^2
+cost_per_km: 1280000    # $
+current_capacity: 910   # A # ESTIMATE
+inductance: 0.35        # mH/km
+linear_density: 185     # t/km
+rated_voltage: 275      # kV
+cable_type: HVAC        # HVDC vs HVAC
+name: XLPE_1900mm_275kV

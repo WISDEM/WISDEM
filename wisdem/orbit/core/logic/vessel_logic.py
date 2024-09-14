@@ -1,4 +1,4 @@
-"""This module contains common simulation logic related to vessels."""
+"""Provides common simulation logic related to vessels."""
 
 __author__ = ["Jake Nunemaker", "Rob Hammond"]
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
@@ -70,10 +70,18 @@ def stabilize(vessel, **kwargs):
         site_depth = kwargs.get("site_depth", 40)
         extension = kwargs.get("extension", site_depth + 10)
         jackup_time = jacksys.jacking_time(extension, site_depth)
-        yield vessel.task_wrapper("Jackup", jackup_time, constraints=vessel.transit_limits, **kwargs)
+        yield vessel.task_wrapper(
+            "Jackup",
+            jackup_time,
+            constraints=vessel.transit_limits,
+            **kwargs,
+        )
 
-    except MissingComponent:
-        raise MissingComponent(vessel, ["Dynamic Positioning", "Jacking System"])
+    except MissingComponent as exc:
+        raise MissingComponent(
+            vessel,
+            ["Dynamic Positioning", "Jacking System"],
+        ) from exc
 
 
 @process
@@ -118,7 +126,11 @@ def position_onsite(vessel, **kwargs):
 
     position_time = kwargs.get("site_position_time", pt["site_position_time"])
 
-    yield vessel.task_wrapper("Position Onsite", position_time, constraints=vessel.transit_limits)
+    yield vessel.task_wrapper(
+        "Position Onsite",
+        position_time,
+        constraints=vessel.transit_limits,
+    )
 
 
 @process
@@ -143,28 +155,42 @@ def shuttle_items_to_queue(vessel, port, queue, distance, items, **kwargs):
     transit_time = vessel.transit_time(distance)
 
     while True:
+
         if vessel.at_port:
             vessel.submit_debug_log(message=f"{vessel} is at port.")
 
             if not port.items:
-                vessel.submit_debug_log(message="No items at port. Shutting down.")
+                vessel.submit_debug_log(
+                    message="No items at port. Shutting down."
+                )
                 break
 
             # Get list of items
             try:
-                yield get_list_of_items_from_port(vessel, port, items, **kwargs)
+                yield get_list_of_items_from_port(
+                    vessel,
+                    port,
+                    items,
+                    **kwargs,
+                )
 
             except ItemNotFound:
                 # If no items are at port and vessel.storage.items is empty,
                 # the job is done
                 if not vessel.storage.items:
-                    vessel.submit_debug_log(message="Items not found. Shutting down.")
+                    vessel.submit_debug_log(
+                        message="Items not found. Shutting down."
+                    )
                     break
 
             # Transit to site
             vessel.update_trip_data()
             vessel.at_port = False
-            yield vessel.task_wrapper("Transit", transit_time, constraints=vessel.transit_limits)
+            yield vessel.task_wrapper(
+                "Transit",
+                transit_time,
+                constraints=vessel.transit_limits,
+            )
             yield stabilize(vessel, **kwargs)
             vessel.at_site = True
 
@@ -178,7 +204,11 @@ def shuttle_items_to_queue(vessel, port, queue, distance, items, **kwargs):
 
                 queue_time = vessel.env.now - queue_start
                 if queue_time > 0:
-                    vessel.submit_action_log("Queue", queue_time, location="Site")
+                    vessel.submit_action_log(
+                        "Queue",
+                        queue_time,
+                        location="Site",
+                    )
 
                 queue.vessel = vessel
                 active_start = vessel.env.now
@@ -189,7 +219,11 @@ def shuttle_items_to_queue(vessel, port, queue, distance, items, **kwargs):
                 yield vessel.release
                 active_time = vessel.env.now - active_start
 
-                vessel.submit_action_log("ActiveFeeder", active_time, location="Site")
+                vessel.submit_action_log(
+                    "ActiveFeeder",
+                    active_time,
+                    location="Site",
+                )
 
                 queue.vessel = None
                 queue.activate = vessel.env.event()
@@ -197,7 +231,11 @@ def shuttle_items_to_queue(vessel, port, queue, distance, items, **kwargs):
             # Transit back to port
             vessel.at_site = False
             yield jackdown_if_required(vessel, **kwargs)
-            yield vessel.task_wrapper("Transit", transit_time, constraints=vessel.transit_limits)
+            yield vessel.task_wrapper(
+                "Transit",
+                transit_time,
+                constraints=vessel.transit_limits,
+            )
             vessel.at_port = True
 
 
@@ -233,18 +271,27 @@ def get_list_of_items_from_port(vessel, port, items, **kwargs):
 
                 # Calculate deck space and mass of one complete turbine
                 total_deck_space = sum([item.deck_space for item in buffer])
-                proposed_deck_space = vessel.storage.current_deck_space + total_deck_space
+                proposed_deck_space = (
+                    vessel.storage.current_deck_space + total_deck_space
+                )
 
                 total_mass = sum([item.mass for item in buffer])
                 proposed_mass = vessel.storage.current_cargo_mass + total_mass
 
                 if vessel.storage.current_cargo_mass == 0:
+
                     if proposed_deck_space > vessel.storage.max_deck_space:
-                        msg = f"Warning: '{vessel}' Deck Space Capacity Exceeded"
+
+                        msg = (
+                            f"Warning: '{vessel}' Deck Space Capacity Exceeded"
+                        )
                         vessel.submit_debug_log(message=msg)
 
                     if proposed_mass > vessel.storage.max_cargo_mass:
-                        msg = f"Warning: '{vessel}' Cargo Mass Capacity Exceeded"
+
+                        msg = (
+                            f"Warning: '{vessel}' Cargo Mass Capacity Exceeded"
+                        )
                         vessel.submit_debug_log(message=msg)
 
                 elif proposed_deck_space > vessel.storage.max_deck_space:
@@ -276,7 +323,16 @@ def get_list_of_items_from_port(vessel, port, items, **kwargs):
 
 
 @process
-def shuttle_items_to_queue_wait(vessel, port, queue, distance, items, per_trip, assigned, **kwargs):
+def shuttle_items_to_queue_wait(
+    vessel,
+    port,
+    queue,
+    distance,
+    items,
+    per_trip,
+    assigned,
+    **kwargs,
+):
     """
     Shuttles a list of items from port to queue.
 
@@ -300,15 +356,25 @@ def shuttle_items_to_queue_wait(vessel, port, queue, distance, items, per_trip, 
 
     n = 0
     while n < assigned:
+
         vessel.submit_debug_log(message=f"{vessel} is at port.")
 
         # Get list of items
         per_trip = max([per_trip, 1])
-        yield get_list_of_items_from_port_wait(vessel, port, items * per_trip, **kwargs)
+        yield get_list_of_items_from_port_wait(
+            vessel,
+            port,
+            items * per_trip,
+            **kwargs,
+        )
 
         # Transit to site
         vessel.update_trip_data()
-        yield vessel.task("Transit", transit_time, constraints=vessel.transit_limits)
+        yield vessel.task(
+            "Transit",
+            transit_time,
+            constraints=vessel.transit_limits,
+        )
         yield stabilize(vessel, **kwargs)
 
         vessel.submit_debug_log(message=f"{vessel} is at site.")
@@ -331,7 +397,11 @@ def shuttle_items_to_queue_wait(vessel, port, queue, distance, items, per_trip, 
             yield vessel.release
             active_time = vessel.env.now - active_start
 
-            vessel.submit_action_log("ActiveFeeder", active_time, location="Site")
+            vessel.submit_action_log(
+                "ActiveFeeder",
+                active_time,
+                location="Site",
+            )
 
             queue.vessel = None
             queue.activate = vessel.env.event()
@@ -339,7 +409,11 @@ def shuttle_items_to_queue_wait(vessel, port, queue, distance, items, per_trip, 
             # Transit back to port
             vessel.at_site = False
             yield jackdown_if_required(vessel, **kwargs)
-            yield vessel.task("Transit", transit_time, constraints=vessel.transit_limits)
+            yield vessel.task(
+                "Transit",
+                transit_time,
+                constraints=vessel.transit_limits,
+            )
 
         n += per_trip
 
@@ -370,7 +444,7 @@ def get_list_of_items_from_port_wait(vessel, port, items, **kwargs):
 
         for i in items:
             wait_start = vessel.env.now
-            item = yield port.get(lambda x: x.type == i)
+            item = yield port.get(lambda x: x.type == i)  # noqa: B023
             wait_time = vessel.env.now - wait_start
 
             if wait_time > 0:
@@ -380,4 +454,9 @@ def get_list_of_items_from_port_wait(vessel, port, items, **kwargs):
             vessel.storage.put_item(item)
 
             if time > 0:
-                yield vessel.task(action, time, constraints=vessel.transit_limits, **kwargs)
+                yield vessel.task(
+                    action,
+                    time,
+                    constraints=vessel.transit_limits,
+                    **kwargs,
+                )

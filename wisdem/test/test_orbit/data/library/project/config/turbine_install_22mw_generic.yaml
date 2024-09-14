@@ -1,0 +1,10 @@
+plant:
+  num_turbines: 50
+port:
+  monthly_rate: 100000
+  num_cranes: 1
+site:
+  depth: 40
+  distance: 50
+turbine: 22MW_generic
+wtiv: test_wtiv

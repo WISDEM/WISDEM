@@ -1,6 +1,6 @@
 transport_specs:
-  max_waveheight: 2.5       # m
-  max_windspeed: 20         # m/s
-  transit_speed: 6          # km/h
+  max_waveheight: 3.0       # m
+  max_windspeed: 15         # m/s
+  transit_speed: 14          # km/h
 vessel_specs:
-  day_rate: 30000           # USD/day
+  day_rate: 35000           # USD/day

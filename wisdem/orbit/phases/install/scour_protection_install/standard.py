@@ -11,10 +11,13 @@ from math import ceil
 import simpy
 from marmot import process
 
-from wisdem.orbit.core import Vessel
 from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import InstallPhase
-from wisdem.orbit.core.exceptions import CargoMassExceeded, InsufficientAmount
+from wisdem.orbit.core.exceptions import (
+    CargoMassExceeded,
+    InsufficientAmount,
+    VesselCapacityError,
+)
 
 
 class ScourProtectionInstallation(InstallPhase):
@@ -63,12 +66,7 @@ class ScourProtectionInstallation(InstallPhase):
         self.setup_simulation(**kwargs)
 
     def setup_simulation(self, **kwargs):
-        """
-        Sets up the required simulation infrastructure:
-            - creates a port
-            - initializes a scour protection installation vessel
-            - initializes vessel storage
-        """
+        """Sets up the required simulation infrastructure."""
 
         self.initialize_port()
         self.initialize_spi_vessel()
@@ -79,9 +77,15 @@ class ScourProtectionInstallation(InstallPhase):
         turbine_distance = self.config["plant"].get("turbine_distance", None)
 
         if turbine_distance is None:
-            turbine_distance = rotor_diameter * self.config["plant"]["turbine_spacing"] / 1000.0
+            turbine_distance = (
+                rotor_diameter
+                * self.config["plant"]["turbine_spacing"]
+                / 1000.0
+            )
 
-        self.tonnes_per_substructure = ceil(self.config["scour_protection"]["tonnes_per_substructure"])
+        self.tonnes_per_substructure = ceil(
+            self.config["scour_protection"]["tonnes_per_substructure"]
+        )
 
         self.cost_per_tonne = self.config["scour_protection"]["cost_per_tonne"]
 
@@ -99,7 +103,11 @@ class ScourProtectionInstallation(InstallPhase):
     def system_capex(self):
         """Returns total procurement cost of scour protection material."""
 
-        return self.num_turbines * self.tonnes_per_substructure * self.cost_per_tonne
+        return (
+            self.num_turbines
+            * self.tonnes_per_substructure
+            * self.cost_per_tonne
+        )
 
     def initialize_port(self):
         """
@@ -110,9 +118,7 @@ class ScourProtectionInstallation(InstallPhase):
         self.port = simpy.Container(self.env)
 
     def initialize_spi_vessel(self):
-        """
-        Creates the scouring protection isntallation (SPI) vessel.
-        """
+        """Creates the scouring protection isntallation (SPI) vessel."""
 
         spi_specs = self.config["spi_vessel"]
         name = spi_specs.get("name", "SPI Vessel")
@@ -163,11 +169,20 @@ def install_scour_protection(
     tonnes_per_substructure : int
         Number of tonnes required to be installed at each substation
     """
+    if tonnes_per_substructure > vessel.rock_storage.available_capacity:
+        raise VesselCapacityError(
+            vessel,
+            f"tonnes per substructure ({tonnes_per_substructure})",
+        )
 
     while turbines > 0:
         if vessel.at_port:
             # Load scour protection material
-            yield load_material(vessel, vessel.rock_storage.available_capacity, **kwargs)
+            yield load_material(
+                vessel,
+                vessel.rock_storage.available_capacity,
+                **kwargs,
+            )
 
             # Transit to site
             vessel.at_port = False
@@ -181,7 +196,10 @@ def install_scour_protection(
                 turbines -= 1
 
                 # Transit to another turbine
-                if vessel.rock_storage.level >= tonnes_per_substructure and turbines > 0:
+                if (
+                    vessel.rock_storage.level >= tonnes_per_substructure
+                    and turbines > 0
+                ):
                     yield vessel.transit(turbine_distance)
 
                 else:
@@ -253,7 +271,11 @@ def drop_material(vessel, mass, **kwargs):
     """
 
     if vessel.rock_storage.level < mass:
-        raise InsufficientAmount(vessel.rock_storage.level, "Scour Protection", mass)
+        raise InsufficientAmount(
+            vessel.rock_storage.level,
+            "Scour Protection",
+            mass,
+        )
 
     key = "drop_rocks_time"
     drop_time = kwargs.get(key, pt[key])

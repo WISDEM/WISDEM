@@ -489,6 +489,15 @@ class PoseOptimization(object):
             else:
                 wt_opt.model.add_objective("rotorse.ccblade.CP", ref=-1.0)
 
+        elif self.opt["merit_figure"] in ["turbine_cost", "turbine_capex"]:
+            wt_opt.model.add_objective("tcc.turbine_cost_kW", ref=1e3)
+
+        elif self.opt["merit_figure"] in ["bos", "bos_cost", "bos_capex"]:
+            if self.modeling["flags"]["offshore"]:
+                wt_opt.model.add_objective("orbit.total_capex_kW", ref=1e3)
+            else:
+                wt_opt.model.add_objective("landbosse.total_capex_kW", ref=1e3)
+
         elif self.opt["merit_figure"] == "inverse_design":
             wt_opt.model.add_objective("inverse_design.objective")
 

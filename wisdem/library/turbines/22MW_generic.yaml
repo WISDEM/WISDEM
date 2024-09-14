@@ -1,0 +1,21 @@
+# Most Data comes from IEA Wind 22-MW Reference Turbine (IEA-22MW-RWT)
+blade:
+  deck_space: 744.12      # m^2 [IEA-22MW-RWT Value] assuming area = blade length * max chord * 0.75 (assume 25% overhang) = 137.8 * 7.2 * 0.75
+  length: 137.8          # m tonnes [IEA-22MW-RWT Value]
+  type: Blade
+  mass: 82.301         # tonnes [IEA-22MW-RWT Value]
+hub_height: 170        # m [IEA-22MW-RWT Value]
+nacelle:
+  deck_space: 198      # m^2 [IEA-22MW-RWT Value] "The outer dimenesions of the nacelle are estimated equal to 18 m in length, 11 m in width, and 11 m in height" area = 18 * 11
+  type: Nacelle
+  mass: 941.2        # tonnes [IEA-22MW-RWT Value] Nacelle assembly mass + Hub system mass = 120.0 +  821.2
+name: 22MW_generic
+rated_windspeed: 11.00 # m/s [IEA-22MW-RWT Value]
+rotor_diameter: 284   # m [IEA-22MW-RWT Value]
+tower:
+  deck_space: 78.54    # m^2 [IEA-22MW-RWT Value] and assuming erected tower, deck space = tower base = pi * max outer tower diameter^2 /4 = pi * 10^2 / 4
+  sections: 3        # guess
+  type: Tower
+  length: 164.4        # m [IEA-22MW-RWT Value] Hub height - Vertical distance between tower top and hub center
+  mass: 1574         # tonnes [IEA-22MW-RWT Value]
+turbine_rating: 22     # MW
