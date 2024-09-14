@@ -1147,6 +1147,13 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("rotorse.re.rail.constr_strainPS", upper=1.0)
             wt_opt.model.add_constraint("rotorse.re.rail.constr_strainSS", upper=1.0)
 
+        if blade_constr["rated_velocity"]["flag"]:
+            target = blade_constr["rated_velocity"]["target"]
+            error = blade_constr["rated_velocity"]["acceptable_error"]
+            upper_value = target + error
+            lower_value = target - error
+            wt_opt.model.add_constraint("rotorse.rp.powercurve.rated_V", upper = upper_value, lower = lower_value, ref = 10.0)
+            
         if self.opt["constraints"]["blade"]["moment_coefficient"]["flag"]:
             wt_opt.model.add_constraint(
                 "rotorse.ccblade.CM",
