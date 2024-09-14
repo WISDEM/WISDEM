@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 from benedict import benedict
 
-import wisdem.orbit
+import wisdem.orbit as ORBIT
 from wisdem.orbit.phases import DesignPhase, InstallPhase
 from wisdem.orbit.core.library import (
     initialize_library,

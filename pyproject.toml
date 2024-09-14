@@ -57,7 +57,7 @@ dependencies = [
   "openpyxl",
   "pandas",
   "pydoe3",
-  "python-benedict",
+  "python-benedict<0.33.2",
   "pyyaml",
   "ruamel.yaml",
   "scipy",
