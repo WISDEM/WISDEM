@@ -6,7 +6,6 @@ __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
 
-import pandas as pd
 import pytest
 from marmot import Environment
 
@@ -45,13 +44,15 @@ base_config = {"port": {"num_cranes": 1, "name": "TEST_PORT"}}
 
 
 def test_abstract_methods():
-    with pytest.raises(TypeError):
-        install = BadInstallPhase(base_config)
 
-    install = SampleInstallPhase(base_config)
+    with pytest.raises(TypeError):
+        _ = BadInstallPhase(base_config)
+
+    _ = SampleInstallPhase(base_config)
 
 
 def test_run():
+
     sim = SampleInstallPhase(base_config)
     sim.run(until=10)
 

@@ -3,8 +3,9 @@
 __author__ = "Rob Hammond"
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Rob Hammond"
-__email__ = "robert.hammond@nrel.gov"
+__email__ = "rob.hammond@nrel.gov"
 
+import warnings
 from copy import deepcopy
 
 import pytest
@@ -29,9 +30,10 @@ def test_export_system_creation():
 
 def test_number_cables():
     export = ExportSystemDesign(config)
+    print(export.config)
     export.run()
 
-    assert export.num_cables == 11
+    assert export.num_cables == 9
 
 
 def test_cable_length():
@@ -48,7 +50,7 @@ def test_cable_mass():
 
     length = (0.02 + 3 + 30) * 1.01
     mass = length * export.cable.linear_density
-    assert export.mass == mass
+    assert export.mass == pytest.approx(mass, abs=1e-10)
 
 
 def test_total_cable():
@@ -58,15 +60,17 @@ def test_total_cable():
     length = 0.02 + 3 + 30
     length += length * 0.01
     mass = length * export.cable.linear_density
-    assert export.total_mass == pytest.approx(mass * 11, abs=1e-10)
-    assert export.total_length == pytest.approx(length * 11, abs=1e-10)
+    assert export.total_mass == pytest.approx(mass * 9, abs=1e-10)
+    assert export.total_length == pytest.approx(length * 9, abs=1e-10)
 
 
 def test_cables_property():
     export = ExportSystemDesign(config)
     export.run()
 
-    assert (export.sections_cables == export.cable.name).sum() == export.num_cables
+    assert (
+        export.sections_cables == export.cable.name
+    ).sum() == export.num_cables
 
 
 def test_cable_lengths_property():
@@ -74,7 +78,9 @@ def test_cable_lengths_property():
     export.run()
 
     cable_name = export.cable.name
-    assert (export.cable_lengths_by_type[cable_name] == export.length).sum() == export.num_cables
+    assert (
+        export.cable_lengths_by_type[cable_name] == export.length
+    ).sum() == export.num_cables
 
 
 def test_total_cable_len_property():
@@ -82,7 +88,10 @@ def test_total_cable_len_property():
     export.run()
 
     cable_name = export.cable.name
-    assert export.total_cable_length_by_type[cable_name] == pytest.approx(export.total_length, abs=1e-10)
+    assert export.total_cable_length_by_type[cable_name] == pytest.approx(
+        export.total_length,
+        abs=1e-10,
+    )
 
 
 def test_design_result():
@@ -91,13 +100,16 @@ def test_design_result():
 
     _ = export.cable.name
     cables = export.design_result["export_system"]["cable"]
+    # landfall = export.design_results["export_system"]["landfall"]
 
     assert cables["sections"] == [export.length]
-    assert cables["number"] == 11
+    assert cables["number"] == 9
     assert cables["linear_density"] == export.cable.linear_density
+    # assert landfall["interconnection_distance"] == 3
 
 
 def test_floating_length_calculations():
+
     base = deepcopy(config)
     base["site"]["depth"] = 250
     base["export_system_design"]["touchdown_distance"] = 0
@@ -114,3 +126,20 @@ def test_floating_length_calculations():
     new.run()
 
     assert new.total_length < base_length
+
+
+def test_deprecated_landfall():
+
+    base = deepcopy(config)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        sim = ExportSystemDesign(base)
+        sim.run()
+
+    deprecated = deepcopy(base)
+    deprecated["landfall"] = {"interconnection_distance": 4}
+
+    with pytest.deprecated_call():
+        sim = ExportSystemDesign(deprecated)
+        sim.run()

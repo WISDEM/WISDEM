@@ -3,7 +3,9 @@
 __author__ = "Rob Hammond"
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Rob Hammond"
-__email__ = "robert.hammond@nrel.gov"
+__email__ = "rob.hammond@nrel.gov"
+
+from warnings import warn
 
 import numpy as np
 
@@ -19,7 +21,8 @@ class ExportSystemDesign(CableSystem):
     num_cables : int
         Total number of cables required for transmitting power.
     length : float
-        Length of a single cable connecting the OSS to the interconnection in km.
+        Length of a single cable connecting the OSS to the
+        interconnection in km.
     mass : float
         Mass of `length` in tonnes.
     cable : `Cable`
@@ -44,6 +47,7 @@ class ExportSystemDesign(CableSystem):
             "num_redundant": "int (optional)",
             "touchdown_distance": "m (optional, default: 0)",
             "percent_added_length": "float (optional)",
+            "landfall": {"interconnection_distance": "km (optional)"},
         },
     }
 
@@ -54,7 +58,8 @@ class ExportSystemDesign(CableSystem):
                 "number": "int",
                 "sections": "list",
                 "cable_power": "MW",
-            }
+            },
+            "landfall": {"interconnection_distance": "km"},
         }
     }
 
@@ -80,15 +85,25 @@ class ExportSystemDesign(CableSystem):
         self._plant_capacity = self.config["plant"]["capacity"]
         self._distance_to_landfall = config["site"]["distance_to_landfall"]
         self._get_touchdown_distance()
-        try:
-            self._distance_to_interconnection = config["landfall"]["interconnection_distance"]
-        except KeyError:
-            self._distance_to_interconnection = 3
+
+        _landfall = self.config.get("landfall", {})
+        if _landfall:
+            warn(
+                "landfall dictionary will be deprecated and moved"
+                " into [export_system_design][landfall].",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
+        else:
+            _landfall = self.config["export_system_design"].get("landfall", {})
+
+        self._distance_to_interconnection = _landfall.get(
+            "interconnection_distance", 3
+        )
 
     def run(self):
-        """
-        Instantiates the export cable system and runs all the required methods.
-        """
+        """Runs the design model."""
 
         self._initialize_cables()
         self.cable = self.cables[[*self.cables][0]]
@@ -129,9 +144,7 @@ class ExportSystemDesign(CableSystem):
         self.num_cables = int(num_required + num_redundant)
 
     def compute_cable_length(self):
-        """
-        Calculates the total distance an export cable must travel.
-        """
+        """Calculates the total distance an export cable must travel."""
 
         added_length = 1.0 + self._design.get("percent_added_length", 0.0)
         self.length = round(
@@ -145,9 +158,7 @@ class ExportSystemDesign(CableSystem):
         )
 
     def compute_cable_mass(self):
-        """
-        Calculates the total mass of a single length of export cable.
-        """
+        """Calculates the total mass of a single length of export cable."""
 
         self.mass = round(self.length * self.cable.linear_density, 10)
 
@@ -163,24 +174,24 @@ class ExportSystemDesign(CableSystem):
     @property
     def sections_cable_lengths(self):
         """
-        Creates an array of section lengths to work with `CableSystem`
+        Creates an array of section lengths to work with ``CableSystem``.
 
         Returns
         -------
         np.ndarray
-            Array of `length` with shape (`num_cables`, ).
+            Array of ``length`` with shape (``num_cables``, ).
         """
         return np.full(self.num_cables, self.length)
 
     @property
     def sections_cables(self):
         """
-        Creates an array of cable names to work with `CableSystem`.
+        Creates an array of cable names to work with ``CableSystem``.
 
         Returns
         -------
         np.ndarray
-            Array of `cable.name` with shape (`num_cables`, ).
+            Array of `cable.name` with shape (``num_cables``, ).
         """
 
         return np.full(self.num_cables, self.cable.name)
@@ -205,12 +216,17 @@ class ExportSystemDesign(CableSystem):
 
         output = {
             "export_system": {
-                "interconnection_distance": self._distance_to_interconnection,
+                "landfall": {
+                    "interconnection_distance": (
+                        self._distance_to_interconnection
+                    )
+                },
                 "system_cost": self.total_cost,
             }
         }
 
-        for name, cable in self.cables.items():
+        for cable in self.cables.values():
+
             output["export_system"]["cable"] = {
                 "linear_density": cable.linear_density,
                 "sections": [self.length],

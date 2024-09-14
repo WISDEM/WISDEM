@@ -13,11 +13,9 @@ substructure:
   towing_speed: 6
   unit_cost: 12e6
 ahts_vessel: test_ahts_vessel
-support_vessel: test_support_vessel
 towing_vessel: test_towing_vessel
 towing_vessel_groups:
-  num_groups: 1
+  num_groups: 3
   ahts_vessels: 1
-  station_keeping_vessels: 3
   towing_vessels: 1
 turbine: 12MW_generic
