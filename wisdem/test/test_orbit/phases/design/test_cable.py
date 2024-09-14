@@ -3,7 +3,7 @@
 __author__ = "Rob Hammond"
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Rob Hammond"
-__email__ = "robert.hammond@nrel.gov"
+__email__ = "rob.hammond@nrel.gov"
 
 
 import copy
@@ -18,7 +18,7 @@ cables = {
     "empty": {},
     "passes": {
         "conductor_size": 400,
-        "current_capacity": 610,
+        "current_capacity": 600,
         "rated_voltage": 33,
         "ac_resistance": 0.06,
         "inductance": 0.375,
@@ -26,6 +26,7 @@ cables = {
         "linear_density": 35,
         "cost_per_km": 300000,
         "name": "passes",
+        "cable_type": "HVAC",
     },
 }
 
@@ -111,6 +112,7 @@ def test_power_factor():
         np.arange(0, 1, 0.15),  # inductance
         range(100, 1001, 150),  # capacitance
     ):
+
         c["conductor_size"] = i[0]
         c["ac_resistance"] = i[1]
         c["inductance"] = i[2]
@@ -121,6 +123,17 @@ def test_power_factor():
 
     if any((a < 0) | (a > 1) for a in results):
         raise Exception("Invalid Power Factor.")
+
+
+def test_cable_power():
+    cable = Cable(cables["passes"])
+    assert cable.cable_power == pytest.approx(34.1341, abs=2e-1)
+
+    c = copy.deepcopy(cables["passes"])
+    c["cable_type"] = "HVDC-monopole"
+    cable = Cable(c)
+    print(c)
+    assert cable.cable_power == pytest.approx(39.6, abs=2e-1)
 
 
 @pytest.mark.parametrize(
@@ -142,14 +155,22 @@ def test_plant_creation(config):
     assert plant.num_turbines == config["plant"]["num_turbines"]
 
     if "turbine_spacing" in config["plant"]:
-        td = config["turbine"]["rotor_diameter"] * config["plant"]["turbine_spacing"] / 1000.0
+        td = (
+            config["turbine"]["rotor_diameter"]
+            * config["plant"]["turbine_spacing"]
+            / 1000.0
+        )
     else:
         td = config["plant"]["turbine_distance"]
     assert plant.turbine_distance == td
 
     if "row_spacing" in config["plant"]:
         if config["plant"]["layout"] == "grid":
-            rd = config["turbine"]["rotor_diameter"] * config["plant"]["row_spacing"] / 1000.0
+            rd = (
+                config["turbine"]["rotor_diameter"]
+                * config["plant"]["row_spacing"]
+                / 1000.0
+            )
         if config["plant"]["layout"] == "ring":
             rd = td
     else:

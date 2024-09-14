@@ -9,7 +9,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 from marmot import process
 
 from wisdem.orbit.core import Cargo
-from wisdem.orbit.core.logic import stabilize, jackdown_if_required
+from wisdem.orbit.core.logic import jackdown_if_required
 from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install.monopile_install.common import (
     bolt_transition_piece,
@@ -19,12 +19,10 @@ from wisdem.orbit.phases.install.monopile_install.common import (
 
 
 class Topside(Cargo):
-    """Topside Cargo"""
+    """Topside Cargo."""
 
     def __init__(self, mass=None, deck_space=None, **kwargs):
-        """
-        Creates an instance of `Topside`.
-        """
+        """Creates an instance of `Topside`."""
 
         self.mass = mass
         self.deck_space = deck_space
@@ -49,7 +47,7 @@ class Topside(Cargo):
 
 
 class Jacket(Cargo):
-    """Jacket Cargo"""
+    """Jacket Cargo."""
 
     pass
 
@@ -73,7 +71,11 @@ def lift_topside(vessel, **kwargs):
     crane_rate = vessel.crane.crane_rate(**kwargs)
     lift_time = lift_height / crane_rate
 
-    yield vessel.task_wrapper("Lift Topside", lift_time, constraints=vessel.operational_limits)
+    yield vessel.task_wrapper(
+        "Lift Topside",
+        lift_time,
+        constraints=vessel.operational_limits,
+    )
 
 
 @process
@@ -98,13 +100,18 @@ def attach_topside(vessel, **kwargs):
     key = "topside_attach_time"
     attach_time = kwargs.get(key, pt[key])
 
-    yield vessel.task_wrapper("Attach Topside", attach_time, constraints=vessel.operational_limits)
+    yield vessel.task_wrapper(
+        "Attach Topside",
+        attach_time,
+        constraints=vessel.operational_limits,
+    )
 
 
 @process
 def install_topside(vessel, topside, **kwargs):
     """
     Substation topside installation process.
+
     Subprocesses:
     - Crane reequip
     - Lift topside
@@ -135,12 +142,14 @@ def install_topside(vessel, topside, **kwargs):
         yield bolt_transition_piece(vessel, **kwargs)
 
     elif connection == "grouted":
+
         yield pump_transition_piece_grout(vessel, **kwargs)
         yield cure_transition_piece_grout(vessel, **kwargs)
 
     else:
         raise Exception(
-            f"Transition piece connection type '{connection}'" "not recognized. Must be 'bolted' or 'grouted'."
+            f"Transition piece connection type '{connection}'"
+            "not recognized. Must be 'bolted' or 'grouted'."
         )
 
     yield jackdown_if_required(vessel, **kwargs)

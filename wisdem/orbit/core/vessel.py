@@ -5,12 +5,11 @@ __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
-from math import ceil
 from collections import Counter, namedtuple
 
 import numpy as np
 from marmot import Agent, le, process
-from marmot._exceptions import StateExhausted, WindowNotFound, AgentNotRegistered
+from marmot._exceptions import AgentNotRegistered
 
 from wisdem.orbit.core.components import (
     Crane,
@@ -26,7 +25,7 @@ Trip = namedtuple("Trip", "cargo_mass deck_space items")
 
 
 class Vessel(Agent):
-    """Base Vessel Class"""
+    """Base Vessel Class."""
 
     def __init__(self, name, config, avail=1):
         """
@@ -79,7 +78,17 @@ class Vessel(Agent):
             self.env._submit_log(payload, level="ACTION")
 
     @process
-    def task_wrapper(self, name, duration, constraints={}, suspendable=False, **kwargs):
+    def task_wrapper(
+        self,
+        name,
+        duration,
+        constraints=None,
+        suspendable=False,
+        **kwargs,
+    ):
+        """Wraps the ``task`` method and provides two checks."""
+        if constraints is None:
+            constraints = {}
         duration /= self.avail
         yield self.task(name, duration, constraints, suspendable, **kwargs)
 
@@ -93,7 +102,7 @@ class Vessel(Agent):
             self.day_rate = self.config["vessel_specs"]["day_rate"]
 
         except KeyError:
-            self.day_rate = np.NaN
+            self.day_rate = np.nan
 
     def mobilize(self):
         """
@@ -128,8 +137,8 @@ class Vessel(Agent):
         try:
             return self._crane
 
-        except AttributeError:
-            raise MissingComponent(self, "Crane")
+        except AttributeError as exc:
+            raise MissingComponent(self, "Crane") from exc
 
     @property
     def jacksys(self):
@@ -137,17 +146,17 @@ class Vessel(Agent):
         try:
             return self._jacksys
 
-        except AttributeError:
-            raise MissingComponent(self, "Jacking System")
+        except AttributeError as exc:
+            raise MissingComponent(self, "Jacking System") from exc
 
     @property
     def dynamic_positioning(self):
-        """Returns configured `DynamicPositioning` or raises `MissingComponent`."""
+        """Returns `DynamicPositioning` or raises `MissingComponent`."""
         try:
             return self._dp_system
 
-        except AttributeError:
-            raise MissingComponent(self, "Dynamic Positioning")
+        except AttributeError as exc:
+            raise MissingComponent(self, "Dynamic Positioning") from exc
 
     @property
     def storage(self):
@@ -155,17 +164,20 @@ class Vessel(Agent):
         try:
             return self._storage
 
-        except AttributeError:
-            return MissingComponent(self, "Vessel Storage")
+        except AttributeError as exc:
+            raise MissingComponent(self, "Vessel Storage") from exc
 
     @property
     def rock_storage(self):
-        """Returns configured `ScourProtectionStorage` or raises `MissingComponent`."""
+        """
+        Returns configured `ScourProtectionStorage` or raises
+        `MissingComponent`.
+        """
         try:
             return self._rock_storage
 
-        except AttributeError:
-            raise MissingComponent(self, "Scour Protection Storage")
+        except AttributeError as exc:
+            raise MissingComponent(self, "Scour Protection Storage") from exc
 
     @property
     def cable_storage(self):
@@ -173,8 +185,8 @@ class Vessel(Agent):
         try:
             return self._cable_storage
 
-        except AttributeError:
-            raise MissingComponent(self, "Cable Storage")
+        except AttributeError as exc:
+            raise MissingComponent(self, "Cable Storage") from exc
 
     def initialize(self, mobilize=True):
         """
@@ -230,12 +242,15 @@ class Vessel(Agent):
             self._storage = VesselStorage(self.env, **self._storage_specs)
 
     def extract_cable_storage_specs(self):
-        """Extracts and defines cable storage system specifications if found."""
+        """Extracts and defines cable storage system specifications."""
 
         self._cable_storage_specs = self.config.get("cable_storage", {})
         if self._cable_storage_specs:
             self.trip_data = []
-            self._cable_storage = CableCarousel(self.env, **self._cable_storage_specs)
+            self._cable_storage = CableCarousel(
+                self.env,
+                **self._cable_storage_specs,
+            )
 
     def extract_scour_protection_specs(self):
         """
@@ -259,10 +274,19 @@ class Vessel(Agent):
         if capacity:
             self._rock_storage = ScourProtectionStorage(self.env, capacity)
 
-        self.scour_protection_install_speed = self._sp_specs.get("scour_protection_install_speed", 10)
+        self.scour_protection_install_speed = self._sp_specs.get(
+            "scour_protection_install_speed",
+            10,
+        )
 
     @process
-    def get_item_from_storage(self, _type, vessel=None, release=False, **kwargs):
+    def get_item_from_storage(
+        self,
+        _type,
+        vessel=None,
+        release=False,
+        **kwargs,
+    ):
         """
         Retrieves an item which matches `item.type = _type` from `self.storage`
         or `vessel.storage` if configured.
@@ -362,7 +386,7 @@ class Vessel(Agent):
         """
 
         try:
-            _ = getattr(self, "crane")
+            _ = self.crane
             max_windspeed = self._crane_specs["max_windspeed"]
 
         except MissingComponent:
@@ -390,9 +414,9 @@ class Vessel(Agent):
         if storage is None:
             raise Exception("Vessel does not have storage capacity.")
 
-        _cargo = storage.current_cargo_mass if cargo else np.NaN
-        _deck = storage.current_deck_space if deck else np.NaN
-        _items = dict(Counter(i for i in storage.items)) if items else np.NaN
+        _cargo = storage.current_cargo_mass if cargo else np.nan
+        _deck = storage.current_deck_space if deck else np.nan
+        _items = dict(Counter(i for i in storage.items)) if items else np.nan
 
         trip = Trip(cargo_mass=_cargo, deck_space=_deck, items=_items)
 
@@ -413,7 +437,7 @@ class Vessel(Agent):
             return np.array(self.cargo_mass_list) / max_cargo_mass
 
         except MissingComponent:
-            return np.array(np.NaN)
+            return np.array(np.nan)
 
     @property
     def deck_space_list(self):
@@ -430,14 +454,14 @@ class Vessel(Agent):
             return np.array(self.deck_space_list) / max_deck_space
 
         except MissingComponent:
-            return np.array(np.NaN)
+            return np.array(np.nan)
 
     @property
     def max_cargo_mass_utilization(self):
         """Returns maximum cargo mass utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.max(self.cargo_mass_utilizations)
 
@@ -446,7 +470,7 @@ class Vessel(Agent):
         """Returns minimum cargo mass utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.min(self.cargo_mass_utilizations)
 
@@ -455,7 +479,7 @@ class Vessel(Agent):
         """Returns mean cargo mass utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.mean(self.cargo_mass_utilizations)
 
@@ -464,7 +488,7 @@ class Vessel(Agent):
         """Returns median cargo mass utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.median(self.cargo_mass_utilizations)
 
@@ -473,7 +497,7 @@ class Vessel(Agent):
         """Returns maximum deck_space utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.max(self.deck_space_utilizations)
 
@@ -482,7 +506,7 @@ class Vessel(Agent):
         """Returns minimum deck_space utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.min(self.deck_space_utilizations)
 
@@ -491,7 +515,7 @@ class Vessel(Agent):
         """Returns mean deck space utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.mean(self.deck_space_utilizations)
 
@@ -500,7 +524,7 @@ class Vessel(Agent):
         """Returns median deck space utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.median(self.deck_space_utilizations)
 
@@ -509,7 +533,7 @@ class Vessel(Agent):
         """Returns items corresponding to `self.max_cargo_mass`."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         i = np.argmax(self.cargo_mass_list)
         return self.trip_data[i].items
@@ -519,7 +543,7 @@ class Vessel(Agent):
         """Returns items corresponding to `self.min_cargo_mass`."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         i = np.argmin(self.cargo_mass_list)
         return self.trip_data[i].items
@@ -529,7 +553,7 @@ class Vessel(Agent):
         """Returns items corresponding to `self.max_deck_space`."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         i = np.argmax(self.deck_space_list)
         return self.trip_data[i].items
@@ -539,7 +563,7 @@ class Vessel(Agent):
         """Returns items corresponding to `self.min_deck_space`."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         i = np.argmin(self.deck_space_list)
         return self.trip_data[i].items

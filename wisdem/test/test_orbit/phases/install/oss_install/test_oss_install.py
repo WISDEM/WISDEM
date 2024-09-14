@@ -12,11 +12,13 @@ import pandas as pd
 import pytest
 
 from wisdem.orbit import ProjectManager
+from wisdem.test.test_orbit.data import test_weather
 from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.core.defaults import process_times as pt
-from wisdem.orbit.phases.install import FloatingSubstationInstallation, OffshoreSubstationInstallation
-from wisdem.test.test_orbit.data import test_weather
-from wisdem.orbit.core.exceptions import MissingComponent
+from wisdem.orbit.phases.install import (
+    FloatingSubstationInstallation,
+    OffshoreSubstationInstallation,
+)
 
 config_single = extract_library_specs("config", "oss_install")
 config_floating = extract_library_specs("config", "floating_oss_install")
@@ -30,6 +32,7 @@ config_multi["num_feeders"] = 2
     ids=["single_feeder", "multi_feeder"],
 )
 def test_simulation_setup(config):
+
     sim = OffshoreSubstationInstallation(config)
     assert sim.config == config
     assert sim.env
@@ -41,6 +44,7 @@ def test_simulation_setup(config):
 
 
 def test_floating_simulation_setup():
+
     sim = FloatingSubstationInstallation(config_floating)
     assert sim.config == config_floating
     assert sim.env
@@ -53,6 +57,7 @@ def test_floating_simulation_setup():
     ids=["single_feeder", "multi_feeder"],
 )
 def test_vessel_initialization(config):
+
     sim = OffshoreSubstationInstallation(config)
     assert sim.oss_vessel
     assert sim.oss_vessel.crane
@@ -60,8 +65,7 @@ def test_vessel_initialization(config):
     js = sim.oss_vessel._jacksys_specs
     dp = sim.oss_vessel._dp_specs
 
-    if not any([js, dp]):
-        assert False
+    assert any([js, dp])
 
     for feeder in sim.feeders:
         assert feeder.storage
@@ -72,8 +76,13 @@ def test_vessel_initialization(config):
     (config_single, config_multi),
     ids=["single_feeder", "multi_feeder"],
 )
-@pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
+@pytest.mark.parametrize(
+    "weather",
+    (None, test_weather),
+    ids=["no_weather", "test_weather"],
+)
 def test_for_complete_logging(weather, config):
+
     # No weather
     sim = OffshoreSubstationInstallation(config, weather=weather)
     sim.run()
@@ -86,13 +95,18 @@ def test_for_complete_logging(weather, config):
         _df = _df.assign(shift=(_df["time"] - _df["time"].shift(1)))
         assert (_df["shift"] - _df["duration"]).fillna(0.0).abs().max() < 1e-9
 
-    assert ~df["cost"].isnull().any()
+    assert ~df["cost"].isna().any()
     _ = sim.agent_efficiencies
     _ = sim.detailed_output
 
 
-@pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
+@pytest.mark.parametrize(
+    "weather",
+    (None, test_weather),
+    ids=["no_weather", "test_weather"],
+)
 def test_for_complete_logging_floating(weather):
+
     sim = FloatingSubstationInstallation(config_floating, weather=weather)
     sim.run()
 
@@ -106,6 +120,7 @@ def test_for_complete_logging_floating(weather):
 
 
 def test_kwargs():
+
     sim = OffshoreSubstationInstallation(config_single)
     sim.run()
     baseline = sim.total_phase_time
@@ -126,6 +141,7 @@ def test_kwargs():
     failed = []
 
     for kw in keywords:
+
         default = pt[kw]
 
         if kw == "mono_drive_rate":
@@ -157,6 +173,7 @@ def test_kwargs():
 
 
 def test_kwargs_in_ProjectManager():
+
     base = deepcopy(config_single)
     base["install_phases"] = ["OffshoreSubstationInstallation"]
 
@@ -180,6 +197,7 @@ def test_kwargs_in_ProjectManager():
     failed = []
 
     for kw in keywords:
+
         default = pt[kw]
 
         if kw == "mono_drive_rate":

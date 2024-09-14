@@ -22,7 +22,7 @@ dependencies:
   - pyoptsparse
   - pytest
   - pytest-cov
-  - python-benedict
+  - python-benedict<0.33.2
   - pyyaml
   - ruamel.yaml
   - scipy

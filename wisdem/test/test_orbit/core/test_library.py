@@ -3,7 +3,7 @@
 __author__ = "Rob Hammond"
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Rob Hammond"
-__email__ = "robert.hammond@nrel.gov"
+__email__ = "rob.hammond@nrel.gov"
 
 import os
 from copy import deepcopy
@@ -58,6 +58,7 @@ def test_extract_library_specs_fail():
 
 
 def test_phase_specific_file_extraction():
+
     project = ProjectManager(config)
     turbine_config = project.create_config_for_phase("TurbineInstallation")
     monopile_config = project.create_config_for_phase("MonopileInstallation")
@@ -71,4 +72,4 @@ def test_phase_specific_file_extraction():
     bad_config["MonopileInstallation"]["wtiv"] = "missing_vessel"
 
     with pytest.raises(LibraryItemNotFoundError):
-        bad_project = ProjectManager(bad_config)
+        _ = ProjectManager(bad_config)

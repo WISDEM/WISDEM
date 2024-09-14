@@ -13,12 +13,10 @@ from wisdem.orbit.core.defaults import process_times as pt
 
 
 class TowerSection(Cargo):
-    """Tower Section Cargo"""
+    """Tower Section Cargo."""
 
     def __init__(self, length=None, mass=None, deck_space=None, **kwargs):
-        """
-        Creates an instance of `TowerSection`.
-        """
+        """Creates an instance of `TowerSection`."""
 
         self.length = length
         self.mass = mass
@@ -44,12 +42,10 @@ class TowerSection(Cargo):
 
 
 class Nacelle(Cargo):
-    """Nacelle Cargo"""
+    """Nacelle Cargo."""
 
     def __init__(self, mass=None, deck_space=None, **kwargs):
-        """
-        Creates an instance of `Nacelle`.
-        """
+        """Creates an instance of `Nacelle`."""
 
         self.mass = mass
         self.deck_space = deck_space
@@ -74,12 +70,10 @@ class Nacelle(Cargo):
 
 
 class Blade(Cargo):
-    """Blade Cargo"""
+    """Blade Cargo."""
 
     def __init__(self, length=None, mass=None, deck_space=None, **kwargs):
-        """
-        Creates an instance of `Blade`.
-        """
+        """Creates an instance of `Blade`."""
 
         self.length = length
         self.mass = mass

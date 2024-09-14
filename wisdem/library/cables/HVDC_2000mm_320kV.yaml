@@ -1,0 +1,10 @@
+ac_resistance: 0           # ohm/km
+capacitance: 295000        # nF/km
+conductor_size: 2000       # mm^2
+cost_per_km: 828000        # $
+current_capacity: 1900     # A # ESTIMATE
+inductance: 0.127          # mH/km
+linear_density: 53         # t/km
+rated_voltage: 320         # kV
+cable_type: HVDC-monopole  # HVDC vs HVAC
+name: HVDC_2000mm_320kV

@@ -6,6 +6,10 @@ offshore_substation_substructure:
   mooring_cost: 5e6
 offshore_substation_topside:
   unit_cost: 100e6
+mooring_system:
+  num_lines: 3
+  line_cost: 1e4
+  anchor_cost: 1e5
 site:
   depth: 500
   distance: 40

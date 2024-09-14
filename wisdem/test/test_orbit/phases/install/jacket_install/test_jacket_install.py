@@ -11,11 +11,10 @@ from copy import deepcopy
 import pandas as pd
 import pytest
 
-from wisdem.orbit import ProjectManager
+from wisdem.test.test_orbit.data import test_weather
 from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import JacketInstallation
-from wisdem.test.test_orbit.data import test_weather
 
 config_wtiv = extract_library_specs("config", "single_wtiv_jacket_install")
 config_feeder = extract_library_specs("config", "feeder_jacket_install")
@@ -29,6 +28,7 @@ config_multi_feeder["num_feeders"] = 2
     ids=["wtiv_only", "single_feeder", "multi_feeder"],
 )
 def test_simulation_setup(config):
+
     sim = JacketInstallation(config)
     assert sim.config == config
     assert sim.env
@@ -49,6 +49,7 @@ def test_simulation_setup(config):
     ids=["wtiv_only", "single_feeder", "multi_feeder"],
 )
 def test_vessel_initialization(config):
+
     sim = JacketInstallation(config)
     assert sim.wtiv
     assert sim.wtiv.jacksys
@@ -68,8 +69,13 @@ def test_vessel_initialization(config):
     (config_wtiv, config_feeder, config_multi_feeder),
     ids=["wtiv_only", "single_feeder", "multi_feeder"],
 )
-@pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
+@pytest.mark.parametrize(
+    "weather",
+    (None, test_weather),
+    ids=["no_weather", "test_weather"],
+)
 def test_for_complete_logging(weather, config):
+
     sim = JacketInstallation(config, weather=weather)
     sim.run()
 
@@ -81,7 +87,7 @@ def test_for_complete_logging(weather, config):
         _df = _df.assign(shift=(_df["time"] - _df["time"].shift(1)))
         assert (_df["shift"] - _df["duration"]).abs().max() < 1e-9
 
-    assert ~df["cost"].isnull().any()
+    assert ~df["cost"].isna().any()
     _ = sim.agent_efficiencies
     _ = sim.detailed_output
 
@@ -92,6 +98,7 @@ def test_for_complete_logging(weather, config):
     ids=["wtiv_only", "single_feeder", "multi_feeder"],
 )
 def test_num_legs(config):
+
     base = JacketInstallation(config)
     base.run()
 
@@ -110,6 +117,7 @@ def test_num_legs(config):
     ids=["wtiv_only", "single_feeder", "multi_feeder"],
 )
 def test_foundation_type(config):
+
     base = JacketInstallation(config)
     base.run()
 
@@ -127,6 +135,7 @@ def test_foundation_type(config):
 
 
 def test_kwargs_piles():
+
     sim = JacketInstallation(config_wtiv)
     sim.run()
     baseline = sim.total_phase_time
@@ -146,6 +155,7 @@ def test_kwargs_piles():
     failed = []
 
     for kw in keywords:
+
         default = pt[kw]
         kwargs = {kw: default + 2}
 
@@ -167,6 +177,7 @@ def test_kwargs_piles():
 
 
 def test_kwargs_suction():
+
     config_wtiv_suction = deepcopy(config_wtiv)
     config_wtiv_suction["jacket"]["foundation_type"] = "suction"
 
@@ -187,6 +198,7 @@ def test_kwargs_suction():
     failed = []
 
     for kw in keywords:
+
         default = pt[kw]
         kwargs = {kw: default + 2}
 
