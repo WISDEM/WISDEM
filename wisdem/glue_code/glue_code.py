@@ -1036,7 +1036,7 @@ class WindPark(om.Group):
                 if modeling_options["flags"]["offshore"]:
                     self.connect("orbit.total_capex_kW", "financese.bos_per_kW")
                 else:
-                    self.connect("landbosse.bos_capex_kW", "financese.bos_per_kW")
+                    self.connect("landbosse.total_capex_kW", "financese.bos_per_kW")
             else:
                 self.connect("costs.bos_per_kW", "financese.bos_per_kW")
 
