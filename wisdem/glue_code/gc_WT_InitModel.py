@@ -449,7 +449,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                                 "The end position of the layer "
                                 + internal_structure_2d_fem["layers"][i]["name"]
                                 + " is linked to the layer "
-                                + internal_structure_2d_fem["layers"][i]["start_nd_arc"]["fixed"]
+                                + internal_structure_2d_fem["layers"][i]["end_nd_arc"]["fixed"]
                                 + " , but this layer does not exist in the yaml."
                             )
             if "width" in internal_structure_2d_fem["layers"][i]:
