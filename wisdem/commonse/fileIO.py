@@ -157,14 +157,14 @@ def transfer_data(prob_from, prob_to, prefix_append=None, prefix_remove=None):
 
         # Restore the type of the input data
         ival = var_df_from["values"].iloc[k]
-        if isinstance(ival, (np.ndarray, float, int, list)):
+        if isinstance(ival, (np.ndarray, float, int, list, dict)):
             pass
-        elif isinstance(ival, str) and ival.startswith('['):
+        elif isinstance(ival, str) and (ival.startswith('[') or ival.startswith('{')):
             ival = eval(ival)
         else:
             try:
                 ival = float(ival)
-            except ValueError:
+            except Exception:
                 pass
 
         # Store the value
