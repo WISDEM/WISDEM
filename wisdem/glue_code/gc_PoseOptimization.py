@@ -433,7 +433,10 @@ class PoseOptimization(object):
             wt_opt.model.add_objective("rotorse.rp.AEP", ref=-1.0e6)
 
         elif self.opt["merit_figure"] == "blade_mass":
-            wt_opt.model.add_objective("rotorse.blade_mass", ref=1.0e4)
+            wt_opt.model.add_objective("rotorse.blade_mass", ref=1.0e6)
+
+        elif self.opt["merit_figure"] == "blade_cost":
+            wt_opt.model.add_objective("rotorse.total_bc.total_blade_cost", ref=1.0e6)
 
         elif self.opt["merit_figure"].lower() == "lcoe":
             wt_opt.model.add_objective("financese.lcoe", ref=0.1)
