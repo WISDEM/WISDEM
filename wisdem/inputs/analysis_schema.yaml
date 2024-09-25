@@ -1055,6 +1055,24 @@ properties:
                                 minimum: 0.
                                 maximum: 5.e+4
                                 description: Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility.
+                    rated_velocity:
+                        type: object
+                        description: Enforcing a target rated velocity (useful for inverse design approaches)
+                        default: {}
+                        properties:
+                            flag: *flag
+                            target:
+                                type: number
+                                default: 0.
+                                minimum: 0.
+                                maximum: 100.0
+                                description: Value of the target rated velocity
+                            acceptable_error:
+                                type: number
+                                default: 0.1
+                                minimum: 0.
+                                maximum: 5.0
+                                description: Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility.
                     moment_coefficient:
                         type: object
                         description: (EXPERIMENTAL) Targeted blade moment coefficient (useful for managing root flap loads or inverse design approaches that is not recommendend for general use)

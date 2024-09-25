@@ -433,7 +433,10 @@ class PoseOptimization(object):
             wt_opt.model.add_objective("rotorse.rp.AEP", ref=-1.0e6)
 
         elif self.opt["merit_figure"] == "blade_mass":
-            wt_opt.model.add_objective("rotorse.blade_mass", ref=1.0e4)
+            wt_opt.model.add_objective("rotorse.blade_mass", ref=1.0e6)
+
+        elif self.opt["merit_figure"] == "blade_cost":
+            wt_opt.model.add_objective("rotorse.total_bc.total_blade_cost", ref=1.0e6)
 
         elif self.opt["merit_figure"].lower() == "lcoe":
             wt_opt.model.add_objective("financese.lcoe", ref=0.1)
@@ -1164,6 +1167,13 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("rotorse.re.rail.constr_strainPS", upper=1.0)
             wt_opt.model.add_constraint("rotorse.re.rail.constr_strainSS", upper=1.0)
 
+        if blade_constr["rated_velocity"]["flag"]:
+            target = blade_constr["rated_velocity"]["target"]
+            error = blade_constr["rated_velocity"]["acceptable_error"]
+            upper_value = target + error
+            lower_value = target - error
+            wt_opt.model.add_constraint("rotorse.rp.powercurve.rated_V", upper = upper_value, lower = lower_value, ref = 10.0)
+            
         if self.opt["constraints"]["blade"]["moment_coefficient"]["flag"]:
             wt_opt.model.add_constraint(
                 "rotorse.ccblade.CM",
