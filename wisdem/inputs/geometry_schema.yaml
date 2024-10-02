@@ -127,6 +127,7 @@ properties:
                             - twist
                             - pitch_axis
                             - reference_axis
+                        optional:
                             - blade_mount_point
                         properties:
                             airfoil_position:
@@ -2254,7 +2255,7 @@ properties:
                                         $ref: "#/definitions/distributed_data/grid_nd"
                             reference_axis:
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
-                    internal_structure_2d_fem: # TODO-YL: Do we need this? They are all zeroes in current owens yaml
+                    internal_structure_2d_fem: 
                         type: object
                         default: {}
                         required:
@@ -2280,7 +2281,7 @@ properties:
                                         maximum: 1.e+10
                                         unit: Pa
                                         description: Max stress on bolt
-                            reference_axis:
+                            reference_axis: # TODO-YL: Do we need this? They are all zeroes in current owens yaml
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
                             webs:
                                 type: array
@@ -2378,7 +2379,7 @@ properties:
                             joint:
                                 type: object
                                 default: {}
-                                description: This is a spanwise joint along the blade, usually adopted to ease transportation constraints. WISDEM currently supports a single joint.
+                                description: This is a spanwise joint along the struct, usually adopted to ease transportation constraints. WISDEM currently supports a single joint.
                                 properties:
                                     position:
                                         type: number

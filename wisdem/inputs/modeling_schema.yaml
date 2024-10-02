@@ -464,3 +464,25 @@ properties:
                                     description: Applied wind reference velocity, if necessary
                                     default: 0.0
                                     unit: meter
+
+
+            OWENS:
+                type: object
+                default: {}
+                properties:
+                    flag: &flag
+                        type: boolean
+                        default: False
+                        description: Whether or not to run this module
+                    n_aoa:
+                        type: integer
+                        default: 200
+                        description: Number of angles of attack in a common grid to define polars
+                    n_xy:
+                        type: integer
+                        default: 200
+                        description: Number of coordinate point used to define airfoils #GB: This should depend on the airfoil. We are not resampling if the airfoils come inwith different numbers of points.  PreComp doesn't care if different airfoils have different numbers of points, right?
+                    n_span:
+                        type: integer
+                        default: 30
+                        description: Number of spanwise stations in a common grid used to define strut properties

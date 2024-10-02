@@ -53,7 +53,7 @@ class WindTurbineOntologyPython(object):
         )
 
         # VAWT flag
-        self.modeling_options["flags"]["vertical"] = (self.wt_init["turbine_type"] == "vertical")
+        self.modeling_options["flags"]["vawt"] = (self.wt_init["assembly"]["turbine_type"] == "vertical")
 
         # Put in some logic about what needs to be in there
         flags = self.modeling_options["flags"]
@@ -61,11 +61,10 @@ class WindTurbineOntologyPython(object):
         # Even if the block is in the inputs, the user can turn off via modeling options
         if flags["bos"]:
             flags["bos"] = self.modeling_options["WISDEM"]["BOS"]["flag"]
-        if flags["blade"]: # TODO-YL: only use RotorSE for horizoncal axis for now??
-            if not self.modeling_options["flags"]["vertical"]:
-                flags["blade"] = self.modeling_options["WISDEM"]["RotorSE"]["flag"]
+        if flags["blade"]:
+            flags["blade"] = self.modeling_options["WISDEM"]["RotorSE"]["flag"] or self.modeling_options["flags"]["vawt"]
         if flags["tower"]:
-            if not self.modeling_options["flags"]["vertical"]: # TODO-YL: Do we want to use towerSE for owens?
+            if not self.modeling_options["flags"]["vawt"]: # TODO-YL: Do we want to use towerSE for owens?
                 flags["tower"] = self.modeling_options["WISDEM"]["TowerSE"]["flag"]
         if flags["monopile"]:
             flags["monopile"] = self.modeling_options["WISDEM"]["FixedBottomSE"]["flag"]
@@ -80,10 +79,12 @@ class WindTurbineOntologyPython(object):
         flags["hub"] = flags["nacelle"] = flags["hub"] or flags["nacelle"]  # Hub and nacelle have to go together
 
         # Blades and airfoils
-        if flags["blade"] and not flags["airfoils"]:
-            raise ValueError("Blades/rotor analysis is requested but no airfoils are found")
-        if flags["airfoils"] and not flags["blade"]:
-            print("WARNING: Airfoils provided but no blades/rotor found or RotorSE deactivated")
+        if not self.modeling_options["flags"]["vawt"]:
+            # Right now OWENS use externally provided airfoil polar
+            if flags["blade"] and not flags["airfoils"]:
+                raise ValueError("Blades/rotor analysis is requested but no airfoils are found")
+            if flags["airfoils"] and not flags["blade"]:
+                print("WARNING: Airfoils provided but no blades/rotor found or RotorSE deactivated")
 
         # Blades, tower, monopile and environment
         if flags["blade"] and not flags["environment"]:
@@ -113,7 +114,7 @@ class WindTurbineOntologyPython(object):
                 raise ValueError("Water depth must be > 0 to do fixed-bottom or floating analysis")
             
         # VAWT flags check
-        if self.modeling_options["flags"]["vertical"] and not self.modeling_options["flags"]["struts"]:
+        if self.modeling_options["flags"]["vawt"] and not self.modeling_options["flags"]["struts"]:
             raise ValueError("Vertical axis turbine is modeled but no struts is provided.")
 
     def set_openmdao_vectors(self):
@@ -174,10 +175,11 @@ class WindTurbineOntologyPython(object):
 
         # Blade
         self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = False
-        if self.modeling_options["flags"]["blade"] and not self.modeling_options["flags"]["vertical"]:
+        if self.modeling_options["flags"]["blade"]:
             self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] = np.linspace(
                 0.0, 1.0, self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
             )  # Equally spaced non-dimensional spanwise grid
+            # YL: The af_position might not be needed for vawt but no harm to leave as it is for now
             self.modeling_options["WISDEM"]["RotorSE"]["n_af_span"] = len(
                 self.wt_init["components"]["blade"]["outer_shape_bem"]["airfoil_position"]["labels"]
             )  # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
@@ -242,7 +244,7 @@ class WindTurbineOntologyPython(object):
             ]
 
         # Tower
-        if self.modeling_options["flags"]["tower"] and not self.modeling_options["flags"]["vertical"]:
+        if self.modeling_options["flags"]["tower"]:
             self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = len(
                 self.wt_init["components"]["tower"]["outer_shape_bem"]["outer_diameter"]["grid"]
             )
@@ -636,6 +638,41 @@ class WindTurbineOntologyPython(object):
                             "anchor_type_type"
                         ][i]
             self.modeling_options["mooring"]["n_attach"] = len(set(fairlead_nodes))
+        
+        # VAWT strut
+        if self.modeling_options["flags"]["vawt"] and self.modeling_options["flags"]["struts"]:
+            self.modeling_options["WISDEM"]["OWENS"]["struts"]["nd_span"] = self.wt_init["components"]["struts"]["outer_shape_bem"]["airfoil_position"]["grid"]/np.max(self.wt_init["components"]["struts"]["outer_shape_bem"]["airfoil_position"]["grid"])
+              # Right now using just the non-dimensional original grid, might need to adapt to the equallly spacing like blade later with a separate n_span_strut_options
+            self.modeling_options["WISDEM"]["OWENS"]["struts"]["n_af_span"] = len(
+                self.wt_init["components"]["struts"]["outer_shape_bem"]["airfoil_position"]["labels"]
+            )  # This is the number of airfoils defined along strut span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
+            self.modeling_options["WISDEM"]["OWENS"]["struts"]["n_webs"] = len(
+                self.wt_init["components"]["struts"]["internal_structure_2d_fem"]["webs"]
+            )
+            self.modeling_options["WISDEM"]["OWENS"]["struts"]["n_layers"] = len(
+                self.wt_init["components"]["struts"]["internal_structure_2d_fem"]["layers"]
+            )
+            self.modeling_options["WISDEM"]["OWENS"]["struts"]["layer_name"] = self.modeling_options["WISDEM"]["OWENS"]["struts"][
+                "n_layers"
+            ] * [""]
+            self.modeling_options["WISDEM"]["OWENS"]["struts"]["layer_mat"] = self.modeling_options["WISDEM"]["OWENS"]["struts"][
+                "n_layers"
+            ] * [""]
+            for i in range(self.modeling_options["WISDEM"]["OWENS"]["struts"]["n_layers"]):
+                self.modeling_options["WISDEM"]["OWENS"]["struts"]["layer_name"][i] = self.wt_init["components"]["struts"][
+                    "internal_structure_2d_fem"
+                ]["layers"][i]["name"]
+                self.modeling_options["WISDEM"]["OWENS"]["struts"]["layer_mat"][i] = self.wt_init["components"]["struts"][
+                    "internal_structure_2d_fem"
+                ]["layers"][i]["material"]
+
+            self.modeling_options["WISDEM"]["OWENS"]["struts"]["web_name"] = self.modeling_options["WISDEM"]["OWENS"]["struts"][
+                "n_webs"
+            ] * [""]
+            for i in range(self.modeling_options["WISDEM"]["OWENS"]["struts"]["n_webs"]):
+                self.modeling_options["WISDEM"]["OWENS"]["struts"]["web_name"][i] = self.wt_init["components"]["struts"][
+                    "internal_structure_2d_fem"
+                ]["webs"][i]["name"]
 
         # Assembly
         self.modeling_options["assembly"] = {}
@@ -728,8 +765,24 @@ class WindTurbineOntologyPython(object):
                 self.modeling_options["WISDEM"]["RotorSE"]["n_span"],
                 blade_opt_options["aero_shape"]["L/D"]["n_opt"],
             )
+        
+        # VAWT radius variable
+        if not blade_opt_options["aero_shape"]["rotor_radius_vawt"]["flag"]:
+            blade_opt_options["aero_shape"]["rotor_radius_vawt"]["n_opt"] = self.modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        elif blade_opt_options["aero_shape"]["chord"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
+            raise ValueError("you are attempting to do an analysis using fewer analysis points than control points.")
+        elif blade_opt_options["aero_shape"]["chord"]["n_opt"] < 4:
+            raise ValueError("Cannot optimize rotor_radius_vawt with less than 4 control points along blade span")
+        elif blade_opt_options["aero_shape"]["chord"]["n_opt"] > self.modeling_options["WISDEM"]["RotorSE"]["n_span"]:
+            raise ValueError(
+                """Please set WISDEM->RotorSE->n_span in the modeling options yaml larger
+                than aero_shape->rotor_radius_vawt->n_opt in the analysis options yaml. n_span and chord n_opt are """,
+                self.modeling_options["WISDEM"]["RotorSE"]["n_span"],
+                blade_opt_options["aero_shape"]["rotor_radius_vawt"]["n_opt"],
+            )
+
         # # Blade structural design variables
-        if self.modeling_options["WISDEM"]["RotorSE"]["flag"] and self.modeling_options["flags"]["blade"]:
+        if (self.modeling_options["WISDEM"]["RotorSE"]["flag"] or self.modeling_options["flags"]["vawt"]) and self.modeling_options["flags"]["blade"]:
             n_layers = self.modeling_options["WISDEM"]["RotorSE"]["n_layers"]
             layer_name = self.modeling_options["WISDEM"]["RotorSE"]["layer_name"]
             spars_tereinf = np.zeros(4, dtype=int)

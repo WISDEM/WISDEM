@@ -74,6 +74,12 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
     else:
         tower = {}
 
+    if modeling_options["flags"]["struts"]:
+        struts = wt_init["components"]["struts"]
+        wt_opt = assign_struts_values(wt_opt, modeling_options, struts)
+    else:
+        struts = {}
+
     if modeling_options["flags"]["monopile"]:
         monopile = wt_init["components"]["monopile"]
         wt_opt = assign_monopile_values(wt_opt, modeling_options, monopile)
@@ -974,6 +980,56 @@ def assign_tower_values(wt_opt, modeling_options, tower):
             wt_opt["fixedse.monopile.rna_M"] = M
 
     return wt_opt
+
+
+def assign_struts_values(wt_opt, modeling_options, struts):
+    strut_options = modeling_options["WISDEM"]["OWENS"]
+    n_span_strut = strut_options["n_span_strut"]
+    n_layers_strut = strut_options["n_layers"]
+    n_webs_strut = strut_options["n_webs"]
+
+    wt_opt["struts.nd_span"] = struts["outer_shape_bem"]["airfoil_positions"]["grid"]
+    wt_opt["struts.chord"] = struts["outer_shape_bem"]["chord"]["values"]
+    wt_opt["struts.twist"] = struts["outer_shape_bem"]["twist"]["values"]
+    wt_opt["struts.pitch_axis"] = struts["outer_shape_bem"]["pitch_axis"]["values"]
+    wt_opt["struts.reference_axis"][:,0] = struts["outer_shape_bem"]["reference_axis"]["x"]["values"]
+    wt_opt["struts.reference_axis"][:,1] = struts["outer_shape_bem"]["reference_axis"]["y"]["values"]
+    wt_opt["struts.reference_axis"][:,2] = struts["outer_shape_bem"]["reference_axis"]["z"]["values"]
+
+
+    # Assign layer values
+    layer_name = n_layers_strut * [""]
+    layer_mat = n_layers_strut * [""]
+    thickness = np.zeros((n_layers_strut, n_span_strut))
+    fiber_orientation = np.zeros((n_layers_strut, n_span_strut))
+    layer_start_nd_arc = np.zeros((n_layers_strut, n_span_strut))
+    layer_end_nd_arc = np.zeros((n_layers_strut, n_span_strut))
+    
+
+    for i in range(n_layers_strut):
+        layer_name[i] = struts["internal_structure_2d_fem"]["layers"][i]["name"]
+        layer_mat[i] = struts["internal_structure_2d_fem"]["layers"][i]["material"]
+        thickness[i, :] = struts["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"]
+        fiber_orientation[i, :] = struts["internal_structure_2d_fem"]["layers"][i]["fiber_orientation"]["values"]
+        layer_start_nd_arc[i, :] = struts["internal_structure_2d_fem"]["layers"][i]["start_nd_arc"]["values"]
+        layer_end_nd_arc[i, :] = struts["internal_structure_2d_fem"]["layers"][i]["end_nd_arc"]["values"]
+    
+    wt_opt["struts.layer_material"] = layer_mat
+    wt_opt["struts.layer_name"] = layer_name
+    wt_opt["struts.layer_thickness"] = thickness
+    wt_opt["struts.layer_fiber_orientation"] = fiber_orientation
+    wt_opt["struts.layer_start_nd_arc"] = layer_start_nd_arc
+    wt_opt["struts.layer_end_nd_arc"] = layer_end_nd_arc
+
+    # Assign web values
+    web_name = n_webs_strut * [""]
+    web_start_nd_arc = np.zeros((n_webs_strut, n_span_strut))
+    web_end_nd_arc = np.zeros((n_webs_strut, n_span_strut))
+
+    for i in range(n_webs_strut):
+        web_name[i] = struts["internal_structure_2d_fem"]["webs"][i]["name"]
+        layer_start_nd_arc[i, :] = struts["internal_structure_2d_fem"]["webs"][i]["start_nd_arc"]["values"]
+        layer_end_nd_arc[i, :] = struts["internal_structure_2d_fem"]["webs"][i]["end_nd_arc"]["values"]
 
 
 def assign_monopile_values(wt_opt, modeling_options, monopile):

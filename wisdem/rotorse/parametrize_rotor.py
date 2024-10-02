@@ -17,7 +17,6 @@ class ParametrizeBladeAero(om.ExplicitComponent):
         n_span = rotorse_options["n_span"]
         self.n_opt_twist = n_opt_twist = self.opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
         self.n_opt_chord = n_opt_chord = self.opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]
-        self.n_opt_x = n_opt_x = self.opt_options["design_variables"]["blade"]["aero_shape"]["x"]["n_opt"]
 
         # Inputs
         self.add_input(
@@ -43,12 +42,7 @@ class ParametrizeBladeAero(om.ExplicitComponent):
             units="rad",
             desc="1D array of the twist angle being optimized at the n_opt locations.",
         )
-        self.add_input(
-            "x_opt",
-            val=np.ones(n_opt_x),
-            units="m",
-            desc="1D array of the radius distribution being optimized at the n_opt locations.",
-        )
+
         # Blade chord
         # self.add_input(
         #     "chord_original",
@@ -67,12 +61,6 @@ class ParametrizeBladeAero(om.ExplicitComponent):
             units="m",
             desc="1D array of the chord being optimized at the n_opt locations.",
         )
-        self.add_input(
-            "x_opt",
-            val=np.ones(n_opt_x),
-            units="m",
-            desc="1D array of the radius distribution being optimized at the n_opt locations.",
-        )
 
         # Outputs
         self.add_output(
@@ -86,12 +74,6 @@ class ParametrizeBladeAero(om.ExplicitComponent):
             val=np.zeros(n_span),
             units="m",
             desc="1D array of the chord values defined along blade span. The chord is the result of the parameterization.",
-        )
-        self.add_output(
-            "x_param",
-            val=np.zeros(n_span),
-            units="m",
-            desc="1D array of the radius distribution values defined along blade span. The x is the result of the parameterization.",
         )
         self.add_output(
             "max_chord_constr",
@@ -108,8 +90,6 @@ class ParametrizeBladeAero(om.ExplicitComponent):
         chord_opt = spline(inputs["s"], outputs["chord_param"])
         max_chord = self.opt_options["constraints"]["blade"]["chord"]["max"]
         outputs["max_chord_constr"] = chord_opt(inputs["s_opt_chord"]) / max_chord
-        x_spline = spline(inputs["s_opt_x"], inputs["x_opt"])
-        outputs["x_param"] = x_spline(inputs["s"])
 
 
 class ParametrizeBladeStruct(om.ExplicitComponent):
@@ -129,12 +109,14 @@ class ParametrizeBladeStruct(om.ExplicitComponent):
             val=np.zeros(n_span),
             desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
         )
-        self.add_input(
-            "layer_thickness_original",
-            val=np.zeros((n_layers, n_span)),
-            units="m",
-            desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        )
+        # YL: layer_thickness_original not used
+        # TODO: delete if confirm not used
+        # self.add_input(
+        #     "layer_thickness_original",
+        #     val=np.zeros((n_layers, n_span)),
+        #     units="m",
+        #     desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        # )
 
         for i in range(n_layers):
             self.add_input(

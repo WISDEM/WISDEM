@@ -201,7 +201,7 @@ properties:
                                         default: 1.0
                                         minimum: -1.e30
                                         maximum: 1.e30
-                            x:
+                            rotor_radius_vawt:
                                 type: object
                                 default: {}
                                 description: Blade radius as a design variable by scaling (multiplying) the initial value at spline control points along the span, for VAWT only!
@@ -210,7 +210,7 @@ properties:
                                     n_opt:
                                         type: integer
                                         default: 3
-                                        description: x_scale design parameter count
+                                        description: rotor_diameter_vawt design parameter count
                                     lower_bound:
                                         type: number
                                         default: -1.0
