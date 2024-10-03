@@ -997,7 +997,7 @@ class CCBlade(object):
             ) = self.__loads(phi_star, rotating, *args)
 
             if np.isnan(Np[i]):
-                print(f"NaNs at {i}/{n}: {phi_lower} {phi_star} {phi_upper}")
+                print(f"nans at {i}/{n}: {phi_lower} {phi_star} {phi_upper}")
                 a[i] = 0.0
                 ap[i] = 0.0
                 Np[i] = 0.0

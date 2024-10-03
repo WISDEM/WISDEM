@@ -387,7 +387,7 @@ class ArraySystem(CostModule):
 
         # Check to make sure there aren't any zeros in num_turbines_per_cable, which is used as the denominator
         # in the division above (this happens when not all of the cable types in the input sheet need to be used).
-        # If there is a zero, then print a warning and change NaN to 0 in perc_partial_string.
+        # If there is a zero, then print a warning and change nan to 0 in perc_partial_string.
         if 0.0 in num_turb_per_cable:
             print(
                 f'Warning: {self.project_name} CollectionCost module generates number of turbines per string that '

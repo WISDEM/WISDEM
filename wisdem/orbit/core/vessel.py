@@ -93,7 +93,7 @@ class Vessel(Agent):
             self.day_rate = self.config["vessel_specs"]["day_rate"]
 
         except KeyError:
-            self.day_rate = np.NaN
+            self.day_rate = np.nan
 
     def mobilize(self):
         """
@@ -390,9 +390,9 @@ class Vessel(Agent):
         if storage is None:
             raise Exception("Vessel does not have storage capacity.")
 
-        _cargo = storage.current_cargo_mass if cargo else np.NaN
-        _deck = storage.current_deck_space if deck else np.NaN
-        _items = dict(Counter(i for i in storage.items)) if items else np.NaN
+        _cargo = storage.current_cargo_mass if cargo else np.nan
+        _deck = storage.current_deck_space if deck else np.nan
+        _items = dict(Counter(i for i in storage.items)) if items else np.nan
 
         trip = Trip(cargo_mass=_cargo, deck_space=_deck, items=_items)
 
@@ -413,7 +413,7 @@ class Vessel(Agent):
             return np.array(self.cargo_mass_list) / max_cargo_mass
 
         except MissingComponent:
-            return np.array(np.NaN)
+            return np.array(np.nan)
 
     @property
     def deck_space_list(self):
@@ -430,14 +430,14 @@ class Vessel(Agent):
             return np.array(self.deck_space_list) / max_deck_space
 
         except MissingComponent:
-            return np.array(np.NaN)
+            return np.array(np.nan)
 
     @property
     def max_cargo_mass_utilization(self):
         """Returns maximum cargo mass utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.max(self.cargo_mass_utilizations)
 
@@ -446,7 +446,7 @@ class Vessel(Agent):
         """Returns minimum cargo mass utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.min(self.cargo_mass_utilizations)
 
@@ -455,7 +455,7 @@ class Vessel(Agent):
         """Returns mean cargo mass utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.mean(self.cargo_mass_utilizations)
 
@@ -464,7 +464,7 @@ class Vessel(Agent):
         """Returns median cargo mass utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.median(self.cargo_mass_utilizations)
 
@@ -473,7 +473,7 @@ class Vessel(Agent):
         """Returns maximum deck_space utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.max(self.deck_space_utilizations)
 
@@ -482,7 +482,7 @@ class Vessel(Agent):
         """Returns minimum deck_space utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.min(self.deck_space_utilizations)
 
@@ -491,7 +491,7 @@ class Vessel(Agent):
         """Returns mean deck space utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.mean(self.deck_space_utilizations)
 
@@ -500,7 +500,7 @@ class Vessel(Agent):
         """Returns median deck space utilization."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         return np.median(self.deck_space_utilizations)
 
@@ -509,7 +509,7 @@ class Vessel(Agent):
         """Returns items corresponding to `self.max_cargo_mass`."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         i = np.argmax(self.cargo_mass_list)
         return self.trip_data[i].items
@@ -519,7 +519,7 @@ class Vessel(Agent):
         """Returns items corresponding to `self.min_cargo_mass`."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         i = np.argmin(self.cargo_mass_list)
         return self.trip_data[i].items
@@ -529,7 +529,7 @@ class Vessel(Agent):
         """Returns items corresponding to `self.max_deck_space`."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         i = np.argmax(self.deck_space_list)
         return self.trip_data[i].items
@@ -539,7 +539,7 @@ class Vessel(Agent):
         """Returns items corresponding to `self.min_deck_space`."""
 
         if not self.trip_data:
-            return np.NaN
+            return np.nan
 
         i = np.argmin(self.deck_space_list)
         return self.trip_data[i].items

@@ -149,7 +149,7 @@ class ParametricManager:
                 )
 
             except AttributeError:
-                res = np.NaN
+                res = np.nan
 
             results[k] = res
 
