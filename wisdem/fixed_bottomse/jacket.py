@@ -368,18 +368,18 @@ class ComputeFrame3DD(om.ExplicitComponent):
         rho = [inputs["rho_mat"][imat]] * self.num_elements
 
         # Convert all lists to arrays
-        Area = np.squeeze(np.array(self.Area, dtype=np.float_))
-        Asx = np.squeeze(np.array(self.Asx, dtype=np.float_))
-        Asy = np.squeeze(np.array(self.Asy, dtype=np.float_))
-        J0 = np.squeeze(np.array(self.J0, dtype=np.float_))
-        Ixx = np.squeeze(np.array(self.Ixx, dtype=np.float_))
-        Iyy = np.squeeze(np.array(self.Iyy, dtype=np.float_))
-        L = np.squeeze(np.array(self.L, dtype=np.float_))
-        D = np.squeeze(np.array(self.D, dtype=np.float_))
-        t = np.squeeze(np.array(self.t, dtype=np.float_))
-        E = np.squeeze(np.array(E, dtype=np.float_))
-        G = np.squeeze(np.array(G, dtype=np.float_))
-        rho = np.squeeze(np.array(rho, dtype=np.float_))
+        Area = np.squeeze(np.array(self.Area, dtype=np.float64))
+        Asx = np.squeeze(np.array(self.Asx, dtype=np.float64))
+        Asy = np.squeeze(np.array(self.Asy, dtype=np.float64))
+        J0 = np.squeeze(np.array(self.J0, dtype=np.float64))
+        Ixx = np.squeeze(np.array(self.Ixx, dtype=np.float64))
+        Iyy = np.squeeze(np.array(self.Iyy, dtype=np.float64))
+        L = np.squeeze(np.array(self.L, dtype=np.float64))
+        D = np.squeeze(np.array(self.D, dtype=np.float64))
+        t = np.squeeze(np.array(self.t, dtype=np.float64))
+        E = np.squeeze(np.array(E, dtype=np.float64))
+        G = np.squeeze(np.array(G, dtype=np.float64))
+        rho = np.squeeze(np.array(rho, dtype=np.float64))
         N1 = self.N1
         N2 = self.N2
 
