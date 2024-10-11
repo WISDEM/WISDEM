@@ -183,6 +183,7 @@ def write_geometry_yaml(instance : dict, foutput : str) -> None:
     if not foutput.endswith(".yaml"):
         foutput += ".yaml"
     write_yaml(instance, foutput)
+    return foutput
 
 
 def write_modeling_yaml(instance : dict, foutput : str) -> None:
@@ -197,6 +198,7 @@ def write_modeling_yaml(instance : dict, foutput : str) -> None:
 
     instance2 = simple_types(instance)
     write_yaml(instance2, foutput + sfx_str)
+    return foutput + sfx_str
 
 
 def write_analysis_yaml(instance : dict, foutput : str) -> None:
@@ -210,6 +212,7 @@ def write_analysis_yaml(instance : dict, foutput : str) -> None:
 
     sfx_str = "-analysis.yaml"
     write_yaml(instance, foutput + sfx_str)
+    return foutput + sfx_str
 
 def remove_numpy(fst_vt : dict) -> dict:
     """
