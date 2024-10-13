@@ -247,7 +247,6 @@ def remove_numpy(fst_vt : dict) -> dict:
         np.longdouble: float,
         np.csingle: float,
         np.cdouble: float,
-        np.float_: float,
         np.float16: float,
         np.float32: float,
         np.float64: float,

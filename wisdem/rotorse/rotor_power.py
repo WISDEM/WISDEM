@@ -803,7 +803,7 @@ class ComputePowerCurve(ExplicitComponent):
         outputs["M"] = M
         outputs["pitch"] = pitch
 
-        outputs["rated_V"] = np.float_(U_rated)
+        outputs["rated_V"] = np.float64(U_rated)
         outputs["rated_Omega"] = Omega_rpm_rated
         outputs["rated_pitch"] = pitch_rated
         outputs["rated_T"] = T_rated
