@@ -15,7 +15,7 @@ from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
 
 # Numpy deprecation warnings
-warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+warnings.filterwarnings("ignore", category=np.exceptions.VisibleDeprecationWarning)
 
 # Suppress the maxfev warnings is scipy _minpack_py, line:175
 warnings.simplefilter("ignore", RuntimeWarning, lineno=175)
@@ -45,7 +45,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         # Extract the number of cores available
         max_cores = MPI.COMM_WORLD.Get_size()
 
-        if max_cores > n_DV:
+        if max_cores > n_DV and opt_options["opt_flag"] and not run_only:
             raise ValueError(
                 "ERROR: please reduce the number of cores, currently set to "
                 + str(max_cores)

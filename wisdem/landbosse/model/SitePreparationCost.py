@@ -375,7 +375,7 @@ class SitePreparationCost(CostModule):
         # if more than one crew needed to complete within construction duration then assume that all construction happens
         # within that window and use that time frame for weather delays; if not, use the number of days calculated
         operation_data['time_construct_bool'] = operation_data['Number of days'] > estimate_construction_time_output['road_construction_time'] * 30.
-        boolean_dictionary = {True: estimate_construction_time_output['road_construction_time'] * 30., False: np.NAN}
+        boolean_dictionary = {True: estimate_construction_time_output['road_construction_time'] * 30., False: np.nan}
         operation_data['time_construct_bool'] = operation_data['time_construct_bool'].map(boolean_dictionary)
         operation_data['Time construct days'] = operation_data[['time_construct_bool', 'Number of days']].min(axis=1)
         num_days = operation_data['Time construct days'].max()

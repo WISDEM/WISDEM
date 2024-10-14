@@ -35,9 +35,9 @@ class MyComp(om.ExplicitComponent):
         outputs["float_out"] = inputs["float_in"] + 1
         outputs["fraction_out"] = inputs["fraction_in"] + 0.1
         outputs["array_out"] = inputs["array_in"] + 1
-        discrete_outputs["int_out"] = 1
-        discrete_outputs["string_out"] = "full"
-        discrete_outputs["list_out"] = ["full"] * 3
+        discrete_outputs["int_out"] = discrete_inputs["int_in"] + 1
+        discrete_outputs["string_out"] = discrete_inputs["string_in"] + "_full"
+        discrete_outputs["list_out"] = discrete_inputs["list_in"] + ["full"] * 3
 
 
 class MyGroup(om.Group):
@@ -64,37 +64,56 @@ class TestFileIO(unittest.TestCase):
         self.assertFalse(os.path.exists("test.xlsx"))
 
         clear_files()
-        fileIO.save_data("test.junk", self.prob, mat_file=False)
+        fileIO.save_data("test.junk", self.prob, mat_file=True)
         self.assertTrue(os.path.exists("test.pkl"))
         self.assertTrue(os.path.exists("test.npz"))
-        self.assertFalse(os.path.exists("test.mat"))
+        self.assertTrue(os.path.exists("test.mat"))
         self.assertTrue(os.path.exists("test.xlsx"))
 
         clear_files()
         fileIO.save_data("test.junk", self.prob)
         self.assertTrue(os.path.exists("test.pkl"))
         self.assertTrue(os.path.exists("test.npz"))
-        self.assertTrue(os.path.exists("test.mat"))
         self.assertTrue(os.path.exists("test.xlsx"))
+        self.assertFalse(os.path.exists("test.mat"))
 
-    def testLoadFile(self):
+    def testLoadFile_pkl(self):
         clear_files()
         fileIO.save_data("test", self.prob)
-        self.prob = fileIO.load_data("test.pkl", self.prob)
 
         # Check pickle file
-        self.assertEqual(self.prob["float_in"], 5.0)
-        self.assertEqual(self.prob["float_out"], 6.0)
-        self.assertEqual(self.prob["fraction_in"], 0.0)
-        self.assertEqual(self.prob["fraction_out"], 0.1)
-        npt.assert_equal(self.prob["array_in"], np.zeros(3))
-        npt.assert_equal(self.prob["array_out"], np.ones(3))
-        self.assertEqual(self.prob["int_in"], 0)
-        self.assertEqual(self.prob["int_out"], 1)
-        self.assertEqual(self.prob["string_in"], "empty")
-        self.assertEqual(self.prob["string_out"], "full")
-        self.assertEqual(self.prob["list_in"], ["empty"] * 3)
-        self.assertEqual(self.prob["list_out"], ["full"] * 3)
+        newprob = fileIO.load_data("test.pkl", self.prob)
+        self.assertEqual(newprob["float_in"], 5.0)
+        self.assertEqual(newprob["float_out"], 6.0)
+        self.assertEqual(newprob["fraction_in"], 0.0)
+        self.assertEqual(newprob["fraction_out"], 0.1)
+        npt.assert_equal(newprob["array_in"], np.zeros(3))
+        npt.assert_equal(newprob["array_out"], np.ones(3))
+        self.assertEqual(newprob["int_in"], 0)
+        self.assertEqual(newprob["int_out"], 1)
+        self.assertEqual(newprob["string_in"], "empty")
+        self.assertEqual(newprob["string_out"], "empty_full")
+        self.assertEqual(newprob["list_in"], ["empty"] * 3)
+        self.assertEqual(newprob["list_out"], ["empty"] * 3 + ["full"] * 3)
+
+    def testLoadFile_npz(self):
+        clear_files()
+        fileIO.save_data("test", self.prob)
+
+        # Check pickle file
+        newprob = fileIO.load_data("test.npz", self.prob)
+        self.assertEqual(newprob["float_in"], 5.0)
+        self.assertEqual(newprob["float_out"], 6.0)
+        self.assertEqual(newprob["fraction_in"], 0.0)
+        self.assertEqual(newprob["fraction_out"], 0.1)
+        npt.assert_equal(newprob["array_in"], np.zeros(3))
+        npt.assert_equal(newprob["array_out"], np.ones(3))
+        self.assertEqual(newprob["int_in"], 0)
+        self.assertEqual(newprob["int_out"], 1)
+        self.assertEqual(newprob["string_in"], "empty")
+        self.assertEqual(newprob["string_out"], "empty_full")
+        npt.assert_array_equal(newprob["list_in"], ["empty"] * 3)
+        npt.assert_array_equal(newprob["list_out"], ["empty"] * 3 + ["full"] * 3)
 
         # Check numpy file
         npzdat = np.load("test.npz", allow_pickle=True)
@@ -107,9 +126,47 @@ class TestFileIO(unittest.TestCase):
         self.assertEqual(npzdat["int_in"], 0)
         self.assertEqual(npzdat["int_out"], 1)
         self.assertEqual(npzdat["string_in"], "empty")
-        self.assertEqual(npzdat["string_out"], "full")
+        self.assertEqual(npzdat["string_out"], "empty_full")
         npt.assert_equal(npzdat["list_in"], ["empty"] * 3)
-        npt.assert_equal(npzdat["list_out"], ["full"] * 3)
+        npt.assert_equal(npzdat["list_out"], ["empty"] * 3 + ["full"] * 3)
+
+    def testLoadFile_csv(self):
+        clear_files()
+        fileIO.save_data("test", self.prob)
+
+        # Check pickle file
+        newprob = fileIO.load_data("test.csv", self.prob)
+        self.assertEqual(newprob["float_in"], 5.0)
+        self.assertEqual(newprob["float_out"], 6.0)
+        self.assertEqual(newprob["fraction_in"], 0.0)
+        self.assertEqual(newprob["fraction_out"], 0.1)
+        npt.assert_equal(newprob["array_in"], np.zeros(3))
+        npt.assert_equal(newprob["array_out"], np.ones(3))
+        self.assertEqual(newprob["int_in"], 0)
+        self.assertEqual(newprob["int_out"], 1)
+        self.assertEqual(newprob["string_in"], "empty")
+        self.assertEqual(newprob["string_out"], "empty_full")
+        self.assertEqual(newprob["list_in"], ["empty"] * 3)
+        self.assertEqual(newprob["list_out"], ["empty"] * 3 + ["full"] * 3)
+
+    def testLoadFile_xlsx(self):
+        clear_files()
+        fileIO.save_data("test", self.prob)
+
+        # Check pickle file
+        newprob = fileIO.load_data("test.xlsx", self.prob)
+        self.assertEqual(newprob["float_in"], 5.0)
+        self.assertEqual(newprob["float_out"], 6.0)
+        self.assertEqual(newprob["fraction_in"], 0.0)
+        self.assertEqual(newprob["fraction_out"], 0.1)
+        npt.assert_equal(newprob["array_in"], np.zeros(3))
+        npt.assert_equal(newprob["array_out"], np.ones(3))
+        self.assertEqual(newprob["int_in"], 0)
+        self.assertEqual(newprob["int_out"], 1)
+        self.assertEqual(newprob["string_in"], "empty")
+        self.assertEqual(newprob["string_out"], "empty_full")
+        self.assertEqual(newprob["list_in"], ["empty"] * 3)
+        self.assertEqual(newprob["list_out"], ["empty"] * 3 + ["full"] * 3)
 
 
 if __name__ == "__main__":

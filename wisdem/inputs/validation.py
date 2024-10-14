@@ -113,18 +113,18 @@ def simple_types(indict : dict) -> dict:
     """
     def convert(value):
         if isinstance(value, np.ndarray):
-            return value.tolist()
+            return convert(value.tolist())
         elif isinstance(value, dict):
-            return simple_types(value)
-        elif isinstance(value, (list, tuple)):
-            return [convert(item) for item in value]
+            return {key: convert(value) for key, value in value.items()}
+        elif isinstance(value, (list, tuple, set)):
+            return [convert(item) for item in value]  # treat all as list
+        elif isinstance(value, (np.generic)):
+            return value.item()  # convert numpy primatives to python primative underlying
         elif isinstance(value, (float, int, bool, str)):
-            return value
+            return value  # this should be the end case
         else:
             return ""
-
-    rv = {k: convert(v) for k, v in indict.items()}
-    return rv
+    return convert(indict)
 
 
 # ---------------------
@@ -183,6 +183,7 @@ def write_geometry_yaml(instance : dict, foutput : str) -> None:
     if not foutput.endswith(".yaml"):
         foutput += ".yaml"
     write_yaml(instance, foutput)
+    return foutput
 
 
 def write_modeling_yaml(instance : dict, foutput : str) -> None:
@@ -197,6 +198,7 @@ def write_modeling_yaml(instance : dict, foutput : str) -> None:
 
     instance2 = simple_types(instance)
     write_yaml(instance2, foutput + sfx_str)
+    return foutput + sfx_str
 
 
 def write_analysis_yaml(instance : dict, foutput : str) -> None:
@@ -210,6 +212,7 @@ def write_analysis_yaml(instance : dict, foutput : str) -> None:
 
     sfx_str = "-analysis.yaml"
     write_yaml(instance, foutput + sfx_str)
+    return foutput + sfx_str
 
 def remove_numpy(fst_vt : dict) -> dict:
     """
@@ -244,7 +247,6 @@ def remove_numpy(fst_vt : dict) -> dict:
         np.longdouble: float,
         np.csingle: float,
         np.cdouble: float,
-        np.float_: float,
         np.float16: float,
         np.float32: float,
         np.float64: float,

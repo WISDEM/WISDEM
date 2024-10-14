@@ -100,21 +100,18 @@ class CCAirfoil(object):
         # Check efficiency only between -20 and +40 deg
         aoa_start = -20.0
         aoa_end = 40
-        i_start = np.argmin(abs(self.alpha - np.deg2rad(aoa_start)))
-        i_end = np.argmin(abs(self.alpha - np.deg2rad(aoa_end)))
 
-        if len(self.alpha[i_start:i_end]) == 0:  # Cylinder
-            alpha_Emax = 0.0
+        alpha = np.deg2rad(np.linspace(aoa_start, aoa_end, num=201))
+        cl = np.array([self.cl_spline.ev(aoa, Re) for aoa in alpha])
+        cd = np.array([self.cd_spline.ev(aoa, Re) for aoa in alpha])
+
+        if np.max(cl) < 1.e-3:  # Cylinder
+            alpha_Emax = 0.
             cl_Emax = self.cl_spline.ev(alpha_Emax, Re)
             cd_Emax = self.cd_spline.ev(alpha_Emax, Re)
             Emax = cl_Emax / cd_Emax
-
         else:
-            alpha = np.deg2rad(np.linspace(aoa_start, aoa_end, num=201))
-            cl = [self.cl_spline.ev(aoa, Re) for aoa in alpha]
-            cd = [self.cd_spline.ev(aoa, Re) for aoa in alpha]
             Eff = [cli / cdi for cli, cdi, in zip(cl, cd)]
-
             i_max = np.argmax(Eff)
             alpha_Emax = alpha[i_max]
             cl_Emax = cl[i_max]

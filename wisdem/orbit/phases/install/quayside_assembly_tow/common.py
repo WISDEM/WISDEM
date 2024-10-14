@@ -1,5 +1,6 @@
 """Common processes and cargo types for quayside assembly and tow-out
-installations"""
+installations.
+"""
 
 __author__ = "Jake Nunemaker"
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
@@ -7,7 +8,7 @@ __maintainer__ = "Jake Nunemaker"
 __email__ = "jake.nunemaker@nrel.gov"
 
 
-from marmot import Agent, le, process
+from marmot import Agent, le, false, process
 from marmot._exceptions import AgentNotRegistered
 
 
@@ -82,9 +83,7 @@ class SubstructureAssemblyLine(Agent):
 
     @process
     def assemble_substructure(self):
-        """
-        Simulation process for assembling a substructure.
-        """
+        """Simulation process for assembling a substructure."""
 
         yield self.task("Substructure Assembly", self.time)
         substructure = Substructure()
@@ -94,7 +93,9 @@ class SubstructureAssemblyLine(Agent):
         delay = self.env.now - start
 
         if delay > 0:
-            self.submit_action_log("Delay: No Wet Storage Available", delay)
+            self.submit_action_log(
+                "Delay: No Substructure Storage Available", delay
+            )
 
     @process
     def start(self):
@@ -181,11 +182,13 @@ class TurbineAssemblyLine(Agent):
 
         while True:
             start = self.env.now
-            sub = yield self.feed.get()
+            _ = yield self.feed.get()
             delay = self.env.now - start
 
             if delay > 0:
-                self.submit_action_log("Delay: No Substructures in Wet Storage", delay)
+                self.submit_action_log(
+                    "Delay: No Substructures in Wet Storage", delay
+                )
 
             yield self.assemble_turbine()
 
@@ -211,14 +214,20 @@ class TurbineAssemblyLine(Agent):
 
         yield self.mechanical_completion()
 
+        yield self.electrical_completion()
+
         start = self.env.now
         yield self.target.put(1)
         delay = self.env.now - start
 
         if delay > 0:
-            self.submit_action_log("Delay: No Assembly Storage Available", delay)
+            self.submit_action_log(
+                "Delay: No Assembly Storage Available", delay
+            )
 
-        self.submit_debug_log(message="Assembly delievered to installation groups.")
+        self.submit_debug_log(
+            message="Assembly delievered to installation groups."
+        )
 
     @process
     def move_substructure(self):
@@ -229,7 +238,7 @@ class TurbineAssemblyLine(Agent):
         TODO: Move to dynamic process involving tow groups.
         """
 
-        yield self.task("Move Substructure", 8)
+        yield self.task("Move Substructure", 8, {"port_in_use": false()})
 
     @process
     def prepare_for_assembly(self):
@@ -249,7 +258,7 @@ class TurbineAssemblyLine(Agent):
 
         yield self.task(
             "Lift and Attach Tower Section",
-            12,
+            4,
             constraints={"windspeed": le(15)},
         )
 
@@ -260,7 +269,11 @@ class TurbineAssemblyLine(Agent):
         at quayside.
         """
 
-        yield self.task("Lift and Attach Nacelle", 7, constraints={"windspeed": le(15)})
+        yield self.task(
+            "Lift and Attach Nacelle",
+            12,
+            constraints={"windspeed": le(15)},
+        )
 
     @process
     def lift_and_attach_blade(self):
@@ -269,7 +282,11 @@ class TurbineAssemblyLine(Agent):
         blade at quayside.
         """
 
-        yield self.task("Lift and Attach Blade", 3.5, constraints={"windspeed": le(12)})
+        yield self.task(
+            "Lift and Attach Blade",
+            3.5,
+            constraints={"windspeed": le(12)},
+        )
 
     @process
     def mechanical_completion(self):
@@ -278,13 +295,32 @@ class TurbineAssemblyLine(Agent):
         work at quayside.
         """
 
-        yield self.task("Mechanical Completion", 24, constraints={"windspeed": le(18)})
+        yield self.task(
+            "Mechanical Completion",
+            24,
+            constraints={"windspeed": le(18)},
+        )
+
+    @process
+    def electrical_completion(self):
+        """
+        Task representing time associated with performing electrical completion
+        work at quayside, including precommissioning. Assumes the tower is
+        delivered to port in multiple sections, requiring cable pull-in after
+        tower assembly.
+        """
+
+        yield self.task(
+            "Electrical Completion",
+            72,
+            constraints={"windspeed": le(18)},
+        )
 
 
 class TowingGroup(Agent):
     """Class to represent an arbitrary group of towing vessels."""
 
-    def __init__(self, vessel_specs, num=1):
+    def __init__(self, vessel_specs, ahts_vessel_specs=None, num=1):
         """
         Creates an instance of TowingGroup.
 
@@ -293,12 +329,36 @@ class TowingGroup(Agent):
         vessel_specs : dict
             Specs for the individual vessels used in the towing group.
             Currently restricted to one vessel specification per group.
+        num : int
+            Towing group number
+        ahts_vessel_specs : dict
+            Specs for the anchor hndling tug vessel.
         """
 
         super().__init__(f"Towing Group {num}")
         self._specs = vessel_specs
-        self.day_rate = self._specs["vessel_specs"]["day_rate"]
+        self.day_rate_towing = self._specs["vessel_specs"]["day_rate"]
+        self.day_rate_anchor = 0.0
+        self.max_waveheight = self._specs["transport_specs"]["max_waveheight"]
+        self.max_windspeed = self._specs["transport_specs"]["max_windspeed"]
         self.transit_speed = self._specs["transport_specs"]["transit_speed"]
+
+        if ahts_vessel_specs is not None:
+            self.day_rate_anchor = ahts_vessel_specs["vessel_specs"][
+                "day_rate"
+            ]
+            self.max_waveheight = min(
+                vessel_specs["transport_specs"]["max_waveheight"],
+                ahts_vessel_specs["transport_specs"]["max_waveheight"],
+            )
+            self.max_windspeed = min(
+                vessel_specs["transport_specs"]["max_windspeed"],
+                ahts_vessel_specs["transport_specs"]["max_windspeed"],
+            )
+            self.transit_speed = min(
+                vessel_specs["transport_specs"]["transit_speed"],
+                ahts_vessel_specs["transport_specs"]["transit_speed"],
+            )
 
     def initialize(self):
         """Initializes the towing group."""
@@ -306,7 +366,15 @@ class TowingGroup(Agent):
         self.submit_debug_log(message="{self.name} initialized.")
 
     @process
-    def group_task(self, name, duration, num_vessels, constraints={}, **kwargs):
+    def group_task(
+        self,
+        name,
+        duration,
+        num_vessels,
+        num_ahts_vessels=0,
+        constraints=None,
+        **kwargs,
+    ):
         """
         Submits a group task with any number of towing vessels.
 
@@ -319,9 +387,13 @@ class TowingGroup(Agent):
             Rounded up to the nearest int.
         num_vessels : int
             Number of individual towing vessels needed for the operation.
+        num_ahts_vessels : int
+            Number of anchor handling tug vessels used for the operation.
         """
-
+        if constraints is None:
+            constraints = {}
         kwargs = {**kwargs, "num_vessels": num_vessels}
+        kwargs = {**kwargs, "num_ahts_vessels": num_ahts_vessels}
         yield self.task(name, duration, constraints=constraints, **kwargs)
 
     def operation_cost(self, hours, **kwargs):
@@ -338,8 +410,16 @@ class TowingGroup(Agent):
         """
 
         mult = kwargs.get("cost_multiplier", 1.0)
-        vessels = kwargs.get("num_vessels", 1)
-        return (self.day_rate / 24) * vessels * hours * mult
+        num_towing_vessels = kwargs.get("num_vessels", 1)
+        num_ahts_vessels = kwargs.get("num_ahts_vessels", 0)
+        return (
+            (
+                (self.day_rate_towing / 24) * num_towing_vessels
+                + (self.day_rate_anchor / 24) * num_ahts_vessels
+            )
+            * hours
+            * mult
+        )
 
     def submit_action_log(self, action, duration, **kwargs):
         """

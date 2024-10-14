@@ -61,7 +61,12 @@ properties:
                                     inverse:
                                         type: boolean
                                         default: False
-                                        description: Words TODO?
+                                        description: This flag is only used if the flag in twist is set to False. Once turned on, the twist is set to achieve a given target for the angle of attack. The target can be a predefined margin to stall or the point of maximum airfoil efficiency, see flag inverse_target
+                                    inverse_target:
+                                        type: string
+                                        enumerate: ['max_efficiency', 'stall_margin']
+                                        default: 'max_efficiency'
+                                        description: This input is only used if the flag 'inverse' is set to True. 'max_efficiency' makes sure the twist generates angles of attack corresponding to max airfoil efficiency along span. The input 'stall_margin' makes sure the angles of attack respect a predefined margin from the stall point. The actual margin is set in the input 'stall_margin' among the blade aerodynamic constraints.
                                     n_opt: &nopt
                                         type: integer
                                         default: 8
@@ -204,6 +209,7 @@ properties:
                     structure:
                         type: array
                         description: Design variables associated with the internal blade structure
+                        default: []
                         items:
                             type: object
                             description: Set the thickness of any blade layer as a design variable by scaling (multiplying) the initial value at spline control points along the span.
@@ -984,6 +990,12 @@ properties:
                                 minimum: 0.1
                                 maximum: 20.0
                                 unit: meter
+                    chord_slope:
+                        type: object
+                        description: Constraint to enforce monothonically decreasing chord after max chord
+                        default: {}
+                        properties:
+                            flag: *flag
                     root_circle_diameter:
                         type: object
                         description: Enforcing the minimum blade root circle diameter.
@@ -1042,6 +1054,24 @@ properties:
                                 default: 0.
                                 minimum: 0.
                                 maximum: 5.e+4
+                                description: Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility.
+                    rated_velocity:
+                        type: object
+                        description: Enforcing a target rated velocity (useful for inverse design approaches)
+                        default: {}
+                        properties:
+                            flag: *flag
+                            target:
+                                type: number
+                                default: 0.
+                                minimum: 0.
+                                maximum: 100.0
+                                description: Value of the target rated velocity
+                            acceptable_error:
+                                type: number
+                                default: 0.1
+                                minimum: 0.
+                                maximum: 5.0
                                 description: Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility.
                     moment_coefficient:
                         type: object
@@ -1470,7 +1500,7 @@ properties:
 
     merit_figure:
         type: string
-        description: Objective function / merit figure for optimization (not checked via schema, but in python).  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation, platform_mass- floating platform mass without variable ballast, inverse_design- custom inverse design used to match reference values of any arbitrary output
+        description: Objective function / merit figure for optimization (not checked via schema, but in python).  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, turbine_cost- turbine CapEx, bos_cost- balance of station CapEx, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation, platform_mass- floating platform mass without variable ballast, inverse_design- custom inverse design used to match reference values of any arbitrary output
         default: LCOE
 
     merit_figure_user:

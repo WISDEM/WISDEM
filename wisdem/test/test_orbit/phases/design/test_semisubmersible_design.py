@@ -19,8 +19,12 @@ base = {
 }
 
 
-@pytest.mark.parametrize("depth,turbine_rating", product(range(100, 1201, 200), range(3, 15, 1)))
+@pytest.mark.parametrize(
+    "depth,turbine_rating",
+    product(range(100, 1201, 200), range(3, 15, 1)),
+)
 def test_parameter_sweep(depth, turbine_rating):
+
     config = {
         "site": {"depth": depth},
         "plant": {"num_turbines": 50},
@@ -38,6 +42,7 @@ def test_parameter_sweep(depth, turbine_rating):
 
 
 def test_design_kwargs():
+
     test_kwargs = {
         "stiffened_column_CR": 3000,
         "truss_CR": 6000,
@@ -50,6 +55,7 @@ def test_design_kwargs():
     base_cost = s.total_cost
 
     for k, v in test_kwargs.items():
+
         config = deepcopy(base)
         config["semisubmersible_design"] = {}
         config["semisubmersible_design"][k] = v
@@ -59,3 +65,11 @@ def test_design_kwargs():
         cost = s.total_cost
 
         assert cost != base_cost
+
+
+def test_total_cost():
+
+    semi = SemiSubmersibleDesign(base)
+    semi.run()
+
+    assert semi.total_cost == pytest.approx(630709636, abs=1e0)

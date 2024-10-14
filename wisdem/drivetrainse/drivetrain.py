@@ -206,6 +206,7 @@ class DrivetrainSE(om.Group):
                 "generator",
                 Generator(design=gentype, n_pc=n_pc),
                 promotes=[
+                    "generator_mass_user",
                     "generator_mass",
                     "generator_cost",
                     "generator_I",

@@ -1,28 +1,38 @@
+"""
+Provides the ``ProjectManager`` API for running ORBIT simulations and
+calculating results.
+"""
+
 __author__ = ["Jake Nunemaker"]
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = "Jake Nunemaker"
 __email__ = ["jake.nunemaker@nrel.gov"]
 
 
-import os
 import re
 import datetime as dt
 import collections.abc as collections
 from copy import deepcopy
 from math import ceil
 from numbers import Number
+from pathlib import Path
 from itertools import product
 
 import numpy as np
 import pandas as pd
 from benedict import benedict
 
-import wisdem.orbit
+import wisdem.orbit as ORBIT
 from wisdem.orbit.phases import DesignPhase, InstallPhase
-from wisdem.orbit.core.library import initialize_library, export_library_specs, extract_library_data
+from wisdem.orbit.core.library import (
+    initialize_library,
+    export_library_specs,
+    extract_library_data,
+)
 from wisdem.orbit.phases.design import (
     SparDesign,
     MonopileDesign,
+    ElectricalDesign,
     ArraySystemDesign,
     ExportSystemDesign,
     MooringSystemDesign,
@@ -30,6 +40,7 @@ from wisdem.orbit.phases.design import (
     SemiSubmersibleDesign,
     CustomArraySystemDesign,
     OffshoreSubstationDesign,
+    OffshoreFloatingSubstationDesign,
 )
 from wisdem.orbit.phases.install import (
     JacketInstallation,
@@ -44,7 +55,11 @@ from wisdem.orbit.phases.install import (
     FloatingSubstationInstallation,
     OffshoreSubstationInstallation,
 )
-from wisdem.orbit.core.exceptions import PhaseNotFound, WeatherProfileError, PhaseDependenciesInvalid
+from wisdem.orbit.core.exceptions import (
+    PhaseNotFound,
+    WeatherProfileError,
+    PhaseDependenciesInvalid,
+)
 
 
 class ProjectManager:
@@ -60,9 +75,11 @@ class ProjectManager:
         ExportSystemDesign,
         ScourProtectionDesign,
         OffshoreSubstationDesign,
+        OffshoreFloatingSubstationDesign,
         MooringSystemDesign,
         SemiSubmersibleDesign,
         SparDesign,
+        ElectricalDesign,
     )
 
     _install_phases = (
@@ -118,6 +135,20 @@ class ProjectManager:
         self.phase_times = {}
         self._output_logs = []
 
+    @property
+    def start_date(self):
+        """
+        Return start date for the analysis. If weather is configured, the
+        first date in the weather profile is used. If weather is not
+        configured, an arbitary start date is assumed and used to index phase
+        times.
+        """
+
+        if self.weather is not None:
+            return self.weather.index[0].to_pydatetime()
+
+        return dt.datetime(2010, 1, 1, 0, 0)
+
     def run(self, **kwargs):
         """
         Main project run method.
@@ -159,12 +190,14 @@ class ProjectManager:
         self._print_warnings()
 
     def _print_warnings(self):
+
         try:
             df = pd.DataFrame(self.logs)
-            df = df.loc[~df["message"].isnull()]
+            df = df.loc[~df["message"].isna()]
             df = df.loc[df["message"].str.contains("Exceeded")]
 
             for msg in df["message"].unique():
+
                 idx = df.loc[df["message"] == msg].index[0]
                 phase = df.loc[idx, "phase"]
                 print(f"{phase}:\n\t {msg}")
@@ -189,13 +222,18 @@ class ProjectManager:
         """
 
         if not issubclass(phase, DesignPhase):
-            raise ValueError("Registered design phase must be a subclass of " "'ORBIT.phases.DesignPhase'.")
+            raise ValueError(
+                "Registered design phase must be a subclass of "
+                "'ORBIT.phases.DesignPhase'."
+            )
 
         if phase.__name__ in [c.__name__ for c in cls._design_phases]:
-            raise ValueError(f"A phase with name '{phase.__name__}' already exists.")
+            raise ValueError(
+                f"A phase with name '{phase.__name__}' already exists."
+            )
 
         if len(re.split("[_ ]", phase.__name__)) > 1:
-            raise ValueError(f"Registered phase name must not include a '_'.")
+            raise ValueError("Registered phase name must not include a '_'.")
 
         cls._design_phases = (*cls._design_phases, phase)
 
@@ -210,13 +248,18 @@ class ProjectManager:
         """
 
         if not issubclass(phase, InstallPhase):
-            raise ValueError("Registered install phase must be a subclass of " "'ORBIT.phases.InstallPhase'.")
+            raise ValueError(
+                "Registered install phase must be a subclass of "
+                "'ORBIT.phases.InstallPhase'."
+            )
 
         if phase.__name__ in [c.__name__ for c in cls._install_phases]:
-            raise ValueError(f"A phase with name '{phase.__name__}' already exists.")
+            raise ValueError(
+                f"A phase with name '{phase.__name__}' already exists."
+            )
 
         if len(re.split("[_ ]", phase.__name__)) > 1:
-            raise ValueError(f"Registered phase name must not include a '_'.")
+            raise ValueError("Registered phase name must not include a '_'.")
 
         cls._install_phases = (*cls._install_phases, phase)
 
@@ -256,8 +299,12 @@ class ProjectManager:
         if _error:
             raise PhaseNotFound(_error)
 
-        design_phases = {n: c for n, c in _phases.items() if issubclass(c, DesignPhase)}
-        install_phases = {n: c for n, c in _phases.items() if issubclass(c, InstallPhase)}
+        design_phases = {
+            n: c for n, c in _phases.items() if issubclass(c, DesignPhase)
+        }
+        install_phases = {
+            n: c for n, c in _phases.items() if issubclass(c, InstallPhase)
+        }
 
         config = {}
         for i in install_phases.values():
@@ -287,7 +334,7 @@ class ProjectManager:
 
         config["design_phases"] = [*design_phases.keys()]
         config["install_phases"] = [*install_phases.keys()]
-        config["orbit_version"] = str(wisdem.orbit.__version__)
+        config["orbit_version"] = str(ORBIT.__version__)
 
         return config
 
@@ -315,7 +362,9 @@ class ProjectManager:
 
         if all((project_capacity, turbine_rating, num_turbines)):
             if project_capacity != (turbine_rating * num_turbines):
-                raise AttributeError(f"Input and calculated project capacity don't match.")
+                raise AttributeError(
+                    "Input and calculated project capacity don't match."
+                )
 
         else:
             if all((project_capacity, turbine_rating)):
@@ -358,9 +407,7 @@ class ProjectManager:
 
     @classmethod
     def phase_dict(cls):
-        """
-        Returns dictionary of all possible phases with format 'name': 'class'.
-        """
+        """Returns dictionary of all phases with format {'name': 'class'}."""
 
         install = {p.__name__: p for p in cls._install_phases}
         design = {p.__name__: p for p in cls._design_phases}
@@ -387,10 +434,23 @@ class ProjectManager:
         if not add_keys:
             right = {k: right[k] for k in set(new).intersection(set(right))}
 
-        for k, _ in right.items():
-            if k in new and isinstance(new[k], dict) and isinstance(right[k], collections.Mapping):
-                new[k] = cls.merge_dicts(new[k], right[k], overwrite=overwrite, add_keys=add_keys)
-            elif k in new and isinstance(new[k], list) and isinstance(right[k], list):
+        for k in right.keys():
+            if (
+                k in new
+                and isinstance(new[k], dict)
+                and isinstance(right[k], collections.Mapping)
+            ):
+                new[k] = cls.merge_dicts(
+                    new[k],
+                    right[k],
+                    overwrite=overwrite,
+                    add_keys=add_keys,
+                )
+            elif (
+                k in new
+                and isinstance(new[k], list)
+                and isinstance(right[k], list)
+            ):
                 new[k].extend(right[k])
             else:
                 if overwrite or k not in new:
@@ -421,6 +481,7 @@ class ProjectManager:
         right = {k: right[k] for k in set(new).intersection(set(right))}
 
         for k, val in right.items():
+
             if isinstance(new.get(k, None), dict) and isinstance(val, dict):
                 new[k] = cls.remove_keys(new[k], val)
 
@@ -455,7 +516,11 @@ class ProjectManager:
         """
 
         _specific = self.config.get(phase, {}).copy()
-        _general = {k: v for k, v in self.config.items() if k not in set(self.phase_dict())}
+        _general = {
+            k: v
+            for k, v in self.config.items()
+            if k not in set(self.phase_dict())
+        }
 
         phase_config = self.merge_dicts(_general, _specific)
 
@@ -463,6 +528,8 @@ class ProjectManager:
 
     @property
     def phase_ends(self):
+        """Calculates hte end date for all phases."""
+
         ret = {}
         for k, t in self.phase_times.items():
             try:
@@ -507,10 +574,15 @@ class ProjectManager:
 
         if _catch:
             try:
-                phase = _class(_config, weather=weather, phase_name=name, **kwargs)
+                phase = _class(
+                    _config,
+                    weather=weather,
+                    phase_name=name,
+                    **kwargs,
+                )
                 phase.run()
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 print(f"\n\t - {name}: {e}")
                 return None, None
 
@@ -525,7 +597,10 @@ class ProjectManager:
 
         self.phase_starts[name] = start
         self.phase_times[name] = time
-        self.detailed_outputs = self.merge_dicts(self.detailed_outputs, phase.detailed_output)
+        self.detailed_outputs = self.merge_dicts(
+            self.detailed_outputs,
+            phase.detailed_output,
+        )
 
         if phase.system_capex:
             self.system_costs[name] = phase.system_capex
@@ -559,9 +634,7 @@ class ProjectManager:
         return phase_class
 
     def run_all_design_phases(self, phase_list, **kwargs):
-        """
-        Runs multiple design phases and adds '.design_result' to self.config.
-        """
+        """Runs the design phases and adds '.design_result' to self.config."""
 
         for name in phase_list:
             self.run_design_phase(name, **kwargs)
@@ -586,7 +659,7 @@ class ProjectManager:
                 phase = _class(_config)
                 phase.run()
 
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 print(f"\n\t - {name}: {e}")
                 return
 
@@ -596,10 +669,20 @@ class ProjectManager:
 
         self._phases[name] = phase
 
-        self.design_results = self.merge_dicts(self.design_results, phase.design_result, overwrite=False)
+        self.design_results = self.merge_dicts(
+            self.design_results,
+            phase.design_result,
+            overwrite=False,
+        )
 
-        self.config = self.merge_dicts(self.config, phase.design_result, overwrite=False)
-        self.detailed_outputs = self.merge_dicts(self.detailed_outputs, phase.detailed_output)
+        self.config = self.merge_dicts(
+            self.config,
+            phase.design_result,
+            overwrite=False,
+        )
+        self.detailed_outputs = self.merge_dicts(
+            self.detailed_outputs, phase.detailed_output
+        )
 
     def run_multiple_phases_in_serial(self, phase_list, **kwargs):
         """
@@ -620,14 +703,14 @@ class ProjectManager:
                 continue
 
             else:
-                for l in logs:
+                for log in logs:
                     try:
-                        l["time"] += start
+                        log["time"] += start
                     except KeyError:
                         pass
 
                 self._output_logs.extend(logs)
-                start = ceil(start + time)
+                start = start + time
 
     def run_multiple_phases_overlapping(self, phases, **kwargs):
         """
@@ -645,15 +728,16 @@ class ProjectManager:
 
         # Run defined
         for name, start in defined.items():
+
             _, logs = self.run_install_phase(name, start, **kwargs)
 
             if logs is None:
                 continue
 
             else:
-                for l in logs:
+                for log in logs:
                     try:
-                        l["time"] += start - zero
+                        log["time"] += start - zero
                     except KeyError:
                         pass
 
@@ -678,6 +762,7 @@ class ProjectManager:
         skipped = {}
 
         while True:
+
             phases = {**phases, **skipped}
             if not phases:
                 break
@@ -698,9 +783,9 @@ class ProjectManager:
                         continue
 
                     else:
-                        for l in logs:
+                        for log in logs:
                             try:
-                                l["time"] += start - zero
+                                log["time"] += start - zero
                             except KeyError:
                                 pass
 
@@ -728,7 +813,40 @@ class ProjectManager:
         start = self.phase_starts[target]
         elapsed = self.phase_times[target]
 
-        return start + elapsed * perc
+        if isinstance(perc, (int, float)):
+
+            if (perc < 0.0) or (perc > 1.0):
+                raise ValueError(
+                    "Dependent phase perc must be between 0. and 1."
+                )
+
+            return start + elapsed * perc
+
+        if isinstance(perc, str):
+
+            try:
+                delta = dt.timedelta(
+                    **{
+                        v.split("=")[0].strip(): float(v.split("=")[1])
+                        for v in perc.split(";")
+                    }
+                )
+
+                return start + delta.days * 24 + delta.seconds / 3600
+
+            except (TypeError, IndexError) as exc:
+                raise ValueError(
+                    "Dependent phase amount must be defined with this"
+                    " format: 'weeks=1;hours=12'. Accepted entries: 'weeks',"
+                    " 'days', 'hours'."
+                ) from exc
+
+        else:
+            raise ValueError(
+                f"Unrecognized dependent phase amount: '{perc}'. "
+                f"Must be float between 0. and 1.0 or str with format "
+                "'weeks=1;days=0;hours=12'"
+            )
 
     @staticmethod
     def transform_weather_input(weather):
@@ -758,7 +876,8 @@ class ProjectManager:
     def _parse_install_phase_values(self, phases):
         """
         Parses the input dictionary `install_phases`, splitting them into
-        phases that have defined start times and ones that rely on other phases.
+        phases that have defined start times and ones that rely on other
+        phases.
 
         Parameters
         ----------
@@ -776,21 +895,9 @@ class ProjectManager:
         depends = {}
 
         for k, v in phases.items():
-            if isinstance(v, (int, float)):
-                defined[k] = ceil(v)
 
-            elif isinstance(v, str):
-                _dt = dt.datetime.strptime(v, self.date_format_short)
-
-                try:
-                    i = self.weather.index.get_loc(_dt)
-                    defined[k] = i
-
-                except AttributeError:
-                    raise ValueError(f"No weather profile configured " f"for '{k}': '{v}' input type.")
-
-                except KeyError:
-                    raise WeatherProfileError(_dt, self.weather)
+            if isinstance(v, (int, float, str)):
+                defined[k] = v
 
             elif isinstance(v, tuple) and len(v) == 2:
                 depends[k] = v
@@ -800,6 +907,32 @@ class ProjectManager:
 
         if not defined:
             raise ValueError("No phases have a defined start index/date.")
+
+        if len({type(i) for i in defined.values()}) > 1:
+            raise ValueError(
+                "Defined start date types can't be mixed."
+                " All must be an int (index location) or str (format:"
+                " '%m/%d/%Y'). This does not apply to the dependent phases"
+                " defined as tuples."
+            )
+
+        for k, v in defined.items():
+
+            if isinstance(v, int):
+                continue
+
+            _dt = dt.datetime.strptime(v, self.date_format_short)
+
+            if self.weather is not None:
+                try:
+                    defined[k] = self.weather.index.get_loc(_dt)
+
+                except KeyError as exc:
+                    raise WeatherProfileError(_dt, self.weather) from exc
+
+            else:
+                delta = _dt - self.start_date
+                defined[k] = delta.days * 24 + delta.seconds / 3600
 
         return defined, depends
 
@@ -891,7 +1024,7 @@ class ProjectManager:
 
     @property
     def turbine_rating(self):
-        """Returns turbine rating in MW"""
+        """Returns turbine rating in MW."""
 
         try:
             rating = self.config["turbine"]["turbine_rating"]
@@ -905,7 +1038,7 @@ class ProjectManager:
     def logs(self):
         """Returns list of all logs in the project."""
 
-        return sorted(self._output_logs, key=lambda l: l["time"])
+        return sorted(self._output_logs, key=lambda x: x["time"])
 
     @property
     def project_time(self):
@@ -922,13 +1055,17 @@ class ProjectManager:
     @property
     def monthly_expenses(self):
         """Returns the monthly expenses of the project from development through
-        construction."""
+        construction.
+        """
 
         opex = self.monthly_opex
         lifetime = self.project_params.get("project_lifetime", 25)
 
         _expense_logs = self._filter_logs(keys=["cost", "time"])
-        expenses = np.array(_expense_logs, dtype=[("cost", "f8"), ("time", "i4")])
+        expenses = np.array(
+            _expense_logs,
+            dtype=[("cost", "f8"), ("time", "i4")],
+        )
         dig = np.digitize(expenses["time"], self.month_bins)
 
         monthly = {}
@@ -956,14 +1093,17 @@ class ProjectManager:
             generating_strings = len([t for t in dig if i >= t])
             generating_turbines = sum(turbines[:generating_strings])
 
-            opex[i] = generating_turbines * self.turbine_rating * rate * 1000 / 12
+            opex[i] = (
+                generating_turbines * self.turbine_rating * rate * 1000 / 12
+            )
 
         return opex
 
     @property
     def monthly_revenue(self):
         """Returns the monthly revenue based on when array system strings can
-        be energized, eg. 'self.progress.energize_points'."""
+        be energized, eg. 'self.progress.energize_points'.
+        """
 
         ncf = self.project_params.get("ncf", 0.4)
         price = self.project_params.get("offtake_price", 80)
@@ -976,7 +1116,9 @@ class ProjectManager:
         for i in range(1, lifetime * 12):
             generating_strings = len([t for t in dig if i >= t])
             generating_turbines = sum(turbines[:generating_strings])
-            production = generating_turbines * self.turbine_rating * ncf * 730  # MWh
+            production = (
+                generating_turbines * self.turbine_rating * ncf * 730
+            )  # MWh
             revenue[i] = production * price
 
         return revenue
@@ -984,7 +1126,8 @@ class ProjectManager:
     @property
     def cash_flow(self):
         """Returns the net cash flow based on `self.monthly_expenses` and
-        `self.monthly_revenue`."""
+        `self.monthly_revenue`.
+        """
 
         try:
             revenue = self.monthly_revenue
@@ -1001,13 +1144,17 @@ class ProjectManager:
     @property
     def npv(self):
         """Returns the net present value of the project based on
-        `self.cash_flow`."""
+        `self.cash_flow`.
+        """
 
         dr = self.project_params.get("discount_rate", 0.025)
         pr = (1 + dr) ** (1 / 12) - 1
 
         cash_flow = self.cash_flow
-        _npv = [(cash_flow[i] / (1 + pr) ** (i)) for i in range(1, max(cash_flow.keys()) + 1)]
+        _npv = [
+            (cash_flow[i] / (1 + pr) ** (i))
+            for i in range(1, max(cash_flow.keys()) + 1)
+        ]
 
         return (self.total_capex - self.installation_capex) - sum(_npv)
 
@@ -1021,9 +1168,9 @@ class ProjectManager:
         """Returns filtered list of logs."""
 
         filtered = []
-        for l in self.logs:
+        for log in self.logs:
             try:
-                filtered.append(tuple(l[k] for k in keys))
+                filtered.append(tuple(log[k] for k in keys))
 
             except KeyError:
                 pass
@@ -1034,12 +1181,17 @@ class ProjectManager:
     def progress_summary(self):
         """Returns a summary of progress by month."""
 
-        arr = np.array(self.progress_logs, dtype=[("progress", "U32"), ("time", "i4")])
+        arr = np.array(
+            self.progress_logs, dtype=[("progress", "U32"), ("time", "i4")]
+        )
         dig = np.digitize(arr["time"], self.month_bins)
 
         summary = {}
         for i in range(1, len(self.month_bins)):
-            unique, counts = np.unique(arr["progress"][dig == i], return_counts=True)
+
+            unique, counts = np.unique(
+                arr["progress"][dig == i], return_counts=True
+            )
             summary[i] = dict(zip(unique, counts))
 
         return summary
@@ -1048,8 +1200,8 @@ class ProjectManager:
     def actions(self):
         """Returns list of all actions in the project."""
 
-        actions = [l for l in self.logs if l["level"] == "ACTION"]
-        return sorted(actions, key=lambda l: l["time"])
+        actions = [log for log in self.logs if log["level"] == "ACTION"]
+        return sorted(actions, key=lambda x: x["time"])
 
     @staticmethod
     def create_input_xlsx():
@@ -1061,9 +1213,7 @@ class ProjectManager:
 
     @property
     def phase_dates(self):
-        """
-        Returns a combination of input start dates and `self.phase_times`.
-        """
+        """Returns a combination of phase start dates and timing."""
 
         if not isinstance(self.config["install_phases"], dict):
             print("Project was not configured with start dates.")
@@ -1072,8 +1222,16 @@ class ProjectManager:
         dates = {}
 
         for phase, _start in self.config["install_phases"].items():
-            start = dt.datetime.strptime(_start, self.date_format_short)
-            end = start + dt.timedelta(hours=ceil(self.phase_times[phase]))
+
+            try:
+                start = dt.datetime.strptime(_start, self.date_format_short)
+
+            except TypeError:
+                start = self.start_date + dt.timedelta(
+                    hours=self.phase_starts[phase]
+                )
+
+            end = start + dt.timedelta(hours=self.phase_times[phase])
 
             dates[phase] = {
                 "start": start.strftime(self.date_format_long),
@@ -1090,7 +1248,11 @@ class ProjectManager:
         """
 
         res = sum(
-            [v for k, v in self.phase_times.items() if k in self.config["install_phases"] and isinstance(v, Number)]
+            [
+                v
+                for k, v in self.phase_times.items()
+                if k in self.config["install_phases"] and isinstance(v, Number)
+            ]
         )
         return res
 
@@ -1119,9 +1281,7 @@ class ProjectManager:
 
     @property
     def overnight_capex_per_kw(self):
-        """
-        Returns overnight CAPEX/kW.
-        """
+        """Returns overnight CAPEX/kW."""
 
         try:
             capex = self.overnight_capex / (self.capacity * 1000)
@@ -1171,7 +1331,9 @@ class ProjectManager:
     def capex_breakdown(self):
         """Returns CapEx breakdown by category."""
 
-        unique = np.unique([*self.system_costs.keys(), *self.installation_costs.keys()])
+        unique = np.unique(
+            [*self.system_costs.keys(), *self.installation_costs.keys()]
+        )
         categories = {}
 
         for phase in unique:
@@ -1180,9 +1342,12 @@ class ProjectManager:
                     categories[phase] = cat
                     break
 
-        missing = [p for p in unique if p not in categories.keys()]
+        missing = list(set(unique).difference([*categories]))
         if missing:
-            print(f"Warning: CapEx category not found for {missing}. " f"Added to 'Misc.'")
+            print(
+                f"Warning: CapEx category not found for {missing}. "
+                f"Added to 'Misc.'"
+            )
 
             for phase in missing:
                 categories[phase] = "Misc."
@@ -1190,7 +1355,7 @@ class ProjectManager:
         outputs = {}
         for phase, cost in self.system_costs.items():
             name = categories[phase]
-            if name in outputs.keys():
+            if name in outputs:
                 outputs[name] += cost
 
             else:
@@ -1198,7 +1363,7 @@ class ProjectManager:
 
         for phase, cost in self.installation_costs.items():
             name = categories[phase] + " Installation"
-            if name in outputs.keys():
+            if name in outputs:
                 outputs[name] += cost
 
             else:
@@ -1214,7 +1379,10 @@ class ProjectManager:
     def capex_breakdown_per_kw(self):
         """Returns CapEx per kW breakdown by category."""
 
-        return {k: v / (self.capacity * 1000) for k, v in self.capex_breakdown.items()}
+        return {
+            k: v / (self.capacity * 1000)
+            for k, v in self.capex_breakdown.items()
+        }
 
     @property
     def bos_capex(self):
@@ -1243,12 +1411,12 @@ class ProjectManager:
             num_turbines = self.config["plant"]["num_turbines"]
             rating = self.config["turbine"]["turbine_rating"]
 
-        except KeyError:
+        except KeyError as exc:
             raise KeyError(
-                f"Total turbine CAPEX can't be calculated. Required "
-                f"parameters 'plant.num_turbines' or 'turbine.turbine_rating' "
-                f"not found."
-            )
+                "Total turbine CAPEX can't be calculated. Required "
+                "parameters 'plant.num_turbines' or 'turbine.turbine_rating' "
+                "not found."
+            ) from exc
 
         capex = _capex * num_turbines * rating * 1000
         return capex
@@ -1291,7 +1459,15 @@ class ProjectManager:
         commissioning = self.project_params.get("commissioning", 44)
         decommissioning = self.project_params.get("decommissioning", 58)
 
-        return sum([insurance, financing, contingency, commissioning, decommissioning])
+        return sum(
+            [
+                insurance,
+                financing,
+                contingency,
+                commissioning,
+                decommissioning,
+            ],
+        )
 
     @property
     def project_capex(self):
@@ -1302,8 +1478,12 @@ class ProjectManager:
 
         site_auction = self.project_params.get("site_auction_price", 100e6)
         site_assessment = self.project_params.get("site_assessment_cost", 50e6)
-        construction_plan = self.project_params.get("construction_plan_cost", 1e6)
-        installation_plan = self.project_params.get("installation_plan_cost", 0.25e6)
+        construction_plan = self.project_params.get(
+            "construction_plan_cost", 1e6
+        )
+        installation_plan = self.project_params.get(
+            "installation_plan_cost", 0.25e6
+        )
 
         return sum(
             [
@@ -1330,7 +1510,12 @@ class ProjectManager:
     def total_capex(self):
         """Returns total project CapEx including soft costs."""
 
-        return self.bos_capex + self.turbine_capex + self.soft_capex + self.project_capex
+        return (
+            self.bos_capex
+            + self.turbine_capex
+            + self.soft_capex
+            + self.project_capex
+        )
 
     @property
     def total_capex_per_kw(self):
@@ -1371,9 +1556,9 @@ class ProjectManager:
             Default: 'ACTION'
         """
 
-        dirs = os.path.split(filepath)[0]
-        if dirs and not os.path.isdir(dirs):
-            os.makedirs(dirs)
+        dirs = Path(filepath).parent
+        if dirs and not dirs.is_dir():
+            dirs.mkdir(parents=True)
 
         if level == "ACTION":
             out = pd.DataFrame(self.actions)
@@ -1382,7 +1567,10 @@ class ProjectManager:
             out = pd.DataFrame(self.logs)
 
         else:
-            raise ValueError(f"Unrecognized level '{level}'." " Must be 'ACTION' or 'DEBUG'.")
+            raise ValueError(
+                f"Unrecognized level '{level}'."
+                " Must be 'ACTION' or 'DEBUG'."
+            )
 
         out.to_csv(filepath, index=False)
 
@@ -1435,7 +1623,7 @@ class ProjectProgress:
 
         data = list(zip(strings, subs, turbines))
 
-        return [max(l) for l in data], num_turbines
+        return [max(el) for el in data], num_turbines
 
     @property
     def energize_points(self):
@@ -1449,13 +1637,12 @@ class ProjectProgress:
         points = []
 
         times, turbines = self.complete_array_strings
-        for t in times:
-            points.append(max([t, export]))
+        points = [max(t, export) for t in times]
 
         return points, turbines
 
     def parse_logs(self, k):
-        """Parse `self.data` for specific progress points associated key `k`"""
+        """Parse `self.data` for specific progress points for key ``k``."""
 
         pts = [p[1] for p in self.data if p[0] == k]
         if not pts:
@@ -1464,15 +1651,15 @@ class ProjectProgress:
         return pts
 
     @staticmethod
-    def chunk_max(l, n):
-        """Yield max value of successive n-sized chunks from l."""
+    def chunk_max(x, n):
+        """Yield max value of successive n-sized chunks from x."""
 
-        for i in range(0, len(l), n):
-            yield max(l[i : i + n])
+        for i in range(0, len(x), n):
+            yield max(x[i : i + n])
 
     @staticmethod
-    def chunk_len(l, n):
-        """Yield successive n-sized chunks from l."""
+    def chunk_len(x, n):
+        """Yield successive n-sized chunks from x."""
 
-        for i in range(0, len(l), n):
-            yield len(l[i : i + n])
+        for i in range(0, len(x), n):
+            yield len(x[i : i + n])

@@ -1,4 +1,4 @@
-"""This package contains simulation logic shared across several modules."""
+"""Provides the simulation logic shared across several modules."""
 
 __author__ = "Jake Nunemaker"
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"

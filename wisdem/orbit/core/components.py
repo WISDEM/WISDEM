@@ -14,7 +14,7 @@ from wisdem.orbit.core.exceptions import ItemNotFound, InsufficientCable
 
 
 class Crane:
-    """Base Crane Class"""
+    """Base Crane Class."""
 
     def __init__(self, crane_specs):
         """
@@ -72,7 +72,7 @@ class Crane:
 
 
 class DynamicPositioning:
-    """Base Dynamic Positioning Class"""
+    """Base Dynamic Positioning Class."""
 
     def __init__(self, dp_specs):
         """
@@ -100,7 +100,7 @@ class DynamicPositioning:
 
 
 class JackingSys:
-    """Base Jacking System Class"""
+    """Base Jacking System Class."""
 
     def __init__(self, jacksys_specs):
         """
@@ -153,24 +153,40 @@ class JackingSys:
         """
 
         if extension > self.max_extension:
-            raise Exception("{} extension is greater than {} maximum" "".format(extension, self.max_extension))
+            msg = (
+                f"{extension} extension is greater than {self.max_extension}"
+                " maximum"
+            )
+            raise Exception(msg)
 
         elif depth > self.max_depth:
-            raise Exception("{} is beyond the operating depth {}" "".format(depth, self.max_depth))
+            raise Exception(
+                f"{depth} is beyond the operating depth {self.max_depth}"
+            )
 
         elif depth > extension:
             raise Exception("Extension must be greater than depth")
 
         else:
-            return (depth / self.speed_below_depth + (extension - depth) / self.speed_above_depth) / 60
+            return (
+                depth / self.speed_below_depth
+                + (extension - depth) / self.speed_above_depth
+            ) / 60
 
 
 class VesselStorage(simpy.FilterStore):
-    """Vessel Storage Class"""
+    """Vessel Storage Class."""
 
     required_keys = ["type", "mass", "deck_space"]
 
-    def __init__(self, env, max_cargo, max_deck_space, max_deck_load, **kwargs):
+    def __init__(
+        self,
+        env,
+        max_cargo,
+        max_deck_space,
+        max_deck_load,
+        **kwargs,
+    ):
         """
         Creates an instance of VesselStorage.
 
@@ -280,7 +296,7 @@ class VesselStorage(simpy.FilterStore):
 
 
 class ScourProtectionStorage(simpy.Container):
-    """Scour Protection Storage Class"""
+    """Scour Protection Storage Class."""
 
     def __init__(self, env, max_mass, **kwargs):
         """
@@ -305,7 +321,7 @@ class ScourProtectionStorage(simpy.Container):
 
 
 class CableCarousel(simpy.Container):
-    """Cable Storage Class"""
+    """Cable Storage Class."""
 
     def __init__(self, env, max_mass, **kwargs):
         """
@@ -331,7 +347,7 @@ class CableCarousel(simpy.Container):
 
     @property
     def current_mass(self):
-        """Returns current cargo mass"""
+        """Returns current cargo mass."""
 
         try:
             mass = self.level * self.cable.linear_density
@@ -381,7 +397,9 @@ class CableCarousel(simpy.Container):
             # Load length of cable
             proposed = length * cable.linear_density
             if proposed > self.available_mass:
-                raise ValueError(f"Length {length} of {cable} can't be loaded.")
+                raise ValueError(
+                    f"Length {length} of {cable} can't be loaded."
+                )
 
             self.put(length)
 

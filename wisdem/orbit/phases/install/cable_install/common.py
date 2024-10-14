@@ -13,7 +13,7 @@ from wisdem.orbit.core.defaults import process_times as pt
 
 
 class SimpleCable:
-    """Simple Cable Class"""
+    """Simple Cable Class."""
 
     def __init__(self, linear_density):
         """
@@ -28,7 +28,7 @@ class SimpleCable:
 
 
 @process
-def load_cable_on_vessel(vessel, cable, constraints={}, **kwargs):
+def load_cable_on_vessel(vessel, cable, constraints=None, **kwargs):
     """
     Subprocess for loading `cable` onto the configured `vessel`.
 
@@ -38,15 +38,24 @@ def load_cable_on_vessel(vessel, cable, constraints={}, **kwargs):
         Performing vessel. Required to have configured `cable_storage`.
     cable : SimpleCable | Cable
         Cable type.
-    constraints : dict
-        Constraints to be applied to cable loading subprocess.
+    constraints : dict | None
+        Constraints to be applied to cable loading subprocess, defaults to
+        None.
     """
+
+    if constraints is None:
+        constraints = {}
 
     key = "cable_load_time"
     load_time = kwargs.get(key, pt[key])
 
     vessel.cable_storage.load_cable(cable)
-    yield vessel.task_wrapper("Load Cable", load_time, constraints=constraints, **kwargs)
+    yield vessel.task_wrapper(
+        "Load Cable",
+        load_time,
+        constraints=constraints,
+        **kwargs,
+    )
 
 
 @process
@@ -85,7 +94,12 @@ def prep_cable(vessel, **kwargs):
     key = "cable_prep_time"
     prep_time = kwargs.get(key, pt[key])
 
-    yield vessel.task_wrapper("Prepare Cable", prep_time, constraints=vessel.transit_limits, **kwargs)
+    yield vessel.task_wrapper(
+        "Prepare Cable",
+        prep_time,
+        constraints=vessel.transit_limits,
+        **kwargs,
+    )
 
 
 @process
@@ -172,8 +186,7 @@ def lay_bury_cable(vessel, distance, **kwargs):
 
     kwargs = {**kwargs, **getattr(vessel, "_transport_specs", {})}
 
-    key = "cable_lay_bury_speed"
-    lay_bury_speed = kwargs.get(key, pt[key])
+    lay_bury_speed = vessel._vessel_specs.get("cable_lay_bury_speed", 0.0625)
     lay_bury_time = distance / lay_bury_speed
 
     yield vessel.task_wrapper(
@@ -330,7 +343,12 @@ def tow_plow(vessel, distance, **kwargs):
     plow_speed = kwargs.get(key, pt[key])
     plow_time = distance / plow_speed
 
-    yield vessel.task_wrapper("Tow Plow", plow_time, constraints=vessel.operational_limits, **kwargs)
+    yield vessel.task_wrapper(
+        "Tow Plow",
+        plow_time,
+        constraints=vessel.operational_limits,
+        **kwargs,
+    )
 
 
 @process
@@ -364,7 +382,8 @@ def pull_winch(vessel, distance, **kwargs):
 @process
 def dig_trench(vessel, distance, **kwargs):
     """
-    Task representing time required to dig a trench prior to cable lay and burial
+    Task representing time required to dig a trench prior to cable lay and
+    burial.
 
     Parameters
     ----------

@@ -1,13 +1,13 @@
 .. _user_custom_tutorial-label:
 
-11. User Customized Optimization Example
+11a. User Customized Optimization Example
 -----------------------------
 
 WISDEM offers a long list of design variables, figures of merit, and constraints that users can call in their ``analysis_options.yaml``. The full list is specified in the `modeling_options.yaml <https://github.com/WISDEM/WISDEM/blob/develop/examples/02_reference_turbines/modeling_options.yaml>`. In addition, WISDEM now offers the option to build your own optimization problem by setting any available input as a design variable and any available output as either a constraint or a figure of merit. This example 11 shows how to build your customized ``analysis_options.yaml``.
 
 In this example, we start from a 5MW land-based wind turbine that was developed within the Big Adaptive Rotor project (for more details refer to https://github.com/NREL/BAR_Designs) and we ask WISDEM to optimize the rated power of the turbine to minimize the levelized value of energy (LVOE) while keeping the turbine capital cost (TCC) within certain limits. Note that the focus of this example is on the capability of WISDEM, more than on the actual problem setup.
 
-The focus of this example is on the file ``analysis_options_custom.yaml``. 
+The focus of this example is on the file ``analysis_options_custom.yaml``.
 
 The field ``general`` lists the standard output folder and naming convention.
 
@@ -23,7 +23,7 @@ The field ``design_variables`` shows how the user can define a list of design va
     :end-before: # figure of merit
 
 
-The ``merit_figure`` consists of only one entry (not a list of entries!) and in this case we set LVOE as the metric to be minimize. If you want to maximize a metric, set the ``max_flag`` to True. Again, quantities far away from 1 should have the ``ref`` entry set. 
+The ``merit_figure`` consists of only one entry (not a list of entries!) and in this case we set LVOE as the metric to be minimize. If you want to maximize a metric, set the ``max_flag`` to True. Again, quantities far away from 1 should have the ``ref`` entry set.
 
 .. literalinclude:: ../../../examples/11_user_custom/analysis_options_custom.yaml
     :language: python
