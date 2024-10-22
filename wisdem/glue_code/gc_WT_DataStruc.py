@@ -214,7 +214,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 Blade(
                     rotorse_options=modeling_options["WISDEM"]["RotorSE"],
                     opt_options=opt_options,
-                    vawt_option=modeling_options["flag"]["vawt"],
+                    vawt_option=modeling_options["flags"]["vawt"],
                 ),
             )
             self.connect("airfoils.name", "blade.interp_airfoils.name")
@@ -549,17 +549,16 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # VAWT strut inputs
         if modeling_options["flags"]["struts"]:
             struts = self.add_subsystem("struts", om.IndepVarComp())
-            strut_options = modeling_options["OWENS"]
-            n_span_strut = strut_options["n_span"]
+            strut_options = modeling_options["OWENS"]["struts"]
+            n_span_strut = strut_options["n_af_span"]
             n_webs_strut = strut_options["n_webs"]
             n_layers_strut = strut_options["n_layers"]
             struts.add_output("nd_span", val=np.linspace(0, 1, n_span_strut))
             struts.add_discrete_output("airfoil_labels", val=n_span_strut*[""])
             struts.add_output("twist", val=np.zeros(n_span_strut))
             struts.add_output("chord", val=np.zeros(n_span_strut))
-            struts.add_output("pitch_axis", val=np.zeros([n_span_strut,3]))
-            struts.add_output("web_start_nd_arc", val=np.zeros([n_webs_strut, n_span_strut]))
-            struts.add_output("web_end_nd_arc", val=np.zeros([n_webs_strut, n_span_strut]))
+            struts.add_output("pitch_axis", val=np.zeros(n_span_strut))
+            struts.add_output("reference_axis", val=np.zeros([n_span_strut,3]))
             struts.add_output("layer_start_nd_arc", val=np.zeros([n_layers_strut, n_span_strut]))
             struts.add_output("layer_end_nd_arc", val=np.zeros([n_layers_strut, n_span_strut]))
             struts.add_output("layer_thickness", val=np.zeros([n_layers_strut, n_span_strut]))
@@ -567,6 +566,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             struts.add_discrete_output("layer_material", val=n_layers_strut*[""])
             struts.add_discrete_output("layer_name", val=n_layers_strut*[""])
             struts.add_discrete_output("web_name", val=n_webs_strut*[""])
+            struts.add_output("web_start_nd_arc", val=np.zeros([n_webs_strut, n_span_strut]))
+            struts.add_output("web_end_nd_arc", val=np.zeros([n_webs_strut, n_span_strut]))
 
 
         # Balance of station inputs
@@ -706,12 +707,12 @@ class Blade(om.Group):
         # inputs and outputs for vawt only
         if vawt_flag:
             opt_var.add_output(
-                "s_opt_radius", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt_opt"]["n_opt"])
+                "s_opt_radius", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["n_opt"])
             )
             opt_var.add_output(
-                "rotor_radius_vawt_opt",
+                "rotor_radius_vawt",
                 units="m",
-                val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt_opt"]["n_opt"]),
+                val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["rotor_radius_vawt"]["n_opt"]),
             )
         self.add_subsystem("opt_var", opt_var)
 
@@ -745,7 +746,7 @@ class Blade(om.Group):
         self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options, opt_options=opt_options))
         self.connect("opt_var.s_opt_radius", "high_level_blade_props.s_opt_radius")
         self.connect("outer_shape_bem.s", "high_level_blade_props.s")
-        self.connect("opt_var.rotor_radius_vawt_opt", "pa.rotor_radius_vawt_opt")
+        self.connect("opt_var.rotor_radius_vawt", "high_level_blade_props.rotor_radius_vawt")
         self.connect("outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
 
         # TODO : Compute Reynolds here
@@ -815,7 +816,7 @@ class Blade(om.Group):
 
         self.connect("outer_shape_bem.s", "ps.s")
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
-        self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
+        self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original") # YL: ps does not use layer thickness original maybe we can remove this?
 
         # Fatigue specific parameters
         fat_var = om.IndepVarComp()
@@ -1169,8 +1170,9 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
 
         # Spanwise interpolation of the profile coordinates with a pchip
         r_thick_unique, indices = np.unique(r_thick_used, return_index=True)
-        profile_spline = spline(r_thick_unique, coord_xy_used[indices, :, :])
-        coord_xy_interp = np.flip(profile_spline(np.flip(outputs["r_thick_interp"])), axis=0)
+        if len(r_thick_unique)>1: # Only interpolate when you have at least two different airfoils
+            profile_spline = spline(r_thick_unique, coord_xy_used[indices, :, :])
+            coord_xy_interp = np.flip(profile_spline(np.flip(outputs["r_thick_interp"])), axis=0)
 
         for i in range(self.n_span):
             # Correction to move the leading edge (min x point) to (0,0)
@@ -1187,17 +1189,23 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         chord = inputs["chord"]
 
         # Spanwise interpolation of the airfoil polars with a pchip
-        cl_spline = spline(r_thick_unique, cl_used[indices, :, :, :])
-        cl_interp = np.flip(cl_spline(np.flip(outputs["r_thick_interp"])), axis=0)
-        cd_spline = spline(r_thick_unique, cd_used[indices, :, :, :])
-        cd_interp = np.flip(cd_spline(np.flip(outputs["r_thick_interp"])), axis=0)
-        cm_spline = spline(r_thick_unique, cm_used[indices, :, :, :])
-        cm_interp = np.flip(cm_spline(np.flip(outputs["r_thick_interp"])), axis=0)
+        if len(r_thick_unique)>1: # Only interpolate when you have at least two different airfoils
+            cl_spline = spline(r_thick_unique, cl_used[indices, :, :, :])
+            cl_interp = np.flip(cl_spline(np.flip(outputs["r_thick_interp"])), axis=0)
+            cd_spline = spline(r_thick_unique, cd_used[indices, :, :, :])
+            cd_interp = np.flip(cd_spline(np.flip(outputs["r_thick_interp"])), axis=0)
+            cm_spline = spline(r_thick_unique, cm_used[indices, :, :, :])
+            cm_interp = np.flip(cm_spline(np.flip(outputs["r_thick_interp"])), axis=0)
 
-        outputs["coord_xy_interp"] = coord_xy_interp
-        outputs["cl_interp"] = cl_interp
-        outputs["cd_interp"] = cd_interp
-        outputs["cm_interp"] = cm_interp
+            outputs["coord_xy_interp"] = coord_xy_interp
+            outputs["cl_interp"] = cl_interp
+            outputs["cd_interp"] = cd_interp
+            outputs["cm_interp"] = cm_interp
+        else:
+            outputs["coord_xy_interp"] = coord_xy_used[indices, :, :]
+            outputs["cl_interp"] = cl_used[indices, :, :, :]
+            outputs["cd_interp"] = cd_used[indices, :, :, :]
+            outputs["cm_interp"] = cm_used[indices, :, :, :]
 
 
 class Compute_Coord_XY_Dim(om.ExplicitComponent):
@@ -3228,7 +3236,7 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
         )
 
         self.add_input(
-            "rotor_radius_vawt_opt",
+            "rotor_radius_vawt",
             val=np.zeros(n_opt_radius),
             units="m",
             desc="1D array of the radius distribution being optimized at the n_opt locations"
@@ -3285,10 +3293,10 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             outputs["rotor_diameter"] = (inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0
             outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2]
 
-        if np.any(inputs["rotor_radius_vawt_opt"]>0):
+        if np.any(inputs["rotor_radius_vawt"]>0):
             # update the reference axis location
             spline = PchipInterpolator
-            x_spline = spline(inputs["s_opt_radius"], inputs["rotor_radius_vawt_opt"])
+            x_spline = spline(inputs["s_opt_radius"], inputs["rotor_radius_vawt"])
             outputs["blade_ref_axis"][:, 0] = x_spline(inputs["s"])
 
         outputs["r_blade"] = outputs["blade_ref_axis"][:, 2] + inputs["hub_radius"]

@@ -983,18 +983,19 @@ def assign_tower_values(wt_opt, modeling_options, tower):
 
 
 def assign_struts_values(wt_opt, modeling_options, struts):
-    strut_options = modeling_options["WISDEM"]["OWENS"]
-    n_span_strut = strut_options["n_span_strut"]
+    strut_options = modeling_options["OWENS"]["struts"]
+    n_span_strut = strut_options["n_af_span"]
     n_layers_strut = strut_options["n_layers"]
     n_webs_strut = strut_options["n_webs"]
 
-    wt_opt["struts.nd_span"] = struts["outer_shape_bem"]["airfoil_positions"]["grid"]
+    wt_opt["struts.nd_span"] = struts["outer_shape_bem"]["airfoil_position"]["grid"]
     wt_opt["struts.chord"] = struts["outer_shape_bem"]["chord"]["values"]
     wt_opt["struts.twist"] = struts["outer_shape_bem"]["twist"]["values"]
     wt_opt["struts.pitch_axis"] = struts["outer_shape_bem"]["pitch_axis"]["values"]
     wt_opt["struts.reference_axis"][:,0] = struts["outer_shape_bem"]["reference_axis"]["x"]["values"]
     wt_opt["struts.reference_axis"][:,1] = struts["outer_shape_bem"]["reference_axis"]["y"]["values"]
     wt_opt["struts.reference_axis"][:,2] = struts["outer_shape_bem"]["reference_axis"]["z"]["values"]
+    # YL: internal_structure_2d_fem also has reference axis field but owens does not seem to use it
 
 
     # Assign layer values
@@ -1028,8 +1029,14 @@ def assign_struts_values(wt_opt, modeling_options, struts):
 
     for i in range(n_webs_strut):
         web_name[i] = struts["internal_structure_2d_fem"]["webs"][i]["name"]
-        layer_start_nd_arc[i, :] = struts["internal_structure_2d_fem"]["webs"][i]["start_nd_arc"]["values"]
-        layer_end_nd_arc[i, :] = struts["internal_structure_2d_fem"]["webs"][i]["end_nd_arc"]["values"]
+        web_start_nd_arc[i, :] = struts["internal_structure_2d_fem"]["webs"][i]["start_nd_arc"]["values"]
+        web_end_nd_arc[i, :] = struts["internal_structure_2d_fem"]["webs"][i]["end_nd_arc"]["values"]
+
+    wt_opt["struts.web_name"] = web_name
+    wt_opt["struts.web_start_nd_arc"] = web_start_nd_arc
+    wt_opt["struts.web_end_nd_arc"] = web_end_nd_arc
+
+    return wt_opt
 
 
 def assign_monopile_values(wt_opt, modeling_options, monopile):
@@ -1743,9 +1750,9 @@ def assign_material_values(wt_opt, modeling_options, materials):
         if "Xy" in materials[i]:
             sigma_y[i] = materials[i]["Xy"]
         if "m" in materials[i]:
-            m[i] = materials[i]["m"]
+            m[i] = materials[i]["m"] # This does not work with array m
         if "A" in materials[i]:
-            A[i] = materials[i]["A"]
+            A[i] = materials[i]["A"] # This does not work with array A
         if A[i] == 0.0:
             A[i] = np.r_[Xt[i, :], Xc[i, :]].max()
 

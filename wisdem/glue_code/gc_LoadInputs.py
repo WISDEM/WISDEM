@@ -641,36 +641,37 @@ class WindTurbineOntologyPython(object):
         
         # VAWT strut
         if self.modeling_options["flags"]["vawt"] and self.modeling_options["flags"]["struts"]:
-            self.modeling_options["WISDEM"]["OWENS"]["struts"]["nd_span"] = self.wt_init["components"]["struts"]["outer_shape_bem"]["airfoil_position"]["grid"]/np.max(self.wt_init["components"]["struts"]["outer_shape_bem"]["airfoil_position"]["grid"])
+            self.modeling_options["OWENS"]["struts"] = {}
+            self.modeling_options["OWENS"]["struts"]["nd_span"] = self.wt_init["components"]["struts"]["outer_shape_bem"]["airfoil_position"]["grid"]/np.max(self.wt_init["components"]["struts"]["outer_shape_bem"]["airfoil_position"]["grid"])
               # Right now using just the non-dimensional original grid, might need to adapt to the equallly spacing like blade later with a separate n_span_strut_options
-            self.modeling_options["WISDEM"]["OWENS"]["struts"]["n_af_span"] = len(
+            self.modeling_options["OWENS"]["struts"]["n_af_span"] = len(
                 self.wt_init["components"]["struts"]["outer_shape_bem"]["airfoil_position"]["labels"]
             )  # This is the number of airfoils defined along strut span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
-            self.modeling_options["WISDEM"]["OWENS"]["struts"]["n_webs"] = len(
+            self.modeling_options["OWENS"]["struts"]["n_webs"] = len(
                 self.wt_init["components"]["struts"]["internal_structure_2d_fem"]["webs"]
             )
-            self.modeling_options["WISDEM"]["OWENS"]["struts"]["n_layers"] = len(
+            self.modeling_options["OWENS"]["struts"]["n_layers"] = len(
                 self.wt_init["components"]["struts"]["internal_structure_2d_fem"]["layers"]
             )
-            self.modeling_options["WISDEM"]["OWENS"]["struts"]["layer_name"] = self.modeling_options["WISDEM"]["OWENS"]["struts"][
+            self.modeling_options["OWENS"]["struts"]["layer_name"] = self.modeling_options["OWENS"]["struts"][
                 "n_layers"
             ] * [""]
-            self.modeling_options["WISDEM"]["OWENS"]["struts"]["layer_mat"] = self.modeling_options["WISDEM"]["OWENS"]["struts"][
+            self.modeling_options["OWENS"]["struts"]["layer_mat"] = self.modeling_options["OWENS"]["struts"][
                 "n_layers"
             ] * [""]
-            for i in range(self.modeling_options["WISDEM"]["OWENS"]["struts"]["n_layers"]):
-                self.modeling_options["WISDEM"]["OWENS"]["struts"]["layer_name"][i] = self.wt_init["components"]["struts"][
+            for i in range(self.modeling_options["OWENS"]["struts"]["n_layers"]):
+                self.modeling_options["OWENS"]["struts"]["layer_name"][i] = self.wt_init["components"]["struts"][
                     "internal_structure_2d_fem"
                 ]["layers"][i]["name"]
-                self.modeling_options["WISDEM"]["OWENS"]["struts"]["layer_mat"][i] = self.wt_init["components"]["struts"][
+                self.modeling_options["OWENS"]["struts"]["layer_mat"][i] = self.wt_init["components"]["struts"][
                     "internal_structure_2d_fem"
                 ]["layers"][i]["material"]
 
-            self.modeling_options["WISDEM"]["OWENS"]["struts"]["web_name"] = self.modeling_options["WISDEM"]["OWENS"]["struts"][
+            self.modeling_options["OWENS"]["struts"]["web_name"] = self.modeling_options["OWENS"]["struts"][
                 "n_webs"
             ] * [""]
-            for i in range(self.modeling_options["WISDEM"]["OWENS"]["struts"]["n_webs"]):
-                self.modeling_options["WISDEM"]["OWENS"]["struts"]["web_name"][i] = self.wt_init["components"]["struts"][
+            for i in range(self.modeling_options["OWENS"]["struts"]["n_webs"]):
+                self.modeling_options["OWENS"]["struts"]["web_name"][i] = self.wt_init["components"]["struts"][
                     "internal_structure_2d_fem"
                 ]["webs"][i]["name"]
 

@@ -470,10 +470,7 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag: &flag
-                        type: boolean
-                        default: False
-                        description: Whether or not to run this module
+                    flag: *flag
                     n_aoa:
                         type: integer
                         default: 200

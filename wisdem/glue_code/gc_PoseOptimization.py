@@ -510,6 +510,9 @@ class PoseOptimization(object):
         float_opt = self.opt["design_variables"]["floating"]
         mooring_opt = self.opt["design_variables"]["mooring"]
 
+        # OWENS
+        rotor_radius_vawt_opt = self.opt["design_variables"]["rotor_radius_vawt"]
+
         # -- Rotor & Blade --
         if rotorD_opt["flag"]:
             wt_opt.model.add_design_var(
@@ -1509,6 +1512,16 @@ class PoseOptimization(object):
                 wt_opt["inn_af.stall_margin_opt"] = init_stall_margin_opt
 
             layers = wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
+
+            # For OWENS radius distribution
+            wt_opt["blade.opt_var.s_opt_radius"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["rotor_radius_vawt"]["n_opt"])
+            rotor_radius_vawt_interpolator = PchipInterpolator(
+                wt_init["components"]["blade"]["internal_structure_2d_fem"]["reference_axis"]["x"]["grid"],
+                wt_init["components"]["blade"]["internal_structure_2d_fem"]["reference_axis"]["x"]["values"],
+            )
+            init_rotor_radius_vawt_opt = rotor_radius_vawt_interpolator(wt_opt["blade.opt_var.s_opt_radius"])
+            wt_opt["blade.opt_var.rotor_radius_vawt"] = init_rotor_radius_vawt_opt
+
             for i in range(self.modeling["WISDEM"]["RotorSE"]["n_layers"]):
                 wt_opt["blade.opt_var.s_opt_layer_%d"%i] = np.linspace(
                     0.0, 1.0, blade_opt["n_opt_struct"][i]

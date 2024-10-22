@@ -38,7 +38,7 @@ class WT_RNTA_Prop(om.Group):
             promotes=["*"],
         )
 
-        if modeling_options["flags"]["blade"]:
+        if modeling_options["flags"]["blade"] and (not modeling_options["flags"]["vawt"]):
             self.add_subsystem("rotorse", RotorSEProp(modeling_options=modeling_options, opt_options=opt_options))
 
         if modeling_options["flags"]["tower"]:
@@ -70,7 +70,7 @@ class WT_RNA(om.Group):
             nlbgs.options["rtol"] = 1e-8
             nlbgs.options["iprint"] = 2
 
-        if modeling_options["flags"]["blade"]:
+        if modeling_options["flags"]["blade"] and (not modeling_options["flags"]["vawt"]):
             self.add_subsystem("rotorse", RotorSEPerf(modeling_options=modeling_options, opt_options=opt_options))
 
         if modeling_options["flags"]["nacelle"]:
@@ -112,7 +112,9 @@ class WT_RNTA(om.Group):
 
         self.add_subsystem("tcc", Turbine_CostsSE_2015(verbosity=modeling_options["General"]["verbosity"]))
 
-        if modeling_options["flags"]["blade"]:
+
+        # if not modeling_options["flags"]["vawt"]: # YL: Don't want rotorSE for vawt, do we want to condition all connections?
+        if modeling_options["flags"]["blade"]: 
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
 
             self.connect("blade.pa.chord_param", "blade.compute_reynolds.chord")
@@ -510,14 +512,14 @@ class WT_RNTA(om.Group):
                 self.connect("generator.generator_efficiency_user", "drivese.generator_efficiency_user")
 
         # Connections to TowerSE
-        if modeling_options["flags"]["tower"]:
+        if modeling_options["flags"]["tower"] and (not modeling_options["flags"]["vawt"]):
             if modeling_options["flags"]["nacelle"]:
                 self.connect("drivese.base_F", "towerse.tower.rna_F")
                 self.connect("drivese.base_M", "towerse.tower.rna_M")
                 self.connect("drivese.rna_I_TT", "towerse.rna_I")
                 self.connect("drivese.rna_cm", "towerse.rna_cg")
                 self.connect("drivese.rna_mass", "towerse.rna_mass")
-            if modeling_options["flags"]["blade"]:
+            if modeling_options["flags"]["blade"] and (not modeling_options["flags"]["vawt"]):
                 self.connect("rotorse.rp.gust.V_gust", "towerse.env.Uref")
             self.connect("high_level_tower_props.hub_height", "towerse.wind_reference_height")
             self.connect("high_level_tower_props.hub_height", "towerse.hub_height")
@@ -564,7 +566,7 @@ class WT_RNTA(om.Group):
                 self.connect("tower_grid.foundation_height", "fixedse.tower_foundation_height")
 
         if modeling_options["flags"]["monopile"]:
-            if modeling_options["flags"]["blade"]:
+            if modeling_options["flags"]["blade"] and (not modeling_options["flags"]["vawt"]):
                 self.connect("rotorse.rp.gust.V_gust", "fixedse.env.Uref")
             self.connect("high_level_tower_props.hub_height", "fixedse.wind_reference_height")
             self.connect("env.rho_air", "fixedse.rho_air")
@@ -927,7 +929,7 @@ class WindPark(om.Group):
             else:
                 self.add_subsystem("landbosse", LandBOSSE())
 
-        if modeling_options["flags"]["blade"]:
+        if modeling_options["flags"]["blade"] and (not modeling_options["flags"]["vawt"]):
             self.add_subsystem("financese", PlantFinance(verbosity=modeling_options["General"]["verbosity"]))
             self.add_subsystem(
                 "outputs_2_screen", Outputs_2_Screen(modeling_options=modeling_options, opt_options=opt_options)
@@ -998,7 +1000,7 @@ class WindPark(om.Group):
                 self.connect("env.shear_exp", "landbosse.wind_shear_exponent")
                 self.connect("blade.high_level_blade_props.rotor_diameter", "landbosse.rotor_diameter_m")
                 self.connect("configuration.n_blades", "landbosse.number_of_blades")
-                if modeling_options["flags"]["blade"]:
+                if modeling_options["flags"]["blade"] and (not modeling_options["flags"]["vawt"]):
                     self.connect("rotorse.rp.powercurve.rated_T", "landbosse.rated_thrust_N")
                     self.connect("rotorse.wt_class.V_extreme50", "landbosse.gust_velocity_m_per_s")
                     self.connect("blade.compute_coord_xy_dim.projected_area", "landbosse.blade_surface_area")
@@ -1017,7 +1019,7 @@ class WindPark(om.Group):
                 self.connect("bos.interconnect_voltage", "landbosse.interconnect_voltage_kV")
 
         # Inputs to plantfinancese from wt group
-        if modeling_options["flags"]["blade"]:
+        if modeling_options["flags"]["blade"] and (not modeling_options["flags"]["vawt"]):
             self.connect("rotorse.rp.AEP", "financese.turbine_aep")
             self.connect("tcc.turbine_cost_kW", "financese.tcc_per_kW")
 
@@ -1043,7 +1045,8 @@ class WindPark(om.Group):
             self.connect("costs.benchmark_price", "financese.benchmark_price")
 
         # Connections to outputs to screen
-        if modeling_options["flags"]["blade"]:
+        if modeling_options["flags"]["blade"] and (not modeling_options["flags"]["vawt"]):
+            # YL: need to output from OWENS for vawt
             self.connect("rotorse.rp.AEP", "outputs_2_screen.aep")
             self.connect("financese.lcoe", "outputs_2_screen.lcoe")
             self.connect("rotorse.blade_mass", "outputs_2_screen.blade_mass")

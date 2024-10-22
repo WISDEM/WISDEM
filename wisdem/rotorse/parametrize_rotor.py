@@ -110,13 +110,13 @@ class ParametrizeBladeStruct(om.ExplicitComponent):
             desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
         )
         # YL: layer_thickness_original not used
-        # TODO: delete if confirm not used
-        # self.add_input(
-        #     "layer_thickness_original",
-        #     val=np.zeros((n_layers, n_span)),
-        #     units="m",
-        #     desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
-        # )
+        # TODO: delete if confirm not used but it is used in connection
+        self.add_input(
+            "layer_thickness_original",
+            val=np.zeros((n_layers, n_span)),
+            units="m",
+            desc="2D array of the thickness of the layers of the blade structure. The first dimension represents each layer, the second dimension represents each entry along blade span.",
+        )
 
         for i in range(n_layers):
             self.add_input(
