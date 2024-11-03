@@ -447,8 +447,14 @@ class PoseOptimization(object):
         elif self.opt["merit_figure"] == "tower_mass":
             wt_opt.model.add_objective("towerse.tower_mass", ref=1e6)
 
+        elif self.opt["merit_figure"] == "tower_cost":
+            wt_opt.model.add_objective("tcc.tower_cost", ref=1e6)
+            
         elif self.opt["merit_figure"] == "monopile_mass":
             wt_opt.model.add_objective("fixedse.monopile_mass", ref=1e6)
+
+        elif self.opt["merit_figure"] == "monopile_cost":
+            wt_opt.model.add_objective("fixedse.monopile_cost", ref=1e6)
 
         elif self.opt["merit_figure"] == "jacket_mass":
             wt_opt.model.add_objective("fixedse.jacket_mass", ref=1e6)
@@ -458,9 +464,6 @@ class PoseOptimization(object):
                 wt_opt.model.add_objective("fixedse.structural_mass", ref=1e6)
             else:
                 wt_opt.model.add_objective("floatingse.system_structural_mass", ref=1e6)
-
-        elif self.opt["merit_figure"] == "tower_cost":
-            wt_opt.model.add_objective("tcc.tower_cost", ref=1e6)
 
         elif self.opt["merit_figure"] == "hub_mass":
             wt_opt.model.add_objective("drivese.hub_system_mass", ref=1e5)
@@ -1157,7 +1160,7 @@ class PoseOptimization(object):
             error = blade_constr["mass"]["acceptable_error"]
             upper_value = target + error
             lower_value = target - error
-            wt_opt.model.add_constraint("rotorse.blade_mass", upper = upper_value, lower = lower_value, ref = 1.e+4)
+            wt_opt.model.add_constraint("rotorse.blade_mass", upper = upper_value, lower = lower_value, ref = 1.e+5)
         if blade_constr["rail_transport"]["8_axle"]:
             wt_opt.model.add_constraint("rotorse.re.rail.constr_LV_8axle_horiz", lower=0.8, upper=1.0)
             wt_opt.model.add_constraint("rotorse.re.rail.constr_strainPS", upper=1.0)
@@ -1283,6 +1286,13 @@ class PoseOptimization(object):
                 upper=tower_constr["frequency_1"]["upper_bound"],
             )
 
+        if tower_constr["mass"]["flag"]:
+            target = tower_constr["mass"]["target"]
+            error = tower_constr["mass"]["acceptable_error"]
+            upper_value = target + error
+            lower_value = target - error
+            wt_opt.model.add_constraint("towerse.tower_mass", upper = upper_value, lower = lower_value, ref = 1.e+6)
+            
         if monopile_constr["stress"]["flag"] and tower_constr["stress"]["flag"]:
             wt_opt.model.add_constraint("fixedse.post_monopile_tower.constr_stress", upper=1.0)
         elif monopile_constr["stress"]["flag"]:
@@ -1327,6 +1337,13 @@ class PoseOptimization(object):
 
         if monopile_constr["tower_diameter_coupling"]["flag"]:
             wt_opt.model.add_constraint("fixedse.constr_diam_consistency", upper=1.0)
+            
+        if monopile_constr["mass"]["flag"]:
+            target = monopile_constr["mass"]["target"]
+            error = monopile_constr["mass"]["acceptable_error"]
+            upper_value = target + error
+            lower_value = target - error
+            wt_opt.model.add_constraint("fixedse.monopile_mass", upper = upper_value, lower = lower_value, ref = 1.e+6)
 
         # Jacket constraints
         jacket_constr = self.opt["constraints"]["jacket"]
