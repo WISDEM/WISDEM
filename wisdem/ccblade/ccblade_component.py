@@ -400,7 +400,7 @@ class CCBladeTwist(ExplicitComponent):
         n_opt_twist = opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
 
         # Inputs
-        self.add_input("Uhub", val=9.0, units="m/s", desc="Undisturbed wind speed")
+        self.add_input("Uhub", val=5.0, units="m/s", desc="Undisturbed wind speed")
 
         self.add_input("tsr", val=0.0, desc="Tip speed ratio")
         self.add_input("pitch", val=0.0, units="deg", desc="Pitch angle")
@@ -591,12 +591,15 @@ class CCBladeTwist(ExplicitComponent):
             cl = np.zeros(self.n_span)
             cd = np.zeros(self.n_span)
             alpha = np.zeros(self.n_span)
+            Emax = np.zeros(self.n_span)
             margin2stall = self.options["opt_options"]["constraints"]["blade"]["stall"]["margin"] * 180.0 / np.pi
             Re = np.array(Omega * inputs["r"] * inputs["chord"] * inputs["rho"] / inputs["mu"])
             aoa_op = inputs["aoa_op"]
             for i in range(self.n_span):
                 # Use the required angle of attack if defined. If it isn't defined (==pi), then take the stall point minus the margin
-                if abs(aoa_op[i] - np.pi) < 1.0e-4:
+                if abs(aoa_op[i] - np.pi) > 1.0e-4:
+                    alpha[i] = aoa_op[i]
+                elif self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse_target"] == 'stall_margin':
                     af[i].eval_unsteady(
                         inputs["airfoils_aoa"],
                         inputs["airfoils_cl"][i, :, 0, 0],
@@ -604,8 +607,16 @@ class CCBladeTwist(ExplicitComponent):
                         inputs["airfoils_cm"][i, :, 0, 0],
                     )
                     alpha[i] = (af[i].unsteady["alpha1"] - margin2stall) / 180.0 * np.pi
+                elif self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse_target"] == 'max_efficiency':
+                    af[i].eval_unsteady(
+                        inputs["airfoils_aoa"],
+                        inputs["airfoils_cl"][i, :, 0, 0],
+                        inputs["airfoils_cd"][i, :, 0, 0],
+                        inputs["airfoils_cm"][i, :, 0, 0],
+                    )
+                    Emax[i], alpha[i], _, _ = af[i].max_eff(Re[i])
                 else:
-                    alpha[i] = aoa_op[i]
+                    raise Exception('The flags for the twist inverse design are not set appropriately. Please check documentation for the available analysis options.')
                 cl[i], cd[i] = af[i].evaluate(alpha[i], Re[i])
 
             # Overwrite aoa of high thickness airfoils at blade root
@@ -627,13 +638,9 @@ class CCBladeTwist(ExplicitComponent):
         else:
             ccblade.theta = inputs["theta_in"]
 
-        # Smooth out twist profile if we're doing inverse and inn_af design
-        if (
-            self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]
-            and self.options["modeling_options"]["WISDEM"]["RotorSE"]["inn_af"]
-        ):
-            n_opt = self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
-            training_theta = np.copy(ccblade.theta)
+        # Smooth out twist profile if we're doing inverse design for twist
+        if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
+            training_theta = ccblade.theta
             s = (inputs["r"] - inputs["r"][0]) / (inputs["r"][-1] - inputs["r"][0])
 
             twist_spline = PchipInterpolator(s, training_theta)
@@ -655,7 +662,7 @@ class CCBladeTwist(ExplicitComponent):
 
         # import matplotlib.pyplot as plt
         # plt.figure()
-        # plt.plot(inputs['r'], alpha*180./np.pi, '-')
+        # plt.plot(inputs['r'], np.rad2deg(alpha), '-')
         # plt.plot(inputs['r'], loads["alpha"], ':')
         # plt.xlabel('blade fraction')
         # plt.ylabel('aoa (deg)')

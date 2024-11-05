@@ -449,7 +449,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                                 "The end position of the layer "
                                 + internal_structure_2d_fem["layers"][i]["name"]
                                 + " is linked to the layer "
-                                + internal_structure_2d_fem["layers"][i]["start_nd_arc"]["fixed"]
+                                + internal_structure_2d_fem["layers"][i]["end_nd_arc"]["fixed"]
                                 + " , but this layer does not exist in the yaml."
                             )
             if "width" in internal_structure_2d_fem["layers"][i]:
@@ -721,6 +721,9 @@ def assign_hub_values(wt_opt, hub, flags):
         wt_opt["hub.pitch_system_scaling_factor"] = hub["pitch_system_scaling_factor"]
         wt_opt["hub.hub_material"] = hub["hub_material"]
         wt_opt["hub.spinner_material"] = hub["spinner_material"]
+        wt_opt["hub.spinner_mass_user"] = hub["spinner_mass_user"]
+        wt_opt["hub.pitch_system_mass_user"] = hub["pitch_system_mass_user"]
+        wt_opt["hub.hub_shell_mass_user"] = hub["hub_shell_mass_user"]
 
     return wt_opt
 
@@ -742,7 +745,10 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
         wt_opt["nacelle.uptower"] = nacelle["drivetrain"]["uptower"]
         wt_opt["nacelle.lss_material"] = nacelle["drivetrain"]["lss_material"]
         wt_opt["nacelle.bedplate_material"] = nacelle["drivetrain"]["bedplate_material"]
+        wt_opt["nacelle.bedplate_mass_user"] = nacelle["drivetrain"]["bedplate_mass_user"]
         wt_opt["nacelle.brake_mass_user"] = nacelle["drivetrain"]["brake_mass_user"]
+        wt_opt["nacelle.mb1_mass_user"] = nacelle["drivetrain"]["mb1_mass_user"]
+        wt_opt["nacelle.mb2_mass_user"] = nacelle["drivetrain"]["mb2_mass_user"]
         wt_opt["nacelle.hvac_mass_coeff"] = nacelle["drivetrain"]["hvac_mass_coefficient"]
         wt_opt["nacelle.converter_mass_user"] = nacelle["drivetrain"]["converter_mass_user"]
         wt_opt["nacelle.transformer_mass_user"] = nacelle["drivetrain"]["transformer_mass_user"]
@@ -784,9 +790,9 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
             wt_opt["nacelle.planet_numbers"] = nacelle["drivetrain"]["planet_numbers"]
             wt_opt["nacelle.hss_material"] = nacelle["drivetrain"]["hss_material"]
 
+        wt_opt["generator.generator_mass_user"] = nacelle["drivetrain"]["generator_mass_user"]
         if not modeling_options["flags"]["generator"]:
             wt_opt["generator.generator_radius_user"] = nacelle["drivetrain"]["generator_radius_user"]
-            wt_opt["generator.generator_mass_user"] = nacelle["drivetrain"]["generator_mass_user"]
 
             eff_user = np.c_[
                 nacelle["drivetrain"]["generator_rpm_efficiency_user"]["grid"],
@@ -805,6 +811,8 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
 
 
 def assign_generator_values(wt_opt, modeling_options, nacelle):
+    if "generator_mass_user" in nacelle["generator"]:
+        wt_opt["generator.generator_mass_user"] = nacelle["generator"]["generator_mass_user"]
     wt_opt["generator.B_r"] = nacelle["generator"]["B_r"]
     wt_opt["generator.P_Fe0e"] = nacelle["generator"]["P_Fe0e"]
     wt_opt["generator.P_Fe0h"] = nacelle["generator"]["P_Fe0h"]
@@ -943,6 +951,7 @@ def assign_tower_values(wt_opt, modeling_options, tower):
     wt_opt["tower.layer_thickness"] = thickness
 
     wt_opt["tower.outfitting_factor"] = tower["internal_structure_2d_fem"]["outfitting_factor"]
+    wt_opt["tower.tower_mass_user"] = tower["tower_mass_user"]
 
     if "Loading" in modeling_options["WISDEM"]:
         F = []
@@ -1028,6 +1037,7 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
     wt_opt["monopile.transition_piece_mass"] = monopile["transition_piece_mass"]
     wt_opt["monopile.transition_piece_cost"] = monopile["transition_piece_cost"]
     wt_opt["monopile.gravity_foundation_mass"] = monopile["gravity_foundation_mass"]
+    wt_opt["monopile.monopile_mass_user"] = monopile["monopile_mass_user"]
 
     return wt_opt
 
@@ -1045,6 +1055,7 @@ def assign_jacket_values(wt_opt, modeling_options, jacket):
     wt_opt["jacket.brace_diameters"] = jacket["brace_diameters"]
     wt_opt["jacket.brace_thicknesses"] = jacket["brace_thicknesses"]
     wt_opt["jacket.bay_spacing"] = jacket["bay_spacing"]
+    wt_opt["jacket.jacket_mass_user"] = jacket["jacket_mass_user"]
 
     return wt_opt
 
@@ -1093,11 +1104,11 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
         else:
             grid_length = len(floating["members"][i]["outer_shape"]["outer_diameter"]["grid"])
             
-
+        usr_defined_flag = {}
         for coeff in usr_defined_coeffs:
-            usr_defined_flag = np.all(np.array(floating["members"][i][coeff])>0)
+            usr_defined_flag[coeff] = np.all(np.array(floating["members"][i][coeff])>0)
             coeff_length = len(floating["members"][i][coeff])
-            if usr_defined_flag:
+            if usr_defined_flag[coeff]:
                 assert grid_length == coeff_length, f"Users define {coeff}, but the length is different from grid length ({grid_length}). Please correct."
 
         diameter_assigned = False
@@ -1111,41 +1122,41 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                         wt_opt[f"floating.memgrp{idx}.outer_diameter_in"] = floating["members"][i]["outer_shape"][
                             "outer_diameter"
                         ]["values"][0]
-                        wt_opt[f"floating.memgrp{idx}.ca_usr"] = floating["members"][i]["Ca"][0] if floating["members"][i]["Ca"][0]>0.0 else 1
-                        wt_opt[f"floating.memgrp{idx}.cd_usr"] = floating["members"][i]["Cd"][0] if floating["members"][i]["Cd"][0]>0.0 else 1
+                        wt_opt[f"floating.memgrp{idx}.ca_usr_geom"] = floating["members"][i]["Ca"][0] if floating["members"][i]["Ca"][0]>0.0 else 1
+                        wt_opt[f"floating.memgrp{idx}.cd_usr_geom"] = floating["members"][i]["Cd"][0] if floating["members"][i]["Cd"][0]>0.0 else 1
                     else:
                         wt_opt[f"floating.memgrp{idx}.outer_diameter_in"][:] = floating["members"][i]["outer_shape"][
                             "outer_diameter"
                         ]["values"]
-                        wt_opt[f"floating.memgrp{idx}.ca_usr"] = floating["members"][i]["Ca"] if np.all(floating["members"][i]["Ca"]>0.0) else 1
-                        wt_opt[f"floating.memgrp{idx}.cd_usr"] = floating["members"][i]["Cd"] if np.all(floating["members"][i]["Cd"]>0.0) else 1
+                        wt_opt[f"floating.memgrp{idx}.ca_usr_geom"] = floating["members"][i]["Ca"] if np.all(floating["members"][i]["Ca"]>0.0) else 1
+                        wt_opt[f"floating.memgrp{idx}.cd_usr_geom"] = floating["members"][i]["Cd"] if np.all(floating["members"][i]["Cd"]>0.0) else 1
                     diameter_assigned = True
                 if "side_length_a" in float_opt["members"]["groups"][j]:
                     if float_opt["members"]["groups"][j]["side_length_a"]["constant"]:
                         wt_opt[f"floating.memgrp{idx}.side_length_a_in"] = floating["members"][i]["outer_shape"][
                             "side_length_a"
                         ]["values"][0]
-                        wt_opt[f"floating.memgrp{idx}.ca_usr"] = floating["members"][i]["Ca"][0] if floating["members"][i]["Ca"][0]>0.0 else 1
-                        wt_opt[f"floating.memgrp{idx}.cd_usr"] = floating["members"][i]["Cd"][0] if floating["members"][i]["Ca"][0]>0.0 else 1
+                        wt_opt[f"floating.memgrp{idx}.ca_usr_geom"] = floating["members"][i]["Ca"][0] if floating["members"][i]["Ca"][0]>0.0 else 1
+                        wt_opt[f"floating.memgrp{idx}.cd_usr_geom"] = floating["members"][i]["Cd"][0] if floating["members"][i]["Ca"][0]>0.0 else 1
                     else:
                         wt_opt[f"floating.memgrp{idx}.side_length_a_in"][:] = floating["members"][i]["outer_shape"][
                             "side_length_a"
                         ]["values"]
-                        wt_opt[f"floating.memgrp{idx}.ca_usr"] = floating["members"][i]["Ca"] if np.all(floating["members"][i]["Ca"]>0.0) else 1
-                        wt_opt[f"floating.memgrp{idx}.cd_usr"] = floating["members"][i]["Cd"] if np.all(floating["members"][i]["Ca"]>0.0) else 1
+                        wt_opt[f"floating.memgrp{idx}.ca_usr_geom"] = floating["members"][i]["Ca"] if np.all(floating["members"][i]["Ca"]>0.0) else 1
+                        wt_opt[f"floating.memgrp{idx}.cd_usr_geom"] = floating["members"][i]["Cd"] if np.all(floating["members"][i]["Ca"]>0.0) else 1
                 if "side_length_b" in float_opt["members"]["groups"][j]:
                     if float_opt["members"]["groups"][j]["side_length_b"]["constant"]:
                         wt_opt[f"floating.memgrp{idx}.side_length_b_in"] = floating["members"][i]["outer_shape"][
                             "side_length_b"
                         ]["values"][0]
-                        wt_opt[f"floating.memgrp{idx}.cay_usr"] = floating["members"][i]["Cay"][0] if floating["members"][i]["Cay"][0]>0.0 else 1
-                        wt_opt[f"floating.memgrp{idx}.cdy_usr"] = floating["members"][i]["Cdy"][0] if floating["members"][i]["Cay"][0]>0.0 else 1
+                        wt_opt[f"floating.memgrp{idx}.cay_usr_geom"] = floating["members"][i]["Cay"][0] if floating["members"][i]["Cay"][0]>0.0 else 1
+                        wt_opt[f"floating.memgrp{idx}.cdy_usr_geom"] = floating["members"][i]["Cdy"][0] if floating["members"][i]["Cay"][0]>0.0 else 1
                     else:
                         wt_opt[f"floating.memgrp{idx}.side_length_b_in"][:] = floating["members"][i]["outer_shape"][
                             "side_length_b"
                         ]["values"]
-                        wt_opt[f"floating.memgrp{idx}.cay_usr"] = floating["members"][i]["Cay"] if np.all(floating["members"][i]["Cay"]>0.0) else 1
-                        wt_opt[f"floating.memgrp{idx}.cdy_usr"] = floating["members"][i]["Cdy"] if np.all(floating["members"][i]["Cdy"]>0.0) else 1
+                        wt_opt[f"floating.memgrp{idx}.cay_usr_geom"] = floating["members"][i]["Cay"] if np.all(floating["members"][i]["Cay"]>0.0) else 1
+                        wt_opt[f"floating.memgrp{idx}.cdy_usr_geom"] = floating["members"][i]["Cdy"] if np.all(floating["members"][i]["Cdy"]>0.0) else 1
                     diameter_assigned = True
 
         if not diameter_assigned:
@@ -1154,16 +1165,12 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                     floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
                     floating["members"][i]["outer_shape"]["outer_diameter"]["values"],
                 )(grid_geom)
-                if usr_defined_flag:
-                    wt_opt[f"floating.memgrp{idx}.ca_usr"] = PchipInterpolator(
-                    floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
-                    floating["members"][i]["Ca"],
-                    )(grid_geom)
-                    wt_opt[f"floating.memgrp{idx}.cd_usr"] = PchipInterpolator(
-                    floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
-                    floating["members"][i]["Cd"],
-                    )(grid_geom)
-
+                for coeff in usr_defined_flag.keys():
+                    if usr_defined_flag[coeff]:
+                        wt_opt[f"floating.memgrp{idx}.{coeff.lower()}_usr_geom"] = PchipInterpolator(
+                        floating["members"][i]["outer_shape"]["outer_diameter"]["grid"],
+                        floating["members"][i][coeff],
+                        )(grid_geom)
             except:
                 wt_opt[f"floating.memgrp{idx}.side_length_a_in"] = PchipInterpolator(
                     floating["members"][i]["outer_shape"]["side_length_a"]["grid"],
@@ -1173,24 +1180,13 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                     floating["members"][i]["outer_shape"]["side_length_b"]["grid"],
                     floating["members"][i]["outer_shape"]["side_length_b"]["values"],
                 )(grid_geom)
-                if usr_defined_flag:
-                    wt_opt[f"floating.memgrp{idx}.cay_usr"] = PchipInterpolator(
-                        floating["members"][i]["outer_shape"]["side_length_b"]["grid"],
-                        floating["members"][i]["Cay"],
-                    )(grid_geom)
-                    wt_opt[f"floating.memgrp{idx}.cdy_usr"] = PchipInterpolator(
-                        floating["members"][i]["outer_shape"]["side_length_b"]["grid"],
-                        floating["members"][i]["Cdy"],
-                    )(grid_geom)
-                    wt_opt[f"floating.memgrp{idx}.ca_usr"] = PchipInterpolator(
+                
+                for coeff in usr_defined_flag.keys():
+                    if usr_defined_flag[coeff]:
+                        wt_opt[f"floating.memgrp{idx}.{coeff.lower()}_usr_geom"] = PchipInterpolator(
                         floating["members"][i]["outer_shape"]["side_length_a"]["grid"],
-                        floating["members"][i]["Ca"],
-                    )(grid_geom)
-                    wt_opt[f"floating.memgrp{idx}.cd_usr"] = PchipInterpolator(
-                        floating["members"][i]["outer_shape"]["side_length_a"]["grid"],
-                        floating["members"][i]["Cd"],
-                    )(grid_geom)
-
+                        floating["members"][i][coeff],
+                        )(grid_geom)
 
         wt_opt[f"floating.memgrp{idx}.outfitting_factor"] = floating["members"][i]["internal_structure"][
             "outfitting_factor"
@@ -1252,6 +1248,8 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
                 ballast_mat[j] = "seawater"
         wt_opt[f"floating.memgrp{idx}.ballast_materials"] = ballast_mat
 
+        wt_opt[f"floating.memgrp{idx}.member_mass_user"] = floating["members"][i]["member_mass_user"]
+        
         if floating_init_options["members"]["n_axial_joints"][i] > 0:
             for j in range(floating_init_options["members"]["n_axial_joints"][i]):
                 wt_opt[f"floating.memgrp{idx}.grid_axial_joints"][j] = floating["members"][i]["axial_joints"][j]["grid"]

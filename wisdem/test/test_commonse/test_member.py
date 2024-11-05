@@ -241,6 +241,8 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["s_ghost1"] = 0.0
         self.inputs["s_ghost2"] = 1.0
 
+        self.inputs["total_mass_user"] = 0.0
+
         opt = {}
         opt["n_height"] = [NHEIGHT]
         opt["n_ballasts"] = [3]
@@ -812,6 +814,11 @@ class TestMemberComponent(unittest.TestCase):
         s_all = self.outputs["s_all"]
         nout = np.where(s_all == NULL)[0][0]
         self.assertEqual(nout, NPTS + 3 + 2 * nbulk - 2 + 2 * 5)
+
+    def testUserMass(self):
+        self.inputs["total_mass_user"] = 123456.0
+        self.mem.compute(self.inputs, self.outputs)
+        self.assertEqual(self.outputs["total_mass"], 123456.0)
 
     def testDeconflict(self):
         self.inputs["bulkhead_grid"] = np.array([0.0, 0.1, 1.0])

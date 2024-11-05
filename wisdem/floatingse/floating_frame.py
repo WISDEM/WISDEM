@@ -160,9 +160,9 @@ class FrameAnalysis(om.ExplicitComponent):
         n_attach = opt["mooring"]["n_attach"]
         n_dlc = opt["WISDEM"]["n_dlc"]
 
-        m_trans = float(inputs["transition_piece_mass"])
+        m_trans = float(inputs["transition_piece_mass"][0])
         I_trans = inputs["transition_piece_I"]
-        m_variable = float(inputs["variable_ballast_mass"])
+        m_variable = float(inputs["variable_ballast_mass"][0])
         cg_variable = inputs["variable_center_of_mass"]
         I_variable = inputs["variable_I"]
 
@@ -351,7 +351,6 @@ class TowerModal(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("n_full")
         self.options.declare("frame3dd_opt")
-        self.options.declare("rank_and_file", default=False)
 
     def setup(self):
         n_full = self.options["n_full"]
@@ -496,6 +495,7 @@ class TowerModal(om.ExplicitComponent):
 
                 # Get all mode shapes in batch
                 NFREQ2 = int(NFREQ / 2)
+                myzmpf = 1e-7*modal.zmpf # zmpf is buggy here, so suppressing it
                 freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
                     xyz[:, 2],
                     modal.freq,
@@ -504,9 +504,8 @@ class TowerModal(om.ExplicitComponent):
                     modal.zdsp,
                     modal.xmpf,
                     modal.ympf,
-                    modal.zmpf,
+                    myzmpf, #modal.zmpf,
                     base_slope0=False,
-                    rank_and_file=self.options["rank_and_file"],
                 )
 
                 outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
@@ -515,7 +514,7 @@ class TowerModal(om.ExplicitComponent):
                 outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
                 outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
                 outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
-        except:
+        except Exception:
             pass
 
 
@@ -628,7 +627,7 @@ class FloatingPost(om.ExplicitComponent):
             # Use DNV-GL CP202 Method
             circ_check = util_dnvgl.CylinderBuckling(h[circ_idx], d[circ_idx], t[circ_idx], E=E[circ_idx], G=G[circ_idx],
                                             sigma_y=sigy[circ_idx], gamma=gamma_f * gamma_b,
-                                            A=Az, I=Iyy)
+                                            A=Az[circ_idx], I=Iyy[circ_idx])
             for k in range(n_dlc):
                 results = circ_check.run_buckling_checks(
                     Fz[k, :], M[k, :], circ_axial_stress[k, :], hoop_stress[k, :], circ_shear_stress[k, :]
@@ -669,7 +668,6 @@ class FloatingFrame(om.Group):
         nLC = opt["WISDEM"]["n_dlc"]
         n_member = opt["floating"]["members"]["n_members"]
         frame3dd_opt = opt["WISDEM"]["FloatingSE"]["frame3dd"]
-        rank_and_file = opt["WISDEM"]["FloatingSE"]["rank_and_file"]
 
         mem_vars = ["Px", "Py", "Pz", "qdyn"]
 
@@ -677,7 +675,6 @@ class FloatingFrame(om.Group):
             "wind_reference_height",
             "z0",
             "shearExp",
-            "cd_usr",
             "rho_air",
             "rho_water",
             "mu_air",
@@ -701,9 +698,9 @@ class FloatingFrame(om.Group):
             n_full = get_nfull(opt["floating"]["members"]["n_height"][k], nref=2)
             shape = opt["floating"]["members"]["outer_shape"][k]
             if shape == "circular":
-                mem_prom = mem_prom_base + ["ca_usr"]
+                mem_prom = mem_prom_base + [("cd_usr", f"memload{k}.cd_usr"), ("ca_usr", f"memload{k}.ca_usr")]
             elif shape == "rectangular":
-                mem_prom = mem_prom_base + ["cdy_usr", "ca_usr", "cay_usr"]
+                mem_prom = mem_prom_base + [("cd_usr", f"memload{k}.cd_usr"), ("cdy_usr", f"memload{k}.cdy_usr"), ("ca_usr", f"memload{k}.ca_usr"), ("cay_usr", f"memload{k}.cay_usr")]
             self.add_subsystem(
                 f"memload{k}",
                 MemberLoads(
@@ -726,7 +723,7 @@ class FloatingFrame(om.Group):
             n_full_tow = get_nfull(n_height, nref=tow_opt["n_refine"])
             self.add_subsystem(
                 "tower",
-                TowerModal(n_full=n_full_tow, frame3dd_opt=frame3dd_opt, rank_and_file=rank_and_file),
+                TowerModal(n_full=n_full_tow, frame3dd_opt=frame3dd_opt),
                 promotes=["*"],
             )
 

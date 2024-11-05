@@ -1,0 +1,10 @@
+ac_resistance: 0.03        # ohm/km
+capacitance: 140           # nF/km
+conductor_size: 500        # mm^2
+cost_per_km: 665000        # $
+current_capacity: 655      # A
+inductance: 0.43           # mH/km
+linear_density: 90         # t/km
+rated_voltage: 220         # kV
+cable_type: HVAC           # HVDC vs HVAC
+name: XLPE_500mm_220kV

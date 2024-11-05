@@ -3,7 +3,7 @@ import sys
 
 try:
     from mpi4py import MPI
-except:
+except ImportError:
     MPI = False
 
 
@@ -49,7 +49,7 @@ def map_comm_heirarchical(n_DV, n_OF, openmp=False):
     in the color map as 1000000. The ones handling python and the DV are marked as 0, and
     finally the master ones for each openfast run are marked with a 1.
     """
-    if openmp == True:
+    if openmp:
         n_procs_per_node = 36  # Number of
         num_procs = MPI.COMM_WORLD.Get_size()
         n_nodes = num_procs / n_procs_per_node
@@ -111,7 +111,7 @@ def subprocessor_loop(comm_map_up):
     rank_target = comm_map_up[rank]
 
     keep_running = True
-    while keep_running == True:
+    while keep_running:
         data = MPI.COMM_WORLD.recv(source=(rank_target), tag=0)
         if data[0] == False:
             break

@@ -78,18 +78,19 @@ class PoseOptimization(object):
                 - blade_opt["aero_shape"]["af_positions"]["af_start"]
                 - 1
             )
-        if len(blade_opt["structure"])>0:
-            for i in range(len(blade_opt["structure"])):
-                if blade_opt["structure"][i]["index_end"] > blade_opt["structure"][i]["n_opt"]:
-                    raise Exception(
-                        "Check the analysis options yaml, the index_end of a blade layer is higher than the number of DVs n_opt"
+        if "structure" in blade_opt:
+            if len(blade_opt["structure"])>0:
+                for i in range(len(blade_opt["structure"])):
+                    if blade_opt["structure"][i]["index_end"] > blade_opt["structure"][i]["n_opt"]:
+                        raise Exception(
+                            "Check the analysis options yaml, the index_end of a blade layer is higher than the number of DVs n_opt"
+                        )
+                    elif blade_opt["structure"][i]["index_end"] == 0:
+                        blade_opt["structure"][i]["index_end"] = blade_opt["structure"][i]["n_opt"]
+                    n_DV += (
+                        blade_opt["structure"][i]["index_end"]
+                        - blade_opt["structure"][i]["index_start"]
                     )
-                elif blade_opt["structure"][i]["index_end"] == 0:
-                    blade_opt["structure"][i]["index_end"] = blade_opt["structure"][i]["n_opt"]
-                n_DV += (
-                    blade_opt["structure"][i]["index_end"]
-                    - blade_opt["structure"][i]["index_start"]
-                )
         if self.opt["design_variables"]["control"]["tsr"]["flag"]:
             n_DV += 1
 
@@ -432,7 +433,10 @@ class PoseOptimization(object):
             wt_opt.model.add_objective("rotorse.rp.AEP", ref=-1.0e6)
 
         elif self.opt["merit_figure"] == "blade_mass":
-            wt_opt.model.add_objective("rotorse.blade_mass", ref=1.0e4)
+            wt_opt.model.add_objective("rotorse.blade_mass", ref=1.0e6)
+
+        elif self.opt["merit_figure"] == "blade_cost":
+            wt_opt.model.add_objective("rotorse.total_bc.total_blade_cost", ref=1.0e6)
 
         elif self.opt["merit_figure"].lower() == "lcoe":
             wt_opt.model.add_objective("financese.lcoe", ref=0.1)
@@ -487,6 +491,15 @@ class PoseOptimization(object):
                 wt_opt.model.add_objective("rotorse.rp.powercurve.Cp_regII", ref=-1.0)
             else:
                 wt_opt.model.add_objective("rotorse.ccblade.CP", ref=-1.0)
+
+        elif self.opt["merit_figure"] in ["turbine_cost", "turbine_capex"]:
+            wt_opt.model.add_objective("tcc.turbine_cost_kW", ref=1e3)
+
+        elif self.opt["merit_figure"] in ["bos", "bos_cost", "bos_capex"]:
+            if self.modeling["flags"]["offshore"]:
+                wt_opt.model.add_objective("orbit.total_capex_kW", ref=1e3)
+            else:
+                wt_opt.model.add_objective("landbosse.total_capex_kW", ref=1e3)
 
         elif self.opt["merit_figure"] == "inverse_design":
             wt_opt.model.add_objective("inverse_design.objective")
@@ -656,7 +669,7 @@ class PoseOptimization(object):
                 upper=z_options["upper_bound"],
             )
 
-        if "structure" in blade_opt:
+        if "structure" in blade_opt and len(blade_opt["structure"]) > 0:
             layers = wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
             for i in range(len(blade_opt["structure"])):
                 k = blade_opt["layer_index_opt"][i]
@@ -1088,6 +1101,14 @@ class PoseOptimization(object):
                 print(
                     "WARNING: the max chord is set to be constrained, but chord is not an active design variable. The constraint is not enforced."
                 )
+        if blade_constr["chord_slope"]["flag"]:
+            if blade_opt["aero_shape"]["chord"]["flag"]:
+                wt_opt.model.add_constraint("blade.pa.slope_chord_constr", upper=0.0)
+            else:
+                print(
+                    "WARNING: the slope of the chord is set to be constrained, but chord is not an active design variable. The constraint is not enforced."
+                )
+
         if blade_constr["root_circle_diameter"]["flag"]:
             if blade_opt["aero_shape"]["chord"]["flag"] and blade_opt["aero_shape"]["chord"]["index_start"] == 0.0:
                 wt_opt.model.add_constraint(
@@ -1146,6 +1167,13 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("rotorse.re.rail.constr_strainPS", upper=1.0)
             wt_opt.model.add_constraint("rotorse.re.rail.constr_strainSS", upper=1.0)
 
+        if blade_constr["rated_velocity"]["flag"]:
+            target = blade_constr["rated_velocity"]["target"]
+            error = blade_constr["rated_velocity"]["acceptable_error"]
+            upper_value = target + error
+            lower_value = target - error
+            wt_opt.model.add_constraint("rotorse.rp.powercurve.rated_V", upper = upper_value, lower = lower_value, ref = 10.0)
+            
         if self.opt["constraints"]["blade"]["moment_coefficient"]["flag"]:
             wt_opt.model.add_constraint(
                 "rotorse.ccblade.CM",
@@ -1358,7 +1386,10 @@ class PoseOptimization(object):
 
         if float_constr["metacentric_height"]["flag"]:
             wt_opt.model.add_constraint(
-                "floatingse.metacentric_height", lower=float_constr["metacentric_height"]["lower_bound"]
+                "floatingse.metacentric_height_roll", lower=float_constr["metacentric_height"]["lower_bound"]
+            )
+            wt_opt.model.add_constraint(
+                "floatingse.metacentric_height_pitch", lower=float_constr["metacentric_height"]["lower_bound"]
             )
 
         if float_constr["freeboard_margin"]["flag"]:

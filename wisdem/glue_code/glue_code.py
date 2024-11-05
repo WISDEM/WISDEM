@@ -1,14 +1,14 @@
 import numpy as np
 import openmdao.api as om
 
-from wisdem.rotorse.rotor import RotorSE
-from wisdem.towerse.tower import TowerSE
-from wisdem.floatingse.floating import FloatingSE
-from wisdem.fixed_bottomse.jacket import JacketSE
-from wisdem.glue_code.gc_RunTools import Outputs_2_Screen
-from wisdem.drivetrainse.drivetrain import DrivetrainSE
-from wisdem.fixed_bottomse.monopile import MonopileSE
 from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
+from wisdem.rotorse.rotor import RotorSEProp, RotorSEPerf, RotorSE
+from wisdem.drivetrainse.drivetrain import DrivetrainSE
+from wisdem.towerse.tower import TowerSEProp, TowerSEPerf, TowerSE
+from wisdem.floatingse.floating import FloatingSEProp, FloatingSEPerf, FloatingSE
+from wisdem.fixed_bottomse.monopile import MonopileSEProp, MonopileSEPerf, MonopileSE
+from wisdem.fixed_bottomse.jacket import JacketSEProp, JacketSEPerf, JacketSE
+from wisdem.glue_code.gc_RunTools import Outputs_2_Screen
 from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
 from wisdem.commonse.turbine_constraints import TurbineConstraints
 from wisdem.plant_financese.plant_finance import PlantFinance
@@ -20,6 +20,63 @@ except ImportError:
     print("WARNING: Be sure to pip install simpy and marmot-agents for offshore BOS runs")
 
 
+class WT_RNTA_Prop(om.Group):
+    # Openmdao group to compute most of the mass properties of the components
+
+    def initialize(self):
+        self.options.declare("modeling_options")
+        self.options.declare("opt_options")
+
+    def setup(self):
+        modeling_options = self.options["modeling_options"]
+        opt_options = self.options["opt_options"]
+
+        # Analysis components
+        self.add_subsystem(
+            "wt_init",
+            WindTurbineOntologyOpenMDAO(modeling_options=modeling_options, opt_options=opt_options),
+            promotes=["*"],
+        )
+
+        if modeling_options["flags"]["blade"]:
+            self.add_subsystem("rotorse", RotorSEProp(modeling_options=modeling_options, opt_options=opt_options))
+
+        if modeling_options["flags"]["tower"]:
+            self.add_subsystem("towerse", TowerSEProp(modeling_options=modeling_options))
+
+        if modeling_options["flags"]["monopile"]:
+            self.add_subsystem("fixedse", MonopileSEProp(modeling_options=modeling_options))
+
+        elif modeling_options["flags"]["jacket"]:
+            self.add_subsystem("fixedse", JacketSEProp(modeling_options=modeling_options))
+
+            
+class WT_RNA(om.Group):
+    # Openmdao group to iterate on the rated torque - turbine efficiency
+
+    def initialize(self):
+        self.options.declare("modeling_options")
+        self.options.declare("opt_options")
+
+    def setup(self):
+        modeling_options = self.options["modeling_options"]
+        opt_options = self.options["opt_options"]
+
+        if modeling_options["flags"]["blade"] and modeling_options["flags"]["nacelle"]:
+            self.linear_solver = lbgs = om.LinearBlockGS()
+            self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
+            nlbgs.options["maxiter"] = modeling_options["General"]["solver_maxiter"]
+            nlbgs.options["atol"] = 1e-2
+            nlbgs.options["rtol"] = 1e-8
+            nlbgs.options["iprint"] = 2
+
+        if modeling_options["flags"]["blade"]:
+            self.add_subsystem("rotorse", RotorSEPerf(modeling_options=modeling_options, opt_options=opt_options))
+
+        if modeling_options["flags"]["nacelle"]:
+            self.add_subsystem("drivese", DrivetrainSE(modeling_options=modeling_options))
+
+            
 class WT_RNTA(om.Group):
     # Openmdao group to run the analysis of the wind turbine
 
@@ -32,48 +89,32 @@ class WT_RNTA(om.Group):
         nLC = modeling_options["WISDEM"]["n_dlc"]
         opt_options = self.options["opt_options"]
 
-        if modeling_options["flags"]["blade"] and modeling_options["flags"]["nacelle"]:
-            self.linear_solver = lbgs = om.LinearBlockGS()
-            self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
-            nlbgs.options["maxiter"] = modeling_options["General"]["solver_maxiter"]
-            nlbgs.options["atol"] = 1e-2
-            nlbgs.options["rtol"] = 1e-8
-            nlbgs.options["iprint"] = 2
-
         # Analysis components
-        self.add_subsystem(
-            "wt_init",
-            WindTurbineOntologyOpenMDAO(modeling_options=modeling_options, opt_options=opt_options),
-            promotes=["*"],
-        )
-
-        if modeling_options["flags"]["blade"]:
-            self.add_subsystem("rotorse", RotorSE(modeling_options=modeling_options, opt_options=opt_options))
-
-        if modeling_options["flags"]["nacelle"]:
-            self.add_subsystem("drivese", DrivetrainSE(modeling_options=modeling_options))
+        self.add_subsystem("wt_prop", WT_RNTA_Prop(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
+        
+        if modeling_options["flags"]["blade"] or modeling_options["flags"]["nacelle"]:
+            self.add_subsystem("wt_rna", WT_RNA(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"])
 
         if modeling_options["flags"]["tower"]:
-            self.add_subsystem("towerse", TowerSE(modeling_options=modeling_options))
-
-        if modeling_options["flags"]["monopile"]:
-            self.add_subsystem("fixedse", MonopileSE(modeling_options=modeling_options))
-
-        elif modeling_options["flags"]["jacket"]:
-            self.add_subsystem("fixedse", JacketSE(modeling_options=modeling_options))
-
-        elif modeling_options["flags"]["floating"]:
-            self.add_subsystem("floatingse", FloatingSE(modeling_options=modeling_options))
+            self.add_subsystem("towerse", TowerSEPerf(modeling_options=modeling_options))
 
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
             self.add_subsystem("tcons", TurbineConstraints(modeling_options=modeling_options))
+
+        if modeling_options["flags"]["monopile"]:
+            self.add_subsystem("fixedse", MonopileSEPerf(modeling_options=modeling_options))
+
+        elif modeling_options["flags"]["jacket"]:
+            self.add_subsystem("fixedse", JacketSEPerf(modeling_options=modeling_options))
+
+        elif modeling_options["flags"]["floating"]:
+            self.add_subsystem("floatingse", FloatingSE(modeling_options=modeling_options))
 
         self.add_subsystem("tcc", Turbine_CostsSE_2015(verbosity=modeling_options["General"]["verbosity"]))
 
         if modeling_options["flags"]["blade"]:
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
 
-            self.connect("rotorse.ccblade.local_airfoil_velocities", "blade.compute_reynolds.local_airfoil_velocities")
             self.connect("blade.pa.chord_param", "blade.compute_reynolds.chord")
             self.connect("env.rho_air", "blade.compute_reynolds.rho")
             self.connect("env.mu_air", "blade.compute_reynolds.mu")
@@ -163,6 +204,8 @@ class WT_RNTA(om.Group):
             self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[3], "rotorse.rs.constr.s_opt_te_ps")
 
             # Connections to RotorPower
+            self.connect("rotorse.wt_class.V_mean", "rotorse.rp.cdf.xbar")
+            self.connect("rotorse.wt_class.V_mean", "rotorse.rp.gust.V_mean")
             self.connect("control.V_in", "rotorse.rp.v_min")
             self.connect("control.V_out", "rotorse.rp.v_max")
             self.connect("configuration.rated_power", "rotorse.rp.rated_power")
@@ -279,6 +322,7 @@ class WT_RNTA(om.Group):
                 self.connect("materials.fvf", "rotorse.rc.fvf")
                 self.connect("materials.roll_mass", "rotorse.rc.roll_mass")
 
+
         # Connections to DriveSE
         if modeling_options["flags"]["nacelle"]:
             self.connect("hub.diameter", "drivese.hub_diameter")
@@ -292,6 +336,9 @@ class WT_RNTA(om.Group):
             self.connect("hub.clearance_hub_spinner", "drivese.clearance_hub_spinner")
             self.connect("hub.spin_hole_incr", "drivese.spin_hole_incr")
             self.connect("hub.pitch_system_scaling_factor", "drivese.pitch_system_scaling_factor")
+            self.connect("hub.pitch_system_mass_user", "drivese.pitch_system_mass_user")
+            self.connect("hub.hub_shell_mass_user", "drivese.hub_shell_mass_user")
+            self.connect("hub.spinner_mass_user", "drivese.spinner_mass_user")
             self.connect("rotorse.wt_class.V_extreme50", "drivese.spinner_gust_ws")
 
             self.connect("configuration.n_blades", "drivese.n_blades")
@@ -305,8 +352,8 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["tower"]:
                 self.connect("tower.diameter", "drivese.D_top", src_indices=[-1])
 
-            self.connect("rotorse.rs.aero_hub_loads.Fhub", "drivese.F_hub")
-            self.connect("rotorse.rs.aero_hub_loads.Mhub", "drivese.M_hub")
+            self.connect("rotorse.rs.aero_hub_loads.Fhub", "drivese.F_aero_hub")
+            self.connect("rotorse.rs.aero_hub_loads.Mhub", "drivese.M_aero_hub")
             self.connect("rotorse.rs.frame.root_M", "drivese.pitch_system.BRFM", src_indices=[1])
 
             self.connect("blade.pa.chord_param", "drivese.blade_root_diameter", src_indices=[0])
@@ -335,6 +382,9 @@ class WT_RNTA(om.Group):
                 self.connect("nacelle.lss_diameter", "drivese.bear2.D_shaft", src_indices=[-1])
             self.connect("nacelle.uptower", "drivese.uptower")
             self.connect("nacelle.brake_mass_user", "drivese.brake_mass_user")
+            self.connect("nacelle.bedplate_mass_user", "drivese.bedplate_mass_user")
+            self.connect("nacelle.mb1_mass_user", "drivese.bear1.mb_mass_user")
+            self.connect("nacelle.mb2_mass_user", "drivese.bear2.mb_mass_user")
             self.connect("nacelle.hvac_mass_coeff", "drivese.hvac_mass_coeff")
             self.connect("nacelle.converter_mass_user", "drivese.converter_mass_user")
             self.connect("nacelle.transformer_mass_user", "drivese.transformer_mass_user")
@@ -372,6 +422,7 @@ class WT_RNTA(om.Group):
             self.connect("materials.wohler_intercept", "drivese.wohler_A_mat")
             self.connect("materials.unit_cost", "drivese.unit_cost_mat")
 
+            self.connect("generator.generator_mass_user", "drivese.generator_mass_user")
             if modeling_options["flags"]["generator"]:
                 self.connect("generator.B_r", "drivese.generator.B_r")
                 self.connect("generator.P_Fe0e", "drivese.generator.P_Fe0e")
@@ -465,7 +516,6 @@ class WT_RNTA(om.Group):
 
             else:
                 self.connect("generator.generator_radius_user", "drivese.generator_radius_user")
-                self.connect("generator.generator_mass_user", "drivese.generator_mass_user")
                 self.connect("generator.generator_efficiency_user", "drivese.generator_efficiency_user")
 
         # Connections to TowerSE
@@ -489,6 +539,7 @@ class WT_RNTA(om.Group):
             self.connect("tower_grid.s", "towerse.tower_s")
             self.connect("tower.layer_thickness", "towerse.tower_layer_thickness")
             self.connect("tower.outfitting_factor", "towerse.outfitting_factor_in")
+            self.connect("tower.tower_mass_user", "towerse.tower_mass_user")
             self.connect("tower.layer_mat", "towerse.tower_layer_materials")
             self.connect("materials.name", "towerse.material_names")
             self.connect("materials.E", "towerse.E_mat")
@@ -535,6 +586,8 @@ class WT_RNTA(om.Group):
             if modeling_options["WISDEM"]["FixedBottomSE"]["soil_springs"]:
                 self.connect("env.G_soil", "fixedse.G_soil")
                 self.connect("env.nu_soil", "fixedse.nu_soil")
+                self.connect("fixedse.soil.z_k", "fixedse.monopile.z_soil")
+                self.connect("fixedse.soil.k", "fixedse.monopile.k_soil")
             self.connect("env.Hsig_wave", "fixedse.Hsig_wave")
             self.connect("env.Tsig_wave", "fixedse.Tsig_wave")
             self.connect("monopile.diameter", "fixedse.monopile_outer_diameter_in")
@@ -551,6 +604,7 @@ class WT_RNTA(om.Group):
             self.connect("monopile.transition_piece_cost", "fixedse.transition_piece_cost")
             self.connect("monopile.transition_piece_mass", "fixedse.transition_piece_mass")
             self.connect("monopile.gravity_foundation_mass", "fixedse.gravity_foundation_mass")
+            self.connect("monopile.monopile_mass_user", "fixedse.monopile_mass_user")
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.nodes_xyz", "fixedse.tower_xyz")
                 self.connect("towerse.outer_diameter_full", "fixedse.tower_outer_diameter_full")
@@ -581,6 +635,7 @@ class WT_RNTA(om.Group):
             self.connect("jacket.brace_diameters", "fixedse.brace_diameters")
             self.connect("jacket.brace_thicknesses", "fixedse.brace_thicknesses")
             self.connect("jacket.bay_spacing", "fixedse.bay_spacing")
+            self.connect("jacket.jacket_mass_user", "fixedse.jacket_mass_user")
 
         if modeling_options["flags"]["floating"]:
             self.connect("env.rho_water", "floatingse.rho_water")
@@ -623,13 +678,41 @@ class WT_RNTA(om.Group):
                 self.connect("drivese.rna_mass", "floatingse.rna_mass")
 
             # Individual member connections
+            n_member = modeling_options["floating"]["members"]["n_members"]
+            for k in range(n_member):
+                member_shape = modeling_options["floating"]["members"]["outer_shape"][k]
+
+                self.connect(f"floatingse.member{k}.nodes_xyz_all", f"floatingse.member{k}:nodes_xyz")
+                self.connect(f"floatingse.member{k}.constr_ballast_capacity", f"floatingse.member{k}:constr_ballast_capacity")
+                
+                if member_shape == "circular":
+                    self.connect(f"floatingse.member{k}.ca_usr_grid_full", f"floatingse.memload{k}.ca_usr")
+                    self.connect(f"floatingse.member{k}.cd_usr_grid_full", f"floatingse.memload{k}.cd_usr")
+                    self.connect(f"floatingse.member{k}.outer_diameter_full", f"floatingse.memload{k}.outer_diameter_full")
+                elif member_shape == "rectangular":
+                    self.connect(f"floatingse.member{k}.ca_usr_grid_full", f"floatingse.memload{k}.ca_usr")
+                    self.connect(f"floatingse.member{k}.cay_usr_grid_full", f"floatingse.memload{k}.cay_usr")
+                    self.connect(f"floatingse.member{k}.cd_usr_grid_full", f"floatingse.memload{k}.cd_usr")
+                    self.connect(f"floatingse.member{k}.cdy_usr_grid_full", f"floatingse.memload{k}.cdy_usr")
+                    self.connect(f"floatingse.member{k}.side_length_a_full", f"floatingse.memload{k}.side_length_a_full")
+                    self.connect(f"floatingse.member{k}.side_length_b_full", f"floatingse.memload{k}.side_length_b_full")
+
+                for var in ["z_global", "s_full", "s_all"]:
+                    self.connect(f"floatingse.member{k}.{var}", f"floatingse.memload{k}.{var}")
+            
             for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
                 idx = modeling_options["floating"]["members"]["name2idx"][kname]
                 if modeling_options["floating"]["members"]["outer_shape"][k] == "circular":
                     self.connect(f"floating.memgrid{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
+                    self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"floatingse.member{k}.ca_usr_grid")
+                    self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"floatingse.member{k}.cd_usr_grid")
                 elif modeling_options["floating"]["members"]["outer_shape"][k] == "rectangular":
                     self.connect(f"floating.memgrid{idx}.side_length_a", f"floatingse.member{k}.side_length_a_in")
                     self.connect(f"floating.memgrid{idx}.side_length_b", f"floatingse.member{k}.side_length_b_in")
+                    self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"floatingse.member{k}.ca_usr_grid")
+                    self.connect(f"floating.memgrid{idx}.cay_usr_grid", f"floatingse.member{k}.cay_usr_grid")
+                    self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"floatingse.member{k}.cd_usr_grid")
+                    self.connect(f"floating.memgrid{idx}.cdy_usr_grid", f"floatingse.member{k}.cdy_usr_grid")
                 self.connect(f"floating.memgrid{idx}.layer_thickness", f"floatingse.member{k}.layer_thickness")
                 self.connect(f"floating.memgrp{idx}.outfitting_factor", f"floatingse.member{k}.outfitting_factor_in")
                 self.connect(f"floating.memgrp{idx}.s", f"floatingse.member{k}.s_in")
@@ -655,6 +738,8 @@ class WT_RNTA(om.Group):
                 ]:
                     self.connect(f"floating.memgrp{idx}.{var}", f"floatingse.member{k}.{var}")
 
+                self.connect(f"floating.memgrp{idx}.member_mass_user", f"floatingse.member{k}:mass_user")
+                    
                 for var in ["joint1", "joint2"]:
                     self.connect(f"floating.member_{kname}:{var}", f"floatingse.member{k}:{var}")
 
@@ -954,7 +1039,7 @@ class WindPark(om.Group):
                 if modeling_options["flags"]["offshore"]:
                     self.connect("orbit.total_capex_kW", "financese.bos_per_kW")
                 else:
-                    self.connect("landbosse.bos_capex_kW", "financese.bos_per_kW")
+                    self.connect("landbosse.total_capex_kW", "financese.bos_per_kW")
             else:
                 self.connect("costs.bos_per_kW", "financese.bos_per_kW")
 

@@ -13,9 +13,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-12, macos-13, macos-14]
 
     steps:
+      - name: Set up QEMU
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+        
       - name: Setup GNU Fortran
         if: false == contains( matrix.os, 'windows')
         uses: awvwgk/setup-fortran@v1
@@ -39,16 +45,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build wheels mac and linux
-        if: false == contains( matrix.os, 'windows')
-        uses: pypa/cibuildwheel@v2.17.0
+      - name: Build wheels linux
+        if: contains( matrix.os, 'ubuntu')
+        uses: pypa/cibuildwheel@v2.18.1
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
 
+      - name: Build wheels mac-12
+        if: contains( matrix.os, 'macos-12')
+        uses: pypa/cibuildwheel@v2.18.1
+        env:
+          CC: ${{ steps.install_cc.outputs.cc }}
+          CXX: ${{ steps.install_cc.outputs.cxx }}
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET="12.0"
+
+      - name: Build wheels mac-13
+        if: contains( matrix.os, 'macos-13')
+        uses: pypa/cibuildwheel@v2.18.1
+        env:
+          CC: ${{ steps.install_cc.outputs.cc }}
+          CXX: ${{ steps.install_cc.outputs.cxx }}
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET="13.0"
+
+      - name: Build wheels mac-14
+        if: contains( matrix.os, 'macos-14')
+        uses: pypa/cibuildwheel@v2.18.1
+        env:
+          CC: ${{ steps.install_cc.outputs.cc }}
+          CXX: ${{ steps.install_cc.outputs.cxx }}
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET="14.0"
+
       - name: Build wheels windows
         if: contains( matrix.os, 'windows')
-        uses: pypa/cibuildwheel@v2.17.0
+        uses: pypa/cibuildwheel@v2.18.1
           
       - uses: actions/upload-artifact@v4
         with:

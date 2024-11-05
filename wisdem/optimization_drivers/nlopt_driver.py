@@ -138,7 +138,6 @@ class NLoptDriver(Driver):
         self.supports["integer_design_vars"] = False
         self.supports._read_only = True
 
-        self.result = None
         self._grad_cache = None
         self._con_cache = None
         self._con_idx = {}
@@ -381,7 +380,6 @@ class NLoptDriver(Driver):
                 opt_prob.set_maxtime(self.options["maxtime"])
                 opt_prob.set_population(int(self.options["maxiter"] / self.options["numgen"]))
                 opt_prob.optimize(x_init)
-                self.result = opt_prob.last_optimize_result()
 
             else:
                 msg = 'Optimizer "{}" is not implemented yet. Choose from: {}'

@@ -493,6 +493,24 @@ properties:
                     spinner_material:
                         type: string
                         description: Material of the spinner
+                    hub_shell_mass_user:
+                        type: number
+                        description: User input override of hub shell mass calculation
+                        unit: kg
+                        minimum: 0.
+                        default: 0.0
+                    spinner_mass_user:
+                        type: number
+                        description: User input override of hub shell mass calculation
+                        unit: kg
+                        minimum: 0.
+                        default: 0.0
+                    pitch_system_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override regular regression-based calculation of pitch system mass with this value
+                        minimum: 0.0
                     elastic_properties_mb:
                         type: object
                         default: {}
@@ -752,6 +770,12 @@ properties:
                                 minimum: 0.
                                 maximum: 1.
                                 default: 0.05
+                            bedplate_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular calculation of bedplate mass with this value
+                                minimum: 0.0
                             brake_mass_user:
                                 type: number
                                 default: 0.0
@@ -790,6 +814,18 @@ properties:
                                 description: Type of bearing for second main bearing
                                 default: SRB
                                 enum: [CARB, CRB, SRB, TRB]
+                            mb1_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of first main bearing mass with this value
+                                minimum: 0.0
+                            mb2_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of second main bearing mass with this value
+                                minimum: 0.0
                             uptower:
                                 type: boolean
                                 description: If power electronics are located uptower (True) or at tower base (False)
@@ -1228,6 +1264,9 @@ properties:
                 required:
                     - outer_shape_bem
                     - internal_structure_2d_fem
+                optional:
+                    - tower_mass_user
+                    - elastic_properties_mb
                 properties:
                     outer_shape_bem:
                         type: object
@@ -1267,6 +1306,12 @@ properties:
                                 $ref: "#/definitions/beam/cp_lambda_beam"
                             six_x_six:
                                 $ref: "#/definitions/beam/six_x_six"
+                    tower_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total tower mass with this value
+                        minimum: 0.0
                     internal_structure_2d_fem:
                         type: object
                         required:
@@ -1320,6 +1365,7 @@ properties:
                     - transition_piece_mass
                     - transition_piece_cost
                     - gravity_foundation_mass
+                    - monopile_mass_user
                 properties:
                     transition_piece_mass: &m_tp
                         type: number
@@ -1339,6 +1385,12 @@ properties:
                         unit: kg
                         minimum: 0.0
                         default: 0.0
+                    monopile_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total monopile mass with this value
+                        minimum: 0.0
                     outer_shape:
                         type: object
                         required:
@@ -1438,10 +1490,17 @@ properties:
                     - transition_piece_mass
                     - transition_piece_cost
                     - gravity_foundation_mass
+                    - jacket_mass_user
                 properties:
                     transition_piece_mass: *m_tp
                     transition_piece_cost: *c_tp
                     gravity_foundation_mass: *g_fm
+                    jacket_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total jacket mass with this value
+                        minimum: 0.0
                     material:
                         type: string
                         description: Material of jacket members
@@ -1600,6 +1659,7 @@ properties:
                                 - Cp
                                 - Cd
                                 - Cdy
+                                - member_mass_user
                             properties:
                                 name:
                                     description: Name of the member
@@ -1608,6 +1668,12 @@ properties:
                                     type: string
                                     description: Name of joint/node connection
                                 joint2: *jointid
+                                member_mass_user:
+                                    type: number
+                                    default: 0.0
+                                    units: kg
+                                    description: Override bottom-up calculation of total member mass with this value
+                                    minimum: 0.0
                                 outer_shape:
                                     type: object
                                     required:
@@ -3081,7 +3147,7 @@ properties:
                 description: Capacity credit used to compute value in beyond lcoe metrics
                 minimum: 0.
                 maximum: 1.
-                default: 0.
+                default: 1.
             benchmark_price:
                 type: number
                 description: Benchmark price used to nondimensionalize value in beyond lcoe metrics

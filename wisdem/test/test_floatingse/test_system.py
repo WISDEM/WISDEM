@@ -80,20 +80,20 @@ class TestPlatform(unittest.TestCase):
             self.inputs[f"member{k}:section_G"][:1] = 4 * k * np.ones(1) + 1
             self.inputs[f"member{k}:section_TorsC"][:1] = 4 * k * np.ones(1) + 1
             self.inputs[f"member{k}:section_sigma_y"][:1] = 5 * k * np.ones(1) + 1
-            self.inputs[f"member{k}:idx_cb"] = 0
-            self.inputs[f"member{k}:buoyancy_force"] = 1e2
-            self.inputs[f"member{k}:displacement"] = 1e1
+            self.inputs[f"member{k}:idx_cb"] = np.array([ 0 ], dtype=np.int_)
+            self.inputs[f"member{k}:buoyancy_force"] = np.array([ 1e2 ])
+            self.inputs[f"member{k}:displacement"] = np.array([ 1e1 ])
             self.inputs[f"member{k}:center_of_buoyancy"] = self.inputs[f"member{k}:nodes_xyz"][:2, :].mean(axis=0)
             self.inputs[f"member{k}:center_of_mass"] = self.inputs[f"member{k}:nodes_xyz"][:2, :].mean(axis=0)
-            self.inputs[f"member{k}:total_mass"] = 1e3
-            self.inputs[f"member{k}:total_cost"] = 2e3
+            self.inputs[f"member{k}:total_mass"] = np.array([ 1e3 ])
+            self.inputs[f"member{k}:total_cost"] = np.array([ 2e3 ])
             self.inputs[f"member{k}:I_total"] = 1e2 + np.arange(6)
-            self.inputs[f"member{k}:Awater"] = 5.0
-            self.inputs[f"member{k}:Iwaterx"] = 15.0
-            self.inputs[f"member{k}:Iwatery"] = 15.0
+            self.inputs[f"member{k}:Awater"] = np.array([ 5.0 ])
+            self.inputs[f"member{k}:Iwaterx"] = np.array([ 15.0 ])
+            self.inputs[f"member{k}:Iwatery"] = np.array([ 15.0 ])
             self.inputs[f"member{k}:added_mass"] = np.arange(6)
-            self.inputs[f"member{k}:ballast_mass"] = 1e2
-            self.inputs[f"member{k}:variable_ballast_capacity"] = 10 + k
+            self.inputs[f"member{k}:ballast_mass"] = np.array([ 1e2 ])
+            self.inputs[f"member{k}:variable_ballast_capacity"] = np.array([ 10 + k ])
             self.inputs[f"member{k}:variable_ballast_spts"] = np.linspace(0, 0.5, 10)
             self.inputs[f"member{k}:variable_ballast_Vpts"] = np.arange(10)
             self.inputs[f"member{k}:waterline_centroid"] = self.inputs[f"member{k}:nodes_xyz"][:2, :2].mean(axis=0)
@@ -107,12 +107,12 @@ class TestPlatform(unittest.TestCase):
         self.inputs["mooring_fairlead_joints"] = np.array([[0.0, 0.0, 0.0], [0.5, 1.0, 0.0], [1.0, 0.0, 0.0]])
         self.inputs["mooring_stiffness"] = 5 * np.eye(6)
         self.inputs["transition_node"] = self.inputs["member5:nodes_xyz"][1, :]
-        self.inputs["turbine_mass"] = 1e4
+        self.inputs["turbine_mass"] = np.array([ 1e4 ])
         self.inputs["turbine_cg"] = np.array([0, 0, 50])
         self.inputs["turbine_I"] = 1e6 * np.ones(6)
-        self.inputs["transition_piece_mass"] = 1e3
-        self.inputs["transition_piece_cost"] = 3e3
-        self.inputs["rho_water"] = 1e3
+        self.inputs["transition_piece_mass"] = np.array([ 1e3 ])
+        self.inputs["transition_piece_cost"] = np.array([ 3e3 ])
+        self.inputs["rho_water"] = np.array([ 1e3 ])
 
     def testTetrahedron(self):
         myobj = sys.PlatformFrame(options=self.opt)
@@ -162,7 +162,7 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["platform_elem_E"][:6], 3 * np.arange(6) + 1)
         npt.assert_equal(self.outputs["platform_elem_G"][:6], 4 * np.arange(6) + 1)
         npt.assert_equal(self.outputs["platform_elem_sigma_y"][:6], 5 * np.arange(6) + 1)
-        self.assertEqual(self.outputs["platform_displacement"], 6e1)
+        npt.assert_equal(self.outputs["platform_displacement"], 6e1)
         centroid = np.array([0.375, 0.25, 0.25])
         R = np.zeros((6, 2))
         R[0,] = self.inputs["member0:nodes_xyz"][:2, :2].mean(axis=0) - centroid[:2]
@@ -176,12 +176,12 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["platform_centroid"], centroid)
         cg = (6e3 * centroid + 1e3 * np.array([0.0, 0.0, 1.0])) / 7e3
         npt.assert_equal(self.outputs["platform_hull_center_of_mass"], cg)
-        self.assertEqual(self.outputs["platform_ballast_mass"], 6e2)
-        self.assertEqual(self.outputs["platform_hull_mass"], 6e3 + 1e3 - 6e2)
-        self.assertEqual(self.outputs["platform_cost"], 6 * 2e3 + 3e3)
-        self.assertEqual(self.outputs["platform_Awater"], 30)
-        self.assertEqual(self.outputs["platform_Iwaterx"], 6 * 15 + 5 * np.sum(R[:, 1] ** 2))
-        self.assertEqual(self.outputs["platform_Iwatery"], 6 * 15 + 5 * np.sum(R[:, 0] ** 2))
+        npt.assert_equal(self.outputs["platform_ballast_mass"], 6e2)
+        npt.assert_equal(self.outputs["platform_hull_mass"], 6e3 + 1e3 - 6e2)
+        npt.assert_equal(self.outputs["platform_cost"], 6 * 2e3 + 3e3)
+        npt.assert_equal(self.outputs["platform_Awater"], 30)
+        npt.assert_equal(self.outputs["platform_Iwaterx"], 6 * 15 + 5 * np.sum(R[:, 1] ** 2))
+        npt.assert_equal(self.outputs["platform_Iwatery"], 6 * 15 + 5 * np.sum(R[:, 0] ** 2))
         npt.assert_equal(self.outputs["platform_added_mass"], 6 * np.arange(6))
         npt.assert_equal(self.outputs["platform_variable_capacity"], 10 + np.arange(6))
         npt.assert_equal(self.outputs["transition_piece_I"], 1e3 * 0.5**2 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
@@ -199,14 +199,14 @@ class TestPlatform(unittest.TestCase):
         myobj = sys.PlatformTurbineSystem()
         myobj.compute(self.inputs, self.outputs)
 
-        self.assertEqual(self.outputs["system_structural_mass"], 6e3 + 1e4 + 1e3)
+        npt.assert_equal(self.outputs["system_structural_mass"], 6e3 + 1e4 + 1e3)
         npt.assert_equal(
             self.outputs["system_structural_center_of_mass"],
             (6e3 * np.array([0.375, 0.25, 0.25]) + 1e3 * np.array([0.0, 0.0, 1.0]) + 1e4 * np.array([0.0, 0.0, 50.0]))
             / 1.7e4,
         )
-        self.assertEqual(self.outputs["variable_ballast_mass"], 6e4 - self.outputs["system_structural_mass"] - 3e3 / g)
-        self.assertAlmostEqual(
+        npt.assert_equal(self.outputs["variable_ballast_mass"], 6e4 - self.outputs["system_structural_mass"] - 3e3 / g)
+        npt.assert_almost_equal(
             self.outputs["constr_variable_margin"],
             self.outputs["variable_ballast_mass"] / 1e3 / (10 + np.arange(6)).sum(),
         )
@@ -223,7 +223,7 @@ class TestPlatform(unittest.TestCase):
                 + self.inputs[f"member{k}:nodes_xyz"][0, :]
             )
         cg_var = np.dot(V_frac, cg_mem) / (self.outputs["variable_ballast_mass"] / 1e3)
-        self.assertEqual(self.outputs["system_mass"], 6e3 + 1e4 + 1e3 + self.outputs["variable_ballast_mass"])
+        npt.assert_equal(self.outputs["system_mass"], 6e3 + 1e4 + 1e3 + self.outputs["variable_ballast_mass"])
         npt.assert_almost_equal(
             self.outputs["system_center_of_mass"],
             (
@@ -233,7 +233,7 @@ class TestPlatform(unittest.TestCase):
             / self.outputs["system_mass"],
         )
         npt.assert_array_less(self.outputs["platform_I_hull"], self.outputs["platform_I_total"])
-        self.assertEqual(self.outputs["platform_mass"], 6e3 + 1e3 + self.outputs["variable_ballast_mass"])
+        npt.assert_equal(self.outputs["platform_mass"], 6e3 + 1e3 + self.outputs["variable_ballast_mass"])
 
 
 class TestGroup(unittest.TestCase):

@@ -1,3 +1,5 @@
+"""Provides the jacket installation class and model."""
+
 __author__ = "Jake Nunemaker"
 __copyright__ = "Copyright 2021, National Renewable Energy Laboratory"
 __maintainer__ = "Jake Nunemaker"
@@ -16,7 +18,10 @@ from wisdem.orbit.core.logic import (
 )
 from wisdem.orbit.phases.install import InstallPhase
 from wisdem.orbit.core.exceptions import ItemNotFound
-from wisdem.orbit.phases.install.monopile_install.common import TransitionPiece, install_transition_piece
+from wisdem.orbit.phases.install.monopile_install.common import (
+    TransitionPiece,
+    install_transition_piece,
+)
 
 from .common import Jacket, install_jacket
 
@@ -52,7 +57,7 @@ class JacketInstallation(InstallPhase):
             "mass": "t",
             "unit_cost": "USD",
             "num_legs": "N (optional, default: 4)",
-            "foundation_type": "str (optional, 'piles' | 'suction', default: 'piles')",
+            "foundation_type": "str (optional, 'piles' | 'suction', default: 'piles')",  # noqa: E501
         },
         "transition_piece": {
             "deck_space": "m2 (optional)",
@@ -103,10 +108,12 @@ class JacketInstallation(InstallPhase):
         else:
             tp_unit_cost = 0.0
 
-        return (jacket_unit_cost + tp_unit_cost) * self.config["plant"]["num_turbines"]
+        return (jacket_unit_cost + tp_unit_cost) * self.config["plant"][
+            "num_turbines"
+        ]
 
     def initialize_substructure_delivery(self):
-        """ """
+        """Creates the simulated jacket delivery process."""
 
         jacket = Jacket(**self.config["jacket"])
 
@@ -125,8 +132,11 @@ class JacketInstallation(InstallPhase):
         self.supply_chain = self.config.get("jacket_supply_chain", {})
 
         if self.supply_chain.get("enabled", False):
+
             items = [jacket, self.tp] if self.tp else [jacket]
-            delivery_time = self.supply_chain.get("substructure_delivery_time", 168)
+            delivery_time = self.supply_chain.get(
+                "substructure_delivery_time", 168
+            )
             # storage = self.supply_chain.get("substructure_storage", "inf")
             supply_chain = SubstructureDelivery(
                 "Jacket",
@@ -134,7 +144,9 @@ class JacketInstallation(InstallPhase):
                 delivery_time,
                 self.port,
                 items,
-                num_parallel=self.supply_chain.get("num_substructures_delivered", 1),
+                num_parallel=self.supply_chain.get(
+                    "num_substructures_delivered", 1
+                ),
             )
 
             self.env.register(supply_chain)
@@ -149,8 +161,8 @@ class JacketInstallation(InstallPhase):
 
     def setup_simulation(self, **kwargs):
         """
-        Sets up simulation infrastructure, routing to specific methods dependent
-        on number of feeders.
+        Sets up simulation infrastructure, routing to specific methods
+        dependent on number of feeders.
         """
 
         if self.config.get("num_feeders", None):
@@ -164,7 +176,8 @@ class JacketInstallation(InstallPhase):
 
     def setup_simulation_without_feeders(self, **kwargs):
         """
-        Sets up infrastructure for turbine installation without feeder barges.
+        Creates the infrastructure for turbine installation without feeder
+        barges.
         """
 
         site_distance = self.config["site"]["distance"]
@@ -178,7 +191,9 @@ class JacketInstallation(InstallPhase):
         self.sets_per_trip = int(
             min(
                 np.floor(self.wtiv.storage.max_cargo_mass / self.set_mass),
-                np.floor(self.wtiv.storage.max_deck_space / self.set_deck_space),
+                np.floor(
+                    self.wtiv.storage.max_deck_space / self.set_deck_space
+                ),
             )
         )
 
@@ -196,7 +211,8 @@ class JacketInstallation(InstallPhase):
 
     def setup_simulation_with_feeders(self, **kwargs):
         """
-        Sets up infrastructure for turbine installation using feeder barges.
+        Creates the infrastructure for turbine installation using feeder
+        barges.
         """
 
         site_distance = self.config["site"]["distance"]
@@ -208,8 +224,13 @@ class JacketInstallation(InstallPhase):
 
         self.sets_per_trip = int(
             min(
-                np.floor(self.feeders[0].storage.max_cargo_mass / self.set_mass),
-                np.floor(self.feeders[0].storage.max_deck_space / self.set_deck_space),
+                np.floor(
+                    self.feeders[0].storage.max_cargo_mass / self.set_mass
+                ),
+                np.floor(
+                    self.feeders[0].storage.max_deck_space
+                    / self.set_deck_space
+                ),
             )
         )
 
@@ -224,7 +245,8 @@ class JacketInstallation(InstallPhase):
         )
 
         assignments = [
-            self.num_jackets // len(self.feeders) + (1 if x < self.num_jackets % len(self.feeders) else 0)
+            self.num_jackets // len(self.feeders)
+            + (1 if x < self.num_jackets % len(self.feeders) else 0)
             for x in range(len(self.feeders))
         ]
 
@@ -241,9 +263,7 @@ class JacketInstallation(InstallPhase):
             )
 
     def initialize_wtiv(self):
-        """
-        Initializes the WTIV simulation object and the onboard vessel storage.
-        """
+        """Creates the WTIV simulation object and onboard vessel storage."""
 
         wtiv_specs = self.config.get("wtiv", None)
         name = wtiv_specs.get("name", "WTIV")
@@ -257,16 +277,14 @@ class JacketInstallation(InstallPhase):
         self.wtiv = wtiv
 
     def initialize_feeders(self):
-        """
-        Initializes feeder barge objects.
-        """
+        """Initializes feeder barge objects."""
 
         number = self.config.get("num_feeders", None)
         feeder_specs = self.config.get("feeder", None)
 
         self.feeders = []
         for n in range(number):
-            name = "Feeder {}".format(n)
+            name = f"Feeder {n}"
 
             feeder = self.initialize_vessel(name, feeder_specs)
             self.env.register(feeder)
@@ -279,7 +297,8 @@ class JacketInstallation(InstallPhase):
     def initialize_queue(self):
         """
         Initializes the queue, modeled as a ``SimPy.Resource`` that feeders
-        join at site. This limits the simulation to one active feeder at a time.
+        join at site. This limits the simulation to one active feeder at a
+        time.
         """
 
         self.active_feeder = simpy.Resource(self.env, capacity=1)
@@ -301,14 +320,21 @@ class JacketInstallation(InstallPhase):
                 **self.agent_efficiencies,
                 **self.get_max_cargo_mass_utilzations(transport_vessels),
                 **self.get_max_deck_space_utilzations(transport_vessels),
-            }
+            },
         }
 
         return outputs
 
 
 @process
-def solo_install_jackets(vessel, port, distance, jackets, component_list, **kwargs):
+def solo_install_jackets(
+    vessel,
+    port,
+    distance,
+    jackets,
+    component_list,
+    **kwargs,
+):
     """
     Logic that a Wind Turbine Installation Vessel (WTIV) uses during a single
     jacket installation process.
@@ -331,13 +357,20 @@ def solo_install_jackets(vessel, port, distance, jackets, component_list, **kwar
         if vessel.at_port:
             try:
                 # Get substructure + transition piece from port
-                yield get_list_of_items_from_port_wait(vessel, port, component_list, **kwargs)
+                yield get_list_of_items_from_port_wait(
+                    vessel,
+                    port,
+                    component_list,
+                    **kwargs,
+                )
 
             except ItemNotFound:
                 # If no items are at port and vessel.storage.items is empty,
                 # the job is done
                 if not vessel.storage.items:
-                    vessel.submit_debug_log(message="Item not found. Shutting down.")
+                    vessel.submit_debug_log(
+                        message="Item not found. Shutting down."
+                    )
                     break
 
             # Transit to site
@@ -347,9 +380,14 @@ def solo_install_jackets(vessel, port, distance, jackets, component_list, **kwar
             vessel.at_site = True
 
         if vessel.at_site:
+
             if vessel.storage.items:
                 # Prep for jacket install
-                yield prep_for_site_operations(vessel, survey_required=True, **kwargs)
+                yield prep_for_site_operations(
+                    vessel,
+                    survey_required=True,
+                    **kwargs,
+                )
 
                 # Get jacket from internal storage
                 jacket = yield vessel.get_item_from_storage("Jacket", **kwargs)
@@ -357,7 +395,10 @@ def solo_install_jackets(vessel, port, distance, jackets, component_list, **kwar
 
                 # Get transition piece from internal storage if needed
                 if "TransitionPiece" in component_list:
-                    tp = yield vessel.get_item_from_storage("TransitionPiece", **kwargs)
+                    tp = yield vessel.get_item_from_storage(
+                        "TransitionPiece",
+                        **kwargs,
+                    )
 
                     yield install_transition_piece(vessel, tp, **kwargs)
 
@@ -375,7 +416,14 @@ def solo_install_jackets(vessel, port, distance, jackets, component_list, **kwar
 
 
 @process
-def install_jackets_from_queue(wtiv, queue, jackets, distance, component_list, **kwargs):
+def install_jackets_from_queue(
+    wtiv,
+    queue,
+    jackets,
+    distance,
+    component_list,
+    **kwargs,
+):
     """
     Logic that a Wind Turbine Installation Vessel (WTIV) uses to install
     jackets and transition pieces from queue of feeder barges.
@@ -405,13 +453,23 @@ def install_jackets_from_queue(wtiv, queue, jackets, distance, component_list, *
             wtiv.at_site = True
 
         if wtiv.at_site:
+
             if queue.vessel:
+
                 # Prep for jacket install
-                yield prep_for_site_operations(wtiv, survey_required=True, **kwargs)
+                yield prep_for_site_operations(
+                    wtiv,
+                    survey_required=True,
+                    **kwargs,
+                )
 
                 # Get jacket and tp
                 if "TransitionPiece" in component_list:
-                    jacket = yield wtiv.get_item_from_storage("Jacket", vessel=queue.vessel, **kwargs)
+                    jacket = yield wtiv.get_item_from_storage(
+                        "Jacket",
+                        vessel=queue.vessel,
+                        **kwargs,
+                    )
 
                     yield install_jacket(wtiv, jacket, **kwargs)
 
@@ -427,7 +485,12 @@ def install_jackets_from_queue(wtiv, queue, jackets, distance, component_list, *
                     yield install_transition_piece(wtiv, tp, **kwargs)
 
                 else:
-                    jacket = yield wtiv.get_item_from_storage("Jacket", vessel=queue.vessel, release=True, **kwargs)
+                    jacket = yield wtiv.get_item_from_storage(
+                        "Jacket",
+                        vessel=queue.vessel,
+                        release=True,
+                        **kwargs,
+                    )
 
                     yield install_jacket(wtiv, jacket, **kwargs)
 
@@ -439,7 +502,11 @@ def install_jackets_from_queue(wtiv, queue, jackets, distance, component_list, *
                 start = wtiv.env.now
                 yield queue.activate
                 delay_time = wtiv.env.now - start
-                wtiv.submit_action_log("Delay", delay_time, location="Site")
+                wtiv.submit_action_log(
+                    "Delay: Not enough vessels for jackets",
+                    delay_time,
+                    location="Site",
+                )
 
     # Transit to port
     wtiv.at_site = False

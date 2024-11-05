@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import warnings
+import time
 
 import numpy as np
 import openmdao.api as om
@@ -14,7 +15,7 @@ from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
 
 # Numpy deprecation warnings
-warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+warnings.filterwarnings("ignore", category=np.exceptions.VisibleDeprecationWarning)
 
 # Suppress the maxfev warnings is scipy _minpack_py, line:175
 warnings.simplefilter("ignore", RuntimeWarning, lineno=175)
@@ -28,6 +29,8 @@ if MPI:
 
 
 def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overridden_values=None, run_only=False):
+    t0 = time.time()
+    
     # Load all yaml inputs and validate (also fills in defaults)
     wt_initial = WindTurbineOntologyPython(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
@@ -42,7 +45,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         # Extract the number of cores available
         max_cores = MPI.COMM_WORLD.Get_size()
 
-        if max_cores > n_DV:
+        if max_cores > n_DV and opt_options["opt_flag"] and not run_only:
             raise ValueError(
                 "ERROR: please reduce the number of cores, currently set to "
                 + str(max_cores)
@@ -189,6 +192,9 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)
 
+    t1 = time.time()
+    print("Completed in,", t1-t0, "seconds")
+    
     if rank == 0:
         return wt_opt, modeling_options, opt_options
     else:

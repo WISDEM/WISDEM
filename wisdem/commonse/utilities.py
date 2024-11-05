@@ -5,9 +5,8 @@ Created by Andrew Ning on 2013-05-31.
 Copyright (c) NREL. All rights reserved.
 """
 
-from __future__ import print_function
-
-import copy
+import logging
+logger = logging.getLogger("wisdem/weis")
 
 import numpy as np
 from scipy.linalg import solve_banded
@@ -39,42 +38,47 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None, base_slope0=Tru
             y = y - dy[idx0] * xn
 
     # Get coefficients to 2-6th order polynomial
-    p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
+    p6_0 = np.polynomial.polynomial.polyfit(xn, y, deg)
 
     # Normalize for Elastodyn
     # The normalization shouldn't be less than 1e-5 otherwise OpenFAST has trouble in single prec
     if y.ndim > 1:
-        p6 = p6[2:, :]
+        p6 = p6_0[2:, :]
         tempsum = np.sum(p6, axis=0) + 1e-16  # Avoid divide by 0
         normval = np.maximum(np.abs(tempsum), 1e-5)
         normval *= np.sign(tempsum)
         p6 /= normval[np.newaxis, :]
     else:
-        p6 = p6[2:]
+        p6 = p6_0[2:]
         tempsum = p6.sum() + 1e-16  # Avoid divide by 0
         normval = np.maximum(np.abs(tempsum), 1e-5)
         normval *= np.sign(tempsum)
         p6 /= normval
 
-    return p6
+    return p6, p6_0
 
 
-def get_xyz_mode_shapes(
-    r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None, base_slope0=True, expect_all=True, rank_and_file=False
-):
+def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None, base_slope0=True, expect_all=True):
     # Number of frequencies and modes
     nfreq = len(freqs)
 
     # Get mode shapes in batch
     mpfs = np.abs(np.c_[xmpf, ympf, zmpf])
     displacements = np.vstack((xdsp, ydsp, zdsp)).T
-    polys = get_modal_coefficients(r, displacements, idx0=idx0, base_slope0=base_slope0)
+    polys, polys_raw = get_modal_coefficients(r, displacements, idx0=idx0, base_slope0=base_slope0)
+    poly_d1 = np.polynomial.polynomial.polyder(polys_raw, m=1, axis=0)
+
+    # Count the roots of the first derivative of the mode shape- First mode has zero, second has one, etc.
+    xx = np.linspace(0.05, 1-1e-4, 1000) # BC at 0 can mess with root counting
+    val_d1 = np.polynomial.polynomial.polyval(xx, poly_d1)
+    nroot_d1 = np.count_nonzero(np.diff(np.sign(val_d1), axis=1), axis=1)
+    
     xpolys = polys[:, :nfreq].T
     ypolys = polys[:, nfreq : (2 * nfreq)].T
     zpolys = polys[:, (2 * nfreq) :].T
-    ix = 0
-    iy = 0
-    iz = 0
+    xroot1 = nroot_d1[:nfreq]
+    yroot1 = nroot_d1[nfreq : (2 * nfreq)]
+    #zroot1 = nroot_d1[(2 * nfreq) :]
 
     # Containers and counters for the mode shapes
     nfreq2 = int(nfreq / 2)
@@ -85,78 +89,111 @@ def get_xyz_mode_shapes(
     freq_x = np.zeros(mysize)
     freq_y = np.zeros(mysize)
     freq_z = np.zeros(mysize)
+    ix = 0
+    iy = 0
+    iz = 0
 
-    # Filter the modeshapes by their mpfs
-    #   - guarauntees that no modeshapes are calculated at the same frequency,
-    #   - does not guarantee a modeshape in every direction
-    #   - does not guarantee exact modeshape orders
-    if not rank_and_file:
-        # Identify which mode is which and whether it is a valid mode
-        imode = np.argmax(mpfs, axis=1)
-        mpfs_ratio = np.abs(mpfs.max(axis=1) / (1e-16 + mpfs.min(axis=1)))  # Avoid divide by 0
+    # Identify which mode is which and whether it is a valid mode
+    idir = np.argmax(mpfs, axis=1)
+    mpfs_ratio = np.abs(mpfs.max(axis=1) / (1e-16 + mpfs.min(axis=1)))  # Avoid divide by 0
 
-        for m in range(nfreq):
-            if np.isnan(freqs[m]) or (freqs[m] < 1e-1) or (mpfs_ratio[m] < 1e3) or (mpfs[m, :].max() < 1e-13):
+    for m in range(nfreq):
+        if np.isnan(freqs[m]) or (freqs[m] < 1e-1) or (mpfs_ratio[m] < 1e3) or (mpfs[m, :].max() < 1e-13):
+            continue
+        
+        if idir[m] == 0:
+            if expect_all and ix >= nfreq2:
                 continue
-            if imode[m] == 0:
-                if expect_all and ix >= nfreq2:
-                    continue
-                mshapes_x[ix, :] = xpolys[m, :]
-                freq_x[ix] = freqs[m]
-                ix += 1
-            elif imode[m] == 1:
-                if expect_all and iy >= nfreq2:
-                    continue
-                mshapes_y[iy, :] = ypolys[m, :]
-                freq_y[iy] = freqs[m]
-                iy += 1
-            elif imode[m] == 2:
-                if expect_all and iz >= nfreq2:
-                    continue
-                mshapes_z[iz, :] = zpolys[m, :]
-                freq_z[iz] = freqs[m]
-                iz += 1
+            imode = xroot1[m]
+            if imode != ix and ix<2:
+                logger.debug(f"WARNING: Freq no. {m}, x-dir: Mode numbder identified as {imode+1} going into slot {ix+1}")
+            mshapes_x[ix, :] = xpolys[m, :]
+            freq_x[ix] = freqs[m]
+            ix += 1
+        elif idir[m] == 1:
+            if expect_all and iy >= nfreq2:
+                continue
+            imode = yroot1[m]
+            if imode != iy and iy<2:
+                logger.debug(f"WARNING: Freq no. {m}, y-dir: Mode numbder identified as {imode+1} going into slot {iy+1}")
+            mshapes_y[iy, :] = ypolys[m, :]
+            freq_y[iy] = freqs[m]
+            iy += 1
+        elif idir[m] == 2:
+            if expect_all and iz >= nfreq2:
+                continue
+            # Torsional modes are not well captured by Frame3DD
+            #imode = zroot1[m]
+            #if imode != iz and iz<2:
+            #    logger.debug(f"WARNING: Freq no. {m}, z-dir: Mode numbder identified as {imode+1} going into slot {iz+1}")
+            mshapes_z[iz, :] = zpolys[m, :]
+            freq_z[iz] = freqs[m]
+            iz += 1
+    '''
     # "Rank and file" the modeshapes by their mpfs and order
     # Filter the modeshapes by their mpfs
     #   - does guarauntees that modeshapes are calculated at different frequencies,
     #   - guarantees a modeshape in every direction
     #   - guarantees exact modeshape orders
-    else:
+    if rank_and_file:
         idyn = np.where(freqs > 1e-1)[0]
         freqs_dyn = freqs[idyn]
+        ndyn = freqs_dyn.size
         eps = 1e-12
         dummy_span = np.linspace(0.0 + eps, 1.0 - eps, 100)
-        defl_numbers = np.zeros((freqs_dyn.size, 3))
-        for j, polys in enumerate([xpolys, ypolys, zpolys]):
-            poly_dyn = polys[idyn, :]
-            for i, p in enumerate(poly_dyn):
-                pf = np.r_[np.zeros(2), p]
-                p_1deriv = np.polynomial.polynomial.polyder(pf, m=1, axis=0)
-                p_1val = np.polynomial.polynomial.polyval(dummy_span, p_1deriv)
-                dnx1 = np.count_nonzero(np.sign(p_1val[:-1]) != np.sign(p_1val[1:]))
-
-                p_2deriv = np.polynomial.polynomial.polyder(pf, m=2, axis=0)
-                p_2val = np.polynomial.polynomial.polyval(dummy_span, p_2deriv)
-                dnx2 = np.count_nonzero(np.sign(p_2val[:-1]) != np.sign(p_2val[1:]))
-
-                # Check second derivative for higher order modes
-                if dnx2 >= defl_numbers[i, j]:  # Should only exist for higher order but monotonically increasing modes
-                    defl_numbers[i, j] = dnx2 + 1
+        defl_numbers = np.zeros((ndyn, 3))
+        xmpf_dyn = np.abs(xmpf[idyn])
+        ympf_dyn = np.abs(ympf[idyn])
+        zmpf_dyn = np.abs(zmpf[idyn])
+        xpolys_dyn = xpolys[idyn, :]
+        ypolys_dyn = ypolys[idyn, :]
+        zpolys_dyn = zpolys[idyn, :]
+        polys_dyn = np.vstack((xpolys_dyn, ypolys_dyn, zpolys_dyn))
+        pf = np.hstack((np.zeros((polys_dyn.shape[0], 2)),
+                        polys_dyn))
+        p_1deriv = np.polynomial.polynomial.polyder(pf, m=1, axis=1)
+        p_2deriv = np.polynomial.polynomial.polyder(pf, m=2, axis=1)
+        p_1val   = np.polynomial.polynomial.polyval(dummy_span, p_1deriv.T)
+        p_2val   = np.polynomial.polynomial.polyval(dummy_span, p_2deriv.T)
+        dnx1 = np.count_nonzero(np.diff(np.sign(p_1val), axis=1), axis=1)
+        dnx2 = np.count_nonzero(np.diff(np.sign(p_2val), axis=1), axis=1)
+        # Check second derivative for higher order modes
+        for i in range(ndyn):
+            for j in range(3):
+                k = j*ndyn + i
+                # Should only exist for higher order but monotonically increasing modes
+                if dnx2[k] >= defl_numbers[i, j]:
+                    defl_numbers[i, j] = dnx2[k] + 1
                 else:
-                    defl_numbers[i, j] = dnx1
+                    defl_numbers[i, j] = dnx1[k]
+        
+        #for j, polys in enumerate([xpolys, ypolys, zpolys]):
+        #    poly_dyn = polys[idyn, :]
+        #    for i, p in enumerate(poly_dyn):
+        #        pf = np.r_[np.zeros(2), p]
+        #        p_1deriv = np.polynomial.polynomial.polyder(pf, m=1, axis=0)
+        #        p_1val = np.polynomial.polynomial.polyval(dummy_span, p_1deriv)
+        #        dnx1 = np.count_nonzero(np.sign(p_1val[:-1]) != np.sign(p_1val[1:]))
+
+        #        p_2deriv = np.polynomial.polynomial.polyder(pf, m=2, axis=0)
+        #        p_2val = np.polynomial.polynomial.polyval(dummy_span, p_2deriv)
+        #        dnx2 = np.count_nonzero(np.sign(p_2val[:-1]) != np.sign(p_2val[1:]))
+
+        #        # Check second derivative for higher order modes
+        #        if dnx2 >= defl_numbers[i, j]:  # Should only exist for higher order but monotonically increasing modes
+        #            defl_numbers[i, j] = dnx2 + 1
+        #        else:
+        #            defl_numbers[i, j] = dnx1
 
         def record_used_freqs(polyidx, i, used_freq_idx):
             directions = ["x", "y", "z"]
             if polyidx in used_freq_idx and i < 3:
-                print(
+                logger.debug(
                     f"WARNING: Frequency index {polyidx} has been used again for i={i} in the {directions[i]}-direction"
                 )
             used_freq_idx.append(polyidx)
             return used_freq_idx
 
-        xmpf_dyn = np.abs(xmpf[freqs > 1e-1])
-        ympf_dyn = np.abs(ympf[freqs > 1e-1])
-        zmpf_dyn = np.abs(zmpf[freqs > 1e-1])
         used_freq_idx = []
         for i in range(mysize):
             # Number of unique mode shape orders
@@ -171,7 +208,7 @@ def get_xyz_mode_shapes(
             x_polyidx = mode_freq_idx[
                 np.argsort(-xmpf_dyn[mode_freq_idx])[min(ix, len(mode_freq_idx) - 1)]
             ]  # find index for i'th or the "next" i'th desired mode shape polynomial
-            mshapes_x[i, :] = xpolys[freqs > 1e-1, :][x_polyidx, :]
+            mshapes_x[i, :] = xpolys_dyn[x_polyidx, :]
             freq_x[i] = freqs_dyn[x_polyidx]
             used_freq_idx = record_used_freqs(x_polyidx, i, used_freq_idx)
 
@@ -186,7 +223,7 @@ def get_xyz_mode_shapes(
             y_polyidx = mode_freq_idx[
                 np.argsort(-ympf_dyn[mode_freq_idx])[min(iy, len(mode_freq_idx) - 1)]
             ]  # find index for i'th or the "next" i'th desired mode shape polynomial
-            mshapes_y[i, :] = ypolys[freqs > 1e-1, :][y_polyidx, :]
+            mshapes_y[i, :] = ypolys_dyn[y_polyidx, :]
             freq_y[i] = freqs_dyn[y_polyidx]
             used_freq_idx = record_used_freqs(y_polyidx, i, used_freq_idx)
 
@@ -200,9 +237,10 @@ def get_xyz_mode_shapes(
             z_polyidx = mode_freq_idx[
                 np.argsort(-zmpf_dyn[mode_freq_idx])[min(iz, len(mode_freq_idx) - 1)]
             ]  # find index for i'th or the "next" i'th desired mode shape polynomial
-            mshapes_z[i, :] = zpolys[freqs > 1e-1, :][z_polyidx, :]
+            mshapes_z[i, :] = zpolys_dyn[z_polyidx, :]
             freq_z[i] = freqs_dyn[z_polyidx]
             used_freq_idx = record_used_freqs(z_polyidx, i, used_freq_idx)
+    '''
 
     return freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z
 

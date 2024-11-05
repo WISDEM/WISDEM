@@ -159,7 +159,7 @@ class PowerWind(WindBase):
     def compute(self, inputs, outputs):
         # rename
         z = inputs["z"]
-        if isinstance(z, float) or isinstance(z, np.float_):
+        if isinstance(z, float) or isinstance(z, np.float64):
             z = np.array([z])
         zref = float(inputs["zref"][0])
         z0 = float(inputs["z0"][0])
@@ -185,7 +185,7 @@ class PowerWind(WindBase):
     def compute_partials(self, inputs, J):
         # rename
         z = inputs["z"]
-        if isinstance(z, float) or isinstance(z, np.float_):
+        if isinstance(z, float) or isinstance(z, np.float64):
             z = np.array([z])
         zref = inputs["zref"]
         z0 = inputs["z0"]
@@ -262,7 +262,7 @@ class LogWind(WindBase):
     def compute(self, inputs, outputs):
         # rename
         z = inputs["z"]
-        if isinstance(z, float) or isinstance(z, np.float_):
+        if isinstance(z, float) or isinstance(z, np.float64):
             z = np.array([z])
         zref = float(inputs["zref"][0])
         z0 = float(inputs["z0"][0])
@@ -276,7 +276,7 @@ class LogWind(WindBase):
     def compute_partials(self, inputs, J):
         # rename
         z = inputs["z"]
-        if isinstance(z, float) or isinstance(z, np.float_):
+        if isinstance(z, float) or isinstance(z, np.float64):
             z = np.array([z])
         zref = float(inputs["zref"][0])
         z0 = float(inputs["z0"][0])

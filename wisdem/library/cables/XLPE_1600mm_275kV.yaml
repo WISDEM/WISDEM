@@ -1,0 +1,10 @@
+ac_resistance: 0.022    # ohm/km
+capacitance: 221        # nF/km
+conductor_size: 1600    # mm^2
+cost_per_km: 1500000    # $
+current_capacity: 730   # A # ESTIMATE
+inductance: 0.35        # mH/km
+linear_density: 176     # t/km
+rated_voltage: 275      # kV
+cable_type: HVAC        # HVDC vs HVAC
+name: XLPE_1600mm_275kV

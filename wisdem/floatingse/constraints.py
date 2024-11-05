@@ -53,10 +53,10 @@ class FloatingConstraints(om.ExplicitComponent):
         n_member = opt["floating"]["members"]["n_members"]
 
         # Unpack inputs
-        Hsig = float(inputs["Hsig_wave"])
-        fairlead = np.abs(float(inputs["fairlead"]))
-        R_fairlead = float(inputs["fairlead_radius"])
-        max_heel = float(inputs["survival_heel"])
+        Hsig = float(inputs["Hsig_wave"][0])
+        fairlead = np.abs(float(inputs["fairlead"][0]))
+        R_fairlead = float(inputs["fairlead_radius"][0])
+        max_heel = float(inputs["survival_heel"][0])
         cg = inputs["system_center_of_mass"]
         gamma = 1.1
 
@@ -169,15 +169,15 @@ class RigidModes(om.ExplicitComponent):
         nDOF = 6
 
         # Unpack variables
-        rhoWater = inputs["rho_water"]
-        m_system = inputs["system_mass"]
+        rhoWater = float(inputs["rho_water"][0])
+        m_system = float(inputs["system_mass"][0])
         I_system = inputs["system_I"]
-        z_cg = inputs["system_center_of_mass"][-1]
+        z_cg = float(inputs["system_center_of_mass"][-1])
         A_mat = inputs["platform_added_mass"]
-        V_system = inputs["platform_displacement"]
-        h_metacentric_roll = inputs["metacentric_height_roll"]
-        h_metacentric_pitch = inputs["metacentric_height_pitch"]
-        Awater = inputs["platform_Awater"]
+        V_system = float(inputs["platform_displacement"][0])
+        h_metacentric_roll = float(inputs["metacentric_height_roll"][0])
+        h_metacentric_pitch = float(inputs["metacentric_height_pitch"][0])
+        Awater = float(inputs["platform_Awater"][0])
         K_moor = np.diag(inputs["mooring_stiffness"])
 
         # Compute elements on mass matrix diagonal

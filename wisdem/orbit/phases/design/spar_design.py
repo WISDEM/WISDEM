@@ -1,4 +1,4 @@
-"""Provides the `SparDesign` class (from OffshoreBOS)."""
+"""Provides the `SparDesign` class."""
 
 __author__ = "Jake Nunemaker"
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
@@ -10,9 +10,14 @@ from numpy import exp, log
 
 from wisdem.orbit.phases.design import DesignPhase
 
+"""
+[1] Maness et al. 2017, NREL Offshore Balance-of-System Model.
+https://www.nrel.gov/docs/fy17osti/66874.pdf
+"""
+
 
 class SparDesign(DesignPhase):
-    """Spar Substructure Design"""
+    """Spar Substructure Design."""
 
     expected_config = {
         "site": {"depth": "m"},
@@ -33,7 +38,7 @@ class SparDesign(DesignPhase):
             "ballasted_mass": "t",
             "unit_cost": "USD",
             "towing_speed": "km/h",
-        }
+        },
     }
 
     def __init__(self, config, **kwargs):
@@ -65,8 +70,8 @@ class SparDesign(DesignPhase):
 
     @property
     def stiffened_column_mass(self):
-        """
-        Calculates the mass of the stiffened column for a single spar in tonnes. From original OffshoreBOS model.
+        """Calculates the mass of the stiffened column for a single spar
+        in tonnes [1].
         """
 
         rating = self.config["turbine"]["turbine_rating"]
@@ -78,8 +83,8 @@ class SparDesign(DesignPhase):
 
     @property
     def tapered_column_mass(self):
-        """
-        Calculates the mass of the atpered column for a single spar in tonnes. From original OffshoreBOS model.
+        """Calculates the mass of the tapered column for a single
+        spar in tonnes [1].
         """
 
         rating = self.config["turbine"]["turbine_rating"]
@@ -90,71 +95,80 @@ class SparDesign(DesignPhase):
 
     @property
     def stiffened_column_cost(self):
-        """
-        Calculates the cost of the stiffened column for a single spar. From original OffshoreBOS model.
+        """Calculates the cost of the stiffened column for a single spar
+        [1].
         """
 
-        cr = self._design.get("stiffened_column_CR", 3120)
+        _key = "stiffened_column_CR"
+        cr = self._design.get(_key, self.get_default_cost("spar_design", _key))
+
         return self.stiffened_column_mass * cr
 
     @property
     def tapered_column_cost(self):
-        """
-        Calculates the cost of the tapered column for a single spar. From original OffshoreBOS model.
-        """
+        """Calculates the cost of the tapered column for a single spar [1]."""
 
-        cr = self._design.get("tapered_column_CR", 4220)
+        _key = "tapered_column_CR"
+        cr = self._design.get(_key, self.get_default_cost("spar_design", _key))
+
         return self.tapered_column_mass * cr
 
     @property
     def ballast_mass(self):
-        """
-        Calculates the ballast mass of a single spar. From original OffshoreBOS model.
-        """
+        """Calculates the ballast mass of a single spar [1]."""
 
         rating = self.config["turbine"]["turbine_rating"]
+
         mass = -16.536 * rating**2 + 1261.8 * rating - 1554.6
 
         return mass
 
     @property
     def ballast_cost(self):
-        """
-        Calculates the cost of ballast material for a single spar. From original OffshoreBOS model.
-        """
+        """Calculates the cost of ballast material for a single spar [1]."""
 
-        cr = self._design.get("ballast_material_CR", 100)
+        _key = "ballast_material_CR"
+        cr = self._design.get(_key, self.get_default_cost("spar_design", _key))
+
         return self.ballast_mass * cr
 
     @property
     def secondary_steel_mass(self):
-        """
-        Calculates the mass of the required secondary steel for a single
-        spar. From original OffshoreBOS model.
+        """Calculates the mass of the required secondary steel for a single
+        spar [1].
         """
 
         rating = self.config["turbine"]["turbine_rating"]
         depth = self.config["site"]["depth"]
 
-        mass = exp(3.58 + 0.196 * (rating**0.5) * log(rating) + 0.00001 * depth * log(depth))
+        mass = exp(
+            3.58
+            + 0.196 * (rating**0.5) * log(rating)
+            + 0.00001 * depth * log(depth)
+        )
 
         return mass
 
     @property
     def secondary_steel_cost(self):
-        """
-        Calculates the cost of the required secondary steel for a single
-        spar. For original OffshoreBOS model.
+        """Calculates the cost of the required secondary steel for a single
+        spar [1].
         """
 
-        cr = self._design.get("secondary_steel_CR", 7250)
+        _key = "secondary_steel_CR"
+        cr = self._design.get(_key, self.get_default_cost("spar_design", _key))
+
         return self.secondary_steel_mass * cr
 
     @property
     def unballasted_mass(self):
         """Returns the unballasted mass of the spar substructure."""
 
-        return self.stiffened_column_mass + self.tapered_column_mass + self.secondary_steel_mass
+        return (
+            self.stiffened_column_mass
+            + self.tapered_column_mass
+            + self.secondary_steel_mass
+        )
 
     @property
     def ballasted_mass(self):
@@ -164,9 +178,17 @@ class SparDesign(DesignPhase):
 
     @property
     def substructure_cost(self):
-        """Returns the total cost (including ballast) of the spar substructure."""
+        """
+        Returns the total cost (including ballast) of the spar
+        substructure.
+        """
 
-        return self.stiffened_column_cost + self.tapered_column_cost + self.secondary_steel_cost + self.ballast_cost
+        return (
+            self.stiffened_column_cost
+            + self.tapered_column_cost
+            + self.secondary_steel_cost
+            + self.ballast_cost
+        )
 
     @property
     def detailed_output(self):
@@ -194,7 +216,7 @@ class SparDesign(DesignPhase):
 
     @property
     def design_result(self):
-        """Returns the result of `self.run()`"""
+        """Returns the result of `self.run()`."""
 
         if not self._outputs:
             raise Exception("Has `SparDesign` been ran yet?")

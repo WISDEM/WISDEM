@@ -598,15 +598,15 @@ class LandBOSSE_API(om.ExplicitComponent):
         commissioning_per_kW = bos_per_kw * commissioning_pct
         decomissioning_per_kW = bos_per_kw * decommissioning_pct
 
-        outputs["total_capex_kW"] = np.round(bos_per_kw + commissioning_per_kW + decomissioning_per_kW, 0)
-        outputs["total_capex"] = np.round(bos_per_project + commissioning_per_project + decomissioning_per_project, 0)
-        outputs["bos_capex"] = round(bos_per_project, 0)
-        outputs["bos_capex_kW"] = round(bos_per_kw, 0)
-        outputs["installation_capex"] = round(installation_per_project, 0)
-        outputs["installation_capex_kW"] = round(installation_per_kW, 0)
+        outputs["total_capex_kW"] = bos_per_kw + commissioning_per_kW + decomissioning_per_kW
+        outputs["total_capex"] = bos_per_project + commissioning_per_project + decomissioning_per_project
+        outputs["bos_capex"] = bos_per_project
+        outputs["bos_capex_kW"] = bos_per_kw
+        outputs["installation_capex"] = installation_per_project
+        outputs["installation_capex_kW"] = installation_per_kW
 
         actual_construction_months = master_output_dict["actual_construction_months"]
-        outputs["installation_time_months"] = round(actual_construction_months, 0)
+        outputs["installation_time_months"] = actual_construction_months
 
     def modify_component_lists(self, inputs, discrete_inputs):
         """

@@ -71,6 +71,10 @@ def rectangular_Ca(AR):
 
     return ca, dca_dAR
 
+def make_float(x):
+    #return x if isinstance(x, float) else float(x[0])
+    return float(x[0]) if type(x) in [np.ndarray, list] else float(x)
+
 class CrossSection(object):
     def __init__(
         self, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, J0=0.0, E=0.0, G=0.0, rho=0.0, TorsC=0.0, sigy=0.0
@@ -87,6 +91,20 @@ class CrossSection(object):
         self.rho = 1e-2
         self.E, self.G, self.sigy = 1e2 * self.E, 1e2 * self.G, 1e2 * self.sigy
 
+    def make_float(self):
+        self.t = make_float(self.t)
+        self.A = make_float(self.A)
+        self.Asx = make_float(self.Asx)
+        self.Asy = make_float(self.Asy)
+        self.Ixx = make_float(self.Ixx)
+        self.Iyy = make_float(self.Iyy)
+        self.J0 = make_float(self.J0)
+        self.E = make_float(self.E)
+        self.G = make_float(self.G)
+        self.rho = make_float(self.rho)
+        self.TorsC = make_float(self.TorsC)
+        self.sigy = make_float(self.sigy)
+
 class CircCrossSection(CrossSection):
     def __init__(
         self, D=0.0, t=0.0, A=0.0, Asx=0.0, Asy=0.0, Ixx=0.0, Iyy=0.0, J0=0.0, E=0.0, G=0.0, rho=0.0, TorsC=0.0, sigy=0.0
@@ -97,6 +115,10 @@ class CircCrossSection(CrossSection):
     def make_ghost(self):
         super().make_ghost()
         self.D = 1e-2
+
+    def make_float(self):
+        super().make_float()
+        self.D = make_float(self.D)
 
 class RectCrossSection(CrossSection):
     def __init__(
@@ -109,6 +131,11 @@ class RectCrossSection(CrossSection):
         super().make_ghost()
         self.a = 1e-2
         self.b = 1e-2
+
+    def make_float(self):
+        super().make_float()
+        self.a = make_float(self.a)
+        self.b = make_float(self.b)
 
 
 def get_nfull(npts, nref=NREFINE):
@@ -344,8 +371,8 @@ class DiscretizationYAML(om.ExplicitComponent):
         lthick = 0.5 * (lthick[:, :-1] + lthick[:, 1:])
 
         s_param = inputs["s_in"].flatten()
-        s0 = float(inputs["s_const1"])  # If we need a constant section at beginning
-        s1 = float(inputs["s_const2"])  # If we need a constant section at end
+        s0 = make_float(inputs["s_const1"])  # If we need a constant section at beginning
+        s1 = make_float(inputs["s_const2"])  # If we need a constant section at end
         if s0 > 0:
             icheck = np.where(s_param > s0 + 1e-3)[0][0]
             s_param = np.r_[0.0, np.linspace(s0, s_param[icheck], icheck), s_param[(icheck + 1) :]]
@@ -500,7 +527,7 @@ class DiscretizationYAML(om.ExplicitComponent):
             iname = ballast_mat[k]
 
             if iname.find("water") >= 0 or iname == "":
-                rho_ballast[k] = inputs["rho_water"]
+                rho_ballast[k] = make_float(inputs["rho_water"])
                 continue
 
             # Get the index into the material list
@@ -590,7 +617,10 @@ class MemberDiscretization(om.ExplicitComponent):
         self.add_input("s", val=np.zeros(n_height))
         self.add_input("height", val=0.0, units="m")
         for dv in member_shape_variables:
-            self.add_input(dv, np.zeros(n_height), units="m")
+            if "diameter" in dv or "length" in dv:
+                self.add_input(dv, np.zeros(n_height), units="m")
+            else:
+                self.add_input(dv, np.zeros(n_height))
         self.add_input("wall_thickness", np.zeros(n_height - 1), units="m")
         self.add_input("E", val=np.zeros(n_height - 1), units="Pa")
         self.add_input("G", val=np.zeros(n_height - 1), units="Pa")
@@ -605,7 +635,10 @@ class MemberDiscretization(om.ExplicitComponent):
         self.add_output("z_full", np.zeros(n_full), units="m")
         # self.add_output("d_full", np.zeros(n_full), units="m")
         for dv in member_shape_variables:
-            self.add_output(dv+"_full", np.zeros(n_full), units="m")
+            if "diameter" in dv or "length" in dv:
+                self.add_output(dv+"_full", np.zeros(n_full), units="m")
+            else:
+                self.add_output(dv+"_full", np.zeros(n_full))
         self.add_output("t_full", np.zeros(n_full - 1), units="m")
         self.add_output("E_full", val=np.zeros(n_full - 1), units="Pa")
         self.add_output("G_full", val=np.zeros(n_full - 1), units="Pa")
@@ -703,18 +736,18 @@ class ShellMassCost(om.ExplicitComponent):
         Labor cost rate
     painting_cost_rate : float, [USD/m/m]
         Painting / surface finishing cost rate
+    shell_mass_user : float [kg]
+        User override of total cylinder mass
 
     Returns
     -------
-    cost : float, [USD]
+    shell_cost : float, [USD]
         Total cylinder cost
-    mass : numpy array[n_full-1], [kg]
+    shell_mass : numpy array[n_full-1], [kg]
         Total cylinder mass
-    center_of_mass : float, [m]
+    shell_z_cg : float, [m]
         z-position of center of mass of cylinder
-    section_center_of_mass : numpy array[n_full-1], [m]
-        z position of center of mass of each can in the cylinder
-    I_base : numpy array[6], [kg*m**2]
+    shell_I_base : numpy array[6], [kg*m**2]
         mass moment of inertia of cylinder about base [xx yy zz xy xz yz]
 
     """
@@ -739,6 +772,7 @@ class ShellMassCost(om.ExplicitComponent):
         self.add_input("unit_cost_full", val=np.zeros(n_full - 1), units="USD/kg")
         self.add_input("labor_cost_rate", 0.0, units="USD/min")
         self.add_input("painting_cost_rate", 0.0, units="USD/m/m")
+        self.add_input("shell_mass_user", val=0.0, units="kg")        
 
         self.add_output("labor_hours", val=0.0, units="h")
         self.add_output("shell_cost", val=0.0, units="USD")
@@ -761,8 +795,8 @@ class ShellMassCost(om.ExplicitComponent):
     def compute(self, inputs, outputs):
         # Unpack inputs
         s_full = inputs["s_full"]
-        s_ghost1 = float(inputs["s_ghost1"])
-        s_ghost2 = float(inputs["s_ghost2"])
+        s_ghost1 = make_float(inputs["s_ghost1"])
+        s_ghost2 = make_float(inputs["s_ghost2"])
         outer_diameter_full = inputs["outer_diameter_full"]
         t_full = inputs["t_full"]
         rho = inputs["rho_full"]
@@ -771,6 +805,7 @@ class ShellMassCost(om.ExplicitComponent):
         sigymat = inputs["sigma_y_full"]
         coeff = inputs["outfitting_full"]
         d_sec, _ = util.nodal2sectional(outer_diameter_full)
+        mass_user = make_float(inputs["shell_mass_user"])
 
         mysections = []
         itube = cs.Tube(d_sec, t_full)
@@ -834,6 +869,8 @@ class ShellMassCost(om.ExplicitComponent):
         # Total mass of cylinder
         V_shell = frustum.frustumShellVol(Rb, Rt, t_full, H)
         mass = coeff * rho * V_shell
+        coeff_user = 1.0 if mass_user == 0.0 else mass_user/mass.sum()
+        mass *= coeff_user
         outputs["shell_mass"] = mass.sum()
 
         # Center of mass
@@ -841,8 +878,8 @@ class ShellMassCost(om.ExplicitComponent):
         outputs["shell_z_cg"] = np.dot(cm_section, mass) / mass.sum()
 
         # Moments of inertia
-        J0_section = coeff * rho * frustum.frustumShellIzz(Rb, Rt, t_full, H)
-        Ixx_section = Iyy_section = coeff * rho * frustum.frustumShellIxx(Rb, Rt, t_full, H)
+        J0_section = coeff_user * coeff * rho * frustum.frustumShellIzz(Rb, Rt, t_full, H)
+        Ixx_section = Iyy_section = coeff_user * coeff * rho * frustum.frustumShellIxx(Rb, Rt, t_full, H)
 
         # Sum up each cylinder section using parallel axis theorem
         I_base = np.zeros((3, 3))
@@ -977,6 +1014,8 @@ class MemberComplex(om.ExplicitComponent):
         Volume of ballast segments.  Should be non-zero for permanent ballast, zero for variable ballast
     ballast_unit_cost : numpy array[n_ballast], [USD/kg]
         Cost per unit mass of ballast
+    total_mass_user : float [kg]
+        User override of total cylinder mass
 
     Returns
     -------
@@ -1134,6 +1173,8 @@ class MemberComplex(om.ExplicitComponent):
         self.add_input("s_ghost1", 0.0)
         self.add_input("s_ghost2", 1.0)
 
+        self.add_input("total_mass_user", val=0.0, units="kg")        
+        
         # Outputs
         self.add_output("shell_cost", val=0.0, units="USD")
         self.add_output("shell_mass", val=0.0, units="kg")
@@ -1257,8 +1298,8 @@ class MemberComplex(om.ExplicitComponent):
         Gmat = inputs["G_full"]
         sigymat = inputs["sigma_y_full"]
         coeff = inputs["outfitting_full"]
-        s_ghost1 = float(inputs["s_ghost1"])
-        s_ghost2 = float(inputs["s_ghost2"])
+        s_ghost1 = make_float(inputs["s_ghost1"])
+        s_ghost2 = make_float(inputs["s_ghost2"])
 
         t_web = inputs["axial_stiffener_web_thickness"]
         t_flange = inputs["axial_stiffener_flange_thickness"]
@@ -1384,7 +1425,7 @@ class MemberComplex(om.ExplicitComponent):
             Ix_stiff = 0.5 * n_stiff * (A_web * R_w**2 + A_flange * R_f**2)
             Iz_stiff = 2 * Ix_stiff
 
-        # Total mass of cylinder
+            # Total mass of cylinder
             V_shell = frustum.frustumShellVol(Rb, Rt, t_full, H) # Why is H discretized?
             mass = coeff * rho * (V_shell + A_stiff * H)
             outputs["shell_mass"] = mass.sum()
@@ -1525,9 +1566,9 @@ class MemberComplex(om.ExplicitComponent):
         s_bulk = inputs["bulkhead_grid"]
         t_bulk = inputs["bulkhead_thickness"]
         coeff = inputs["outfitting_full"]
-        L = inputs["height"]
-        s_ghost1 = float(inputs["s_ghost1"])
-        s_ghost2 = float(inputs["s_ghost2"])
+        L = make_float(inputs["height"])
+        s_ghost1 = make_float(inputs["s_ghost1"])
+        s_ghost2 = make_float(inputs["s_ghost2"])
         nbulk = s_bulk.size
         if nbulk == 0:
             return
@@ -1581,7 +1622,7 @@ class MemberComplex(om.ExplicitComponent):
                 )
                 self.insert_section(s0[k], s1[k], iprop)
         elif self.shape == "rectangular":
-            for k in range(len(s_full) - 1):
+            for k in range(nbulk):
                 irect = cs.Rectangle(a_bulk[k], b_bulk[k], 0.5*np.minimum(a_bulk[k], b_bulk[k])) 
                 iprop = RectCrossSection(
                     a=a_bulk[k],
@@ -1599,7 +1640,7 @@ class MemberComplex(om.ExplicitComponent):
                     TorsC=irect.TorsConst,
                     sigy=sigy_bulk[k],
                 )
-                self.add_section(s_full[k], s_full[k + 1], iprop)
+                self.insert_section(s0[k], s1[k], iprop)
 
         # Compute bulkhead mass independent of shell
         if self.shape == "circular":
@@ -1675,14 +1716,14 @@ class MemberComplex(om.ExplicitComponent):
         sigma_y = inputs["sigma_y_full"]
         coeff = inputs["outfitting_full"]
         s_bulk = inputs["bulkhead_grid"]
-        s_ghost1 = float(inputs["s_ghost1"])
-        s_ghost2 = float(inputs["s_ghost2"])
+        s_ghost1 = make_float(inputs["s_ghost1"])
+        s_ghost2 = make_float(inputs["s_ghost2"])
 
         t_web = inputs["ring_stiffener_web_thickness"]
         t_flange = inputs["ring_stiffener_flange_thickness"]
         h_web = inputs["ring_stiffener_web_height"]
         w_flange = inputs["ring_stiffener_flange_width"]
-        L_stiffener = inputs["ring_stiffener_spacing"]
+        L_stiffener = make_float(inputs["ring_stiffener_spacing"])
 
         n_stiff = 0 if L_stiffener == 0.0 else int(np.floor(1 / L_stiffener))
         if n_stiff == 0:
@@ -1834,8 +1875,8 @@ class MemberComplex(om.ExplicitComponent):
         rho_ballast = inputs["ballast_density"]
         V_ballast = inputs["ballast_volume"]
         km_ballast = inputs["ballast_unit_cost"]
-        s_ghost1 = float(inputs["s_ghost1"])
-        s_ghost2 = float(inputs["s_ghost2"])
+        s_ghost1 = make_float(inputs["s_ghost1"])
+        s_ghost2 = make_float(inputs["s_ghost2"])
         n_ballast = len(V_ballast)
         if n_ballast == 0:
             return
@@ -1961,13 +2002,15 @@ class MemberComplex(om.ExplicitComponent):
                 zpts = np.linspace(zpts[0], z_end, npts)
                 H = np.diff(zpts)
 
-                a_out_pts = np.interp(zpts, z_full, a_out_pts)
-                b_out_pts = np.interp(zpts, z_full, b_out_pts)
+                a_out_pts = np.interp(zpts, z_full, a_out)
+                b_out_pts = np.interp(zpts, z_full, b_out)
                 twall_pts = util.sectionalInterp(zpts, z_full, twall)
                 a_in_pts = a_out_pts - twall_pts
                 b_in_pts = b_out_pts - twall_pts
 
-                V_pts = frustum.RectangularFrustumShellVol(a_in_pts[:-1], b_in_pts[:-1], a_in_pts[1:], b_in_pts[1:], H)
+                twall_sec, _ = util.nodal2sectional(twall_pts)
+
+                V_pts = frustum.RectangularFrustumShellVol(a_in_pts[:-1], b_in_pts[:-1], a_in_pts[1:], b_in_pts[1:], twall_sec, H)
                 cg_pts = frustum.RectangularFrustumCG(a_in_pts[:-1], b_in_pts[:-1], a_in_pts[1:], b_in_pts[1:], H) + zpts[:-1]
                 z_cg[k] = np.dot(cg_pts, V_pts) / V_pts.sum()
 
@@ -2032,6 +2075,23 @@ class MemberComplex(om.ExplicitComponent):
         # Move moments of inertia from keel to cg
         I_total -= m_total * ((z_cg - z_full[0]) ** 2.0) * np.r_[1.0, 1.0, np.zeros(4)]
 
+        # User override options
+        mass_user = make_float(inputs["total_mass_user"])
+        coeff_user = 1.0 if mass_user == 0.0 else mass_user/m_total
+        m_total *= coeff_user
+        I_total *= coeff_user
+        m_ballast *= coeff_user
+
+        outputs["shell_mass"] *= coeff_user
+        outputs["ballast_mass"] *= coeff_user
+        outputs["bulkhead_mass"] *= coeff_user
+        outputs["stiffener_mass"] *= coeff_user
+
+        outputs["shell_I_base"] *= coeff_user
+        outputs["ballast_I_base"] *= coeff_user
+        outputs["bulkhead_I_base"] *= coeff_user
+        outputs["stiffener_I_base"] *= coeff_user
+        
         # Store outputs addressed so far
         outputs["total_mass"] = m_total
         outputs["structural_mass"] = m_total - m_ballast
@@ -2066,10 +2126,7 @@ class MemberComplex(om.ExplicitComponent):
         s_grid = s_grid[idx]
         n_nodes = s_grid.size
         nodes = np.outer(s_grid, dxyz) + xyz0[np.newaxis, :]
-
-        
-
-        
+  
         # Convert axial to absolute
         outputs["center_of_mass"] = (outputs["z_cg"] / z_full[-1]) * dxyz + xyz0
 
@@ -2107,6 +2164,7 @@ class MemberComplex(om.ExplicitComponent):
         for k, s in enumerate(s_grid):
             if s == s_grid[-1]:
                 continue
+            self.sections[s].make_float()
             if self.shape == "circular":
                 outputs["section_D"][k] = self.sections[s].D
             elif self.shape == "rectangular":
@@ -2201,11 +2259,11 @@ class MemberHydro(om.ExplicitComponent):
     def compute(self, inputs, outputs):
         # Unpack variables
         s_full = inputs["s_full"]
-        s_ghost1 = float(inputs["s_ghost1"])
-        s_ghost2 = float(inputs["s_ghost2"])
+        s_ghost1 = make_float(inputs["s_ghost1"])
+        s_ghost2 = make_float(inputs["s_ghost2"])
         z_full = inputs["z_full"]
         R_od = 0.5 * inputs["outer_diameter_full"]
-        rho_water = inputs["rho_water"]
+        rho_water = make_float(inputs["rho_water"])
 
         # Get coordinates at full nodes
         xyz0 = inputs["joint1"]
@@ -2410,6 +2468,9 @@ class RectangularMemberHydro(om.ExplicitComponent):
         z_under = np.interp(s_under, s_full, z_full)
         a_under = np.interp(s_under, s_full, a)
         b_under = np.interp(s_under, s_full, b)
+        ARx_under = np.interp(s_under, s_full, ARx)
+        ARy_under = np.interp(s_under, s_full, ARy)
+
         if waterline:
             a_waterline = a_under[-1]
             b_waterline = b_under[-1]
@@ -2441,8 +2502,8 @@ class RectangularMemberHydro(om.ExplicitComponent):
         temp = np.linspace(z_under[0], z_under[-1], 200)
         a_under = np.interp(temp, z_under, a_under)
         b_under = np.interp(temp, z_under, b_under)
-        ARx_under = np.interp(temp, z_under, ARx)
-        ARy_under = np.interp(temp, z_under, ARy)
+        ARx_under = np.interp(temp, z_under, ARx_under)
+        ARy_under = np.interp(temp, z_under, ARy_under)
         z_under = temp
         dz_under = np.diff(z_under)
         m_a = np.zeros(6)
@@ -2897,11 +2958,11 @@ class MemberBase(om.Group):
         )
         
             self.connect("wall_thickness", "gc.t")
-            member_shape_variables = ["outer_diameter"]
+            member_shape_variables = ["outer_diameter", "ca_usr_grid", "cd_usr_grid"]
             self.connect("outer_diameter", "gc.d")
         elif member_shape == "rectangular":
             # TODO: geometricconstraint hasn't considered rectangular member yet, so no connection
-            member_shape_variables = ["side_length_a", "side_length_b"]
+            member_shape_variables = ["side_length_a", "side_length_b", "ca_usr_grid", "cd_usr_grid", "cay_usr_grid", "cdy_usr_grid"]
 
         self.add_subsystem("geom", MemberDiscretization(n_height=n_height, n_refine=n_refine, member_shape_variables = member_shape_variables), promotes=["*"])
 

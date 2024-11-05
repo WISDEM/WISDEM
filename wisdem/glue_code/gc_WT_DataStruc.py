@@ -37,6 +37,26 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             Materials(mat_init_options=modeling_options["materials"], composites=modeling_options["flags"]["blade"]),
         )
 
+        # Environment inputs
+        if modeling_options["flags"]["environment"]:
+            env_ivc = self.add_subsystem("env", om.IndepVarComp())
+            env_ivc.add_output("rho_air", val=1.225, units="kg/m**3", desc="Density of air")
+            env_ivc.add_output("mu_air", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
+            env_ivc.add_output("shear_exp", val=0.2, desc="Shear exponent of the wind.")
+            env_ivc.add_output("speed_sound_air", val=340.0, units="m/s", desc="Speed of sound in air.")
+            env_ivc.add_output(
+                "weibull_k", val=2.0, desc="Shape parameter of the Weibull probability density function of the wind."
+            )
+            env_ivc.add_output("rho_water", val=1025.0, units="kg/m**3", desc="Density of ocean water")
+            env_ivc.add_output("mu_water", val=1.3351e-3, units="kg/(m*s)", desc="Dynamic viscosity of ocean water")
+            env_ivc.add_output(
+                "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
+            )
+            env_ivc.add_output("Hsig_wave", val=0.0, units="m", desc="Significant wave height")
+            env_ivc.add_output("Tsig_wave", val=0.0, units="s", desc="Significant wave period")
+            env_ivc.add_output("G_soil", val=140e6, units="N/m**2", desc="Shear stress of soil")
+            env_ivc.add_output("nu_soil", val=0.4, desc="Poisson ratio of soil")
+        
         # Airfoil dictionary inputs
         if modeling_options["flags"]["airfoils"]:
             airfoils = om.IndepVarComp()
@@ -207,6 +227,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
             self.connect("hub.radius", "blade.high_level_blade_props.hub_radius")
             self.connect("configuration.rotor_diameter_user", "blade.high_level_blade_props.rotor_diameter_user")
+            self.connect("configuration.n_blades", "blade.high_level_blade_props.n_blades")
 
             if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
                 self.connect("airfoils.aoa", "blade.run_inn_af.aoa")
@@ -294,6 +315,18 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     units="kg",
                     desc="Override regular regression-based calculation of transformer mass with this value",
                 )
+                nacelle_ivc.add_output(
+                    "mb1_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override regular regression-based calculation of first main bearing mass with this value",
+                )
+                nacelle_ivc.add_output(
+                    "mb2_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override regular regression-based calculation of second main bearing mass with this value",
+                )
                 nacelle_ivc.add_discrete_output(
                     "mb1Type", val="CARB", desc="Type of main bearing: CARB / CRB / SRB / TRB"
                 )
@@ -311,6 +344,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 )
                 nacelle_ivc.add_discrete_output(
                     "bedplate_material", val="steel", desc="Material name identifier for the bedplate"
+                )
+                nacelle_ivc.add_output(
+                    "bedplate_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override bottom-up calculation of bedplate mass with this value",
                 )
 
                 if modeling_options["WISDEM"]["DriveSE"]["direct"]:
@@ -372,6 +411,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
             # Generator inputs
             generator_ivc = om.IndepVarComp()
+            generator_ivc.add_output("generator_mass_user", val=0.0, units="kg")
             if modeling_options["flags"]["generator"]:
                 generator_ivc.add_output("B_r", val=1.2, units="T")
                 generator_ivc.add_output("P_Fe0e", val=1.0, units="W/kg")
@@ -460,7 +500,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 # If using simple (regression) generator scaling, this is an optional input to override default values
                 n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
                 generator_ivc.add_output("generator_radius_user", val=0.0, units="m")
-                generator_ivc.add_output("generator_mass_user", val=0.0, units="kg")
                 generator_ivc.add_output("generator_efficiency_user", val=np.zeros((n_pc, 2)))
 
             self.add_subsystem("generator", generator_ivc)
@@ -499,6 +538,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 val=0.0,
                 desc="Multiplier that accounts for secondary structure mass inside of tower",
             )
+            ivc.add_output(
+                "tower_mass_user",
+                val=0.0,
+                units="kg",
+                desc="Override bottom-up calculation of total tower mass with this value",
+            )
             ivc.add_discrete_output(
                 "layer_name", val=[], desc="1D array of the names of the layers modeled in the tower structure."
             )
@@ -524,26 +569,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             )
             self.add_subsystem("mooring", Mooring(options=modeling_options))
             self.connect("floating.joints_xyz", "mooring.joints_xyz")
-
-        # Environment inputs
-        if modeling_options["flags"]["environment"]:
-            env_ivc = self.add_subsystem("env", om.IndepVarComp())
-            env_ivc.add_output("rho_air", val=1.225, units="kg/m**3", desc="Density of air")
-            env_ivc.add_output("mu_air", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
-            env_ivc.add_output("shear_exp", val=0.2, desc="Shear exponent of the wind.")
-            env_ivc.add_output("speed_sound_air", val=340.0, units="m/s", desc="Speed of sound in air.")
-            env_ivc.add_output(
-                "weibull_k", val=2.0, desc="Shape parameter of the Weibull probability density function of the wind."
-            )
-            env_ivc.add_output("rho_water", val=1025.0, units="kg/m**3", desc="Density of ocean water")
-            env_ivc.add_output("mu_water", val=1.3351e-3, units="kg/(m*s)", desc="Dynamic viscosity of ocean water")
-            env_ivc.add_output(
-                "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
-            )
-            env_ivc.add_output("Hsig_wave", val=0.0, units="m", desc="Significant wave height")
-            env_ivc.add_output("Tsig_wave", val=0.0, units="s", desc="Significant wave period")
-            env_ivc.add_output("G_soil", val=140e6, units="N/m**2", desc="Shear stress of soil")
-            env_ivc.add_output("nu_soil", val=0.4, desc="Poisson ratio of soil")
 
         # Balance of station inputs
         if modeling_options["flags"]["bos"]:
@@ -626,6 +651,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("blade.interp_airfoils.r_thick_interp", "af_3d.r_thick")
             self.connect("blade.pa.chord_param", "af_3d.chord")
             self.connect("control.rated_TSR", "af_3d.rated_TSR")
+            self.connect("control.maxOmega", "blade.compute_reynolds.maxOmega")
+            self.connect("control.max_TS", "blade.compute_reynolds.max_TS")
+            self.connect("control.V_out", "blade.compute_reynolds.V_out")
         if modeling_options["flags"]["tower"]:
             self.connect("tower.ref_axis", "high_level_tower_props.tower_ref_axis_user")
             self.add_subsystem("tower_grid", Compute_Grid(n_height=n_height_tower))
@@ -705,10 +733,13 @@ class Blade(om.Group):
 
         self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options))
         self.connect("outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
+        self.connect("pa.chord_param", "high_level_blade_props.chord")
 
         # TODO : Compute Reynolds here
         self.add_subsystem("compute_reynolds", ComputeReynolds(n_span=rotorse_options["n_span"]))
-
+        self.connect("high_level_blade_props.r_blade", "compute_reynolds.r_blade")
+        self.connect("high_level_blade_props.rotor_radius", "compute_reynolds.rotor_radius")
+        
         if rotorse_options["inn_af"]:
             self.add_subsystem(
                 "run_inn_af",
@@ -1232,7 +1263,6 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
         projected_chord = coord_xy_twist[:,:,1].max(axis=1) - coord_xy_twist[:,:,1].min(axis=1)
         outputs["projected_area"] = np.trapz(projected_chord, inputs["ref_axis"][:,2])
         
-            
 
 class INN_Airfoils(om.ExplicitComponent):
     # Openmdao component to run the inverted neural network framework for airfoil design
@@ -2128,6 +2158,9 @@ class Hub(om.Group):
             ivc.add_output("hub_in2out_circ", val=1.2)
             ivc.add_discrete_output("hub_material", val="steel")
             ivc.add_discrete_output("spinner_material", val="carbon")
+            ivc.add_output("hub_shell_mass_user", val=0.0, units="kg")
+            ivc.add_output("spinner_mass_user", val=0.0, units="kg")
+            ivc.add_output("pitch_system_mass_user", val=0.0, units="kg")
 
         exec_comp = om.ExecComp(
             "radius = 0.5 * diameter",
@@ -2253,6 +2286,7 @@ class Monopile(om.Group):
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
+        ivc.add_output("monopile_mass_user", val=0.0, units="kg", desc="Override bottom-up calculation of total monopile mass with this value")
 
         self.add_subsystem("compute_monopile_grid", Compute_Grid(n_height=n_height), promotes=["*"])
 
@@ -2319,6 +2353,7 @@ class Jacket(om.Group):
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
+        ivc.add_output("jacket_mass_user", val=0.0, units="kg", desc="Override bottom-up calculation of total jacket mass with this value")
 
 
 class Floating(om.Group):
@@ -2369,8 +2404,8 @@ class Floating(om.Group):
                             ivc.add_output("outer_diameter_in", val=0.0, units="m")
                         else:
                             ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
-                        ivc.add_output("ca_usr", val=-1.0*np.ones(n_geom))
-                        ivc.add_output("cd_usr", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("ca_usr_geom", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("cd_usr_geom", val=-1.0*np.ones(n_geom))
                         member_shape_assigned = True
                     if "side_length_a" in float_opt["members"]["groups"][i]:
                         if float_opt["members"]["groups"][i]["side_length_a"]["constant"]:
@@ -2378,30 +2413,30 @@ class Floating(om.Group):
                         else:
                             ivc.add_output("side_length_a_in", val=np.zeros(n_geom), units="m")
                         member_shape_assigned = True
-                        ivc.add_output("ca_usr", val=-1.0*np.ones(n_geom))
-                        ivc.add_output("cd_usr", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("ca_usr_geom", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("cd_usr_geom", val=-1.0*np.ones(n_geom))
                     if "side_length_b" in float_opt["members"]["groups"][i]:
                         if float_opt["members"]["groups"][i]["side_length_b"]["constant"]:
                             ivc.add_output("side_length_b_in", val=0.0, units="m")
                         else:
                             ivc.add_output("side_length_b_in", val=np.zeros(n_geom), units="m")
-                        ivc.add_output("cay_usr", val=-1.0*np.ones(n_geom))
-                        ivc.add_output("cdy_usr", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("cay_usr_geom", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("cdy_usr_geom", val=-1.0*np.ones(n_geom))
                         member_shape_assigned = True
 
             if not member_shape_assigned:
                 # Use the memidx to query the correct member_shape
                 if floating_init_options["members"]["outer_shape"][memidx] == "circular":
                     ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
-                    ivc.add_output("ca_usr", val=-1.0*np.ones(n_geom))
-                    ivc.add_output("cd_usr", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("ca_usr_geom", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cd_usr_geom", val=-1.0*np.ones(n_geom))
                 elif floating_init_options["members"]["outer_shape"][memidx] == "rectangular":
                     ivc.add_output("side_length_a_in", val=np.zeros(n_geom), units="m")
                     ivc.add_output("side_length_b_in", val=np.zeros(n_geom), units="m")
-                    ivc.add_output("ca_usr", val=-1.0*np.ones(n_geom))
-                    ivc.add_output("cd_usr", val=-1.0*np.ones(n_geom))
-                    ivc.add_output("cay_usr", val=-1.0*np.ones(n_geom))
-                    ivc.add_output("cdy_usr", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("ca_usr_geom", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cd_usr_geom", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cay_usr_geom", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cdy_usr_geom", val=-1.0*np.ones(n_geom))
 
             ivc.add_discrete_output("layer_materials", val=[""] * n_layers)
             ivc.add_output("layer_thickness_in", val=np.zeros((n_layers, n_geom)), units="m")
@@ -2422,6 +2457,7 @@ class Floating(om.Group):
             ivc.add_output("axial_stiffener_flange_width", 0.0, units="m")
             ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_spacing", 0.0, units="rad")
+            ivc.add_output("member_mass_user", 0.0, units="kg", desc="Override bottom-up calculation of total member mass with this value")
 
             # Use the memidx to query the correct member_shape
             self.add_subsystem(f"memgrid{k}", MemberGrid(n_height=n_height, n_geom=n_geom, n_layers=n_layers, member_shape=floating_init_options["members"]["outer_shape"][memidx]))
@@ -2430,9 +2466,16 @@ class Floating(om.Group):
             # Here looping all dv member groups
             if floating_init_options["members"]["outer_shape"][memidx] == "circular":
                 self.connect(f"memgrp{k}.outer_diameter_in", f"memgrid{k}.outer_diameter_in")
+                self.connect(f"memgrp{k}.ca_usr_geom", f"memgrid{k}.ca_usr_geom")
+                self.connect(f"memgrp{k}.cd_usr_geom", f"memgrid{k}.cd_usr_geom")
             elif floating_init_options["members"]["outer_shape"][memidx] == "rectangular":
                 self.connect(f"memgrp{k}.side_length_a_in", f"memgrid{k}.side_length_a_in")
                 self.connect(f"memgrp{k}.side_length_b_in", f"memgrid{k}.side_length_b_in")
+                self.connect(f"memgrp{k}.ca_usr_geom", f"memgrid{k}.ca_usr_geom")
+                self.connect(f"memgrp{k}.cd_usr_geom", f"memgrid{k}.cd_usr_geom")
+                self.connect(f"memgrp{k}.cay_usr_geom", f"memgrid{k}.cay_usr_geom")
+                self.connect(f"memgrp{k}.cdy_usr_geom", f"memgrid{k}.cdy_usr_geom")
+
             self.connect(f"memgrp{k}.layer_thickness_in", f"memgrid{k}.layer_thickness_in")
 
         self.add_subsystem("alljoints", AggregateJoints(floating_init_options=floating_init_options), promotes=["*"])
@@ -2497,17 +2540,29 @@ class MemberGrid(om.ExplicitComponent):
         self.add_input("s_grid", val=np.zeros(n_height))
         if member_shape == "circular":
             self.add_input("outer_diameter_in", shape_by_conn=True, units="m")
+            self.add_input("ca_usr_geom", shape_by_conn=True)  
+            self.add_input("cd_usr_geom", shape_by_conn=True)            
         elif member_shape == "rectangular":
             self.add_input("side_length_a_in", shape_by_conn=True, units="m")
             self.add_input("side_length_b_in", shape_by_conn=True, units="m")
+            self.add_input("ca_usr_geom", shape_by_conn=True)  
+            self.add_input("cd_usr_geom", shape_by_conn=True)    
+            self.add_input("cay_usr_geom", shape_by_conn=True)  
+            self.add_input("cdy_usr_geom", shape_by_conn=True)    
 
         self.add_input("layer_thickness_in", val=np.zeros((n_layers, n_geom)), units="m")
 
         if member_shape == "circular":
             self.add_output("outer_diameter", val=np.zeros(n_height), units="m")
+            self.add_output("ca_usr_grid", val=-1.0*np.ones(n_height))
+            self.add_output("cd_usr_grid", val=-1.0*np.ones(n_height))
         elif member_shape == "rectangular":
             self.add_output("side_length_a", val=np.zeros(n_height), units="m")
             self.add_output("side_length_b", val=np.zeros(n_height), units="m")
+            self.add_output("ca_usr_grid", val=-1.0*np.ones(n_height))
+            self.add_output("cd_usr_grid", val=-1.0*np.ones(n_height))
+            self.add_output("cay_usr_grid", val=-1.0*np.ones(n_height))
+            self.add_output("cdy_usr_grid", val=-1.0*np.ones(n_height))
 
         self.add_output("layer_thickness", val=np.zeros((n_layers, n_height)), units="m")
 
@@ -2523,6 +2578,8 @@ class MemberGrid(om.ExplicitComponent):
                 outputs["outer_diameter"] = PchipInterpolator(s_in, inputs["outer_diameter_in"])(s_grid)
             else:
                 outputs["outer_diameter"][:] = inputs["outer_diameter_in"]
+            outputs["ca_usr_grid"] = PchipInterpolator(s_in, inputs["ca_usr_geom"])(s_grid)
+            outputs["cd_usr_grid"] = PchipInterpolator(s_in, inputs["cd_usr_geom"])(s_grid)
         elif member_shape == "rectangular":
             if len(inputs["side_length_a_in"]) > 1:
                 outputs["side_length_a"] = PchipInterpolator(s_in, inputs["side_length_a_in"])(s_grid)
@@ -2530,6 +2587,10 @@ class MemberGrid(om.ExplicitComponent):
             else:
                 outputs["side_length_a"][:] = inputs["side_length_a_in"]
                 outputs["side_length_b"][:] = inputs["side_length_b_in"]
+            outputs["ca_usr_grid"] = PchipInterpolator(s_in, inputs["ca_usr_geom"])(s_grid)
+            outputs["cd_usr_grid"] = PchipInterpolator(s_in, inputs["cd_usr_geom"])(s_grid)
+            outputs["cay_usr_grid"] = PchipInterpolator(s_in, inputs["cay_usr_geom"])(s_grid)
+            outputs["cdy_usr_grid"] = PchipInterpolator(s_in, inputs["cdy_usr_geom"])(s_grid)
         
         for k in range(n_layers):
             outputs["layer_thickness"][k, :] = PchipInterpolator(s_in, inputs["layer_thickness_in"][k, :])(s_grid)
@@ -3163,6 +3224,10 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             units="m",
             desc="Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.",
         )
+        self.add_input(
+            "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
+        )
+        self.add_discrete_input("n_blades", val=3, desc="Number of blades of the rotor.")
 
         self.add_output(
             "rotor_diameter",
@@ -3198,8 +3263,10 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             units="m",
             desc="Scalar of the 3D blade length computed along its axis, scaled based on the user defined rotor diameter.",
         )
+        self.add_output("blade_solidity", val=0.0, desc="Blade solidity")
+        self.add_output("rotor_solidity", val=0.0, desc="Rotor solidity")
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs,  discrete_outputs):
         outputs["blade_ref_axis"][:, 0] = inputs["blade_ref_axis_user"][:, 0]
         outputs["blade_ref_axis"][:, 1] = inputs["blade_ref_axis_user"][:, 1]
         # Scale z if the blade length provided by the user does not match the rotor diameter. D = (blade length + hub radius) * 2
@@ -3221,6 +3288,8 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
         outputs["prebendTip"] = outputs["blade_ref_axis"][-1, 0]
         outputs["presweep"] = outputs["blade_ref_axis"][:, 1]
         outputs["presweepTip"] = outputs["blade_ref_axis"][-1, 1]
+        outputs['blade_solidity'] = np.trapz(inputs['chord'], outputs["r_blade"]) / (np.pi * outputs["rotor_radius"]**2.)
+        outputs['rotor_solidity'] = outputs['blade_solidity'] * discrete_inputs['n_blades']
 
 
 class ComputeHighLevelTowerProperties(om.ExplicitComponent):

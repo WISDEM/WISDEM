@@ -150,28 +150,28 @@ class Mooring(om.ExplicitComponent):
 
     def evaluate_mooring(self, inputs, outputs):
         # Unpack variables
-        water_depth = float(inputs["water_depth"])
-        fairlead_depth = float(inputs["fairlead"])
-        R_fairlead = float(inputs["fairlead_radius"])
-        R_anchor = float(inputs["anchor_radius"])
-        heel = float(inputs["operational_heel"])
-        max_heel = float(inputs["survival_heel"])
-        d = float(inputs["line_diameter"])
+        water_depth = float(inputs["water_depth"][0])
+        fairlead_depth = float(inputs["fairlead"][0])
+        R_fairlead = float(inputs["fairlead_radius"][0])
+        R_anchor = float(inputs["anchor_radius"][0])
+        heel = float(inputs["operational_heel"][0])
+        max_heel = float(inputs["survival_heel"][0])
+        d = float(inputs["line_diameter"][0])
         L_mooring = inputs["line_length"]
         gamma = self.options["gamma"]
         n_attach = self.options["options"]["n_attach"]
         n_lines = self.options["options"]["n_anchors"]
-        offset = float(inputs["max_surge_fraction"]) * water_depth
+        offset = float(inputs["max_surge_fraction"][0]) * water_depth
         n_anchors = self.options["options"]["n_anchors"]
         ratio = int(n_anchors / n_attach)
 
         line_obj = None
         line_mat = self.options["options"]["line_material"][0]
         if line_mat == "custom":
-            min_break_load = float(inputs["line_breaking_load_coeff"]) * d**2
-            mass_den = float(inputs["line_mass_density_coeff"]) * d**2
-            ea_stiff = float(inputs["line_stiffness_coeff"]) * d**2
-            cost_rate = float(inputs["line_cost_rate_coeff"]) * d**2
+            min_break_load = float(inputs["line_breaking_load_coeff"][0]) * d**2
+            mass_den = float(inputs["line_mass_density_coeff"][0]) * d**2
+            ea_stiff = float(inputs["line_stiffness_coeff"][0]) * d**2
+            cost_rate = float(inputs["line_cost_rate_coeff"][0]) * d**2
         elif line_mat == "chain_stud":
             line_obj = props.getLineProps(1e3 * d, type="chain", stud="stud")
         else:
@@ -320,14 +320,14 @@ class Mooring(om.ExplicitComponent):
 
     def compute_cost(self, inputs, outputs):
         # Unpack variables
-        L_mooring = float(inputs["line_length"])
-        d = float(inputs["line_diameter"])
+        L_mooring = float(inputs["line_length"][0])
+        d = float(inputs["line_diameter"][0])
         gamma = self.options["gamma"]
 
         anchor_type = self.options["options"]["line_anchor"][0]
         if anchor_type == "custom":
-            anchor_rate = float(inputs["anchor_cost"])
-            anchor_mass = float(inputs["anchor_mass"])
+            anchor_rate = float(inputs["anchor_cost"][0])
+            anchor_mass = float(inputs["anchor_mass"][0])
         else:
             # Do empirical sizing with MoorPy
             fx = (inputs["anchor_max_lateral_load"] - outputs["constr_anchor_lateral"].min()) / gamma
@@ -339,8 +339,8 @@ class Mooring(om.ExplicitComponent):
         line_obj = None
         line_mat = self.options["options"]["line_material"][0]
         if line_mat == "custom":
-            mass_den = float(inputs["line_mass_density_coeff"]) * d**2
-            cost_rate = float(inputs["line_cost_rate_coeff"]) * d**2
+            mass_den = float(inputs["line_mass_density_coeff"][0]) * d**2
+            cost_rate = float(inputs["line_cost_rate_coeff"][0]) * d**2
         elif line_mat == "chain_stud":
             line_obj = props.getLineProps(1e3 * d, type="chain", stud="stud")
         else:

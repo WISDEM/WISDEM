@@ -5,7 +5,6 @@ channels:
 dependencies:
   - coveralls
   - cython
-  - git
   - jsonschema
   - make
   - matplotlib
@@ -13,9 +12,9 @@ dependencies:
   - moorpy
   - ninja
   - nlopt
-  - numpy>=1.26
+  - numpy
   - numpydoc
-  - openmdao>=3.31
+  - openmdao
   - openpyxl
   - pandas
   - pip
@@ -23,7 +22,7 @@ dependencies:
   - pyoptsparse
   - pytest
   - pytest-cov
-  - python-benedict
+  - python-benedict<0.33.2
   - pyyaml
   - ruamel.yaml
   - scipy

@@ -7,3 +7,5 @@ inductance: 0.35
 linear_density: 42.5
 name: XLPE_630mm_66kV
 rated_voltage: 66
+switchgear_cost: 1e6
+cable_type: HVAC           # HVDC vs HVAC

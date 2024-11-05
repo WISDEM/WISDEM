@@ -7,3 +7,4 @@ inductance: 0.35
 linear_density: 42.5
 name: XLPE_630mm_33kV
 rated_voltage: 33
+cable_type: HVAC
