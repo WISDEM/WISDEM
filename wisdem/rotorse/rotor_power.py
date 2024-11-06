@@ -473,7 +473,7 @@ class ComputePowerCurve(ExplicitComponent):
                 P_aero_i = float(myout["P"][0])
                 # P_i,_  = compute_P_and_eff(P_aero_i.flatten(), P_rated, Omega_i_rpm, driveType, driveEta)
                 eff_i = np.interp(Omega_i_rpm, lss_rpm, driveEta)
-                P_i = float(P_aero_i * eff_i)
+                P_i = float(P_aero_i * eff_i[0])
                 return 1e-4 * (P_i - P_rated)
 
             if region2p5:
@@ -547,7 +547,7 @@ class ComputePowerCurve(ExplicitComponent):
                     P_aero_i = float(myout["P"][0])
                     # P_i,_  = compute_P_and_eff(P_aero_i.flatten(), P_rated, Omega_i_rpm, driveType, driveEta)
                     eff_i = np.interp(Omega_i_rpm, lss_rpm, driveEta)
-                    P_i = float(P_aero_i * eff_i)
+                    P_i = float(P_aero_i * eff_i[0])
                     T_i = float(myout["T"][0])
                     return 1e-4 * (P_i - P_rated), 1e-4 * (T_i - max_T)
 
@@ -688,12 +688,12 @@ class ComputePowerCurve(ExplicitComponent):
                     bounds=bnds,
                     method="bounded",
                     options={"disp": False, "xatol": TOL, "maxiter": 40},
-                )["x"]
+                )["x"][0]
 
             # Find associated power
             myout, _ = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
             P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [
-                myout[key] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
+                myout[key][0] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
             ]
             # P[i], eff[i] = compute_P_and_eff(P_aero[i], P_rated, Omega_rpm[i], driveType, driveEta)
             eff[i] = np.interp(Omega_rpm[i], lss_rpm, driveEta)
@@ -737,7 +737,7 @@ class ComputePowerCurve(ExplicitComponent):
 
                     myout, _ = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
                     P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [
-                        myout[key] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
+                        myout[key][0] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
                     ]
                     eff[i] = np.interp(Omega_rpm[i], lss_rpm, driveEta)
                     P[i] = P_aero[i] * eff[i]
