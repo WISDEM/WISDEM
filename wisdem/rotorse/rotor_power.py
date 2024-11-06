@@ -473,7 +473,8 @@ class ComputePowerCurve(ExplicitComponent):
                 P_aero_i = float(myout["P"][0])
                 # P_i,_  = compute_P_and_eff(P_aero_i.flatten(), P_rated, Omega_i_rpm, driveType, driveEta)
                 eff_i = np.interp(Omega_i_rpm, lss_rpm, driveEta)
-                P_i = float(P_aero_i * eff_i[0])
+                if isinstance(eff_i, type(np.array([]))): eff_i = eff_i[0]
+                P_i = float(P_aero_i * eff_i)
                 return 1e-4 * (P_i - P_rated)
 
             if region2p5:
@@ -547,7 +548,8 @@ class ComputePowerCurve(ExplicitComponent):
                     P_aero_i = float(myout["P"][0])
                     # P_i,_  = compute_P_and_eff(P_aero_i.flatten(), P_rated, Omega_i_rpm, driveType, driveEta)
                     eff_i = np.interp(Omega_i_rpm, lss_rpm, driveEta)
-                    P_i = float(P_aero_i * eff_i[0])
+                    if isinstance(eff_i, type(np.array([]))): eff_i = eff_i[0]
+                    P_i = float(P_aero_i * eff_i)
                     T_i = float(myout["T"][0])
                     return 1e-4 * (P_i - P_rated), 1e-4 * (T_i - max_T)
 

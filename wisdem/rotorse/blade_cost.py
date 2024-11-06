@@ -2366,11 +2366,13 @@ class virtual_factory(object):
         delta = 2.0  # [m] Distance between blades
         self.floor_space = np.zeros(len(operation))  # [m2]
         self.floor_space[0] = 3.0 * blade_specs["blade_length"][0]  # [m2] Material cutting
+        if isinstance(blade_specs["root_preform_length"], type(np.array([]))):
+            blade_specs["root_preform_length"] = blade_specs["root_preform_length"][0]
         self.floor_space[1] = (
-            self.parallel_proc[1] * (delta + blade_specs["root_D"]) * (delta + blade_specs["root_preform_length"][0])
+            self.parallel_proc[1] * (delta + blade_specs["root_D"]) * (delta + blade_specs["root_preform_length"])
         )  # [m2] Infusion root preform lp
         self.floor_space[2] = (
-            self.parallel_proc[2] * (delta + blade_specs["root_D"]) * (delta + blade_specs["root_preform_length"][0])
+            self.parallel_proc[2] * (delta + blade_specs["root_D"]) * (delta + blade_specs["root_preform_length"])
         )  # [m2] Infusion root preform hp
         for i_web in range(self.n_webs):
             self.floor_space[3 + i_web] = (
