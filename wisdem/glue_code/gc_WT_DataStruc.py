@@ -577,8 +577,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             bos_ivc = self.add_subsystem("bos", om.IndepVarComp())
             bos_ivc.add_output("plant_turbine_spacing", 7, desc="Distance between turbines in rotor diameters")
             bos_ivc.add_output("plant_row_spacing", 7, desc="Distance between turbine rows in rotor diameters")
-            bos_ivc.add_output("commissioning_pct", 0.01)
-            bos_ivc.add_output("decommissioning_pct", 0.15)
+            bos_ivc.add_output("commissioning_cost_kW", 44.0, units="USD/kW")
+            bos_ivc.add_output("decommissioning_cost_kW", 58.0, units="USD/kW")
             bos_ivc.add_output("distance_to_substation", 50.0, units="km")
             bos_ivc.add_output("distance_to_interconnection", 5.0, units="km")
             if modeling_options["flags"]["offshore"]:
@@ -586,11 +586,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 bos_ivc.add_output("distance_to_landfall", 40.0, units="km")
                 bos_ivc.add_output("port_cost_per_month", 2e6, units="USD/mo")
                 bos_ivc.add_output("site_auction_price", 100e6, units="USD")
-                bos_ivc.add_output("site_assessment_plan_cost", 1e6, units="USD")
-                bos_ivc.add_output("site_assessment_cost", 25e6, units="USD")
-                bos_ivc.add_output("construction_operations_plan_cost", 2.5e6, units="USD")
+                bos_ivc.add_output("site_assessment_cost", 50e6, units="USD")
                 bos_ivc.add_output("boem_review_cost", 0.0, units="USD")
-                bos_ivc.add_output("design_install_plan_cost", 2.5e6, units="USD")
+                bos_ivc.add_output("installation_plan_cost", 2.5e5, units="USD")
+                bos_ivc.add_output("construction_plan_cost", 1e6, units="USD")
+                bos_ivc.add_output("construction_insurance", 44.0, units="USD/kW")
+                bos_ivc.add_output("construction_financing", 183.0, units="USD/kW")
+                bos_ivc.add_output("contingency", 316.0, units="USD/kW")
             else:
                 bos_ivc.add_output("interconnect_voltage", 130.0, units="kV")
 

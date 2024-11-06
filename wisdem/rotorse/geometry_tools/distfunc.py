@@ -66,7 +66,13 @@ def distfunc(dinp, ival=1):
 def tanhdist(delta1=None, delta2=None, _len=None, i1=None, i2=None):
     if isinstance(delta1, type(np.array([]))):
         delta1 = float(delta1[0])
-        delta2 = float(delta1[0])
+        delta2 = float(delta2[0])
+    if isinstance(i1, type(np.array([]))):
+        i1 = float(i1[0])
+        i2 = float(i2[0])
+    if isinstance(_len, type(np.array([]))):
+        _len = float(_len[0])
+        
     ni = i2 - i1
     fdist = np.zeros(ni + 1)
     if i2 == i1:
@@ -113,7 +119,13 @@ def tanhdist(delta1=None, delta2=None, _len=None, i1=None, i2=None):
 def sinhdist(delta1=None, delta2=None, _len=None, i1=None, i2=None):
     if isinstance(delta1, type(np.array([]))):
         delta1 = float(delta1[0])
-        delta2 = float(delta1[0])
+        delta2 = float(delta2[0])
+    if isinstance(i1, type(np.array([]))):
+        i1 = float(i1[0])
+        i2 = float(i2[0])
+    if isinstance(_len, type(np.array([]))):
+        _len = float(_len[0])
+        
     ni = i2 - i1
     fdist = np.zeros(ni + 1)
     if i2 == i1:
@@ -167,7 +179,7 @@ def transsinh(b):
     """
     res = root(_transsinh, 1.0, args=(b))
 
-    return res["x"]
+    return res["x"][0]
 
 
 def _transsinh(delta, b):
@@ -184,7 +196,7 @@ def transtanh(b):
     """
     res = root(_transtanh, 1.0, args=(b))
 
-    return res["x"]
+    return res["x"][0]
 
 
 def _transtanh(delta, b):

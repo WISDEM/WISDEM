@@ -68,7 +68,7 @@ class TestGenerators(unittest.TestCase):
         self.inputs["rad_ag"] = 4.0  # rev 1  4.92
         self.inputs["len_s"] = 1.7  # rev 2.3
         self.inputs["h_s"] = 0.7  # rev 1 0.3
-        self.inputs["p"] = 70  # 100.0    # rev 1 160
+        self.inputs["p"] = 70.0  # 100.0    # rev 1 160
         self.inputs["h_m"] = 0.005  # rev 1 0.034
         self.inputs["h_ys"] = 0.04  # rev 1 0.045
         self.inputs["h_yr"] = 0.06  # rev 1 0.045

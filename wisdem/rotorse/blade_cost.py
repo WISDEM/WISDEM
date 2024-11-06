@@ -2365,7 +2365,9 @@ class virtual_factory(object):
         # Building space per operation
         delta = 2.0  # [m] Distance between blades
         self.floor_space = np.zeros(len(operation))  # [m2]
-        self.floor_space[0] = 3.0 * blade_specs["blade_length"]  # [m2] Material cutting
+        self.floor_space[0] = 3.0 * blade_specs["blade_length"][0]  # [m2] Material cutting
+        if isinstance(blade_specs["root_preform_length"], type(np.array([]))):
+            blade_specs["root_preform_length"] = blade_specs["root_preform_length"][0]
         self.floor_space[1] = (
             self.parallel_proc[1] * (delta + blade_specs["root_D"]) * (delta + blade_specs["root_preform_length"])
         )  # [m2] Infusion root preform lp
@@ -2380,12 +2382,12 @@ class virtual_factory(object):
             )  # [m2] Infusion webs
         self.floor_space[3 + self.n_webs] = (
             self.parallel_proc[3 + self.n_webs]
-            * (delta + blade_specs["length_sc_lp"])
+            * (delta + blade_specs["length_sc_lp"][0])
             * (delta + blade_specs["width_sc_start_lp"])
         )  # [m2] Infusion spar caps
         self.floor_space[4 + self.n_webs] = (
             self.parallel_proc[4 + self.n_webs]
-            * (delta + blade_specs["length_sc_hp"])
+            * (delta + blade_specs["length_sc_hp"][0])
             * (delta + blade_specs["width_sc_start_hp"])
         )  # [m2] Infusion spar caps
         self.floor_space[5 + self.n_webs] = (
@@ -2541,10 +2543,10 @@ class virtual_factory(object):
             )  # [$] Equipment for webs infusion is assumed at 1700 $ per meter of web length
         if not blade_specs["pultruded_spar_caps"]:
             self.equipm_investment[3 + self.n_webs] = (
-                1700.0 * self.parallel_proc[3 + self.n_webs] * float(blade_specs["length_sc_lp"])
+                1700.0 * self.parallel_proc[3 + self.n_webs] * blade_specs["length_sc_lp"][0]
             )  # [$] Equipment for spar caps infusion is assumed at 1700 $ per meter of spar cap length
             self.equipm_investment[4 + self.n_webs] = (
-                1700.0 * self.parallel_proc[4 + self.n_webs] * float(blade_specs["length_sc_hp"])
+                1700.0 * self.parallel_proc[4 + self.n_webs] * blade_specs["length_sc_hp"][0]
             )  # [$] Equipment for spar caps infusion is assumed at 1700 $ per meter of spar cap length
         else:
             cutting_chamfering_unit = 2.0e5  # Assume one pultrusion cutting and chamfering unit costs $200k
@@ -3503,7 +3505,7 @@ class BladeCost(om.ExplicitComponent):
                     )
                     # Compute length of shear webs
                     if web_length[int(layer_web[i_lay]) - 1] == 0:
-                        web_length[int(layer_web[i_lay]) - 1] = (s[imax] - s[imin]) * blade_length
+                        web_length[int(layer_web[i_lay]) - 1] = (s[imax] - s[imin]) * blade_length[0]
                         web_indices[int(layer_web[i_lay]) - 1, :] = [imin, imax]
                 # Compute volume of layer
                 layer_volume_span = (
@@ -3667,9 +3669,9 @@ class BladeCost(om.ExplicitComponent):
             i_adhesive = discrete_inputs["mat_name"].index("adhesive")
         except:
             i_adhesive = discrete_inputs["mat_name"].index("Adhesive")
-        mat_mass[i_adhesive] += bonding_lines_vol * rho_mat[i_adhesive]
+        mat_mass[i_adhesive] += bonding_lines_vol[0] * rho_mat[i_adhesive]
         mat_cost[i_adhesive] += mat_mass[i_adhesive] * unit_cost[i_adhesive]
-        mat_mass_scrap[i_adhesive] += bonding_lines_vol * rho_mat[i_adhesive]
+        mat_mass_scrap[i_adhesive] += bonding_lines_vol[0] * rho_mat[i_adhesive]
         mat_cost_scrap[i_adhesive] += mat_mass_scrap[i_adhesive] * unit_cost[i_adhesive]
 
         # Hub connection and lightning protection system
