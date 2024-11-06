@@ -94,6 +94,11 @@ properties:
                                         minimum: 0
                                         unit: none
                                         description: Last index of the array of design variables/constraints that is optimized/constrained
+                                    cap_twist_root:
+                                        type: number
+                                        description: Maximum allowable twist during an inverse design. Close to blade root, twist will be capped to this value.
+                                        default: 0.349
+                                        unit: rad
                             chord:
                                 type: object
                                 default: {}
