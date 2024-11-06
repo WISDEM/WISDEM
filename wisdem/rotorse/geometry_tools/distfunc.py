@@ -94,13 +94,13 @@ def tanhdist(delta1=None, delta2=None, _len=None, i1=None, i2=None):
     else:
         if delta1 > 0.0:
             b = 1.0 / (ni * delta1)
-            delta = transsinh(b)
+            delta = transsinh(b)[0]
             for i in range(ni + 1):
                 fdist[i] = 1.0 + np.tanh(0.5 * delta * (i / ni - 1.0)) / np.tanh(0.5 * delta)
         else:
             if delta2 > 0.0:
                 b = 1.0 / (ni * delta2)
-                delta = transsinh(b)
+                delta = transsinh(b)[0]
                 for i in range(ni + 1):
                     fdist[i] = np.tanh(0.5 * delta * i / ni) / np.tanh(0.5 * delta)
             else:
