@@ -155,10 +155,6 @@ class ComputePowerCurve(ExplicitComponent):
         self.regulation_reg_III = modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"]
         self.n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
         self.n_pc_spline = modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"]
-        self.peak_thrust_shaving = modeling_options["WISDEM"]["RotorSE"]["peak_thrust_shaving"]
-        self.fix_pitch_regI12 = modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"]
-        if self.peak_thrust_shaving:
-            self.thrust_shaving_coeff = modeling_options["WISDEM"]["RotorSE"]["thrust_shaving_coeff"]
 
         # parameters
         self.add_input("v_min", val=0.0, units="m/s", desc="cut-in wind speed")
@@ -174,6 +170,9 @@ class ComputePowerCurve(ExplicitComponent):
             units="deg",
             desc="pitch angle in region 2 (and region 3 for fixed pitch machines)",
         )
+        self.add_input("ps_percent", val=1.0, desc="Scalar applied to the max torque within RotorSE for peak thrust shaving. Only used if `peak_thrust_shaving` is True.")
+        self.add_discrete_input("fix_pitch_regI12", val=False, desc="If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.")
+
         self.add_discrete_input("drivetrainType", val="GEARED")
         self.add_input("gearbox_efficiency", val=1.0)
         self.add_input(
@@ -457,7 +456,12 @@ class ComputePowerCurve(ExplicitComponent):
         region2p5 = U_2p5 < U_rated
 
         # Initialize peak shaving thrust value, will be updated later
-        max_T = self.thrust_shaving_coeff * T.max() if self.peak_thrust_shaving and found_rated else 1e16
+        ps_percent = inputs["ps_percent"][0]
+        if ps_percent < 1.:
+            peak_thrust_shaving = True
+        else:
+            peak_thrust_shaving = False
+        max_T = ps_percent * T.max() if peak_thrust_shaving and found_rated else 1e16
 
         ## REGION II.5 and RATED ##
         # Solve for rated velocity
@@ -472,7 +476,7 @@ class ComputePowerCurve(ExplicitComponent):
                 myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_i_rpm], [pitch_i], coefficients=False)
                 P_aero_i = float(myout["P"][0])
                 # P_i,_  = compute_P_and_eff(P_aero_i.flatten(), P_rated, Omega_i_rpm, driveType, driveEta)
-                eff_i = np.interp(Omega_i_rpm, lss_rpm, driveEta)
+                eff_i = np.interp(Omega_i_rpm, lss_rpm, driveEta)[0]
                 P_i = float(P_aero_i * eff_i)
                 return 1e-4 * (P_i - P_rated)
 
@@ -535,8 +539,8 @@ class ComputePowerCurve(ExplicitComponent):
             P_rated = P_rated
 
             ## REGION II.5 and RATED with peak shaving##
-            if self.peak_thrust_shaving:
-                max_T = self.thrust_shaving_coeff * T_rated
+            if peak_thrust_shaving:
+                max_T = ps_percent * T_rated
 
                 def const_Urated_Tpeak(x):
                     pitch_i = x[0]
@@ -546,7 +550,7 @@ class ComputePowerCurve(ExplicitComponent):
                     myout, _ = self.ccblade.evaluate([Uhub_i], [Omega_i_rpm], [pitch_i], coefficients=False)
                     P_aero_i = float(myout["P"][0])
                     # P_i,_  = compute_P_and_eff(P_aero_i.flatten(), P_rated, Omega_i_rpm, driveType, driveEta)
-                    eff_i = np.interp(Omega_i_rpm, lss_rpm, driveEta)
+                    eff_i = np.interp(Omega_i_rpm, lss_rpm, driveEta)[0]
                     P_i = float(P_aero_i * eff_i)
                     T_i = float(myout["T"][0])
                     return 1e-4 * (P_i - P_rated), 1e-4 * (T_i - max_T)
@@ -651,9 +655,9 @@ class ComputePowerCurve(ExplicitComponent):
             # points coming out of the optimization routines in the next block of code. This way, a Region 2 point that is
             # at optimal TSR-rpm and 0-deg pitch but 1% over the thrust target can be allowed to stand.
             if (
-                ((Omega[i] == Omega_tsr[i]) and not self.peak_thrust_shaving)
-                or ((Omega[i] == Omega_tsr[i]) and self.peak_thrust_shaving and (T[i]/max_T <= 1.04))
-                or ((Omega[i] == Omega_min) and self.fix_pitch_regI12)
+                ((Omega[i] == Omega_tsr[i]) and not peak_thrust_shaving)
+                or ((Omega[i] == Omega_tsr[i]) and peak_thrust_shaving and (T[i]/max_T <= 1.04))
+                or ((Omega[i] == Omega_min) and discrete_inputs["fix_pitch_regI12"])
                 or (found_rated and (i == i_rated))
             ):
                 continue
@@ -666,7 +670,7 @@ class ComputePowerCurve(ExplicitComponent):
             # For better conditioning near cut-in, use rated values
             scaling_power = P_rated #myout["P"]
             scaling_thrust = T_rated #myout["T"]
-            if self.peak_thrust_shaving and found_rated:
+            if peak_thrust_shaving and found_rated:
                 # Have to constrain thrust
                 const = {}
                 const["type"] = "ineq"
@@ -693,7 +697,7 @@ class ComputePowerCurve(ExplicitComponent):
             # Find associated power
             myout, _ = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
             P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [
-                myout[key] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
+                myout[key][0] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
             ]
             # P[i], eff[i] = compute_P_and_eff(P_aero[i], P_rated, Omega_rpm[i], driveType, driveEta)
             eff[i] = np.interp(Omega_rpm[i], lss_rpm, driveEta)
@@ -737,7 +741,7 @@ class ComputePowerCurve(ExplicitComponent):
 
                     myout, _ = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
                     P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [
-                        myout[key] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
+                        myout[key][0] for key in ["P", "T", "Q", "Mb", "CP", "CT", "CQ", "CMb"]
                     ]
                     eff[i] = np.interp(Omega_rpm[i], lss_rpm, driveEta)
                     P[i] = P_aero[i] * eff[i]
@@ -745,7 +749,7 @@ class ComputePowerCurve(ExplicitComponent):
                     # P[i]        = P_rated
 
                     # If we are thrust shaving, then check if this is a point that must be modified
-                    if self.peak_thrust_shaving and T[i] >= max_T:
+                    if peak_thrust_shaving and T[i] >= max_T:
                         myout, _ = self.ccblade.evaluate(Uhub[i], Omega_rpm[i], pitch0, coefficients=False)
                         scaling_thrust = myout["T"]
                         const = {}
