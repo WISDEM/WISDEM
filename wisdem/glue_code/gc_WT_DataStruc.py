@@ -1151,6 +1151,9 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             outputs["r_thick_interp"] = rthick_spline(inputs["s"])
         else:
             outputs["r_thick_interp"] = inputs["r_thick_yaml"]
+            if np.min(outputs["r_thick_interp"]) < np.min(r_thick_used):
+                raise Exception("The distribution of relative thickness defined in the geometry yaml cannot be reproduced with the airfoils defined along span. Please provide an airfoil at least %f percent thick in the field airfoil_position."%(np.min(outputs["r_thick_interp"])*100))
+
         ac_spline = spline(inputs["af_position"], ac_used)
         outputs["ac_interp"] = ac_spline(inputs["s"])
 
