@@ -31,8 +31,8 @@ class LandBOSSE(om.Group):
 
         self.set_input_defaults("turbine_spacing_rotor_diameters", 4)
         self.set_input_defaults("row_spacing_rotor_diameters", 10)
-        self.set_input_defaults("commissioning_pct", 0.01)
-        self.set_input_defaults("decommissioning_pct", 0.15)
+        self.set_input_defaults("commissioning_cost_kW", 44.0, units="USD/kW")
+        self.set_input_defaults("decommissioning_cost_kW", 58.0, units="USD/kW")
         self.set_input_defaults("trench_len_to_substation_km", 50.0, units="km")
         self.set_input_defaults("interconnect_voltage_kV", 130.0, units="kV")
 
@@ -163,8 +163,8 @@ class LandBOSSE_API(om.ExplicitComponent):
         # Disabled due to Pandas conflict right now.
         self.add_input("labor_cost_multiplier", val=1.0, desc="Labor cost multiplier")
 
-        self.add_input("commissioning_pct", 0.01)
-        self.add_input("decommissioning_pct", 0.15)
+        self.add_input("commissioning_cost_kW", 44.0, units="USD/kW", desc="Commissioning cost.")
+        self.add_input("decommissioning_cost_kW", 58.0, units="USD/kW", desc="Decommissioning cost.")
 
     def setup_discrete_inputs_that_are_not_dataframes(self):
         """
@@ -590,18 +590,15 @@ class LandBOSSE_API(om.ExplicitComponent):
                 installation_per_project += row["Cost / project"]
                 installation_per_kW += row["Cost / kW"]
 
-        commissioning_pct = inputs["commissioning_pct"]
-        decommissioning_pct = inputs["decommissioning_pct"]
+        commissioning_kW = inputs["commissioning_cost_kW"]
+        decommissioning_kW = inputs["decommissioning_cost_kW"]
 
-        commissioning_per_project = bos_per_project * commissioning_pct
-        decomissioning_per_project = bos_per_project * decommissioning_pct
-        commissioning_per_kW = bos_per_kw * commissioning_pct
-        decomissioning_per_kW = bos_per_kw * decommissioning_pct
+        capacity = bos_per_project / bos_per_kw
 
-        outputs["total_capex_kW"] = bos_per_kw + commissioning_per_kW + decomissioning_per_kW
-        outputs["total_capex"] = bos_per_project + commissioning_per_project + decomissioning_per_project
         outputs["bos_capex"] = bos_per_project
         outputs["bos_capex_kW"] = bos_per_kw
+        outputs["total_capex_kW"] = bos_per_kw + commissioning_kW + decommissioning_kW
+        outputs["total_capex"] = bos_per_project + capacity*(commissioning_kW + decommissioning_kW)
         outputs["installation_capex"] = installation_per_project
         outputs["installation_capex_kW"] = installation_per_kW
 

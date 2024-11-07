@@ -94,6 +94,11 @@ properties:
                                         minimum: 0
                                         unit: none
                                         description: Last index of the array of design variables/constraints that is optimized/constrained
+                                    cap_twist_root:
+                                        type: number
+                                        description: Maximum allowable twist during an inverse design. Close to blade root, twist will be capped to this value.
+                                        default: 0.349
+                                        unit: rad
                             chord:
                                 type: object
                                 default: {}
@@ -1037,9 +1042,9 @@ properties:
                             first_edge: *freq_constraint
                             # second_edge: *freq_constraint
                             first_torsion: *freq_constraint
-                    mass:
+                    mass: &mass_constr
                         type: object
-                        description: Enforcing a target blade mass (useful for inverse design approaches)
+                        description: Enforcing a target mass (useful for inverse design approaches)
                         default: {}
                         properties:
                             flag: *flag
@@ -1047,7 +1052,7 @@ properties:
                                 type: number
                                 default: 0.
                                 minimum: 0.
-                                maximum: 3.e+5
+                                maximum: 1.e+7
                                 description: Value of the target blade mass
                             acceptable_error:
                                 type: number
@@ -1219,6 +1224,7 @@ properties:
                                 maximum: 5.0
                                 unit: Hz
                             upper_bound: *fminmax
+                    mass: *mass_constr
             monopile: &moncon
                 type: object
                 default: {}
@@ -1232,6 +1238,7 @@ properties:
                     d_to_t: *d_to_t
                     taper: *taper
                     frequency_1: *towfreq1
+                    mass: *mass_constr
                     pile_depth:
                         type: object
                         description: Ensures that the submerged suction pile depth meets a minimum value
