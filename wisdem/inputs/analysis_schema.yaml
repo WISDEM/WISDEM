@@ -867,6 +867,7 @@ properties:
             user_defined:
                 type: array
                 description: List of user-defined design variables. These must be already listed as OpenMDAO indipendent cariable components. 
+                default: []
                 items:
                     type: object
                     description: OpenMDAO entries, taken from https://openmdao.org/newdocs/versions/latest/features/core_features/adding_desvars_cons_objs/adding_design_variables.html 
