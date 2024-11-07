@@ -206,6 +206,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             ctrl_ivc.add_output("max_torque_rate", val=0.0, units="N*m/s", desc="Maximum allowed generator torque rate")
             ctrl_ivc.add_output("rated_TSR", val=0.0, desc="Constant tip speed ratio in region II.")
             ctrl_ivc.add_output("rated_pitch", val=0.0, units="rad", desc="Constant pitch angle in region II.")
+            ctrl_ivc.add_output("ps_percent", val=1.0, desc="Scalar applied to the max thrust within RotorSE for peak thrust shaving.")
+            ctrl_ivc.add_discrete_output("fix_pitch_regI12", val=False, desc="If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.")
 
         # Blade inputs and connections from airfoils
         if modeling_options["flags"]["blade"]:
@@ -1153,6 +1155,9 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             outputs["r_thick_interp"] = rthick_spline(inputs["s"])
         else:
             outputs["r_thick_interp"] = inputs["r_thick_yaml"]
+            if np.min(outputs["r_thick_interp"]) < np.min(r_thick_used):
+                raise Exception("The distribution of relative thickness defined in the geometry yaml cannot be reproduced with the airfoils defined along span. Please provide an airfoil at least %f percent thick in the field airfoil_position."%(np.min(outputs["r_thick_interp"])*100))
+
         ac_spline = spline(inputs["af_position"], ac_used)
         outputs["ac_interp"] = ac_spline(inputs["s"])
 

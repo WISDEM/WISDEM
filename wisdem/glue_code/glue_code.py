@@ -147,6 +147,8 @@ class WT_RNTA(om.Group):
 
             if modeling_options["flags"]["control"]:
                 self.connect("control.rated_pitch", "rotorse.pitch")
+                self.connect("control.ps_percent", "rotorse.rp.powercurve.ps_percent")
+                self.connect("control.fix_pitch_regI12", "rotorse.rp.powercurve.fix_pitch_regI12")
             self.connect("control.rated_TSR", "rotorse.tsr")
             self.connect("env.rho_air", "rotorse.rho_air")
             self.connect("env.mu_air", "rotorse.mu_air")
