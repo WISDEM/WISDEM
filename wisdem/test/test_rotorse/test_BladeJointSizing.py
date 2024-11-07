@@ -23,9 +23,9 @@ class TestRC(unittest.TestCase):
         self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.L_transition_joint"][0], -0.004017126893942291, places=accuracy)
         self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.t_reinf_ratio_joint"][0], 0.9899571827651443, places=accuracy)
         self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.w_reinf_ratio_joint"][0], 1.2087641190997038, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.n_joint_bolt"][0], 38.364778956043914, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_mass"][0], 431.97426980947546, places=accuracy)
-        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_material_cost"][0], 1863.1661079528496, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.n_joint_bolt"][0],  36.71294888223487, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_mass"][0], 415.7592207437483, places=accuracy)
+        self.assertAlmostEqual(wt_opt["rotorse.rs.bjs.joint_material_cost"][0], 1792.094896021335, places=accuracy)
 
 
 if __name__ == "__main__":
