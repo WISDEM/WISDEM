@@ -864,7 +864,7 @@ properties:
                             flag: *flag
                             lower_bound: *lboundm
                             upper_bound: *uboundm
-            user_defined:
+            user:
                 type: array
                 description: List of user-defined design variables. These must be already listed as OpenMDAO indipendent cariable components. 
                 default: []
