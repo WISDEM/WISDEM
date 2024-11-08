@@ -1,11 +1,5 @@
 import os
-import sys
-
-try:
-    from mpi4py import MPI
-except ImportError:
-    MPI = False
-
+#import sys
 
 def under_mpirun():
     """Return True if we're being executed under mpirun."""
@@ -28,12 +22,12 @@ def under_mpirun():
 if under_mpirun():
     from mpi4py import MPI
 
-    def debug(*msg):  # pragma: no cover
-        newmsg = ["%d: " % MPI.COMM_WORLD.rank] + list(msg)
-        for m in newmsg:
-            sys.stdout.write("%s " % m)
-        sys.stdout.write("\n")
-        sys.stdout.flush()
+    #def debug(*msg):  # pragma: no cover
+    #    newmsg = ["%d: " % MPI.COMM_WORLD.rank] + list(msg)
+    #    for m in newmsg:
+    #        sys.stdout.write("%s " % m)
+    #    sys.stdout.write("\n")
+    #    sys.stdout.flush()
 
 else:
     MPI = None

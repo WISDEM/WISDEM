@@ -6,9 +6,9 @@ import time
 
 import numpy as np
 import openmdao.api as om
+from openmdao.utils.mpi import MPI
 
 from wisdem.commonse import fileIO
-from wisdem.commonse.mpi_tools import MPI
 from wisdem.glue_code.glue_code import WindPark
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
@@ -40,33 +40,33 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
     myopt = PoseOptimization(wt_init, modeling_options, opt_options)
 
     if MPI:
-        n_DV = myopt.get_number_design_variables()
+        #n_DV = myopt.get_number_design_variables()
 
         # Extract the number of cores available
         max_cores = MPI.COMM_WORLD.Get_size()
 
-        if max_cores > n_DV and opt_options["opt_flag"] and not run_only:
-            raise ValueError(
-                "ERROR: please reduce the number of cores, currently set to "
-                + str(max_cores)
-                + ", to the number of finite differences "
-                + str(n_DV)
-                + ", which is equal to the number of design variables DV for forward differencing"
-                + " and DV times 2 for central differencing,"
-                + " or the parallelization logic will not work"
-            )
+        #if max_cores > n_DV and opt_options["opt_flag"] and not run_only:
+        #    raise ValueError(
+        #        "ERROR: please reduce the number of cores, currently set to "
+        #        + str(max_cores)
+        #        + ", to the number of finite differences "
+        #        + str(n_DV)
+        #        + ", which is equal to the number of design variables DV for forward differencing"
+        #        + " and DV times 2 for central differencing,"
+        #        + " or the parallelization logic will not work"
+        #    )
 
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD) evaluations based on the number of design variables (DV).
-        n_FD = min([max_cores, n_DV])
+        #n_FD = min([max_cores, n_DV])
 
         # Define the color map for the cores
-        n_FD = max([n_FD, 1])
-        comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, 1)
+        #n_FD = max([n_FD, 1])
+        #comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, 1)
         rank = MPI.COMM_WORLD.Get_rank()
-        color_i = color_map[rank]
-        comm_i = MPI.COMM_WORLD.Split(color_i, 1)
+        #color_i = color_map[rank]
+        #comm_i = MPI.COMM_WORLD.Split(color_i, 1)
     else:
-        color_i = 0
+        #color_i = 0
         rank = 0
 
     folder_output = opt_options["general"]["folder_output"]
@@ -101,10 +101,10 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
         logger.addHandler(hf)
         logger.info("Started")
 
-    if color_i == 0:  # the top layer of cores enters
+    if rank == 0:  # the top layer of cores enters
         if MPI:
             # Parallel settings for OpenMDAO
-            wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i, reports=False)
+            wt_opt = om.Problem(model=om.Group(num_par_fd=max_cores), reports=False)
             wt_opt.model.add_subsystem(
                 "comp", WindPark(modeling_options=modeling_options, opt_options=opt_options), promotes=["*"]
             )
