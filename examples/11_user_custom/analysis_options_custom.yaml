@@ -6,9 +6,9 @@ general:
 design_variables:
     user:
       - name: configuration.rated_power
-        lower_bound: 4.e+6
-        upper_bound: 6.e+6
-        ref: 5.e+6
+        lower_bound: [4.e+6]
+        upper_bound: [6.e+6]
+        ref: [5.e+6]
         # indices:
         
 
