@@ -23,8 +23,8 @@ merit_figure_user:
 constraints:
     user:
       - name: tcc.turbine_cost_kW
-        lower: 1.e+3
-        upper: 1.5e+3
+        lower: [1.0e+3]
+        upper: [1.5e+3]
         # indices: 
 
 # driver
