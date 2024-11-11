@@ -864,9 +864,10 @@ properties:
                             flag: *flag
                             lower_bound: *lboundm
                             upper_bound: *uboundm
-            user_defined:
+            user:
                 type: array
                 description: List of user-defined design variables. These must be already listed as OpenMDAO indipendent cariable components. 
+                default: []
                 items:
                     type: object
                     description: OpenMDAO entries, taken from https://openmdao.org/newdocs/versions/latest/features/core_features/adding_desvars_cons_objs/adding_design_variables.html 
@@ -894,7 +895,7 @@ properties:
                             type: array
                             description: If an input is an array, these indicate which entries are of interest for this particular design variable. These may be positive or negative integers
                             items:
-                                type: number
+                                type: integer
     constraints:
         type: object
         default: {}
@@ -1496,14 +1497,20 @@ properties:
                             type: string
                             description: User-specified constraint variable using full name in the WISDEM namespace
                         lower_bound:
-                            type: number
+                            type: array
                             description: Variable must be greater than or equal to this value (entry must have lower_bound and/or upper_bound)
+                            items:
+                                type: number
                         upper_bound:
-                            type: number
+                            type: array
                             description: Variable must be less than or equal to this value (entry must have lower_bound and/or upper_bound)
+                            items:
+                                type: number
                         indices:
-                            type: string
+                            type: array
                             description: Optional string of python indices in a list (i.e. [0,1,2]) or slice (i.e. [:3])
+                            items:
+                                type: integer
 
     merit_figure:
         type: string
