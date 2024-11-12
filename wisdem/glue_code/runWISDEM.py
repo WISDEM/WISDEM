@@ -63,7 +63,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
     logger.addHandler(hf)
     logger.info("Started")
 
-    if MPI:
+    if MPI and opt_options["opt_flag"] and not run_only:
         # Parallel settings for OpenMDAO
         wt_opt = om.Problem(model=om.Group(num_par_fd=max_cores), reports=False)
         wt_opt.model.add_subsystem(
