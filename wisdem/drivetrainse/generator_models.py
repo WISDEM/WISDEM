@@ -775,7 +775,7 @@ class PMSG_Outer(GeneratorBase):
         m = int(discrete_inputs["m"])
         mu_0 = float(inputs["mu_0"][0])
         mu_r = float(inputs["mu_r"][0])
-        p = inputs["p"]
+        p = float(inputs["p"][0])
         phi = float(inputs["phi"][0])
         ratio_mw2pp = float(inputs["ratio_mw2pp"][0])
         resist_Cu = float(inputs["resist_Cu"][0])

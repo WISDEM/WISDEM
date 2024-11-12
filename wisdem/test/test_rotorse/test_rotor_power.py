@@ -152,8 +152,6 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = True
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
-        modeling_options["WISDEM"]["RotorSE"]["peak_thrust_shaving"] = False
-        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = False
 
         prob.model.add_subsystem(
             "powercurve", rp.RegulatedPowerCurve(modeling_options=modeling_options), promotes=["*"]
@@ -337,8 +335,6 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = False
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
-        modeling_options["WISDEM"]["RotorSE"]["peak_thrust_shaving"] = False
-        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = False
 
         prob.model.add_subsystem(
             "powercurve", rp.RegulatedPowerCurve(modeling_options=modeling_options), promotes=["*"]
@@ -420,9 +416,6 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = True
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
-        modeling_options["WISDEM"]["RotorSE"]["peak_thrust_shaving"] = True
-        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = False
-        modeling_options["WISDEM"]["RotorSE"]["thrust_shaving_coeff"] = 0.8
 
         prob.model.add_subsystem(
             "powercurve", rp.RegulatedPowerCurve(modeling_options=modeling_options), promotes=["*"]
@@ -433,6 +426,7 @@ class TestServo(unittest.TestCase):
         prob["omega_max"] = 1e3
         prob["control_maxTS"] = 1e5
         prob["rated_power"] = 1e16
+        prob["ps_percent"] = 0.8
         prob.run_model()
 
         grid0 = np.cumsum(np.abs(np.diff(np.cos(np.linspace(-np.pi / 4.0, np.pi / 2.0, n_pc)))))
@@ -553,9 +547,6 @@ class TestServo(unittest.TestCase):
         modeling_options["WISDEM"]["RotorSE"]["regulation_reg_III"] = True
         modeling_options["WISDEM"]["RotorSE"]["n_pc"] = n_pc
         modeling_options["WISDEM"]["RotorSE"]["n_pc_spline"] = n_pc
-        modeling_options["WISDEM"]["RotorSE"]["peak_thrust_shaving"] = False
-        modeling_options["WISDEM"]["RotorSE"]["fix_pitch_regI12"] = False
-        modeling_options["WISDEM"]["RotorSE"]["thrust_shaving_coeff"] = 1.0
 
         prob.model.add_subsystem(
             "powercurve", rp.RegulatedPowerCurve(modeling_options=modeling_options), promotes=["*"]

@@ -686,8 +686,8 @@ environment:
 bos:
     plant_turbine_spacing: 7
     plant_row_spacing: 7
-    commissioning_pct: 0.01
-    decommissioning_pct: 0.15
+    commissioning_cost_kW: 44.0
+    decommissioning_cost_kW: 58.0
     distance_to_substation: 50.0
     distance_to_interconnection: 8.
     interconnect_voltage: 130
