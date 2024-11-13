@@ -124,6 +124,7 @@ class WindTurbineOntologyPython(object):
         # Materials
         self.modeling_options["materials"] = {}
         self.modeling_options["materials"]["n_mat"] = len(self.wt_init["materials"])
+        self.modeling_options["materials"]["mat_name"] = [self.wt_init["materials"][i]["name"] for i in range(self.modeling_options["materials"]["n_mat"])]
 
         # Airfoils
         if self.modeling_options["flags"]["airfoils"]:
@@ -183,6 +184,7 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["WISDEM"]["RotorSE"]["n_af_span"] = len(
                 self.wt_init["components"]["blade"]["outer_shape_bem"]["airfoil_position"]["labels"]
             )  # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
+            self.modeling_options["WISDEM"]["RotorSE"]["airfoil_labels"] = self.wt_init["components"]["blade"]["outer_shape_bem"]["airfoil_position"]["labels"]
             self.modeling_options["WISDEM"]["RotorSE"]["n_webs"] = len(
                 self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"]
             )
@@ -257,6 +259,8 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = self.modeling_options["WISDEM"]["TowerSE"][
                 "n_layers"
             ]
+            self.modeling_options["WISDEM"]["TowerSE"]["layer_name"] = [self.wt_init["components"]["tower"]["internal_structure_2d_fem"]["layers"][i]["name"] for i in range(self.modeling_options["WISDEM"]["TowerSE"]["n_layers"])]
+            self.modeling_options["WISDEM"]["TowerSE"]["layer_material"] = [self.wt_init["components"]["tower"]["internal_structure_2d_fem"]["layers"][i]["material"] for i in range(self.modeling_options["WISDEM"]["TowerSE"]["n_layers"])]
 
         # Monopile
         if self.modeling_options["flags"]["monopile"]:
@@ -647,6 +651,7 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["OWENS"]["struts"]["n_af_span"] = len(
                 self.wt_init["components"]["struts"]["outer_shape_bem"]["airfoil_position"]["labels"]
             )  # This is the number of airfoils defined along strut span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
+            self.modeling_options["OWENS"]["struts"]["airfoils"] = self.wt_init["components"]["struts"]["outer_shape_bem"]["airfoil_position"]["labels"]
             self.modeling_options["OWENS"]["struts"]["n_webs"] = len(
                 self.wt_init["components"]["struts"]["internal_structure_2d_fem"]["webs"]
             )
@@ -945,7 +950,7 @@ class WindTurbineOntologyPython(object):
             # Reference axis from blade outer shape
             self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["reference_axis"] = self.wt_init[
                 "components"
-            ]["blade"]["outer_shape_bem"]["reference_axis"]
+            ]["blade"]["outer_shape_bem"]["reference_axis"] # YL: why does the internal structure 2d fem take the outer shape bem values?
             # Webs positions
             for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_webs"]):
                 if "rotation" in self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"]:

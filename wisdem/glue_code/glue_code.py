@@ -38,7 +38,7 @@ class WT_RNTA_Prop(om.Group):
             promotes=["*"],
         )
 
-        if modeling_options["flags"]["blade"] and (not modeling_options["flags"]["vawt"]):
+        if modeling_options["flags"]["blade"]: # and (not modeling_options["flags"]["vawt"]):
             self.add_subsystem("rotorse", RotorSEProp(modeling_options=modeling_options, opt_options=opt_options))
 
         if modeling_options["flags"]["tower"]:
@@ -70,7 +70,7 @@ class WT_RNA(om.Group):
             nlbgs.options["rtol"] = 1e-8
             nlbgs.options["iprint"] = 2
 
-        if modeling_options["flags"]["blade"] and (not modeling_options["flags"]["vawt"]):
+        if modeling_options["flags"]["blade"]: # and (not modeling_options["flags"]["vawt"]):
             self.add_subsystem("rotorse", RotorSEPerf(modeling_options=modeling_options, opt_options=opt_options))
 
         if modeling_options["flags"]["nacelle"]:
@@ -294,7 +294,7 @@ class WT_RNTA(om.Group):
                     "blade.internal_structure_2d_fem.layer_web", ["rotorse.rc_in.layer_web", "rotorse.rc_out.layer_web"]
                 )
 
-            else:
+            elif False:
                 self.connect("blade.high_level_blade_props.blade_length", "rotorse.rc.blade_length")
                 self.connect("blade.outer_shape_bem.s", "rotorse.rc.s")
                 self.connect("blade.pa.chord_param", "rotorse.rc.chord")
@@ -512,7 +512,7 @@ class WT_RNTA(om.Group):
                 self.connect("generator.generator_efficiency_user", "drivese.generator_efficiency_user")
 
         # Connections to TowerSE
-        if modeling_options["flags"]["tower"] and (not modeling_options["flags"]["vawt"]):
+        if modeling_options["flags"]["tower"]:
             if modeling_options["flags"]["nacelle"]:
                 self.connect("drivese.base_F", "towerse.tower.rna_F")
                 self.connect("drivese.base_M", "towerse.tower.rna_M")
@@ -775,7 +775,7 @@ class WT_RNTA(om.Group):
         self.connect("configuration.rated_power", "tcc.machine_rating")
         if modeling_options["flags"]["blade"]:
             self.connect("rotorse.blade_mass", "tcc.blade_mass")
-            self.connect("rotorse.total_bc.total_blade_cost", "tcc.blade_cost_external")
+            # self.connect("rotorse.total_bc.total_blade_cost", "tcc.blade_cost_external")
 
         if modeling_options["flags"]["nacelle"]:
             self.connect("drivese.hub_mass", "tcc.hub_mass")
