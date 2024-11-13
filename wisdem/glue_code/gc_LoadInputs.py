@@ -1478,6 +1478,7 @@ class WindTurbineOntologyPython(object):
         # Update controller
         if self.modeling_options["flags"]["control"]:
             self.wt_init["control"]["torque"]["tsr"] = float(wt_opt["control.rated_TSR"][0])
+            self.wt_init["control"]["pitch"]["ps_percent"] = float(wt_opt["control.ps_percent"][0])
 
         # Update cost coefficients
         if self.modeling_options["flags"]["costs"]:
