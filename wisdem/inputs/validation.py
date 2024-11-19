@@ -5,6 +5,7 @@ import jsonschema as json
 import ruamel.yaml as ry
 from functools import reduce
 import operator
+from openmdao.utils.mpi import MPI
 
 
 fschema_geom = os.path.join(os.path.dirname(os.path.realpath(__file__)), "geometry_schema.yaml")
@@ -145,6 +146,23 @@ def extend_with_default(validator_class):
 
 DefaultValidatingDraft7Validator = extend_with_default(json.Draft7Validator)
 
+def MPI_load_yaml(fname):
+    """
+    When MPI is active, loads a yaml on rank 0 and broadcasts it out
+
+    Args:
+        fname: file name of input yaml file
+
+    Returns:
+        dict: Dictionary corresponding to that yaml file
+    """
+
+    rank = MPI.COMM_WORLD.Get_rank()
+    dict_yaml = load_yaml(fname) if rank == 0 else None
+    dict_yaml = MPI.COMM_WORLD.bcast(dict_yaml, root = 0)
+
+    return dict_yaml
+
 def _validate(finput, fschema, defaults=True):
     """
     Validates a dictionary against a schema and returns the validated dictionary.
@@ -157,8 +175,19 @@ def _validate(finput, fschema, defaults=True):
     Returns:
         dict: Validated dictionary.
     """
-    schema_dict = fschema if isinstance(fschema, dict) else load_yaml(fschema)
-    input_dict = finput if isinstance(finput, dict) else load_yaml(finput)
+    if isinstance(fschema, dict):
+        schema_dict = fschema
+    else:
+        schema_dict = MPI_load_yaml(fschema) if MPI else load_yaml(fschema)
+
+    
+    if isinstance(finput, dict):
+        input_dict = finput
+    else:
+        input_dict = MPI_load_yaml(finput) if MPI else load_yaml(finput)
+
+    # schema_dict = fschema if isinstance(fschema, dict) else load_yaml(fschema)
+    # input_dict = finput if isinstance(finput, dict) else load_yaml(finput)
     validator = DefaultValidatingDraft7Validator if defaults else json.Draft7Validator
     validator(schema_dict).validate(input_dict)
     return input_dict
