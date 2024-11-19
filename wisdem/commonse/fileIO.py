@@ -4,15 +4,22 @@ import openmdao
 import numpy as np
 import pandas as pd
 import scipy.io as sio
+from openmdao.utils.mpi import MPI
 
 def get_variable_list(prob):
 
     # Get all OpenMDAO inputs and outputs into a dictionary
     input_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, is_indep_var=True, out_stream=None)
+    # If MPI, share input dictionary from rank 0 to all other ranks, which would otherwise be empty
+    if MPI:
+        input_dict = MPI.COMM_WORLD.bcast(input_dict, root=0) 
     for k in range(len(input_dict)):
         input_dict[k][1]["type"] = "input"
 
     inter_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, is_indep_var=False, out_stream=None)
+    # If MPI, share intermediate dictionary from rank 0 to all other ranks, which would otherwise be empty
+    if MPI:
+        inter_dict = MPI.COMM_WORLD.bcast(inter_dict, root=0)
     for k in range(len(inter_dict)):
         inter_dict[k][1]["type"] = "intermediate"
 
@@ -21,6 +28,9 @@ def get_variable_list(prob):
     #    var_dict[k][1]["type"] = "output"
 
     out_dict = prob.model.list_outputs(prom_name=True, units=True, desc=True, out_stream=None)
+    # If MPI, share output dictionary from rank 0 to all other ranks, which would otherwise be empty
+    if MPI:
+        out_dict = MPI.COMM_WORLD.bcast(out_dict, root=0)
     for k in range(len(out_dict)):
         out_dict[k][1]["type"] = "output"
         
