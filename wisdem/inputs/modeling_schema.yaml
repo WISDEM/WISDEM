@@ -7,7 +7,7 @@
 $schema: "http://json-schema.org/draft-07/schema#"
 $id: WISDEM_model_options_schema_v00
 title: WISDEM wind turbine modeling options schema
-description: Scehma that describes the modeling options for WISDEM
+description: Schema that describes the modeling options for WISDEM
 type: object
 properties:
     General:
