@@ -163,7 +163,7 @@ def MPI_load_yaml(fname):
 
     return dict_yaml
 
-def _validate(finput, fschema, defaults=True):
+def _validate(finput, fschema, defaults=True, rank_0 = False):
     """
     Validates a dictionary against a schema and returns the validated dictionary.
 
@@ -171,6 +171,8 @@ def _validate(finput, fschema, defaults=True):
         finput (dict or str): Dictionary or path to the YAML file to be validated.
         fschema (dict or str): Dictionary or path to the schema file to validate against.
         defaults (bool): Flag to indicate if default values should be integrated.
+        rank_0 (bool): Flag that should be set to true when the _validate function is
+        called with MPI turned on and rank=0. Otherwise it can be kept as default to False
 
     Returns:
         dict: Validated dictionary.
@@ -178,13 +180,13 @@ def _validate(finput, fschema, defaults=True):
     if isinstance(fschema, dict):
         schema_dict = fschema
     else:
-        schema_dict = MPI_load_yaml(fschema) if MPI else load_yaml(fschema)
+        schema_dict = MPI_load_yaml(fschema) if (MPI and rank_0 == False) else load_yaml(fschema)
 
     
     if isinstance(finput, dict):
         input_dict = finput
     else:
-        input_dict = MPI_load_yaml(finput) if MPI else load_yaml(finput)
+        input_dict = MPI_load_yaml(finput) if (MPI and rank_0 == False) else load_yaml(finput)
 
     # schema_dict = fschema if isinstance(fschema, dict) else load_yaml(fschema)
     # input_dict = finput if isinstance(finput, dict) else load_yaml(finput)
@@ -207,7 +209,7 @@ def load_analysis_yaml(finput):
 
 
 def write_geometry_yaml(instance : dict, foutput : str) -> None:
-    _validate(instance, fschema_geom, defaults=False)
+    _validate(instance, fschema_geom, defaults=False, rank_0=True)
     # Ensure the file output has a .yaml suffix
     if not foutput.endswith(".yaml"):
         foutput += ".yaml"
@@ -216,7 +218,7 @@ def write_geometry_yaml(instance : dict, foutput : str) -> None:
 
 
 def write_modeling_yaml(instance : dict, foutput : str) -> None:
-    _validate(instance, fschema_model, defaults=False)
+    _validate(instance, fschema_model, defaults=False, rank_0=True)
 
     # Ensure the output filename does not end with .yaml or .yml
     if foutput.endswith(".yaml"):
@@ -231,7 +233,7 @@ def write_modeling_yaml(instance : dict, foutput : str) -> None:
 
 
 def write_analysis_yaml(instance : dict, foutput : str) -> None:
-    _validate(instance, fschema_opt, defaults=False)
+    _validate(instance, fschema_opt, defaults=False, rank_0=True)
 
     # Ensure the output filename does not end with .yaml or .yml
     if foutput.endswith(".yaml"):
