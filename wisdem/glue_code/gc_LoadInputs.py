@@ -1,6 +1,7 @@
 import numpy as np
 
 import wisdem.inputs as sch
+from openmdao.utils.mpi import MPI
 
 
 class WindTurbineOntologyPython(object):
