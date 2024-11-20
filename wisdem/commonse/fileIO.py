@@ -6,19 +6,19 @@ import pandas as pd
 import scipy.io as sio
 from openmdao.utils.mpi import MPI
 
-def get_variable_list(prob):
+def get_variable_list(prob, rank_0=False):
 
     # Get all OpenMDAO inputs and outputs into a dictionary
     input_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, is_indep_var=True, out_stream=None)
     # If MPI, share input dictionary from rank 0 to all other ranks, which would otherwise be empty
-    if MPI:
+    if MPI and rank_0 == False:
         input_dict = MPI.COMM_WORLD.bcast(input_dict, root=0) 
     for k in range(len(input_dict)):
         input_dict[k][1]["type"] = "input"
 
     inter_dict = prob.model.list_inputs(prom_name=True, units=True, desc=True, is_indep_var=False, out_stream=None)
     # If MPI, share intermediate dictionary from rank 0 to all other ranks, which would otherwise be empty
-    if MPI:
+    if MPI and rank_0 == False:
         inter_dict = MPI.COMM_WORLD.bcast(inter_dict, root=0)
     for k in range(len(inter_dict)):
         inter_dict[k][1]["type"] = "intermediate"
@@ -29,7 +29,7 @@ def get_variable_list(prob):
 
     out_dict = prob.model.list_outputs(prom_name=True, units=True, desc=True, out_stream=None)
     # If MPI, share output dictionary from rank 0 to all other ranks, which would otherwise be empty
-    if MPI:
+    if MPI and rank_0 == False:
         out_dict = MPI.COMM_WORLD.bcast(out_dict, root=0)
     for k in range(len(out_dict)):
         out_dict[k][1]["type"] = "output"
@@ -81,7 +81,7 @@ def variable_dict2df(var_dict):
 
 def save_data(fname, prob, npz_file=True, mat_file=False, xls_file=True):
     # Get the variables
-    _, _, var_dict = get_variable_list(prob)
+    _, _, var_dict = get_variable_list(prob, rank_0 = True)
     df = variable_dict2df(var_dict)
     
     # Remove file extension
