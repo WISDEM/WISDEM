@@ -1,4 +1,6 @@
 import openmdao.api as om
+import logging
+logger = logging.getLogger("wisdem/weis")
 
 
 class PlantFinance(om.ExplicitComponent):
@@ -70,6 +72,10 @@ class PlantFinance(om.ExplicitComponent):
         self.options.declare("verbosity", default=False)
 
     def setup(self):
+
+        logger.warning("In setup PlantFinance")
+
+
         # Inputs
         self.add_input("machine_rating", val=0.0, units="kW")
         self.add_input("tcc_per_kW", val=0.0, units="USD/kW")

@@ -6,6 +6,9 @@ import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.cylinder_member as mem
 from wisdem.commonse import NFREQ, gravity
 
+import logging
+logger = logging.getLogger("wisdem/weis")
+
 RIGID = 1e30
 NREFINE = 3
 
@@ -260,6 +263,7 @@ class TowerFrame(om.ExplicitComponent):
         self.add_output("turbine_M", val=np.zeros((3, nLC)), units="N*m")
 
     def compute(self, inputs, outputs):
+        logger.warning("In TowerFrame compute()")
         frame3dd_opt = self.options["frame3dd_opt"]
         nLC = self.options["nLC"]
 

@@ -1,6 +1,19 @@
 import numpy as np
 from scipy.optimize import fsolve
 
+# create logger
+import logging
+logger = logging.getLogger("wisdem/weis")
+logger.setLevel(logging.INFO)
+
+# create handlers
+ht = logging.StreamHandler()
+ht.setLevel(logging.WARNING)
+
+flog = '/projects/wec/dzalkind/weis-ctopt/examples/17_MHK/MPI_debug.log'
+hf = logging.FileHandler(flog, mode="w")
+hf.setLevel(logging.INFO)
+
 
 class CylinderBuckling:
     """
@@ -284,6 +297,8 @@ class CylinderBuckling:
         sigma_h :
         sigma_t :
         """
+
+        logger.warning('In run_buckling_checks')
 
         # Axial stress contributions
         sigma_a = Fz / (2 * np.pi * self.r * self.te)
