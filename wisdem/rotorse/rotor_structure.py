@@ -541,13 +541,14 @@ class RunFrame3DD(ExplicitComponent):
             outputs["dx"] = -displacements.dx[iCase, :]
             outputs["dy"] = displacements.dy[iCase, :]
             outputs["dz"] = -displacements.dz[iCase, :]
-            outputs["EI11"] = EI11
-            outputs["EI22"] = EI22
             outputs["M1"] = M1
             outputs["M2"] = M2
             outputs["F2"] = F2
             outputs["F3"] = F3
             outputs["alpha"] = alpha
+        
+        outputs["EI11"] = EI11
+        outputs["EI22"] = EI22
 
 
 class ComputeStrains(ExplicitComponent):
