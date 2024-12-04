@@ -510,8 +510,6 @@ class PoseOptimization(object):
         float_opt = self.opt["design_variables"]["floating"]
         mooring_opt = self.opt["design_variables"]["mooring"]
 
-        # OWENS
-        rotor_radius_vawt_opt = self.opt["design_variables"]["rotor_radius_vawt"]
 
         # -- Rotor & Blade --
         if rotorD_opt["flag"]:

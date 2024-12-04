@@ -3298,6 +3298,7 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             spline = PchipInterpolator
             x_spline = spline(inputs["s_opt_radius"], inputs["rotor_radius_vawt"])
             outputs["blade_ref_axis"][:, 0] = x_spline(inputs["s"])
+            outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2] # Don't update blade z based on diameter for vawt 
 
         outputs["r_blade"] = outputs["blade_ref_axis"][:, 2] + inputs["hub_radius"]
         outputs["rotor_radius"] = outputs["r_blade"][-1]

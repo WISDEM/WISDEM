@@ -646,6 +646,8 @@ class WindTurbineOntologyPython(object):
         # VAWT strut
         if self.modeling_options["flags"]["vawt"] and self.modeling_options["flags"]["struts"]:
             self.modeling_options["OWENS"]["struts"] = {}
+            self.modeling_options["OWENS"]["struts"]["mountfraction_blade"] = self.wt_init["components"]["struts"]["mountfraction_blade"]
+            self.modeling_options["OWENS"]["struts"]["mountfraction_tower"] = self.wt_init["components"]["struts"]["mountfraction_tower"]
             self.modeling_options["OWENS"]["struts"]["nd_span"] = self.wt_init["components"]["struts"]["outer_shape_bem"]["airfoil_position"]["grid"]/np.max(self.wt_init["components"]["struts"]["outer_shape_bem"]["airfoil_position"]["grid"])
               # Right now using just the non-dimensional original grid, might need to adapt to the equallly spacing like blade later with a separate n_span_strut_options
             self.modeling_options["OWENS"]["struts"]["n_af_span"] = len(
@@ -680,6 +682,10 @@ class WindTurbineOntologyPython(object):
                     "internal_structure_2d_fem"
                 ]["webs"][i]["name"]
 
+
+        if self.modeling_options["flags"]["vawt"]:
+            self.modeling_options["OWENS"]["blade"] = {}
+            self.modeling_options["OWENS"]["blade"]["blade_mountpoint"] = self.wt_init["components"]["blade"]["outer_shape_bem"]["blade_mountpoint"]
         # Assembly
         self.modeling_options["assembly"] = {}
         self.modeling_options["assembly"]["number_of_blades"] = int(self.wt_init["assembly"]["number_of_blades"])

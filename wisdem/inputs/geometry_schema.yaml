@@ -128,7 +128,7 @@ properties:
                             - pitch_axis
                             - reference_axis
                         optional:
-                            - blade_mount_point
+                            - blade_mountpoint
                         properties:
                             airfoil_position:
                                 type: object
@@ -212,7 +212,7 @@ properties:
                                         $ref: "#/definitions/distributed_data/angle"
                             reference_axis:
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
-                            blade_mount_point:
+                            blade_mountpoint:
                                 type: number
                                 default: 0.5
                                 description: Blade mount point ratio, 0.5 is the blade half chord is perpendicular with the axis of rotation, 0.25 is the quarter chord, etc
@@ -2204,6 +2204,12 @@ properties:
             struts:
                 type: object
                 properties:
+                    mountfraction_blade:
+                        type: array
+                        default: [0.11, 0.89]
+                    mountfraction_tower:
+                        type: array
+                        default: [0.11, 0.89]                        
                     outer_shape_bem:
                         type: object
                         required:
