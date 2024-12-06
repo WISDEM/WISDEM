@@ -112,6 +112,8 @@ class TestDirectStructure(unittest.TestCase):
         self.opt["gamma_f"] = 1.35
         self.opt["gamma_m"] = 1.3
         self.opt["gamma_n"] = 1.0
+        self.opt["frame3dd"] = {}
+        self.opt["frame3dd"]['flag'] = True        
 
 
         for k in self.inputs:
