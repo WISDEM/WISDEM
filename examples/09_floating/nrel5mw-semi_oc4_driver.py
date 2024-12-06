@@ -2,7 +2,7 @@ import os
 import sys
 import time
 
-from wisdem.commonse.mpi_tools import MPI
+from openmdao.utils.mpi import MPI
 from wisdem.glue_code.runWISDEM import run_wisdem
 
 ## File management

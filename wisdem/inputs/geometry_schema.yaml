@@ -2675,6 +2675,14 @@ properties:
                         unit: rad/s
                         minimum: 0
                         maximum: 0.2
+                    ps_percent:
+                        type: number
+                        default: 1.
+                        description: Scalar applied to the max thrust within RotorSE for peak thrust shaving
+                    fix_pitch_regI12:
+                        type: boolean
+                        default: False
+                        description: If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.
             torque:
                 type: object
                 required:
@@ -2838,20 +2846,6 @@ properties:
                 minimum: 1
                 maximum: 100
                 default: 7
-            commissioning_pct:
-                type: number
-                description: Fraction of total BOS cost that is due to commissioning
-                unit: none
-                minimum: 0
-                maximum: 1
-                default: 0.01
-            decommissioning_pct:
-                type: number
-                description: Fraction of total BOS cost that is due to decommissioning
-                unit: none
-                minimum: 0
-                maximum: 1
-                default: 0.15
             distance_to_substation:
                 type: number
                 description: Distance from centroid of plant to substation in km
@@ -2887,6 +2881,41 @@ properties:
                 minimum: 0
                 maximum: 1000
                 default: 130
+            contingency:
+                type: number
+                description: Additional contingency cost during project construction
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 316.0
+            construction_insurance:
+                type: number
+                description: Additional insurance cost during project construction
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 44.0
+            construction_financing:
+                type: number
+                description: Additional financing cost during project construction
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 183.0
+            commissioning_cost_kW:
+                type: number
+                description: Additional BOS cost to commission the turbines and wind farm
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 44.0
+            decommissioning_cost_kW:
+                type: number
+                description: Additional BOS cost to decommission the turbines and wind farm
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 58.0
             port_cost_per_month:
                 type: number
                 description: Monthly port rental fees
@@ -2900,28 +2929,14 @@ properties:
                 unit: USD
                 minimum: 0
                 maximum: 1.e+9
-                default: 0.0
-            site_assessment_plan_cost:
-                type: number
-                description: Cost to do engineering plan for site assessment
-                unit: USD
-                minimum: 0
-                maximum: 1.e+9
-                default: 0.0
+                default: 100e6
             site_assessment_cost:
                 type: number
-                description: Cost to execute site assessment
+                description: Cost to do engineering site assessment
                 unit: USD
                 minimum: 0
                 maximum: 1.e+9
-                default: 0.0
-            construction_operations_plan_cost:
-                type: number
-                description: Cost to do construction planning
-                unit: USD
-                minimum: 0
-                maximum: 1.e+9
-                default: 0.0
+                default: 50e6
             boem_review_cost:
                 type: number
                 description: Cost for additional review by U.S. Dept of Interior Bureau of Ocean Energy Management (BOEM)
@@ -2929,13 +2944,20 @@ properties:
                 minimum: 0
                 maximum: 1.e+9
                 default: 0.0
-            design_install_plan_cost:
+            construction_plan_cost:
+                type: number
+                description: Cost to do construction planning
+                unit: USD
+                minimum: 0
+                maximum: 1.e+9
+                default: 1e6
+            installation_plan_cost:
                 type: number
                 description: Cost to do installation planning
                 unit: USD
                 minimum: 0
                 maximum: 1.e+9
-                default: 0.0
+                default: 2.5e5
     costs:
         type: object
         properties:

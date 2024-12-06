@@ -1,8 +1,5 @@
 import os
 
-import numpy as np
-
-from wisdem.commonse.mpi_tools import MPI
 from wisdem.glue_code.runWISDEM import run_wisdem
 
 ## File management

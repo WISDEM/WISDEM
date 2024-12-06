@@ -206,6 +206,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             ctrl_ivc.add_output("max_torque_rate", val=0.0, units="N*m/s", desc="Maximum allowed generator torque rate")
             ctrl_ivc.add_output("rated_TSR", val=0.0, desc="Constant tip speed ratio in region II.")
             ctrl_ivc.add_output("rated_pitch", val=0.0, units="rad", desc="Constant pitch angle in region II.")
+            ctrl_ivc.add_output("ps_percent", val=1.0, desc="Scalar applied to the max thrust within RotorSE for peak thrust shaving.")
+            ctrl_ivc.add_discrete_output("fix_pitch_regI12", val=False, desc="If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.")
 
         # Blade inputs and connections from airfoils
         if modeling_options["flags"]["blade"]:
@@ -575,8 +577,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             bos_ivc = self.add_subsystem("bos", om.IndepVarComp())
             bos_ivc.add_output("plant_turbine_spacing", 7, desc="Distance between turbines in rotor diameters")
             bos_ivc.add_output("plant_row_spacing", 7, desc="Distance between turbine rows in rotor diameters")
-            bos_ivc.add_output("commissioning_pct", 0.01)
-            bos_ivc.add_output("decommissioning_pct", 0.15)
+            bos_ivc.add_output("commissioning_cost_kW", 44.0, units="USD/kW")
+            bos_ivc.add_output("decommissioning_cost_kW", 58.0, units="USD/kW")
             bos_ivc.add_output("distance_to_substation", 50.0, units="km")
             bos_ivc.add_output("distance_to_interconnection", 5.0, units="km")
             if modeling_options["flags"]["offshore"]:
@@ -584,11 +586,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 bos_ivc.add_output("distance_to_landfall", 40.0, units="km")
                 bos_ivc.add_output("port_cost_per_month", 2e6, units="USD/mo")
                 bos_ivc.add_output("site_auction_price", 100e6, units="USD")
-                bos_ivc.add_output("site_assessment_plan_cost", 1e6, units="USD")
-                bos_ivc.add_output("site_assessment_cost", 25e6, units="USD")
-                bos_ivc.add_output("construction_operations_plan_cost", 2.5e6, units="USD")
+                bos_ivc.add_output("site_assessment_cost", 50e6, units="USD")
                 bos_ivc.add_output("boem_review_cost", 0.0, units="USD")
-                bos_ivc.add_output("design_install_plan_cost", 2.5e6, units="USD")
+                bos_ivc.add_output("installation_plan_cost", 2.5e5, units="USD")
+                bos_ivc.add_output("construction_plan_cost", 1e6, units="USD")
+                bos_ivc.add_output("construction_insurance", 44.0, units="USD/kW")
+                bos_ivc.add_output("construction_financing", 183.0, units="USD/kW")
+                bos_ivc.add_output("contingency", 316.0, units="USD/kW")
             else:
                 bos_ivc.add_output("interconnect_voltage", 130.0, units="kV")
 
@@ -1151,6 +1155,9 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             outputs["r_thick_interp"] = rthick_spline(inputs["s"])
         else:
             outputs["r_thick_interp"] = inputs["r_thick_yaml"]
+            if np.min(outputs["r_thick_interp"]) < np.min(r_thick_used):
+                raise Exception("The distribution of relative thickness defined in the geometry yaml cannot be reproduced with the airfoils defined along span. Please provide an airfoil at least %f percent thick in the field airfoil_position."%(np.min(outputs["r_thick_interp"])*100))
+
         ac_spline = spline(inputs["af_position"], ac_used)
         outputs["ac_interp"] = ac_spline(inputs["s"])
 

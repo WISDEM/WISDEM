@@ -1350,6 +1350,8 @@ def assign_control_values(wt_opt, modeling_options, control):
     wt_opt["control.maxOmega"] = control["torque"]["VS_maxspd"]
     wt_opt["control.rated_TSR"] = control["torque"]["tsr"]
     wt_opt["control.rated_pitch"] = control["pitch"]["min_pitch"]
+    wt_opt["control.ps_percent"] = control["pitch"]["ps_percent"]
+    wt_opt["control.fix_pitch_regI12"] = control["pitch"]["fix_pitch_regI12"]
     wt_opt["control.max_TS"] = control["supervisory"]["maxTS"]
     wt_opt["control.max_pitch_rate"] = control["pitch"]["max_pitch_rate"]
     wt_opt["control.max_torque_rate"] = control["torque"]["max_torque_rate"]
@@ -1416,8 +1418,8 @@ def assign_environment_values(wt_opt, environment, offshore, blade_flag):
 def assign_bos_values(wt_opt, bos, offshore):
     wt_opt["bos.plant_turbine_spacing"] = bos["plant_turbine_spacing"]
     wt_opt["bos.plant_row_spacing"] = bos["plant_row_spacing"]
-    wt_opt["bos.commissioning_pct"] = bos["commissioning_pct"]
-    wt_opt["bos.decommissioning_pct"] = bos["decommissioning_pct"]
+    wt_opt["bos.commissioning_cost_kW"] = bos["commissioning_cost_kW"]
+    wt_opt["bos.decommissioning_cost_kW"] = bos["decommissioning_cost_kW"]
     wt_opt["bos.distance_to_substation"] = bos["distance_to_substation"]
     wt_opt["bos.distance_to_interconnection"] = bos["distance_to_interconnection"]
     if offshore:
@@ -1425,11 +1427,13 @@ def assign_bos_values(wt_opt, bos, offshore):
         wt_opt["bos.distance_to_landfall"] = bos["distance_to_landfall"]
         wt_opt["bos.port_cost_per_month"] = bos["port_cost_per_month"]
         wt_opt["bos.site_auction_price"] = bos["site_auction_price"]
-        wt_opt["bos.site_assessment_plan_cost"] = bos["site_assessment_plan_cost"]
         wt_opt["bos.site_assessment_cost"] = bos["site_assessment_cost"]
-        wt_opt["bos.construction_operations_plan_cost"] = bos["construction_operations_plan_cost"]
+        wt_opt["bos.construction_insurance"] = bos["construction_insurance"]
+        wt_opt["bos.construction_financing"] = bos["construction_financing"]
+        wt_opt["bos.contingency"] = bos["contingency"]
+        wt_opt["bos.construction_plan_cost"] = bos["construction_plan_cost"]
+        wt_opt["bos.installation_plan_cost"] = bos["installation_plan_cost"]
         wt_opt["bos.boem_review_cost"] = bos["boem_review_cost"]
-        wt_opt["bos.design_install_plan_cost"] = bos["design_install_plan_cost"]
     else:
         wt_opt["bos.interconnect_voltage"] = bos["interconnect_voltage"]
 

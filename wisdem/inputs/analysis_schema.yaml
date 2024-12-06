@@ -94,6 +94,11 @@ properties:
                                         minimum: 0
                                         unit: none
                                         description: Last index of the array of design variables/constraints that is optimized/constrained
+                                    cap_twist_root:
+                                        type: number
+                                        description: Maximum allowable twist during an inverse design. Close to blade root, twist will be capped to this value.
+                                        default: 0.349
+                                        unit: rad
                             chord:
                                 type: object
                                 default: {}
@@ -859,9 +864,10 @@ properties:
                             flag: *flag
                             lower_bound: *lboundm
                             upper_bound: *uboundm
-            user_defined:
+            user:
                 type: array
                 description: List of user-defined design variables. These must be already listed as OpenMDAO indipendent cariable components. 
+                default: []
                 items:
                     type: object
                     description: OpenMDAO entries, taken from https://openmdao.org/newdocs/versions/latest/features/core_features/adding_desvars_cons_objs/adding_design_variables.html 
@@ -889,7 +895,7 @@ properties:
                             type: array
                             description: If an input is an array, these indicate which entries are of interest for this particular design variable. These may be positive or negative integers
                             items:
-                                type: number
+                                type: integer
     constraints:
         type: object
         default: {}
@@ -1037,9 +1043,9 @@ properties:
                             first_edge: *freq_constraint
                             # second_edge: *freq_constraint
                             first_torsion: *freq_constraint
-                    mass:
+                    mass: &mass_constr
                         type: object
-                        description: Enforcing a target blade mass (useful for inverse design approaches)
+                        description: Enforcing a target mass (useful for inverse design approaches)
                         default: {}
                         properties:
                             flag: *flag
@@ -1047,7 +1053,7 @@ properties:
                                 type: number
                                 default: 0.
                                 minimum: 0.
-                                maximum: 3.e+5
+                                maximum: 1.e+7
                                 description: Value of the target blade mass
                             acceptable_error:
                                 type: number
@@ -1219,6 +1225,7 @@ properties:
                                 maximum: 5.0
                                 unit: Hz
                             upper_bound: *fminmax
+                    mass: *mass_constr
             monopile: &moncon
                 type: object
                 default: {}
@@ -1232,6 +1239,7 @@ properties:
                     d_to_t: *d_to_t
                     taper: *taper
                     frequency_1: *towfreq1
+                    mass: *mass_constr
                     pile_depth:
                         type: object
                         description: Ensures that the submerged suction pile depth meets a minimum value
@@ -1489,14 +1497,20 @@ properties:
                             type: string
                             description: User-specified constraint variable using full name in the WISDEM namespace
                         lower_bound:
-                            type: number
+                            type: array
                             description: Variable must be greater than or equal to this value (entry must have lower_bound and/or upper_bound)
+                            items:
+                                type: number
                         upper_bound:
-                            type: number
+                            type: array
                             description: Variable must be less than or equal to this value (entry must have lower_bound and/or upper_bound)
+                            items:
+                                type: number
                         indices:
-                            type: string
+                            type: array
                             description: Optional string of python indices in a list (i.e. [0,1,2]) or slice (i.e. [:3])
+                            items:
+                                type: integer
 
     merit_figure:
         type: string

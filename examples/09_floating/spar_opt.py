@@ -2,7 +2,7 @@ import os
 import sys
 import time
 
-from wisdem.commonse.mpi_tools import MPI
+from openmdao.utils.mpi import MPI
 from wisdem.glue_code.runWISDEM import run_wisdem
 
 ## File management
@@ -23,4 +23,4 @@ if rank == 0:
     print("Run time: %f" % (time.time() - tt))
     sys.stdout.flush()
 
-wt_opt.model.list_outputs(units=True)
+#wt_opt.model.list_outputs(units=True)
