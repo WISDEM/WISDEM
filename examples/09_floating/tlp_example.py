@@ -32,6 +32,7 @@ opt["WISDEM"]["TowerSE"]["n_layers"] = 1
 opt["WISDEM"]["TowerSE"]["n_refine"] = 1
 opt["WISDEM"]["FloatingSE"] = {}
 opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
+opt["WISDEM"]["FloatingSE"]["frame3dd"]["flag"] = True
 opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = False
 opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = False
 opt["WISDEM"]["FloatingSE"]["frame3dd"]["modal_method"] = 2
