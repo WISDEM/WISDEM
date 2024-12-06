@@ -386,7 +386,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
                 outputs["lss_shear_stress"][:, k] = 2.0 * F / As + np.abs(Mxx) / C
                 hoop = np.zeros(F.shape)
 
-                outputs["constr_lss_vonmises"][:, k] = vonMisesStressUtilization(
+                outputs["constr_lss_vonmises"][:, k] = TubevonMisesStressUtilization(
                     outputs["lss_axial_stress"][:, k],
                     hoop,
                     outputs["lss_shear_stress"][:, k],
@@ -394,7 +394,7 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
                     sigma_y,
                 )
             outputs["torq_deflection"] = rotor_gearbox_deflection.max()
-            outputs["torq_angle"] = rotor_gearbox_rotation.max()
+            outputs["torq_angle"] = rotor_gearbox_angle.max()
             outputs["constr_shaft_deflection"] = gamma * outputs["torq_deflection"] / torq_defl_allow
             outputs["constr_shaft_angle"] = gamma * outputs["torq_angle"] / torq_angle_allow
 
@@ -1421,7 +1421,7 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
                 ]
                 hoop = np.zeros(2 * n - 2)
 
-                outputs["constr_bedplate_vonmises"][:, k] = vonMisesStressUtilization(
+                outputs["constr_bedplate_vonmises"][:, k] = TubevonMisesStressUtilization(
                     outputs["bedplate_axial_stress"][:, k],
                     hoop,
                     outputs["bedplate_shear_stress"][:, k],
