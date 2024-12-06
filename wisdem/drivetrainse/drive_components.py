@@ -6,9 +6,6 @@ import openmdao.api as om
 
 import wisdem.commonse.utilities as util
 
-import logging
-logger = logging.getLogger("wisdem/weis")
-
 # -------------------------------------------------------------------------
 
 
@@ -1089,7 +1086,6 @@ class RNA_Adder(om.ExplicitComponent):
         self.add_output("rna_I_TT", np.zeros(6), units="kg*m**2")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        logger.warning('In compute RNA_Adder')
         Cup = -1.0 if discrete_inputs["upwind"] else 1.0
         tilt = float(np.deg2rad(inputs["tilt"][0]))
 
