@@ -10,6 +10,9 @@ NELEM_MAX = 500  # 1000
 RIGID = 1e30
 EPS = 1e-6
 
+import logging
+logger = logging.getLogger("wisdem/weis")
+
 
 class PlatformFrame(om.ExplicitComponent):
     def initialize(self):
@@ -103,6 +106,7 @@ class PlatformFrame(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Seems like we have to run this each time as numbering can change during optimization
+        logger.warning('In PlatformFrame compute')
         self.node_mem2glob = {}
         self.set_connectivity(inputs, outputs)
 
