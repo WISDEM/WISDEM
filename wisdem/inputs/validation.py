@@ -192,8 +192,22 @@ def _validate(finput, fschema, defaults=True, rank_0 = False):
     # input_dict = finput if isinstance(finput, dict) else load_yaml(finput)
     validator = DefaultValidatingDraft7Validator if defaults else json.Draft7Validator
     validator(schema_dict).validate(input_dict)
-    return input_dict
 
+    # Deep copy to ensure no shared references from yaml pointers and anchors
+    unique_input_dict = deep_copy_without_shared_refs(input_dict)
+
+    return unique_input_dict
+
+def deep_copy_without_shared_refs(obj):
+    """
+    Recursively creates a deep copy of the object, breaking any shared references.
+    """
+    if isinstance(obj, dict):
+        return {k: deep_copy_without_shared_refs(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [deep_copy_without_shared_refs(item) for item in obj]
+    else:
+        return obj  # Return the value directly if not a container
 
 # ---------------------
 def load_geometry_yaml(finput):
