@@ -519,8 +519,8 @@ components:
                       thickness:
                           grid: [0.0, 0.5, 1.0]
                           values: [0.02, 0.02, 0.02]
-              Ca: 1.0
-              Cd: 1.2
+              Ca: &col_ca [1.0, 1.0]
+              Cd: &col_cd [1.2, 1.0]
               Cp: 1.0
               axial_joints:
                    -  {name: 'downstream_lower_pon', grid: 0.0625}
@@ -530,8 +530,8 @@ components:
               joint2: 'upstream_upper_col'
               outer_shape: *col_out
               internal_structure: *col_int
-              Ca: 1.0
-              Cd: 1.2
+              Ca: *col_ca
+              Cd: *col_cd
               Cp: 1.0
               axial_joints:
                    -  {name: 'upstream_lower_pon', grid: 0.0625}
@@ -541,8 +541,8 @@ components:
               joint2: 'starboard_upper_col'
               outer_shape: *col_out
               internal_structure: *col_int
-              Ca: 1.0
-              Cd: 1.2
+              Ca: *col_ca
+              Cd: *col_cd
               Cp: 1.0
               axial_joints:
                    -  {name: 'starboard_lower_pon', grid: 0.0625}
@@ -552,39 +552,39 @@ components:
               joint2: 'port_upper_col'
               outer_shape: *col_out
               internal_structure: *col_int
-              Ca: 1.0
-              Cd: 1.2
+              Ca: *col_ca
+              Cd: *col_cd
               Cp: 1.0
               axial_joints:
                    -  {name: 'port_lower_pon', grid: 0.0625}
                    -  {name: 'port_upper_pon', grid: 0.9375}
-        #    -  name: 'downstream_heave_plate'
-        #       joint1: 'downstream_heave_plate'
-        #       joint2: 'downstream_lower_col'
-        #       no_intersect: True
-        #       outer_shape: &heave_plate_out
-        #           shape: circular
-        #           outer_diameter:
-        #               grid: [0.0, 1.0]
-        #               values: [12.0, 12.0]
-        #       internal_structure: &heave_plate_int
-        #           layers:
-        #              - name: col_twall
-        #                material: steel
-        #                thickness:
-        #                 grid: [0.0, 1.0]
-        #                 values: [0.4, 0.4]
-        #       Ca: 1.0
-        #       Cd: 1.2
-        #       Cp: 1.0
+           -  name: 'downstream_heave_plate'
+              joint1: 'downstream_heave_plate'
+              joint2: 'downstream_lower_col'
+              no_intersect: True
+              outer_shape: &heave_plate_out
+                  shape: circular
+                  outer_diameter:
+                      grid: [0.0, 1.0]
+                      values: [12.0, 12.0]
+              internal_structure: &heave_plate_int
+                  layers:
+                     - name: col_twall
+                       material: steel
+                       thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.4, 0.4]
+              Ca: &hp_ca [1.0,1.0]
+              Cd: &hp_cd [1.2,1.2]
+              Cp: 1.0
         #    -  name: 'upstream_heave_plate'
         #       joint1: 'upstream_heave_plate'
         #       joint2: 'upstream_lower_col'
         #       no_intersect: True
         #       outer_shape: *heave_plate_out
         #       internal_structure: *heave_plate_int
-        #       Ca: 1.0
-        #       Cd: 1.2
+        #       Ca: *hp_ca
+        #       Cd: *hp_cd
         #       Cp: 1.0
         #    -  name: 'port_heave_plate'
         #       joint1: 'port_heave_plate'
@@ -592,8 +592,8 @@ components:
         #       no_intersect: True
         #       outer_shape: *heave_plate_out
         #       internal_structure: *heave_plate_int
-        #       Ca: 1.0
-        #       Cd: 1.2
+        #       Ca: *hp_ca
+        #       Cd: *hp_cd
         #       Cp: 1.0
         #    -  name: 'starboard_heave_plate'
         #       joint1: 'starboard_heave_plate'
@@ -601,8 +601,8 @@ components:
         #       no_intersect: True
         #       outer_shape: *heave_plate_out
         #       internal_structure: *heave_plate_int
-        #       Ca: 1.0
-        #       Cd: 1.2
+        #       Ca: *hp_ca
+        #       Cd: *hp_cd
         #       Cp: 1.0
            -  name: 'upper_pontoon_DP'
               joint1: 'downstream_upper_pon'
@@ -631,8 +631,8 @@ components:
                 #       thickness:
                 #           grid: []
                 #           values: []
-              Ca: 1.0
-              Cd: 1.2
+              Ca: &pon_ca [1.0,1.0]
+              Cd: &pon_cd [1.2,1.2]
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
@@ -641,8 +641,8 @@ components:
               joint2: 'starboard_upper_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_upper
-              Ca: 1.0
-              Cd: 1.2
+              Ca: *pon_ca
+              Cd: *pon_cd
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
@@ -651,8 +651,8 @@ components:
               joint2: 'port_upper_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_upper
-              Ca: 1.0
-              Cd: 1.2
+              Ca: *pon_ca
+              Cd: *pon_cd
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
@@ -661,8 +661,8 @@ components:
               joint2: 'starboard_upper_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_upper
-              Ca: 1.0
-              Cd: 1.2
+              Ca: *pon_ca
+              Cd: *pon_cd
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
@@ -670,8 +670,8 @@ components:
               joint1: 'port_upper_pon'
               joint2: 'starboard_upper_pon'
               outer_shape: *pon_out
-              Ca: 1.0
-              Cd: 1.2
+              Ca: *pon_ca
+              Cd: *pon_cd
               Cp: 1.0
               internal_structure: *pon_int_upper
            -  name: 'lower_pontoon_DP'
@@ -688,8 +688,8 @@ components:
                   ballasts:
                     - variable_flag: True
                       grid: [0.0, 1.0]
-              Ca: 1.0
-              Cd: 1.2
+              Ca: *pon_ca
+              Cd: *pon_cd
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
@@ -698,8 +698,8 @@ components:
               joint2: 'starboard_lower_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_lower
-              Ca: 1.0
-              Cd: 1.2
+              Ca: *pon_ca
+              Cd: *pon_cd
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
@@ -708,8 +708,8 @@ components:
               joint2: 'port_lower_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_lower
-              Ca: 1.0
-              Cd: 1.2
+              Ca: *pon_ca
+              Cd: *pon_cd
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
@@ -718,8 +718,8 @@ components:
               joint2: 'starboard_lower_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_lower
-              Ca: 1.0
-              Cd: 1.2
+              Ca: *pon_ca
+              Cd: *pon_cd
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
@@ -728,8 +728,8 @@ components:
               joint2: 'starboard_lower_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_upper   # no ballast because it fills from one end to other
-              Ca: 1.0
-              Cd: 1.2
+              Ca: *pon_ca
+              Cd: *pon_cd
               Cp: 1.0
               axial_joints:
                 -  {name: 'lower_brace', grid: 0.5}
@@ -738,16 +738,16 @@ components:
               joint2: 'lower_brace'
               outer_shape: *pon_out
               internal_structure: *pon_int_lower
-              Ca: 1.0
-              Cd: 1.2
+              Ca: *pon_ca
+              Cd: *pon_cd
               Cp: 1.0
            -  name: 'tower_brace_starboard'
               joint1: 'starboard_upper_pon'
               joint2: 'lower_brace'
               outer_shape: *pon_out
               internal_structure: *pon_int_lower
-              Ca: 1.0
-              Cd: 1.2
+              Ca: *pon_ca
+              Cd: *pon_cd
               Cp: 1.0
                 
         transition_piece_mass: 0
@@ -1054,7 +1054,7 @@ materials:
    -  {name: adhesive, description: Sample adhesive, source: https://www.nrel.gov/docs/fy19osti/73585.pdf, orth: 0, rho: 1100, E: 4560000.0, nu: 0.49, alpha: 0.0, Xt: 690000.0, Xc: 400000.0, S: 310000.0, G: 1520000.0, unit_cost: 9.0}
 control:
     supervisory: {Vin: 0.5, Vout: 4.0, maxTS: 60}
-    pitch: {PC_zeta: !!null '', PC_omega: !!null '', ps_percent: !!null '', max_pitch: !!null '', max_pitch_rate: 0.1745, min_pitch: 0.00088}
+    pitch: {PC_zeta: !!null '', PC_omega: !!null '', ps_percent: 1.0, max_pitch: !!null '', max_pitch_rate: 0.1745, min_pitch: 0.00088}
     torque: {control_type: !!null '', tsr: 7.64, VS_zeta: !!null '', VS_omega: !!null '', max_torque_rate: 1500000.0, VS_minspd: 0.0, VS_maxspd: 1.26711}
     setpoint_smooth: {ss_vsgain: !!null '', ss_pcgain: !!null ''}
     shutdown: {limit_type: !!null '', limit_value: !!null ''}
