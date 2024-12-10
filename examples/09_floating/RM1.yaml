@@ -558,25 +558,25 @@ components:
               axial_joints:
                    -  {name: 'port_lower_pon', grid: 0.0625}
                    -  {name: 'port_upper_pon', grid: 0.9375}
-           -  name: 'downstream_heave_plate'
-              joint1: 'downstream_heave_plate'
-              joint2: 'downstream_lower_col'
-              no_intersect: True
-              outer_shape: &heave_plate_out
-                  shape: circular
-                  outer_diameter:
-                      grid: [0.0, 1.0]
-                      values: [12.0, 12.0]
-              internal_structure: &heave_plate_int
-                  layers:
-                     - name: col_twall
-                       material: steel
-                       thickness:
-                        grid: [0.0, 1.0]
-                        values: [0.4, 0.4]
-              Ca: &hp_ca [1.0,1.0]
-              Cd: &hp_cd [1.2,1.2]
-              Cp: 1.0
+        #    -  name: 'downstream_heave_plate'
+        #       joint1: 'downstream_heave_plate'
+        #       joint2: 'downstream_lower_col'
+        #       no_intersect: True
+        #       outer_shape: &heave_plate_out
+        #           shape: circular
+        #           outer_diameter:
+        #               grid: [0.0, 1.0]
+        #               values: [12.0, 12.0]
+        #       internal_structure: &heave_plate_int
+        #           layers:
+        #              - name: col_twall
+        #                material: steel
+        #                thickness:
+        #                 grid: [0.0, 1.0]
+        #                 values: [0.4, 0.4]
+        #       Ca: &hp_ca [1.0,1.0]
+        #       Cd: &hp_cd [1.2,1.2]
+        #       Cp: 1.0
         #    -  name: 'upstream_heave_plate'
         #       joint1: 'upstream_heave_plate'
         #       joint2: 'upstream_lower_col'
