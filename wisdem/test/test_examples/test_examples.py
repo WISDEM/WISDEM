@@ -44,7 +44,7 @@ all_scripts = [
     "09_floating/nrel5mw-spar_oc3_driver",
     "09_floating/nrel5mw-semi_oc4_driver",
     "09_floating/iea15mw_driver",
-    "09_floating/rm1_driver.py",
+    "09_floating/rm1_driver",
     "10_ccblade/example",
     "10_ccblade/gradients",
     "10_ccblade/precurve",

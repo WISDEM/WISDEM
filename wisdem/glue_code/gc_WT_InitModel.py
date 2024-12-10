@@ -1109,7 +1109,7 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
             usr_defined_flag[coeff] = np.all(np.array(floating["members"][i][coeff])>0)
             coeff_length = len(floating["members"][i][coeff])
             if usr_defined_flag[coeff]:
-                assert grid_length == coeff_length, f"Users define {coeff} of {floating["members"][i]['name']}, but the length is different from grid length ({grid_length}). Please correct."
+                assert grid_length == coeff_length, f"Users define {coeff} of {floating["members"][i]["name"]}, but the length is different from grid length ({grid_length}). Please correct."
 
         diameter_assigned = False
         for j, kgrp in enumerate(float_opt["members"]["groups"]):
