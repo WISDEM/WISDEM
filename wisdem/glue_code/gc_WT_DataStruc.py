@@ -2719,7 +2719,9 @@ class AggregateJoints(om.ExplicitComponent):
             outputs["member_" + iname + ":height"] = hk
 
             # Largest radius at connection points for this member,
-            # Don't check radius if members are paralell, it's a flag for now, but can probably check if orthogonal in the future
+            # Don't check radius and add an intersection if the member is parallel to the one it's connecting to
+            # The ghost node calculations pre-suppose that joints join orthogonal members, but if the member is parallel to another, the
+            # no_intersect flag should be used.  no_intersect should be used for modeling heave plates 
             if not floating_init_options['members']['no_intersect'][k]:
                 Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
                 node_r[joint1id] = max(node_r[joint1id], Rk[0])
