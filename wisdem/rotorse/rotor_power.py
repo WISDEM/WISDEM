@@ -670,17 +670,17 @@ class ComputePowerCurve(ExplicitComponent):
             # For a successfull minimization, find the initial power value to nondimensionalize power and bring the figure of merit close to 1
             myout, _ = self.ccblade.evaluate(Uhub[i], Omega_rpm[i], pitch0, coefficients=False)
             # For better conditioning near cut-in, use rated values
-            scaling_power = P_rated #myout["P"]
-            scaling_thrust = T_rated #myout["T"]
-            if peak_thrust_shaving and found_rated:
-                # Have to constrain thrust
+            scaling_power = 0.1*P_rated #myout["P"]
+            scaling_thrust = 0.1*T_rated #myout["T"]
+            if peak_thrust_shaving and found_rated and (Omega[i] <= Omega_tsr[i]):
+                # Have to constrain thrust in Region II.5
                 const = {}
                 const["type"] = "ineq"
                 const["fun"] = lambda x: constr_Tmax(x, Uhub[i], Omega_rpm[i], scaling_thrust)
                 params = minimize(
                     lambda x: maximizePower(x, Uhub[i], Omega_rpm[i], scaling_power),
                     pitch0,
-                    method="slsqp",  # "cobyla",
+                    method="slsqp", #"cobyla",
                     bounds=[bnds],
                     constraints=const,
                     tol=TOL,
@@ -688,14 +688,14 @@ class ComputePowerCurve(ExplicitComponent):
                 )
                 pitch[i] = params.x[0]
             else:
-                # Only adjust pitch
+                # Only adjust pitch- should be mostly region I.5 for peak shaving and also II.5 for non-peak shaving
                 pitch[i] = minimize_scalar(
                     lambda x: maximizePower(x, Uhub[i], Omega_rpm[i], scaling_power),
                     bounds=bnds,
                     method="bounded",
                     options={"disp": False, "xatol": TOL, "maxiter": 40},
                 )["x"][0]
-
+                
             # Find associated power
             myout, _ = self.ccblade.evaluate([Uhub[i]], [Omega_rpm[i]], [pitch[i]], coefficients=True)
             P_aero[i], T[i], Q[i], M[i], Cp_aero[i], Ct_aero[i], Cq_aero[i], Cm_aero[i] = [
@@ -753,7 +753,7 @@ class ComputePowerCurve(ExplicitComponent):
                     # If we are thrust shaving, then check if this is a point that must be modified
                     if peak_thrust_shaving and T[i] >= max_T:
                         myout, _ = self.ccblade.evaluate(Uhub[i], Omega_rpm[i], pitch0, coefficients=False)
-                        scaling_thrust = myout["T"]
+                        scaling_thrust = 0.1*myout["T"]
                         const = {}
                         const["type"] = "ineq"
                         const["fun"] = lambda x: constr_Tmax(x, Uhub[i], Omega_rpm[i], scaling_thrust)
