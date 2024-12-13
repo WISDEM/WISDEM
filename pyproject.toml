@@ -53,7 +53,7 @@ dependencies = [
   "marmot-agents>=0.2.5",
   "moorpy",
   "numpy",
-  "openmdao<3.36",
+  "openmdao",
   "openpyxl",
   "pandas",
   "pydoe3",
