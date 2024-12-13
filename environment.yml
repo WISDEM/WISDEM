@@ -14,7 +14,7 @@ dependencies:
   - nlopt=2.8.0
   - numpy
   - numpydoc
-  - openmdao
+  - openmdao<3.36
   - openpyxl
   - pandas
   - pip
