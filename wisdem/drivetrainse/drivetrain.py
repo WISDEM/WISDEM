@@ -165,14 +165,14 @@ class DrivetrainSE(om.Group):
         n_pc = self.options["modeling_options"]["WISDEM"]["RotorSE"]["n_pc"]
 
         self.set_input_defaults("machine_rating", units="kW")
-        self.set_input_defaults("planet_numbers", [3, 3, 0])
-        self.set_input_defaults("gear_configuration", "eep")
+        #self.set_input_defaults("planet_numbers", [3, 3, 0])
+        #self.set_input_defaults("gear_configuration", "eep")
         self.set_input_defaults("hvac_mass_coeff", 0.025, units="kg/kW/m")
         # self.set_input_defaults('mb1Type', 'CARB')
         # self.set_input_defaults('mb2Type', 'SRB')
-        self.set_input_defaults("uptower", True)
-        self.set_input_defaults("upwind", True)
-        self.set_input_defaults("n_blades", 3)
+        #self.set_input_defaults("uptower", True)
+        #self.set_input_defaults("upwind", True)
+        #self.set_input_defaults("n_blades", 3)
 
         # Materials prep
         self.add_subsystem(
