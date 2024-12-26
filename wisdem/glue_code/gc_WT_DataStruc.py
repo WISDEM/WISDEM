@@ -406,12 +406,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             else:
                 # Mulit-body properties
                 # GB: I understand these will need to be in there for OpenFAST, but if running DrivetrainSE & OpenFAST this might cause problems?
-                nacelle_ivc.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
-                nacelle_ivc.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
                 nacelle_ivc.add_output('nacelle_cm',       val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
                 nacelle_ivc.add_output('nacelle_I',        val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
-                nacelle_ivc.add_output('above_yaw_cm',       val=np.zeros(3), units='m', desc='Figure this out')
-                nacelle_ivc.add_output('generator_rotor_I',       val=np.zeros(3), units='kg*m**2', desc='Figure this out.  TODO: loadinfo')
 
             self.add_subsystem("nacelle", nacelle_ivc)
 

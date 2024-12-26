@@ -84,7 +84,10 @@ class WT_RNA(om.Group):
             drive_ivc.add_output('hub_system_I',     val=np.zeros(6), units='kg*m**2', desc='User-defined Inertia of the hub system, on the hub reference system, which has the x aligned with the rotor axis, and y and z perpendicular to it.')
             drive_ivc.add_output('rna_I_TT',     val=np.zeros(6), units='kg*m**2', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
             drive_ivc.add_output('above_yaw_I_TT',     val=np.zeros(6), units='kg*m**2', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
-
+            drive_ivc.add_output('above_yaw_mass',   val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
+            drive_ivc.add_output('yaw_mass',         val=0.0, units='kg', desc='Mass of yaw system')
+            drive_ivc.add_output('above_yaw_cm',       val=np.zeros(3), units='m', desc='Figure this out')
+            drive_ivc.add_output('generator_rotor_I',       val=np.zeros(3), units='kg*m**2', desc='Figure this out.  TODO: loadinfo')
             # Are these even in WISDEM? 
             # Why are we required to define it here?
             # Are we going to have to add IVC outputs from drivese here every time one is added to drivese?
