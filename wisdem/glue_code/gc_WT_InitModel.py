@@ -706,6 +706,7 @@ def assign_te_flaps_values(wt_opt, modeling_options, blade):
 
 def assign_hub_values(wt_opt, hub, flags):
     wt_opt["hub.diameter"] = hub["diameter"]
+    wt_opt["hub.radius"] = hub["diameter"] / 2
     wt_opt["hub.cone"] = hub["cone_angle"]
     # wt_opt['hub.drag_coeff']                  = hub['drag_coefficient'] # GB: This doesn't connect to anything
     if flags["hub"]:
@@ -724,6 +725,9 @@ def assign_hub_values(wt_opt, hub, flags):
         wt_opt["hub.spinner_mass_user"] = hub["spinner_mass_user"]
         wt_opt["hub.pitch_system_mass_user"] = hub["pitch_system_mass_user"]
         wt_opt["hub.hub_shell_mass_user"] = hub["hub_shell_mass_user"]
+    else:
+        wt_opt['drivese.hub_system_mass']   = hub['elastic_properties_mb']['system_mass']
+        wt_opt['drivese.hub_system_I']      = hub['elastic_properties_mb']['system_inertia']
 
     return wt_opt
 
@@ -806,6 +810,36 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle, flags):
             else:
                 myeff = np.zeros((n_pc, 2))
             wt_opt["generator.generator_efficiency_user"] = myeff
+
+    else:
+
+        # Should we check for some required inputs?
+        wt_opt['nacelle.above_yaw_mass']    = nacelle['elastic_properties_mb']['system_mass']
+        wt_opt['nacelle.yaw_mass']          = nacelle['elastic_properties_mb']['yaw_mass']
+        wt_opt['nacelle.nacelle_cm']        = nacelle['elastic_properties_mb']['system_center_mass']
+        wt_opt['nacelle.nacelle_I']         = nacelle['elastic_properties_mb']['system_inertia']
+        wt_opt['nacelle.above_yaw_cm']      = nacelle['elastic_properties_mb']['system_center_mass']  # TODO: figure out difference with nacelle_cm
+        wt_opt['nacelle.generator_rotor_I'] = nacelle['drivetrain']['generator_inertia_user']
+
+
+        wt_opt['drivese.rna_I_TT']          = nacelle['elastic_properties_mb']['system_inertia_tt'][2]  # TODO: check these
+        wt_opt['drivese.above_yaw_I_TT']    = nacelle['elastic_properties_mb']['system_inertia_tt'][2]  # TODO: check these
+
+        # Are these even in WISDEM? 
+        # Why are we required to define it here?
+        # Are we going to have to add IVC outputs from drivese here every time one is added to drivese?
+        # Is there an automated way to set up the outputs of drivese here?
+        wt_opt['drivese.drivetrain_spring_constant']        = 0
+        wt_opt['drivese.drivetrain_damping_coefficient']    = 0
+
+
+        # wt_opt['drivese.lss_wohler_exp'] =0 # pCrunch doesn't like this
+        # wt_opt['drivese.lss_wohler_A'] = 0  # pCrunch doesn't like this
+        # wt_opt['drivese.lss_Xt'] =  0 
+        # wt_opt['drivese.lss_axial_load2stress'] =   0 
+        # wt_opt['drivese.lss_shear_load2stress'] =   0 
+        
+        print('here')
 
     return wt_opt
 

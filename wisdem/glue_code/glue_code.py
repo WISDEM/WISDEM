@@ -75,6 +75,32 @@ class WT_RNA(om.Group):
 
         if modeling_options["flags"]["nacelle"]:
             self.add_subsystem("drivese", DrivetrainSE(modeling_options=modeling_options))
+        else:
+            # Add pass through info for drivese
+            # self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_mass'] = float(wt_opt["drivese.hub_system_mass"][0])
+            # self.wt_init["components"]["hub"]["elastic_properties_mb"]['system_inertia'] = wt_opt["drivese.hub_system_I"].tolist()
+            drive_ivc = om.IndepVarComp()
+            drive_ivc.add_output('hub_system_mass',  val=0, units='kg', desc='User-defined mass of the hub system, which includes the hub, the spinner, the blade bearings, the pitch actuators, the cabling, etc. ')
+            drive_ivc.add_output('hub_system_I',     val=np.zeros(6), units='kg*m**2', desc='User-defined Inertia of the hub system, on the hub reference system, which has the x aligned with the rotor axis, and y and z perpendicular to it.')
+            drive_ivc.add_output('rna_I_TT',     val=np.zeros(6), units='kg*m**2', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
+            drive_ivc.add_output('above_yaw_I_TT',     val=np.zeros(6), units='kg*m**2', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
+
+            # Are these even in WISDEM? 
+            # Why are we required to define it here?
+            # Are we going to have to add IVC outputs from drivese here every time one is added to drivese?
+            # Is there an automated way to set up the outputs of drivese here?
+            drive_ivc.add_output('drivetrain_spring_constant',     val=0, units='N*m/rad', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
+            drive_ivc.add_output('drivetrain_damping_coefficient',     val=0, units='N*m*s/rad', desc='Figure out how to handle this.  Can we ignore it?')  # TODO: define in loadinputs
+
+
+            drive_ivc.add_output('lss_wohler_exp', val=0, desc= 'Figure out what to do with this here')
+            drive_ivc.add_output('lss_wohler_A', val=0, desc= 'Figure out what to do with this here')
+            drive_ivc.add_output('lss_Xt', val=0, desc= 'Figure out what to do with this here')
+            drive_ivc.add_output('lss_axial_load2stress', val=np.ones(6), desc= 'Figure out what to do with this here')
+            drive_ivc.add_output('lss_shear_load2stress', val=np.ones(6), desc= 'Figure out what to do with this here')
+
+            self.add_subsystem("drivese", drive_ivc)
+            print('here')
 
             
 class WT_RNTA(om.Group):
