@@ -666,8 +666,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("tower.ref_axis", "high_level_tower_props.tower_ref_axis_user")
             self.add_subsystem("tower_grid", Compute_Grid(n_height=n_height_tower))
             self.connect("high_level_tower_props.tower_ref_axis", "tower_grid.ref_axis")
-        if modeling_options["flags"]["nacelle"]:
-            self.connect("nacelle.distance_tt_hub", "high_level_tower_props.distance_tt_hub")
+        # if modeling_options["flags"]["nacelle"]:
+        # TODO: check this hack
+        self.connect("nacelle.distance_tt_hub", "high_level_tower_props.distance_tt_hub")
 
 
 class Blade(om.Group):
