@@ -47,14 +47,14 @@ jobs:
 
       - name: Build wheels linux
         if: contains( matrix.os, 'ubuntu')
-        uses: pypa/cibuildwheel@v2.21.3
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
 
       - name: Build wheels mac-12
         if: contains( matrix.os, 'macos-12')
-        uses: pypa/cibuildwheel@v2.21.3
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
@@ -62,7 +62,7 @@ jobs:
 
       - name: Build wheels mac-13
         if: contains( matrix.os, 'macos-13')
-        uses: pypa/cibuildwheel@v2.21.3
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
@@ -70,7 +70,7 @@ jobs:
 
       - name: Build wheels mac-14
         if: contains( matrix.os, 'macos-14')
-        uses: pypa/cibuildwheel@v2.21.3
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CC: ${{ steps.install_cc.outputs.cc }}
           CXX: ${{ steps.install_cc.outputs.cxx }}
@@ -78,7 +78,7 @@ jobs:
 
       - name: Build wheels windows
         if: contains( matrix.os, 'windows')
-        uses: pypa/cibuildwheel@v2.21.3
+        uses: pypa/cibuildwheel@v2.22.0
           
       - uses: actions/upload-artifact@v4
         with:
