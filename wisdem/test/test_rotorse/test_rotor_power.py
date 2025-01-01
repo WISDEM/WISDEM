@@ -291,6 +291,30 @@ class TestServo(unittest.TestCase):
         npt.assert_allclose(myCp[Omega_expect == Omega_tsr], myCp[6])
         npt.assert_allclose(myCp[Omega_expect == Omega_tsr], prob["Cp"][Omega_expect == Omega_tsr])
 
+        # Test min & max rpm, normal power
+        prob["omega_min"] = 7.0
+        prob["omega_max"] = 14.0
+        prob["control_maxTS"] = 1e5
+        prob["rated_power"] = 5e6
+        prob.run_model()
+        V_expect1 = np.sort(np.r_[V_expect0, prob["rated_V"]])
+        # V_expect1[irated] = 14.*70*2*np.pi/(10.*60.)
+        Omega_tsr = V_expect1 * 10 * 60 / 70.0 / 2.0 / np.pi
+        Omega_expect = np.maximum(np.minimum(Omega_tsr, 14.0), 7.0)
+        npt.assert_allclose(prob["V"], V_expect1)
+        npt.assert_equal(prob["V_spline"], V_spline.flatten())
+        npt.assert_allclose(prob["Omega"], Omega_expect)
+        npt.assert_array_less(0.0, np.abs(prob["pitch"][Omega_expect != Omega_tsr]))
+        npt.assert_array_almost_equal(prob["Cp"], prob["Cp_aero"] * 0.975 * 0.975)
+        npt.assert_array_less(prob["P"][:irated], prob["P"][1 : (irated + 1)])
+        npt.assert_allclose(prob["P"][irated:], 5e6, rtol=1e-4, atol=0)
+        npt.assert_array_less(prob["T"], prob["T"][irated] + 1e-1)
+        self.assertAlmostEqual(prob["rated_Omega"][0], 14.0)
+        self.assertLess(0.0, prob["rated_pitch"])
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
+        npt.assert_allclose(myCp[Omega_expect == Omega_tsr][:-1], myCp[6])
+        npt.assert_allclose(myCp[Omega_expect == Omega_tsr][:-1], prob["Cp"][Omega_expect == Omega_tsr][:-1])
+
         # Test fixed pitch
         prob["omega_min"] = 0.0
         prob["omega_max"] = 15.0
@@ -527,6 +551,55 @@ class TestServo(unittest.TestCase):
         myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
         npt.assert_allclose(myCp[: (irated - 1)], myCp[0])
         npt.assert_allclose(myCp[: (irated - 1)], prob["Cp"][: (irated - 1)])
+
+        # Test min & max rpm, no power limit
+        prob["omega_min"] = 7.0
+        prob["omega_max"] = 15.0
+        prob["control_maxTS"] = 1e5
+        prob["rated_power"] = 1e16
+        prob.run_model()
+        V_expect1 = np.sort(np.r_[V_expect0, prob["rated_V"]])
+        # V_expect1[irated] = 15.*70*2*np.pi/(10.*60.)
+        Omega_tsr = V_expect1 * 10 * 60 / 70.0 / 2.0 / np.pi
+        Omega_expect = np.maximum(np.minimum(Omega_tsr, 15.0), 7.0)
+        npt.assert_allclose(prob["V"], V_expect1)
+        npt.assert_equal(prob["V_spline"], V_spline.flatten())
+        npt.assert_allclose(prob["Omega"], Omega_expect)
+        npt.assert_array_less(0.0, np.abs(prob["pitch"][Omega_expect != Omega_tsr]))
+        npt.assert_array_almost_equal(prob["Cp"], prob["Cp_aero"] * 0.975 * 0.975)
+        npt.assert_array_less(prob["P"][:-2], prob["P"][1:-1])
+        npt.assert_array_less(prob["Q"][:-2], prob["Q"][1:-1])
+        npt.assert_array_less(prob["T"][:-2], prob["T"][1:-1])
+        self.assertEqual(prob["rated_V"], V_expect1[-1])
+        self.assertAlmostEqual(prob["rated_Omega"][0], 15.0)
+        self.assertEqual(prob["rated_pitch"], 0.0)
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
+        npt.assert_allclose(myCp[Omega_expect == Omega_tsr], myCp[6])
+        npt.assert_allclose(myCp[Omega_expect == Omega_tsr], prob["Cp"][Omega_expect == Omega_tsr])
+
+        # Test min & max rpm, normal power
+        prob["omega_min"] = 7.0
+        prob["omega_max"] = 14.0
+        prob["control_maxTS"] = 1e5
+        prob["rated_power"] = 5e6
+        prob.run_model()
+        V_expect1 = np.sort(np.r_[V_expect0, prob["rated_V"]])
+        # V_expect1[irated] = 14.*70*2*np.pi/(10.*60.)
+        Omega_tsr = V_expect1 * 10 * 60 / 70.0 / 2.0 / np.pi
+        Omega_expect = np.maximum(np.minimum(Omega_tsr, 14.0), 7.0)
+        npt.assert_allclose(prob["V"], V_expect1)
+        npt.assert_equal(prob["V_spline"], V_spline.flatten())
+        npt.assert_allclose(prob["Omega"], Omega_expect)
+        npt.assert_array_less(0.0, np.abs(prob["pitch"][Omega_expect != Omega_tsr]))
+        npt.assert_array_almost_equal(prob["Cp"], prob["Cp_aero"] * 0.975 * 0.975)
+        npt.assert_array_less(prob["P"][:irated], prob["P"][1 : (irated + 1)])
+        npt.assert_allclose(prob["P"][irated:], 5e6, rtol=1e-4, atol=0)
+        npt.assert_array_less(prob["T"], 0.8 * 880899)  # From print out in first test
+        self.assertAlmostEqual(prob["rated_Omega"][0], 14.0)
+        self.assertLess(0.0, prob["rated_pitch"])
+        myCp = prob["P"] / (0.5 * 1.225 * V_expect1**3.0 * np.pi * 70**2)
+        npt.assert_allclose(myCp[Omega_expect == Omega_tsr][:-1], myCp[6])
+        npt.assert_allclose(myCp[Omega_expect == Omega_tsr][:-1], prob["Cp"][Omega_expect == Omega_tsr][:-1])
 
     def testRegulationTrajectory_reindex(self):
         prob = om.Problem(reports=False)
