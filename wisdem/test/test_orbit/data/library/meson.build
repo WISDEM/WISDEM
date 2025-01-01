@@ -9,7 +9,7 @@ py3.install_sources(
 )
 
 subdir('cables')
-subdir('defaults')
+#subdir('defaults')
 subdir('project')
 subdir('turbines')
 subdir('vessels')
