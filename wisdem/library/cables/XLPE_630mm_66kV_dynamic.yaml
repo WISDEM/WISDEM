@@ -1,0 +1,11 @@
+ac_resistance: 0.04
+capacitance: 300
+conductor_size: 630
+cost_per_km: 480000       # $  (20% adder over XLPE_630mm_66kV)
+current_capacity: 775
+inductance: 0.35
+linear_density: 42.5
+name: XLPE_630mm_66kV
+rated_voltage: 66
+switchgear_cost: 1e6
+cable_type: HVAC           # HVDC vs HVAC

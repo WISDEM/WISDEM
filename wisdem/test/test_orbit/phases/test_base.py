@@ -18,12 +18,14 @@ expected_config = {
 
 
 def test_good_config():
+
     config = deepcopy(expected_config)
     missing = BasePhase._check_keys(expected_config, config)
     assert len(missing) == 0
 
 
 def test_missing_key():
+
     config = deepcopy(expected_config)
     _ = config.pop("param1")
     missing = BasePhase._check_keys(expected_config, config)
@@ -31,6 +33,7 @@ def test_missing_key():
 
 
 def test_optional():
+
     config = deepcopy(expected_config)
     _ = config["param2"].pop("param4")
     missing = BasePhase._check_keys(expected_config, config)
@@ -38,6 +41,7 @@ def test_optional():
 
 
 def test_variable_key():
+
     config = deepcopy(expected_config)
     _ = config.pop("param5 (variable)")
 
@@ -46,6 +50,7 @@ def test_variable_key():
 
 
 def test_optional_dict():
+
     config = deepcopy(expected_config)
     _ = config.pop("param6")
 

@@ -4,6 +4,7 @@ python_sources = [
   'test_drivers.py',
   'test_gc_loadinputs.py',
   'test_gc_modified_yaml.py',
+  'test_gc_user_mass.py',
   'test_gc_yaml_floating.py',
   'test_gluecode.py',
 ]

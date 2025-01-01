@@ -9,6 +9,7 @@ py3.install_sources(
 )
 
 data_files = [
+  'test_ahts_vessel.yaml',
   'test_cable_lay_vessel.yaml',
   'test_feeder.yaml',
   'test_floating_barge.yaml',

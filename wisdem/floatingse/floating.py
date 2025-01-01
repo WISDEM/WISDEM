@@ -40,7 +40,9 @@ class FloatingSEProp(om.Group):
                     n_refine=2,
                     member_shape=opt["floating"]["members"]["outer_shape"][k],
                 ),
-                promotes=mem_prom + [("joint1", f"member{k}:joint1"), ("joint2", f"member{k}:joint2")],
+                promotes=mem_prom + [("joint1", f"member{k}:joint1"),
+                                     ("joint2", f"member{k}:joint2"),
+                                     ("total_mass_user", f"member{k}:mass_user")],
             )
 
         self.add_subsystem(

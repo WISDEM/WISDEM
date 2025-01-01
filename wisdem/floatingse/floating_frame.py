@@ -494,6 +494,7 @@ class TowerModal(om.ExplicitComponent):
 
                 # Get all mode shapes in batch
                 NFREQ2 = int(NFREQ / 2)
+                myzmpf = 1e-7*modal.zmpf # zmpf is buggy here, so suppressing it
                 freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
                     xyz[:, 2],
                     modal.freq,
@@ -502,7 +503,7 @@ class TowerModal(om.ExplicitComponent):
                     modal.zdsp,
                     modal.xmpf,
                     modal.ympf,
-                    modal.zmpf,
+                    myzmpf, #modal.zmpf,
                     base_slope0=False,
                 )
 

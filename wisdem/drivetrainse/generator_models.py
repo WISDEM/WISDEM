@@ -319,6 +319,8 @@ class GeneratorBase(om.ExplicitComponent):
         Structural Steel density
     rho_PM : float, [kg*m**-3]
         Magnet density
+    generator_mass_user : float, [kg]
+        User input override of generator mass
 
     Returns
     -------
@@ -505,6 +507,9 @@ class GeneratorBase(om.ExplicitComponent):
         self.add_input("rho_Fe", val=7700.0, units="kg*m**-3")
         self.add_input("rho_Fes", val=7850.0, units="kg*m**-3")
         self.add_input("rho_PM", val=7450.0, units="kg*m**-3")
+
+        # Overrides
+        self.add_input("generator_mass_user", 0.0, units="kg")
 
         # Magnetic loading
         self.add_output("B_rymax", val=0.0, units="T")
@@ -770,7 +775,7 @@ class PMSG_Outer(GeneratorBase):
         m = int(discrete_inputs["m"])
         mu_0 = float(inputs["mu_0"][0])
         mu_r = float(inputs["mu_r"][0])
-        p = inputs["p"]
+        p = float(inputs["p"][0])
         phi = float(inputs["phi"][0])
         ratio_mw2pp = float(inputs["ratio_mw2pp"][0])
         resist_Cu = float(inputs["resist_Cu"][0])
@@ -1189,7 +1194,6 @@ class PMSG_Outer(GeneratorBase):
         outputs["y_ar"] = y_ar
         outputs["y_allow_r"] = y_allow_r
         outputs["twist_r"] = twist_r
-        outputs["Structural_mass_rotor"] = Structural_mass_rotor
         outputs["TC1"] = TC1
         outputs["TC2r"] = TC2r
         outputs["u_as"] = u_as
@@ -1197,12 +1201,19 @@ class PMSG_Outer(GeneratorBase):
         outputs["y_as"] = y_as
         outputs["y_allow_s"] = y_allow_s
         outputs["twist_s"] = twist_s
-        outputs["Structural_mass_stator"] = Structural_mass_stator
         outputs["TC2s"] = TC2s
-        outputs["Structural_mass"] = outputs["Structural_mass_rotor"] + outputs["Structural_mass_stator"]
-        outputs["stator_mass"] = Stator + outputs["Structural_mass_stator"]
-        outputs["rotor_mass"] = Rotor + outputs["Structural_mass_rotor"]
-        outputs["generator_mass"] = Stator + Rotor + outputs["Structural_mass"]
+        mass_struct = Structural_mass_rotor + Structural_mass_stator
+        mass_stator = Stator + Structural_mass_stator
+        mass_rotor = Rotor + Structural_mass_rotor
+        mass = Stator + Rotor + mass_struct
+        mass_user = float(inputs["generator_mass_user"][0])
+        coeff = 1.0 if mass_user == 0.0 else mass_user/mass
+        outputs["Structural_mass_rotor"] = coeff*Structural_mass_rotor
+        outputs["Structural_mass_stator"] = coeff*Structural_mass_stator
+        outputs["Structural_mass"] = coeff*mass_struct
+        outputs["stator_mass"] = coeff*mass_stator
+        outputs["rotor_mass"] = coeff*mass_rotor
+        outputs["generator_mass"] = coeff*mass
 
 
 # ----------------------------------------------------------------------------------------
@@ -1712,9 +1723,11 @@ class PMSG_Disc(GeneratorBase):
         outputs["TC2r"] = TC2r
         outputs["TC2s"] = TC2s
         outputs["R_out"] = R_out
-        outputs["Structural_mass"] = Structural_mass
-        outputs["generator_mass"] = Mass
         outputs["mass_PM"] = mass_PM
+        mass_user = float(inputs["generator_mass_user"][0])
+        coeff = 1.0 if mass_user == 0.0 else mass_user/Mass
+        outputs["Structural_mass"] = coeff*Structural_mass
+        outputs["generator_mass"] = coeff*Mass
 
 
 # ----------------------------------------------------------------------------------------
@@ -2166,9 +2179,11 @@ class PMSG_Arms(GeneratorBase):
         outputs["TC2r"] = TC2r
         outputs["TC2s"] = TC2s
         outputs["R_out"] = R_out
-        outputs["Structural_mass"] = Structural_mass
-        outputs["generator_mass"] = Mass
         outputs["mass_PM"] = mass_PM
+        mass_user = float(inputs["generator_mass_user"][0])
+        coeff = 1.0 if mass_user == 0.0 else mass_user/Mass
+        outputs["Structural_mass"] = coeff*Structural_mass
+        outputs["generator_mass"] = coeff*Mass
 
 
 # ----------------------------------------------------------------------------------------
@@ -2569,18 +2584,20 @@ class DFIG(GeneratorBase):
         outputs["L_r"] = L_r
         outputs["L_s"] = L_s
         outputs["L_sm"] = L_sm
-        outputs["generator_mass"] = Mass
         outputs["K_rad"] = K_rad
         outputs["Losses"] = Losses
 
         outputs["eandm_efficiency"] = np.maximum(eps, gen_eff)
         outputs["Copper"] = Copper
         outputs["Iron"] = Iron
-        outputs["Structural_mass"] = Structural_mass
         outputs["TC1"] = TC1
         outputs["TC2r"] = TC2r
 
         outputs["Current_ratio"] = Current_ratio
+        mass_user = float(inputs["generator_mass_user"][0])
+        coeff = 1.0 if mass_user == 0.0 else mass_user/Mass
+        outputs["Structural_mass"] = coeff*Structural_mass
+        outputs["generator_mass"] = coeff*Mass
 
 
 # ----------------------------------------------------------------------------------------
@@ -3013,7 +3030,6 @@ class SCIG(GeneratorBase):
         outputs["R_R"] = R_R[-1]
         outputs["L_s"] = L_s
         outputs["L_sm"] = L_sm
-        outputs["generator_mass"] = Mass
         outputs["K_rad"] = K_rad
         outputs["K_rad_UL"] = K_rad_UL
         outputs["K_rad_LL"] = K_rad_LL
@@ -3021,9 +3037,12 @@ class SCIG(GeneratorBase):
         outputs["eandm_efficiency"] = np.maximum(eps, gen_eff)
         outputs["Copper"] = Copper
         outputs["Iron"] = Iron
-        outputs["Structural_mass"] = Structural_mass
         outputs["TC1"] = TC1
         outputs["TC2r"] = TC2r
+        mass_user = float(inputs["generator_mass_user"][0])
+        coeff = 1.0 if mass_user == 0.0 else mass_user/Mass
+        outputs["Structural_mass"] = coeff*Structural_mass
+        outputs["generator_mass"] = coeff*Mass
 
 
 # ----------------------------------------------------------------------------------------
@@ -3643,8 +3662,10 @@ class EESG(GeneratorBase):
         outputs["TC2r"] = TC2r
         outputs["TC2s"] = TC2s
         outputs["R_out"] = R_out
-        outputs["Structural_mass"] = Structural_mass
-        outputs["generator_mass"] = Mass
+        mass_user = float(inputs["generator_mass_user"][0])
+        coeff = 1.0 if mass_user == 0.0 else mass_user/Mass
+        outputs["Structural_mass"] = coeff*Structural_mass
+        outputs["generator_mass"] = coeff*Mass
 
 
 # ----------------------------------------------------------------------------------------

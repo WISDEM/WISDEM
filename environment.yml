@@ -12,10 +12,10 @@ dependencies:
   - meson-python
   - moorpy
   - ninja
-  - nlopt
-  - numpy>=1.26
+  - nlopt=2.8.0
+  - numpy
   - numpydoc
-  - openmdao>=3.31
+  - openmdao
   - openpyxl
   - pandas
   - pip
@@ -23,7 +23,7 @@ dependencies:
   - pyoptsparse
   - pytest
   - pytest-cov
-  - python-benedict
+  - python-benedict<0.33.2
   - pyyaml
   - ruamel.yaml
   - scipy

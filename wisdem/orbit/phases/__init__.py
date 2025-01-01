@@ -1,11 +1,12 @@
 """
-The phases package contains `DesignPhase`, `InstallPhase` and any subclasses.
+Provides `DesignPhase`, `InstallPhase` and their component-specific
+implementations.
 """
 
 __author__ = ["Jake Nunemaker", "Rob Hammond"]
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
 __maintainer__ = ["Jake Nunemaker", "Rob Hammond"]
-__email__ = ["jake.nunemaker@nrel.gov" "robert.hammond@nrel.gov"]
+__email__ = ["jake.nunemaker@nrel.gov" "rob.hammond@nrel.gov"]
 
 
 from .base import BasePhase

@@ -3,6 +3,7 @@ python_sources = [
   '__init__.py',
   'test_array_system_design.py',
   'test_cable.py',
+  'test_electrical_design.py',
   'test_export_system_design.py',
   'test_monopile_design.py',
   'test_mooring_system_design.py',

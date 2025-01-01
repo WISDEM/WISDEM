@@ -12,10 +12,10 @@ import pandas as pd
 import pytest
 
 from wisdem.orbit import ProjectManager
+from wisdem.test.test_orbit.data import test_weather
 from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import MonopileInstallation
-from wisdem.test.test_orbit.data import test_weather
 
 config_wtiv = extract_library_specs("config", "single_wtiv_mono_install")
 config_wtiv_feeder = extract_library_specs("config", "multi_wtiv_mono_install")
@@ -29,6 +29,7 @@ config_wtiv_multi_feeder["num_feeders"] = 2
     ids=["wtiv_only", "single_feeder", "multi_feeder"],
 )
 def test_simulation_setup(config):
+
     sim = MonopileInstallation(config)
     assert sim.config == config
     assert sim.env
@@ -49,6 +50,7 @@ def test_simulation_setup(config):
     ids=["wtiv_only", "single_feeder", "multi_feeder"],
 )
 def test_vessel_initialization(config):
+
     sim = MonopileInstallation(config)
     assert sim.wtiv
     assert sim.wtiv.jacksys
@@ -68,8 +70,13 @@ def test_vessel_initialization(config):
     (config_wtiv, config_wtiv_feeder, config_wtiv_multi_feeder),
     ids=["wtiv_only", "single_feeder", "multi_feeder"],
 )
-@pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
+@pytest.mark.parametrize(
+    "weather",
+    (None, test_weather),
+    ids=["no_weather", "test_weather"],
+)
 def test_for_complete_logging(weather, config):
+
     sim = MonopileInstallation(config, weather=weather)
     sim.run()
 
@@ -81,12 +88,13 @@ def test_for_complete_logging(weather, config):
         _df = _df.assign(shift=(_df["time"] - _df["time"].shift(1)))
         assert (_df["shift"] - _df["duration"]).abs().max() < 1e-9
 
-    assert ~df["cost"].isnull().any()
+    assert ~df["cost"].isna().any()
     _ = sim.agent_efficiencies
     _ = sim.detailed_output
 
 
 def test_kwargs():
+
     sim = MonopileInstallation(config_wtiv)
     sim.run()
     baseline = sim.total_phase_time
@@ -107,6 +115,7 @@ def test_kwargs():
     failed = []
 
     for kw in keywords:
+
         default = pt[kw]
 
         if kw == "mono_drive_rate":
@@ -138,6 +147,7 @@ def test_kwargs():
 
 
 def test_kwargs_in_ProjectManager():
+
     base = deepcopy(config_wtiv)
     base["install_phases"] = ["MonopileInstallation"]
     project = ProjectManager(base)
@@ -160,6 +170,7 @@ def test_kwargs_in_ProjectManager():
     failed = []
 
     for kw in keywords:
+
         default = pt[kw]
 
         if kw == "mono_drive_rate":
@@ -194,13 +205,14 @@ def test_kwargs_in_ProjectManager():
 
 
 def test_grout_kwargs():
+
     sim = MonopileInstallation(config_wtiv)
     sim.run()
 
-    assert "Bolt TP" in list([a["action"] for a in sim.env.actions])
+    assert "Bolt TP" in [a["action"] for a in sim.env.actions]
 
     sim = MonopileInstallation(config_wtiv, tp_connection_type="grouted")
     sim.run()
 
-    assert "Pump TP Grout" in list([a["action"] for a in sim.env.actions])
-    assert "Cure TP Grout" in list([a["action"] for a in sim.env.actions])
+    assert "Pump TP Grout" in [a["action"] for a in sim.env.actions]
+    assert "Cure TP Grout" in [a["action"] for a in sim.env.actions]

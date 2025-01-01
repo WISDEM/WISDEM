@@ -1,6 +1,4 @@
-"""
-Testing framework for the `ExportCableInstallation` class.
-"""
+"""Testing framework for the `ExportCableInstallation` class."""
 
 __author__ = ["Rob Hammond", "Jake Nunemaker"]
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
@@ -8,23 +6,28 @@ __maintainer__ = "Jake Nunemaker"
 __email__ = "Jake.Nunemaker@nrel.gov"
 
 
+import warnings
 from copy import deepcopy
 
 import pandas as pd
 import pytest
 
 from wisdem.orbit import ProjectManager
+from wisdem.test.test_orbit.data import test_weather
 from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.core.defaults import process_times as pt
 from wisdem.orbit.phases.install import ExportCableInstallation
-from wisdem.test.test_orbit.data import test_weather
 
 base_config = extract_library_specs("config", "export_cable_install")
 simul_config = deepcopy(base_config)
 _ = simul_config.pop("export_cable_bury_vessel")
 
 
-@pytest.mark.parametrize("config", (base_config, simul_config), ids=["separate", "simultaneous"])
+@pytest.mark.parametrize(
+    "config",
+    (base_config, simul_config),
+    ids=["separate", "simultaneous"],
+)
 def test_simulation_setup(config):
     sim = ExportCableInstallation(config)
     assert sim.env
@@ -35,7 +38,11 @@ def test_simulation_setup(config):
     assert "Onshore Construction" in actions
 
 
-@pytest.mark.parametrize("config", (base_config, simul_config), ids=["separate", "simultaneous"])
+@pytest.mark.parametrize(
+    "config",
+    (base_config, simul_config),
+    ids=["separate", "simultaneous"],
+)
 def test_vessel_initialization(config):
     sim = ExportCableInstallation(config)
     assert sim.install_vessel
@@ -45,8 +52,16 @@ def test_vessel_initialization(config):
         assert sim.bury_vessel
 
 
-@pytest.mark.parametrize("config", (base_config, simul_config), ids=["separate", "simultaneous"])
-@pytest.mark.parametrize("weather", (None, test_weather), ids=["no_weather", "test_weather"])
+@pytest.mark.parametrize(
+    "config",
+    (base_config, simul_config),
+    ids=["separate", "simultaneous"],
+)
+@pytest.mark.parametrize(
+    "weather",
+    (None, test_weather),
+    ids=["no_weather", "test_weather"],
+)
 def test_for_complete_logging(config, weather):
     sim = ExportCableInstallation(config, weather=weather)
     sim.run()
@@ -60,7 +75,7 @@ def test_for_complete_logging(config, weather):
         _df = _df.assign(shift=(_df["time"] - _df["time"].shift(1)))
         assert (_df["shift"] - _df["duration"]).fillna(0.0).abs().max() < 1e-9
 
-    assert ~df["cost"].isnull().any()
+    assert ~df["cost"].isna().any()
     _ = sim.agent_efficiencies
     _ = sim.detailed_output
 
@@ -70,12 +85,11 @@ def test_simultaneous_speed_kwargs():
     sim.run()
     baseline = sim.total_phase_time
 
-    key = "cable_lay_bury_speed"
-    val = pt[key] * 0.1
+    sim.install_vessel._vessel_specs["cable_lay_bury_speed"] = (
+        sim.install_vessel._vessel_specs["cable_lay_bury_speed"] * 0.1
+    )
 
-    kwargs = {key: val}
-
-    sim = ExportCableInstallation(simul_config, **kwargs)
+    sim = ExportCableInstallation(simul_config)
     sim.run()
 
     assert sim.total_phase_time > baseline
@@ -106,7 +120,10 @@ def test_separate_speed_kwargs():
 
 
 def test_kwargs_for_export_install():
-    new_export_system = {"cable": {"linear_density": 50.0, "sections": [1000], "number": 1}}
+    new_export_system = {
+        "cable": {"linear_density": 50.0, "sections": [1000], "number": 1},
+        "system_cost": 200e6,
+    }
     new_site = {"distance": 50, "depth": 20}
 
     new_config = deepcopy(base_config)
@@ -118,7 +135,6 @@ def test_kwargs_for_export_install():
     baseline = sim.total_phase_time
 
     keywords = [
-        "onshore_construction_time",
         "cable_load_time",
         "site_position_time",
         "cable_prep_time",
@@ -180,7 +196,6 @@ def test_kwargs_for_export_install_in_ProjectManager():
     baseline = project.phase_times["ExportCableInstallation"]
 
     keywords = [
-        "onshore_construction_time",
         "cable_load_time",
         "site_position_time",
         "cable_prep_time",
@@ -227,3 +242,48 @@ def test_kwargs_for_export_install_in_ProjectManager():
 
     else:
         assert True
+
+
+def test_deprecated_values():
+    """Temporary test for deprecated values."""
+
+    base = deepcopy(base_config)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        sim = ExportCableInstallation(base)
+        sim.run()
+
+    deprecated = deepcopy(base_config)
+
+    deprecated["landfall"] = {"trench_length": 4}
+    new_export_system = {
+        "cable": {"linear_density": 50.0, "sections": [1000], "number": 1},
+        "system_cost": 200e6,
+        "interconnection_distance": 5,
+    }
+
+    deprecated["export_system"] = new_export_system
+
+    with pytest.deprecated_call():
+
+        # sim = ExportCableInstallation(base)
+        # sim.run()
+
+        sim = ExportCableInstallation(deprecated)
+        sim.run()
+
+        # assert len(w) == 2
+        # assert issubclass(w[0].category, DeprecationWarning)
+        # assert (
+        #    str(w[0].message)
+        #    == "landfall dictionary will be deprecated and moved \
+        #            into [export_system][landfall]."
+        # )
+
+        # assert issubclass(w[1].category, DeprecationWarning)
+        # assert (
+        #    str(w[1].message)
+        #    == "[export_system][interconnection] will be deprecated and \
+        #            moved into [export_system][landfall][interconnection]."
+        # )

@@ -8,6 +8,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 from copy import deepcopy
 from math import ceil
+from warnings import warn
 
 from marmot import process
 
@@ -30,7 +31,7 @@ from .common import (
 
 
 class ExportCableInstallation(InstallPhase):
-    """Export Cable Installation Phase"""
+    """Export Cable Installation Phase."""
 
     phase = "Export Cable Installation"
     capex_category = "Export System"
@@ -44,13 +45,21 @@ class ExportCableInstallation(InstallPhase):
         "site": {"distance": "km"},
         "plant": {"capacity": "MW"},
         "export_system": {
+            "system_cost": "USD",
             "cable": {
                 "linear_density": "t/km",
                 "sections": [("length, km", "speed, km/h (optional)")],
                 "number": "int (optional)",
+                "cable_type": "str(optional, defualt: 'HVAC')",
+                "landfall": {
+                    "trench_length": "km (optional)",
+                    "interconnection_distance": "km (optional); default: 3km",
+                },
             },
-            "interconnection_distance": "km (optional); default: 3km",
+            "interconnection_distance": "km (optional)",
             "interconnection_voltage": "kV (optional); default: 345kV",
+            "onshore_construction_cost": "$, (optional)",
+            "onshore_construction_time": "h, (optional)",
         },
     }
 
@@ -88,8 +97,13 @@ class ExportCableInstallation(InstallPhase):
         self.free_cable_length = system.get("free_cable_length", depth / 1000)
 
         self.cable = Cable(system["cable"]["linear_density"])
+        self.cable_type = system["cable"].get("cable_type", "HVAC")
         self.sections = system["cable"]["sections"]
-        self.number = system["cable"].get("number", 1)
+
+        if self.cable_type == "HVDC-monopole":
+            self.number = int(system["cable"].get("number", 2) / 2)
+        else:
+            self.number = system["cable"].get("number", 1)
 
         self.initialize_installation_vessel()
         self.initialize_burial_vessel()
@@ -123,11 +137,19 @@ class ExportCableInstallation(InstallPhase):
         """Extracts distances from input configuration or default values."""
 
         site = self.config["site"]["distance"]
-        try:
-            trench = self.config["landfall"]["trench_length"]
 
-        except KeyError:
-            trench = 1
+        _landfall = self.config.get("landfall", {})
+        if _landfall:
+            warn(
+                "landfall dictionary will be deprecated and moved"
+                " into [export_system][landfall].",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            _landfall = self.config["export_system"].get("landfall", {})
+
+        trench = _landfall.get("trench_length", 1)
 
         self.distances = {"site": site, "trench": trench}
 
@@ -140,14 +162,22 @@ class ExportCableInstallation(InstallPhase):
         ----------
         construction_time : int | float
             Amount of time onshore construction takes.
-            Default: 48h
+            Default: 0h
         construction_rate : int | float
             Day rate of onshore construction.
             Default: 50000 USD/day
         """
 
-        construction_time = kwargs.get("onshore_construction_time", 0.0)
-        construction_cost = self.calculate_onshore_transmission_cost(**kwargs)
+        construction_time = self.config["export_system"].get(
+            "onshore_construction_time", 0.0
+        )
+        construction_cost = self.config["export_system"].get(
+            "onshore_construction_cost", None
+        )
+        if construction_cost is None:
+            construction_cost = self.calculate_onshore_transmission_cost(
+                **kwargs
+            )
 
         if construction_time:
             _ = self.env.timeout(construction_time)
@@ -170,21 +200,40 @@ class ExportCableInstallation(InstallPhase):
         OffshoreBOS model.
         """
 
-        capacity = self.config["plant"]["capacity"]
+        # capacity = self.config["plant"]["capacity"]
+        system = self.config["export_system"]
+        voltage = system.get("interconnection_voltage", 345)
+        distance = system.get("interconnection_distance", None)
 
-        voltage = self.config["export_system"].get("interconnection_voltage", 345)
-        distance = self.config["export_system"].get("interconnection_distance", 3)
+        if distance:
+            warn(
+                "[export_system][interconnection_distance] will be deprecated"
+                " and moved to"
+                " [export_system][landfall][interconnection_distance].",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
-        switchyard_cost = 18115 * voltage + 165944
-        onshore_substation_cost = (0.165 * 1e6) * capacity  # From BNEF Tomorrow's Cost of Offshore Wind
-        onshore_misc_cost = 11795 * capacity**0.3549 + 350000
-        transmission_line_cost = (1176 * voltage + 218257) * (distance ** (1 - 0.1063))
+        landfall = system.get("landfall", {})
+        distance = landfall.get("interconnection_distance", 3)
 
-        onshore_transmission_cost = (
-            switchyard_cost + onshore_substation_cost + onshore_misc_cost + transmission_line_cost
+        # switchyard_cost = 18115 * voltage + 165944
+        # onshore_substation_cost = (
+        #     0.165 * 1e6
+        # ) * capacity  # From BNEF Tomorrow's Cost of Offshore Wind
+        # onshore_misc_cost = 11795 * capacity**0.3549 + 350000
+        transmission_line_cost = (1176 * voltage + 218257) * (
+            distance ** (1 - 0.1063)
         )
 
-        return onshore_transmission_cost
+        self.onshore_transmission_cost = (
+            transmission_line_cost
+            #                        + switchyard_cost
+            #                        + onshore_substation_cost
+            #                        + onshore_misc_cost
+        )
+
+        return self.onshore_transmission_cost
 
     def initialize_installation_vessel(self):
         """Creates the export cable installation vessel."""
@@ -302,14 +351,22 @@ def install_export_cables(
 
     else:
         for _ in range(number):
-            # Trenching vessel can dig a trench during inbound or outbound journey
+            # Trench vessel can dig a trench during inbound or outbound journey
             if trench_vessel.at_port:
                 trench_vessel.at_port = False
-                yield dig_export_cables_trench(trench_vessel, ground_distance, **kwargs)
+                yield dig_export_cables_trench(
+                    trench_vessel,
+                    ground_distance,
+                    **kwargs,
+                )
                 trench_vessel.at_site = True
             elif trench_vessel.at_site:
                 trench_vessel.at_site = False
-                yield dig_export_cables_trench(trench_vessel, ground_distance, **kwargs)
+                yield dig_export_cables_trench(
+                    trench_vessel,
+                    ground_distance,
+                    **kwargs,
+                )
                 trench_vessel.at_port = True
 
         # If the vessel finishes trenching at site, return to shore
@@ -425,4 +482,6 @@ def dig_export_cables_trench(vessel, distance, **kwargs):
     yield position_onsite(vessel, site_position_time=2)
     yield dig_trench(vessel, distance, **kwargs)
 
-    vessel.submit_debug_log(message="Export cable trench digging process completed!")
+    vessel.submit_debug_log(
+        message="Export cable trench digging process completed!"
+    )

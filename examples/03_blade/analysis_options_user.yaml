@@ -52,7 +52,7 @@ constraints:
         # Create entries in a YAML list with variable name, lower_bound and/or upper_bound, and indices (optional)
         # Variable name is taken from the WISDEM namespace
         - name: rotorse.blade_mass
-          upper_bound: 17000.00
+          upper_bound: [17000.00]
 
 driver:
     optimization:

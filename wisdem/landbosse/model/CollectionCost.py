@@ -752,7 +752,7 @@ class ArraySystem(CostModule):
         # happens within that window and use that timeframe for weather delays;
         # if not, use the number of days calculated
         operation_data['time_construct_bool'] = operation_data['Number of days taken by single crew'] > collection_construction_time * 30
-        boolean_dictionary = {True: collection_construction_time * 30, False: np.NAN}
+        boolean_dictionary = {True: collection_construction_time * 30, False: np.nan}
         operation_data['time_construct_bool'] = operation_data['time_construct_bool'].map(boolean_dictionary)
         operation_data['Time construct days'] = operation_data[['time_construct_bool', 'Number of days taken by single crew']].min(axis=1)
         num_days = operation_data['Time construct days'].max()

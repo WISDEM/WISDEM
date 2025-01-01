@@ -15,8 +15,9 @@ class TestComponents(unittest.TestCase):
         myobj = dc.MainBearing()
 
         discrete_inputs["bearing_type"] = "carb"
-        inputs["D_bearing"] = 2.0
-        inputs["D_shaft"] = 3.0
+        inputs["D_bearing"] = np.array([ 2.0 ])
+        inputs["D_shaft"] = np.array([ 3.0 ])
+        inputs["mb_mass_user"] = np.array([ 0.0 ])
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         npt.assert_equal(
             outputs["mb_I"] / outputs["mb_mass"], 0.125 * np.r_[2 * (4 * 1.5**2 + 3), (4 * 1.5**2 + 5) * np.ones(2)]
@@ -43,6 +44,12 @@ class TestComponents(unittest.TestCase):
             myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         except ValueError:
             self.assertTrue(True)
+
+        # User override
+        discrete_inputs["bearing_type"] = "carb"
+        inputs["mb_mass_user"] = np.array([ 100.0 ])
+        myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
+        npt.assert_almost_equal(outputs["mb_mass"], 100.0)
 
     def testBrake(self):
         inputs = {}

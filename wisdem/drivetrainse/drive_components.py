@@ -25,6 +25,8 @@ class MainBearing(om.ExplicitComponent):
         bearing diameter/facewidth
     D_shaft : float, [m]
         Diameter of LSS shaft at bearing location
+    mb_mass_user : float, [kg]
+        user override of component mass
 
     Returns
     -------
@@ -41,6 +43,7 @@ class MainBearing(om.ExplicitComponent):
         self.add_discrete_input("bearing_type", "CARB")
         self.add_input("D_bearing", 0.0, units="m")
         self.add_input("D_shaft", 0.0, units="m")
+        self.add_input("mb_mass_user", 0.0, units="kg")
 
         self.add_output("mb_max_defl_ang", 0.0, units="rad")
         self.add_output("mb_mass", 0.0, units="kg")
@@ -51,6 +54,7 @@ class MainBearing(om.ExplicitComponent):
             raise ValueError("Bearing type input must be a string")
         btype = discrete_inputs["bearing_type"].upper()
         D_shaft = inputs["D_shaft"]
+        mass_user = float(inputs["mb_mass_user"][0])
 
         # assume low load rating for bearing
         if btype == "CARB":  # p = Fr, so X=1, Y=0
@@ -88,6 +92,9 @@ class MainBearing(om.ExplicitComponent):
 
         # add housing weight, but pg 23 of report says factor is 2.92 whereas this is 2.963
         mass *= 1 + 80.0 / 27.0
+
+        if mass_user > 0.0:
+            mass = mass_user
 
         # Consider the bearings a torus for MoI (https://en.wikipedia.org/wiki/List_of_moments_of_inertia)
         D_bearing = inputs["D_bearing"] if inputs["D_bearing"] > 0.0 else face_width
@@ -1028,7 +1035,7 @@ class RNA_Adder(om.ExplicitComponent):
     shaft_start : numpy array[3], [m]
         coordinate of start of shaft relative to tower top
     blades_mass : float, [kg]
-        Mass of all bladea
+        Mass of all blades
     hub_system_mass : float, [kg]
         Mass of hub system (hub + spinner + pitch)
     nacelle_mass : float, [kg]

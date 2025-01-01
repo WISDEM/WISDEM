@@ -12,6 +12,7 @@ data_files = [
   '12MW_generic.yaml',
   '15MW.yaml',
   '15MW_generic.yaml',
+  '22MW_generic.yaml',
   'SWT_6MW_154m_110m.yaml',
   ]
 
