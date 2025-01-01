@@ -11,7 +11,6 @@ python_sources = [
   'fileIO.py',
   'frustum.py',
   'manufacturing.py',
-  'mpi_tools.py',
   'turbine_class.py',
   'turbine_constraints.py',
   'utilities.py',

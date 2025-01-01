@@ -1,7 +1,7 @@
 
 python_sources = [
   '__init__.py',
-  '_version.py',
+  #'_version.py',
   'config.py',
   'manager.py',
   'parametric.py',
