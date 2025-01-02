@@ -1,5 +1,6 @@
 import numpy as np
 import openmdao.api as om
+import logging
 
 import wisdem.commonse.utilities as util
 from wisdem.commonse import gravity
@@ -10,6 +11,7 @@ NELEM_MAX = 500  # 1000
 RIGID = 1e30
 EPS = 1e-6
 
+logger = logging.getLogger("wisdem/weis")
 
 class PlatformFrame(om.ExplicitComponent):
     def initialize(self):
@@ -487,6 +489,9 @@ class PlatformTurbineSystem(om.ExplicitComponent):
         outputs["variable_center_of_mass"] = cg_variable
 
         # Now find total system mass
+        if (np.sum(m_variable_member) == 0) and (m_variable != 0):
+            logger.warning(f'A variable ballast mass of {m_variable[0]} kg was calculated, but there are no variable ballast chambers in the floating platform.\nNo variable ballast will be used. Please define at least one variable ballast chamber.')
+        m_variable = np.sum(m_variable_member)
         outputs["platform_mass"] = m_platform + m_variable
         outputs["system_mass"] = m_sys_total = m_sys + m_variable
         outputs["system_center_of_mass"] = cg_sys_total = (
