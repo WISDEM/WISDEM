@@ -227,6 +227,7 @@ components:
             planet_numbers: [3, 3, 0]
             gear_configuration: eep
             gearbox_efficiency: 0.975
+            gearbox_torque_density: 200.
             damping_ratio: 0.01
             mb1Type: CARB
             mb2Type: SRB
@@ -343,15 +344,15 @@ components:
               cylindrical: True
 
             - name: anchor1
-              location: [837.6, 0.0, -200.0]
+              location: [837.6,  3.14159265, -200.0]
               cylindrical: True
 
             - name: anchor2
-              location: [837.6, 2.0943951023931953, -200.0] # 120deg
+              location: [837.6, 1.0471976, -200.0] # 120deg
               cylindrical: True
 
             - name: anchor3
-              location: [837.6, 4.1887902047863905, -200.0] # 240deg
+              location: [837.6, -1.0471976, -200.0] # 240deg
               cylindrical: True
 
         members:
@@ -990,8 +991,8 @@ environment:
 bos:
     plant_turbine_spacing: 7
     plant_row_spacing: 7
-    commissioning_pct: 0.01
-    decommissioning_pct: 0.15
+    commissioning_cost_kW: 44.0
+    decommissioning_cost_kW: 58.0
     distance_to_substation: 50.0
     distance_to_interconnection: 8.
     interconnect_voltage: 130
@@ -1010,7 +1011,7 @@ costs:
     spinner_mass_cost_coeff: 11.1
     lss_mass_cost_coeff: 11.9
     bearing_mass_cost_coeff: 4.5
-    gearbox_mass_cost_coeff: 12.9
+    gearbox_torque_cost: 50.
     hss_mass_cost_coeff: 6.8
     generator_mass_cost_coeff: 12.4
     bedplate_mass_cost_coeff: 2.9

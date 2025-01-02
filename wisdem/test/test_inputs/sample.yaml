@@ -1,0 +1,277 @@
+name: 5MW
+comments: NREL 5MW Offshore Reference Wind Turbine, modified for a more realisitic manufacturable blade with constant width spar caps, trailing edge reinforcement, and leading edge foam that wraps around the full LE w/o a gap -EMG
+assembly:
+    turbine_class: I
+    turbulence_class: B
+    drivetrain: Geared
+    rotor_orientation: Upwind
+    number_of_blades: 3
+    hub_height: 90.
+    rotor_diameter: 126.
+    rated_power: 5.e+6
+components:
+    tower:
+        outer_shape_bem:
+            reference_axis: &ref_axis_tower
+                x:
+                    grid: [0.0, 1.0]
+                    values: [0.0, 0.0]
+                y:
+                    grid: [0.0, 1.0]
+                    values: [0.0, 0.0]
+                z:
+                    grid: &grid_tower [0., 0.167, 0.333, 0.5 , 0.6667, 0.833, 1.]
+                    values: [0. , 14.6, 29.2, 43.8, 58.4, 73. , 87.6974416]
+            outer_diameter:
+                grid: *grid_tower
+                values: [6.   , 5.645, 5.29 , 4.935, 4.58 , 4.225, 3.87]
+            drag_coefficient:
+                grid: [0.0, 1.0]
+                values: [1.0, 1.0]
+        internal_structure_2d_fem:
+            outfitting_factor: 1.07
+            reference_axis: *ref_axis_tower
+            layers:
+                - name: tower_wall
+                  material: steel
+                  thickness:
+                    grid: *grid_tower
+                    values: [0.027, 0.0254, 0.0238, 0.0222, 0.0206, 0.019, 0.019]
+materials:
+   -  E: 3.44E+9
+      name: Gelcoat
+      G: 1323000000.0
+      rho: 1235.0
+      orth: 0
+      nu: 0.3
+      Xt: 74.e+006
+      Xc: 87.e+006
+      unit_cost: 7.23
+      ply_t: 0.00051
+      waste: 0.25
+      component_id: 0
+   -  E: [41800000000.0, 14000000000.0, 2630000000.0]
+      name: glassUD
+      G: [2630000000.0, 2630000000.0, 2630000000.0]
+      rho: 1920.0
+      orth: 1
+      nu: [0.28, 0.28, 0.28]
+      Xt: [1060.0e+006, 66.3e+006, 26.6e+006]
+      Xc: [826.0e+006, 196.0e+006, 197.0e+006]
+      m: 10
+      unit_cost: 1.87
+      waste: 0.05
+      fiber_density: 2600.
+      area_density_dry: 1.858
+      component_id: 5
+   -  E: [27700000000.0, 13650000000.0, 7200000000.0]
+      name: glassTri
+      G: [7200000000.0, 7200000000.0, 7200000000.0]
+      rho: 1850.0
+      orth: 1
+      nu: [0.39, 0.39, 0.39]
+      Xt: [54.5e+006, 54.5e+006, 26.6e+006]
+      Xc: [74.1e+006, 74.1e+006, 197.0e+006]
+      m: 10
+      unit_cost: 2.86
+      waste: 0.15
+      fiber_density: 2600.
+      area_density_dry: 1.112
+      component_id: 2
+      roll_mass: 181.4368
+   -  E: [13600000000.0, 13300000000.0, 11800000000.0]
+      name: glassDB
+      G: [11800000000.0, 11800000000.0, 11800000000.0]
+      rho: 1780.0
+      orth: 1
+      nu: [0.49, 0.49, 0.49]
+      Xt: [54.47e+006, 54.47e+006, 26.6e+006]
+      Xc: [74.1e+006, 74.1e+006, 197.0e+006]
+      m: 10
+      unit_cost: 3.00
+      waste: 0.15
+      fiber_density: 2600.
+      area_density_dry: 1.112
+      component_id: 3
+      roll_mass: 181.4368
+   -  name: steel
+      description: Steel of the tower and monopile ASTM A572 Grade 50
+      source: http://www.matweb.com/search/DataSheet.aspx?MatGUID=9ced5dc901c54bd1aef19403d0385d7f
+      orth: 0
+      rho: 7800
+      alpha: 0.0
+      E: 200.e+009
+      nu: 0.3
+      G: 79.3e+009
+      GIc: 0  #Place holder, currently not used
+      GIIc: 0  #Place holder, currently not used
+      alp0: 0  #Place holder, currently not used
+      Xt: 450.e+006
+      Xc: 450.e+006
+      S: 0
+      Xy: 345.e+6
+      m: 3
+      A: 3.5534648443719767e10 #DOI 10.1016/j.proeng.2013.12.061 eqn 5
+      unit_cost: 0.7
+   -  name: steel_drive
+      description: Steel of the drivetrain ASTM 4140 40Cr1Mo28
+      source: http://www.matweb.com/search/DataSheet.aspx?MatGUID=38108bfd64c44b4c9c6a02af78d5b6c6
+      orth: 0
+      rho: 7850
+      alpha: 0.0
+      E: 205.e+009
+      nu: 0.3
+      G: 80.0e+009
+      GIc: 0  #Place holder, currently not used
+      GIIc: 0  #Place holder, currently not used
+      alp0: 0  #Place holder, currently not used
+      Xt: 814.e+006
+      Xc: 814.e+006
+      S: 0
+      Xy: 485.e+6
+      m: 3
+      A: 3.5534648443719767e10 #DOI 10.1016/j.proeng.2013.12.061 eqn 5
+      unit_cost: 0.9
+   -  name: cast_iron
+      description: TODO Steel of the drivetrain ASTM 4140 40Cr1Mo28
+      source: TODO http://www.matweb.com/search/DataSheet.aspx?MatGUID=38108bfd64c44b4c9c6a02af78d5b6c6
+      orth: 0
+      rho: 7200
+      alpha: 0.0
+      E: 118.e+009
+      nu: 0.3
+      G: 47.6e+009
+      GIc: 0  #Place holder, currently not used
+      GIIc: 0  #Place holder, currently not used
+      alp0: 0  #Place holder, currently not used
+      Xt: 310.e+006
+      Xc: 310.e+006
+      S: 0
+      Xy: 265.e+6
+      m: 3
+      unit_cost: 0.5
+   -  E: 98460000.0
+      name: FOAM
+      G: 98460000.0
+      rho: 200.0
+      orth: 0
+      nu: 0.3
+      Xt: 6.04e+006
+      Xc: 5.10e+006
+      component_id: 1
+      waste: 0.2
+      unit_cost: 13
+      ply_t: 0.0025
+   -  E: [114500000000.0, 8390000000.0, 5990000000.0]
+      name: CarbonUD
+      G: [5990000000.0, 5990000000.0, 5990000000.0]
+      rho: 1220.0
+      orth: 1
+      nu: [0.27, 0.27, 0.27]
+      Xt: [2236.0e+006, 0.00, 0.00]
+      Xc: [1528.0e+006, 0.00, 0.00]
+      m: 16.1
+      unit_cost: 30.00
+      waste: 0.05
+      fiber_density: 1800.
+      area_density_dry: 1.000
+      component_id: 4
+   -  name: resin
+      description: epoxy
+      E: 1.e+6
+      rho: 1150.
+      nu: 0.30
+      Xt: 61.51e+006
+      Xc: 65.36e+006
+      orth: 0
+      unit_cost: 3.63
+   -  name: adhesive
+      description: Sample adhesive
+      source: https://www.nrel.gov/docs/fy19osti/73585.pdf
+      orth: 0
+      rho: 1100
+      E: 4.56e+006
+      nu: 0.49
+      alpha: 0.0
+      Xt: 0.69e+006
+      Xc: 0.4e+006
+      S: 0.31e+006
+      G: 1520000.0
+      unit_cost: 9.0
+
+control:
+    supervisory:
+        Vin: 3.0
+        Vout: 25.0
+        maxTS: 80.
+    pitch:
+        PC_zeta: 0.7
+        PC_omega: 0.5
+        ps_percent: 0.8
+        max_pitch: 1.57
+        max_pitch_rate: 0.1745
+        min_pitch: 0
+    torque:
+        control_type: tsr_tracking
+        tsr: 7.01754386
+        VS_zeta: 0.7
+        VS_omega: 0.2
+        max_torque_rate: 1500000.
+        VS_minspd: 0.72256
+        VS_maxspd: 1.26711
+    setpoint_smooth:
+        ss_vsgain: 1
+        ss_pcgain: .01
+    shutdown:
+        limit_type: gen_speed
+        limit_value: 2.0
+
+environment:
+    air_density: 1.225
+    air_dyn_viscosity: 1.81e-5
+    weib_shape_parameter: 2.
+    air_speed_sound: 340.
+    shear_exp: 0.2
+    water_density: 1025.0
+    water_dyn_viscosity: 1.3351e-3
+    #water_depth: 0.0
+    significant_wave_height: 0.0
+    significant_wave_period: 0.0
+    soil_shear_modulus: 140.e+6
+    soil_poisson: 0.4
+bos:
+    plant_turbine_spacing: 7
+    plant_row_spacing: 7
+    commissioning_pct: 0.01
+    decommissioning_pct: 0.15
+    distance_to_substation: 50.0
+    distance_to_interconnection: 8.
+    interconnect_voltage: 130
+costs:
+    wake_loss_factor: 0.15
+    fixed_charge_rate: 0.075
+    bos_per_kW: 2979.
+    opex_per_kW: 144.
+    turbine_number: 120
+    labor_rate: 58.8
+    painting_rate: 30.0
+    blade_mass_cost_coeff: 14.6
+    hub_mass_cost_coeff: 3.9
+    pitch_system_mass_cost_coeff: 22.1
+    spinner_mass_cost_coeff: 11.1
+    lss_mass_cost_coeff: 11.9
+    bearing_mass_cost_coeff: 4.5
+    gearbox_mass_cost_coeff: 12.9
+    hss_mass_cost_coeff: 6.8
+    generator_mass_cost_coeff: 12.4
+    bedplate_mass_cost_coeff: 2.9
+    yaw_mass_cost_coeff: 8.3
+    converter_mass_cost_coeff: 18.8
+    transformer_mass_cost_coeff: 18.8
+    hvac_mass_cost_coeff: 124.0
+    cover_mass_cost_coeff: 5.7
+    elec_connec_machine_rating_cost_coeff: 41.85
+    platforms_mass_cost_coeff: 17.1
+    tower_mass_cost_coeff: 2.9
+    controls_machine_rating_cost_coeff: 21.15
+    crane_cost: 12e3

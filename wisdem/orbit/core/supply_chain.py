@@ -9,9 +9,17 @@ from marmot import Agent, process
 
 
 class SubstructureDelivery(Agent):
-    """"""
+    """Simulates the substrucutre delivery process."""
 
-    def __init__(self, component, num, deilvery_time, port, items, num_parallel=1):
+    def __init__(
+        self,
+        component,
+        num,
+        deilvery_time,
+        port,
+        items,
+        num_parallel=1,
+    ):
         """
         Creates an instance of `SupplyChain`.
 
@@ -39,6 +47,8 @@ class SubstructureDelivery(Agent):
 
     @process
     def start(self):
+        """Starts the delivery processes."""
+
         n = 0
         while n < self.num:
             yield self.task(

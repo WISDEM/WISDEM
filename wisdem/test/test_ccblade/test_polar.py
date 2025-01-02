@@ -118,7 +118,7 @@ class TestBlend(unittest.TestCase):
         ]
         Re = 1
 
-        self.polar1 = Polar(Re, alpha, cl, cd, cm)
+        self.polar1 = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm)
 
         alpha = [
             -3.04,
@@ -241,7 +241,7 @@ class TestBlend(unittest.TestCase):
             -0.0633,
         ]
 
-        self.polar2 = Polar(Re, alpha, cl, cd, cm)
+        self.polar2 = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm)
 
     def test_blend1(self):
         polar3 = blend(self.polar1, self.polar2, 0.5)
@@ -755,8 +755,8 @@ class Test3DStall(unittest.TestCase):
         cm_zeros = np.zeros(len(cm))
         Re = 1
 
-        self.polar = Polar(Re, alpha, cl, cd, cm)
-        self.polar2 = Polar(Re, alpha, cl, cd, cm_zeros)
+        self.polar = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm)
+        self.polar2 = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm_zeros)
 
     def test_stall1(self):
         R = 2.4
@@ -1204,8 +1204,8 @@ class TestExtrap(unittest.TestCase):
         ]
         cm_zeros = np.zeros(len(cm))
         Re = 1
-        self.polar = Polar(Re, alpha, cl, cd, cm)
-        self.polar2 = Polar(Re, alpha, cl, cd, cm_zeros)
+        self.polar = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm)
+        self.polar2 = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm_zeros)
 
     def test_extrap1(self):
         cdmax = 1.29
@@ -2021,16 +2021,16 @@ class TestMisc(unittest.TestCase):
         ]
         cm_zeros = np.zeros(len(cm))
         Re = 1
-        self.polar = Polar(Re, alpha, cl, cd, cm)
-        self.polar2 = Polar(Re, alpha, cl, cd, cm_zeros)
+        self.polar = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm)
+        self.polar2 = Polar(Re=Re, alpha=alpha, cl=cl, cd=cd, cm=cm_zeros)
 
     def test_unsteady(self):
         alpha0, alpha1, alpha2, cnSlope, cn1, cn2, cd0, cm0 = self.polar.unsteadyParams()
 
         np.testing.assert_allclose(alpha0, -0.32307692307692304)
-        np.testing.assert_allclose(alpha1, 9.260783831245934)
-        np.testing.assert_allclose(alpha2, -6.779334979177289)
-        np.testing.assert_allclose(cnSlope, 6.4380618436681765)
+        np.testing.assert_allclose(alpha1, 9.552811766400268)
+        np.testing.assert_allclose(alpha2, -6.897960464135163)
+        np.testing.assert_allclose(cnSlope, 6.274086123213817)
         np.testing.assert_allclose(cn1, 0.9201540372961516)
         np.testing.assert_allclose(cn2, -0.6377683435797556)
         np.testing.assert_allclose(cd0, 0.012142307692307694)
@@ -2040,54 +2040,19 @@ class TestMisc(unittest.TestCase):
         cl_fs, f_st = self.polar.cl_fully_separated()
 
         cl_fs_ref = np.array(
-            [
-                -0.63,
-                -0.42017185,
-                -0.35815607,
-                -0.23440711,
-                -0.11213462,
-                0.02669872,
-                0.15,
-                0.2815297,
-                0.41432191,
-                0.51685242,
-                0.60852946,
-                0.6464375,
-                0.68202361,
-                0.7299095,
-                0.76769179,
-                0.8037866,
-                0.82370687,
-                0.81723832,
-                0.78926905,
-                0.69419819,
-                0.65999953,
-            ]
+            [-0.63      , -0.42013103, -0.35811382, -0.23437943, -0.11212114,
+            0.02669551,  0.15      ,  0.28149555,  0.41427177,  0.51679214,
+            0.60846331,  0.64637075,  0.68195446,  0.72983731,  0.76761824,
+            0.80371291,  0.82363622,  0.81717562,  0.78922118,  0.69418166,
+            0.65999935]
         )
         f_st_ref = np.array(
-            [
-                0.00000000e00,
-                2.34199688e-01,
-                7.26644559e-01,
-                7.32580663e-01,
-                8.34063987e-01,
-                8.34063987e-01,
-                1.00000000e00,
-                8.92315821e-01,
-                8.77625013e-01,
-                6.71133852e-01,
-                4.28392660e-01,
-                3.20122429e-01,
-                2.90558283e-01,
-                2.55881726e-01,
-                2.18728235e-01,
-                1.78134763e-01,
-                1.33254382e-01,
-                8.56818538e-02,
-                3.81986876e-02,
-                3.19820908e-03,
-                2.39632149e-07,
-            ]
+            [0.00000000e+00, 2.34317543e-01, 7.26903695e-01, 7.32841344e-01,
+            8.34350734e-01, 8.34350730e-01, 1.00000000e+00, 8.92617271e-01,
+            8.77922772e-01, 6.71378429e-01, 4.28570375e-01, 3.20267816e-01,
+            2.90694427e-01, 2.56006735e-01, 2.18840884e-01, 1.78233263e-01,
+            1.33336160e-01, 8.57439565e-02, 3.82370360e-02, 3.20802118e-03,
+            3.26735755e-07]
         )
 
         np.testing.assert_allclose(cl_fs, cl_fs_ref)
@@ -2102,19 +2067,20 @@ class TestMisc(unittest.TestCase):
     def test_linear_region(self):
         alpha_linear_region, cl_linear_region, slope, alpha0 = self.polar.linear_region()
 
-        np.testing.assert_allclose(alpha_linear_region, np.array([-3.36474623, 5.96375]))
-        np.testing.assert_allclose(cl_linear_region, np.array([-0.39279835, 0.811875]))
-        np.testing.assert_allclose(slope, 0.1291390728476821)
+        np.testing.assert_allclose(alpha_linear_region, np.array([-6.17381944,  7.43986639]))
+        np.testing.assert_allclose(cl_linear_region, np.array([-0.68718783,  0.91178174]))
+        np.testing.assert_allclose(slope, 0.11745309755638363)
         np.testing.assert_allclose(alpha0, -0.32307692307692304)
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestBlend))
-    suite.addTest(unittest.makeSuite(Test3DStall))
-    suite.addTest(unittest.makeSuite(TestExtrap))
-    suite.addTest(unittest.makeSuite(TestMisc))
-    return suite
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestBlend),
+        unittest.TestLoader().loadTestsFromTestCase(Test3DStall),
+        unittest.TestLoader().loadTestsFromTestCase(TestExtrap),
+        unittest.TestLoader().loadTestsFromTestCase(TestMisc),
+    ]
+    return unittest.TestSuite(suite)
 
 
 if __name__ == "__main__":

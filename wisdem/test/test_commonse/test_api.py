@@ -232,16 +232,5 @@ class TestUtilization(unittest.TestCase):
         npt.assert_almost_equal(external_general_unity, 0.59, 1)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestUtilization))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

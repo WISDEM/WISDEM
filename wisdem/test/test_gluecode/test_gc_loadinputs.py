@@ -44,19 +44,9 @@ class TestLoadInputs(unittest.TestCase):
         self.myobj.set_opt_flags()
         self.assertFalse(self.myobj.analysis_options["opt_flag"])
 
-        self.myobj.analysis_options["design_variables"]["test1"]["flag"] = True
-        self.myobj.set_opt_flags()
-        self.assertTrue(self.myobj.analysis_options["opt_flag"])
-
-        self.myobj.analysis_options["design_variables"]["test1"]["flag"] = False
-        self.myobj.analysis_options["design_variables"]["test1"]["test2"]["test3"]["flag"] = True
-        self.myobj.set_opt_flags()
-        self.assertTrue(self.myobj.analysis_options["opt_flag"])
-
         self.myobj.analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"] = 500
         self.myobj.analysis_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"] = 600
-        self.myobj.analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"] = 700
-        self.myobj.analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"] = 800
+        self.myobj.analysis_options["design_variables"]["blade"]["n_opt_struct"] = [700, 800]
         self.myobj.set_opt_flags()
         self.assertEqual(
             self.myobj.analysis_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"],
@@ -67,25 +57,14 @@ class TestLoadInputs(unittest.TestCase):
             self.myobj.modeling_options["WISDEM"]["RotorSE"]["n_span"],
         )
         self.assertEqual(
-            self.myobj.analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"],
+            self.myobj.analysis_options["design_variables"]["blade"]["n_opt_struct"][0],
             self.myobj.modeling_options["WISDEM"]["RotorSE"]["n_span"],
         )
         self.assertEqual(
-            self.myobj.analysis_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"],
+            self.myobj.analysis_options["design_variables"]["blade"]["n_opt_struct"][1],
             self.myobj.modeling_options["WISDEM"]["RotorSE"]["n_span"],
         )
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestLoadInputs))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

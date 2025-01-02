@@ -25,6 +25,8 @@ class MainBearing(om.ExplicitComponent):
         bearing diameter/facewidth
     D_shaft : float, [m]
         Diameter of LSS shaft at bearing location
+    mb_mass_user : float, [kg]
+        user override of component mass
 
     Returns
     -------
@@ -41,6 +43,7 @@ class MainBearing(om.ExplicitComponent):
         self.add_discrete_input("bearing_type", "CARB")
         self.add_input("D_bearing", 0.0, units="m")
         self.add_input("D_shaft", 0.0, units="m")
+        self.add_input("mb_mass_user", 0.0, units="kg")
 
         self.add_output("mb_max_defl_ang", 0.0, units="rad")
         self.add_output("mb_mass", 0.0, units="kg")
@@ -51,6 +54,7 @@ class MainBearing(om.ExplicitComponent):
             raise ValueError("Bearing type input must be a string")
         btype = discrete_inputs["bearing_type"].upper()
         D_shaft = inputs["D_shaft"]
+        mass_user = float(inputs["mb_mass_user"][0])
 
         # assume low load rating for bearing
         if btype == "CARB":  # p = Fr, so X=1, Y=0
@@ -88,6 +92,9 @@ class MainBearing(om.ExplicitComponent):
 
         # add housing weight, but pg 23 of report says factor is 2.92 whereas this is 2.963
         mass *= 1 + 80.0 / 27.0
+
+        if mass_user > 0.0:
+            mass = mass_user
 
         # Consider the bearings a torus for MoI (https://en.wikipedia.org/wiki/List_of_moments_of_inertia)
         D_bearing = inputs["D_bearing"] if inputs["D_bearing"] > 0.0 else face_width
@@ -154,11 +161,11 @@ class Brake(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         # Unpack inputs
-        D_rotor = float(inputs["rotor_diameter"])
-        Q_rotor = float(inputs["rated_torque"])
-        m_brake = float(inputs["brake_mass_user"])
-        s_rotor = float(inputs["s_rotor"])
-        s_gearbox = float(inputs["s_gearbox"])
+        D_rotor = float(inputs["rotor_diameter"][0])
+        Q_rotor = float(inputs["rated_torque"][0])
+        m_brake = float(inputs["brake_mass_user"][0])
+        s_rotor = float(inputs["s_rotor"][0])
+        s_gearbox = float(inputs["s_gearbox"][0])
 
         # Regression based sizing derived by J.Keller under FOA 1981 support project
         if m_brake == 0.0:
@@ -214,9 +221,9 @@ class RPM_Input(om.ExplicitComponent):
         self.add_output("hss_rpm", val=np.zeros(n_pc), units="rpm")
 
     def compute(self, inputs, outputs):
-        min_rpm = np.maximum(0.1, float(inputs["minimum_rpm"]))
-        max_rpm = float(inputs["rated_rpm"])
-        ratio = float(inputs["gear_ratio"])
+        min_rpm = np.maximum(0.1, float(inputs["minimum_rpm"][0]))
+        max_rpm = float(inputs["rated_rpm"][0])
+        ratio = float(inputs["gear_ratio"][0])
         rpm_full = np.linspace(min_rpm, max_rpm, self.options["n_pc"])
         outputs["lss_rpm"] = rpm_full
         outputs["hss_rpm"] = ratio * rpm_full
@@ -290,13 +297,13 @@ class GeneratorSimple(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         # Unpack inputs
-        rating = float(inputs["machine_rating"])
-        D_rotor = float(inputs["rotor_diameter"])
-        Q_rotor = float(inputs["rated_torque"])
-        R_generator = float(inputs["generator_radius_user"])
-        mass = float(inputs["generator_mass_user"])
+        rating = float(inputs["machine_rating"][0])
+        D_rotor = float(inputs["rotor_diameter"][0])
+        Q_rotor = float(inputs["rated_torque"][0])
+        R_generator = float(inputs["generator_radius_user"][0])
+        mass = float(inputs["generator_mass_user"][0])
         eff_user = inputs["generator_efficiency_user"]
-        length = float(inputs["L_generator"])
+        length = float(inputs["L_generator"][0])
 
         if mass == 0.0:
             if self.options["direct_drive"]:
@@ -398,11 +405,11 @@ class Electronics(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         # Unpack inputs
-        rating = float(inputs["machine_rating"])
-        D_rotor = float(inputs["rotor_diameter"])
-        D_top = float(inputs["D_top"])
-        m_conv_usr = float(inputs["converter_mass_user"])
-        m_trans_usr = float(inputs["transformer_mass_user"])
+        rating = float(inputs["machine_rating"][0])
+        D_rotor = float(inputs["rotor_diameter"][0])
+        D_top = float(inputs["D_top"][0])
+        m_conv_usr = float(inputs["converter_mass_user"][0])
+        m_trans_usr = float(inputs["transformer_mass_user"][0])
 
         # Correlation based trends, assume box
         m_converter = (
@@ -467,9 +474,9 @@ class YawSystem(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         # Unpack inputs
-        D_rotor = float(inputs["rotor_diameter"])
-        D_top = float(inputs["D_top"])
-        rho = float(inputs["rho"])
+        D_rotor = float(inputs["rotor_diameter"][0])
+        D_top = float(inputs["D_top"][0])
+        rho = float(inputs["rho"][0])
 
         # Estimate the number of yaw motors (borrowed from old DriveSE utilities)
         n_motors = 2 * np.ceil(D_rotor / 30.0) - 2
@@ -534,6 +541,12 @@ class MiscNacelleComponents(om.ExplicitComponent):
         component center of mass
     platform_I : numpy array[3], [m]
         component mass moments of inertia
+    cover_length : float, [m]
+        length of cover and outer nacelle
+    cover_height : float, [m]
+        height of cover and outer nacelle
+    cover_width : float, [m]
+        width of cover and outer nacelle
     cover_mass : float, [kg]
         component mass
     cover_cm : numpy array[3], [m]
@@ -565,6 +578,9 @@ class MiscNacelleComponents(om.ExplicitComponent):
         self.add_output("platform_mass", 0.0, units="kg")
         self.add_output("platform_cm", np.zeros(3), units="m")
         self.add_output("platform_I", np.zeros(3), units="m")
+        self.add_output("cover_length", 0.0, units="m")
+        self.add_output("cover_height", 0.0, units="m")
+        self.add_output("cover_width", 0.0, units="m")
         self.add_output("cover_mass", 0.0, units="kg")
         self.add_output("cover_cm", np.zeros(3), units="m")
         self.add_output("cover_I", np.zeros(3), units="m")
@@ -573,16 +589,16 @@ class MiscNacelleComponents(om.ExplicitComponent):
         # Unpack inputs
         direct = self.options["direct_drive"]
         upwind = discrete_inputs["upwind"]
-        rating = float(inputs["machine_rating"])
-        coeff = float(inputs["hvac_mass_coeff"])
-        H_bedplate = float(inputs["H_bedplate"])
-        D_top = float(inputs["D_top"])
-        L_bedplate = float(inputs["L_bedplate"])
-        R_generator = float(inputs["R_generator"])
-        overhang = float(inputs["overhang"])
-        s_generator = float(inputs["generator_cm"])
-        rho_fiberglass = float(inputs["rho_fiberglass"])
-        rho_castiron = float(inputs["rho_castiron"])
+        rating = float(inputs["machine_rating"][0])
+        coeff = float(inputs["hvac_mass_coeff"][0])
+        H_bedplate = float(inputs["H_bedplate"][0])
+        D_top = float(inputs["D_top"][0])
+        L_bedplate = float(inputs["L_bedplate"][0])
+        R_generator = float(inputs["R_generator"][0])
+        overhang = float(inputs["overhang"][0])
+        s_generator = float(inputs["generator_cm"][0])
+        rho_fiberglass = float(inputs["rho_fiberglass"][0])
+        rho_castiron = float(inputs["rho_castiron"][0])
 
         # For the nacelle cover, imagine a box from the bedplate to the hub in length and around the generator in width, height, with 10% margin in each dim
         L_cover = 1.1 * L_bedplate if direct else 1.1 * (overhang + D_top)
@@ -605,6 +621,9 @@ class MiscNacelleComponents(om.ExplicitComponent):
         )
         if upwind:
             cm_cover[0] *= -1.0
+        outputs["cover_length"] = L_cover
+        outputs["cover_height"] = H_cover
+        outputs["cover_width"] = W_cover
         outputs["cover_mass"] = m_cover
         outputs["cover_cm"] = cm_cover
         outputs["cover_I"] = I_cover
@@ -846,7 +865,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         Cup = -1.0 if discrete_inputs["upwind"] else 1.0
-        tilt = float(np.deg2rad(inputs["tilt"]))
+        tilt = float(np.deg2rad(inputs["tilt"][0]))
 
         components = [
             "mb1",
@@ -871,7 +890,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         m_nac = 0.0
         cm_nac = np.zeros(3)
         shaft0 = np.zeros(3)
-        shaft0[-1] += inputs["constr_height"]
+        shaft0[-1] += inputs["constr_height"][0]
         if self.options["direct_drive"]:
             shaft0[0] += inputs["x_bedplate"][-1]
         outputs["shaft_start"] = shaft0
@@ -899,7 +918,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         I_cm_list = np.zeros((len(components) + 3, 6))
         I_TT_list = np.zeros((len(components) + 3, 6))
         for ic, c in enumerate(components):
-            m_i = inputs[c + "_mass"]
+            m_i = float(inputs[c + "_mass"][0])
             cm_i = inputs["generator_cm"] if c.find("generator") >= 0 else inputs[c + "_cm"]
             I_i = inputs[c + "_I"]
 
@@ -963,16 +982,16 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
 
         # Wrap up nacelle mass table
         components.append("Above_yaw")
-        m_list[-3] = outputs["above_yaw_mass"]
+        m_list[-3] = outputs["above_yaw_mass"][0]
         cm_list[-3, :] = outputs["above_yaw_cm"]
         I_cm_list[-3, :] = outputs["above_yaw_I"]
         I_TT_list[-3, :] = outputs["above_yaw_I_TT"]
         components.append("yaw")
-        m_list[-2] = inputs["yaw_mass"]
+        m_list[-2] = inputs["yaw_mass"][0]
         cm_list[-2, :] = inputs["yaw_cm"]
         I_cm_list[-2, :] = I_TT_list[-2, :] = np.r_[inputs["yaw_I"], np.zeros(3)]
         components.append("nacelle")
-        m_list[-1] = m_nac
+        m_list[-1] = m_nac[0]
         cm_list[-1, :] = cm_nac
         I_cm_list[-1, :] = I_nac
         I_TT_list[-1, :] = outputs["nacelle_I_TT"]
@@ -995,6 +1014,7 @@ class NacelleSystemAdder(om.ExplicitComponent):  # added to drive to include ele
         self._mass_table["MoI_TT_xz"] = I_TT_list[:, 4]
         self._mass_table["MoI_TT_yz"] = I_TT_list[:, 5]
         self._mass_table.set_index("Component", inplace=True)
+        #print(self._mass_table[["Mass","CoM_TT_x"]])
 
 
 # --------------------------------------------
@@ -1015,11 +1035,13 @@ class RNA_Adder(om.ExplicitComponent):
     shaft_start : numpy array[3], [m]
         coordinate of start of shaft relative to tower top
     blades_mass : float, [kg]
-        Mass of all bladea
+        Mass of all blades
     hub_system_mass : float, [kg]
         Mass of hub system (hub + spinner + pitch)
     nacelle_mass : float, [kg]
         Mass of nacelle system
+    blades_cm : float, [m]
+        Center of mass for all blades from blade attachment centerpoint in hub c.s.
     hub_system_cm : float, [m]
         Hub center of mass from hub flange in hub c.s.
     nacelle_cm : numpy array[3], [m]
@@ -1051,6 +1073,7 @@ class RNA_Adder(om.ExplicitComponent):
         self.add_input("blades_mass", 0.0, units="kg")
         self.add_input("hub_system_mass", 0.0, units="kg")
         self.add_input("nacelle_mass", 0.0, units="kg")
+        self.add_input("blades_cm", 0.0, units="m")
         self.add_input("hub_system_cm", 0.0, units="m")
         self.add_input("nacelle_cm", np.zeros(3), units="m")
         self.add_input("blades_I", np.zeros(6), units="kg*m**2")
@@ -1064,31 +1087,40 @@ class RNA_Adder(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         Cup = -1.0 if discrete_inputs["upwind"] else 1.0
-        tilt = float(np.deg2rad(inputs["tilt"]))
+        tilt = float(np.deg2rad(inputs["tilt"][0]))
 
-        rotor_mass = inputs["blades_mass"] + inputs["hub_system_mass"]
+        hub_mass = inputs["hub_system_mass"]
+        blades_mass = inputs["blades_mass"]
         nac_mass = inputs["nacelle_mass"]
 
         # rna mass
-        outputs["rotor_mass"] = rotor_mass
+        outputs["rotor_mass"] = rotor_mass = hub_mass + blades_mass
         outputs["rna_mass"] = rotor_mass + nac_mass
 
         # rna cm
         shaft0 = inputs["shaft_start"]
-        hub_cm = inputs["hub_system_cm"]
+        hub_cm_in = inputs["hub_system_cm"]
+        blades_cm_in = inputs["blades_cm"]
         L_drive = inputs["L_drive"]
-        hub_cm = shaft0 + (L_drive + hub_cm) * np.array([Cup * np.cos(tilt), 0.0, np.sin(tilt)])
-        outputs["rna_cm"] = (rotor_mass * hub_cm + nac_mass * inputs["nacelle_cm"]) / outputs["rna_mass"]
+        cm_array = np.array([Cup * np.cos(tilt), 0.0, np.sin(tilt)])
+        hub_cm = shaft0 + (L_drive + hub_cm_in) * cm_array
+        blades_cm = shaft0 + (L_drive + hub_cm_in + blades_cm_in) * cm_array
+        outputs["rna_cm"] = (hub_mass * hub_cm +
+                             blades_mass * blades_cm + 
+                             nac_mass * inputs["nacelle_cm"]) / outputs["rna_mass"]
 
         # rna I
         hub_I = util.assembleI(util.rotateI(inputs["hub_system_I"], -Cup * tilt, axis="y"))
         blades_I = util.assembleI(util.rotateI(inputs["blades_I"], -Cup * tilt, axis="y"))
         nac_I_TT = util.assembleI(inputs["nacelle_I_TT"])
-        rotor_I = blades_I + hub_I
 
         R = hub_cm
-        rotor_I_TT = rotor_I + rotor_mass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
-        outputs["rna_I_TT"] = util.unassembleI(rotor_I_TT + nac_I_TT)
+        hub_I_TT = hub_I + hub_mass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+
+        R = blades_cm
+        blades_I_TT = blades_I + blades_mass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        
+        outputs["rna_I_TT"] = util.unassembleI(hub_I_TT + blades_I_TT + nac_I_TT)
 
 
 # --------------------------------------------

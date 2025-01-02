@@ -26,21 +26,18 @@ design_variables:
               index_start: 1
               index_end: 7
         structure:
-            spar_cap_ss:
-                flag: True 
-                n_opt: 8     
-                max_decrease: 0.2
-                max_increase: 2.0
-                index_start: 1
-                index_end: 7
-            spar_cap_ps:
-                flag: True
-                equal_to_suction: True 
-                n_opt: 8
-                max_decrease: 0.2
-                max_increase: 2.0
-                index_start: 1
-                index_end: 7
+            - layer_name: Spar_Cap_SS
+              n_opt: 8
+              max_decrease: 0.2
+              max_increase: 2.0
+              index_start: 1
+              index_end: 7
+            - layer_name: Spar_Cap_PS
+              n_opt: 8
+              max_decrease: 0.2
+              max_increase: 2.0
+              index_start: 1
+              index_end: 7
     drivetrain:
         lss_diameter:
             flag: True
@@ -137,7 +134,7 @@ driver:
         tol: 1.e-3          # Optimality tolerance
         # max_major_iter: 100  # Maximum number of major design iterations (SNOPT)
         # max_minor_iter: 1000 # Maximum number of minor design iterations (SNOPT)
-        max_iter: 2         # Maximum number of iterations (SLSQP)
+        max_iter: 1         # Maximum number of iterations (SLSQP)
         solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         # step_size: 1.e-3    # Step size for finite differencing
         form: central       # Finite differencing mode, either forward or central

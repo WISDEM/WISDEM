@@ -1,66 +1,125 @@
 name: Build and upload to PyPI
 # https://github.com/pypa/cibuildwheel/blob/main/examples/github-deploy.yml
+# Best comparable example: https://github.com/pdfo/pdfo
 
-# Build on every branch push, tag push, and pull request change:
-#on: [push, pull_request]
-# Alternatively, to publish when a (published) GitHub Release is created, use the following:
-on:
-  release:
-    types:
-      - published
+# Build on every pull request (no need for every push) and release change:
+on: [pull_request, release]
+
 
 jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14, macos-15]
 
     steps:
-      - name: Setup GNU Fortran
-        uses: awvwgk/setup-fortran@main
-              
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.12.3
-
-      - uses: actions/upload-artifact@v3
+      - name: Set up QEMU
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
         with:
+          platforms: all
+        
+      - name: Setup GNU Fortran
+        if: false == contains( matrix.os, 'windows')
+        uses: awvwgk/setup-fortran@v1
+
+      - name: Install compiler
+        if: false == contains( matrix.os, 'windows')
+        id: install_cc
+        uses: rlalik/setup-cpp-compiler@master
+        with:
+          compiler: clang
+          
+      - name: Install mingw-w64 on Windows
+        if: contains( matrix.os, 'windows')
+        uses: msys2/setup-msys2@v2
+        with:
+          path-type: inherit
+          install: |
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-gcc-fortran
+            
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build wheels linux
+        if: contains( matrix.os, 'ubuntu')
+        uses: pypa/cibuildwheel@v2.21.3
+        env:
+          CC: ${{ steps.install_cc.outputs.cc }}
+          CXX: ${{ steps.install_cc.outputs.cxx }}
+
+      - name: Build wheels mac-12
+        if: contains( matrix.os, 'macos-12')
+        uses: pypa/cibuildwheel@v2.21.3
+        env:
+          CC: ${{ steps.install_cc.outputs.cc }}
+          CXX: ${{ steps.install_cc.outputs.cxx }}
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET="12.0"
+
+      - name: Build wheels mac-13
+        if: contains( matrix.os, 'macos-13')
+        uses: pypa/cibuildwheel@v2.21.3
+        env:
+          CC: ${{ steps.install_cc.outputs.cc }}
+          CXX: ${{ steps.install_cc.outputs.cxx }}
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET="13.0"
+
+      - name: Build wheels mac-14
+        if: contains( matrix.os, 'macos-14')
+        uses: pypa/cibuildwheel@v2.21.3
+        env:
+          CC: ${{ steps.install_cc.outputs.cc }}
+          CXX: ${{ steps.install_cc.outputs.cxx }}
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET="14.0"
+
+      - name: Build wheels windows
+        if: contains( matrix.os, 'windows')
+        uses: pypa/cibuildwheel@v2.21.3
+          
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
           
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Build sdist
         run: pipx run build --sdist
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
+          name: cibw-sdist
           path: dist/*.tar.gz
 
   upload_pypi:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     # upload to PyPI on every tag starting with 'v'
     #if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     # alternatively, to publish when a GitHub Release is created, use the following rule:
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          # unpacks default artifact into dist/
-          # if `name: artifact` is omitted, the action will create extra parent dir
-          name: artifact
+          # unpacks all CIBW artifacts into dist/
+          pattern: cibw-*
           path: dist
+          merge-multiple: true
 
-      - uses: pypa/gh-action-pypi-publish@v1.8.5
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_password }}
-          # To test: repository_url: https://test.pypi.org/legacy/
+      - name: Upload to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        #with:
+        #  user: __token__
+        #  password: ${{ secrets.pypi_password }}
+        #  # To test: repository_url: https://test.pypi.org/legacy/

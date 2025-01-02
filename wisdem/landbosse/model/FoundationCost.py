@@ -3,7 +3,6 @@ import math
 
 import pandas as pd
 import numpy as np
-import math
 from scipy.optimize import root_scalar
 
 from wisdem.landbosse.model.WeatherDelay import WeatherDelay as WD
@@ -347,7 +346,7 @@ class FoundationCost(CostModule):
                 v_1 = (foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete) + f_dead)
                 e = m_tot / v_1
                 return (e * 3 - x)
-            result = root_scalar(r_g, method='brentq', bracket=[0.9*r_overturn, 50], xtol=1e-4, maxiter=50)
+            result = root_scalar(r_g, method='brentq', bracket=[0.5*r_overturn, 50], xtol=1e-4, maxiter=50)
             r_gapping = result.root
             if not result.converged:
                 raise ValueError(f'Warning {self.project_name} calculate_foundation_load r_gapping solve failed, {result.flag}')
@@ -361,7 +360,13 @@ class FoundationCost(CostModule):
             e = m_tot / v_1
             a_eff = v_1 / bearing_pressure
             return (2 * (x ** 2 - e * (x ** 2 - e ** 2) ** 0.5) - a_eff)
-        result = root_scalar(r_b, method='brentq', bracket=[0.9*r_overturn, 50], xtol=1e-10, maxiter=50)
+
+        # Get minimum radius
+        foundation_vol = np.pi * r_test_bearing ** 2 * foundation_load_input_data['depth']
+        v_1 = (foundation_vol * (vol_fraction_fill * unit_weight_fill + vol_fraction_concrete * unit_weight_concrete) + f_dead)
+        min_r = m_tot / v_1
+
+        result = root_scalar(r_b, method='brentq', bracket=[min_r+1e-3, 50], xtol=1e-10, maxiter=50)
         r_bearing = result.root
 
         if not result.converged:
@@ -490,7 +495,7 @@ class FoundationCost(CostModule):
                 thresh=4)
 
         #operation data for entire wind farm:
-        operation_data = pd.merge(material_needs_entire_farm, operation_data, on=['Material type ID'], how='outer')
+        operation_data = pd.merge(material_needs_entire_farm, operation_data, on=['Material type ID'], how='outer', sort=True)
         operation_data['Number of days'] = operation_data['Quantity of material'] / operation_data['Daily output']
         operation_data['Number of crews'] = np.ceil((operation_data['Number of days'] / 30) / foundation_construction_time)
 
@@ -500,7 +505,7 @@ class FoundationCost(CostModule):
         # if more than one crew needed to complete within construction duration then assume that all construction happens
         # within that window and use that timeframe for weather delays; if not, use the number of days calculated
         operation_data['time_construct_bool'] = operation_data['Number of days'] > foundation_construction_time * 30
-        boolean_dictionary = {True: foundation_construction_time * 30, False: np.NAN}
+        boolean_dictionary = {True: foundation_construction_time * 30, False: np.nan}
         operation_data['time_construct_bool'] = operation_data['time_construct_bool'].map(boolean_dictionary)
         operation_data['Time construct days'] = operation_data[['time_construct_bool', 'Number of days']].min(axis=1)
         num_days = operation_data['Time construct days'].max()
@@ -512,7 +517,7 @@ class FoundationCost(CostModule):
         if construction_time_input_data['turbine_rating_MW'] > 0.1:
             crew_cost = self.input_dict['crew_cost']
             crew = self.input_dict['crew'][self.input_dict['crew']['Crew type ID'].str.contains('M0')]
-            management_crew = pd.merge(crew_cost, crew, on=['Labor type ID'])
+            management_crew = pd.merge(crew_cost, crew, on=['Labor type ID'], sort=True)
             management_crew = management_crew.assign(per_diem_total=management_crew['Per diem USD per day'] * management_crew['Number of workers'] * num_days)
             management_crew = management_crew.assign(hourly_costs_total=management_crew['Hourly rate USD per hour'] * self.input_dict['hour_day'][self.input_dict['time_construct']] * num_days)
             management_crew = management_crew.assign(total_crew_cost_before_wind_delay=management_crew['per_diem_total'] + management_crew['hourly_costs_total'])
@@ -596,7 +601,7 @@ class FoundationCost(CostModule):
         material_price = calculate_costs_input_dict['material_price']
 
 
-        material_data_entire_farm = pd.merge(material_vol_entire_farm, material_price, on=['Material type ID'])
+        material_data_entire_farm = pd.merge(material_vol_entire_farm, material_price, on=['Material type ID'], sort=True)
         material_data_entire_farm['Cost USD'] = material_data_entire_farm['Quantity of material'] * pd.to_numeric(material_data_entire_farm['Material price USD per unit'])     # material data on a total wind farm basis
 
 
@@ -617,7 +622,7 @@ class FoundationCost(CostModule):
         else:
             rsmeans = rsmeans.where(rsmeans['Module'] == 'Small DW Foundations').dropna(thresh=4)
 
-        labor_equip_data = pd.merge(material_vol_entire_farm, rsmeans, on=['Material type ID'])
+        labor_equip_data = pd.merge(material_vol_entire_farm, rsmeans, on=['Material type ID'], sort=True)
 
         # Create foundation cost dataframe
         foundation_cost = pd.DataFrame(columns=['Type of cost', 'Cost USD', 'Phase of construction'])

@@ -7,7 +7,7 @@ from wisdem.floatingse.floating_frame import FloatingFrame
 from wisdem.floatingse.floating_system import FloatingSystem
 
 
-class FloatingSE(om.Group):
+class FloatingSEProp(om.Group):
     def initialize(self):
         self.options.declare("modeling_options")
 
@@ -38,16 +38,27 @@ class FloatingSE(om.Group):
                     n_mat=opt["materials"]["n_mat"],
                     memmax=True,
                     n_refine=2,
+                    member_shape=opt["floating"]["members"]["outer_shape"][k],
                 ),
-                promotes=mem_prom + [("joint1", f"member{k}:joint1"), ("joint2", f"member{k}:joint2")],
+                promotes=mem_prom + [("joint1", f"member{k}:joint1"),
+                                     ("joint2", f"member{k}:joint2"),
+                                     ("total_mass_user", f"member{k}:mass_user")],
             )
-
-        # Combine all members and tower into single system
-        self.add_subsystem("sys", FloatingSystem(modeling_options=opt), promotes=["*"])
 
         self.add_subsystem(
             "mm", Mooring(options=opt["mooring"], gamma=opt["WISDEM"]["FloatingSE"]["gamma_f"]), promotes=["*"]
         )
+
+                
+class FloatingSEPerf(om.Group):
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        opt = self.options["modeling_options"]
+
+        # Combine all members and tower into single system
+        self.add_subsystem("sys", FloatingSystem(modeling_options=opt), promotes=["*"])
 
         # Do the load analysis over one or more load cases
         self.add_subsystem("load", FloatingFrame(modeling_options=opt), promotes=["*"])
@@ -58,9 +69,20 @@ class FloatingSE(om.Group):
         # Evaluate system constraints
         self.add_subsystem("modal", RigidModes(), promotes=["*"])
 
+                
+class FloatingSE(om.Group):
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        opt = self.options["modeling_options"]
+
+
+        self.add_subsystem("prop", FloatingSEProp(modeling_options=opt), promotes=["*"])
+        self.add_subsystem("perf", FloatingSEPerf(modeling_options=opt), promotes=["*"])
+
         # Connect all input variables from all models
         mem_vars = [
-            "section_D",
             "section_t",
             "section_A",
             "section_Asx",
@@ -71,12 +93,12 @@ class FloatingSE(om.Group):
             "section_rho",
             "section_E",
             "section_G",
+            "section_TorsC",
             "section_sigma_y",
             "idx_cb",
             "variable_ballast_capacity",
             "variable_ballast_Vpts",
             "variable_ballast_spts",
-            "constr_ballast_capacity",
             "buoyancy_force",
             "displacement",
             "center_of_buoyancy",
@@ -86,18 +108,39 @@ class FloatingSE(om.Group):
             "total_cost",
             "I_total",
             "Awater",
-            "Iwater",
+            "Iwaterx",
+            "Iwatery",
             "added_mass",
             "waterline_centroid",
         ]
-        mem_load_vars = ["z_global", "d_full", "s_full", "s_all"]
-
+        
+        n_member = opt["floating"]["members"]["n_members"]
         for k in range(n_member):
+            member_shape = opt["floating"]["members"]["outer_shape"][k]
+
             for var in mem_vars:
                 self.connect(f"member{k}.{var}", f"member{k}:{var}")
 
             self.connect(f"member{k}.nodes_xyz_all", f"member{k}:nodes_xyz")
-            self.connect(f"member{k}.nodes_r_all", f"member{k}:nodes_r")
+            self.connect(f"member{k}.constr_ballast_capacity", f"member{k}:constr_ballast_capacity")
 
-            for var in mem_load_vars:
+            if member_shape == "circular":
+                self.connect(f"member{k}.nodes_r_all", f"member{k}:nodes_r")
+                self.connect(f"member{k}.section_D", f"member{k}:section_D")
+                self.connect(f"member{k}.ca_usr_grid_full", f"memload{k}.ca_usr")
+                self.connect(f"member{k}.cd_usr_grid_full", f"memload{k}.cd_usr")
+                self.connect(f"member{k}.outer_diameter_full", f"memload{k}.outer_diameter_full")
+            elif member_shape == "rectangular":
+                # self.connect(f"member{k}.nodes_a_all", f"member{k}:nodes_a")
+                # self.connect(f"member{k}.nodes_b_all", f"member{k}:nodes_b")
+                self.connect(f"member{k}.section_a", f"member{k}:section_a") 
+                self.connect(f"member{k}.section_b", f"member{k}:section_b")
+                self.connect(f"member{k}.ca_usr_grid_full", f"memload{k}.ca_usr")
+                self.connect(f"member{k}.cay_usr_grid_full", f"memload{k}.cay_usr")
+                self.connect(f"member{k}.cd_usr_grid_full", f"memload{k}.cd_usr")
+                self.connect(f"member{k}.cdy_usr_grid_full", f"memload{k}.cdy_usr")
+                self.connect(f"member{k}.side_length_a_full", f"memload{k}.side_length_a_full")
+                self.connect(f"member{k}.side_length_b_full", f"memload{k}.side_length_b_full")
+
+            for var in ["z_global", "s_full", "s_all"]:
                 self.connect(f"member{k}.{var}", f"memload{k}.{var}")

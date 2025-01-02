@@ -73,7 +73,7 @@ properties:
             rotor_diameter:
                 type: number
                 default: 0
-                description: Diameter of the rotor, defined as two times the blade length plus the hub diameter
+                description: Diameter of the rotor, defined as two times the projected blade length plus the hub diameter
                 unit: m
                 minimum: 0
                 maximum: 1000
@@ -160,7 +160,7 @@ properties:
                                         $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
                                         $ref: "#/definitions/distributed_data/grid_nd"
-                            t/c:
+                            rthick:
                                 type: object
                                 required:
                                     - grid
@@ -205,17 +205,6 @@ properties:
                             # coordinates:
                                     # description: Coordinates expressed in the blade root coordinate system.
                                     # $ref: "#/definitions/distributed_data/coordinates"
-                            rthick:
-                                type: object
-                                required:
-                                    - grid
-                                    - values
-                                properties:
-                                    grid:
-                                        $ref: "#/definitions/distributed_data/grid_nd"
-                                    values:
-                                        $ref: "#/definitions/distributed_data/grid_nd"
-
                     elastic_properties_mb:
                         type: object
                         properties:
@@ -493,19 +482,30 @@ properties:
                         default: 0.54
                         minimum: 0
                         maximum: 2.
-                    spinner_gust_ws:
-                        type: number
-                        description: Extreme gust wind speed used to size the hub
-                        unit: m/s
-                        default: 70.
-                        minimum: 0
-                        maximum: 100.
                     hub_material:
                         type: string
                         description: Material of the shell of the hub
                     spinner_material:
                         type: string
                         description: Material of the spinner
+                    hub_shell_mass_user:
+                        type: number
+                        description: User input override of hub shell mass calculation
+                        unit: kg
+                        minimum: 0.
+                        default: 0.0
+                    spinner_mass_user:
+                        type: number
+                        description: User input override of hub shell mass calculation
+                        unit: kg
+                        minimum: 0.
+                        default: 0.0
+                    pitch_system_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override regular regression-based calculation of pitch system mass with this value
+                        minimum: 0.0
                     elastic_properties_mb:
                         type: object
                         default: {}
@@ -636,6 +636,13 @@ properties:
                                 minimum: 0.
                                 maximum: 1.e+9
                                 default: 0.0
+                            gearbox_torque_density:
+                                type: number
+                                minimum: 0.
+                                maximum: 1.e+4
+                                default: 200.
+                                units: N*m/kg
+                                desc: Torque density of the gearbox. This can be used to set gearbox mass with a top-down approach
                             gearbox_efficiency:
                                 type: number
                                 description: Efficiency of the gearbox system.
@@ -758,6 +765,12 @@ properties:
                                 minimum: 0.
                                 maximum: 1.
                                 default: 0.05
+                            bedplate_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular calculation of bedplate mass with this value
+                                minimum: 0.0
                             brake_mass_user:
                                 type: number
                                 default: 0.0
@@ -796,6 +809,18 @@ properties:
                                 description: Type of bearing for second main bearing
                                 default: SRB
                                 enum: [CARB, CRB, SRB, TRB]
+                            mb1_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of first main bearing mass with this value
+                                minimum: 0.0
+                            mb2_mass_user:
+                                type: number
+                                default: 0.0
+                                units: kg
+                                description: Override regular regression-based calculation of second main bearing mass with this value
+                                minimum: 0.0
                             uptower:
                                 type: boolean
                                 description: If power electronics are located uptower (True) or at tower base (False)
@@ -1234,6 +1259,9 @@ properties:
                 required:
                     - outer_shape_bem
                     - internal_structure_2d_fem
+                optional:
+                    - tower_mass_user
+                    - elastic_properties_mb
                 properties:
                     outer_shape_bem:
                         type: object
@@ -1273,6 +1301,12 @@ properties:
                                 $ref: "#/definitions/beam/cp_lambda_beam"
                             six_x_six:
                                 $ref: "#/definitions/beam/six_x_six"
+                    tower_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total tower mass with this value
+                        minimum: 0.0
                     internal_structure_2d_fem:
                         type: object
                         required:
@@ -1326,6 +1360,7 @@ properties:
                     - transition_piece_mass
                     - transition_piece_cost
                     - gravity_foundation_mass
+                    - monopile_mass_user
                 properties:
                     transition_piece_mass: &m_tp
                         type: number
@@ -1345,6 +1380,12 @@ properties:
                         unit: kg
                         minimum: 0.0
                         default: 0.0
+                    monopile_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total monopile mass with this value
+                        minimum: 0.0
                     outer_shape:
                         type: object
                         required:
@@ -1444,10 +1485,17 @@ properties:
                     - transition_piece_mass
                     - transition_piece_cost
                     - gravity_foundation_mass
+                    - jacket_mass_user
                 properties:
                     transition_piece_mass: *m_tp
                     transition_piece_cost: *c_tp
                     gravity_foundation_mass: *g_fm
+                    jacket_mass_user:
+                        type: number
+                        default: 0.0
+                        units: kg
+                        description: Override bottom-up calculation of total jacket mass with this value
+                        minimum: 0.0
                     material:
                         type: string
                         description: Material of jacket members
@@ -1569,8 +1617,11 @@ properties:
                                 # TODO: Move these to the modeling file?
                                 - hydrodynamic_approach
                                 - Ca
+                                - Cay
                                 - Cp
                                 - Cd
+                                - Cdy
+                                - member_mass_user
                             properties:
                                 name:
                                     description: Name of the member
@@ -1579,6 +1630,12 @@ properties:
                                     type: string
                                     description: Name of joint/node connection
                                 joint2: *jointid
+                                member_mass_user:
+                                    type: number
+                                    default: 0.0
+                                    units: kg
+                                    description: Override bottom-up calculation of total member mass with this value
+                                    minimum: 0.0
                                 outer_shape:
                                     type: object
                                     required:
@@ -1593,26 +1650,60 @@ properties:
                                             - outer_diameter
                                     else:
                                         if:
-                                            # If shape == polygonal, then we need to specify the side lengths
+                                            # If shape == rectangular, then we need to specify the two side lengths
                                             properties:
                                                 shape:
-                                                    const: polygonal
+                                                    const: rectangular
                                         then:
                                             required:
-                                                - side_lengths1
-                                                - side_lengths2
-                                            optional:
-                                                - rotation
-                                                - angles
+                                                - side_length_a
+                                                - side_length_b
+                                            # TODO: Might add rotation in the future, ignore for now
+                                        else:
+                                            if:
+                                                # If shape == polygonal, then we need to specify the side lengths
+                                                properties:
+                                                    shape:
+                                                        const: polygonal
+                                            then:
+                                                required:
+                                                    - side_lengths1
+                                                    - side_lengths2
+                                                optional:
+                                                    - rotation
+                                                    - angles
                                     properties:
                                         shape:
                                             type: string
                                             description: Specifies cross-sectional shape of the member.  If circular, then the outer_diameter field is required.  If polygonal, then the side_lengths, angles, and rotation fields are required
                                             enum:
                                                 - circular
+                                                - rectangular
                                                 - polygonal
                                         outer_diameter:
                                             description: Gridded values describing diameter at non-dimensional axis from joint1 to joint2
+                                            type: object
+                                            required:
+                                                - grid
+                                                - values
+                                            properties:
+                                                grid:
+                                                    $ref: "#/definitions/distributed_data/grid_nd"
+                                                values:
+                                                    $ref: "#/definitions/distributed_data/length"
+                                        side_length_a:
+                                            description: Gridded values describing side length a for rectangular members at non-dimensional axis from joint1 to joint2
+                                            type: object
+                                            required:
+                                                - grid
+                                                - values
+                                            properties:
+                                                grid:
+                                                    $ref: "#/definitions/distributed_data/grid_nd"
+                                                values:
+                                                    $ref: "#/definitions/distributed_data/length"
+                                        side_length_b:
+                                            description: Gridded values describing side length b for rectangular members at non-dimensional axis from joint1 to joint2
                                             type: object
                                             required:
                                                 - grid
@@ -1807,19 +1898,29 @@ properties:
                                                 maximum: 1.0
                                                 description: Non-dimensional value along member axis
                                 Ca: &ca
-                                    description: User-defined added mass coefficient
-                                    type: number
-                                    default: 0.0
-                                    minimum: 0.0
+                                    description: User-defined added mass coefficient if axi-symmetric or user-defined added mass coefficient in x-direction
+                                    type: array
+                                    default: [-1.0] # default -1.0 so it will be deactivated when defaulting to -1.0
+                                    items:
+                                        type: number
+                                        minimum: -1.0
+                                Cay:
+                                    <<: *ca
+                                    description: User-defined added mass coefficient in y-direction
                                 Cp: &cp
                                     description: User-defined pressure coefficient
                                     type: number
                                     default: 0.0
                                 Cd: &cd
-                                    description: User-defined drag coefficient
-                                    type: number
-                                    default: 0.0
-                                    minimum: 0.0
+                                    description: User-defined drag coefficient if axi-symmetric or user-defined drag coefficient in x-direction
+                                    type: array
+                                    default: [-1.0]
+                                    items:
+                                        type: number
+                                        minimum: -1.0
+                                Cdy:
+                                    <<: *cd
+                                    description: User-defined drag coefficient in y-direction
                     rigid_bodies:
                         type: array
                         descriptions: Additional point masses at joints with user-customized properties
@@ -2532,6 +2633,14 @@ properties:
                         unit: rad/s
                         minimum: 0
                         maximum: 0.2
+                    ps_percent:
+                        type: number
+                        default: 1.
+                        description: Scalar applied to the max thrust within RotorSE for peak thrust shaving
+                    fix_pitch_regI12:
+                        type: boolean
+                        default: False
+                        description: If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.
             torque:
                 type: object
                 required:
@@ -2695,20 +2804,6 @@ properties:
                 minimum: 1
                 maximum: 100
                 default: 7
-            commissioning_pct:
-                type: number
-                description: Fraction of total BOS cost that is due to commissioning
-                unit: none
-                minimum: 0
-                maximum: 1
-                default: 0.01
-            decommissioning_pct:
-                type: number
-                description: Fraction of total BOS cost that is due to decommissioning
-                unit: none
-                minimum: 0
-                maximum: 1
-                default: 0.15
             distance_to_substation:
                 type: number
                 description: Distance from centroid of plant to substation in km
@@ -2744,6 +2839,41 @@ properties:
                 minimum: 0
                 maximum: 1000
                 default: 130
+            contingency:
+                type: number
+                description: Additional contingency cost during project construction
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 316.0
+            construction_insurance:
+                type: number
+                description: Additional insurance cost during project construction
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 44.0
+            construction_financing:
+                type: number
+                description: Additional financing cost during project construction
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 183.0
+            commissioning_cost_kW:
+                type: number
+                description: Additional BOS cost to commission the turbines and wind farm
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 44.0
+            decommissioning_cost_kW:
+                type: number
+                description: Additional BOS cost to decommission the turbines and wind farm
+                unit: USD/kW
+                minimum: 0
+                maximum: 1e4
+                default: 58.0
             port_cost_per_month:
                 type: number
                 description: Monthly port rental fees
@@ -2757,28 +2887,14 @@ properties:
                 unit: USD
                 minimum: 0
                 maximum: 1.e+9
-                default: 0.0
-            site_assessment_plan_cost:
-                type: number
-                description: Cost to do engineering plan for site assessment
-                unit: USD
-                minimum: 0
-                maximum: 1.e+9
-                default: 0.0
+                default: 100e6
             site_assessment_cost:
                 type: number
-                description: Cost to execute site assessment
+                description: Cost to do engineering site assessment
                 unit: USD
                 minimum: 0
                 maximum: 1.e+9
-                default: 0.0
-            construction_operations_plan_cost:
-                type: number
-                description: Cost to do construction planning
-                unit: USD
-                minimum: 0
-                maximum: 1.e+9
-                default: 0.0
+                default: 50e6
             boem_review_cost:
                 type: number
                 description: Cost for additional review by U.S. Dept of Interior Bureau of Ocean Energy Management (BOEM)
@@ -2786,13 +2902,20 @@ properties:
                 minimum: 0
                 maximum: 1.e+9
                 default: 0.0
-            design_install_plan_cost:
+            construction_plan_cost:
+                type: number
+                description: Cost to do construction planning
+                unit: USD
+                minimum: 0
+                maximum: 1.e+9
+                default: 1e6
+            installation_plan_cost:
                 type: number
                 description: Cost to do installation planning
                 unit: USD
                 minimum: 0
                 maximum: 1.e+9
-                default: 0.0
+                default: 2.5e5
     costs:
         type: object
         properties:
@@ -2887,13 +3010,13 @@ properties:
                 minimum: 0.0
                 maximum: 1.e+6
                 default: 4.5
-            gearbox_mass_cost_coeff:
+            gearbox_torque_cost:
                 type: number
-                description: Regression-based gearbox cost/mass ratio
-                unit: USD/kg
+                description: Regression-based cost of gearboxes based on torque, tuned in 2024
+                unit: USD/kNm
                 minimum: 0.0
-                maximum: 1.e+6
-                default: 12.9
+                maximum: 1.e+3
+                default: 50.
             hss_mass_cost_coeff:
                 type: number
                 description: Regression-based high speed side cost/mass ratio
@@ -3004,7 +3127,7 @@ properties:
                 description: Capacity credit used to compute value in beyond lcoe metrics
                 minimum: 0.
                 maximum: 1.
-                default: 0.
+                default: 1.
             benchmark_price:
                 type: number
                 description: Benchmark price used to nondimensionalize value in beyond lcoe metrics

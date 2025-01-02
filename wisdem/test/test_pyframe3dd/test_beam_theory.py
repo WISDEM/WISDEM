@@ -237,17 +237,12 @@ class FrameTestEXA(unittest.TestCase):
         _, _, _, _, _, modal = frame.run()
 
         mpfs = np.abs(np.c_[modal.xmpf, modal.ympf, modal.zmpf])
-        ratios = mpfs.max(axis=1) / mpfs.min(axis=1)
+        ratios = mpfs.max(axis=1) / (mpfs.min(axis=1) + 1e-15)
 
         npt.assert_array_less(modal.freq[:6], 0.05)
         npt.assert_array_less(1e3, ratios[6:11])
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(FrameTestEXA))
-    return suite
-
-
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    unittest.main()
+

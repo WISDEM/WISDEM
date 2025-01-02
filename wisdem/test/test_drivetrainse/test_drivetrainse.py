@@ -19,8 +19,8 @@ def set_common(prob, opt):
     prob["rated_torque"] = 10.25e6  # rev 1 9.94718e6
     prob["damping_ratio"] = 0.01
 
-    prob["F_hub"] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3, 1))
-    prob["M_hub"] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3, 1))
+    prob["F_aero_hub"] = np.array([2409.750e3, 0.0, 74.3529e2]).reshape((3, 1))
+    prob["M_aero_hub"] = np.array([-1.83291e4, 6171.7324e2, 5785.82946e2]).reshape((3, 1))
 
     prob["E_mat"] = 210e9 * np.ones((1, 3))
     prob["G_mat"] = 80.8e9 * np.ones((1, 3))
@@ -35,7 +35,9 @@ def set_common(prob, opt):
     ] = "steel"
     prob["material_names"] = ["steel"]
 
-    prob["blade_mass"] = 17000.0
+    prob["blade_mass"] = 170.0
+    prob["blades_mass"] = 3*prob["blade_mass"]
+    prob["blades_cm"] = 2.0
     prob["pitch_system.BRFM"] = 1.0e6
     prob["pitch_system_scaling_factor"] = 0.54
 
@@ -242,6 +244,8 @@ class TestGroup(unittest.TestCase):
         opt["WISDEM"]["n_dlc"] = 1
         opt["WISDEM"]["DriveSE"] = {}
         opt["WISDEM"]["DriveSE"]["direct"] = False
+        opt["WISDEM"]["DriveSE"]["use_gb_torque_density"] = False
+        opt["WISDEM"]["DriveSE"]["gearbox_torque_density"] = 0.
         opt["WISDEM"]["DriveSE"]["hub"] = {}
         opt["WISDEM"]["DriveSE"]["hub"]["hub_gamma"] = 2.0
         opt["WISDEM"]["DriveSE"]["hub"]["spinner_gamma"] = 1.5
@@ -369,6 +373,7 @@ class TestGroup(unittest.TestCase):
         opt["WISDEM"]["n_dlc"] = 1
         opt["WISDEM"]["DriveSE"] = {}
         opt["WISDEM"]["DriveSE"]["direct"] = False
+        opt["WISDEM"]["DriveSE"]["use_gb_torque_density"] = False
         opt["WISDEM"]["DriveSE"]["hub"] = {}
         opt["WISDEM"]["DriveSE"]["hub"]["hub_gamma"] = 2.0
         opt["WISDEM"]["DriveSE"]["hub"]["spinner_gamma"] = 1.5
@@ -442,16 +447,5 @@ class TestGroup(unittest.TestCase):
         self.assertGreater(prob["drivetrain_damping_coefficient"], 1e7)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestGroup))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

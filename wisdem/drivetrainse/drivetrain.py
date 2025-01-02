@@ -157,18 +157,22 @@ class DrivetrainSE(om.Group):
         opt = self.options["modeling_options"]["WISDEM"]["DriveSE"]
         n_dlcs = self.options["modeling_options"]["WISDEM"]["n_dlc"]
         direct = opt["direct"]
+        if direct:
+            use_gb_torque_density = False
+        else:
+            use_gb_torque_density = opt["use_gb_torque_density"]
         dogen = self.options["modeling_options"]["flags"]["generator"]
         n_pc = self.options["modeling_options"]["WISDEM"]["RotorSE"]["n_pc"]
 
         self.set_input_defaults("machine_rating", units="kW")
-        self.set_input_defaults("planet_numbers", [3, 3, 0])
-        self.set_input_defaults("gear_configuration", "eep")
+        #self.set_input_defaults("planet_numbers", [3, 3, 0])
+        #self.set_input_defaults("gear_configuration", "eep")
         self.set_input_defaults("hvac_mass_coeff", 0.025, units="kg/kW/m")
         # self.set_input_defaults('mb1Type', 'CARB')
         # self.set_input_defaults('mb2Type', 'SRB')
-        self.set_input_defaults("uptower", True)
-        self.set_input_defaults("upwind", True)
-        self.set_input_defaults("n_blades", 3)
+        #self.set_input_defaults("uptower", True)
+        #self.set_input_defaults("upwind", True)
+        #self.set_input_defaults("n_blades", 3)
 
         # Materials prep
         self.add_subsystem(
@@ -179,7 +183,7 @@ class DrivetrainSE(om.Group):
 
         # Need to do these first, before the layout
         self.add_subsystem("hub", Hub_System(modeling_options=opt["hub"]), promotes=["*"])
-        self.add_subsystem("gear", Gearbox(direct_drive=direct), promotes=["*"])
+        self.add_subsystem("gear", Gearbox(direct_drive=direct, use_gb_torque_density=use_gb_torque_density), promotes=["*"])
 
         # Layout and mass for the big items
         if direct:
@@ -202,6 +206,7 @@ class DrivetrainSE(om.Group):
                 "generator",
                 Generator(design=gentype, n_pc=n_pc),
                 promotes=[
+                    "generator_mass_user",
                     "generator_mass",
                     "generator_cost",
                     "generator_I",

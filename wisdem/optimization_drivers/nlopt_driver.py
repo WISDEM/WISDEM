@@ -9,7 +9,7 @@ import numpy as np
 import openmdao
 import openmdao.utils.coloring as coloring_mod
 from openmdao.core.driver import Driver, RecordingDebugging
-from openmdao.utils.general_utils import issue_warning
+from openmdao.utils.om_warnings import issue_warning
 
 try:
     from openmdao.utils.class_util import weak_method_wrapper as weak_method_wrapper
@@ -138,7 +138,6 @@ class NLoptDriver(Driver):
         self.supports["integer_design_vars"] = False
         self.supports._read_only = True
 
-        self.result = None
         self._grad_cache = None
         self._con_cache = None
         self._con_idx = {}
@@ -381,7 +380,6 @@ class NLoptDriver(Driver):
                 opt_prob.set_maxtime(self.options["maxtime"])
                 opt_prob.set_population(int(self.options["maxiter"] / self.options["numgen"]))
                 opt_prob.optimize(x_init)
-                self.result = opt_prob.last_optimize_result()
 
             else:
                 msg = 'Optimizer "{}" is not implemented yet. Choose from: {}'
@@ -458,7 +456,7 @@ class NLoptDriver(Driver):
         except Exception as msg:
             self._exc_info = msg
 
-        return float(f_new)
+        return float(f_new[0])
 
     def _confunc(self, x_new, grad, name, dbl, idx):
         """

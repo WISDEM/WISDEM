@@ -17,9 +17,9 @@ class TestPreDiscretization(unittest.TestCase):
     def testAll(self):
         inputs = {}
         outputs = {}
-        inputs["hub_height"] = 125.0
-        inputs["tower_height"] = 100.0
-        inputs["foundation_height"] = 10.0
+        inputs["hub_height"] = np.array([ 125.0 ])
+        inputs["tower_height"] = np.array([ 100.0 ])
+        inputs["foundation_height"] = np.array([ 10.0 ])
 
         mydis = tow.PreDiscretization()
         mydis.compute(inputs, outputs)
@@ -35,10 +35,10 @@ class TestMass(unittest.TestCase):
         inputs = {}
         outputs = {}
         inputs["joint2"] = np.array([0.0, 0.0, 125.0])
-        inputs["rna_mass"] = 1000.0
+        inputs["rna_mass"] = np.array([ 1000.0 ])
         inputs["rna_I"] = 3e4 * np.ones(6)
         inputs["rna_cg"] = 20.0 * np.ones(3)
-        inputs["tower_mass"] = 3000.0
+        inputs["tower_mass"] = np.array([ 3000.0 ])
         inputs["tower_center_of_mass"] = 0.5 * inputs["joint2"][-1]
         inputs["tower_I_base"] = 2e4 * np.ones(6)
 
@@ -50,7 +50,7 @@ class TestMass(unittest.TestCase):
         npt.assert_equal(outputs["turbine_center_of_mass"], (1e3 * (inputs["rna_cg"] + h) + 3e3 * 0.5 * h) / 4e3)
         # npt.assert_array_less(5e4, np.abs(outputs["turbine_I_base"]))
 
-
+        
 class TestTowerSE(unittest.TestCase):
     def setUp(self):
         self.inputs = {}
@@ -135,21 +135,21 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(prob["tower_center_of_mass"], 40.0)
         npt.assert_almost_equal(prob["tower_mass"], mass_dens * 80.0)
 
-        npt.assert_equal(prob.model.tower.frame.rnode, np.array([1], dtype=np.int_))
-        npt.assert_equal(prob.model.tower.frame.rKx, np.array([RIGID]))
-        npt.assert_equal(prob.model.tower.frame.rKy, np.array([RIGID]))
-        npt.assert_equal(prob.model.tower.frame.rKz, np.array([RIGID]))
-        npt.assert_equal(prob.model.tower.frame.rKtx, np.array([RIGID]))
-        npt.assert_equal(prob.model.tower.frame.rKty, np.array([RIGID]))
-        npt.assert_equal(prob.model.tower.frame.rKtz, np.array([RIGID]))
+        npt.assert_equal(prob.model.perf.tower.frame.rnode, np.array([1], dtype=np.int_))
+        npt.assert_equal(prob.model.perf.tower.frame.rKx, np.array([RIGID]))
+        npt.assert_equal(prob.model.perf.tower.frame.rKy, np.array([RIGID]))
+        npt.assert_equal(prob.model.perf.tower.frame.rKz, np.array([RIGID]))
+        npt.assert_equal(prob.model.perf.tower.frame.rKtx, np.array([RIGID]))
+        npt.assert_equal(prob.model.perf.tower.frame.rKty, np.array([RIGID]))
+        npt.assert_equal(prob.model.perf.tower.frame.rKtz, np.array([RIGID]))
 
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].NF, np.array([7]))
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].Fx, np.array([2e3]))
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].Fy, np.array([3e3]))
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].Fz, np.array([4e3]))
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].Mxx, np.array([2e4]))
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].Myy, np.array([3e4]))
-        npt.assert_equal(prob.model.tower.frame.loadCases[0].Mzz, np.array([4e4]))
+        npt.assert_equal(prob.model.perf.tower.frame.loadCases[0].NF, np.array([7]))
+        npt.assert_equal(prob.model.perf.tower.frame.loadCases[0].Fx, np.array([2e3]))
+        npt.assert_equal(prob.model.perf.tower.frame.loadCases[0].Fy, np.array([3e3]))
+        npt.assert_equal(prob.model.perf.tower.frame.loadCases[0].Fz, np.array([4e3]))
+        npt.assert_equal(prob.model.perf.tower.frame.loadCases[0].Mxx, np.array([2e4]))
+        npt.assert_equal(prob.model.perf.tower.frame.loadCases[0].Myy, np.array([3e4]))
+        npt.assert_equal(prob.model.perf.tower.frame.loadCases[0].Mzz, np.array([4e4]))
 
     def testAddedMassForces(self):
         self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 3
@@ -453,7 +453,7 @@ class TestTowerSE(unittest.TestCase):
         prob.run_model()
 
         npt.assert_almost_equal(prob["z_full"], [0.0, 14.6, 29.2, 43.8, 58.4, 73.0, 87.6])
-        npt.assert_almost_equal(prob["d_full"], [6.0, 5.645, 5.29, 4.935, 4.58, 4.225, 3.87])
+        npt.assert_almost_equal(prob["outer_diameter_full"], [6.0, 5.645, 5.29, 4.935, 4.58, 4.225, 3.87])
         npt.assert_almost_equal(prob["t_full"], [0.0325, 0.0325, 0.0325, 0.0273, 0.0273, 0.0273])
 
         npt.assert_almost_equal(prob["tower_mass"], [370541.14008246])
@@ -467,8 +467,8 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(
             prob["post.constr_stress"].T,
             [
-                [0.4049813, 0.3679485, 0.3149976, 0.2846112, 0.1624641, 0.0675307],
-                [0.2803884, 0.2545789, 0.217153, 0.1937528, 0.1053185, 0.0462051],
+                [0.37859014, 0.34400647, 0.29456394, 0.2663071 , 0.15248295, 0.06494359],
+                [0.26212952, 0.23803754, 0.2030959 , 0.18133974, 0.09896319, 0.04456172],
             ],
         )
         npt.assert_almost_equal(
@@ -481,8 +481,8 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(
             prob["post.constr_shell_buckling"].T,
             [
-                [0.2600685, 0.2103217, 0.1527136, 0.1415266, 0.0524728, 0.0142974],
-                [0.1347713, 0.1092965, 0.079095, 0.073742, 0.0270721, 0.0099099],
+                [0.23067874, 0.18651124, 0.13545567, 0.12620337, 0.04734878, 0.01360982],
+                [0.11961036, 0.09709062, 0.07034931, 0.06611991, 0.02478743, 0.00959923],
             ],
         )
         npt.assert_almost_equal(
@@ -500,7 +500,7 @@ class TestTowerSE(unittest.TestCase):
         prob.run_model()
 
         npt.assert_almost_equal(prob["z_full"], [0.0, 14.6, 29.2, 43.8, 58.4, 73.0, 87.6])
-        npt.assert_almost_equal(prob["d_full"], [6.0, 5.645, 5.29, 4.935, 4.58, 4.225, 3.87])
+        npt.assert_almost_equal(prob["outer_diameter_full"], [6.0, 5.645, 5.29, 4.935, 4.58, 4.225, 3.87])
         npt.assert_almost_equal(prob["t_full"], [0.0325, 0.0325, 0.0325, 0.0273, 0.0273, 0.0273])
 
         npt.assert_almost_equal(prob["tower_mass"], [370541.14008246])
@@ -514,22 +514,22 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_almost_equal(
             prob["post.constr_stress"].T,
             [
-                [0.4049813, 0.3679485, 0.3149976, 0.2846112, 0.1624641, 0.0675307],
-                [0.2803884, 0.2545789, 0.217153, 0.1937528, 0.1053185, 0.0462051],
+                [0.37859014, 0.34400647, 0.29456394, 0.2663071 , 0.15248295, 0.06494359],
+                [0.26212952, 0.23803754, 0.2030959 , 0.18133974, 0.09896319, 0.04456172],
             ],
         )
         npt.assert_almost_equal(
             prob["post.constr_global_buckling"].T,
             [
-                [0.5922989, 0.5317575, 0.4492056, 0.4047178, 0.2268246, 0.070537],
-                [0.446346, 0.3990504, 0.334617, 0.2975646, 0.1591067, 0.0474357],
+                [0.61035748, 0.55938751, 0.47287421, 0.4249917 , 0.23820016, 0.074166  ],
+                [0.45451296, 0.41435613, 0.3476131 , 0.30829985, 0.16478585, 0.04921057],
             ],
         )
         npt.assert_almost_equal(
             prob["post.constr_shell_buckling"].T,
             [
-                [0.0191805, 0.0147922, 0.010586, 0.00998, 0.0055687, 0.0014409],
-                [0.0268627, 0.0246294, 0.0201412, 0.0229699, 0.0175204, 0.0126214],
+                [0.05559682, 0.05320304, 0.05133924, 0.07092966, 0.07038021, 0.070811  ],
+                [0.05057771, 0.05009383, 0.04746213, 0.0651608 , 0.06238187, 0.06025312],
             ],
         )
         npt.assert_almost_equal(
@@ -543,12 +543,12 @@ class TestTowerSE(unittest.TestCase):
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestPreDiscretization))
-    suite.addTest(unittest.makeSuite(TestMass))
-    suite.addTest(unittest.makeSuite(TestTowerSE))
-    return suite
-
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestPreDiscretization),
+        unittest.TestLoader().loadTestsFromTestCase(TestMass),
+        unittest.TestLoader().loadTestsFromTestCase(TestTowerSE),
+    ]
+    return unittest.TestSuite(suite)
 
 if __name__ == "__main__":
     result = unittest.TextTestRunner().run(suite())

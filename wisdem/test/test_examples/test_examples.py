@@ -18,7 +18,9 @@ all_scripts = [
     "01_nrel_csm/mass_and_cost",
     "01_nrel_csm/parametric",
     "02_reference_turbines/iea10mw_driver",
+    "02_reference_turbines/iea3p4mw_driver",
     "03_blade/blade_driver",
+    "03_blade/load_log",
     "04_openmdao/betz_limit",
     "04_openmdao/sellar",
     "05_tower_monopile/monopile_direct",
@@ -45,12 +47,13 @@ all_scripts = [
     "10_ccblade/example",
     "10_ccblade/gradients",
     "10_ccblade/precurve",
-    "11_airfoilprep/example",
+    "11_user_custom/user_custom_opt",
     "12_pyframe3dd/exB",
     "13_design_of_experiments/doe_driver",
     "14_overridden_values/driver",
     "15_step_size_study/driver",
     "16_inverse_design/inverse_spar_design",
+    "16_inverse_design/inverse_rotor_design",
     "17_jacket/jacket_driver",
     "18_rotor_tower_monopile/design_run",
     "19_rotor_drivetrain_tower/wisdem_driver"
@@ -86,14 +89,15 @@ class TestExamples(unittest.TestCase):
                 try:
                     execute_script(s)
                     self.assertTrue(True)
-                except:
+                except Exception:
                     self.assertEqual(s, "Success")
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestExamples))
-    return suite
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestExamples),
+    ]
+    return unittest.TestSuite(suite)
 
 
 if __name__ == "__main__":

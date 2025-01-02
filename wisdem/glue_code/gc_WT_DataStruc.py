@@ -5,7 +5,7 @@ import numpy as np
 import openmdao.api as om
 from scipy.interpolate import PchipInterpolator, interp1d
 
-import wisdem.moorpy.MoorProps as mp
+import moorpy.MoorProps as mp
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAero, ParametrizeBladeStruct
@@ -36,6 +36,26 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             "materials",
             Materials(mat_init_options=modeling_options["materials"], composites=modeling_options["flags"]["blade"]),
         )
+
+        # Environment inputs
+        if modeling_options["flags"]["environment"]:
+            env_ivc = self.add_subsystem("env", om.IndepVarComp())
+            env_ivc.add_output("rho_air", val=1.225, units="kg/m**3", desc="Density of air")
+            env_ivc.add_output("mu_air", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
+            env_ivc.add_output("shear_exp", val=0.2, desc="Shear exponent of the wind.")
+            env_ivc.add_output("speed_sound_air", val=340.0, units="m/s", desc="Speed of sound in air.")
+            env_ivc.add_output(
+                "weibull_k", val=2.0, desc="Shape parameter of the Weibull probability density function of the wind."
+            )
+            env_ivc.add_output("rho_water", val=1025.0, units="kg/m**3", desc="Density of ocean water")
+            env_ivc.add_output("mu_water", val=1.3351e-3, units="kg/(m*s)", desc="Dynamic viscosity of ocean water")
+            env_ivc.add_output(
+                "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
+            )
+            env_ivc.add_output("Hsig_wave", val=0.0, units="m", desc="Significant wave height")
+            env_ivc.add_output("Tsig_wave", val=0.0, units="s", desc="Significant wave period")
+            env_ivc.add_output("G_soil", val=140e6, units="N/m**2", desc="Shear stress of soil")
+            env_ivc.add_output("nu_soil", val=0.4, desc="Poisson ratio of soil")
 
         # Airfoil dictionary inputs
         if modeling_options["flags"]["airfoils"]:
@@ -93,11 +113,11 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
                 inn_af = om.IndepVarComp()
                 inn_af.add_output(
-                    "s_opt_r_thick", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["t/c"]["n_opt"])
+                    "s_opt_r_thick", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["rthick"]["n_opt"])
                 )
                 inn_af.add_output(
                     "r_thick_opt",
-                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["t/c"]["n_opt"]),
+                    val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["rthick"]["n_opt"]),
                 )
                 inn_af.add_output(
                     "s_opt_L_D", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["L/D"]["n_opt"])
@@ -186,6 +206,8 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             ctrl_ivc.add_output("max_torque_rate", val=0.0, units="N*m/s", desc="Maximum allowed generator torque rate")
             ctrl_ivc.add_output("rated_TSR", val=0.0, desc="Constant tip speed ratio in region II.")
             ctrl_ivc.add_output("rated_pitch", val=0.0, units="rad", desc="Constant pitch angle in region II.")
+            ctrl_ivc.add_output("ps_percent", val=1.0, desc="Scalar applied to the max thrust within RotorSE for peak thrust shaving.")
+            ctrl_ivc.add_discrete_output("fix_pitch_regI12", val=False, desc="If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.")
 
         # Blade inputs and connections from airfoils
         if modeling_options["flags"]["blade"]:
@@ -197,7 +219,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 ),
             )
             self.connect("airfoils.name", "blade.interp_airfoils.name")
-            self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick")
+            self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick_discrete")
             self.connect("airfoils.ac", "blade.interp_airfoils.ac")
             self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
             self.connect("airfoils.aoa", "blade.interp_airfoils.aoa")
@@ -207,6 +229,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
             self.connect("hub.radius", "blade.high_level_blade_props.hub_radius")
             self.connect("configuration.rotor_diameter_user", "blade.high_level_blade_props.rotor_diameter_user")
+            self.connect("configuration.n_blades", "blade.high_level_blade_props.n_blades")
 
             if modeling_options["WISDEM"]["RotorSE"]["inn_af"]:
                 self.connect("airfoils.aoa", "blade.run_inn_af.aoa")
@@ -239,6 +262,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 "gearbox_efficiency", val=1.0, desc="Efficiency of the gearbox. Set to 1.0 for direct-drive"
             )
             nacelle_ivc.add_output("gearbox_mass_user", val=0.0, units="kg", desc="User override of gearbox mass.")
+            nacelle_ivc.add_output("gearbox_torque_density", val=0.0, units="N*m/kg", desc="Torque density of the gearbox.")
             nacelle_ivc.add_output(
                 "gearbox_radius_user",
                 val=0.0,
@@ -251,16 +275,17 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 units="m",
                 desc="User override of gearbox length (only used if gearbox_mass_user is > 0).",
             )
+
             nacelle_ivc.add_output("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
             if modeling_options["flags"]["nacelle"]:
                 nacelle_ivc.add_output(
-                    "distance_hub2mb",
+                    "distance_hub_mb",
                     val=0.0,
                     units="m",
                     desc="Distance from hub flange to first main bearing along shaft",
                 )
                 nacelle_ivc.add_output(
-                    "distance_mb2mb", val=0.0, units="m", desc="Distance from first to second main bearing along shaft"
+                    "distance_mb_mb", val=0.0, units="m", desc="Distance from first to second main bearing along shaft"
                 )
                 nacelle_ivc.add_output("L_generator", val=0.0, units="m", desc="Generator length along shaft")
                 nacelle_ivc.add_output("lss_diameter", val=np.zeros(2), units="m", desc="Diameter of low speed shaft")
@@ -292,6 +317,18 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                     units="kg",
                     desc="Override regular regression-based calculation of transformer mass with this value",
                 )
+                nacelle_ivc.add_output(
+                    "mb1_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override regular regression-based calculation of first main bearing mass with this value",
+                )
+                nacelle_ivc.add_output(
+                    "mb2_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override regular regression-based calculation of second main bearing mass with this value",
+                )
                 nacelle_ivc.add_discrete_output(
                     "mb1Type", val="CARB", desc="Type of main bearing: CARB / CRB / SRB / TRB"
                 )
@@ -309,6 +346,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 )
                 nacelle_ivc.add_discrete_output(
                     "bedplate_material", val="steel", desc="Material name identifier for the bedplate"
+                )
+                nacelle_ivc.add_output(
+                    "bedplate_mass_user",
+                    val=0.0,
+                    units="kg",
+                    desc="Override bottom-up calculation of bedplate mass with this value",
                 )
 
                 if modeling_options["WISDEM"]["DriveSE"]["direct"]:
@@ -370,6 +413,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
             # Generator inputs
             generator_ivc = om.IndepVarComp()
+            generator_ivc.add_output("generator_mass_user", val=0.0, units="kg")
             if modeling_options["flags"]["generator"]:
                 generator_ivc.add_output("B_r", val=1.2, units="T")
                 generator_ivc.add_output("P_Fe0e", val=1.0, units="W/kg")
@@ -458,7 +502,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 # If using simple (regression) generator scaling, this is an optional input to override default values
                 n_pc = modeling_options["WISDEM"]["RotorSE"]["n_pc"]
                 generator_ivc.add_output("generator_radius_user", val=0.0, units="m")
-                generator_ivc.add_output("generator_mass_user", val=0.0, units="kg")
                 generator_ivc.add_output("generator_efficiency_user", val=np.zeros((n_pc, 2)))
 
             self.add_subsystem("generator", generator_ivc)
@@ -497,6 +540,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 val=0.0,
                 desc="Multiplier that accounts for secondary structure mass inside of tower",
             )
+            ivc.add_output(
+                "tower_mass_user",
+                val=0.0,
+                units="kg",
+                desc="Override bottom-up calculation of total tower mass with this value",
+            )
             ivc.add_discrete_output(
                 "layer_name", val=[], desc="1D array of the names of the layers modeled in the tower structure."
             )
@@ -523,33 +572,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.add_subsystem("mooring", Mooring(options=modeling_options))
             self.connect("floating.joints_xyz", "mooring.joints_xyz")
 
-        # Environment inputs
-        if modeling_options["flags"]["environment"]:
-            env_ivc = self.add_subsystem("env", om.IndepVarComp())
-            env_ivc.add_output("rho_air", val=1.225, units="kg/m**3", desc="Density of air")
-            env_ivc.add_output("mu_air", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
-            env_ivc.add_output("shear_exp", val=0.2, desc="Shear exponent of the wind.")
-            env_ivc.add_output("speed_sound_air", val=340.0, units="m/s", desc="Speed of sound in air.")
-            env_ivc.add_output(
-                "weibull_k", val=2.0, desc="Shape parameter of the Weibull probability density function of the wind."
-            )
-            env_ivc.add_output("rho_water", val=1025.0, units="kg/m**3", desc="Density of ocean water")
-            env_ivc.add_output("mu_water", val=1.3351e-3, units="kg/(m*s)", desc="Dynamic viscosity of ocean water")
-            env_ivc.add_output(
-                "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
-            )
-            env_ivc.add_output("Hsig_wave", val=0.0, units="m", desc="Significant wave height")
-            env_ivc.add_output("Tsig_wave", val=0.0, units="s", desc="Significant wave period")
-            env_ivc.add_output("G_soil", val=140e6, units="N/m**2", desc="Shear stress of soil")
-            env_ivc.add_output("nu_soil", val=0.4, desc="Poisson ratio of soil")
-
         # Balance of station inputs
         if modeling_options["flags"]["bos"]:
             bos_ivc = self.add_subsystem("bos", om.IndepVarComp())
             bos_ivc.add_output("plant_turbine_spacing", 7, desc="Distance between turbines in rotor diameters")
             bos_ivc.add_output("plant_row_spacing", 7, desc="Distance between turbine rows in rotor diameters")
-            bos_ivc.add_output("commissioning_pct", 0.01)
-            bos_ivc.add_output("decommissioning_pct", 0.15)
+            bos_ivc.add_output("commissioning_cost_kW", 44.0, units="USD/kW")
+            bos_ivc.add_output("decommissioning_cost_kW", 58.0, units="USD/kW")
             bos_ivc.add_output("distance_to_substation", 50.0, units="km")
             bos_ivc.add_output("distance_to_interconnection", 5.0, units="km")
             if modeling_options["flags"]["offshore"]:
@@ -557,11 +586,13 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 bos_ivc.add_output("distance_to_landfall", 40.0, units="km")
                 bos_ivc.add_output("port_cost_per_month", 2e6, units="USD/mo")
                 bos_ivc.add_output("site_auction_price", 100e6, units="USD")
-                bos_ivc.add_output("site_assessment_plan_cost", 1e6, units="USD")
-                bos_ivc.add_output("site_assessment_cost", 25e6, units="USD")
-                bos_ivc.add_output("construction_operations_plan_cost", 2.5e6, units="USD")
+                bos_ivc.add_output("site_assessment_cost", 50e6, units="USD")
                 bos_ivc.add_output("boem_review_cost", 0.0, units="USD")
-                bos_ivc.add_output("design_install_plan_cost", 2.5e6, units="USD")
+                bos_ivc.add_output("installation_plan_cost", 2.5e5, units="USD")
+                bos_ivc.add_output("construction_plan_cost", 1e6, units="USD")
+                bos_ivc.add_output("construction_insurance", 44.0, units="USD/kW")
+                bos_ivc.add_output("construction_financing", 183.0, units="USD/kW")
+                bos_ivc.add_output("contingency", 316.0, units="USD/kW")
             else:
                 bos_ivc.add_output("interconnect_voltage", 130.0, units="kV")
 
@@ -585,7 +616,7 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             costs_ivc.add_output("spinner_mass_cost_coeff", units="USD/kg", val=11.1)
             costs_ivc.add_output("lss_mass_cost_coeff", units="USD/kg", val=11.9)
             costs_ivc.add_output("bearing_mass_cost_coeff", units="USD/kg", val=4.5)
-            costs_ivc.add_output("gearbox_mass_cost_coeff", units="USD/kg", val=12.9)
+            costs_ivc.add_output("gearbox_torque_cost", units="USD/kN/m", val=50.)
             costs_ivc.add_output("hss_mass_cost_coeff", units="USD/kg", val=6.8)
             costs_ivc.add_output("generator_mass_cost_coeff", units="USD/kg", val=12.4)
             costs_ivc.add_output("bedplate_mass_cost_coeff", units="USD/kg", val=2.9)
@@ -621,9 +652,12 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             self.connect("blade.interp_airfoils.cm_interp", "af_3d.cm")
             self.connect("blade.high_level_blade_props.rotor_radius", "af_3d.rotor_radius")
             self.connect("blade.high_level_blade_props.r_blade", "af_3d.r_blade")
-            self.connect("blade.interp_airfoils.r_thick_interp", "af_3d.r_thick_interp")
+            self.connect("blade.interp_airfoils.r_thick_interp", "af_3d.r_thick")
             self.connect("blade.pa.chord_param", "af_3d.chord")
             self.connect("control.rated_TSR", "af_3d.rated_TSR")
+            self.connect("control.maxOmega", "blade.compute_reynolds.maxOmega")
+            self.connect("control.max_TS", "blade.compute_reynolds.max_TS")
+            self.connect("control.V_out", "blade.compute_reynolds.V_out")
         if modeling_options["flags"]["tower"]:
             self.connect("tower.ref_axis", "high_level_tower_props.tower_ref_axis_user")
             self.add_subsystem("tower_grid", Compute_Grid(n_height=n_height_tower))
@@ -662,42 +696,16 @@ class Blade(om.Group):
             val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
         opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
-        opt_var.add_output(
-            "s_opt_spar_cap_ss",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "s_opt_spar_cap_ps",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "spar_cap_ss_opt",
-            units="m",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "spar_cap_ps_opt",
-            units="m",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "s_opt_te_ss",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "s_opt_te_ps",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "te_ss_opt",
-            units="m",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]),
-        )
-        opt_var.add_output(
-            "te_ps_opt",
-            units="m",
-            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]),
-        )
+        for i in range(rotorse_options["n_layers"]):
+            opt_var.add_output(
+                "s_opt_layer_%d"%i,
+                val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
+            )
+            opt_var.add_output(
+                "layer_%d_opt"%i,
+                units="m",
+                val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
+            )
         self.add_subsystem("opt_var", opt_var)
 
         # Import outer shape BEM
@@ -722,15 +730,19 @@ class Blade(om.Group):
 
         # Connections from oute_shape_bem to interp_airfoils
         self.connect("outer_shape_bem.s", "interp_airfoils.s")
+        self.connect("outer_shape_bem.r_thick_yaml_interp", "interp_airfoils.r_thick_yaml")
         self.connect("pa.chord_param", ["interp_airfoils.chord", "compute_coord_xy_dim.chord"])
         self.connect("outer_shape_bem.pitch_axis", ["interp_airfoils.pitch_axis", "compute_coord_xy_dim.pitch_axis"])
         self.connect("opt_var.af_position", "interp_airfoils.af_position")
 
         self.add_subsystem("high_level_blade_props", ComputeHighLevelBladeProperties(rotorse_options=rotorse_options))
         self.connect("outer_shape_bem.ref_axis", "high_level_blade_props.blade_ref_axis_user")
+        self.connect("pa.chord_param", "high_level_blade_props.chord")
 
         # TODO : Compute Reynolds here
         self.add_subsystem("compute_reynolds", ComputeReynolds(n_span=rotorse_options["n_span"]))
+        self.connect("high_level_blade_props.r_blade", "compute_reynolds.r_blade")
+        self.connect("high_level_blade_props.rotor_radius", "compute_reynolds.rotor_radius")
 
         if rotorse_options["inn_af"]:
             self.add_subsystem(
@@ -742,7 +754,7 @@ class Blade(om.Group):
             )
             self.connect("outer_shape_bem.s", "run_inn_af.s")
             self.connect("pa.chord_param", "run_inn_af.chord")
-            self.connect("interp_airfoils.r_thick_interp", "run_inn_af.r_thick_interp_yaml")
+            self.connect("interp_airfoils.r_thick_interp", "run_inn_af.r_thick")
             self.connect("interp_airfoils.cl_interp", "run_inn_af.cl_interp_yaml")
             self.connect("interp_airfoils.cd_interp", "run_inn_af.cd_interp_yaml")
             self.connect("interp_airfoils.cm_interp", "run_inn_af.cm_interp_yaml")
@@ -788,15 +800,9 @@ class Blade(om.Group):
         )  # Parameterize struct (spar caps ss and ps)
 
         # Connections to blade struct parametrization
-        self.connect("opt_var.spar_cap_ss_opt", "ps.spar_cap_ss_opt")
-        self.connect("opt_var.s_opt_spar_cap_ss", "ps.s_opt_spar_cap_ss")
-        self.connect("opt_var.spar_cap_ps_opt", "ps.spar_cap_ps_opt")
-        self.connect("opt_var.s_opt_spar_cap_ps", "ps.s_opt_spar_cap_ps")
-
-        self.connect("opt_var.te_ss_opt", "ps.te_ss_opt")
-        self.connect("opt_var.s_opt_te_ss", "ps.s_opt_te_ss")
-        self.connect("opt_var.te_ps_opt", "ps.te_ps_opt")
-        self.connect("opt_var.s_opt_te_ps", "ps.s_opt_te_ps")
+        for i in range(rotorse_options["n_layers"]):
+            self.connect("opt_var.layer_%d_opt"%i, "ps.layer_%d_opt"%i)
+            self.connect("opt_var.s_opt_layer_%d"%i, "ps.s_opt_layer_%d"%i)
 
         self.connect("outer_shape_bem.s", "ps.s")
         # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
@@ -860,6 +866,9 @@ class Blade_Outer_Shape_BEM(om.Group):
             units="m",
             desc="2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.",
         )
+        ivc.add_output(
+            "r_thick_yaml", val=np.zeros(n_span), desc="1D array of the relative thickness values defined along blade span."
+        )
 
         self.add_subsystem(
             "compute_blade_outer_shape_bem",
@@ -895,6 +904,11 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             val=np.zeros(n_span),
             units="rad",
             desc="1D array of the twist values defined along blade span. The twist is defined positive for negative rotations around the z axis (the same as in BeamDyn).",
+        )
+        self.add_input(
+            "r_thick_yaml",
+            val=np.zeros(n_span),
+            desc="1D array of the relative thickness values defined along blade span.",
         )
         self.add_input(
             "pitch_axis_yaml",
@@ -939,6 +953,11 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             desc="1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.",
         )
         self.add_output(
+            "r_thick_yaml_interp",
+            val=np.zeros(n_span),
+            desc="1D array of the relative thickness values defined along blade span.",
+        )
+        self.add_output(
             "ref_axis",
             val=np.zeros((n_span, 3)),
             units="m",
@@ -953,6 +972,7 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             chord_orig = PchipInterpolator(inputs["s_default"], inputs["chord_yaml"])(nd_span_orig)
             twist_orig = PchipInterpolator(inputs["s_default"], inputs["twist_yaml"])(nd_span_orig)
             pitch_axis_orig = PchipInterpolator(inputs["s_default"], inputs["pitch_axis_yaml"])(nd_span_orig)
+            r_thick_orig = PchipInterpolator(inputs["s_default"], inputs["r_thick_yaml"])(nd_span_orig)
             ref_axis_orig = np.zeros((self.n_span, 3))
             ref_axis_orig[:, 0] = PchipInterpolator(inputs["s_default"], inputs["ref_axis_yaml"][:, 0])(nd_span_orig)
             ref_axis_orig[:, 1] = PchipInterpolator(inputs["s_default"], inputs["ref_axis_yaml"][:, 1])(nd_span_orig)
@@ -980,7 +1000,7 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             outputs["chord"] = PchipInterpolator(nd_span_orig, chord_orig)(outputs["s"])
             outputs["twist"] = PchipInterpolator(nd_span_orig, twist_orig)(outputs["s"])
             outputs["pitch_axis"] = PchipInterpolator(nd_span_orig, pitch_axis_orig)(outputs["s"])
-
+            outputs["r_thick_yaml_interp"] = PchipInterpolator(nd_span_orig, r_thick_orig)(outputs["s"])
             outputs["ref_axis"][:, 0] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 0])(outputs["s"])
             outputs["ref_axis"][:, 1] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 1])(outputs["s"])
             outputs["ref_axis"][:, 2] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 2])(outputs["s"])
@@ -989,6 +1009,7 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
             outputs["chord"] = inputs["chord_yaml"]
             outputs["twist"] = inputs["twist_yaml"]
             outputs["pitch_axis"] = inputs["pitch_axis_yaml"]
+            outputs["r_thick_yaml_interp"] = inputs["r_thick_yaml"]
             outputs["ref_axis"] = inputs["ref_axis_yaml"]
 
 
@@ -1033,7 +1054,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         # Airfoil properties
         self.add_discrete_input("name", val=n_af * [""], desc="1D array of names of airfoils.")
         self.add_input("ac", val=np.zeros(n_af), desc="1D array of the aerodynamic centers of each airfoil.")
-        self.add_input("r_thick", val=np.zeros(n_af), desc="1D array of the relative thicknesses of each airfoil.")
+        self.add_input("r_thick_discrete", val=np.zeros(n_af), desc="1D array of the relative thicknesses of each airfoil.")
         self.add_input(
             "aoa",
             val=np.zeros(n_aoa),
@@ -1061,6 +1082,11 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
             "coord_xy",
             val=np.zeros((n_af, n_xy, 2)),
             desc="3D array of the x and y airfoil coordinates of the n_af airfoils.",
+        )
+        self.add_input(
+            "r_thick_yaml",
+            val=np.zeros(n_span),
+            desc="1D array of the relative thicknesses of the blade defined along span.",
         )
 
         # Polars and coordinates interpolated along span
@@ -1111,7 +1137,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         for i in range(self.n_af_span):
             for j in range(self.n_af):
                 if self.af_used[i] == discrete_inputs["name"][j]:
-                    r_thick_used[i] = inputs["r_thick"][j]
+                    r_thick_used[i] = inputs["r_thick_discrete"][j]
                     ac_used[i] = inputs["ac"][j]
                     coord_xy_used[i, :, :] = inputs["coord_xy"][j]
                     cl_used[i, :, :, :] = inputs["cl"][j, :, :, :]
@@ -1124,7 +1150,15 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         spline = PchipInterpolator
         rthick_spline = spline(inputs["af_position"], r_thick_used)
         ac_spline = spline(inputs["af_position"], ac_used)
-        outputs["r_thick_interp"] = rthick_spline(inputs["s"])
+        if np.max(inputs["r_thick_yaml"]) < 1.e-6:
+            rthick_spline = spline(inputs["af_position"], r_thick_used)
+            outputs["r_thick_interp"] = rthick_spline(inputs["s"])
+        else:
+            outputs["r_thick_interp"] = inputs["r_thick_yaml"]
+            if np.min(outputs["r_thick_interp"]) < np.min(r_thick_used):
+                raise Exception("The distribution of relative thickness defined in the geometry yaml cannot be reproduced with the airfoils defined along span. Please provide an airfoil at least %f percent thick in the field airfoil_position."%(np.min(outputs["r_thick_interp"])*100))
+
+        ac_spline = spline(inputs["af_position"], ac_used)
         outputs["ac_interp"] = ac_spline(inputs["s"])
 
         # Spanwise interpolation of the profile coordinates with a pchip
@@ -1235,8 +1269,7 @@ class Compute_Coord_XY_Dim(om.ExplicitComponent):
 
         projected_chord = coord_xy_twist[:,:,1].max(axis=1) - coord_xy_twist[:,:,1].min(axis=1)
         outputs["projected_area"] = np.trapz(projected_chord, inputs["ref_axis"][:,2])
-        
-            
+
 
 class INN_Airfoils(om.ExplicitComponent):
     # Openmdao component to run the inverted neural network framework for airfoil design
@@ -1265,7 +1298,7 @@ class INN_Airfoils(om.ExplicitComponent):
             desc="1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)",
         )
         self.add_input(
-            "r_thick_interp_yaml",
+            "r_thick",
             val=np.zeros(n_span),
             desc="1D array of the relative thicknesses of the blade defined along span.",
         )
@@ -1300,10 +1333,10 @@ class INN_Airfoils(om.ExplicitComponent):
             val=np.zeros((n_span, n_xy, 2)),
             desc="3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.",
         )
-        self.add_input("s_opt_r_thick", val=np.ones(aero_shape_opt_options["t/c"]["n_opt"]))
+        self.add_input("s_opt_r_thick", val=np.ones(aero_shape_opt_options["rthick"]["n_opt"]))
         self.add_input(
             "r_thick_opt",
-            val=np.ones(aero_shape_opt_options["t/c"]["n_opt"]),
+            val=np.ones(aero_shape_opt_options["rthick"]["n_opt"]),
         )
         self.add_input("s_opt_L_D", val=np.ones(aero_shape_opt_options["L/D"]["n_opt"]))
         self.add_input(
@@ -1371,7 +1404,7 @@ class INN_Airfoils(om.ExplicitComponent):
         self.inn = INN()
 
     def compute(self, inputs, outputs):
-        # Interpolate t/c and L/D from opt grid to full grid
+        # Interpolate rthick and L/D from opt grid to full grid
         spline = PchipInterpolator
         r_thick_spline = spline(inputs["s_opt_r_thick"], inputs["r_thick_opt"])
         r_thick = r_thick_spline(inputs["s"])
@@ -1383,8 +1416,8 @@ class INN_Airfoils(om.ExplicitComponent):
         stall_margin = stall_margin_spline(inputs["s"])
 
         # Find indices for start and end of the optimization
-        max_t_c = self.options["rotorse_options"]["inn_af_max_t/c"]
-        min_t_c = self.options["rotorse_options"]["inn_af_min_t/c"]
+        max_t_c = self.options["rotorse_options"]["inn_af_max_rthick"]
+        min_t_c = self.options["rotorse_options"]["inn_af_min_rthick"]
         indices = np.argwhere(np.logical_and(r_thick > min_t_c, r_thick < max_t_c))
         indices = list(np.squeeze(indices))
 
@@ -1922,31 +1955,19 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                         [0.0, 0.0],
                         ["suction", "pressure"],
                     )
-                    # if i == 0:
-                    #     print(
-                    #         "WARNING: The web "
-                    #         + web_name[j]
-                    #         + " is defined with a user-defined rotation. If you are planning to run a twist optimization, you may want to rethink this definition."
-                    #     )
-                    # if web_start_nd[j, i] < 0.0 or web_start_nd[j, i] > 1.0:
-                    #     print(
-                    #         "WARNING: Blade web "
-                    #         + web_name[j]
-                    #         + " at n.d. span position "
-                    #         + str(inputs["s"][i])
-                    #         + " has the n.d. start point outside the TE. Please check the yaml input file."
-                    #     )
-                    # if web_end_nd[j, i] < 0.0 or web_end_nd[j, i] > 1.0:
-                    #     print(
-                    #         "WARNING: Blade web "
-                    #         + web_name[j]
-                    #         + " at n.d. span position "
-                    #         + str(inputs["s"][i])
-                    #         + " has the n.d. end point outside the TE. Please check the yaml input file."
-                    #     )
                 elif discrete_inputs["definition_web"][j] == 3:
                     web_start_nd[j, i] = inputs["web_start_nd_yaml"][j, i]
                     web_end_nd[j, i] = inputs["web_end_nd_yaml"][j, i]
+                elif discrete_inputs["definition_web"][j] == 4:
+                    web_rotation[j, i] = -inputs["web_rotation_yaml"][j, i]
+                    web_rotation[j, i] -= inputs["twist"][i]
+                    web_start_nd[j, i], web_end_nd[j, i] = calc_axis_intersection(
+                        inputs["coord_xy_dim"][i, :, :],
+                        -web_rotation[j, i],
+                        outputs["web_offset_y_pa"][j, i],
+                        [0.0, 0.0],
+                        ["suction", "pressure"],
+                    )
                 else:
                     raise ValueError(
                         "Blade web " + web_name[j] + " not described correctly. Please check the yaml input file."
@@ -1958,12 +1979,24 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     layer_start_nd[j, i] = 0.0
                     layer_end_nd[j, i] = 1.0
                 elif (
-                    discrete_inputs["definition_layer"][j] == 2 or discrete_inputs["definition_layer"][j] == 3
+                    discrete_inputs["definition_layer"][j] == 2
+                    or discrete_inputs["definition_layer"][j] == 3
+                    or discrete_inputs["definition_layer"][j] == 13
                 ):  # Midpoint and width
                     if discrete_inputs["definition_layer"][j] == 2:
                         layer_rotation[j, i] = -inputs["twist"][i]
+                    elif discrete_inputs["definition_layer"][j] == 3:
+                        layer_rotation[j, i] = -inputs["layer_rotation_yaml"][j, i]
                     else:
                         layer_rotation[j, i] = -inputs["layer_rotation_yaml"][j, i]
+                        layer_rotation[j, i] -= inputs["twist"][i]
+                    midpoint = calc_axis_intersection(
+                        inputs["coord_xy_dim"][i, :, :],
+                        -layer_rotation[j, i],
+                        inputs["layer_offset_y_pa_yaml"][j, i],
+                        [0.0, 0.0],
+                        [discrete_inputs["layer_side"][j]],
+                    )[0]
 
                     # Geometry check to make sure the spar caps does not exceed 80% of the chord
                     width = inputs["layer_width_yaml"][j, i]
@@ -1981,11 +2014,10 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                             'WARNING: Layer "%s" may be too large to fit within chord. "offset_y_pa" changed from %f to 0.0 and "width" changed from %f to %f at s=%f (i=%d)'
                             % (layer_name[j], offset, width_old, width, inputs["s"][i], i)
                         )
-                        # print(layer_resize_warning)
                     else:
                         outputs["layer_width"][j, i] = copy.copy(width)
                         outputs["layer_offset_y_pa"][j, i] = copy.copy(offset)
-                    
+
                     midpoint = calc_axis_intersection(
                         inputs["coord_xy_dim"][i, :, :],
                         -layer_rotation[j, i],
@@ -1995,7 +2027,6 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     )[0]
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = midpoint + width / arc_L_i / 2.0
-
                 elif discrete_inputs["definition_layer"][j] == 4:  # Midpoint and width
                     midpoint = 1.0
                     inputs["layer_midpoint_nd"][j, i] = midpoint
@@ -2003,17 +2034,6 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     outputs["layer_width"][j, i] = copy.copy(width)
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = width / arc_L_i / 2.0
-
-                    # # Geometry check to prevent overlap between SC and TE reinf
-                    # for k in range(self.n_layers):
-                    #     if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
-                    # if layer_end_nd[j, i] > layer_start_nd[k, i] or layer_start_nd[j, i] < layer_end_nd[k, i]:
-                    #     print(
-                    #         "WARNING: The trailing edge reinforcement extends above the spar caps at station "
-                    #         + str(i)
-                    #         + ". Please reduce its width."
-                    #     )
-
                 elif discrete_inputs["definition_layer"][j] == 5:  # Midpoint and width
                     midpoint = LE_loc
                     inputs["layer_midpoint_nd"][j, i] = midpoint
@@ -2021,33 +2041,8 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
                     outputs["layer_width"][j, i] = copy.copy(width)
                     layer_start_nd[j, i] = midpoint - width / arc_L_i / 2.0
                     layer_end_nd[j, i] = midpoint + width / arc_L_i / 2.0
-                    # # Geometry check to prevent overlap between SC and LE reinf
-                    # for k in range(self.n_layers):
-                    #     if discrete_inputs["definition_layer"][k] == 2 or discrete_inputs["definition_layer"][k] == 3:
-                    #         if (
-                    #             discrete_inputs["layer_side"][k] == "suction"
-                    #             and layer_start_nd[j, i] < layer_end_nd[k, i]
-                    #         ):
-                    #             print(
-                    #                 "WARNING: The leading edge reinforcement extends above the spar caps at station "
-                    #                 + str(i)
-                    #                 + ". Please reduce its width."
-                    #             )
-                    #         elif (
-                    #             discrete_inputs["layer_side"][k] == "pressure"
-                    #             and layer_end_nd[j, i] > layer_start_nd[k, i]
-                    #         ):
-                    #             print(
-                    #                 "WARNING: The leading edge reinforcement extends above the spar caps at station "
-                    #                 + str(i)
-                    #                 + ". Please reduce its width."
-                    #             )
-                    #         else:
-                    #             pass
                 elif discrete_inputs["definition_layer"][j] == 6:  # Start and end locked to other element
-                    # if inputs['layer_start_nd'][j,i] > 1:
                     layer_start_nd[j, i] = layer_end_nd[int(discrete_inputs["index_layer_start"][j]), i]
-                    # if inputs['layer_end_nd'][j,i] > 1:
                     layer_end_nd[j, i] = layer_start_nd[int(discrete_inputs["index_layer_end"][j]), i]
                 elif discrete_inputs["definition_layer"][j] == 7:  # Start nd and width
                     width = inputs["layer_width_yaml"][j, i]
@@ -2177,6 +2172,9 @@ class Hub(om.Group):
             ivc.add_output("hub_in2out_circ", val=1.2)
             ivc.add_discrete_output("hub_material", val="steel")
             ivc.add_discrete_output("spinner_material", val="carbon")
+            ivc.add_output("hub_shell_mass_user", val=0.0, units="kg")
+            ivc.add_output("spinner_mass_user", val=0.0, units="kg")
+            ivc.add_output("pitch_system_mass_user", val=0.0, units="kg")
 
         exec_comp = om.ExecComp(
             "radius = 0.5 * diameter",
@@ -2302,6 +2300,7 @@ class Monopile(om.Group):
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
+        ivc.add_output("monopile_mass_user", val=0.0, units="kg", desc="Override bottom-up calculation of total monopile mass with this value")
 
         self.add_subsystem("compute_monopile_grid", Compute_Grid(n_height=n_height), promotes=["*"])
 
@@ -2368,6 +2367,7 @@ class Jacket(om.Group):
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
+        ivc.add_output("jacket_mass_user", val=0.0, units="kg", desc="Override bottom-up calculation of total jacket mass with this value")
 
 
 class Floating(om.Group):
@@ -2408,7 +2408,7 @@ class Floating(om.Group):
             ivc.add_output("s_in", val=np.zeros(n_geom))
             ivc.add_output("s", val=np.zeros(n_height))
 
-            diameter_assigned = False
+            member_shape_assigned = False
             for i, kgrp in enumerate(float_opt["members"]["groups"]):
                 memname = kgrp["names"][0]
                 idx = floating_init_options["members"]["name2idx"][memname]
@@ -2418,10 +2418,39 @@ class Floating(om.Group):
                             ivc.add_output("outer_diameter_in", val=0.0, units="m")
                         else:
                             ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
-                        diameter_assigned = True
+                        ivc.add_output("ca_usr_geom", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("cd_usr_geom", val=-1.0*np.ones(n_geom))
+                        member_shape_assigned = True
+                    if "side_length_a" in float_opt["members"]["groups"][i]:
+                        if float_opt["members"]["groups"][i]["side_length_a"]["constant"]:
+                            ivc.add_output("side_length_a_in", val=0.0, units="m")
+                        else:
+                            ivc.add_output("side_length_a_in", val=np.zeros(n_geom), units="m")
+                        member_shape_assigned = True
+                        ivc.add_output("ca_usr_geom", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("cd_usr_geom", val=-1.0*np.ones(n_geom))
+                    if "side_length_b" in float_opt["members"]["groups"][i]:
+                        if float_opt["members"]["groups"][i]["side_length_b"]["constant"]:
+                            ivc.add_output("side_length_b_in", val=0.0, units="m")
+                        else:
+                            ivc.add_output("side_length_b_in", val=np.zeros(n_geom), units="m")
+                        ivc.add_output("cay_usr_geom", val=-1.0*np.ones(n_geom))
+                        ivc.add_output("cdy_usr_geom", val=-1.0*np.ones(n_geom))
+                        member_shape_assigned = True
 
-            if not diameter_assigned:
-                ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
+            if not member_shape_assigned:
+                # Use the memidx to query the correct member_shape
+                if floating_init_options["members"]["outer_shape"][memidx] == "circular":
+                    ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
+                    ivc.add_output("ca_usr_geom", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cd_usr_geom", val=-1.0*np.ones(n_geom))
+                elif floating_init_options["members"]["outer_shape"][memidx] == "rectangular":
+                    ivc.add_output("side_length_a_in", val=np.zeros(n_geom), units="m")
+                    ivc.add_output("side_length_b_in", val=np.zeros(n_geom), units="m")
+                    ivc.add_output("ca_usr_geom", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cd_usr_geom", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cay_usr_geom", val=-1.0*np.ones(n_geom))
+                    ivc.add_output("cdy_usr_geom", val=-1.0*np.ones(n_geom))
 
             ivc.add_discrete_output("layer_materials", val=[""] * n_layers)
             ivc.add_output("layer_thickness_in", val=np.zeros((n_layers, n_geom)), units="m")
@@ -2442,11 +2471,25 @@ class Floating(om.Group):
             ivc.add_output("axial_stiffener_flange_width", 0.0, units="m")
             ivc.add_output("axial_stiffener_flange_thickness", 0.0, units="m")
             ivc.add_output("axial_stiffener_spacing", 0.0, units="rad")
+            ivc.add_output("member_mass_user", 0.0, units="kg", desc="Override bottom-up calculation of total member mass with this value")
 
-            self.add_subsystem(f"memgrid{k}", MemberGrid(n_height=n_height, n_geom=n_geom, n_layers=n_layers))
+            # Use the memidx to query the correct member_shape
+            self.add_subsystem(f"memgrid{k}", MemberGrid(n_height=n_height, n_geom=n_geom, n_layers=n_layers, member_shape=floating_init_options["members"]["outer_shape"][memidx]))
             self.connect(f"memgrp{k}.s_in", f"memgrid{k}.s_in")
             self.connect(f"memgrp{k}.s", f"memgrid{k}.s_grid")
-            self.connect(f"memgrp{k}.outer_diameter_in", f"memgrid{k}.outer_diameter_in")
+            # Here looping all dv member groups
+            if floating_init_options["members"]["outer_shape"][memidx] == "circular":
+                self.connect(f"memgrp{k}.outer_diameter_in", f"memgrid{k}.outer_diameter_in")
+                self.connect(f"memgrp{k}.ca_usr_geom", f"memgrid{k}.ca_usr_geom")
+                self.connect(f"memgrp{k}.cd_usr_geom", f"memgrid{k}.cd_usr_geom")
+            elif floating_init_options["members"]["outer_shape"][memidx] == "rectangular":
+                self.connect(f"memgrp{k}.side_length_a_in", f"memgrid{k}.side_length_a_in")
+                self.connect(f"memgrp{k}.side_length_b_in", f"memgrid{k}.side_length_b_in")
+                self.connect(f"memgrp{k}.ca_usr_geom", f"memgrid{k}.ca_usr_geom")
+                self.connect(f"memgrp{k}.cd_usr_geom", f"memgrid{k}.cd_usr_geom")
+                self.connect(f"memgrp{k}.cay_usr_geom", f"memgrid{k}.cay_usr_geom")
+                self.connect(f"memgrp{k}.cdy_usr_geom", f"memgrid{k}.cdy_usr_geom")
+
             self.connect(f"memgrp{k}.layer_thickness_in", f"memgrid{k}.layer_thickness_in")
 
         self.add_subsystem("alljoints", AggregateJoints(floating_init_options=floating_init_options), promotes=["*"])
@@ -2455,7 +2498,13 @@ class Floating(om.Group):
             name_member = floating_init_options["members"]["name"][i]
             idx = floating_init_options["members"]["name2idx"][name_member]
             self.connect(f"memgrp{idx}.grid_axial_joints", "member_" + name_member + ":grid_axial_joints")
-            self.connect(f"memgrid{idx}.outer_diameter", "member_" + name_member + ":outer_diameter")
+            if floating_init_options["members"]["outer_shape"][i] == "circular":
+                self.connect(f"memgrid{idx}.outer_diameter", "member_" + name_member + ":outer_diameter")
+            elif floating_init_options["members"]["outer_shape"][i] == "rectangular":
+                # TODO: AggregatedJoints hasn't included rectangular yet, so no connection now
+                print("WARNING: AggregatedJoints hasn't included rectangular yet")
+                # self.connect(f"memgrid{idx}.side_length_a", "member_" + name_member + ":side_length_a")
+                # self.connect(f"memgrid{idx}.side_length_b", "member_" + name_member + ":side_length_b")
             self.connect(f"memgrp{idx}.s", "member_" + name_member + ":s")
 
 
@@ -2487,35 +2536,76 @@ class NodeDVs(om.ExplicitComponent):
 
 
 # Component that interpolates the diameter/thickness nodes to all of the other points needed in the member discretization
+# TODO: This can be cleaned by generalizing the variables, set variables as options and loop all required variables to interpolate
 class MemberGrid(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("n_layers")
         self.options.declare("n_height")
         self.options.declare("n_geom")
+        self.options.declare("member_shape")
 
     def setup(self):
         n_layers = self.options["n_layers"]
         n_height = self.options["n_height"]
         n_geom = self.options["n_geom"]
+        member_shape = self.options["member_shape"]
 
         self.add_input("s_in", val=np.zeros(n_geom))
         self.add_input("s_grid", val=np.zeros(n_height))
-        self.add_input("outer_diameter_in", shape_by_conn=True, units="m")
+        if member_shape == "circular":
+            self.add_input("outer_diameter_in", shape_by_conn=True, units="m")
+            self.add_input("ca_usr_geom", shape_by_conn=True)
+            self.add_input("cd_usr_geom", shape_by_conn=True)
+        elif member_shape == "rectangular":
+            self.add_input("side_length_a_in", shape_by_conn=True, units="m")
+            self.add_input("side_length_b_in", shape_by_conn=True, units="m")
+            self.add_input("ca_usr_geom", shape_by_conn=True)
+            self.add_input("cd_usr_geom", shape_by_conn=True)
+            self.add_input("cay_usr_geom", shape_by_conn=True)
+            self.add_input("cdy_usr_geom", shape_by_conn=True)
+
         self.add_input("layer_thickness_in", val=np.zeros((n_layers, n_geom)), units="m")
 
-        self.add_output("outer_diameter", val=np.zeros(n_height), units="m")
+        if member_shape == "circular":
+            self.add_output("outer_diameter", val=np.zeros(n_height), units="m")
+            self.add_output("ca_usr_grid", val=-1.0*np.ones(n_height))
+            self.add_output("cd_usr_grid", val=-1.0*np.ones(n_height))
+        elif member_shape == "rectangular":
+            self.add_output("side_length_a", val=np.zeros(n_height), units="m")
+            self.add_output("side_length_b", val=np.zeros(n_height), units="m")
+            self.add_output("ca_usr_grid", val=-1.0*np.ones(n_height))
+            self.add_output("cd_usr_grid", val=-1.0*np.ones(n_height))
+            self.add_output("cay_usr_grid", val=-1.0*np.ones(n_height))
+            self.add_output("cdy_usr_grid", val=-1.0*np.ones(n_height))
+
         self.add_output("layer_thickness", val=np.zeros((n_layers, n_height)), units="m")
 
     def compute(self, inputs, outputs):
         n_layers = self.options["n_layers"]
+        member_shape = self.options["member_shape"]
 
         s_in = inputs["s_in"]
         s_grid = inputs["s_grid"]
 
-        if len(inputs["outer_diameter_in"]) > 1:
-            outputs["outer_diameter"] = PchipInterpolator(s_in, inputs["outer_diameter_in"])(s_grid)
-        else:
-            outputs["outer_diameter"][:] = inputs["outer_diameter_in"]
+        if member_shape == "circular":
+            if len(inputs["outer_diameter_in"]) > 1:
+                outputs["outer_diameter"] = PchipInterpolator(s_in, inputs["outer_diameter_in"])(s_grid)
+            else:
+                outputs["outer_diameter"][:] = inputs["outer_diameter_in"]
+            outputs["ca_usr_grid"] = PchipInterpolator(s_in, inputs["ca_usr_geom"])(s_grid)
+            outputs["cd_usr_grid"] = PchipInterpolator(s_in, inputs["cd_usr_geom"])(s_grid)
+        elif member_shape == "rectangular":
+            if len(inputs["side_length_a_in"]) > 1:
+                outputs["side_length_a"] = PchipInterpolator(s_in, inputs["side_length_a_in"])(s_grid)
+                outputs["side_length_b"] = PchipInterpolator(s_in, inputs["side_length_b_in"])(s_grid)
+            else:
+                outputs["side_length_a"][:] = inputs["side_length_a_in"]
+                outputs["side_length_b"][:] = inputs["side_length_b_in"]
+            outputs["ca_usr_grid"] = PchipInterpolator(s_in, inputs["ca_usr_geom"])(s_grid)
+            outputs["cd_usr_grid"] = PchipInterpolator(s_in, inputs["cd_usr_geom"])(s_grid)
+            outputs["cay_usr_grid"] = PchipInterpolator(s_in, inputs["cay_usr_geom"])(s_grid)
+            outputs["cdy_usr_grid"] = PchipInterpolator(s_in, inputs["cdy_usr_geom"])(s_grid)
+
         for k in range(n_layers):
             outputs["layer_thickness"][k, :] = PchipInterpolator(s_in, inputs["layer_thickness_in"][k, :])(s_grid)
 
@@ -2556,6 +2646,7 @@ class AggregateJoints(om.ExplicitComponent):
         n_joints = floating_init_options["joints"]["n_joints"]
         n_members = memopt["n_members"]
         name2idx = floating_init_options["joints"]["name2idx"]
+        n_joint_tot = len(name2idx)
         NULL = -9999.0
 
         # Unpack inputs
@@ -2570,15 +2661,15 @@ class AggregateJoints(om.ExplicitComponent):
         joints_xyz[:n_joints, :] = locations_xyz.copy()
 
         # Initial biggest radius at each node
-        node_r = np.zeros(joints_xyz.shape[0])
-        intersects = np.zeros(joints_xyz.shape[0])
+        node_r = np.zeros(n_joint_tot)
+        intersects = np.zeros(n_joint_tot)
 
         # Now add axial joints
         member_list = list(range(n_members))
         count = n_joints
-        n_joint_tot = len(name2idx)
         while count < n_joint_tot:
             for k in member_list[:]:
+                # Get the end joint locations for members and then compute the axial joint loc
                 joint1xyz = joints_xyz[name2idx[memopt["joint1"][k]], :]
                 joint2xyz = joints_xyz[name2idx[memopt["joint2"][k]], :]
 
@@ -3125,6 +3216,10 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             units="m",
             desc="Radius of the hub. It defines the distance of the blade root from the rotor center along the coned line.",
         )
+        self.add_input(
+            "chord", val=np.zeros(n_span), units="m", desc="1D array of the chord values defined along blade span."
+        )
+        self.add_discrete_input("n_blades", val=3, desc="Number of blades of the rotor.")
 
         self.add_output(
             "rotor_diameter",
@@ -3160,8 +3255,10 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             units="m",
             desc="Scalar of the 3D blade length computed along its axis, scaled based on the user defined rotor diameter.",
         )
+        self.add_output("blade_solidity", val=0.0, desc="Blade solidity")
+        self.add_output("rotor_solidity", val=0.0, desc="Rotor solidity")
 
-    def compute(self, inputs, outputs):
+    def compute(self, inputs, outputs, discrete_inputs,  discrete_outputs):
         outputs["blade_ref_axis"][:, 0] = inputs["blade_ref_axis_user"][:, 0]
         outputs["blade_ref_axis"][:, 1] = inputs["blade_ref_axis_user"][:, 1]
         # Scale z if the blade length provided by the user does not match the rotor diameter. D = (blade length + hub radius) * 2
@@ -3170,11 +3267,11 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
             outputs["blade_ref_axis"][:, 2] = (
                 inputs["blade_ref_axis_user"][:, 2]
                 * inputs["rotor_diameter_user"]
-                / ((arc_length(inputs["blade_ref_axis_user"])[-1] + inputs["hub_radius"]) * 2.0)
+                / ((inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0)
             )
         # If the user does not provide a rotor diameter, this is computed from the hub diameter and the blade length
         else:
-            outputs["rotor_diameter"] = (arc_length(inputs["blade_ref_axis_user"])[-1] + inputs["hub_radius"]) * 2.0
+            outputs["rotor_diameter"] = (inputs["blade_ref_axis_user"][-1,2] + inputs["hub_radius"]) * 2.0
             outputs["blade_ref_axis"][:, 2] = inputs["blade_ref_axis_user"][:, 2]
         outputs["r_blade"] = outputs["blade_ref_axis"][:, 2] + inputs["hub_radius"]
         outputs["rotor_radius"] = outputs["r_blade"][-1]
@@ -3183,6 +3280,8 @@ class ComputeHighLevelBladeProperties(om.ExplicitComponent):
         outputs["prebendTip"] = outputs["blade_ref_axis"][-1, 0]
         outputs["presweep"] = outputs["blade_ref_axis"][:, 1]
         outputs["presweepTip"] = outputs["blade_ref_axis"][-1, 1]
+        outputs['blade_solidity'] = np.trapz(inputs['chord'], outputs["r_blade"]) / (np.pi * outputs["rotor_radius"]**2.)
+        outputs['rotor_solidity'] = outputs['blade_solidity'] * discrete_inputs['n_blades']
 
 
 class ComputeHighLevelTowerProperties(om.ExplicitComponent):
@@ -3228,9 +3327,11 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         modeling_options = self.options["modeling_options"]
+        if inputs["hub_height_user"][0] != 0.0:
+            outputs["hub_height"] = inputs["hub_height_user"]
+
         if modeling_options["flags"]["tower"]:
-            if inputs["hub_height_user"] != 0.0:
-                outputs["hub_height"] = inputs["hub_height_user"]
+            if inputs["hub_height_user"][0] != 0.0:
                 z_base = inputs["tower_ref_axis_user"][0, 2]
                 z_current = inputs["tower_ref_axis_user"][:, 2] - z_base
                 h_needed = inputs["hub_height_user"] - inputs["distance_tt_hub"] - z_base
@@ -3239,6 +3340,9 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
             else:
                 outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]
+
+        if outputs["hub_height"][0] == 0.0:
+            raise Exception("The hub height cannot be set.  Please set it in the top level 'assembly' section in the yaml file and/or define the tower reference axis")
 
         if modeling_options["flags"]["blade"] and inputs["rotor_diameter"] > 2.0 * outputs["hub_height"]:
             raise Exception(
@@ -3299,7 +3403,7 @@ class Airfoil3DCorrection(om.ExplicitComponent):
             desc="Scalar of the rotor radius, defined ignoring prebend and sweep curvatures, and cone and uptilt angles.",
         )
         self.add_input(
-            "r_thick_interp",
+            "r_thick",
             val=np.zeros(n_span),
             desc="1D array of the relative thicknesses of the blade defined along span.",
         )
@@ -3329,17 +3433,17 @@ class Airfoil3DCorrection(om.ExplicitComponent):
         cm_corrected = np.zeros((self.n_span, self.n_aoa, self.n_Re, self.n_tab))
         for i in range(self.n_span):
             if (
-                inputs["r_thick_interp"][i] < 0.7 and self.af_correction
+                inputs["r_thick"][i] < 0.7 and self.af_correction
             ):  # Only apply 3D correction to airfoils thinner than 70% to avoid numerical problems at blade root
                 logger.info("3D correction applied to airfoil polars for section " + str(i))
                 for j in range(self.n_Re):
                     for k in range(self.n_tab):
                         inn_polar = Polar(
-                            inputs["Re"][j],
-                            np.degrees(inputs["aoa"]),
-                            inputs["cl"][i, :, j, k],
-                            inputs["cd"][i, :, j, k],
-                            inputs["cm"][i, :, j, k],
+                            Re=inputs["Re"][j],
+                            alpha=np.degrees(inputs["aoa"]),
+                            cl=inputs["cl"][i, :, j, k],
+                            cd=inputs["cd"][i, :, j, k],
+                            cm=inputs["cm"][i, :, j, k],
                         )
                         polar3d = inn_polar.correction3D(
                             inputs["r_blade"][i] / inputs["rotor_radius"],

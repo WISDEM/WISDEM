@@ -7,6 +7,7 @@ __email__ = "jake.nunemaker@nrel.gov"
 
 
 import os
+from pathlib import Path
 
 
 class MissingComponent(Exception):
@@ -26,14 +27,17 @@ class MissingComponent(Exception):
         self.vessel = vessel
         self.component = component
 
-        self.message = f"{vessel} is missing required component(s) '{component}'."
+        self.message = (
+            f"{vessel} is missing required component(s) '{component}'."
+        )
 
     def __str__(self):
+        """Provides the string error message."""
         return self.message
 
 
 class ItemNotFound(Exception):
-    """Error for when no items in list satisfy rule"""
+    """Error for when no items in list satisfy rule."""
 
     def __init__(self, rule):
         """
@@ -48,19 +52,20 @@ class ItemNotFound(Exception):
         self.message = f"No items found that satisfy: {rule}"
 
     def __str__(self):
+        """Provides the string error message."""
         return self.message
 
 
 class CargoMassExceeded(Exception):
-    """Error for exceeding vessel maximum cargo mass"""
+    """Error for exceeding vessel maximum cargo mass."""
 
-    def __init__(self, max, current, item):
+    def __init__(self, max_mass, current, item):
         """
         Creates an instance of CargoMassExceeded.
 
         Parameters
         ----------
-        max : int | float
+        max_mass : int | float
             Maximum vessel cargo mass (t).
         current : int | float
             Vessel cargo mass currently in use (t).
@@ -69,12 +74,13 @@ class CargoMassExceeded(Exception):
             a dictionary with a 'type' or the name of an item.
         """
 
-        self.max = max
+        self.max = max_mass
         self.current = current
         self.item = item
         self.message = f"'{self.item}' will exceed maximum cargo mass."
 
     def __str__(self):
+        """Provides the string error message."""
         return self.message
 
 
@@ -98,6 +104,7 @@ class ItemPropertyNotDefined(Exception):
         self.message = f"{item} is missing {self.missing}"
 
     def __str__(self):
+        """Provides the string error message."""
         return self.message
 
 
@@ -123,16 +130,18 @@ class InsufficientAmount(Exception):
         self.amount_requested = amount_requested
 
         required = self.amount_requested - self.current_amount
-        self.message = f"Not enough '{self.item_type}' on vessel. At least " f"{required:.4e} more units required"
+        self.message = (
+            f"Not enough '{self.item_type}' on vessel. At least "
+            f"{required:.4e} more units required"
+        )
 
     def __str__(self):
+        """Provides the string error message."""
         return self.message
 
 
 class InsufficientCable(Exception):
-    """
-    Error raised when a Carousel doesn't have enough cable for next section.
-    """
+    """Error for when a Carousel doesn't have enough cable for next section."""
 
     def __init__(self, current_amount, amount_requested):
         """
@@ -148,14 +157,15 @@ class InsufficientCable(Exception):
 
         self.current = current_amount
         self.requested = amount_requested
-        self.message = f"Not enough cable on carousel."
+        self.message = "Not enough cable on carousel."
 
     def __str__(self):
+        """Provides the string error message."""
         return self.message
 
 
 class PhaseNotFound(Exception):
-    """Exception for missing Phase"""
+    """Exception for missing Phase."""
 
     def __init__(self, p):
         """
@@ -171,6 +181,7 @@ class PhaseNotFound(Exception):
         self.message = f"Unrecognized phase '{self.phase}'."
 
     def __str__(self):
+        """Provides a string of the error message."""
         return self.message
 
 
@@ -191,6 +202,7 @@ class MissingInputs(Exception):
         self.message = f"Input(s) '{self.keys}' missing in config."
 
     def __str__(self):
+        """Provides a string of the error message."""
         return self.message
 
 
@@ -218,11 +230,12 @@ class WeatherProfileError(Exception):
         )
 
     def __str__(self):
+        """Provides a string of the error message."""
         return self.message
 
 
 class LibraryItemNotFoundError(Exception):
-    """Error for missing library data"""
+    """Error for missing library data."""
 
     def __init__(self, sub_dir, name):
         """
@@ -236,11 +249,12 @@ class LibraryItemNotFoundError(Exception):
             Filename of item to be extracted.
         """
 
-        self.dir = os.path.join(os.environ["DATA_LIBRARY"], sub_dir)
+        self.dir = Path(os.environ["DATA_LIBRARY"]) / sub_dir
         self.name = name
         self.message = f"{self.name} not found in {self.dir}."
 
     def __str__(self):
+        """Provides a string of the error message."""
         return self.message
 
 
@@ -270,21 +284,19 @@ class WeatherWindowNotFound(Exception):
         self.max_waveheight = max_waveheight
 
         self.message = (
-            "No weather window found for '{}' that satisfies:"
-            "\n\tMaximum Windspeed: {:.2f}"
-            "\n\tMaximum Waveheight: {:.2f}"
-            "\n\tDuration: {:.2f}"
-            "".format(agent, max_windspeed, max_waveheight, duration)
+            f"No weather window found for '{agent}' that satisfies:"
+            f"\n\tMaximum Windspeed: {max_windspeed:.2f}"
+            f"\n\tMaximum Waveheight: {max_waveheight:.2f}"
+            f"\n\tDuration: {duration:.2f}"
         )
 
     def __str__(self):
+        """Provides a string of the error message."""
         return self.message
 
 
 class WeatherProfileExhausted(Exception):
-    """
-    Error to be raised at the end of the weather data.
-    """
+    """Error to be raised at the end of the weather data."""
 
     def __init__(self, length):
         """
@@ -298,9 +310,10 @@ class WeatherProfileExhausted(Exception):
 
         self.length = length
 
-        self.message = "Weather profile exhausted at element {:,.0f}".format(length)
+        self.message = f"Weather profile exhausted at element {length:,.0f}"
 
     def __str__(self):
+        """Provides a string of the error message."""
         return self.message
 
 
@@ -329,6 +342,7 @@ class VesselCapacityError(Exception):
         )
 
     def __str__(self):
+        """Provides a string of the error message."""
         return self.message
 
 
@@ -337,7 +351,7 @@ class FastenTimeNotFound(Exception):
 
     def __init__(self, item):
         """
-        Creates an instance of FastenTimeNotFound
+        Creates an instance of FastenTimeNotFound.
 
         Parameters
         ----------
@@ -350,6 +364,7 @@ class FastenTimeNotFound(Exception):
         self.message = f"Unknown fasten time for item type '{item}'."
 
     def __str__(self):
+        """Provides a string of the error message."""
         return self.message
 
 
@@ -371,4 +386,5 @@ class PhaseDependenciesInvalid(Exception):
         self.message = f"Phase dependencies {phases} are not resolvable."
 
     def __str__(self):
+        """Provides a string of the error message."""
         return self.message

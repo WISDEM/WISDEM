@@ -2291,6 +2291,10 @@ def compute_total_labor_ct(data_struct, name, verbose, no_contribution2ct=[]):
         if var not in no_contribution2ct:
             ct_total_per_process += data["ct"]
 
+    def f(x):
+        return x[0] if type(x) == type(np.array([])) else x
+    labor_total_per_process = f(labor_total_per_process)
+    ct_total_per_process = f(ct_total_per_process)
     return labor_total_per_process, ct_total_per_process
 
 
@@ -2362,6 +2366,8 @@ class virtual_factory(object):
         delta = 2.0  # [m] Distance between blades
         self.floor_space = np.zeros(len(operation))  # [m2]
         self.floor_space[0] = 3.0 * blade_specs["blade_length"]  # [m2] Material cutting
+        if isinstance(blade_specs["root_preform_length"], type(np.array([]))):
+            blade_specs["root_preform_length"] = blade_specs["root_preform_length"][0]
         self.floor_space[1] = (
             self.parallel_proc[1] * (delta + blade_specs["root_D"]) * (delta + blade_specs["root_preform_length"])
         )  # [m2] Infusion root preform lp
@@ -3317,9 +3323,8 @@ class BladeCost(om.ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Inputs
         s = inputs["s"]
-        blade_length = inputs["blade_length"]
         chord = inputs["chord"]
-        blade_length = inputs["blade_length"]
+        blade_length = inputs["blade_length"][0]
         s = inputs["s"]
         layer_start_nd = inputs["layer_start_nd"]
         layer_end_nd = inputs["layer_end_nd"]
@@ -3338,15 +3343,15 @@ class BladeCost(om.ExplicitComponent):
         fwf = inputs["fwf"]
         fvf = inputs["fvf"]
         unit_cost = inputs["unit_cost"]
-        flange_adhesive_squeezed = inputs["flange_adhesive_squeezed"]
-        flange_thick = inputs["flange_thick"]
-        flange_width = inputs["flange_width"]
-        t_bolt_spacing = inputs["t_bolt_spacing"]
+        flange_adhesive_squeezed = inputs["flange_adhesive_squeezed"][0]
+        flange_thick = inputs["flange_thick"][0]
+        flange_width = inputs["flange_width"][0]
+        t_bolt_spacing = inputs["t_bolt_spacing"][0]
         t_bolt_unit_cost = inputs["t_bolt_unit_cost"]
         barrel_nut_unit_cost = inputs["barrel_nut_unit_cost"]
         LPS_unit_cost = inputs["LPS_unit_cost"]
         if self.root:
-            root_preform_length = inputs["root_preform_length"]
+            root_preform_length = inputs["root_preform_length"][0]
         else:
             root_preform_length = 0.0
 
@@ -3377,7 +3382,9 @@ class BladeCost(om.ExplicitComponent):
             for j in range(self.n_webs):
                 id_start = np.argmin(abs(xy_arc_nd_i - web_start_nd[j, i]))
                 id_end = np.argmin(abs(xy_arc_nd_i - web_end_nd[j, i]))
-                web_height[j, i] = abs((xy_coord_i[id_end, 1] - xy_coord_i[id_start, 0]) * chord[i])
+                web_height[j, i] = np.sqrt((xy_coord_i[id_start, 0] - xy_coord_i[id_end, 0])**2 +
+                                             (xy_coord_i[id_start, 1] - xy_coord_i[id_end, 1])**2) * (
+                                             chord[i])
 
         # Compute materials from the yaml
         layer_volume_span_ss = np.zeros((self.n_layers, self.n_span))
@@ -3426,6 +3433,19 @@ class BladeCost(om.ExplicitComponent):
         mass_shell_ss = 0.0
         mass_shell_ps = 0.0
         tol_LE = 1.0e-5
+        pultruded_spar_caps = False
+        area_sc_ss = 0.
+        volume2lay_sc_ss = 0.
+        fabric2lay_sc_ss = 0.
+        mass_sc_ss = 0.
+        max_n_plies_sc_ss = 0.
+        area_sc_ps = 0.
+        volume2lay_sc_ps = 0.
+        fabric2lay_sc_ps = 0.
+        mass_sc_ps = 0.
+        max_n_plies_sc_ps = 0.
+
+
         for i_lay in range(self.n_layers):
             if np.max(layer_thickness[i_lay, :]) > 0.0:
                 imin, imax = np.nonzero(layer_thickness[i_lay, :])[0][[0, -1]]
@@ -3897,7 +3917,7 @@ class StandaloneBladeCost(om.Group):
             ),
         )
         self.connect("airfoils.name", "blade.interp_airfoils.name")
-        self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick")
+        self.connect("airfoils.r_thick", "blade.interp_airfoils.r_thick_discrete")
         self.connect("airfoils.coord_xy", "blade.interp_airfoils.coord_xy")
 
         self.add_subsystem(
@@ -4007,12 +4027,13 @@ class StandaloneBladeCost(om.Group):
             self.connect("rc.total_blade_cost", "total_bc.inner_blade_cost")
 
 
-def initialize_omdao_prob(wt_opt, modeling_options, wt_init):
+def initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options):
     materials = wt_init["materials"]
     wt_opt = assign_material_values(wt_opt, modeling_options, materials)
 
     blade = wt_init["components"]["blade"]
-    wt_opt = assign_blade_values(wt_opt, modeling_options, blade)
+    blade_DV = opt_options['design_variables']['blade']
+    wt_opt = assign_blade_values(wt_opt, modeling_options, blade_DV, blade)
 
     airfoils = wt_init["airfoils"]
     wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=True)
@@ -4035,5 +4056,5 @@ if __name__ == "__main__":
     wt_opt.setup(derivatives=False)
     myopt = PoseOptimization(wt_init, modeling_options, opt_options)
     wt_opt = myopt.set_initial(wt_opt, wt_init)
-    wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init)
+    wt_opt = initialize_omdao_prob(wt_opt, modeling_options, wt_init, opt_options)
     wt_opt.run_model()

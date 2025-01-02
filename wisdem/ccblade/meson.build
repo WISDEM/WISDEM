@@ -6,11 +6,9 @@ bem_source = custom_target('bemmodule.c',
                             )
 
 py3.extension_module('_bem',
-                    'src/bem.f90',
-                bem_source,
-                fortranobject_c,
-                include_directories: inc_np,
-                dependencies : py3_dep,
-                subdir: 'wisdem/ccblade',
-		link_language: 'fortran',
-                install : true)
+                     'src/bem.f90',
+                     bem_source,
+                     dependencies : fortranobject_dep,
+                     subdir: 'wisdem/ccblade',
+		     link_language: 'fortran',
+                     install : true)

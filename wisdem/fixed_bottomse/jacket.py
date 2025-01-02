@@ -168,6 +168,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
         self.add_input("gravity_foundation_mass", 0.0, units="kg")
         self.add_input("gravity_foundation_I", np.zeros(6), units="kg*m**2")
         self.add_input("tower_mass", val=0.0, units="kg")
+        self.add_input("jacket_mass_user", val=0.0, units="kg")
 
         # For modal analysis only (loads captured in turbine_F & turbine_M)
         self.add_input("turbine_mass", val=0.0, units="kg")
@@ -314,7 +315,7 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         # Add leg members.
         for jdx in range(n_bays + 1):
-            itube = cs.Tube(float(inputs["leg_diameter"]), float(inputs["leg_thickness"]))
+            itube = cs.Tube(float(inputs["leg_diameter"][0]), float(inputs["leg_thickness"][0]))
             for idx in range(n_legs):
                 add_element(leg_nodes, leg_indices, bay_nodes, bay_indices, itube, idx, jdx, idx, jdx)
                 add_element(bay_nodes, bay_indices, leg_nodes, leg_indices, itube, idx, jdx, idx, jdx + 1)
@@ -367,18 +368,18 @@ class ComputeFrame3DD(om.ExplicitComponent):
         rho = [inputs["rho_mat"][imat]] * self.num_elements
 
         # Convert all lists to arrays
-        Area = np.squeeze(np.array(self.Area, dtype=np.float_))
-        Asx = np.squeeze(np.array(self.Asx, dtype=np.float_))
-        Asy = np.squeeze(np.array(self.Asy, dtype=np.float_))
-        J0 = np.squeeze(np.array(self.J0, dtype=np.float_))
-        Ixx = np.squeeze(np.array(self.Ixx, dtype=np.float_))
-        Iyy = np.squeeze(np.array(self.Iyy, dtype=np.float_))
-        L = np.squeeze(np.array(self.L, dtype=np.float_))
-        D = np.squeeze(np.array(self.D, dtype=np.float_))
-        t = np.squeeze(np.array(self.t, dtype=np.float_))
-        E = np.squeeze(np.array(E, dtype=np.float_))
-        G = np.squeeze(np.array(G, dtype=np.float_))
-        rho = np.squeeze(np.array(rho, dtype=np.float_))
+        Area = np.squeeze(np.array(self.Area, dtype=np.float64))
+        Asx = np.squeeze(np.array(self.Asx, dtype=np.float64))
+        Asy = np.squeeze(np.array(self.Asy, dtype=np.float64))
+        J0 = np.squeeze(np.array(self.J0, dtype=np.float64))
+        Ixx = np.squeeze(np.array(self.Ixx, dtype=np.float64))
+        Iyy = np.squeeze(np.array(self.Iyy, dtype=np.float64))
+        L = np.squeeze(np.array(self.L, dtype=np.float64))
+        D = np.squeeze(np.array(self.D, dtype=np.float64))
+        t = np.squeeze(np.array(self.t, dtype=np.float64))
+        E = np.squeeze(np.array(E, dtype=np.float64))
+        G = np.squeeze(np.array(G, dtype=np.float64))
+        rho = np.squeeze(np.array(rho, dtype=np.float64))
         N1 = self.N1
         N2 = self.N2
 
@@ -412,7 +413,9 @@ class ComputeFrame3DD(om.ExplicitComponent):
 
         # Populate mass and cost outputs
         # TODO: Is there an "outfitting" factor for jackets.  Seems like it would be much smaller than monopiles
-        outputs["jacket_mass"] = np.sum(Area[:-n_legs] * rho[:-n_legs] * L[:-n_legs])
+        m_jack_user = float(inputs["jacket_mass_user"][0])
+        m_jack = np.sum(Area[:-n_legs] * rho[:-n_legs] * L[:-n_legs])
+        outputs["jacket_mass"] = m_jack_user if m_jack_user > 0.0 else m_jack
         outputs["structural_mass"] = outputs["jacket_mass"] + inputs["tower_mass"]
 
         # ------ options ------------
@@ -479,11 +482,11 @@ class ComputeFrame3DD(om.ExplicitComponent):
         # ------ add extra mass ------------
         # Prepare transition piece, and gravity foundation (if any applicable) for "extra node mass"
         # Turbine mass added for modal analysis only- gravity loads accounted for in point force
-        m_trans = float(inputs["transition_piece_mass"])
+        m_trans = float(inputs["transition_piece_mass"][0])
         I_trans = inputs["transition_piece_I"].flatten()
-        m_grav = float(inputs["gravity_foundation_mass"])
+        m_grav = float(inputs["gravity_foundation_mass"][0])
         I_grav = inputs["gravity_foundation_I"].flatten()
-        m_turb = float(inputs["turbine_mass"])
+        m_turb = float(inputs["turbine_mass"][0])
         cg_turb = inputs["turbine_cg"].flatten()
         I_turb = inputs["turbine_I"].flatten()
         # Note, need len()-1 because Frame3DD crashes if mass add at end
@@ -625,7 +628,7 @@ class JacketPost(om.ExplicitComponent):
         axial_stress = Fz / Az[:, np.newaxis] + M * (r / Iyy)[:, np.newaxis]
         shear_stress = np.abs(Mzz) / (Jz * r)[:, np.newaxis] + V / Asx[:, np.newaxis]
         hoop_stress = -qdyn * ((r - 0.5 * t) / t)[:, np.newaxis]  # util_con.hoopStress(d, t, qdyn)
-        outputs["constr_stress"] = util_con.vonMisesStressUtilization(
+        outputs["constr_stress"] = util_con.TubevonMisesStressUtilization(
             axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigy.reshape((-1, 1))
         )[:-n_legs]
 
@@ -675,6 +678,7 @@ class JacketCost(om.ExplicitComponent):
         self.add_input("tower_cost", val=0.0, units="USD")
         self.add_input("transition_piece_cost", 0.0, units="USD")
 
+        self.add_output("labor_hours", 0.0, units="h")
         self.add_output("jacket_cost", 0.0, units="USD")
         self.add_output("structural_cost", val=0.0, units="USD")
 
@@ -737,7 +741,8 @@ class JacketCost(om.ExplicitComponent):
         t_weld = manu.steel_tube_welding_time(theta, n_pieces, m_total, weld_L, t)
         t_manufacture = t_cut + t_weld
         K_f = k_f * t_manufacture
-
+        outputs["labor_hours"] = t_manufacture / 60.0
+        
         # Cost step 5) Painting by surface area
         theta_p = 2
         K_p = k_p * theta_p * np.pi * np.sum(D[:-n_legs] * L[:-n_legs])
@@ -759,7 +764,7 @@ class JacketCost(om.ExplicitComponent):
 
 
 # Assemble the system together in an OpenMDAO Group
-class JacketSE(om.Group):
+class JacketSEProp(om.Group):
     """
     Group to contain all subsystems needed for jacket analysis and design.
     Can be used as a standalone or within the larger WISDEM stack.
@@ -773,6 +778,37 @@ class JacketSE(om.Group):
 
         self.add_subsystem("pre", PreDiscretization(), promotes=["*"])
         self.add_subsystem("nodes", ComputeJacketNodes(modeling_options=modeling_options), promotes=["*"])
+
+
+class JacketSEPerf(om.Group):
+    """
+    Group to contain all subsystems needed for jacket analysis and design.
+    Can be used as a standalone or within the larger WISDEM stack.
+    """
+
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        modeling_options = self.options["modeling_options"]
+
         self.add_subsystem("frame3dd", ComputeFrame3DD(modeling_options=modeling_options), promotes=["*"])
         self.add_subsystem("post", JacketPost(modeling_options=modeling_options), promotes=["*"])
         self.add_subsystem("cost", JacketCost(modeling_options=modeling_options), promotes=["*"])
+
+
+class JacketSE(om.Group):
+    """
+    Group to contain all subsystems needed for jacket analysis and design.
+    Can be used as a standalone or within the larger WISDEM stack.
+    """
+
+    def initialize(self):
+        self.options.declare("modeling_options")
+
+    def setup(self):
+        modeling_options = self.options["modeling_options"]
+
+        self.add_subsystem("prop", JacketSEProp(modeling_options=modeling_options), promotes=["*"])
+        self.add_subsystem("perf", JacketSEPerf(modeling_options=modeling_options), promotes=["*"])
+

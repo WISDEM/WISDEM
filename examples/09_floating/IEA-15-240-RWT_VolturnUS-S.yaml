@@ -6,7 +6,7 @@ assembly:
     rotor_orientation: Upwind
     number_of_blades: 3
     hub_height: 150.
-    rotor_diameter: 242.23775645
+    rotor_diameter: 241.94
     rated_power: 15.e+6
     lifetime: 25.0
 components:
@@ -631,8 +631,8 @@ components:
             - name: main_column
               joint1: main_keel
               joint2: main_freeboard
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape:
                 shape: circular
                 outer_diameter:
@@ -660,8 +660,8 @@ components:
             - name: column1
               joint1: col1_keel
               joint2: col1_freeboard
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape: &col_out
                 shape: circular
                 outer_diameter:
@@ -699,8 +699,8 @@ components:
             - name: column2
               joint1: col2_keel
               joint2: col2_freeboard
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape: *col_out
               internal_structure: *col_int
               axial_joints:
@@ -716,8 +716,8 @@ components:
             - name: column3
               joint1: col3_keel
               joint2: col3_freeboard
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape: *col_out
               internal_structure: *col_int
               axial_joints:
@@ -734,8 +734,8 @@ components:
             - name: Y_pontoon_upper1
               joint1: main_upper_pontoon
               joint2: col1_upper_pontoon
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape: &pontup_out
                 shape: circular
                 outer_diameter:
@@ -752,24 +752,24 @@ components:
             - name: Y_pontoon_upper2
               joint1: main_upper_pontoon
               joint2: col2_upper_pontoon
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape: *pontup_out
               internal_structure: *pontup_int
 
             - name: Y_pontoon_upper3
               joint1: main_upper_pontoon
               joint2: col3_upper_pontoon
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape: *pontup_out
               internal_structure: *pontup_int
 
             - name: Y_pontoon_lower1
               joint1: main_lower_pontoon
               joint2: col1_lower_pontoon
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape: &pontlow_out
                 shape: circular
                 outer_diameter:
@@ -796,16 +796,16 @@ components:
               joint2: col2_lower_pontoon
               outer_shape: *pontlow_out
               internal_structure: *pontlow_int
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
 
             - name: Y_pontoon_lower3
               joint1: main_lower_pontoon
               joint2: col3_lower_pontoon
               outer_shape: *pontlow_out
               internal_structure: *pontlow_int
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
     mooring:
         nodes:
             - name: line1_anchor
@@ -1279,20 +1279,22 @@ environment:
 bos:
     plant_turbine_spacing: 7
     plant_row_spacing: 7
-    commissioning_pct: 0.01
-    decommissioning_pct: 0.15
+    commissioning_cost_kW: 44.0
+    decommissioning_cost_kW: 58.0
     distance_to_substation: 1.0
     distance_to_interconnection: 8.5
     interconnect_voltage: 130.
     distance_to_site: 115.
     distance_to_landfall: 50.
     port_cost_per_month: 2e6
-    site_auction_price: 100e6
-    site_assessment_plan_cost: 1e6
-    site_assessment_cost: 25e6
-    construction_operations_plan_cost: 2.5e6
     boem_review_cost: 0.0
-    design_install_plan_cost: 2.5e6
+    construction_insurance: 44.0
+    construction_financing: 183.0
+    contingency: 316.0
+    site_auction_price: 100e6
+    site_assessment_cost: 50e6
+    construction_plan_cost: 2.5e5
+    installation_plan_cost: 1e6
 costs:
     wake_loss_factor: 0.15
     fixed_charge_rate: 0.056
@@ -1307,7 +1309,6 @@ costs:
     spinner_mass_cost_coeff: 11.1
     lss_mass_cost_coeff: 11.9
     bearing_mass_cost_coeff: 4.5
-    gearbox_mass_cost_coeff: 12.9
     hss_mass_cost_coeff: 6.8
     generator_mass_cost_coeff: 12.4
     bedplate_mass_cost_coeff: 2.9

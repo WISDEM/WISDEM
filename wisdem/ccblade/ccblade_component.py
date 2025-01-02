@@ -2,7 +2,6 @@ import numpy as np
 from openmdao.api import ExplicitComponent
 from scipy.interpolate import PchipInterpolator
 
-import wisdem.ccblade._bem as _bem
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.csystem import DirectionVector
 
@@ -63,8 +62,8 @@ class CCBladeGeometry(ExplicitComponent):
         self.declare_partials("presweepTip", "presweep_in", val=1.0, rows=[0], cols=[n_span - 1])
 
     def compute(self, inputs, outputs):
-        Rtip = inputs["Rtip"]
-        precone = inputs["precone"]
+        Rtip = inputs["Rtip"][0]
+        precone = inputs["precone"][0]
 
         outputs["precurveTip"] = inputs["precurve_in"][-1]
         outputs["presweepTip"] = inputs["presweep_in"][-1]
@@ -271,27 +270,27 @@ class CCBladeLoads(ExplicitComponent):
         r = inputs["r"]
         chord = inputs["chord"]
         theta = inputs["theta"]
-        Rhub = inputs["Rhub"]
-        Rtip = inputs["Rtip"]
-        hub_height = inputs["hub_height"]
-        precone = inputs["precone"]
-        tilt = inputs["tilt"]
-        yaw = inputs["yaw"]
+        Rhub = inputs["Rhub"][0]
+        Rtip = inputs["Rtip"][0]
+        hub_height = inputs["hub_height"][0]
+        precone = inputs["precone"][0]
+        tilt = inputs["tilt"][0]
+        yaw = inputs["yaw"][0]
         precurve = inputs["precurve"]
-        precurveTip = inputs["precurveTip"]
+        precurveTip = inputs["precurveTip"][0]
         B = discrete_inputs["nBlades"]
-        rho = inputs["rho"]
-        mu = inputs["mu"]
-        shearExp = inputs["shearExp"]
+        rho = inputs["rho"][0]
+        mu = inputs["mu"][0]
+        shearExp = inputs["shearExp"][0]
         nSector = discrete_inputs["nSector"]
         tiploss = discrete_inputs["tiploss"]
         hubloss = discrete_inputs["hubloss"]
         wakerotation = discrete_inputs["wakerotation"]
         usecd = discrete_inputs["usecd"]
-        V_load = inputs["V_load"]
-        Omega_load = inputs["Omega_load"]
-        pitch_load = inputs["pitch_load"]
-        azimuth_load = inputs["azimuth_load"]
+        V_load = inputs["V_load"][0]
+        Omega_load = inputs["Omega_load"][0]
+        pitch_load = inputs["pitch_load"][0]
+        azimuth_load = inputs["azimuth_load"][0]
 
         if len(precurve) == 0:
             precurve = np.zeros_like(r)
@@ -401,7 +400,7 @@ class CCBladeTwist(ExplicitComponent):
         n_opt_twist = opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
 
         # Inputs
-        self.add_input("Uhub", val=9.0, units="m/s", desc="Undisturbed wind speed")
+        self.add_input("Uhub", val=5.0, units="m/s", desc="Undisturbed wind speed")
 
         self.add_input("tsr", val=0.0, desc="Tip speed ratio")
         self.add_input("pitch", val=0.0, units="deg", desc="Pitch angle")
@@ -560,28 +559,28 @@ class CCBladeTwist(ExplicitComponent):
             inputs["chord"],
             np.zeros_like(inputs["chord"]),
             af,
-            inputs["Rhub"],
-            inputs["Rtip"],
+            inputs["Rhub"][0],
+            inputs["Rtip"][0],
             discrete_inputs["nBlades"],
-            inputs["rho"],
-            inputs["mu"],
-            inputs["precone"],
-            inputs["tilt"],
-            inputs["yaw"],
-            inputs["shearExp"],
-            inputs["hub_height"],
+            inputs["rho"][0],
+            inputs["mu"][0],
+            inputs["precone"][0],
+            inputs["tilt"][0],
+            inputs["yaw"][0],
+            inputs["shearExp"][0],
+            inputs["hub_height"][0],
             discrete_inputs["nSector"],
             inputs["precurve"],
-            inputs["precurveTip"],
+            inputs["precurveTip"][0],
             inputs["presweep"],
-            inputs["presweepTip"],
+            inputs["presweepTip"][0],
             discrete_inputs["tiploss"],
             discrete_inputs["hubloss"],
             discrete_inputs["wakerotation"],
             discrete_inputs["usecd"],
         )
 
-        Omega = inputs["tsr"] * inputs["Uhub"] / inputs["r"][-1] * 30.0 / np.pi
+        Omega = inputs["tsr"][0] * inputs["Uhub"][0] / inputs["r"][-1] * 30.0 / np.pi
 
         if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
             if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["flag"]:
@@ -592,12 +591,15 @@ class CCBladeTwist(ExplicitComponent):
             cl = np.zeros(self.n_span)
             cd = np.zeros(self.n_span)
             alpha = np.zeros(self.n_span)
+            Emax = np.zeros(self.n_span)
             margin2stall = self.options["opt_options"]["constraints"]["blade"]["stall"]["margin"] * 180.0 / np.pi
             Re = np.array(Omega * inputs["r"] * inputs["chord"] * inputs["rho"] / inputs["mu"])
             aoa_op = inputs["aoa_op"]
             for i in range(self.n_span):
                 # Use the required angle of attack if defined. If it isn't defined (==pi), then take the stall point minus the margin
-                if abs(aoa_op[i] - np.pi) < 1.0e-4:
+                if abs(aoa_op[i] - np.pi) > 1.0e-4:
+                    alpha[i] = aoa_op[i]
+                elif self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse_target"] == 'stall_margin':
                     af[i].eval_unsteady(
                         inputs["airfoils_aoa"],
                         inputs["airfoils_cl"][i, :, 0, 0],
@@ -605,8 +607,16 @@ class CCBladeTwist(ExplicitComponent):
                         inputs["airfoils_cm"][i, :, 0, 0],
                     )
                     alpha[i] = (af[i].unsteady["alpha1"] - margin2stall) / 180.0 * np.pi
+                elif self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse_target"] == 'max_efficiency':
+                    af[i].eval_unsteady(
+                        inputs["airfoils_aoa"],
+                        inputs["airfoils_cl"][i, :, 0, 0],
+                        inputs["airfoils_cd"][i, :, 0, 0],
+                        inputs["airfoils_cm"][i, :, 0, 0],
+                    )
+                    Emax[i], alpha[i], _, _ = af[i].max_eff(Re[i])
                 else:
-                    alpha[i] = aoa_op[i]
+                    raise Exception('The flags for the twist inverse design are not set appropriately. Please check documentation for the available analysis options.')
                 cl[i], cd[i] = af[i].evaluate(alpha[i], Re[i])
 
             # Overwrite aoa of high thickness airfoils at blade root
@@ -622,19 +632,16 @@ class CCBladeTwist(ExplicitComponent):
 
             # Cap twist root region to 20 degrees
             for i in range(len(ccblade.theta)):
-                if ccblade.theta[-i - 1] > 20.0 / 180.0 * np.pi:
-                    ccblade.theta[0 : len(ccblade.theta) - i] = 20.0 / 180.0 * np.pi
+                cap_twist_root = self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["cap_twist_root"]
+                if ccblade.theta[-i - 1] > cap_twist_root:
+                    ccblade.theta[0 : len(ccblade.theta) - i] = cap_twist_root
                     break
         else:
             ccblade.theta = inputs["theta_in"]
 
-        # Smooth out twist profile if we're doing inverse and inn_af design
-        if (
-            self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]
-            and self.options["modeling_options"]["WISDEM"]["RotorSE"]["inn_af"]
-        ):
-            n_opt = self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]
-            training_theta = np.copy(ccblade.theta)
+        # Smooth out twist profile if we're doing inverse design for twist
+        if self.options["opt_options"]["design_variables"]["blade"]["aero_shape"]["twist"]["inverse"]:
+            training_theta = ccblade.theta
             s = (inputs["r"] - inputs["r"][0]) / (inputs["r"][-1] - inputs["r"][0])
 
             twist_spline = PchipInterpolator(s, training_theta)
@@ -648,7 +655,7 @@ class CCBladeTwist(ExplicitComponent):
         ccblade.inverse_analysis = False
 
         # Call ccblade at azimuth 0 deg
-        loads, _ = ccblade.distributedAeroLoads(inputs["Uhub"][0], Omega[0], inputs["pitch"][0], 0.0)
+        loads, _ = ccblade.distributedAeroLoads(inputs["Uhub"][0], Omega, inputs["pitch"][0], 0.0)
 
         # Call ccblade evaluate (averaging across azimuth)
         myout, _ = ccblade.evaluate([inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=True)
@@ -656,7 +663,7 @@ class CCBladeTwist(ExplicitComponent):
 
         # import matplotlib.pyplot as plt
         # plt.figure()
-        # plt.plot(inputs['r'], alpha*180./np.pi, '-')
+        # plt.plot(inputs['r'], np.rad2deg(alpha), '-')
         # plt.plot(inputs['r'], loads["alpha"], ':')
         # plt.xlabel('blade fraction')
         # plt.ylabel('aoa (deg)')
@@ -769,28 +776,28 @@ class CCBladeEvaluate(ExplicitComponent):
         r = inputs["r"]
         chord = inputs["chord"]
         theta = inputs["theta"]
-        Rhub = inputs["Rhub"]
-        Rtip = inputs["Rtip"]
-        hub_height = inputs["hub_height"]
-        precone = inputs["precone"]
-        tilt = inputs["tilt"]
-        yaw = inputs["yaw"]
+        Rhub = inputs["Rhub"][0]
+        Rtip = inputs["Rtip"][0]
+        hub_height = inputs["hub_height"][0]
+        precone = inputs["precone"][0]
+        tilt = inputs["tilt"][0]
+        yaw = inputs["yaw"][0]
         precurve = inputs["precurve"]
-        precurveTip = inputs["precurveTip"]
+        precurveTip = inputs["precurveTip"][0]
         presweep = inputs["presweep"]
-        presweepTip = inputs["presweepTip"]
+        presweepTip = inputs["presweepTip"][0]
         B = discrete_inputs["nBlades"]
-        rho = inputs["rho"]
-        mu = inputs["mu"]
-        shearExp = inputs["shearExp"]
+        rho = inputs["rho"][0]
+        mu = inputs["mu"][0]
+        shearExp = inputs["shearExp"][0]
         nSector = discrete_inputs["nSector"]
         tiploss = discrete_inputs["tiploss"]
         hubloss = discrete_inputs["hubloss"]
         wakerotation = discrete_inputs["wakerotation"]
         usecd = discrete_inputs["usecd"]
-        V_load = inputs["V_load"]
-        Omega_load = inputs["Omega_load"]
-        pitch_load = inputs["pitch_load"]
+        V_load = inputs["V_load"][0]
+        Omega_load = inputs["Omega_load"][0]
+        pitch_load = inputs["pitch_load"][0]
 
         if len(precurve) == 0:
             precurve = np.zeros_like(r)
@@ -847,28 +854,28 @@ class CCBladeEvaluate(ExplicitComponent):
         r = inputs["r"]
         chord = inputs["chord"]
         theta = inputs["theta"]
-        Rhub = inputs["Rhub"]
-        Rtip = inputs["Rtip"]
-        hub_height = inputs["hub_height"]
-        precone = inputs["precone"]
-        tilt = inputs["tilt"]
-        yaw = inputs["yaw"]
+        Rhub = inputs["Rhub"][0]
+        Rtip = inputs["Rtip"][0]
+        hub_height = inputs["hub_height"][0]
+        precone = inputs["precone"][0]
+        tilt = inputs["tilt"][0]
+        yaw = inputs["yaw"][0]
         precurve = inputs["precurve"]
-        precurveTip = inputs["precurveTip"]
+        precurveTip = inputs["precurveTip"][0]
         presweep = inputs["presweep"]
-        presweepTip = inputs["presweepTip"]
+        presweepTip = inputs["presweepTip"][0]
         B = discrete_inputs["nBlades"]
-        rho = inputs["rho"]
-        mu = inputs["mu"]
-        shearExp = inputs["shearExp"]
+        rho = inputs["rho"][0]
+        mu = inputs["mu"][0]
+        shearExp = inputs["shearExp"][0]
         nSector = discrete_inputs["nSector"]
         tiploss = discrete_inputs["tiploss"]
         hubloss = discrete_inputs["hubloss"]
         wakerotation = discrete_inputs["wakerotation"]
         usecd = discrete_inputs["usecd"]
-        V_load = inputs["V_load"]
-        Omega_load = inputs["Omega_load"]
-        pitch_load = inputs["pitch_load"]
+        V_load = inputs["V_load"][0]
+        Omega_load = inputs["Omega_load"][0]
+        pitch_load = inputs["pitch_load"][0]
 
         if len(precurve) == 0:
             precurve = np.zeros_like(r)

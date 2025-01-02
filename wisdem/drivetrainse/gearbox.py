@@ -115,6 +115,7 @@ class Gearbox(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare("direct_drive", default=True)
+        self.options.declare("use_gb_torque_density", default=True)
 
     def setup(self):
         self.add_discrete_input("gear_configuration", val="eep")
@@ -125,6 +126,7 @@ class Gearbox(om.ExplicitComponent):
         self.add_input("rated_torque", val=0.0, units="N*m")
         self.add_input("machine_rating", val=0.0, units="kW")
         self.add_input("gearbox_mass_user", val=0.0, units="kg")
+        self.add_input("gearbox_torque_density", val=0.0, units="N*m/kg")
         self.add_input("gearbox_radius_user", val=0.0, units="m")
         self.add_input("gearbox_length_user", val=0.0, units="m")
 
@@ -139,26 +141,59 @@ class Gearbox(om.ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         if self.options["direct_drive"]:
             outputs["stage_ratios"] = np.zeros(3)
-            outputs["gearbox_mass"] = outputs["D_gearbox"] = outputs["L_gearbox"] = 0.0
+            outputs["gearbox_mass"] = outputs["D_gearbox"] = outputs["L_gearbox"] = np.zeros(1)
             outputs["gearbox_I"] = np.zeros(3)
             return
-        elif inputs["gearbox_mass_user"] == 0.0:
-            # Unpack inputs
-            config = discrete_inputs["gear_configuration"]
-            # shaft_factor = discrete_inputs['shaft_factor']
-            n_planets = np.maximum(1.0, np.array(discrete_inputs["planet_numbers"]))
-            gear_ratio = inputs["gear_ratio"]
-            D_rotor = inputs["rotor_diameter"]
-            torque = inputs["rated_torque"]
-            rating = inputs["machine_rating"]
+
+        # Unpack inputs
+        config = discrete_inputs["gear_configuration"]
+        # shaft_factor = discrete_inputs['shaft_factor']
+        n_planets = np.maximum(1.0, np.array(discrete_inputs["planet_numbers"]))
+        gear_ratio = float(inputs["gear_ratio"][0])
+        torque = float(inputs["rated_torque"][0])
+        rating = float(inputs["machine_rating"][0])
+        n_stage = 3
+        
+        # Other gearbox elements that are just estimates: shrink disc and carrier
+        m_shrink_disc = rating / 3.0
+        m_carrier = 8e3
+        outputs["carrier_mass"] = m_shrink_disc + m_carrier
+        
+        # calculate mass properties
+        D_rotor = float(inputs["rotor_diameter"][0])
+        
+        R_gearbox = float(inputs["gearbox_radius_user"][0])
+        if R_gearbox == 0.0:
+            R_gearbox = 0.006 * D_rotor # assumed to be 0.6% of wind turbine rotor diameter, regression from Jan 30th, 2024
+                
+        L_gearbox = float(inputs["gearbox_length_user"][0])
+        if L_gearbox == 0.0:
+            L_gearbox = 0.015 * D_rotor # assumed to be 1.5% of wind turbine rotor diameter, regression from Jan 30th, 2024
+
+        # Moment of inertia (without mass yet)
+        I = np.zeros(3)
+        I[0] = 0.5 * R_gearbox**2
+        I[1:] = (1.0 / 12.0) * (3 * R_gearbox**2 + L_gearbox**2)
+
+        # Store some outputs
+        outputs["D_gearbox"] = 2 * R_gearbox
+        outputs["L_gearbox"] = L_gearbox
+        outputs["carrier_I"] = outputs["carrier_mass"] * I[0] * np.array([1.0, 0.5, 0.5])  # Solid disk
+
+        # Now determine gearbox mass
+        m_gearbox = float(inputs["gearbox_mass_user"][0])
+        
+        if m_gearbox == 0.0 and self.options["use_gb_torque_density"]:
+            # NOTE THIS IS DEFAULT BECAUSE WE TRUST IT MORE AND IT IS MUCH QUICKER
+            m_gearbox = torque / float(inputs["gearbox_torque_density"][0])
+
+        if m_gearbox == 0.0:
 
             # Known configuration checks
-            if not config.lower() in ["eep", "eep_2", "eep_3", "epp"]:
+            if config.lower() not in ["eep", "eep_2", "eep_3", "epp"]:
                 raise ValueError("Invalid value for gearbox_configuration.  Must be one of: eep, eep_2, eep_3, epp")
-            n_stage = 3
 
             # Optimize stage ratios
-
             # Use double sided constraints to hack inequality constraints as COBYLA seems to work better than SLSQP here
             def constr1(x, ratio):
                 return np.prod(x) - ratio
@@ -248,27 +283,8 @@ class Gearbox(om.ExplicitComponent):
             m_gearbox = K * Kshaft * vol.sum()
 
             # Other gearbox elements that are just estimates: shrink disc and carrier
-            m_shrink_disc = rating / 3.0
-            m_carrier = 8e3
             m_gearbox += m_shrink_disc + m_carrier
-            outputs["carrier_mass"] = m_shrink_disc + m_carrier
-
-            # calculate mass properties
-            L_gearbox = 0.012 * D_rotor
-            R_gearbox = 0.5 * 0.75 * 0.015 * D_rotor
-        else:
-            m_gearbox = inputs["gearbox_mass_user"]
-            R_gearbox = inputs["gearbox_radius_user"]
-            L_gearbox = inputs["gearbox_length_user"]
-            outputs["carrier_mass"] = 0.0
-
-        I = np.zeros(3)
-        I[0] = 0.5 * R_gearbox**2
-        I[1:] = (1.0 / 12.0) * (3 * R_gearbox**2 + L_gearbox**2)
 
         # Store outputs
         outputs["gearbox_mass"] = m_gearbox
         outputs["gearbox_I"] = I * m_gearbox
-        outputs["D_gearbox"] = 2 * R_gearbox
-        outputs["L_gearbox"] = L_gearbox
-        outputs["carrier_I"] = outputs["carrier_mass"] * I[0] * np.array([1.0, 0.5, 0.5])  # Solid disk

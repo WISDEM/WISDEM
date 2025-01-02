@@ -11,6 +11,9 @@ if incdir_numpy == ''
 endif
 # this creates a raw string which is useful for Windows use of '\' for paths
 incdir_numpy = '''@0@'''.format(incdir_numpy)
+inc_np = include_directories(incdir_numpy)
+numpy_nodepr_api = ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION']
+np_dep = declare_dependency(include_directories: inc_np, compile_args: numpy_nodepr_api)
 
 #incdir_f2py = run_command(py3,
 #    ['-c', 'import os; os.chdir(".."); import numpy.f2py; print(numpy.f2py.get_include())'],
@@ -18,12 +21,21 @@ incdir_numpy = '''@0@'''.format(incdir_numpy)
 #).stdout().strip()
 
 incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
-inc_f2py = include_directories(incdir_f2py)
 fortranobject_c = incdir_f2py / 'fortranobject.c'
+inc_f2py = include_directories(incdir_f2py)
 
-inc_np = include_directories(incdir_numpy, incdir_f2py)
-
+# Share this object across multiple modules.
+fortranobject_lib = static_library('_fortranobject',
+  fortranobject_c,
+  c_args: numpy_nodepr_api,
+  dependencies: py3_dep,
+  include_directories: [inc_np, inc_f2py],
+)
+fortranobject_dep = declare_dependency(
+  link_with: fortranobject_lib,
+  include_directories: [inc_np, inc_f2py],
+)
 
 subdir('ccblade')
 subdir('pyframe3dd')
-subdir('rotorse')
+#subdir('precomp')

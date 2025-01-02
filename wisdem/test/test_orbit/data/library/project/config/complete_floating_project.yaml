@@ -42,6 +42,7 @@ site:
 substructure:
   takt_time: 168
 support_vessel: test_support_vessel
+ahts_vessel: test_ahts_vessel
 towing_vessel: test_towing_vessel
 towing_vessel_groups:
   station_keeping_vessels: 2

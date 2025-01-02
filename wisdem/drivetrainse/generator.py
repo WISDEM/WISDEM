@@ -221,11 +221,11 @@ class MofI(om.ExplicitComponent):
         self.add_output("stator_I", val=np.zeros(3), units="kg*m**2")
 
     def compute(self, inputs, outputs):
-        R_out = inputs["R_out"]
-        Mass = inputs["generator_mass"]
-        m_stator = inputs["stator_mass"]
-        m_rotor = inputs["rotor_mass"]
-        len_s = inputs["len_s"]
+        R_out = float(inputs["R_out"][0])
+        Mass = float(inputs["generator_mass"][0])
+        m_stator = float(inputs["stator_mass"][0])
+        m_rotor = float(inputs["rotor_mass"][0])
+        len_s = float(inputs["len_s"][0])
 
         I = np.zeros(3)
         I[0] = 0.50 * Mass * R_out**2
@@ -419,13 +419,13 @@ class Generator(om.Group):
         self.set_input_defaults("k_fillr", val=0.7)
         self.set_input_defaults("k_fills", val=0.65)
         self.set_input_defaults("k_s", val=0.2)
-        self.set_input_defaults("m", val=3)
+        #self.set_input_defaults("m", val=3)
         self.set_input_defaults("mu_0", val=np.pi * 4e-7, units="m*kg/s**2/A**2")
         self.set_input_defaults("mu_r", val=1.06, units="m*kg/s**2/A**2")
         self.set_input_defaults("p", val=3.0)
         self.set_input_defaults("phi", val=np.deg2rad(90), units="rad")
-        self.set_input_defaults("q1", val=6)
-        self.set_input_defaults("q2", val=4)
+        #self.set_input_defaults("q1", val=6)
+        #self.set_input_defaults("q2", val=4)
         self.set_input_defaults("ratio_mw2pp", val=0.7)
         self.set_input_defaults("resist_Cu", val=1.8e-8 * 1.4, units="ohm/m")
         self.set_input_defaults("sigma", val=40e3, units="Pa")

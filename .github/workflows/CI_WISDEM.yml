@@ -5,35 +5,32 @@ on: [push, pull_request]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  build:
-    name: Build (${{ matrix.os }} Python ${{ matrix.python-version }})
+  build_conda:
+    name: Conda Build-Test (${{ matrix.os }} Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
 
     defaults:
         run:
             shell: bash -el {0}
 
-
     strategy:
       fail-fast: False
       matrix:
-        os: [ubuntu-latest, windows-latest] #macos-latest, 
-        python-version: ["3.9", "3.10", "3.11"]
+        os: [ubuntu-latest, macos-13, windows-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
       - name: checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install conda/mamba
         uses: conda-incubator/setup-miniconda@v2
         # https://github.com/marketplace/actions/setup-miniconda
         with:
-          #miniconda-version: "latest"
-          #miniforge-version: "latest"
-          mamba-version: "*"
-          channels: conda-forge
-          channel-priority: true          
-          #auto-update-conda: true
+          # To use mamba, uncomment here, comment out the miniforge line
+          #mamba-version: "*"
+          miniforge-version: "latest"
+          auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           environment-file: environment.yml
           activate-environment: test
@@ -43,60 +40,107 @@ jobs:
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         run: |
-          mamba install -y petsc4py gfortran
-          mamba info -e
+          conda install -y petsc4py gfortran
 
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
         run: |
-          mamba install -y m2w64-toolchain libpython
+          conda install -y m2w64-toolchain libpython
 
       - name: Debug config
         run: |
-          mamba list
+          conda list
+          which -a gfortran
+          which pip
+
+      - name: Install WISDEM with setup
+        run: |
+          pip install --no-build-isolation --no-deps -e . -v
     
       # Debugging session
       #- name: Setup tmate session
       #  uses: mxschmitt/action-tmate@v3
 
-      # Install WISDEM with setup
-      - name: Install WISDEM with setup
+      - name: Run all tests
+        if: contains( matrix.os, 'ubuntu')
         run: |
-          python setup.py develop
+          pytest -p no:warnings --disable-warnings --cov=wisdem
 
-      # Install WISDEM with pip
-      - name: Install WISDEM with pip for Unix
-        if: false == contains( matrix.os, 'windows')
-        run: |
-          rm -rf meson_build
-          pip install -vv --no-deps -e .
-
-      # Install WISDEM with pip
-      #- name: Install WISDEM with pip for Windows
-      #  if: contains( matrix.os, 'windows')
-      #  run: |
-      #    pip install -vv --no-deps --global-option --compiler=unix .
-
-      # Run all tests
-      - name: Run tests
-        if: false == contains( matrix.os, 'windows')
-        run: |
-          pytest --cov=wisdem
-
-      # Run limited test on WINDOWS
-      - name: Limited Windows test
-        if: contains( matrix.os, 'windows')
+      - name: Limited test for non Linux
+        if: false == contains( matrix.os, 'ubuntu')
         run: |
           cd wisdem/test/test_gluecode
-          pytest test_g*
+          pytest  -p no:warnings --disable-warnings test_g*
 
       # Run coveralls
       - name: Run coveralls
-        if: contains( matrix.os, 'ubuntu')
-        # This also works, https://github.com/AndreMiras/coveralls-python-action
-        #uses: AndreMiras/coveralls-python-action@develop
+        if: contains( matrix.os, 'ubuntu') && contains( matrix.python-version, '3.11')
+        #uses: coverallsapp/github-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           coveralls --service=github
+          
+  build_pip:
+    name: Pip Build-Test (${{ matrix.os }} Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+
+    defaults:
+        run:
+            shell: bash -el {0}
+
+    strategy:
+      fail-fast: False
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-13] #mac-13 intel, mac-latest is arm
+        python-version: ["3.11"]
+
+    steps:
+      - name: Setup GNU Fortran
+        if: false == contains( matrix.os, 'windows')
+        uses: awvwgk/setup-fortran@v1
+
+      - name: Install compiler
+        if: false == contains( matrix.os, 'windows')
+        id: install_cc
+        uses: rlalik/setup-cpp-compiler@master
+        with:
+          compiler: clang
+          
+      - name: Install mingw-w64 on Windows
+        if: contains( matrix.os, 'windows')
+        uses: msys2/setup-msys2@v2
+        with:
+          path-type: inherit
+          install: |
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-gcc-fortran
+            
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        id: cp
+        with:
+            python-version: ${{ matrix.python-version }}
+            update-environment: true
+
+      - name: Set compilers
+        if: false == contains( matrix.os, 'windows')
+        run: |
+            echo "CC=${{ steps.install_cc.outputs.cc }}" >> $GITHUB_ENV
+            echo "CXX=${{ steps.install_cc.outputs.cxx }}" >> $GITHUB_ENV
+
+      - name: Install WISDEM with setup
+        env:
+            MESON_ARGS: "-Dpython_target=${{ steps.cp.outputs.python-path }}"
+        run: |
+          '${{ steps.cp.outputs.python-path }}' -m pip install --upgrade pip pytest numpy
+          '${{ steps.cp.outputs.python-path }}' -m pip install -v .
+
+      - name: Limited test
+        run: |
+          cd wisdem/test/test_gluecode
+          pytest -p no:warnings --disable-warnings test_g*

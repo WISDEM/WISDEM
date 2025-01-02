@@ -31,8 +31,8 @@ class LandBOSSE(om.Group):
 
         self.set_input_defaults("turbine_spacing_rotor_diameters", 4)
         self.set_input_defaults("row_spacing_rotor_diameters", 10)
-        self.set_input_defaults("commissioning_pct", 0.01)
-        self.set_input_defaults("decommissioning_pct", 0.15)
+        self.set_input_defaults("commissioning_cost_kW", 44.0, units="USD/kW")
+        self.set_input_defaults("decommissioning_cost_kW", 58.0, units="USD/kW")
         self.set_input_defaults("trench_len_to_substation_km", 50.0, units="km")
         self.set_input_defaults("interconnect_voltage_kV", 130.0, units="kV")
 
@@ -163,8 +163,8 @@ class LandBOSSE_API(om.ExplicitComponent):
         # Disabled due to Pandas conflict right now.
         self.add_input("labor_cost_multiplier", val=1.0, desc="Labor cost multiplier")
 
-        self.add_input("commissioning_pct", 0.01)
-        self.add_input("decommissioning_pct", 0.15)
+        self.add_input("commissioning_cost_kW", 44.0, units="USD/kW", desc="Commissioning cost.")
+        self.add_input("decommissioning_cost_kW", 58.0, units="USD/kW", desc="Decommissioning cost.")
 
     def setup_discrete_inputs_that_are_not_dataframes(self):
         """
@@ -445,7 +445,7 @@ class LandBOSSE_API(om.ExplicitComponent):
 
         # Calculate project size in megawatts
         incomplete_input_dict["project_size_megawatts"] = float(
-            discrete_inputs["num_turbines"] * inputs["turbine_rating_MW"]
+            discrete_inputs["num_turbines"] * inputs["turbine_rating_MW"][0]
         )
 
         # Needed to avoid distributed wind keys
@@ -590,23 +590,20 @@ class LandBOSSE_API(om.ExplicitComponent):
                 installation_per_project += row["Cost / project"]
                 installation_per_kW += row["Cost / kW"]
 
-        commissioning_pct = inputs["commissioning_pct"]
-        decommissioning_pct = inputs["decommissioning_pct"]
+        commissioning_kW = inputs["commissioning_cost_kW"]
+        decommissioning_kW = inputs["decommissioning_cost_kW"]
 
-        commissioning_per_project = bos_per_project * commissioning_pct
-        decomissioning_per_project = bos_per_project * decommissioning_pct
-        commissioning_per_kW = bos_per_kw * commissioning_pct
-        decomissioning_per_kW = bos_per_kw * decommissioning_pct
+        capacity = bos_per_project / bos_per_kw
 
-        outputs["total_capex_kW"] = np.round(bos_per_kw + commissioning_per_kW + decomissioning_per_kW, 0)
-        outputs["total_capex"] = np.round(bos_per_project + commissioning_per_project + decomissioning_per_project, 0)
-        outputs["bos_capex"] = round(bos_per_project, 0)
-        outputs["bos_capex_kW"] = round(bos_per_kw, 0)
-        outputs["installation_capex"] = round(installation_per_project, 0)
-        outputs["installation_capex_kW"] = round(installation_per_kW, 0)
+        outputs["bos_capex"] = bos_per_project
+        outputs["bos_capex_kW"] = bos_per_kw
+        outputs["total_capex_kW"] = bos_per_kw + commissioning_kW + decommissioning_kW
+        outputs["total_capex"] = bos_per_project + capacity*(commissioning_kW + decommissioning_kW)
+        outputs["installation_capex"] = installation_per_project
+        outputs["installation_capex_kW"] = installation_per_kW
 
         actual_construction_months = master_output_dict["actual_construction_months"]
-        outputs["installation_time_months"] = round(actual_construction_months, 0)
+        outputs["installation_time_months"] = actual_construction_months
 
     def modify_component_lists(self, inputs, discrete_inputs):
         """
@@ -651,10 +648,10 @@ class LandBOSSE_API(om.ExplicitComponent):
         kg_per_tonne = 1000
 
         # Get the hub height
-        hub_height_meters = float(inputs["hub_height_meters"])
+        hub_height_meters = float(inputs["hub_height_meters"][0])
 
         # Make the nacelle. This does not include the hub or blades.
-        nacelle_mass_kg = float(inputs["nacelle_mass"])
+        nacelle_mass_kg = float(inputs["nacelle_mass"][0])
         nacelle = input_components[input_components["Component"].str.startswith("Nacelle")].iloc[0].copy()
         if inputs["nacelle_mass"] != use_default_component_data:
             nacelle["Mass tonne"] = nacelle_mass_kg / kg_per_tonne
@@ -663,7 +660,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         output_components_list.append(nacelle)
 
         # Make the hub
-        hub_mass_kg = float(inputs["hub_mass"])
+        hub_mass_kg = float(inputs["hub_mass"][0])
         hub = input_components[input_components["Component"].str.startswith("Hub")].iloc[0].copy()
         hub["Lift height m"] = hub["Lever arm m"] = hub_height_meters
         if hub_mass_kg != use_default_component_data:
@@ -676,29 +673,29 @@ class LandBOSSE_API(om.ExplicitComponent):
         # There is always a hub height, so use that as the lift height
         blade["Lift height m"] = blade["Lever arm m"] = hub_height_meters
 
-        if float(inputs["blade_drag_coefficient"]) != use_default_component_data:
-            blade["Coeff drag"] = float(inputs["blade_drag_coefficient"])
+        if float(inputs["blade_drag_coefficient"][0]) != use_default_component_data:
+            blade["Coeff drag"] = float(inputs["blade_drag_coefficient"][0])
 
-        if float(inputs["blade_lever_arm"]) != use_default_component_data:
-            blade["Lever arm m"] = float(inputs["blade_lever_arm"])
+        if float(inputs["blade_lever_arm"][0]) != use_default_component_data:
+            blade["Lever arm m"] = float(inputs["blade_lever_arm"][0])
 
-        if float(inputs["blade_install_cycle_time"]) != use_default_component_data:
-            blade["Cycle time installation hrs"] = float(inputs["blade_install_cycle_time"])
+        if float(inputs["blade_install_cycle_time"][0]) != use_default_component_data:
+            blade["Cycle time installation hrs"] = float(inputs["blade_install_cycle_time"][0])
 
-        if float(inputs["blade_offload_hook_height"]) != use_default_component_data:
+        if float(inputs["blade_offload_hook_height"][0]) != use_default_component_data:
             blade["Offload hook height m"] = hub_height_meters
 
-        if float(inputs["blade_offload_cycle_time"]) != use_default_component_data:
-            blade["Offload cycle time hrs"] = inputs["blade_offload_cycle_time"]
+        if float(inputs["blade_offload_cycle_time"][0]) != use_default_component_data:
+            blade["Offload cycle time hrs"] = inputs["blade_offload_cycle_time"][0]
 
-        if float(inputs["blade_drag_multiplier"]) != use_default_component_data:
-            blade["Multiplier drag rotor"] = inputs["blade_drag_multiplier"]
+        if float(inputs["blade_drag_multiplier"][0]) != use_default_component_data:
+            blade["Multiplier drag rotor"] = inputs["blade_drag_multiplier"][0]
 
-        if float(inputs["blade_mass"]) != use_default_component_data:
-            blade["Mass tonne"] = float(inputs["blade_mass"]) / kg_per_tonne
+        if float(inputs["blade_mass"][0]) != use_default_component_data:
+            blade["Mass tonne"] = float(inputs["blade_mass"][0]) / kg_per_tonne
 
-        if float(inputs["blade_surface_area"]) != use_default_component_data:
-            blade["Surface area sq m"] = float(inputs["blade_surface_area"])
+        if float(inputs["blade_surface_area"][0]) != use_default_component_data:
+            blade["Surface area sq m"] = float(inputs["blade_surface_area"][0])
 
         # Assume that number_of_blades always has a reasonable value. It's
         # default count when the discrete input is declared of 3 is always
@@ -711,8 +708,8 @@ class LandBOSSE_API(om.ExplicitComponent):
             output_components_list.append(blade_i)
 
         # Make tower sections
-        tower_mass_tonnes = float(inputs["tower_mass"]) / kg_per_tonne
-        tower_height_m = hub_height_meters - float(inputs["foundation_height"])
+        tower_mass_tonnes = float(inputs["tower_mass"][0]) / kg_per_tonne
+        tower_height_m = hub_height_meters - float(inputs["foundation_height"][0])
         default_tower_section = input_components[input_components["Component"].str.startswith("Tower")].iloc[0]
         tower_sections = self.make_tower_sections(tower_mass_tonnes, tower_height_m, default_tower_section)
         output_components_list.extend(tower_sections)

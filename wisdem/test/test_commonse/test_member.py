@@ -48,10 +48,11 @@ class TestInputs(unittest.TestCase):
         self.opt["n_height"] = [5]
         self.opt["n_layers"] = [1]
         self.opt["n_ballasts"] = [3]
+        self.shape = "circular"
 
     def testDiscYAML_1Material(self):
         outputs = {}
-        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=2)
+        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=2, shape=self.shape)
         myobj.compute(self.inputs, outputs, self.discrete_inputs, self.discrete_outputs)
 
         myones = np.ones(4)
@@ -101,7 +102,7 @@ class TestInputs(unittest.TestCase):
         self.inputs["unit_cost_mat"] = np.array([1e1, 2e1, 2e1])
         self.discrete_inputs["material_names"] = ["steel", "slurry", "other"]
         self.opt["n_layers"] = [2]
-        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=3)
+        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=3, shape=self.shape)
         myobj.compute(self.inputs, outputs, self.discrete_inputs, self.discrete_outputs)
 
         # Define mixtures
@@ -128,7 +129,7 @@ class TestInputs(unittest.TestCase):
     def test_sconst(self):
         outputs = {}
         self.inputs["s_const1"] = 0.1
-        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=2)
+        myobj = member.DiscretizationYAML(options=self.opt, idx=0, n_mat=2, shape=self.shape)
         myobj.compute(self.inputs, outputs, self.discrete_inputs, self.discrete_outputs)
 
         npt.assert_equal(outputs["s"], np.array([0.0, 0.1, 0.5, 0.75, 1.0]))
@@ -141,6 +142,7 @@ class TestFullDiscretization(unittest.TestCase):
 
         self.inputs["s"] = np.array([0.0, 0.1, 0.3, 0.6, 1.0])
         self.inputs["height"] = 1e1
+        self.member_shape_variables = ["outer_diameter"]
         self.inputs["outer_diameter"] = 5.0 * np.ones(5)
         self.inputs["wall_thickness"] = 0.05 * np.ones(4)
         self.inputs["unit_cost"] = 1.0 * np.ones(4)
@@ -154,12 +156,12 @@ class TestFullDiscretization(unittest.TestCase):
         self.inputs["joint1"] = np.zeros(3)
         self.inputs["joint2"] = np.r_[np.zeros(2), 1e2]
 
-        self.mydis = member.MemberDiscretization(n_height=5, n_refine=2)
+        self.mydis = member.MemberDiscretization(n_height=5, n_refine=2, member_shape_variables=self.member_shape_variables)
 
     def testRefine2(self):
         self.mydis.compute(self.inputs, self.outputs)
         npt.assert_array_equal(self.outputs["z_full"], np.array([0.0, 0.5, 1.0, 2.0, 3.0, 4.5, 6.0, 8.0, 10.0]))
-        npt.assert_array_equal(self.outputs["d_full"], 5.0 * np.ones(9))
+        npt.assert_array_equal(self.outputs["outer_diameter_full"], 5.0 * np.ones(9))
         npt.assert_array_equal(self.outputs["t_full"], 0.05 * np.ones(8))
         npt.assert_array_equal(self.outputs["E_full"], 2e9 * np.ones(8))
         npt.assert_array_equal(self.outputs["G_full"], 2e7 * np.ones(8))
@@ -180,7 +182,7 @@ class TestFullDiscretization(unittest.TestCase):
         self.mydis.compute(self.inputs, self.outputs)
         npt.assert_almost_equal(self.outputs["s_full"], np.array([0.0, 0.05, 0.1, 0.2, 0.3, 0.45, 0.6, 0.8, 1.0]))
         npt.assert_array_equal(self.outputs["z_full"], np.array([0.0, 0.5, 1.0, 2.0, 3.0, 4.5, 6.0, 8.0, 10.0]))
-        npt.assert_array_equal(self.outputs["d_full"], np.array([5.0, 5.0, 5.0, 5.5, 6.0, 6.5, 7.0, 7.0, 7.0]))
+        npt.assert_array_equal(self.outputs["outer_diameter_full"], np.array([5.0, 5.0, 5.0, 5.5, 6.0, 6.5, 7.0, 7.0, 7.0]))
         npt.assert_array_equal(self.outputs["t_full"], 1e-2 * np.array([5.0, 5.0, 5.0, 5.0, 6.0, 6.0, 7.0, 7.0]))
         npt.assert_array_equal(self.outputs["E_full"], 2e9 * np.ones(8))
         npt.assert_array_equal(self.outputs["G_full"], 2e7 * np.ones(8))
@@ -200,7 +202,7 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["s_full"] = np.linspace(0, 1, NPTS)
         self.inputs["z_full"] = 100 * np.linspace(0, 1, NPTS)
         self.inputs["height"] = 100
-        self.inputs["d_full"] = 10.0 * myones
+        self.inputs["outer_diameter_full"] = 10.0 * myones
         self.inputs["t_full"] = 0.05 * secones
         self.inputs["rho_full"] = 1e3 * secones
         self.inputs["E_full"] = 1e6 * secones
@@ -239,12 +241,16 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["s_ghost1"] = 0.0
         self.inputs["s_ghost2"] = 1.0
 
+        self.inputs["total_mass_user"] = 0.0
+
         opt = {}
         opt["n_height"] = [NHEIGHT]
         opt["n_ballasts"] = [3]
         opt["n_bulkheads"] = [nbulk]
         opt["n_axial_joints"] = [3]
+        opt["outer_shape"] = ["circular"]
         self.mem = member.MemberComplex(options=opt, idx=0)
+        self.mem.setup()
         self.mem.sections = member.SortedDict()
 
     def testSortedDict(self):
@@ -665,7 +671,7 @@ class TestMemberComponent(unittest.TestCase):
 
     def testBallast(self):
         self.mem.add_main_sections(self.inputs, self.outputs)
-        self.mem.add_ballast_sections(self.inputs, self.outputs)
+        self.mem.add_circular_ballast_sections(self.inputs, self.outputs)
 
         area = 0.25 * np.pi * 9.9**2
         h = 10 * np.pi / area
@@ -694,7 +700,7 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["s_ghost1"] = 0.1
         self.inputs["s_ghost2"] = 1.0
         self.mem.add_main_sections(self.inputs, self.outputs)
-        self.mem.add_ballast_sections(self.inputs, self.outputs)
+        self.mem.add_circular_ballast_sections(self.inputs, self.outputs)
 
         area = 0.25 * np.pi * 9.9**2
         h = 10 * np.pi / area
@@ -722,7 +728,7 @@ class TestMemberComponent(unittest.TestCase):
         self.mem.add_main_sections(self.inputs, self.outputs)
         self.mem.add_bulkhead_sections(self.inputs, self.outputs)
         self.mem.add_ring_stiffener_sections(self.inputs, self.outputs)
-        self.mem.add_ballast_sections(self.inputs, self.outputs)
+        self.mem.add_circular_ballast_sections(self.inputs, self.outputs)
         self.mem.compute_mass_properties(self.inputs, self.outputs)
 
         m_shell = np.pi * 0.25 * (10.0**2 - 9.9**2) * 1e3 * 1.1 * 100.0
@@ -809,6 +815,11 @@ class TestMemberComponent(unittest.TestCase):
         nout = np.where(s_all == NULL)[0][0]
         self.assertEqual(nout, NPTS + 3 + 2 * nbulk - 2 + 2 * 5)
 
+    def testUserMass(self):
+        self.inputs["total_mass_user"] = 123456.0
+        self.mem.compute(self.inputs, self.outputs)
+        self.assertEqual(self.outputs["total_mass"], 123456.0)
+
     def testDeconflict(self):
         self.inputs["bulkhead_grid"] = np.array([0.0, 0.1, 1.0])
         self.mem.add_main_sections(self.inputs, self.outputs)
@@ -833,7 +844,7 @@ class TestHydro(unittest.TestCase):
         npts = member.get_nfull(n_height)
         self.inputs["s_full"] = np.linspace(0, 1.0, npts)
         self.inputs["z_full"] = np.linspace(0, 50.0, npts)
-        self.inputs["d_full"] = 10.0 * np.ones(npts)
+        self.inputs["outer_diameter_full"] = 10.0 * np.ones(npts)
         self.inputs["s_all"] = np.linspace(0, 1.0, 2 * npts)
         self.inputs["nodes_xyz"] = np.c_[
             1 * np.ones(2 * npts), 2 * np.ones(2 * npts), np.linspace(0, 50.0, 2 * npts) - 75
@@ -859,11 +870,11 @@ class TestHydro(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["buoyancy_force"], V_expect * rho_w * g)
         npt.assert_almost_equal(self.outputs["center_of_buoyancy"], cb_expect)
         self.assertEqual(self.outputs["idx_cb"], npts - 1)  # Halfway node point
-        self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
+        self.assertAlmostEqual(self.outputs["Iwaterx"], Ixx)
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
         npt.assert_equal(self.outputs["waterline_centroid"], [0.0, 0.0])
         npt.assert_almost_equal(self.outputs["z_dim"], np.linspace(0, 50.0, npts) - 75)
-        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["d_full"])
+        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["outer_diameter_full"])
 
         m_a = np.zeros(6)
         m_a[:2] = V_expect * rho_w
@@ -892,11 +903,11 @@ class TestHydro(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["buoyancy_force"], V_expect * rho_w * g)
         npt.assert_almost_equal(self.outputs["center_of_buoyancy"], cb_expect)
         self.assertEqual(self.outputs["idx_cb"], int(0.5 * npts - 1))
-        self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
+        self.assertAlmostEqual(self.outputs["Iwaterx"], Ixx)
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
         npt.assert_equal(self.outputs["waterline_centroid"], [1.0, 2.0])
         npt.assert_almost_equal(self.outputs["z_dim"], np.linspace(0, 50.0, npts) - 25)
-        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["d_full"])
+        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["outer_diameter_full"])
 
         m_a = np.zeros(6)
         m_a[:2] = V_expect * rho_w
@@ -921,11 +932,11 @@ class TestHydro(unittest.TestCase):
         self.assertAlmostEqual(self.outputs["buoyancy_force"], V_expect * rho_w * g)
         npt.assert_almost_equal(self.outputs["center_of_buoyancy"], cb_expect)
         self.assertEqual(self.outputs["idx_cb"], int(0.5 * npts - 1))
-        self.assertAlmostEqual(self.outputs["Iwater"], Ixx)
+        self.assertAlmostEqual(self.outputs["Iwaterx"], Ixx)
         self.assertAlmostEqual(self.outputs["Awater"], Axx)
         npt.assert_almost_equal(self.outputs["waterline_centroid"], [0.0, 0.0])
         npt.assert_almost_equal(self.outputs["z_dim"], np.linspace(0, 50.0, npts) - 25)
-        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["d_full"] / np.cos(0.25 * np.pi))
+        npt.assert_almost_equal(self.outputs["d_eff"], self.inputs["outer_diameter_full"] / np.cos(0.25 * np.pi))
 
         m_a = np.zeros(6)
         m_a[:2] = V_expect * rho_w
@@ -1083,6 +1094,7 @@ class TestGroup(unittest.TestCase):
         opt["n_bulkheads"] = nbulk = [4]
         opt["n_ballasts"] = [2]
         opt["n_axial_joints"] = [3]
+        opt["outer_shape"] = ["circular"]
 
         prob = om.Problem(reports=False)
 
@@ -1151,14 +1163,15 @@ class TestGroup(unittest.TestCase):
 
 
 def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestInputs))
-    suite.addTest(unittest.makeSuite(TestFullDiscretization))
-    suite.addTest(unittest.makeSuite(TestMemberComponent))
-    suite.addTest(unittest.makeSuite(TestHydro))
-    suite.addTest(unittest.makeSuite(TestGlobal2Member))
-    suite.addTest(unittest.makeSuite(TestGroup))
-    return suite
+    suite = [
+        unittest.TestLoader().loadTestsFromTestCase(TestInputs),
+        unittest.TestLoader().loadTestsFromTestCase(TestFullDiscretization),
+        unittest.TestLoader().loadTestsFromTestCase(TestMemberComponent),
+        unittest.TestLoader().loadTestsFromTestCase(TestHydro),
+        unittest.TestLoader().loadTestsFromTestCase(TestGlobal2Member),
+        unittest.TestLoader().loadTestsFromTestCase(TestGroup),
+    ]
+    return unittest.TestSuite(suite)
 
 
 if __name__ == "__main__":

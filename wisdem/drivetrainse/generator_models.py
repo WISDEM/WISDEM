@@ -98,7 +98,7 @@ def winding_factor(Sin, b, c, p, m):
 
     R = S if S % 2 == 0 else S + 1
 
-    windings_df = (pd.DataFrame(index=Seq_f.index, columns=Seq_f.columns[1:R])).fillna(0)
+    windings_df = pd.DataFrame(index=Seq_f.index, columns=Seq_f.columns[1:R], data=np.zeros((len(Seq_f), R-1)))
     windings_idx = list(windings_df.loc[0])
     windings_arrange = list(windings_df.loc[1])
 
@@ -319,6 +319,8 @@ class GeneratorBase(om.ExplicitComponent):
         Structural Steel density
     rho_PM : float, [kg*m**-3]
         Magnet density
+    generator_mass_user : float, [kg]
+        User input override of generator mass
 
     Returns
     -------
@@ -505,6 +507,9 @@ class GeneratorBase(om.ExplicitComponent):
         self.add_input("rho_Fe", val=7700.0, units="kg*m**-3")
         self.add_input("rho_Fes", val=7850.0, units="kg*m**-3")
         self.add_input("rho_PM", val=7450.0, units="kg*m**-3")
+
+        # Overrides
+        self.add_input("generator_mass_user", 0.0, units="kg")
 
         # Magnetic loading
         self.add_output("B_rymax", val=0.0, units="T")
@@ -731,51 +736,50 @@ class PMSG_Outer(GeneratorBase):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack inputs
-        rad_ag = float(inputs["rad_ag"])
-        len_s = float(inputs["len_s"])
-        p = float(inputs["p"])
-        b = float(inputs["b"])
-        c = float(inputs["c"])
-        h_m = float(inputs["h_m"])
-        h_ys = float(inputs["h_ys"])
-        h_yr = float(inputs["h_yr"])
-        h_s = float(inputs["h_s"])
-        h_ss = float(inputs["h_ss"])
-        h_0 = float(inputs["h_0"])
-        B_tmax = float(inputs["B_tmax"])
-        E_p = float(inputs["E_p"])
-        P_mech = float(inputs["P_mech"])
-        P_av_v = float(inputs["machine_rating"])
-        h_sr = float(inputs["h_sr"])
-        t_r = float(inputs["t_r"])
-        t_s = float(inputs["t_s"])
-        R_sh = 0.5 * float(inputs["D_shaft"])
-        R_no = 0.5 * float(inputs["D_nose"])
-        y_sh = float(inputs["y_sh"])
-        y_bd = float(inputs["y_bd"])
-        rho_Fes = float(inputs["rho_Fes"])
-        rho_Fe = float(inputs["rho_Fe"])
-        sigma = float(inputs["sigma"])
+        rad_ag = float(inputs["rad_ag"][0])
+        len_s = float(inputs["len_s"][0])
+        b = float(inputs["b"][0])
+        c = float(inputs["c"][0])
+        h_m = float(inputs["h_m"][0])
+        h_ys = float(inputs["h_ys"][0])
+        h_yr = float(inputs["h_yr"][0])
+        h_s = float(inputs["h_s"][0])
+        h_ss = float(inputs["h_ss"][0])
+        h_0 = float(inputs["h_0"][0])
+        B_tmax = float(inputs["B_tmax"][0])
+        E_p = float(inputs["E_p"][0])
+        P_mech = float(inputs["P_mech"][0])
+        P_av_v = float(inputs["machine_rating"][0])
+        h_sr = float(inputs["h_sr"][0])
+        t_r = float(inputs["t_r"][0])
+        t_s = float(inputs["t_s"][0])
+        R_sh = 0.5 * float(inputs["D_shaft"][0])
+        R_no = 0.5 * float(inputs["D_nose"][0])
+        y_sh = float(inputs["y_sh"][0])
+        y_bd = float(inputs["y_bd"][0])
+        rho_Fes = float(inputs["rho_Fes"][0])
+        rho_Fe = float(inputs["rho_Fe"][0])
+        sigma = float(inputs["sigma"][0])
         shaft_rpm = inputs["shaft_rpm"]
 
         # Grab constant values
-        B_r = float(inputs["B_r"])
-        E = float(inputs["E"])
-        G = float(inputs["G"])
-        P_Fe0e = float(inputs["P_Fe0e"])
-        P_Fe0h = float(inputs["P_Fe0h"])
-        cofi = float(inputs["cofi"])
-        h_w = float(inputs["h_w"])
-        k_fes = float(inputs["k_fes"])
-        k_fills = float(inputs["k_fills"])
+        B_r = float(inputs["B_r"][0])
+        E = float(inputs["E"][0])
+        G = float(inputs["G"][0])
+        P_Fe0e = float(inputs["P_Fe0e"][0])
+        P_Fe0h = float(inputs["P_Fe0h"][0])
+        cofi = float(inputs["cofi"][0])
+        h_w = float(inputs["h_w"][0])
+        k_fes = float(inputs["k_fes"][0])
+        k_fills = float(inputs["k_fills"][0])
         m = int(discrete_inputs["m"])
-        mu_0 = float(inputs["mu_0"])
-        mu_r = float(inputs["mu_r"])
-        p = float(inputs["p"])
-        phi = float(inputs["phi"])
-        ratio_mw2pp = float(inputs["ratio_mw2pp"])
-        resist_Cu = float(inputs["resist_Cu"])
-        v = float(inputs["v"])
+        mu_0 = float(inputs["mu_0"][0])
+        mu_r = float(inputs["mu_r"][0])
+        p = float(inputs["p"][0])
+        phi = float(inputs["phi"][0])
+        ratio_mw2pp = float(inputs["ratio_mw2pp"][0])
+        resist_Cu = float(inputs["resist_Cu"][0])
+        v = float(inputs["v"][0])
 
         """
         #Assign values to universal constants
@@ -1190,7 +1194,6 @@ class PMSG_Outer(GeneratorBase):
         outputs["y_ar"] = y_ar
         outputs["y_allow_r"] = y_allow_r
         outputs["twist_r"] = twist_r
-        outputs["Structural_mass_rotor"] = Structural_mass_rotor
         outputs["TC1"] = TC1
         outputs["TC2r"] = TC2r
         outputs["u_as"] = u_as
@@ -1198,12 +1201,19 @@ class PMSG_Outer(GeneratorBase):
         outputs["y_as"] = y_as
         outputs["y_allow_s"] = y_allow_s
         outputs["twist_s"] = twist_s
-        outputs["Structural_mass_stator"] = Structural_mass_stator
         outputs["TC2s"] = TC2s
-        outputs["Structural_mass"] = outputs["Structural_mass_rotor"] + outputs["Structural_mass_stator"]
-        outputs["stator_mass"] = Stator + outputs["Structural_mass_stator"]
-        outputs["rotor_mass"] = Rotor + outputs["Structural_mass_rotor"]
-        outputs["generator_mass"] = Stator + Rotor + outputs["Structural_mass"]
+        mass_struct = Structural_mass_rotor + Structural_mass_stator
+        mass_stator = Stator + Structural_mass_stator
+        mass_rotor = Rotor + Structural_mass_rotor
+        mass = Stator + Rotor + mass_struct
+        mass_user = float(inputs["generator_mass_user"][0])
+        coeff = 1.0 if mass_user == 0.0 else mass_user/mass
+        outputs["Structural_mass_rotor"] = coeff*Structural_mass_rotor
+        outputs["Structural_mass_stator"] = coeff*Structural_mass_stator
+        outputs["Structural_mass"] = coeff*mass_struct
+        outputs["stator_mass"] = coeff*mass_stator
+        outputs["rotor_mass"] = coeff*mass_rotor
+        outputs["generator_mass"] = coeff*mass
 
 
 # ----------------------------------------------------------------------------------------
@@ -1713,9 +1723,11 @@ class PMSG_Disc(GeneratorBase):
         outputs["TC2r"] = TC2r
         outputs["TC2s"] = TC2s
         outputs["R_out"] = R_out
-        outputs["Structural_mass"] = Structural_mass
-        outputs["generator_mass"] = Mass
         outputs["mass_PM"] = mass_PM
+        mass_user = float(inputs["generator_mass_user"][0])
+        coeff = 1.0 if mass_user == 0.0 else mass_user/Mass
+        outputs["Structural_mass"] = coeff*Structural_mass
+        outputs["generator_mass"] = coeff*Mass
 
 
 # ----------------------------------------------------------------------------------------
@@ -2167,9 +2179,11 @@ class PMSG_Arms(GeneratorBase):
         outputs["TC2r"] = TC2r
         outputs["TC2s"] = TC2s
         outputs["R_out"] = R_out
-        outputs["Structural_mass"] = Structural_mass
-        outputs["generator_mass"] = Mass
         outputs["mass_PM"] = mass_PM
+        mass_user = float(inputs["generator_mass_user"][0])
+        coeff = 1.0 if mass_user == 0.0 else mass_user/Mass
+        outputs["Structural_mass"] = coeff*Structural_mass
+        outputs["generator_mass"] = coeff*Mass
 
 
 # ----------------------------------------------------------------------------------------
@@ -2570,18 +2584,20 @@ class DFIG(GeneratorBase):
         outputs["L_r"] = L_r
         outputs["L_s"] = L_s
         outputs["L_sm"] = L_sm
-        outputs["generator_mass"] = Mass
         outputs["K_rad"] = K_rad
         outputs["Losses"] = Losses
 
         outputs["eandm_efficiency"] = np.maximum(eps, gen_eff)
         outputs["Copper"] = Copper
         outputs["Iron"] = Iron
-        outputs["Structural_mass"] = Structural_mass
         outputs["TC1"] = TC1
         outputs["TC2r"] = TC2r
 
         outputs["Current_ratio"] = Current_ratio
+        mass_user = float(inputs["generator_mass_user"][0])
+        coeff = 1.0 if mass_user == 0.0 else mass_user/Mass
+        outputs["Structural_mass"] = coeff*Structural_mass
+        outputs["generator_mass"] = coeff*Mass
 
 
 # ----------------------------------------------------------------------------------------
@@ -3014,7 +3030,6 @@ class SCIG(GeneratorBase):
         outputs["R_R"] = R_R[-1]
         outputs["L_s"] = L_s
         outputs["L_sm"] = L_sm
-        outputs["generator_mass"] = Mass
         outputs["K_rad"] = K_rad
         outputs["K_rad_UL"] = K_rad_UL
         outputs["K_rad_LL"] = K_rad_LL
@@ -3022,9 +3037,12 @@ class SCIG(GeneratorBase):
         outputs["eandm_efficiency"] = np.maximum(eps, gen_eff)
         outputs["Copper"] = Copper
         outputs["Iron"] = Iron
-        outputs["Structural_mass"] = Structural_mass
         outputs["TC1"] = TC1
         outputs["TC2r"] = TC2r
+        mass_user = float(inputs["generator_mass_user"][0])
+        coeff = 1.0 if mass_user == 0.0 else mass_user/Mass
+        outputs["Structural_mass"] = coeff*Structural_mass
+        outputs["generator_mass"] = coeff*Mass
 
 
 # ----------------------------------------------------------------------------------------
@@ -3644,8 +3662,10 @@ class EESG(GeneratorBase):
         outputs["TC2r"] = TC2r
         outputs["TC2s"] = TC2s
         outputs["R_out"] = R_out
-        outputs["Structural_mass"] = Structural_mass
-        outputs["generator_mass"] = Mass
+        mass_user = float(inputs["generator_mass_user"][0])
+        coeff = 1.0 if mass_user == 0.0 else mass_user/Mass
+        outputs["Structural_mass"] = coeff*Structural_mass
+        outputs["generator_mass"] = coeff*Mass
 
 
 # ----------------------------------------------------------------------------------------

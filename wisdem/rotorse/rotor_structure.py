@@ -29,6 +29,8 @@ class BladeCurvature(ExplicitComponent):
         self.add_input("precurve", val=np.zeros(n_span), units="m", desc="location in blade x-coordinate")
         self.add_input("presweep", val=np.zeros(n_span), units="m", desc="location in blade y-coordinate")
         self.add_input("precone", val=0.0, units="deg", desc="precone angle")
+        self.add_input("Rhub", val=0.0, units="m", desc="hub radius")
+        self.add_input("blade_span_cg", val=0.0, units="m", desc="Distance along the blade span for its center of gravity")
 
         # Outputs
         self.add_output(
@@ -44,13 +46,16 @@ class BladeCurvature(ExplicitComponent):
             "z_az", val=np.zeros(n_span), units="m", desc="location of blade in azimuth z-coordinate system"
         )
         self.add_output("s", val=np.zeros(n_span), units="m", desc="cumulative path length along blade")
+        self.add_output("blades_cg_hubcc", val=0.0, units="m", desc="cg of all blades relative to hub along shaft axis. Distance is should be interpreted as negative for upwind and positive for downwind turbines")
 
     def compute(self, inputs, outputs):
         r = inputs["r"]
         precurve = inputs["precurve"]
         presweep = inputs["presweep"]
         precone = inputs["precone"]
-
+        r_cg = inputs["blade_span_cg"]
+        Rhub = inputs["Rhub"]
+        
         n = len(r)
         dx_dx = np.eye(3 * n)
 
@@ -67,9 +72,15 @@ class BladeCurvature(ExplicitComponent):
         outputs["z_az"] = z_az
         outputs["s"] = s
 
+        # Compute cg location of all blades in hub coordinates
+        cone_cg = np.interp(r_cg, r, totalCone)
+        cg = (r_cg + Rhub) * np.sin(np.deg2rad(cone_cg))
+        outputs["blades_cg_hubcc"] = cg
 
-class TotalLoads(ExplicitComponent):
-    # OpenMDAO component that takes as input the rotor configuration (tilt, cone), the blade twist and mass distributions, and the blade aerodynamic loading, and computes the total loading including gravity and centrifugal forces
+
+class TotalBladeLoads(ExplicitComponent):
+    # OpenMDAO component that takes as input the rotor configuration (tilt, cone), the blade twist and mass distributions, 
+    # and the blade aerodynamic loading, and computes the blade loading including gravity and centrifugal forces
     def initialize(self):
         self.options.declare("modeling_options")
 
@@ -244,6 +255,11 @@ class RunFrame3DD(ExplicitComponent):
             desc="6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)",
         )
         self.add_output(
+            "tors_mode_shapes",
+            np.zeros((n_freq2, 5)),
+            desc="6-degree polynomial coefficients of mode shapes in the torsional direction (x^2..x^6, no linear or constant term)",
+        )
+        self.add_output(
             "all_mode_shapes",
             np.zeros((n_freq, 5)),
             desc="6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)",
@@ -259,6 +275,12 @@ class RunFrame3DD(ExplicitComponent):
             np.zeros(n_freq2),
             units="Hz",
             desc="Frequencies associated with mode shapes in the edge direction",
+        )
+        self.add_output(
+            "tors_mode_freqs",
+            np.zeros(n_freq2),
+            units="Hz",
+            desc="Frequencies associated with mode shapes in the torsional direction",
         )
         self.add_output(
             "freqs",
@@ -343,7 +365,9 @@ class RunFrame3DD(ExplicitComponent):
         Px_af = inputs["Px_af"]
         Py_af = inputs["Py_af"]
         Pz_af = inputs["Pz_af"]
-        # np.savez('nrel5mw_test.npz',r=r,x_az=x_az,y_az=y_az,z_az=z_az,theta=theta,x_ec=x_ec,y_ec=y_ec,A=A,rhoA=rhoA,rhoJ=rhoJ,GJ=GJ,EA=EA,EIxx=EIxx,EIyy=EIyy,EIxy=EIxy,Px_af=Px_af,Py_af=Py_af,Pz_af=Pz_af)
+        #np.savez('nrel5mw_test.npz',
+        #         r=r,x_az=x_az,y_az=y_az,z_az=z_az,theta=theta,x_ec=x_ec,y_ec=y_ec,A=A,rhoA=rhoA,
+        #         rhoJ=rhoJ,GJ=GJ,EA=EA,EIxx=EIxx,EIyy=EIyy,EIxy=EIxy,Px_af=Px_af,Py_af=Py_af,Pz_af=Pz_af)
 
         # Determine principal C.S. (with swap of x, y for profile c.s.)
         # Can get to Hansen's c.s. from Precomp's c.s. by rotating around z -90 deg, then y by 180 (swap x-y)
@@ -387,7 +411,7 @@ class RunFrame3DD(ExplicitComponent):
         # Pinned at root
         rnode = np.array([1])
         rigid = np.array([1e16])
-        reactions = pyframe3dd.ReactionData(rnode, rigid, rigid, rigid, rigid, rigid, rigid, float(rigid))
+        reactions = pyframe3dd.ReactionData(rnode, rigid, rigid, rigid, rigid, rigid, rigid, float(rigid[0]))
         # -----------------------------------
 
         # ------ frame element data ------------
@@ -483,13 +507,15 @@ class RunFrame3DD(ExplicitComponent):
 
         # Mode shapes and frequencies
         n_freq2 = int(self.n_freq / 2)
-        freq_x, freq_y, _, mshapes_x, mshapes_y, _ = util.get_xyz_mode_shapes(
-            r, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
+        freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
+            r, modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf,
         )
         freq_x = freq_x[:n_freq2]
         freq_y = freq_y[:n_freq2]
+        freq_z = freq_z[:n_freq2]
         mshapes_x = mshapes_x[:n_freq2, :]
         mshapes_y = mshapes_y[:n_freq2, :]
+        mshapes_z = mshapes_z[:n_freq2, :]
 
         # shear and bending w.r.t. principal axes
         F2 = np.r_[-forces.Vz[iCase, 0], forces.Vz[iCase, 1::2]]  # TODO verify if this is correct
@@ -503,10 +529,12 @@ class RunFrame3DD(ExplicitComponent):
         outputs["freqs"] = modal.freq[: self.n_freq]
         outputs["edge_mode_shapes"] = mshapes_y
         outputs["flap_mode_shapes"] = mshapes_x
+        outputs["tors_mode_shapes"] = mshapes_z
         # Dense numpy command that interleaves and alternates flap and edge modes
         outputs["all_mode_shapes"] = np.c_[mshapes_x, mshapes_y].flatten().reshape((self.n_freq, 5))
         outputs["edge_mode_freqs"] = freq_y
         outputs["flap_mode_freqs"] = freq_x
+        outputs["tors_mode_freqs"] = freq_z
         outputs["freq_distance"] = freq_y[0] / freq_x[0]
         # Displacements in global (blade) c.s.
         outputs["dx"] = -displacements.dx[iCase, :]
@@ -676,7 +704,9 @@ class ComputeStrains(ExplicitComponent):
         M2_principle = inputs["M2"]
         alpha = inputs["alpha"]
         n_sec = EA.size
-        # np.savez('nrel5mw_test2.npz',EA=EA,EI11=EI11,EI22=EI22,xu_spar=xu_spar,xl_spar=xl_spar,yu_spar=yu_spar,yl_spar=yl_spar,xu_te=xu_te,xl_te=xl_te,yu_te=yu_te,yl_te=yl_te, F3=F3, M1=M1, M2=M2, alpha=alpha)
+        #np.savez('nrel5mw_test2.npz',
+        #         EA=EA,EI11=EI11,EI22=EI22,xu_spar=xu_spar,xl_spar=xl_spar,yu_spar=yu_spar,yl_spar=yl_spar,
+        #         xu_te=xu_te,xl_te=xl_te,yu_te=yu_te,yl_te=yl_te, F3=F3_principle, M1=M1_principle, M2=M2_principle, alpha=alpha)
 
         ca = np.cos(np.deg2rad(alpha))
         sa = np.sin(np.deg2rad(alpha))
@@ -811,10 +841,11 @@ class DesignConstraints(ExplicitComponent):
         n_freq = rotorse_options["n_freq"]
         n_freq2 = int(n_freq / 2)
         opt_options = self.options["opt_options"]
-        n_opt_spar_cap_ss = opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]
-        n_opt_spar_cap_ps = opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]
-        n_opt_te_ss = opt_options["design_variables"]["blade"]["structure"]["te_ss"]["n_opt"]
-        n_opt_te_ps = opt_options["design_variables"]["blade"]["structure"]["te_ps"]["n_opt"]
+        spars_tereinf = rotorse_options["spars_tereinf"]
+        n_opt_spar_cap_ss = opt_options["design_variables"]["blade"]["n_opt_struct"][spars_tereinf[0]]
+        n_opt_spar_cap_ps = opt_options["design_variables"]["blade"]["n_opt_struct"][spars_tereinf[1]]
+        n_opt_te_ss = opt_options["design_variables"]["blade"]["n_opt_struct"][spars_tereinf[2]]
+        n_opt_te_ps = opt_options["design_variables"]["blade"]["n_opt_struct"][spars_tereinf[3]]
 
         # Inputs strains
         self.add_input(
@@ -885,6 +916,12 @@ class DesignConstraints(ExplicitComponent):
             units="Hz",
             desc="Frequencies associated with mode shapes in the edge direction",
         )
+        self.add_input(
+            "tors_mode_freqs",
+            np.zeros(n_freq2),
+            units="Hz",
+            desc="Frequencies associated with mode shapes in the torsional direction",
+        )
 
         self.add_discrete_input("blade_number", 3)
 
@@ -951,6 +988,7 @@ class DesignConstraints(ExplicitComponent):
         threeP = discrete_inputs["blade_number"] * inputs["rated_Omega"] / 60.0
         flap_f = inputs["flap_mode_freqs"]
         edge_f = inputs["edge_mode_freqs"]
+        tors_f = inputs["tors_mode_freqs"]
         gamma = self.options["modeling_options"]["WISDEM"]["RotorSE"]["gamma_freq"]
         outputs["constr_flap_f_margin"] = np.array(
             [min([threeP - (2 - gamma) * f, gamma * f - threeP]) for f in flap_f]
@@ -1305,7 +1343,6 @@ class BladeJointSizing(ExplicitComponent):
             val=False,
             desc="whether discrete calculation is allowed. Set to False if in optimization loop. [bool]",
         )  # (hardcoded) TODO could add as user input
-        self.add_input("blade_mass_re", val=0, units="kg", desc="blade mass")
         self.add_input(
             "joint_nonmaterial_cost",
             val=0.0,
@@ -1345,7 +1382,6 @@ class BladeJointSizing(ExplicitComponent):
         # self.add_output("layer_offset_y_bjs", val=np.zeros((n_layers, n_span)), units="m",
         #            desc="2D array of the offset along the y axis to set the position of a layer. Positive values move the layer towards the trailing edge, negative values towards the leading edge. The first dimension represents each layer, the second dimension represents each entry along blade span.")
 
-        self.add_output("blade_mass", val=0, units="kg", desc="blade mass")
         self.add_output(
             "joint_material_cost", val=0, units="USD", desc="cost of joint metallic parts (bolts, washers, and inserts)"
         )
@@ -1468,7 +1504,7 @@ class BladeJointSizing(ExplicitComponent):
         w_layer = inputs["layer_width"]
         layer_start_nd = inputs["layer_start_nd"]
         layer_end_nd = inputs["layer_end_nd"]
-        bolt_spacing_dia = inputs["bolt_spacing_dia"]
+        bolt_spacing_dia = inputs["bolt_spacing_dia"][0]
         ply_drop_slope = inputs["ply_drop_slope"]
         t_adhesive = inputs["t_adhesive"]
         t_max = inputs["t_max"]
@@ -1498,9 +1534,9 @@ class BladeJointSizing(ExplicitComponent):
         w_reinf = w_layer[ss_layer_i, i_span]
 
         # Loads
-        Mflap_ultimate = abs(inputs["M1"][i_span]) * load_factor
-        Medge_ultimate = abs(inputs["M2"][i_span]) * load_factor
-        Fflap_ultimate = abs(inputs["F2"][i_span]) * load_factor
+        Mflap_ultimate = np.abs(inputs["M1"][i_span]) * load_factor
+        Medge_ultimate = np.abs(inputs["M2"][i_span]) * load_factor
+        Fflap_ultimate = np.abs(inputs["F2"][i_span]) * load_factor
 
         # Fatigue factors
         a = inputs["a"]
@@ -1514,7 +1550,7 @@ class BladeJointSizing(ExplicitComponent):
         Medge_fatigue = Medge_ultimate * kp
 
         # Other
-        itermax = int(inputs["itermax"])
+        itermax = int(inputs["itermax"][0])
         discrete = inputs["discrete"]
 
         """ Loading calculations begin"""
@@ -1772,7 +1808,6 @@ class BladeJointSizing(ExplicitComponent):
         t_reinf_ratio = t_req_reinf / t_reinf
         w_reinf_ratio = w_req_reinf / w_reinf
 
-        outputs["blade_mass"] = inputs["blade_mass_re"] + m_add
         # outputs['layer_offset_y_bjs'] = offset
         # outputs['layer_start_nd_bjs'] = layer_start_nd
         # outputs['layer_end_nd_bjs'] = layer_end_nd
@@ -1785,7 +1820,8 @@ class BladeJointSizing(ExplicitComponent):
         outputs["joint_material_cost"] = cost_joint_materials
         outputs["joint_total_cost"] = cost_joint_materials + inputs["joint_nonmaterial_cost"]
 
-
+    
+        
 class RotorStructure(Group):
     # OpenMDAO group to compute the blade elastic properties, deflections, and loading
     def initialize(self):
@@ -1835,19 +1871,19 @@ class RotorStructure(Group):
         # self.add_subsystem('aero_storm_1yr',    CCBladeLoads(modeling_options = modeling_options), promotes=promoteListAeroLoads)
         # self.add_subsystem('aero_storm_50yr',   CCBladeLoads(modeling_options = modeling_options), promotes=promoteListAeroLoads)
         # Add centrifugal and gravity loading to aero loading
-        promotes = ["tilt", "theta", "rhoA", "z", "totalCone", "z_az"]
+        #promotes = ["tilt", "theta", "rhoA", "z", "totalCone", "z_az"]
         self.add_subsystem(
             "curvature",
             BladeCurvature(modeling_options=modeling_options),
-            promotes=["r", "precone", "precurve", "presweep", "3d_curv", "x_az", "y_az", "z_az"],
+            promotes=["r", "precone", "precurve", "presweep", "Rhub", "blade_span_cg", "3d_curv", "x_az", "y_az", "z_az"],
         )
-        promoteListTotalLoads = ["r", "theta", "tilt", "rhoA", "3d_curv", "z_az"]
+        promoteListTotalBladeLoads = ["r", "theta", "tilt", "rhoA", "3d_curv", "z_az"]
         self.add_subsystem(
-            "tot_loads_gust", TotalLoads(modeling_options=modeling_options), promotes=promoteListTotalLoads
+            "tot_loads_gust", TotalBladeLoads(modeling_options=modeling_options), promotes=promoteListTotalBladeLoads
         )
-        # self.add_subsystem('tot_loads_rated',       TotalLoads(modeling_options = modeling_options),      promotes=promoteListTotalLoads)
-        # self.add_subsystem('tot_loads_storm_1yr',   TotalLoads(modeling_options = modeling_options),      promotes=promoteListTotalLoads)
-        # self.add_subsystem('tot_loads_storm_50yr',  TotalLoads(modeling_options = modeling_options),      promotes=promoteListTotalLoads)
+        # self.add_subsystem('tot_loads_rated',       TotalBladeLoads(modeling_options = modeling_options),      promotes=promoteListTotalBladeLoads)
+        # self.add_subsystem('tot_loads_storm_1yr',   TotalBladeLoads(modeling_options = modeling_options),      promotes=promoteListTotalBladeLoads)
+        # self.add_subsystem('tot_loads_storm_50yr',  TotalBladeLoads(modeling_options = modeling_options),      promotes=promoteListTotalBladeLoads)
         promoteListFrame3DD = [
             "x_az",
             "y_az",
@@ -1943,6 +1979,7 @@ class RotorStructure(Group):
         self.connect("strains.strainL_te", "constr.strainL_te")
         self.connect("frame.flap_mode_freqs", "constr.flap_mode_freqs")
         self.connect("frame.edge_mode_freqs", "constr.edge_mode_freqs")
+        self.connect("frame.tors_mode_freqs", "constr.tors_mode_freqs")
 
         # Blade root moment to blade root sizing
         self.connect("frame.root_M", "brs.root_M")

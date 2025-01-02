@@ -11,7 +11,6 @@ Module documentation
    :maxdepth: 2
    :caption: Contents:
 
-   wisdem/airfoilprep/index
    wisdem/ccblade/index
    wisdem/commonse/index
    wisdem/drivetrainse/index

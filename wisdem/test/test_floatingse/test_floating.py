@@ -27,6 +27,7 @@ class TestOC3Mass(unittest.TestCase):
         opt["floating"]["members"]["n_layers"] = [1]
         opt["floating"]["members"]["n_ballasts"] = [0]
         opt["floating"]["members"]["n_axial_joints"] = [1]
+        opt["floating"]["members"]["outer_shape"] = ["circular"]
         opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = False
         opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = False
@@ -38,7 +39,6 @@ class TestOC3Mass(unittest.TestCase):
         opt["WISDEM"]["FloatingSE"]["gamma_n"] = 1.0  # Safety factor on consequence of failure
         opt["WISDEM"]["FloatingSE"]["gamma_b"] = 1.1  # Safety factor on buckling
         opt["WISDEM"]["FloatingSE"]["gamma_fatigue"] = 1.755  # Not used
-        opt["WISDEM"]["FloatingSE"]["rank_and_file"] = False
         opt["mooring"] = {}
         opt["mooring"]["n_attach"] = 3
         opt["mooring"]["n_anchors"] = 3
@@ -75,6 +75,8 @@ class TestOC3Mass(unittest.TestCase):
         # prob["member0.ballast_volume"] = np.empty(0)
         prob["member0.s_in"] = np.cumsum(np.r_[0, h]) / h.sum()
         prob["member0.outer_diameter_in"] = np.array([9.4, 9.4, 9.4, 6.5, 6.5])
+        prob["member0.ca_usr_grid"] = 2.0*np.ones(5)  # Added mass coefficient
+        prob["member0.cd_usr_grid"] = -1.0*np.ones(5)  # Drag coefficient
         prob["member0.layer_thickness"] = 0.05 * np.ones((1, npts))
         prob["member0.layer_materials"] = ["steel"]
         prob["member0.ballast_materials"] = ["slurry", "seawater"]
@@ -120,10 +122,8 @@ class TestOC3Mass(unittest.TestCase):
         prob["Hsig_wave"] = 1.0  # Significant wave height [m]
         prob["Tsig_wave"] = 1e3  # Wave period [s]
         prob["shearExp"] = 0.11  # Shear exponent in wind power law
-        prob["cm"] = 2.0  # Added mass coefficient
         prob["Uc"] = 0.0  # Mean current speed
         prob["beta_wind"] = prob["beta_wave"] = 0.0
-        prob["cd_usr"] = -1.0  # Compute drag coefficient
         prob["env.Uref"] = 10.0
         prob["wind_reference_height"] = 100.0
 
@@ -157,16 +157,5 @@ class TestOC3Mass(unittest.TestCase):
         npt.assert_allclose(ansys_I, prob["member0.I_total"], rtol=0.02)
 
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestOC3Mass))
-    return suite
-
-
 if __name__ == "__main__":
-    result = unittest.TextTestRunner().run(suite())
-
-    if result.wasSuccessful():
-        exit(0)
-    else:
-        exit(1)
+    unittest.main()

@@ -7,7 +7,7 @@
 $schema: "http://json-schema.org/draft-07/schema#"
 $id: WISDEM_model_options_schema_v00
 title: WISDEM wind turbine modeling options schema
-description: Scehma that describes the modeling options for WISDEM
+description: Schema that describes the modeling options for WISDEM
 type: object
 properties:
     General:
@@ -91,34 +91,22 @@ properties:
                         type: boolean
                         default: True
                         description: Flag to derive the regulation trajectory in region III in terms of pitch and TSR
-                    peak_thrust_shaving:
-                        type: boolean
-                        default: False
-                        description: If True, apply peak thrust shaving within RotorSE.
-                    thrust_shaving_coeff:
-                        type: number
-                        default: 1.0
-                        description: Scalar applied to the max torque within RotorSE for peak thrust shaving. Only used if `peak_thrust_shaving` is True.
-                    fix_pitch_regI12:
-                        type: boolean
-                        default: False
-                        description: If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.
                     spar_cap_ss:
                         type: string
                         default: 'none'
-                        description: Composite layer modeling the spar cap on the suction side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable spar_cap_ss.
+                        description: Composite layer modeling the spar cap on the suction side in the geometry yaml. This entry is used to compute ultimate strains.
                     spar_cap_ps:
                         type: string
                         default: 'none'
-                        description: Composite layer modeling the spar cap on the pressure side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable spar_cap_ps.
+                        description: Composite layer modeling the spar cap on the pressure side in the geometry yaml. This entry is used to compute ultimate strains.
                     te_ss:
                         type: string
                         default: 'none'
-                        description: Composite layer modeling the trailing edge reinforcement on the suction side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable te_ss.
+                        description: Composite layer modeling the trailing edge reinforcement on the suction side in the geometry yaml. This entry is used to compute ultimate strains.
                     te_ps:
                         type: string
                         default: 'none'
-                        description: Composite layer modeling the trailing edge reinforcement on the pressure side in the geometry yaml. This entry is used to compute ultimate strains and it is linked to the design variable te_ps.
+                        description: Composite layer modeling the trailing edge reinforcement on the pressure side in the geometry yaml. This entry is used to compute ultimate strains.
                     gamma_freq: &gamma_freq
                         type: number
                         description: Partial safety factor on modal frequencies
@@ -169,13 +157,13 @@ properties:
                         type: boolean
                         default: False
                         description: Flag switching on and off the inverted neural network for airfoil design
-                    inn_af_max_t/c:
+                    inn_af_max_rthick:
                         type: number
                         default: 0.4
                         minimum: 0.
                         maximum: 1.
                         description: Maximum airfoil thickness supported by the INN for airfoil design
-                    inn_af_min_t/c:
+                    inn_af_min_rthick:
                         type: number
                         default: 0.15
                         minimum: 0.
@@ -215,6 +203,10 @@ properties:
                         maximum: 5.0
                         default: 1.0
                         unit: none
+                    use_gb_torque_density:
+                        type: boolean
+                        default: True
+                        description: Flag switching between running to gearbox sizing of DrivetrainSE (False) or the simple sizing given a value of torque density expressed in Nm/kg
                     hub:
                         type: object
                         default: {}
@@ -397,10 +389,6 @@ properties:
                         type: boolean
                         default: True
                         description: Whether or not to assume a symmetric mooring system
-                    rank_and_file:
-                        type: boolean
-                        default: False
-                        description: Use the rank-and-file method of identifying mode shapes that guarantees modeshape numbers in all directions, but will reuse the same modeshape for multiple directions
 
             Loading:
                 type: object

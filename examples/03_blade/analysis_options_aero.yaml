@@ -3,48 +3,73 @@ general:
     fname_output: blade_out
 
 design_variables:
+    control:
+        tsr:
+            flag: True
+            minimum: 8
+            maximum: 11
     blade:
         aero_shape:
             twist:
-                flag: True  # Flag to optimize the twist
-                inverse: False # Flag to determine twist from the user-defined desired margin to stall (defined in constraints)
-                n_opt: 4     # Number of control points along blade span
-                max_decrease: 0.08722222222222221 # Maximum decrease for the twist in [rad] at the n_opt locations
-                max_increase: 0.08722222222222221 # Maximum increase for the twist in [rad] at the n_opt locations
-                index_start: 2 # Lock the first two DVs from blade root
-                index_end: 4 # All DVs close to blade tip are active
+                flag: False # Flag to assign design variables to the blade twist 
+                inverse: True # Flag to determine twist from a desired angle of attack. 
+                # Only used if flag is set to False
+                inverse_target: 'stall_margin' # Twist generates angles of attack 
+                # corresponding to 'max_efficiency' or 'stall_margin'
+                n_opt: 8 # Number of control points along blade span. During inverse design, 
+                # twist is smoothened with a spline with these
+                # max_decrease: 0.08722222222222221 # Maximum decrease for the twist 
+                # in [rad] at the n_opt locations. Only used if flag is set to True
+                # max_increase: 0.08722222222222221 # Maximum increase for the twist 
+                # in [rad] at the n_opt locations. Only used if flag is set to True
+                # index_start: 2 # Lock the first two DVs from blade root
+                # index_end: 8 # All DVs close to blade tip are active
             chord:
-                flag: False  # Flag to optimize the chord
+                flag: True  # Flag to optimize the chord
                 n_opt: 4     # Number of control points along blade span
-                max_decrease: 0.3 # Minimum multiplicative gain on existing chord at the n_opt locations
-                max_increase: 3. # Maximum multiplicative gain on existing chord at the n_opt locations
-                index_start: 0 # Start by optimizing chord at blade root
-                index_end: 3 # Lock chord at blade tip
+                max_decrease: 0.4 # Minimum multiplicative gain on existing chord at the n_opt locations
+                max_increase: 2. # Maximum multiplicative gain on existing chord at the n_opt locations
+                index_start: 1 # Lock the first DVs from blade root
+                index_end: 3 # Lock the last DV at blade tip
 
-merit_figure: AEP
+# figure of merit
+merit_figure: Cp
 
+# constraints
 constraints:
     blade:
         stall:
-            flag: True     # Constraint on minimum stall margin
-            margin: 0.087 # Value of minimum stall margin in [rad]
+            flag: False # Constraint on minimum stall margin
+            margin: 0.1 # Value of minimum stall margin in [rad]
         chord:
-            flag: False # Constraint max chord to its default value (4.75 m)
+            flag: True # Constraint max chord to its default value (4.75 m)
+            max: 4.75 # Max chord value
         root_circle_diameter:
             flag: False # Constraint for the minimum blade root circle diameter
             max_ratio: 1.2 # The recommended value can be up to 20% larger than the actual
+        chord_slope:
+            flag: True # Constraint to enforce monothonically decreasing chord after max chord
+        moment_coefficient:
+            flag: False # Constraint on maximum blade root flapwise moment coefficient
+            max: 0.20 # Lowering this value will lead to low induction rotors
+    # user:
+    #   - name: blade.high_level_blade_props.rotor_solidity
+    #     lower: 0.04
 
+            
+
+# driver
 driver:
     optimization:
         flag: True         # Flag to enable optimization
-        tol: 1.e-3          # Optimality tolerance
+        tol: 1.e-6          # Optimality tolerance
         # max_major_iter: 10  # Maximum number of major design iterations (SNOPT)
         # max_minor_iter: 100 # Maximum number of minor design iterations (SNOPT)
-        max_iter: 2         # Maximum number of iterations (SLSQP)
+        max_iter: 1         # Maximum number of iterations (SLSQP)
         solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         step_size: 1.e-3    # Step size for finite differencing
         form: forward       # Finite differencing mode, either forward or central
 
 recorder:
-    flag: False              # Flag to activate OpenMDAO recorder
+    flag: True              # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder
