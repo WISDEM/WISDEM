@@ -508,6 +508,11 @@ class WindTurbineOntologyPython(object):
             # Store joint info
             self.modeling_options["floating"]["joints"]["name2idx"] = name2idx
 
+            # Store rigid_bodies info
+            self.modeling_options["floating"]["rigid_bodies"] = {}
+            self.modeling_options["floating"]["rigid_bodies"]["n_bodies"] = len(self.wt_init['components']['floating_platform']['rigid_bodies'])
+            self.modeling_options["floating"]["rigid_bodies"]["joint1"] = [rb['joint1'] for rb in self.wt_init['components']['floating_platform']['rigid_bodies']]
+
             # Floating tower params
             self.modeling_options["floating"]["tower"] = {}
             self.modeling_options["floating"]["tower"]["n_ballasts"] = [0]

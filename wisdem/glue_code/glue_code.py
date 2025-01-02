@@ -691,6 +691,13 @@ class WT_RNTA(om.Group):
             self.connect("floating.transition_node", "floatingse.transition_node")
             self.connect("floating.transition_piece_mass", "floatingse.transition_piece_mass")
             self.connect("floating.transition_piece_cost", "floatingse.transition_piece_cost")
+
+            # Rigid bodies
+            for k in range(modeling_options['floating']['rigid_bodies']['n_bodies']):
+                self.connect(f"floating.rigid_body_{k}_node",f"floatingse.rigid_body_{k}_node")
+                self.connect(f"floating.rigid_body_{k}_mass",f"floatingse.rigid_body_{k}_mass")
+                self.connect(f"floating.rigid_body_{k}_inertia",f"floatingse.rigid_body_{k}_inertia")
+
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.turbine_mass", "floatingse.turbine_mass")
                 self.connect("towerse.turbine_center_of_mass", "floatingse.turbine_cg")

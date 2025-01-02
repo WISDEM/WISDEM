@@ -60,6 +60,12 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_input("transition_piece_mass", 0.0, units="kg")
         self.add_input("transition_piece_cost", 0.0, units="USD")
 
+        # Rigid bodies
+        for k in range(opt['floating']['rigid_bodies']['n_bodies']):
+            self.add_input(f"rigid_body_{k}_node", val=np.zeros(3), units="m", desc=f"location of rigid body {k}")
+            self.add_input(f"rigid_body_{k}_mass", val=0.0, units="kg", desc=f"point mass of rigid body {k}")
+            self.add_input(f"rigid_body_{k}_inertia", val=np.zeros(3), units="kg*m**2", desc=f"inertia of rigid body {k}")
+
         self.add_output("transition_piece_I", np.zeros(6), units="kg*m**2")
 
         self.add_output("platform_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
@@ -278,6 +284,12 @@ class PlatformFrame(om.ExplicitComponent):
             cb_plat += ivol * inputs[f"member{k}:center_of_buoyancy"]
 
 
+        # Add rigid bodies
+        for k in range(opt['floating']['rigid_bodies']['n_bodies']):
+            mass += inputs[f"rigid_body_{k}_mass"]
+            cg_plat += inputs[f"rigid_body_{k}_mass"] * inputs[f"rigid_body_{k}_node"]
+            
+        
         # Add transition piece
         m_trans = inputs["transition_piece_mass"]
         cg_trans = inputs["transition_node"]
@@ -319,6 +331,13 @@ class PlatformFrame(om.ExplicitComponent):
             m_added[:3] += m_add_k[:3]
             m_added[3:] += m_add_k[3:] + np.diag(m_add_k[0] * (np.dot(R, R) * np.eye(3) - np.outer(R, R)))
 
+        
+        # Add rigid bodies
+        for k in range(opt['floating']['rigid_bodies']['n_bodies']):
+            R = cg_plat - inputs[f"rigid_body_{k}_node"]
+            I_rb = util.assembleI(np.r_[inputs[f"rigid_body_{k}_inertia"],0,0,0])
+            I_hull += I_rb + inputs[f"rigid_body_{k}_mass"] * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        
         # Add in transition piece
         R = cg_plat - cg_trans
         I_hull += I_trans + m_trans * (np.dot(R, R) * np.eye(3) - np.outer(R, R))

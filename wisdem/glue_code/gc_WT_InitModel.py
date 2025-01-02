@@ -1112,6 +1112,13 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
     wt_opt["floating.transition_piece_mass"] = floating["transition_piece_mass"]
     wt_opt["floating.transition_piece_cost"] = floating["transition_piece_cost"]
 
+    # Assign rigid body info
+    for k, rb in enumerate(floating['rigid_bodies']):
+        rb_joint_index = floating_init_options['joints']['name2idx'][rb['joint1']]
+        wt_opt[f"floating.rigid_body_{k}_node"] = floating["joints"][rb_joint_index]["location"]
+        wt_opt[f"floating.rigid_body_{k}_mass"] = rb['mass']
+        wt_opt[f"floating.rigid_body_{k}_inertia"] = rb['moments_of_inertia']
+
     # Make sure IVCs are initialized too
     for k, linked_node_dict in enumerate(modeling_options["floating"]["joints"]["design_variable_data"]):
         idx = linked_node_dict["indices"]

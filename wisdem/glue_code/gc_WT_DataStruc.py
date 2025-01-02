@@ -2385,6 +2385,14 @@ class Floating(om.Group):
         jivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         jivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
 
+        # Rigid body IVCs
+        rb_ivc = self.add_subsystem("rigid_bodies", om.IndepVarComp(), promotes=["*"])
+        for k in range(floating_init_options['rigid_bodies']['n_bodies']):
+            rb_ivc.add_output(f"rigid_body_{k}_node", val=np.zeros(3), units="m", desc="location of rigid body")
+            rb_ivc.add_output(f"rigid_body_{k}_mass", val=0.0, units="kg", desc="point mass of rigid body")
+            rb_ivc.add_output(f"rigid_body_{k}_inertia", val=np.zeros(3), units="kg*m**2", desc="inertia of rigid body")
+
+
         # Additions for optimizing individual nodes or multiple nodes concurrently
         self.add_subsystem("nodedv", NodeDVs(options=floating_init_options["joints"]), promotes=["*"])
         for k in range(len(floating_init_options["joints"]["design_variable_data"])):
@@ -2661,6 +2669,9 @@ class AggregateJoints(om.ExplicitComponent):
         # Initial biggest radius at each node
         node_r = np.zeros(n_joint_tot)
         intersects = np.zeros(n_joint_tot)
+
+        if n_joints + sum(memopt["n_axial_joints"]) > n_joint_tot:
+            raise Exception(f'WISDEM has detected {n_joints + sum(memopt["n_axial_joints"])}, but only {n_joint_tot} have been defined in the yaml')
 
         # Now add axial joints
         member_list = list(range(n_members))
