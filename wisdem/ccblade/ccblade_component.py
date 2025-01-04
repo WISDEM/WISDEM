@@ -72,8 +72,8 @@ class CCBladeGeometry(ExplicitComponent):
         outputs["diameter"] = outputs["R"] * 2
 
     def compute_partials(self, inputs, J):
-        Rtip = inputs["Rtip"]
-        precone = inputs["precone"]
+        Rtip = inputs["Rtip"][0]
+        precone = inputs["precone"][0]
         precurveTip = inputs["precurve_in"][-1]
 
         J["R", "precurve_in"] = sind(precone)
@@ -593,7 +593,7 @@ class CCBladeTwist(ExplicitComponent):
             alpha = np.zeros(self.n_span)
             Emax = np.zeros(self.n_span)
             margin2stall = self.options["opt_options"]["constraints"]["blade"]["stall"]["margin"] * 180.0 / np.pi
-            Re = np.array(Omega * inputs["r"] * inputs["chord"] * inputs["rho"] / inputs["mu"])
+            Re = np.array(Omega * inputs["r"] * inputs["chord"] * inputs["rho"][0] / inputs["mu"][0])
             aoa_op = inputs["aoa_op"]
             for i in range(self.n_span):
                 # Use the required angle of attack if defined. If it isn't defined (==pi), then take the stall point minus the margin
