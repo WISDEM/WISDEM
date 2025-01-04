@@ -60,8 +60,8 @@ class TestServo(unittest.TestCase):
 
         myobj = rp.GustETM(std=2.5)
 
-        inputs["V_mean"] = 10.0
-        inputs["V_hub"] = 15.0
+        inputs["V_mean"] = 10.0 * np.ones(1)
+        inputs["V_hub"] = 15.0 * np.ones(1)
         discrete_inputs["turbulence_class"] = "A"
         myobj.compute(inputs, outputs, discrete_inputs, discrete_outputs)
         sigma = 0.32 * (0.072 * 8.0 * 3.5 + 10.0)
