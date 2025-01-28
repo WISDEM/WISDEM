@@ -217,7 +217,7 @@ properties:
 
                     internal_structure_2d_fem:
                         type: object
-                        default: {}
+                        # default: {}
                         required:
                             - reference_axis
                             - layers

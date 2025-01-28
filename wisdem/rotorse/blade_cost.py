@@ -2962,6 +2962,9 @@ class BladeSplit(om.ExplicitComponent):
 
 
 class TotalBladeCosts(om.ExplicitComponent):
+    def initialize(self):
+        self.options.declare("modeling_options")
+
     def setup(self):
         self.add_input(
             "joint_cost",
@@ -2990,7 +2993,10 @@ class TotalBladeCosts(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-        outputs["total_blade_cost"] = inputs["inner_blade_cost"] + inputs["outer_blade_cost"] + inputs["joint_cost"]
+        if self.modeling_options["WISDME"]["RotorSE"]["user_defined_blade_elastic"]:
+            outputs["total_blade_cost"] = 0.0
+        else:
+            outputs["total_blade_cost"] = inputs["inner_blade_cost"] + inputs["outer_blade_cost"] + inputs["joint_cost"]
 
 
 # OpenMDAO component to execute the blade cost model

@@ -173,36 +173,48 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["WISDEM"]["RotorSE"]["n_af_span"] = len(
                 self.wt_init["components"]["blade"]["outer_shape_bem"]["airfoil_position"]["labels"]
             )  # This is the number of airfoils defined along blade span and it is often different than n_af, which is the number of airfoils defined in the airfoil database
-            self.modeling_options["WISDEM"]["RotorSE"]["n_webs"] = len(
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"]
-            )
-            self.modeling_options["WISDEM"]["RotorSE"]["n_layers"] = len(
-                self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
-            )
-            self.modeling_options["WISDEM"]["RotorSE"]["lofted_output"] = False
-            self.modeling_options["WISDEM"]["RotorSE"]["n_freq"] = 10  # Number of blade nat frequencies computed
 
-            self.modeling_options["WISDEM"]["RotorSE"]["layer_name"] = self.modeling_options["WISDEM"]["RotorSE"][
-                "n_layers"
-            ] * [""]
-            self.modeling_options["WISDEM"]["RotorSE"]["layer_mat"] = self.modeling_options["WISDEM"]["RotorSE"][
-                "n_layers"
-            ] * [""]
-            for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_layers"]):
-                self.modeling_options["WISDEM"]["RotorSE"]["layer_name"][i] = self.wt_init["components"]["blade"][
-                    "internal_structure_2d_fem"
-                ]["layers"][i]["name"]
-                self.modeling_options["WISDEM"]["RotorSE"]["layer_mat"][i] = self.wt_init["components"]["blade"][
-                    "internal_structure_2d_fem"
-                ]["layers"][i]["material"]
+            self.modeling_options["WISDEM"]["RotorSE"]["lofted_output"] = False # Is this always false? It is not in the schema and not changed anywhere else.
+            self.modeling_options["WISDEM"]["RotorSE"]["n_freq"] = 10  # Number of blade nat frequencies computed, this should be common so moved out of the conditional
+            if not self.modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+                self.modeling_options["WISDEM"]["RotorSE"]["n_webs"] = len(
+                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["webs"]
+                )
+                self.modeling_options["WISDEM"]["RotorSE"]["n_layers"] = len(
+                    self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"]
+                )
+                
 
-            self.modeling_options["WISDEM"]["RotorSE"]["web_name"] = self.modeling_options["WISDEM"]["RotorSE"][
-                "n_webs"
-            ] * [""]
-            for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_webs"]):
-                self.modeling_options["WISDEM"]["RotorSE"]["web_name"][i] = self.wt_init["components"]["blade"][
-                    "internal_structure_2d_fem"
-                ]["webs"][i]["name"]
+                self.modeling_options["WISDEM"]["RotorSE"]["layer_name"] = self.modeling_options["WISDEM"]["RotorSE"][
+                    "n_layers"
+                ] * [""]
+                self.modeling_options["WISDEM"]["RotorSE"]["layer_mat"] = self.modeling_options["WISDEM"]["RotorSE"][
+                    "n_layers"
+                ] * [""]
+                for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_layers"]):
+                    self.modeling_options["WISDEM"]["RotorSE"]["layer_name"][i] = self.wt_init["components"]["blade"][
+                        "internal_structure_2d_fem"
+                    ]["layers"][i]["name"]
+                    self.modeling_options["WISDEM"]["RotorSE"]["layer_mat"][i] = self.wt_init["components"]["blade"][
+                        "internal_structure_2d_fem"
+                    ]["layers"][i]["material"]
+
+                self.modeling_options["WISDEM"]["RotorSE"]["web_name"] = self.modeling_options["WISDEM"]["RotorSE"][
+                    "n_webs"
+                ] * [""]
+                for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_webs"]):
+                    self.modeling_options["WISDEM"]["RotorSE"]["web_name"][i] = self.wt_init["components"]["blade"][
+                        "internal_structure_2d_fem"
+                    ]["webs"][i]["name"]
+
+                
+                    joint_pos = self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["position"]
+                if joint_pos > 0.0:
+                    self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = True
+                    # Adjust grid to have grid point at join location
+                    closest_grid_pt = np.argmin(abs(self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] - joint_pos))
+                    self.modeling_options["WISDEM"]["RotorSE"]["nd_span"][closest_grid_pt] = joint_pos
+                    self.modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] = closest_grid_pt
 
             # Distributed aerodynamic control devices along blade
             self.modeling_options["WISDEM"]["RotorSE"]["n_te_flaps"] = 0
@@ -217,13 +229,6 @@ class WindTurbineOntologyPython(object):
                         "A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem."
                     )
 
-            joint_pos = self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["joint"]["position"]
-            if joint_pos > 0.0:
-                self.modeling_options["WISDEM"]["RotorSE"]["bjs"] = True
-                # Adjust grid to have grid point at join location
-                closest_grid_pt = np.argmin(abs(self.modeling_options["WISDEM"]["RotorSE"]["nd_span"] - joint_pos))
-                self.modeling_options["WISDEM"]["RotorSE"]["nd_span"][closest_grid_pt] = joint_pos
-                self.modeling_options["WISDEM"]["RotorSE"]["id_joint_position"] = closest_grid_pt
 
         # Drivetrain
         if self.modeling_options["flags"]["nacelle"]:
@@ -726,7 +731,7 @@ class WindTurbineOntologyPython(object):
                 blade_opt_options["aero_shape"]["L/D"]["n_opt"],
             )
         # # Blade structural design variables
-        if self.modeling_options["WISDEM"]["RotorSE"]["flag"] and self.modeling_options["flags"]["blade"]:
+        if self.modeling_options["WISDEM"]["RotorSE"]["flag"] and self.modeling_options["flags"]["blade"] and (not self.modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]):
             n_layers = self.modeling_options["WISDEM"]["RotorSE"]["n_layers"]
             layer_name = self.modeling_options["WISDEM"]["RotorSE"]["layer_name"]
             spars_tereinf = np.zeros(4, dtype=int)
@@ -817,6 +822,7 @@ class WindTurbineOntologyPython(object):
 
     def write_ontology(self, wt_opt, fname_output):
         # Update blade
+        # TODO_YL: leave write_ontology for the last
         if self.modeling_options["flags"]["blade"]:
             # Update blade outer shape
             self.wt_init["components"]["blade"]["outer_shape_bem"]["airfoil_position"]["grid"] = wt_opt[
@@ -885,6 +891,7 @@ class WindTurbineOntologyPython(object):
             ][:, 2].tolist()
 
             # Update blade structure
+            # TODO_YL: conditional?
             # Reference axis from blade outer shape
             self.wt_init["components"]["blade"]["internal_structure_2d_fem"]["reference_axis"] = self.wt_init[
                 "components"

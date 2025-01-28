@@ -701,16 +701,18 @@ class Blade(om.Group):
             val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
         opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
-        for i in range(rotorse_options["n_layers"]):
-            opt_var.add_output(
-                "s_opt_layer_%d"%i,
-                val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
-            )
-            opt_var.add_output(
-                "layer_%d_opt"%i,
-                units="m",
-                val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
-            )
+
+        if not rotorse_options["user_defined_blade_elastic"]:
+            for i in range(rotorse_options["n_layers"]):
+                opt_var.add_output(
+                    "s_opt_layer_%d"%i,
+                    val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
+                )
+                opt_var.add_output(
+                    "layer_%d_opt"%i,
+                    units="m",
+                    val=np.ones(opt_options["design_variables"]["blade"]["n_opt_struct"][i]),
+                )
         self.add_subsystem("opt_var", opt_var)
 
         # Import outer shape BEM
@@ -789,29 +791,31 @@ class Blade(om.Group):
             self.connect("high_level_blade_props.blade_ref_axis", "blade_lofted.ref_axis")
 
         # Import blade internal structure data and remap composites on the outer blade shape
-        self.add_subsystem(
-            "internal_structure_2d_fem",
-            Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
-        )
-        self.connect("outer_shape_bem.s", "internal_structure_2d_fem.s")
-        self.connect("pa.twist_param", "internal_structure_2d_fem.twist")
-        self.connect("pa.chord_param", "internal_structure_2d_fem.chord")
-        self.connect("outer_shape_bem.pitch_axis", "internal_structure_2d_fem.pitch_axis")
+        # when not using the user-defined elastic properties only
+        if not rotorse_options["user_defined_blade_elastic"]:
+            self.add_subsystem(
+                "internal_structure_2d_fem",
+                Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
+            )
+            self.connect("outer_shape_bem.s", "internal_structure_2d_fem.s")
+            self.connect("pa.twist_param", "internal_structure_2d_fem.twist")
+            self.connect("pa.chord_param", "internal_structure_2d_fem.chord")
+            self.connect("outer_shape_bem.pitch_axis", "internal_structure_2d_fem.pitch_axis")
 
-        self.connect("compute_coord_xy_dim.coord_xy_dim", "internal_structure_2d_fem.coord_xy_dim")
+            self.connect("compute_coord_xy_dim.coord_xy_dim", "internal_structure_2d_fem.coord_xy_dim")
 
-        self.add_subsystem(
-            "ps", ParametrizeBladeStruct(rotorse_options=rotorse_options, opt_options=opt_options)
-        )  # Parameterize struct (spar caps ss and ps)
+            self.add_subsystem(
+                "ps", ParametrizeBladeStruct(rotorse_options=rotorse_options, opt_options=opt_options)
+            )  # Parameterize struct (spar caps ss and ps)
 
-        # Connections to blade struct parametrization
-        for i in range(rotorse_options["n_layers"]):
-            self.connect("opt_var.layer_%d_opt"%i, "ps.layer_%d_opt"%i)
-            self.connect("opt_var.s_opt_layer_%d"%i, "ps.s_opt_layer_%d"%i)
+            # Connections to blade struct parametrization
+            for i in range(rotorse_options["n_layers"]):
+                self.connect("opt_var.layer_%d_opt"%i, "ps.layer_%d_opt"%i)
+                self.connect("opt_var.s_opt_layer_%d"%i, "ps.s_opt_layer_%d"%i)
 
-        self.connect("outer_shape_bem.s", "ps.s")
-        # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
-        self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
+            self.connect("outer_shape_bem.s", "ps.s")
+            # self.connect('internal_structure_2d_fem.layer_name',      'ps.layer_name')
+            self.connect("internal_structure_2d_fem.layer_thickness", "ps.layer_thickness_original")
 
         # Fatigue specific parameters
         fat_var = om.IndepVarComp()

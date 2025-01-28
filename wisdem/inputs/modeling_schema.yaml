@@ -39,6 +39,10 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run this module
+                    user_defined_blade_elastic:
+                        type: boolean
+                        default: False
+                        description: Flag to use only user-defined blade elastic properties, otherwise need to use detailed blade layup and material properties
                     n_aoa:
                         type: integer
                         default: 200

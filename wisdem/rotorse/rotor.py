@@ -82,23 +82,25 @@ class RotorSEProp(om.Group):
 
         self.add_subsystem("wt_class", TurbineClass())
 
-        re_promote_add = ["chord", "theta", "r", "precurve", "presweep",
-                          "blade_mass", "blade_span_cg", "blade_moment_of_inertia",
+        re_promote_add = ["r", "blade_mass", "blade_span_cg", "blade_moment_of_inertia",
                           "mass_all_blades", "I_all_blades"]
+        if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+            re_promote_add = re_promote_add + ["chord", "theta", "precurve", "presweep"]
         self.add_subsystem(
             "re",
             RotorElasticity(modeling_options=modeling_options, opt_options=opt_options),
             promotes=promoteGeom + re_promote_add,
         )
 
-        if not modeling_options["WISDEM"]["RotorSE"]["bjs"]:
+        if not modeling_options["WISDEM"]["RotorSE"]["bjs"] and not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]: # Can't estimate blade cost with user defined blade elastic properties
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
             self.add_subsystem(
                 "rc", BladeCost(mod_options=modeling_options, opt_options=opt_options, n_span=n_span, root=True)
             )
 
-            self.add_subsystem("total_bc", TotalBladeCosts())
-
+        self.add_subsystem("total_bc", TotalBladeCosts(modeling_options=modeling_options))
+        
+        if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
             self.connect("rc.total_blade_cost", "total_bc.inner_blade_cost")
 
 
@@ -173,10 +175,17 @@ class RotorSEPerf(om.Group):
             promotes=["s", "airfoils_aoa", "airfoils_cl", "airfoils_cd", "airfoils_cm"],
         )
 
+        # promotion list for RotorStructure
+        if modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+            # Can't promote s when designConstraint component is not added
+            promoteRS = ["precurveTip", "presweepTip", "blade_span_cg"]
+        else:
+            promoteRS = ["s", "precurveTip", "presweepTip", "blade_span_cg"]
+
         self.add_subsystem(
             "rs",
             RotorStructure(modeling_options=modeling_options, opt_options=opt_options, freq_run=False),
-            promotes=promoteGeom + promoteCC + ["s", "precurveTip", "presweepTip", "blade_span_cg"],
+            promotes=promoteGeom + promoteCC + promoteRS,
         )
 
         if modeling_options["WISDEM"]["RotorSE"]["bjs"]:
@@ -223,8 +232,12 @@ class RotorSEPerf(om.Group):
         # Connection from ra to rs for the rated conditions
         self.connect("rp.gust.V_gust", ["rs.aero_gust.V_load", "rs.aero_hub_loads.V_load"])
         self.connect(
-            "rp.powercurve.rated_Omega", ["rs.Omega_load", "rs.tot_loads_gust.aeroloads_Omega", "rs.constr.rated_Omega"]
+            "rp.powercurve.rated_Omega", ["rs.Omega_load", "rs.tot_loads_gust.aeroloads_Omega"]
         )
+        if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+            # constr is not available when user defined blade elastic properties are used
+            # TODO YL: move it back when constr is available for user defined blade elastic properties
+            self.connect("rp.powercurve.rated_Omega", "rs.constr.rated_Omega")
         self.connect("rp.powercurve.rated_pitch", ["rs.pitch_load", "rs.tot_loads_gust.aeroloads_pitch"])
 
         # Connections to the stall check

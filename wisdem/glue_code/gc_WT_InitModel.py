@@ -111,7 +111,10 @@ def assign_blade_values(wt_opt, modeling_options, blade_DV, blade):
     # Function to assign values to the openmdao group Blade
     blade_DV_aero = blade_DV['aero_shape']
     wt_opt = assign_outer_shape_bem_values(wt_opt, modeling_options, blade_DV_aero, blade["outer_shape_bem"])
-    wt_opt = assign_internal_structure_2d_fem_values(wt_opt, modeling_options, blade["internal_structure_2d_fem"])
+    if not modeling_options["Rotorse"]["user_defined_blade_elastic"]:
+        wt_opt = assign_internal_structure_2d_fem_values(wt_opt, modeling_options, blade["internal_structure_2d_fem"])
+    else: 
+        wt_opt = assign_user_defined_blade_elastic(wt_opt, modeling_options, blade["elastic_properties_mb"])
     wt_opt = assign_te_flaps_values(wt_opt, modeling_options, blade)
 
     return wt_opt
@@ -600,6 +603,44 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     wt_opt["blade.internal_structure_2d_fem.sigma_max"] = internal_structure_2d_fem["root"]["sigma_max"]
 
     return wt_opt
+
+def assign_user_defined_blade_elastic(wt_opt, modeling_options, user_defined_elastic_properties_mb):
+    # Function to assign values to the openmdao component Blade_Internal_Structure_2D_FEM
+    n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
+    nd_span = wt_opt["blade.outer_shape_bem.s_default"]
+    # TODO YL: maybe I can pass in the inertia twist throught the twist in six_x_six
+    stiff_grid = user_defined_elastic_properties_mb["six_x_six"]["stiff_matrix"]["grid"]
+    stiff_matrix = np.array(user_defined_elastic_properties_mb["six_x_six"]["stiff_matrix"]["values"])
+
+    inertia_grid = user_defined_elastic_properties_mb["six_x_six"]["inertia_matrix"]["grid"]
+    inertia_matrix = np.array(user_defined_elastic_properties_mb["six_x_six"]["inertia_matrix"]["values"])
+
+    # 21-element inertia matrix
+    # idx = [0, 1, 2, 3, 4, 5,     6, 7, 8, 9, 10,   11, 12,   13,    14, 15,    16,   17, 18,    19, 20]
+    # M   = [m, 0, 0, 0, 0, -mYcm, m, 0, 0, 0, mXcm, m,  mYcm, -mXcm, 0,  iedge, -icp, 0,  iflap, 0,  iplr]
+
+    # 21-element stiffness matrix
+    # idx = [0,        1, 2, 3, 4, 5, 6,        7, 8, 9, 10, 11, 12, 13, 14, 15,     16, 17, 18,     19, 20]
+    # K =   [KShrflap, 0, 0, 0, 0, 0, KShredge, 0, 0, 0, 0,  EA, 0,  0,  0,  EIedge, 0,  0,  EIflap, 0,  GJ]
+
+    wt_opt["blade.rotorse.precomp.z"] = stiff_matrix[:,11]
+    wt_opt["blade.rotorse.precomp.EA"] = stiff_matrix[:,11]
+    wt_opt["blade.rotorse.precomp.EIxx"] = stiff_matrix[:,15]
+    wt_opt["blade.rotorse.precomp.EIyy"] = stiff_matrix[:,18]
+    wt_opt["blade.rotorse.precomp.GJ"] = stiff_matrix[:,20]
+    wt_opt["blade.rotorse.precomp.rhoA"] = inertia_matrix[:,0]
+    wt_opt["blade.rotorse.precomp.rhoJ"] = inertia_matrix[:,20] # TODO YL: confirm if this is iplr
+    # wt_opt["blade.rotorse.precomp.Tw_iner"]
+    # wt_opt["blade.rotorse.precomp.x_ec"]
+    # wt_opt["blade.rotorse.precomp.y_ec"]
+    # wt_opt["blade.rotorse.precomp.x_tc"]
+    # wt_opt["blade.rotorse.precomp.x_sc"]
+    # wt_opt["blade.rotorse.precomp.y_sc"]
+    wt_opt["blade.rotorse.precomp.y_cg"] = inertia_matrix[:,12]/inertia_matrix[:,0]
+    wt_opt["blade.rotorse.precomp.x_cg"] = inertia_matrix[:,10]/inertia_matrix[:,0]
+    wt_opt["blade.rotorse.precomp.flap_iner"] = inertia_matrix[:,10]/inertia_matrix[:,18]
+    wt_opt["blade.rotorse.precomp.edge_iner"] = inertia_matrix[:,10]/inertia_matrix[:,15]
+
 
 
 def assign_te_flaps_values(wt_opt, modeling_options, blade):
