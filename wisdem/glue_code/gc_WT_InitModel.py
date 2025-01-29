@@ -111,7 +111,7 @@ def assign_blade_values(wt_opt, modeling_options, blade_DV, blade):
     # Function to assign values to the openmdao group Blade
     blade_DV_aero = blade_DV['aero_shape']
     wt_opt = assign_outer_shape_bem_values(wt_opt, modeling_options, blade_DV_aero, blade["outer_shape_bem"])
-    if not modeling_options["Rotorse"]["user_defined_blade_elastic"]:
+    if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
         wt_opt = assign_internal_structure_2d_fem_values(wt_opt, modeling_options, blade["internal_structure_2d_fem"])
     else: 
         wt_opt = assign_user_defined_blade_elastic(wt_opt, modeling_options, blade["elastic_properties_mb"])
@@ -623,24 +623,24 @@ def assign_user_defined_blade_elastic(wt_opt, modeling_options, user_defined_ela
     # idx = [0,        1, 2, 3, 4, 5, 6,        7, 8, 9, 10, 11, 12, 13, 14, 15,     16, 17, 18,     19, 20]
     # K =   [KShrflap, 0, 0, 0, 0, 0, KShredge, 0, 0, 0, 0,  EA, 0,  0,  0,  EIedge, 0,  0,  EIflap, 0,  GJ]
 
-    wt_opt["blade.rotorse.precomp.z"] = stiff_matrix[:,11]
-    wt_opt["blade.rotorse.precomp.EA"] = stiff_matrix[:,11]
-    wt_opt["blade.rotorse.precomp.EIxx"] = stiff_matrix[:,15]
-    wt_opt["blade.rotorse.precomp.EIyy"] = stiff_matrix[:,18]
-    wt_opt["blade.rotorse.precomp.GJ"] = stiff_matrix[:,20]
-    wt_opt["blade.rotorse.precomp.rhoA"] = inertia_matrix[:,0]
-    wt_opt["blade.rotorse.precomp.rhoJ"] = inertia_matrix[:,20] # TODO YL: confirm if this is iplr
-    # wt_opt["blade.rotorse.precomp.Tw_iner"]
-    # wt_opt["blade.rotorse.precomp.x_ec"]
-    # wt_opt["blade.rotorse.precomp.y_ec"]
-    # wt_opt["blade.rotorse.precomp.x_tc"]
-    # wt_opt["blade.rotorse.precomp.x_sc"]
-    # wt_opt["blade.rotorse.precomp.y_sc"]
-    wt_opt["blade.rotorse.precomp.y_cg"] = inertia_matrix[:,12]/inertia_matrix[:,0]
-    wt_opt["blade.rotorse.precomp.x_cg"] = inertia_matrix[:,10]/inertia_matrix[:,0]
-    wt_opt["blade.rotorse.precomp.flap_iner"] = inertia_matrix[:,10]/inertia_matrix[:,18]
-    wt_opt["blade.rotorse.precomp.edge_iner"] = inertia_matrix[:,10]/inertia_matrix[:,15]
+    wt_opt["rotorse.EA"] = PchipInterpolator(stiff_grid, stiff_matrix[:,11])(nd_span)
+    wt_opt["rotorse.EIxx"] = PchipInterpolator(stiff_grid, stiff_matrix[:,15])(nd_span)
+    wt_opt["rotorse.EIyy"] = PchipInterpolator(stiff_grid, stiff_matrix[:,18])(nd_span)
+    wt_opt["rotorse.GJ"] = PchipInterpolator(stiff_grid, stiff_matrix[:,20])(nd_span)
+    wt_opt["rotorse.rhoA"] = PchipInterpolator(inertia_grid, inertia_matrix[:,0])(nd_span)
+    wt_opt["rotorse.rhoJ"] = PchipInterpolator(inertia_grid, inertia_matrix[:,20])(nd_span) # TODO YL: confirm if this is iplr
+    # wt_opt["rotorse.Tw_iner"]
+    # wt_opt["rotorse.x_ec"]
+    # wt_opt["rotorse.y_ec"]
+    # wt_opt["rotorse.x_tc"]
+    # wt_opt["rotorse.x_sc"]
+    # wt_opt["rotorse.y_sc"]
+    wt_opt["rotorse.re.y_cg"] = PchipInterpolator(inertia_grid, inertia_matrix[:,12]/inertia_matrix[:,0])(nd_span)
+    wt_opt["rotorse.re.x_cg"] = PchipInterpolator(inertia_grid, inertia_matrix[:,10]/inertia_matrix[:,0])(nd_span)
+    wt_opt["rotorse.re.precomp.flap_iner"] = PchipInterpolator(inertia_grid, inertia_matrix[:,10]/inertia_matrix[:,18])(nd_span)
+    wt_opt["rotorse.re.precomp.edge_iner"] = PchipInterpolator(inertia_grid, inertia_matrix[:,10]/inertia_matrix[:,15])(nd_span)
 
+    return wt_opt
 
 
 def assign_te_flaps_values(wt_opt, modeling_options, blade):

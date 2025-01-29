@@ -932,7 +932,8 @@ class RotorElasticity(Group):
             # Outputs - Distributed beam properties
             # YL: Try to match what precomp gives
             blade_elastic_ivc.add_output("z", val=np.zeros(n_span), units="m", desc="locations of properties along beam")
-            blade_elastic_ivc.add_output("A", val=np.zeros(n_span), units="m**2", desc="cross sectional area")
+            # TODO YL: any way to get area so that pyframe3DD can run properly?
+            blade_elastic_ivc.add_output("A", val=np.ones(n_span), units="m**2", desc="cross sectional area")
             blade_elastic_ivc.add_output("EA", val=np.zeros(n_span), units="N", desc="axial stiffness")
             blade_elastic_ivc.add_output(
                 "EIxx",
@@ -1067,39 +1068,28 @@ class RotorElasticity(Group):
             )
 
             # Add to rotorelasticity group
+            promote_list = promote_list + [ 
+                        "Tw_iner",
+                        "x_ec",
+                        "y_ec",
+                        "x_tc",
+                        "y_tc",
+                        "x_cg",
+                        "y_cg",
+                        "xu_spar",
+                        "xl_spar",
+                        "yu_spar",
+                        "yl_spar",
+                        "xu_te",
+                        "xl_te",
+                        "yu_te",
+                        "yl_te",
+                    ]
+            print("promote_list",promote_list)
             self.add_subsystem(
                 "precomp",
                 blade_elastic_ivc,
                 promotes=promote_list
-                + [
-                    # "r", # this is given by ccblade for precomp
-                    "Tw_iner",
-                    # "precurve",
-                    # "presweep",
-                    "x_ec",
-                    "y_ec",
-                    "x_tc",
-                    "y_tc",
-                    "x_cg",
-                    "y_cg",
-                    # "sc_ss_mats",
-                    # "sc_ps_mats",
-                    # "te_ss_mats",
-                    # "te_ps_mats",
-                    "xu_spar",
-                    "xl_spar",
-                    "yu_spar",
-                    "yl_spar",
-                    "xu_te",
-                    "xl_te",
-                    "yu_te",
-                    "yl_te",
-                    # "blade_mass",
-                    # "blade_span_cg",
-                    # "blade_moment_of_inertia",
-                    # "mass_all_blades",
-                    # "I_all_blades",
-                ],
             )
         else:
             promote_list = promote_list + ["chord","theta", "pitch_axis", "coord_xy_interp",]
@@ -1145,4 +1135,4 @@ class RotorElasticity(Group):
                 self.add_subsystem("rail", RailTransport(modeling_options=modeling_options), promotes=promote_list)
 
         # Compute total blade properties
-        self.add_subsystem("total_blade_properties", TotalBladeProperties(modeling_options=modeling_options, opt_options=opt_options), promotes=["r", "blade_mass", "blade_span_cg","blade_moment_of_inertia","mass_all_blades","I_all_blades"])
+        self.add_subsystem("total_blade_properties", TotalBladeProperties(modeling_options=modeling_options, opt_options=opt_options), promotes=["r", "rhoA", "blade_mass", "blade_span_cg","blade_moment_of_inertia","mass_all_blades","I_all_blades"])

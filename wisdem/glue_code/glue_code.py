@@ -208,22 +208,23 @@ class WT_RNTA(om.Group):
                 self.connect("blade.interp_airfoils.coord_xy_interp", "rotorse.re.coord_xy_interp")
 
 
-                # Connections to RotorPower
-                self.connect("rotorse.wt_class.V_mean", "rotorse.rp.cdf.xbar")
-                self.connect("rotorse.wt_class.V_mean", "rotorse.rp.gust.V_mean")
-                self.connect("control.V_in", "rotorse.rp.v_min")
-                self.connect("control.V_out", "rotorse.rp.v_max")
-                self.connect("configuration.rated_power", "rotorse.rp.rated_power")
-                self.connect("control.minOmega", "rotorse.rp.omega_min")
-                self.connect("control.maxOmega", "rotorse.rp.omega_max")
-                self.connect("control.max_TS", "rotorse.rp.control_maxTS")
-                self.connect("configuration.gearbox_type", "rotorse.rp.drivetrainType")
-                self.connect("nacelle.gearbox_efficiency", "rotorse.rp.powercurve.gearbox_efficiency")
-                if modeling_options["flags"]["nacelle"]:
-                    self.connect("drivese.lss_rpm", "rotorse.rp.powercurve.lss_rpm")
-                    self.connect("drivese.generator_efficiency", "rotorse.rp.powercurve.generator_efficiency")
-                self.connect("env.weibull_k", "rotorse.rp.cdf.k")
-                self.connect("configuration.turb_class", "rotorse.rp.gust.turbulence_class")
+            # Connections to RotorPower
+            self.connect("rotorse.wt_class.V_mean", "rotorse.rp.cdf.xbar")
+            self.connect("rotorse.wt_class.V_mean", "rotorse.rp.gust.V_mean")
+            self.connect("control.V_in", "rotorse.rp.v_min")
+            self.connect("control.V_out", "rotorse.rp.v_max")
+            self.connect("configuration.rated_power", "rotorse.rp.rated_power")
+            self.connect("control.minOmega", "rotorse.rp.omega_min")
+            self.connect("control.maxOmega", "rotorse.rp.omega_max")
+            self.connect("control.max_TS", "rotorse.rp.control_maxTS")
+            self.connect("configuration.gearbox_type", "rotorse.rp.drivetrainType")
+            self.connect("nacelle.gearbox_efficiency", "rotorse.rp.powercurve.gearbox_efficiency")
+            if modeling_options["flags"]["nacelle"]:
+                self.connect("drivese.lss_rpm", "rotorse.rp.powercurve.lss_rpm")
+                self.connect("drivese.generator_efficiency", "rotorse.rp.powercurve.generator_efficiency")
+            self.connect("env.weibull_k", "rotorse.rp.cdf.k")
+            self.connect("configuration.turb_class", "rotorse.rp.gust.turbulence_class")
+            
 
             if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
                 self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rotorse.re.precomp.layer_start_nd")

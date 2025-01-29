@@ -1171,6 +1171,7 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         outputs["ac_interp"] = ac_spline(inputs["s"])
 
         # Spanwise interpolation of the profile coordinates with a pchip
+        # Is this unique an issue? Does it assume no two airfoils have the same relative thickness?
         r_thick_unique, indices = np.unique(r_thick_used, return_index=True)
         profile_spline = spline(r_thick_unique, coord_xy_used[indices, :, :])
         coord_xy_interp = np.flip(profile_spline(np.flip(outputs["r_thick_interp"])), axis=0)
